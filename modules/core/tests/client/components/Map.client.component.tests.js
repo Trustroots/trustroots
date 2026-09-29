@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import Map from '@/modules/core/client/components/Map';
 
@@ -16,6 +16,7 @@ jest.mock('react-map-gl', () => {
   const React = require('react');
   return {
     __esModule: true,
+    MapController: jest.requireActual('react-map-gl').MapController,
     default: function MockMapGL(props) {
       mockMapGL(props);
       return <div data-testid="react-map">{props.children}</div>;

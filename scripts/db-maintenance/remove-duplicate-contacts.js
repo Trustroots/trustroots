@@ -27,6 +27,7 @@ var removedCounter = 0,
     totalInitialContacts;
 
 // Bootstrap db connection
+mongoose.set('strictQuery', false);
 mongoose.connect(config.db.uri, function(err) {
   if (err) {
     console.error(chalk.red('Could not connect to MongoDB!'));

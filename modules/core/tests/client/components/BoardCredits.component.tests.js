@@ -1,22 +1,22 @@
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import BoardCredits from '@/modules/core/client/components/BoardCredits';
-import { $on } from '@/modules/core/client/services/angular-compat';
+import { onClientEvent } from '@/modules/core/client/services/client-runtime';
 
-jest.mock('@/modules/core/client/services/angular-compat', () => ({
-  $on: jest.fn(() => () => {}),
+jest.mock('@/modules/core/client/services/client-runtime', () => ({
+  onClientEvent: jest.fn(() => () => {}),
 }));
 
 describe('<BoardCredits />', () => {
   afterEach(() => {
-    $on.mockClear();
+    onClientEvent.mockClear();
   });
 
   function getEventHandler(eventName) {
-    return $on.mock.calls.find(
+    return onClientEvent.mock.calls.find(
       ([registeredEvent]) => registeredEvent === eventName,
     )[1];
   }

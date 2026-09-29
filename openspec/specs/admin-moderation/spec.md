@@ -11,7 +11,10 @@ member activity, and access operational information.
 
 The system SHALL restrict administration tools and administration APIs to
 authorised administrators, except that members with the `welcome-team` role
-SHALL also have access to acquisition stories and analysis and their APIs.
+SHALL also have access to acquisition stories and analysis and their APIs, as
+well as a staff support view where administrators can see who blocked any
+administrator or Welcome team member and Welcome team members can see who
+blocked their own account.
 
 #### Scenario: Administrator opens the dashboard
 
@@ -21,6 +24,23 @@ SHALL also have access to acquisition stories and analysis and their APIs.
 #### Scenario: Regular member requests an administration API
 
 - **WHEN** a regular member without an applicable administrative role requests an administration API
+- **THEN** the system denies access
+
+### Requirement: Staff can identify members who blocked staff accounts
+
+The system SHALL allow administrators to view members who blocked any
+administrator or Welcome team member, and Welcome team members to view members
+who blocked their own account. The view SHALL expose only public identifiers,
+usernames, and display names.
+
+#### Scenario: Staff views members who blocked them
+
+- **WHEN** an administrator or Welcome team member opens the blocked-member support view
+- **THEN** administrators see members who blocked any administrator or Welcome team member, and Welcome team members see members who blocked them
+
+#### Scenario: Regular member requests the staff support list
+
+- **WHEN** a regular member requests the blocked-member support list
 - **THEN** the system denies access
 
 ### Requirement: Administration dashboard overview
@@ -359,22 +379,23 @@ NOT automatically change an account because of a match.
 
 The system SHALL compare acquisition-story rows with a bounded set of
 suspended and shadowbanned accounts and show possible matches to authorised
-administrators. Match signals SHALL include similar normalised identifiers,
-identical normalised acquisition stories, and conservatively similar
-acquisition stories. Matches SHALL NOT automatically change account state.
+administrators. Match signals SHALL include similar normalised username and
+email local-part identifiers and SHALL NOT include acquisition-story text.
+Matches SHALL NOT automatically change account state.
 
 #### Scenario: Acquisition story resembles a restricted account
 
 - **WHEN** an authorised administrator opens the acquisition-stories view
-- **AND** a story row resembles a suspended or shadowbanned account
+- **AND** a story row has an identifier resembling one from a suspended or shadowbanned account
 - **THEN** the row identifies the matching restricted account
-- **AND** labels the identifier, exact-story, or similar-story signal
+- **AND** labels the username, email, or temporary-email identifier signal
 - **AND** links to the restricted account's member report
 
 #### Scenario: Acquisition story has no restricted-account signal
 
 - **WHEN** an authorised administrator opens the acquisition-stories view
-- **AND** a story row has no qualifying restricted-account match
+- **AND** a row shares exact or similar acquisition-story text with a restricted account
+- **AND** the accounts have no qualifying identifier match
 - **THEN** the row is shown without a restricted-account lead
 
 ### Requirement: Member role inventory
@@ -392,7 +413,7 @@ team membership controls.
 
 ### Requirement: Welcome team acquisition access
 
-The system SHALL allow members with the `welcome-team` role to view acquisition stories and analysis, including all existing acquisition data, without granting other administrator permissions. The interface SHALL display the role as Welcome team and show only accessible navigation and member links.
+The system SHALL allow members with the `welcome-team` role to view acquisition stories and analysis, including all existing acquisition data, and the blockers of their own account. Administrator permissions beyond these tools SHALL remain restricted to administrators. The interface SHALL display the role as Welcome team and show only accessible navigation and member links.
 
 #### Scenario: Welcome team views acquisition pages
 
@@ -414,3 +435,15 @@ Administrators SHALL be able to grant and revoke `welcome-team` from member role
 
 - **WHEN** a non-administrator requests a role change
 - **THEN** the request is forbidden
+
+### Requirement: Acquisition-story table context
+
+The acquisition-stories view SHALL show each member's profile visibility,
+explain its compact column headings, and allow profile visibility to be sorted.
+
+#### Scenario: Administrator opens acquisition stories
+
+- **WHEN** an authorised administrator opens the acquisition-stories view
+- **THEN** each story shows whether the member's profile is visible
+- **AND** compact column headings provide accessible explanations
+- **AND** the administrator can sort the rows by profile visibility

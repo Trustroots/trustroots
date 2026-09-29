@@ -1,9 +1,9 @@
 # Non-production image for local `deploy/docker` development and CI test jobs.
 #
-# Node 16, native build deps, npm ci to seed the `node_modules` named volume.
+# Node 24, native build deps, npm ci to seed the `node_modules` named volume.
 # App code is bind-mounted at runtime. Playwright browsers are baked for E2E.
 
-FROM node:16-bookworm-slim
+FROM node:24.21.0-bookworm-slim
 
 RUN apt-get -qq update && apt-get -q install -y \
   build-essential \
@@ -24,12 +24,8 @@ RUN apt-get -qq update && apt-get -q install -y \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Pin npm to v7 to satisfy `engines` in package.json (`npm >=6 <8`).
-RUN npm -g i npm@latest-7
-
-# npm 7's bundled node-gyp predates Bookworm's Python 3.11 support.
-RUN npm explore npm/node_modules/@npmcli/run-script -g -- \
-  npm_config_global=false npm install --omit=dev --no-package-lock node-gyp@9.4.1
+# Keep the package manager consistent across runtime images.
+RUN npm -g i npm@11.19.0
 
 WORKDIR /home/app/trustroots
 

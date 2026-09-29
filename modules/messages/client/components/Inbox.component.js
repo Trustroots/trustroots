@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import * as api from '../api/messages.api';
 import Activate from '@/modules/users/client/components/Activate';
-import { eventTrack } from '@/modules/core/client/services/angular-compat';
+import { trackEvent } from '@/modules/core/client/services/client-runtime';
 import InboxThread from '@/modules/messages/client/components/InboxThread';
 import { userType } from '@/modules/users/client/users.prop-types';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
@@ -28,7 +28,7 @@ export default function Inbox({ user }) {
     setIsFetching(true);
     try {
       if (next) {
-        eventTrack('inbox-pagination', {
+        trackEvent('inbox-pagination', {
           category: 'messages.inbox',
           label: 'Inbox page ' + nextParams.page,
         });

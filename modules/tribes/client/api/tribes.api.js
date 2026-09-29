@@ -1,4 +1,9 @@
-import axios from 'axios';
+import axios from '../../../core/client/api/http-client.js';
+
+export async function listMemberships() {
+  const { data } = await axios.get('/api/users/memberships');
+  return data;
+}
 
 export async function join(tribeId) {
   const { data } = await axios.post(`/api/users/memberships/${tribeId}`);

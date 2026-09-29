@@ -47,6 +47,7 @@ var chalk = require('chalk'),
     mongoose.Promise = Promise;
 
 // Bootstrap db connection
+mongoose.set('strictQuery', false);
 var db = mongoose.connect(config.db.uri, function(err) {
   if (err) {
     console.log(chalk.red('Could not connect to MongoDB!'));

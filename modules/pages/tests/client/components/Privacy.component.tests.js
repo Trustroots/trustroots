@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Privacy from '@/modules/pages/client/components/Privacy.component';
@@ -41,6 +41,11 @@ describe('<Privacy />', () => {
     expect(
       screen.getByRole('link', { name: 'Nostroots privacy policy' }),
     ).toHaveAttribute('href', 'https://nos.trustroots.org/privacy/');
+    for (const link of screen.getAllByRole('link', {
+      name: 'Account settings',
+    })) {
+      expect(link).toHaveAttribute('href', '/profile/edit/account');
+    }
     expect(
       screen.getByRole('link', { name: 'Zendesk privacy policy' }),
     ).toHaveAttribute(

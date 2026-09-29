@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import * as visibilityService from '@/modules/messages/client/services/visibility.client.service';
 

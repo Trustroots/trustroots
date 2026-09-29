@@ -46,11 +46,14 @@ const rules = {
 };
 
 module.exports = {
+  // Keep linting scoped to this worktree (parent repo .eslintrc must not load).
+  root: true,
   extends: ['eslint:recommended', 'plugin:import/errors', 'prettier'],
   rules,
-  plugins: ['angular', 'react', 'import', 'prettier'],
+  plugins: ['react', 'import', 'prettier'],
   settings: {
     'import/resolver': {
+      node: true,
       webpack: {
         config: __dirname + '/config/webpack/webpack.config.js',
       },
@@ -73,81 +76,12 @@ module.exports = {
         'config/**',
         'migrations/**',
         'modules/*/shared/**/*.js',
-        'modules/*/server/*.js',
-        'modules/*/server/**/*.js',
+        'modules/*/server/*.{js,mjs}',
+        'modules/*/server/**/*.{js,mjs}',
         'testutils/server/**',
       ],
       env: {
         node: true,
-      },
-    },
-
-    /**
-     * Overrides for client Angular code
-     */
-    {
-      files: [
-        'modules/*/client/*.module.js',
-        'modules/*/client/config/*.js',
-        'modules/*/client/controllers/*.js',
-        'modules/*/client/directives/*.js',
-        'modules/*/client/filters/*.js',
-        'modules/*/client/services/*.js',
-        'modules/core/client/app/config.js',
-        'modules/core/client/app/init.js',
-        'testutils/client/*.js',
-      ],
-      rules: {
-        'angular/component-limit': 0,
-        'angular/controller-as-route': 1,
-        'angular/controller-as-vm': 1,
-        'angular/controller-as': 1,
-        'angular/deferred': 1,
-        'angular/di-unused': 2,
-        'angular/directive-restrict': 0,
-        'angular/empty-controller': 2,
-        'angular/no-controller': 0,
-        'angular/no-inline-template': 0,
-        'angular/no-run-logic': 0,
-        'angular/no-services': 0,
-        'angular/on-watch': 0,
-        'angular/prefer-component': 0,
-        'angular/no-cookiestore': 2,
-        'angular/no-directive-replace': 0,
-        'angular/no-http-callback': 2,
-        'angular/angularelement': 2,
-        'angular/definedundefined': 0,
-        'angular/document-service': 0,
-        'angular/interval-service': 0,
-        'angular/json-functions': 2,
-        'angular/log': 1,
-        'angular/timeout-service': 0,
-        'angular/typecheck-array': 2,
-        'angular/typecheck-date': 2,
-        'angular/typecheck-function': 2,
-        'angular/typecheck-number': 2,
-        'angular/typecheck-object': 2,
-        'angular/typecheck-string': 2,
-        'angular/window-service': 2,
-      },
-      settings: {
-        angular: 1,
-      },
-      env: {
-        browser: true,
-        jquery: true,
-      },
-      globals: {
-        angular: true,
-        AppConfig: true,
-        L: true,
-        moment: true,
-      },
-      parser: '@babel/eslint-parser',
-      parserOptions: {
-        ecmaVersion: 2018,
-
-        sourceType: 'module',
       },
     },
 
@@ -158,12 +92,11 @@ module.exports = {
       files: [
         'config/client/**',
         'modules/admin/client/**',
-        'modules/core/client/app/config.js',
         'modules/**/client/components/**',
         'modules/**/client/react-app/**',
         'modules/**/client/api/**',
         'modules/**/client/utils/**',
-        'modules/core/client/services/photos.service.js',
+        'modules/**/client/services/**',
         'modules/experiences/tests/client/**',
       ],
       env: {
@@ -195,8 +128,8 @@ module.exports = {
      */
     {
       files: [
-        'modules/*/tests/client/*.js',
-        'modules/*/tests/client/**/*.js',
+        'modules/*/tests/client/*.{js,ts,tsx}',
+        'modules/*/tests/client/**/*.{js,ts,tsx}',
         'testutils/client/*.js',
       ],
       extends: [
@@ -217,8 +150,27 @@ module.exports = {
         jquery: true,
       },
       globals: {
-        angular: true,
-        inject: true,
+        L: true,
+      },
+    },
+
+    /**
+     * TypeScript is introduced for client code only. Keep JS linting unchanged.
+     */
+    {
+      files: [
+        'modules/*/client/**/*.{ts,tsx}',
+        'modules/*/tests/client/**/*.{ts,tsx}',
+      ],
+      parser: '@typescript-eslint/parser',
+      extends: ['plugin:@typescript-eslint/recommended', 'prettier'],
+      parserOptions: {
+        ecmaVersion: 2018,
+        sourceType: 'module',
+        ecmaFeatures: { jsx: true },
+      },
+      rules: {
+        'react/prop-types': 0,
       },
     },
 

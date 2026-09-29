@@ -1,7 +1,6 @@
-let acl = require('acl');
+const acl =
+  require('../../../core/server/services/memory-policy.server.service')();
 const errorService = require('../../../core/server/services/error.server.service');
-
-acl = new acl(new acl.memoryBackend());
 
 exports.invokeRolesPolicies = function () {
   acl.allow([

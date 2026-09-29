@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import AdminNotes from '@/modules/admin/client/components/AdminNotes';
 import * as notesApi from '@/modules/admin/client/api/admin-notes.api';

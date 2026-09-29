@@ -10,9 +10,9 @@ describe('Service: email', function () {
   function loadEmailService(stubs = {}) {
     jobs = [];
     const agenda = {
-      now(type, data, callback) {
+      now(type, data) {
         jobs.push(JSON.parse(JSON.stringify({ type, data })));
-        process.nextTick(callback);
+        return Promise.resolve({ attrs: { name: type } });
       },
     };
 
@@ -24,6 +24,26 @@ describe('Service: email', function () {
 
   beforeEach(function () {
     emailService = loadEmailService();
+  });
+
+  it('passes Agenda enqueue failures to the email caller', function (done) {
+    const enqueueError = new Error('Job could not be queued');
+    emailService = loadEmailService({
+      '../../../../config/lib/agenda': {
+        now() {
+          return Promise.reject(enqueueError);
+        },
+      },
+    });
+    emailService.renderEmail = function (templateName, params, callback) {
+      callback(null, { to: { address: 'member@example.test' } });
+    };
+
+    emailService.renderEmailAndSend('example', {}, function (err, job) {
+      err.should.equal(enqueueError);
+      should.not.exist(job);
+      done();
+    });
   });
 
   it('can send signup email confirmation', function (done) {
@@ -366,7 +386,7 @@ describe('Service: email', function () {
     );
   });
 
-  it('removes links from unread message previews', function (done) {
+  it('defangs links in unread message previews', function (done) {
     const userFrom = {
       _id: 'from-user-id',
       username: 'userfrom',
@@ -386,6 +406,14 @@ describe('Service: email', function () {
           content:
             'Visit <a href="https://example.invalid/payment">example.invalid/payment</a>.',
         },
+        {
+          id: 'message-id-2',
+          content: 'Or visit https://scammetyscammetyscam.example.com/.',
+        },
+        {
+          id: 'message-id-3',
+          content: 'The domain is scammetyscammetyscam.example.com.',
+        },
       ],
     };
 
@@ -396,9 +424,32 @@ describe('Service: email', function () {
       function (err) {
         if (err) return done(err);
         jobs.length.should.equal(1);
-        jobs[0].data.html.should.containEql('Visit [link removed].');
+        jobs[0].data.html.should.containEql(
+          'Visit https[:]//example[.]invalid/payment.',
+        );
+        jobs[0].data.text.should.containEql(
+          'Visit https[:]//example[.]invalid/payment.',
+        );
         jobs[0].data.html.should.not.containEql('https://example.invalid');
         jobs[0].data.text.should.not.containEql('https://example.invalid');
+        jobs[0].data.html.should.containEql(
+          'Or visit https[:]//scammetyscammetyscam[.]example[.]com/.',
+        );
+        jobs[0].data.text.should.containEql(
+          'Or visit https[:]//scammetyscammetyscam[.]example[.]com/.',
+        );
+        jobs[0].data.html.should.containEql(
+          'The domain is scammetyscammetyscam[.]example[.]com.',
+        );
+        jobs[0].data.text.should.containEql(
+          'The domain is scammetyscammetyscam[.]example[.]com.',
+        );
+        jobs[0].data.html.should.not.containEql(
+          'scammetyscammetyscam.example.com',
+        );
+        jobs[0].data.text.should.not.containEql(
+          'scammetyscammetyscam.example.com',
+        );
         done();
       },
     );
@@ -442,6 +493,7 @@ describe('Service: email', function () {
 
   it('can send support request email', function (done) {
     const supportRequest = {
+      category: 'reportMember',
       message: 'test-support-message',
       username: 'joedoe',
       email: 'test@test.com',
@@ -470,7 +522,7 @@ describe('Service: email', function () {
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
       jobs[0].data.subject.should.equal(
-        'Support request from ' +
+        'Support request [Report a member] from ' +
           supportRequest.username +
           ' (' +
           supportRequest.displayName +
@@ -486,11 +538,12 @@ describe('Service: email', function () {
       should.not.exist(jobs[0].data.html);
       should.exist(jobs[0].data.text);
       jobs[0].data.text.should.containEql('test-support-message');
+      jobs[0].data.text.should.containEql('Category: Report a member');
       jobs[0].data.text.should.containEql(
-        'Reporting member: ' + supportRequest.reportMember,
+        'Reported member: ' + supportRequest.reportMember,
       );
       jobs[0].data.text.should.containEql(
-        'Username: ' + supportRequest.username,
+        'From username: ' + supportRequest.username,
       );
       jobs[0].data.text.should.containEql('Email: ' + supportRequest.email);
       jobs[0].data.text.should.containEql(
@@ -536,7 +589,7 @@ describe('Service: email', function () {
     emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.subject.should.equal('Support request');
+      jobs[0].data.subject.should.equal('Support request [Other]');
       done();
     });
   });
@@ -553,7 +606,7 @@ describe('Service: email', function () {
     emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.subject.should.equal('Support request from joedoe');
+      jobs[0].data.subject.should.equal('Support request [Other] from joedoe');
       done();
     });
   });
@@ -570,7 +623,7 @@ describe('Service: email', function () {
     emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.subject.should.equal('Support request (Joe Doe)');
+      jobs[0].data.subject.should.equal('Support request [Other] (Joe Doe)');
       done();
     });
   });
@@ -860,7 +913,7 @@ describe('Service: email', function () {
     emailService.renderEmail('reset-password', params, function (err, email) {
       if (err) return done(err);
       email.text.should.containEql(
-        "Remember, I'm just a little mail robot. Don't reply to this email directly.",
+        'This is an automated email. Please don’t reply directly.',
       );
       done();
     });
@@ -881,7 +934,7 @@ describe('Service: email', function () {
     emailService.renderEmail('reset-password', params, function (err, email) {
       if (err) return done(err);
       email.text.should.not.containEql(
-        "Remember, I'm just a little mail robot. Don't reply to this email directly.",
+        'This is an automated email. Please don’t reply directly.',
       );
       done();
     });
@@ -923,9 +976,9 @@ describe('Service: email', function () {
   it('passes Agenda scheduling failures to renderEmailAndSend callbacks', function (done) {
     const service = loadEmailService({
       '../../../../config/lib/agenda': {
-        now(type, data, callback) {
+        now(type, data) {
           jobs.push(JSON.parse(JSON.stringify({ type, data })));
-          callback(new Error('agenda failed'));
+          return Promise.reject(new Error('agenda failed'));
         },
       },
     });

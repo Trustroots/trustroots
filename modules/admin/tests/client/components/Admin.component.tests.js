@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import Admin from '@/modules/admin/client/components/Admin.component';
 import * as dashboardApi from '@/modules/admin/client/api/admin-dashboard.api';

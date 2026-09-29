@@ -31,7 +31,9 @@ export function loadRtlCSS() {
     }
 
     const link = document.createElement('link');
-    link.href = `assets/main.rtl.css?c=${window?.settings?.commit ?? ''}`;
+    link.href = `/assets/react-main.rtl.css?c=${
+      window?.settings?.commit ?? ''
+    }`;
     link.id = id;
     link.rel = 'stylesheet';
     link.type = 'text/css';

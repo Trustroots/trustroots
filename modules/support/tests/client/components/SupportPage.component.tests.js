@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import SupportPage from '@/modules/support/client/components/SupportPage.component';
@@ -34,6 +34,9 @@ describe('<SupportPage />', () => {
 
     expect(screen.getByText('Trustroots Support')).toBeInTheDocument();
     expect(screen.getByText('support:anonymous')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Become a volunteer' }),
+    ).toHaveAttribute('href', '/support?category=volunteering');
     expect(
       screen.queryByRole('link', { name: 'Removing your account' }),
     ).not.toBeInTheDocument();

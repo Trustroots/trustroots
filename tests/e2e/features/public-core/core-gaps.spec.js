@@ -1,4 +1,10 @@
-const { annotateFeature, test, expect } = require('../../support/test');
+/* global window */
+const {
+  annotateFeature,
+  test,
+  expect,
+  useViewportScreenshot,
+} = require('../../support/test');
 
 test.describe('public core manifest gap coverage', () => {
   test('support API accepts valid guest requests', async ({
@@ -22,32 +28,53 @@ test.describe('public core manifest gap coverage', () => {
     });
   });
 
-  test('support API surfaces send failures as validation errors', async ({
-    page,
-  }, testInfo) => {
-    annotateFeature(testInfo, 'public.support-submit', [
-      'Support request validation errors are shown without sending email.',
-    ]);
+  for (const [size, viewport] of Object.entries({
+    desktop: { width: 1280, height: 720 },
+    mobile: { width: 390, height: 640 },
+  })) {
+    test(`support form keeps send failures visible and focused on ${size}`, async ({
+      page,
+    }, testInfo) => {
+      useViewportScreenshot(testInfo);
+      await page.setViewportSize(viewport);
+      annotateFeature(testInfo, 'public.support-submit', [
+        'Support request validation errors are shown without sending email.',
+      ]);
 
-    await page.route('**/api/support', route =>
-      route.fulfill({
-        status: 400,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          message:
-            'Failure while sending your support request. Please try again.',
+      await page.route('**/api/support', route =>
+        route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            message:
+              'Failure while sending your support request. Please try again.',
+          }),
         }),
-      }),
-    );
+      );
 
-    await page.goto('/support');
-    await page.getByLabel(/message/i).fill('E2E failing support request.');
-    await page.getByRole('button', { name: /^send$/i }).click();
+      await page.goto('/support');
+      await page
+        .getByRole('textbox', { name: 'Message', exact: true })
+        .fill('E2E failing support request.');
+      await page.getByRole('button', { name: /^send$/i }).click();
 
-    await expect(
-      page.getByText(/something went wrong sending your message/i),
-    ).toBeVisible();
-  });
+      const alert = page.getByRole('alert');
+      await expect(alert).toContainText(
+        'Something went wrong sending your message.',
+      );
+      await expect(alert).toBeFocused();
+      await expect(alert).toBeInViewport({ ratio: 1 });
+      const navigation = await page
+        .getByRole('navigation', { name: 'Page navigation' })
+        .boundingBox();
+      const error = await alert.boundingBox();
+      expect(error.y).toBeGreaterThanOrEqual(navigation.y + navigation.height);
+      await expect(page.getByLabel('Message', { exact: true })).toHaveValue(
+        'E2E failing support request.',
+      );
+      await expect(page.getByRole('button', { name: /^send$/i })).toBeEnabled();
+    });
+  }
 
   test('support form submits guest reports through the UI', async ({
     page,
@@ -61,8 +88,13 @@ test.describe('public core manifest gap coverage', () => {
     ]);
 
     await page.goto('/support?report=e2e-seeded-shadow');
-    await expect(page.getByText('Reporting member')).toBeVisible();
+    await expect(page.getByText('Reported member')).toBeVisible();
     await expect(page.getByText('e2e-seeded-shadow')).toBeVisible();
+    await expect(
+      page.getByText(
+        'This message goes to Trustroots support, not to the member.',
+      ),
+    ).toBeVisible();
 
     await page.locator('#message').fill('E2E support report from UI coverage.');
     await page.locator('#username').fill('guest-support-ui');
@@ -77,23 +109,46 @@ test.describe('public core manifest gap coverage', () => {
     await page.getByRole('button', { name: /^send$/i }).click();
     await supportRequest;
 
-    await expect(page.getByText('Thank you!')).toBeVisible();
+    await expect(page.getByText('Thanks for getting in touch!')).toBeVisible();
     await expect(
-      page.getByText(/sent your message to our support people/i),
+      page.getByText(/Your message has been sent to the Trustroots team/),
     ).toBeVisible();
   });
 
-  test('service worker config renders JavaScript for visitors', async ({
-    request,
+  test('internal links preserve the React single-page shell and browser history', async ({
+    page,
   }, testInfo) => {
-    annotateFeature(testInfo, 'public.service-worker-config', [
-      'Endpoint returns JavaScript config without requiring authentication.',
+    annotateFeature(testInfo, 'public.single-page-navigation', [
+      'React-owned links update the URL without reloading the document.',
+      'Browser history restores the previous React-owned route in the same document.',
     ]);
 
-    const response = await request.get('/config/sw.js');
-    expect(response.ok()).toBeTruthy();
-    expect(response.headers()['content-type']).toContain('text/javascript');
-    expect(await response.text()).toMatch(/var FCM_SENDER_ID = .*;\n/);
+    await page.goto('/rules');
+    await page.evaluate(() => {
+      window.__trustrootsSpaDocument = {};
+    });
+
+    await page
+      .locator('#tr-footer')
+      .getByRole('link', { name: 'FAQ', exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/faq$/);
+    await expect(
+      page.getByRole('heading', {
+        name: 'about the site & community',
+        exact: true,
+      }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(() => Boolean(window.__trustrootsSpaDocument)),
+    ).toBeTruthy();
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/rules$/);
+    await expect(page.getByRole('heading', { name: /^rules$/i })).toBeVisible();
+    expect(
+      await page.evaluate(() => Boolean(window.__trustrootsSpaDocument)),
+    ).toBeTruthy();
   });
 
   test('legacy invite redirects to signup', async ({ request }, testInfo) => {

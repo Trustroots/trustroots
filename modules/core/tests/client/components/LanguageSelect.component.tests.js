@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import LanguageSelect from '@/modules/core/client/components/LanguageSelect';
@@ -81,6 +81,53 @@ describe('<LanguageSelect />', () => {
         { value: 'fin', label: 'Finnish' },
       ]);
     });
+  });
+
+  it('retains a deprecated selection without offering it in search', async () => {
+    const existing = {
+      value: 'enm',
+      label: 'Middle English (1100-1500)',
+      deprecated: true,
+    };
+    const selectable = {
+      value: 'eng',
+      label: 'English',
+      deprecated: false,
+    };
+    useLanguagesQuery.mockReturnValue({
+      data: [existing, selectable],
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<LanguageSelect excludeDeprecated preSelectedLanguages={['enm']} />);
+
+    await waitFor(() => {
+      expect(asyncSelectProps.at(-1).value).toEqual([existing]);
+    });
+    expect(await asyncSelectProps.at(-1).loadOptions('Middle')).toEqual([]);
+    expect(await asyncSelectProps.at(-1).loadOptions('English')).toEqual([
+      selectable,
+    ]);
+  });
+
+  it('offers deprecated languages when used as a search filter', async () => {
+    const historical = {
+      value: 'enm',
+      label: 'Middle English (1100-1500)',
+      deprecated: true,
+    };
+    useLanguagesQuery.mockReturnValue({
+      data: [historical],
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<LanguageSelect />);
+
+    expect(await asyncSelectProps.at(-1).loadOptions('Middle')).toEqual([
+      historical,
+    ]);
   });
 
   it('forwards selected values to onChangeLanguages', async () => {

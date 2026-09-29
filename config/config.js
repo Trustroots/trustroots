@@ -82,16 +82,6 @@ const validateEnvironmentVariable = function () {
 /**
  * Initialize global configuration files
  */
-const initGlobalConfigFolders = function (config) {
-  // Appending files
-  config.folders = {
-    server: {},
-  };
-};
-
-/**
- * Initialize global configuration files
- */
 const initGlobalConfigFiles = function (config, assets) {
   // Appending files
   config.files = {
@@ -152,9 +142,6 @@ const initGlobalConfig = function () {
 
   // Initialize global globbed files
   initGlobalConfigFiles(config, assets);
-
-  // Initialize global globbed folders
-  initGlobalConfigFolders(config, assets);
 
   // Expose configuration utilities
   config.utils = {

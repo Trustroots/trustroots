@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import ReactFooter from '@/modules/core/client/react-app/ReactFooter';
 
-jest.mock('@/modules/core/client/services/angular-compat', () => ({
-  $on: jest.fn(() => () => {}),
+jest.mock('@/modules/core/client/services/client-runtime', () => ({
+  onClientEvent: jest.fn(() => () => {}),
 }));
 
 const build = {
@@ -32,7 +32,7 @@ describe('<ReactFooter />', () => {
     expect(container.querySelector('#tr-footer')).toHaveClass('container');
     expect(screen.getByRole('link', { name: 'Volunteering' })).toHaveAttribute(
       'href',
-      'https://team.trustroots.org/',
+      '/support?category=volunteering',
     );
   });
 });

@@ -1,4 +1,6 @@
-import axios from 'axios';
+import axios, {
+  getErrorResponse,
+} from '../../../core/client/api/http-client.js';
 
 /**
  * API request: create an experience
@@ -47,23 +49,12 @@ export async function readMine({ userWith }) {
     });
     return experience;
   } catch (err) {
-    if (err.response?.status === 404) {
+    if (getErrorResponse(err)?.status === 404) {
       return null;
     } else {
       throw err;
     }
   }
-}
-
-/**
- * API request: report a member
- * @TODO this request belongs to a different module
- * @param {object} user - member to report
- * @param {string} message - message to administrators
- * @returns Promise<void>
- */
-export async function report(user, message) {
-  await axios.post('/api/support', { message, reportMember: user.username });
 }
 
 /**

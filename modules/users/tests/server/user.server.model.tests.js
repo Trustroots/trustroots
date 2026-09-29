@@ -179,6 +179,9 @@ describe('User Model Unit Tests:', function () {
           _user3.email = _user.email;
           _user3.save(function (err) {
             should.exist(err);
+            err.errors.email.message.should.equal(
+              'Account with this email exists already.',
+            );
             // Restoring the original email for test3 so it can be used in later tests
             _user3.email = user3_email;
             done();
@@ -199,12 +202,71 @@ describe('User Model Unit Tests:', function () {
           _user3.username = _user.username;
           _user3.save(function (err) {
             should.exist(err);
+            err.errors.username.message.should.equal(
+              'Username exists already.',
+            );
             // Restoring the original username for test3 so it can be used in later tests
             _user3.username = user3_username;
             done();
           });
         });
       });
+    });
+  });
+
+  describe('Mongoose 6 database compatibility', function () {
+    it('reports a duplicate email on updateOne and leaves the stored user unchanged', async function () {
+      const first = await new User(user).save();
+      const second = await new User(user3).save();
+
+      try {
+        await User.updateOne(
+          { _id: second._id },
+          { $set: { email: first.email } },
+        );
+        throw new Error('Expected the unique email index to reject the update');
+      } catch (err) {
+        err.should.be.instanceof(mongoose.Error.ValidationError);
+        err.errors.email.message.should.equal(
+          'Account with this email exists already.',
+        );
+      }
+
+      const stored = await User.findById(second._id);
+      stored.email.should.equal(user3.email);
+    });
+
+    it('reports a duplicate username on findOneAndUpdate without changing the user', async function () {
+      const first = await new User(user).save();
+      const second = await new User(user3).save();
+
+      try {
+        await User.findOneAndUpdate(
+          { _id: second._id },
+          { $set: { username: first.username } },
+          { new: true },
+        );
+        throw new Error(
+          'Expected the unique username index to reject the update',
+        );
+      } catch (err) {
+        err.should.be.instanceof(mongoose.Error.ValidationError);
+        err.errors.username.message.should.equal('Username exists already.');
+      }
+
+      const stored = await User.findById(second._id);
+      stored.username.should.equal(user3.username);
+    });
+
+    it('keeps unknown query fields in the MongoDB filter', async function () {
+      await new User(user).save();
+
+      const match = await User.findOne({
+        username: user.username,
+        fieldNotInSchema: 'anonymous-value',
+      });
+
+      should.not.exist(match);
     });
   });
 

@@ -24,8 +24,9 @@ const VALID_NPUB =
   'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
 const PUBLIC_MEMBER_NPUB =
   'npub1yg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3q2pw2gm';
-const FORM_NPUB =
-  'npub1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygse4sl3h';
+// Generate this per worker so Playwright's serial-group retries cannot collide
+// with an npub saved by an earlier worker attempt.
+const FORM_NPUB = nip19.npubEncode(getPublicKey(generateSecretKey()));
 // A secret key (nsec) must never be accepted in place of a public key.
 const NSEC = 'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqwkhnav';
 
@@ -135,14 +136,10 @@ test.describe('nostr NIP-05 .well-known endpoint', () => {
 });
 
 test.describe.serial('nostr npub on the profile networks form', () => {
-  const user = createUser();
+  const user = SEEDED_MEMBERS[2];
 
-  test.beforeAll(async ({ request }) => {
-    await registerViaApi(request, user);
-  });
-
-  test.beforeEach(async ({ page }) => {
-    await signIn(page, user);
+  test.beforeEach(async ({ page, request }) => {
+    await signInViaApi(page, request, user);
   });
 
   test('offers personalised onboarding and a scannable desktop QR above the public key field', async ({
@@ -213,7 +210,7 @@ test.describe.serial('nostr npub on the profile networks form', () => {
     await expect(input).toBeVisible({ timeout: 30000 });
 
     await input.fill(NSEC);
-    await input.blur();
+    await page.locator('.profile-editor-save').click();
 
     await expect(page.getByText(/invalid nostr key/i)).toBeVisible();
   });
@@ -415,9 +412,8 @@ test.describe('nostr community notes badge on the profile view', () => {
       ),
     ];
 
-    const user = createUser();
-    await registerViaApi(request, user);
-    await signIn(page, user);
+    const user = SEEDED_MEMBERS[0];
+    await signInViaApi(page, request, user);
 
     const update = await page.request.put('/api/users', {
       data: { nostrNpub: npub },

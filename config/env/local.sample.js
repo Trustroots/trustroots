@@ -41,15 +41,7 @@ module.exports = {
     }
   },
   */
-  // Uncomment to configure Google FCM push
-  // serviceAccount comes from a json file downloaded from the fcm console
-  /*
-  fcm: {
-    senderId: '',
-    serviceAccount: {
-    }
-  },
-  */
+  // Future push: restore FCM (or another transport) credentials here.
   // Uncomment if you want to have Mapbox maps at development environment
   /*
   mapbox: {

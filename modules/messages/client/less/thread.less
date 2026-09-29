@@ -125,7 +125,10 @@
 #message-reply {
   display: flex;
   flex-direction: column;
-  flex: 0 1 auto;
+  // The message list is the flexible, scrollable part of the thread. Letting
+  // the form shrink makes long conversations collapse the editor until its
+  // text and the actions row overlap.
+  flex: 0 0 auto;
   min-height: 0;
   max-height: 50vh;
   overflow: hidden;

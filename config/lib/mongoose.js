@@ -8,24 +8,13 @@ const log = require('./logger');
 const mongoose = require('mongoose');
 const semver = require('semver');
 
-/**
- * Options for Native MongoDB connection
- *
- * @link https://mongodb.github.io/node-mongodb-native/2.1/api/Server.html
- * @link https://mongoosejs.com/docs/connections.html
- */
+/** Options for the Mongoose connection. */
 const mongoConnectionOptions = {
-  server: {
-    // Never stop reconnecting
-    reconnectTries: Number.MAX_SAFE_INTEGER,
-  },
-  // https://mongoosejs.com/docs/deprecations.html#-ensureindex-
-  useCreateIndex: true,
-  // https://mongoosejs.com/docs/deprecations.html#-findandmodify-
-  useFindAndModify: false,
   // Mongoose-specific option. Set to false to disable automatic index
   // creation for all models associated with this connection.
   autoIndex: Boolean(config.db.autoIndex),
+  // Keep collection creation under the same explicit control as before.
+  autoCreate: false,
 };
 
 // Load the mongoose models
@@ -73,19 +62,24 @@ module.exports.connect = function (callback) {
 
   // Enabling mongoose debug mode if required
   mongoose.set('debug', Boolean(config.db.debug));
+  // Preserve Mongoose 5's query filtering semantics for existing queries.
+  mongoose.set('strictQuery', false);
 
   async.waterfall(
     [
       // Connect
       function (done) {
-        mongoose.connect(config.db.uri, mongoConnectionOptions, function (err) {
-          if (err) {
+        mongoose.connect(config.db.uri, mongoConnectionOptions).then(
+          function () {
+            done();
+          },
+          function (err) {
             log('error', 'Could not connect to MongoDB!', {
               error: err,
             });
-          }
-          done(err);
-        });
+            done(err);
+          },
+        );
       },
       // Confirm compatibility with MongoDB version
       function (done) {
@@ -95,25 +89,27 @@ module.exports.connect = function (callback) {
         }
 
         const engines = require('../../package.json').engines;
-        const admin = new mongoose.mongo.Admin(mongoose.connection.db);
-        admin.buildInfo(function (err, info) {
-          log('info', 'MongoDB', {
-            version: info.version,
-          });
-
-          if (
-            semver.valid(info.version) &&
-            !semver.satisfies(info.version, engines.mongodb)
-          ) {
-            log('error', 'MongoDB version incompatibility!', {
+        mongoose.connection.db
+          .admin()
+          .buildInfo()
+          .then(function (info) {
+            log('info', 'MongoDB', {
               version: info.version,
-              compatibleVersion: engines.mongodb,
             });
-            process.exit(1);
-          }
 
-          done();
-        });
+            if (
+              semver.valid(info.version) &&
+              !semver.satisfies(info.version, engines.mongodb)
+            ) {
+              log('error', 'MongoDB version incompatibility!', {
+                version: info.version,
+                compatibleVersion: engines.mongodb,
+              });
+              process.exit(1);
+            }
+
+            done();
+          }, done);
       },
       // Load models
       function (done) {
@@ -131,12 +127,15 @@ module.exports.connect = function (callback) {
 };
 
 module.exports.disconnect = function (callback) {
-  mongoose.disconnect(function (err) {
-    log('info', 'Disconnected from MongoDB.');
-    if (callback) {
-      callback(err);
-    }
-  });
+  mongoose.disconnect().then(
+    function () {
+      log('info', 'Disconnected from MongoDB.');
+      if (callback) callback();
+    },
+    function (err) {
+      if (callback) callback(err);
+    },
+  );
 };
 
 module.exports.dropDatabase = function (connection, callback) {

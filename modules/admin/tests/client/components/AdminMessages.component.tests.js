@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import AdminMessages from '@/modules/admin/client/components/AdminMessages.component';
 import * as messagesApi from '@/modules/admin/client/api/messages.api';
@@ -153,7 +153,7 @@ describe('<AdminMessages />', () => {
       ),
     );
     expect(
-      screen.getByText(
+      await screen.findByText(
         (_, element) =>
           element.tagName === 'P' &&
           element.textContent === '0 recipient(s) found for @quiet-member.',

@@ -87,6 +87,37 @@ describe('Tribe CRUD tests', function () {
 
   afterEach(utils.clearDatabase);
 
+  it('formats stored descriptions consistently in catalogue and detail responses', async () => {
+    tribe.description =
+      '<p>Sample <b>formatted</b> text</p><iframe src="about:blank"></iframe>';
+    await tribe.save();
+    const catalogue = await agent.get('/api/tribes').expect(200);
+    const detail = await agent.get(`/api/tribes/${tribe.slug}`).expect(200);
+    for (const circle of [catalogue.body[0], detail.body]) {
+      circle.description.should.equal('<p>Sample <b>formatted</b> text</p>');
+    }
+  });
+
+  it('builds catalogue page links with ordinary nested query fields', async () => {
+    await new Tribe({ label: 'Another Sample Circle' }).save();
+    const response = await agent
+      .get(
+        '/api/tribes?limit=1&filter[label]=sample&filter[constructor][label]=unused',
+      )
+      .expect(200);
+    response.headers.link.should.containEql('rel="next"');
+    response.headers.link.should.not.containEql('constructor');
+    response.body.should.have.length(1);
+  });
+
+  it('serves the catalogue and details through the React root', async () => {
+    for (const url of ['/circles', `/circles/${tribe.slug}`]) {
+      const response = await agent.get(url).expect(200);
+      response.text.should.containEql('id="tr-react-root"');
+      response.text.should.not.containEql('data-ui-view');
+    }
+  });
+
   it('should be able to read tribes when not logged in', function (done) {
     // Read tribes
     agent

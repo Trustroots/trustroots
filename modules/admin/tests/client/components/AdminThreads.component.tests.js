@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import AdminThreads from '@/modules/admin/client/components/AdminThreads.component';
 import * as threadsApi from '@/modules/admin/client/api/threads.api';
@@ -86,13 +86,13 @@ describe('<AdminThreads />', () => {
       target: { value: 'alice' },
     });
 
-    await waitFor(() =>
-      expect(threadsApi.getThreads).toHaveBeenCalledWith({
-        userId: '',
-        username: 'alice',
-      }),
-    );
-    expect(screen.getByText('Messages from/to them')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Messages from/to them'),
+    ).toBeInTheDocument();
+    expect(threadsApi.getThreads).toHaveBeenCalledWith({
+      userId: '',
+      username: 'alice',
+    });
     expect(screen.getByText('Unread')).toHaveClass('label-warning');
     expect(screen.getByRole('link', { name: 'Read thread' })).toHaveAttribute(
       'href',

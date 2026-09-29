@@ -5,7 +5,6 @@ const config = require('../../../../config/config');
 const textService = require('../../../core/server/services/text.server.service');
 const errorService = require('../../../core/server/services/error.server.service');
 const emailService = require('../../../core/server/services/email.server.service');
-const pushService = require('../../../core/server/services/push.server.service');
 const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
 const Contact = mongoose.model('Contact');
 const Experience = mongoose.model('Experience');
@@ -340,27 +339,6 @@ async function sendEmailNotification(
   }
 }
 
-async function sendPushNotification(
-  userFrom,
-  userTo,
-  { isFirst, experienceId },
-) {
-  // First push notification when first experience-pair is written
-  if (isFirst) {
-    return util.promisify(pushService.notifyNewExperienceFirst)(
-      userFrom,
-      userTo,
-    );
-  }
-
-  // Second push notification when both experiences become public
-  return util.promisify(pushService.notifyNewExperienceSecond)(
-    userFrom,
-    userTo,
-    experienceId,
-  );
-}
-
 /**
  * Create an experience - express middleware
  */
@@ -412,11 +390,8 @@ exports.create = async function (req, res, next) {
       selfId,
     );
 
-    // send push notification
-    await sendPushNotification(req.user, userTo, {
-      isFirst: !otherExperience,
-      experienceId: savedExperience._id,
-    });
+    // Future push: notify userTo about a new or reciprocal experience here
+    // (previously notifyNewExperienceFirst / notifyNewExperienceSecond).
 
     // finally, respond
     throw new ResponseError({

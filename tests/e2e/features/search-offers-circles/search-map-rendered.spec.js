@@ -1,4 +1,6 @@
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test: base } = require('../../support/test');
+
+const test = base.extend({ mapZoom: [6, { option: true }] });
 const { finalizeEvent } = require('nostr-tools');
 
 const { SEEDED_MEMBERS, signInViaApi } = require('../../support/helpers');
@@ -13,6 +15,84 @@ const {
 const berlin = SEEDED_MEMBERS[0];
 const communityNotePlusCode = '9F4MG82G+7Q';
 const communityNoteText = 'E2E community note: quiet courtyard with good tea.';
+
+const readMapZoom = page =>
+  page.evaluate(() => {
+    const raw = window.localStorage.getItem('search-map-location');
+    return raw ? JSON.parse(raw).zoom : null;
+  });
+
+async function wheelOverMap(page, selector, delta, deltaMode) {
+  const canvas = page.locator(selector);
+  await expect(canvas).toBeVisible();
+  // React Map GL receives input through its overlay above the canvas. Hover
+  // waits for that surface to settle after navigation and viewport changes.
+  const surface = page.locator(
+    selector === '.mapboxgl-canvas'
+      ? '.search-map-container .overlays'
+      : selector,
+  );
+  if (selector === '.mapboxgl-canvas') {
+    // A visible overlay can resize before the WebGL canvas and controller do.
+    // Sending input in that interval can put it outside the rendered map.
+    await expect
+      .poll(async () => {
+        const [rendered, input] = await Promise.all([
+          canvas.boundingBox(),
+          surface.boundingBox(),
+        ]);
+        return (
+          !!rendered &&
+          !!input &&
+          Math.abs(rendered.width - input.width) < 1 &&
+          Math.abs(rendered.height - input.height) < 1
+        );
+      })
+      .toBe(true);
+  }
+  const box = await surface.boundingBox();
+  expect(box, 'map input surface should have a layout box').toBeTruthy();
+  // Avoid the current-location marker at the centre of the map.
+  await surface.hover({
+    position: { x: (box.width * 3) / 4, y: box.height / 2 },
+  });
+  if (deltaMode !== 0) {
+    // Exercise the renderer's DOM wheel handler with line and page units.
+    // These cases are synthetic; the pixel case uses browser input.
+    await surface.dispatchEvent('wheel', {
+      deltaY: delta,
+      deltaMode,
+      clientX: box.x + (box.width * 3) / 4,
+      clientY: box.y + box.height / 2,
+    });
+  } else {
+    await page.mouse.wheel(0, delta);
+  }
+}
+
+async function expectWheelZoom(page, selector, deltaMode) {
+  const delta = [240, 3, 1][deltaMode];
+  const readZoom = () => readMapZoom(page);
+  await expect.poll(readZoom).not.toBeNull();
+  const initialZoom = await readZoom();
+  await wheelOverMap(page, selector, -delta, deltaMode);
+  // A tiny numerical change can be imperceptible to someone using the map.
+  await expect.poll(readZoom).toBeGreaterThan(initialZoom + 0.5);
+  const zoomedIn = await readZoom();
+  await wheelOverMap(page, selector, delta, deltaMode);
+  await expect.poll(readZoom).toBeLessThan(zoomedIn - 0.5);
+}
+
+async function expectWheelZoomAfterNavigation(page, selector, deltaMode) {
+  await expectWheelZoom(page, selector, deltaMode);
+  await page.getByRole('link', { name: 'Circles', exact: true }).click();
+  await expect(page).toHaveURL(/\/circles$/);
+  await page.locator('a[href="/search"]').first().click();
+  if (selector === '.mapboxgl-canvas') {
+    await waitForSearchMap(page);
+  }
+  await expectWheelZoom(page, selector, deltaMode);
+}
 async function installNostrRelayStub(page, events = []) {
   await page.addInitScript(relayEvents => {
     const NativeWebSocket = window.WebSocket;
@@ -140,106 +220,49 @@ async function installNostrRelayStub(page, events = []) {
   }, events);
 }
 
-async function showCommunityNotesSidebar(page) {
-  await page.waitForFunction(
-    () => {
-      function findSearchScope(rootScope) {
-        const scopes = [rootScope];
-
-        while (scopes.length) {
-          const scope = scopes.pop();
-          if (scope.search && typeof scope.search.openSidebar === 'function') {
-            return scope;
-          }
-
-          for (
-            let child = scope.$$childHead;
-            child;
-            child = child.$$nextSibling
-          ) {
-            scopes.push(child);
-          }
-        }
-
+async function showCommunityNotesSidebar(page, events) {
+  await page.addInitScript(() => {
+    const Canvas = window.HTMLCanvasElement;
+    const getContext = Canvas.prototype.getContext;
+    Canvas.prototype.getContext = function getWebGLContext(type, ...args) {
+      if (type === 'webgl' || type === 'experimental-webgl') {
         return null;
       }
+      return getContext.call(this, type, ...args);
+    };
+  });
+  await page.route('**://*.tile.openstreetmap.org/**', route =>
+    route.fulfill({
+      body: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL0iAAAAABJRU5ErkJggg==',
+        'base64',
+      ),
+      contentType: 'image/png',
+    }),
+  );
+  const authorPubkeys = [...new Set(events.map(event => event.pubkey))];
+  await page.route('**/api/nostr/author-visibility?*', route =>
+    route.fulfill({
+      json: {
+        linkedPubkeys: authorPubkeys,
+        pubkeys: authorPubkeys,
+      },
+    }),
+  );
+  await installNostrRelayStub(page, events);
 
-      if (!window.angular) return false;
-
-      const injector = window.angular
-        .element(document.documentElement)
-        .injector();
-      if (!injector) return false;
-
-      return Boolean(findSearchScope(injector.get('$rootScope')));
-    },
+  await page.goto('/search');
+  await page.waitForFunction(
+    () =>
+      document.querySelectorAll('.leaflet-interactive[fill="#1565C0"]').length >
+      0,
     null,
     { timeout: 30000 },
   );
-
-  await page.evaluate(
-    ({ plusCode, noteText }) => {
-      function findSearchScope(rootScope) {
-        const scopes = [rootScope];
-
-        while (scopes.length) {
-          const scope = scopes.pop();
-          if (scope.search && typeof scope.search.openSidebar === 'function') {
-            return scope;
-          }
-
-          for (
-            let child = scope.$$childHead;
-            child;
-            child = child.$$nextSibling
-          ) {
-            scopes.push(child);
-          }
-        }
-
-        return null;
-      }
-
-      if (!window.angular) return false;
-
-      const injector = window.angular
-        .element(document.documentElement)
-        .injector();
-      if (!injector) throw new Error('Search Angular injector unavailable');
-
-      const scope = findSearchScope(injector.get('$rootScope'));
-      if (!scope) {
-        throw new Error('Search controller scope unavailable');
-      }
-
-      const now = Math.floor(Date.now() / 1000);
-      scope.$apply(() => {
-        scope.search.offer = false;
-        scope.search.loadingOffer = false;
-        scope.search.communityNote = {
-          plusCode,
-          notes: [
-            {
-              id: 'e2e-community-note-1',
-              content: noteText,
-              created_at: now - 3600,
-              pubkey:
-                '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
-            },
-            {
-              id: 'e2e-community-note-2',
-              content: 'E2E community note: late trains but friendly locals.',
-              created_at: now - 7200,
-              pubkey:
-                'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789',
-            },
-          ],
-        };
-        scope.search.openSidebar('results');
-      });
-    },
-    { plusCode: communityNotePlusCode, noteText: communityNoteText },
-  );
+  await page
+    .locator('.leaflet-interactive[fill="#1565C0"]')
+    .first()
+    .dispatchEvent('click');
 }
 
 async function waitForRasterTileNear(
@@ -281,12 +304,54 @@ async function waitForRasterTileNear(
 }
 
 test.describe('rendered search map feature coverage', () => {
-  test.beforeEach(async ({ context, page, request }) => {
-    await seedMapState(page);
-    await useMapProviderHar(context, 'search-map');
-    await blockUnexpectedMapNetwork(context);
-    await useMapRouteFixtures(context);
-    await signInViaApi(page, request, berlin);
+  test.beforeEach(
+    async ({ context, page, request, mapZoom, browser }, testInfo) => {
+      if (process.env.TRUSTROOTS_E2E_WHEEL_DIAGNOSTICS === 'true') {
+        testInfo.annotations.push({
+          type: 'browser-version',
+          description: browser.version(),
+        });
+        await page.addInitScript(() => {
+          window.__wheelEvents = [];
+          document.addEventListener(
+            'wheel',
+            event => {
+              window.__wheelEvents.push({
+                type: event.type,
+                targetClass: event.target.className,
+                deltaX: event.deltaX,
+                deltaY: event.deltaY,
+                deltaMode: event.deltaMode,
+                ctrlKey: event.ctrlKey,
+                isTrusted: event.isTrusted,
+              });
+            },
+            true,
+          );
+        });
+      }
+      await seedMapState(page, { zoom: mapZoom });
+      await useMapProviderHar(context, 'search-map');
+      await blockUnexpectedMapNetwork(context);
+      await useMapRouteFixtures(context);
+      await signInViaApi(page, request, berlin);
+    },
+  );
+
+  test.afterEach(async ({ page }, testInfo) => {
+    if (
+      process.env.TRUSTROOTS_E2E_WHEEL_DIAGNOSTICS === 'true' &&
+      !page.isClosed()
+    ) {
+      const diagnostics = await page.evaluate(() => ({
+        userAgent: window.navigator.userAgent,
+        events: window.__wheelEvents,
+      }));
+      await testInfo.attach('wheel-events', {
+        body: JSON.stringify(diagnostics, null, 2),
+        contentType: 'application/json',
+      });
+    }
   });
 
   test('search map renders with offline style and fixture offers', async ({
@@ -316,6 +381,98 @@ test.describe('rendered search map feature coverage', () => {
       persistedStyleName: 'E2E Offline Map',
     });
   });
+
+  // Seed each starting zoom once. Persisted viewport updates are debounced,
+  // so driving a long wheel sequence towards a boundary can read stale zoom.
+  for (const zoom of [6, 2]) {
+    for (const deltaMode of [0, 1, 2]) {
+      const suffix =
+        (zoom <= 2 ? ' at low zoom' : '') +
+        ['', ' with line-based deltas', ' with page-based deltas'][deltaMode];
+      test.describe(`wheel input starting at zoom ${zoom}`, () => {
+        test.use({ mapZoom: zoom });
+        test(`mouse wheel zooms the rendered search map in and out${suffix}`, async ({
+          page,
+          browserName,
+        }, testInfo) => {
+          // Mapbox GL needs WebGL; Firefox CI falls back to Leaflet and has no
+          // .mapboxgl-canvas. Wheel zoom on that path is covered separately.
+          test.skip(
+            browserName === 'firefox',
+            'Mapbox GL is unavailable in Firefox CI; use the raster fallback wheel test.',
+          );
+          annotateFeature(testInfo, 'search.map', [
+            'Mouse-wheel input zooms the rendered map in and out.',
+            'Mouse-wheel input works after returning to Search.',
+            ...(zoom <= 2 ? ['Mouse-wheel input works at low zoom.'] : []),
+            ...(deltaMode === 1
+              ? ['Line-based wheel events zoom the rendered map.']
+              : []),
+            ...(deltaMode === 2
+              ? ['Page-based wheel events visibly zoom the rendered map.']
+              : []),
+          ]);
+          await waitForSearchMap(page);
+          if (zoom <= 2) {
+            await expect(
+              page.getByText('Zoom closer to find members.'),
+            ).toBeVisible();
+          }
+          await expectWheelZoomAfterNavigation(
+            page,
+            '.mapboxgl-canvas',
+            deltaMode,
+          );
+        });
+
+        test(`mouse wheel zooms the raster fallback map in and out${suffix}`, async ({
+          context,
+          page,
+        }, testInfo) => {
+          annotateFeature(testInfo, 'search.map', [
+            'Mouse-wheel input zooms the raster fallback map in and out.',
+            'Mouse-wheel input works after returning to Search.',
+            ...(zoom <= 2 ? ['Mouse-wheel input works at low zoom.'] : []),
+            ...(deltaMode === 1
+              ? ['Line-based wheel events zoom the raster fallback map.']
+              : []),
+            ...(deltaMode === 2
+              ? [
+                  'Page-based wheel events visibly zoom the raster fallback map.',
+                ]
+              : []),
+          ]);
+          await page.addInitScript(() => {
+            const getContext = window.HTMLCanvasElement.prototype.getContext;
+            window.HTMLCanvasElement.prototype.getContext = function (
+              type,
+              ...args
+            ) {
+              if (type === 'webgl' || type === 'experimental-webgl')
+                return null;
+              return getContext.call(this, type, ...args);
+            };
+          });
+          await context.route('**://*.tile.openstreetmap.org/**', route =>
+            route.fulfill({
+              body: Buffer.from(
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL0iAAAAABJRU5ErkJggg==',
+                'base64',
+              ),
+              contentType: 'image/png',
+            }),
+          );
+          await page.goto('/search');
+          await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
+          await expectWheelZoomAfterNavigation(
+            page,
+            '.leaflet-container',
+            deltaMode,
+          );
+        });
+      });
+    }
+  }
 
   test('search map uses the raster fallback when WebGL is unavailable', async ({
     context,
@@ -370,6 +527,10 @@ test.describe('rendered search map feature coverage', () => {
     // verify that the fallback requests its offer details.
     const hostMarker = page.locator('.leaflet-interactive[fill="#58ba58"]');
     await expect(hostMarker).toBeVisible();
+    const originalMap = await page
+      .locator('[data-testid="leaflet-search-map"]')
+      .elementHandle();
+
     const offerRequest = page.waitForRequest(
       '**/api/offers/665100000000000000000001**',
     );
@@ -378,6 +539,13 @@ test.describe('rendered search map feature coverage', () => {
     await hostMarker.dispatchEvent('click');
     expect((await offerRequest).url()).toContain(
       '/api/offers/665100000000000000000001',
+    );
+    await expect(page).toHaveURL(/offer=665100000000000000000001/);
+    await expect(
+      page.locator('.search-sidebar-container.is-offer-open'),
+    ).toBeVisible();
+    expect(await originalMap.evaluate(element => element.isConnected)).toBe(
+      true,
     );
   });
 
@@ -421,7 +589,7 @@ test.describe('rendered search map feature coverage', () => {
     await page.getByRole('button', { name: 'Search places' }).click();
     const searchInput = page.getByRole('textbox', { name: 'Search places' });
     await searchInput.fill('Berlin');
-    await page.locator('.search-place .dropdown-menu a').click();
+    await page.locator('.search-place .dropdown-menu a').dispatchEvent('click');
 
     const map = page.locator('[data-testid="leaflet-search-map"]');
     await expect(map).toBeVisible();
@@ -657,17 +825,17 @@ test.describe('rendered search map feature coverage', () => {
     await installNostrRelayStub(page);
     await page.goto('/search');
 
+    await page
+      .locator('.search-map-meta button')
+      .filter({ hasText: 'Filters' })
+      .click();
+
     const filterLabel = page
       .locator('.search-sidebar-filters label')
       .filter({ hasText: 'Community Notes' });
     const checkbox = filterLabel.locator('input[type="checkbox"]');
 
     await expect(filterLabel).toHaveCount(1);
-    await page
-      .locator('.search-map-meta button')
-      .filter({ hasText: 'Filters' })
-      .click();
-
     await expect(filterLabel).toBeVisible();
     await expect(checkbox).toBeChecked();
 
@@ -683,9 +851,27 @@ test.describe('rendered search map feature coverage', () => {
       'Reply action opens the Nostroots action-gate modal.',
     ]);
 
-    await installNostrRelayStub(page);
-    await page.goto('/search');
-    await showCommunityNotesSidebar(page);
+    const noteEvents = [
+      communityNoteText,
+      'E2E community note: late trains but friendly locals.',
+    ].map((content, index) =>
+      finalizeEvent(
+        {
+          content,
+          created_at: 1700000000 - index * 3600,
+          kind: 30397,
+          tags: [
+            ['l', communityNotePlusCode, 'open-location-code'],
+            [
+              'p',
+              '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+            ],
+          ],
+        },
+        new Uint8Array(32).fill(1),
+      ),
+    );
+    await showCommunityNotesSidebar(page, noteEvents);
 
     const sidebar = page.locator('.community-notes-sidebar');
     await expect(sidebar).toBeVisible();
@@ -765,6 +951,25 @@ test.describe('rendered search map feature coverage', () => {
 
     await expect(result).toBeVisible();
     await expect(result.getByText(/Berlin Host/i)).toBeVisible();
+  });
+
+  test('location search accepts a place with Enter', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-locations', [
+      'Geocoding/map interactions are stubbed deterministically.',
+    ]);
+
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/search');
+    await waitForSearchMap(page);
+    await page.getByRole('button', { name: 'Search places' }).click();
+    const searchInput = page.getByRole('textbox', { name: 'Search places' });
+    await searchInput.fill('Berlin');
+    await searchInput.press('Enter');
+
+    await expect(searchInput).toBeHidden();
+    await expect(page.locator('.search-map')).toBeVisible();
   });
 
   test('location search uses deterministic geocoding fixture', async ({

@@ -1,0 +1,5 @@
+# Design
+
+Use per-file ESM implementations and synchronous CommonJS adapters without top-level await. Preserve mutable objects, callable exports, Mongoose model registration, Passport setup, Express route/policy registration and Agenda job signatures. Keep dependencies routed through existing `.js` adapters where NYC require-hook instrumentation requires it. Test mocks must intercept the real dependency boundary; proxyquire cannot intercept static native ESM imports. Avoid adding production injection APIs solely for tests unless a specific compatibility constraint requires a factory, and document such cases for review. Preserve startup ordering and function context semantics, including any `this`, `exports` or `module.exports` self-dispatch.
+
+Run focused tests during implementation. Primary runs full coverage suites sequentially to avoid sharing the MongoDB test database. Each of the three sibling PRs targets the PR #2896 branch until that dependency merges, then can target main. Configuration, command-line tooling and broad test-file conversion are separate from this server implementation scope.
