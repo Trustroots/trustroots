@@ -177,7 +177,7 @@ exports.signup = function (req, res) {
         statsObject.tags.status = 'failed';
         statService.stat(statsObject, function () {
           // Send error to the API
-          res.status(400).send({
+          res.status(err.code === 'KDF_OVERLOADED' ? 503 : 400).send({
             message: err.userFacing
               ? err.message
               : errorService.getErrorMessage(err),
@@ -308,6 +308,12 @@ exports.signin = function (req, res, next) {
   };
 
   passport.authenticate('local', function (err, user, info) {
+    if (err && err.code === 'KDF_OVERLOADED') {
+      return res.status(503).send({
+        message: 'Password service is temporarily busy. Please try again.',
+      });
+    }
+
     if (err || !user) {
       // Log the failure to signin
       log('error', 'User signin failed. #3tfgbg-1', {

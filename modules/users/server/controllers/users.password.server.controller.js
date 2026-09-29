@@ -127,7 +127,7 @@ exports.validateResetToken = function (req, res) {
 /**
  * Reset password POST from email token
  */
-exports.reset = function (req, res) {
+exports.reset = async function (req, res) {
   const passwordDetails = req.body;
   if (passwordDetails.newPassword !== passwordDetails.verifyPassword) {
     return res.status(400).send({ message: 'Passwords do not match.' });
@@ -136,12 +136,16 @@ exports.reset = function (req, res) {
     return res.status(400).send({ message: 'Password reset failed.' });
   }
 
-  let salt;
+  let password;
   try {
-    salt = crypto.randomBytes(16).toString('base64');
+    password = await User.hashPassword(passwordDetails.newPassword);
   } catch (err) {
-    log('error', 'Password reset credential generation failed.');
-    return res.status(400).send({ message: 'Password reset failed.' });
+    if (err.code !== 'KDF_OVERLOADED') {
+      log('error', 'Password reset credential generation failed.');
+    }
+    return res.status(err.status || 400).send({
+      message: 'Password reset failed.',
+    });
   }
   const now = new Date();
   User.findOneAndUpdate(
@@ -151,11 +155,11 @@ exports.reset = function (req, res) {
     },
     {
       $set: {
-        password: User.hashPassword(passwordDetails.newPassword, salt),
-        salt,
+        password,
         passwordUpdated: now,
       },
       $unset: {
+        salt: 1,
         resetPasswordToken: 1,
         resetPasswordExpires: 1,
       },
@@ -236,41 +240,53 @@ exports.changePassword = function (req, res) {
 
       // Authenticate with old password to check if it was correct
       function (user, done) {
-        if (user.authenticate(req.body.currentPassword)) {
-          done(null, user);
-        } else {
-          done(new Error('Current password is incorrect.'));
-        }
+        user
+          .authenticate(req.body.currentPassword)
+          .then(valid => {
+            if (valid) return done(null, user);
+            return done(new Error('Current password is incorrect.'));
+          })
+          .catch(done);
       },
 
       // Save user with new password
       function (user, done) {
         const oldPassword = user.password;
         const oldSalt = user.salt;
-        let salt;
-        try {
-          salt = crypto.randomBytes(16).toString('base64');
-        } catch (err) {
-          return done(err);
-        }
-        const password = User.hashPassword(req.body.newPassword, salt);
-        const passwordUpdated = new Date();
-
-        User.findOneAndUpdate(
-          { _id: user._id, password: oldPassword, salt: oldSalt },
-          {
-            $set: { password, salt, passwordUpdated },
-            $inc: { authVersion: 1 },
-          },
-          { new: true, runValidators: true },
-          function (err, updatedUser) {
-            if (err) return done(err);
-            if (!updatedUser) {
-              return done(new Error('Current password is incorrect.'));
+        const authVersion = user.authVersion;
+        User.hashPassword(req.body.newPassword)
+          .then(password => {
+            const filter = { _id: user._id, password: oldPassword };
+            if (oldSalt === undefined) {
+              filter.salt = { $exists: false };
+            } else {
+              filter.salt = oldSalt;
             }
-            done(null, updatedUser);
-          },
-        );
+            if (authVersion === undefined || authVersion === 0) {
+              filter.$or = [
+                { authVersion: { $exists: false } },
+                { authVersion: authVersion ?? 0 },
+              ];
+            } else {
+              filter.authVersion = authVersion;
+            }
+
+            return User.findOneAndUpdate(
+              filter,
+              {
+                $set: { password, passwordUpdated: new Date() },
+                $unset: { salt: 1 },
+                $inc: { authVersion: 1 },
+              },
+              { new: true, runValidators: true },
+            ).then(updatedUser => {
+              if (!updatedUser) {
+                return done(new Error('Current password is incorrect.'));
+              }
+              return done(null, updatedUser);
+            });
+          })
+          .catch(done);
       },
 
       // Login again and return new user

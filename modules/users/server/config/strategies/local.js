@@ -4,6 +4,7 @@
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const User = require('mongoose').model('User');
+const passwordHashing = require('../services/password-hashing.server.service');
 
 module.exports = function () {
   // Use local strategy
@@ -25,13 +26,28 @@ module.exports = function () {
             if (err) {
               return done(err);
             }
-            if (!user || !user.authenticate(password)) {
-              return done(null, false, {
-                message: 'Unknown user or invalid password',
-              });
+            if (!user) {
+              return passwordHashing
+                .verifyPassword(password, null, null)
+                .then(() =>
+                  done(null, false, {
+                    message: 'Unknown user or invalid password',
+                  }),
+                )
+                .catch(done);
             }
 
-            return done(null, user);
+            return user
+              .authenticate(password)
+              .then(valid => {
+                if (!valid) {
+                  return done(null, false, {
+                    message: 'Unknown user or invalid password',
+                  });
+                }
+                return done(null, user);
+              })
+              .catch(done);
           },
         );
       },
