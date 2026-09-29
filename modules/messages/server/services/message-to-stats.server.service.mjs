@@ -1,5 +1,6 @@
 import '../models/message.server.model.js';
 import async from 'async';
+import nodeProcess from 'node:process';
 import config from '../../../../config/config.js';
 import mongoose from 'mongoose';
 import log from '../../../../config/lib/logger.js';
@@ -98,7 +99,7 @@ service.save = function (message, callback) {
       if (
         err &&
         err.message !== INFLUXDB_DISABLED_ERROR_MESSAGE &&
-        process.env.NODE_ENV !== 'test'
+        nodeProcess.env.NODE_ENV !== 'test'
       ) {
         log('error', 'Saving message stats failed.', err);
       }
