@@ -25,6 +25,20 @@ describe('<OffersPresentational />', () => {
     expect(screen.getByText('At most 2 guests.')).toBeInTheDocument();
   });
 
+  it('uses empty content and zero guests when optional hosting details are absent', () => {
+    render(
+      <OffersPresentational
+        isOwnOffer={false}
+        isUserPublic={true}
+        username="alice"
+        offer={{ status: 'yes' }}
+      />,
+    );
+
+    expect(screen.getByText('No guests.')).toBeInTheDocument();
+    expect(screen.getByText('Accommodation')).toBeInTheDocument();
+  });
+
   it('renders owner edit action and no-guest copy for an active hosting offer', () => {
     render(
       <OffersPresentational
