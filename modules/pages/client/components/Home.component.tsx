@@ -457,7 +457,9 @@ export default function Home({
                   <a href="https://ideas.trustroots.org/">{t('Blog')}</a>
                 </li>
                 <li>
-                  <a href="https://team.trustroots.org/">{t('Volunteering')}</a>
+                  <a href="/support?category=volunteering">
+                    {t('Volunteering')}
+                  </a>
                 </li>
                 <li>
                   <a href="/media">{t('Media')}</a>
