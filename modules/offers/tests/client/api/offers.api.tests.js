@@ -84,6 +84,15 @@ describe('offers api', () => {
     expect(axios.get).toHaveBeenCalledWith('/api/offers?');
   });
 
+  it('omits undefined query values when serializing offer filters', async () => {
+    axios.get.mockResolvedValueOnce({ data: [] });
+
+    await expect(
+      queryOffers({ type: 'host', optionalFilter: undefined }),
+    ).resolves.toEqual([]);
+    expect(axios.get).toHaveBeenCalledWith('/api/offers?type=host');
+  });
+
   it('creates an offer', async () => {
     const offer = { _id: 'offer-1', type: 'meet' };
     axios.post.mockResolvedValueOnce({ data: offer });
