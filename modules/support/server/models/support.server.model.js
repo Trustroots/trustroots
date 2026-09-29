@@ -3,6 +3,7 @@
  */
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
+const { SUPPORT_CATEGORIES } = require('../../shared/categories');
 
 /**
  * Support request Schema
@@ -10,6 +11,11 @@ const Schema = mongoose.Schema;
  * This collection serves as a backup for sent support requests
  */
 const SupportRequestSchema = new Schema({
+  category: {
+    type: String,
+    enum: Object.keys(SUPPORT_CATEGORIES),
+    default: 'other',
+  },
   user: {
     type: Schema.ObjectId,
     ref: 'User',
