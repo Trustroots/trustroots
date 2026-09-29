@@ -60,9 +60,7 @@ function loadController({
       mongoose: {
         model: () => User,
       },
-      crypto: randomBytes
-        ? { randomBytes }
-        : require('crypto'),
+      crypto: randomBytes ? { randomBytes } : require('crypto'),
       './users.profile.server.controller': {
         sanitizeOwnProfile: profile => profile,
       },
@@ -133,15 +131,23 @@ describe('Password controller direct unit tests', () => {
             if (completed.length === 2) completeStats();
           },
         });
-      const lookupController = makeController({ findOneError: new Error('lookup') });
+      const lookupController = makeController({
+        findOneError: new Error('lookup'),
+      });
       const lookupResponse = deferredResponse();
-      lookupController.forgot({ body: { username: 'person@example.test' } }, lookupResponse);
+      lookupController.forgot(
+        { body: { username: 'person@example.test' } },
+        lookupResponse,
+      );
       (await lookupResponse.waitForResponse()).statusCode.should.equal(200);
 
       const saveFailure = fakeUser({ save: cb => cb(new Error('save')) });
       const saveController = makeController({ user: saveFailure });
       const saveResponse = deferredResponse();
-      saveController.forgot({ body: { username: 'person@example.test' } }, saveResponse);
+      saveController.forgot(
+        { body: { username: 'person@example.test' } },
+        saveResponse,
+      );
       (await saveResponse.waitForResponse()).statusCode.should.equal(200);
 
       await statsComplete;
@@ -183,7 +189,10 @@ describe('Password controller direct unit tests', () => {
       controller.reset(
         {
           params: { token: 'reset-token' },
-          body: { newPassword: 'newpassword123', verifyPassword: 'newpassword123' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
         },
         res,
       );
@@ -195,14 +204,19 @@ describe('Password controller direct unit tests', () => {
 
     it('uses a service unavailable response when password hashing is overloaded', async () => {
       const controller = loadController({
-        findOneAndUpdateError: Object.assign(new Error('busy'), { status: 503 }),
+        findOneAndUpdateError: Object.assign(new Error('busy'), {
+          status: 503,
+        }),
       });
       const res = deferredResponse();
 
       controller.reset(
         {
           params: { token: 'reset-token' },
-          body: { newPassword: 'newpassword123', verifyPassword: 'newpassword123' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
         },
         res,
       );
@@ -220,13 +234,19 @@ describe('Password controller direct unit tests', () => {
       controller.changePassword(
         {
           user: { id: 'user-id' },
-          body: { currentPassword: 'oldpassword1', newPassword: 'newpassword123', verifyPassword: 'newpassword123' },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
         },
         res,
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('Password should be more than 8 characters long.');
+      res.body.message.should.equal(
+        'Password should be more than 8 characters long.',
+      );
     });
 
     it('reports a controlled error when credential generation fails', async () => {
@@ -240,7 +260,11 @@ describe('Password controller direct unit tests', () => {
       controller.changePassword(
         {
           user: { id: 'user-id' },
-          body: { currentPassword: 'oldpassword1', newPassword: 'newpassword123', verifyPassword: 'newpassword123' },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
         },
         res,
       );
@@ -250,18 +274,47 @@ describe('Password controller direct unit tests', () => {
     });
 
     it('rejects a stale password compare-and-set', async () => {
-      const controller = loadController({ user: fakeUser(), findOneAndUpdateUser: null });
+      const controller = loadController({
+        user: fakeUser(),
+        findOneAndUpdateUser: null,
+      });
       const res = deferredResponse();
       controller.changePassword(
         {
           user: { id: 'user-id' },
-          body: { currentPassword: 'oldpassword1', newPassword: 'newpassword123', verifyPassword: 'newpassword123' },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
         },
         res,
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
       res.body.message.should.equal('Current password is incorrect.');
+    });
+
+    it('reports a password update database error', async () => {
+      const controller = loadController({
+        user: fakeUser(),
+        findOneAndUpdateError: new Error('database unavailable'),
+      });
+      const res = deferredResponse();
+      controller.changePassword(
+        {
+          user: { id: 'user-id' },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('database unavailable');
     });
     it('returns the login failure when reauthentication fails', async () => {
       const controller = loadController({ user: fakeUser() });
