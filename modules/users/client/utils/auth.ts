@@ -34,6 +34,7 @@ interface UsernameValidationInput {
 interface AuthenticatedUser {
   _id: string;
   username: string;
+  roles?: string[];
 }
 
 declare global {
