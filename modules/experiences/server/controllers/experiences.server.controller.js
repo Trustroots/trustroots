@@ -479,6 +479,7 @@ exports.readMany = async function readMany(req, res, next) {
       username: 1,
       avatarSource: 1,
       avatarUploaded: 1,
+      avatarVersion: 1,
       emailHash: 1,
       created: 1,
       gender: 1,
