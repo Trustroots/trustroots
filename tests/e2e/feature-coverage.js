@@ -960,6 +960,7 @@ const features = [
       'Forgot password page renders.',
       'Valid reset request sends a deterministic reset email/stub.',
       'Invalid or unknown account request does not leak account existence.',
+      'Recovery transport failures show guidance without automatic retries.',
     ],
     relatedSpecs: [
       spec(
@@ -993,6 +994,7 @@ const features = [
       'Password reset succeeds with matching valid passwords.',
       'Success page is shown after reset.',
       'Member can sign in with the new password.',
+      'Reset transport failures show guidance without automatic retries.',
     ],
     relatedSpecs: [],
   },
