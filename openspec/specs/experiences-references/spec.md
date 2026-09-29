@@ -37,6 +37,13 @@ experience visibility rules.
 - **WHEN** a member is not permitted to view an experience
 - **THEN** the system does not expose that experience's protected details
 
+#### Scenario: Experience author is suspended or shadowbanned
+
+- **WHEN** a member views an active member's profile after an experience author is suspended or shadowbanned
+- **THEN** the author's experiences are excluded from the profile list, count and pending indicator
+- **AND** the author's experience details and paired responses are hidden
+- **AND** removing the moderation role restores visibility according to the existing public and private visibility rules
+
 ### Requirement: Duplicate experience prevention
 
 The system SHALL identify an existing experience between the same members and

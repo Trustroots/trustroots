@@ -9,6 +9,7 @@ const userProfile = require('../../../users/server/controllers/users.profile.ser
 const Contact = mongoose.model('Contact');
 const Experience = mongoose.model('Experience');
 const User = mongoose.model('User');
+const visibleAuthorRoles = { $nin: ['shadowban', 'suspended'] };
 
 /**
  * Return one confirmed, public contact for whom the authenticated member has
@@ -517,6 +518,7 @@ exports.readMany = async function readMany(req, res, next) {
       // `[{userObject}]`, we have to unwind it back to `{userObject}`
       { $unwind: '$userTo' },
       { $unwind: '$userFrom' },
+      { $match: { 'userFrom.roles': visibleAuthorRoles } },
 
       // Pick fields to receive
       {
@@ -584,16 +586,22 @@ exports.experienceById = async function experienceById(req, res, next, id) {
 
     // find the experience by id
     const experience = await Experience.findById(req.params.experienceId)
-      .populate('userFrom userTo', userProfile.userMiniProfileFields)
+      .populate({
+        path: 'userFrom',
+        select: userProfile.userMiniProfileFields,
+        match: { roles: visibleAuthorRoles },
+      })
+      .populate('userTo', userProfile.userMiniProfileFields)
       .exec();
 
-    const userFromId = experience ? experience.userFrom._id : null;
+    const userFromId = experience?.userFrom?._id;
     const userToId = experience ? experience.userTo._id : null;
 
     // make sure that nonpublic experiences are not exposed
     // nonpublic experience can be exposed to userFrom or userTo only.
     const isExistentPublicOrFromToSelf =
       experience &&
+      userFromId &&
       (experience.public ||
         userFromId.equals(selfId) ||
         userToId.equals(selfId));
@@ -612,11 +620,13 @@ exports.experienceById = async function experienceById(req, res, next, id) {
     const response = await Experience.findOne({
       userFrom: userToId,
       userTo: userFromId,
-    }).exec();
+    })
+      .populate({ path: 'userFrom', match: { roles: visibleAuthorRoles } })
+      .exec();
 
     const experienceWithResponse = prepareSendingToClient(
       experience,
-      response,
+      response?.userFrom ? response : null,
       selfId,
     );
 
@@ -645,10 +655,16 @@ exports.readMine = async function readMine(req, res) {
   }
 
   let experience = await findMyExperience(req, userWith);
-  let otherExperience = await Experience.findOne({
-    userFrom: userWith,
-    userTo: selfId,
-  }).exec();
+  const visibleOtherAuthor = await User.exists({
+    _id: userWith,
+    roles: visibleAuthorRoles,
+  });
+  let otherExperience = visibleOtherAuthor
+    ? await Experience.findOne({
+        userFrom: userWith,
+        userTo: selfId,
+      }).exec()
+    : null;
 
   if (experience === null && otherExperience === null) {
     return res.status(404).json({
@@ -684,18 +700,28 @@ exports.getCount = async function getCount(req, res, next) {
       userTo: new mongoose.Types.ObjectId(userTo),
     };
 
-    const publicCount = await Experience.find({
-      ...query,
-      public: true,
-    }).count();
-
-    // Include non-public experiences only when userTo is self
-    const privateCount = isSelf
-      ? await Experience.find({
-          ...query,
-          public: false,
-        }).count()
-      : 0;
+    // Apply the same author visibility rule as the profile list before counting.
+    const counts = await Experience.aggregate([
+      { $match: { ...query, ...(isSelf ? {} : { public: true }) } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userFrom',
+          foreignField: '_id',
+          as: 'author',
+        },
+      },
+      { $unwind: '$author' },
+      { $match: { 'author.roles': visibleAuthorRoles } },
+      { $group: { _id: '$public', count: { $sum: 1 } } },
+    ]).exec();
+    const { publicCount, privateCount } = counts.reduce(
+      (result, group) => {
+        result[group._id ? 'publicCount' : 'privateCount'] = group.count;
+        return result;
+      },
+      { publicCount: 0, privateCount: 0 },
+    );
 
     return res.status(200).json({
       count: privateCount + publicCount,
