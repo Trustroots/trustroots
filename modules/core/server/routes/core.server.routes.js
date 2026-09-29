@@ -107,7 +107,9 @@ module.exports = function (app) {
   });
 
   // Return a 404 for all undefined api, module or lib routes
-  app.route('/:url(api|modules|lib|developers)/*').get(core.renderNotFound);
+  app
+    .route(/^\/(?:api|modules|lib|developers)\/.*$/i)
+    .get(core.renderNotFound);
 
   // Protect direct page loads before the client-side route guard is ready.
   // Signed-in members continue to the generic circle route below.
