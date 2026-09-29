@@ -4,6 +4,7 @@
 const glob = require('glob');
 const Mocha = require('mocha');
 const path = require('path');
+require('./register-server-typescript');
 
 const mongooseService = require('../config/lib/mongoose');
 const agenda = require('../config/lib/agenda');
