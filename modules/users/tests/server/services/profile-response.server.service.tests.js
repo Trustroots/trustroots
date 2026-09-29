@@ -5,11 +5,15 @@ const {
 } = require('../../../server/services/profile-response.server.service');
 
 describe('Service: profile-response', function () {
-  it('exposes the same service functions through ESM and CommonJS', async function () {
-    const esmService = await import(
+  let esmService;
+
+  before(async function () {
+    esmService = await import(
       '../../../server/services/profile-response.server.service.mjs'
     );
+  });
 
+  it('exposes the same service functions through ESM and CommonJS', function () {
     esmService.profileQueryFields.should.equal(profileQueryFields);
     esmService.selectProfileResponse.should.equal(selectProfileResponse);
   });
@@ -41,14 +45,16 @@ describe('Service: profile-response', function () {
   };
 
   it('queries only the approved public profile fields', function () {
-    profileQueryFields.should.containEql('additionalProvidersData.facebook.id');
-    profileQueryFields.should.containEql('avatarVersion');
-    profileQueryFields.should.not.containEql('lastIpAddress');
-    profileQueryFields.should.not.containEql('pushRegistration');
+    esmService.profileQueryFields.should.containEql(
+      'additionalProvidersData.facebook.id',
+    );
+    esmService.profileQueryFields.should.containEql('avatarVersion');
+    esmService.profileQueryFields.should.not.containEql('lastIpAddress');
+    esmService.profileQueryFields.should.not.containEql('pushRegistration');
   });
 
   it('returns only public fields for another member', function () {
-    const response = selectProfileResponse(profile, false);
+    const response = esmService.selectProfileResponse(profile, false);
 
     response.username.should.equal('fictional-member');
     response.avatarVersion.should.equal('0123456789abcdef0123456789abcdef');
@@ -76,7 +82,7 @@ describe('Service: profile-response', function () {
   });
 
   it('keeps account-editing fields for the account holder only', function () {
-    const response = selectProfileResponse(profile, true);
+    const response = esmService.selectProfileResponse(profile, true);
     response.avatarVersion.should.equal('0123456789abcdef0123456789abcdef');
 
     for (const field of [
