@@ -15,4 +15,4 @@ The general logger currently exports winston.log directly, so each caller is res
 
 ## Status
 
-Implementation in progress. Redaction covers structured metadata keys; arbitrary free-text strings are deliberately not scanned, so callers must keep event descriptions stable and avoid embedding request data. The pure logger-boundary suite is appropriate here instead of a browser end-to-end test because the change only affects server logging transports.
+Implementation and validation are complete. The full server suite passed with 100% statements, branches, functions and lines; the full client suite passed with the same coverage. Targeted lint and the focused logger/analytics suite also passed. Redaction covers structured metadata keys; arbitrary free-text strings are deliberately not scanned, so callers must keep event descriptions stable and avoid embedding request data. A browser end-to-end test is unsuitable because this change only affects server logging transports.

@@ -2,6 +2,6 @@
 - [x] Create and strictly validate the proposal before implementation.
 - [x] Implement the guardrails and document rollout requirements.
 - [x] Add anonymous regression cases for the logger boundary and confirmed analytics exposure; a browser end-to-end test is not appropriate for transport behaviour.
-- [ ] Run focused checks and preserve full client/server coverage.
+- [x] Run focused checks and preserve full client/server coverage.
 - [x] Update the living specification.
-- [ ] Run full server validation, confirm full client coverage, and archive the completed proposal.
+- [x] Run full server validation, confirm full client coverage, and archive the completed proposal.
