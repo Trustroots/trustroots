@@ -294,11 +294,17 @@ describe('<AdminNewsletter />', () => {
       .mockRejectedValueOnce({
         response: { data: { message: 'Choose valid criteria.' } },
       })
-      .mockRejectedValueOnce(new Error('Network issue'));
+      .mockRejectedValueOnce(new Error('Network issue'))
+      .mockRejectedValueOnce({ response: { data: {} } });
     render(<AdminNewsletter />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Count recipients' }));
     expect(await screen.findByText('Choose valid criteria.')).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Count recipients' }));
+    expect(
+      await screen.findByText('Could not preview this newsletter audience.'),
+    ).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: 'Count recipients' }));
     expect(
