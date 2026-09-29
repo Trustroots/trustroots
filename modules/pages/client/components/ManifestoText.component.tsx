@@ -1,9 +1,11 @@
+import type { PageTranslator } from '../types';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import '@/config/client/i18n';
 
 export default function ManifestoText() {
-  const { t } = useTranslation('pages');
+  const { t: rawT } = useTranslation('pages');
+  const t = rawT as unknown as PageTranslator;
 
   return (
     <>

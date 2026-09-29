@@ -1,9 +1,11 @@
+import type { PageTranslator } from '../types';
 import React from 'react';
 import Faq from '@/modules/pages/client/components/Faq.component.js';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function FaqTribes() {
-  const { t } = useTranslation('pages');
+  const { t: rawT } = useTranslation('pages');
+  const t = rawT as unknown as PageTranslator;
 
   return (
     <Faq category="circles">
@@ -14,7 +16,7 @@ export default function FaqTribes() {
         )}
         <br />
         <br />
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           You can start now by joining <a href="/circles">circles</a> that you
           identify yourself with.
         </Trans>
@@ -33,7 +35,7 @@ export default function FaqTribes() {
         )}
         <br />
         <br />
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           See also{' '}
           <a href="https://ideas.trustroots.org/2016/05/09/introducing-trustroots-tribes/">
             the blog post
@@ -44,7 +46,7 @@ export default function FaqTribes() {
 
       <div className="faq-question" id="no-suitable-circles">
         <h3>{t("I don't find a circle that suits me")}</h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           <a href="/support">Send us</a> new circle ideas! In the future you
           will be able to create new circles by yourself.
         </Trans>

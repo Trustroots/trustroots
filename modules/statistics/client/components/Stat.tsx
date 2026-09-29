@@ -18,7 +18,13 @@ const Container = styled.div`
   }
 `;
 
-export default function Stat({ children, title, className }) {
+interface StatProps {
+  children: React.ReactNode;
+  className?: string;
+  title: string;
+}
+
+export default function Stat({ children, title, className }: StatProps) {
   return (
     <Container className={classnames('panel', 'panel-default', className)}>
       <div className="panel-heading">
