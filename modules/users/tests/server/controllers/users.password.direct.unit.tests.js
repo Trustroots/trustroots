@@ -27,10 +27,19 @@ function deferredResponse() {
 
 function loadController({ user, confirmEmailError } = {}) {
   const User = {
+    isValidPassword() {
+      return true;
+    },
+    hashPassword(password) {
+      return password;
+    },
     findOne(query, cb) {
       cb(null, user || null);
     },
     findById(id, cb) {
+      cb(null, user || null);
+    },
+    findOneAndUpdate(query, update, options, cb) {
       cb(null, user || null);
     },
   };
@@ -42,7 +51,7 @@ function loadController({ user, confirmEmailError } = {}) {
         model: () => User,
       },
       './users.profile.server.controller': {
-        sanitizeProfile: profile => profile,
+        sanitizeOwnProfile: profile => profile,
       },
       '../../../core/server/controllers/analytics.server.controller': {
         appendUTMParams: url => url,
@@ -123,7 +132,7 @@ describe('Password controller direct unit tests', () => {
       res.body.message.should.equal('login failed');
     });
 
-    it('returns the confirmation email failure after saving and logging in', async () => {
+    it('succeeds when the confirmation email fails after saving and logging in', async () => {
       const controller = loadController({
         user: fakeUser(),
         confirmEmailError: new Error('confirm email failed'),
@@ -144,8 +153,8 @@ describe('Password controller direct unit tests', () => {
       );
 
       await res.waitForResponse();
-      res.statusCode.should.equal(400);
-      res.body.message.should.equal('confirm email failed');
+      res.statusCode.should.equal(200);
+      res.body.message.should.equal('Password changed successfully!');
     });
   });
 });
