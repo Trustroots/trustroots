@@ -229,6 +229,29 @@ h4 {
   color: var(--muted);
 }
 
+.volunteer-contact {
+  display: inline-block;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  background: var(--accent-dark);
+  color: var(--white);
+  font-size: 1.4rem;
+  font-weight: 800;
+  box-shadow: 0 4px 12px var(--shadow);
+}
+
+.volunteer-contact:hover,
+.volunteer-contact:focus-visible {
+  background: var(--accent);
+  color: var(--white);
+  text-decoration: underline;
+}
+
+.volunteer-contact:focus-visible {
+  outline: 3px solid var(--accent-dark);
+  outline-offset: 3px;
+}
+
 .main-content {
   > * + * {
     margin-top: 1rem;
