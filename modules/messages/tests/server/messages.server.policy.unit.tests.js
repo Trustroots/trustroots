@@ -1,18 +1,12 @@
-const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 require('should');
 
 function loadPolicy() {
-  const mockAcl = {
-    allow: sinon.stub(),
-    areAnyRolesAllowed: sinon.stub(),
-  };
-  const createMemoryPolicy = () => mockAcl;
-  const policy = proxyquire('../../server/policies/messages.server.policy', {
-    '../../../core/server/services/memory-policy.server.service':
-      createMemoryPolicy,
-  });
-  return { policy, mockAcl };
+  const implementation = require('../../server/policies/messages.server.policy.mjs');
+  const mockAcl = implementation._acl;
+  sinon.stub(mockAcl, 'allow');
+  sinon.stub(mockAcl, 'areAnyRolesAllowed');
+  return { policy: implementation.default, mockAcl };
 }
 
 function mockResponse() {
@@ -29,6 +23,8 @@ function mockResponse() {
 }
 
 describe('Messages policy unit tests', () => {
+  afterEach(() => sinon.restore());
+
   it('registers admin and user message policies', () => {
     const { policy, mockAcl } = loadPolicy();
 
