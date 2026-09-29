@@ -7,11 +7,7 @@ import UsersList from '@/modules/users/client/components/UsersList';
 import NoContent from '@/modules/core/client/components/NoContent';
 import type { UserSummary } from '@/modules/users/client/types';
 
-export default function UsersResults({
-  users,
-}: {
-  users: UserSummary[];
-}) {
+export default function UsersResults({ users }: { users: UserSummary[] }) {
   const { t } = useTranslation('search');
   if (!users || users.length === 0) {
     return (
