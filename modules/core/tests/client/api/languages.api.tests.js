@@ -2,7 +2,9 @@ import axios from 'axios';
 
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 
-jest.mock('axios');
+jest.mock('axios', () =>
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+);
 
 const mockUseQuery = jest.fn();
 jest.mock('react-query', () => ({
