@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../../../core/client/api/http-client.js';
 
 export interface StatisticsResponse {
   connections?: Array<{ network: string; count: number; percentage: number }>;
