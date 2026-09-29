@@ -7,6 +7,7 @@ export default function Feedback({
   recommend,
   report,
   onChangeFeedback,
+  maximumLength = 2000,
 }) {
   const { t } = useTranslation('experiences');
 
@@ -56,7 +57,21 @@ export default function Feedback({
           id="feedback-message"
           onChange={event => onChangeFeedback(event.target.value)}
           value={feedback}
+          aria-describedby="feedback-length"
+          aria-invalid={feedback.length > maximumLength}
         ></textarea>
+        <p id="feedback-length" className="help-block">
+          {t('{{used}} / {{maximum}} characters', {
+            used: feedback.length,
+            maximum: maximumLength,
+          })}
+          {feedback.length > maximumLength && (
+            <span role="alert">
+              {' '}
+              {t('Your feedback is too long. Please shorten it and try again.')}
+            </span>
+          )}
+        </p>
         <span className="help-block">
           {t(
             'The answer you write will be publicly available on their profile.',
@@ -73,4 +88,5 @@ Feedback.propTypes = {
   recommend: PropTypes.string,
   report: PropTypes.bool,
   onChangeFeedback: PropTypes.func.isRequired,
+  maximumLength: PropTypes.number,
 };
