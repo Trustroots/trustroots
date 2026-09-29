@@ -1,15 +1,17 @@
+import type { PageTranslator } from '../types';
 import React from 'react';
 import Faq from '@/modules/pages/client/components/Faq.component.js';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function FaqFoundation() {
-  const { t } = useTranslation('pages');
+  const { t: rawT } = useTranslation('pages');
+  const t = rawT as unknown as PageTranslator;
 
   return (
     <Faq category="foundation">
       <div className="faq-question" id="what-is-your-legal-status">
         <h3>{t("What's your legal status?")}</h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           The website is owned and operated by{' '}
           <a href="/faq/foundation">Trustroots Foundation</a>, a non-profit
           Limited by Guarantee (LBG) under section 60 exemption, registered in
@@ -33,7 +35,7 @@ export default function FaqFoundation() {
             )}
           </li>
           <li>
-            <Trans t={t} ns="pages">
+            <Trans t={rawT} ns="pages">
               Additionally, section 60 exemption from the obligation to have
               name ending with “limited”{' '}
               <a href="https://www.legislation.gov.uk/ukpga/2006/46/section/62">
@@ -53,7 +55,7 @@ export default function FaqFoundation() {
             )}
           </li>
         </ul>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           Some typical LBGs in the UK would be clubs and membership
           organisations such as workers’ co-operatives, non-governmental
           organizations (NGOs) and charities. For example the{' '}
@@ -103,7 +105,7 @@ export default function FaqFoundation() {
         )}
         <br />
         <br />
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           Additionally our by-laws (articles of association) specifically
           prohibit selling the users database and specify that the company code
           will be licensed under an
@@ -116,7 +118,7 @@ export default function FaqFoundation() {
 
       <div className="faq-question" id="who-are-the-board">
         <h3>{t('Who are the board?')}</h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           <a href="/foundation#board">We</a>: Callum and Kasper.
         </Trans>
       </div>
@@ -128,7 +130,7 @@ export default function FaqFoundation() {
         <h3>
           {t('How do you want to make the project financially sustainable?')}
         </h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           <a href="/contribute">Donations</a> and grants are the most likely
           ways. There are many inspiring organisations out there serving as
           great examples: <a href="https://couchers.org/">Couchers.org</a>,{' '}
@@ -140,7 +142,7 @@ export default function FaqFoundation() {
 
       <div className="faq-question" id="who-decides-what-gets-done">
         <h3>{t('Who decides what gets done?')}</h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           Trustroots returned to active development in 2026. The project is led
           by a small team of volunteers, including two of the original founders.
           Learn more at{' '}

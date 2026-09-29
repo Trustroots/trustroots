@@ -1,15 +1,17 @@
+import type { PageTranslator } from '../types';
 import React from 'react';
 import Faq from '@/modules/pages/client/components/Faq.component.js';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function FaqBugsAndFeatures() {
-  const { t } = useTranslation('pages');
+  const { t: rawT } = useTranslation('pages');
+  const t = rawT as unknown as PageTranslator;
 
   return (
     <Faq category="bugs-and-features">
       <div className="faq-question" id="how-do-i-report-a-bug">
         <h3>{t('How do I report a bug?')}</h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           First of all: thank you for taking the time and making an effort in
           reporting a bug. We have a technical workspace where we document all
           our bugs, suggestions and improvement. If you go to our{' '}
@@ -18,14 +20,14 @@ export default function FaqBugsAndFeatures() {
         </Trans>
         <br />
         <br />
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           Before you go through the trouble of creating a new issue, use the
           search bar to see if there’s already an issue about the bug. You can
           check when it’s created, the responses and who’s working on it.
         </Trans>
         <br />
         <br />
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           If you want to respond or if you need to create a new issue, you have
           to sign up at Github. It takes a few minutes and this way, you’ll get
           an email about any updates or responses. When you create a new issue,
@@ -36,7 +38,7 @@ export default function FaqBugsAndFeatures() {
 
       <div className="faq-question" id="where-can-i-suggest">
         <h3>{t('Where can I suggest an improvement or new feature?')}</h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           Trustroots is under active development again. Small improvements and
           fixes are welcome in our{' '}
           <a href="https://github.com/Trustroots/trustroots/issues">

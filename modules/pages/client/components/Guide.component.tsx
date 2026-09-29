@@ -1,9 +1,11 @@
+import type { PageTranslator } from '../types';
 import React from 'react';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from './PageBoard';
 import { useTranslation } from 'react-i18next';
 
 export default function Guide() {
-  const { t } = useTranslation('pages');
+  const { t: rawT } = useTranslation('pages');
+  const t = rawT as unknown as PageTranslator;
 
   return (
     <>

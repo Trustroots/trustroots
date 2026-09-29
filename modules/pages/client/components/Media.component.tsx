@@ -1,5 +1,6 @@
+import type { PageTranslator } from '../types';
 import React from 'react';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from './PageBoard';
 import { Trans, useTranslation } from 'react-i18next';
 
 const mediaRepositoryUrl = 'https://github.com/Trustroots/community';
@@ -8,10 +9,11 @@ const mediaRawUrl =
   'https://raw.githubusercontent.com/Trustroots/community/master/media';
 
 export default function Media() {
-  const { t } = useTranslation('pages');
+  const { t: rawT } = useTranslation('pages');
+  const t = rawT as unknown as PageTranslator;
 
-  const mediaDate = (...dateArgs) =>
-    t('{{date, MMMM Do}}', { date: new Date(...dateArgs) });
+  const mediaDate = (year: number, month: number, day: number) =>
+    t('{{date, MMMM Do}}', { date: new Date(year, month, day) });
 
   return (
     <>
@@ -250,13 +252,13 @@ export default function Media() {
             <br />
             <h3 id="interviews">{t('Interviews')}</h3>
             <p>
-              <Trans t={t} ns="pages">
+              <Trans t={rawT} ns="pages">
                 <a href="/support">Contact us</a> if you have any questions or
                 if you are planning to write about us.
               </Trans>
             </p>
             <p>
-              <Trans t={t} ns="pages">
+              <Trans t={rawT} ns="pages">
                 <a href="/team">We</a> can give interviews in English, German,
                 Dutch, French, Spanish &amp; Finnish.
               </Trans>
@@ -276,23 +278,23 @@ export default function Media() {
                 {t('Entirely free and operating on basis of gift-economy')}
               </li>
               <li>
-                <Trans t={t} ns="pages">
+                <Trans t={rawT} ns="pages">
                   Run by <a href="/foundation">Trustroots Foundation</a>
                 </Trans>
               </li>
               <li>
-                <Trans t={t} ns="pages">
+                <Trans t={rawT} ns="pages">
                   Operating costs covered entirely by{' '}
                   <a href="/contribute">donations</a>
                 </Trans>
               </li>
               <li>
-                <Trans t={t} ns="pages">
+                <Trans t={rawT} ns="pages">
                   See <a href="/statistics">statistics</a>
                 </Trans>
               </li>
               <li>
-                <Trans t={t} ns="pages">
+                <Trans t={rawT} ns="pages">
                   Read <a href="faq.general">frequently asked questions</a>
                 </Trans>
               </li>
@@ -312,7 +314,7 @@ export default function Media() {
                 <a href={`${mediaPathUrl}/screenshots`}>{t('Screenshots')}</a>
               </li>
               <li>
-                <Trans t={t} ns="pages">
+                <Trans t={rawT} ns="pages">
                   Download all media files as a{' '}
                   <a href={`${mediaRepositoryUrl}/archive/master.zip`}>
                     zip archive
@@ -321,7 +323,7 @@ export default function Media() {
               </li>
               <li>
                 <em>
-                  <Trans t={t} ns="pages">
+                  <Trans t={rawT} ns="pages">
                     <a href="/support">Ask</a> us for more photos etc
                   </Trans>
                 </em>

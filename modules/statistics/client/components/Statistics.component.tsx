@@ -5,12 +5,31 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
 // Internal dependencies
-import { get } from '../api/statistics.api';
+import { get, type StatisticsResponse } from '../api/statistics.api';
 import { getSuggestion } from '@/modules/experiences/client/api/experiences.api';
 import { getNetworkName } from '@/modules/users/client/utils/networks';
-import Board from '@/modules/core/client/components/Board';
+import BoardImplementation from '@/modules/core/client/components/Board';
 import Stat from './Stat';
 import Tooltip from '@/modules/core/client/components/Tooltip';
+
+interface ExperienceSuggestion {
+  displayName: string;
+  username: string;
+}
+
+const Board = BoardImplementation as React.ComponentType<{
+  children?: React.ReactNode;
+  className?: string;
+  names?: string | string[];
+  style?: React.CSSProperties | null;
+}>;
+
+const TypedTooltip = Tooltip as unknown as React.ComponentType<{
+  children: React.ReactNode;
+  id: string;
+  placement?: 'bottom' | 'right';
+  tooltip: string;
+}>;
 
 const Grid = styled.div`
   align-items: stretch;
@@ -102,14 +121,23 @@ const LegacyNote = styled.p`
 
 const legacyNetworks = new Set(['facebook', 'github']);
 
-export default function Statistics({ isAuthenticated }) {
-  const { t } = useTranslation('statistics');
-  const [statistics, setStatistics] = useState(false);
-  const [experienceSuggestion, setExperienceSuggestion] = useState(null);
+export default function Statistics({
+  isAuthenticated,
+}: {
+  isAuthenticated: boolean;
+}) {
+  const { t: rawT } = useTranslation('statistics');
+  const t = rawT as unknown as (
+    key: string,
+    options?: Record<string, unknown>,
+  ) => string;
+  const [statistics, setStatistics] = useState<StatisticsResponse | null>(null);
+  const [experienceSuggestion, setExperienceSuggestion] =
+    useState<ExperienceSuggestion | null>(null);
 
-  const numberFormat = number =>
+  const numberFormat = (number?: number) =>
     number ? new Intl.NumberFormat().format(number) : 0;
-  const percentage = (positive, negative) => {
+  const percentage = (positive?: number, negative?: number) => {
     const answered = (positive ?? 0) + (negative ?? 0);
     return answered ? Math.round(((positive ?? 0) / answered) * 100) : 0;
   };
@@ -137,9 +165,11 @@ export default function Statistics({ isAuthenticated }) {
 
   useEffect(() => {
     const loadStatistics = async () => {
+      const loadSuggestion =
+        getSuggestion as unknown as () => Promise<ExperienceSuggestion | null>;
       const [{ data }, suggestion] = await Promise.all([
         get(),
-        isAuthenticated ? getSuggestion().catch(() => null) : null,
+        isAuthenticated ? loadSuggestion().catch(() => null) : null,
       ]);
       setStatistics(data);
       setExperienceSuggestion(suggestion);
@@ -306,7 +336,7 @@ export default function Statistics({ isAuthenticated }) {
                   </>
                 ) : (
                   <>
-                    <Tooltip
+                    <TypedTooltip
                       id="hosts-tooltip"
                       tooltip={t('{{count}} members', {
                         count: numberFormat(statistics?.hosting?.total ?? 0),
@@ -315,8 +345,8 @@ export default function Statistics({ isAuthenticated }) {
                       <Count>{`${
                         statistics?.hosting?.percentage ?? 0
                       }%`}</Count>
-                    </Tooltip>
-                    <Tooltip
+                    </TypedTooltip>
+                    <TypedTooltip
                       id="hosts-yes-tooltip"
                       tooltip={t('{{count}} members', {
                         count: numberFormat(statistics?.hosting?.yes ?? 0),
@@ -328,8 +358,8 @@ export default function Statistics({ isAuthenticated }) {
                           percentage: statistics?.hosting?.yesPercentage ?? 0,
                         })}
                       </p>
-                    </Tooltip>
-                    <Tooltip
+                    </TypedTooltip>
+                    <TypedTooltip
                       id="hosts-maybe-tooltip"
                       tooltip={t('{{count}} members', {
                         count: statistics?.hosting?.maybe ?? 0,
@@ -341,7 +371,7 @@ export default function Statistics({ isAuthenticated }) {
                           percentage: statistics?.hosting?.maybePercentage ?? 0,
                         })}
                       </p>
-                    </Tooltip>
+                    </TypedTooltip>
                   </>
                 )}
               </Stat>
@@ -367,7 +397,7 @@ export default function Statistics({ isAuthenticated }) {
                       ))
                     : statistics?.connections?.map(
                         ({ network, count, percentage }) => (
-                          <Tooltip
+                          <TypedTooltip
                             id={`network-${network}-tooltip`}
                             key={network}
                             placement="right"
@@ -386,7 +416,7 @@ export default function Statistics({ isAuthenticated }) {
                                 {Number(percentage).toFixed(1)}%
                               </NetworkPercentage>
                             </NetworkRow>
-                          </Tooltip>
+                          </TypedTooltip>
                         ),
                       )}
                 </NetworkList>
@@ -452,7 +482,7 @@ export default function Statistics({ isAuthenticated }) {
             <hr />
 
             <p className="lead">
-              <Trans t={t} ns="statistics">
+              <Trans t={rawT} ns="statistics">
                 Check <a href="https://grafana.trustroots.org/">our Grafana</a>{' '}
                 for stats galore.
               </Trans>

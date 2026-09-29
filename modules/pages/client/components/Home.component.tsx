@@ -3,13 +3,14 @@ import { Trans, useTranslation } from 'react-i18next';
 import classnames from 'classnames';
 import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
+import type { PageTranslator, PageUser } from '../types';
 
 // Internal dependencies
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
 import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import { userType } from '@/modules/users/client/users.prop-types';
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from './PageBoard';
 import SiteFooter from '@/modules/core/client/components/SiteFooter.component.js';
 import ManifestoText from './ManifestoText.component.js';
 import Screenshot from '@/modules/core/client/components/Screenshot.js';
@@ -28,7 +29,15 @@ import screenshotSearchWebp2x from '../img/screenshot-search-2x.webp';
  * @param  {[String]} circleSlug Slug of circle.
  * @return {Array}
  */
-function getBoardPictures(circleSlug) {
+interface Circle {
+  _id: string;
+  color?: string;
+  image?: string;
+  label: string;
+  slug: string;
+}
+
+function getBoardPictures(circleSlug?: string) {
   // Default photos
   let boards = [
     'woman-bridge',
@@ -69,7 +78,7 @@ function getBoardPictures(circleSlug) {
  * @param  {[String]} circleSlug Slug of circle.
  * @return {String} Signup URL
  */
-export function getSignupUrl(circleSlug) {
+export function getSignupUrl(circleSlug?: string) {
   if (circleSlug) {
     // @TODO: change `tribe` to `circle`, needs changes in Signup form controller
     return `/signup?tribe=${circleSlug}`;
@@ -78,19 +87,42 @@ export function getSignupUrl(circleSlug) {
   return '/signup';
 }
 
+interface HomeProps {
+  build?: {
+    branch?: string;
+    committedAt?: string;
+    commitUrl?: string;
+    shortCommit?: string;
+  };
+  isNativeMobileApp?: boolean;
+  photoCredits?: Record<string, string>;
+  routeParams?: Record<string, string>;
+  user?: PageUser | null;
+}
+
 export default function Home({
   user,
   photoCredits,
   build,
   routeParams = getCurrentRouteParams(),
-}) {
-  const { t } = useTranslation('pages');
+}: HomeProps) {
+  const { t: rawT } = useTranslation('pages');
+  const t = rawT as unknown as PageTranslator;
+  const TypedTrans = Trans as unknown as React.ComponentType<{
+    children: React.ReactNode;
+    ns: string;
+    t: typeof rawT;
+    values: { memberCount: string };
+  }>;
   // `tribe` route supported for legacy reasons, deprecated Feb 2021
   const { circle: circleRouteParam, tribe: tribeRouteParam } = routeParams;
   const circleRoute = circleRouteParam || tribeRouteParam;
 
   // @TODO change this to be based on UI language rather than browser locale
   const memberCount = new Intl.NumberFormat().format(140000);
+  const memberCountInterpolation = {
+    memberCount,
+  } as unknown as React.ReactNode;
 
   // TODO get header height instead of magic number 56
   const headerHeight = 56;
@@ -102,15 +134,23 @@ export default function Home({
 
   const boards = getBoardPictures(circleRoute);
 
-  const [circles, setCircles] = useState([]);
+  const [circles, setCircles] = useState<Circle[]>([]);
+  const readCircles = circlesAPI.read as unknown as (options: {
+    limit: number;
+  }) => Promise<Circle[]>;
+  const getCircle = circlesAPI.get as unknown as (
+    slug: string,
+  ) => Promise<Circle | null>;
 
   useEffect(() => {
     async function fetchData() {
-      const circles = await circlesAPI.read({ limit: 3 });
-      const circleIsLoaded = circles.some(t => t.slug === circleRoute);
+      const circles = await readCircles({ limit: 3 });
+      const circleIsLoaded = circles.some(
+        circle => circle.slug === circleRoute,
+      );
 
       if (circleRoute && !circleIsLoaded) {
-        const extraCircle = await circlesAPI.get(circleRoute);
+        const extraCircle = await getCircle(circleRoute);
 
         if (extraCircle && extraCircle._id) {
           circles.unshift(extraCircle);
@@ -215,11 +255,11 @@ export default function Home({
                 <br />
                 <br />
                 {/* @TODO remove ns (issue #1368) */}
-                <Trans t={t} ns="pages" values={{ memberCount }}>
+                <TypedTrans t={rawT} ns="pages" values={{ memberCount }}>
                   Trustroots is over{' '}
-                  <a href="/statistics">{{ memberCount }} members</a> strong and
-                  growing!
-                </Trans>
+                  <a href="/statistics">{memberCountInterpolation} members</a>{' '}
+                  strong and growing!
+                </TypedTrans>
               </p>
             </div>
             <div aria-hidden className="col-md-7">
@@ -371,7 +411,7 @@ export default function Home({
               <h3 className="font-brand-light">{t('Team')}</h3>
               <p>
                 {/* @TODO remove ns (issue #1368) */}
-                <Trans t={t} ns="pages">
+                <Trans t={rawT} ns="pages">
                   Trustroots is being built by a small team of activists who
                   felt that the world of sharing is being taken over by
                   corporations trying to monetize people&apos;s willingness to
