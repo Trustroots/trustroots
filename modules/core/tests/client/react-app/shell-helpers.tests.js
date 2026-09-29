@@ -192,6 +192,9 @@ describe('React shell helpers', () => {
 
   it('signs out without browser postMessage support', () => {
     const originalPostMessage = window.postMessage;
+    const submit = jest
+      .spyOn(HTMLFormElement.prototype, 'submit')
+      .mockImplementation(() => {});
 
     window.postMessage = undefined;
 
@@ -199,13 +202,22 @@ describe('React shell helpers', () => {
       expect(() => signout()).not.toThrow();
     } finally {
       window.postMessage = originalPostMessage;
+      submit.mockRestore();
     }
   });
 
   it('prevents default when sign out receives an event', () => {
     const preventDefault = jest.fn();
+    const submit = jest
+      .spyOn(HTMLFormElement.prototype, 'submit')
+      .mockImplementation(() => {});
 
-    signout({ preventDefault });
+    try {
+      signout({ preventDefault });
+      expect(submit).toHaveBeenCalled();
+    } finally {
+      submit.mockRestore();
+    }
 
     expect(preventDefault).toHaveBeenCalled();
   });
@@ -214,6 +226,9 @@ describe('React shell helpers', () => {
     const postMessage = jest.fn();
     const originalPostMessage = window.postMessage;
     const originalIsNativeMobileApp = window.isNativeMobileApp;
+    const submit = jest
+      .spyOn(HTMLFormElement.prototype, 'submit')
+      .mockImplementation(() => {});
 
     window.postMessage = postMessage;
     window.isNativeMobileApp = true;
@@ -227,6 +242,7 @@ describe('React shell helpers', () => {
     } finally {
       window.postMessage = originalPostMessage;
       window.isNativeMobileApp = originalIsNativeMobileApp;
+      submit.mockRestore();
     }
   });
 });

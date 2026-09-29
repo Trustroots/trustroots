@@ -14,7 +14,12 @@ export function signout(event?: { preventDefault: () => void }) {
     window.postMessage(JSON.stringify({ action: 'unAuthenticated' }));
   }
 
-  window.top!.location.href = '/api/auth/signout';
+  const form = document.createElement('form');
+  form.method = 'post';
+  form.action = '/api/auth/signout';
+  form.target = '_top';
+  document.body.appendChild(form);
+  form.submit();
 }
 
 function getBrowserPath(location: Location | URL): string {
