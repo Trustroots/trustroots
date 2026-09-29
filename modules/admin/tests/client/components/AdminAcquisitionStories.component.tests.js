@@ -157,6 +157,20 @@ describe('<AdminAcquisitionStories />', () => {
     expect(screen.getAllByText('', { selector: 'time' })).toHaveLength(2);
   });
 
+  it('renders an empty acquisition story when the field is absent', async () => {
+    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      {
+        _id: '333333333333333333333333',
+        username: 'casey',
+      },
+    ]);
+
+    render(<AdminAcquisitionStories />);
+
+    expect(await screen.findByRole('link', { name: 'casey' })).toBeInTheDocument();
+    expect(screen.getByRole('table')).toHaveTextContent('casey');
+  });
+
   it('sorts stories by every table column', async () => {
     acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {

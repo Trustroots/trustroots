@@ -130,6 +130,23 @@ describe('OfferMeetEditPage', () => {
     });
   });
 
+  it('fills missing description and location on a legacy offer', async () => {
+    const {
+      getCurrentRouteParams,
+    } = require('@/modules/core/client/services/client-runtime');
+    getCurrentRouteParams.mockReturnValue({ offerId: 'legacy-offer' });
+    offersApi.getOffer.mockResolvedValue({
+      _id: 'legacy-offer',
+      validUntil: new Date(Date.now() + 86400000).toISOString(),
+    });
+
+    render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+
+    expect(await screen.findByPlaceholderText('Write here...')).toHaveValue('');
+    fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
+    expect(await screen.findByTestId('location-editor')).toBeInTheDocument();
+  });
+
   it('keeps loading when an existing meet offer cannot be loaded', async () => {
     const {
       getCurrentRouteParams,
