@@ -114,17 +114,6 @@ module.exports.initMiddleware = function (app) {
 
   // Initialize pagination middleware
   // Set Pagination default values (limit, max limit)
-  // Express 5 returns a fresh query object on every access. Keep one mutable
-  // object per request for middleware such as express-paginate that normalises
-  // query values in place.
-  app.use((req, res, next) => {
-    Object.defineProperty(req, 'query', {
-      configurable: true,
-      enumerable: true,
-      value: req.query,
-    });
-    next();
-  });
   app.use(paginate.middleware(config.limits.paginationLimit, 50));
 
   // Initialize favicon middleware
@@ -466,6 +455,18 @@ module.exports.init = function (connection) {
   // Initialize express app
   const app = express();
   app.set('query parser', query => qs.parse(query));
+
+  // Express 5 returns a fresh query object on every access. Keep one mutable
+  // object per request for middleware and local variables that normalise or
+  // read query values.
+  app.use((req, res, next) => {
+    Object.defineProperty(req, 'query', {
+      configurable: true,
+      enumerable: true,
+      value: req.query,
+    });
+    next();
+  });
 
   // Initialize local variables
   this.initLocalVariables(app);
