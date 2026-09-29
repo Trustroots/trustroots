@@ -865,6 +865,20 @@ describe('<AdminUser />', () => {
             created: '2024-05-01T00:00:00.000Z',
             userTo: { _id: '555555555555555555555555' },
           },
+          {
+            _id: 'contact-without-date',
+            user: { displayName: 'Undated Contact' },
+          },
+          {
+            _id: 'contact-without-date-2',
+            user: { displayName: 'Another Undated Contact' },
+          },
+          {
+            _id: 'contact-string-user-ids',
+            created: '2024-06-01T00:00:00.000Z',
+            userFrom: userId,
+            userTo: { _id: '666666666666666666666666' },
+          },
         ],
         offers: [
           {
@@ -916,6 +930,7 @@ describe('<AdminUser />', () => {
         .map(link => link.getAttribute('href')),
     ).toEqual(
       [
+        '666666666666666666666666',
         '555555555555555555555555',
         '444444444444444444444444',
         '333333333333333333333333',
