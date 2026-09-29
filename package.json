@@ -139,7 +139,7 @@
     "morgan": "1.12.1",
     "multer": "2.4.0",
     "natural": "5.2.3",
-    "nodemailer": "9.1.1",
+    "nodemailer": "10.0.12",
     "nostr-tools": "2.7.2",
     "nunjucks": "3.2.4",
     "open-location-code": "1.0.3",
