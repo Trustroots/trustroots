@@ -4,7 +4,7 @@ import httpClient, {
 
 describe('shared module HTTP client', () => {
   it('uses a finite default timeout', () => {
-    expect(httpClient.defaults.timeout).toBe(15000);
+    expect(httpClient.defaults.timeout).toBe(120000);
   });
 
   it('passes per-request timeout and headers to Axios', async () => {
@@ -79,6 +79,35 @@ describe('shared module HTTP client', () => {
       adapter.mock.calls[0][0].headers.get('X-Trustroots-Request'),
     ).toBeUndefined();
   });
+
+  it.each([false, 'caller-value'])(
+    'sets the required mutation marker when a caller supplies %s',
+    async marker => {
+      const adapter = jest.fn(async config => ({
+        config,
+        data: {},
+        headers: {},
+        status: 200,
+        statusText: 'OK',
+      }));
+
+      await httpClient.post(
+        '/api/example',
+        {},
+        {
+          adapter,
+          headers: {
+            'x-trustroots-request': marker,
+            'X-Request-Option': 'provided',
+          },
+        },
+      );
+
+      const headers = adapter.mock.calls[0][0].headers;
+      expect(headers.get('X-Trustroots-Request')).toBe('1');
+      expect(headers.get('X-Request-Option')).toBe('provided');
+    },
+  );
 
   it('returns a response from an Axios error without wrapping it', () => {
     const response = { data: { message: 'Unavailable' }, status: 503 };
