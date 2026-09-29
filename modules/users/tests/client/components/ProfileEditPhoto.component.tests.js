@@ -137,7 +137,9 @@ describe('ProfileEditPhoto', () => {
 
     renderPage();
     fireEvent.change(document.querySelector('input[type="file"]'), {
-      target: { files: [new File(['data'], 'photo.png', { type: 'image/png' })] },
+      target: {
+        files: [new File(['data'], 'photo.png', { type: 'image/png' })],
+      },
     });
     fileReaderMock.onloadend();
 

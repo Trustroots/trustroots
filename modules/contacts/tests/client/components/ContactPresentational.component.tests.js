@@ -86,7 +86,9 @@ describe('<ContactPresentational />', () => {
         onClickRemove={() => {}}
       />,
     );
-    expect(screen.getByRole('link', { name: 'Alice Example' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Alice Example' }),
+    ).toBeInTheDocument();
 
     rerender(
       <ContactPresentational
@@ -95,6 +97,8 @@ describe('<ContactPresentational />', () => {
         onClickRemove={() => {}}
       />,
     );
-    expect(screen.getByText('Contact request sent and pending.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Contact request sent and pending.'),
+    ).toBeInTheDocument();
   });
 });

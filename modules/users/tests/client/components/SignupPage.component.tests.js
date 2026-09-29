@@ -204,7 +204,9 @@ describe('SignupPage', () => {
     fillStepOne();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
-    expect(await screen.findByRole('button', { name: 'Join Cyclists' })).toBeVisible();
+    expect(
+      await screen.findByRole('button', { name: 'Join Cyclists' }),
+    ).toBeVisible();
   });
 
   it('joins a referred circle after successful signup', async () => {
@@ -259,7 +261,9 @@ describe('SignupPage', () => {
     fillStepOne();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
-    expect(await screen.findByRole('button', { name: 'Join Hitchhikers' })).toBeVisible();
+    expect(
+      await screen.findByRole('button', { name: 'Join Hitchhikers' }),
+    ).toBeVisible();
   });
 
   it('keeps the signup user when a referred circle join has no user payload', async () => {

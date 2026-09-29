@@ -57,7 +57,9 @@ describe('ForgotPasswordPage', () => {
     render(<ForgotPasswordPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
 
-    await waitFor(() => expect(screen.getByLabelText('Email or username')).toBeEnabled());
+    await waitFor(() =>
+      expect(screen.getByLabelText('Email or username')).toBeEnabled(),
+    );
   });
 
   it('updates the username before submitting', async () => {

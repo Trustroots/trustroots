@@ -117,7 +117,9 @@ describe('ResetPasswordPage', () => {
     await submitForm();
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Update Password' })).toBeEnabled(),
+      expect(
+        screen.getByRole('button', { name: 'Update Password' }),
+      ).toBeEnabled(),
     );
   });
 });
