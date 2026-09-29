@@ -1665,7 +1665,9 @@ describe('Search', () => {
   });
 
   it('does not log offer query failures outside development', async () => {
-    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleError = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
     mockPersistentMapLocation = {
       ...mockPersistentMapLocation,
       zoom: 6,
