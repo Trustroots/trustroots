@@ -214,7 +214,14 @@ export default function SupportForm({ user }) {
                   <>
                     {t(
                       'Briefly tell us about your interests, skills, and availability.',
-                    )}
+                    )}{' '}
+                    <a
+                      href="https://team.trustroots.org/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {t('Team Guide')}
+                    </a>
                     <br />
                   </>
                 )}

@@ -74,6 +74,10 @@ describe('<Home />', () => {
       'href',
       '/safety',
     );
+    expect(screen.getByRole('link', { name: 'Volunteering' })).toHaveAttribute(
+      'href',
+      '/support?category=volunteering',
+    );
   });
 
   it('uses compact board height on small screens', async () => {

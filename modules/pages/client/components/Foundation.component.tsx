@@ -66,7 +66,9 @@ export default function Foundation({ user }: { user?: PageUser | null }) {
                   <a href="/support">{t('Contact us')}</a>
                 </li>
                 <li>
-                  <a href="https://team.trustroots.org/">{t('Volunteering')}</a>
+                  <a href="/support?category=volunteering">
+                    {t('Volunteering')}
+                  </a>
                 </li>
               </ul>
             </div>
