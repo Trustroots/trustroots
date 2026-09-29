@@ -20,7 +20,7 @@ describe('<SiteFooter />', () => {
     const { container } = render(<SiteFooter build={build} />);
 
     [
-      ['Volunteering', 'https://team.trustroots.org/'],
+      ['Volunteering', '/support?category=volunteering'],
       ['Rules', '/rules'],
       ['Safety', '/safety'],
       ['FAQ', '/faq'],
@@ -30,7 +30,7 @@ describe('<SiteFooter />', () => {
     ].forEach(([name, href]) => {
       expect(screen.getByRole('link', { name })).toHaveAttribute('href', href);
     });
-    ['Volunteering', 'Wiki'].forEach(name => {
+    ['Wiki'].forEach(name => {
       expect(screen.getByRole('link', { name })).toHaveAttribute(
         'target',
         '_blank',
@@ -102,7 +102,7 @@ describe('<SiteFooter />', () => {
 
     expect(screen.getByRole('link', { name: 'Volunteering' })).toHaveAttribute(
       'href',
-      'https://team.trustroots.org/',
+      '/support?category=volunteering',
     );
     expect(
       screen.queryByRole('link', { name: 'Trustroots Foundation' }),

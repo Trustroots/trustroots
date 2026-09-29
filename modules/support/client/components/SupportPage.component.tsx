@@ -50,7 +50,9 @@ export default function SupportPage({ user }: SupportPageProps) {
               )}
               <li>
                 <Trans t={t} ns="support">
-                  <a href="https://team.trustroots.org/">Become a volunteer</a>{' '}
+                  <a href="/support?category=volunteering">
+                    Become a volunteer
+                  </a>{' '}
                   and make a difference!
                 </Trans>
               </li>

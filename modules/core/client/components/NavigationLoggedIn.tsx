@@ -245,10 +245,8 @@ export default function NavigationLoggedIn({
                 rel: 'noopener noreferrer',
               },
               {
-                href: 'https://team.trustroots.org/',
+                href: '/support?category=volunteering',
                 label: t<string>('Volunteering'),
-                target: '_blank',
-                rel: 'noopener noreferrer',
               },
             ]}
           />

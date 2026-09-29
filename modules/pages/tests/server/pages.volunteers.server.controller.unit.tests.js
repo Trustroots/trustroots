@@ -1,7 +1,9 @@
 /**
  * Unit tests for the volunteers controller.
  */
-const proxyquire = require('proxyquire').noCallThru();
+const mongoose = require('mongoose');
+const lodash = require('lodash');
+require('../../../users/server/models/user.server.model');
 const sinon = require('sinon');
 
 require('should');
@@ -25,33 +27,28 @@ function mockResponse() {
   return res;
 }
 
-function loadController(execHandler) {
+async function loadController(execHandler) {
   const exec = sinon.stub().callsFake(execHandler);
   const limit = sinon.stub().withArgs(500).returns({ exec });
   const sort = sinon.stub().withArgs('firstName username').returns({ limit });
   const select = sinon.stub().withArgs('username firstName roles').returns({
     sort,
   });
-  const find = sinon.stub().returns({ select });
 
-  const controller = proxyquire(
-    '../../server/controllers/pages.volunteers.server.controller',
-    {
-      lodash: {
-        shuffle: users => users,
-      },
-      mongoose: {
-        model: () => ({ find }),
-      },
-    },
+  const User = mongoose.model('User');
+  sinon.stub(User, 'find').returns({ select });
+  sinon.stub(lodash, 'shuffle').callsFake(users => users);
+  const controller = await import(
+    '../../server/controllers/pages.volunteers.server.controller.mjs'
   );
 
-  return { controller, exec, find, limit, select, sort };
+  return { controller, exec, find: User.find, limit, select, sort };
 }
 
 describe('Volunteers controller unit tests', () => {
+  afterEach(() => sinon.restore());
   it('queries volunteer and alumni roles with bounded selected results', async () => {
-    const harness = loadController(callback => callback(null, []));
+    const harness = await loadController(callback => callback(null, []));
     const res = mockResponse();
 
     harness.controller.list({}, res);
@@ -70,7 +67,7 @@ describe('Volunteers controller unit tests', () => {
   });
 
   it('returns 400 when the database lookup fails', async () => {
-    const harness = loadController(callback =>
+    const harness = await loadController(callback =>
       callback(new Error('lookup failed')),
     );
     const res = mockResponse();
@@ -105,7 +102,7 @@ describe('Volunteers controller unit tests', () => {
         username: 'bothvol',
       },
     ];
-    const harness = loadController(callback => callback(null, users));
+    const harness = await loadController(callback => callback(null, users));
     const res = mockResponse();
 
     harness.controller.list({}, res);

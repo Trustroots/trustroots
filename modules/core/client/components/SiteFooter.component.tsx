@@ -62,13 +62,7 @@ function FooterLinks() {
   return (
     <ul className="site-footer-links list-inline">
       <li>
-        <a
-          href="https://team.trustroots.org/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Volunteering
-        </a>
+        <a href="/support?category=volunteering">Volunteering</a>
       </li>
       <li>
         <a href="/rules">Rules</a>
