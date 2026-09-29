@@ -8,11 +8,14 @@ type StepButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   small?: boolean;
 };
 
+type SubmitButtonProps = StepButtonProps & { label?: string };
+
 type StepNavigationProps = {
   currentStep: number;
   numberOfSteps: number;
   disabled?: boolean;
   disabledReason?: string;
+  submitLabel?: string;
   onBack: () => void;
   onNext: () => void;
   onSubmit: () => void;
@@ -59,7 +62,7 @@ const NextButton = ({ small, ...props }: StepButtonProps) => {
   );
 };
 
-const SubmitButton = ({ small, ...props }: StepButtonProps) => {
+const SubmitButton = ({ small, label, ...props }: SubmitButtonProps) => {
   const { t } = useTranslation('core');
   return (
     <button
@@ -70,15 +73,14 @@ const SubmitButton = ({ small, ...props }: StepButtonProps) => {
         'btn-action': !small,
         'btn-primary': true,
       })}
-      aria-label={t<string>('Finish editing and save')}
+      aria-label={label || t<string>('Finish editing and save')}
       {...props}
     >
-      {t<string>('Finish')}
+      {label || t<string>('Finish')}
       {small && <span className="icon-ok" aria-hidden="true"></span>}
     </button>
   );
 };
-
 export default function StepNavigation({
   currentStep,
   numberOfSteps,
@@ -87,10 +89,11 @@ export default function StepNavigation({
   onBack,
   onNext,
   onSubmit,
+  submitLabel,
 }: StepNavigationProps) {
   const backProps = { onClick: onBack };
   const nextProps = { onClick: onNext, disabled };
-  const submitProps = { onClick: onSubmit, disabled };
+  const submitProps = { onClick: onSubmit, disabled, label: submitLabel };
   const tooltipProps = {
     tooltip: disabledReason,
     id: 'tooltip-disabled-button',
@@ -160,4 +163,5 @@ StepNavigation.propTypes = {
   onBack: PropTypes.func.isRequired,
   onNext: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
+  submitLabel: PropTypes.string,
 };
