@@ -113,7 +113,7 @@ it('reports the panned centre to the latest listener without resetting zoom', ()
   const { rerender } = render(
     <LeafletMap location={[50.12, 19.89]} zoom={11} onLocationChange={first} />,
   );
-  const move = mockMap.on.mock.calls.find(([name]) => name === 'moveend')[1];
+  const move = mockMap.on.mock.calls.find(([name]) => name === 'dragend')[1];
   rerender(
     <LeafletMap
       location={[50.12, 19.89]}
