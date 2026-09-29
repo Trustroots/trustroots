@@ -413,14 +413,14 @@ service.readFormattedMessageStatsOfUser = function (userId, timeNow, callback) {
   );
 };
 
-const namedExport0 = service.formatStats;
-const namedExport1 = service.readFormattedMessageStatsOfUser;
-const namedExport2 = service.readMessageStatsOfUser;
-const namedExport3 = service.updateMessageStat;
+const formatStats = service.formatStats;
+const readFormattedMessageStatsOfUser = service.readFormattedMessageStatsOfUser;
+const readMessageStatsOfUser = service.readMessageStatsOfUser;
+const updateMessageStat = service.updateMessageStat;
 export {
-  namedExport0 as formatStats,
-  namedExport1 as readFormattedMessageStatsOfUser,
-  namedExport2 as readMessageStatsOfUser,
-  namedExport3 as updateMessageStat,
+  formatStats as formatStats,
+  readFormattedMessageStatsOfUser as readFormattedMessageStatsOfUser,
+  readMessageStatsOfUser as readMessageStatsOfUser,
+  updateMessageStat as updateMessageStat,
 };
 export default service;

@@ -145,16 +145,16 @@ service.updateCount = function (id, difference, returnUpdated, callback) {
   );
 };
 
-const namedExport0 = service.getTribe;
-const namedExport1 = service.listTribes;
-const namedExport2 = service.tribeBySlug;
-const namedExport3 = service.tribeFields;
-const namedExport4 = service.updateCount;
+const getTribe = service.getTribe;
+const listTribes = service.listTribes;
+const tribeBySlug = service.tribeBySlug;
+const tribeFields = service.tribeFields;
+const updateCount = service.updateCount;
 export {
-  namedExport0 as getTribe,
-  namedExport1 as listTribes,
-  namedExport2 as tribeBySlug,
-  namedExport3 as tribeFields,
-  namedExport4 as updateCount,
+  getTribe as getTribe,
+  listTribes as listTribes,
+  tribeBySlug as tribeBySlug,
+  tribeFields as tribeFields,
+  updateCount as updateCount,
 };
 export default service;

@@ -925,24 +925,24 @@ service.removeAllByUserId = function (userId, callback) {
   );
 };
 
-const namedExport0 = service.create;
-const namedExport1 = service.delete;
-const namedExport2 = service.getOffer;
-const namedExport3 = service.list;
-const namedExport4 = service.listOffersByUser;
-const namedExport5 = service.offerById;
-const namedExport6 = service.offersByUserId;
-const namedExport7 = service.removeAllByUserId;
-const namedExport8 = service.update;
+const create = service.create;
+const deleteExport = service.delete;
+const getOffer = service.getOffer;
+const list = service.list;
+const listOffersByUser = service.listOffersByUser;
+const offerById = service.offerById;
+const offersByUserId = service.offersByUserId;
+const removeAllByUserId = service.removeAllByUserId;
+const update = service.update;
 export {
-  namedExport0 as create,
-  namedExport1 as delete,
-  namedExport2 as getOffer,
-  namedExport3 as list,
-  namedExport4 as listOffersByUser,
-  namedExport5 as offerById,
-  namedExport6 as offersByUserId,
-  namedExport7 as removeAllByUserId,
-  namedExport8 as update,
+  create as create,
+  deleteExport as delete,
+  getOffer as getOffer,
+  list as list,
+  listOffersByUser as listOffersByUser,
+  offerById as offerById,
+  offersByUserId as offersByUserId,
+  removeAllByUserId as removeAllByUserId,
+  update as update,
 };
 export default service;

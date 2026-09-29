@@ -1010,24 +1010,24 @@ service.markAllMessagesToUserNotified = function (userId, callback) {
   });
 };
 
-const namedExport0 = service.inbox;
-const namedExport1 = service.markAllMessagesToUserNotified;
-const namedExport2 = service.markRead;
-const namedExport3 = service.messagesCount;
-const namedExport4 = service.sanitizeMessages;
-const namedExport5 = service.send;
-const namedExport6 = service.sync;
-const namedExport7 = service.thread;
-const namedExport8 = service.threadByUser;
+const inbox = service.inbox;
+const markAllMessagesToUserNotified = service.markAllMessagesToUserNotified;
+const markRead = service.markRead;
+const messagesCount = service.messagesCount;
+const sanitizeMessagesExport = service.sanitizeMessages;
+const send = service.send;
+const sync = service.sync;
+const thread = service.thread;
+const threadByUser = service.threadByUser;
 export {
-  namedExport0 as inbox,
-  namedExport1 as markAllMessagesToUserNotified,
-  namedExport2 as markRead,
-  namedExport3 as messagesCount,
-  namedExport4 as sanitizeMessages,
-  namedExport5 as send,
-  namedExport6 as sync,
-  namedExport7 as thread,
-  namedExport8 as threadByUser,
+  inbox as inbox,
+  markAllMessagesToUserNotified as markAllMessagesToUserNotified,
+  markRead as markRead,
+  messagesCount as messagesCount,
+  sanitizeMessagesExport as sanitizeMessages,
+  send as send,
+  sync as sync,
+  thread as thread,
+  threadByUser as threadByUser,
 };
 export default service;

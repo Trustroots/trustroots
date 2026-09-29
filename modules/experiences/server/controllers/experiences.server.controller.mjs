@@ -710,20 +710,20 @@ service.getCount = async function getCount(req, res, next) {
   }
 };
 
-const namedExport0 = service.create;
-const namedExport1 = service.experienceById;
-const namedExport2 = service.getCount;
-const namedExport3 = service.getSuggestion;
-const namedExport4 = service.readMany;
-const namedExport5 = service.readMine;
-const namedExport6 = service.readOne;
+const create = service.create;
+const experienceById = service.experienceById;
+const getCount = service.getCount;
+const getSuggestion = service.getSuggestion;
+const readMany = service.readMany;
+const readMine = service.readMine;
+const readOne = service.readOne;
 export {
-  namedExport0 as create,
-  namedExport1 as experienceById,
-  namedExport2 as getCount,
-  namedExport3 as getSuggestion,
-  namedExport4 as readMany,
-  namedExport5 as readMine,
-  namedExport6 as readOne,
+  create as create,
+  experienceById as experienceById,
+  getCount as getCount,
+  getSuggestion as getSuggestion,
+  readMany as readMany,
+  readMine as readMine,
+  readOne as readOne,
 };
 export default service;

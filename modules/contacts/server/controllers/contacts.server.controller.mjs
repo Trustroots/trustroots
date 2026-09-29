@@ -506,26 +506,26 @@ service.contactListByUser = function (req, res, next, listUserId) {
   });
 };
 
-const namedExport0 = service.add;
-const namedExport1 = service.confirm;
-const namedExport2 = service.contactById;
-const namedExport3 = service.contactByUserId;
-const namedExport4 = service.contactListByUser;
-const namedExport5 = service.filterByCommon;
-const namedExport6 = service.get;
-const namedExport7 = service.list;
-const namedExport8 = service.remove;
-const namedExport9 = service.removeAllByUserId;
+const add = service.add;
+const confirm = service.confirm;
+const contactById = service.contactById;
+const contactByUserId = service.contactByUserId;
+const contactListByUser = service.contactListByUser;
+const filterByCommon = service.filterByCommon;
+const get = service.get;
+const list = service.list;
+const remove = service.remove;
+const removeAllByUserId = service.removeAllByUserId;
 export {
-  namedExport0 as add,
-  namedExport1 as confirm,
-  namedExport2 as contactById,
-  namedExport3 as contactByUserId,
-  namedExport4 as contactListByUser,
-  namedExport5 as filterByCommon,
-  namedExport6 as get,
-  namedExport7 as list,
-  namedExport8 as remove,
-  namedExport9 as removeAllByUserId,
+  add as add,
+  confirm as confirm,
+  contactById as contactById,
+  contactByUserId as contactByUserId,
+  contactListByUser as contactListByUser,
+  filterByCommon as filterByCommon,
+  get as get,
+  list as list,
+  remove as remove,
+  removeAllByUserId as removeAllByUserId,
 };
 export default service;

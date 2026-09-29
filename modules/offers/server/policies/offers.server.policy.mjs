@@ -1,4 +1,4 @@
-import memoryPolicy0 from '../../../core/server/services/memory-policy.server.service.js';
+import memoryPolicy from '../../../core/server/services/memory-policy.server.service.js';
 import errorService from '../../../core/server/services/error.server.service.js';
 
 const service = {};
@@ -6,7 +6,7 @@ const service = {};
 /**
  * Module dependencies.
  */
-const acl = memoryPolicy0();
+const acl = memoryPolicy();
 /**
  * Invoke Offers Permissions
  */
@@ -91,9 +91,9 @@ service.isAllowed = function (req, res, next) {
   );
 };
 
-const namedExport0 = service.invokeRolesPolicies;
-const namedExport1 = service.isAllowed;
-export { namedExport0 as invokeRolesPolicies, namedExport1 as isAllowed };
+const invokeRolesPolicies = service.invokeRolesPolicies;
+const isAllowed = service.isAllowed;
+export { invokeRolesPolicies as invokeRolesPolicies, isAllowed as isAllowed };
 export default service;
 
 // Expose the ACL dependency for native ESM boundary stubs.

@@ -268,8 +268,8 @@ service.send = function (statObject, callback) {
   return statService.stat(statObject, callback);
 };
 
-const namedExport0 = service.process;
-const namedExport1 = service.save;
-const namedExport2 = service.send;
-export { namedExport0 as process, namedExport1 as save, namedExport2 as send };
+const process = service.process;
+const save = service.save;
+const send = service.send;
+export { process as process, save as save, send as send };
 export default service;

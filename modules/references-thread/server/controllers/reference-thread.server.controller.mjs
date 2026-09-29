@@ -240,12 +240,12 @@ service.readReferenceThreadById = function (req, res, next, userToId) {
   );
 };
 
-const namedExport0 = service.createReferenceThread;
-const namedExport1 = service.readReferenceThread;
-const namedExport2 = service.readReferenceThreadById;
+const createReferenceThread = service.createReferenceThread;
+const readReferenceThread = service.readReferenceThread;
+const readReferenceThreadById = service.readReferenceThreadById;
 export {
-  namedExport0 as createReferenceThread,
-  namedExport1 as readReferenceThread,
-  namedExport2 as readReferenceThreadById,
+  createReferenceThread as createReferenceThread,
+  readReferenceThread as readReferenceThread,
+  readReferenceThreadById as readReferenceThreadById,
 };
 export default service;
