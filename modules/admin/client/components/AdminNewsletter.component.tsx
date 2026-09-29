@@ -33,6 +33,8 @@ interface CircleChoice {
   label: string;
 }
 
+type ReadCircles = (options: { limit: number }) => Promise<CircleChoice[]>;
+
 interface AudiencePreview {
   count: number;
 }
@@ -149,7 +151,11 @@ export default function AdminNewsletter() {
   useEffect(() => {
     async function loadCircles() {
       try {
-        const circleChoices = await readCircles({ limit: 500 });
+        // The JavaScript API's implementation accepts options, though its
+        // JSDoc currently describes the argument as a number.
+        const circleChoices = await (readCircles as unknown as ReadCircles)({
+          limit: 500,
+        });
         setCircles(circleChoices || []);
       } catch {
         setCirclesErrorMessage(

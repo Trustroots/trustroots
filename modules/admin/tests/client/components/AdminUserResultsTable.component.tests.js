@@ -29,7 +29,7 @@ const users = [
 
 describe('<AdminUserResultsTable />', () => {
   it('keeps sort controls safe when sorting is not supplied', () => {
-    render(<AdminUserResultsTable userResults={users} />);
+    render(<AdminUserResultsTable onSortChange={null} userResults={users} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Name' }));
   });
