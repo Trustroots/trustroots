@@ -2,23 +2,31 @@ const should = require('should');
 const sinon = require('sinon');
 const influx = require('influx');
 const Promise = require('promise');
-const proxyquire = require('proxyquire').noCallThru();
+const winston = require('winston');
 // influx = require('influx'),
 const influxService = require('../../../server/services/influx.server.service');
 const config = require('../../../../../config/config');
 
-const servicePath = '../../../server/services/influx.server.service';
-
 function loadInfluxServiceWithLogger(logger) {
-  return proxyquire(servicePath, {
-    '../../../../config/lib/logger': logger,
-  });
+  sinon.stub(winston.Logger.prototype, 'log').callsFake(logger);
+  return influxService;
 }
 
 describe('Service: influx', function () {
   // restore the stubbed services
   afterEach(function () {
     sinon.restore();
+  });
+
+  it('keeps the CommonJS adapter identical to the ESM default and named exports', async function () {
+    const esmService = await import(
+      '../../../server/services/influx.server.service.mjs'
+    );
+
+    esmService.default.should.equal(influxService);
+    ['stat', '_getClient', '_writeMeasurement'].forEach(function (name) {
+      esmService.default[name].should.equal(esmService[name]);
+    });
   });
 
   context('InfluxDB disabled', function () {
