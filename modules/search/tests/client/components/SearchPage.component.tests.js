@@ -526,6 +526,19 @@ describe('<SearchPage />', () => {
     expect(resultsTab).toHaveAttribute('aria-selected', 'true');
   });
 
+  it('switches between the filters and results tabs directly', () => {
+    renderSearchPage();
+
+    const [filtersTab, resultsTab] = document.querySelectorAll(
+      '.search-sidebar-tabs a',
+    );
+
+    fireEvent.click(filtersTab);
+    expect(filtersTab.parentElement).toHaveClass('active');
+    fireEvent.click(resultsTab);
+    expect(resultsTab.parentElement).toHaveClass('active');
+  });
+
   it('closes the sidebar from the filters back button on small screens', () => {
     renderSearchPage();
 

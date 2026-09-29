@@ -50,7 +50,7 @@ export default class AdminAuditLog extends Component<
                       Boolean(item[type]) && (
                         <div key={type}>
                           <h5>{`${type}: `}</h5>
-                          <Json content={item[type] ?? {}} />
+                          <Json content={item[type] as object} />
                         </div>
                       ),
                   )}
