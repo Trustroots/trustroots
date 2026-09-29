@@ -25,7 +25,10 @@ export default function ForgotPasswordPage() {
       setCredentials({ username: '' });
       setSuccess(response.message);
     } catch (requestError: unknown) {
-      setError(readApiError(requestError).message || null);
+      setError(
+        readApiError(requestError).message ||
+          'We could not confirm whether the recovery request completed. Check your inbox before trying again.',
+      );
     } finally {
       setIsLoading(false);
     }

@@ -1,5 +1,6 @@
-import axios from 'axios';
-import { readApiError } from '@/modules/users/client/utils/api-error';
+import axios, {
+  getErrorResponse,
+} from '../../../core/client/api/http-client.js';
 import type {
   Experience,
   ExperienceMine,
@@ -71,7 +72,7 @@ export async function readMine({
     });
     return experience;
   } catch (err: unknown) {
-    if (readApiError(err).status === 404) {
+    if (getErrorResponse(err)?.status === 404) {
       return null;
     } else {
       throw err;

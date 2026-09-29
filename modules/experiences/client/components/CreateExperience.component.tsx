@@ -50,29 +50,46 @@ export default function CreateExperience({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [sharedOnTime, setSharedOnTime] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [submitError, setSubmitError] = useState('');
+  const [reportError, setReportError] = useState(false);
+  const [isReported, setIsReported] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const experience = await experiencesApi.readMine({
-        userWith: userTo._id,
-      });
-      if (experience) {
-        const authorId =
-          typeof experience.userFrom === 'string'
-            ? experience.userFrom
-            : experience.userFrom?._id;
-        if (authorId === userFrom._id || !!experience.response) {
-          setIsDuplicate(true);
-        } else {
-          setIsDuplicate(false);
-          setSharedOnTime(!experience.public);
-          setRecommend('yes');
+      setIsLoading(true);
+      setLoadError(false);
+      try {
+        const experience = await experiencesApi.readMine({
+          userWith: userTo._id,
+        });
+        if (experience) {
+          const authorId =
+            typeof experience.userFrom === 'string'
+              ? experience.userFrom
+              : experience.userFrom?._id;
+          if (authorId === userFrom._id || !!experience.response) {
+            setIsDuplicate(true);
+          } else {
+            setIsDuplicate(false);
+            setSharedOnTime(!experience.public);
+            setRecommend('yes');
+          }
         }
+      } catch {
+        setLoadError(true);
+      } finally {
+        setIsLoading(false);
       }
-
-      setIsLoading(false);
+        }
+      } catch {
+        setLoadError(true);
+      } finally {
+        setIsLoading(false);
+      }
     })();
-  }, [userFrom, userTo]);
+  }, [userFrom, userTo, loadAttempt]);
 
   const handleChangeInteraction = (
     interactionType: keyof ExperienceInteractions,
@@ -90,8 +107,25 @@ export default function CreateExperience({
     }
   };
 
+  const submitReport = async () => {
+    setReportError(false);
+    try {
+      await supportApi.reportMember(userTo, reportMessage);
+      setIsReported(true);
+    } catch {
+      setReportError(true);
+    }
+  };
+
+  const handleRetryReport = async () => {
+    setIsSubmitting(true);
+    await submitReport();
+    setIsSubmitting(false);
+  };
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    setSubmitError('');
 
     const experience = {
       interactions: { met, host, guest },
@@ -99,17 +133,41 @@ export default function CreateExperience({
       feedbackPublic,
     };
 
-    // save the experience
-    const [savedExperience] = await Promise.all([
-      experiencesApi.create({ ...experience, userTo: userTo._id }),
-      recommend === 'no' && report
-        ? supportApi.reportMember(userTo, reportMessage)
-        : null,
-    ]);
-
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    setIsPublic(savedExperience.public);
+    try {
+      let savedExperience;
+      try {
+        savedExperience = await experiencesApi.create({
+          ...experience,
+          userTo: userTo._id,
+        });
+      } catch (error) {
+        if (error?.response?.status !== 409) {
+          throw error;
+        }
+        // A previous save may have succeeded even if its response was lost.
+        savedExperience = await experiencesApi.readMine({
+          userWith: userTo._id,
+        });
+        if (savedExperience?.userFrom !== userFrom._id) {
+          throw error;
+        }
+      }
+      setIsPublic(savedExperience.public);
+      if (recommend === 'no' && report) {
+        await submitReport();
+      }
+      setIsSubmitted(true);
+    } catch (error) {
+      setSubmitError(
+        error?.response?.data?.details?.feedbackPublic === 'toolong'
+          ? t('Your feedback is too long. Please shorten it and try again.')
+          : t(
+              'We could not save your experience. Your text is still here. Please try again.',
+            ),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const primaryInteraction = (guest && 'guest') || (host && 'host') || 'met';
@@ -205,19 +263,52 @@ export default function CreateExperience({
     return <LoadingIndicator />;
   }
 
+  if (loadError) {
+    return (
+      <div className="alert alert-danger" role="alert">
+        <p>{t('We could not load the experience form. Please try again.')}</p>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => setLoadAttempt(attempt => attempt + 1)}
+        >
+          {t('Try again')}
+        </button>
+      </div>
+    );
+  }
+
   if (isDuplicate) {
     return <DuplicateInfo username={userTo.username} />;
   }
 
   if (isSubmitted) {
-    const isReported = recommend === 'no' && report;
     return (
-      <SubmittedInfo
-        isPublic={isPublic}
-        isReported={isReported}
-        name={userTo.displayName}
-        username={userTo.username}
-      />
+      <div>
+        <SubmittedInfo
+          isPublic={isPublic}
+          isReported={isReported}
+          name={userTo.displayName}
+          username={userTo.username}
+        />
+        {reportError && (
+          <div className="alert alert-warning" role="alert">
+            <p>
+              {t(
+                'Your experience was saved, but your private report could not be sent. Please try sending the report again.',
+              )}
+            </p>
+            <button
+              type="button"
+              className="btn btn-primary"
+              disabled={isSubmitting}
+              onClick={handleRetryReport}
+            >
+              {t('Retry private report')}
+            </button>
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -237,6 +328,11 @@ export default function CreateExperience({
           );
         })}
       </Tabs>
+      {submitError && (
+        <div className="alert alert-danger" role="alert">
+          {submitError}
+        </div>
+      )}
       <StepNavigation
         currentStep={step}
         numberOfSteps={tabs.length}
