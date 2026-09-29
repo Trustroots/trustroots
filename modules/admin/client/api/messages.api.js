@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../../../core/client/api/http-client.js';
 
 export async function getMessages(user1, user2) {
   const { data } = await axios.post('/api/admin/messages', { user1, user2 });
