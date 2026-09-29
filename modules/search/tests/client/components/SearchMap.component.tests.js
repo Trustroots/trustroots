@@ -164,6 +164,7 @@ jest.mock('react-map-gl', () => {
   return {
     __esModule: true,
     default: MockReactMapGL,
+    MapController: jest.requireActual('react-map-gl').MapController,
     FlyToInterpolator: jest.fn(function FlyToInterpolator(options) {
       this.options = options;
     }),

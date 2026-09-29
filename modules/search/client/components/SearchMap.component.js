@@ -23,6 +23,7 @@ import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
 import MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
+import WheelMapController from '@/modules/core/client/components/Map/WheelMapController';
 import SearchMapNoContent from './SearchMapNoContent';
 import LeafletSearchMap from './LeafletSearchMap';
 import { ensureValidLat, ensureValidLng } from '../utils';
@@ -176,6 +177,7 @@ export default function SearchMap({
   const gestureSurfaceRef = useRef(null);
   const viewportChangeRef = useRef(null);
   const [webGLSupported] = useState(isWebGLSupported);
+  const [mapController] = useState(() => new WheelMapController());
   const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
   const [map, setMap] = useState();
   const [hoveredOffer, setHoveredOffer] = useState(false);
@@ -781,6 +783,7 @@ export default function SearchMap({
     <div ref={gestureSurfaceRef}>
       <ReactMapGL
         reuseMaps
+        controller={mapController}
         className="search-map"
         dragRotate={false}
         height="100%"
