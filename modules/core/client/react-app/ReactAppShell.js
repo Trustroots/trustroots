@@ -2,7 +2,6 @@ import {
   Outlet,
   useRouteContext,
   useRouter,
-  useRouterState,
 } from '@tanstack/react-router';
 import React, { useEffect } from 'react';
 
@@ -23,14 +22,8 @@ export default function ReactAppShell() {
   const { build } = useSettings();
   const { navigateOverride } = useRouteContext({ from: '__root__' });
   const { user } = useAuth();
-  const locationHref = useRouterState({
-    select: state => state.location.href,
-  });
   const router = useRouter();
-  const location = new URL(
-    window.location.href || locationHref,
-    window.location.origin,
-  );
+  const location = new URL(window.location.href, window.location.origin);
   const currentPath = `${location.pathname}${location.search}`;
   const route = getReactRoutePolicy(currentPath);
   const shouldScrollToTop = Boolean(route && !route.noScrollingTop);
