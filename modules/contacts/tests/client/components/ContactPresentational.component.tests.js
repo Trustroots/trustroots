@@ -77,4 +77,24 @@ describe('<ContactPresentational />', () => {
     ).toHaveAttribute('href', '/contact-confirm/contact-1');
     expect(screen.getByText('Decline Request')).toBeInTheDocument();
   });
+
+  it('renders contacts whose creation timestamp is unavailable', () => {
+    const { rerender } = render(
+      <ContactPresentational
+        contact={makeContact({ created: undefined })}
+        situation="confirmed"
+        onClickRemove={() => {}}
+      />,
+    );
+    expect(screen.getByRole('link', { name: 'Alice Example' })).toBeInTheDocument();
+
+    rerender(
+      <ContactPresentational
+        contact={makeContact({ confirmed: false, created: undefined })}
+        situation="unconfirmedFromMe"
+        onClickRemove={() => {}}
+      />,
+    );
+    expect(screen.getByText('Contact request sent and pending.')).toBeInTheDocument();
+  });
 });
