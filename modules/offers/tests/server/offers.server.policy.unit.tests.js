@@ -146,6 +146,12 @@ describe('Offers policy unit tests', () => {
     const { policy, mockAcl } = loadPolicy();
     mockAcl.areAnyRolesAllowed.yields(new Error('acl down'));
     const res = mockResponse();
+    let sendCalled = false;
+    const send = res.send;
+    res.send = body => {
+      sendCalled = true;
+      return send(body);
+    };
 
     policy.isAllowed(
       {
@@ -159,6 +165,7 @@ describe('Offers policy unit tests', () => {
 
     res.statusCode.should.equal(500);
     res.body.message.should.equal('Unexpected authorization error');
+    sendCalled.should.be.true();
     done();
   });
 
