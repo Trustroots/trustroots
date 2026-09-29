@@ -4,7 +4,7 @@
  * with mock req/res/next against the test database.
  */
 const mongoose = require('mongoose');
-const proxyquire = require('proxyquire').noCallThru();
+const asyncLib = require('async');
 const sinon = require('sinon');
 
 const config = require('../../../../config/config');
@@ -15,7 +15,6 @@ require('should');
 
 const User = mongoose.model('User');
 const Offer = mongoose.model('Offer');
-const controllerPath = '../../server/controllers/offers.server.controller';
 
 function runHandler(invoke) {
   return new Promise(resolve => {
@@ -141,12 +140,8 @@ describe('Offers controller unit tests', () => {
     });
 
     it('defaults meet offer expiry when max validity config is absent', async () => {
-      const controller = proxyquire(controllerPath, {
-        '../../../../config/config': {
-          ...config,
-          limits: {},
-        },
-      });
+      sinon.stub(config, 'limits').value({});
+      const controller = offersController;
 
       const { res } = await runHandler(res =>
         controller.create(
@@ -161,12 +156,8 @@ describe('Offers controller unit tests', () => {
     });
 
     it('accepts a valid meet offer expiry when max validity config is absent', async () => {
-      const controller = proxyquire(controllerPath, {
-        '../../../../config/config': {
-          ...config,
-          limits: {},
-        },
-      });
+      sinon.stub(config, 'limits').value({});
+      const controller = offersController;
       const validUntil = require('moment')().add(5, 'days').toISOString();
 
       const { res } = await runHandler(res =>
@@ -325,13 +316,8 @@ describe('Offers controller unit tests', () => {
     });
 
     it('ignores a successful final update callback', () => {
-      const controller = proxyquire(controllerPath, {
-        async: {
-          waterfall(tasks, done) {
-            done();
-          },
-        },
-      });
+      sinon.stub(asyncLib, 'waterfall').callsArg(1);
+      const controller = offersController;
       const res = {
         status: sinon.stub().returnsThis(),
         send: sinon.stub(),
@@ -816,13 +802,8 @@ describe('Offers controller unit tests', () => {
     });
 
     it('ignores a successful final getOffer callback', () => {
-      const controller = proxyquire(controllerPath, {
-        async: {
-          waterfall(tasks, done) {
-            done();
-          },
-        },
-      });
+      sinon.stub(asyncLib, 'waterfall').callsArg(1);
+      const controller = offersController;
       const res = {
         status: sinon.stub().returnsThis(),
         send: sinon.stub(),
@@ -996,18 +977,10 @@ describe('Offers controller unit tests', () => {
     });
 
     it('calls next(err) when attaching the offer fails', async () => {
-      const asyncLib = require('async');
-      const failingOffersController = proxyquire(
-        '../../server/controllers/offers.server.controller',
-        {
-          async: {
-            ...asyncLib,
-            waterfall(tasks, callback) {
-              callback(new Error('attach failed'));
-            },
-          },
-        },
-      );
+      sinon
+        .stub(asyncLib, 'waterfall')
+        .callsArgWith(1, new Error('attach failed'));
+      const failingOffersController = offersController;
 
       const { nextCalled, nextArg } = await runHandler((res, next) =>
         failingOffersController.offerById(

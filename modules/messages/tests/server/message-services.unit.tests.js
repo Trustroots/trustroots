@@ -1,5 +1,8 @@
 const should = require('should');
-const proxyquire = require('proxyquire').noCallThru();
+const mongoose = require('mongoose');
+const config = require('../../../../config/config');
+const winston = require('winston');
+const statService = require('../../../stats/server/services/stats.server.service');
 const sinon = require('sinon');
 
 function queryResult(value, err) {
@@ -18,35 +21,17 @@ describe('Message server services unit tests', function () {
 
   describe('message-to-stats service', function () {
     function loadMessageToStatsService(options = {}) {
-      const Message = {
-        findOne: sinon.stub(),
-      };
-      const config = options.config || {
+      const Message = mongoose.model('Message');
+      sinon.stub(Message, 'findOne');
+      const serviceConfig = options.config || {
         influxdb: { enabled: true },
         limits: { longMessageMinimumLength: 10 },
       };
-      const statService = {
-        stat: sinon.stub(),
-      };
-      const log = sinon.spy();
-      const service = proxyquire(
-        '../../server/services/message-to-stats.server.service',
-        {
-          '../../../../config/config': config,
-          '../../../../config/lib/logger': log,
-          '../../../core/server/services/text.server.service': {
-            plainText: content => content,
-          },
-          '../../../stats/server/services/stats.server.service': statService,
-          '../models/message.server.model': {},
-          mongoose: {
-            model: name => {
-              name.should.equal('Message');
-              return Message;
-            },
-          },
-        },
-      );
+      sinon.stub(config, 'influxdb').value(serviceConfig.influxdb);
+      sinon.stub(config, 'limits').value(serviceConfig.limits);
+      sinon.stub(statService, 'stat');
+      const log = sinon.stub(winston.Logger.prototype, 'log');
+      const service = require('../../server/services/message-to-stats.server.service');
 
       return { Message, log, service, statService };
     }
@@ -273,31 +258,14 @@ describe('Message server services unit tests', function () {
 
   describe('message-stat service', function () {
     function loadMessageStatService(options = {}) {
-      const Message = {
-        findOne: sinon.stub(),
-      };
-
-      function MessageStat(data) {
-        Object.assign(this, data);
-      }
-
-      MessageStat.prototype.save = sinon.stub();
-      MessageStat.findOne = sinon.stub();
-      MessageStat.findOneAndUpdate = sinon.stub();
-      MessageStat.find = sinon.stub();
-
-      const service = proxyquire(
-        '../../server/services/message-stat.server.service',
-        {
-          mongoose: {
-            model: name => {
-              if (name === 'Message') return Message;
-              if (name === 'MessageStat') return MessageStat;
-              throw new Error(`Unexpected model: ${name}`);
-            },
-          },
-        },
-      );
+      const Message = mongoose.model('Message');
+      const MessageStat = mongoose.model('MessageStat');
+      sinon.stub(Message, 'findOne');
+      sinon.stub(MessageStat.prototype, 'save');
+      sinon.stub(MessageStat, 'findOne');
+      sinon.stub(MessageStat, 'findOneAndUpdate');
+      sinon.stub(MessageStat, 'find');
+      const service = require('../../server/services/message-stat.server.service');
 
       if (options.messageStatFindOne) {
         MessageStat.findOne.returns(options.messageStatFindOne);
