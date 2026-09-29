@@ -463,7 +463,8 @@ module.exports.init = function (connection) {
   // Initialize Express middleware
   this.initMiddleware(app);
 
-  // Reject cross-origin state changes before session and route middleware.
+  // Reject cross-origin state changes after method override and body parsing,
+  // but before session and route middleware.
   app.use(csrfProtection(config));
 
   // Initialize Express view engine
