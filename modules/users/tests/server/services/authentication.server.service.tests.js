@@ -1,17 +1,19 @@
-const proxyquire = require('proxyquire').noCallThru();
+const sinon = require('sinon');
+const config = require('../../../../../config/config');
 
 require('should');
 
-const authenticationService = proxyquire(
-  '../../../server/services/authentication.server.service',
-  {
-    '../../../../config/config': {
-      illegalStrings: ['trustroots', 'trust', 'roots'],
-    },
-  },
-);
+const authenticationService = require('../../../server/services/authentication.server.service');
 
 describe('Service: authentication', function () {
+  beforeEach(function () {
+    sinon
+      .stub(config, 'illegalStrings')
+      .value(['trustroots', 'trust', 'roots']);
+  });
+  afterEach(function () {
+    sinon.restore();
+  });
   describe('generateEmailToken', function () {
     it('generates a hex token from salt and email', function () {
       const salt = Buffer.from('salt:');
