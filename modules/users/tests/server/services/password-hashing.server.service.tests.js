@@ -1,4 +1,5 @@
 const crypto = require('node:crypto');
+const sinon = require('sinon');
 require('should');
 
 const passwordHashing = require('../../../server/services/password-hashing.server.service');
@@ -11,6 +12,44 @@ describe('Service: password hashing', function () {
     Object.keys(state).sort().should.deepEqual(['active', 'queued']);
     state.active.should.be.a.Number();
     state.queued.should.be.a.Number();
+  });
+
+  it('bounds production work to one active and 64 queued derivations', async function () {
+    let releaseFirst;
+    const scryptStub = sinon
+      .stub(crypto, 'scrypt')
+      .callsFake((password, salt, keyLength, options, callback) => {
+        if (!releaseFirst) {
+          releaseFirst = () => callback(null, Buffer.alloc(keyLength, 1));
+          return;
+        }
+        callback(null, Buffer.alloc(keyLength, 1));
+      });
+
+    try {
+      const requests = Array.from({ length: 66 }, () =>
+        passwordHashing.hashPassword('fixture-password'),
+      );
+      const results = requests.map(request =>
+        request.then(
+          () => null,
+          error => error,
+        ),
+      );
+
+      await new Promise(resolve => setImmediate(resolve));
+      passwordHashing.getKdfState().should.deepEqual({ active: 1, queued: 64 });
+      releaseFirst();
+
+      const settled = await Promise.all(results);
+      settled.filter(Boolean).should.have.length(1);
+      settled
+        .find(Boolean)
+        .should.be.instanceOf(passwordHashing.KdfOverloadedError);
+      passwordHashing.getKdfState().should.deepEqual({ active: 0, queued: 0 });
+    } finally {
+      scryptStub.restore();
+    }
   });
 
   describe('createKdfScheduler', function () {

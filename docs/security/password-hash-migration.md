@@ -15,15 +15,18 @@ shortcut. Future format or cost changes should add a verifier for the old
 format and upgrade it after a successful login.
 
 The current scrypt settings use 128 MiB per active derivation. Each Node
-process admits one derivation at a time and queues at most 16 additional
+process admits one derivation at a time and queues at most 64 additional
 requests. A full queue returns HTTP 503 so the client can retry; it never falls
-back to a cheaper hash. The active-memory requirement is therefore at least
-128 MiB per process, plus Node and application overhead. Multiply that amount
-by the number of application processes on a host, and measure peak memory,
-login latency, and queue rejections under the production process count before
-changing concurrency or work parameters. Keep enough memory headroom for the
-rest of the application and avoid increasing the process count without
-rechecking that budget.
+back to a cheaper hash. At the measured 231 ms per derivation, a full queue can
+add roughly 15 seconds before its last request starts. Waiting requests do not
+allocate scrypt memory, but retain request and password data in process memory.
+The active-memory requirement is therefore at least 128 MiB per process, plus
+Node and application overhead. Multiply that amount by the number of
+application processes on a host, and measure peak memory, login latency, and
+queue rejections under the production process count before changing
+concurrency or work parameters. Keep enough memory headroom for the rest of the
+application and avoid increasing the process count without rechecking that
+budget.
 
 Treat passwords and complete password hashes as sensitive authentication
 data. Never include a submitted password, derived key, salt, or stored hash in
