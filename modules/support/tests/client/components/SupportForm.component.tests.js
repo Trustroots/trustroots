@@ -206,6 +206,10 @@ describe('<SupportForm />', () => {
         /Briefly tell us about your interests, skills, and availability\./,
       ),
     ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Team Guide' })).toHaveAttribute(
+      'href',
+      'https://team.trustroots.org/',
+    );
     fireEvent.change(screen.getByLabelText('Message'), {
       target: { value: 'I can help translate for two hours a week.' },
     });
@@ -237,10 +241,20 @@ describe('<SupportForm />', () => {
     render(<SupportForm user={{}} />);
     const category = screen.getByLabelText('What can we help with?');
     fireEvent.change(category, { target: { value: 'account' } });
+    expect(
+      screen.queryByRole('link', { name: 'Team Guide' }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText('example-member')).not.toBeInTheDocument();
     fireEvent.change(category, { target: { value: 'reportMember' } });
+    expect(
+      screen.queryByRole('link', { name: 'Team Guide' }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText('example-member')).toBeInTheDocument();
     fireEvent.change(category, { target: { value: 'volunteering' } });
+    expect(screen.getByRole('link', { name: 'Team Guide' })).toHaveAttribute(
+      'href',
+      'https://team.trustroots.org/',
+    );
     fireEvent.change(screen.getByLabelText('Message'), {
       target: { value: 'I can help.' },
     });

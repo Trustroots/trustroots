@@ -104,7 +104,7 @@ export default function Team({ user }: { user?: PageUser | null }) {
             <p>
               <a
                 className="btn btn-lg btn-primary"
-                href="https://team.trustroots.org/"
+                href="/support?category=volunteering"
               >
                 {t('Get active!')}
               </a>
