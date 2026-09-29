@@ -82,12 +82,6 @@ export default function CreateExperience({
       } finally {
         setIsLoading(false);
       }
-        }
-      } catch {
-        setLoadError(true);
-      } finally {
-        setIsLoading(false);
-      }
     })();
   }, [userFrom, userTo, loadAttempt]);
 
