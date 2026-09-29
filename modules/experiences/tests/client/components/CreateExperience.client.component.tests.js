@@ -1,12 +1,13 @@
 import React from 'react';
 import {
-  render,
+  render as renderComponent,
   fireEvent,
   waitFor,
   waitForElementToBeRemoved,
   screen,
 } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 
 import * as experiencesApi from '@/modules/experiences/client/api/experiences.api';
 import * as supportApi from '@/modules/support/client/api/support.api';
@@ -15,6 +16,10 @@ import CreateExperience from '@/modules/experiences/client/components/CreateExpe
 
 jest.mock('@/modules/experiences/client/api/experiences.api');
 jest.mock('@/modules/support/client/api/support.api');
+
+const render = component =>
+  renderComponent(<AppProviders>{component}</AppProviders>);
+
 afterEach(() => {
   jest.restoreAllMocks();
   jest.clearAllMocks();
