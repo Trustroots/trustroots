@@ -324,9 +324,9 @@ const REACT_ROUTE_POLICIES = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
-    path: '/admin/blocked-by-me',
+    path: '/admin/staff-blockers',
     requiresRole: ['admin', 'welcome-team'],
-    title: 'Admin - Members who blocked you',
+    title: 'Admin - Staff blockers',
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,

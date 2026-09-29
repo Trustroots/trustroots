@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export async function getMembersWhoBlockedMe() {
-  const { data } = await axios.get('/api/admin/blocked-by-me');
+export async function getStaffBlockers() {
+  const { data } = await axios.get('/api/admin/staff-blockers');
   return data;
 }

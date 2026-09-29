@@ -50,8 +50,8 @@ describe('<AdminHeader />', () => {
     render(<AdminHeader />);
 
     expect(
-      screen.getByRole('link', { name: 'Members who blocked you' }),
-    ).toHaveAttribute('href', '/admin/blocked-by-me');
+      screen.getByRole('link', { name: 'Staff blockers' }),
+    ).toHaveAttribute('href', '/admin/staff-blockers');
   });
 
   it('marks the current admin page as active', () => {

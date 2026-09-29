@@ -36,8 +36,8 @@ export default function AdminHeader() {
       label: 'Acquisition stories',
     },
     {
-      path: 'blocked-by-me',
-      label: 'Members who blocked you',
+      path: 'staff-blockers',
+      label: 'Staff blockers',
     },
     {
       path: 'acquisition-stories/analysis',
@@ -76,7 +76,7 @@ export default function AdminHeader() {
             .filter(
               page =>
                 isAdmin ||
-                (page.path === 'blocked-by-me' && isWelcomeTeam) ||
+                (page.path === 'staff-blockers' && isWelcomeTeam) ||
                 page.path === 'acquisition-stories' ||
                 page.path === 'acquisition-stories/analysis',
             )

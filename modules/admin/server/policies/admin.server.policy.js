@@ -20,7 +20,7 @@ exports.invokeRolesPolicies = () => {
           resources: '/api/admin/acquisition-stories/analysis',
           permissions: ['post'],
         },
-        { resources: '/api/admin/blocked-by-me', permissions: ['get'] },
+        { resources: '/api/admin/staff-blockers', permissions: ['get'] },
       ],
     },
     {
@@ -31,7 +31,7 @@ exports.invokeRolesPolicies = () => {
           resources: '/api/admin/acquisition-stories/analysis',
           permissions: ['post'],
         },
-        { resources: '/api/admin/blocked-by-me', permissions: ['get'] },
+        { resources: '/api/admin/staff-blockers', permissions: ['get'] },
         { resources: '/api/admin/audit-log', permissions: ['get'] },
         { resources: '/api/admin/dashboard', permissions: ['get'] },
         { resources: '/api/admin/messages', permissions: ['post'] },

@@ -477,6 +477,89 @@ describe('Admin users controller unit tests', () => {
     });
   });
 
+  describe('listStaffBlockers', () => {
+    it('lists blockers for every admin and Welcome team member', async () => {
+      const users = utils.generateUsers(4);
+      users[0].roles = ['user', 'admin'];
+      users[1].roles = ['user', 'welcome-team'];
+      users[2].roles = ['user', 'admin'];
+      const saved = await utils.saveUsers(users);
+      saved[3].blocked = [saved[0]._id, saved[1]._id];
+      await saved[3].save();
+
+      const res = mockResponse();
+      await adminUsers.listStaffBlockers(
+        { user: { _id: saved[0]._id, roles: ['admin'] } },
+        res,
+      );
+
+      res.body.length.should.equal(3);
+      res.body.find(staff => staff._id.equals(saved[0]._id)).blockedBy[0]._id
+        .should.deepEqual(saved[3]._id);
+      res.body.find(staff => staff._id.equals(saved[1]._id)).blockedBy[0]._id
+        .should.deepEqual(saved[3]._id);
+      res.body.find(staff => staff._id.equals(saved[2]._id)).blockedBy
+        .should.deepEqual([]);
+    });
+
+    it('limits Welcome team members to blockers of their own account', async () => {
+      const users = utils.generateUsers(3);
+      users[0].roles = ['user', 'welcome-team'];
+      const saved = await utils.saveUsers(users);
+      saved[2].blocked = [saved[0]._id];
+      await saved[2].save();
+
+      const res = mockResponse();
+      await adminUsers.listStaffBlockers(
+        { user: { _id: saved[0]._id, roles: ['welcome-team'] } },
+        res,
+      );
+
+      res.body.length.should.equal(1);
+      res.body[0].blockedBy[0].username.should.equal(saved[2].username);
+    });
+
+    it('returns an empty list when there are no staff records', async () => {
+      sinon.stub(User, 'find').returns({
+        select() {
+          return this;
+        },
+        sort() {
+          return this;
+        },
+        lean: () => Promise.resolve([]),
+      });
+      const res = mockResponse();
+
+      await adminUsers.listStaffBlockers(
+        { user: { _id: new mongoose.Types.ObjectId(), roles: ['admin'] } },
+        res,
+      );
+
+      res.body.should.deepEqual([]);
+    });
+
+    it('returns 400 when staff blockers cannot be loaded', async () => {
+      sinon.stub(User, 'find').returns({
+        select() {
+          return this;
+        },
+        sort() {
+          return this;
+        },
+        lean: () => Promise.reject(new Error('lookup failed')),
+      });
+      const res = mockResponse();
+
+      await adminUsers.listStaffBlockers(
+        { user: { _id: new mongoose.Types.ObjectId(), roles: ['admin'] } },
+        res,
+      );
+
+      res.statusCode.should.equal(400);
+    });
+  });
+
   describe('findPotentialMatches', () => {
     it('returns no leads when every available identifier is too short', async () => {
       const matches = await adminUsers.findPotentialMatches({

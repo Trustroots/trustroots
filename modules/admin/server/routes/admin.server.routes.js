@@ -84,9 +84,9 @@ module.exports = app => {
     .post(adminAuditLog.record, adminUsers.getUser);
 
   app
-    .route('/api/admin/blocked-by-me')
+    .route('/api/admin/staff-blockers')
     .all(adminPolicy.isAllowed)
-    .get(adminAuditLog.record, adminUsers.listMembersWhoBlockedCurrentUser);
+    .get(adminAuditLog.record, adminUsers.listStaffBlockers);
 
   app
     .route('/api/admin/user/change-role')

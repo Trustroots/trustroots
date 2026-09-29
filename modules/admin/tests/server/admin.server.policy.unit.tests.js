@@ -49,7 +49,7 @@ describe('Admin policy unit tests', () => {
         resources: '/api/admin/acquisition-stories/analysis',
         permissions: ['post'],
       },
-      { resources: '/api/admin/blocked-by-me', permissions: ['get'] },
+      { resources: '/api/admin/staff-blockers', permissions: ['get'] },
     ]);
     policies[0].roles.should.deepEqual(['admin']);
     policies[0].allows
@@ -57,7 +57,7 @@ describe('Admin policy unit tests', () => {
       .should.containEql('/api/admin/acquisition-stories');
     policies[0].allows
       .map(allow => allow.resources)
-      .should.containEql('/api/admin/blocked-by-me');
+      .should.containEql('/api/admin/staff-blockers');
     policies[0].allows
       .map(allow => allow.resources)
       .should.containEql('/api/admin/dashboard');

@@ -16,7 +16,7 @@ test.describe('admin moderation inspection flows', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
   });
 
-  test('admin can see members who have blocked their account', async ({
+  test('admin can see members who have blocked any staff account', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.support', [
@@ -24,16 +24,24 @@ test.describe('admin moderation inspection flows', () => {
     ]);
     const member = await findUserByUsername(SEEDED_MEMBERS[0].username);
     const admin = await findUserByUsername(SEEDED_ADMIN.username);
-    await withE2eDb(db =>
-      db.collection('users').updateOne(
+    const welcomer = await findUserByUsername(SEEDED_MEMBERS[1].username);
+    await withE2eDb(async db => {
+      await db.collection('users').updateOne(
+        { _id: welcomer._id },
+        { $addToSet: { roles: 'welcome-team' } },
+      );
+      await db.collection('users').updateOne(
         { _id: member._id },
-        { $addToSet: { blocked: admin._id } },
-      ),
-    );
+        { $addToSet: { blocked: { $each: [admin._id, welcomer._id] } } },
+      );
+    });
 
-    await page.goto('/admin/blocked-by-me');
+    await page.goto('/admin/staff-blockers');
     await expect(
       page.getByText(SEEDED_MEMBERS[0].username, { exact: false }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(SEEDED_MEMBERS[1].username, { exact: false }),
     ).toBeVisible();
   });
 

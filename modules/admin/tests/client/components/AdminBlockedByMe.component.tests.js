@@ -2,13 +2,27 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import AdminBlockedByMe from '@/modules/admin/client/components/AdminBlockedByMe.component';
-import { getMembersWhoBlockedMe } from '@/modules/admin/client/api/blocked-by-me.api';
+import { getStaffBlockers } from '@/modules/admin/client/api/blocked-by-me.api';
 
 jest.mock('@/modules/admin/client/api/blocked-by-me.api');
+jest.mock('@/modules/core/client/services/client-runtime', () => ({
+  getCurrentUser: () => ({ roles: ['welcome-team'] }),
+}));
 
 it('shows the members who blocked the signed-in staff member', async () => {
-  getMembersWhoBlockedMe.mockResolvedValueOnce([
-    { _id: 'member-1', username: 'sample-member', displayName: 'Sample Member' },
+  getStaffBlockers.mockResolvedValueOnce([
+    {
+      _id: 'staff-1',
+      username: 'staff-member',
+      displayName: 'Staff Member',
+      blockedBy: [
+        {
+          _id: 'member-1',
+          username: 'sample-member',
+          displayName: 'Sample Member',
+        },
+      ],
+    },
   ]);
 
   render(<AdminBlockedByMe />);
@@ -19,7 +33,9 @@ it('shows the members who blocked the signed-in staff member', async () => {
 });
 
 it('shows an empty state when nobody has blocked the staff member', async () => {
-  getMembersWhoBlockedMe.mockResolvedValueOnce([]);
+  getStaffBlockers.mockResolvedValueOnce([
+    { _id: 'staff-1', username: 'staff', blockedBy: [] },
+  ]);
 
   render(<AdminBlockedByMe />);
 

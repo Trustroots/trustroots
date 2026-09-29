@@ -491,14 +491,40 @@ exports.getUser = async (req, res) => {
 };
 
 /** Return members who have blocked the signed-in staff member. */
-exports.listMembersWhoBlockedCurrentUser = async (req, res) => {
+exports.listStaffBlockers = async (req, res) => {
   try {
-    const members = await User.find({ blocked: req.user._id })
-      .select('username displayName')
-      .sort({ username: 1 })
-      .lean();
+    const staffMembers = req.user.roles.includes('admin')
+      ? await User.find({ roles: { $in: ['admin', 'welcome-team'] } })
+          .select('username displayName')
+          .sort({ username: 1 })
+          .lean()
+      : await User.find({ _id: req.user._id })
+          .select('username displayName')
+          .lean();
+    const staffIds = staffMembers.map(staff => staff._id);
+    const blockers = staffIds.length
+      ? await User.find({ blocked: { $in: staffIds } })
+          .select('username displayName blocked')
+          .sort({ username: 1 })
+          .lean()
+      : [];
 
-    res.send(members);
+    res.send(
+      staffMembers.map(staff => ({
+        _id: staff._id,
+        username: staff.username,
+        displayName: staff.displayName,
+        blockedBy: blockers
+          .filter(blocker =>
+            (blocker.blocked || []).some(id => id.equals(staff._id)),
+          )
+          .map(({ _id, username, displayName }) => ({
+            _id,
+            username,
+            displayName,
+          })),
+      })),
+    );
   } catch (err) {
     log('error', 'Failed to load members who blocked staff.', { error: err });
     handleAdminApiError(res, err);

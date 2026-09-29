@@ -186,7 +186,7 @@ const renderByPath = {
   '/about': renderWithUser(HomeRoute),
   '/admin': () => <Admin />,
   '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
-  '/admin/blocked-by-me': () => <AdminBlockedByMe />,
+  '/admin/staff-blockers': () => <AdminBlockedByMe />,
   '/admin/acquisition-stories/analysis': () => (
     <AdminAcquisitionStoriesAnalysis />
   ),
