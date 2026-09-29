@@ -1,5 +1,7 @@
 const should = require('should');
-const proxyquire = require('proxyquire').noCallThru();
+const sinon = require('sinon');
+const agenda = require('../../../../../config/lib/agenda');
+const nunjucks = require('nunjucks');
 const config = require('../../../../../config/config');
 
 let emailService;
@@ -7,20 +9,36 @@ let emailService;
 describe('Service: email', function () {
   let jobs;
 
-  function loadEmailService(stubs = {}) {
-    jobs = [];
-    const agenda = {
-      now(type, data) {
-        jobs.push(JSON.parse(JSON.stringify({ type, data })));
-        return Promise.resolve({ attrs: { name: type } });
-      },
-    };
+  const sandbox = sinon.createSandbox();
 
-    return proxyquire('../../../server/services/email.server.service', {
-      '../../../../config/lib/agenda': agenda,
-      ...stubs,
-    });
+  function loadEmailService(stubs = {}) {
+    sandbox.restore();
+    jobs = [];
+    const enqueue = stubs['../../../../config/lib/agenda'];
+    sandbox.stub(agenda, 'now').callsFake(
+      enqueue
+        ? enqueue.now
+        : (type, data) => {
+            jobs.push(JSON.parse(JSON.stringify({ type, data })));
+            return Promise.resolve({ attrs: { name: type } });
+          },
+    );
+    const overrides = stubs['../../../../config/config'];
+    if (overrides) {
+      for (const key of Object.keys(overrides)) {
+        if (overrides[key] !== config[key])
+          sandbox.stub(config, key).value(overrides[key]);
+      }
+    }
+    const render = stubs['../../../../config/lib/render'];
+    if (render)
+      sandbox.stub(nunjucks.Environment.prototype, 'render').callsFake(render);
+    return require('../../../server/services/email.server.service');
   }
+
+  afterEach(function () {
+    sandbox.restore();
+  });
 
   beforeEach(function () {
     emailService = loadEmailService();
@@ -35,9 +53,11 @@ describe('Service: email', function () {
         },
       },
     });
-    emailService.renderEmail = function (templateName, params, callback) {
-      callback(null, { to: { address: 'member@example.test' } });
-    };
+    sandbox
+      .stub(emailService, 'renderEmail')
+      .callsFake(function (templateName, params, callback) {
+        callback(null, { to: { address: 'member@example.test' } });
+      });
 
     emailService.renderEmailAndSend('example', {}, function (err, job) {
       err.should.equal(enqueueError);

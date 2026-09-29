@@ -2111,6 +2111,7 @@ const features = [
     requiredScenarios: [
       'Blocked profile actions are hidden or disabled.',
       'Blocked users cannot start or continue conversations where prohibited.',
+      'Blocked members receive default avatars while blockers can still unblock.',
     ],
     relatedSpecs: [],
   },
