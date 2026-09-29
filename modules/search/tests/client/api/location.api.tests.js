@@ -7,7 +7,9 @@ import {
 } from '@/modules/search/client/api/location.api';
 import { getBounds, getCenter } from '@/modules/search/client/utils/location';
 
-jest.mock('axios');
+jest.mock('axios', () =>
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+);
 jest.mock('@/modules/core/client/utils/map', () => ({
   getMapBoxToken: jest.fn(),
 }));

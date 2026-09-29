@@ -5,7 +5,9 @@ import '@testing-library/jest-dom';
 import axios from 'axios';
 import LocationInput from '@/modules/core/client/components/LocationInput.component';
 
-jest.mock('axios');
+jest.mock('axios', () =>
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+);
 
 jest.mock('@/modules/core/client/react-app/AppProviders', () => ({
   useSettings: jest.fn(() => ({
