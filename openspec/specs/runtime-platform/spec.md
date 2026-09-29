@@ -154,6 +154,10 @@ Migrated spam, upload, statistics and Influx services SHALL expose named ESM fun
 
 Server implementations in messages, contacts, experiences, offers, references-thread, tribes SHALL use native ESM while retaining existing synchronous CommonJS entry paths, export shapes and registration behaviour during incremental migration.
 
+### Requirement: Administration server ESM preserves registration and consumers
+
+Server implementations in admin, statistics, support, pages SHALL use native ESM while retaining existing synchronous CommonJS entry paths, export shapes and registration behaviour during incremental migration.
+
 #### Scenario: Existing bootstrap loads migrated modules
 
 - **WHEN** existing application bootstrap discovers and loads models, configuration, policies, routes or jobs in these domains
