@@ -51,6 +51,15 @@ describe('ForgotPasswordPage', () => {
     expect(await screen.findByText('Unknown user.')).toBeInTheDocument();
   });
 
+  it('keeps the form usable when the rejected value has no API message', async () => {
+    authApi.forgotPassword.mockRejectedValue(null);
+
+    render(<ForgotPasswordPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
+
+    await waitFor(() => expect(screen.getByLabelText('Email or username')).toBeEnabled());
+  });
+
   it('updates the username before submitting', async () => {
     authApi.forgotPassword.mockResolvedValue({ message: 'Sent.' });
     render(<ForgotPasswordPage />);

@@ -34,3 +34,18 @@ The project SHALL include client TypeScript and TSX in linting, test discovery, 
 
 - **WHEN** client coverage runs
 - **THEN** that module remains in the coverage calculation
+
+### Requirement: Member-facing client modules use strict TypeScript
+The users, contacts, tribes, experiences and references-thread client modules SHALL use `.ts` or `.tsx` for all migrated production modules, with meaningful types that pass the project TypeScript checks without suppressing diagnostics.
+
+#### Scenario: Migrated member modules are type-checked
+- **WHEN** the project TypeScript check runs
+- **THEN** every migrated production module is included in the check and passes without blanket `any` types or TypeScript suppression comments
+
+#### Scenario: Existing member-facing imports remain compatible
+- **WHEN** existing client modules import a migrated module using its prior extensionless or explicit `.js` path
+- **THEN** client bundling and tests resolve the converted module with the same runtime behaviour
+
+#### Scenario: Member-facing client coverage stays complete
+- **WHEN** client tests and full client coverage run after migration
+- **THEN** migrated functionality remains covered and the client coverage requirement stays at 100 percent

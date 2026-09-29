@@ -62,6 +62,23 @@ describe('<Contact />', () => {
     ).toBeInTheDocument();
   });
 
+  it('accepts embedded member objects in contact references', () => {
+    render(
+      <Contact
+        contact={
+          makeContact({
+            confirmed: false,
+            userFrom: { _id: 'someone-else' },
+            userTo: { _id: 'me' },
+          })
+        }
+        selfId="me"
+      />,
+    );
+
+    expect(screen.getByText('You received a contact request.')).toBeInTheDocument();
+  });
+
   it('opens the remove modal when clicking revoke', () => {
     render(
       <Contact

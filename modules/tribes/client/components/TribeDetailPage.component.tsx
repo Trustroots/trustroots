@@ -10,23 +10,25 @@ import * as api from '../api/tribes.api';
 import type { MembershipUpdate, TribeSummary } from '../api/tribes.api';
 import type { UserProfile } from '@/modules/users/client/types';
 
+export function getTribeHeaderBackgroundStyle(tribe: TribeSummary) {
+  const style = getCircleBackgroundStyle(tribe, '1400x900');
+
+  return css`
+    ${style.backgroundImage
+      ? `background-image: ${style.backgroundImage};`
+      : ''}
+    ${style.backgroundColor
+      ? `background-color: ${style.backgroundColor};`
+      : ''}
+  `;
+}
+
 const Header = styled.section.attrs({
   className: 'board tribe-image tribe-header' as string,
 })<{ tribe: TribeSummary }>`
   &&& {
     position: relative;
-    ${({ tribe }) => {
-      if (!tribe) return '';
-      const style = getCircleBackgroundStyle(tribe, '1400x900');
-      return css`
-        ${style.backgroundImage
-          ? `background-image: ${style.backgroundImage};`
-          : ''}
-        ${style.backgroundColor
-          ? `background-color: ${style.backgroundColor};`
-          : ''}
-      `;
-    }}
+    ${({ tribe }) => getTribeHeaderBackgroundStyle(tribe)}
   }
 `;
 

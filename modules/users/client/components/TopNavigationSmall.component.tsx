@@ -101,7 +101,7 @@ export default function TopNavigationSmall({
     setShowRemoveModal(false);
 
     // Notify the parent about the removal.
-    if (contact) onContactRemoved(contact);
+    onContactRemoved(contact as ContactRecord);
   }
 
   return (

@@ -197,6 +197,16 @@ describe('SignupPage', () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
+  it('renders circle suggestions when signup leaves the current user unavailable', async () => {
+    authApi.signup.mockResolvedValue(null);
+
+    renderPage();
+    fillStepOne();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    expect(await screen.findByRole('button', { name: 'Join Cyclists' })).toBeVisible();
+  });
+
   it('joins a referred circle after successful signup', async () => {
     getCurrentRouteParams.mockReturnValue({ tribe: 'hitchhikers' });
     tribesApi.get.mockResolvedValue({
@@ -231,6 +241,25 @@ describe('SignupPage', () => {
     expect(
       await screen.findByRole('button', { name: 'Join Hitchhikers' }),
     ).toBeVisible();
+  });
+
+  it('renders a referred circle when no current user is available', async () => {
+    getCurrentRouteParams.mockReturnValue({ tribe: 'hitchhikers' });
+    tribesApi.get.mockResolvedValue({
+      _id: 'tribe-ref',
+      label: 'Hitchhikers',
+      slug: 'hitchhikers',
+      count: 5,
+    });
+    authApi.signup.mockResolvedValue(null);
+    tribesApi.join.mockResolvedValue({ user: null });
+
+    renderPage();
+    await screen.findByText('+ Circle Hitchhikers');
+    fillStepOne();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    expect(await screen.findByRole('button', { name: 'Join Hitchhikers' })).toBeVisible();
   });
 
   it('keeps the signup user when a referred circle join has no user payload', async () => {
