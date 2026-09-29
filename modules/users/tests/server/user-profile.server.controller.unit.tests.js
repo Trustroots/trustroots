@@ -5,9 +5,9 @@
  */
 const crypto = require('crypto');
 const mongoose = require('mongoose');
-const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 
+require('../../server/models/user.server.model');
 const profileController = require('../../server/controllers/users.profile.server.controller');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const should = require('should');
@@ -53,6 +53,17 @@ function runHandler(invoke) {
 const controllerPath =
   '../../server/controllers/users.profile.server.controller';
 const emailServicePath = '../../../core/server/services/email.server.service';
+
+function stubControllerDependencies(controllerPath, dependencyStubs) {
+  for (const [dependencyPath, methods] of Object.entries(dependencyStubs)) {
+    const dependency = require(dependencyPath);
+    for (const [method, implementation] of Object.entries(methods)) {
+      sinon.stub(dependency, method).callsFake(implementation);
+    }
+  }
+
+  return require(controllerPath);
+}
 
 describe('Profile controller unit tests', () => {
   afterEach(() => {
@@ -281,7 +292,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('ignores a successful final waterfall callback', () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         async: {
           waterfall(steps, done) {
             done();
@@ -376,7 +387,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('returns 400 when sending the removal email fails', async () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         [emailServicePath]: {
           sendRemoveProfile: (user, cb) => cb(new Error('smtp down')),
         },
@@ -406,7 +417,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('ignores a successful final removal initialization callback', () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         async: {
           waterfall(steps, done) {
             done();
@@ -471,7 +482,7 @@ describe('Profile controller unit tests', () => {
     it('returns 400 when profile removal fails in the waterfall', async () => {
       const messageHandlerPath =
         '../../../messages/server/controllers/messages.server.controller';
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         [messageHandlerPath]: {
           markAllMessagesToUserNotified: (userId, cb) =>
             cb(new Error('messages failed')),
@@ -503,7 +514,7 @@ describe('Profile controller unit tests', () => {
         '../../../offers/server/controllers/offers.server.controller';
       const contactHandlerPath =
         '../../../contacts/server/controllers/contacts.server.controller';
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         [emailServicePath]: {
           sendRemoveProfileConfirmed: (user, cb) =>
             cb(new Error('confirm email failed')),
@@ -538,7 +549,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('ignores a successful final removal callback', () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         async: {
           waterfall(steps, done) {
             done();
@@ -810,7 +821,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('passes unexpected middleware errors to next', async () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         async: {
           waterfall(steps, done) {
             done(new Error('unexpected profile middleware failure'));
@@ -832,7 +843,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('continues when reply statistics lookup fails', async () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         '../../../messages/server/services/message-stat.server.service': {
           readFormattedMessageStatsOfUser(userId, now, cb) {
             cb(new Error('stats unavailable'));
@@ -858,7 +869,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('ignores a successful final username middleware callback', () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         async: {
           waterfall(steps, done) {
             done();

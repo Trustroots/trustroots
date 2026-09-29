@@ -1,4 +1,5 @@
-const proxyquire = require('proxyquire').noCallThru();
+const sinon = require('sinon');
+const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
 const languagesObject = require('../../../../config/languages/languages.json');
 const languagesArray = require('../../../../config/languages/languages-array.json');
 const deprecatedLanguages = require('../../../../config/languages/deprecated');
@@ -9,14 +10,7 @@ const sanitizeOwnProfile = user => ({
   sanitized: true,
   username: user.username,
 });
-const coreController = proxyquire(
-  '../../server/controllers/core.server.controller',
-  {
-    '../../../users/server/controllers/users.profile.server.controller': {
-      sanitizeOwnProfile,
-    },
-  },
-);
+const coreController = require('../../server/controllers/core.server.controller');
 
 /**
  * Minimal Express-like response mock for unit-testing controller actions
@@ -69,6 +63,13 @@ function mockResponse(acceptType) {
 }
 
 describe('Controller: core', function () {
+  beforeEach(function () {
+    sinon.stub(userProfile, 'sanitizeOwnProfile').callsFake(sanitizeOwnProfile);
+  });
+
+  afterEach(function () {
+    sinon.restore();
+  });
   describe('renderIndex', function () {
     it('marks the signup page as an invite', function () {
       const res = mockResponse();
