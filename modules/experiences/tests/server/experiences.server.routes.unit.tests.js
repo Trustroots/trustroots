@@ -12,6 +12,7 @@ describe('Experiences routes unit tests', () => {
       },
       '../policies/experiences.server.policy': {
         isAllowed: (req, res, next) => next(),
+        isAllowedChange: (req, res, next) => next(),
       },
       '../controllers/experiences.server.controller': {
         create: (req, res) => res.status(200).send({ action: 'create' }),

@@ -151,6 +151,11 @@ const REACT_ROUTE_POLICIES = [
     noScrollingTop: true,
   },
   {
+    path: '/experiences/:id/change',
+    title: 'Change an Experience',
+    requiresAuth: true,
+  },
+  {
     path: '/profile/:username/experiences',
     title: 'Experiences',
     requiresAuth: true,
@@ -358,6 +363,11 @@ const REACT_ROUTE_POLICIES = [
     ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/reference-threads',
     title: 'Admin - Reference threads',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/experience-changes',
+    title: 'Admin - Experience changes',
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,

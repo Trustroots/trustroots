@@ -253,6 +253,7 @@ export const getExperienceStatistics = function (since, callback) {
       experiences: done => {
         Experience.aggregate(
           [
+            { $match: { removedAt: { $exists: false } } },
             {
               $group: {
                 _id: null,
@@ -313,6 +314,7 @@ export const getExperienceStatistics = function (since, callback) {
               $match: {
                 recommend: 'yes',
                 'interactions.met': true,
+                removedAt: { $exists: false },
               },
             },
             {

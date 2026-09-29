@@ -23,6 +23,8 @@ import AdminAuditLog from '@/modules/admin/client/components/AdminAuditLog.compo
 import AdminMessages from '@/modules/admin/client/components/AdminMessages.component';
 import AdminNewsletter from '@/modules/admin/client/components/AdminNewsletter.component';
 import AdminReferenceThreads from '@/modules/admin/client/components/AdminReferenceThreads.component';
+import AdminExperienceChanges from '@/modules/admin/client/components/AdminExperienceChanges';
+import ExperienceChangePage from '@/modules/experiences/client/components/ExperienceChangePage';
 import AdminSearchUsers from '@/modules/admin/client/components/AdminSearchUsers.component';
 import AdminThreads from '@/modules/admin/client/components/AdminThreads.component';
 import AdminUser from '@/modules/admin/client/components/AdminUser.component';
@@ -181,6 +183,14 @@ function renderCircleDetail({ user, params }) {
   });
 }
 
+function renderExperienceChange({ params }) {
+  return <ExperienceChangePage id={params.id} />;
+}
+
+renderExperienceChange.propTypes = {
+  params: PropTypes.shape({ id: PropTypes.string.isRequired }).isRequired,
+};
+
 const renderByPath = {
   '/': renderWithUser(HomeRoute),
   '/about': renderWithUser(HomeRoute),
@@ -194,6 +204,7 @@ const renderByPath = {
   '/admin/messages': () => <AdminMessages />,
   '/admin/newsletter': () => <AdminNewsletter />,
   '/admin/reference-threads': () => <AdminReferenceThreads />,
+  '/admin/experience-changes': () => <AdminExperienceChanges />,
   '/admin/search-users': () => <AdminSearchUsers />,
   '/admin/threads': () => <AdminThreads />,
   '/admin/user': () => <AdminUser />,
@@ -224,6 +235,7 @@ const renderByPath = {
   '/password/reset/:token': () => <ResetPasswordPage />,
   '/privacy': () => <Privacy />,
   '/profile-signup': () => <ProfileSignupPage />,
+  '/experiences/:id/change': renderExperienceChange,
   '/profile/:username/experiences/new': renderWithUser(ProfilePage),
   '/profile/:username/experiences': renderWithUser(ProfilePage),
   '/profile/:username/accommodation': renderWithUser(ProfilePage),

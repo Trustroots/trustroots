@@ -8,6 +8,7 @@ import adminUsers from '../controllers/admin.users.server.controller.js';
 import adminDashboard from '../controllers/admin.dashboard.server.controller.js';
 import adminNotes from '../controllers/admin.notes.server.controller.js';
 import adminReferenceThreads from '../controllers/admin.reference-threads.server.controller.js';
+import adminExperienceChanges from '../controllers/admin.experience-changes.server.controller.js';
 
 /**
  * Module dependencies.
@@ -98,6 +99,26 @@ const registerRoutes = app => {
     .route('/api/admin/reference-threads')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminReferenceThreads.list);
+
+  app
+    .route('/api/admin/experiences')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminExperienceChanges.findExperiences);
+
+  app
+    .route('/api/admin/experiences/:id/change-links')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminExperienceChanges.issueLink);
+
+  app
+    .route('/api/admin/experience-change-requests')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminExperienceChanges.listRequests);
+
+  app
+    .route('/api/admin/experience-change-requests/:id/decision')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminExperienceChanges.decide);
 
   app
     .route('/api/admin/newsletter-subscribers/split')
