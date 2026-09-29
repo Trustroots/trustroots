@@ -60,10 +60,10 @@ service.appendUTMParams = function (trackUrl, utmParams) {
     !utmParams.campaign
   ) {
     log('error', 'utmTrackify() missing one of the required variables.', {
-      trackUrl,
-      utmParamsSource: utmParams && utmParams.source,
-      utmParamsMedium: utmParams && utmParams.medium,
-      utmParamsCampaign: utmParams && utmParams.campaign,
+      hasTrackUrl: Boolean(trackUrl),
+      hasSource: Boolean(utmParams && utmParams.source),
+      hasMedium: Boolean(utmParams && utmParams.medium),
+      hasCampaign: Boolean(utmParams && utmParams.campaign),
     });
     return trackUrl || '';
   }
