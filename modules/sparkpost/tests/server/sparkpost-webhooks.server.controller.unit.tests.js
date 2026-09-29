@@ -1,4 +1,7 @@
-const proxyquire = require('proxyquire').noCallThru();
+const config = require('../../../../config/config');
+const winston = require('winston');
+const statService = require('../../../stats/server/services/stats.server.service');
+const controller = require('../../server/controllers/sparkpost-webhooks.server.controller');
 const sinon = require('sinon');
 const should = require('should');
 
@@ -38,26 +41,17 @@ function authHeader(username, password) {
 }
 
 function loadController(options = {}) {
-  const stat = sinon.stub().callsFake((statsObject, callback) => {
-    callback(options.statError || null);
+  const stat = sinon
+    .stub(statService, 'stat')
+    .callsFake((statsObject, callback) => {
+      callback(options.statError || null);
+    });
+  const log = sinon.stub(winston.Logger.prototype, 'log');
+  sinon.stub(config, 'sparkpostWebhook').value({
+    enabled: options.enabled !== false,
+    password: 'secret',
+    username: 'sparkpost',
   });
-  const log = sinon.spy();
-  const config = {
-    sparkpostWebhook: {
-      enabled: options.enabled !== false,
-      password: 'secret',
-      username: 'sparkpost',
-    },
-  };
-
-  const controller = proxyquire(
-    '../../server/controllers/sparkpost-webhooks.server.controller',
-    {
-      '../../../../config/config': config,
-      '../../../../config/lib/logger': log,
-      '../../../stats/server/services/stats.server.service': { stat },
-    },
-  );
 
   return { controller, log, stat };
 }
@@ -69,6 +63,7 @@ function processEvent(controller, event) {
 }
 
 describe('SparkPost webhook controller unit tests', () => {
+  afterEach(() => sinon.restore());
   it('rejects non-array webhook batches', async () => {
     const { controller } = loadController();
     const res = mockResponse();
@@ -92,9 +87,11 @@ describe('SparkPost webhook controller unit tests', () => {
   it('responds 200 even when metric writing reports an error', async () => {
     const { controller } = loadController();
     const res = mockResponse();
-    controller.processAndSendMetrics = (event, callback) => {
-      callback(new Error('metric write failed'));
-    };
+    sinon
+      .stub(controller, 'processAndSendMetrics')
+      .callsFake((event, callback) => {
+        callback(new Error('metric write failed'));
+      });
 
     controller.receiveBatch({ body: [{ msys: { message_event: {} } }] }, res);
     await res.waitForResponse();
