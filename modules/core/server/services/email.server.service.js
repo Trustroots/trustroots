@@ -511,6 +511,12 @@ exports.sendExperienceNotificationFirst = function (
   userTo,
   callback,
 ) {
+  if (
+    userRolesService.hasRestrictedMessagingRole(userFrom) ||
+    userRolesService.hasRestrictedMessagingRole(userTo)
+  ) {
+    return callback();
+  }
   const campaign = 'experience-notification-first';
   const userFromProfileUrl = `${url}/profile/${userFrom.username}`;
   const giveExperienceUrl = `${url}/profile/${userFrom.username}/experiences/new`;
@@ -550,6 +556,12 @@ exports.sendExperienceNotificationSecond = function (
   experience,
   callback,
 ) {
+  if (
+    userRolesService.hasRestrictedMessagingRole(userFrom) ||
+    userRolesService.hasRestrictedMessagingRole(userTo)
+  ) {
+    return callback();
+  }
   const campaign = 'experience-notification-second';
   const seeExperiencesUrl = `${url}/profile/${userTo.username}/experiences#${experience._id}`;
   const userFromProfileUrl = `${url}/profile/${userFrom.username}`;

@@ -824,6 +824,35 @@ describe('Service: email', function () {
     });
   });
 
+  for (const role of ['suspended', 'shadowban']) {
+    for (const restrictedParty of ['sender', 'recipient']) {
+      it(`does not send experience notifications with a ${role} ${restrictedParty}`, async function () {
+        const sender = {
+          roles: restrictedParty === 'sender' ? [role] : ['user'],
+        };
+        const recipient = {
+          roles: restrictedParty === 'recipient' ? [role] : ['user'],
+        };
+        await new Promise(resolve =>
+          emailService.sendExperienceNotificationFirst(
+            sender,
+            recipient,
+            resolve,
+          ),
+        );
+        await new Promise(resolve =>
+          emailService.sendExperienceNotificationSecond(
+            sender,
+            recipient,
+            {},
+            resolve,
+          ),
+        );
+        jobs.should.have.length(0);
+      });
+    }
+  }
+
   it('can send experience notification emails', function (done) {
     const userFrom = {
       username: 'sender',

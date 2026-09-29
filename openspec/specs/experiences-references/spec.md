@@ -22,6 +22,23 @@ another member where the experience feature is available.
 - **WHEN** a member attempts to create an experience about themselves
 - **THEN** the system rejects the request
 
+#### Scenario: Shadowbanned member submits an experience
+
+- **WHEN** a shadowbanned member submits a valid experience for an active member
+- **THEN** the system saves their submission privately without notifying the recipient
+- **AND** does not reveal or publish the recipient's reciprocal experience
+- **AND** hides the submission from the recipient according to the author visibility rule
+
+#### Scenario: Experience recipient is restricted
+
+- **WHEN** a member submits an experience addressed to a suspended or shadowbanned member
+- **THEN** the system reports that the recipient was not found and saves no experience
+
+#### Scenario: Experience notification involves a restricted member
+
+- **WHEN** either party to an experience notification is suspended or shadowbanned
+- **THEN** the system sends no notification email
+
 ### Requirement: Experience visibility and detail
 
 The system SHALL display experience counts and details according to the

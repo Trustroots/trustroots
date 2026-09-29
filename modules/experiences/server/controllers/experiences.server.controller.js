@@ -6,10 +6,11 @@ const textService = require('../../../core/server/services/text.server.service')
 const errorService = require('../../../core/server/services/error.server.service');
 const emailService = require('../../../core/server/services/email.server.service');
 const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
+const userRolesService = require('../../../users/server/services/user-roles.server.service');
 const Contact = mongoose.model('Contact');
 const Experience = mongoose.model('Experience');
 const User = mongoose.model('User');
-const visibleAuthorRoles = { $nin: ['shadowban', 'suspended'] };
+const visibleAuthorRoles = { $nin: userRolesService.restrictedMessagingRoles };
 
 /**
  * Return one confirmed, public contact for whom the authenticated member has
@@ -275,7 +276,11 @@ async function isUserToPublic(req) {
 
   // Can't create an experience to a nonexistent user
   // Can't create an experience to a nonpublic user
-  if (!userTo || !userTo.public) {
+  if (
+    !userTo ||
+    !userTo.public ||
+    userRolesService.hasRestrictedMessagingRole(userTo)
+  ) {
     throw new ResponseError({
       status: 404,
       body: {
@@ -347,6 +352,9 @@ exports.create = async function (req, res, next) {
   // each of the following functions throws a special response error when it wants to respond
   // this special error gets processed within the catch {}
   const selfId = req.user._id;
+  const senderIsRestricted = userRolesService.hasRestrictedMessagingRole(
+    req.user,
+  );
   try {
     // Synchronous validation of the request data consistency
     validate(validateCreate, req);
@@ -359,10 +367,14 @@ exports.create = async function (req, res, next) {
 
     // Check if the opposite direction experience exists
     // when it exists, we will want to make both experiences public
-    const otherExperience = await Experience.findOne({
-      userFrom: req.body.userTo,
-      userTo: selfId,
-    }).exec();
+    // Keep a restricted author's submission private without publishing or
+    // disclosing the recipient's experience in the opposite direction.
+    const otherExperience = senderIsRestricted
+      ? null
+      : await Experience.findOne({
+          userFrom: req.body.userTo,
+          userTo: selfId,
+        }).exec();
 
     // when the other experience is public, this one can only have value of recommend: yes
     validateReplyToPublicExperience(otherExperience, req);

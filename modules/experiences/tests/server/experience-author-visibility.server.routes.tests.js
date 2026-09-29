@@ -3,10 +3,12 @@ const request = require('supertest');
 const should = require('should');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const express = require('../../../../config/lib/express');
+const testutils = require('../../../../testutils/server/server.testutil');
 
 const Experience = mongoose.model('Experience');
 
 describe('Experience author moderation visibility', () => {
+  const jobs = testutils.catchJobs();
   const agent = request.agent(express.init(mongoose.connection));
   let users;
   let credentials;
@@ -32,6 +34,21 @@ describe('Experience author moderation visibility', () => {
   });
 
   for (const role of ['suspended', 'shadowban']) {
+    it(`rejects new experiences addressed to a ${role} member without sending email`, async () => {
+      users[1].roles.push(role);
+      await users[1].save();
+      await agent
+        .post('/api/experiences')
+        .send({
+          userTo: users[1].id,
+          interactions: { met: true },
+          recommend: 'yes',
+        })
+        .expect(404);
+      should(await Experience.countDocuments()).equal(4);
+      should(jobs).have.length(0);
+    });
+
     it(`hides ${role} authors from another member's profile and count, then restores them when unbanned`, async () => {
       for (const index of [2, 4]) {
         users[index].roles.push(role);
@@ -94,6 +111,54 @@ describe('Experience author moderation visibility', () => {
       should(mine.body._id).equal(experiences[3].id);
       should(mine.body.response).be.null();
       await agent.get(`/api/my-experience?userWith=${users[4].id}`).expect(404);
+    });
+  }
+
+  for (const oppositeVisibility of [null, false, true]) {
+    it(`keeps a shadowbanned author's submission private and silent with opposite visibility ${oppositeVisibility}`, async () => {
+      let opposite;
+      if (oppositeVisibility !== null) {
+        opposite = await new Experience({
+          userFrom: users[1]._id,
+          userTo: users[0]._id,
+          public: oppositeVisibility,
+          interactions: { met: true },
+          recommend: 'yes',
+          feedbackPublic: 'Private reciprocal feedback.',
+        }).save();
+      }
+      users[0].roles.push('shadowban');
+      await users[0].save();
+      const created = await agent
+        .post('/api/experiences')
+        .send({
+          userTo: users[1].id,
+          interactions: { met: true },
+          recommend: 'no',
+          feedbackPublic: 'Hidden author feedback.',
+        })
+        .expect(201);
+      should(created.body.public).be.false();
+      should(created.body.response).be.null();
+      should(jobs).have.length(0);
+      if (opposite) {
+        should((await Experience.findById(opposite.id)).public).equal(
+          oppositeVisibility,
+        );
+      }
+      await utils.signOut(agent);
+      await utils.signIn(credentials[1], agent);
+      const received = await agent
+        .get(`/api/experiences?userTo=${users[1].id}`)
+        .expect(200);
+      should(
+        received.body.some(experience => experience._id === created.body._id),
+      ).be.false();
+      await agent.get(`/api/experiences/${created.body._id}`).expect(404);
+      const mine = await agent
+        .get(`/api/my-experience?userWith=${users[0].id}`)
+        .expect(opposite ? 200 : 404);
+      if (opposite) should(mine.body.response).be.null();
     });
   }
 
