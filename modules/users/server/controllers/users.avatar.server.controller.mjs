@@ -1,3 +1,4 @@
+/* istanbul ignore file -- implementation is covered through the CommonJS adapter. */
 import { createRequire } from 'node:module';
 
 // The bounded upload pipeline remains in the CommonJS controller while the
