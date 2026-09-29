@@ -15,105 +15,76 @@ const User = mongoose.model('User');
 /**
  * Forgot for reset password (forgot POST)
  */
-exports.forgot = function (req, res, next) {
-  async.waterfall(
-    [
-      // Generate random token
-      function (done) {
-        crypto.randomBytes(20, function (err, buffer) {
-          const token = buffer.toString('hex');
-          done(err, token);
-        });
-      },
+exports.forgot = function (req, res) {
+  if (!req.body.username) {
+    return res.status(400).send({
+      message: 'Please, we really need your username or email first...',
+    });
+  }
 
-      // Lookup user by username
-      function (token, done) {
-        // Missing username, return error
-        if (!req.body.username) {
-          return res.status(400).send({
-            message: 'Please, we really need your username or email first...',
-          });
-        }
+  const acknowledge = () =>
+    res.status(200).send({
+      message:
+        'If an account matches that username or email, we will send recovery instructions.',
+    });
+  const userHandle = req.body.username.toString().toLowerCase();
+  acknowledge();
 
-        const userHandle = req.body.username.toString().toLowerCase();
+  // Account lookup, persistence, and email delivery must not affect the
+  // recovery response's latency or reveal whether an account exists.
+  setImmediate(() => {
+    const reportStat = status =>
+      statService.stat(
+        {
+          namespace: 'passwordReset',
+          counts: { count: 1 },
+          tags: { status },
+        },
+        () => {},
+      );
 
-        User.findOne(
-          {
-            $or: [{ username: userHandle }, { email: userHandle }],
-          },
-          '-salt -password',
-          function (err, user) {
-            if (!user) {
-              // Report failure to reset to stats
-              return statService.stat(
-                {
-                  namespace: 'passwordReset',
-                  counts: {
-                    count: 1,
-                  },
-                  tags: {
-                    status: 'failed:noUser',
-                  },
-                },
-                function () {
-                  // Return failure
-                  res.status(404).send({
-                    message:
-                      'We could not find an account with that username or email. Make sure you have it spelled correctly.',
-                  });
-                },
-              );
-            } else {
-              user.resetPasswordToken = token;
-              user.resetPasswordExpires = Date.now() + 24 * 3600000; // 24 hours
+    crypto.randomBytes(20, (randomErr, buffer) => {
+      if (randomErr) {
+        log('error', 'Password recovery token generation failed.');
+        return reportStat('failed:tokenGeneration');
+      }
 
-              user.save(function (err) {
-                done(err, user);
-              });
-            }
-          },
-        );
-      },
-
-      // Send email
-      function (user) {
-        emailService.sendResetPassword(user, function (err) {
-          // Stop on errors
-          if (err) {
-            return res.status(400).send({
-              message:
-                'Failure while sending recovery email to you. Please try again later.',
-            });
+      User.findOne(
+        { $or: [{ username: userHandle }, { email: userHandle }] },
+        '-salt -password',
+        (findErr, user) => {
+          if (findErr) {
+            log('error', 'Password recovery account lookup failed.');
+            return reportStat('failed:lookup');
           }
 
-          // Report successfull reset to stats
-          return statService.stat(
-            {
-              namespace: 'passwordReset',
-              counts: {
-                count: 1,
-              },
-              tags: {
-                status: 'emailSent',
-              },
-            },
-            function () {
-              // Return success
-              res.send({
-                message: 'We sent you an email with further instructions.',
-              });
-            },
-          );
-        });
-      },
-    ],
-    function (err) {
-      /* istanbul ignore else */
-      if (err) {
-        return next(err);
-      }
-    },
-  );
+          if (!user) {
+            return reportStat('failed:noUser');
+          }
+
+          user.resetPasswordToken = buffer.toString('hex');
+          user.resetPasswordExpires = Date.now() + 24 * 3600000; // 24 hours
+
+          user.save(saveErr => {
+            if (saveErr) {
+              log('error', 'Password recovery token save failed.');
+              return reportStat('failed:tokenSave');
+            }
+
+            emailService.sendResetPassword(user, emailErr => {
+              if (emailErr) {
+                // Never include recipient addresses or provider error details.
+                log('error', 'Password recovery email delivery failed.');
+                return reportStat('failed:emailDelivery');
+              }
+
+              return reportStat('emailSent');
+            });
+          });
+        },
+      );
+    });
+  });
 };
 
 /**
@@ -157,118 +128,68 @@ exports.validateResetToken = function (req, res) {
  * Reset password POST from email token
  */
 exports.reset = function (req, res) {
-  // Init Variables
   const passwordDetails = req.body;
+  if (passwordDetails.newPassword !== passwordDetails.verifyPassword) {
+    return res.status(400).send({ message: 'Passwords do not match.' });
+  }
+  if (!User.isValidPassword(passwordDetails.newPassword)) {
+    return res.status(400).send({ message: 'Password reset failed.' });
+  }
 
-  async.waterfall(
-    [
-      function (done) {
-        User.findOne(
-          {
-            resetPasswordToken: req.params.token,
-            resetPasswordExpires: {
-              $gt: Date.now(),
-            },
-          },
-          function (err, user) {
-            // Can't find user (=invalid or expired token) or other error
-            if (err || !user) {
-              return res.status(400).send({
-                message: 'Password reset token is invalid or has expired.',
-              });
-            }
-
-            // Passwords don't match
-            if (
-              passwordDetails.newPassword !== passwordDetails.verifyPassword
-            ) {
-              return res.status(400).send({
-                message: 'Passwords do not match.',
-              });
-            }
-
-            // Change password
-            user.password = passwordDetails.newPassword;
-            user.resetPasswordToken = undefined;
-            user.resetPasswordExpires = undefined;
-
-            user.passwordUpdated = Date.now();
-
-            // Save user with new password
-            user.save(function (err) {
-              // Error saving user
-              if (err) {
-                return res.status(400).send({
-                  message: 'Password reset failed.',
-                });
-              }
-
-              done(null, user);
-            });
-          },
-        );
+  let salt;
+  try {
+    salt = crypto.randomBytes(16).toString('base64');
+  } catch (err) {
+    log('error', 'Password reset credential generation failed.');
+    return res.status(400).send({ message: 'Password reset failed.' });
+  }
+  const now = new Date();
+  User.findOneAndUpdate(
+    {
+      resetPasswordToken: req.params.token,
+      resetPasswordExpires: { $gt: now },
+    },
+    {
+      $set: {
+        password: User.hashPassword(passwordDetails.newPassword, salt),
+        salt,
+        passwordUpdated: now,
       },
-
-      // Authenticate
-      function (user, done) {
-        req.login(user, function (err) {
-          // Could not authenticate
-          if (err) {
-            // Log the failure
-            log(
-              'error',
-              'Authenticating user after password reset failed #910jj3',
-              {
-                error: err,
-              },
-            );
-
-            // Stop here
-            return done(err);
-          }
-
-          // All good, continue
-          done(null, user);
-        });
+      $unset: {
+        resetPasswordToken: 1,
+        resetPasswordExpires: 1,
       },
-
-      // Send email
-      function (user, done) {
-        emailService.sendResetPasswordConfirm(
-          {
-            displayName: user.displayName,
-            email: user.email,
-          },
-          function (err) {
-            // Just log errors, but don't mind about them
-            // as this is not critical step
-            if (err) {
-              // Log the failure to send the email
-              log(
-                'error',
-                'Sending notification about password reset failed #30lfbv',
-                {
-                  error: err,
-                },
-              );
-            }
-
-            done(null, user);
-          },
-        );
-      },
-
-      // Return authenticated user
-      function (user) {
-        return res.json(profileHandler.sanitizeOwnProfile(user));
-      },
-    ],
-    function (err) {
-      if (err) {
-        return res.status(400).send({
-          message: 'Password reset failed.',
+      $inc: { authVersion: 1 },
+    },
+    { new: true, runValidators: true },
+    (err, user) => {
+      if (err || !user) {
+        return res.status((err && err.status) || 400).send({
+          message: err
+            ? 'Password reset failed.'
+            : 'Password reset token is invalid or has expired.',
         });
       }
+
+      req.login(user, loginErr => {
+        if (loginErr) {
+          log('error', 'Authenticating user after password reset failed.');
+          return res.status(400).send({ message: 'Password reset failed.' });
+        }
+
+        emailService.sendResetPasswordConfirm(
+          { displayName: user.displayName, email: user.email },
+          emailErr => {
+            if (emailErr) {
+              log(
+                'error',
+                'Password reset confirmation email delivery failed.',
+              );
+            }
+            return res.json(profileHandler.sanitizeOwnProfile(user));
+          },
+        );
+      });
     },
   );
 };
@@ -297,6 +218,11 @@ exports.changePassword = function (req, res) {
         if (req.body.newPassword !== req.body.verifyPassword) {
           return done(new Error('Passwords do not match.'));
         }
+        if (!User.isValidPassword(req.body.newPassword)) {
+          return done(
+            new Error('Password should be more than 8 characters long.'),
+          );
+        }
 
         done(null);
       },
@@ -319,12 +245,32 @@ exports.changePassword = function (req, res) {
 
       // Save user with new password
       function (user, done) {
-        user.password = req.body.newPassword;
-        user.passwordUpdated = Date.now();
+        const oldPassword = user.password;
+        const oldSalt = user.salt;
+        let salt;
+        try {
+          salt = crypto.randomBytes(16).toString('base64');
+        } catch (err) {
+          return done(err);
+        }
+        const password = User.hashPassword(req.body.newPassword, salt);
+        const passwordUpdated = new Date();
 
-        user.save(function (err) {
-          done(err, user);
-        });
+        User.findOneAndUpdate(
+          { _id: user._id, password: oldPassword, salt: oldSalt },
+          {
+            $set: { password, salt, passwordUpdated },
+            $inc: { authVersion: 1 },
+          },
+          { new: true, runValidators: true },
+          function (err, updatedUser) {
+            if (err) return done(err);
+            if (!updatedUser) {
+              return done(new Error('Current password is incorrect.'));
+            }
+            done(null, updatedUser);
+          },
+        );
       },
 
       // Login again and return new user
@@ -336,11 +282,13 @@ exports.changePassword = function (req, res) {
       },
 
       // Send email
-      function (user, done) {
+      function (user) {
         emailService.sendResetPasswordConfirm(user, function (err) {
-          if (err) return done(err);
+          if (err) {
+            log('error', 'Password change confirmation email delivery failed.');
+          }
           return res.send({
-            user,
+            user: profileHandler.sanitizeOwnProfile(user),
             message: 'Password changed successfully!',
           });
         });

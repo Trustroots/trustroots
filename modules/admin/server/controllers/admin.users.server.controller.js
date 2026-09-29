@@ -518,23 +518,69 @@ exports.changeRole = async (req, res) => {
     });
   }
 
-  // If switching role to 'suspended', change also these settings straight up
-  const additionalChangesForSuspended =
-    role === 'suspended' ? { $set: { newsletter: false, public: false } } : {};
-
   try {
-    const user = await User.updateOne(
-      { _id: userId },
-      {
-        ...additionalChangesForSuspended,
-        [action === 'remove' ? '$pull' : '$addToSet']: {
-          roles: role,
-        },
-      },
-    );
+    const id = new mongoose.Types.ObjectId(userId);
+    let changedUser = false;
 
-    // No documents were updated
-    if (!user.matchedCount) {
+    // Compare-and-set the role array so an overlapping role update cannot
+    // overwrite another update or lose an authVersion increment.
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const current = await User.findById(id).select('roles').lean().exec();
+      if (!current) {
+        break;
+      }
+
+      const currentRoles = current.roles || [];
+      const nextRoles = currentRoles.filter(existingRole => {
+        if (action === 'remove') {
+          return existingRole !== role;
+        }
+        if (
+          (role === 'volunteer' && existingRole === 'volunteer-alumni') ||
+          (role === 'volunteer-alumni' && existingRole === 'volunteer') ||
+          (role === 'shadowban' && existingRole === 'suspended') ||
+          (role === 'suspended' && existingRole === 'shadowban')
+        ) {
+          return false;
+        }
+        return true;
+      });
+      if (action === 'add' && !nextRoles.includes(role)) {
+        nextRoles.push(role);
+      }
+
+      const rolesChanged =
+        currentRoles.length !== nextRoles.length ||
+        currentRoles.some(
+          (existingRole, index) => existingRole !== nextRoles[index],
+        );
+      const filter = { _id: id };
+      if (Object.prototype.hasOwnProperty.call(current, 'roles')) {
+        filter.roles = current.roles;
+      } else {
+        filter.roles = { $exists: false };
+      }
+      const update = {
+        $set: { roles: nextRoles },
+      };
+      if (role === 'suspended') {
+        update.$set.newsletter = false;
+        update.$set.public = false;
+      }
+      if (rolesChanged) {
+        // $inc creates authVersion=1 for legacy accounts where the field is
+        // absent, and remains atomic with the role mutation.
+        update.$inc = { authVersion: 1 };
+      }
+
+      const result = await User.updateOne(filter, update);
+      if (result.matchedCount) {
+        changedUser = true;
+        break;
+      }
+    }
+
+    if (!changedUser) {
       return res.status(404).send({
         message: errorService.getErrorMessageByKey('not-found'),
       });
@@ -546,28 +592,21 @@ exports.changeRole = async (req, res) => {
 
     // If adding role 'volunteer-alumni', remove 'volunteer' role
     if (role === 'volunteer-alumni') {
-      await User.updateOne({ _id: userId }, { $pull: { roles: 'volunteer' } });
       roleChangeMessage = 'User made into volunteer-alumni.';
     }
 
     // If adding role 'volunteer', remove 'volunteer-alumni' role
     if (role === 'volunteer') {
-      await User.updateOne(
-        { _id: userId },
-        { $pull: { roles: 'volunteer-alumni' } },
-      );
       roleChangeMessage = 'User made into volunteer.';
     }
 
     // If adding role 'shadowban', remove 'suspended' role
     if (role === 'shadowban') {
-      await User.updateOne({ _id: userId }, { $pull: { roles: 'suspended' } });
       roleChangeMessage = 'User shadowbanned.';
     }
 
     // If adding role 'suspended', remove 'shadowban' role
     if (role === 'suspended') {
-      await User.updateOne({ _id: userId }, { $pull: { roles: 'shadowban' } });
       roleChangeMessage = 'User suspended.';
     }
 

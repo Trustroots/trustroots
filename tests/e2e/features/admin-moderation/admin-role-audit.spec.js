@@ -31,6 +31,56 @@ test.describe('admin role and audit feature coverage', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
   });
 
+  test('role changes revoke prior sessions while repeated no-op role requests do not', async ({
+    browser,
+    baseURL,
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.change-role', [
+      'Actual role changes invalidate sessions established before the change.',
+      'Repeating a role assignment with no effect does not invalidate sessions.',
+    ]);
+
+    const member = createUser();
+    const memberContext = await createIsolatedContext(browser, baseURL);
+    try {
+      await registerViaApi(memberContext.request, member);
+      const target = await findUserByUsername(member.username);
+
+      const grantVolunteer = await page.request.post(
+        '/api/admin/user/change-role',
+        { data: { id: String(target._id), role: 'volunteer' } },
+      );
+      expect(grantVolunteer.ok()).toBeTruthy();
+
+      const memberPage = await memberContext.newPage();
+      await signInViaApi(memberPage, memberContext.request, member);
+      expect(
+        (await memberContext.request.get('/api/users/export')).ok(),
+      ).toBeTruthy();
+
+      const repeatVolunteer = await page.request.post(
+        '/api/admin/user/change-role',
+        { data: { id: String(target._id), role: 'volunteer' } },
+      );
+      expect(repeatVolunteer.ok()).toBeTruthy();
+      expect(
+        (await memberContext.request.get('/api/users/export')).ok(),
+      ).toBeTruthy();
+
+      const grantWelcomeTeam = await page.request.post(
+        '/api/admin/user/change-role',
+        { data: { id: String(target._id), role: 'welcome-team' } },
+      );
+      expect(grantWelcomeTeam.ok()).toBeTruthy();
+      expect(
+        (await memberContext.request.get('/api/users/export')).status(),
+      ).toBe(403);
+    } finally {
+      await memberContext.close();
+    }
+  });
+
   test('administrator can grant and revoke limited Welcome team access', async ({
     page,
     browser,
@@ -75,6 +125,7 @@ test.describe('admin role and audit feature coverage', () => {
           exact: true,
         }),
       ).toBeVisible();
+      await signInViaApi(memberPage, memberContext.request, member);
       await memberPage.goto('/admin/acquisition-stories');
       await expect(
         memberPage.getByRole('link', { name: 'Welcome team', exact: true }),
@@ -125,6 +176,12 @@ test.describe('admin role and audit feature coverage', () => {
           await memberContext.request.post(
             '/api/admin/acquisition-stories/analysis',
           )
+        ).status(),
+      ).toBe(403);
+      await signInViaApi(memberPage, memberContext.request, member);
+      expect(
+        (
+          await memberContext.request.post('/api/admin/acquisition-stories')
         ).status(),
       ).toBe(403);
       await memberPage.goto('/admin/acquisition-stories');

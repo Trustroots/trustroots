@@ -314,6 +314,12 @@ const UserSchema = new Schema({
   passwordUpdated: {
     type: Date,
   },
+  // Incremented when credentials or account privileges change so sessions
+  // established before the change can be invalidated.
+  authVersion: {
+    type: Number,
+    default: 0,
+  },
   /* For email confirmations */
   emailToken: {
     type: String,
@@ -408,14 +414,20 @@ UserSchema.pre('save', function (next) {
 /**
  * Create instance method for hashing a password
  */
-UserSchema.methods.hashPassword = function (password) {
-  if (this.salt && password) {
+UserSchema.statics.hashPassword = function (password, salt) {
+  if (salt && password) {
     return crypto
-      .pbkdf2Sync(password, Buffer.from(this.salt, 'base64'), 10000, 64, 'SHA1')
+      .pbkdf2Sync(password, Buffer.from(salt, 'base64'), 10000, 64, 'SHA1')
       .toString('base64');
   } else {
     return password;
   }
+};
+
+UserSchema.statics.isValidPassword = validatePassword;
+
+UserSchema.methods.hashPassword = function (password) {
+  return this.constructor.hashPassword(password, this.salt);
 };
 
 /**
