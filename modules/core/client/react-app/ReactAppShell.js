@@ -27,7 +27,10 @@ export default function ReactAppShell() {
     select: state => state.location.href,
   });
   const router = useRouter();
-  const location = new URL(locationHref, window.location.origin);
+  const location = new URL(
+    window.location.href || locationHref,
+    window.location.origin,
+  );
   const currentPath = `${location.pathname}${location.search}`;
   const route = getReactRoutePolicy(currentPath);
   const shouldScrollToTop = Boolean(route && !route.noScrollingTop);
