@@ -1,4 +1,6 @@
-import axios from 'axios';
+import axios, {
+  getErrorResponse,
+} from '../../../core/client/api/http-client.js';
 
 export async function remove(contactId) {
   await axios.delete(`/api/contact/${contactId}`);
@@ -14,7 +16,7 @@ export async function getByUserId(userId) {
     const { data } = await axios.get(`/api/contact-by/${userId}`);
     return data;
   } catch (error) {
-    if (error.response?.status === 404) return null;
+    if (getErrorResponse(error)?.status === 404) return null;
     throw error;
   }
 }
