@@ -7,6 +7,7 @@ import {
   trackEvent,
 } from '@/modules/core/client/services/client-runtime';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import {
   createOffer,
   getOffer,
@@ -22,7 +23,7 @@ interface MeetOffer {
   _id?: string;
   type: 'meet';
   description: string;
-  location: [number, number];
+  location: [number, number] | null;
   validUntil: string | number | Date;
 }
 

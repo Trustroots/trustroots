@@ -11,7 +11,7 @@ import type {
 } from '@/modules/search/client/utils/location';
 
 interface OfferLocationEditorProps {
-  location: [number, number];
+  location: [number, number] | null;
   offerStatus?: string;
   offerType?: string;
   onLocationChange: (location: [number, number]) => void;
@@ -21,7 +21,7 @@ interface OfferMapProps {
   children?: React.ReactNode;
   'aria-describedby'?: string;
   className: string;
-  fallbackMarker: { color: string; location: [number, number] };
+  fallbackMarker?: { color: string; location: [number, number] };
   height: number;
   location: [number, number];
   onLocationChange?: (location: [number, number]) => void;
@@ -60,7 +60,7 @@ export default function OfferLocationEditor({
     }
   }
 
-  function handleMapLocationChange(nextLocation) {
+  function handleMapLocationChange(nextLocation: [number, number]) {
     // The unchosen map centre is not an offer location.
     if (
       !location &&

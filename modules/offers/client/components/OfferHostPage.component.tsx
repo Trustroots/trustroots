@@ -24,7 +24,7 @@ interface HostOffer {
   status: HostStatus;
   description: string;
   noOfferDescription: string;
-  location: [number, number];
+  location: [number, number] | null;
   maxGuests: number;
   showOnlyInMyCircles: boolean;
 }
