@@ -112,6 +112,8 @@ describe('Avatar processing failure handling', () => {
   let previousFallback;
 
   beforeEach(async () => {
+    const testTempRoot = path.resolve('.tmp');
+    await fs.mkdir(testTempRoot, { recursive: true });
     temporaryRoot = await fs.mkdtemp(path.resolve('.tmp/avatar-failures-'));
     previousNodeEnv = process.env.NODE_ENV;
     previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
@@ -130,7 +132,9 @@ describe('Avatar processing failure handling', () => {
     } else {
       process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = previousFallback;
     }
-    await fs.rm(temporaryRoot, { recursive: true, force: true });
+    if (temporaryRoot) {
+      await fs.rm(temporaryRoot, { recursive: true, force: true });
+    }
   });
 
   async function makeService(
