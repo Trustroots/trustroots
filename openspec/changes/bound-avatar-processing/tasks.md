@@ -1,6 +1,0 @@
-- [x] Inspect the existing implementation and define the bounded change.
-- [x] Create and strictly validate the proposal before implementation.
-- [x] Implement the guardrails and document rollout requirements.
-- [x] Add anonymous regression cases and extend the existing avatar-upload end-to-end case.
-- [ ] Run focused checks and preserve full client/server coverage. Focused service/controller/profile/static tests pass; full coverage and browser execution remain pending.
-- [ ] Complete native-backend validation, then archive the proposal after validation is complete.

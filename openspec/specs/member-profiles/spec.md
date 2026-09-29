@@ -73,6 +73,24 @@ flat avatar paths.
 - **WHEN** a signed-in member uploads an unsupported file as a profile photo
 - **THEN** the system explains that the file type is not supported
 
+#### Scenario: Image exceeds a processing bound
+
+- **WHEN** a member uploads an image exceeding a configured dimension, frame or
+  resource bound
+- **THEN** the system rejects the upload and removes private temporary output
+- **AND** the previous avatar remains available
+
+#### Scenario: Avatar processing succeeds
+
+- **WHEN** every required thumbnail is generated within the processing bounds
+- **THEN** the system publishes the complete processed set with metadata removed
+
+#### Scenario: Processing fails or times out
+
+- **WHEN** thumbnail generation fails or reaches its time budget
+- **THEN** the system stops processing and cleans private staging without
+  publishing incomplete output
+
 ### Requirement: React profile viewing
 
 The system SHALL render member profile views with the React application shell
