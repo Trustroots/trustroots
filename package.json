@@ -167,7 +167,7 @@
     "styled-components": "5.3.6",
     "supercluster": "7.1.5",
     "url": "0.11.4",
-    "use-debounce": "3.4.3",
+    "use-debounce": "10.1.1",
     "use-local-storage-state": "20.0.0",
     "uuid": "11.1.1",
     "validator": "13.15.35",
