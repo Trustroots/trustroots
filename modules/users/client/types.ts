@@ -34,6 +34,7 @@ export interface UserProfile {
   seen?: string;
   avatarSource?: string;
   avatarUploaded?: boolean;
+  avatarVersion?: string;
   roles?: string[];
   replyRate?: number;
   replyTime?: number;

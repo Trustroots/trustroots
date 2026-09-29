@@ -10,6 +10,7 @@ type AvatarUser = {
   displayName?: string;
   avatarSource?: string;
   avatarUploaded?: boolean;
+  avatarVersion?: string;
   updated?: string;
   emailHash?: string;
   additionalProvidersData?: UserProfile['additionalProvidersData'];
