@@ -1,6 +1,8 @@
 export const MONGO_OBJECT_ID_LENGTH = 24;
 export const SEARCH_STRING_LIMIT = 3;
 
+type ExactMatchField = 'username' | 'email' | 'emailTemporary';
+
 const DEFAULT_EXACT_MATCH_FIELDS: ExactMatchField[] = [
   'username',
   'email',
@@ -22,8 +24,6 @@ interface ReferenceThreadIdentity {
   userFrom?: string | { _id: string };
   userTo?: string | { _id: string };
 }
-
-type ExactMatchField = 'username' | 'email' | 'emailTemporary';
 
 export function normalizeAdminQuery(query: unknown): string {
   return String(query || '').trim();

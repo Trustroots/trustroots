@@ -27,6 +27,45 @@ import {
   isSuspendedUser,
 } from './userSearch.helpers';
 
+interface MemberSort {
+  column: string;
+  direction: 'ascending' | 'descending';
+}
+
+interface MemberProfile {
+  _id: string;
+  username?: string;
+  displayName?: string;
+  email?: string;
+  emailTemporary?: string;
+  acquisitionStory?: string;
+  roles: string[];
+  public?: boolean;
+  created?: string | number;
+  seen?: string | number;
+  lastIpAddress?: string;
+  location?: { city?: string; country?: string };
+}
+
+interface MemberThreadReference {
+  _id: string;
+  created: string | number;
+  reference: string;
+  userFrom?: string | { _id: string };
+  userTo?: string | { _id: string };
+  from?: MemberProfile;
+  to?: MemberProfile;
+  message?: string;
+}
+
+interface MemberContact {
+  _id: string;
+  userFrom?: string | MemberRecord;
+  userTo?: string | MemberRecord;
+  user?: string | MemberRecord;
+  created?: string | number;
+}
+
 const DEFAULT_MEMBER_LIST_SORT: MemberSort = {
   column: 'username',
   direction: 'ascending',
@@ -43,21 +82,6 @@ const ROLE_DESCRIPTIONS: Record<string, string> = {
   volunteer: 'Current Trustroots volunteer.',
   'volunteer-alumni': 'Former Trustroots volunteer.',
 };
-
-interface MemberProfile {
-  _id: string;
-  username?: string;
-  displayName?: string;
-  email?: string;
-  emailTemporary?: string;
-  acquisitionStory?: string;
-  roles: string[];
-  public?: boolean;
-  created?: string | number;
-  seen?: string | number;
-  lastIpAddress?: string;
-  location?: { city?: string; country?: string };
-}
 
 interface MemberRecord {
   _id: string;
@@ -90,30 +114,6 @@ interface MemberRecord {
   threadReferencesSentNo?: number;
   messageFromCount?: number;
   messageToCount?: number;
-}
-
-interface MemberThreadReference {
-  _id: string;
-  created: string | number;
-  reference: string;
-  userFrom?: string | { _id: string };
-  userTo?: string | { _id: string };
-  from?: MemberProfile;
-  to?: MemberProfile;
-  message?: string;
-}
-
-interface MemberContact {
-  _id: string;
-  userFrom?: string | MemberRecord;
-  userTo?: string | MemberRecord;
-  user?: string | MemberRecord;
-  created?: string | number;
-}
-
-interface MemberSort {
-  column: string;
-  direction: 'ascending' | 'descending';
 }
 
 interface MemberList {
@@ -359,7 +359,7 @@ export default class AdminUser extends Component<
   }
 
   queryUser(
-    event: FormEvent<HTMLFormElement> | null = null,
+    event: FormEvent<HTMLFormElement> | null,
     options: { page?: number; sort?: MemberSort } = {},
   ) {
     if (event) {
