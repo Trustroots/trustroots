@@ -508,7 +508,7 @@ describe('<CreateExperience />', () => {
     fireEvent.click(await screen.findByText('Restore draft'));
     expect(screen.getByLabelText('Met in person')).toBeChecked();
     fireEvent.click(screen.getAllByText('Next')[0]);
-    expect(screen.getByText('No').querySelector('input')).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'No' })).toBeChecked();
     fireEvent.click(screen.getAllByText('Next')[0]);
     expect(
       screen.getByLabelText(/Leave your public feedback here/),

@@ -18,7 +18,7 @@ export default function NavigationLoggedOut({ currentPath }) {
       >
         {/* a span for centering the main header content */}
         <span className="flex-side"></span>
-        <span className="header-welcome-text hidden-xs">
+        <span className="header-welcome-text hidden-xs" dir="auto">
           {t('New to Trustroots?')}
         </span>
         <a href="/signup" className="btn btn-lg btn-default">

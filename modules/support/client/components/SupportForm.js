@@ -139,10 +139,10 @@ export default function SupportForm({ user }) {
           className="form-horizontal"
         >
           <div className="form-group">
-            <label htmlFor="category" className="col-sm-2 control-label">
+            <label htmlFor="category" className="col-sm-3 control-label">
               {t('What can we help with?')}
             </label>
-            <div className="col-sm-10">
+            <div className="col-sm-9">
               <select
                 id="category"
                 className="form-control input-lg"
@@ -161,10 +161,10 @@ export default function SupportForm({ user }) {
           {/* Reporting another profile */}
           {category === 'reportMember' && (
             <div className="form-group">
-              <label className="col-sm-2 control-label">
+              <label className="col-sm-3 control-label">
                 {t('Reported member')}
               </label>
-              <div className="col-sm-10">
+              <div className="col-sm-9">
                 {reportMember ? (
                   <p className="form-control-static">
                     <strong>{reportMember}</strong>
@@ -193,10 +193,10 @@ export default function SupportForm({ user }) {
           )}
 
           <div className="form-group">
-            <label htmlFor="message" className="col-sm-2 control-label">
+            <label htmlFor="message" className="col-sm-3 control-label">
               {t('Message')}
             </label>
-            <div className="col-sm-10">
+            <div className="col-sm-9">
               <textarea
                 className="form-control input-lg"
                 rows="7"
@@ -236,18 +236,18 @@ export default function SupportForm({ user }) {
           {/* Name is sent only for logged in users, don't bother to ask it from non-logged users */}
           {user?.displayName && (
             <div className="form-group">
-              <label className="col-sm-2 control-label">{t('Name')}</label>
-              <div className="col-sm-10">
+              <label className="col-sm-3 control-label">{t('Name')}</label>
+              <div className="col-sm-9">
                 <p className="form-control-static">{user.displayName}</p>
               </div>
             </div>
           )}
 
           <div className="form-group">
-            <label htmlFor="username" className="col-sm-2 control-label">
+            <label htmlFor="username" className="col-sm-3 control-label">
               {t('Username')}
             </label>
-            <div className="col-sm-10">
+            <div className="col-sm-9">
               {user?.username ? (
                 <p className="form-control-static">{user.username}</p>
               ) : (
@@ -265,10 +265,10 @@ export default function SupportForm({ user }) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="email" className="col-sm-2 control-label">
+            <label htmlFor="email" className="col-sm-3 control-label">
               {t('Email')}
             </label>
-            <div className="col-sm-10">
+            <div className="col-sm-9">
               {user?.email ? (
                 <p className="form-control-static">{user.email}</p>
               ) : (
@@ -287,7 +287,7 @@ export default function SupportForm({ user }) {
           </div>
 
           <div className="form-group">
-            <div className="col-sm-offset-2 col-sm-10">
+            <div className="offset-sm-3 col-sm-9">
               <button
                 type="submit"
                 className="btn btn-lg btn-primary"

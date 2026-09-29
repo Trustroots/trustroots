@@ -1,3 +1,5 @@
+@import '~less/global-variables';
+
 .form-auth {
   margin-bottom: 20px;
   .alert {
@@ -21,8 +23,12 @@
 }
 
 .btn.btn-default.btn-password-toggle {
-  height: 100%;
-  padding: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: @input-height-large;
+  height: @input-height-large;
+  padding: 0;
   border: 0;
   outline: none;
   // z-index to cover `box-shadow` of the text input

@@ -357,6 +357,15 @@ test.describe('public pages and unauthenticated flows', () => {
     await page.goto('/password/reset/invalid');
 
     await expect(page).toHaveURL(/\/password\/reset\/invalid/);
+    const board = page.locator('.board.container-fullscreen');
+    await expect
+      .poll(() =>
+        board.evaluate(element => {
+          const bounds = element.getBoundingClientRect();
+          return [Math.round(bounds.left), Math.round(bounds.width)];
+        }),
+      )
+      .toEqual([0, page.viewportSize().width]);
     await expect(
       page.getByRole('heading', { name: /password reset is invalid/i }),
     ).toBeVisible();
