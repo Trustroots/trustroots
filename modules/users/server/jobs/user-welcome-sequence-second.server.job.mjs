@@ -1,0 +1,114 @@
+/**
+ * Onboarding/welcome sequence email for new members: 2/3
+ *
+ * Ignores users with `suspended` or `shadowban` roles.
+ *
+ * Keeps count of onboarding emails at user's model.
+ */
+
+/**
+ * Module dependencies.
+ */
+
+// Disable all welcome emails
+const defaultExport = function (job, done) {
+  if (typeof done === 'function') {
+    return done();
+  }
+};
+
+/*
+
+
+
+
+
+
+
+const User = mongoose.model('User');
+
+const defaultExport = function (job, agendaDone) {
+  // Ignore very recently confirmed (i.e. signed up) users
+  const previousEmailSentTimeAgo = moment().subtract(
+    moment.duration(config.limits.welcomeSequence.second),
+  );
+
+  async.waterfall(
+    [
+      // Find un-welcomed users
+      function (done) {
+        User.find({
+          // User has confirmed their email
+          public: true,
+
+          // One of the welcome sequence emails was sent out to them previously
+          welcomeSequenceStep: 1,
+
+          // Wait for x hours after email confirmation before sending
+          // the first welcome sequence email
+          welcomeSequenceSent: { $lt: previousEmailSentTimeAgo },
+
+          // Exclude users with restricted roles.
+          roles: { $nin: ['suspended', 'shadowban'] },
+        })
+          // Limit stops any crazy amounts of emails being processed at once
+          // the rest would be processed in next round.
+          .limit(50)
+          .exec(function (err, users) {
+            done(err, users);
+          });
+      },
+
+      // Send emails
+      function (users, done) {
+        // No users to send emails to
+        if (!users.length) {
+          return done();
+        }
+
+        async.eachSeries(
+          users,
+          function (user, callback) {
+            emailService.sendWelcomeSequenceSecond(user, function (err) {
+              if (err) {
+                return callback(err);
+              } else {
+                // Mark reminder sent and update the reminder count
+                User.findByIdAndUpdate(
+                  user._id,
+                  {
+                    $set: {
+                      welcomeSequenceSent: new Date(),
+                    },
+                    // If the field does not exist, $inc creates the field
+                    // and sets the field to the specified value.
+                    $inc: {
+                      welcomeSequenceStep: 1,
+                    },
+                  },
+                  function (err) {
+                    callback(err);
+                  },
+                );
+              }
+            });
+          },
+          function (err) {
+            done(err);
+          },
+        );
+      },
+    ],
+    function (err) {
+      if (err) {
+        log('error', 'Failure in second welcome sequence background job.', {
+          error: err,
+          jobId: _.get(job, 'attrs._id').toString(),
+        });
+      }
+      return agendaDone(err);
+    },
+  );
+};
+*/
+export default defaultExport;

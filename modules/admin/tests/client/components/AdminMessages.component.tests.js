@@ -212,6 +212,22 @@ describe('<AdminMessages />', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows the fallback when an API error has no message', async () => {
+    messagesApi.getScammerRecipients.mockRejectedValueOnce({
+      response: { data: {} },
+    });
+
+    render(<AdminMessages />);
+    fireEvent.change(screen.getByLabelText('Scammer username'), {
+      target: { value: 'reported-member' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show recipients' }));
+
+    expect(
+      await screen.findByText('Could not find that member.'),
+    ).toBeInTheDocument();
+  });
+
   it('shows the fallback error when warning delivery fails', async () => {
     messagesApi.getScammerRecipients.mockResolvedValueOnce({
       scammer: { username: 'reported-member' },
