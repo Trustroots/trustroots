@@ -494,12 +494,15 @@ describe('Admin users controller unit tests', () => {
       );
 
       res.body.length.should.equal(3);
-      res.body.find(staff => staff._id.equals(saved[0]._id)).blockedBy[0]._id
-        .should.deepEqual(saved[3]._id);
-      res.body.find(staff => staff._id.equals(saved[1]._id)).blockedBy[0]._id
-        .should.deepEqual(saved[3]._id);
-      res.body.find(staff => staff._id.equals(saved[2]._id)).blockedBy
-        .should.deepEqual([]);
+      res.body
+        .find(staff => staff._id.equals(saved[0]._id))
+        .blockedBy[0]._id.should.deepEqual(saved[3]._id);
+      res.body
+        .find(staff => staff._id.equals(saved[1]._id))
+        .blockedBy[0]._id.should.deepEqual(saved[3]._id);
+      res.body
+        .find(staff => staff._id.equals(saved[2]._id))
+        .blockedBy.should.deepEqual([]);
     });
 
     it('limits Welcome team members to blockers of their own account', async () => {

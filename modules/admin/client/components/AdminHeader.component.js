@@ -5,7 +5,9 @@ import { getCurrentUser } from '../../../core/client/services/client-runtime';
 
 export default function AdminHeader() {
   const isAdmin = (getCurrentUser()?.roles || []).includes('admin');
-  const isWelcomeTeam = (getCurrentUser()?.roles || []).includes('welcome-team');
+  const isWelcomeTeam = (getCurrentUser()?.roles || []).includes(
+    'welcome-team',
+  );
   const currentPath = window.location.pathname.replace('/admin/', '');
 
   useEffect(() => {

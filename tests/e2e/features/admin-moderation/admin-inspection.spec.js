@@ -26,14 +26,18 @@ test.describe('admin moderation inspection flows', () => {
     const admin = await findUserByUsername(SEEDED_ADMIN.username);
     const welcomer = await findUserByUsername(SEEDED_MEMBERS[1].username);
     await withE2eDb(async db => {
-      await db.collection('users').updateOne(
-        { _id: welcomer._id },
-        { $addToSet: { roles: 'welcome-team' } },
-      );
-      await db.collection('users').updateOne(
-        { _id: member._id },
-        { $addToSet: { blocked: { $each: [admin._id, welcomer._id] } } },
-      );
+      await db
+        .collection('users')
+        .updateOne(
+          { _id: welcomer._id },
+          { $addToSet: { roles: 'welcome-team' } },
+        );
+      await db
+        .collection('users')
+        .updateOne(
+          { _id: member._id },
+          { $addToSet: { blocked: { $each: [admin._id, welcomer._id] } } },
+        );
     });
 
     await page.goto('/admin/staff-blockers');
