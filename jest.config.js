@@ -25,5 +25,7 @@ module.exports = {
   transform: {
     '^.+\\.[jt]sx?$': 'babel-jest',
   },
-  transformIgnorePatterns: ['/node_modules/(?!use-local-storage-state/)'],
+  transformIgnorePatterns: [
+    '/node_modules/(?!use-local-storage-state|nostr-tools|@noble|@scure)/',
+  ],
 };

@@ -166,6 +166,7 @@
     "stopword": "1.0.11",
     "styled-components": "5.3.6",
     "supercluster": "7.1.5",
+    "tiny-warning": "1.0.3",
     "url": "0.11.4",
     "use-debounce": "3.4.3",
     "use-local-storage-state": "20.0.0",
