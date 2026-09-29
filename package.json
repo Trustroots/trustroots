@@ -99,7 +99,6 @@
     "basic-auth": "2.0.1",
     "body-parser": "1.20.8",
     "bootstrap": "3.4.1",
-    "chalk": "4.1.2",
     "check-node-version": "4.2.1",
     "classnames": "2.3.2",
     "compression": "1.8.1",
