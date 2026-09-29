@@ -31,6 +31,15 @@ describe('<ReferenceThread />', () => {
     expect(get).toHaveBeenCalledWith('user-1');
   });
 
+  it('renders an existing answer without a creation timestamp', async () => {
+    get.mockResolvedValueOnce({ reference: 'yes' });
+
+    render(<ReferenceThread userToId="user-1" />);
+
+    expect(await screen.findByText('Change')).toBeInTheDocument();
+    expect(screen.getByText('Yes')).toBeInTheDocument();
+  });
+
   it('renders an existing negative reference answer and allows changing it', async () => {
     get.mockResolvedValueOnce({
       reference: 'no',
