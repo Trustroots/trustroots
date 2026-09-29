@@ -30,6 +30,7 @@ describe('Service: profile-response', function () {
     usernameUpdateAllowed: true,
     updated: new Date('2025-01-02T00:00:00.000Z'),
     passwordUpdated: new Date('2025-01-03T00:00:00.000Z'),
+    avatarVersion: '0123456789abcdef0123456789abcdef',
     lastIpAddress: '192.0.2.1',
     pushRegistration: [{ token: 'fictional-push-token' }],
     providerData: [{ accessToken: 'fictional-provider-token' }],
@@ -41,6 +42,7 @@ describe('Service: profile-response', function () {
 
   it('queries only the approved public profile fields', function () {
     profileQueryFields.should.containEql('additionalProvidersData.facebook.id');
+    profileQueryFields.should.containEql('avatarVersion');
     profileQueryFields.should.not.containEql('lastIpAddress');
     profileQueryFields.should.not.containEql('pushRegistration');
   });
@@ -49,6 +51,7 @@ describe('Service: profile-response', function () {
     const response = selectProfileResponse(profile, false);
 
     response.username.should.equal('fictional-member');
+    response.avatarVersion.should.equal('0123456789abcdef0123456789abcdef');
     response.additionalProvidersData.facebook.id.should.equal(
       'fictional-facebook-id',
     );
@@ -74,6 +77,7 @@ describe('Service: profile-response', function () {
 
   it('keeps account-editing fields for the account holder only', function () {
     const response = selectProfileResponse(profile, true);
+    response.avatarVersion.should.equal('0123456789abcdef0123456789abcdef');
 
     for (const field of [
       'firstName',

@@ -19,6 +19,7 @@ export const profileQueryFields = [
   'passwordUpdated',
   'avatarSource',
   'avatarUploaded',
+  'avatarVersion',
   'member',
   'replyRate',
   'replyTime',

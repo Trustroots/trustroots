@@ -622,6 +622,12 @@ describe('Profile controller unit tests', () => {
   });
 
   describe('userMiniByID', () => {
+    it('includes avatarVersion in mini-profile query fields', () => {
+      profileController.userMiniProfileFields
+        .split(/\s+/)
+        .should.containEql('avatarVersion');
+    });
+
     it('responds with 400 for an invalid id', async () => {
       const { res } = await runHandler((res, next) =>
         profileController.userMiniByID({ user: {} }, res, next, 'bad-id'),
