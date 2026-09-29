@@ -573,14 +573,18 @@ export const changeRole = async (req, res) => {
           (role === 'volunteer-alumni' && existingRole === 'volunteer') ||
           (role === 'shadowban' && existingRole === 'suspended') ||
           (role === 'suspended' && existingRole === 'shadowban')
-        ) return false;
+        ) {
+          return false;
+        }
         return true;
       });
       if (action === 'add' && !nextRoles.includes(role)) nextRoles.push(role);
 
       const rolesChanged =
         currentRoles.length !== nextRoles.length ||
-        currentRoles.some((existingRole, index) => existingRole !== nextRoles[index]);
+        currentRoles.some(
+          (existingRole, index) => existingRole !== nextRoles[index],
+        );
       const filter = { _id: id };
       filter.roles = Object.prototype.hasOwnProperty.call(current, 'roles')
         ? current.roles

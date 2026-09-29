@@ -1,13 +1,7 @@
 const sinon = require('sinon');
-const proxyquire = require('proxyquire').noCallThru();
 require('should');
-
-const path = require('path');
+const crypto = require('crypto');
 const mongoose = require('mongoose');
-const config = require('../../../../../config/config');
-config.files.server.models.forEach(modelPath =>
-  require(path.resolve(modelPath)),
-);
 const analyticsHandler = require('../../../../core/server/controllers/analytics.server.controller');
 const emailService = require('../../../../core/server/services/email.server.service');
 require('../../../server/models/user.server.model');
@@ -50,51 +44,37 @@ function loadController({
   randomBytes,
   onStat = () => {},
 } = {}) {
-  const User = {
-    isValidPassword() {
-      return validPassword;
-    },
-    hashPassword(password) {
-      return password;
-    },
-    findOne(query, projectionOrCallback, callback) {
+  sinon.restore();
+  sinon.stub(User, 'isValidPassword').callsFake(() => validPassword);
+  sinon.stub(User, 'hashPassword').callsFake(password => password);
+  sinon
+    .stub(User, 'findOne')
+    .callsFake((query, projectionOrCallback, callback) => {
       const cb = callback || projectionOrCallback;
       cb(findOneError || null, user || null);
-    },
-    findById(id, cb) {
-      cb(null, user || null);
-    },
-    findOneAndUpdate(query, update, options, cb) {
-      cb(findOneAndUpdateError || null, findOneAndUpdateUser);
-    },
-  };
-
-  return proxyquire(
-    '../../../server/controllers/users.password.server.controller',
-    {
-      mongoose: {
-        model: () => User,
-      },
-      crypto: randomBytes ? { randomBytes } : require('crypto'),
-      './users.profile.server.controller': {
-        sanitizeOwnProfile: profile => profile,
-      },
-      '../../../core/server/controllers/analytics.server.controller': {
-        appendUTMParams: url => url,
-      },
-      '../../../core/server/services/email.server.service': {
-        sendResetPassword: (profile, cb) => cb(),
-        sendResetPasswordConfirm: (profile, cb) => cb(confirmEmailError),
-      },
-      '../../../stats/server/services/stats.server.service': {
-        stat: (payload, cb) => {
-          onStat(payload);
-          cb();
-        },
-      },
-      '../../../../config/lib/logger': () => {},
-    },
-  );
+    });
+  sinon.stub(User, 'findById').callsFake((id, cb) => cb(null, user || null));
+  sinon
+    .stub(User, 'findOneAndUpdate')
+    .callsFake((query, update, options, cb) =>
+      cb(findOneAndUpdateError || null, findOneAndUpdateUser),
+    );
+  sinon
+    .stub(profileHandler, 'sanitizeOwnProfile')
+    .callsFake(profile => profile);
+  sinon.stub(analyticsHandler, 'appendUTMParams').callsFake(url => url);
+  sinon
+    .stub(emailService, 'sendResetPassword')
+    .callsFake((profile, cb) => cb());
+  sinon
+    .stub(emailService, 'sendResetPasswordConfirm')
+    .callsFake((profile, cb) => cb(confirmEmailError));
+  sinon.stub(statService, 'stat').callsFake((payload, cb) => {
+    onStat(payload);
+    cb();
+  });
+  if (randomBytes) sinon.stub(crypto, 'randomBytes').callsFake(randomBytes);
+  return controller;
 }
 
 function fakeUser(overrides = {}) {
@@ -102,6 +82,8 @@ function fakeUser(overrides = {}) {
     displayName: 'Direct User',
     email: 'direct@example.test',
     password: 'oldpassword1',
+    salt: 'old-salt',
+    _id: 'user-id',
     resetPasswordToken: 'reset-token',
     resetPasswordExpires: Date.now() + 3600000,
     save(cb) {
@@ -133,21 +115,10 @@ describe('Password controller direct unit tests', () => {
 
     it('handles account lookup and token persistence failures in the background', async () => {
       const completed = [];
-      let completeStats;
-      const statsComplete = new Promise(resolve => {
-        completeStats = resolve;
-      });
-      const makeController = options =>
-        loadController({
-          ...options,
-          randomBytes: (length, cb) => cb(null, Buffer.from('token')),
-          onStat: payload => {
-            completed.push(payload.tags.status);
-            if (completed.length === 2) completeStats();
-          },
-        });
-      const lookupController = makeController({
+      const lookupController = loadController({
         findOneError: new Error('lookup'),
+        randomBytes: (length, cb) => cb(null, Buffer.from('token')),
+        onStat: payload => completed.push(payload.tags.status),
       });
       const lookupResponse = deferredResponse();
       lookupController.forgot(
@@ -155,17 +126,21 @@ describe('Password controller direct unit tests', () => {
         lookupResponse,
       );
       (await lookupResponse.waitForResponse()).statusCode.should.equal(200);
+      await new Promise(resolve => setImmediate(resolve));
 
       const saveFailure = fakeUser({ save: cb => cb(new Error('save')) });
-      const saveController = makeController({ user: saveFailure });
+      const saveController = loadController({
+        user: saveFailure,
+        randomBytes: (length, cb) => cb(null, Buffer.from('token')),
+        onStat: payload => completed.push(payload.tags.status),
+      });
       const saveResponse = deferredResponse();
       saveController.forgot(
         { body: { username: 'person@example.test' } },
         saveResponse,
       );
       (await saveResponse.waitForResponse()).statusCode.should.equal(200);
-
-      await statsComplete;
+      await new Promise(resolve => setImmediate(resolve));
       completed.should.containEql('failed:lookup');
       completed.should.containEql('failed:tokenSave');
     });

@@ -171,7 +171,10 @@ service.reset = function (req, res) {
           { displayName: user.displayName, email: user.email },
           emailErr => {
             if (emailErr) {
-              log('error', 'Password reset confirmation email delivery failed.');
+              log(
+                'error',
+                'Password reset confirmation email delivery failed.',
+              );
             }
             return res.json(profileHandler.sanitizeOwnProfile(user));
           },
@@ -271,10 +274,13 @@ service.changePassword = function (req, res) {
       },
 
       // Send email
-      function (user, done) {
+      function (user) {
         emailService.sendResetPasswordConfirm(user, function (err) {
           if (err) {
-            log('error', 'Password change confirmation email delivery failed.');
+            log(
+              'error',
+              'Password change confirmation email delivery failed.',
+            );
           }
           return res.send({
             user: profileHandler.sanitizeOwnProfile(user),
