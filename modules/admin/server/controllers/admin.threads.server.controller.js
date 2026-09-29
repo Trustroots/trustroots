@@ -27,9 +27,9 @@ exports.getThreads = async (req, res) => {
       $match: {
         $or: [
           // eslint-disable-next-line new-cap
-          { userFrom: mongoose.Types.ObjectId(userId) },
+          { userFrom: new mongoose.Types.ObjectId(userId) },
           // eslint-disable-next-line new-cap
-          { userTo: mongoose.Types.ObjectId(userId) },
+          { userTo: new mongoose.Types.ObjectId(userId) },
         ],
       },
     },

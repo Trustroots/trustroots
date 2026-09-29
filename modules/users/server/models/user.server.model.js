@@ -7,7 +7,7 @@ const languages = require('../../../../config/languages/languages.json');
 const authenticationService = require('../services/authentication.server.service');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
-const uniqueValidation = require('mongoose-beautiful-unique-validation');
+const uniqueValidation = require('../../../../config/lib/mongoose-unique-validation');
 const validator = require('validator');
 const Schema = mongoose.Schema;
 
@@ -426,8 +426,7 @@ UserSchema.methods.authenticate = function (password) {
 };
 
 /**
- * Make sure unique fields yeld verbal errors
- * @link https://www.npmjs.com/package/mongoose-beautiful-unique-validation
+ * Convert duplicate unique values into field validation errors.
  */
 UserSchema.plugin(uniqueValidation);
 

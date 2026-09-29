@@ -490,6 +490,45 @@ exports.getUser = async (req, res) => {
   }
 };
 
+/** Admins inspect blockers of all staff; Welcome team members inspect their own. */
+exports.listStaffBlockers = async (req, res) => {
+  try {
+    const staffMembers = req.user.roles.includes('admin')
+      ? await User.find({ roles: { $in: ['admin', 'welcome-team'] } })
+          .select('username displayName')
+          .sort({ username: 1 })
+          .lean()
+      : await User.find({ _id: req.user._id })
+          .select('username displayName')
+          .lean();
+    const staffIds = staffMembers.map(staff => staff._id);
+    const blockers = staffIds.length
+      ? await User.find({ blocked: { $in: staffIds } })
+          .select('username displayName blocked')
+          .sort({ username: 1 })
+          .lean()
+      : [];
+
+    res.send(
+      staffMembers.map(staff => ({
+        _id: staff._id,
+        username: staff.username,
+        displayName: staff.displayName,
+        blockedBy: blockers
+          .filter(blocker => blocker.blocked.some(id => id.equals(staff._id)))
+          .map(({ _id, username, displayName }) => ({
+            _id,
+            username,
+            displayName,
+          })),
+      })),
+    );
+  } catch (err) {
+    log('error', 'Failed to load members who blocked staff.', { error: err });
+    handleAdminApiError(res, err);
+  }
+};
+
 exports.findPotentialMatches = findPotentialMatches;
 
 /**
@@ -534,7 +573,7 @@ exports.changeRole = async (req, res) => {
     );
 
     // No documents were updated
-    if (!user.n) {
+    if (!user.matchedCount) {
       return res.status(404).send({
         message: errorService.getErrorMessageByKey('not-found'),
       });

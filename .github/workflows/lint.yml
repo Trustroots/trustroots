@@ -10,21 +10,28 @@ concurrency:
 
 permissions:
   contents: read
-  checks: write
-  pull-requests: write
 
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
+
   lint:
     # Don't run inline ESlint test if PR is from a forked repo (i.e. it doesn't have read permission)
     # See https://github.com/ataylorme/eslint-annotate-action/issues/28
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: changes
+    if: >
+      always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
+      github.event.pull_request.head.repo.full_name == github.repository
 
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Use Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -55,15 +62,15 @@ jobs:
         # Continue to the next step even if this fails
         continue-on-error: true
       - name: Run ESLint with reviewdog
-        uses: reviewdog/action-eslint@v1.34.0
+        uses: reviewdog/action-eslint@b6303df522851d0e9abaea654da0222037d97e75 # v1.36.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-check
           filter_mode: file # annotate all issues in changed files (mirrors old only-pr-files)
           fail_level: error # fail the check on ESLint errors (warnings still reported)
-          eslint_flags: '.'
+          eslint_flags: '--ext .js,.mjs,.ts,.tsx .'
       - name: Upload ESLint report
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: eslint_report.json
           path: eslint_report.json

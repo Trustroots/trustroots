@@ -2,10 +2,10 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import axios from 'axios';
 import SearchMyCirclesToggle from '@/modules/search/client/components/SearchMyCirclesToggle.component';
+import { listMemberships } from '@/modules/tribes/client/api/tribes.api';
 
-jest.mock('axios');
+jest.mock('@/modules/tribes/client/api/tribes.api');
 
 describe('SearchMyCirclesToggle', () => {
   const onChange = jest.fn();
@@ -15,7 +15,7 @@ describe('SearchMyCirclesToggle', () => {
   });
 
   it('prompts members without circles to join circles', async () => {
-    axios.get.mockResolvedValue({ data: [] });
+    listMemberships.mockResolvedValue([]);
 
     render(<SearchMyCirclesToggle onChange={onChange} selectedTribeIds={[]} />);
 
@@ -27,9 +27,10 @@ describe('SearchMyCirclesToggle', () => {
   });
 
   it('filters search results to the member circles when enabled', async () => {
-    axios.get.mockResolvedValue({
-      data: [{ tribe: { _id: 'tribe-1' } }, { tribe: { _id: 'tribe-2' } }],
-    });
+    listMemberships.mockResolvedValue([
+      { tribe: { _id: 'tribe-1' } },
+      { tribe: { _id: 'tribe-2' } },
+    ]);
 
     render(<SearchMyCirclesToggle onChange={onChange} selectedTribeIds={[]} />);
 
@@ -46,7 +47,7 @@ describe('SearchMyCirclesToggle', () => {
   });
 
   it('handles an empty membership response', async () => {
-    axios.get.mockResolvedValue({ data: null });
+    listMemberships.mockResolvedValue(null);
 
     render(<SearchMyCirclesToggle onChange={onChange} selectedTribeIds={[]} />);
 
@@ -58,9 +59,7 @@ describe('SearchMyCirclesToggle', () => {
   });
 
   it('uses singular copy when the member belongs to one circle', async () => {
-    axios.get.mockResolvedValue({
-      data: [{ tribe: { _id: 'tribe-1' } }],
-    });
+    listMemberships.mockResolvedValue([{ tribe: { _id: 'tribe-1' } }]);
 
     render(<SearchMyCirclesToggle onChange={onChange} selectedTribeIds={[]} />);
 
@@ -72,13 +71,10 @@ describe('SearchMyCirclesToggle', () => {
   });
 
   it('ignores membership results after unmounting', async () => {
-    axios.get.mockImplementation(
+    listMemberships.mockImplementation(
       () =>
         new Promise(resolve => {
-          setTimeout(
-            () => resolve({ data: [{ tribe: { _id: 'tribe-1' } }] }),
-            50,
-          );
+          setTimeout(() => resolve([{ tribe: { _id: 'tribe-1' } }]), 50);
         }),
     );
 
@@ -93,9 +89,10 @@ describe('SearchMyCirclesToggle', () => {
   });
 
   it('disables the toggle when a selected circle is removed from membership', async () => {
-    axios.get.mockResolvedValue({
-      data: [{ tribe: { _id: 'tribe-1' } }, { tribe: { _id: 'tribe-2' } }],
-    });
+    listMemberships.mockResolvedValue([
+      { tribe: { _id: 'tribe-1' } },
+      { tribe: { _id: 'tribe-2' } },
+    ]);
 
     const { rerender } = render(
       <SearchMyCirclesToggle onChange={onChange} selectedTribeIds={[]} />,

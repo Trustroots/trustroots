@@ -91,6 +91,32 @@ test.describe.serial('message action feature coverage', () => {
     await expect(page.getByText(replyText)).toBeVisible();
   });
 
+  test('external links in messages are displayed as plain text', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.external-links', [
+      'External message links are visible but cannot be clicked.',
+    ]);
+
+    const recipientId = await fetchUserIdByUsername(request, portland.username);
+    const message = await page.request.post('/api/messages', {
+      data: {
+        userTo: recipientId,
+        content:
+          'Here is my scam link <a href="https://scammetyscammetyscam.example.com/">scammetyscammetyscam.example.com</a> please click it or else',
+      },
+    });
+    expect(message.ok()).toBeTruthy();
+
+    await page.goto(`/messages/${portland.username}`);
+    const body = page.locator('.message .panel-body').filter({
+      hasText: 'scammetyscammetyscam.example.com',
+    });
+    await expect(body).toBeVisible();
+    await expect(body.locator('a')).toHaveCount(0);
+  });
+
   test('direct conversation links change the recipient and clear the previous draft', async ({
     browser,
     baseURL,

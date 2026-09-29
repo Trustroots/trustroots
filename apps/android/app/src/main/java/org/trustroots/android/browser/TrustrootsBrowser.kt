@@ -7,6 +7,8 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -94,6 +96,12 @@ fun TrustrootsBrowser(
                     settings.userAgentString =
                         "${settings.userAgentString} TrustrootsAndroid/0.1 native"
                     webViewClient = object : WebViewClient() {
+                        override fun onPageFinished(view: WebView, url: String?) {
+                            if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT) &&
+                                url?.startsWith("https://www.trustroots.org/") == true) {
+                                view.evaluateJavascript(embeddedBrowserStyle, null)
+                            }
+                        }
                         override fun shouldOverrideUrlLoading(
                             view: WebView,
                             request: WebResourceRequest,
@@ -109,6 +117,7 @@ fun TrustrootsBrowser(
                             }
                         }
                     }
+                    installEmbeddedBrowserStyle(this)
                     loadUrl(route.url)
                     webView = this
                 }
@@ -117,6 +126,30 @@ fun TrustrootsBrowser(
         )
     }
 }
+
+internal fun installEmbeddedBrowserStyle(webView: WebView) {
+    if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+        WebViewCompat.addDocumentStartJavaScript(
+            webView, embeddedBrowserStyle, setOf("https://www.trustroots.org"),
+        )
+    }
+}
+
+internal val embeddedBrowserStyle = """
+    (() => {
+      if (location.hostname !== 'www.trustroots.org' || document.getElementById('trustroots-android-embedded-style')) return;
+      const style = document.createElement('style');
+      style.id = 'trustroots-android-embedded-style';
+      style.textContent = `
+        #tr-header { display: none !important; }
+        .container-spacer { margin-top: 0 !important; }
+        .container-fullscreen.container-spacer { top: 0 !important; }
+        .home-intro .home-join,
+        #manifesto a[href^="/signup"] { display: none !important; }
+      `;
+      (document.head || document.documentElement).appendChild(style);
+    })();
+""".trimIndent()
 
 internal fun isAllowedTrustrootsURL(url: String): Boolean = runCatching {
     val uri = URI(url)

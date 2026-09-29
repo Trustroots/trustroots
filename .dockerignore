@@ -13,7 +13,6 @@ node_modules/
 .migrate
 .dockerignore
 .gitignore
-.travis.yml
 maildev
 tmp
 uploads

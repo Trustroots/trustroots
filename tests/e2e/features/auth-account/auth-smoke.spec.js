@@ -85,6 +85,21 @@ test.describe.serial('authentication smoke', () => {
     await signUp(page, signupUser);
   });
 
+  test('UI signup creates an account that can sign in with username and email', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signup', [
+      'Signup succeeds for a unique user.',
+    ]);
+
+    const member = createUser();
+    await signUp(page, member);
+    await signOut(page);
+    await signInExisting(page, member.username);
+    await signOut(page);
+    await signInExisting(page, member.email);
+  });
+
   test('signup rejects reserved service names', async ({
     page,
     request,

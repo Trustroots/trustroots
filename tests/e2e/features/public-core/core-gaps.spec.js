@@ -1,5 +1,10 @@
 /* global window */
-const { annotateFeature, test, expect } = require('../../support/test');
+const {
+  annotateFeature,
+  test,
+  expect,
+  useViewportScreenshot,
+} = require('../../support/test');
 
 test.describe('public core manifest gap coverage', () => {
   test('support API accepts valid guest requests', async ({
@@ -23,32 +28,53 @@ test.describe('public core manifest gap coverage', () => {
     });
   });
 
-  test('support API surfaces send failures as validation errors', async ({
-    page,
-  }, testInfo) => {
-    annotateFeature(testInfo, 'public.support-submit', [
-      'Support request validation errors are shown without sending email.',
-    ]);
+  for (const [size, viewport] of Object.entries({
+    desktop: { width: 1280, height: 720 },
+    mobile: { width: 390, height: 640 },
+  })) {
+    test(`support form keeps send failures visible and focused on ${size}`, async ({
+      page,
+    }, testInfo) => {
+      useViewportScreenshot(testInfo);
+      await page.setViewportSize(viewport);
+      annotateFeature(testInfo, 'public.support-submit', [
+        'Support request validation errors are shown without sending email.',
+      ]);
 
-    await page.route('**/api/support', route =>
-      route.fulfill({
-        status: 400,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          message:
-            'Failure while sending your support request. Please try again.',
+      await page.route('**/api/support', route =>
+        route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            message:
+              'Failure while sending your support request. Please try again.',
+          }),
         }),
-      }),
-    );
+      );
 
-    await page.goto('/support');
-    await page.getByLabel(/message/i).fill('E2E failing support request.');
-    await page.getByRole('button', { name: /^send$/i }).click();
+      await page.goto('/support');
+      await page
+        .getByRole('textbox', { name: 'Message', exact: true })
+        .fill('E2E failing support request.');
+      await page.getByRole('button', { name: /^send$/i }).click();
 
-    await expect(
-      page.getByText(/something went wrong sending your message/i),
-    ).toBeVisible();
-  });
+      const alert = page.getByRole('alert');
+      await expect(alert).toContainText(
+        'Something went wrong sending your message.',
+      );
+      await expect(alert).toBeFocused();
+      await expect(alert).toBeInViewport({ ratio: 1 });
+      const navigation = await page
+        .getByRole('navigation', { name: 'Page navigation' })
+        .boundingBox();
+      const error = await alert.boundingBox();
+      expect(error.y).toBeGreaterThanOrEqual(navigation.y + navigation.height);
+      await expect(page.getByLabel('Message', { exact: true })).toHaveValue(
+        'E2E failing support request.',
+      );
+      await expect(page.getByRole('button', { name: /^send$/i })).toBeEnabled();
+    });
+  }
 
   test('support form submits guest reports through the UI', async ({
     page,
@@ -83,9 +109,9 @@ test.describe('public core manifest gap coverage', () => {
     await page.getByRole('button', { name: /^send$/i }).click();
     await supportRequest;
 
-    await expect(page.getByText('Thank you!')).toBeVisible();
+    await expect(page.getByText('Thanks for getting in touch!')).toBeVisible();
     await expect(
-      page.getByText(/sent your message to our support people/i),
+      page.getByText(/Your message has been sent to the Trustroots team/),
     ).toBeVisible();
   });
 
