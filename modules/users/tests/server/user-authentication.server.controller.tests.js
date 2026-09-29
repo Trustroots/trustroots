@@ -1,19 +1,28 @@
 /** Unit tests for the OAuth helpers of the authentication controller. */
-const proxyquire = require('proxyquire').noCallThru();
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const sinon = require('sinon');
+const winston = require('winston');
 const should = require('should');
 
 const testutils = require('../../../../testutils/server/server.testutil');
+require('../../server/models/user.server.model');
 const authController = require('../../server/controllers/users.authentication.server.controller');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 const User = mongoose.model('User');
 
-const controllerPath =
-  '../../server/controllers/users.authentication.server.controller';
+function stubControllerDependencies(dependencyStubs) {
+  for (const [dependencyPath, methods] of Object.entries(dependencyStubs)) {
+    const dependency = require(dependencyPath);
+    for (const [method, implementation] of Object.entries(methods)) {
+      sinon.stub(dependency, method).callsFake(implementation);
+    }
+  }
+
+  return authController;
+}
 /**
  * Express-like response mock that resolves a promise as soon as the controller
  * sends a response, so callback-based controllers can be awaited.
@@ -248,10 +257,9 @@ describe('Authentication controller OAuth unit tests', () => {
     });
 
     it('returns 400 when resending the confirmation email fails', async () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies({
         '../../../core/server/services/email.server.service': {
           sendSignupEmailConfirmation: (user, cb) => cb(new Error('smtp down')),
-          sendEmailConfirmation: (user, cb) => cb(new Error('smtp down')),
         },
       });
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
@@ -324,7 +332,7 @@ describe('Authentication controller OAuth unit tests', () => {
 
   describe('signup', () => {
     function loadSignupController() {
-      return proxyquire(controllerPath, {
+      return stubControllerDependencies({
         '../../../core/server/services/email.server.service': {
           sendSignupEmailConfirmation: (user, cb) => cb(),
         },
@@ -449,7 +457,7 @@ describe('Authentication controller OAuth unit tests', () => {
       const sendFlaggedSignupAlert = sinon
         .stub()
         .callsFake((user, matchedKeywords, callback) => callback());
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies({
         '../../../core/server/services/email.server.service': {
           sendFlaggedSignupAlert,
           sendSignupEmailConfirmation: (user, callback) => callback(),
@@ -479,8 +487,11 @@ describe('Authentication controller OAuth unit tests', () => {
 
     it('continues signup when flagged-alert delivery fails', async () => {
       const log = sinon.stub();
-      const controller = proxyquire(controllerPath, {
-        '../../../../config/lib/logger': log,
+      sinon.stub(winston.Logger.prototype, 'log').callsFake(function (...args) {
+        log(...args);
+        return this;
+      });
+      const controller = stubControllerDependencies({
         '../../../core/server/services/email.server.service': {
           sendFlaggedSignupAlert: (user, matchedKeywords, callback) =>
             callback(new Error('alert mail failed')),
@@ -514,7 +525,7 @@ describe('Authentication controller OAuth unit tests', () => {
     });
 
     it('returns an empty object when signup completes without a user', async () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies({
         async: {
           waterfall(steps, done) {
             done(null);
@@ -556,7 +567,7 @@ describe('Authentication controller OAuth unit tests', () => {
 
     it('uses generic error metadata when validation fails without an error code', async () => {
       let stats;
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies({
         async: {
           waterfall(steps, done) {
             done({ errors: {} });
@@ -593,7 +604,7 @@ describe('Authentication controller OAuth unit tests', () => {
 
   describe('signin', () => {
     function loadSigninController(callback) {
-      return proxyquire(controllerPath, {
+      return stubControllerDependencies({
         passport: {
           authenticate: (strategy, authCallback) => () =>
             authCallback.apply(null, callback()),
