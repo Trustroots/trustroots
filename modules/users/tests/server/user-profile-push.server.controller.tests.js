@@ -5,7 +5,6 @@
  */
 const mongoose = require('mongoose');
 const sinon = require('sinon');
-const proxyquire = require('proxyquire').noCallThru();
 
 require('../../server/models/user.server.model');
 require('../../../contacts/server/models/contacts.server.model');
@@ -21,17 +20,11 @@ require('should');
 
 const User = mongoose.model('User');
 
-const controllerPath =
-  '../../server/controllers/users.profile.server.controller';
 const errorServicePath = '../../../core/server/services/error.server.service';
 
 function loadControllerWithEmptyErrorMessage() {
-  return proxyquire(controllerPath, {
-    [errorServicePath]: {
-      getErrorMessage: () => false,
-      getErrorMessageByKey: require(errorServicePath).getErrorMessageByKey,
-    },
-  });
+  sinon.stub(require(errorServicePath), 'getErrorMessage').returns(false);
+  return profileController;
 }
 
 function deferredResponse() {
