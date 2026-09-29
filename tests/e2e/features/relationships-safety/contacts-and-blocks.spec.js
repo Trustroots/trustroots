@@ -442,4 +442,75 @@ test.describe.serial('contacts and safety feature coverage', () => {
       await context.close();
     }
   });
+
+  test('blocked members receive default avatars while blockers can still unblock', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'safety.block-effects', [
+      'Blocked profile actions are hidden or disabled.',
+      'Blocked users cannot start or continue conversations where prohibited.',
+      'Blocked members receive default avatars while blockers can still unblock.',
+    ]);
+
+    const blocker = createUser();
+    const blocked = createUser();
+    const context = await createIsolatedContext(browser, baseURL);
+    const page = await context.newPage();
+
+    try {
+      await registerViaApi(context.request, blocker);
+      await registerViaApi(context.request, blocked);
+      await Promise.all(
+        [blocker, blocked].map(user =>
+          updateUserByUsername(user.username, {
+            $set: { public: true, avatarUploaded: true, avatarSource: 'local' },
+          }),
+        ),
+      );
+
+      await signInViaApi(page, context.request, blocker);
+      const block = await page.request.put(
+        `/api/blocked-users/${blocked.username}`,
+      );
+      expect(block.ok()).toBeTruthy();
+
+      const blockerProfile = await page.request.get(
+        `/api/users/${blocked.username}`,
+      );
+      expect(blockerProfile.ok()).toBeTruthy();
+      const blockedId = await fetchUserIdByUsername(
+        context.request,
+        blocked.username,
+      );
+      const blockerId = await fetchUserIdByUsername(
+        context.request,
+        blocker.username,
+      );
+      const blockedUserAvatar = await page.request.get(
+        `/api/users/${blockedId}/avatar?size=128`,
+        { maxRedirects: 0 },
+      );
+      expect(blockedUserAvatar.headers().location).toContain(
+        '/uploads-profile/',
+      );
+
+      await signInViaApi(page, context.request, blocked);
+      const hiddenBlockerProfile = await page.request.get(
+        `/api/users/${blocker.username}`,
+      );
+      expect(hiddenBlockerProfile.status()).toBe(404);
+
+      const hiddenBlockerAvatar = await page.request.get(
+        `/api/users/${blockerId}/avatar?size=128`,
+        { maxRedirects: 0 },
+      );
+      expect(hiddenBlockerAvatar.status()).toBe(302);
+      expect(hiddenBlockerAvatar.headers().location).toContain(
+        '/img/avatar-128.png',
+      );
+    } finally {
+      await context.close();
+    }
+  });
 });
