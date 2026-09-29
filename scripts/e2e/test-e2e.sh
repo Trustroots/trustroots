@@ -112,7 +112,7 @@ NODE
 
 needs_firefox_browser() {
   case " $* " in
-    *" --project=photo-upload-firefox "* | *" --project photo-upload-firefox "* | *" --project=messages-firefox-layout "* | *" --project messages-firefox-layout "*)
+    *" --project=photo-upload-firefox "* | *" --project photo-upload-firefox "* | *" --project=messages-firefox-layout "* | *" --project messages-firefox-layout "* | *" --project=search-map-wheel-firefox "* | *" --project search-map-wheel-firefox "*)
       return 0
       ;;
     *" --project"*)
