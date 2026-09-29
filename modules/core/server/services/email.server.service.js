@@ -15,6 +15,7 @@ const agenda = require('../../../../config/lib/agenda');
 const config = require('../../../../config/config');
 const log = require('../../../../config/lib/logger');
 const userRolesService = require('../../../users/server/services/user-roles.server.service');
+const { SUPPORT_CATEGORIES } = require('../../../support/shared/categories');
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 
 /**
@@ -303,6 +304,8 @@ exports.sendFlaggedSignupAlert = function (user, matchedKeywords, callback) {
 
 exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
   let subject = 'Support request';
+  const categoryLabel = SUPPORT_CATEGORIES[supportRequest.category] || 'Other';
+  subject += ' [' + categoryLabel + ']';
 
   // I miss CoffeeSscript
   if (_.has(supportRequest, 'username') && supportRequest.username) {
@@ -318,7 +321,7 @@ exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
     email: config.supportEmail, // `To:`
     replyTo,
     subject,
-    request: supportRequest,
+    request: { ...supportRequest, categoryLabel },
     skipHtmlTemplate: true, // Don't render html template for this email
     sparkpostCampaign: 'support-request',
   };

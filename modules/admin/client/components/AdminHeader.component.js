@@ -5,6 +5,9 @@ import { getCurrentUser } from '../../../core/client/services/client-runtime';
 
 export default function AdminHeader() {
   const isAdmin = (getCurrentUser()?.roles || []).includes('admin');
+  const isWelcomeTeam = (getCurrentUser()?.roles || []).includes(
+    'welcome-team',
+  );
   const currentPath = window.location.pathname.replace('/admin/', '');
 
   useEffect(() => {
@@ -37,6 +40,10 @@ export default function AdminHeader() {
     {
       path: 'acquisition-stories',
       label: 'Acquisition stories',
+    },
+    {
+      path: 'staff-blockers',
+      label: 'Staff blockers',
     },
     {
       path: 'acquisition-stories/analysis',
@@ -75,6 +82,7 @@ export default function AdminHeader() {
             .filter(
               page =>
                 isAdmin ||
+                (page.path === 'staff-blockers' && isWelcomeTeam) ||
                 page.path === 'acquisition-stories' ||
                 page.path === 'acquisition-stories/analysis',
             )

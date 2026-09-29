@@ -50,9 +50,31 @@ describe('Support CRUD tests', () => {
   afterEach(utils.clearDatabase);
 
   context('not logged in', () => {
+    it('stores and emails a volunteer enquiry', async () => {
+      const job = await assertSendingSupportMessage({
+        category: 'volunteering',
+      });
+      should(job.data.subject).containEql('[Volunteering]');
+      should(job.data.text).containEql('Category: Volunteering');
+      const stored = await mongoose
+        .model('SupportRequest')
+        .findOne({ username: 'demousername' });
+      stored.category.should.equal('volunteering');
+    });
+
+    it('rejects an invalid category without storing or emailing it', async () => {
+      await agent
+        .post('/api/support')
+        .send({ category: 'unknown', message: 'Please help.' })
+        .expect(400);
+      (await mongoose.model('SupportRequest').countDocuments()).should.equal(0);
+      jobs.filter(job => job.type === 'send email').length.should.equal(0);
+    });
     it('should be able to send support message', async () => {
       const job = await assertSendingSupportMessage();
-      should(job.data.subject).equal(`Support request from demousername (-)`);
+      should(job.data.subject).equal(
+        `Support request [Other] from demousername (-)`,
+      );
       should(job.data.text).containEql('Authenticated: no');
       should(job.data.text).containEql('Signup confirmed: no');
     });
@@ -62,7 +84,7 @@ describe('Support CRUD tests', () => {
         username: '',
         email: '',
       });
-      should(job.data.subject).equal(`Support request (-)`);
+      should(job.data.subject).equal(`Support request [Other] (-)`);
       should(job.data.text).containEql('Authenticated: no');
       should(job.data.text).containEql('Signup confirmed: no');
     });
@@ -73,10 +95,23 @@ describe('Support CRUD tests', () => {
     beforeEach(utils.signIn.bind(this, _usersPublic[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
+    it('stores and emails a signed-in volunteer enquiry using member details', async () => {
+      const job = await assertSendingSupportMessage({
+        category: 'volunteering',
+      });
+      should(job.data.subject).containEql('[Volunteering]');
+      should(job.data.text).containEql('Category: Volunteering');
+      const stored = await mongoose
+        .model('SupportRequest')
+        .findOne({ user: users[0]._id });
+      stored.category.should.equal('volunteering');
+      stored.email.should.equal(users[0].email);
+    });
+
     it('should be able to send support message', async () => {
       const job = await assertSendingSupportMessage();
       should(job.data.subject).equal(
-        `Support request from ${users[0].username} (${users[0].displayName})`,
+        `Support request [Other] from ${users[0].username} (${users[0].displayName})`,
       );
       should(job.data.text).containEql('Authenticated: yes');
       should(job.data.text).containEql('Signup confirmed: yes');
@@ -98,7 +133,7 @@ describe('Support CRUD tests', () => {
     it('should be able to send support message', async () => {
       const job = await assertSendingSupportMessage();
       should(job.data.subject).equal(
-        `Support request from ${users[1].username} (${users[1].displayName})`,
+        `Support request [Other] from ${users[1].username} (${users[1].displayName})`,
       );
       should(job.data.text).containEql('Authenticated: yes');
       should(job.data.text).containEql('Signup confirmed: no');

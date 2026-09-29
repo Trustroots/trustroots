@@ -9,11 +9,26 @@ const config = require('../../../../config/config');
 const mongoose = require('mongoose');
 const SupportRequest = mongoose.model('SupportRequest');
 const validator = require('validator');
+const { SUPPORT_CATEGORIES } = require('../../shared/categories');
 
 /**
  * Send support request to our support systems
  */
 exports.supportRequest = function (req, res) {
+  const category =
+    req.body.category === undefined
+      ? req.body.reportMember
+        ? 'reportMember'
+        : 'other'
+      : req.body.category;
+  if (
+    typeof category !== 'string' ||
+    !Object.prototype.hasOwnProperty.call(SUPPORT_CATEGORIES, category)
+  ) {
+    return res
+      .status(400)
+      .send({ message: 'Please select a valid support category.' });
+  }
   const build =
     req.app &&
     req.app.locals &&
@@ -22,6 +37,7 @@ exports.supportRequest = function (req, res) {
 
   // Prepare support request variables for the email template
   const supportRequestData = {
+    category,
     /* eslint-disable key-spacing */
     message: req.body.message ? textService.plainText(req.body.message) : '—',
     username: req.user
@@ -39,9 +55,10 @@ exports.supportRequest = function (req, res) {
     authenticated: req.user ? 'yes' : 'no',
     profilePublic: req.user && req.user.public ? 'yes' : 'no',
     signupDate: req.user ? req.user.created.toString() : '-',
-    reportMember: req.body.reportMember
-      ? textService.plainText(req.body.reportMember)
-      : false,
+    reportMember:
+      category === 'reportMember' && req.body.reportMember
+        ? textService.plainText(req.body.reportMember)
+        : false,
     build: build || false,
     /* eslint-enable key-spacing */
   };
@@ -62,6 +79,7 @@ exports.supportRequest = function (req, res) {
 
   // Backup support request for storing it to db
   const storedSupportRequestData = {
+    category,
     userAgent: supportRequestData.userAgent,
     username: supportRequestData.username,
     email: supportRequestData.email,
@@ -111,6 +129,7 @@ exports.supportRequest = function (req, res) {
           },
           tags: {
             authenticated: supportRequestData.authenticated,
+            category,
             type: supportRequestData.reportMember ? 'reportMember' : 'normal',
           },
         };

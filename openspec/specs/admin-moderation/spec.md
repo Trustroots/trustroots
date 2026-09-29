@@ -11,7 +11,10 @@ member activity, and access operational information.
 
 The system SHALL restrict administration tools and administration APIs to
 authorised administrators, except that members with the `welcome-team` role
-SHALL also have access to acquisition stories and analysis and their APIs.
+SHALL also have access to acquisition stories and analysis and their APIs, as
+well as a staff support view where administrators can see who blocked any
+administrator or Welcome team member and Welcome team members can see who
+blocked their own account.
 
 #### Scenario: Administrator opens the dashboard
 
@@ -21,6 +24,23 @@ SHALL also have access to acquisition stories and analysis and their APIs.
 #### Scenario: Regular member requests an administration API
 
 - **WHEN** a regular member without an applicable administrative role requests an administration API
+- **THEN** the system denies access
+
+### Requirement: Staff can identify members who blocked staff accounts
+
+The system SHALL allow administrators to view members who blocked any
+administrator or Welcome team member, and Welcome team members to view members
+who blocked their own account. The view SHALL expose only public identifiers,
+usernames, and display names.
+
+#### Scenario: Staff views members who blocked them
+
+- **WHEN** an administrator or Welcome team member opens the blocked-member support view
+- **THEN** administrators see members who blocked any administrator or Welcome team member, and Welcome team members see members who blocked them
+
+#### Scenario: Regular member requests the staff support list
+
+- **WHEN** a regular member requests the blocked-member support list
 - **THEN** the system denies access
 
 ### Requirement: Administration dashboard overview
@@ -393,7 +413,7 @@ team membership controls.
 
 ### Requirement: Welcome team acquisition access
 
-The system SHALL allow members with the `welcome-team` role to view acquisition stories and analysis, including all existing acquisition data, without granting other administrator permissions. The interface SHALL display the role as Welcome team and show only accessible navigation and member links.
+The system SHALL allow members with the `welcome-team` role to view acquisition stories and analysis, including all existing acquisition data, and the blockers of their own account. Administrator permissions beyond these tools SHALL remain restricted to administrators. The interface SHALL display the role as Welcome team and show only accessible navigation and member links.
 
 #### Scenario: Welcome team views acquisition pages
 

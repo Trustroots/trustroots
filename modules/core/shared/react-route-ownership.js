@@ -329,6 +329,12 @@ const REACT_ROUTE_POLICIES = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/staff-blockers',
+    requiresRole: ['admin', 'welcome-team'],
+    title: 'Admin - Staff blockers',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/acquisition-stories/analysis',
     requiresRole: ['admin', 'welcome-team'],
     title: 'Admin - Acquisition stories analysis',

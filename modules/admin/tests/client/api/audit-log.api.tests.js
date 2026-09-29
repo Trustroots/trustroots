@@ -2,7 +2,9 @@ import axios from 'axios';
 
 import { getAuditLog } from '@/modules/admin/client/api/audit-log.api';
 
-jest.mock('axios');
+jest.mock('axios', () =>
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+);
 
 afterEach(() => {
   jest.clearAllMocks();

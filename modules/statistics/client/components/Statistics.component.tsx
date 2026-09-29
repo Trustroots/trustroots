@@ -1,0 +1,506 @@
+// External dependencies
+import { Trans, useTranslation } from 'react-i18next';
+import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
+import styled from 'styled-components';
+
+// Internal dependencies
+import { get, type StatisticsResponse } from '../api/statistics.api';
+import { getSuggestion } from '@/modules/experiences/client/api/experiences.api';
+import { getNetworkName } from '@/modules/users/client/utils/networks';
+import BoardImplementation from '@/modules/core/client/components/Board';
+import Stat from './Stat';
+import Tooltip from '@/modules/core/client/components/Tooltip';
+
+interface ExperienceSuggestion {
+  displayName: string;
+  username: string;
+}
+
+const Board = BoardImplementation as React.ComponentType<{
+  children?: React.ReactNode;
+  className?: string;
+  names?: string | string[];
+  style?: React.CSSProperties | null;
+}>;
+
+const TypedTooltip = Tooltip as unknown as React.ComponentType<{
+  children: React.ReactNode;
+  id: string;
+  placement?: 'bottom' | 'right';
+  tooltip: string;
+}>;
+
+const Grid = styled.div`
+  align-items: stretch;
+  display: grid;
+  grid-gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+
+  @media (min-width: 481px) {
+    grid-gap: 10px;
+
+    .is-graph {
+      grid-column: span 2;
+    }
+  }
+`;
+
+const CountPlaceholder = styled.div`
+  content: '  ';
+  display: inline-block;
+  min-width: 20px;
+  height: 20px;
+  background: #eee;
+`;
+
+const Count = styled.p`
+  font-size: 50px;
+  line-height: 55px;
+  color: #12b591;
+  font-weight: 300;
+`;
+
+const PeriodGroup = styled.div`
+  & + & {
+    margin-top: 20px;
+  }
+`;
+
+const NetworkList = styled.ul`
+  font-size: 18px;
+  margin: 0;
+  max-width: 300px;
+  width: 100%;
+`;
+
+const NetworkRow = styled.li`
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 7px 2px;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+`;
+
+const NetworkLabel = styled.span`
+  align-items: center;
+  display: flex;
+  gap: 7px;
+  min-width: 0;
+`;
+
+const LegacyLabel = styled.span`
+  background: #eee;
+  border-radius: 10px;
+  color: #666;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 16px;
+  padding: 0 6px;
+  text-transform: uppercase;
+`;
+
+const NetworkPercentage = styled.span`
+  color: #555;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+`;
+
+const LegacyNote = styled.p`
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 14px auto 0;
+  max-width: 300px;
+`;
+
+const legacyNetworks = new Set(['facebook', 'github']);
+
+export default function Statistics({
+  isAuthenticated,
+}: {
+  isAuthenticated: boolean;
+}) {
+  const { t: rawT } = useTranslation('statistics');
+  const t = rawT as unknown as (
+    key: string,
+    options?: Record<string, unknown>,
+  ) => string;
+  const [statistics, setStatistics] = useState<StatisticsResponse | null>(null);
+  const [experienceSuggestion, setExperienceSuggestion] =
+    useState<ExperienceSuggestion | null>(null);
+
+  const numberFormat = (number?: number) =>
+    number ? new Intl.NumberFormat().format(number) : 0;
+  const percentage = (positive?: number, negative?: number) => {
+    const answered = (positive ?? 0) + (negative ?? 0);
+    return answered ? Math.round(((positive ?? 0) / answered) * 100) : 0;
+  };
+  const experienceStatistics = statistics?.experiences ?? {};
+  const recentExperienceStatistics = experienceStatistics.recent ?? {};
+  const messageInteractionStatistics = statistics?.messageInteractions ?? {};
+  const recentMessageInteractionStatistics =
+    messageInteractionStatistics.recent ?? {};
+  const recommendationPercentage = percentage(
+    experienceStatistics.recommended,
+    experienceStatistics.notRecommended,
+  );
+  const recentRecommendationPercentage = percentage(
+    recentExperienceStatistics.recommended,
+    recentExperienceStatistics.notRecommended,
+  );
+  const positiveFeedbackPercentage = percentage(
+    messageInteractionStatistics.positive,
+    messageInteractionStatistics.negative,
+  );
+  const recentPositiveFeedbackPercentage = percentage(
+    recentMessageInteractionStatistics.positive,
+    recentMessageInteractionStatistics.negative,
+  );
+
+  useEffect(() => {
+    const loadStatistics = async () => {
+      const loadSuggestion =
+        getSuggestion as unknown as () => Promise<ExperienceSuggestion | null>;
+      const [{ data }, suggestion] = await Promise.all([
+        get(),
+        isAuthenticated ? loadSuggestion().catch(() => null) : null,
+      ]);
+      setStatistics(data);
+      setExperienceSuggestion(suggestion);
+    };
+
+    loadStatistics();
+  }, [isAuthenticated]);
+
+  return (
+    <>
+      <Board names="nordiclights">
+        <div className="container">
+          <div className="row">
+            <div className="col-xs-12 text-center">
+              <br />
+              <br />
+              <h2>{t('Trustroots Statistics')}</h2>
+              <br />
+              <p className="lead">
+                {/* Dec 23, 2014 */}
+                {t(
+                  'Enabling the latent trust between humans since {{date, LL}}',
+                  { date: new Date(2014, 11, 23) },
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      </Board>
+
+      <section className="container container-spacer">
+        <div className="row">
+          <div className="col-xs-12">
+            <Grid>
+              <Stat title={t('Real-life connections')} className="is-graph">
+                {!statistics ? (
+                  <CountPlaceholder />
+                ) : (
+                  <>
+                    <PeriodGroup>
+                      <Count>
+                        {numberFormat(
+                          experienceStatistics.realLifeConnections?.total ?? 0,
+                        )}
+                      </Count>
+                      <p className="text-muted">
+                        {t(
+                          'This is a lower bound: most people do not share an experience, and Trustroots did not have this experience feature until 2021.',
+                        )}
+                      </p>
+                      {isAuthenticated && (
+                        <p className="text-muted">
+                          {experienceSuggestion ? (
+                            <>
+                              {t('Help make this picture more complete:')}{' '}
+                              <a
+                                href={`/profile/${experienceSuggestion.username}/experiences/new`}
+                              >
+                                {t(
+                                  'Why not write some nice words about {{contactName}}?',
+                                  {
+                                    contactName:
+                                      experienceSuggestion.displayName,
+                                  },
+                                )}
+                              </a>
+                            </>
+                          ) : (
+                            t(
+                              "Help make this picture more complete by sharing an experience from a member's profile.",
+                            )
+                          )}
+                        </p>
+                      )}
+                      <p className="text-muted">
+                        {t('{{percentage}}% recommended overall', {
+                          percentage: recommendationPercentage,
+                        })}
+                      </p>
+                    </PeriodGroup>
+                    <PeriodGroup>
+                      <p className="text-muted">
+                        {t('{{count}} in the last 90 days', {
+                          count: numberFormat(
+                            experienceStatistics.realLifeConnections?.recent ??
+                              0,
+                          ),
+                        })}
+                      </p>
+                      <p className="text-muted">
+                        {t('{{percentage}}% recommended in the last 90 days', {
+                          percentage: recentRecommendationPercentage,
+                        })}
+                      </p>
+                    </PeriodGroup>
+                  </>
+                )}
+              </Stat>
+
+              <Stat title={t('Message interactions')} className="is-graph">
+                {!statistics ? (
+                  <CountPlaceholder />
+                ) : (
+                  <>
+                    <PeriodGroup>
+                      <Count>
+                        {numberFormat(messageInteractionStatistics.total)}
+                      </Count>
+                      <p className="text-muted">
+                        {t(
+                          'Interactions where both members exchanged messages',
+                        )}
+                      </p>
+                      <p className="text-muted">
+                        {t('{{percentage}}% positive feedback overall', {
+                          percentage: positiveFeedbackPercentage,
+                        })}
+                      </p>
+                    </PeriodGroup>
+                    <PeriodGroup>
+                      <p className="text-muted">
+                        {t('{{count}} in the last 90 days', {
+                          count: numberFormat(
+                            recentMessageInteractionStatistics.total,
+                          ),
+                        })}
+                      </p>
+                      <p className="text-muted">
+                        {t(
+                          '{{percentage}}% positive feedback in the last 90 days',
+                          { percentage: recentPositiveFeedbackPercentage },
+                        )}
+                      </p>
+                    </PeriodGroup>
+                  </>
+                )}
+              </Stat>
+
+              <Stat title={t('Members')}>
+                {!statistics ? (
+                  <CountPlaceholder />
+                ) : (
+                  <Count>{numberFormat(statistics?.total)}</Count>
+                )}
+              </Stat>
+
+              <Stat title={t('Member growth')} className="is-graph">
+                <a href="https://grafana.trustroots.org/d/000000002/members">
+                  <img
+                    className="img-responsive"
+                    src="https://grafana.trustroots.org/render/d-solo/000000002/members?orgId=1&theme=light&panelId=1&width=800&height=400&tz=UTC"
+                    width="100%"
+                    alt={t('Member growth')}
+                  />
+                </a>
+              </Stat>
+
+              <Stat title={t('Hosts')}>
+                {!statistics ? (
+                  <>
+                    <CountPlaceholder />
+                    <CountPlaceholder />
+                    <CountPlaceholder />
+                  </>
+                ) : (
+                  <>
+                    <TypedTooltip
+                      id="hosts-tooltip"
+                      tooltip={t('{{count}} members', {
+                        count: numberFormat(statistics?.hosting?.total ?? 0),
+                      })}
+                    >
+                      <Count>{`${
+                        statistics?.hosting?.percentage ?? 0
+                      }%`}</Count>
+                    </TypedTooltip>
+                    <TypedTooltip
+                      id="hosts-yes-tooltip"
+                      tooltip={t('{{count}} members', {
+                        count: numberFormat(statistics?.hosting?.yes ?? 0),
+                      })}
+                      placement="bottom"
+                    >
+                      <p className="text-muted">
+                        {t('{{percentage}}% yes', {
+                          percentage: statistics?.hosting?.yesPercentage ?? 0,
+                        })}
+                      </p>
+                    </TypedTooltip>
+                    <TypedTooltip
+                      id="hosts-maybe-tooltip"
+                      tooltip={t('{{count}} members', {
+                        count: statistics?.hosting?.maybe ?? 0,
+                      })}
+                      placement="bottom"
+                    >
+                      <p className="text-muted">
+                        {t('{{percentage}}% maybe', {
+                          percentage: statistics?.hosting?.maybePercentage ?? 0,
+                        })}
+                      </p>
+                    </TypedTooltip>
+                  </>
+                )}
+              </Stat>
+
+              <Stat title={t('Member retention')} className="is-graph">
+                <a href="https://grafana.trustroots.org/d/UCqv_IYiz/member-retention">
+                  <img
+                    className="img-responsive"
+                    src="https://grafana.trustroots.org/render/d-solo/UCqv_IYiz/member-retention?orgId=1&theme=light&panelId=4&width=800&height=400&tz=UTC"
+                    width="100%"
+                    alt={t('Member retention')}
+                  />
+                </a>
+              </Stat>
+
+              <Stat title={t('Connected to networks')}>
+                <NetworkList className="list-unstyled">
+                  {!statistics
+                    ? Array.from({ length: 6 }, (_, index) => (
+                        <li key={index}>
+                          <CountPlaceholder />
+                        </li>
+                      ))
+                    : statistics?.connections?.map(
+                        ({ network, count, percentage }) => (
+                          <TypedTooltip
+                            id={`network-${network}-tooltip`}
+                            key={network}
+                            placement="right"
+                            tooltip={t('{{count}} members', {
+                              count: numberFormat(count),
+                            })}
+                          >
+                            <NetworkRow>
+                              <NetworkLabel>
+                                <span>{getNetworkName(network)}</span>
+                                {legacyNetworks.has(network) && (
+                                  <LegacyLabel>{t('Legacy')}</LegacyLabel>
+                                )}
+                              </NetworkLabel>
+                              <NetworkPercentage>
+                                {Number(percentage).toFixed(1)}%
+                              </NetworkPercentage>
+                            </NetworkRow>
+                          </TypedTooltip>
+                        ),
+                      )}
+                </NetworkList>
+                {statistics && (
+                  <LegacyNote className="text-muted">
+                    {t(
+                      'Facebook and GitHub percentages represent legacy connections made before social account linking was retired.',
+                    )}
+                  </LegacyNote>
+                )}
+              </Stat>
+
+              <Stat title={t('Newsletter')}>
+                {!statistics ? (
+                  <>
+                    <CountPlaceholder />
+                    <CountPlaceholder />
+                  </>
+                ) : (
+                  <>
+                    <Count>{statistics?.newsletter?.percentage ?? 0}%</Count>
+                    <p className="text-muted">
+                      {t('{{count}} subscribers', {
+                        count: statistics?.newsletter?.count ?? 0,
+                      })}
+                    </p>
+                    {isAuthenticated && (
+                      <p>
+                        <a
+                          className="btn btn-sm btn-default"
+                          href="/profile/edit/account"
+                        >
+                          {t('Subscribe to newsletter')}
+                        </a>
+                      </p>
+                    )}
+                  </>
+                )}
+              </Stat>
+
+              <Stat title={t('Message replies')} className="is-graph">
+                <p className="text-muted">{t('Weekly messages and replies')}</p>
+                <a href="https://grafana.trustroots.org/d/000000004/messages-detailed">
+                  <img
+                    className="img-responsive"
+                    src="https://grafana.trustroots.org/render/d-solo/000000004/messages-detailed?orgId=1&theme=light&panelId=4&width=800&height=400&tz=UTC"
+                    width="100%"
+                    alt={t('Weekly messages and replies')}
+                  />
+                </a>
+              </Stat>
+
+              <Stat title={t('Translation status')} className="is-graph">
+                <a href="https://hosted.weblate.org/engage/trustroots/">
+                  <img
+                    alt={t('Translation status')}
+                    src="https://hosted.weblate.org/widgets/trustroots/-/horizontal-auto.svg"
+                  />
+                </a>
+              </Stat>
+            </Grid>
+
+            <hr />
+
+            <p className="lead">
+              <Trans t={rawT} ns="statistics">
+                Check <a href="https://grafana.trustroots.org/">our Grafana</a>{' '}
+                for stats galore.
+              </Trans>
+            </p>
+
+            <p className="lead">
+              {t('Wanna help understand Trustroots more in depth?')}{' '}
+              <a href="/support?category=volunteering">
+                {t('Consider volunteering!')}
+              </a>
+            </p>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+Statistics.propTypes = {
+  isAuthenticated: PropTypes.bool.isRequired,
+};
