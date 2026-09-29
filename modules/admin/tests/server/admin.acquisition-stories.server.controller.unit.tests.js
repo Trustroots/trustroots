@@ -3,7 +3,6 @@
  */
 const should = require('should');
 const mongoose = require('mongoose');
-const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 
 const adminAcquisitionStories = require('../../server/controllers/admin.acquisition-stories.server.controller');
@@ -377,20 +376,20 @@ describe('Admin acquisition stories controller unit tests', () => {
     });
 
     it('ignores URL tokens that cannot be parsed', async () => {
-      const controller = proxyquire(
-        '../../server/controllers/admin.acquisition-stories.server.controller',
-        {
-          'wink-tokenizer': () => ({
-            tokenize: () => [{ tag: 'url', value: 'not a valid url' }],
-          }),
-        },
-      );
-      const users = utils.generateUsers(1);
-      users[0].acquisitionStory = 'malformed url token';
-      await utils.saveUsers(users);
+      sinon.stub(global, 'URL').callsFake(() => {
+        throw new TypeError('invalid URL');
+      });
+      const storyQuery = {
+        exec: sinon
+          .stub()
+          .resolves([{ acquisitionStory: 'https://example.com' }]),
+      };
+      storyQuery.sort = sinon.stub().returns(storyQuery);
+      storyQuery.limit = sinon.stub().returns(storyQuery);
+      sinon.stub(User, 'find').returns(storyQuery);
 
       const res = mockResponse();
-      await controller.getAnalysis({}, res);
+      await adminAcquisitionStories.getAnalysis({}, res);
 
       should.exist(res.body);
       res.body.table.should.be.an.Array();

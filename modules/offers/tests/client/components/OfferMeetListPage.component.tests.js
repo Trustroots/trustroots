@@ -42,7 +42,6 @@ describe('OfferMeetListPage', () => {
         _id: 'offer-1',
         type: 'meet',
         description: 'Coffee meetup.',
-        location: [51.5, -0.12],
         validUntil: '2030-01-01T00:00:00.000Z',
       },
     ]);
