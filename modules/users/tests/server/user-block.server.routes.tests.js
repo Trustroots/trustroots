@@ -48,6 +48,7 @@ const block = username =>
   new Promise((resolve, reject) =>
     agent
       .put(`/api/blocked-users/${username}`)
+      .set('X-Trustroots-Request', '1')
       .expect(200)
       .end((err, resp) => {
         if (err) {
@@ -63,6 +64,7 @@ const unblock = username =>
   new Promise((resolve, reject) =>
     agent
       .delete(`/api/blocked-users/${username}`)
+      .set('X-Trustroots-Request', '1')
       .expect(200)
       .end((err, resp) => {
         if (err) {

@@ -19,7 +19,10 @@ export async function uploadAvatar(file) {
   const formData = new FormData();
   formData.append('avatar', file);
   await axios.post('/api/users-avatar', formData, {
-    headers: { 'Content-Type': file.type || 'application/octet-stream' },
+    headers: {
+      'Content-Type': file.type || 'application/octet-stream',
+      'X-Trustroots-Request': '1',
+    },
   });
 }
 

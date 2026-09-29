@@ -61,7 +61,10 @@ describe('Admin Newsletter subscribers API tests', () => {
   after(utils.clearDatabase);
 
   it('non-authenticated users should not be allowed to split subscribers', async () => {
-    await agent.post('/api/admin/newsletter-subscribers/split').expect(403);
+    await agent
+      .post('/api/admin/newsletter-subscribers/split')
+      .set('X-Trustroots-Request', '1')
+      .expect(403);
   });
 
   it('non-authenticated users should not be allowed to export subscribers', async () => {
@@ -77,7 +80,10 @@ describe('Admin Newsletter subscribers API tests', () => {
 
   it('non-admin users should not be allowed to split subscribers', async () => {
     await utils.signIn(nonAdminAuth, agent);
-    await agent.post('/api/admin/newsletter-subscribers/split').expect(403);
+    await agent
+      .post('/api/admin/newsletter-subscribers/split')
+      .set('X-Trustroots-Request', '1')
+      .expect(403);
     await agent.get('/api/admin/newsletter-subscribers').expect(403);
     await agent
       .post('/api/admin/newsletter-subscribers/audience')
@@ -94,6 +100,7 @@ describe('Admin Newsletter subscribers API tests', () => {
 
     const { body } = await agent
       .post('/api/admin/newsletter-subscribers/split')
+      .set('X-Trustroots-Request', '1')
       .attach(
         'newsletterCsv',
         Buffer.from(
@@ -135,6 +142,7 @@ describe('Admin Newsletter subscribers API tests', () => {
 
     const { body } = await agent
       .post('/api/admin/newsletter-subscribers/split')
+      .set('X-Trustroots-Request', '1')
       .attach(
         'newsletterCsv',
         Buffer.from(
@@ -239,7 +247,10 @@ describe('Admin Newsletter subscribers API tests', () => {
   it('admin users receive validation errors for missing CSV uploads', async () => {
     await utils.signIn(adminAuth, agent);
 
-    await agent.post('/api/admin/newsletter-subscribers/split').expect(422);
+    await agent
+      .post('/api/admin/newsletter-subscribers/split')
+      .set('X-Trustroots-Request', '1')
+      .expect(422);
 
     await utils.signOut(agent);
   });
@@ -249,6 +260,7 @@ describe('Admin Newsletter subscribers API tests', () => {
 
     const response = await agent
       .post('/api/admin/newsletter-subscribers/split')
+      .set('X-Trustroots-Request', '1')
       .attach('newsletterCsv', Buffer.from('{}'), {
         contentType: 'application/json',
         filename: 'newsletter.json',

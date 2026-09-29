@@ -462,9 +462,18 @@ describe('API route registrations', () => {
     assertHandlers(routeByPath(routes, '/api/auth/signin').post, [
       authentication.signin,
     ]);
-    assertHandlers(routeByPath(routes, '/api/auth/signout').get, [
-      authentication.signout,
-    ]);
+    const signoutRoute = routeByPath(routes, '/api/auth/signout');
+    let getSignoutStatus;
+    signoutRoute.get[0](
+      {},
+      {
+        sendStatus(status) {
+          getSignoutStatus = status;
+        },
+      },
+    );
+    assert.equal(getSignoutStatus, 405);
+    assertHandlers(signoutRoute.post, [authentication.signout]);
     assert.equal(
       routes.some(route => /\/api\/auth\/(facebook|github)/.test(route.path)),
       false,

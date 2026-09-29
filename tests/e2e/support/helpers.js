@@ -1,3 +1,5 @@
+/* global document */
+
 const { expect } = require('@playwright/test');
 
 const DEFAULT_PASSWORD = 'Tester123';
@@ -291,7 +293,13 @@ async function signIn(page, user, identifier = user.username) {
  * homepage.
  */
 async function signOut(page) {
-  await page.goto('/api/auth/signout');
+  await page.evaluate(() => {
+    const form = document.createElement('form');
+    form.method = 'post';
+    form.action = '/api/auth/signout';
+    document.body.appendChild(form);
+    form.submit();
+  });
   await expect(page).toHaveURL(/\/$/);
 }
 

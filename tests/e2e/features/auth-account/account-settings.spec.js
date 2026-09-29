@@ -123,12 +123,14 @@ test.describe.serial('account settings feature coverage', () => {
     await signInViaApi(page, request, user);
 
     const invalid = await page.request.put('/api/users', {
+      headers: { Origin: new URL(page.url()).origin },
       data: { locale: 'definitely-invalid-locale' },
     });
     expect(invalid.status()).toBe(400);
 
     const tagline = 'E2E account update tagline';
     const valid = await page.request.put('/api/users', {
+      headers: { Origin: new URL(page.url()).origin },
       data: { tagline },
     });
     expect(valid.ok()).toBeTruthy();

@@ -435,6 +435,7 @@ describe('Offer CRUD tests', function () {
     it('should not be able to delete offer if not authenticated', function (done) {
       agent
         .delete('/api/offers')
+        .set('X-Trustroots-Request', '1')
         .expect(403)
         .end(function (offerSaveErr, offerSaveRes) {
           offerSaveRes.body.message.should.equal('Forbidden.');

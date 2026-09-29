@@ -199,8 +199,9 @@ class MobileApiClient(
             runCatching {
                 jsonRequest(
                     path = "/api/auth/signout",
-                    method = "GET",
+                    method = "POST",
                     sessionCookie = session.cookieHeader,
+                    requestHeaders = mapOf("X-Trustroots-Request" to "1"),
                 )
                 Unit
             }
@@ -369,6 +370,7 @@ class MobileApiClient(
         method: String,
         body: String? = null,
         sessionCookie: String? = null,
+        requestHeaders: Map<String, String> = emptyMap(),
         rejectedMessage: String = "The request was not accepted.",
     ): JsonResponse {
         val endpoint = URL("${baseURL.trimEnd('/')}$path")
@@ -379,6 +381,10 @@ class MobileApiClient(
             connection.readTimeout = 15_000
             connection.setRequestProperty("Accept", "application/json")
             connection.setRequestProperty("User-Agent", "TrustrootsAndroid/0.1")
+            if (method != "GET" && method != "HEAD") {
+                connection.setRequestProperty("X-Trustroots-Request", "1")
+            }
+            requestHeaders.forEach { (name, value) -> connection.setRequestProperty(name, value) }
             sessionCookie?.let { connection.setRequestProperty("Cookie", it) }
             body?.let {
                 connection.doOutput = true

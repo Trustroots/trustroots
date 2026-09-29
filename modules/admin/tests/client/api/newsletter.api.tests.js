@@ -114,6 +114,7 @@ describe('admin newsletter api', () => {
       {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'X-Trustroots-Request': '1',
         },
       },
     );

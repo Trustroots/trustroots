@@ -8,6 +8,7 @@ const express = require('express');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const session = require('express-session');
+const csrfProtection = require('./csrf-protection');
 const mongoStore = require('connect-mongo');
 const favicon = require('serve-favicon');
 const compress = require('compression');
@@ -461,6 +462,9 @@ module.exports.init = function (connection) {
 
   // Initialize Express middleware
   this.initMiddleware(app);
+
+  // Reject cross-origin state changes before session and route middleware.
+  app.use(csrfProtection(config));
 
   // Initialize Express view engine
   this.initViewEngine(app);

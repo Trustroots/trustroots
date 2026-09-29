@@ -50,6 +50,7 @@ export async function splitNewsletterSubscribers(newsletterCsvFile) {
     {
       headers: {
         'Content-Type': 'multipart/form-data',
+        'X-Trustroots-Request': '1',
       },
     },
   );

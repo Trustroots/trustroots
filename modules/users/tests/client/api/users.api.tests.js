@@ -53,7 +53,10 @@ describe('users api', () => {
       '/api/users-avatar',
       expect.any(FormData),
       {
-        headers: { 'Content-Type': 'image/png' },
+        headers: {
+          'Content-Type': 'image/png',
+          'X-Trustroots-Request': '1',
+        },
       },
     );
   });
@@ -68,7 +71,10 @@ describe('users api', () => {
       '/api/users-avatar',
       expect.any(FormData),
       {
-        headers: { 'Content-Type': 'application/octet-stream' },
+        headers: {
+          'Content-Type': 'application/octet-stream',
+          'X-Trustroots-Request': '1',
+        },
       },
     );
   });

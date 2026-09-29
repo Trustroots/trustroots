@@ -29,7 +29,10 @@ module.exports = function (app) {
     .route('/api/auth/signup/validate')
     .post(userAuthentication.signupValidation);
   app.route('/api/auth/signin').post(userAuthentication.signin);
-  app.route('/api/auth/signout').get(userAuthentication.signout);
+  app
+    .route('/api/auth/signout')
+    .get((req, res) => res.sendStatus(405))
+    .post(userAuthentication.signout);
 
   // Validate username
 };
