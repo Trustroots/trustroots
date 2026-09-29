@@ -1,4 +1,3 @@
-const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 require('should');
 
@@ -7,11 +6,10 @@ function loadPolicy() {
     allow: sinon.stub(),
     areAnyRolesAllowed: sinon.stub(),
   };
-  const createMemoryPolicy = () => mockAcl;
-  const policy = proxyquire('../../server/policies/users.server.policy', {
-    '../../../core/server/services/memory-policy.server.service':
-      createMemoryPolicy,
-  });
+  const policy = require('../../server/policies/users.server.policy');
+  const { _acl } = require('../../server/policies/users.server.policy.mjs');
+  sinon.stub(_acl, 'allow').callsFake(mockAcl.allow);
+  sinon.stub(_acl, 'areAnyRolesAllowed').callsFake(mockAcl.areAnyRolesAllowed);
   return { policy, mockAcl };
 }
 
@@ -29,6 +27,8 @@ function mockResponse() {
 }
 
 describe('Users policy unit tests', () => {
+  afterEach(() => sinon.restore());
+
   it('registers user and admin role policies', () => {
     const { policy, mockAcl } = loadPolicy();
 

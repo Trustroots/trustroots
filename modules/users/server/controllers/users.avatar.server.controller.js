@@ -335,6 +335,7 @@ const userForAvatarByUserId = async (req, res, next, userId) => {
     'avatarSource',
     'avatarUploaded',
     'avatarVersion',
+    'blocked',
     'emailHash', // MD5 hashed email to use with Gravatars
     'id',
     'public',
