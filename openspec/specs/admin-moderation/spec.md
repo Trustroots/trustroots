@@ -413,7 +413,7 @@ team membership controls.
 
 ### Requirement: Welcome team acquisition access
 
-The system SHALL allow members with the `welcome-team` role to view acquisition stories and analysis, including all existing acquisition data, without granting other administrator permissions. The interface SHALL display the role as Welcome team and show only accessible navigation and member links.
+The system SHALL allow members with the `welcome-team` role to view acquisition stories and analysis, including all existing acquisition data, and the blockers of their own account. Administrator permissions beyond these tools SHALL remain restricted to administrators. The interface SHALL display the role as Welcome team and show only accessible navigation and member links.
 
 #### Scenario: Welcome team views acquisition pages
 
