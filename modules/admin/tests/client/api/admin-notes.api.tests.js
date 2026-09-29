@@ -2,7 +2,9 @@ import axios from 'axios';
 
 import { addNote, listNotes } from '@/modules/admin/client/api/admin-notes.api';
 
-jest.mock('axios');
+jest.mock('axios', () =>
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+);
 
 afterEach(() => {
   jest.clearAllMocks();
