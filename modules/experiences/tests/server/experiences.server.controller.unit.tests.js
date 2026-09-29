@@ -95,11 +95,11 @@ describe('Experiences controller unit tests', () => {
     });
 
     it('includes pending experiences for the authenticated user', async () => {
-      const [user] = await utils.saveUsers(
-        utils.generateUsers(1, { public: true }),
+      const [user, author] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
       );
       await new Experience({
-        userFrom: new mongoose.Types.ObjectId(),
+        userFrom: author._id,
         userTo: user._id,
         public: false,
         recommend: 'yes',
@@ -122,8 +122,8 @@ describe('Experiences controller unit tests', () => {
       const [user] = await utils.saveUsers(
         utils.generateUsers(1, { public: true }),
       );
-      sinon.stub(Experience, 'find').returns({
-        count: () => {
+      sinon.stub(Experience, 'aggregate').returns({
+        exec: () => {
           throw new Error('count failed');
         },
       });

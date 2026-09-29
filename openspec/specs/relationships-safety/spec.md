@@ -46,6 +46,13 @@ contact record remains.
 - **THEN** the system displays the visible contacts or an empty state
 - **AND** omits suspended and shadowbanned contacts
 
+#### Scenario: Member accesses or confirms a restricted contact directly
+
+- **WHEN** a member requests a contact by its identifier or the other member's identifier, or attempts to confirm it
+- **AND** either participant is suspended or shadowbanned
+- **THEN** the system reports that the contact was not found
+- **AND** leaves the stored contact unchanged
+
 #### Scenario: Member requests common contacts
 
 - **WHEN** a member requests common contacts for two members
