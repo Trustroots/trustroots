@@ -10,8 +10,6 @@ concurrency:
 
 permissions:
   contents: read
-  checks: write
-  pull-requests: write
 
 jobs:
   changes:
@@ -26,11 +24,14 @@ jobs:
       github.event.pull_request.head.repo.full_name == github.repository
 
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Use Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version-file: '.nvmrc'
           cache: npm
@@ -61,7 +62,7 @@ jobs:
         # Continue to the next step even if this fails
         continue-on-error: true
       - name: Run ESLint with reviewdog
-        uses: reviewdog/action-eslint@v1.34.0
+        uses: reviewdog/action-eslint@556a3fdaf8b4201d4d74d406013386aa4f7dab96 # v1.34.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-check
@@ -69,7 +70,7 @@ jobs:
           fail_level: error # fail the check on ESLint errors (warnings still reported)
           eslint_flags: '--ext .js,.mjs,.ts,.tsx .'
       - name: Upload ESLint report
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: eslint_report.json
           path: eslint_report.json
