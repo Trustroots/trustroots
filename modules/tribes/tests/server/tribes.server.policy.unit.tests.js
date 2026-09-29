@@ -1,18 +1,12 @@
-const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 require('should');
 
 function loadPolicy() {
-  const mockAcl = {
-    allow: sinon.stub(),
-    areAnyRolesAllowed: sinon.stub(),
-  };
-  const createMemoryPolicy = () => mockAcl;
-  const policy = proxyquire('../../server/policies/tribes.server.policy', {
-    '../../../core/server/services/memory-policy.server.service':
-      createMemoryPolicy,
-  });
-  return { policy, mockAcl };
+  const implementation = require('../../server/policies/tribes.server.policy.mjs');
+  const mockAcl = implementation._acl;
+  sinon.stub(mockAcl, 'allow');
+  sinon.stub(mockAcl, 'areAnyRolesAllowed');
+  return { policy: implementation.default, mockAcl };
 }
 
 function mockResponse() {
@@ -33,6 +27,8 @@ function mockResponse() {
 }
 
 describe('Tribes policy unit tests', () => {
+  afterEach(() => sinon.restore());
+
   it('registers admin, user, and guest tribe policies', () => {
     const { policy, mockAcl } = loadPolicy();
 
