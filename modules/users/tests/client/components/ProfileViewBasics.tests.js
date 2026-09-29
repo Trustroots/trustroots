@@ -227,7 +227,8 @@ describe('<ProfileViewBasics />', () => {
     render(
       <ProfileViewBasics
         profile={{
-          created: '2020-01-01T00:00:00.000Z',
+          created: undefined,
+          additionalProvidersData: { github: null },
           languages: [],
           seen: null,
         }}
@@ -239,7 +240,8 @@ describe('<ProfileViewBasics />', () => {
     expect(screen.queryByText(/^Reply rate/)).not.toBeInTheDocument();
     expect(screen.queryByText(/^Replies within/)).not.toBeInTheDocument();
     expect(screen.queryByText('Languages')).not.toBeInTheDocument();
-    expect(screen.queryByText('Elsewhere')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'GitHub' })).toBeInTheDocument();
+    expect(screen.getByText('Elsewhere')).toBeInTheDocument();
     expect(
       screen.queryByRole('link', { name: 'Nostroots' }),
     ).not.toBeInTheDocument();
