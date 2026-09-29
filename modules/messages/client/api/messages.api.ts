@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../../../core/client/api/http-client.js';
 import parseLinkheader from 'parse-link-header';
 export type MessageUser = {
   _id: string;

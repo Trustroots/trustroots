@@ -1,0 +1,4 @@
+- [x] Implement shared route authorisation middleware in six callback-based policies.
+- [x] Add focused helper regression tests and retain existing policy and end-to-end coverage.
+- [x] Run focused tests, lint and strict proposal validation.
+- [x] Update the runtime-platform living spec and archive the proposal.
