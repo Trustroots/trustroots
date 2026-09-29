@@ -11,7 +11,9 @@ import { getCurrentRouteParams } from '@/modules/core/client/services/client-run
 import { userType } from '@/modules/users/client/users.prop-types';
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
 import Board from './PageBoard';
-import SiteFooter, { type Build } from '@/modules/core/client/components/SiteFooter.component.js';
+import SiteFooter, {
+  type Build,
+} from '@/modules/core/client/components/SiteFooter.component.js';
 import type { PhotoCredit } from '@/modules/core/client/components/BoardCredits';
 import ManifestoText from './ManifestoText.component.js';
 import Screenshot from '@/modules/core/client/components/Screenshot.js';
