@@ -48,4 +48,3 @@ The project SHALL implement the public pages and statistics client modules in st
 - **WHEN** the client test suite and coverage run
 - **THEN** the migrated modules remain exercised by their existing tests
 - **AND** the established client coverage thresholds remain satisfied
-
