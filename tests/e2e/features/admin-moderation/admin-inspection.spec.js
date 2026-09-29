@@ -16,6 +16,92 @@ test.describe('admin moderation inspection flows', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
   });
 
+  test('staff blockers are grouped for admins and limited for Welcome team members', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.staff-blockers', [
+      'Admins can inspect blockers of any administrator or Welcome team member.',
+      'Welcome team members can inspect only blockers of their own account.',
+      'Regular members cannot access staff blocker information.',
+    ]);
+    const administrator = createUser();
+    const welcomer = createUser();
+    const blocker = createUser();
+    for (const user of [administrator, welcomer, blocker]) {
+      await registerViaApi(request, user);
+    }
+    const adminDoc = await findUserByUsername(administrator.username);
+    const welcomerDoc = await findUserByUsername(welcomer.username);
+    const blockerDoc = await findUserByUsername(blocker.username);
+    const fixtureIds = [adminDoc._id, welcomerDoc._id, blockerDoc._id];
+
+    try {
+      await withE2eDb(async db => {
+        await db
+          .collection('users')
+          .updateOne(
+            { _id: adminDoc._id },
+            { $addToSet: { roles: 'admin' }, $set: { public: true } },
+          );
+        await db
+          .collection('users')
+          .updateOne(
+            { _id: welcomerDoc._id },
+            { $addToSet: { roles: 'welcome-team' }, $set: { public: true } },
+          );
+        await db
+          .collection('users')
+          .updateOne(
+            { _id: blockerDoc._id },
+            { $set: { blocked: [adminDoc._id, welcomerDoc._id] } },
+          );
+      });
+      await signInViaApi(page, request, SEEDED_ADMIN);
+      await page.goto('/admin/staff-blockers');
+      for (const staffMember of [administrator, welcomer]) {
+        const group = page.locator('section').filter({
+          has: page.getByRole('heading', {
+            name: new RegExp(staffMember.username),
+          }),
+        });
+        await expect(
+          group.getByText(`(@${blocker.username})`, { exact: false }),
+        ).toBeVisible();
+      }
+
+      await signInViaApi(page, request, welcomer);
+      await page.goto('/admin/staff-blockers');
+      await expect(
+        page.getByRole('heading', { name: 'Members who blocked you' }),
+      ).toBeVisible();
+      await expect(
+        page.getByText(`(@${blocker.username})`, { exact: false }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole('heading', { name: new RegExp(administrator.username) }),
+      ).toHaveCount(0);
+      const response = await page.request.get(
+        `/api/admin/staff-blockers?userId=${adminDoc._id}`,
+      );
+      expect(response.ok()).toBeTruthy();
+      expect((await response.json()).map(staff => staff._id)).toEqual([
+        String(welcomerDoc._id),
+      ]);
+
+      await signInViaApi(page, request, blocker);
+      expect(
+        (await page.request.get('/api/admin/staff-blockers')).status(),
+      ).toBe(403);
+      await page.goto('/admin/staff-blockers');
+      await expect(page).toHaveURL(/\/volunteering$/);
+    } finally {
+      await withE2eDb(db =>
+        db.collection('users').deleteMany({ _id: { $in: fixtureIds } }),
+      );
+    }
+  });
+
   test('admin messages tool shows shadow-hidden messages between members', async ({
     page,
   }, testInfo) => {
