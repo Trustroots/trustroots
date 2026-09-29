@@ -285,6 +285,7 @@ describe('Password controller direct unit tests', () => {
             newPassword: 'newpassword123',
             verifyPassword: 'newpassword123',
           },
+          login: (authenticatedUser, callback) => callback(),
         },
         res,
       );
@@ -339,6 +340,30 @@ describe('Password controller direct unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(400);
       res.body.message.should.equal('Current password is incorrect.');
+    });
+
+    it('includes a legacy salt and non-zero auth version in its compare-and-set', async () => {
+      const user = fakeUser({ salt: 'legacy-salt', authVersion: 3 });
+      const controller = loadController({ user });
+      const res = deferredResponse();
+
+      controller.changePassword(
+        {
+          user: { id: 'user-id' },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (authenticatedUser, callback) => callback(),
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      user.lastPasswordUpdate.query.salt.should.equal('legacy-salt');
+      user.lastPasswordUpdate.query.authVersion.should.equal(3);
     });
 
     it('reports a password update database error', async () => {

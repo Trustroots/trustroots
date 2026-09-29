@@ -12,8 +12,7 @@ const LEGACY_ITERATIONS = 10000;
 const LEGACY_KEY_BYTES = 64;
 const LEGACY_DIGEST = 'sha1';
 const MAX_ACTIVE_KDFS = 1;
-// Fixture setup and legitimate concurrent requests can briefly exceed the
-// old 16-item cap. Keep the queue bounded while allowing those bursts to drain.
+// Allow short request bursts to queue while bounding outstanding process work.
 const MAX_QUEUED_KDFS = 64;
 const DUMMY_SALT = Buffer.alloc(SALT_BYTES, 0);
 const DUMMY_KEY = Buffer.alloc(KEY_BYTES, 0);

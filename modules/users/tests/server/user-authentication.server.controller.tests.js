@@ -613,6 +613,21 @@ describe('Authentication controller OAuth unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
+    it('returns retryable service unavailable for password hash overload', async () => {
+      const overload = Object.assign(new Error('busy'), {
+        code: 'KDF_OVERLOADED',
+      });
+      const controller = loadSigninController(() => [overload, null, null]);
+      const res = deferredResponse();
+
+      controller.signin({}, res, () => {});
+      await res.waitForResponse();
+      res.statusCode.should.equal(503);
+      res.body.message.should.equal(
+        'Password service is temporarily busy. Please try again.',
+      );
+    });
+
     it('rejects suspended users', async () => {
       const controller = loadSigninController(() => [
         null,
