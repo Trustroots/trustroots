@@ -619,7 +619,9 @@ exports.getMiniUser = function (req, res) {
     // checks in `userMiniByID`
     delete profile.roles;
 
-    return res.json(profile);
+    return res.json(
+      selectProfileResponse(profile, sameUser(req.profile, req.user)),
+    );
   }
 
   res.json({});
