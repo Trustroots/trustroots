@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 // Internal dependencies
 import '@/config/client/i18n';
 import { createValidator } from '@/modules/core/client/utils/validation';
+import { readApiError } from '@/modules/users/client/utils/api-error';
 import * as supportApi from '@/modules/support/client/api/support.api';
 import * as experiencesApi from '../api/experiences.api';
 import DuplicateInfo from './create-experience/DuplicateInfo';
@@ -18,7 +19,9 @@ import Recommend from './create-experience/Recommend';
 import StepNavigation from '@/modules/core/client/components/StepNavigation';
 import SubmittedInfo from './create-experience/SubmittedInfo';
 import type {
+  Experience,
   ExperienceInteractions,
+  ExperienceMine,
   ExperienceRecommendation,
   ExperienceUser,
 } from '../experiences.prop-types';
@@ -128,23 +131,30 @@ export default function CreateExperience({
     };
 
     try {
-      let savedExperience;
+      let savedExperience: Experience | ExperienceMine | null;
       try {
         savedExperience = await experiencesApi.create({
           ...experience,
           userTo: userTo._id,
         });
       } catch (error) {
-        if (error?.response?.status !== 409) {
+        if (readApiError(error).status !== 409) {
           throw error;
         }
         // A previous save may have succeeded even if its response was lost.
         savedExperience = await experiencesApi.readMine({
           userWith: userTo._id,
         });
-        if (savedExperience?.userFrom !== userFrom._id) {
+        const savedAuthorId =
+          typeof savedExperience?.userFrom === 'string'
+            ? savedExperience.userFrom
+            : savedExperience?.userFrom?._id;
+        if (!savedExperience || savedAuthorId !== userFrom._id) {
           throw error;
         }
+      }
+      if (!savedExperience) {
+        throw new Error('The experience response was empty.');
       }
       setIsPublic(savedExperience.public);
       if (recommend === 'no' && report) {
@@ -152,8 +162,14 @@ export default function CreateExperience({
       }
       setIsSubmitted(true);
     } catch (error) {
+      const apiError = readApiError(error);
+      const details = apiError.data.details;
+      const feedbackPublicError =
+        typeof details === 'object' && details !== null
+          ? (details as Record<string, unknown>).feedbackPublic
+          : undefined;
       setSubmitError(
-        error?.response?.data?.details?.feedbackPublic === 'toolong'
+        feedbackPublicError === 'toolong'
           ? t('Your feedback is too long. Please shorten it and try again.')
           : t(
               'We could not save your experience. Your text is still here. Please try again.',
