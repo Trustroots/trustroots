@@ -271,10 +271,14 @@ service.contactByUserId = function (req, res, next, userId) {
         },
       ],
     })
-      .populate('userTo userFrom', getUserProfile().userMiniProfileFields)
+      .populate({
+        path: 'userTo userFrom',
+        select: getUserProfile().userMiniProfileFields,
+        match: { roles: { $nin: userRolesService.restrictedMessagingRoles } },
+      })
       .exec(function (err, contact) {
         if (err) return next(err);
-        if (!contact) {
+        if (!contact || !contact.userFrom || !contact.userTo) {
           return res.status(404).json({
             message: errorService.getErrorMessageByKey('not-found'),
           });
@@ -301,13 +305,19 @@ service.contactById = function (req, res, next, contactId) {
 
   if (req.user && req.user.public) {
     Contact.findById(contactId)
-      .populate('userTo userFrom', getUserProfile().userMiniProfileFields)
+      .populate({
+        path: 'userTo userFrom',
+        select: getUserProfile().userMiniProfileFields,
+        match: { roles: { $nin: userRolesService.restrictedMessagingRoles } },
+      })
       .exec(function (err, contact) {
         if (err) return next(err);
 
         // If nothing was found or neither of the user ID's match currently authenticated user's id, return 404
         if (
           !contact ||
+          !contact.userFrom ||
+          !contact.userTo ||
           !req.user ||
           (!contact.userFrom._id.equals(req.user._id.valueOf()) &&
             !contact.userTo._id.equals(req.user._id.valueOf()))
