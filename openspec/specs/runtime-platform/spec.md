@@ -112,6 +112,25 @@ path as an adapter until all consumers have migrated.
 - **WHEN** an ESM consumer imports the implementation
 - **THEN** it can access the service functions through named ESM exports
 
+### Requirement: Shared route authorisation middleware
+
+The users, offers, messages, contacts, tribes and reference-thread callback-based route policies SHALL share role lookup and ACL response handling while preserving route grants, guest fallback, domain prechecks, ownership shortcuts and existing HTTP status and response bodies. The admin policy and asynchronous experiences policy remain outside this shared middleware.
+
+#### Scenario: ACL allows a request
+
+- **WHEN** one of the six policies evaluates a request after its domain prechecks
+- **THEN** it checks the existing route grant for the user's roles, or `guest` when roles are absent, and calls the next handler only when allowed
+
+#### Scenario: ACL denies or fails
+
+- **WHEN** the ACL denies a request or reports an unexpected error
+- **THEN** the policy returns its existing 403 denial or 500 error response, including its established JSON or send method
+
+#### Scenario: Excluded policies
+
+- **WHEN** the admin or asynchronous experiences policy evaluates a request
+- **THEN** its existing authorisation and error handling remains in use
+
 ### Requirement: Migrated service objects preserve shared method replacements
 
 Migrated spam, upload, statistics and Influx services SHALL expose named ESM functions and retain synchronous CommonJS adapters with the existing API. Where consumers replace service methods, the adapter SHALL return the same mutable object used by ESM consumers and internal dispatch.
