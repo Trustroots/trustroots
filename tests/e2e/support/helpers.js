@@ -293,12 +293,12 @@ async function signIn(page, user, identifier = user.username) {
 async function signOut(page) {
   await Promise.all([
     page.waitForURL(/\/$/),
-    page.evaluate(() => {
-      const form = document.createElement('form');
+    page.locator('body').evaluate(body => {
+      const form = body.ownerDocument.createElement('form');
       form.method = 'post';
       form.action = '/api/auth/signout';
       form.target = '_top';
-      document.body.appendChild(form);
+      body.appendChild(form);
       form.submit();
     }),
   ]);
