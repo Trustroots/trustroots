@@ -1,6 +1,16 @@
 @import '~less/global-variables';
 @import './variables';
 
+// Keep the clear button's bottom border level with the location input.
+.search-place .input-group-btn {
+  display: flex;
+  align-items: stretch;
+
+  .btn {
+    height: 100%;
+  }
+}
+
 // Search input at sidebar (bigger screens)
 .search-sidebar-section {
   .search-place {
