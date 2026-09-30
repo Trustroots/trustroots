@@ -490,10 +490,6 @@ export const getUser = async (req, res) => {
   }
 };
 
-/**
- * This middleware changes user roles by ID
- * Used for suspending users or setting them a "shadow ban"
- */
 /** Admins inspect blockers of all staff; Welcome team members inspect their own. */
 export const listStaffBlockers = async (req, res) => {
   try {
@@ -513,26 +509,30 @@ export const listStaffBlockers = async (req, res) => {
           .lean()
       : [];
 
-    res.send(
-      staffMembers.map(staff => ({
-        _id: staff._id,
-        username: staff.username,
-        displayName: staff.displayName,
-        blockedBy: blockers
-          .filter(blocker => blocker.blocked.some(id => id.equals(staff._id)))
-          .map(({ _id, username, displayName }) => ({
-            _id,
-            username,
-            displayName,
-          })),
-      })),
-    );
+    /** @type {import('../../shared/staff-blockers').StaffBlocker<import('mongoose').Types.ObjectId>[]} */
+    const staffBlockers = staffMembers.map(staff => ({
+      _id: staff._id,
+      username: staff.username,
+      displayName: staff.displayName,
+      blockedBy: blockers
+        .filter(blocker => blocker.blocked.some(id => id.equals(staff._id)))
+        .map(({ _id, username, displayName }) => ({
+          _id,
+          username,
+          displayName,
+        })),
+    }));
+    res.send(staffBlockers);
   } catch (err) {
     log('error', 'Failed to load members who blocked staff.', { error: err });
     handleAdminApiError(res, err);
   }
 };
 
+/**
+ * This middleware changes user roles by ID
+ * Used for suspending users or setting them a "shadow ban"
+ */
 export const changeRole = async (req, res) => {
   const userId = _.get(req, ['body', 'id']);
   const role = _.get(req, ['body', 'role']);
