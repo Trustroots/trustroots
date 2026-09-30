@@ -7,7 +7,10 @@ import deprecatedLanguages from '../../../../config/languages/deprecated.js';
 import reactRouteOwnership from '../../shared/react-route-ownership.js';
 
 const require = createRequire(import.meta.url);
+// JSON import attributes are not supported by the pinned formatter.
+// eslint-disable-next-line import/no-commonjs
 const languagesObject = require('../../../../config/languages/languages.json');
+// eslint-disable-next-line import/no-commonjs
 const languagesArray = require('../../../../config/languages/languages-array.json');
 const service = {};
 
