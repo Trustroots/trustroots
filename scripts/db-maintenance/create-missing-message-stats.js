@@ -31,8 +31,7 @@ var searchMessagesParam = {
   // */
 };
 
-var chalk = require('chalk'),
-    async = require('async'),
+var async = require('async'),
     config = require('../../config/config'),
     configMongoose = require('../../config/lib/mongoose'),
     mongoose = require('mongoose'),
@@ -50,7 +49,7 @@ var chalk = require('chalk'),
 mongoose.set('strictQuery', false);
 var db = mongoose.connect(config.db.uri, function(err) {
   if (err) {
-    console.log(chalk.red('Could not connect to MongoDB!'));
+    console.log('Could not connect to MongoDB!');
     console.error(err);
   }
 });

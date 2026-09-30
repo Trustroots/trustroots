@@ -4,7 +4,6 @@
 const config = require('../config');
 const mongoose = require('./mongoose');
 const express = require('./express');
-const chalk = require('chalk');
 
 // Initialize Models
 mongoose.loadModels();
@@ -36,47 +35,36 @@ module.exports.start = function start(callback) {
         config.mailer.service === 'MAILER_SERVICE_PROVIDER'
       ) {
         console.warn(
-          chalk.red(
-            "Remember to setup mailer from ./config/env/local.js - some features won't work without it.",
-          ),
+          "Remember to setup mailer from ./config/env/local.js - some features won't work without it.",
         );
       }
 
       // Logging initialization
-      console.log(chalk.white('--'));
-      console.log(chalk.green(new Date()));
-      console.log(chalk.green('Environment:\t\t' + process.env.NODE_ENV));
-      console.log(chalk.green('Database:\t\t' + config.db.uri));
+      console.log('--');
+      console.log(new Date());
+      console.log('Environment:\t\t' + process.env.NODE_ENV);
+      console.log('Database:\t\t' + config.db.uri);
       console.log(
-        chalk.green(
-          'Database autoindexing:\t' + (config.db.autoIndex ? 'on' : 'off'),
-        ),
+        'Database autoindexing:\t' + (config.db.autoIndex ? 'on' : 'off'),
       );
-      console.log(chalk.green('HTTPS:\t\t\t' + (config.https ? 'on' : 'off')));
+      console.log('HTTPS:\t\t\t' + (config.https ? 'on' : 'off'));
       if (config.fd) {
-        console.log(chalk.green('File Descriptor:\t' + config.fd));
+        console.log('File Descriptor:\t' + config.fd);
       } else {
-        console.log(chalk.green('Port:\t\t\t' + config.port));
+        console.log('Port:\t\t\t' + config.port);
       }
-      console.log(chalk.green('Image processor:\t' + config.imageProcessor));
+      console.log('Image processor:\t' + config.imageProcessor);
       console.log(
-        chalk.green(
-          'Phusion Passenger:\t' +
-            (typeof PhusionPassenger !== 'undefined' ? 'on' : 'off'),
-        ),
+        'Phusion Passenger:\t' +
+          (typeof PhusionPassenger !== 'undefined' ? 'on' : 'off'),
       );
       console.log(
-        chalk.green(
-          'InfluxDB:\t\t' +
-            (config.influxdb && config.influxdb.enabled === true
-              ? 'on'
-              : 'off'),
-        ),
+        'InfluxDB:\t\t' +
+          (config.influxdb && config.influxdb.enabled === true ? 'on' : 'off'),
       );
-      // Reset console color
-      console.log(chalk.white('--'));
+      console.log('--');
       console.log('');
-      console.log(chalk.white('Trustroots is up and running now.'));
+      console.log('Trustroots is up and running now.');
       console.log('');
 
       if (callback) callback(app, db, config);

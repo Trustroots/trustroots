@@ -11,7 +11,10 @@ import { getCurrentRouteParams } from '@/modules/core/client/services/client-run
 import { userType } from '@/modules/users/client/users.prop-types';
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
 import Board from './PageBoard';
-import SiteFooter from '@/modules/core/client/components/SiteFooter.component.js';
+import SiteFooter, {
+  type Build,
+} from '@/modules/core/client/components/SiteFooter.component.js';
+import type { PhotoCredit } from '@/modules/core/client/components/BoardCredits';
 import ManifestoText from './ManifestoText.component.js';
 import Screenshot from '@/modules/core/client/components/Screenshot.js';
 import screenshotProfilePng from '../img/screenshot-profile.png';
@@ -88,14 +91,9 @@ export function getSignupUrl(circleSlug?: string) {
 }
 
 interface HomeProps {
-  build?: {
-    branch?: string;
-    committedAt?: string;
-    commitUrl?: string;
-    shortCommit?: string;
-  };
+  build?: Build | null;
   isNativeMobileApp?: boolean;
-  photoCredits?: Record<string, string>;
+  photoCredits?: Record<string, PhotoCredit>;
   routeParams?: Record<string, string>;
   user?: PageUser | null;
 }
@@ -166,7 +164,7 @@ export default function Home({
       {!user && (
         // TODO apply tr-boards-ignore-small attribute here and implement functionality in the Board.js controller
         <Board
-          className="board-primary container home-intro"
+          className="board-primary home-intro"
           names={boards}
           style={{
             height: boardHeight,
@@ -174,36 +172,39 @@ export default function Home({
         >
           <div className="middle-wrapper middle-wrapper-horizontal">
             <div className="middle-content">
-              <div className="row">
-                <div className="col-xs-12 col-sm-8 col-sm-offset-2">
-                  <img
-                    className="home-logo hidden-xs center-block"
-                    src="/img/logo/white.svg"
-                    alt="Trustroots"
-                    width="210"
-                    height="210"
-                    aria-hidden="true"
-                  />
-                  <img
-                    className="home-logo visible-xs-block center-block"
-                    src="/img/logo/white.svg"
-                    alt="Trustroots"
-                    width="130"
-                    height="130"
-                    aria-hidden="true"
-                  />
-                  <h1 className="sr-only">Trustroots</h1>
-                  <h3 className="home-tagline">{t("Travellers' community")}</h3>
-                  <h4 className="home-subtagline">
-                    {t('Sharing, hosting and getting people together.')}
-                  </h4>
-                  <a
-                    href={getSignupUrl(circleRoute)}
-                    className="btn btn-action btn-default home-join hidden-xs"
-                  >
-                    {t('Join Trustroots now')}
-                  </a>
-                  {/*
+              <div className="container">
+                <div className="row">
+                  <div className="col-xs-12 col-sm-8 col-sm-offset-2">
+                    <img
+                      className="home-logo hidden-xs center-block"
+                      src="/img/logo/white.svg"
+                      alt="Trustroots"
+                      width="210"
+                      height="210"
+                      aria-hidden="true"
+                    />
+                    <img
+                      className="home-logo visible-xs-block center-block"
+                      src="/img/logo/white.svg"
+                      alt="Trustroots"
+                      width="130"
+                      height="130"
+                      aria-hidden="true"
+                    />
+                    <h1 className="sr-only">Trustroots</h1>
+                    <h3 className="home-tagline">
+                      {t("Travellers' community")}
+                    </h3>
+                    <h4 className="home-subtagline">
+                      {t('Sharing, hosting and getting people together.')}
+                    </h4>
+                    <a
+                      href={getSignupUrl(circleRoute)}
+                      className="btn btn-action btn-default home-join hidden-xs"
+                    >
+                      {t('Join Trustroots now')}
+                    </a>
+                    {/*
                   {!isNativeMobileApp && (
                     <div className="home-apps">
                       <a
@@ -225,12 +226,13 @@ export default function Home({
                     </div>
                   )}
                   */}
-                  <div className="home-down hidden-xs">
-                    <i className="icon-down"></i>
+                    <div className="home-down hidden-xs">
+                      <i className="icon-down"></i>
+                    </div>
                   </div>
                 </div>
+                {/* .row */}
               </div>
-              {/* .row */}
             </div>
           </div>
         </Board>

@@ -10,14 +10,13 @@ var async = require('async'),
     config = require('../../config/config'),
     configMongoose = require('../../config/lib/mongoose'),
     configExpress = require('../../config/lib/express'),
-    chalk = require('chalk'),
     mongoose = require('mongoose'),
     contactsModels = require('../../modules/contacts/server/models/contacts.server.model'),
     Contact = mongoose.model('Contact');
 
-console.log(chalk.white('--'));
-console.log(chalk.green('Trustroots - remove duplicate contacts from the DB'));
-console.log(chalk.white('--'));
+console.log('--');
+console.log('Trustroots - remove duplicate contacts from the DB');
+console.log('--');
 
 console.log('Connecting to MongoDB');
 console.log(config.db.uri);
@@ -30,7 +29,7 @@ var removedCounter = 0,
 mongoose.set('strictQuery', false);
 mongoose.connect(config.db.uri, function(err) {
   if (err) {
-    console.error(chalk.red('Could not connect to MongoDB!'));
+    console.error('Could not connect to MongoDB!');
     console.log(err);
     process.exit(0);
   }
@@ -71,11 +70,11 @@ q.drain = function() {
 // Check for initial count
 Contact.find().count().exec(function(err, contactsCount) {
   if (err) {
-    console.error(chalk.red('Error:'));
+    console.error('Error:');
     console.log(err);
     process.exit(1);
   } else if (contactsCount === 0) {
-    console.log(chalk.green('Could not find any contact records to test.'));
+    console.log('Could not find any contact records to test.');
     process.exit(0);
   } else {
     // Save total
@@ -99,11 +98,11 @@ Contact.find().count().exec(function(err, contactsCount) {
       { $match: { count: { $gt: 1 } }}
     ], function(err, issueContacts) {
         if (err) {
-          console.error(chalk.red('Error:'));
+          console.error('Error:');
           console.log(err);
           process.exit(1);
         } else if (issueContacts.length <= 0) {
-          console.log(chalk.green('Could not find any records with issues.'));
+          console.log('Could not find any records with issues.');
           process.exit(0);
         } else {
           totalRecordsWithIssues = issueContacts.length;

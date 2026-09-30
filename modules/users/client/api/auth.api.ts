@@ -20,6 +20,7 @@ export interface AuthenticatedUser {
   username: string;
   email?: string;
   roles?: string[];
+  [key: string]: unknown;
 }
 
 export async function signin(
