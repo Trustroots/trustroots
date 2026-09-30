@@ -6,14 +6,9 @@ import type {
   ExperienceMine,
   ExperienceRecommendation,
 } from '../experiences.prop-types';
+import type { CreateExperienceRequest } from '../../shared/experience';
 
-export interface ExperienceDraft {
-  interactions?: { met?: boolean; host?: boolean; guest?: boolean };
-  recommend?: ExperienceRecommendation | null;
-  feedbackPublic?: string;
-  userTo?: string;
-  [key: string]: unknown;
-}
+export type { CreateExperienceRequest } from '../../shared/experience';
 
 interface UserTarget {
   userTo: string;
@@ -28,7 +23,9 @@ interface UserWith {
  * @param {object} experience - experience to save
  * @returns {object} - saved experience object, which includes the "response" to it if exists
  */
-export async function create(experience: ExperienceDraft): Promise<Experience> {
+export async function create(
+  experience: CreateExperienceRequest,
+): Promise<Experience> {
   const { data: responseExperience } = await axios.post(
     '/api/experiences',
     experience,
