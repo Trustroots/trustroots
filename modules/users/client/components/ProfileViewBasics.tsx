@@ -75,7 +75,10 @@ export default function ProfileViewBasics({
     </div>
   );
 
-  const renderBirthdateAndGender = (birthdate?: string, gender?: string) => {
+  const renderBirthdateAndGender = (
+    birthdate?: string | null,
+    gender?: string,
+  ) => {
     return (
       <div className="profile-sidebar-section">
         {birthdate && `${getBirthdate(birthdate)} `}
