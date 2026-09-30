@@ -35,6 +35,8 @@ const defaultExport = function (app) {
   config.utils
     .getGlobbedPaths(path.join(import.meta.dirname, './strategies/**/*.js'))
     .forEach(function (strategy) {
+      // Passport setup requires these CommonJS strategies to register synchronously.
+      // eslint-disable-next-line import/no-dynamic-require
       require(path.resolve(strategy))(config);
     });
 
