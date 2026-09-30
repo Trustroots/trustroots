@@ -1,5 +1,3 @@
 // Keep the CommonJS adapter for server callers. Browser code imports the ESM
 // adapter so Vite can serve this shared data as a native module.
-exports.SUPPORT_CATEGORIES = Object.freeze(
-  require('./categories.json'),
-);
+exports.SUPPORT_CATEGORIES = Object.freeze(require('./categories.json'));
