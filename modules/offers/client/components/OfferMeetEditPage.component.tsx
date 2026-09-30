@@ -155,7 +155,7 @@ export default function OfferMeetEditPage() {
     const payload: Offer = {
       type: 'meet',
       description: loadedOffer.description,
-      location: loadedOffer.location,
+      location: loadedOffer.location ?? undefined,
       validUntil: new Date(loadedOffer.validUntil).toISOString(),
     };
 
