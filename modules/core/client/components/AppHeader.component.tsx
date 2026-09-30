@@ -27,8 +27,8 @@ export default function AppHeader({
   const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const header = headerRef.current;
-    if (!header) return;
+    // The effect runs after Navbar attaches its ref.
+    const header = headerRef.current as HTMLElement;
     const updateHeight = () => {
       document.documentElement.style.setProperty(
         '--tr-header-height',
