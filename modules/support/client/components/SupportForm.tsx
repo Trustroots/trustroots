@@ -6,7 +6,9 @@ import { Trans, useTranslation } from 'react-i18next';
 // Internal dependencies
 import { send } from '../api/support.api';
 import usePersistentSupportMessage from '../hooks/use-persistent-support-message';
-import { SUPPORT_CATEGORIES } from '../../shared/categories';
+import supportCategories from '../../shared/categories.json';
+
+const SUPPORT_CATEGORIES = Object.freeze(supportCategories);
 
 type SupportUser = { displayName?: string; username?: string; email?: string };
 type SupportFormProps = { user?: SupportUser | null };

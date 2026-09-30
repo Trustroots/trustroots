@@ -159,6 +159,10 @@ module.exports = webpackMerge.merge(shims, {
           ...styleLoaders,
           {
             loader: 'less-loader',
+            options: {
+              // Keep the default build on Less 3 while Vite trials Less 4.
+              implementation: require('less-webpack'),
+            },
           },
         ],
       },
