@@ -49,7 +49,7 @@ interface TabsProps {
   activeKey: string;
   className: string;
   id: string;
-  justified: boolean;
+  justify: boolean;
   onSelect: (key: string | null) => void;
 }
 
@@ -89,7 +89,7 @@ export default function SearchSidebar({
         activeKey={activeTab}
         className="search-sidebar-tabs"
         id="search-sidebar-tabs"
-        justified
+        justify
         onSelect={onTabSelect}
       >
         <Tab

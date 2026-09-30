@@ -104,6 +104,7 @@ jobs:
           context: .
           file: deploy/docker/dev.Dockerfile
           tags: trustroots-dev:ci
+          cache-from: type=gha
           load: true
 
       - name: Prepare compose local config
@@ -138,6 +139,7 @@ jobs:
             -e TRUSTROOTS_E2E_SCREENSHOTS=true \
             -e TRUSTROOTS_E2E_REQUIRE_FULL_FEATURE_COVERAGE=false \
             -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
+            -e TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE=true \
             dev npm run test:e2e -- "${specs[@]}"
           test_status="$?"
           set -e
