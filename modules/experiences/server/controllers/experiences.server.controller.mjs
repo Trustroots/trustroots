@@ -79,6 +79,7 @@ service.getSuggestion = async function getSuggestion(req, res, next) {
 /**
  * Validate the request body and data consistency
  * of an experience
+ * @param {{ user: { _id: { equals: (userId: string) => boolean } }, body: import('../../shared/experience').CreateExperienceRequest }} req
  */
 function validateCreate(req) {
   let valid = true;
