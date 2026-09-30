@@ -7,7 +7,7 @@ module.exports = {
     [
       '@babel/preset-env',
       {
-        corejs: 2,
+        corejs: '3.49',
         modules: 'commonjs',
         useBuiltIns: 'usage',
       },

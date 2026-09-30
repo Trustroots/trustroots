@@ -50,7 +50,7 @@ export default function TribesPage({
     <>
       <TribesHeader isLoggedIn={!!user} />
 
-      <section className="container container-spacer">
+      <section className="container">
         <div className="row">
           <div className="col-xs-12">
             <TribesList
