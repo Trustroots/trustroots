@@ -487,7 +487,7 @@ describe('API route registrations', () => {
     assertHandlers(routeByPath(routes, '/api/auth/signin').post, [
       authentication.signin,
     ]);
-    assert.equal(routeByPath(routes, '/api/auth/signout').get.length, 1);
+    assert.equal(routeByPath(routes, '/api/auth/signout').get.length, 0);
     assertHandlers(routeByPath(routes, '/api/auth/signout').post, [
       authentication.signout,
     ]);

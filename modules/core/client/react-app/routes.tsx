@@ -109,7 +109,12 @@ function renderWithUser(Component: React.ElementType) {
 }
 
 function renderProfile({ currentPath, user }: RouteContext) {
-  return <ProfilePage currentPath={currentPath} user={user as AuthUser} />;
+  return (
+    <ProfilePage
+      currentPath={currentPath}
+      user={user as React.ComponentProps<typeof ProfilePage>['user']}
+    />
+  );
 }
 
 function renderStatistics({ user }: RouteContext) {
@@ -155,7 +160,10 @@ function TribesPageRoute({ user }: RouteContext) {
   };
 
   return (
-    <TribesPage onMembershipUpdated={handleMembershipUpdated} user={user} />
+    <TribesPage
+      onMembershipUpdated={handleMembershipUpdated}
+      user={user as React.ComponentProps<typeof TribesPage>['user']}
+    />
   );
 }
 
@@ -185,7 +193,7 @@ function TribeDetailPageRoute({
     <TribeDetailPage
       circle={circle as string}
       onMembershipUpdated={handleMembershipUpdated}
-      user={user as AuthUser}
+      user={user as React.ComponentProps<typeof TribeDetailPage>['user']}
     />
   );
 }

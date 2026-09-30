@@ -16,7 +16,6 @@ var path = require('path'),
     del = require('del'),
     mkdirRecursive = require('mkdir-recursive'),
     async = require('async'),
-    chalk = require('chalk'),
     nodemailer = require('nodemailer'),
     config = require('../config/config'),
     emailService = require('../modules/core/server/services/email.server.service');
@@ -68,7 +67,7 @@ function writeEml(templateName, params, callback) {
 
 function writeEmails() {
   console.log('---');
-  console.log(chalk.green('Generating eml files out of emails.'));
+  console.log('Generating eml files out of emails.');
   console.log('Storing them to "' + tempFolder + '"');
 
   // Send emails
@@ -92,9 +91,8 @@ function writeEmails() {
       return;
     }
     console.log();
-    console.log(chalk.green('Done!'));
+    console.log('Done!');
     console.log('See files from ' + tempFolder);
-    console.log(chalk.white('')); // Reset to white
     process.exit(0);
   });
 }

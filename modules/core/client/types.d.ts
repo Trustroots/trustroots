@@ -10,6 +10,10 @@ interface Window {
   settings?: {
     mapbox?: { publicKey?: string };
     flashTimeout?: number;
+    limits?: { maximumExperienceFeedbackPublicLength?: number };
+    maxUploadSize?: number;
+    profileMinimumLength?: number;
+    referencesEnabled?: boolean;
     [key: string]: unknown;
   };
   env?: string;

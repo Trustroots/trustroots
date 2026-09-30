@@ -14,11 +14,7 @@ export type BootstrapData = {
   env?: string;
   gaId?: string;
   isNativeMobileApp?: boolean;
-  settings: {
-    mapbox?: { publicKey?: string };
-    flashTimeout?: number;
-    [key: string]: unknown;
-  };
+  settings: NonNullable<Window['settings']>;
   title: string;
   user: AuthUser | null;
 };
