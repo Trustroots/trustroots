@@ -2,12 +2,7 @@
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React, { type MouseEvent } from 'react';
-import {
-  Navbar,
-  NavDropdown,
-  Nav,
-  MenuItem as DropMenuItem,
-} from 'react-bootstrap';
+import { Navbar, NavDropdown, Nav, Dropdown } from 'react-bootstrap';
 
 // Internal dependencies
 import { userType } from '@/modules/users/client/users.prop-types';
@@ -32,8 +27,8 @@ export default function NavigationLoggedIn({
 
   return (
     <div className="container">
-      <Navbar.Header>
-        <Navbar.Brand>
+      <div className="navbar-header">
+        <Navbar.Brand as="div">
           <a href="/" className="hidden-xs" aria-hidden="true">
             <img
               className="hidden-xs hidden-sm"
@@ -51,26 +46,30 @@ export default function NavigationLoggedIn({
             />
           </a>
         </Navbar.Brand>
-      </Navbar.Header>
+      </div>
 
-      <Nav className="hidden-xs">
+      <Nav as="ul" className="hidden-xs">
         <NavDropdown
+          as="li"
+          renderMenuOnMount
           className="hidden-xs cursor-pointer"
           id="support-dropdown"
           title={t<string>('Support')}
         >
-          <DropMenuItem href="/faq">
+          <Dropdown.Item href="/faq">
             {t<string>('Frequently Asked Questions')}
-          </DropMenuItem>
-          <DropMenuItem href="/safety">{t<string>('Safety')}</DropMenuItem>
-          <DropMenuItem href="/faq/bugs-and-features">
+          </Dropdown.Item>
+          <Dropdown.Item href="/safety">{t<string>('Safety')}</Dropdown.Item>
+          <Dropdown.Item href="/faq/bugs-and-features">
             {t<string>('Report a bug')}
-          </DropMenuItem>
-          <DropMenuItem href="/support">{t<string>('Contact us')}</DropMenuItem>
+          </Dropdown.Item>
+          <Dropdown.Item href="/support">
+            {t<string>('Contact us')}
+          </Dropdown.Item>
         </NavDropdown>
       </Nav>
 
-      <Nav className="nav-header-primary">
+      <Nav as="ul" className="nav-header-primary">
         <MenuItem
           currentPath={currentPath}
           path="/circles"
@@ -127,9 +126,11 @@ export default function NavigationLoggedIn({
           Nostroots
         </MenuItem>
         <NavDropdown
+          as="li"
+          renderMenuOnMount
           className="dropdown-user hidden-xs cursor-pointer"
           id="profile-dropdown"
-          pullRight
+          align="end"
           title={
             <>
               <Avatar user={user} link={false} size={24} />
@@ -140,38 +141,34 @@ export default function NavigationLoggedIn({
             </>
           }
         >
-          <li
-            role="presentation"
-            className="dropdown-header"
-            aria-hidden="true"
-          >
+          <div className="dropdown-header" aria-hidden="true">
             {user.displayName}
-          </li>
-          <DropMenuItem divider />
-          <DropMenuItem href={`/profile/${user.username}`}>
+          </div>
+          <Dropdown.Divider />
+          <Dropdown.Item href={`/profile/${user.username}`}>
             {t<string>('My profile')}
-          </DropMenuItem>
-          <DropMenuItem href="/profile/edit">
+          </Dropdown.Item>
+          <Dropdown.Item href="/profile/edit">
             {t<string>('Edit profile')}
-          </DropMenuItem>
-          <DropMenuItem href={`/profile/${user.username}/contacts`}>
+          </Dropdown.Item>
+          <Dropdown.Item href={`/profile/${user.username}/contacts`}>
             {t<string>('Contacts')}
-          </DropMenuItem>
-          <DropMenuItem href="/search/members">
+          </Dropdown.Item>
+          <Dropdown.Item href="/search/members">
             {t<string>('Find people')}
-          </DropMenuItem>
-          <DropMenuItem divider />
-          <DropMenuItem href="/profile/edit/account">
+          </Dropdown.Item>
+          <Dropdown.Divider />
+          <Dropdown.Item href="/profile/edit/account">
             {t<string>('Account')}
-          </DropMenuItem>
-          <DropMenuItem
-            onClick={(event: MouseEvent<HTMLElement>) => onSignout(event)}
+          </Dropdown.Item>
+          <Dropdown.Item
+            onClick={event => onSignout(event)}
             href="/api/auth/signout"
             target="_top"
           >
             {t<string>('Sign out')}
-          </DropMenuItem>
-          <DropMenuItem divider />
+          </Dropdown.Item>
+          <Dropdown.Divider />
           <SubMenuList
             list={[
               {
@@ -214,7 +211,7 @@ export default function NavigationLoggedIn({
               },
             ]}
           />
-          <DropMenuItem divider />
+          <Dropdown.Divider />
           <SubMenuList
             list={[
               /*

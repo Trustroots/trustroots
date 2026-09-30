@@ -14,7 +14,7 @@ export default function NavigationSubMenuList({
   list,
 }: NavigationSubMenuListProps) {
   return (
-    <li className="small text-muted dropdown-meta text-center font-brand-regular">
+    <div className="small text-muted dropdown-meta text-center font-brand-regular">
       <ul className="list-inline">
         {list.map(({ href, label, rel, target }) => (
           <li key={href}>
@@ -24,7 +24,7 @@ export default function NavigationSubMenuList({
           </li>
         ))}
       </ul>
-    </li>
+    </div>
   );
 }
 

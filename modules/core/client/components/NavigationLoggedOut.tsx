@@ -14,7 +14,7 @@ export default function NavigationLoggedOut({
   const { t } = useTranslation('core');
 
   return (
-    <div className="container">
+    <div className="container w-100">
       <nav
         aria-label={t<string>('Page navigation')}
         className="header-welcome text-center"
@@ -22,7 +22,7 @@ export default function NavigationLoggedOut({
       >
         {/* a span for centering the main header content */}
         <span className="flex-side"></span>
-        <span className="header-welcome-text hidden-xs">
+        <span className="header-welcome-text hidden-xs" dir="auto">
           {t<string>('New to Trustroots?')}
         </span>
         <a href="/signup" className="btn btn-lg btn-default">
