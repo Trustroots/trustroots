@@ -73,6 +73,7 @@ module.exports = {
     {
       files: [
         '*.js',
+        '*.mjs',
         'config/**',
         'migrations/**',
         'modules/*/shared/**/*.js',
