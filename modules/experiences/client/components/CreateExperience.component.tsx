@@ -118,12 +118,13 @@ function ExperienceForm({
   ]);
 
   const restoreDraft = () => {
-    if (!pendingDraft) return;
-    setMet(pendingDraft.met);
-    setHostedThem(pendingDraft.host);
-    setHostedMe(pendingDraft.guest);
-    if (sharedOnTime) setRecommend(pendingDraft.recommend);
-    setFeedbackPublic(pendingDraft.feedbackPublic);
+    // This handler is only rendered while a draft is pending.
+    const draft = pendingDraft as NonNullable<typeof pendingDraft>;
+    setMet(draft.met);
+    setHostedThem(draft.host);
+    setHostedMe(draft.guest);
+    if (sharedOnTime) setRecommend(draft.recommend);
+    setFeedbackPublic(draft.feedbackPublic);
     setPendingDraft(null);
   };
 
