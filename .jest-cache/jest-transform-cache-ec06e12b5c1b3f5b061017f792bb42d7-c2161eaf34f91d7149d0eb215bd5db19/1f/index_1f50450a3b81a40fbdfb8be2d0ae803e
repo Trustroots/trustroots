@@ -1,0 +1,57 @@
+579a33c8857de9a77744e2a2f6d22f84
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.getCircleBackgroundStyle = getCircleBackgroundStyle;
+exports.getCircleBackgroundUrl = getCircleBackgroundUrl;
+var _dom = require("@/modules/core/client/utils/dom");
+/**
+ * Return Circle background image URL
+ *
+ * Usage: getCircleBackgroundUrl(circle, '742x496', 'jpg')
+ *
+ * @param {string} slug - the circle slug
+ * @param {string} dimensions - Set background image dimensions (width x height)
+ * @param {string} [format=jpg] - File format, either "jpg" or "webp"
+ *
+ * @returns {string}
+ */
+function getCircleBackgroundUrl(slug, dimensions, format = 'jpg') {
+  return `/uploads-circle/${slug}/${dimensions}.${format}`;
+}
+
+/**
+ * Generate background color + image styles for Circle panel.
+ * Returns image either in jpg or webp format depending on browser support.
+ *
+ * usage in React: <div style={getCircleBackgroundStyle(circle, '742x496')}>...</div>
+ *
+ * @param {object} circle - the circle data
+ * @param {string} dimensions - Set background image dimensions (width x height)
+ *
+ * @returns {object}
+ */
+function getCircleBackgroundStyle(circle, dimensions) {
+  const style = {};
+  const {
+    color,
+    image,
+    slug
+  } = circle;
+  const format = (0, _dom.canUseWebP)() ? 'webp' : 'jpg';
+
+  // Set background image
+  if (image) {
+    const url = getCircleBackgroundUrl(slug, dimensions, format);
+    style.backgroundImage = `url(${url})`;
+  }
+
+  // Set background color
+  if (color) {
+    style.backgroundColor = `#${color}`;
+  }
+  return style;
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6WyJfZG9tIiwicmVxdWlyZSIsImdldENpcmNsZUJhY2tncm91bmRVcmwiLCJzbHVnIiwiZGltZW5zaW9ucyIsImZvcm1hdCIsImdldENpcmNsZUJhY2tncm91bmRTdHlsZSIsImNpcmNsZSIsInN0eWxlIiwiY29sb3IiLCJpbWFnZSIsImNhblVzZVdlYlAiLCJ1cmwiLCJiYWNrZ3JvdW5kSW1hZ2UiLCJiYWNrZ3JvdW5kQ29sb3IiXSwic291cmNlcyI6WyJpbmRleC50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBjYW5Vc2VXZWJQIH0gZnJvbSAnQC9tb2R1bGVzL2NvcmUvY2xpZW50L3V0aWxzL2RvbSc7XG5pbXBvcnQgdHlwZSB7IENTU1Byb3BlcnRpZXMgfSBmcm9tICdyZWFjdCc7XG5cbmludGVyZmFjZSBDaXJjbGUge1xuICBzbHVnOiBzdHJpbmc7XG4gIGNvbG9yPzogc3RyaW5nO1xuICBpbWFnZT86IHN0cmluZztcbn1cblxudHlwZSBDaXJjbGVEaW1lbnNpb25zID0gYCR7bnVtYmVyfXgke251bWJlcn1gIHwgc3RyaW5nO1xuXG4vKipcbiAqIFJldHVybiBDaXJjbGUgYmFja2dyb3VuZCBpbWFnZSBVUkxcbiAqXG4gKiBVc2FnZTogZ2V0Q2lyY2xlQmFja2dyb3VuZFVybChjaXJjbGUsICc3NDJ4NDk2JywgJ2pwZycpXG4gKlxuICogQHBhcmFtIHtzdHJpbmd9IHNsdWcgLSB0aGUgY2lyY2xlIHNsdWdcbiAqIEBwYXJhbSB7c3RyaW5nfSBkaW1lbnNpb25zIC0gU2V0IGJhY2tncm91bmQgaW1hZ2UgZGltZW5zaW9ucyAod2lkdGggeCBoZWlnaHQpXG4gKiBAcGFyYW0ge3N0cmluZ30gW2Zvcm1hdD1qcGddIC0gRmlsZSBmb3JtYXQsIGVpdGhlciBcImpwZ1wiIG9yIFwid2VicFwiXG4gKlxuICogQHJldHVybnMge3N0cmluZ31cbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIGdldENpcmNsZUJhY2tncm91bmRVcmwoXG4gIHNsdWc6IHN0cmluZyxcbiAgZGltZW5zaW9uczogQ2lyY2xlRGltZW5zaW9ucyxcbiAgZm9ybWF0OiAnanBnJyB8ICd3ZWJwJyA9ICdqcGcnLFxuKTogc3RyaW5nIHtcbiAgcmV0dXJuIGAvdXBsb2Fkcy1jaXJjbGUvJHtzbHVnfS8ke2RpbWVuc2lvbnN9LiR7Zm9ybWF0fWA7XG59XG5cbi8qKlxuICogR2VuZXJhdGUgYmFja2dyb3VuZCBjb2xvciArIGltYWdlIHN0eWxlcyBmb3IgQ2lyY2xlIHBhbmVsLlxuICogUmV0dXJucyBpbWFnZSBlaXRoZXIgaW4ganBnIG9yIHdlYnAgZm9ybWF0IGRlcGVuZGluZyBvbiBicm93c2VyIHN1cHBvcnQuXG4gKlxuICogdXNhZ2UgaW4gUmVhY3Q6IDxkaXYgc3R5bGU9e2dldENpcmNsZUJhY2tncm91bmRTdHlsZShjaXJjbGUsICc3NDJ4NDk2Jyl9Pi4uLjwvZGl2PlxuICpcbiAqIEBwYXJhbSB7b2JqZWN0fSBjaXJjbGUgLSB0aGUgY2lyY2xlIGRhdGFcbiAqIEBwYXJhbSB7c3RyaW5nfSBkaW1lbnNpb25zIC0gU2V0IGJhY2tncm91bmQgaW1hZ2UgZGltZW5zaW9ucyAod2lkdGggeCBoZWlnaHQpXG4gKlxuICogQHJldHVybnMge29iamVjdH1cbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIGdldENpcmNsZUJhY2tncm91bmRTdHlsZShcbiAgY2lyY2xlOiBDaXJjbGUsXG4gIGRpbWVuc2lvbnM6IENpcmNsZURpbWVuc2lvbnMsXG4pOiBDU1NQcm9wZXJ0aWVzIHtcbiAgY29uc3Qgc3R5bGU6IENTU1Byb3BlcnRpZXMgPSB7fTtcbiAgY29uc3QgeyBjb2xvciwgaW1hZ2UsIHNsdWcgfSA9IGNpcmNsZTtcbiAgY29uc3QgZm9ybWF0ID0gY2FuVXNlV2ViUCgpID8gJ3dlYnAnIDogJ2pwZyc7XG5cbiAgLy8gU2V0IGJhY2tncm91bmQgaW1hZ2VcbiAgaWYgKGltYWdlKSB7XG4gICAgY29uc3QgdXJsID0gZ2V0Q2lyY2xlQmFja2dyb3VuZFVybChzbHVnLCBkaW1lbnNpb25zLCBmb3JtYXQpO1xuICAgIHN0eWxlLmJhY2tncm91bmRJbWFnZSA9IGB1cmwoJHt1cmx9KWA7XG4gIH1cblxuICAvLyBTZXQgYmFja2dyb3VuZCBjb2xvclxuICBpZiAoY29sb3IpIHtcbiAgICBzdHlsZS5iYWNrZ3JvdW5kQ29sb3IgPSBgIyR7Y29sb3J9YDtcbiAgfVxuXG4gIHJldHVybiBzdHlsZTtcbn1cbiJdLCJtYXBwaW5ncyI6Ijs7Ozs7OztBQUFBLElBQUFBLElBQUEsR0FBQUMsT0FBQTtBQVdBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDTyxTQUFTQyxzQkFBc0JBLENBQ3BDQyxJQUFZLEVBQ1pDLFVBQTRCLEVBQzVCQyxNQUFzQixHQUFHLEtBQUssRUFDdEI7RUFDUixPQUFPLG1CQUFtQkYsSUFBSSxJQUFJQyxVQUFVLElBQUlDLE1BQU0sRUFBRTtBQUMxRDs7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ08sU0FBU0Msd0JBQXdCQSxDQUN0Q0MsTUFBYyxFQUNkSCxVQUE0QixFQUNiO0VBQ2YsTUFBTUksS0FBb0IsR0FBRyxDQUFDLENBQUM7RUFDL0IsTUFBTTtJQUFFQyxLQUFLO0lBQUVDLEtBQUs7SUFBRVA7RUFBSyxDQUFDLEdBQUdJLE1BQU07RUFDckMsTUFBTUYsTUFBTSxHQUFHLElBQUFNLGVBQVUsRUFBQyxDQUFDLEdBQUcsTUFBTSxHQUFHLEtBQUs7O0VBRTVDO0VBQ0EsSUFBSUQsS0FBSyxFQUFFO0lBQ1QsTUFBTUUsR0FBRyxHQUFHVixzQkFBc0IsQ0FBQ0MsSUFBSSxFQUFFQyxVQUFVLEVBQUVDLE1BQU0sQ0FBQztJQUM1REcsS0FBSyxDQUFDSyxlQUFlLEdBQUcsT0FBT0QsR0FBRyxHQUFHO0VBQ3ZDOztFQUVBO0VBQ0EsSUFBSUgsS0FBSyxFQUFFO0lBQ1RELEtBQUssQ0FBQ00sZUFBZSxHQUFHLElBQUlMLEtBQUssRUFBRTtFQUNyQztFQUVBLE9BQU9ELEtBQUs7QUFDZCIsImlnbm9yZUxpc3QiOltdfQ==

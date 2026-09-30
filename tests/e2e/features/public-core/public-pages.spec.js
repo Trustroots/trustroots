@@ -6,7 +6,14 @@ test.describe('public pages and unauthenticated flows', () => {
   test('photo boards start at the bottom of the fixed header', async ({
     page,
   }) => {
-    for (const path of ['/', '/faq', '/support']) {
+    for (const path of [
+      '/',
+      '/faq',
+      '/support',
+      '/circles',
+      '/password/forgot',
+      '/password/reset/invalid',
+    ]) {
       await page.goto(path);
       await expect
         .poll(async () => {
@@ -24,6 +31,16 @@ test.describe('public pages and unauthenticated flows', () => {
           page.viewportSize().width - (board.x + board.width),
         );
         expect(rightGap).toBeLessThanOrEqual(1);
+      }
+
+      if (path === '/circles') {
+        const [board, content] = await Promise.all([
+          page.locator('.tribes-header').boundingBox(),
+          page.locator('.tribes-header + section').boundingBox(),
+        ]);
+        expect(
+          Math.abs(content.y - (board.y + board.height)),
+        ).toBeLessThanOrEqual(1);
       }
     }
   });

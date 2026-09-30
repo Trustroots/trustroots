@@ -7,8 +7,8 @@ import ProfileEditNetworks from '@/modules/users/client/components/ProfileEditNe
 import * as usersApi from '@/modules/users/client/api/users.api';
 
 jest.mock('@/modules/users/client/api/users.api');
-jest.mock('nostr-tools/nip19', () => ({
-  npubEncode: jest.fn(() => 'npub1suggestedkey'),
+jest.mock('nostr-tools', () => ({
+  nip19: { npubEncode: jest.fn(() => 'npub1suggestedkey') },
 }));
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({

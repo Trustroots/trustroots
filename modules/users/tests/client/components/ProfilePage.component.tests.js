@@ -290,6 +290,39 @@ describe('ProfilePage', () => {
     ).toHaveAttribute('href', '/contact-confirm/contact-1');
   });
 
+  it('renders contact tooltips when the creation timestamp is absent', async () => {
+    contactsApi.getByUserId.mockResolvedValue({
+      _id: 'contact-1',
+      confirmed: true,
+      userFrom: authUser._id,
+      userTo: profile._id,
+    });
+    renderPage();
+
+    const confirmedContact = await screen.findByRole('button', {
+      name: 'Remove contact',
+    });
+    fireEvent.mouseOver(confirmedContact);
+    expect(await screen.findByText(/Contacts since/)).toBeVisible();
+  });
+
+  it('renders incoming contact tooltips when the creation timestamp is absent', async () => {
+    contactsApi.getByUserId.mockResolvedValue({
+      _id: 'contact-1',
+      confirmed: false,
+      userFrom: profile._id,
+      userTo: authUser._id,
+    });
+    renderPage();
+
+    expect(await screen.findByText(/sent you a contact request/)).toBeVisible();
+    const deleteRequest = await screen.findByRole('button', {
+      name: 'Delete contact request',
+    });
+    fireEvent.mouseOver(deleteRequest);
+    expect(await screen.findByText(/Request sent/)).toBeVisible();
+  });
+
   it('opens the remove contact modal and clears contact state on success', async () => {
     contactsApi.getByUserId.mockResolvedValue({
       _id: 'contact-1',

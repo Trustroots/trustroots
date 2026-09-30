@@ -32,7 +32,7 @@ body {
   right: 0;
   padding-bottom: 130px;
   &.container-spacer {
-    top: @navbar-height;
+    top: var(--tr-header-height, @navbar-height);
     margin-top: 0;
   }
 }
@@ -102,7 +102,7 @@ hr {
   padding-bottom: @article-padding-bottom;
   // Photo boards sit directly below the fixed header, whose height varies
   // between the signed-in and guest navigation and across viewport widths.
-  > .board:first-child {
+  > .board:not(.container-fullscreen):first-child {
     margin-top: var(--tr-header-height, 0px);
   }
   @media (max-width: @screen-xs-max) {
