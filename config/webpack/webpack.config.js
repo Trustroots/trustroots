@@ -115,7 +115,7 @@ module.exports = webpackMerge.merge(shims, {
         test: /\.[jt]sx?$/,
         // Transpile our own code, plus the modern-syntax dependencies that
         // must match the application's supported browser targets.
-        exclude: /node_modules[\\/](?!(nostr-tools|@noble|@scure)[\\/])/,
+        exclude: /node_modules[\\/](?!(nostr-tools)[\\/])/,
         use: [
           {
             loader: 'babel-loader',
@@ -123,6 +123,26 @@ module.exports = webpackMerge.merge(shims, {
               plugins: [
                 isDevelopment && require.resolve('react-refresh/babel'),
               ].filter(Boolean),
+            },
+          },
+        ],
+      },
+      {
+        test: /\.[jt]sx?$/,
+        include: /node_modules[\\/](@noble|@scure)[\\/]/,
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              // Preserve ESM so Webpack can supply module imports and exports.
+              babelrc: false,
+              configFile: false,
+              presets: [
+                [
+                  '@babel/preset-env',
+                  { corejs: 2, modules: false, useBuiltIns: 'usage' },
+                ],
+              ],
             },
           },
         ],
