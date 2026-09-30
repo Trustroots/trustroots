@@ -27,7 +27,7 @@ export interface UserProfile {
   blocked?: string[];
   email?: string;
   gender?: string;
-  birthdate?: string;
+  birthdate?: string | null;
   created?: string;
   updated?: string;
   lastSeen?: string;
