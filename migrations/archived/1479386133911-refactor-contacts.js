@@ -5,7 +5,6 @@
 const async = require('async');
 const mongooseService = require('../../config/lib/mongoose');
 const mongoose = require('mongoose');
-const chalk = require('chalk');
 // userModels = require(path.resolve('./modules/users/server/models/user.server.model')),
 // User = mongoose.model('User'),
 // eslint-disable-next-line no-unused-vars
@@ -19,7 +18,7 @@ exports.up = function (next) {
     // Bootstrap db connection
     function (done) {
       mongooseService.connect(function () {
-        console.log(chalk.green('Connected to MongoDB.'));
+        console.log('Connected to MongoDB.');
         done();
       });
     },
@@ -120,7 +119,7 @@ exports.down = function (next) {
     // Bootstrap db connection
     function (done) {
       mongooseService.connect(function () {
-        console.log(chalk.green('Connected to MongoDB.'));
+        console.log('Connected to MongoDB.');
         done();
       });
     },
