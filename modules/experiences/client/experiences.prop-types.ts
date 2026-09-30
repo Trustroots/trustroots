@@ -1,4 +1,13 @@
 import PropTypes from 'prop-types';
+import type {
+  ExperienceInteractions,
+  ExperienceRecommendation,
+} from '../shared/experience';
+
+export type {
+  ExperienceInteractions,
+  ExperienceRecommendation,
+} from '../shared/experience';
 
 export interface ExperienceUser {
   _id: string;
@@ -9,14 +18,6 @@ export interface ExperienceUser {
   created?: string;
   gender?: string;
 }
-
-export interface ExperienceInteractions {
-  met: boolean;
-  guest: boolean;
-  host: boolean;
-}
-
-export type ExperienceRecommendation = 'yes' | 'no' | 'unknown';
 
 export interface Experience {
   _id: string;
