@@ -27,14 +27,6 @@ import type {
   ExperienceUser,
 } from '../experiences.prop-types';
 
-declare global {
-  interface Window {
-    settings?: {
-      limits?: { maximumExperienceFeedbackPublicLength?: number };
-    };
-  }
-}
-
 export default function CreateExperience({
   userFrom,
   userTo,
@@ -320,16 +312,14 @@ function ExperienceForm({
   const validate = createValidator({
     interaction: [
       [
-        ({ guest, host, met }: ExperienceInteractions) => guest || host || met,
+        (value: unknown) => {
+          const { guest, host, met } = value as ExperienceInteractions;
+          return guest || host || met;
+        },
         t('Choose your interaction'),
       ],
     ],
-    recommend: [
-      [
-        (value: ExperienceRecommendation | null) => !!value,
-        t('Choose your recommendation'),
-      ],
-    ],
+    recommend: [[(value: unknown) => !!value, t('Choose your recommendation')]],
   }) as unknown as (values: {
     interaction: ExperienceInteractions;
     recommend: ExperienceRecommendation | null;
