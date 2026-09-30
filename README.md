@@ -1,7 +1,7 @@
 <p align="center">
   <br>
   <br>
-  <a href="https://www.trustroots.org/"><img width="150" src="https://cdn.rawgit.com/Trustroots/trustroots/main/public/img/logo/color.svg" alt="Trustroots"></a>
+  <a href="https://www.trustroots.org/"><img width="150" src="docs/assets/trustroots-logo-white-bg.svg" alt="Trustroots"></a>
   <br>
   <br>
   <em>Travellers' community. Sharing, hosting and getting people together.</em>
@@ -19,19 +19,19 @@ Download the latest signed Android APK from [GitHub Releases](https://github.com
 
 [![Tests](https://github.com/Trustroots/trustroots/actions/workflows/test.yml/badge.svg)](https://team.trustroots.org/coverage/)
 
-_Out of maintenance mode_
+Trustroots is actively developed again. After a period focused mainly on
+maintenance from 2022 to June 2026, we welcome contributions and improvements.
 
-As of June 2026, Trustroots is no longer in maintenance mode. The project was mostly in maintenance mode from 2022 until June 2026, and development work is welcome again.
+Current areas of work include:
 
-Priorities:
+- Simplifying older code and reducing duplication.
+- Improving the development setup and updating dependencies.
+- Continuing the move to React and TypeScript where it makes sense.
+- Developing the Nostr/Nostroots integration.
+- Making Trustroots easier to run independently and adapt for forks.
 
-- Simplify old code and reduce duplication.
-- Upgrade dependencies and improve the development setup, including Docker.
-- Continue the React transition where it makes sense.
-- Work on Nostr/Nostroots integration. The basics are in place for NIP-5 and NIP-7.
-- Make Trustroots easier to fork and run independently.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and tests. See [team.trustroots.org](https://team.trustroots.org/) for more ways to help.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and tests,
+and [team.trustroots.org](https://team.trustroots.org/) for more ways to help.
 
 ## Medium term plans
 
@@ -39,46 +39,10 @@ Our medium term plan is decentralisation through the Nostr protocol. See https:/
 
 We are also open to improvements that [make trustroots forkable](https://github.com/Trustroots/trustroots/issues/2669).
 
-## nvm & npm
+## Development setup
 
-We're using [nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating) to manage node versions.
-
-- `nvm use`
-- `npm -g i npm@11.19.0`
-
-Use Node.js 24 (the exact version is in `.nvmrc`) and npm 11. Install dependencies
-with `npm ci`.
-
-To be able to install dependencies on macOS / apple silicon, the following dependencies are required:
-
-- `brew install pkg-config cairo pango libpng jpeg giflib librsvg python-setuptools`
-
-Installing mmmagic expects `python` to be a valid binary, which it is not. This can be solved by adding a symlink from `python` to `python3` like so:
-
-- `ln -s "$(brew --prefix)/bin/python"{3,}`
-
-## Running locally
-
-Choose the setup that fits what you're doing:
-
-- Host development: `nvm use && npm start`
-- Docker development: `cd deploy/docker && docker compose up`
-- Dev container: open the repository with **Dev Containers: Reopen in Container**
-  and run `npm start` inside the integrated terminal
-
-The host and Docker setups serve the app at http://localhost:3000.
-
-Mailpit catches outbound development email when using Docker Compose or the Dev
-Container. Its web UI is available at http://localhost:1080 for Docker Compose
-and http://localhost:11080 for the Dev Container. Bare `npm start` uses an
-in-process JSON transport instead and does not start the mail UI.
-
-Docker dev uses hot reload, Mailpit, and a shared MongoDB service. Development
-emails are captured locally and are not delivered. See
-[`deploy/docker/README.md`](deploy/docker/README.md) for first-time setup,
-troubleshooting, dependency rebuilds, test workflows, and production-like image
-checks. See [`.devcontainer/README.md`](.devcontainer/README.md) for editor and
-test workflow details.
+See the [development setup guide](docs/development.md) for prerequisites and
+instructions for running Trustroots locally.
 
 ## Building for production
 
