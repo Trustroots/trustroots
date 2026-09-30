@@ -3,7 +3,6 @@
  */
 const _ = require('lodash');
 const mongooseService = require('../../config/lib/mongoose');
-const chalk = require('chalk');
 const yargs = require('yargs');
 const faker = require('faker');
 const mongoose = require('mongoose');
@@ -227,9 +226,9 @@ function generateExperienceSharingMatrix(nUsers, averageExpNumber, replyRate) {
 function seedExperiences() {
   const debug = argv.debug === true;
 
-  console.log(chalk.white('--'));
-  console.log(chalk.green('Trustroots test experiences data'));
-  console.log(chalk.white('--'));
+  console.log('--');
+  console.log('Trustroots test experiences data');
+  console.log('--');
 
   // Override debug mode to use the option set by the user
   config.db.debug = debug;
@@ -243,9 +242,7 @@ function seedExperiences() {
 
       if (users.length < profileType.minimumTestableUserNumber()) {
         console.error(
-          chalk.red(
-            `At least ${profileType.minimumTestableUserNumber()} users must exist in the db to test experiences. Please create more users and run again`,
-          ),
+          `At least ${profileType.minimumTestableUserNumber()} users must exist in the db to test experiences. Please create more users and run again`,
         );
         mongooseService.disconnect();
         return;
@@ -254,16 +251,12 @@ function seedExperiences() {
       const experience = await Experience.findOne();
       if (experience && !argv.reCreate) {
         console.log(
-          chalk.red(
-            'Experiences already exist in the db. Use --re-create option if you want to rewrite them',
-          ),
+          'Experiences already exist in the db. Use --re-create option if you want to rewrite them',
         );
       } else {
         if (experience) {
           console.log(
-            chalk.yellow(
-              'Running with --re-create option. Removing existing Experiences ...',
-            ),
+            'Running with --re-create option. Removing existing Experiences ...',
           );
           await Experience.deleteMany();
         }
@@ -281,9 +274,7 @@ function seedExperiences() {
         const nExperiencesToBeAdded = countTrueElements(
           experienceSharingMatrix,
         );
-        console.log(
-          chalk.green(`Saving ${nExperiencesToBeAdded} experiences ... `),
-        );
+        console.log(`Saving ${nExperiencesToBeAdded} experiences ... `);
 
         const experienceSaveTaskQueue = queue(async (task, callback) => {
           const experience = createExperience(task.userTo, task.userFrom);

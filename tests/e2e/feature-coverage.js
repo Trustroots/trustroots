@@ -481,7 +481,9 @@ const features = [
           requiresAuth: true,
         }),
       ],
-      apiRoutes: [apiRoute('GET', '/api/auth/signout', source.usersAuthServer)],
+      apiRoutes: [
+        apiRoute('POST', '/api/auth/signout', source.usersAuthServer),
+      ],
     },
     requiredScenarios: [
       'Member navigation page loads.',
@@ -849,7 +851,9 @@ const features = [
           requiresAuth: true,
         }),
       ],
-      apiRoutes: [apiRoute('GET', '/api/auth/signout', source.usersAuthServer)],
+      apiRoutes: [
+        apiRoute('POST', '/api/auth/signout', source.usersAuthServer),
+      ],
     },
     requiredScenarios: [
       'Sign out endpoint clears the session.',

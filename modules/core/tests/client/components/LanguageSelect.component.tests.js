@@ -50,7 +50,7 @@ describe('<LanguageSelect />', () => {
     expect(screen.getByText('Pick a language')).toBeInTheDocument();
   });
 
-  it('shows an error alert when languages fail to load', () => {
+  it('shows an error alert when languages fail to load', async () => {
     useLanguagesQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
@@ -60,6 +60,9 @@ describe('<LanguageSelect />', () => {
     render(<LanguageSelect />);
 
     expect(screen.getByRole('alert')).toHaveTextContent('Something went wrong');
+    await expect(
+      asyncSelectProps.at(-1).loadOptions('English'),
+    ).resolves.toEqual([]);
   });
 
   it('prefills selected languages from preSelectedLanguages', async () => {

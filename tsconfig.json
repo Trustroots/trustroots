@@ -17,11 +17,9 @@
       "@/*": ["./*"],
       "modules/*": ["./modules/*"]
     },
-    "types": []
+    "types": [],
+    "resolveJsonModule": true
   },
-  "include": [
-    "modules/*/client/**/*.ts",
-    "modules/*/client/**/*.tsx"
-  ],
+  "include": ["modules/*/client/**/*.ts", "modules/*/client/**/*.tsx"],
   "exclude": ["node_modules"]
 }
