@@ -312,7 +312,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
       <div className="panel panel-default">
         <div className="panel-heading">{t('Remove profile')}</div>
         <div className="panel-body">
-          <div className="checkbox">
+          <div className="checkbox profile-remove-confirmation">
             <label>
               <input
                 type="checkbox"
