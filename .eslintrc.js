@@ -85,6 +85,15 @@ module.exports = {
       },
     },
 
+    /** Native server implementations must not regain CommonJS syntax. */
+    {
+      files: ['modules/*/server/**/*.mjs'],
+      rules: {
+        'import/no-commonjs': 2,
+        'import/no-dynamic-require': 2,
+      },
+    },
+
     /**
      * Overrides for client-React code
      */
