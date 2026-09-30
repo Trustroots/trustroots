@@ -191,9 +191,7 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
                 </label>
                 <div className="col-sm-9">
                   <BirthdateSelect
-                    onChange={birthdate =>
-                      updateDraft({ birthdate: birthdate ?? undefined })
-                    }
+                    onChange={birthdate => updateDraft({ birthdate })}
                     value={draftUser.birthdate || ''}
                   />
                 </div>
