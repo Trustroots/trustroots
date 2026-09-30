@@ -118,6 +118,7 @@ function ExperienceForm({
   ]);
 
   const restoreDraft = () => {
+    if (!pendingDraft) return;
     setMet(pendingDraft.met);
     setHostedThem(pendingDraft.host);
     setHostedMe(pendingDraft.guest);

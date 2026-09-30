@@ -14,9 +14,7 @@ httpClient.interceptors.request.use(config => {
   return config;
 });
 
-export function getErrorResponse(
-  error: unknown,
-): AxiosResponse | undefined {
+export function getErrorResponse(error: unknown): AxiosResponse | undefined {
   if (typeof error !== 'object' || error === null || !('response' in error)) {
     return undefined;
   }

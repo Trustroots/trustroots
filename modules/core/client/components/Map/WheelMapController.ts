@@ -5,11 +5,6 @@ import { MapController, type MjolnirEvent } from 'react-map-gl';
  * unscaled. Treat a page as the map's height so a wheel turn visibly zooms.
  */
 export default class WheelMapController extends MapController {
-  declare _setInteractionState: (state: {
-    isPanning: boolean;
-    isZooming: boolean;
-  }) => void;
-
   handleEvent(event: MjolnirEvent): boolean {
     if (
       event.type === 'wheel' &&
@@ -37,7 +32,13 @@ export default class WheelMapController extends MapController {
 
     if (immediateWheelZoom) {
       // Complete the interaction without waiting for an animation to end.
-      this._setInteractionState({ isPanning: false, isZooming: false });
+      const controller = this as unknown as {
+        _setInteractionState: (state: {
+          isPanning: boolean;
+          isZooming: boolean;
+        }) => void;
+      };
+      controller._setInteractionState({ isPanning: false, isZooming: false });
     }
   }
 }

@@ -1,11 +1,7 @@
 import axios, {
   getErrorResponse,
 } from '../../../core/client/api/http-client.js';
-import type {
-  Experience,
-  ExperienceMine,
-  ExperienceRecommendation,
-} from '../experiences.prop-types';
+import type { Experience, ExperienceMine } from '../experiences.prop-types';
 import type { CreateExperienceRequest } from '../../shared/experience';
 
 export type { CreateExperienceRequest } from '../../shared/experience';
