@@ -3,7 +3,6 @@
  */
 const _ = require('lodash');
 const mongooseService = require('../../config/lib/mongoose');
-const chalk = require('chalk');
 const yargs = require('yargs');
 const faker = require('faker');
 const mongoose = require('mongoose');
@@ -125,9 +124,9 @@ function seedCircles() {
     console.log('...this might really take a while... go grab some coffee!');
   }
 
-  console.log(chalk.white('--'));
-  console.log(chalk.green('Trustroots test circles data'));
-  console.log(chalk.white('--'));
+  console.log('--');
+  console.log('Trustroots test circles data');
+  console.log('--');
 
   // Override debug mode to use the option set by the user
   config.db.debug = debug;
@@ -158,12 +157,9 @@ function seedCircles() {
           // if we already hit the limit
           if (index >= max) {
             console.log(
-              chalk.green(
-                initialCircleCount +
-                  ' circles already exist. No circles created!',
-              ),
+              initialCircleCount +
+                ' circles already exist. No circles created!',
             );
-            console.log(chalk.white('')); // Reset to white
             resolve();
           }
 
@@ -191,21 +187,14 @@ function seedCircles() {
                 ) {
                   console.log('');
                   console.log(
-                    chalk.green(
-                      initialCircleCount + ' circles existed in the database.',
-                    ),
+                    initialCircleCount + ' circles existed in the database.',
                   );
+                  console.log(savedCircles + ' circles successfully added.');
                   console.log(
-                    chalk.green(savedCircles + ' circles successfully added.'),
+                    'Database now contains ' +
+                      (initialCircleCount + savedCircles) +
+                      ' circles.',
                   );
-                  console.log(
-                    chalk.green(
-                      'Database now contains ' +
-                        (initialCircleCount + savedCircles) +
-                        ' circles.',
-                    ),
-                  );
-                  console.log(chalk.white('')); // Reset to white
                   resolve();
                 }
               }

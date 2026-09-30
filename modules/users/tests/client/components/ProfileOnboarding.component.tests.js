@@ -73,12 +73,14 @@ describe('profile onboarding components', () => {
     render(
       <AvatarNameMobile
         profile={{
-          avatarSource: 'none',
+          avatarSource: 'local',
+          avatarUploaded: true,
           displayName: 'Alice Example',
           displayUsername: 'Alice',
           tagline: 'Hosting cyclists in Lisbon',
           username: 'alice',
         }}
+        isSelf
       />,
     );
 
@@ -116,5 +118,22 @@ describe('profile onboarding components', () => {
     expect(
       screen.queryByText('Hosting cyclists in Lisbon'),
     ).not.toBeInTheDocument();
+  });
+
+  it('links an owner’s mobile placeholder to photo editing', () => {
+    render(
+      <AvatarNameMobile
+        profile={{
+          avatarSource: 'none',
+          avatarUploaded: false,
+          username: 'alice',
+        }}
+        isSelf
+      />,
+    );
+
+    expect(
+      screen.getByRole('link', { name: 'Edit profile photo' }),
+    ).toHaveAttribute('href', '/profile/edit/photo');
   });
 });

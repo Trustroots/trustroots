@@ -1,0 +1,116 @@
+import React, { useState } from 'react';
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
+
+import TrEditor from '@/modules/core/client/components/TrEditor';
+import { plainTextLength } from '@/modules/core/client/utils/filters';
+
+type ThreadReplyProps = {
+  onSend: (content: string) => Promise<unknown>;
+  cacheKey?: string;
+};
+
+export default function ThreadReply({ onSend, cacheKey }: ThreadReplyProps) {
+  const { t } = useTranslation('messages');
+
+  const [sending, setSending] = useState(false);
+  const [editorKeyCounter, setEditorKeyCounter] = useState(0);
+  const [content, setContent] = useState(() => getDraft() || '');
+
+  async function send(event: React.SyntheticEvent | KeyboardEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (sending) {
+      return;
+    }
+
+    if (plainTextLength(content) === 0) {
+      return;
+    }
+
+    setSending(true);
+    const sent = await onSend(content);
+
+    // Clear only when really sent to avoid data loss
+    if (sent) {
+      setContent('');
+      // There is a bug somewhere that means just setting content to '' does not
+      // set the text in the editor after pressing send, we can work around that by
+      // recreating the TrEditor component after each send by setting a fresh key
+      setEditorKeyCounter(n => n + 1);
+      clearDraft();
+    }
+
+    setSending(false);
+  }
+
+  function onChange(text: string) {
+    saveDraft(text);
+    setContent(text);
+  }
+
+  function saveDraft(text: string) {
+    if (window.localStorage && cacheKey) {
+      window.localStorage.setItem(cacheKey, text);
+    }
+  }
+
+  function getDraft() {
+    if (window.localStorage && cacheKey) {
+      return window.localStorage.getItem(cacheKey);
+    } else {
+      return null;
+    }
+  }
+
+  function clearDraft() {
+    if (window.localStorage && cacheKey) {
+      window.localStorage.removeItem(cacheKey);
+    }
+  }
+
+  return (
+    <form
+      id="message-reply"
+      name="messageForm"
+      className="form-horizontal"
+      onSubmit={event => send(event)}
+    >
+      <div className="row message-reply-editor-row">
+        <div className="col-xs-12">
+          <div className="panel panel-default">
+            <TrEditor
+              key={editorKeyCounter}
+              id="message-reply-content"
+              text={content}
+              onChange={text => onChange(text)}
+              onCtrlEnter={event => send(event)}
+            />
+          </div>
+        </div>
+      </div>
+      <div className="col-xs-2 col-sm-12 message-reply-actions">
+        <small className="text-muted hidden-xs">
+          {t<string>(
+            'Highlight text to add links or change its appearance. Ctrl+Enter to send.',
+          )}
+        </small>
+        <button
+          id="messageReplySubmit"
+          className="btn btn-md btn-primary message-reply-btn"
+          type="submit"
+          disabled={sending}
+        >
+          <i className="icon-send" />
+          <span className="hidden-xs">&nbsp;{t<string>('Send')}</span>
+        </button>
+      </div>
+    </form>
+  );
+}
+
+ThreadReply.propTypes = {
+  onSend: PropTypes.func.isRequired,
+  cacheKey: PropTypes.string,
+};
