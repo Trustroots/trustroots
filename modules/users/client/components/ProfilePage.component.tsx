@@ -364,7 +364,7 @@ export default function ProfilePage({
       case 'overview':
         return (
           <>
-            <AvatarNameMobile profile={profile} />
+            <AvatarNameMobile profile={profile} isSelf={isSelf} />
             <ProfileOverview profile={profile} isSelf={isSelf} />
             {!isSelf && (
               <div className="profile-flags">

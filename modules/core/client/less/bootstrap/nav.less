@@ -3,6 +3,23 @@
 
 .nav {
   .font-brand-regular();
+
+  > li > a {
+    display: block;
+  }
+}
+
+.nav-stacked {
+  flex-direction: column;
+
+  > li {
+    width: 100%;
+  }
+}
+
+.nav-stacked.nav-pills > li.active > a {
+  color: #fff;
+  background: @brand-primary;
 }
 
 /**
@@ -32,6 +49,7 @@
 
     &.active .badge,
     .badge {
+      margin-left: 5px;
       background: transparent;
       color: @gray-light;
       border: 1px solid @gray-light;

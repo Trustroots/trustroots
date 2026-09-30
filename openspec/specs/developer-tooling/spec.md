@@ -35,18 +35,38 @@ The project SHALL include client TypeScript and TSX in linting, test discovery, 
 - **WHEN** client coverage runs
 - **THEN** that module remains in the coverage calculation
 
+### Requirement: Core, messaging and support client modules use strict TypeScript
+
+All production modules under `modules/core/client`, `modules/messages/client` and `modules/support/client` SHALL use `.ts` or `.tsx` with meaningful strict types, while preserving their runtime behaviour, translations, module exports and import compatibility.
+
+#### Scenario: Existing JavaScript callers import migrated platform modules
+
+- **WHEN** a JavaScript caller imports a migrated core, messaging or support module without an extension
+- **THEN** the development and production bundles resolve and compile that module
+- **AND** client tests can import and exercise it
+
+#### Scenario: Type-checking migrated platform modules
+
+- **WHEN** the client TypeScript check runs
+- **THEN** it checks the migrated core, messaging and support modules under strict TypeScript settings
+- **AND** the migration does not rely on broad `any` types or TypeScript/lint suppressions
+
 ### Requirement: Member-facing client modules use strict TypeScript
+
 The users, contacts, tribes, experiences and references-thread client modules SHALL use `.ts` or `.tsx` for all migrated production modules, with meaningful types that pass the project TypeScript checks without suppressing diagnostics.
 
 #### Scenario: Migrated member modules are type-checked
+
 - **WHEN** the project TypeScript check runs
 - **THEN** every migrated production module is included in the check and passes without blanket `any` types or TypeScript suppression comments
 
 #### Scenario: Existing member-facing imports remain compatible
+
 - **WHEN** existing client modules import a migrated module using its prior extensionless or explicit `.js` path
 - **THEN** client bundling and tests resolve the converted module with the same runtime behaviour
 
 #### Scenario: Member-facing client coverage stays complete
+
 - **WHEN** client tests and full client coverage run after migration
 - **THEN** migrated functionality remains covered and the client coverage requirement stays at 100 percent
 

@@ -1,8 +1,18 @@
 @import '~less/global-variables';
 
 .navbar-admin {
-  margin-top: 36px;
+  margin-top: @navbar-height;
   margin-bottom: 0;
+
+  .navbar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .navbar-nav > li > a {
+    display: block;
+    padding: 10px 12px;
+  }
 
   + .container {
     padding-top: 18px;
