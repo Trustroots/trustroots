@@ -44,22 +44,16 @@ We are also open to improvements that [make trustroots forkable](https://github.
 See the [development setup guide](docs/development.md) for prerequisites and
 instructions for running Trustroots locally.
 
-## Building for production
+## Production builds
 
-See `deploy/docker`. Run `dockerBuild.sh`. Then `docker push` the latest tags
-which are output as the last part of the `dockerBuild.sh` script.
+See the [Docker deployment guide](deploy/docker/README.md) for instructions to
+build and push production images.
 
-## Merging
+## Licence
 
-Only use `git merge --no-ff branch` or the "Create a merge commit" option on
-GitHub. We don't want to delete any commit hashes. No rebasing or squashing.
-
-We use the commit hash to track what was deployed when, so any of those
-operations can destroy that history, making it much harder to understand what
-code was deployed when in the past.
-
-## License
-
-- [The AGPL Licence](LICENSE.md)
-- Photos copyright [photographers](https://github.com/Trustroots/trustroots/blob/main/modules/core/client/directives/tr-boards.client.directive.js#L30) - several of them are under Creative Commons. Others are permitted to use only with Trustroots.
-- Logos of external communities are copyrighted work and may be subject to trademark laws.
+The software in this repository is licensed under the [GNU Affero General
+Public License, version 3](LICENSE.md). Images and community logos may have
+separate copyright or licence terms. See the
+[contributor asset guide](docs/Contributor-assets.md) for photo credits and
+permissions. Third-party names and logos remain the property of their
+respective owners.
