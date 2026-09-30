@@ -5,9 +5,9 @@ import { useTranslation } from 'react-i18next';
 import type { UserProfile } from '../types';
 
 type AvatarUser = {
-  username: string;
+  username?: string | null;
   _id?: string;
-  displayName?: string;
+  displayName?: string | null;
   avatarSource?: string;
   avatarUploaded?: boolean;
   updated?: string;

@@ -3,7 +3,6 @@
  */
 const _ = require('lodash');
 const mongooseService = require('../../config/lib/mongoose');
-const chalk = require('chalk');
 const yargs = require('yargs');
 const faker = require('faker');
 const mongoose = require('mongoose');
@@ -99,9 +98,9 @@ function seedThreads() {
     console.log('...this might really take a while... go grab some coffee!');
   }
 
-  console.log(chalk.white('--'));
-  console.log(chalk.green('Trustroots test circles data'));
-  console.log(chalk.white('--'));
+  console.log('--');
+  console.log('Trustroots test circles data');
+  console.log('--');
 
   // Override debug mode to use the option set by the user
   config.db.debug = debug;
@@ -135,12 +134,9 @@ function seedThreads() {
           // if we already hit the limit
           if (index >= numThreads) {
             console.log(
-              chalk.green(
-                initialThreadCount +
-                  ' message threads already exist. No threads created!',
-              ),
+              initialThreadCount +
+                ' message threads already exist. No threads created!',
             );
-            console.log(chalk.white('')); // Reset to white
             resolve();
             return;
           }
@@ -235,25 +231,18 @@ function seedThreads() {
                           ) {
                             console.log('');
                             console.log(
-                              chalk.green(
-                                initialThreadCount +
-                                  ' message threads existed in the database.',
-                              ),
+                              initialThreadCount +
+                                ' message threads existed in the database.',
                             );
                             console.log(
-                              chalk.green(
-                                threadsSaved +
-                                  ' message threads successfully added.',
-                              ),
+                              threadsSaved +
+                                ' message threads successfully added.',
                             );
                             console.log(
-                              chalk.green(
-                                'Database now contains ' +
-                                  (initialThreadCount + threadsSaved) +
-                                  ' message threads.',
-                              ),
+                              'Database now contains ' +
+                                (initialThreadCount + threadsSaved) +
+                                ' message threads.',
                             );
-                            console.log(chalk.white('')); // Reset to white
                             resolve();
                             return;
                           }

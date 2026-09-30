@@ -21,22 +21,24 @@ export default function OfferLocation({
     return null;
   }
 
+  const coordinates = location as [number, number];
+
   return (
     <Map
       aria-hidden
       className="offer-location"
       fallbackMarker={{
         color: getOfferHexColor({ offerType, offerStatus }),
-        location,
+        location: coordinates,
       }}
       height={320}
-      location={location}
+      location={coordinates}
       scrollZoom={false}
       width="100%"
       zoom={11}
     >
       <OfferLocationOverlay
-        location={location as [number, number]}
+        location={coordinates}
         offerType={offerType}
         offerStatus={offerStatus}
       />

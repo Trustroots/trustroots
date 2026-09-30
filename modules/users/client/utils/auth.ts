@@ -35,12 +35,7 @@ interface AuthenticatedUser {
   _id: string;
   username: string;
   roles?: string[];
-}
-
-declare global {
-  interface Window {
-    user?: AuthenticatedUser;
-  }
+  [key: string]: unknown;
 }
 
 export function getEmailFromToken(token = ''): string | null {
