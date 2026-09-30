@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { getUser } from '../services/angular-compat';
+import { getCurrentUser } from '../services/client-runtime';
 import NostrootsOnboarding from './NostrootsOnboarding.component';
 
 /**
@@ -79,7 +79,7 @@ export default function NostrootsActionModal({
         </h2>
 
         <NostrootsOnboarding
-          username={getUser()?.username}
+          username={getCurrentUser()?.username}
           source={source}
           linkRef={ctaRef}
         />
