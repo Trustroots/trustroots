@@ -2,10 +2,10 @@ import React from 'react';
 import { render, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
-import { getUser } from '@/modules/core/client/services/angular-compat';
+import { getCurrentUser } from '@/modules/core/client/services/client-runtime';
 
-jest.mock('@/modules/core/client/services/angular-compat', () => ({
-  getUser: jest.fn(() => null),
+jest.mock('@/modules/core/client/services/client-runtime', () => ({
+  getCurrentUser: jest.fn(() => null),
 }));
 
 jest.mock('react-i18next', () => ({
@@ -122,7 +122,7 @@ describe('NostrootsActionModal', () => {
   });
 
   it('focuses the onboarding link and uses the current viewer from authentication', () => {
-    getUser.mockReturnValueOnce({
+    getCurrentUser.mockReturnValueOnce({
       username: 'sampleviewer',
       nostrNpub: 'npub-unused',
     });
