@@ -22,6 +22,23 @@ another member where the experience feature is available.
 - **WHEN** a member attempts to create an experience about themselves
 - **THEN** the system rejects the request
 
+#### Scenario: Shadowbanned member submits an experience
+
+- **WHEN** a shadowbanned member submits a valid experience for an active member
+- **THEN** the system saves their submission privately without notifying the recipient
+- **AND** does not reveal or publish the recipient's reciprocal experience
+- **AND** hides the submission from the recipient according to the author visibility rule
+
+#### Scenario: Experience recipient is restricted
+
+- **WHEN** a member submits an experience addressed to a suspended or shadowbanned member
+- **THEN** the system reports that the recipient was not found and saves no experience
+
+#### Scenario: Experience notification involves a restricted member
+
+- **WHEN** either party to an experience notification is suspended or shadowbanned
+- **THEN** the system sends no notification email
+
 ### Requirement: Experience visibility and detail
 
 The system SHALL display experience counts and details according to the
@@ -36,6 +53,13 @@ experience visibility rules.
 
 - **WHEN** a member is not permitted to view an experience
 - **THEN** the system does not expose that experience's protected details
+
+#### Scenario: Experience author is suspended or shadowbanned
+
+- **WHEN** a member views an active member's profile after an experience author is suspended or shadowbanned
+- **THEN** the author's experiences are excluded from the profile list, count and pending indicator
+- **AND** the author's experience details and paired responses are hidden
+- **AND** removing the moderation role restores visibility according to the existing public and private visibility rules
 
 ### Requirement: Duplicate experience prevention
 
@@ -86,3 +110,52 @@ denominators.
 - **AND** includes all-time and preceding-90-day counts of conversations whose first message received a reply
 - **AND** includes positive and negative latest-feedback counts for replied member pairs
 - **AND** includes no individual Experience content, message content, member identity, or visibility-status data
+
+### Requirement: Recoverable experience drafts
+
+The system SHALL save public experience drafts on the device for seven days,
+scoped to the signed-in author and recipient. It SHALL offer explicit restoration
+or discarding and SHALL exclude private moderator report text. Storage failures
+SHALL leave the form usable and communicate that device recovery is unavailable.
+
+#### Scenario: Member returns after a phone loses power
+
+- **WHEN** a member reopens an unsaved experience within seven days on the same device
+- **THEN** the form offers to restore or discard their saved draft
+- **AND** restoring recovers public feedback, interactions and recommendation
+
+#### Scenario: Draft belongs to another member or recipient
+
+- **WHEN** the signed-in author or recipient differs from the draft's member pair
+- **THEN** the form does not restore or display that draft
+
+#### Scenario: Member confirms saving or discards a draft
+
+- **WHEN** a member's experience is confirmed saved or they discard the draft
+- **THEN** the corresponding device draft is removed
+
+### Requirement: Clear experience saving outcomes
+
+The system SHALL show an explicit saving state and confirmed saved state. It SHALL
+check uncertain saves before requiring retry and SHALL show saved confirmation
+independently of optional private-report delivery. It SHALL display the configured
+feedback limit and prevent submission of oversized feedback without removing text.
+
+#### Scenario: Save response is lost
+
+- **WHEN** saving fails with a transport error, server error or conflict
+- **THEN** the system reads back the current author's experience once
+- **AND** only a confirmed saved experience produces success
+- **AND** an unconfirmed save leaves the draft editable and retry available
+
+#### Scenario: Private report is still sending
+
+- **WHEN** an experience is saved and an optional private report is pending
+- **THEN** saved confirmation is shown immediately with report sending status
+- **AND** a failed report can be retried without saving the experience again
+
+#### Scenario: Feedback exceeds the configured limit
+
+- **WHEN** public feedback exceeds the configured character limit
+- **THEN** the form shows the character count and an explanation
+- **AND** saving is disabled until the member shortens the feedback

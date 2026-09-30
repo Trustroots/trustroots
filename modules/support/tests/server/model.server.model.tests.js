@@ -48,6 +48,25 @@ describe('Support request Model Unit Tests:', function () {
   after(utils.clearDatabase);
 
   describe('Method Save', function () {
+    for (const category of [
+      'account',
+      'reportMember',
+      'volunteering',
+      'other',
+    ]) {
+      it(`retains the ${category} category`, async function () {
+        const saved = await new SupportRequest({
+          ..._support,
+          category,
+        }).save();
+        saved.category.should.equal(category);
+      });
+    }
+
+    it('rejects unsupported categories', function () {
+      const invalid = new SupportRequest({ ..._support, category: 'unknown' });
+      should.exist(invalid.validateSync().errors.category);
+    });
     it('should be able to save without problems', function (done) {
       support.save(function (err, supportRes) {
         should.not.exist(err);
@@ -56,6 +75,7 @@ describe('Support request Model Unit Tests:', function () {
         supportRes.message.should.equal(_support.message);
         supportRes.userAgent.should.equal(_support.userAgent);
         supportRes.reportMember.should.equal(_support.reportMember);
+        supportRes.category.should.equal('other');
         should.exist(supportRes.sent);
         return done();
       });

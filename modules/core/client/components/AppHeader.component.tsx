@@ -1,0 +1,53 @@
+// External dependencies
+import PropTypes from 'prop-types';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Navbar } from 'react-bootstrap';
+
+// Internal dependencies
+import { useCurrentPath } from '@/modules/core/client/react-app/useCurrentPath';
+import { userType } from '@/modules/users/client/users.prop-types';
+import type { AuthUser } from '@/modules/core/client/react-app/auth';
+import NavigationLoggedIn from './NavigationLoggedIn';
+import NavigationLoggedOut from './NavigationLoggedOut';
+
+type Props = {
+  currentPath?: string;
+  onSignout: (event?: React.MouseEvent<HTMLElement>) => void;
+  user?: AuthUser | null;
+};
+export default function AppHeader({
+  currentPath: routedPath,
+  onSignout,
+  user,
+}: Props) {
+  const { t } = useTranslation('core');
+  const browserPath = useCurrentPath();
+  const currentPath = routedPath || browserPath;
+
+  return (
+    <Navbar className="hidden-print" id="tr-header" fixedTop>
+      <a
+        className="btn btn-primary sr-only sr-only-focusable sr-helper"
+        href="#tr-main"
+      >
+        {t<string>('Skip to main content')}
+      </a>
+      {user?.username ? (
+        <NavigationLoggedIn
+          onSignout={onSignout}
+          user={user}
+          currentPath={currentPath}
+        />
+      ) : (
+        <NavigationLoggedOut currentPath={currentPath} />
+      )}
+    </Navbar>
+  );
+}
+
+AppHeader.propTypes = {
+  currentPath: PropTypes.string,
+  onSignout: PropTypes.func.isRequired,
+  user: userType,
+};

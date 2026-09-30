@@ -26,6 +26,11 @@ describe('<BoardCredits />', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  it('uses an empty credit list when no photo credits are supplied', () => {
+    const { container } = render(<BoardCredits />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it('renders a single photo credit', () => {
     render(
       <BoardCredits

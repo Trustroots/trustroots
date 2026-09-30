@@ -17,6 +17,10 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
 describe('ForgotPasswordPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    const {
+      getCurrentRouteParams,
+    } = require('@/modules/core/client/services/client-runtime');
+    getCurrentRouteParams.mockReturnValue({ userhandle: 'ada' });
   });
 
   it('prefills the username from route params and submits a reset request', async () => {
@@ -50,6 +54,33 @@ describe('ForgotPasswordPage', () => {
 
     expect(await screen.findByText('Unknown user.')).toBeInTheDocument();
   });
+
+  it('keeps the form usable when the rejected value has no API message', async () => {
+    authApi.forgotPassword.mockRejectedValue(null);
+
+    render(<ForgotPasswordPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
+
+    await waitFor(() =>
+      expect(screen.getByLabelText('Email or username')).toBeEnabled(),
+    );
+  });
+  it.each(['ECONNABORTED', 'ETIMEDOUT', 'ERR_NETWORK'])(
+    'shows recovery guidance for %s without retrying the request',
+    async code => {
+      authApi.forgotPassword.mockRejectedValue({ code });
+
+      render(<ForgotPasswordPage />);
+      fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'We could not confirm whether the recovery request completed. Check your inbox before trying again.',
+      );
+      expect(screen.getByRole('button', { name: 'Restore' })).toBeEnabled();
+      expect(screen.getByLabelText('Email or username')).toHaveValue('ada');
+      expect(authApi.forgotPassword).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it('updates the username before submitting', async () => {
     authApi.forgotPassword.mockResolvedValue({ message: 'Sent.' });

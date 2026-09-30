@@ -17,7 +17,8 @@
       "@/*": ["./*"],
       "modules/*": ["./modules/*"]
     },
-    "types": []
+    "types": [],
+    "resolveJsonModule": true
   },
   "include": [
     "config/vite/react-main.tsx",

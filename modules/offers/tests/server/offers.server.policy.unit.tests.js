@@ -1,18 +1,12 @@
-const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 require('should');
 
 function loadPolicy() {
-  const mockAcl = {
-    allow: sinon.stub(),
-    areAnyRolesAllowed: sinon.stub(),
-  };
-  const createMemoryPolicy = () => mockAcl;
-  const policy = proxyquire('../../server/policies/offers.server.policy', {
-    '../../../core/server/services/memory-policy.server.service':
-      createMemoryPolicy,
-  });
-  return { policy, mockAcl };
+  const implementation = require('../../server/policies/offers.server.policy.mjs');
+  const mockAcl = implementation._acl;
+  sinon.stub(mockAcl, 'allow');
+  sinon.stub(mockAcl, 'areAnyRolesAllowed');
+  return { policy: implementation.default, mockAcl };
 }
 
 function mockResponse() {
@@ -33,6 +27,8 @@ function mockResponse() {
 }
 
 describe('Offers policy unit tests', () => {
+  afterEach(() => sinon.restore());
+
   it('registers admin and user offer policies', () => {
     const { policy, mockAcl } = loadPolicy();
 
@@ -146,6 +142,12 @@ describe('Offers policy unit tests', () => {
     const { policy, mockAcl } = loadPolicy();
     mockAcl.areAnyRolesAllowed.yields(new Error('acl down'));
     const res = mockResponse();
+    let sendCalled = false;
+    const send = res.send;
+    res.send = body => {
+      sendCalled = true;
+      return send(body);
+    };
 
     policy.isAllowed(
       {
@@ -159,6 +161,7 @@ describe('Offers policy unit tests', () => {
 
     res.statusCode.should.equal(500);
     res.body.message.should.equal('Unexpected authorization error');
+    sendCalled.should.be.true();
     done();
   });
 

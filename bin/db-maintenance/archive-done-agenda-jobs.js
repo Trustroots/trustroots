@@ -16,7 +16,6 @@
  */
 
 const { MongoClient } = require('mongodb');
-const chalk = require('chalk');
 const async = require('async');
 const config = require('../../config/config');
 
@@ -33,9 +32,7 @@ const sourceCollectionName = isReverse ? 'agendaJobsArchived' : 'agendaJobs';
 const targetCollectionName = isReverse ? 'agendaJobs' : 'agendaJobsArchived';
 
 if (isReverse) {
-  console.log(
-    chalk.red('🚨 Reverse action! Movind docs from archive back to live.'),
-  );
+  console.log('🚨 Reverse action! Movind docs from archive back to live.');
 }
 
 function countTotals(done) {
@@ -99,12 +96,12 @@ async.waterfall(
       // Use connect method to connect to the server
       MongoClient.connect(config.db.uri, function (err, client) {
         if (err) {
-          console.log(chalk.red('Could not connect to MongoDB!'));
+          console.log('Could not connect to MongoDB!');
           return done(err);
         }
 
         dbClient = client;
-        console.log(chalk.green('Connected to MongoDB:'), config.db.uri);
+        console.log('Connected to MongoDB:', config.db.uri);
 
         sourceCollection = client.db().collection(sourceCollectionName);
         targetCollection = client.db().collection(targetCollectionName);

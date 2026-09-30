@@ -83,6 +83,8 @@ module.exports = webpackMerge.merge(shims, {
   resolve: {
     // Keep webpack's defaults explicit for eslint-import-resolver-webpack.
     extensions: ['.ts', '.tsx', '.js', '.json', '.wasm'],
+    // Preserve explicit JavaScript imports while client modules move to TypeScript.
+    extensionAlias: { '.js': ['.js', '.ts', '.tsx'] },
     fallback: {
       querystring: require.resolve('querystring-es3'),
       url: require.resolve('url/'),
@@ -113,7 +115,7 @@ module.exports = webpackMerge.merge(shims, {
         test: /\.[jt]sx?$/,
         // Transpile our own code, plus the modern-syntax dependencies that
         // must match the application's supported browser targets.
-        exclude: /node_modules\/(?!(nostr-tools|@noble|@scure)\/)/,
+        exclude: /node_modules[\\/](?!(nostr-tools|@noble|@scure)[\\/])/,
         use: [
           {
             loader: 'babel-loader',

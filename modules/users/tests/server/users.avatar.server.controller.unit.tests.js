@@ -5,7 +5,9 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const mongoose = require('mongoose');
-const proxyquire = require('proxyquire').noCallThru();
+const sinon = require('sinon');
+const mkdirRecursive = require('mkdir-recursive');
+const fileUpload = require('../../../core/server/services/file-upload.service');
 
 const config = require('../../../../config/config');
 require('../../server/models/user.server.model');
@@ -51,6 +53,7 @@ function deferredResponse() {
 
 describe('Avatar controller unit tests', () => {
   afterEach(() => {
+    sinon.restore();
     return mongoose.connection.readyState ? utils.clearDatabase() : undefined;
   });
 
@@ -62,9 +65,9 @@ describe('Avatar controller unit tests', () => {
       res.statusCode.should.equal(403);
     });
 
-    it('delegates authenticated uploads to the file upload service', () => {
+    it('delegates authenticated uploads to the file upload service', async () => {
       let uploadArgs;
-      const controller = loadAvatarWithStubs({
+      const controller = await loadAvatarWithStubs({
         '../../../core/server/services/file-upload.service': {
           uploadFile: (...args) => {
             uploadArgs = args;
@@ -110,6 +113,8 @@ describe('Avatar controller unit tests', () => {
       const [viewer, target] = await utils.saveUsers(
         utils.generateUsers(2, { public: true }),
       );
+      target.blocked = [viewer._id];
+      await target.save();
       const res = deferredResponse();
       let nextCalled = false;
       const req = { user: viewer };
@@ -126,15 +131,18 @@ describe('Avatar controller unit tests', () => {
       });
       nextCalled.should.be.true();
       req.profile._id.toString().should.equal(target._id.toString());
+      req.profile.blocked
+        .map(id => id.toString())
+        .should.containEql(viewer._id.toString());
     });
   });
 
   describe('getAvatar', () => {
-    it('loads the ImageMagick processor when configured', () => {
+    it('loads the ImageMagick processor when configured', async () => {
       const config = require('../../../../config/config');
       let subClassOptions;
 
-      const controller = loadAvatarWithStubs({
+      const controller = await loadAvatarWithStubs({
         '../../../../config/config': {
           ...config,
           imageProcessor: 'imagemagic',
@@ -147,7 +155,7 @@ describe('Avatar controller unit tests', () => {
         }),
       });
 
-      controller.should.have.property('getAvatar');
+      Object.keys(controller).should.containEql('getAvatar');
       subClassOptions.should.deepEqual({ imageMagick: true });
     });
 
@@ -213,6 +221,65 @@ describe('Avatar controller unit tests', () => {
       targetDoc.roles = ['user', 'shadowban'];
       targetDoc.avatarUploaded = true;
       targetDoc.avatarSource = 'local';
+      await targetDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        { user: viewer, profile: targetDoc, query: { size: '128' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('/uploads-profile/');
+    });
+
+    it('returns the default avatar when the profile has blocked the viewer', async () => {
+      const [viewer, target] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const targetDoc = await User.findById(target._id);
+      targetDoc.avatarUploaded = true;
+      targetDoc.avatarSource = 'local';
+      targetDoc.blocked = [viewer._id];
+      await targetDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        { user: viewer, profile: targetDoc, query: { size: '128' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('/img/avatar-128.png');
+    });
+
+    it('keeps avatar access for the member who initiated the block', async () => {
+      const [viewer, target] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      viewer.blocked = [target._id];
+      await viewer.save();
+      const targetDoc = await User.findById(target._id);
+      targetDoc.avatarUploaded = true;
+      targetDoc.avatarSource = 'local';
+      await targetDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        { user: viewer, profile: targetDoc, query: { size: '128' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('/uploads-profile/');
+    });
+
+    it('lets admins view an avatar when the profile has blocked them', async () => {
+      const [viewer, target] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      viewer.roles = ['user', 'admin'];
+      const targetDoc = await User.findById(target._id);
+      targetDoc.avatarUploaded = true;
+      targetDoc.avatarSource = 'local';
+      targetDoc.blocked = [viewer._id];
       await targetDoc.save();
 
       const res = deferredResponse();
@@ -478,7 +545,7 @@ describe('Avatar controller unit tests', () => {
     });
   });
 
-  function loadAvatarWithGm(writeHandler) {
+  async function loadAvatarWithGm(writeHandler) {
     function chainable() {
       const chain = {
         autoOrient: () => chain,
@@ -496,19 +563,74 @@ describe('Avatar controller unit tests', () => {
       return chain;
     }
 
-    return proxyquire(
-      '../../server/controllers/users.avatar.server.controller',
-      {
-        gm: () => chainable(),
-      },
-    );
+    return loadAvatarWithStubs({ gm: () => chainable() });
   }
 
-  function loadAvatarWithStubs(stubs) {
-    return proxyquire(
-      '../../server/controllers/users.avatar.server.controller',
-      stubs,
-    );
+  async function loadAvatarWithStubs(stubs) {
+    const configValues = [];
+    const gm = require('gm');
+    if (stubs['../../../../config/config']) {
+      for (const [key, value] of Object.entries(
+        stubs['../../../../config/config'],
+      )) {
+        if (config[key] !== value) {
+          configValues.push([key, config[key]]);
+          config[key] = value;
+        }
+      }
+    }
+
+    if (stubs['../../../core/server/services/file-upload.service']) {
+      sinon
+        .stub(fileUpload, 'uploadFile')
+        .callsFake(
+          stubs['../../../core/server/services/file-upload.service'].uploadFile,
+        );
+    }
+
+    if (stubs['mkdir-recursive']) {
+      sinon
+        .stub(mkdirRecursive, 'mkdir')
+        .callsFake(stubs['mkdir-recursive'].mkdir);
+    }
+
+    if (stubs.fs) {
+      for (const [method, implementation] of Object.entries(stubs.fs)) {
+        sinon.stub(fs, method).callsFake(implementation);
+      }
+    }
+
+    let importUrl =
+      '../../server/controllers/users.avatar.server.controller.mjs';
+    let originalGmModule;
+    let originalGmExports;
+
+    if (stubs.gm && stubs.gm.subClass) {
+      const gmPath = require.resolve('gm');
+      originalGmModule = require.cache[gmPath];
+      originalGmExports = originalGmModule && originalGmModule.exports;
+      if (originalGmModule) {
+        originalGmModule.exports = stubs.gm;
+      }
+      importUrl += `?test=${Date.now()}`;
+    } else if (stubs.gm) {
+      sinon
+        .stub(gm.prototype, 'write')
+        .callsFake(function (outputPath, callback) {
+          return stubs.gm().write(outputPath, callback);
+        });
+    }
+
+    try {
+      return await import(importUrl);
+    } finally {
+      if (originalGmModule) {
+        originalGmModule.exports = originalGmExports;
+      }
+      for (const [key, value] of configValues) {
+        config[key] = value;
+      }
+    }
   }
 
   describe('avatarUpload', () => {
@@ -517,7 +639,7 @@ describe('Avatar controller unit tests', () => {
       delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
 
       try {
-        const controller = loadAvatarWithGm(cb => cb());
+        const controller = await loadAvatarWithGm(cb => cb());
         const [user] = await utils.saveUsers(utils.generateUsers(1));
         const userDoc = await User.findById(user._id);
         const tmpFile = path.join(os.tmpdir(), `avatar-gm-${Date.now()}.jpg`);
@@ -548,7 +670,7 @@ describe('Avatar controller unit tests', () => {
       delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
 
       try {
-        const controller = loadAvatarWithStubs({
+        const controller = await loadAvatarWithStubs({
           'mkdir-recursive': {
             mkdir: (directory, cb) => cb(new Error('mkdir failed')),
           },
@@ -580,7 +702,7 @@ describe('Avatar controller unit tests', () => {
       process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
 
       try {
-        const controller = loadAvatarWithStubs({
+        const controller = await loadAvatarWithStubs({
           'mkdir-recursive': {
             mkdir: (directory, cb) =>
               cb(Object.assign(new Error('exists'), { code: 'EEXIST' })),
@@ -618,7 +740,7 @@ describe('Avatar controller unit tests', () => {
       process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
 
       try {
-        const controller = loadAvatarWithStubs({
+        const controller = await loadAvatarWithStubs({
           fs: {
             copyFile: (source, destination, cb) => cb(),
             unlink: (source, cb) => cb(new Error('unlink failed')),
@@ -669,7 +791,7 @@ describe('Avatar controller unit tests', () => {
           return chain;
         };
 
-        const controller = loadAvatarWithStubs({
+        const controller = await loadAvatarWithStubs({
           gm: () => chainable(),
           fs: {
             unlink: (source, cb) =>
@@ -703,7 +825,7 @@ describe('Avatar controller unit tests', () => {
       delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
 
       try {
-        const controller = loadAvatarWithGm(cb =>
+        const controller = await loadAvatarWithGm(cb =>
           cb(new Error('gm processing failed')),
         );
         const [user] = await utils.saveUsers(utils.generateUsers(1));

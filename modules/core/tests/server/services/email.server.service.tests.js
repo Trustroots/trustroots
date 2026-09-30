@@ -1,5 +1,7 @@
 const should = require('should');
-const proxyquire = require('proxyquire').noCallThru();
+const sinon = require('sinon');
+const agenda = require('../../../../../config/lib/agenda');
+const nunjucks = require('nunjucks');
 const config = require('../../../../../config/config');
 
 let emailService;
@@ -7,20 +9,36 @@ let emailService;
 describe('Service: email', function () {
   let jobs;
 
-  function loadEmailService(stubs = {}) {
-    jobs = [];
-    const agenda = {
-      now(type, data) {
-        jobs.push(JSON.parse(JSON.stringify({ type, data })));
-        return Promise.resolve({ attrs: { name: type } });
-      },
-    };
+  const sandbox = sinon.createSandbox();
 
-    return proxyquire('../../../server/services/email.server.service', {
-      '../../../../config/lib/agenda': agenda,
-      ...stubs,
-    });
+  function loadEmailService(stubs = {}) {
+    sandbox.restore();
+    jobs = [];
+    const enqueue = stubs['../../../../config/lib/agenda'];
+    sandbox.stub(agenda, 'now').callsFake(
+      enqueue
+        ? enqueue.now
+        : (type, data) => {
+            jobs.push(JSON.parse(JSON.stringify({ type, data })));
+            return Promise.resolve({ attrs: { name: type } });
+          },
+    );
+    const overrides = stubs['../../../../config/config'];
+    if (overrides) {
+      for (const key of Object.keys(overrides)) {
+        if (overrides[key] !== config[key])
+          sandbox.stub(config, key).value(overrides[key]);
+      }
+    }
+    const render = stubs['../../../../config/lib/render'];
+    if (render)
+      sandbox.stub(nunjucks.Environment.prototype, 'render').callsFake(render);
+    return require('../../../server/services/email.server.service');
   }
+
+  afterEach(function () {
+    sandbox.restore();
+  });
 
   beforeEach(function () {
     emailService = loadEmailService();
@@ -35,9 +53,11 @@ describe('Service: email', function () {
         },
       },
     });
-    emailService.renderEmail = function (templateName, params, callback) {
-      callback(null, { to: { address: 'member@example.test' } });
-    };
+    sandbox
+      .stub(emailService, 'renderEmail')
+      .callsFake(function (templateName, params, callback) {
+        callback(null, { to: { address: 'member@example.test' } });
+      });
 
     emailService.renderEmailAndSend('example', {}, function (err, job) {
       err.should.equal(enqueueError);
@@ -493,6 +513,7 @@ describe('Service: email', function () {
 
   it('can send support request email', function (done) {
     const supportRequest = {
+      category: 'reportMember',
       message: 'test-support-message',
       username: 'joedoe',
       email: 'test@test.com',
@@ -521,7 +542,7 @@ describe('Service: email', function () {
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
       jobs[0].data.subject.should.equal(
-        'Support request from ' +
+        'Support request [Report a member] from ' +
           supportRequest.username +
           ' (' +
           supportRequest.displayName +
@@ -537,6 +558,7 @@ describe('Service: email', function () {
       should.not.exist(jobs[0].data.html);
       should.exist(jobs[0].data.text);
       jobs[0].data.text.should.containEql('test-support-message');
+      jobs[0].data.text.should.containEql('Category: Report a member');
       jobs[0].data.text.should.containEql(
         'Reported member: ' + supportRequest.reportMember,
       );
@@ -587,7 +609,7 @@ describe('Service: email', function () {
     emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.subject.should.equal('Support request');
+      jobs[0].data.subject.should.equal('Support request [Other]');
       done();
     });
   });
@@ -604,7 +626,7 @@ describe('Service: email', function () {
     emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.subject.should.equal('Support request from joedoe');
+      jobs[0].data.subject.should.equal('Support request [Other] from joedoe');
       done();
     });
   });
@@ -621,7 +643,7 @@ describe('Service: email', function () {
     emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.subject.should.equal('Support request (Joe Doe)');
+      jobs[0].data.subject.should.equal('Support request [Other] (Joe Doe)');
       done();
     });
   });
@@ -822,6 +844,35 @@ describe('Service: email', function () {
     });
   });
 
+  for (const role of ['suspended', 'shadowban']) {
+    for (const restrictedParty of ['sender', 'recipient']) {
+      it(`does not send experience notifications with a ${role} ${restrictedParty}`, async function () {
+        const sender = {
+          roles: restrictedParty === 'sender' ? [role] : ['user'],
+        };
+        const recipient = {
+          roles: restrictedParty === 'recipient' ? [role] : ['user'],
+        };
+        await new Promise(resolve =>
+          emailService.sendExperienceNotificationFirst(
+            sender,
+            recipient,
+            resolve,
+          ),
+        );
+        await new Promise(resolve =>
+          emailService.sendExperienceNotificationSecond(
+            sender,
+            recipient,
+            {},
+            resolve,
+          ),
+        );
+        jobs.should.have.length(0);
+      });
+    }
+  }
+
   it('can send experience notification emails', function (done) {
     const userFrom = {
       username: 'sender',
@@ -911,7 +962,7 @@ describe('Service: email', function () {
     emailService.renderEmail('reset-password', params, function (err, email) {
       if (err) return done(err);
       email.text.should.containEql(
-        "Remember, I'm just a little mail robot. Don't reply to this email directly.",
+        'This is an automated email. Please don’t reply directly.',
       );
       done();
     });
@@ -932,7 +983,7 @@ describe('Service: email', function () {
     emailService.renderEmail('reset-password', params, function (err, email) {
       if (err) return done(err);
       email.text.should.not.containEql(
-        "Remember, I'm just a little mail robot. Don't reply to this email directly.",
+        'This is an automated email. Please don’t reply directly.',
       );
       done();
     });
