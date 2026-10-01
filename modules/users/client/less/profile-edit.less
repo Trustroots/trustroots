@@ -4,6 +4,30 @@
 // Make space for .profile-edit-navbar-mobile
 .profile-edit {
   margin-bottom: @navbar-height;
+
+  @media (max-width: @screen-xs-max) {
+    margin-bottom: 80px;
+  }
+}
+
+.profile-edit-navbar-mobile .navbar-nav {
+  flex-direction: row;
+  width: 100%;
+
+  > li {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+.profile-newsletter label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  input[type='checkbox'] {
+    margin: 0;
+  }
 }
 
 .profile-remove-confirmation label {
