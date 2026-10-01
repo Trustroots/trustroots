@@ -118,13 +118,21 @@ test('member navigation menus and narrow layout remain usable', async ({
   expect(searchBounds.x).toBeGreaterThanOrEqual(
     circlesBounds.x + circlesBounds.width,
   );
-  await page.getByRole('button', { name: 'Support' }).hover();
-  await expect(header.getByRole('link', { name: 'Safety' })).toBeVisible();
+  const supportButton = page.getByRole('button', { name: 'Support' });
+  await supportButton.hover();
+  const safetyLink = header.getByRole('link', { name: 'Safety' });
+  await expect(safetyLink).toBeVisible();
+  await safetyLink.hover();
+  await expect(safetyLink).toBeVisible();
 
-  await page.getByRole('button', { name: 'Support' }).click();
+  await supportButton.click();
   await expect(
     page.locator('#tr-header').getByRole('link', { name: 'Safety' }),
   ).toBeVisible();
+  await page.keyboard.press('Escape');
+  await supportButton.focus();
+  await page.keyboard.press('Enter');
+  await expect(safetyLink).toBeVisible();
 
   await page.locator('.dropdown-user .dropdown-toggle').click();
   await expect(page.getByRole('link', { name: 'My profile' })).toBeVisible();
