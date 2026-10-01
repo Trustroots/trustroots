@@ -30,5 +30,8 @@ module.exports = {
   transform: {
     '^.+\\.[jt]sx?$': 'babel-jest',
   },
-  transformIgnorePatterns: ['/node_modules/(?!use-local-storage-state/)'],
+  // Include nostr-tools so nested ESM-only @noble and @scure packages are transformed.
+  transformIgnorePatterns: [
+    '/node_modules/(?!(use-local-storage-state|nostr-tools|@noble|@scure)/)',
+  ],
 };
