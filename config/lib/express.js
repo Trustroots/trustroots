@@ -475,6 +475,18 @@ module.exports.init = function (connection) {
   const app = express();
   app.set('query parser', query => qs.parse(query));
 
+  // Express 5 returns a fresh query object on every access. Keep one mutable
+  // object per request for middleware and local variables that normalise or
+  // read query values.
+  app.use((req, res, next) => {
+    Object.defineProperty(req, 'query', {
+      configurable: true,
+      enumerable: true,
+      value: req.query,
+    });
+    next();
+  });
+
   // Initialize local variables
   this.initLocalVariables(app);
 
