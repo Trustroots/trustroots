@@ -18,7 +18,7 @@ jest.mock('use-debounce', () => {
         [],
       );
 
-      return [stable];
+      return stable;
     },
   };
 });

@@ -111,7 +111,7 @@ export default function ProfileEditPage({
 
   return (
     <>
-      <nav className="navbar navbar-default navbar-fixed-bottom visible-xs-block">
+      <nav className="navbar navbar-default navbar-fixed-bottom visible-xs-block profile-edit-navbar-mobile">
         <div className="container">
           <ProfileEditNav activeTab={activeTab} variant="bottom" />
         </div>
