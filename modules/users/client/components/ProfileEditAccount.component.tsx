@@ -220,6 +220,14 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                       }))
                     }
                   />
+                  <p className="help-block">
+                    {t(
+                      'You can change your username three months after joining, and again three months after each change.',
+                    )}{' '}
+                    {t(
+                      'Your new username needs to be 3–34 characters long and include at least one letter or number. It must also be available.',
+                    )}
+                  </p>
                   {usernameMessage && (
                     <p className="help-block">{usernameMessage}</p>
                   )}
@@ -244,7 +252,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
       <div className="panel panel-default">
         <div className="panel-heading">{t('News and updates')}</div>
         <div className="panel-body">
-          <div className="checkbox">
+          <div className="checkbox profile-newsletter">
             <label>
               <input
                 type="checkbox"
@@ -253,7 +261,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                   handleSubscriptionsChange('newsletter', event.target.checked)
                 }
               />
-              {t('Community newsletter')}
+              <span>{t('Community newsletter')}</span>
             </label>
           </div>
         </div>

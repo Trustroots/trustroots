@@ -286,7 +286,7 @@ export default function SearchMap({
   /**
    * Debounce setting persistent map state to avoid performance issues
    */
-  const [debouncedSetPersistentMapLocation] = useDebouncedCallback(
+  const debouncedSetPersistentMapLocation = useDebouncedCallback(
     setPersistentMapLocation,
     // delay in ms
     1000,
@@ -470,7 +470,7 @@ export default function SearchMap({
   /**
    * Debounce getting fresh offers for new map state to avoid performance issues
    */
-  const [debouncedUpdateOffers] = useDebouncedCallback(
+  const debouncedUpdateOffers = useDebouncedCallback(
     updateOffers,
     // delay in ms
     500,

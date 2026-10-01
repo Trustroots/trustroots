@@ -88,6 +88,14 @@
   .nav-header-primary {
     margin-left: auto;
 
+    // Bootstrap 5 no longer colours an active item from the legacy li class.
+    > li.active > a,
+    > li.active > a:hover,
+    > li.active > a:focus {
+      color: @navbar-default-link-active-color;
+      background: @navbar-default-link-active-bg;
+    }
+
     @media (max-width: @grid-float-breakpoint-max) {
       margin-left: auto;
       display: flex;
@@ -103,6 +111,12 @@
 
   /* Bootstrap dropdowns */
   @media (min-width: @grid-float-breakpoint) {
+    // Bootstrap 5 adds a gap below the toggle. It breaks the hover path into
+    // the menu, closing it before the pointer reaches the first item.
+    .dropdown-menu {
+      margin-top: 0;
+    }
+
     /* Make Bootstrap dropdowns open at hover */
     .dropdown:hover,
     .dropdown:focus {

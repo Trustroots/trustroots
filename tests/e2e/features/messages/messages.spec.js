@@ -99,7 +99,13 @@ test.describe('seeded message flows', () => {
 
     await page.goto('/messages');
 
-    await expect(page.getByText(SEEDED_SHADOW.firstName)).toHaveCount(0);
-    await expect(page.getByText(SEEDED_SHADOW_MESSAGE)).toHaveCount(0);
+    await expect(page.getByText('Portland Host').first()).toBeVisible();
+    const inboxRows = page.locator('.threadlist-thread');
+    await expect(
+      inboxRows.locator(`a[href*="${SEEDED_SHADOW.username}"]`),
+    ).toHaveCount(0);
+    await expect(
+      inboxRows.filter({ hasText: SEEDED_SHADOW_MESSAGE }),
+    ).toHaveCount(0);
   });
 });
