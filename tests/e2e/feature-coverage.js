@@ -288,9 +288,14 @@ const features = [
       ],
       apiRoutes: [],
     },
-    requiredScenarios: ['General FAQ page loads.'],
+    requiredScenarios: [
+      'General FAQ page loads.',
+      'FAQ filter matches answer text and can be cleared.',
+      'FAQ filter reports when no questions match.',
+    ],
     relatedSpecs: [
       spec('public-pages.spec.js', 'public marketing page /faq loads'),
+      spec('faq-filter.spec.js', 'visitors can filter FAQ questions'),
     ],
   },
   {
@@ -1087,6 +1092,7 @@ const features = [
       'Valid account details update persists.',
       'Invalid account details show validation errors.',
       'The community newsletter checkbox has space before its label.',
+      'Username change rules are visible in account settings.',
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'profile edit account page is reachable'),
