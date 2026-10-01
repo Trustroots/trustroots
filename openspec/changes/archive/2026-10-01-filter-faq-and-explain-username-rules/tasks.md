@@ -1,0 +1,4 @@
+- [x] Add the FAQ category filter and username guidance.
+- [x] Add client and end-to-end coverage for the new behaviour.
+- [x] Run focused tests, type checking, lint, and OpenSpec validation.
+- [x] Update living specifications and archive this change.

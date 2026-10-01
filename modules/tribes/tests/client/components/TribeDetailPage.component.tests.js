@@ -3,7 +3,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
-import TribeDetailPage from '@/modules/tribes/client/components/TribeDetailPage.component';
+import TribeDetailPage, {
+  getTribeHeaderBackgroundStyle,
+} from '@/modules/tribes/client/components/TribeDetailPage.component';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 
 jest.mock('@/modules/tribes/client/api/tribes.api');
@@ -117,6 +119,39 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
       'href',
       'https://example.com/artist',
     );
+  });
+
+  it('renders the header when the circle has no background image or colour', async () => {
+    tribesApi.get.mockResolvedValue({
+      _id: 'tribe-1',
+      slug: 'hitchhikers',
+      label: 'Hitchhikers',
+      count: 12,
+    });
+
+    render(
+      <TribeDetailPage
+        circle="hitchhikers"
+        onMembershipUpdated={jest.fn()}
+        user={{ _id: 'user-1', username: 'alice' }}
+      />,
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: 'Hitchhikers' }),
+    ).toBeInTheDocument();
+    expect(
+      JSON.stringify(getTribeHeaderBackgroundStyle({ slug: 'hitchhikers' })),
+    ).not.toMatch(/background-image|background-color/);
+    const styledBackground = JSON.stringify(
+      getTribeHeaderBackgroundStyle({
+        slug: 'hitchhikers',
+        image: 'circle-photo',
+        color: '123456',
+      }),
+    );
+    expect(styledBackground).toContain('background-image');
+    expect(styledBackground).toContain('background-color');
   });
 
   it('prompts guests to sign up for the circle', async () => {

@@ -167,6 +167,11 @@ test('member edits and submits a contact request and sees its pending state', as
   await signInViaApi(page, request, sender);
   await page.goto(`/contact-add/${recipientId}`);
   await expect(page.locator('#tr-react-root')).toBeVisible();
+  await expect(
+    page.getByText(
+      "You don't need to add someone as a contact to message them. Only add someone as a contact if you have met them or plan to meet them.",
+    ),
+  ).toBeVisible();
   const editor = page.locator('.contact-message [contenteditable="true"]');
   await editor.fill('A friendly sample invitation.');
   const sent = page.waitForResponse(
