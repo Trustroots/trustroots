@@ -353,7 +353,8 @@ describe('User signup and authentication CRUD tests', function () {
 
         // Logout
         agent
-          .get('/api/auth/signout')
+          .post('/api/auth/signout')
+          .set('X-Trustroots-Request', '1')
           .expect(302)
           .end(function (signoutErr, signoutRes) {
             if (signoutErr) {
@@ -384,7 +385,8 @@ describe('User signup and authentication CRUD tests', function () {
 
         // Logout
         agent
-          .get('/api/auth/signout')
+          .post('/api/auth/signout')
+          .set('X-Trustroots-Request', '1')
           .expect(302)
           .end(function (signoutErr, signoutRes) {
             if (signoutErr) {

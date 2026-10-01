@@ -39,7 +39,7 @@ jest.mock('@/modules/offers/client/api/offers.api', () => ({
 }));
 
 jest.mock('use-debounce', () => ({
-  useDebouncedCallback: callback => [callback],
+  useDebouncedCallback: callback => callback,
 }));
 
 let mockPersistentMapLocation = {

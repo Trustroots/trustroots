@@ -97,7 +97,10 @@ async function signIn(user, agent) {
  * @returns {Promise<void>}
  */
 async function signOut(agent) {
-  await agent.get('/api/auth/signout').expect(302);
+  await agent
+    .post('/api/auth/signout')
+    .set('X-Trustroots-Request', '1')
+    .expect(302);
 }
 
 module.exports = {

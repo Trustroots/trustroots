@@ -21,6 +21,8 @@ import deprecatedLanguages from '../../../../config/languages/deprecated.js';
 import { selectProfileResponse } from '../services/profile-response.server.service.mjs';
 
 const require = createRequire(import.meta.url);
+// JSON import attributes are not supported by the pinned formatter.
+// eslint-disable-next-line import/no-commonjs
 const locales = require('../../../../config/shared/locales.json');
 const service = {};
 

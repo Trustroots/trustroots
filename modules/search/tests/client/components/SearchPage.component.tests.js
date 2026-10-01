@@ -39,7 +39,7 @@ jest.mock('use-debounce', () => {
         [],
       );
 
-      return [stable];
+      return stable;
     },
   };
 });
@@ -558,14 +558,13 @@ describe('<SearchPage />', () => {
   it('switches between the filters and results tabs directly', () => {
     renderSearchPage();
 
-    const [filtersTab, resultsTab] = document.querySelectorAll(
-      '.search-sidebar-tabs a',
-    );
+    const filtersTab = screen.getByRole('tab', { name: /filters/i });
+    const resultsTab = screen.getByRole('tab', { name: /^results$/i });
 
     fireEvent.click(filtersTab);
-    expect(filtersTab.parentElement).toHaveClass('active');
+    expect(filtersTab).toHaveAttribute('aria-selected', 'true');
     fireEvent.click(resultsTab);
-    expect(resultsTab.parentElement).toHaveClass('active');
+    expect(resultsTab).toHaveAttribute('aria-selected', 'true');
   });
 
   it('closes the sidebar from the filters back button on small screens', () => {
