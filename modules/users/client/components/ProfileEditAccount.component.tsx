@@ -244,7 +244,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
       <div className="panel panel-default">
         <div className="panel-heading">{t('News and updates')}</div>
         <div className="panel-body">
-          <div className="checkbox">
+          <div className="checkbox profile-newsletter">
             <label>
               <input
                 type="checkbox"
@@ -253,7 +253,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                   handleSubscriptionsChange('newsletter', event.target.checked)
                 }
               />
-              {t('Community newsletter')}
+              <span>{t('Community newsletter')}</span>
             </label>
           </div>
         </div>

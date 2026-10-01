@@ -151,11 +151,16 @@ const features = [
       'Homepage footer links to public statistics.',
       'Homepage footer links to safety guidance.',
       'Optional circle/tribe query parameters do not break the page.',
+      'Home circles have space below the preceding image at desktop and mobile widths.',
     ],
     relatedSpecs: [
       spec(
         'auth-smoke.spec.js',
         'homepage loads and exposes authentication entry points',
+      ),
+      spec(
+        'bootstrap-ui-regressions.spec.js',
+        'home circles have room below the preceding image',
       ),
     ],
   },
@@ -1081,9 +1086,14 @@ const features = [
       'Account edit page is reachable.',
       'Valid account details update persists.',
       'Invalid account details show validation errors.',
+      'The community newsletter checkbox has space before its label.',
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'profile edit account page is reachable'),
+      spec(
+        'bootstrap-ui-regressions.spec.js',
+        'place borders and account checkbox spacing survive Bootstrap 5',
+      ),
     ],
   },
   {
@@ -1608,6 +1618,7 @@ const features = [
       'Mouse-wheel input works at low zoom.',
       'Page-based wheel events visibly zoom the rendered map.',
       'Page-based wheel events visibly zoom the raster fallback map.',
+      'The place search input and clear button share a bottom border at desktop and mobile widths.',
       'Line-based wheel events zoom the rendered map.',
       'Line-based wheel events zoom the raster fallback map.',
       'Later camera commands recenter the raster map after a place search.',
@@ -1616,6 +1627,10 @@ const features = [
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'search page loads for a signed in member'),
+      spec(
+        'bootstrap-ui-regressions.spec.js',
+        'place borders and account checkbox spacing survive Bootstrap 5',
+      ),
       spec('member.spec.js', 'map offers API returns seeded hosts in Europe'),
       spec(
         'search-map-rendered.spec.js',
