@@ -130,7 +130,7 @@
     "method-override": "3.0.0",
     "migrate": "1.7.0",
     "mkdir-recursive": "0.4.0",
-    "moment": "2.29.4",
+    "moment": "2.31.0",
     "mongodb": "4.17.2",
     "mongoose": "6.13.11",
     "mongoose-integer": "0.1.1",
@@ -140,7 +140,7 @@
     "multer": "2.4.0",
     "natural": "5.2.3",
     "nodemailer": "10.0.12",
-    "nostr-tools": "2.7.2",
+    "nostr-tools": "2.25.2",
     "nunjucks": "3.2.4",
     "open-location-code": "1.0.3",
     "passport": "0.7.0",
@@ -276,6 +276,7 @@
     "js-yaml": "4.3.2",
     "brace-expansion@1": "1.1.21",
     "brace-expansion@2": "2.1.7",
+    "brace-expansion@5": "5.0.12",
     "acl": {
       "mongodb": "$mongodb",
       "redis": "3.1.1"
@@ -287,7 +288,7 @@
       "mongodb": "$mongodb"
     },
     "socks": {
-      "ip-address": "10.5.1"
+      "ip-address": "10.7.1"
     },
     "mocha": {
       "js-yaml": "4.3.2",

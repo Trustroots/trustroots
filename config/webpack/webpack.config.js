@@ -112,6 +112,12 @@ module.exports = webpackMerge.merge(shims, {
   module: {
     rules: [
       {
+        // Babel converts these ESM-only packages to CommonJS for supported
+        // browsers. Let Webpack provide the CommonJS exports object too.
+        test: /node_modules[\\/](?:@noble|@scure)[\\/].*\.js$/,
+        type: 'javascript/auto',
+      },
+      {
         test: /\.[jt]sx?$/,
         // Transpile our own code, plus the modern-syntax dependencies that
         // must match the application's supported browser targets.
