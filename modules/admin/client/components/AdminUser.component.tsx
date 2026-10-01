@@ -336,7 +336,9 @@ export default class AdminUser extends Component<
       if (
         window.confirm(
           action === 'remove'
-            ? `Remove ${username} from Welcome team?`
+            ? role === 'shadowban'
+              ? `Unshadowban ${username}? Past hidden messages will stay hidden.`
+              : `Remove ${username} from Welcome team?`
             : `Set ${username} role to ${role}?`,
         )
       ) {
@@ -694,6 +696,18 @@ export default class AdminUser extends Component<
                       {label}
                     </button>
                   ))}
+                  {this.hasRole('shadowban') && (
+                    <button
+                      type="button"
+                      className="btn btn-default"
+                      disabled={isSettingUserRole}
+                      onClick={() =>
+                        this.handleUserRoleChange('shadowban', 'remove')
+                      }
+                    >
+                      Unshadowban
+                    </button>
+                  )}
                 </div>
               </div>
 

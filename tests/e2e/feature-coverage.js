@@ -2951,7 +2951,10 @@ const features = [
     requiredScenarios: [
       'Administrator grants and revokes Welcome team membership.',
       'Admin can apply a moderation role change.',
+      'Admin can remove a shadowban from a member report.',
       'Role change is recorded in audit log.',
+      'Role removal is recorded in audit log.',
+      'Past hidden messages stay hidden after unshadowbanning.',
       'Permission errors are shown for invalid role changes.',
     ],
     relatedSpecs: [],
