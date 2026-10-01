@@ -349,7 +349,7 @@ export default function Faq({ category, children }: FaqProps) {
           </div>
           <div className="col-xs-12 col-sm-8 col-md-8">
             <div className="faq-filter form-group">
-              <label htmlFor="faq-filter">{t('Filter questions')}</label>
+              <label htmlFor="faq-filter">{t('Search this category')}</label>
               <input
                 id="faq-filter"
                 type="search"
@@ -361,7 +361,7 @@ export default function Faq({ category, children }: FaqProps) {
             <div ref={questionsRef}>{children}</div>
             {!hasMatches && (
               <p role="status">
-                {t('No matching questions in this category.')}
+                {t('No questions match your search in this category.')}
               </p>
             )}
             <br />

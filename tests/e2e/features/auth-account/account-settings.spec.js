@@ -166,12 +166,8 @@ test.describe.serial('account settings feature coverage', () => {
 
     await expect(page).toHaveURL(/\/profile\/edit\/account/);
     await expect(page.getByLabel('Username', { exact: true })).toBeEnabled();
-    await expect(
-      page.getByText(/three months after signing up or your last change/),
-    ).toBeVisible();
-    await expect(
-      page.getByText(/periods, hyphens or underscores/),
-    ).toBeVisible();
+    await expect(page.getByText(/three months after joining/)).toBeVisible();
+    await expect(page.getByText(/at least one letter or number/)).toBeVisible();
 
     const nextUsername = createUser().username;
     await page.getByLabel('Username', { exact: true }).fill(nextUsername);

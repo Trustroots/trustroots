@@ -94,7 +94,9 @@ describe('<Faq />', () => {
       </Faq>,
     );
 
-    const filter = screen.getByRole('searchbox', { name: 'Filter questions' });
+    const filter = screen.getByRole('searchbox', {
+      name: 'Search this category',
+    });
     const firstQuestion = document.getElementById('first-question');
     const secondQuestion = document.getElementById('second-question');
 
@@ -104,7 +106,9 @@ describe('<Faq />', () => {
 
     fireEvent.change(filter, { target: { value: 'no such answer' } });
     expect(
-      await screen.findByText('No matching questions in this category.'),
+      await screen.findByText(
+        'No questions match your search in this category.',
+      ),
     ).toBeVisible();
     expect(firstQuestion).toHaveAttribute('hidden');
 
@@ -112,7 +116,7 @@ describe('<Faq />', () => {
     await waitFor(() => expect(firstQuestion).not.toHaveAttribute('hidden'));
     expect(secondQuestion).not.toHaveAttribute('hidden');
     expect(
-      screen.queryByText('No matching questions in this category.'),
+      screen.queryByText('No questions match your search in this category.'),
     ).not.toBeInTheDocument();
   });
 });

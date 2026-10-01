@@ -7,7 +7,7 @@ test('visitors can filter FAQ questions', async ({ page }, testInfo) => {
   ]);
 
   await page.goto('/faq');
-  const filter = page.getByRole('searchbox', { name: 'Filter questions' });
+  const filter = page.getByRole('searchbox', { name: 'Search this category' });
   const matchingQuestion = page.locator(
     '#is-trustroots-exclusively-for-hitchhikers',
   );
@@ -19,7 +19,7 @@ test('visitors can filter FAQ questions', async ({ page }, testInfo) => {
 
   await filter.fill('no such faq answer');
   await expect(
-    page.getByText('No matching questions in this category.'),
+    page.getByText('No questions match your search in this category.'),
   ).toBeVisible();
 
   await filter.fill('');

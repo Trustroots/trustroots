@@ -61,10 +61,8 @@ describe('ProfileEditAccount', () => {
 
     expect(screen.getByLabelText('Email Address')).toBeInTheDocument();
     expect(screen.getByLabelText('Username')).toBeInTheDocument();
-    expect(
-      screen.getByText(/three months after signing up or your last change/),
-    ).toBeVisible();
-    expect(screen.getByText(/periods, hyphens or underscores/)).toBeVisible();
+    expect(screen.getByText(/three months after joining/)).toBeVisible();
+    expect(screen.getByText(/at least one letter or number/)).toBeVisible();
     expect(screen.getByLabelText('Current password')).toBeInTheDocument();
     expect(screen.getByText('Community newsletter')).toBeInTheDocument();
     expect(

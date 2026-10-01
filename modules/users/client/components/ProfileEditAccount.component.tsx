@@ -222,10 +222,10 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                   />
                   <p className="help-block">
                     {t(
-                      'You can change your username three months after signing up or your last change.',
+                      'You can change your username three months after joining, and again three months after each change.',
                     )}{' '}
                     {t(
-                      'Choose a unique username of 3–34 characters using letters, numbers, periods, hyphens or underscores. It must contain at least one letter or number. Periods cannot be first, last or consecutive. Some names are reserved.',
+                      'Your new username needs to be 3–34 characters long and include at least one letter or number. It must also be available.',
                     )}
                   </p>
                   {usernameMessage && (
