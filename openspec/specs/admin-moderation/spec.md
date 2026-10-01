@@ -134,7 +134,21 @@ allow them to record moderation notes about that member.
 ### Requirement: Role changes and audit history
 
 The system SHALL let authorised administrators apply permitted moderation-role
-changes and review the administration audit history.
+changes, including removing a member's `shadowban` role, and review the
+administration audit history. Removing the role SHALL leave messages already
+hidden during the shadowban hidden.
+
+#### Scenario: Administrator unshadowbans a member
+
+- **WHEN** an authorised administrator confirms Unshadowban on a shadowbanned member report
+- **THEN** the `shadowban` role is removed and the member report reflects the change
+- **AND** the removal is recorded in moderation notes and the audit history
+- **AND** previously hidden messages remain hidden
+
+#### Scenario: Member attempts to remove a shadowban
+
+- **WHEN** a member without the `admin` role requests removal of a shadowban
+- **THEN** the system denies access
 
 #### Scenario: Administrator changes a member's moderation role
 

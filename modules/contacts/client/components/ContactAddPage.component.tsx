@@ -173,7 +173,11 @@ export default function ContactAddPage({ user }: { user: UserProfile }) {
                 </div>
                 <div className="panel-body">
                   <div className="contact-message">
-                    <TrEditor onChange={setMessage} text={message} />
+                    <TrEditor
+                      id="contact-message"
+                      onChange={setMessage}
+                      text={message}
+                    />
                   </div>
                 </div>
               </div>

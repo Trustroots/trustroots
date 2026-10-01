@@ -27,14 +27,6 @@ import type {
   ExperienceUser,
 } from '../experiences.prop-types';
 
-declare global {
-  interface Window {
-    settings?: {
-      limits?: { maximumExperienceFeedbackPublicLength?: number };
-    };
-  }
-}
-
 export default function CreateExperience({
   userFrom,
   userTo,
@@ -126,11 +118,13 @@ function ExperienceForm({
   ]);
 
   const restoreDraft = () => {
-    setMet(pendingDraft.met);
-    setHostedThem(pendingDraft.host);
-    setHostedMe(pendingDraft.guest);
-    if (sharedOnTime) setRecommend(pendingDraft.recommend);
-    setFeedbackPublic(pendingDraft.feedbackPublic);
+    // This handler is only rendered while a draft is pending.
+    const draft = pendingDraft as NonNullable<typeof pendingDraft>;
+    setMet(draft.met);
+    setHostedThem(draft.host);
+    setHostedMe(draft.guest);
+    if (sharedOnTime) setRecommend(draft.recommend);
+    setFeedbackPublic(draft.feedbackPublic);
     setPendingDraft(null);
   };
 
@@ -320,16 +314,14 @@ function ExperienceForm({
   const validate = createValidator({
     interaction: [
       [
-        ({ guest, host, met }: ExperienceInteractions) => guest || host || met,
+        (value: unknown) => {
+          const { guest, host, met } = value as ExperienceInteractions;
+          return guest || host || met;
+        },
         t('Choose your interaction'),
       ],
     ],
-    recommend: [
-      [
-        (value: ExperienceRecommendation | null) => !!value,
-        t('Choose your recommendation'),
-      ],
-    ],
+    recommend: [[(value: unknown) => !!value, t('Choose your recommendation')]],
   }) as unknown as (values: {
     interaction: ExperienceInteractions;
     recommend: ExperienceRecommendation | null;
@@ -456,7 +448,7 @@ function ExperienceForm({
       <fieldset disabled={isSubmitting}>
         <Tabs
           activeKey={step}
-          bsStyle="pills"
+          variant="pills"
           id="create-experience-tabs"
           className="create-experience-tabs"
         >
