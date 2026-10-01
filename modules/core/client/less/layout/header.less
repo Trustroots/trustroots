@@ -99,7 +99,13 @@
     @media (max-width: @grid-float-breakpoint-max) {
       margin-left: auto;
       display: flex;
+      width: 100%;
       justify-content: space-between;
+
+      > li:not(.hidden-xs) {
+        flex: 1;
+        text-align: center;
+      }
 
       > li > a,
       > li > a:hover,
