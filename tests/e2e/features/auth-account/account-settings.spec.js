@@ -143,6 +143,7 @@ test.describe.serial('account settings feature coverage', () => {
       'Account edit page is reachable.',
       'Valid account details update persists.',
       'Invalid account details show validation errors.',
+      'Username change rules are visible in account settings.',
     ]);
 
     const user = createUser();
@@ -165,6 +166,12 @@ test.describe.serial('account settings feature coverage', () => {
 
     await expect(page).toHaveURL(/\/profile\/edit\/account/);
     await expect(page.getByLabel('Username', { exact: true })).toBeEnabled();
+    await expect(
+      page.getByText(/three months after signing up or your last change/),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/periods, hyphens or underscores/),
+    ).toBeVisible();
 
     const nextUsername = createUser().username;
     await page.getByLabel('Username', { exact: true }).fill(nextUsername);

@@ -1,5 +1,5 @@
 import type { PageTranslator } from '../types';
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import Board from './PageBoard';
 import { Trans, useTranslation } from 'react-i18next';
@@ -18,6 +18,25 @@ interface FaqProps {
 export default function Faq({ category, children }: FaqProps) {
   const { t: rawT } = useTranslation('pages');
   const t = rawT as unknown as PageTranslator;
+  const questionsRef = useRef<HTMLDivElement>(null);
+  const [filter, setFilter] = useState('');
+  const [hasMatches, setHasMatches] = useState(true);
+
+  useEffect(() => {
+    const query = filter.trim().toLocaleLowerCase();
+    const questions =
+      questionsRef.current?.querySelectorAll<HTMLElement>('.faq-question');
+    let matchCount = 0;
+
+    questions?.forEach(question => {
+      const matches =
+        !query || question.textContent?.toLocaleLowerCase().includes(query);
+      question.hidden = !matches;
+      if (matches) matchCount += 1;
+    });
+
+    setHasMatches(!query || matchCount > 0);
+  }, [children, filter]);
 
   return (
     <>
@@ -329,7 +348,22 @@ export default function Faq({ category, children }: FaqProps) {
             {/* .sidebar */}
           </div>
           <div className="col-xs-12 col-sm-8 col-md-8">
-            <div>{children}</div>
+            <div className="faq-filter form-group">
+              <label htmlFor="faq-filter">{t('Filter questions')}</label>
+              <input
+                id="faq-filter"
+                type="search"
+                className="form-control"
+                value={filter}
+                onChange={event => setFilter(event.target.value)}
+              />
+            </div>
+            <div ref={questionsRef}>{children}</div>
+            {!hasMatches && (
+              <p role="status">
+                {t('No matching questions in this category.')}
+              </p>
+            )}
             <br />
             <br />
             <hr />
