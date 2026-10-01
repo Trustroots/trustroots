@@ -1,4 +1,4 @@
-/* global window */
+/* global getComputedStyle, window */
 const { annotateFeature, expect, test } = require('../../support/test');
 const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
 
@@ -103,6 +103,17 @@ test('member navigation menus and narrow layout remain usable', async ({
 
   const header = page.locator('#tr-header');
   await expect(header).toHaveCSS('background-color', 'rgb(18, 181, 145)');
+  const circlesLink = header.locator('a[href="/circles"]');
+  const searchLink = header.locator('a[href="/search"]');
+  await expect(circlesLink.locator('..')).toHaveClass(/active/);
+  const selectedBackground = await circlesLink.evaluate(
+    link => getComputedStyle(link).backgroundColor,
+  );
+  const unselectedBackground = await searchLink.evaluate(
+    link => getComputedStyle(link).backgroundColor,
+  );
+  expect(selectedBackground).not.toBe(unselectedBackground);
+  expect(selectedBackground).not.toBe('rgba(0, 0, 0, 0)');
   await expect(page.getByRole('button', { name: 'Support' })).toHaveCSS(
     'color',
     'rgb(255, 255, 255)',
@@ -138,6 +149,7 @@ test('member navigation menus and narrow layout remain usable', async ({
   await expect(page.getByRole('link', { name: 'My profile' })).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect(circlesLink).toHaveCSS('background-color', selectedBackground);
   await expect(header.locator('a[href="/messages"]')).toBeVisible();
   for (const href of ['/circles', '/search', '/messages', '/navigation']) {
     await expect(header.locator(`a[href="${href}"] .icon`)).toHaveCSS(
