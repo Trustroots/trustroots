@@ -10,6 +10,35 @@
   }
 }
 
+@media (max-width: @screen-xs-max) {
+  .profile-view-navbar-mobile {
+    .navbar-nav {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .navbar-nav > li {
+      flex: 1 0 auto;
+      text-align: center;
+
+      > a,
+      > a:hover,
+      > a:focus {
+        color: @navbar-default-link-color;
+        padding: 10px 4px;
+      }
+
+      &.active > a {
+        color: @navbar-default-link-active-color;
+        background: @navbar-default-link-active-bg;
+      }
+    }
+  }
+}
+
 .profile-flags {
   padding-bottom: 40px;
 }
