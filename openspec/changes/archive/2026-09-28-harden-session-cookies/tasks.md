@@ -1,0 +1,5 @@
+- [x] Implement session cookies and persistence.
+- [x] Add middleware and end-to-end regression coverage without removing existing cases.
+- [x] Run focused middleware tests, lint and strict OpenSpec validation.
+- [x] Update the living account-access specification.
+- [x] Run the full server and browser integration suites, then archive the proposal.

@@ -69,6 +69,13 @@ test.describe.serial('account settings feature coverage', () => {
       },
     });
     expect(changed.ok()).toBeTruthy();
+    const changedProfile = (await changed.json()).user;
+    expect(changedProfile.username).toBe(user.username);
+    expect(changedProfile).not.toHaveProperty('password');
+    expect(changedProfile).not.toHaveProperty('salt');
+    expect(changedProfile).not.toHaveProperty('emailToken');
+    expect(changedProfile).not.toHaveProperty('resetPasswordToken');
+    expect(changedProfile).not.toHaveProperty('pushRegistration');
   });
 
   test('members can change their password through account settings', async ({
@@ -132,7 +139,11 @@ test.describe.serial('account settings feature coverage', () => {
       data: { tagline },
     });
     expect(valid.ok()).toBeTruthy();
-    expect((await valid.json()).tagline).toBe(tagline);
+    const updatedProfile = await valid.json();
+    expect(updatedProfile.tagline).toBe(tagline);
+    expect(updatedProfile.email).toBe(user.email);
+    expect(updatedProfile.locale).toBeDefined();
+    expect(updatedProfile.blocked).toEqual([]);
   });
 
   test('older members who sign in through the UI can change username', async ({
