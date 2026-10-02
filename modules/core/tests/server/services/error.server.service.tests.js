@@ -1,4 +1,5 @@
 const errorService = require('../../../server/services/error.server.service');
+const winston = require('winston');
 
 const should = require('should');
 
@@ -101,6 +102,27 @@ describe('Service: error', function () {
   });
 
   describe('errorResponse middleware', function () {
+    it('logs classified Error metadata without forwarding its message or stack', function () {
+      const originalLog = winston.log;
+      const calls = [];
+      winston.log = function () {
+        calls.push(Array.from(arguments));
+      };
+
+      try {
+        const err = new Error('recovery token: private-token');
+        errorService.errorResponse(err, {}, mockResponse('application/json'));
+
+        const loggedError = calls.find(
+          ([level, event]) =>
+            level === 'error' && event === 'API error response',
+        );
+        loggedError[2].should.deepEqual({ name: 'Error' });
+      } finally {
+        winston.log = originalLog;
+      }
+    });
+
     it('calls next when there is no error', function (done) {
       errorService.errorResponse(null, {}, mockResponse(), function () {
         done();

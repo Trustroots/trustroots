@@ -10,6 +10,7 @@
 const _ = require('lodash');
 const winston = require('winston');
 const config = require('../config');
+const { redactMetadata } = require('./log-redaction');
 
 // Requiring `winston-papertrail` will expose
 // `winston.transports.Papertrail`
@@ -35,5 +36,14 @@ winston.log('info', 'Logger started #a5fKSK');
 // Add a console.log() to help debugging logger issues
 console.log('Logger just started #SQrUgw');
 
-// We export `winston.log` so we can use `logger('info', ...)` etc
-module.exports = winston.log;
+// Keep Winston's existing arguments and return value, while sanitising any
+// object arguments before they reach a configured transport.
+module.exports = function log() {
+  const args = Array.prototype.slice.call(arguments);
+  for (let index = 1; index < args.length; index += 1) {
+    if (args[index] && typeof args[index] === 'object') {
+      args[index] = redactMetadata(args[index]);
+    }
+  }
+  return winston.log.apply(winston, args);
+};
