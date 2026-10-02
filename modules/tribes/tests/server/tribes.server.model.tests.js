@@ -2,6 +2,7 @@
  * Module dependencies.
  */
 const should = require('should');
+const sinon = require('sinon');
 const mongoose = require('mongoose');
 const validator = require('validator');
 const config = require('../../../../config/config');
@@ -35,6 +36,47 @@ describe('Tribe Model Unit Tests:', function () {
   });
 
   afterEach(utils.clearDatabase);
+
+  it('should give new circles varied dark colours readable with white text', function () {
+    const random = sinon.stub(Math, 'random');
+    const colours = new Set();
+
+    try {
+      for (let index = 0; index < 100; index += 1) {
+        random.returns(index / 100);
+        const colour = new Tribe({ label: `Circle ${index}` }).color;
+        colour.should.match(/^[0-9a-f]{6}$/);
+        colours.add(colour);
+
+        const channels = [0, 2, 4].map(offset => {
+          const value = parseInt(colour.slice(offset, offset + 2), 16) / 255;
+          return value <= 0.04045
+            ? value / 12.92
+            : ((value + 0.055) / 1.055) ** 2.4;
+        });
+        const luminance =
+          0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+        const contrastWithWhite = 1.05 / (luminance + 0.05);
+        contrastWithWhite.should.be.above(4.5);
+      }
+    } finally {
+      random.restore();
+    }
+
+    colours.size.should.be.above(7);
+  });
+
+  it('should preserve an explicitly supplied circle colour', function (done) {
+    const tribe = new Tribe({ label: 'Existing circle', color: 'abcdef' });
+    tribe.save(function (err) {
+      should.not.exist(err);
+      Tribe.findById(tribe._id, function (err, savedTribe) {
+        should.not.exist(err);
+        savedTribe.color.should.equal('abcdef');
+        done();
+      });
+    });
+  });
 
   describe('Method Save', function () {
     it('should begin with no tribes', function (done) {
