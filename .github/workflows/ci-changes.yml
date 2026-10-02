@@ -4,7 +4,7 @@ on:
   workflow_call:
     outputs:
       run-code:
-        description: Whether application builds and tests are needed
+        description: Whether web application builds and tests are needed
         value: ${{ jobs.changes.outputs.run-code }}
 
 permissions:
@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - name: Check documentation detection
+      - name: Check docs and native-app change detection
         run: python3 -m unittest discover -s scripts/ci -p 'test_detect_docs_only.py'
       - name: Classify changed files
         id: changes

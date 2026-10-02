@@ -3,6 +3,7 @@ package org.trustroots.android.browser
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
+import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
@@ -36,6 +37,7 @@ import java.net.URI
 data class BrowserRoute(
     val title: String,
     val url: String,
+    val sessionCookie: String? = null,
 )
 
 @Composable
@@ -118,6 +120,7 @@ fun TrustrootsBrowser(
                         }
                     }
                     installEmbeddedBrowserStyle(this)
+                    applyBrowserSessionCookie(route.url, route.sessionCookie)
                     loadUrl(route.url)
                     webView = this
                 }
@@ -125,6 +128,25 @@ fun TrustrootsBrowser(
             modifier = Modifier.fillMaxSize(),
         )
     }
+}
+
+internal fun cookiePairsForWebView(cookieHeader: String): List<String> =
+    cookieHeader.split(';')
+        .map { it.trim() }
+        .filter { it.contains('=') && !it.startsWith("Path=", true) && !it.startsWith("Domain=", true) }
+
+internal fun applyBrowserSessionCookie(url: String, cookieHeader: String?) {
+    if (cookieHeader.isNullOrBlank()) return
+    val uri = runCatching { URI(url) }.getOrNull() ?: return
+    val host = uri.host ?: return
+    val scheme = uri.scheme ?: "https"
+    val origin = "$scheme://$host"
+    val manager = CookieManager.getInstance()
+    manager.setAcceptCookie(true)
+    cookiePairsForWebView(cookieHeader).forEach { pair ->
+        manager.setCookie(origin, pair)
+    }
+    manager.flush()
 }
 
 internal fun installEmbeddedBrowserStyle(webView: WebView) {

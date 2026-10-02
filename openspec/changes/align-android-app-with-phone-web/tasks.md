@@ -18,28 +18,28 @@
 
 ## 3. Phase 2 — Profile chrome
 
-- [ ] 3.1 Add sticky profile actions equivalent to phone web top small nav.
-- [ ] 3.2 Add section navigation equivalent to phone web bottom profile tabs.
+- [x] 3.1 Add sticky profile actions equivalent to phone web top small nav.
+- [x] 3.2 Add section navigation equivalent to phone web bottom profile tabs.
 
 ## 4. Phase 3 — Messaging
 
-- [ ] 4.1 Multiline compose and draft persistence aligned with phone web.
-- [ ] 4.2 Hosting QuickReply where applicable.
-- [ ] 4.3 Real unread indicator (not a fixed badge).
+- [x] 4.1 Multiline compose and draft persistence aligned with phone web.
+- [x] 4.2 Hosting QuickReply where applicable.
+- [x] 4.3 Real unread indicator (not a fixed badge).
 
 ## 5. Phase 4 — Search
 
-- [ ] 5.1 Filters / place-search patterns closer to mobile `SearchPage`.
+- [x] 5.1 Filters / place-search patterns closer to mobile `SearchPage`.
 
 ## 6. Phase 5 — Host, experiences and remaining account
 
-- [ ] 6.1 Native Host offer management replacing Menu WebView Host.
-- [ ] 6.2 Native experiences and remaining account settings.
+- [x] 6.1 Native Host offer management replacing Menu WebView Host.
+- [x] 6.2 Native experiences and remaining account settings.
 
 ## 7. Verification
 
-- [ ] 7.1 Validate this OpenSpec change after each phase that edits specs or
+- [x] 7.1 Validate this OpenSpec change after each phase that edits specs or
       tasks.
-- [ ] 7.2 Keep Android lint and unit tests green for landed phases.
+- [x] 7.2 Keep Android lint and unit tests green for landed phases.
 
 Phase 1 note: OpenSpec validated and `./gradlew testDebugUnitTest lintDebug assembleDebug` succeeded after Menu landing.
