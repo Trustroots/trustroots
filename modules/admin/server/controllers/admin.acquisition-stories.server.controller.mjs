@@ -1,7 +1,6 @@
 // External dependencies
 import _ from 'lodash';
 import mongoose from 'mongoose';
-import natural from 'natural';
 import pluralize from 'pluralize';
 import stopword from 'stopword';
 import winkStatistics from 'wink-statistics';
@@ -85,8 +84,31 @@ function getSynonym(value) {
   return synonyms[value] || false;
 }
 
+/** Match exactly one insertion, deletion, or substitution. */
+function isOneEditApart(first, second) {
+  if (Math.abs(first.length - second.length) > 1 || first === second) {
+    return false;
+  }
+
+  let index = 0;
+  while (
+    index < Math.min(first.length, second.length) &&
+    first[index] === second[index]
+  ) {
+    index += 1;
+  }
+
+  if (first.length === second.length) {
+    return first.slice(index + 1) === second.slice(index + 1);
+  }
+  if (first.length > second.length) {
+    return first.slice(index + 1) === second.slice(index);
+  }
+  return first.slice(index) === second.slice(index + 1);
+}
+
 /**
- * Detect typos by comparing to most popular terms using Levenshtein distance.
+ * Detect typos by comparing to most popular terms using one edit.
  *
  * @param value {string} Term to check
  * @return {string} Correct term, or false if nothing found
@@ -142,11 +164,7 @@ function getCorrectTerm(value) {
     return false;
   }
 
-  const correctedTerm = correctTerms.find(term =>
-    // To increase hits (but also likelyhood of false positives), use 2 or 3 as distance instead of 1
-    // eslint-disable-next-line new-cap
-    natural.LevenshteinDistance(term, value) === 1 ? term : false,
-  );
+  const correctedTerm = correctTerms.find(term => isOneEditApart(term, value));
 
   // If Levenshtein distance was one, consider value a typo and return correct term instead
   return correctedTerm || false;
@@ -201,7 +219,7 @@ function getDomain(hostname) {
 /*
  * Does some language manipulation to analyse common terms from answers
  *
- * @TODO: group terms into classes? https://www.npmjs.com/package/natural#classifiers
+ * @TODO: consider grouping terms into classes.
  */
 function analyseStories(stories) {
   const tokenizer = winkTokenizer();

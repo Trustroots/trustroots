@@ -11,7 +11,6 @@ const async = require('async');
 const config = require('../config/config');
 const fs = require('fs');
 const glob = require('glob');
-const mkdir = require('mkdir-recursive');
 const path = require('path');
 const sharp = require('sharp');
 
@@ -81,7 +80,7 @@ files.forEach(file => {
   const outputFolder = path.join(path.resolve(config.circleImagesDir), slug);
 
   // Ensure folder exists
-  mkdir.mkdirSync(outputFolder);
+  fs.mkdirSync(outputFolder, { recursive: true });
 
   // Loop sizes and fileformats
   circleImagesSizes.forEach(size => {
