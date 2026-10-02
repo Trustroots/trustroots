@@ -23,6 +23,22 @@ For an API running on the development Mac, use the Android emulator host alias:
 
 Release builds are fixed to `https://www.trustroots.org`.
 
+## APK update alerts
+
+The signed GitHub preview APK lets members opt in to update alerts from Account
+→ APK updates. It checks GitHub Releases daily and links to the release page
+when a newer signed Android preview is available. Android 13 and later asks for
+notification permission when alerts are enabled. A member can also check
+immediately from Account. The app does not download or install updates.
+
+The preview release workflow enables this feature with
+`-PtrustrootsPreviewUpdateAlerts=true`. Local and F-Droid builds leave it off:
+F-Droid's build may have a different signing key, so linking its members to a
+GitHub APK could suggest an update they cannot install. Members using
+[Obtainium](https://obtainium.imranr.dev/) can leave the in-app option off and
+use Obtainium's GitHub prerelease alerts instead. Keep the signing key stable
+and increase Android version codes for every preview update.
+
 ## Build and verify locally
 
 The app deliberately uses the light Trustroots colour scheme regardless of the

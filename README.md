@@ -12,6 +12,14 @@
 
 Download the latest signed Android APK from [GitHub Releases](https://github.com/Trustroots/trustroots/releases). The badge updates automatically when a new Android preview is published after a successful build on `main`.
 
+For update alerts, add `https://github.com/Trustroots/trustroots` to
+[Obtainium](https://obtainium.imranr.dev/), enable prereleases, filter release
+titles with `^Android preview ` and APK filenames with
+`^trustroots-android-.*\.apk$`. The signed
+preview APK also offers optional update alerts under Account → APK updates for
+members who installed it directly. These alerts open the GitHub release page;
+the app does not install updates automatically.
+
 ## Current development
 
 [![Tests](https://github.com/Trustroots/trustroots/actions/workflows/test.yml/badge.svg)](https://team.trustroots.org/coverage/)
