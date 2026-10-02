@@ -7,6 +7,29 @@ account.
 
 ## Requirements
 
+### Requirement: Explicit profile response fields
+
+Profile responses SHALL include only explicitly approved fields. Account-owner
+responses SHALL preserve fields required for profile editing, account settings,
+and blocking. Public responses SHALL omit email addresses, account settings, IP
+addresses, push credentials, provider credentials, and unrecognised document
+fields. Existing sanitisation and viewer-dependent privacy rules SHALL still
+apply.
+
+#### Scenario: Public profile response excludes private fields
+
+- **WHEN** a member requests another member's profile
+- **THEN** the response includes only approved public profile fields
+- **AND** account, credential, and unrecognised fields are omitted
+
+#### Scenario: Account holder receives profile editing fields
+
+- **WHEN** an account holder requests their own profile
+- **THEN** the response includes the fields required to edit their profile and
+  account settings
+- **AND** IP addresses, push credentials, provider credentials, and
+  unrecognised fields are omitted
+
 ### Requirement: Session cookie security and persistence
 
 The system SHALL issue session cookies with HttpOnly and SameSite=Lax. When
