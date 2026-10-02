@@ -6,8 +6,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
+import java.net.URLDecoder
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Assert.assertTrue
@@ -65,15 +68,68 @@ class HostMapJourneyTest {
         compose.onNodeWithTag("openFilters").performClick()
         compose.onNodeWithText("Hosting").assertIsDisplayed()
         compose.onNodeWithText("Meet").assertIsDisplayed()
-        compose.onNodeWithText("Spoken languages").assertIsDisplayed()
         compose.onNodeWithText("Last active: 6 months").performClick()
         compose.onNodeWithText("Last active: any time").assertIsDisplayed()
         compose.onNodeWithText("Last active: any time").performClick()
         compose.onNodeWithText("Last active: 1 month").assertIsDisplayed()
+        compose.onNodeWithText("Spoken languages").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Back to map").performClick()
         compose.onNodeWithText("Search places").assertIsDisplayed()
         compose.onNodeWithText("Members").performClick()
         compose.onNodeWithText("Find members").assertIsDisplayed()
         responder.join(1_000)
+    }
+
+    @Test fun searchesWithSeveralSelectedCircles() {
+        val offerFilters = CopyOnWriteArrayList<String>()
+        thread(isDaemon = true) {
+            while (true) {
+                val connection = runCatching { server.accept() }.getOrNull() ?: break
+                connection.use { socket ->
+                    val input = socket.getInputStream().bufferedReader()
+                    val request = input.readLine().orEmpty()
+                    while (!input.readLine().isNullOrEmpty()) Unit
+                    if (request.contains("/api/offers?")) {
+                        offerFilters += URLDecoder.decode(
+                            request.substringAfter("filters=").substringBefore(' '),
+                            "UTF-8",
+                        )
+                    }
+                    val payload = if (request.contains("/api/tribes")) {
+                        """[{"_id":"circle-one","slug":"wanderers","label":"Wanderers","count":2},""" +
+                            """{"_id":"circle-two","slug":"quiet","label":"Quiet Circle","count":3}]"""
+                    } else {
+                        """{"features":[]}"""
+                    }
+                    val bytes = payload.toByteArray()
+                    socket.getOutputStream().write(
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n".toByteArray(),
+                    )
+                    socket.getOutputStream().write(bytes)
+                    socket.getOutputStream().flush()
+                }
+            }
+        }
+        compose.setContent {
+            HostMapScreen(
+                api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
+                onSessionInvalidated = {},
+            )
+        }
+        compose.waitUntil(15_000) { offerFilters.isNotEmpty() }
+        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithText("All circles").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Quiet Circle").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Quiet Circle").performClick()
+        compose.onNodeWithText("Wanderers").performClick()
+        compose.onNodeWithText("✓ Quiet Circle").assertIsDisplayed()
+        compose.onNodeWithText("✓ Wanderers").assertIsDisplayed()
+        compose.waitUntil(15_000) {
+            offerFilters.any { it.contains("\"tribes\":[\"circle-one\",\"circle-two\"]") }
+        }
+        assertTrue(offerFilters.any { it.contains("\"tribes\":[\"circle-one\",\"circle-two\"]") })
     }
 }
