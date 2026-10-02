@@ -320,6 +320,7 @@ class MobileApiClient(
         types: Set<String> = setOf("host"),
         circleIDs: Set<String> = emptySet(),
         seenMonths: Int? = 6,
+        languages: Set<String> = emptySet(),
     ): Result<List<MapOffer>> = withContext(Dispatchers.IO) {
         runCatching {
             require(south < north && west < east)
@@ -329,6 +330,7 @@ class MobileApiClient(
                 .put("types", JSONArray(types.sorted()))
                 .put("tribes", JSONArray(circleIDs.sorted()))
             if (seenMonths != null) filterObject.put("seen", JSONObject().put("months", seenMonths))
+            if (languages.isNotEmpty()) filterObject.put("languages", JSONArray(languages.sorted()))
             val filters = encode(filterObject.toString())
             val path = "/api/offers?southWestLat=$south&southWestLng=$west" +
                 "&northEastLat=$north&northEastLng=$east&filters=$filters"
