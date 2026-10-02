@@ -1,5 +1,6 @@
 package org.trustroots.android.ui
 
+import androidx.activity.compose.BackHandler
 import android.text.Html
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -53,6 +54,7 @@ internal fun CirclesScreen(
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    BackHandler(enabled = selected != null) { selected = null }
     LaunchedEffect(session) {
         loading = true
         api.circles(session).onSuccess { circles = it }.onFailure {
