@@ -18,8 +18,11 @@ import moment from 'moment';
 import * as nip19 from 'nostr-tools/nip19';
 import validator from 'validator';
 import deprecatedLanguages from '../../../../config/languages/deprecated.js';
+import { selectProfileResponse } from '../services/profile-response.server.service.mjs';
 
 const require = createRequire(import.meta.url);
+// JSON import attributes are not supported by the pinned formatter.
+// eslint-disable-next-line import/no-commonjs
 const locales = require('../../../../config/shared/locales.json');
 const service = {};
 
@@ -56,6 +59,7 @@ service.userProfileFields = [
   'passwordUpdated',
   'avatarSource',
   'avatarUploaded',
+  'avatarVersion',
   'member',
   'replyRate',
   'replyTime',
@@ -78,6 +82,7 @@ service.userMiniProfileFields = [
   'username',
   'avatarSource',
   'avatarUploaded',
+  'avatarVersion',
   'emailHash',
   'additionalProvidersData.facebook.id', // For FB avatars
 ].join(' ');
@@ -993,7 +998,7 @@ function sanitizeProfile(profile, isOwnProfile, authenticatedUser) {
   // http://aaronheckmann.tumblr.com/post/48943525537/mongoose-v3-part-1-versioning
   delete profile.__v;
 
-  return profile;
+  return selectProfileResponse(profile, isOwnProfile);
 }
 
 /**

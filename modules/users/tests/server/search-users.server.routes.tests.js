@@ -105,7 +105,11 @@ describe('Search users: GET /users?search=string', function () {
 
     // sign out
     afterEach(function (done) {
-      agent.get('/api/auth/signout').expect(302).end(done);
+      agent
+        .post('/api/auth/signout')
+        .set('X-Trustroots-Request', '1')
+        .expect(302)
+        .end(done);
     });
 
     context('valid request', function () {

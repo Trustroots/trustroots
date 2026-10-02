@@ -79,6 +79,9 @@ test.describe.serial('account settings feature coverage', () => {
       const changedBody = await changed.json();
       expect(changedBody.user).not.toHaveProperty('password');
       expect(changedBody.user).not.toHaveProperty('salt');
+      expect(changedBody.user).not.toHaveProperty('emailToken');
+      expect(changedBody.user).not.toHaveProperty('resetPasswordToken');
+      expect(changedBody.user).not.toHaveProperty('pushRegistration');
       expect((await page.request.get('/api/users/export')).ok()).toBeTruthy();
       expect(
         (await otherContext.request.get('/api/users/export')).status(),
@@ -222,7 +225,11 @@ test.describe.serial('account settings feature coverage', () => {
       data: { tagline },
     });
     expect(valid.ok()).toBeTruthy();
-    expect((await valid.json()).tagline).toBe(tagline);
+    const updatedProfile = await valid.json();
+    expect(updatedProfile.tagline).toBe(tagline);
+    expect(updatedProfile.email).toBe(user.email);
+    expect(updatedProfile.locale).toBeDefined();
+    expect(updatedProfile.blocked).toEqual([]);
   });
 
   test('older members who sign in through the UI can change username', async ({
@@ -233,6 +240,7 @@ test.describe.serial('account settings feature coverage', () => {
       'Account edit page is reachable.',
       'Valid account details update persists.',
       'Invalid account details show validation errors.',
+      'Username change rules are visible in account settings.',
     ]);
 
     const user = createUser();
@@ -255,6 +263,8 @@ test.describe.serial('account settings feature coverage', () => {
 
     await expect(page).toHaveURL(/\/profile\/edit\/account/);
     await expect(page.getByLabel('Username', { exact: true })).toBeEnabled();
+    await expect(page.getByText(/three months after joining/)).toBeVisible();
+    await expect(page.getByText(/at least one letter or number/)).toBeVisible();
 
     const nextUsername = createUser().username;
     await page.getByLabel('Username', { exact: true }).fill(nextUsername);

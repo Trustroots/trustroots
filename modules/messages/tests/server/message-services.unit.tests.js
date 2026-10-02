@@ -210,12 +210,11 @@ describe('Message server services unit tests', function () {
 
       try {
         service.save({ _id: 'message-id' });
-        sinon.assert.calledOnceWithExactly(
-          log,
-          'error',
-          'Saving message stats failed.',
-          error,
-        );
+        sinon.assert.calledOnce(log);
+        log.firstCall.args
+          .slice(0, 2)
+          .should.deepEqual(['error', 'Saving message stats failed.']);
+        log.firstCall.args[2].should.deepEqual({ name: 'Error' });
       } finally {
         process.env.NODE_ENV = originalNodeEnv;
       }

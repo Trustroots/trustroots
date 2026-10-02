@@ -209,8 +209,9 @@ export default function LeafletSearchMap({
     const container = containerRef.current!;
 
     const map = L.map(container, {
-      zoomControl: true,
+      zoomControl: false,
     }).setView([viewport.latitude, viewport.longitude], viewport.zoom);
+    L.control.zoom({ position: 'topright' }).addTo(map);
     const offerGroup = L.layerGroup().addTo(map);
     const communityNoteGroup = L.layerGroup().addTo(map);
 
