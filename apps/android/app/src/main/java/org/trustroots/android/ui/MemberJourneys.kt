@@ -138,6 +138,7 @@ internal fun MemberProfileScreen(
     username: String,
     onSessionInvalidated: () -> Unit,
     onOwnProfileSaved: (MemberProfile) -> Unit = {},
+    startInEditMode: Boolean = false,
     onBack: () -> Unit,
 ) {
     var profile by remember(username) { mutableStateOf<MemberProfile?>(null) }
@@ -150,7 +151,7 @@ internal fun MemberProfileScreen(
     var references by remember(username) { mutableStateOf<List<ProfileReference>>(emptyList()) }
     var showAllContacts by remember(username) { mutableStateOf(false) }
     var showAllReferences by remember(username) { mutableStateOf(false) }
-    var editing by remember(username) { mutableStateOf(false) }
+    var editing by remember(username) { mutableStateOf(startInEditMode) }
     if (editing && profile != null) {
         EditProfileScreen(
             api, session, requireNotNull(profile), onSessionInvalidated,
@@ -563,6 +564,96 @@ internal fun ConversationScreen(
         )
         Button(onClick = send, enabled = member.id != null && draft.isNotBlank() && !sending) {
             Text("Send")
+        }
+    }
+}
+
+@Composable
+internal fun ContactsScreen(
+    api: MobileApiClient,
+    session: MemberSession,
+    onSessionInvalidated: () -> Unit,
+    onBack: () -> Unit,
+) {
+    var contacts by remember { mutableStateOf<List<ProfileContact>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var selectedUsername by remember { mutableStateOf<String?>(null) }
+    selectedUsername?.let { username ->
+        MemberProfileScreen(api, session, username, onSessionInvalidated) { selectedUsername = null }
+        return
+    }
+    LaunchedEffect(session.member.username) {
+        loading = true
+        error = null
+        api.profile(session, session.member.username).onSuccess { member ->
+            val memberID = member.id
+            if (memberID == null) {
+                error = "Could not load contacts."
+                loading = false
+                return@onSuccess
+            }
+            api.contacts(session, memberID).onSuccess {
+                contacts = it
+                loading = false
+            }.onFailure {
+                if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                else {
+                    error = it.message ?: "Could not load contacts."
+                    loading = false
+                }
+            }
+        }.onFailure {
+            if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+            else {
+                error = it.message ?: "Could not load contacts."
+                loading = false
+            }
+        }
+    }
+    Column(Modifier.fillMaxSize().padding(20.dp)) {
+        TextButton(onClick = onBack) { Text("‹ Back") }
+        Text("Contacts", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        when {
+            loading -> CircularProgressIndicator(modifier = Modifier.padding(top = 20.dp))
+            error != null -> Text(
+                requireNotNull(error),
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+            contacts.isEmpty() -> Text(
+                "People you connect with on Trustroots will appear here.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+            else -> Column(Modifier.verticalScroll(rememberScrollState()).padding(top = 12.dp)) {
+                contacts.forEach { contact ->
+                    val username = contact.user.username
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(
+                                if (username != null) Modifier.clickable { selectedUsername = username }
+                                else Modifier,
+                            )
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RemoteArtwork(
+                            url = contact.user.id?.let { api.avatarURL(it, 64) },
+                            sessionCookie = session.cookieHeader,
+                            label = contact.user.displayName,
+                            size = 54.dp,
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text(contact.user.displayName, fontWeight = FontWeight.Bold)
+                            username?.let { Text("@$it") }
+                        }
+                    }
+                    HorizontalDivider()
+                }
+            }
         }
     }
 }
