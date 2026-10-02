@@ -594,7 +594,12 @@ describe('Admin users controller unit tests', () => {
       const [admin, target] = await utils.saveUsers(utils.generateUsers(2));
       target.roles = ['user', 'volunteer'];
       await target.save();
-      for (const action of ['add', 'add', 'remove', 'remove']) {
+      for (const [index, action] of [
+        'add',
+        'add',
+        'remove',
+        'remove',
+      ].entries()) {
         const res = mockResponse();
         await adminUsers.changeRole(
           {
@@ -610,6 +615,7 @@ describe('Admin users controller unit tests', () => {
             ? ['user', 'volunteer', 'welcome-team']
             : ['user', 'volunteer'],
         );
+        updated.authVersion.should.equal([1, 1, 2, 2][index]);
       }
       const notes = await mongoose
         .model('AdminNote')
@@ -678,6 +684,53 @@ describe('Admin users controller unit tests', () => {
       const updated = await User.findById(target._id).exec();
       updated.roles.should.containEql('volunteer-alumni');
       updated.roles.should.not.containEql('volunteer');
+    });
+
+    it('increments a missing legacy authVersion for concurrent role changes', async () => {
+      const [admin, target] = await utils.saveUsers(utils.generateUsers(2));
+      await User.collection.updateOne(
+        { _id: target._id },
+        { $unset: { authVersion: '' } },
+      );
+
+      const responses = await Promise.all(
+        ['volunteer', 'welcome-team'].map(role => {
+          const res = mockResponse();
+          return adminUsers
+            .changeRole(
+              { body: { id: String(target._id), role }, user: admin },
+              res,
+            )
+            .then(() => res);
+        }),
+      );
+
+      responses.forEach(res => res.body.message.should.equal('Role changed.'));
+      const updated = await User.findById(target._id).exec();
+      updated.authVersion.should.equal(2);
+      updated.roles.should.containEql('volunteer');
+      updated.roles.should.containEql('welcome-team');
+    });
+
+    it('updates a legacy account whose roles field is absent', async () => {
+      const [admin, target] = await utils.saveUsers(utils.generateUsers(2));
+      await User.collection.updateOne(
+        { _id: target._id },
+        { $unset: { roles: '' } },
+      );
+
+      const res = mockResponse();
+      await adminUsers.changeRole(
+        {
+          body: { id: String(target._id), role: 'welcome-team' },
+          user: admin,
+        },
+        res,
+      );
+
+      res.body.message.should.equal('Role changed.');
+      const updated = await User.findById(target._id).exec();
+      updated.roles.should.deepEqual(['welcome-team']);
     });
 
     it('returns 404 when the target user does not exist', async () => {
