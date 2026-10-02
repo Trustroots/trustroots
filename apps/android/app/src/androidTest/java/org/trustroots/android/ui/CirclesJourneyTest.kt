@@ -1,11 +1,12 @@
 package org.trustroots.android.ui
 
+import androidx.activity.ComponentActivity
 import android.graphics.Bitmap
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithContentDescription
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
@@ -28,7 +29,7 @@ import org.trustroots.android.api.MobileMember
 
 @RunWith(AndroidJUnit4::class)
 class CirclesJourneyTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val server = ServerSocket(0)
 
     @After fun closeServer() = server.close()
@@ -89,6 +90,8 @@ class CirclesJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Leave circle").fetchSemanticsNodes().isNotEmpty()
         }
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithText("Circles").assertIsDisplayed()
         responder.join(1_000)
     }
 }

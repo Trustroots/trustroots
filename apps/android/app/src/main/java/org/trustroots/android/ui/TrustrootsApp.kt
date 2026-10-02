@@ -1,5 +1,6 @@
 package org.trustroots.android.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -345,6 +346,7 @@ private fun MemberShell(
     onSessionInvalidated: () -> Unit,
 ) {
     var destination by remember { mutableStateOf(Destination.Circles) }
+    var destinationHistory by remember { mutableStateOf(emptyList<Destination>()) }
     var menuPage by remember { mutableStateOf(MenuPage.Menu) }
     var browserRoute by remember { mutableStateOf<BrowserRoute?>(null) }
     var hasUnreadMessages by remember { mutableStateOf(false) }
@@ -357,6 +359,29 @@ private fun MemberShell(
         MobileApiClient(BuildConfig.API_BASE_URL, responseCache, session.member.username)
     }
     val offlineSavedAt by api.offlineSavedAt.collectAsState()
+    val navigateTo: (Destination) -> Unit = { next ->
+        if (next != destination) {
+            destinationHistory = destinationHistory + destination
+            destination = next
+        }
+        menuPage = MenuPage.Menu
+        browserRoute = null
+    }
+    BackHandler(
+        enabled = browserRoute != null ||
+            (destination == Destination.Menu && menuPage != MenuPage.Menu) ||
+            destinationHistory.isNotEmpty(),
+    ) {
+        when {
+            browserRoute != null -> browserRoute = null
+            destination == Destination.Menu && menuPage != MenuPage.Menu -> menuPage = MenuPage.Menu
+            destinationHistory.isNotEmpty() -> {
+                destination = destinationHistory.last()
+                destinationHistory = destinationHistory.dropLast(1)
+                menuPage = MenuPage.Menu
+            }
+        }
+    }
     LaunchedEffect(session, destination, messagesNavigationID) {
         while (true) {
             api.inbox(session).onSuccess { threads ->
@@ -373,7 +398,7 @@ private fun MemberShell(
                     .fillMaxWidth()
                     .background(TrustrootsGreen)
                     .statusBarsPadding()
-                    .padding(horizontal = 10.dp, vertical = 12.dp),
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
             ) {
                 Destination.entries.forEach { item ->
@@ -385,9 +410,7 @@ private fun MemberShell(
                                 searchInitialTab = 0
                                 searchNavigationID++
                             }
-                            destination = item
-                            menuPage = MenuPage.Menu
-                            browserRoute = null
+                            navigateTo(item)
                         },
                     ) {
                         Box {
@@ -400,6 +423,7 @@ private fun MemberShell(
                             },
                             contentDescription = item.label,
                             tint = Color.White,
+                            modifier = Modifier.size(32.dp),
                         )
                         if (item == Destination.Messages && hasUnreadMessages) {
                             Badge(
@@ -449,13 +473,11 @@ private fun MemberShell(
                         openFindPeople = {
                             searchInitialTab = 1
                             searchNavigationID++
-                            destination = Destination.Search
-                            menuPage = MenuPage.Menu
+                            navigateTo(Destination.Search)
                         },
                         openCircles = {
                             circlesNavigationID++
-                            destination = Destination.Circles
-                            menuPage = MenuPage.Menu
+                            navigateTo(Destination.Circles)
                         },
                         openAccount = { menuPage = MenuPage.Account },
                         openBrowser = { browserRoute = it },
