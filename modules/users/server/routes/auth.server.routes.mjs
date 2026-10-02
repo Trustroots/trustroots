@@ -38,7 +38,7 @@ const defaultExport = function (app) {
   app
     .route('/api/auth/signin')
     .post(targetedRequestLimit.signin, userAuthentication.signin);
-  app.route('/api/auth/signout').get(userAuthentication.signout);
+  app.route('/api/auth/signout').post(userAuthentication.signout);
 
   // Validate username
 };
