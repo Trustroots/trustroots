@@ -57,6 +57,7 @@ jobs:
           test -d "$app"
           xcrun simctl install "$DEVICE_ID" "$app"
           bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")
+          test -n "$bundle_id"
           xcrun simctl launch "$DEVICE_ID" "$bundle_id"
       - name: Capture iOS screenshot
         env:
