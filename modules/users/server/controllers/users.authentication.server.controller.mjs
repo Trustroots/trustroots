@@ -1,8 +1,5 @@
 /* istanbul ignore file -- implementation is covered through the CommonJS adapter. */
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const defaultExport = require('./users.authentication.server.controller.js');
+import defaultExport from './users.authentication.server.controller.js';
 
 export default defaultExport;
 export const confirmEmail = defaultExport.confirmEmail;
