@@ -1,0 +1,15 @@
+# Publish the signed Android preview from GitHub Releases with:
+# zsp publish --pre-release --channel beta
+repository: https://github.com/Trustroots/trustroots
+pubkey: npub1lt6a968lk4h6yqduqnxcha628cudulgy8xk607c4xyxn6d6w6kcsmgp8hj
+release_filter: '^android-preview-[0-9]+(-v.*)?$'
+match: '^trustroots-android-.*\.apk$'
+
+name: Trustroots
+summary: Meet travellers and find hosts in the Trustroots community
+description: |
+  Preview of the native Trustroots Android app. Members can sign in, browse
+  circles, search for hosts, view and edit profiles, and use messaging.
+  More features are still being built.
+license: AGPL-3.0-only
+website: https://www.trustroots.org/
