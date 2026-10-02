@@ -195,7 +195,9 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
       const keyboardInset = isWritingMessage
         ? Math.max(
             0,
-            Math.round(window.innerHeight - viewport.height - viewport.offsetTop),
+            Math.round(
+              window.innerHeight - viewport.height - viewport.offsetTop,
+            ),
           )
         : 0;
       document.documentElement.style.setProperty(
