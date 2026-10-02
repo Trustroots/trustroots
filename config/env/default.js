@@ -42,6 +42,9 @@ module.exports = {
   host: 'localhost',
   fd: null, // listen on a file descriptor (instead of host/port)
   https: false,
+  // Trust X-Forwarded-Proto for session cookies only when the HTTPS frontend
+  // overwrites the header and the application cannot be reached directly.
+  sessionProxy: false,
   sessionSecret: 'MEAN',
   sessionCollection: 'sessions',
   domain: 'localhost:3000',

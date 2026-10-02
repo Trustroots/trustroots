@@ -1,7 +1,9 @@
 package org.trustroots.android.browser
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class TrustrootsBrowserTest {
@@ -34,5 +36,17 @@ class TrustrootsBrowserTest {
         assertFalse(isSafeExternalURL("http://example.test/help"))
         assertFalse(isSafeExternalURL("javascript:alert(1)"))
         assertFalse(isSafeExternalURL("file:///data/local/tmp/secret"))
+    }
+
+    @Test
+    fun extractsCookiePairsForWebViewInjection() {
+        assertEquals(
+            listOf("connect.sid=session-value"),
+            cookiePairsForWebView("connect.sid=session-value"),
+        )
+        assertEquals(
+            listOf("connect.sid=session-value", "other=1"),
+            cookiePairsForWebView("connect.sid=session-value; other=1; Path=/"),
+        )
     }
 }

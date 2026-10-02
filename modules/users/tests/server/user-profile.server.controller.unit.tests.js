@@ -633,6 +633,12 @@ describe('Profile controller unit tests', () => {
   });
 
   describe('userMiniByID', () => {
+    it('includes avatarVersion in mini-profile query fields', () => {
+      profileController.userMiniProfileFields
+        .split(/\s+/)
+        .should.containEql('avatarVersion');
+    });
+
     it('responds with 400 for an invalid id', async () => {
       const { res } = await runHandler((res, next) =>
         profileController.userMiniByID({ user: {} }, res, next, 'bad-id'),
@@ -1216,6 +1222,40 @@ describe('Profile controller unit tests', () => {
   describe('sanitizeProfile', () => {
     it('returns undefined for a missing profile', () => {
       (profileController.sanitizeProfile(null) === undefined).should.be.true();
+    });
+
+    it('omits private and unrecognised document fields after sanitisation', () => {
+      const profile = {
+        toObject: () => ({
+          _id: new mongoose.Types.ObjectId(),
+          created: new Date('2020-01-01T00:00:00.000Z'),
+          displayName: 'Fictional Member',
+          email: 'member@example.test',
+          locale: 'en',
+          blocked: [],
+          description: '',
+          member: [],
+          roles: ['user'],
+          lastIpAddress: '192.0.2.1',
+          pushRegistration: [{ token: 'fictional-push-token' }],
+          providerData: [{ accessToken: 'fictional-provider-token' }],
+          futurePrivateField: 'must stay private',
+        }),
+      };
+
+      const sanitized = profileController.sanitizeOwnProfile(profile);
+
+      sanitized.displayName.should.equal('Fictional Member');
+      sanitized.email.should.equal('member@example.test');
+      sanitized.locale.should.equal('en');
+      for (const field of [
+        'lastIpAddress',
+        'pushRegistration',
+        'providerData',
+        'futurePrivateField',
+      ]) {
+        (sanitized[field] === undefined).should.be.true();
+      }
     });
 
     it('marks active volunteers on the sanitized profile', async () => {

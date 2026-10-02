@@ -4,7 +4,62 @@
 
 Allow people to create, secure, recover, and end access to their Trustroots
 account.
+
 ## Requirements
+
+### Requirement: Explicit profile response fields
+
+Profile responses SHALL include only explicitly approved fields. Account-owner
+responses SHALL preserve fields required for profile editing, account settings,
+and blocking. Public responses SHALL omit email addresses, account settings, IP
+addresses, push credentials, provider credentials, and unrecognised document
+fields. Existing sanitisation and viewer-dependent privacy rules SHALL still
+apply.
+
+#### Scenario: Public profile response excludes private fields
+
+- **WHEN** a member requests another member's profile
+- **THEN** the response includes only approved public profile fields
+- **AND** account, credential, and unrecognised fields are omitted
+
+#### Scenario: Account holder receives profile editing fields
+
+- **WHEN** an account holder requests their own profile
+- **THEN** the response includes the fields required to edit their profile and
+  account settings
+- **AND** IP addresses, push credentials, provider credentials, and
+  unrecognised fields are omitted
+
+### Requirement: Session cookie security and persistence
+
+The system SHALL issue session cookies with HttpOnly and SameSite=Lax. When
+HTTPS is enabled, it SHALL mark session cookies Secure and issue them only for
+HTTPS requests. Forwarded protocol headers SHALL be trusted for this decision
+only when the session proxy setting is explicitly enabled. The system SHALL
+not persist or issue cookies for uninitialised sessions, SHALL avoid rewriting
+unchanged sessions, and SHALL refresh their expiry through the session store.
+
+#### Scenario: Visitor makes an uninitialised request
+
+- **WHEN** a visitor makes a request without changing session state
+- **THEN** the system does not issue a session cookie or persist a session
+
+#### Scenario: HTTPS session is changed
+
+- **WHEN** a person changes session state through a verified HTTPS request
+- **THEN** the system issues an HttpOnly, SameSite=Lax, Secure session cookie
+
+#### Scenario: Forwarded protocol is not trusted by default
+
+- **WHEN** a request over HTTP includes `X-Forwarded-Proto: https` while the
+  session proxy setting is disabled
+- **THEN** the system does not treat the request as HTTPS for session cookies
+
+#### Scenario: Existing session remains unchanged
+
+- **WHEN** a person makes a request without changing an existing session
+- **THEN** the system refreshes the session expiry without rewriting the session
+
 ### Requirement: Account registration
 
 The system SHALL allow a person to create an account with valid, unique
@@ -157,7 +212,9 @@ proof, so this is a bounded defence-in-depth measure.
 ### Requirement: Account settings
 
 The system SHALL let an authenticated account holder update valid account
-details and change their password after providing their current password.
+details and change their password after providing their current password. The
+account settings page SHALL explain the existing username format, availability,
+and change timing rules beside the username field.
 
 #### Scenario: Account holder updates account details
 
@@ -169,6 +226,12 @@ details and change their password after providing their current password.
 - **WHEN** an authenticated account holder provides their current password and matching valid new passwords
 - **THEN** the system updates their password
 - **AND** the account holder can sign in with the new password
+
+#### Scenario: Account holder reads username change rules
+
+- **WHEN** an authenticated account holder opens account settings
+- **THEN** the username field explains when changes are allowed and what makes
+  a username valid and available
 
 ### Requirement: Account removal
 
@@ -238,4 +301,3 @@ Pending email addresses SHALL pass the existing email validator or be empty when
 
 - **WHEN** an account has an empty pending email address
 - **THEN** email validation allows the account to be saved
-

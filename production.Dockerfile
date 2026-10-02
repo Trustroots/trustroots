@@ -33,7 +33,7 @@ COPY package*.json ./
 RUN npm ci --quiet
 
 # Copy code into the container
-COPY .prettierrc.json .eslint* babel.config.* server.js worker.js ./
+COPY .prettierrc.json .eslint* babel.config.* server.js server.mjs worker.js worker.mjs ./
 COPY bin bin
 COPY config config
 COPY migrations migrations

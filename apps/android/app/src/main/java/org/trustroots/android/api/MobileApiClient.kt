@@ -17,6 +17,14 @@ data class MobileMember(
     val displayName: String,
 )
 
+data class AccountDetails(
+    val username: String,
+    val displayName: String,
+    val email: String,
+    val emailTemporary: String? = null,
+    val newsletter: Boolean = false,
+)
+
 data class MemberSession(
     val cookieHeader: String,
     val member: MobileMember,
@@ -68,13 +76,42 @@ data class HostOffer(
 )
 
 data class AccommodationOffer(
+    val id: String? = null,
     val status: String?,
     val description: String?,
     val noOfferDescription: String?,
     val maxGuests: Int?,
+    val showOnlyInMyCircles: Boolean = false,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+)
+
+data class HostOfferUpdate(
+    val id: String? = null,
+    val status: String,
+    val description: String,
+    val noOfferDescription: String,
+    val maxGuests: Int,
+    val showOnlyInMyCircles: Boolean,
+    val latitude: Double,
+    val longitude: Double,
+)
+
+data class ExperienceCreate(
+    val userTo: String,
+    val met: Boolean,
+    val guest: Boolean,
+    val host: Boolean,
+    val recommend: String,
+    val feedbackPublic: String,
 )
 
 data class ProfileContact(val id: String, val user: MessageMember)
+
+data class ContactRelationship(
+    val id: String?,
+    val confirmed: Boolean,
+)
 
 data class ProfileReference(
     val id: String,
@@ -155,12 +192,88 @@ class MobileApiClient(
             }
         }
 
+    suspend fun accountDetails(session: MemberSession): Result<AccountDetails> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                parseAccountDetails(JSONObject(jsonRequest(
+                    "/api/users/${encode(session.member.username)}", "GET",
+                    sessionCookie = session.cookieHeader,
+                ).body))
+            }
+        }
+
+    suspend fun updateAccount(
+        session: MemberSession,
+        email: String,
+        newsletter: Boolean,
+    ): Result<AccountDetails> = withContext(Dispatchers.IO) {
+        runCatching {
+            require(email.isNotBlank())
+            val body = JSONObject()
+                .put("email", email.trim())
+                .put("newsletter", newsletter)
+                .toString()
+            parseAccountDetails(JSONObject(jsonRequest(
+                "/api/users", "PUT", body, session.cookieHeader,
+            ).body))
+        }
+    }
+
+    suspend fun changePassword(
+        session: MemberSession,
+        currentPassword: String,
+        newPassword: String,
+        verifyPassword: String,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            require(currentPassword.isNotBlank() && newPassword.isNotBlank())
+            require(newPassword == verifyPassword)
+            val body = JSONObject()
+                .put("currentPassword", currentPassword)
+                .put("newPassword", newPassword)
+                .put("verifyPassword", verifyPassword)
+                .toString()
+            jsonRequest("/api/users/password", "POST", body, session.cookieHeader)
+            Unit
+        }
+    }
+
     suspend fun contacts(session: MemberSession, memberID: String): Result<List<ProfileContact>> =
         withContext(Dispatchers.IO) {
             runCatching {
                 parseContacts(JSONArray(jsonRequest(
                     "/api/contacts/${encode(memberID)}", "GET", sessionCookie = session.cookieHeader,
                 ).body))
+            }
+        }
+
+    suspend fun contactWith(session: MemberSession, memberID: String): Result<ContactRelationship> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val response = runCatching {
+                    jsonRequest(
+                        "/api/contact-by/${encode(memberID)}", "GET",
+                        sessionCookie = session.cookieHeader,
+                    )
+                }
+                val body = response.getOrElse { error ->
+                    if ((error as? MobileApiException)?.statusCode == HttpURLConnection.HTTP_NOT_FOUND) {
+                        return@runCatching ContactRelationship(id = null, confirmed = false)
+                    }
+                    throw error
+                }
+                parseContactRelationship(JSONObject(body.body))
+            }
+        }
+
+    suspend fun removeContact(session: MemberSession, contactID: String): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                jsonRequest(
+                    "/api/contact/${encode(contactID)}", "DELETE",
+                    sessionCookie = session.cookieHeader,
+                )
+                Unit
             }
         }
 
@@ -286,6 +399,7 @@ class MobileApiClient(
         types: Set<String> = setOf("host"),
         circleIDs: Set<String> = emptySet(),
         seenMonths: Int? = 6,
+        languages: Set<String> = emptySet(),
     ): Result<List<MapOffer>> = withContext(Dispatchers.IO) {
         runCatching {
             require(south < north && west < east)
@@ -295,6 +409,7 @@ class MobileApiClient(
                 .put("types", JSONArray(types.sorted()))
                 .put("tribes", JSONArray(circleIDs.sorted()))
             if (seenMonths != null) filterObject.put("seen", JSONObject().put("months", seenMonths))
+            if (languages.isNotEmpty()) filterObject.put("languages", JSONArray(languages.sorted()))
             val filters = encode(filterObject.toString())
             val path = "/api/offers?southWestLat=$south&southWestLng=$west" +
                 "&northEastLat=$north&northEastLng=$east&filters=$filters"
@@ -319,6 +434,50 @@ class MobileApiClient(
                     sessionCookie = session.cookieHeader,
                 ).body)
                 if (offers.length() == 0) null else parseAccommodationOffer(offers.getJSONObject(0))
+            }
+        }
+
+    suspend fun saveHostOffer(session: MemberSession, update: HostOfferUpdate): Result<AccommodationOffer> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                require(update.status in setOf("yes", "maybe", "no"))
+                require(update.maxGuests in 1..20)
+                require(update.latitude in -90.0..90.0 && update.longitude in -180.0..180.0)
+                val body = JSONObject()
+                    .put("type", "host")
+                    .put("status", update.status)
+                    .put("description", update.description.trim())
+                    .put("noOfferDescription", update.noOfferDescription.trim())
+                    .put("maxGuests", update.maxGuests)
+                    .put("showOnlyInMyCircles", update.showOnlyInMyCircles)
+                    .put("location", JSONArray(listOf(update.latitude, update.longitude)))
+                    .toString()
+                val path = if (update.id.isNullOrBlank()) "/api/offers" else "/api/offers/${encode(update.id)}"
+                val method = if (update.id.isNullOrBlank()) "POST" else "PUT"
+                parseAccommodationOffer(JSONObject(jsonRequest(path, method, body, session.cookieHeader).body))
+            }
+        }
+
+    suspend fun createExperience(session: MemberSession, experience: ExperienceCreate): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                require(experience.userTo.isNotBlank())
+                require(experience.met || experience.guest || experience.host)
+                require(experience.recommend in setOf("yes", "no", "unknown"))
+                val body = JSONObject()
+                    .put("userTo", experience.userTo)
+                    .put(
+                        "interactions",
+                        JSONObject()
+                            .put("met", experience.met)
+                            .put("guest", experience.guest)
+                            .put("host", experience.host),
+                    )
+                    .put("recommend", experience.recommend)
+                    .put("feedbackPublic", experience.feedbackPublic.trim())
+                    .toString()
+                jsonRequest("/api/experiences", "POST", body, session.cookieHeader)
+                Unit
             }
         }
 
@@ -475,6 +634,17 @@ internal fun mobileMemberFrom(member: JSONObject): MobileMember {
     )
 }
 
+internal fun parseAccountDetails(value: JSONObject): AccountDetails {
+    val username = value.getString("username")
+    return AccountDetails(
+        username = username,
+        displayName = value.optionalText("displayName") ?: username,
+        email = value.optionalText("email").orEmpty(),
+        emailTemporary = value.optionalText("emailTemporary"),
+        newsletter = value.optBoolean("newsletter", false),
+    )
+}
+
 private fun encode(value: String): String = URLEncoder.encode(value, Charsets.UTF_8.name())
 
 private fun JSONObject.optionalText(key: String): String? =
@@ -541,6 +711,12 @@ internal fun parseContacts(values: JSONArray): List<ProfileContact> =
         ProfileContact(item.optionalText("_id") ?: return@mapNotNull null, parseMessageMember(user))
     }
 
+internal fun parseContactRelationship(value: JSONObject): ContactRelationship =
+    ContactRelationship(
+        id = value.optionalText("_id"),
+        confirmed = value.optBoolean("confirmed", false),
+    )
+
 internal fun parseReferences(values: JSONArray): List<ProfileReference> =
     (0 until values.length()).mapNotNull { index ->
         val item = values.optJSONObject(index) ?: return@mapNotNull null
@@ -582,12 +758,21 @@ internal fun parseHostOffer(value: JSONObject): HostOffer = HostOffer(
     user = parseMessageMember(value.getJSONObject("user")),
 )
 
-internal fun parseAccommodationOffer(value: JSONObject): AccommodationOffer = AccommodationOffer(
-    status = value.optionalText("status"),
-    description = value.optionalText("description"),
-    noOfferDescription = value.optionalText("noOfferDescription"),
-    maxGuests = value.optInt("maxGuests").takeIf { value.has("maxGuests") && !value.isNull("maxGuests") },
-)
+internal fun parseAccommodationOffer(value: JSONObject): AccommodationOffer {
+    val location = value.optJSONArray("location")
+    val latitude = location?.optDouble(0)?.takeIf { it.isFinite() }
+    val longitude = location?.optDouble(1)?.takeIf { it.isFinite() }
+    return AccommodationOffer(
+        id = value.optionalText("_id") ?: value.optionalText("id"),
+        status = value.optionalText("status"),
+        description = value.optionalText("description"),
+        noOfferDescription = value.optionalText("noOfferDescription"),
+        maxGuests = value.optInt("maxGuests").takeIf { value.has("maxGuests") && !value.isNull("maxGuests") },
+        showOnlyInMyCircles = value.optBoolean("showOnlyInMyCircles", false),
+        latitude = latitude,
+        longitude = longitude,
+    )
+}
 
 internal fun parseCircles(values: JSONArray): List<TrustrootsCircle> =
     (0 until values.length()).mapNotNull { parseCircleOrNull(values.getJSONObject(it)) }

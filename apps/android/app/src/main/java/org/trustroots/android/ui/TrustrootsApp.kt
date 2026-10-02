@@ -20,14 +20,20 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.Button
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
@@ -324,6 +330,9 @@ private enum class Destination(val label: String) {
 private enum class MenuPage {
     Menu,
     Profile,
+    EditProfile,
+    Contacts,
+    Host,
     Account,
 }
 
@@ -338,13 +347,12 @@ private fun MemberShell(
     var destination by remember { mutableStateOf(Destination.Circles) }
     var menuPage by remember { mutableStateOf(MenuPage.Menu) }
     var browserRoute by remember { mutableStateOf<BrowserRoute?>(null) }
-    var accountMessage by remember { mutableStateOf<String?>(null) }
-    var isAccountActionRunning by remember { mutableStateOf(false) }
-    var accountActionLabel by remember { mutableStateOf<String?>(null) }
     var hasUnreadMessages by remember { mutableStateOf(false) }
+    var unreadMessageCount by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var messagesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var circlesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
-    val scope = rememberCoroutineScope()
+    var searchNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var searchInitialTab by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val api = remember(session.member.username) {
         MobileApiClient(BuildConfig.API_BASE_URL, responseCache, session.member.username)
     }
@@ -352,7 +360,8 @@ private fun MemberShell(
     LaunchedEffect(session, destination, messagesNavigationID) {
         while (true) {
             api.inbox(session).onSuccess { threads ->
-                hasUnreadMessages = threads.any { !it.read }
+                unreadMessageCount = threads.count { !it.read }
+                hasUnreadMessages = unreadMessageCount > 0
             }
             delay(60_000)
         }
@@ -372,6 +381,10 @@ private fun MemberShell(
                         onClick = {
                             if (item == Destination.Messages) messagesNavigationID++
                             if (item == Destination.Circles) circlesNavigationID++
+                            if (item == Destination.Search) {
+                                searchInitialTab = 0
+                                searchNavigationID++
+                            }
                             destination = item
                             menuPage = MenuPage.Menu
                             browserRoute = null
@@ -382,7 +395,7 @@ private fun MemberShell(
                             imageVector = when (item) {
                                 Destination.Circles -> Icons.Default.Groups
                                 Destination.Search -> Icons.Default.Search
-                                Destination.Messages -> Icons.AutoMirrored.Filled.Send
+                                Destination.Messages -> Icons.AutoMirrored.Filled.Chat
                                 Destination.Menu -> Icons.Default.Menu
                             },
                             contentDescription = item.label,
@@ -393,7 +406,11 @@ private fun MemberShell(
                                 modifier = Modifier.align(Alignment.TopEnd),
                                 containerColor = Color.Red,
                                 contentColor = Color.White,
-                            ) { Text("1") }
+                            ) {
+                                Text(
+                                    if (unreadMessageCount > 99) "99+" else unreadMessageCount.toString(),
+                                )
+                            }
                         }
                         }
                     }
@@ -419,6 +436,27 @@ private fun MemberShell(
                     MenuPage.Menu -> MenuScreen(
                         session = session,
                         openProfile = { menuPage = MenuPage.Profile },
+                        openEditProfile = { menuPage = MenuPage.EditProfile },
+                        openHost = { menuPage = MenuPage.Host },
+                        openNostroots = {
+                            browserRoute = BrowserRoute(
+                                title = "Nostroots",
+                                url = "https://nos.trustroots.org/",
+                                sessionCookie = session.cookieHeader,
+                            )
+                        },
+                        openContacts = { menuPage = MenuPage.Contacts },
+                        openFindPeople = {
+                            searchInitialTab = 1
+                            searchNavigationID++
+                            destination = Destination.Search
+                            menuPage = MenuPage.Menu
+                        },
+                        openCircles = {
+                            circlesNavigationID++
+                            destination = Destination.Circles
+                            menuPage = MenuPage.Menu
+                        },
                         openAccount = { menuPage = MenuPage.Account },
                         openBrowser = { browserRoute = it },
                     )
@@ -432,29 +470,34 @@ private fun MemberShell(
                             onMemberUpdated(MobileMember(updated.username, updated.displayName))
                         },
                     )
-                    MenuPage.Account -> AccountScreen(
+                    MenuPage.EditProfile -> MemberProfileScreen(
+                        api = api,
                         session = session,
-                        accountMessage = accountMessage,
-                        isActionRunning = isAccountActionRunning,
-                        actionLabel = accountActionLabel,
+                        username = session.member.username,
+                        onSessionInvalidated = onSessionInvalidated,
+                        startInEditMode = true,
                         onBack = { menuPage = MenuPage.Menu },
-                        onCheckAccount = {
-                            scope.launch {
-                                isAccountActionRunning = true
-                                accountActionLabel = "Checking account…"
-                                api.currentMember(session)
-                                    .onSuccess { accountMessage = "Signed in as ${it.displayName}." }
-                                    .onFailure {
-                                        if ((it as? MobileApiException)?.isAuthenticationFailure == true) {
-                                            onSessionInvalidated()
-                                        } else {
-                                            accountMessage = it.message ?: "Could not refresh account."
-                                        }
-                                    }
-                                isAccountActionRunning = false
-                                accountActionLabel = null
-                            }
+                        onOwnProfileSaved = { updated ->
+                            onMemberUpdated(MobileMember(updated.username, updated.displayName))
                         },
+                    )
+                    MenuPage.Contacts -> ContactsScreen(
+                        api = api,
+                        session = session,
+                        onSessionInvalidated = onSessionInvalidated,
+                        onBack = { menuPage = MenuPage.Menu },
+                    )
+                    MenuPage.Host -> HostOfferScreen(
+                        api = api,
+                        session = session,
+                        onSessionInvalidated = onSessionInvalidated,
+                        onBack = { menuPage = MenuPage.Menu },
+                    )
+                    MenuPage.Account -> AccountSettingsScreen(
+                        api = api,
+                        session = session,
+                        onSessionInvalidated = onSessionInvalidated,
+                        onBack = { menuPage = MenuPage.Menu },
                         onResetPassword = {
                             browserRoute = BrowserRoute(
                                 title = "Reset password",
@@ -474,7 +517,14 @@ private fun MemberShell(
                     Destination.Circles -> key(circlesNavigationID) {
                         CirclesScreen(api, session, onSessionInvalidated)
                     }
-                    Destination.Search -> SearchHubScreen(api, session, onSessionInvalidated)
+                    Destination.Search -> key(searchNavigationID) {
+                        SearchHubScreen(
+                            api,
+                            session,
+                            onSessionInvalidated,
+                            initialTab = searchInitialTab,
+                        )
+                    }
                     Destination.Messages -> key(messagesNavigationID) {
                         MessageInboxScreen(api, session, onSessionInvalidated)
                     }
@@ -490,6 +540,12 @@ private fun MemberShell(
 internal fun MenuScreen(
     session: MemberSession,
     openProfile: () -> Unit,
+    openEditProfile: () -> Unit,
+    openHost: () -> Unit,
+    openNostroots: () -> Unit,
+    openContacts: () -> Unit,
+    openFindPeople: () -> Unit,
+    openCircles: () -> Unit,
     openAccount: () -> Unit,
     openBrowser: (BrowserRoute) -> Unit,
 ) {
@@ -500,26 +556,62 @@ internal fun MenuScreen(
             .verticalScroll(rememberScrollState())
             .padding(top = 12.dp),
     ) {
-        Text(
-            "${session.member.displayName}",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 20.dp),
-        )
-        Text(
-            "@${session.member.username}",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp),
-        )
-        Spacer(Modifier.height(16.dp))
-        MenuLink("My profile", Icons.Default.AccountCircle, openProfile)
-        MenuLink("Account", Icons.Default.Settings, openAccount)
-        HorizontalDivider()
-        MenuLink("Frequently asked questions", Icons.AutoMirrored.Filled.HelpOutline) {
-            openBrowser(BrowserRoute("Frequently asked questions", "https://www.trustroots.org/faq"))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = openProfile)
+                .padding(horizontal = 20.dp, vertical = 4.dp),
+        ) {
+            Text(
+                session.member.displayName,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                "@${session.member.username}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                "View your profile",
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 4.dp),
+            )
         }
-        MenuLink("About Trustroots", Icons.Default.Info) {
-            openBrowser(BrowserRoute("About Trustroots", "https://www.trustroots.org/about"))
+        Spacer(Modifier.height(12.dp))
+        MenuLink("Edit profile", Icons.Default.Edit, openEditProfile)
+        MenuLink("Host", Icons.Default.Home, openHost)
+        MenuLink("Nostroots", Icons.Default.Public, openNostroots)
+        MenuLink("Contacts", Icons.Default.People, openContacts)
+        MenuLink("Find people", Icons.Default.PersonSearch, openFindPeople)
+        MenuLink("Circles", Icons.Default.Groups, openCircles)
+        MenuLink("Account", Icons.Default.Settings, openAccount)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        Text(
+            "Info and support",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+        )
+        MenuLink("About", Icons.Default.Info) {
+            openBrowser(BrowserRoute("About", "https://www.trustroots.org/about"))
+        }
+        MenuLink("Blog", Icons.Default.Info) {
+            openBrowser(BrowserRoute("Blog", "https://ideas.trustroots.org/"))
+        }
+        MenuLink("Contact and support", Icons.AutoMirrored.Filled.HelpOutline) {
+            openBrowser(BrowserRoute("Contact and support", "https://www.trustroots.org/support"))
+        }
+        MenuLink("FAQ", Icons.AutoMirrored.Filled.HelpOutline) {
+            openBrowser(BrowserRoute("FAQ", "https://www.trustroots.org/faq"))
+        }
+        MenuLink("Foundation", Icons.Default.Info) {
+            openBrowser(BrowserRoute("Foundation", "https://www.trustroots.org/foundation"))
+        }
+        MenuLink("Media", Icons.Default.Info) {
+            openBrowser(BrowserRoute("Media", "https://www.trustroots.org/media"))
+        }
+        MenuLink("Wiki", Icons.Default.Info) {
+            openBrowser(BrowserRoute("Wiki", "https://wiki.trustroots.org/"))
         }
         MenuLink("Privacy", Icons.Default.Info) {
             openBrowser(BrowserRoute("Privacy", "https://www.trustroots.org/privacy"))
@@ -527,8 +619,11 @@ internal fun MenuScreen(
         MenuLink("Rules", Icons.Default.Info) {
             openBrowser(BrowserRoute("Rules", "https://www.trustroots.org/rules"))
         }
+        MenuLink("Safety", Icons.Default.Info) {
+            openBrowser(BrowserRoute("Safety", "https://www.trustroots.org/safety"))
+        }
         MenuLink("Statistics", Icons.Default.Info) {
-            openBrowser(BrowserRoute("Trustroots statistics", "https://www.trustroots.org/statistics"))
+            openBrowser(BrowserRoute("Statistics", "https://www.trustroots.org/statistics"))
         }
         Spacer(Modifier.height(24.dp))
         Column(

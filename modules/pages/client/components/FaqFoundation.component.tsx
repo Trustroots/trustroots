@@ -60,10 +60,9 @@ export default function FaqFoundation() {
           organisations such as workers’ co-operatives, non-governmental
           organizations (NGOs) and charities. For example the{' '}
           <a href="https://www.osmfoundation.org/">OpenStreetMap Foundation</a>,{' '}
-          the
-          <a href="https://okfn.org/">Open Knowledge Foundation</a> and the{' '}
+          the <a href="https://okfn.org/">Open Knowledge Foundation</a> and the{' '}
           <a href="https://www.hackspace.org.uk/">UK Hackspace Foundation</a>{' '}
-          are LGBs.
+          are LBGs.
         </Trans>
         <h4>{t('More reading:')}</h4>
         <ul>

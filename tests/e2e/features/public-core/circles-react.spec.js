@@ -1,4 +1,4 @@
-/* global window */
+/* global getComputedStyle, window */
 const { annotateFeature, expect, test } = require('../../support/test');
 const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
 
@@ -29,6 +29,9 @@ test('circle pages use React and preserve guest navigation', async ({
   ]);
   await page.goto('/circles');
   await expect(page.locator('#tr-react-root')).toBeVisible();
+  await expect(
+    page.locator('#tr-header').getByRole('link', { name: 'Read more' }),
+  ).toHaveCSS('color', 'rgb(255, 255, 255)');
   await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(0);
   await page.getByRole('link', { name: /^Hitchhikers/ }).click();
   await expect(page).toHaveURL(/\/circles\/hitchhikers$/);
@@ -97,4 +100,83 @@ test('circle membership retains account roles and legacy member links', async ({
         headers: { 'X-Trustroots-Request': '1' },
       });
   }
+});
+
+test('member navigation menus and narrow layout remain usable', async ({
+  page,
+}) => {
+  await signInViaApi(page, undefined, SEEDED_ADMIN);
+  await page.goto('/circles');
+
+  const header = page.locator('#tr-header');
+  await expect(header).toHaveCSS('background-color', 'rgb(18, 181, 145)');
+  const circlesLink = header.locator('a[href="/circles"]');
+  const searchLink = header.locator('a[href="/search"]');
+  await expect(circlesLink.locator('..')).toHaveClass(/active/);
+  const selectedBackground = await circlesLink.evaluate(
+    link => getComputedStyle(link).backgroundColor,
+  );
+  const unselectedBackground = await searchLink.evaluate(
+    link => getComputedStyle(link).backgroundColor,
+  );
+  expect(selectedBackground).not.toBe(unselectedBackground);
+  expect(selectedBackground).not.toBe('rgba(0, 0, 0, 0)');
+  await expect(page.getByRole('button', { name: 'Support' })).toHaveCSS(
+    'color',
+    'rgb(255, 255, 255)',
+  );
+  await expect(header.locator('a[href="/search"]')).toHaveCSS(
+    'color',
+    'rgb(255, 255, 255)',
+  );
+  const circlesBounds = await header
+    .locator('a[href="/circles"]')
+    .boundingBox();
+  const searchBounds = await header.locator('a[href="/search"]').boundingBox();
+  expect(searchBounds.x).toBeGreaterThanOrEqual(
+    circlesBounds.x + circlesBounds.width,
+  );
+  const supportButton = page.getByRole('button', { name: 'Support' });
+  await supportButton.hover();
+  const safetyLink = header.getByRole('link', { name: 'Safety' });
+  await expect(safetyLink).toBeVisible();
+  await safetyLink.hover();
+  await expect(safetyLink).toBeVisible();
+
+  await supportButton.click();
+  await expect(
+    page.locator('#tr-header').getByRole('link', { name: 'Safety' }),
+  ).toBeVisible();
+  await page.keyboard.press('Escape');
+  await supportButton.focus();
+  await page.keyboard.press('Enter');
+  await expect(safetyLink).toBeVisible();
+
+  await page.locator('.dropdown-user .dropdown-toggle').click();
+  await expect(page.getByRole('link', { name: 'My profile' })).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(circlesLink).toHaveCSS('background-color', selectedBackground);
+  await expect(header.locator('a[href="/messages"]')).toBeVisible();
+  for (const href of ['/circles', '/search', '/messages', '/navigation']) {
+    await expect(header.locator(`a[href="${href}"] .icon`)).toHaveCSS(
+      'color',
+      'rgb(255, 255, 255)',
+    );
+  }
+  const mobileLinks = await Promise.all(
+    ['/circles', '/search', '/messages', '/navigation'].map(href =>
+      header.locator(`a[href="${href}"]`).boundingBox(),
+    ),
+  );
+  mobileLinks.forEach((bounds, index) => {
+    expect(bounds.width).toBeGreaterThan(0);
+    if (index > 0) {
+      const previous = mobileLinks[index - 1];
+      expect(bounds.x).toBeGreaterThanOrEqual(previous.x + previous.width);
+    }
+  });
+  const headerBounds = await header.boundingBox();
+  expect(headerBounds.x).toBeGreaterThanOrEqual(0);
+  expect(headerBounds.x + headerBounds.width).toBeLessThanOrEqual(391);
 });

@@ -36,7 +36,7 @@ export default function SearchPlaceInput({
   const skipSuggestionsRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [loadSuggestions] = useDebouncedCallback(async (query: string) => {
+  const loadSuggestions = useDebouncedCallback(async (query: string) => {
     if (!query || query.length < 3) {
       setSuggestions([]);
       setIsOpen(false);

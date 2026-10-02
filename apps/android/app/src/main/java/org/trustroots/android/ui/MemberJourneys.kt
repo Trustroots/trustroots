@@ -1,6 +1,7 @@
 package org.trustroots.android.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -22,6 +24,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.text.KeyboardActions
@@ -35,7 +38,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.ImeAction
@@ -43,7 +49,9 @@ import android.text.Html
 import kotlinx.coroutines.launch
 import org.trustroots.android.api.DirectMessage
 import org.trustroots.android.api.AccommodationOffer
+import org.trustroots.android.api.ContactRelationship
 import org.trustroots.android.api.MemberProfile
+import org.trustroots.android.api.MessageDraftStore
 import org.trustroots.android.api.ProfileContact
 import org.trustroots.android.api.ProfileReference
 import org.trustroots.android.api.ProfileUpdate
@@ -52,9 +60,15 @@ import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MessageThread
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.browser.BrowserRoute
+import org.trustroots.android.browser.TrustrootsBrowser
+import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 import java.util.Locale
 import java.text.SimpleDateFormat
 import java.util.Date
+
+/** Matches `config.featureFlags.reference` (enabled in production and development). */
+private const val referencesEnabled = true
 
 @Composable
 internal fun MemberSearchScreen(
@@ -138,6 +152,7 @@ internal fun MemberProfileScreen(
     username: String,
     onSessionInvalidated: () -> Unit,
     onOwnProfileSaved: (MemberProfile) -> Unit = {},
+    startInEditMode: Boolean = false,
     onBack: () -> Unit,
 ) {
     var profile by remember(username) { mutableStateOf<MemberProfile?>(null) }
@@ -150,12 +165,32 @@ internal fun MemberProfileScreen(
     var references by remember(username) { mutableStateOf<List<ProfileReference>>(emptyList()) }
     var showAllContacts by remember(username) { mutableStateOf(false) }
     var showAllReferences by remember(username) { mutableStateOf(false) }
-    var editing by remember(username) { mutableStateOf(false) }
+    var editing by remember(username) { mutableStateOf(startInEditMode) }
+    var section by remember(username) { mutableStateOf(ProfileSection.Overview) }
+    var browserRoute by remember(username) { mutableStateOf<BrowserRoute?>(null) }
+    var relationship by remember(username) { mutableStateOf<ContactRelationship?>(null) }
+    var relationshipResolved by remember(username) { mutableStateOf(false) }
+    var confirmRemoveContact by remember(username) { mutableStateOf(false) }
+    var removingContact by remember(username) { mutableStateOf(false) }
+    var sharingExperience by remember(username) { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     if (editing && profile != null) {
         EditProfileScreen(
             api, session, requireNotNull(profile), onSessionInvalidated,
             onCancel = { editing = false },
             onSaved = { updated -> profile = updated; editing = false; onOwnProfileSaved(updated) },
+        )
+        return
+    }
+    if (sharingExperience && profile?.id != null) {
+        CreateExperienceScreen(
+            api = api,
+            session = session,
+            memberID = requireNotNull(profile).id!!,
+            memberLabel = requireNotNull(profile).displayName,
+            onSessionInvalidated = onSessionInvalidated,
+            onBack = { sharingExperience = false },
+            onCreated = { sharingExperience = false },
         )
         return
     }
@@ -166,6 +201,55 @@ internal fun MemberProfileScreen(
     recipient?.let {
         ConversationScreen(api, session, it, onSessionInvalidated, onBack = { recipient = null })
         return
+    }
+    browserRoute?.let { route ->
+        TrustrootsBrowser(route = route, onClose = { browserRoute = null })
+        return
+    }
+    if (confirmRemoveContact) {
+        val existing = relationship
+        AlertDialog(
+            onDismissRequest = { if (!removingContact) confirmRemoveContact = false },
+            title = {
+                Text(
+                    if (existing?.confirmed == true) "Remove contact?" else "Delete contact request?",
+                )
+            },
+            text = {
+                Text(
+                    if (existing?.confirmed == true) {
+                        "You will no longer be contacts with this member."
+                    } else {
+                        "This cancels the pending contact request."
+                    },
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !removingContact && existing?.id != null,
+                    onClick = {
+                        val contactID = existing?.id ?: return@TextButton
+                        scope.launch {
+                            removingContact = true
+                            api.removeContact(session, contactID).onSuccess {
+                                relationship = ContactRelationship(id = null, confirmed = false)
+                                confirmRemoveContact = false
+                            }.onFailure {
+                                if ((it as? MobileApiException)?.isAuthenticationFailure == true) {
+                                    onSessionInvalidated()
+                                }
+                            }
+                            removingContact = false
+                        }
+                    },
+                ) { Text(if (removingContact) "Removing…" else "Confirm") }
+            },
+            dismissButton = {
+                TextButton(enabled = !removingContact, onClick = { confirmRemoveContact = false }) {
+                    Text("Cancel")
+                }
+            },
+        )
     }
     LaunchedEffect(username) {
         if (profile != null) return@LaunchedEffect
@@ -180,125 +264,365 @@ internal fun MemberProfileScreen(
                 }
                 launch { api.contacts(session, id).onSuccess { contacts = it } }
                 launch { api.references(session, id).onSuccess { references = it } }
+                if (member.username != session.member.username) {
+                    launch {
+                        api.contactWith(session, id).onSuccess {
+                            relationship = it
+                            relationshipResolved = true
+                        }.onFailure {
+                            if ((it as? MobileApiException)?.isAuthenticationFailure == true) {
+                                onSessionInvalidated()
+                            } else {
+                                relationshipResolved = true
+                            }
+                        }
+                    }
+                }
             }
         }.onFailure {
             if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
             else error = it.message ?: "Could not load profile."
         }
     }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        if (profile == null && error == null) CircularProgressIndicator(Modifier.padding(20.dp))
-        error?.let {
-            TextButton(onClick = onBack) { Text("‹ Back") }
-            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(20.dp))
-        }
-        profile?.let { member ->
-            Box {
-            ArtworkHero(
-                url = member.id?.let { api.avatarURL(it, 512) },
-                sessionCookie = session.cookieHeader,
-                label = member.displayName,
-                subtitle = "@${member.username}",
-                background = MaterialTheme.colorScheme.primary,
-                blurBackground = true,
-                testTag = "profileHero",
-            )
-            TextButton(onClick = onBack, modifier = Modifier.align(Alignment.TopStart).padding(8.dp)) {
-                Text("‹ Back", color = Color.White)
-            }
-            }
-            Column(Modifier.padding(20.dp)) {
-            if (member.username == session.member.username) {
-                Button(onClick = { editing = true }) { Text("Edit profile") }
-            }
-            member.tagline?.let {
-                Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(), style = MaterialTheme.typography.titleMedium)
-            }
-            member.location?.let { Text(it) }
-            member.description?.let {
+    val isSelf = profile?.username == session.member.username
+    val showContactsTab = isSelf || contacts.isNotEmpty()
+    Column(Modifier.fillMaxSize()) {
+        when {
+            profile == null && error == null -> CircularProgressIndicator(Modifier.padding(20.dp))
+            error != null -> {
+                TextButton(onClick = onBack) { Text("‹ Back") }
                 Text(
-                    Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(),
-                    modifier = Modifier.padding(top = 16.dp),
+                    requireNotNull(error),
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(20.dp),
                 )
             }
-            if (member.languages.isNotEmpty()) {
-                Text("Languages: ${member.languages.joinToString { languageName(it) }}")
-            }
-            if (member.circles.isNotEmpty()) {
-                Text("Circles", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
-                member.circles.forEach { circle ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
-                        RemoteArtwork(
-                            url = if (circle.image) api.circleImageURL(circle.slug) else null,
-                            sessionCookie = null,
-                            label = circle.label,
-                            size = 40.dp,
-                        )
-                        Text(circle.label, modifier = Modifier.padding(start = 10.dp, top = 8.dp))
-                    }
-                }
-            }
-            if (hostingLoaded) {
-                Text("Hosting", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
-                val status = when (hosting?.status) {
-                    "yes" -> "Hosting travellers"
-                    "maybe" -> "Maybe hosting"
-                    else -> "Not hosting currently"
-                }
-                Text(status, fontWeight = FontWeight.Bold)
-                hosting?.let { offer ->
-                    val details = if (offer.status == "yes" || offer.status == "maybe") {
-                        offer.description
-                    } else offer.noOfferDescription
-                    details?.let {
-                        Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
-                    }
-                    if (offer.status == "yes" || offer.status == "maybe") {
-                        offer.maxGuests?.let { Text(if (it == 1) "Space for 1 guest" else "Space for up to $it guests") }
-                    }
-                }
-            }
-            if (member.username != session.member.username && member.id != null) {
-                Button(onClick = {
-                    recipient = MessageMember(member.id, member.username, member.displayName)
-                }) { Text("Message") }
-            }
-            if (contacts.isNotEmpty()) {
-                Text("Contacts", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
-                (if (showAllContacts) contacts else contacts.take(6)).forEach { contact ->
-                    Row(
-                        Modifier.fillMaxWidth().clickable {
-                            contact.user.username?.let { relatedUsername = it }
-                        }.padding(vertical = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically,
+            else -> {
+                val member = requireNotNull(profile)
+                ProfileActionBar(
+                    isSelf = isSelf,
+                    onBack = onBack,
+                    onEditProfile = { editing = true },
+                    onMessage = {
+                        recipient = MessageMember(member.id, member.username, member.displayName)
+                    },
+                    showShareExperience = referencesEnabled,
+                    onShareExperience = { sharingExperience = true },
+                    contactLabel = when {
+                        !relationshipResolved -> null
+                        relationship?.id.isNullOrBlank() -> "Add contact"
+                        relationship?.confirmed == true -> "Remove contact"
+                        else -> "Delete contact request"
+                    },
+                    onContactAction = {
+                        val current = relationship
+                        when {
+                            current?.id.isNullOrBlank() -> {
+                                member.id?.let { id ->
+                                    browserRoute = BrowserRoute(
+                                        title = "Add contact",
+                                        url = "https://www.trustroots.org/contact-add/$id",
+                                        sessionCookie = session.cookieHeader,
+                                    )
+                                }
+                            }
+                            else -> confirmRemoveContact = true
+                        }
+                    },
+                )
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    Column(
+                        Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState()),
                     ) {
-                        RemoteArtwork(contact.user.id?.let { api.avatarURL(it, 64) }, session.cookieHeader, contact.user.label, 36.dp)
-                        Text(contact.user.label, modifier = Modifier.padding(start = 10.dp))
-                    }
-                }
-                if (contacts.size > 6) TextButton(onClick = { showAllContacts = !showAllContacts }) {
-                    Text(if (showAllContacts) "Show fewer" else "More contacts (${contacts.size - 6})")
-                }
-            }
-            if (references.isNotEmpty()) {
-                Text("References", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
-                (if (showAllReferences) references else references.take(6)).forEach { reference ->
-                    Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RemoteArtwork(reference.author.id?.let { api.avatarURL(it, 64) }, session.cookieHeader, reference.author.label, 36.dp)
-                            TextButton(onClick = { reference.author.username?.let { relatedUsername = it } }) {
-                                Text(reference.author.label)
+                        ArtworkHero(
+                            url = member.id?.let { api.avatarURL(it, 512) },
+                            sessionCookie = session.cookieHeader,
+                            label = member.displayName,
+                            subtitle = "@${member.username}",
+                            background = MaterialTheme.colorScheme.primary,
+                            blurBackground = true,
+                            testTag = "profileHero",
+                        )
+                        Column(Modifier.padding(20.dp).padding(bottom = 8.dp)) {
+                            when (section) {
+                                ProfileSection.Overview -> ProfileOverviewSection(
+                                    member = member,
+                                    references = references,
+                                    showAllReferences = showAllReferences,
+                                    onToggleReferences = { showAllReferences = !showAllReferences },
+                                    onOpenRelated = { relatedUsername = it },
+                                    api = api,
+                                    session = session,
+                                )
+                                ProfileSection.About -> ProfileAboutSection(member = member, api = api)
+                                ProfileSection.Hosting -> ProfileHostingSection(
+                                    hosting = hosting,
+                                    hostingLoaded = hostingLoaded,
+                                )
+                                ProfileSection.Contacts -> ProfileContactsSection(
+                                    contacts = contacts,
+                                    showAllContacts = showAllContacts,
+                                    onToggleContacts = { showAllContacts = !showAllContacts },
+                                    onOpenRelated = { relatedUsername = it },
+                                    api = api,
+                                    session = session,
+                                )
                             }
                         }
-                        reference.feedback?.let { Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim()) }
-                        reference.response?.let { Text("Response: ${Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim()}") }
                     }
                 }
-                if (references.size > 6) TextButton(onClick = { showAllReferences = !showAllReferences }) {
-                    Text(if (showAllReferences) "Show fewer" else "More references (${references.size - 6})")
+                ProfileSectionBar(
+                    selected = section,
+                    showContacts = showContactsTab,
+                    contactCount = contacts.size,
+                    onSelect = { section = it },
+                )
+            }
+        }
+    }
+}
+
+private enum class ProfileSection(val label: String) {
+    Overview("Overview"),
+    About("About"),
+    Hosting("Hosting"),
+    Contacts("Contacts"),
+}
+
+@Composable
+private fun ProfileActionBar(
+    isSelf: Boolean,
+    onBack: () -> Unit,
+    onEditProfile: () -> Unit,
+    onMessage: () -> Unit,
+    showShareExperience: Boolean,
+    onShareExperience: () -> Unit,
+    contactLabel: String?,
+    onContactAction: () -> Unit,
+) {
+    Surface(
+        color = TrustrootsPaleGreen,
+        shadowElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth().testTag("profileActions"),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            TextButton(onClick = onBack) { Text("‹ Back") }
+            if (isSelf) {
+                TextButton(onClick = onEditProfile) { Text("Edit your profile") }
+            } else {
+                TextButton(onClick = onMessage) { Text("Send a message") }
+                if (showShareExperience) {
+                    TextButton(onClick = onShareExperience) { Text("Share your experience") }
+                }
+                contactLabel?.let { label ->
+                    TextButton(onClick = onContactAction) { Text(label) }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ProfileSectionBar(
+    selected: ProfileSection,
+    showContacts: Boolean,
+    contactCount: Int,
+    onSelect: (ProfileSection) -> Unit,
+) {
+    val sections = buildList {
+        add(ProfileSection.Overview)
+        add(ProfileSection.About)
+        add(ProfileSection.Hosting)
+        if (showContacts) add(ProfileSection.Contacts)
+    }
+    Surface(
+        color = TrustrootsPaleGreen,
+        shadowElevation = 6.dp,
+        modifier = Modifier.fillMaxWidth().testTag("profileSections"),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            sections.forEach { item ->
+                val label = if (item == ProfileSection.Contacts && contactCount > 0) {
+                    "${item.label} ($contactCount)"
+                } else {
+                    item.label
+                }
+                TextButton(
+                    onClick = { onSelect(item) },
+                    modifier = Modifier.testTag("profileSection-${item.name.lowercase()}"),
+                ) {
+                    Text(
+                        label,
+                        fontWeight = if (selected == item) FontWeight.Bold else FontWeight.Normal,
+                        color = if (selected == item) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun ProfileOverviewSection(
+    member: MemberProfile,
+    references: List<ProfileReference>,
+    showAllReferences: Boolean,
+    onToggleReferences: () -> Unit,
+    onOpenRelated: (String) -> Unit,
+    api: MobileApiClient,
+    session: MemberSession,
+) {
+    member.tagline?.let {
+        Text(
+            Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(),
+            style = MaterialTheme.typography.titleMedium,
+        )
+    }
+    member.location?.let { Text(it, modifier = Modifier.padding(top = 6.dp)) }
+    if (references.isNotEmpty()) {
+        Text("References", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
+        (if (showAllReferences) references else references.take(6)).forEach { reference ->
+            Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RemoteArtwork(
+                        reference.author.id?.let { api.avatarURL(it, 64) },
+                        session.cookieHeader,
+                        reference.author.label,
+                        36.dp,
+                    )
+                    TextButton(onClick = { reference.author.username?.let(onOpenRelated) }) {
+                        Text(reference.author.label)
+                    }
+                }
+                reference.feedback?.let {
+                    Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
+                }
+                reference.response?.let {
+                    Text("Response: ${Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim()}")
+                }
+            }
+        }
+        if (references.size > 6) {
+            TextButton(onClick = onToggleReferences) {
+                Text(if (showAllReferences) "Show fewer" else "More references (${references.size - 6})")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileAboutSection(member: MemberProfile, api: MobileApiClient) {
+    member.description?.let {
+        Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
+    } ?: Text(
+        "No about text yet.",
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    if (member.languages.isNotEmpty()) {
+        Text(
+            "Languages: ${member.languages.joinToString { languageName(it) }}",
+            modifier = Modifier.padding(top = 16.dp),
+        )
+    }
+    if (member.circles.isNotEmpty()) {
+        Text("Circles", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
+        member.circles.forEach { circle ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+                RemoteArtwork(
+                    url = if (circle.image) api.circleImageURL(circle.slug) else null,
+                    sessionCookie = null,
+                    label = circle.label,
+                    size = 40.dp,
+                )
+                Text(circle.label, modifier = Modifier.padding(start = 10.dp, top = 8.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileHostingSection(hosting: AccommodationOffer?, hostingLoaded: Boolean) {
+    if (!hostingLoaded) {
+        CircularProgressIndicator()
+        return
+    }
+    val status = when (hosting?.status) {
+        "yes" -> "Hosting travellers"
+        "maybe" -> "Maybe hosting"
+        else -> "Not hosting currently"
+    }
+    Text(status, fontWeight = FontWeight.Bold)
+    hosting?.let { offer ->
+        val details = if (offer.status == "yes" || offer.status == "maybe") {
+            offer.description
+        } else {
+            offer.noOfferDescription
+        }
+        details?.let {
+            Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
+        }
+        if (offer.status == "yes" || offer.status == "maybe") {
+            offer.maxGuests?.let {
+                Text(if (it == 1) "Space for 1 guest" else "Space for up to $it guests")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileContactsSection(
+    contacts: List<ProfileContact>,
+    showAllContacts: Boolean,
+    onToggleContacts: () -> Unit,
+    onOpenRelated: (String) -> Unit,
+    api: MobileApiClient,
+    session: MemberSession,
+) {
+    if (contacts.isEmpty()) {
+        Text(
+            "People you connect with on Trustroots will appear here.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
+    (if (showAllContacts) contacts else contacts.take(6)).forEach { contact ->
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable { contact.user.username?.let(onOpenRelated) }
+                .padding(vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RemoteArtwork(
+                contact.user.id?.let { api.avatarURL(it, 64) },
+                session.cookieHeader,
+                contact.user.label,
+                36.dp,
+            )
+            Text(contact.user.label, modifier = Modifier.padding(start = 10.dp))
+        }
+    }
+    if (contacts.size > 6) {
+        TextButton(onClick = onToggleContacts) {
+            Text(if (showAllContacts) "Show fewer" else "More contacts (${contacts.size - 6})")
         }
     }
 }
@@ -481,19 +805,34 @@ internal fun ConversationScreen(
     onBack: () -> Unit,
     onOpenProfile: (() -> Unit)? = null,
 ) {
+    val context = LocalContext.current
+    val drafts = remember { MessageDraftStore(context) }
+    val draftKey = member.username ?: member.id.orEmpty()
     var messages by remember(member.id) { mutableStateOf<List<DirectMessage>>(emptyList()) }
-    var draft by remember(member.id) { mutableStateOf("") }
+    var draft by remember(member.id) {
+        mutableStateOf(drafts.load(session.member.username, draftKey))
+    }
     var error by remember(member.id) { mutableStateOf<String?>(null) }
     var sending by remember { mutableStateOf(false) }
+    var messagesLoaded by remember(member.id) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val send: () -> Unit = send@{
-        val id = member.id ?: return@send
-        if (draft.isBlank() || sending) return@send
+    val composerFocus = remember { FocusRequester() }
+    val userHasReplied = messages.any { it.sender.username == session.member.username }
+    val showQuickReply = messagesLoaded && messages.isNotEmpty() && !userHasReplied
+    val updateDraft: (String) -> Unit = { text ->
+        draft = text
+        drafts.save(session.member.username, draftKey, text)
+    }
+    val sendContent: (String) -> Unit = sendContent@{ content ->
+        val id = member.id ?: return@sendContent
+        val trimmed = content.trim()
+        if (trimmed.isBlank() || sending) return@sendContent
         scope.launch {
             sending = true
-            api.sendMessage(session, id, draft).onSuccess {
+            api.sendMessage(session, id, content).onSuccess {
                 messages = listOf(it) + messages
                 draft = ""
+                drafts.clear(session.member.username, draftKey)
                 error = null
             }.onFailure {
                 if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
@@ -502,9 +841,14 @@ internal fun ConversationScreen(
             sending = false
         }
     }
+    val send: () -> Unit = { sendContent(draft) }
     LaunchedEffect(member.id) {
         val id = member.id ?: return@LaunchedEffect
-        api.conversation(session, id).onSuccess { messages = it }.onFailure {
+        api.conversation(session, id).onSuccess {
+            messages = it
+            messagesLoaded = true
+        }.onFailure {
+            messagesLoaded = true
             if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
             else error = it.message ?: "Could not load conversation."
         }
@@ -552,17 +896,147 @@ internal fun ConversationScreen(
                 }
             }
         }
+        if (showQuickReply) {
+            QuickReplyBar(
+                onHostYes = {
+                    sendContent(
+                        """<p data-hosting="yes"><b><i>Yes, I can host!</i></b></p>""",
+                    )
+                },
+                onHostNo = {
+                    sendContent(
+                        """<p data-hosting="no"><b><i>Sorry I can't host</i></b></p>""",
+                    )
+                },
+                onWriteBack = { composerFocus.requestFocus() },
+                enabled = !sending && member.id != null,
+            )
+        }
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
-            draft, { draft = it },
+            draft,
+            updateDraft,
             label = { Text("Message") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-            keyboardActions = KeyboardActions(onSend = { send() }),
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(composerFocus)
+                .testTag("messageComposer"),
+            minLines = 2,
+            maxLines = 8,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
         )
         Button(onClick = send, enabled = member.id != null && draft.isNotBlank() && !sending) {
             Text("Send")
+        }
+    }
+}
+
+@Composable
+private fun QuickReplyBar(
+    onHostYes: () -> Unit,
+    onHostNo: () -> Unit,
+    onWriteBack: () -> Unit,
+    enabled: Boolean,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .testTag("quickReply"),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Button(onClick = onHostYes, enabled = enabled) { Text("Yes, I can host!") }
+        Button(onClick = onHostNo, enabled = enabled) { Text("Sorry I can't host") }
+        TextButton(onClick = onWriteBack, enabled = enabled) { Text("Write back") }
+    }
+}
+
+@Composable
+internal fun ContactsScreen(
+    api: MobileApiClient,
+    session: MemberSession,
+    onSessionInvalidated: () -> Unit,
+    onBack: () -> Unit,
+) {
+    var contacts by remember { mutableStateOf<List<ProfileContact>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var selectedUsername by remember { mutableStateOf<String?>(null) }
+    selectedUsername?.let { username ->
+        MemberProfileScreen(api, session, username, onSessionInvalidated) { selectedUsername = null }
+        return
+    }
+    LaunchedEffect(session.member.username) {
+        loading = true
+        error = null
+        api.profile(session, session.member.username).onSuccess { member ->
+            val memberID = member.id
+            if (memberID == null) {
+                error = "Could not load contacts."
+                loading = false
+                return@onSuccess
+            }
+            api.contacts(session, memberID).onSuccess {
+                contacts = it
+                loading = false
+            }.onFailure {
+                if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                else {
+                    error = it.message ?: "Could not load contacts."
+                    loading = false
+                }
+            }
+        }.onFailure {
+            if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+            else {
+                error = it.message ?: "Could not load contacts."
+                loading = false
+            }
+        }
+    }
+    Column(Modifier.fillMaxSize().padding(20.dp)) {
+        TextButton(onClick = onBack) { Text("‹ Back") }
+        Text("Contacts", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        when {
+            loading -> CircularProgressIndicator(modifier = Modifier.padding(top = 20.dp))
+            error != null -> Text(
+                requireNotNull(error),
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+            contacts.isEmpty() -> Text(
+                "People you connect with on Trustroots will appear here.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+            else -> Column(Modifier.verticalScroll(rememberScrollState()).padding(top = 12.dp)) {
+                contacts.forEach { contact ->
+                    val username = contact.user.username
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .then(
+                                if (username != null) Modifier.clickable { selectedUsername = username }
+                                else Modifier,
+                            )
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RemoteArtwork(
+                            url = contact.user.id?.let { api.avatarURL(it, 64) },
+                            sessionCookie = session.cookieHeader,
+                            label = contact.user.displayName,
+                            size = 54.dp,
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Column {
+                            Text(contact.user.displayName, fontWeight = FontWeight.Bold)
+                            username?.let { Text("@$it") }
+                        }
+                    }
+                    HorizontalDivider()
+                }
+            }
         }
     }
 }

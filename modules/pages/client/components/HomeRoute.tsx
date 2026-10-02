@@ -7,12 +7,15 @@ import {
 } from '@/modules/core/client/react-app/AppProviders';
 import { onClientEvent } from '@/modules/core/client/services/client-runtime';
 import type { PageUser } from '../types';
+import type { Build } from '@/modules/core/client/components/SiteFooter.component';
+import type { PhotoCredit } from '@/modules/core/client/components/BoardCredits';
 
-type PhotoCredits = Record<string, string>;
+type PhotoCredits = Record<string, PhotoCredit>;
 
 export default function HomeRoute({ user }: { user?: PageUser | null }) {
   const { isNativeMobileApp } = useAppConfig();
-  const { build } = useSettings();
+  const { build: rawBuild } = useSettings();
+  const build = rawBuild as Build | undefined;
   const [photoCredits, setPhotoCredits] = useState<PhotoCredits>({});
   const listenForPhotoCredits = onClientEvent as unknown as (
     eventName: 'photoCreditsRemoved' | 'photoCreditsUpdated',
