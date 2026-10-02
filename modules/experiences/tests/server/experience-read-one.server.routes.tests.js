@@ -83,7 +83,10 @@ describe('Read a single experience by experience id', () => {
         .expect(200);
 
       // pre-collect expected values of users
-      const userFields = userProfile.userMiniProfileFields.split(' ').slice(2);
+      const userFields = userProfile.userMiniProfileFields
+        .split(' ')
+        .slice(2)
+        .filter(field => field !== 'avatarVersion');
       const userFromExp = _.pick(users[1], userFields);
       userFromExp._id = users[1]._id.toString();
       const userToExp = _.pick(users[2], userFields);
@@ -112,6 +115,8 @@ describe('Read a single experience by experience id', () => {
           },
         },
       });
+      should(body.userFrom).not.have.property('avatarVersion');
+      should(body.userTo).not.have.property('avatarVersion');
     });
 
     it('read a single private experience if it is from self', async () => {

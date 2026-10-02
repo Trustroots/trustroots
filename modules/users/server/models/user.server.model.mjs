@@ -309,6 +309,9 @@ const UserSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  avatarVersion: {
+    type: String,
+  },
   newsletter: {
     type: Boolean,
     default: false,
