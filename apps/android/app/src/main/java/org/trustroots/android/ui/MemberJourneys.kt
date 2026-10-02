@@ -38,6 +38,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -48,6 +51,7 @@ import org.trustroots.android.api.DirectMessage
 import org.trustroots.android.api.AccommodationOffer
 import org.trustroots.android.api.ContactRelationship
 import org.trustroots.android.api.MemberProfile
+import org.trustroots.android.api.MessageDraftStore
 import org.trustroots.android.api.ProfileContact
 import org.trustroots.android.api.ProfileReference
 import org.trustroots.android.api.ProfileUpdate
@@ -794,19 +798,34 @@ internal fun ConversationScreen(
     onBack: () -> Unit,
     onOpenProfile: (() -> Unit)? = null,
 ) {
+    val context = LocalContext.current
+    val drafts = remember { MessageDraftStore(context) }
+    val draftKey = member.username ?: member.id.orEmpty()
     var messages by remember(member.id) { mutableStateOf<List<DirectMessage>>(emptyList()) }
-    var draft by remember(member.id) { mutableStateOf("") }
+    var draft by remember(member.id) {
+        mutableStateOf(drafts.load(session.member.username, draftKey))
+    }
     var error by remember(member.id) { mutableStateOf<String?>(null) }
     var sending by remember { mutableStateOf(false) }
+    var messagesLoaded by remember(member.id) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    val send: () -> Unit = send@{
-        val id = member.id ?: return@send
-        if (draft.isBlank() || sending) return@send
+    val composerFocus = remember { FocusRequester() }
+    val userHasReplied = messages.any { it.sender.username == session.member.username }
+    val showQuickReply = messagesLoaded && messages.isNotEmpty() && !userHasReplied
+    val updateDraft: (String) -> Unit = { text ->
+        draft = text
+        drafts.save(session.member.username, draftKey, text)
+    }
+    val sendContent: (String) -> Unit = sendContent@{ content ->
+        val id = member.id ?: return@sendContent
+        val trimmed = content.trim()
+        if (trimmed.isBlank() || sending) return@sendContent
         scope.launch {
             sending = true
-            api.sendMessage(session, id, draft).onSuccess {
+            api.sendMessage(session, id, content).onSuccess {
                 messages = listOf(it) + messages
                 draft = ""
+                drafts.clear(session.member.username, draftKey)
                 error = null
             }.onFailure {
                 if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
@@ -815,9 +834,14 @@ internal fun ConversationScreen(
             sending = false
         }
     }
+    val send: () -> Unit = { sendContent(draft) }
     LaunchedEffect(member.id) {
         val id = member.id ?: return@LaunchedEffect
-        api.conversation(session, id).onSuccess { messages = it }.onFailure {
+        api.conversation(session, id).onSuccess {
+            messages = it
+            messagesLoaded = true
+        }.onFailure {
+            messagesLoaded = true
             if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
             else error = it.message ?: "Could not load conversation."
         }
@@ -865,18 +889,58 @@ internal fun ConversationScreen(
                 }
             }
         }
+        if (showQuickReply) {
+            QuickReplyBar(
+                onHostYes = {
+                    sendContent(
+                        """<p data-hosting="yes"><b><i>Yes, I can host!</i></b></p>""",
+                    )
+                },
+                onHostNo = {
+                    sendContent(
+                        """<p data-hosting="no"><b><i>Sorry I can't host</i></b></p>""",
+                    )
+                },
+                onWriteBack = { composerFocus.requestFocus() },
+                enabled = !sending && member.id != null,
+            )
+        }
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
-            draft, { draft = it },
+            draft,
+            updateDraft,
             label = { Text("Message") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-            keyboardActions = KeyboardActions(onSend = { send() }),
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(composerFocus)
+                .testTag("messageComposer"),
+            minLines = 2,
+            maxLines = 8,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
         )
         Button(onClick = send, enabled = member.id != null && draft.isNotBlank() && !sending) {
             Text("Send")
         }
+    }
+}
+
+@Composable
+private fun QuickReplyBar(
+    onHostYes: () -> Unit,
+    onHostNo: () -> Unit,
+    onWriteBack: () -> Unit,
+    enabled: Boolean,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .testTag("quickReply"),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Button(onClick = onHostYes, enabled = enabled) { Text("Yes, I can host!") }
+        Button(onClick = onHostNo, enabled = enabled) { Text("Sorry I can't host") }
+        TextButton(onClick = onWriteBack, enabled = enabled) { Text("Write back") }
     }
 }
 
