@@ -39,10 +39,6 @@ export async function uploadAvatar(file: File): Promise<void> {
   formData.append('avatar', file);
   await axios.post('/api/users-avatar', formData, {
     timeout: 120000,
-    headers: {
-      'Content-Type': file.type || 'application/octet-stream',
-      'X-Trustroots-Request': '1',
-    },
   });
 }
 
