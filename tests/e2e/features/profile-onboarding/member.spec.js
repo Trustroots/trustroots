@@ -304,6 +304,7 @@ test.describe('confirmed member flows', () => {
     if (memberships.some(item => item.tribe._id === hikers._id)) {
       const leave = await request.delete(
         `/api/users/memberships/${hikers._id}`,
+        { headers: { 'X-Trustroots-Request': '1' } },
       );
       expect(leave.ok()).toBeTruthy();
     }

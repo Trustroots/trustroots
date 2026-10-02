@@ -698,7 +698,43 @@ test.describe('authenticated member flows', () => {
     try {
       const throwaway = createUser();
       await registerViaApi(context.request, throwaway);
-      await signInViaApi(page, context.request, throwaway);
+      await page.goto('/');
+      const sameOriginSigninStatus = await page.evaluate(
+        async ({ username, password }) => {
+          const response = await fetch('/api/auth/signin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+          });
+          return response.status;
+        },
+        { username: throwaway.username, password: throwaway.password },
+      );
+      expect(sameOriginSigninStatus).toBe(200);
+
+      const crossOriginSignout = await context.request.post(
+        '/api/auth/signout',
+        {
+          headers: {
+            Origin: 'https://attacker.example',
+            'Content-Type': 'application/json',
+          },
+          data: {},
+        },
+      );
+      expect(crossOriginSignout.status()).toBe(403);
+
+      const originlessFormSignout = await context.request.post(
+        '/api/auth/signout',
+        { form: {} },
+      );
+      expect(originlessFormSignout.status()).toBe(403);
+
+      const getSignout = await context.request.get('/api/auth/signout');
+      expect(getSignout.status()).toBe(405);
+
+      await page.goto('/profile/edit/account');
+      await expect(page).toHaveURL(/\/profile\/edit\/account/);
 
       await signOut(page);
 

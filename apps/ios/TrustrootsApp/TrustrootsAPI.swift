@@ -770,7 +770,8 @@ final class TrustrootsAPI {
         }
         let endpoint = configuration.baseURL.appendingPathComponent("api/auth/signout")
         var request = URLRequest(url: endpoint)
-        request.httpMethod = "GET"
+        request.httpMethod = "POST"
+        request.setValue("1", forHTTPHeaderField: "X-Trustroots-Request")
         authorise(&request)
         _ = try? await session.data(for: request)
         credentialStore.delete()
@@ -1343,6 +1344,9 @@ final class TrustrootsAPI {
     }
 
     private func authorise(_ request: inout URLRequest) {
+        if request.httpMethod != "GET" && request.httpMethod != "HEAD" {
+            request.setValue("1", forHTTPHeaderField: "X-Trustroots-Request")
+        }
         guard let cookieHeader = credentialStore.load()?.cookieHeader else { return }
         request.setValue(cookieHeader, forHTTPHeaderField: "Cookie")
     }

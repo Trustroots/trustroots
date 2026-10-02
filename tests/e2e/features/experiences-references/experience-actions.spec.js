@@ -136,7 +136,11 @@ test.describe.serial('experience and reference feature coverage', () => {
           (await context.request.get(`/api/contact/${contact._id}`)).status(),
         ).toBe(404);
         expect(
-          (await context.request.put(`/api/contact/${contact._id}`)).status(),
+          (
+            await context.request.put(`/api/contact/${contact._id}`, {
+              data: {},
+            })
+          ).status(),
         ).toBe(404);
         expect(
           (await findContactByUsers(senderId, recipientId)).confirmed,
