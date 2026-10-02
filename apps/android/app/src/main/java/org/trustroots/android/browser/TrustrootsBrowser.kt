@@ -40,6 +40,8 @@ data class BrowserRoute(
     val sessionCookie: String? = null,
 )
 
+private const val EMBEDDED_SITE_TEXT_ZOOM_PERCENT = 90
+
 @Composable
 @SuppressLint("SetJavaScriptEnabled")
 fun TrustrootsBrowser(
@@ -88,6 +90,8 @@ fun TrustrootsBrowser(
                 WebView(browserContext).apply {
                     settings.javaScriptEnabled = true
                     settings.domStorageEnabled = true
+                    // Keep the embedded site closer to its mobile-browser text size.
+                    settings.textZoom = EMBEDDED_SITE_TEXT_ZOOM_PERCENT
                     settings.allowFileAccess = false
                     settings.allowContentAccess = false
                     settings.javaScriptCanOpenWindowsAutomatically = false

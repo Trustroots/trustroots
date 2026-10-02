@@ -1,5 +1,6 @@
 package org.trustroots.android.ui
 
+import androidx.activity.compose.BackHandler
 import android.text.Html
 import android.location.Geocoder
 import android.graphics.Bitmap
@@ -100,13 +101,23 @@ internal fun HostMapScreen(
     var includeHosts by remember { mutableStateOf(true) }
     var includeMeet by remember { mutableStateOf(false) }
     var seenMonths by remember { mutableStateOf<Int?>(6) }
-    var selectedCircle by remember { mutableStateOf<TrustrootsCircle?>(null) }
+    var selectedCircleIDs by remember { mutableStateOf(emptySet<String>()) }
     var selectedLanguages by remember { mutableStateOf(setOf<String>()) }
     var languageMenuOpen by remember { mutableStateOf(false) }
     var circles by remember { mutableStateOf<List<TrustrootsCircle>>(emptyList()) }
     var circleMenuOpen by remember { mutableStateOf(false) }
     var mapOverlay by remember { mutableStateOf(MapOverlay.None) }
     var mapRevision by remember { mutableIntStateOf(0) }
+    BackHandler(
+        enabled = profileUsername == null &&
+            (mapOverlay != MapOverlay.None || host != null || selectedNotes.isNotEmpty()),
+    ) {
+        when {
+            mapOverlay != MapOverlay.None -> mapOverlay = MapOverlay.None
+            host != null -> host = null
+            selectedNotes.isNotEmpty() -> selectedNotes = emptyList()
+        }
+    }
     val searchGeneration = remember { AtomicInteger() }
     val searchJob = remember { AtomicReference<Job?>() }
     val map = remember(context) {
@@ -160,7 +171,7 @@ internal fun HostMapScreen(
                 bounds.latNorth.coerceAtMost(90.0),
                 bounds.lonEast.coerceAtMost(180.0),
                 types,
-                selectedCircle?.let { setOf(it.id) } ?: emptySet(),
+                selectedCircleIDs,
                 seenMonths,
                 selectedLanguages,
             ).onSuccess {
@@ -199,7 +210,7 @@ internal fun HostMapScreen(
         val visible = api.visibleNostrAuthors(session, authors).getOrNull() ?: authors
         communityNotes = incomingNotes.filter { it.author in visible }
     }
-    LaunchedEffect(includeHosts, includeMeet, seenMonths, selectedCircle, selectedLanguages) {
+    LaunchedEffect(includeHosts, includeMeet, seenMonths, selectedCircleIDs, selectedLanguages) {
         searchVisibleArea()
     }
     val findLocation: () -> Unit = find@{
@@ -391,16 +402,33 @@ internal fun HostMapScreen(
                         Spacer(Modifier.width(6.dp))
                         Box {
                             FilterChip(
-                                selectedCircle != null,
+                                selectedCircleIDs.isNotEmpty(),
                                 onClick = { circleMenuOpen = true },
-                                label = { Text(selectedCircle?.label ?: "All circles") },
+                                label = {
+                                    Text(
+                                        when (selectedCircleIDs.size) {
+                                            0 -> "All circles"
+                                            1 -> circles.firstOrNull { it.id in selectedCircleIDs }?.label ?: "1 circle"
+                                            else -> "${selectedCircleIDs.size} circles"
+                                        },
+                                    )
+                                },
                             )
                             DropdownMenu(expanded = circleMenuOpen, onDismissRequest = { circleMenuOpen = false }) {
-                                DropdownMenuItem(text = { Text("All circles") }, onClick = { selectedCircle = null; circleMenuOpen = false })
+                                DropdownMenuItem(
+                                    text = { Text("All circles") },
+                                    onClick = { selectedCircleIDs = emptySet(); circleMenuOpen = false },
+                                )
                                 circles.forEach { circle ->
                                     DropdownMenuItem(
-                                        text = { Text(circle.label) },
-                                        onClick = { selectedCircle = circle; circleMenuOpen = false },
+                                        text = { Text("${if (circle.id in selectedCircleIDs) "✓ " else ""}${circle.label}") },
+                                        onClick = {
+                                            selectedCircleIDs = if (circle.id in selectedCircleIDs) {
+                                                selectedCircleIDs - circle.id
+                                            } else {
+                                                selectedCircleIDs + circle.id
+                                            }
+                                        },
                                     )
                                 }
                             }

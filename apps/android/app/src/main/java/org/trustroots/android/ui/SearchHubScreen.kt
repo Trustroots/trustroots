@@ -1,5 +1,6 @@
 package org.trustroots.android.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,6 +33,7 @@ internal fun SearchHubScreen(
 ) {
     var tab by remember(initialTab) { mutableIntStateOf(initialTab) }
     var profileOpen by remember { androidx.compose.runtime.mutableStateOf(false) }
+    BackHandler(enabled = tab == 1 && initialTab == 0 && !profileOpen) { tab = 0 }
     Box(Modifier.fillMaxSize()) {
         when (tab) {
             0 -> HostMapScreen(api, session, onSessionInvalidated, onProfileOpenChange = { profileOpen = it })

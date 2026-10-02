@@ -194,7 +194,7 @@
         margin-bottom: 0px;
         min-height: 43px;
         border-radius: 0;
-        max-height: ~'min(150px, calc(40vh - 45px))';
+        max-height: ~'min(100px, calc(25vh - 45px))';
         &:after {
           top: 2px;
           left: 5px;
@@ -215,14 +215,13 @@
     @media (max-width: @screen-xs-max) {
       height: 45px;
       width: 45px;
-      bottom: 0;
+      bottom: var(--trustroots-keyboard-inset, 0px);
       right: 0;
       position: fixed;
       border-radius: 0;
     }
   }
   @media (max-width: @screen-xs-max) {
-    bottom: 0;
-    max-height: 40vh;
+    max-height: 25vh;
   }
 }

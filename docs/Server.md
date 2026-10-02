@@ -4,6 +4,13 @@ As of October 2022 the production server is deployed at Hetzner Cloud with ansib
 
 SSL certs from Let's Encrypt certbot.
 
+## Avatar upload staging
+
+Deploy the updated Nginx location rules in
+`deploy/files/prod-conf/nginx-location.conf` with the avatar processing
+change. Nginx serves static files before requests reach Express middleware,
+so the rules must deny requests for unpublished staging thumbnails.
+
 
 Kasper, Robin and Callum have access, can deploy and are maintaining off-site encrypted backups.
 
@@ -20,4 +27,3 @@ Leave `https: false` for HTTP development and tests. The lifetime remains 28 day
 Untouched anonymous requests no longer create stored sessions, and unchanged
 authenticated requests refresh expiry through the session store's touch method.
 SameSite is an additional defence; CSRF protection remains separate work.
-

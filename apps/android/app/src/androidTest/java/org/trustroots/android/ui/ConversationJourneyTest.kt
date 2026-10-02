@@ -1,7 +1,8 @@
 package org.trustroots.android.ui
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -15,6 +16,7 @@ import java.io.ByteArrayOutputStream
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -27,13 +29,14 @@ import org.trustroots.android.api.MobileMember
 
 @RunWith(AndroidJUnit4::class)
 class ConversationJourneyTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val server = ServerSocket(0)
 
     @After fun closeServer() = server.close()
 
     @Test fun multilineComposerSendsMessage() {
         val posted = AtomicBoolean(false)
+        val returnedToInbox = AtomicBoolean(false)
         val responder = thread(isDaemon = true) {
             repeat(6) {
                 val connection = runCatching { server.accept() }.getOrNull() ?: return@thread
@@ -65,7 +68,7 @@ class ConversationJourneyTest {
                 session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
                 member = MessageMember("member-one", "quiet-fox", "Quiet Fox"),
                 onSessionInvalidated = {},
-                onBack = {},
+                onBack = { returnedToInbox.set(true) },
             )
         }
         compose.onNodeWithTag("messageComposer").performTextInput("Hello there")
@@ -75,6 +78,8 @@ class ConversationJourneyTest {
             posted.get() && compose.onAllNodesWithText("Hello there").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Just now").assertIsDisplayed()
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        assertTrue(returnedToInbox.get())
         responder.join(1_000)
     }
 
@@ -145,7 +150,7 @@ class ConversationJourneyTest {
                     .fetchSemanticsNodes()
                     .size >= 1
         }
-        assertTrue(postedBody.get().contains("data-hosting=\"yes\""))
+        assertTrue(JSONObject(postedBody.get()).getString("content").contains("data-hosting=\"yes\""))
         responder.join(1_000)
     }
 }

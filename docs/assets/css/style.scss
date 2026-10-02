@@ -252,6 +252,37 @@ h4 {
   outline-offset: 3px;
 }
 
+.apps-qr img {
+  display: block;
+  width: 132px;
+  height: 132px;
+}
+
+.latest-apk-page {
+  max-width: 760px;
+  min-height: 48vh;
+  margin: 4rem auto;
+  padding: clamp(28px, 6vw, 60px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 18px 42px var(--shadow);
+}
+
+.latest-apk-page h1 {
+  margin: 0.5rem 0 1rem;
+  font-size: clamp(36px, 6vw, 58px);
+}
+
+.latest-apk-page p + p {
+  margin-top: 1rem;
+}
+
+.latest-apk-help {
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .main-content {
   > * + * {
     margin-top: 1rem;

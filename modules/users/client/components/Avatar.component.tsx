@@ -10,6 +10,7 @@ type AvatarUser = {
   displayName?: string | null;
   avatarSource?: string;
   avatarUploaded?: boolean;
+  avatarVersion?: string;
   updated?: string;
   emailHash?: string;
   additionalProvidersData?: UserProfile['additionalProvidersData'];
@@ -126,7 +127,11 @@ function localAvatarUrl(user: AvatarUser, size: number): string | undefined {
       validSizes.find(validSize => validSize === size || validSize > size) ||
       2048;
 
-    return `/uploads-profile/${user._id}/avatar/${fileSize}.jpg?${timestamp}`;
+    const version = /^[a-f0-9]{32}$/.test(user.avatarVersion || '')
+      ? `${user.avatarVersion}/`
+      : '';
+
+    return `/uploads-profile/${user._id}/avatar/${version}${fileSize}.jpg?${timestamp}`;
   }
 }
 
