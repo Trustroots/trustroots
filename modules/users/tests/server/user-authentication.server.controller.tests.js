@@ -1,6 +1,7 @@
 /** Unit tests for the OAuth helpers of the authentication controller. */
 const crypto = require('crypto');
 const mongoose = require('mongoose');
+const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 const winston = require('winston');
 const should = require('should');
@@ -12,6 +13,8 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 const User = mongoose.model('User');
+const controllerPath =
+  '../../server/controllers/users.authentication.server.controller';
 
 function stubControllerDependencies(dependencyStubs) {
   for (const [dependencyPath, methods] of Object.entries(dependencyStubs)) {
@@ -434,6 +437,30 @@ describe('Authentication controller OAuth unit tests', () => {
       );
     });
 
+    it('returns retryable service unavailable when password hashing is overloaded', async () => {
+      const overload = Object.assign(
+        new Error('Password service is temporarily busy. Please try again.'),
+        { code: 'KDF_OVERLOADED', userFacing: true },
+      );
+      const controller = proxyquire(controllerPath, {
+        async: {
+          waterfall(steps, done) {
+            done(overload);
+          },
+        },
+        '../../../stats/server/services/stats.server.service': {
+          stat: (statsObject, callback) => callback(),
+        },
+      });
+      const res = deferredResponse();
+
+      controller.signup({ body: {} }, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(503);
+      res.body.message.should.equal(overload.message);
+    });
+
     it('creates a user and logs them in', async () => {
       const controller = loadSignupController();
       const res = deferredResponse();
@@ -622,6 +649,21 @@ describe('Authentication controller OAuth unit tests', () => {
       controller.signin({}, res, () => {});
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+    });
+
+    it('returns retryable service unavailable for password hash overload', async () => {
+      const overload = Object.assign(new Error('busy'), {
+        code: 'KDF_OVERLOADED',
+      });
+      const controller = loadSigninController(() => [overload, null, null]);
+      const res = deferredResponse();
+
+      controller.signin({}, res, () => {});
+      await res.waitForResponse();
+      res.statusCode.should.equal(503);
+      res.body.message.should.equal(
+        'Password service is temporarily busy. Please try again.',
+      );
     });
 
     it('rejects suspended users', async () => {

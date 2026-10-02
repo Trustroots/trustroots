@@ -106,7 +106,7 @@ test.describe.serial('account settings feature coverage', () => {
   }, testInfo) => {
     annotateFeature(testInfo, 'account.password-change', [
       'Concurrent password changes using the same current password cannot both succeed.',
-      'The successful password change atomically updates the hash, salt, timestamp, and session version.',
+      'The successful password change atomically updates the hash, clears the legacy salt, and advances the timestamp and session version.',
     ]);
 
     const user = createUser();
@@ -145,7 +145,8 @@ test.describe.serial('account settings feature coverage', () => {
       const changedUser = await findUserByUsername(user.username);
       expect(changedUser.authVersion).toBe(1);
       expect(changedUser.passwordUpdated).toBeTruthy();
-      expect(changedUser.salt).toBeTruthy();
+      expect(changedUser.salt).toBeFalsy();
+      expect(changedUser.password).toMatch(/^\$scrypt\$v=1\$/);
       expect(changedUser.password).not.toBe(user.password);
 
       const successfulPassword = passwords[responses[0].ok() ? 0 : 1];
