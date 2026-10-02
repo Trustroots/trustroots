@@ -108,9 +108,7 @@ jobs:
             bash apps/android/gradlew -p apps/android assembleDebug
             adb install -r apps/android/app/build/outputs/apk/debug/app-debug.apk
             adb shell am force-stop org.trustroots.android.debug
-            launcher="$(adb shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.LAUNCHER org.trustroots.android.debug | tr -d '\r')"
-            test -n "$launcher"
-            adb shell am start -W -n "$launcher"
+            adb shell am start -W -n org.trustroots.android.debug/org.trustroots.android.MainActivity
             # Compose can render a blank first frame while Android restores the
             # activity. Capture only after the launched activity has settled.
             sleep 8
