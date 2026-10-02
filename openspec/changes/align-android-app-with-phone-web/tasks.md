@@ -23,9 +23,9 @@
 
 ## 4. Phase 3 — Messaging
 
-- [ ] 4.1 Multiline compose and draft persistence aligned with phone web.
-- [ ] 4.2 Hosting QuickReply where applicable.
-- [ ] 4.3 Real unread indicator (not a fixed badge).
+- [x] 4.1 Multiline compose and draft persistence aligned with phone web.
+- [x] 4.2 Hosting QuickReply where applicable.
+- [x] 4.3 Real unread indicator (not a fixed badge).
 
 ## 5. Phase 4 — Search
 

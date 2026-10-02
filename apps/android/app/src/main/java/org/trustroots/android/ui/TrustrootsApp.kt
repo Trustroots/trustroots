@@ -20,7 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.AccountCircle
@@ -350,6 +350,7 @@ private fun MemberShell(
     var isAccountActionRunning by remember { mutableStateOf(false) }
     var accountActionLabel by remember { mutableStateOf<String?>(null) }
     var hasUnreadMessages by remember { mutableStateOf(false) }
+    var unreadMessageCount by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var messagesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var circlesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var searchNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
@@ -362,7 +363,8 @@ private fun MemberShell(
     LaunchedEffect(session, destination, messagesNavigationID) {
         while (true) {
             api.inbox(session).onSuccess { threads ->
-                hasUnreadMessages = threads.any { !it.read }
+                unreadMessageCount = threads.count { !it.read }
+                hasUnreadMessages = unreadMessageCount > 0
             }
             delay(60_000)
         }
@@ -396,7 +398,7 @@ private fun MemberShell(
                             imageVector = when (item) {
                                 Destination.Circles -> Icons.Default.Groups
                                 Destination.Search -> Icons.Default.Search
-                                Destination.Messages -> Icons.AutoMirrored.Filled.Send
+                                Destination.Messages -> Icons.AutoMirrored.Filled.Chat
                                 Destination.Menu -> Icons.Default.Menu
                             },
                             contentDescription = item.label,
@@ -407,7 +409,11 @@ private fun MemberShell(
                                 modifier = Modifier.align(Alignment.TopEnd),
                                 containerColor = Color.Red,
                                 contentColor = Color.White,
-                            ) { Text("1") }
+                            ) {
+                                Text(
+                                    if (unreadMessageCount > 99) "99+" else unreadMessageCount.toString(),
+                                )
+                            }
                         }
                         }
                     }
