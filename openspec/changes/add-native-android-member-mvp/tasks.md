@@ -38,3 +38,8 @@
 
 - [ ] 5.1 Add Firebase Cloud Messaging token registration and native message
       notifications after the core MVP is usable.
+
+## 6. UX parity follow-on
+
+- [ ] 6.1 Phone-web member IA and journey parity continues in
+      `align-android-app-with-phone-web` (Menu first).
