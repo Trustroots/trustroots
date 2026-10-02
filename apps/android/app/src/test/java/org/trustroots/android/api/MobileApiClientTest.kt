@@ -50,9 +50,30 @@ class MobileApiClientTest {
 
     @Test
     fun parsesHostingInformation() {
-        val offer = parseAccommodationOffer(JSONObject("""{"status":"maybe","description":"<p>A sofa</p>","maxGuests":1}"""))
+        val offer = parseAccommodationOffer(
+            JSONObject(
+                """{"_id":"offer-host","status":"maybe","description":"<p>A sofa</p>","noOfferDescription":"Away","maxGuests":1,"showOnlyInMyCircles":true,"location":[51.5,-0.12]}""",
+            ),
+        )
+        assertEquals("offer-host", offer.id)
         assertEquals("maybe", offer.status)
         assertEquals(1, offer.maxGuests)
+        assertTrue(offer.showOnlyInMyCircles)
+        assertEquals(51.5, offer.latitude!!, 0.0001)
+        assertEquals(-0.12, offer.longitude!!, 0.0001)
+    }
+
+    @Test
+    fun parsesAccountDetails() {
+        val details = parseAccountDetails(
+            JSONObject(
+                """{"username":"quiet-fox","displayName":"Quiet Fox","email":"quiet@example.test","emailTemporary":"pending@example.test","newsletter":true}""",
+            ),
+        )
+        assertEquals("quiet-fox", details.username)
+        assertEquals("quiet@example.test", details.email)
+        assertEquals("pending@example.test", details.emailTemporary)
+        assertTrue(details.newsletter)
     }
 
     @Test

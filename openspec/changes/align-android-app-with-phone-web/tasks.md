@@ -33,13 +33,13 @@
 
 ## 6. Phase 5 — Host, experiences and remaining account
 
-- [ ] 6.1 Native Host offer management replacing Menu WebView Host.
-- [ ] 6.2 Native experiences and remaining account settings.
+- [x] 6.1 Native Host offer management replacing Menu WebView Host.
+- [x] 6.2 Native experiences and remaining account settings.
 
 ## 7. Verification
 
-- [ ] 7.1 Validate this OpenSpec change after each phase that edits specs or
+- [x] 7.1 Validate this OpenSpec change after each phase that edits specs or
       tasks.
-- [ ] 7.2 Keep Android lint and unit tests green for landed phases.
+- [x] 7.2 Keep Android lint and unit tests green for landed phases.
 
 Phase 1 note: OpenSpec validated and `./gradlew testDebugUnitTest lintDebug assembleDebug` succeeded after Menu landing.
