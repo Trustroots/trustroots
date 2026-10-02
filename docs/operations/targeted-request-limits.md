@@ -19,6 +19,9 @@ Mongoose automatic index creation, so do not rely on application startup to
 create these indexes.
 
 The HMAC used to store counter keys uses the application's shared
-`sessionSecret`. Keep that secret consistent across application instances.
+`sessionSecret`. In production, use a high-entropy secret and keep it
+consistent across application instances. Rotating it changes every counter
+key, so existing counters will no longer be found until their TTL cleanup
+completes; coordinate a rotation as a reset of active request limits.
 Test configuration sets high limits so route suites that deliberately issue
 many requests from localhost remain unaffected.
