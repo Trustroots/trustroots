@@ -29,7 +29,7 @@
 
 ## 5. Phase 4 — Search
 
-- [ ] 5.1 Filters / place-search patterns closer to mobile `SearchPage`.
+- [x] 5.1 Filters / place-search patterns closer to mobile `SearchPage`.
 
 ## 6. Phase 5 — Host, experiences and remaining account
 
