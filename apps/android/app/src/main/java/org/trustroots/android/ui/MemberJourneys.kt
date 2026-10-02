@@ -1,5 +1,6 @@
 package org.trustroots.android.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -174,6 +175,17 @@ internal fun MemberProfileScreen(
     var removingContact by remember(username) { mutableStateOf(false) }
     var sharingExperience by remember(username) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    BackHandler {
+        when {
+            confirmRemoveContact -> if (!removingContact) confirmRemoveContact = false
+            browserRoute != null -> browserRoute = null
+            recipient != null -> recipient = null
+            relatedUsername != null -> relatedUsername = null
+            sharingExperience -> sharingExperience = false
+            editing -> editing = false
+            else -> onBack()
+        }
+    }
     if (editing && profile != null) {
         EditProfileScreen(
             api, session, requireNotNull(profile), onSessionInvalidated,
@@ -805,6 +817,7 @@ internal fun ConversationScreen(
     onBack: () -> Unit,
     onOpenProfile: (() -> Unit)? = null,
 ) {
+    BackHandler(onBack = onBack)
     val context = LocalContext.current
     val drafts = remember { MessageDraftStore(context) }
     val draftKey = member.username ?: member.id.orEmpty()
