@@ -1,7 +1,8 @@
 package org.trustroots.android.ui
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -9,6 +10,7 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Assert.assertTrue
@@ -21,13 +23,14 @@ import org.trustroots.android.api.MobileMember
 
 @RunWith(AndroidJUnit4::class)
 class ProfileEditingJourneyTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val server = ServerSocket(0)
 
     @After fun closeServer() = server.close()
 
     @Test fun editsOwnProfileAndShowsSavedFields() {
         val savedBody = AtomicReference("")
+        val returnedToMap = AtomicBoolean(false)
         thread(isDaemon = true) {
             repeat(10) {
                 val connection = runCatching { server.accept() }.getOrNull() ?: return@thread
@@ -69,7 +72,7 @@ class ProfileEditingJourneyTest {
             MemberProfileScreen(
                 MobileApiClient("http://127.0.0.1:${server.localPort}"),
                 MemberSession("connect.sid=test", MobileMember("quiet-fox", "Quiet Fox")),
-                "quiet-fox", onSessionInvalidated = {}, onBack = {},
+                "quiet-fox", onSessionInvalidated = {}, onBack = { returnedToMap.set(true) },
             )
         }
         compose.waitUntil(10_000) {
@@ -87,5 +90,7 @@ class ProfileEditingJourneyTest {
         compose.onNodeWithText("Overview").assertIsDisplayed()
         compose.onNodeWithText("About").assertIsDisplayed()
         compose.onNodeWithText("Hosting").assertIsDisplayed()
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        assertTrue(returnedToMap.get())
     }
 }
