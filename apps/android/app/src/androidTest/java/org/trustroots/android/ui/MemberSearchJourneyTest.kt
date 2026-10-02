@@ -20,6 +20,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
@@ -79,8 +80,8 @@ class MemberSearchJourneyTest {
             compose.onAllNodesWithText("Travelling slowly").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Travelling slowly").assertIsDisplayed()
-        compose.onNodeWithText("Members").assertDoesNotExist()
-        compose.onNodeWithText("Hosts map").assertDoesNotExist()
+        assertTrue(compose.onAllNodesWithText("Members").fetchSemanticsNodes().isEmpty())
+        assertTrue(compose.onAllNodesWithText("Hosts map").fetchSemanticsNodes().isEmpty())
         val profileHero = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot
         val screen = compose.onRoot().fetchSemanticsNode().boundsInRoot
         assertEquals(screen.left, profileHero.left, 1f)
@@ -89,12 +90,19 @@ class MemberSearchJourneyTest {
             compose.onAllNodesWithContentDescription("Quiet Fox image").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithContentDescription("Quiet Fox image").assertIsDisplayed()
-        compose.onNodeWithText("Hosting", useUnmergedTree = true).assertIsDisplayed()
-        compose.onNodeWithText("Spare room").assertIsDisplayed()
-        compose.onNodeWithText("Languages: English, Portuguese").assertIsDisplayed()
-        compose.onNodeWithText("Contacts").assertIsDisplayed()
+        compose.onNodeWithText("Send a message").assertIsDisplayed()
+        compose.onNodeWithText("Share your experience").assertIsDisplayed()
         compose.onNodeWithText("References").assertIsDisplayed()
         compose.onNodeWithText("A thoughtful guest").assertIsDisplayed()
+        compose.onNodeWithText("About").performClick()
+        compose.onNodeWithText("Languages: English, Portuguese").assertIsDisplayed()
+        compose.onNodeWithText("Hosting").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Spare room").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Spare room").assertIsDisplayed()
+        compose.onNodeWithText("Contacts").performClick()
+        compose.onNodeWithText("Calm Lynx").assertIsDisplayed()
         compose.onNodeWithText("‹ Back").performClick()
         compose.onNodeWithText("Members").assertIsDisplayed()
         responder.join(1_000)

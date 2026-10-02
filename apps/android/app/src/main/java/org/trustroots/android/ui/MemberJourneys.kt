@@ -1,6 +1,7 @@
 package org.trustroots.android.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,6 +23,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.text.KeyboardActions
@@ -36,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.ImeAction
@@ -52,6 +55,9 @@ import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MessageThread
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.browser.BrowserRoute
+import org.trustroots.android.browser.TrustrootsBrowser
+import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 import java.util.Locale
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -152,6 +158,8 @@ internal fun MemberProfileScreen(
     var showAllContacts by remember(username) { mutableStateOf(false) }
     var showAllReferences by remember(username) { mutableStateOf(false) }
     var editing by remember(username) { mutableStateOf(startInEditMode) }
+    var section by remember(username) { mutableStateOf(ProfileSection.Overview) }
+    var browserRoute by remember(username) { mutableStateOf<BrowserRoute?>(null) }
     if (editing && profile != null) {
         EditProfileScreen(
             api, session, requireNotNull(profile), onSessionInvalidated,
@@ -166,6 +174,10 @@ internal fun MemberProfileScreen(
     }
     recipient?.let {
         ConversationScreen(api, session, it, onSessionInvalidated, onBack = { recipient = null })
+        return
+    }
+    browserRoute?.let { route ->
+        TrustrootsBrowser(route = route, onClose = { browserRoute = null })
         return
     }
     LaunchedEffect(username) {
@@ -187,119 +199,331 @@ internal fun MemberProfileScreen(
             else error = it.message ?: "Could not load profile."
         }
     }
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        if (profile == null && error == null) CircularProgressIndicator(Modifier.padding(20.dp))
-        error?.let {
-            TextButton(onClick = onBack) { Text("‹ Back") }
-            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(20.dp))
-        }
-        profile?.let { member ->
-            Box {
-            ArtworkHero(
-                url = member.id?.let { api.avatarURL(it, 512) },
-                sessionCookie = session.cookieHeader,
-                label = member.displayName,
-                subtitle = "@${member.username}",
-                background = MaterialTheme.colorScheme.primary,
-                blurBackground = true,
-                testTag = "profileHero",
-            )
-            TextButton(onClick = onBack, modifier = Modifier.align(Alignment.TopStart).padding(8.dp)) {
-                Text("‹ Back", color = Color.White)
-            }
-            }
-            Column(Modifier.padding(20.dp)) {
-            if (member.username == session.member.username) {
-                Button(onClick = { editing = true }) { Text("Edit profile") }
-            }
-            member.tagline?.let {
-                Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(), style = MaterialTheme.typography.titleMedium)
-            }
-            member.location?.let { Text(it) }
-            member.description?.let {
+    val isSelf = profile?.username == session.member.username
+    val showContactsTab = isSelf || contacts.isNotEmpty()
+    Column(Modifier.fillMaxSize()) {
+        when {
+            profile == null && error == null -> CircularProgressIndicator(Modifier.padding(20.dp))
+            error != null -> {
+                TextButton(onClick = onBack) { Text("‹ Back") }
                 Text(
-                    Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(),
-                    modifier = Modifier.padding(top = 16.dp),
+                    requireNotNull(error),
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(20.dp),
                 )
             }
-            if (member.languages.isNotEmpty()) {
-                Text("Languages: ${member.languages.joinToString { languageName(it) }}")
-            }
-            if (member.circles.isNotEmpty()) {
-                Text("Circles", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
-                member.circles.forEach { circle ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
-                        RemoteArtwork(
-                            url = if (circle.image) api.circleImageURL(circle.slug) else null,
-                            sessionCookie = null,
-                            label = circle.label,
-                            size = 40.dp,
+            else -> {
+                val member = requireNotNull(profile)
+                Box {
+                    ArtworkHero(
+                        url = member.id?.let { api.avatarURL(it, 512) },
+                        sessionCookie = session.cookieHeader,
+                        label = member.displayName,
+                        subtitle = "@${member.username}",
+                        background = MaterialTheme.colorScheme.primary,
+                        blurBackground = true,
+                        testTag = "profileHero",
+                    )
+                    TextButton(onClick = onBack, modifier = Modifier.align(Alignment.TopStart).padding(8.dp)) {
+                        Text("‹ Back", color = Color.White)
+                    }
+                }
+                ProfileActionBar(
+                    isSelf = isSelf,
+                    onEditProfile = { editing = true },
+                    onMessage = {
+                        recipient = MessageMember(member.id, member.username, member.displayName)
+                    },
+                    onShareExperience = {
+                        browserRoute = BrowserRoute(
+                            title = "Share your experience",
+                            url = "https://www.trustroots.org/profile/${member.username}/experiences/new",
                         )
-                        Text(circle.label, modifier = Modifier.padding(start = 10.dp, top = 8.dp))
-                    }
-                }
-            }
-            if (hostingLoaded) {
-                Text("Hosting", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
-                val status = when (hosting?.status) {
-                    "yes" -> "Hosting travellers"
-                    "maybe" -> "Maybe hosting"
-                    else -> "Not hosting currently"
-                }
-                Text(status, fontWeight = FontWeight.Bold)
-                hosting?.let { offer ->
-                    val details = if (offer.status == "yes" || offer.status == "maybe") {
-                        offer.description
-                    } else offer.noOfferDescription
-                    details?.let {
-                        Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
-                    }
-                    if (offer.status == "yes" || offer.status == "maybe") {
-                        offer.maxGuests?.let { Text(if (it == 1) "Space for 1 guest" else "Space for up to $it guests") }
-                    }
-                }
-            }
-            if (member.username != session.member.username && member.id != null) {
-                Button(onClick = {
-                    recipient = MessageMember(member.id, member.username, member.displayName)
-                }) { Text("Message") }
-            }
-            if (contacts.isNotEmpty()) {
-                Text("Contacts", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
-                (if (showAllContacts) contacts else contacts.take(6)).forEach { contact ->
-                    Row(
-                        Modifier.fillMaxWidth().clickable {
-                            contact.user.username?.let { relatedUsername = it }
-                        }.padding(vertical = 5.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RemoteArtwork(contact.user.id?.let { api.avatarURL(it, 64) }, session.cookieHeader, contact.user.label, 36.dp)
-                        Text(contact.user.label, modifier = Modifier.padding(start = 10.dp))
-                    }
-                }
-                if (contacts.size > 6) TextButton(onClick = { showAllContacts = !showAllContacts }) {
-                    Text(if (showAllContacts) "Show fewer" else "More contacts (${contacts.size - 6})")
-                }
-            }
-            if (references.isNotEmpty()) {
-                Text("References", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
-                (if (showAllReferences) references else references.take(6)).forEach { reference ->
-                    Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RemoteArtwork(reference.author.id?.let { api.avatarURL(it, 64) }, session.cookieHeader, reference.author.label, 36.dp)
-                            TextButton(onClick = { reference.author.username?.let { relatedUsername = it } }) {
-                                Text(reference.author.label)
-                            }
+                    },
+                    onAddContact = {
+                        member.id?.let { id ->
+                            browserRoute = BrowserRoute(
+                                title = "Add contact",
+                                url = "https://www.trustroots.org/contact-add/$id",
+                            )
                         }
-                        reference.feedback?.let { Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim()) }
-                        reference.response?.let { Text("Response: ${Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim()}") }
+                    },
+                )
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    Column(
+                        Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState())
+                            .padding(20.dp)
+                            .padding(bottom = 8.dp),
+                    ) {
+                        when (section) {
+                            ProfileSection.Overview -> ProfileOverviewSection(
+                                member = member,
+                                references = references,
+                                showAllReferences = showAllReferences,
+                                onToggleReferences = { showAllReferences = !showAllReferences },
+                                onOpenRelated = { relatedUsername = it },
+                                api = api,
+                                session = session,
+                            )
+                            ProfileSection.About -> ProfileAboutSection(member = member, api = api)
+                            ProfileSection.Hosting -> ProfileHostingSection(
+                                hosting = hosting,
+                                hostingLoaded = hostingLoaded,
+                            )
+                            ProfileSection.Contacts -> ProfileContactsSection(
+                                contacts = contacts,
+                                showAllContacts = showAllContacts,
+                                onToggleContacts = { showAllContacts = !showAllContacts },
+                                onOpenRelated = { relatedUsername = it },
+                                api = api,
+                                session = session,
+                            )
+                        }
                     }
                 }
-                if (references.size > 6) TextButton(onClick = { showAllReferences = !showAllReferences }) {
-                    Text(if (showAllReferences) "Show fewer" else "More references (${references.size - 6})")
+                ProfileSectionBar(
+                    selected = section,
+                    showContacts = showContactsTab,
+                    contactCount = contacts.size,
+                    onSelect = { section = it },
+                )
+            }
+        }
+    }
+}
+
+private enum class ProfileSection(val label: String) {
+    Overview("Overview"),
+    About("About"),
+    Hosting("Hosting"),
+    Contacts("Contacts"),
+}
+
+@Composable
+private fun ProfileActionBar(
+    isSelf: Boolean,
+    onEditProfile: () -> Unit,
+    onMessage: () -> Unit,
+    onShareExperience: () -> Unit,
+    onAddContact: () -> Unit,
+) {
+    Surface(
+        color = TrustrootsPaleGreen,
+        shadowElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth().testTag("profileActions"),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            if (isSelf) {
+                TextButton(onClick = onEditProfile) { Text("Edit your profile") }
+            } else {
+                TextButton(onClick = onMessage) { Text("Send a message") }
+                TextButton(onClick = onShareExperience) { Text("Share your experience") }
+                TextButton(onClick = onAddContact) { Text("Add contact") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileSectionBar(
+    selected: ProfileSection,
+    showContacts: Boolean,
+    contactCount: Int,
+    onSelect: (ProfileSection) -> Unit,
+) {
+    val sections = buildList {
+        add(ProfileSection.Overview)
+        add(ProfileSection.About)
+        add(ProfileSection.Hosting)
+        if (showContacts) add(ProfileSection.Contacts)
+    }
+    Surface(
+        color = TrustrootsPaleGreen,
+        shadowElevation = 6.dp,
+        modifier = Modifier.fillMaxWidth().testTag("profileSections"),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+        ) {
+            sections.forEach { item ->
+                val label = if (item == ProfileSection.Contacts && contactCount > 0) {
+                    "${item.label} ($contactCount)"
+                } else {
+                    item.label
+                }
+                TextButton(
+                    onClick = { onSelect(item) },
+                    modifier = Modifier.testTag("profileSection-${item.name.lowercase()}"),
+                ) {
+                    Text(
+                        label,
+                        fontWeight = if (selected == item) FontWeight.Bold else FontWeight.Normal,
+                        color = if (selected == item) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ProfileOverviewSection(
+    member: MemberProfile,
+    references: List<ProfileReference>,
+    showAllReferences: Boolean,
+    onToggleReferences: () -> Unit,
+    onOpenRelated: (String) -> Unit,
+    api: MobileApiClient,
+    session: MemberSession,
+) {
+    member.tagline?.let {
+        Text(
+            Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(),
+            style = MaterialTheme.typography.titleMedium,
+        )
+    }
+    member.location?.let { Text(it, modifier = Modifier.padding(top = 6.dp)) }
+    if (references.isNotEmpty()) {
+        Text("References", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
+        (if (showAllReferences) references else references.take(6)).forEach { reference ->
+            Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RemoteArtwork(
+                        reference.author.id?.let { api.avatarURL(it, 64) },
+                        session.cookieHeader,
+                        reference.author.label,
+                        36.dp,
+                    )
+                    TextButton(onClick = { reference.author.username?.let(onOpenRelated) }) {
+                        Text(reference.author.label)
+                    }
+                }
+                reference.feedback?.let {
+                    Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
+                }
+                reference.response?.let {
+                    Text("Response: ${Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim()}")
+                }
             }
+        }
+        if (references.size > 6) {
+            TextButton(onClick = onToggleReferences) {
+                Text(if (showAllReferences) "Show fewer" else "More references (${references.size - 6})")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileAboutSection(member: MemberProfile, api: MobileApiClient) {
+    member.description?.let {
+        Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
+    } ?: Text(
+        "No about text yet.",
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    if (member.languages.isNotEmpty()) {
+        Text(
+            "Languages: ${member.languages.joinToString { languageName(it) }}",
+            modifier = Modifier.padding(top = 16.dp),
+        )
+    }
+    if (member.circles.isNotEmpty()) {
+        Text("Circles", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
+        member.circles.forEach { circle ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+                RemoteArtwork(
+                    url = if (circle.image) api.circleImageURL(circle.slug) else null,
+                    sessionCookie = null,
+                    label = circle.label,
+                    size = 40.dp,
+                )
+                Text(circle.label, modifier = Modifier.padding(start = 10.dp, top = 8.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileHostingSection(hosting: AccommodationOffer?, hostingLoaded: Boolean) {
+    if (!hostingLoaded) {
+        CircularProgressIndicator()
+        return
+    }
+    val status = when (hosting?.status) {
+        "yes" -> "Hosting travellers"
+        "maybe" -> "Maybe hosting"
+        else -> "Not hosting currently"
+    }
+    Text(status, fontWeight = FontWeight.Bold)
+    hosting?.let { offer ->
+        val details = if (offer.status == "yes" || offer.status == "maybe") {
+            offer.description
+        } else {
+            offer.noOfferDescription
+        }
+        details?.let {
+            Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
+        }
+        if (offer.status == "yes" || offer.status == "maybe") {
+            offer.maxGuests?.let {
+                Text(if (it == 1) "Space for 1 guest" else "Space for up to $it guests")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileContactsSection(
+    contacts: List<ProfileContact>,
+    showAllContacts: Boolean,
+    onToggleContacts: () -> Unit,
+    onOpenRelated: (String) -> Unit,
+    api: MobileApiClient,
+    session: MemberSession,
+) {
+    if (contacts.isEmpty()) {
+        Text(
+            "People you connect with on Trustroots will appear here.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
+    (if (showAllContacts) contacts else contacts.take(6)).forEach { contact ->
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable { contact.user.username?.let(onOpenRelated) }
+                .padding(vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RemoteArtwork(
+                contact.user.id?.let { api.avatarURL(it, 64) },
+                session.cookieHeader,
+                contact.user.label,
+                36.dp,
+            )
+            Text(contact.user.label, modifier = Modifier.padding(start = 10.dp))
+        }
+    }
+    if (contacts.size > 6) {
+        TextButton(onClick = onToggleContacts) {
+            Text(if (showAllContacts) "Show fewer" else "More contacts (${contacts.size - 6})")
         }
     }
 }

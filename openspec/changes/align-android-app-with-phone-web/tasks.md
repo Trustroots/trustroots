@@ -18,8 +18,8 @@
 
 ## 3. Phase 2 — Profile chrome
 
-- [ ] 3.1 Add sticky profile actions equivalent to phone web top small nav.
-- [ ] 3.2 Add section navigation equivalent to phone web bottom profile tabs.
+- [x] 3.1 Add sticky profile actions equivalent to phone web top small nav.
+- [x] 3.2 Add section navigation equivalent to phone web bottom profile tabs.
 
 ## 4. Phase 3 — Messaging
 

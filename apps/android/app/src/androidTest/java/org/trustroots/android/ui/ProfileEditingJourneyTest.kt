@@ -75,7 +75,7 @@ class ProfileEditingJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Old line").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Edit profile").performClick()
+        compose.onNodeWithText("Edit your profile").performClick()
         compose.onNodeWithText("Tagline").performTextReplacement("New line")
         compose.onNodeWithText("Save profile").performClick()
         compose.waitUntil(10_000) { savedBody.get().isNotBlank() }
@@ -84,5 +84,8 @@ class ProfileEditingJourneyTest {
             compose.onAllNodesWithText("New line").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("New line").assertIsDisplayed()
+        compose.onNodeWithText("Overview").assertIsDisplayed()
+        compose.onNodeWithText("About").assertIsDisplayed()
+        compose.onNodeWithText("Hosting").assertIsDisplayed()
     }
 }
