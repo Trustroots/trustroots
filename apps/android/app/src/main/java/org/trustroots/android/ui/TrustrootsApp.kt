@@ -438,12 +438,14 @@ private fun MemberShell(
                             browserRoute = BrowserRoute(
                                 title = "Host",
                                 url = "https://www.trustroots.org/offer/host",
+                                sessionCookie = session.cookieHeader,
                             )
                         },
                         openNostroots = {
                             browserRoute = BrowserRoute(
                                 title = "Nostroots",
                                 url = "https://nos.trustroots.org/",
+                                sessionCookie = session.cookieHeader,
                             )
                         },
                         openContacts = { menuPage = MenuPage.Contacts },

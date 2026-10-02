@@ -76,6 +76,11 @@ data class AccommodationOffer(
 
 data class ProfileContact(val id: String, val user: MessageMember)
 
+data class ContactRelationship(
+    val id: String?,
+    val confirmed: Boolean,
+)
+
 data class ProfileReference(
     val id: String,
     val author: MessageMember,
@@ -161,6 +166,36 @@ class MobileApiClient(
                 parseContacts(JSONArray(jsonRequest(
                     "/api/contacts/${encode(memberID)}", "GET", sessionCookie = session.cookieHeader,
                 ).body))
+            }
+        }
+
+    suspend fun contactWith(session: MemberSession, memberID: String): Result<ContactRelationship> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val response = runCatching {
+                    jsonRequest(
+                        "/api/contact-by/${encode(memberID)}", "GET",
+                        sessionCookie = session.cookieHeader,
+                    )
+                }
+                val body = response.getOrElse { error ->
+                    if ((error as? MobileApiException)?.statusCode == HttpURLConnection.HTTP_NOT_FOUND) {
+                        return@runCatching ContactRelationship(id = null, confirmed = false)
+                    }
+                    throw error
+                }
+                parseContactRelationship(JSONObject(body.body))
+            }
+        }
+
+    suspend fun removeContact(session: MemberSession, contactID: String): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                jsonRequest(
+                    "/api/contact/${encode(contactID)}", "DELETE",
+                    sessionCookie = session.cookieHeader,
+                )
+                Unit
             }
         }
 
@@ -534,6 +569,12 @@ internal fun parseContacts(values: JSONArray): List<ProfileContact> =
         val user = item.optJSONObject("user") ?: return@mapNotNull null
         ProfileContact(item.optionalText("_id") ?: return@mapNotNull null, parseMessageMember(user))
     }
+
+internal fun parseContactRelationship(value: JSONObject): ContactRelationship =
+    ContactRelationship(
+        id = value.optionalText("_id"),
+        confirmed = value.optBoolean("confirmed", false),
+    )
 
 internal fun parseReferences(values: JSONArray): List<ProfileReference> =
     (0 until values.length()).mapNotNull { index ->

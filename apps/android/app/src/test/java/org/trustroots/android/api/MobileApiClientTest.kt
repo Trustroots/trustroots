@@ -62,6 +62,11 @@ class MobileApiClientTest {
         assertEquals("Calm Lynx", contacts.single().user.label)
         assertEquals("A thoughtful guest", references.single().feedback)
         assertEquals("Thank you", references.single().response)
+        val relationship = parseContactRelationship(
+            JSONObject("""{"_id":"contact-nine","confirmed":true}"""),
+        )
+        assertEquals("contact-nine", relationship.id)
+        assertTrue(relationship.confirmed)
     }
 
     @Test

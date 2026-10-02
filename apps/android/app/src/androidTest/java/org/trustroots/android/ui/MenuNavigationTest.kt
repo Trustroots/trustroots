@@ -1,10 +1,11 @@
 package org.trustroots.android.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,6 +41,6 @@ class MenuNavigationTest {
         compose.onNodeWithText("Safety").assertIsDisplayed()
         compose.onNodeWithText("Contact and support").assertIsDisplayed()
         compose.onNodeWithText("View your profile").assertIsDisplayed()
-        compose.onNodeWithText("Sign out").assertDoesNotExist()
+        assertTrue(compose.onAllNodesWithText("Sign out").fetchSemanticsNodes().isEmpty())
     }
 }
