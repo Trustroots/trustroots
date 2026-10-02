@@ -1,3 +1,4 @@
+/* global document, getComputedStyle */
 const {
   annotateFeature,
   expect,
@@ -43,6 +44,20 @@ test.describe('public footer', () => {
       footer.getByRole('link', { name: 'Trustroots Foundation' }),
     ).toHaveCount(0);
     await expect(footer.locator('.icon-github')).toHaveCount(1);
+    const githubIconFont = await footer
+      .locator('.icon-github')
+      .evaluate(async icon => {
+        const style = getComputedStyle(icon, '::before');
+        const faces = await document.fonts.load('16px tricons', '\ue822');
+        return {
+          content: style.content,
+          family: style.fontFamily,
+          statuses: faces.map(face => face.status),
+        };
+      });
+    expect(githubIconFont.family).toContain('tricons');
+    expect(githubIconFont.content).not.toBe('none');
+    expect(githubIconFont.statuses).toEqual(['loaded']);
     await expect(
       footer.getByRole('link', { name: /currently deployed code/i }),
     ).toHaveAttribute(

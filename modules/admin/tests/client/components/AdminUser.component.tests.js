@@ -1012,6 +1012,9 @@ describe('<AdminUser />', () => {
     submitMemberSearch(userId);
 
     await screen.findByRole('heading', { name: 'Alice Example report card' });
+    expect(
+      screen.queryByRole('button', { name: 'Unshadowban' }),
+    ).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Suspend' }));
 
     expect(window.confirm).toHaveBeenCalledWith('Set alice role to suspended?');
@@ -1041,6 +1044,80 @@ describe('<AdminUser />', () => {
       ),
     );
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledTimes(2));
+  });
+
+  it('confirms unshadowbanning and refreshes the member report', async () => {
+    window.confirm = jest.fn(() => true);
+    const shadowbanned = makeReportCard({
+      profile: { _id: userId, username: 'river', roles: ['user', 'shadowban'] },
+    });
+    const restored = makeReportCard({
+      profile: { _id: userId, username: 'river', roles: ['user'] },
+    });
+    usersApi.getUser
+      .mockResolvedValueOnce(shadowbanned)
+      .mockResolvedValueOnce(restored);
+    usersApi.setUserRole.mockResolvedValueOnce({});
+    render(<AdminUser />);
+    submitMemberSearch(userId);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Unshadowban' }));
+    expect(window.confirm).toHaveBeenCalledWith(
+      'Unshadowban river? Past hidden messages will stay hidden.',
+    );
+    await waitFor(() =>
+      expect(usersApi.setUserRole).toHaveBeenCalledWith(
+        userId,
+        'shadowban',
+        'remove',
+      ),
+    );
+    await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: 'Unshadowban' }),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it('keeps a shadowban when its confirmation is declined', async () => {
+    window.confirm = jest.fn(() => false);
+    usersApi.getUser.mockResolvedValueOnce(
+      makeReportCard({
+        profile: {
+          _id: userId,
+          username: 'river',
+          roles: ['user', 'shadowban'],
+        },
+      }),
+    );
+    render(<AdminUser />);
+    submitMemberSearch(userId);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Unshadowban' }));
+    expect(usersApi.setUserRole).not.toHaveBeenCalled();
+  });
+
+  it('reports failed unshadowbanning and re-enables the action', async () => {
+    window.confirm = jest.fn(() => true);
+    usersApi.getUser.mockResolvedValueOnce(
+      makeReportCard({
+        profile: {
+          _id: userId,
+          username: 'river',
+          roles: ['user', 'shadowban'],
+        },
+      }),
+    );
+    usersApi.setUserRole.mockRejectedValueOnce(new Error('Unavailable'));
+    render(<AdminUser />);
+    submitMemberSearch(userId);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Unshadowban' }));
+    expect(
+      await screen.findByText('Could not change the role. Please try again.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Unshadowban' })).toBeEnabled();
   });
 
   it('shows failed role changes and re-enables the control', async () => {

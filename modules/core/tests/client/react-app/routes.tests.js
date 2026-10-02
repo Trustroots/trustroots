@@ -530,6 +530,11 @@ describe('React route ownership', () => {
     });
   });
 
+  it('renders no message thread when the route has no authenticated user', () => {
+    const { container } = renderRoute(findRoute('/messages/bob'), null);
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it('renders circle list and detail routes for guests and members', () => {
     const circlesRoute = findRoute('/circles');
     const detailRoute = findRoute('/circles/hitchhikers');

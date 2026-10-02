@@ -286,7 +286,7 @@ export default function SearchMap({
   /**
    * Debounce setting persistent map state to avoid performance issues
    */
-  const [debouncedSetPersistentMapLocation] = useDebouncedCallback(
+  const debouncedSetPersistentMapLocation = useDebouncedCallback(
     setPersistentMapLocation,
     // delay in ms
     1000,
@@ -333,7 +333,9 @@ export default function SearchMap({
     typeof mapStyle === 'string' && mapStyle.startsWith('mapbox://');
   const effectiveMapStyle =
     !MAPBOX_TOKEN && isMapboxStyle ? MAP_STYLE_OSM : mapStyle;
-  const isOsmStyle = effectiveMapStyle?.name === MAP_STYLE_OSM.name;
+  const isOsmStyle =
+    typeof effectiveMapStyle !== 'string' &&
+    effectiveMapStyle?.name === MAP_STYLE_OSM.name;
   // If no mapbox token, and we're in production, don't show the style switcher
   const showMapStyles =
     webGLSupported && (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
@@ -468,7 +470,7 @@ export default function SearchMap({
   /**
    * Debounce getting fresh offers for new map state to avoid performance issues
    */
-  const [debouncedUpdateOffers] = useDebouncedCallback(
+  const debouncedUpdateOffers = useDebouncedCallback(
     updateOffers,
     // delay in ms
     500,
@@ -968,7 +970,7 @@ export default function SearchMap({
           persistentMapLocation?.latitude ?? DEFAULT_LOCATION.lat,
           persistentMapLocation?.longitude ?? DEFAULT_LOCATION.lng,
         ]}
-        mapboxApiAccessToken={MAPBOX_TOKEN}
+        mapboxApiAccessToken={MAPBOX_TOKEN || undefined}
         mapStyle={effectiveMapStyle}
         onClick={onClickMap}
         onError={event => handleMapError(event)}

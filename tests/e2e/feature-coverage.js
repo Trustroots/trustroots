@@ -151,11 +151,16 @@ const features = [
       'Homepage footer links to public statistics.',
       'Homepage footer links to safety guidance.',
       'Optional circle/tribe query parameters do not break the page.',
+      'Home circles have space below the preceding image at desktop and mobile widths.',
     ],
     relatedSpecs: [
       spec(
         'auth-smoke.spec.js',
         'homepage loads and exposes authentication entry points',
+      ),
+      spec(
+        'bootstrap-ui-regressions.spec.js',
+        'home circles have room below the preceding image',
       ),
     ],
   },
@@ -283,9 +288,14 @@ const features = [
       ],
       apiRoutes: [],
     },
-    requiredScenarios: ['General FAQ page loads.'],
+    requiredScenarios: [
+      'General FAQ page loads.',
+      'FAQ filter matches answer text and can be cleared.',
+      'FAQ filter reports when no questions match.',
+    ],
     relatedSpecs: [
       spec('public-pages.spec.js', 'public marketing page /faq loads'),
+      spec('faq-filter.spec.js', 'visitors can filter FAQ questions'),
     ],
   },
   {
@@ -481,7 +491,9 @@ const features = [
           requiresAuth: true,
         }),
       ],
-      apiRoutes: [apiRoute('GET', '/api/auth/signout', source.usersAuthServer)],
+      apiRoutes: [
+        apiRoute('POST', '/api/auth/signout', source.usersAuthServer),
+      ],
     },
     requiredScenarios: [
       'Member navigation page loads.',
@@ -849,7 +861,9 @@ const features = [
           requiresAuth: true,
         }),
       ],
-      apiRoutes: [apiRoute('GET', '/api/auth/signout', source.usersAuthServer)],
+      apiRoutes: [
+        apiRoute('POST', '/api/auth/signout', source.usersAuthServer),
+      ],
     },
     requiredScenarios: [
       'Sign out endpoint clears the session.',
@@ -1077,9 +1091,15 @@ const features = [
       'Account edit page is reachable.',
       'Valid account details update persists.',
       'Invalid account details show validation errors.',
+      'The community newsletter checkbox has space before its label.',
+      'Username change rules are visible in account settings.',
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'profile edit account page is reachable'),
+      spec(
+        'bootstrap-ui-regressions.spec.js',
+        'place borders and account checkbox spacing survive Bootstrap 5',
+      ),
     ],
   },
   {
@@ -1604,6 +1624,7 @@ const features = [
       'Mouse-wheel input works at low zoom.',
       'Page-based wheel events visibly zoom the rendered map.',
       'Page-based wheel events visibly zoom the raster fallback map.',
+      'The place search input and clear button share a bottom border at desktop and mobile widths.',
       'Line-based wheel events zoom the rendered map.',
       'Line-based wheel events zoom the raster fallback map.',
       'Later camera commands recenter the raster map after a place search.',
@@ -1612,6 +1633,10 @@ const features = [
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'search page loads for a signed in member'),
+      spec(
+        'bootstrap-ui-regressions.spec.js',
+        'place borders and account checkbox spacing survive Bootstrap 5',
+      ),
       spec('member.spec.js', 'map offers API returns seeded hosts in Europe'),
       spec(
         'search-map-rendered.spec.js',
@@ -2109,6 +2134,7 @@ const features = [
     requiredScenarios: [
       'Blocked profile actions are hidden or disabled.',
       'Blocked users cannot start or continue conversations where prohibited.',
+      'Blocked members receive default avatars while blockers can still unblock.',
     ],
     relatedSpecs: [],
   },
@@ -2925,7 +2951,10 @@ const features = [
     requiredScenarios: [
       'Administrator grants and revokes Welcome team membership.',
       'Admin can apply a moderation role change.',
+      'Admin can remove a shadowban from a member report.',
       'Role change is recorded in audit log.',
+      'Role removal is recorded in audit log.',
+      'Past hidden messages stay hidden after unshadowbanning.',
       'Permission errors are shown for invalid role changes.',
     ],
     relatedSpecs: [],

@@ -3,7 +3,6 @@
  */
 const _ = require('lodash');
 const mongooseService = require('../../config/lib/mongoose');
-const chalk = require('chalk');
 const yargs = require('yargs');
 const faker = require('faker');
 const moment = require('moment');
@@ -101,14 +100,12 @@ function randomizeLocation() {
  */
 function printSummary(countExisting, countSaved) {
   console.log('');
-  console.log(chalk.green(countExisting + ' users existed in the database.'));
-  console.log(chalk.green(countSaved + ' users successfully added.'));
+  console.log(countExisting + ' users existed in the database.');
+  console.log(countSaved + ' users successfully added.');
   console.log(
-    chalk.green(
-      'Database now contains ' + (countExisting + countSaved) + ' users.',
-    ),
+    'Database now contains ' + (countExisting + countSaved) + ' users.',
   );
-  console.log(chalk.white(''));
+  console.log('');
 }
 
 /**
@@ -230,19 +227,14 @@ function addUsers() {
           }
 
           if (index >= max) {
-            console.log(
-              chalk.green(
-                userCount + ' users already exist. No users created!',
-              ),
-            );
-            console.log(chalk.white('')); // Reset to white
+            console.log(userCount + ' users already exist. No users created!');
             resolve();
             return;
           }
 
-          console.log(chalk.white('--'));
-          console.log(chalk.green('Trustroots test user data'));
-          console.log(chalk.white('--'));
+          console.log('--');
+          console.log('Trustroots test user data');
+          console.log('--');
 
           const genderValues = User.schema.path('gender').enumValues;
           while (index < max) {
@@ -323,7 +315,7 @@ function addUsers() {
                     'Created admin user. Login with: ' + admin + ' / password',
                   );
                 } else if (err && admin !== undefined) {
-                  console.log(chalk.red('Could not add admin user ' + admin));
+                  console.log('Could not add admin user ' + admin);
                   console.log(err);
                 } else if (err) {
                   console.log(err);
