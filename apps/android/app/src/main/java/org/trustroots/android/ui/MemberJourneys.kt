@@ -172,12 +172,25 @@ internal fun MemberProfileScreen(
     var relationshipResolved by remember(username) { mutableStateOf(false) }
     var confirmRemoveContact by remember(username) { mutableStateOf(false) }
     var removingContact by remember(username) { mutableStateOf(false) }
+    var sharingExperience by remember(username) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     if (editing && profile != null) {
         EditProfileScreen(
             api, session, requireNotNull(profile), onSessionInvalidated,
             onCancel = { editing = false },
             onSaved = { updated -> profile = updated; editing = false; onOwnProfileSaved(updated) },
+        )
+        return
+    }
+    if (sharingExperience && profile?.id != null) {
+        CreateExperienceScreen(
+            api = api,
+            session = session,
+            memberID = requireNotNull(profile).id!!,
+            memberLabel = requireNotNull(profile).displayName,
+            onSessionInvalidated = onSessionInvalidated,
+            onBack = { sharingExperience = false },
+            onCreated = { sharingExperience = false },
         )
         return
     }
@@ -294,13 +307,7 @@ internal fun MemberProfileScreen(
                         recipient = MessageMember(member.id, member.username, member.displayName)
                     },
                     showShareExperience = referencesEnabled,
-                    onShareExperience = {
-                        browserRoute = BrowserRoute(
-                            title = "Share your experience",
-                            url = "https://www.trustroots.org/profile/${member.username}/experiences/new",
-                            sessionCookie = session.cookieHeader,
-                        )
-                    },
+                    onShareExperience = { sharingExperience = true },
                     contactLabel = when {
                         !relationshipResolved -> null
                         relationship?.id.isNullOrBlank() -> "Add contact"

@@ -332,6 +332,7 @@ private enum class MenuPage {
     Profile,
     EditProfile,
     Contacts,
+    Host,
     Account,
 }
 
@@ -346,16 +347,12 @@ private fun MemberShell(
     var destination by remember { mutableStateOf(Destination.Circles) }
     var menuPage by remember { mutableStateOf(MenuPage.Menu) }
     var browserRoute by remember { mutableStateOf<BrowserRoute?>(null) }
-    var accountMessage by remember { mutableStateOf<String?>(null) }
-    var isAccountActionRunning by remember { mutableStateOf(false) }
-    var accountActionLabel by remember { mutableStateOf<String?>(null) }
     var hasUnreadMessages by remember { mutableStateOf(false) }
     var unreadMessageCount by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var messagesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var circlesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var searchNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var searchInitialTab by remember { androidx.compose.runtime.mutableIntStateOf(0) }
-    val scope = rememberCoroutineScope()
     val api = remember(session.member.username) {
         MobileApiClient(BuildConfig.API_BASE_URL, responseCache, session.member.username)
     }
@@ -440,13 +437,7 @@ private fun MemberShell(
                         session = session,
                         openProfile = { menuPage = MenuPage.Profile },
                         openEditProfile = { menuPage = MenuPage.EditProfile },
-                        openHost = {
-                            browserRoute = BrowserRoute(
-                                title = "Host",
-                                url = "https://www.trustroots.org/offer/host",
-                                sessionCookie = session.cookieHeader,
-                            )
-                        },
+                        openHost = { menuPage = MenuPage.Host },
                         openNostroots = {
                             browserRoute = BrowserRoute(
                                 title = "Nostroots",
@@ -496,29 +487,17 @@ private fun MemberShell(
                         onSessionInvalidated = onSessionInvalidated,
                         onBack = { menuPage = MenuPage.Menu },
                     )
-                    MenuPage.Account -> AccountScreen(
+                    MenuPage.Host -> HostOfferScreen(
+                        api = api,
                         session = session,
-                        accountMessage = accountMessage,
-                        isActionRunning = isAccountActionRunning,
-                        actionLabel = accountActionLabel,
+                        onSessionInvalidated = onSessionInvalidated,
                         onBack = { menuPage = MenuPage.Menu },
-                        onCheckAccount = {
-                            scope.launch {
-                                isAccountActionRunning = true
-                                accountActionLabel = "Checking account…"
-                                api.currentMember(session)
-                                    .onSuccess { accountMessage = "Signed in as ${it.displayName}." }
-                                    .onFailure {
-                                        if ((it as? MobileApiException)?.isAuthenticationFailure == true) {
-                                            onSessionInvalidated()
-                                        } else {
-                                            accountMessage = it.message ?: "Could not refresh account."
-                                        }
-                                    }
-                                isAccountActionRunning = false
-                                accountActionLabel = null
-                            }
-                        },
+                    )
+                    MenuPage.Account -> AccountSettingsScreen(
+                        api = api,
+                        session = session,
+                        onSessionInvalidated = onSessionInvalidated,
+                        onBack = { menuPage = MenuPage.Menu },
                         onResetPassword = {
                             browserRoute = BrowserRoute(
                                 title = "Reset password",
