@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -37,7 +38,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -46,6 +46,7 @@ import android.text.Html
 import kotlinx.coroutines.launch
 import org.trustroots.android.api.DirectMessage
 import org.trustroots.android.api.AccommodationOffer
+import org.trustroots.android.api.ContactRelationship
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.ProfileContact
 import org.trustroots.android.api.ProfileReference
@@ -61,6 +62,9 @@ import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 import java.util.Locale
 import java.text.SimpleDateFormat
 import java.util.Date
+
+/** Matches `config.featureFlags.reference` (enabled in production and development). */
+private const val referencesEnabled = true
 
 @Composable
 internal fun MemberSearchScreen(
@@ -160,6 +164,11 @@ internal fun MemberProfileScreen(
     var editing by remember(username) { mutableStateOf(startInEditMode) }
     var section by remember(username) { mutableStateOf(ProfileSection.Overview) }
     var browserRoute by remember(username) { mutableStateOf<BrowserRoute?>(null) }
+    var relationship by remember(username) { mutableStateOf<ContactRelationship?>(null) }
+    var relationshipResolved by remember(username) { mutableStateOf(false) }
+    var confirmRemoveContact by remember(username) { mutableStateOf(false) }
+    var removingContact by remember(username) { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     if (editing && profile != null) {
         EditProfileScreen(
             api, session, requireNotNull(profile), onSessionInvalidated,
@@ -180,6 +189,51 @@ internal fun MemberProfileScreen(
         TrustrootsBrowser(route = route, onClose = { browserRoute = null })
         return
     }
+    if (confirmRemoveContact) {
+        val existing = relationship
+        AlertDialog(
+            onDismissRequest = { if (!removingContact) confirmRemoveContact = false },
+            title = {
+                Text(
+                    if (existing?.confirmed == true) "Remove contact?" else "Delete contact request?",
+                )
+            },
+            text = {
+                Text(
+                    if (existing?.confirmed == true) {
+                        "You will no longer be contacts with this member."
+                    } else {
+                        "This cancels the pending contact request."
+                    },
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !removingContact && existing?.id != null,
+                    onClick = {
+                        val contactID = existing?.id ?: return@TextButton
+                        scope.launch {
+                            removingContact = true
+                            api.removeContact(session, contactID).onSuccess {
+                                relationship = ContactRelationship(id = null, confirmed = false)
+                                confirmRemoveContact = false
+                            }.onFailure {
+                                if ((it as? MobileApiException)?.isAuthenticationFailure == true) {
+                                    onSessionInvalidated()
+                                }
+                            }
+                            removingContact = false
+                        }
+                    },
+                ) { Text(if (removingContact) "Removing…" else "Confirm") }
+            },
+            dismissButton = {
+                TextButton(enabled = !removingContact, onClick = { confirmRemoveContact = false }) {
+                    Text("Cancel")
+                }
+            },
+        )
+    }
     LaunchedEffect(username) {
         if (profile != null) return@LaunchedEffect
         api.profile(session, username).onSuccess { member ->
@@ -193,6 +247,20 @@ internal fun MemberProfileScreen(
                 }
                 launch { api.contacts(session, id).onSuccess { contacts = it } }
                 launch { api.references(session, id).onSuccess { references = it } }
+                if (member.username != session.member.username) {
+                    launch {
+                        api.contactWith(session, id).onSuccess {
+                            relationship = it
+                            relationshipResolved = true
+                        }.onFailure {
+                            if ((it as? MobileApiException)?.isAuthenticationFailure == true) {
+                                onSessionInvalidated()
+                            } else {
+                                relationshipResolved = true
+                            }
+                        }
+                    }
+                }
             }
         }.onFailure {
             if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
@@ -214,38 +282,40 @@ internal fun MemberProfileScreen(
             }
             else -> {
                 val member = requireNotNull(profile)
-                Box {
-                    ArtworkHero(
-                        url = member.id?.let { api.avatarURL(it, 512) },
-                        sessionCookie = session.cookieHeader,
-                        label = member.displayName,
-                        subtitle = "@${member.username}",
-                        background = MaterialTheme.colorScheme.primary,
-                        blurBackground = true,
-                        testTag = "profileHero",
-                    )
-                    TextButton(onClick = onBack, modifier = Modifier.align(Alignment.TopStart).padding(8.dp)) {
-                        Text("‹ Back", color = Color.White)
-                    }
-                }
                 ProfileActionBar(
                     isSelf = isSelf,
+                    onBack = onBack,
                     onEditProfile = { editing = true },
                     onMessage = {
                         recipient = MessageMember(member.id, member.username, member.displayName)
                     },
+                    showShareExperience = referencesEnabled,
                     onShareExperience = {
                         browserRoute = BrowserRoute(
                             title = "Share your experience",
                             url = "https://www.trustroots.org/profile/${member.username}/experiences/new",
+                            sessionCookie = session.cookieHeader,
                         )
                     },
-                    onAddContact = {
-                        member.id?.let { id ->
-                            browserRoute = BrowserRoute(
-                                title = "Add contact",
-                                url = "https://www.trustroots.org/contact-add/$id",
-                            )
+                    contactLabel = when {
+                        !relationshipResolved -> null
+                        relationship?.id.isNullOrBlank() -> "Add contact"
+                        relationship?.confirmed == true -> "Remove contact"
+                        else -> "Delete contact request"
+                    },
+                    onContactAction = {
+                        val current = relationship
+                        when {
+                            current?.id.isNullOrBlank() -> {
+                                member.id?.let { id ->
+                                    browserRoute = BrowserRoute(
+                                        title = "Add contact",
+                                        url = "https://www.trustroots.org/contact-add/$id",
+                                        sessionCookie = session.cookieHeader,
+                                    )
+                                }
+                            }
+                            else -> confirmRemoveContact = true
                         }
                     },
                 )
@@ -253,33 +323,42 @@ internal fun MemberProfileScreen(
                     Column(
                         Modifier
                             .fillMaxSize()
-                            .verticalScroll(rememberScrollState())
-                            .padding(20.dp)
-                            .padding(bottom = 8.dp),
+                            .verticalScroll(rememberScrollState()),
                     ) {
-                        when (section) {
-                            ProfileSection.Overview -> ProfileOverviewSection(
-                                member = member,
-                                references = references,
-                                showAllReferences = showAllReferences,
-                                onToggleReferences = { showAllReferences = !showAllReferences },
-                                onOpenRelated = { relatedUsername = it },
-                                api = api,
-                                session = session,
-                            )
-                            ProfileSection.About -> ProfileAboutSection(member = member, api = api)
-                            ProfileSection.Hosting -> ProfileHostingSection(
-                                hosting = hosting,
-                                hostingLoaded = hostingLoaded,
-                            )
-                            ProfileSection.Contacts -> ProfileContactsSection(
-                                contacts = contacts,
-                                showAllContacts = showAllContacts,
-                                onToggleContacts = { showAllContacts = !showAllContacts },
-                                onOpenRelated = { relatedUsername = it },
-                                api = api,
-                                session = session,
-                            )
+                        ArtworkHero(
+                            url = member.id?.let { api.avatarURL(it, 512) },
+                            sessionCookie = session.cookieHeader,
+                            label = member.displayName,
+                            subtitle = "@${member.username}",
+                            background = MaterialTheme.colorScheme.primary,
+                            blurBackground = true,
+                            testTag = "profileHero",
+                        )
+                        Column(Modifier.padding(20.dp).padding(bottom = 8.dp)) {
+                            when (section) {
+                                ProfileSection.Overview -> ProfileOverviewSection(
+                                    member = member,
+                                    references = references,
+                                    showAllReferences = showAllReferences,
+                                    onToggleReferences = { showAllReferences = !showAllReferences },
+                                    onOpenRelated = { relatedUsername = it },
+                                    api = api,
+                                    session = session,
+                                )
+                                ProfileSection.About -> ProfileAboutSection(member = member, api = api)
+                                ProfileSection.Hosting -> ProfileHostingSection(
+                                    hosting = hosting,
+                                    hostingLoaded = hostingLoaded,
+                                )
+                                ProfileSection.Contacts -> ProfileContactsSection(
+                                    contacts = contacts,
+                                    showAllContacts = showAllContacts,
+                                    onToggleContacts = { showAllContacts = !showAllContacts },
+                                    onOpenRelated = { relatedUsername = it },
+                                    api = api,
+                                    session = session,
+                                )
+                            }
                         }
                     }
                 }
@@ -304,10 +383,13 @@ private enum class ProfileSection(val label: String) {
 @Composable
 private fun ProfileActionBar(
     isSelf: Boolean,
+    onBack: () -> Unit,
     onEditProfile: () -> Unit,
     onMessage: () -> Unit,
+    showShareExperience: Boolean,
     onShareExperience: () -> Unit,
-    onAddContact: () -> Unit,
+    contactLabel: String?,
+    onContactAction: () -> Unit,
 ) {
     Surface(
         color = TrustrootsPaleGreen,
@@ -320,13 +402,19 @@ private fun ProfileActionBar(
                 .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            TextButton(onClick = onBack) { Text("‹ Back") }
             if (isSelf) {
                 TextButton(onClick = onEditProfile) { Text("Edit your profile") }
             } else {
                 TextButton(onClick = onMessage) { Text("Send a message") }
-                TextButton(onClick = onShareExperience) { Text("Share your experience") }
-                TextButton(onClick = onAddContact) { Text("Add contact") }
+                if (showShareExperience) {
+                    TextButton(onClick = onShareExperience) { Text("Share your experience") }
+                }
+                contactLabel?.let { label ->
+                    TextButton(onClick = onContactAction) { Text(label) }
+                }
             }
         }
     }
