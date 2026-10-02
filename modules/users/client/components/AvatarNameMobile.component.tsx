@@ -12,20 +12,30 @@ import type { UserProfile } from '../types';
 
 export default function AvatarNameMobile({
   profile,
+  isSelf = false,
 }: {
   profile: UserProfile & { displayUsername?: string };
+  isSelf?: boolean;
 }) {
   const [isBiggerAvatar, setIsBiggerAvatar] = useState(false);
+  const showPhotoEditLink =
+    isSelf && (!profile.avatarUploaded || profile.avatarSource === 'none');
 
   return (
     <div className="text-center visible-xs-block" role="dialog">
       {/* Avatar */}
       <a
-        onClick={() => setIsBiggerAvatar(prevState => !prevState)}
+        href={showPhotoEditLink ? '/profile/edit/photo' : undefined}
+        onClick={
+          showPhotoEditLink
+            ? undefined
+            : () => setIsBiggerAvatar(prevState => !prevState)
+        }
         className={classNames('visible-xs-block', 'avatar-circle', {
           'profile-avatar-lg': isBiggerAvatar,
         })}
-        aria-hidden={true}
+        aria-label={showPhotoEditLink ? 'Edit profile photo' : undefined}
+        aria-hidden={showPhotoEditLink ? undefined : true}
       >
         <Avatar user={profile} size={512} link={false} />
       </a>
@@ -52,4 +62,5 @@ export default function AvatarNameMobile({
 
 AvatarNameMobile.propTypes = {
   profile: PropTypes.object.isRequired,
+  isSelf: PropTypes.bool,
 };

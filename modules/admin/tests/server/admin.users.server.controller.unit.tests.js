@@ -13,6 +13,9 @@ const User = mongoose.model('User');
 const Contact = mongoose.model('Contact');
 const Offer = mongoose.model('Offer');
 const ReferenceThread = mongoose.model('ReferenceThread');
+const AdminNote = mongoose.model('AdminNote');
+const Message = mongoose.model('Message');
+const Thread = mongoose.model('Thread');
 
 function mockResponse() {
   let resolveResponse;
@@ -819,6 +822,72 @@ describe('Admin users controller unit tests', () => {
       const updated = await User.findById(target._id).exec();
       updated.roles.should.containEql('shadowban');
       updated.roles.should.not.containEql('suspended');
+    });
+
+    it('removes a shadowban without changing other roles or profile settings', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(2));
+      const target = users[1];
+      target.roles = ['user', 'shadowban', 'suspended', 'volunteer'];
+      target.public = true;
+      target.newsletter = true;
+      await target.save();
+      const hiddenMessage = await new Message({
+        content: 'Earlier hidden message.',
+        userFrom: target._id,
+        userTo: users[0]._id,
+        read: true,
+        shadowHidden: true,
+      }).save();
+
+      const res = mockResponse();
+      await adminUsers.changeRole(
+        {
+          body: {
+            id: target._id.toString(),
+            role: 'shadowban',
+            action: 'remove',
+          },
+          user: users[0],
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(200);
+      const updated = await User.findById(target._id).exec();
+      updated.roles.should.deepEqual(['user', 'suspended', 'volunteer']);
+      updated.public.should.be.true();
+      updated.newsletter.should.be.true();
+      const oldMessage = await Message.findById(hiddenMessage._id).exec();
+      oldMessage.shadowHidden.should.be.true();
+      const recipientThread = await Thread.findOne({
+        userFrom: target._id,
+        userTo: users[0]._id,
+      }).exec();
+      should.not.exist(recipientThread);
+      const note = await AdminNote.findOne({ user: target._id }).exec();
+      note.note.should.equal(
+        '<p><b>Performed action:</b></p><p><i>User unshadowbanned.</i></p>',
+      );
+    });
+
+    it('rejects removal of unsupported moderation roles', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(1));
+      const res = mockResponse();
+
+      await adminUsers.changeRole(
+        {
+          body: {
+            id: users[0]._id.toString(),
+            role: 'suspended',
+            action: 'remove',
+          },
+          user: users[0],
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Invalid role.');
     });
 
     it('suspends a user and removes shadowban role', async () => {

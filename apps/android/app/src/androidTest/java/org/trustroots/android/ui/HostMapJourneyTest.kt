@@ -10,6 +10,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
 import kotlin.concurrent.thread
 import org.junit.After
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -55,12 +56,22 @@ class HostMapJourneyTest {
         val tabsBottom = compose.onNodeWithTag("map-tabs").fetchSemanticsNode().boundsInRoot.bottom
         val controlsTop = compose.onNodeWithTag("map-controls").fetchSemanticsNode().boundsInRoot.top
         org.junit.Assert.assertEquals(tabsBottom, controlsTop, 1f)
+        compose.onNodeWithText("Search places").assertIsDisplayed()
+        compose.onNodeWithText("Filters").assertIsDisplayed()
+        assertTrue(compose.onAllNodesWithText("Hosting").fetchSemanticsNodes().isEmpty())
+        compose.onNodeWithTag("searchPlaces").performClick()
+        compose.onNodeWithTag("placeSearchField").assertIsDisplayed()
+        compose.onNodeWithText("Back to map").performClick()
+        compose.onNodeWithTag("openFilters").performClick()
         compose.onNodeWithText("Hosting").assertIsDisplayed()
         compose.onNodeWithText("Meet").assertIsDisplayed()
+        compose.onNodeWithText("Spoken languages").assertIsDisplayed()
         compose.onNodeWithText("Last active: 6 months").performClick()
         compose.onNodeWithText("Last active: any time").assertIsDisplayed()
         compose.onNodeWithText("Last active: any time").performClick()
         compose.onNodeWithText("Last active: 1 month").assertIsDisplayed()
+        compose.onNodeWithText("Back to map").performClick()
+        compose.onNodeWithText("Search places").assertIsDisplayed()
         compose.onNodeWithText("Members").performClick()
         compose.onNodeWithText("Find members").assertIsDisplayed()
         responder.join(1_000)

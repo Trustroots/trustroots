@@ -1,7 +1,9 @@
 const { annotateFeature, expect, test } = require('../../support/test');
+const { ObjectId } = require('mongodb');
 
 const {
   SEEDED_ADMIN,
+  SEEDED_MEMBERS,
   createIsolatedContext,
   createUser,
   registerViaApi,
@@ -10,6 +12,7 @@ const {
 const {
   findUserByUsername,
   updateUserByUsername,
+  withE2eDb,
 } = require('../../support/db');
 
 async function signInRequest(request, user) {
@@ -243,5 +246,84 @@ test.describe('admin role and audit feature coverage', () => {
     const audit = await request.get('/api/admin/audit-log');
     expect(audit.status()).toBe(200);
     expect((await audit.json()).length).toBeGreaterThan(0);
+  });
+
+  test('admin can unshadowban a member from the report', async ({
+    page,
+    browser,
+    baseURL,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.change-role', [
+      'Admin can remove a shadowban from a member report.',
+      'Role removal is recorded in audit log.',
+      'Past hidden messages stay hidden after unshadowbanning.',
+    ]);
+    const member = createUser();
+    const setupContext = await createIsolatedContext(browser, baseURL);
+    try {
+      await registerViaApi(setupContext.request, member);
+    } finally {
+      await setupContext.close();
+    }
+    await updateUserByUsername(member.username, {
+      $addToSet: { roles: 'shadowban' },
+    });
+    const target = await findUserByUsername(member.username);
+    const hiddenMessage = {
+      _id: new ObjectId(),
+      userFrom: target._id,
+      userTo: new ObjectId(SEEDED_MEMBERS[0].id),
+      content: 'Earlier hidden message.',
+      created: new Date('2026-01-20T12:00:00.000Z'),
+      read: true,
+      shadowHidden: true,
+    };
+    await withE2eDb(db => db.collection('messages').insertOne(hiddenMessage));
+
+    await page.goto(`/admin/user?id=${target._id}`);
+    page.on('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: 'Unshadowban' }).click();
+    await expect(page.getByRole('button', { name: 'Unshadowban' })).toHaveCount(
+      0,
+    );
+    const updated = await findUserByUsername(member.username);
+    expect(updated.roles).not.toContain('shadowban');
+    const oldMessage = await withE2eDb(db =>
+      db.collection('messages').findOne({ _id: hiddenMessage._id }),
+    );
+    expect(oldMessage.shadowHidden).toBe(true);
+    const recipientContext = await createIsolatedContext(browser, baseURL);
+    try {
+      const recipientPage = await recipientContext.newPage();
+      await signInViaApi(
+        recipientPage,
+        recipientContext.request,
+        SEEDED_MEMBERS[0],
+      );
+      const conversation = await recipientContext.request.get(
+        `/api/messages/${target._id}`,
+      );
+      expect(conversation.status()).toBe(200);
+      expect(await conversation.json()).toEqual([]);
+    } finally {
+      await recipientContext.close();
+    }
+    const notes = await request.get(`/api/admin/notes?userId=${target._id}`);
+    expect(notes.status()).toBe(200);
+    expect((await notes.json())[0].note).toContain('User unshadowbanned.');
+    const audit = await request.get('/api/admin/audit-log');
+    expect(audit.status()).toBe(200);
+    expect(await audit.json()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          body: expect.objectContaining({
+            id: String(target._id),
+            role: 'shadowban',
+            action: 'remove',
+          }),
+        }),
+      ]),
+    );
   });
 });

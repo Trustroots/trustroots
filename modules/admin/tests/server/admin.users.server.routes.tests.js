@@ -487,6 +487,11 @@ describe('Admin User CRUD tests', () => {
           .post('/api/admin/user/change-role')
           .send({ id: userRegularId, role: 'suspended' })
           .expect(403);
+
+        await agent
+          .post('/api/admin/user/change-role')
+          .send({ id: userRegularId, role: 'shadowban', action: 'remove' })
+          .expect(403);
       });
 
       // Allowed roles
@@ -510,6 +515,26 @@ describe('Admin User CRUD tests', () => {
           .expect(400);
 
         should(body.message).equal('Invalid role.');
+      });
+
+      it('admin users can remove a shadowban and see the moderation note', async () => {
+        userRegular.roles = ['user', 'shadowban'];
+        await userRegular.save();
+        await utils.signIn(credentialsAdmin, agent);
+
+        await agent
+          .post('/api/admin/user/change-role')
+          .send({ id: userRegularId, role: 'shadowban', action: 'remove' })
+          .expect(200);
+
+        const updated = await User.findById(userRegularId).exec();
+        updated.roles.should.deepEqual(['user']);
+        const { body } = await agent
+          .get(`/api/admin/notes?userId=${userRegularId}`)
+          .expect(200);
+        body[0].note.should.equal(
+          '<p><b>Performed action:</b></p><p><i>User unshadowbanned.</i></p>',
+        );
       });
 
       it('missing id should not change user role', async () => {

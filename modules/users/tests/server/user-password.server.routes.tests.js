@@ -515,6 +515,20 @@ describe('User password CRUD tests', function () {
             }
 
             res.body.message.should.equal('Password changed successfully!');
+            res.body.user.username.should.equal(user.username);
+            res.body.user.email.should.equal(user.email);
+            for (const field of [
+              'password',
+              'salt',
+              'emailToken',
+              'resetPasswordToken',
+              'removeProfileToken',
+              'providerData',
+              'pushRegistration',
+              'lastIpAddress',
+            ]) {
+              should.not.exist(res.body.user[field]);
+            }
             return done();
           });
       });

@@ -8,6 +8,8 @@ import uniqueValidation from '../../../../config/lib/mongoose-unique-validation.
 import validator from 'validator';
 
 const require = createRequire(import.meta.url);
+// JSON import attributes are not supported by the pinned formatter.
+// eslint-disable-next-line import/no-commonjs
 const languages = require('../../../../config/languages/languages.json');
 
 /**

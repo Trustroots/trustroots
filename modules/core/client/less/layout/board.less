@@ -1,7 +1,4 @@
-@import '~bootstrap/less/mixins/background-variant';
-@import '~bootstrap/less/mixins/text-emphasis';
-@import '~bootstrap/less/mixins/text-overflow';
-@import '~bootstrap/less/type';
+@import '~less/bootstrap/legacy-mixins';
 @import '~less/global-variables';
 
 /**
@@ -131,4 +128,8 @@
     // @link https://creativecommons.org/licenses/by-nc-nd/4.0/
     background-image: url(~img/board/error.jpg);
   }
+}
+
+.board.container-fullscreen {
+  max-width: none;
 }
