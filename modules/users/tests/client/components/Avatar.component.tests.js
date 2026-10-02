@@ -62,6 +62,38 @@ describe('<Avatar />', () => {
     );
   });
 
+  it('uses the server-generated version for a newly published avatar set', () => {
+    render(
+      <Avatar
+        user={{ ...user, avatarVersion: '0123456789abcdef0123456789abcdef' }}
+        source="local"
+        size={64}
+        link={false}
+      />,
+    );
+
+    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+      'src',
+      '/uploads-profile/user-1/avatar/0123456789abcdef0123456789abcdef/64.jpg?1767323045000',
+    );
+  });
+
+  it('uses the legacy avatar path for an invalid version value', () => {
+    render(
+      <Avatar
+        user={{ ...user, avatarVersion: '../other-user' }}
+        source="local"
+        size={64}
+        link={false}
+      />,
+    );
+
+    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+      'src',
+      '/uploads-profile/user-1/avatar/64.jpg?1767323045000',
+    );
+  });
+
   it('falls back to the largest generated local avatar size', () => {
     render(<Avatar user={user} source="local" size={4096} link={false} />);
 
