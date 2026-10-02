@@ -1,0 +1,4 @@
+- [x] Implement explicit profile response fields.
+- [x] Add regression tests and retain existing coverage and end-to-end cases.
+- [x] Run focused tests, lint and available integration checks.
+- [x] Update living specs and archive the proposal when complete.
