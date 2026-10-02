@@ -38,7 +38,7 @@ const api = {
 const ThreadContainer = styled.div`
   position: fixed;
   top: 44px;
-  bottom: 0;
+  bottom: var(--trustroots-keyboard-inset, 0px);
   width: 100%;
   min-height: 0;
   overflow: hidden;
@@ -184,6 +184,46 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
   const showQuickReply = showReply && !userHasReplied;
 
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const updateKeyboardInset = () => {
+      const isWritingMessage =
+        document.activeElement?.id === 'message-reply-content';
+      const keyboardInset = isWritingMessage
+        ? Math.max(
+            0,
+            Math.round(
+              window.innerHeight - viewport.height - viewport.offsetTop,
+            ),
+          )
+        : 0;
+      document.documentElement.style.setProperty(
+        '--trustroots-keyboard-inset',
+        `${keyboardInset}px`,
+      );
+    };
+
+    updateKeyboardInset();
+    viewport.addEventListener('resize', updateKeyboardInset);
+    viewport.addEventListener('scroll', updateKeyboardInset);
+    window.addEventListener('resize', updateKeyboardInset);
+    document.addEventListener('focusin', updateKeyboardInset);
+    document.addEventListener('focusout', updateKeyboardInset);
+
+    return () => {
+      viewport.removeEventListener('resize', updateKeyboardInset);
+      viewport.removeEventListener('scroll', updateKeyboardInset);
+      window.removeEventListener('resize', updateKeyboardInset);
+      document.removeEventListener('focusin', updateKeyboardInset);
+      document.removeEventListener('focusout', updateKeyboardInset);
+      document.documentElement.style.removeProperty(
+        '--trustroots-keyboard-inset',
+      );
+    };
+  }, []);
 
   async function fetchMoreData() {
     if (isFetchingMore || !nextParams) return;
