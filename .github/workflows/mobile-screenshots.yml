@@ -56,7 +56,8 @@ jobs:
           app="$RUNNER_TEMP/TrustrootsDerivedData/Build/Products/Debug-iphonesimulator/Trustroots.app"
           test -d "$app"
           xcrun simctl install "$DEVICE_ID" "$app"
-          xcrun simctl launch "$DEVICE_ID" org.trustroots.ios
+          bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")
+          xcrun simctl launch "$DEVICE_ID" "$bundle_id"
       - name: Capture iOS screenshot
         env:
           DEVICE_ID: ${{ steps.simulator.outputs.id }}
@@ -101,10 +102,7 @@ jobs:
             bash apps/android/gradlew -p apps/android assembleDebug
             adb install -r apps/android/app/build/outputs/apk/debug/app-debug.apk
             adb shell am force-stop org.trustroots.android.debug
-            launcher="$(adb shell cmd package resolve-activity --brief \
-              -a android.intent.action.MAIN \
-              -c android.intent.category.LAUNCHER \
-              org.trustroots.android.debug | tr -d '\r')"
+            launcher="$(adb shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.LAUNCHER org.trustroots.android.debug | tr -d '\r')"
             test -n "$launcher"
             adb shell am start -W -n "$launcher"
             # Compose can render a blank first frame while Android restores the
