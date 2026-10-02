@@ -5,6 +5,10 @@
   },
   "header": [
     {
+      "href": "/apps/",
+      "label": "Apps"
+    },
+    {
       "href": "https://www.trustroots.org/",
       "label": "Trustroots.org"
     },
