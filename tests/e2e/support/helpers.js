@@ -291,7 +291,9 @@ async function signIn(page, user, identifier = user.username) {
  * homepage.
  */
 async function signOut(page) {
-  await page.goto('/api/auth/signout');
+  const response = await page.request.post('/api/auth/signout');
+  expect(response.ok()).toBeTruthy();
+  await page.goto('/');
   await expect(page).toHaveURL(/\/$/);
 }
 

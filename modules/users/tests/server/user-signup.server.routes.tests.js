@@ -144,9 +144,7 @@ describe('User signup and authentication CRUD tests', function () {
         signupRes.body.provider.should.equal('local');
         signupRes.body.public.should.equal(false);
         signupRes.body.created.should.not.be.empty();
-        signupRes.body.acquisitionStory.should.equal(
-          _unConfirmedUser.acquisitionStory,
-        );
+        should.not.exist(signupRes.body.acquisitionStory);
         should.not.exist(signupRes.body.updated);
         // Sensitive information should be not sent to the client
         should.not.exist(signupRes.body.emailToken);
@@ -159,7 +157,13 @@ describe('User signup and authentication CRUD tests', function () {
         jobs[0].data.subject.should.equal('Confirm Email');
         jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
 
-        done();
+        User.findById(signupRes.body._id, function (err, savedUser) {
+          if (err) return done(err);
+          savedUser.acquisitionStory.should.equal(
+            _unConfirmedUser.acquisitionStory,
+          );
+          done();
+        });
       });
   });
 
@@ -349,7 +353,8 @@ describe('User signup and authentication CRUD tests', function () {
 
         // Logout
         agent
-          .get('/api/auth/signout')
+          .post('/api/auth/signout')
+          .set('X-Trustroots-Request', '1')
           .expect(302)
           .end(function (signoutErr, signoutRes) {
             if (signoutErr) {
@@ -380,7 +385,8 @@ describe('User signup and authentication CRUD tests', function () {
 
         // Logout
         agent
-          .get('/api/auth/signout')
+          .post('/api/auth/signout')
+          .set('X-Trustroots-Request', '1')
           .expect(302)
           .end(function (signoutErr, signoutRes) {
             if (signoutErr) {

@@ -1,7 +1,12 @@
 const { MongoClient } = require('mongodb');
 const config = require('../../../../config/config');
 const crypto = require('crypto');
-const { annotateFeature, test, expect } = require('../../support/test');
+const {
+  annotateFeature,
+  test,
+  expect,
+  useElementScreenshot,
+} = require('../../support/test');
 
 const {
   SEEDED_MEMBERS,
@@ -17,13 +22,32 @@ async function signInExisting(page, usernameOrEmail) {
   await page.goto('/signin');
   await page.locator('#username').fill(usernameOrEmail);
   await page.locator('#password').fill(user.password);
+  const signinResponse = page.waitForResponse(response =>
+    response.url().endsWith('/api/auth/signin'),
+  );
   await page.getByRole('button', { name: /login/i }).click();
+  const cookie = (await (await signinResponse).allHeaders())['set-cookie'];
+  expect(cookie).toMatch(/HttpOnly/);
+  expect(cookie).toMatch(/SameSite=Lax/i);
   await expect(page).toHaveURL(/\/search/);
 }
 
 test.describe.serial('authentication smoke', () => {
   test.beforeAll(async ({ request }) => {
     await registerViaApi(request, user);
+  });
+
+  test('anonymous visits do not create a session cookie', async ({
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signin', [
+      'Uninitialised anonymous requests do not create a stored browser session.',
+    ]);
+
+    const response = await request.get('/');
+
+    expect(response.status()).toBe(200);
+    expect((await response.headers())['set-cookie']).toBeUndefined();
   });
 
   test('homepage loads and exposes authentication entry points', async ({
@@ -86,6 +110,20 @@ test.describe.serial('authentication smoke', () => {
     });
 
     await signUp(page, signupUser);
+  });
+
+  test('signup uses the Trustroots primary colour', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signup', [
+      'Signup form validates required fields.',
+    ]);
+    useElementScreenshot(testInfo, '.signup-form-steps');
+
+    await page.goto('/signup');
+    await expect(
+      page.getByRole('button', { name: 'Please fill in the form' }),
+    ).toHaveCSS('background-color', 'rgb(18, 181, 145)');
   });
 
   test('UI signup creates an account that can sign in with username and email', async ({

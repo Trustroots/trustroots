@@ -1,0 +1,7 @@
+- [x] Validate this proposal before implementation.
+- [x] Convert core client modules to strict TypeScript and preserve imports/exports.
+- [x] Convert messaging client modules to strict TypeScript and preserve translations and behaviour.
+- [x] Convert support client modules to strict TypeScript and preserve translations and behaviour.
+- [x] Update associated client tests where needed and retain the client coverage ratchet.
+- [x] Run type checking, scoped lint, client coverage/tests and production Webpack build.
+- [x] Update the developer tooling specification and archive this change.

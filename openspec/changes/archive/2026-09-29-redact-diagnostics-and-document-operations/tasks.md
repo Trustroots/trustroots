@@ -1,0 +1,7 @@
+- [x] Inspect the existing implementation and define the bounded change.
+- [x] Create and strictly validate the proposal before implementation.
+- [x] Implement the guardrails and document rollout requirements.
+- [x] Add anonymous regression cases for the logger boundary, confirmed analytics exposure and security-report payload handling; a browser end-to-end test is not appropriate for transport behaviour.
+- [x] Run focused checks and preserve full client/server coverage.
+- [x] Update the living specification.
+- [x] Run full server validation, confirm full client coverage, and archive the completed proposal.

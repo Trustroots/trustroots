@@ -501,7 +501,8 @@ describe('API route registrations', () => {
       targetedRequestLimit.signin,
       authentication.signin,
     ]);
-    assertHandlers(routeByPath(routes, '/api/auth/signout').get, [
+    assert.equal(routeByPath(routes, '/api/auth/signout').get.length, 0);
+    assertHandlers(routeByPath(routes, '/api/auth/signout').post, [
       authentication.signout,
     ]);
     assert.equal(
