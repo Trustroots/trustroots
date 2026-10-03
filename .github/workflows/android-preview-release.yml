@@ -52,7 +52,7 @@ jobs:
           test -n "$ANDROID_KEYSTORE_PASSWORD"
           test -n "$ANDROID_KEY_ALIAS"
           test -n "$ANDROID_KEY_PASSWORD"
-          ./gradlew testDebugUnitTest lintDebug assembleRelease
+          ./gradlew testDebugUnitTest lintDebug assembleRelease -PtrustrootsPreviewUpdateAlerts=true
       - name: Verify and prepare APK
         run: |
           apk="apps/android/app/build/outputs/apk/release/app-release.apk"

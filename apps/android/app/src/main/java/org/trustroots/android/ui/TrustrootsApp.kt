@@ -1,5 +1,12 @@
 package org.trustroots.android.ui
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -87,6 +94,8 @@ import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.api.SecureResponseCache
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.TrustrootsBrowser
+import org.trustroots.android.updates.ApkUpdateAlerts
+import org.trustroots.android.updates.ApkUpdateCheckResult
 import org.trustroots.android.ui.theme.TrustrootsGreen
 import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 
@@ -746,6 +755,35 @@ internal fun AccountScreen(
     onResetPassword: () -> Unit,
     onSignedOut: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var updateAlertsEnabled by remember { mutableStateOf(ApkUpdateAlerts.isEnabled(context)) }
+    var updateStatus by remember { mutableStateOf<String?>(null) }
+    var updateReleaseUrl by remember { mutableStateOf<String?>(null) }
+    var checkingUpdates by remember { mutableStateOf(false) }
+    val checkForUpdates: () -> Unit = {
+        scope.launch {
+            checkingUpdates = true
+            when (val result = ApkUpdateAlerts.checkNow(context)) {
+                ApkUpdateCheckResult.UpToDate -> updateStatus = "You have the latest Android preview."
+                is ApkUpdateCheckResult.NewVersion -> {
+                    updateStatus = "${result.release.versionName} is available."
+                    updateReleaseUrl = result.release.pageUrl
+                }
+                ApkUpdateCheckResult.Unavailable -> updateStatus = "Could not check for updates. Try again later."
+            }
+            checkingUpdates = false
+        }
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            ApkUpdateAlerts.setEnabled(context, true)
+            updateAlertsEnabled = true
+            checkForUpdates()
+        } else {
+            updateStatus = "Allow Trustroots notifications in Android settings to receive update alerts."
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -778,8 +816,65 @@ internal fun AccountScreen(
                 modifier = Modifier.padding(top = 10.dp),
             )
         }
+        if (BuildConfig.PREVIEW_UPDATE_ALERTS) {
+            HorizontalDivider(Modifier.padding(vertical = 20.dp))
+            ApkUpdateSettings(
+                enabled = updateAlertsEnabled,
+                checking = checkingUpdates,
+                status = updateStatus,
+                releaseUrl = updateReleaseUrl,
+                onToggle = {
+                    if (updateAlertsEnabled) {
+                        ApkUpdateAlerts.setEnabled(context, false)
+                        updateAlertsEnabled = false
+                        updateStatus = "Update alerts are off."
+                        updateReleaseUrl = null
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        ApkUpdateAlerts.setEnabled(context, true)
+                        updateAlertsEnabled = true
+                        checkForUpdates()
+                    }
+                },
+                onCheck = checkForUpdates,
+                onOpenRelease = { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) },
+            )
+        }
         HorizontalDivider(Modifier.padding(vertical = 20.dp))
         Button(onClick = onSignedOut, enabled = !isActionRunning) { Text("Sign out") }
+    }
+}
+
+@Composable
+internal fun ApkUpdateSettings(
+    enabled: Boolean,
+    checking: Boolean,
+    status: String?,
+    releaseUrl: String?,
+    onToggle: () -> Unit,
+    onCheck: () -> Unit,
+    onOpenRelease: (String) -> Unit,
+) {
+    Text("APK updates", style = MaterialTheme.typography.titleMedium)
+    Text(
+        "Receive an alert when a new signed Android preview is available on GitHub.",
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 6.dp),
+    )
+    Button(onClick = onToggle, modifier = Modifier.padding(top = 12.dp)) {
+        Text(if (enabled) "Turn off update alerts" else "Turn on update alerts")
+    }
+    if (enabled) {
+        TextButton(onClick = onCheck, enabled = !checking) {
+            Text(if (checking) "Checking for updates…" else "Check for updates now")
+        }
+    }
+    status?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    releaseUrl?.let { url ->
+        TextButton(onClick = { onOpenRelease(url) }) { Text("Open release page") }
     }
 }
 
