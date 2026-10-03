@@ -1,9 +1,6 @@
-## Purpose
+# Member Notifications Specification
 
-Defines member notification behaviour for email, retired legacy push, and
-opt-in native Android message alerts.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Push notifications are retired
 

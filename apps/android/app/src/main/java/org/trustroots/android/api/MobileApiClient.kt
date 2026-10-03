@@ -319,6 +319,41 @@ class MobileApiClient(
             }
         }
 
+    suspend fun messagePushConfiguration(session: MemberSession): Result<String?> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val response = JSONObject(jsonRequest(
+                    "/api/users/unified-push", "GET", sessionCookie = session.cookieHeader,
+                ).body)
+                if (response.optBoolean("enabled")) response.getString("publicKey") else null
+            }
+        }
+
+    suspend fun registerMessagePush(
+        session: MemberSession,
+        endpoint: String,
+        publicKey: String,
+        auth: String,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            val body = JSONObject().put("endpoint", endpoint)
+                .put("publicKey", publicKey).put("auth", auth).toString()
+            jsonRequest("/api/users/unified-push", "POST", body, session.cookieHeader)
+            Unit
+        }
+    }
+
+    suspend fun unregisterMessagePush(session: MemberSession, endpoint: String): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                jsonRequest(
+                    "/api/users/unified-push", "DELETE",
+                    JSONObject().put("endpoint", endpoint).toString(), session.cookieHeader,
+                )
+                Unit
+            }
+        }
+
     suspend fun searchMembers(session: MemberSession, query: String): Result<List<MemberProfile>> =
         withContext(Dispatchers.IO) {
             runCatching {

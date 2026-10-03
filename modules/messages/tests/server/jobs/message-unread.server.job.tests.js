@@ -8,8 +8,10 @@ const sinon = require('sinon');
 const async = require('async');
 const testutils = require('../../../../../testutils/server/server.testutil');
 const mongoose = require('mongoose');
+const webPush = require('web-push');
 const User = mongoose.model('User');
 const Message = mongoose.model('Message');
+const Registration = mongoose.model('UnifiedPushRegistration');
 
 /**
  * Globals
@@ -126,6 +128,46 @@ describe('Job: message unread', function () {
         });
       });
     });
+  });
+
+  it('sends one generic UnifiedPush alert with the first eligible reminder', async function () {
+    const pushService = require('../../../../users/server/services/unified-push.server.service.mjs');
+    await pushService.register(userToId, {
+      endpoint: 'https://ntfy.sh/anonymous-unread-test',
+      publicKey:
+        'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
+      auth: 'abcdefghijklmnopqrstuv',
+    });
+    message.created = moment().subtract({ minutes: 10, seconds: 1 });
+    await message.save();
+    await new Message({
+      ..._message,
+      created: moment().subtract({ minutes: 11 }),
+    }).save();
+    let finishPush;
+    const pushed = new Promise(resolve => {
+      finishPush = resolve;
+    });
+    const sent = sinon.stub(webPush, 'sendNotification').callsFake(() => {
+      finishPush();
+      return Promise.resolve();
+    });
+    sinon.stub(webPush, 'setVapidDetails');
+    try {
+      await new Promise((resolve, reject) => {
+        messageUnreadJobHandler({}, error =>
+          error ? reject(error) : resolve(),
+        );
+      });
+      await pushed;
+      sent.calledOnce.should.equal(true);
+      sent.firstCall.args[1].should.equal(
+        JSON.stringify({ senderId: userFromId.toString() }),
+      );
+      jobs.length.should.equal(1);
+    } finally {
+      sinon.restore();
+    }
   });
 
   it('Remind user about multiple unread messages from same user in one notification email', function (done) {
@@ -267,6 +309,32 @@ describe('Job: message unread', function () {
         });
       });
     });
+  });
+
+  it('does not push when a sender is shadowbanned', async function () {
+    const pushService = require('../../../../users/server/services/unified-push.server.service.mjs');
+    await pushService.register(userToId, {
+      endpoint: 'https://ntfy.sh/anonymous-restricted-test',
+      publicKey:
+        'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
+      auth: 'abcdefghijklmnopqrstuv',
+    });
+    message.created = moment().subtract({ minutes: 10, seconds: 1 });
+    await message.save();
+    userFrom.roles = ['user', 'shadowban'];
+    await userFrom.save();
+    const sent = sinon.stub(webPush, 'sendNotification');
+    try {
+      await new Promise((resolve, reject) => {
+        messageUnreadJobHandler({}, error =>
+          error ? reject(error) : resolve(),
+        );
+      });
+      sent.called.should.equal(false);
+      jobs.length.should.equal(0);
+    } finally {
+      sinon.restore();
+    }
   });
 
   it('Suppress reminder emails when recipient is suspended', function (done) {
@@ -673,7 +741,9 @@ describe('Job: message unread', function () {
 
   afterEach(function (done) {
     User.deleteMany().exec(function () {
-      Message.deleteMany().exec(done);
+      Message.deleteMany().exec(function () {
+        Registration.deleteMany().exec(done);
+      });
     });
   });
 });

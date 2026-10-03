@@ -6,6 +6,7 @@ import async from 'async';
 import moment from 'moment';
 import userRolesService from '../../../users/server/services/user-roles.server.service.js';
 import mongoose from 'mongoose';
+import { notifyUnread } from '../../../users/server/services/unified-push.server.service.mjs';
 
 /**
  * Task that checks for unread messages from the DB and sends
@@ -304,8 +305,14 @@ function sendUnreadMessageReminders(reminder, callback) {
             return notificationCallback();
           }
 
-          // Future push: notify userTo about unread messages here
-          // (previously pushService.notifyMessagesUnread).
+          if (reminderOrder === 0 && notification.notificationCount === 0) {
+            // Push is best effort. Keep the existing email callback independent.
+            notifyUnread(userTo._id, userFrom._id).catch(error => {
+              log('error', 'UnifiedPush unread-message delivery failed.', {
+                error,
+              });
+            });
+          }
           emailService.sendMessagesUnread(
             userFrom,
             userTo,

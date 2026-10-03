@@ -495,6 +495,20 @@ service.removeProfile = function (req, res) {
         );
       },
 
+      // Remove native message alert registrations
+      function (user, done) {
+        mongoose
+          .model('UnifiedPushRegistration')
+          .deleteMany({ user: user._id }, function (err) {
+            if (err) {
+              log('error', 'Error removing message alert registrations.', {
+                error: err,
+              });
+            }
+            done(null, user);
+          });
+      },
+
       // Remove offers
       function (user, done) {
         getOfferHandler().removeAllByUserId(user._id, function (err) {
