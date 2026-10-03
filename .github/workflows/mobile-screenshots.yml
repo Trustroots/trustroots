@@ -56,7 +56,9 @@ jobs:
           app="$RUNNER_TEMP/TrustrootsDerivedData/Build/Products/Debug-iphonesimulator/Trustroots.app"
           test -d "$app"
           xcrun simctl install "$DEVICE_ID" "$app"
-          xcrun simctl launch "$DEVICE_ID" org.trustroots.ios
+          bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")
+          test -n "$bundle_id"
+          xcrun simctl launch "$DEVICE_ID" "$bundle_id"
       - name: Capture iOS screenshot
         env:
           DEVICE_ID: ${{ steps.simulator.outputs.id }}
@@ -89,6 +91,11 @@ jobs:
       - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
       - name: Install Android build SDK
         run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
       - name: Build, launch and capture Android app
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
@@ -101,12 +108,7 @@ jobs:
             bash apps/android/gradlew -p apps/android assembleDebug
             adb install -r apps/android/app/build/outputs/apk/debug/app-debug.apk
             adb shell am force-stop org.trustroots.android.debug
-            launcher="$(adb shell cmd package resolve-activity --brief \
-              -a android.intent.action.MAIN \
-              -c android.intent.category.LAUNCHER \
-              org.trustroots.android.debug | tr -d '\r')"
-            test -n "$launcher"
-            adb shell am start -W -n "$launcher"
+            adb shell am start -W -n org.trustroots.android.debug/org.trustroots.android.MainActivity
             # Compose can render a blank first frame while Android restores the
             # activity. Capture only after the launched activity has settled.
             sleep 8

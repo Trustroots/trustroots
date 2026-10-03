@@ -624,13 +624,20 @@ test.describe('authenticated member flows', () => {
         'Profile photo updated.',
       );
 
+      const savedProfileResponse = await page.request.get(
+        `/api/users/${member.username}`,
+      );
+      expect(savedProfileResponse.ok()).toBeTruthy();
+      const savedProfile = await savedProfileResponse.json();
+      expect(savedProfile.avatarVersion).toMatch(/^[a-f0-9]{32}$/);
+
       const uploadedResponse = await page.request.get(
         `/api/users/${registered._id}/avatar?source=local`,
         { maxRedirects: 0 },
       );
       expect(uploadedResponse.status()).toBe(302);
       expect(uploadedResponse.headers().location).toContain(
-        `/uploads-profile/${registered._id}/avatar/`,
+        `/uploads-profile/${registered._id}/avatar/${savedProfile.avatarVersion}/`,
       );
     } finally {
       await context.close();
