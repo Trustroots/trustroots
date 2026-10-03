@@ -96,6 +96,7 @@ import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.TrustrootsBrowser
 import org.trustroots.android.updates.ApkUpdateAlerts
 import org.trustroots.android.updates.ApkUpdateCheckResult
+import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.ui.theme.TrustrootsGreen
 import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 
@@ -354,6 +355,7 @@ private fun MemberShell(
     onSignedOut: () -> Unit,
     onSessionInvalidated: () -> Unit,
 ) {
+    val context = LocalContext.current
     var destination by remember { mutableStateOf(Destination.Circles) }
     var destinationHistory by remember { mutableStateOf(emptyList<Destination>()) }
     var menuPage by remember { mutableStateOf(MenuPage.Menu) }
@@ -368,6 +370,8 @@ private fun MemberShell(
         MobileApiClient(BuildConfig.API_BASE_URL, responseCache, session.member.username)
     }
     val offlineSavedAt by api.offlineSavedAt.collectAsState()
+    val alertDestination by MessageAlerts.destination.collectAsState()
+    var initialMessageSender by remember { mutableStateOf<String?>(null) }
     val navigateTo: (Destination) -> Unit = { next ->
         if (next != destination) {
             destinationHistory = destinationHistory + destination
@@ -375,6 +379,20 @@ private fun MemberShell(
         }
         menuPage = MenuPage.Menu
         browserRoute = null
+    }
+    LaunchedEffect(session.member.username, alertDestination) {
+        val requested = alertDestination ?: return@LaunchedEffect
+        if (requested.account != session.member.username) {
+            MessageAlerts.clearDestination()
+            return@LaunchedEffect
+        }
+        initialMessageSender = requested.senderId
+        messagesNavigationID++
+        navigateTo(Destination.Messages)
+        MessageAlerts.clearDestination()
+    }
+    LaunchedEffect(session.member.username) {
+        MessageAlerts.reconcile(context, session)
     }
     BackHandler(
         enabled = browserRoute != null ||
@@ -536,9 +554,10 @@ private fun MemberShell(
                             )
                         },
                         onSignedOut = {
-                            onSignedOut()
                             CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                                MessageAlerts.disable(context, session)
                                 api.signOut(session)
+                                withContext(Dispatchers.Main) { onSignedOut() }
                             }
                         },
                     )
@@ -557,7 +576,7 @@ private fun MemberShell(
                         )
                     }
                     Destination.Messages -> key(messagesNavigationID) {
-                        MessageInboxScreen(api, session, onSessionInvalidated)
+                        MessageInboxScreen(api, session, onSessionInvalidated, initialMessageSender)
                     }
                     else -> PlaceholderScreen(destination = destination, session = session)
                 }

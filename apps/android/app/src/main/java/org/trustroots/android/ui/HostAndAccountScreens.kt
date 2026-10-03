@@ -1,6 +1,12 @@
 package org.trustroots.android.ui
 
+import android.Manifest
+import android.app.Activity
+import android.content.pm.PackageManager
+import android.os.Build
 import android.text.Html
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,6 +27,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -30,6 +37,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -42,6 +50,7 @@ import org.trustroots.android.api.HostOfferUpdate
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.notifications.MessageAlerts
 
 private const val defaultHostLatitude = 48.6908333333
 private const val defaultHostLongitude = 9.14055555556
@@ -323,6 +332,24 @@ internal fun AccountSettingsScreen(
     onResetPassword: () -> Unit,
     onSignedOut: () -> Unit,
 ) {
+    val context = LocalContext.current
+    var messageAlertsEnabled by remember(session.member.username) {
+        mutableStateOf(MessageAlerts.isEnabled(context, session.member.username))
+    }
+    var messageAlertStatus by remember { mutableStateOf<String?>(null) }
+    val distributorStatus by MessageAlerts.status.collectAsState()
+    val startMessageAlerts: () -> Unit = {
+        val activity = context as? Activity
+        if (activity == null) messageAlertStatus = "Could not choose a push distributor."
+        else MessageAlerts.enable(activity, session) {
+            messageAlertStatus = it
+            messageAlertsEnabled = MessageAlerts.isEnabled(context, session.member.username)
+        }
+    }
+    val messagePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) startMessageAlerts()
+        else messageAlertStatus = "Allow notifications in Android settings to receive message alerts."
+    }
     var details by remember { mutableStateOf<AccountDetails?>(null) }
     var email by remember { mutableStateOf("") }
     var newsletter by remember { mutableStateOf(false) }
@@ -459,6 +486,23 @@ internal fun AccountSettingsScreen(
             modifier = Modifier.padding(top = 8.dp),
         ) { Text(if (changingPassword) "Changing…" else "Change password") }
         TextButton(onClick = onResetPassword) { Text("Forgot your password?") }
+        HorizontalDivider(Modifier.padding(vertical = 20.dp))
+        Text("Message alerts", style = MaterialTheme.typography.titleMedium)
+        Text("Receive an alert for an unread conversation after ten minutes. This requires an installed UnifiedPush distributor, such as ntfy.")
+        Button(onClick = {
+            if (messageAlertsEnabled) {
+                scope.launch {
+                    MessageAlerts.disable(context, session)
+                    messageAlertsEnabled = false
+                    messageAlertStatus = "Message alerts are off."
+                }
+            } else if (Build.VERSION.SDK_INT >= 33 &&
+                context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            ) {
+                messagePermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else startMessageAlerts()
+        }) { Text(if (messageAlertsEnabled) "Turn off message alerts" else "Turn on message alerts") }
+        (distributorStatus ?: messageAlertStatus)?.let { Text(it) }
         message?.let {
             Text(it, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 10.dp))
         }
