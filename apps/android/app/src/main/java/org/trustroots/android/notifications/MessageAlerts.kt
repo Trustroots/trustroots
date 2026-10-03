@@ -130,6 +130,22 @@ object MessageAlerts {
         }
     }
 
+    fun onDistributorUnregistered(context: Context) {
+        val account = preferences(context).getString("account", null) ?: return
+        if (!isEnabled(context, account)) return
+        val oldEndpoint = endpoint(context)
+        preferences(context).edit().clear().apply()
+        status.value = "Your push distributor stopped message alerts. Choose one again to resume."
+        if (oldEndpoint != null) {
+            scope.launch {
+                val session = SecureMobileSessionStore(context).load() ?: return@launch
+                if (session.member.username == account) {
+                    MobileApiClient(BuildConfig.API_BASE_URL).unregisterMessagePush(session, oldEndpoint)
+                }
+            }
+        }
+    }
+
     fun show(context: Context, message: PushMessage) {
         if (!message.decrypted) return
         val senderId = senderIdFromPushPayload(message.content.toString(Charsets.UTF_8)) ?: return
@@ -165,5 +181,5 @@ class MessagePushService : PushService() {
     override fun onRegistrationFailed(reason: FailedReason, instance: String) {
         MessageAlerts.status.value = "Push distributor registration failed: ${reason.name}."
     }
-    override fun onUnregistered(instance: String) = Unit
+    override fun onUnregistered(instance: String) = MessageAlerts.onDistributorUnregistered(this)
 }
