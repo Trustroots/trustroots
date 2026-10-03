@@ -38,7 +38,7 @@ describe('ForgotPasswordPage', () => {
 
     expect(
       await screen.findByText(
-        'We sent you an email with further instructions.',
+        'If an account matches that username or email, we will send recovery instructions.',
       ),
     ).toBeInTheDocument();
   });

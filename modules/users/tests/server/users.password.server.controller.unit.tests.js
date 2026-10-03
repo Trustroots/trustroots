@@ -9,7 +9,7 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 const testutils = require('../../../../testutils/server/server.testutil');
 const errorService = require('../../../core/server/services/error.server.service');
 const emailService = require('../../../core/server/services/email.server.service');
-const should = require('should');
+require('should');
 
 require('../../server/models/user.server.model');
 const User = mongoose.model('User');
@@ -78,17 +78,27 @@ describe('Password controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
-    it('returns 404 when the account does not exist', async () => {
+    it('returns the generic acknowledgement when the account does not exist', async () => {
       const controller = loadPasswordController();
       const res = deferredResponse();
       controller.forgot({ body: { username: 'nobody-here' } }, res, () => {});
       await res.waitForResponse();
-      res.statusCode.should.equal(404);
+      res.statusCode.should.equal(200);
+      res.body.message.should.equal(
+        'If an account matches that username or email, we will send recovery instructions.',
+      );
     });
 
-    it('returns 400 when sending the reset email fails', async () => {
+    it('returns the same acknowledgement when sending the reset email fails', async () => {
+      let finishEmailAttempt;
+      const emailAttempted = new Promise(resolve => {
+        finishEmailAttempt = resolve;
+      });
       const controller = loadPasswordController({
-        sendResetPassword: (user, cb) => cb(new Error('smtp down')),
+        sendResetPassword: (user, cb) => {
+          cb(new Error('smtp down'));
+          finishEmailAttempt();
+        },
       });
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
@@ -99,7 +109,37 @@ describe('Password controller unit tests', () => {
         () => {},
       );
       await res.waitForResponse();
-      res.statusCode.should.equal(400);
+      await emailAttempted;
+      res.statusCode.should.equal(200);
+      res.body.message.should.equal(
+        'If an account matches that username or email, we will send recovery instructions.',
+      );
+    });
+
+    it('acknowledges before a stalled email provider responds', async () => {
+      let startDelivery;
+      const deliveryStarted = new Promise(resolve => {
+        startDelivery = resolve;
+      });
+      const controller = loadPasswordController({
+        sendResetPassword: () => startDelivery(),
+      });
+      const fakeUser = {
+        save: callback => callback(),
+      };
+      sinon.stub(User, 'findOne').callsFake((query, fields, callback) => {
+        callback(null, fakeUser);
+      });
+      const res = deferredResponse();
+
+      controller.forgot({ body: { username: 'known-member' } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.message.should.equal(
+        'If an account matches that username or email, we will send recovery instructions.',
+      );
+
+      await deliveryStarted;
     });
 
     it('sends a reset email for a valid account', async () => {
@@ -114,10 +154,12 @@ describe('Password controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(200);
-      res.body.message.should.containEql('sent you an email');
+      res.body.message.should.equal(
+        'If an account matches that username or email, we will send recovery instructions.',
+      );
     });
 
-    it('propagates errors when saving the reset token fails', async () => {
+    it('returns the generic acknowledgement when saving the reset token fails', async () => {
       const controller = loadPasswordController();
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
@@ -132,21 +174,13 @@ describe('Password controller unit tests', () => {
         });
       });
 
-      let nextErr;
       const res = deferredResponse();
-      await new Promise(resolve => {
-        controller.forgot(
-          { body: { username: userDoc.username } },
-          res,
-          err => {
-            nextErr = err;
-            resolve();
-          },
-        );
-      });
-
-      should.exist(nextErr);
-      nextErr.message.should.equal('save failed');
+      controller.forgot({ body: { username: userDoc.username } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.message.should.equal(
+        'If an account matches that username or email, we will send recovery instructions.',
+      );
     });
   });
 
@@ -274,14 +308,11 @@ describe('Password controller unit tests', () => {
       userDoc.resetPasswordExpires = Date.now() + 3600000;
       await userDoc.save();
 
-      sinon.stub(User, 'findOne').callsFake((query, cb) => {
-        cb(null, {
-          password: null,
-          resetPasswordToken: userDoc.resetPasswordToken,
-          resetPasswordExpires: userDoc.resetPasswordExpires,
-          save: saveCb => saveCb(new Error('save failed')),
-        });
-      });
+      sinon
+        .stub(User, 'findOneAndUpdate')
+        .callsFake((query, update, options, callback) =>
+          callback(new Error('save failed')),
+        );
 
       const res = deferredResponse();
       controller.reset(
@@ -522,9 +553,8 @@ describe('Password controller unit tests', () => {
       res.body.message.should.equal('login failed');
     });
 
-    it('returns 400 when the password change confirmation email fails', async () => {
+    it('still succeeds when the password change confirmation email fails', async () => {
       const controller = loadPasswordController({
-        sendResetPassword: (user, cb) => cb(),
         sendResetPasswordConfirm: (user, cb) =>
           cb(new Error('confirm email failed')),
       });
@@ -547,8 +577,8 @@ describe('Password controller unit tests', () => {
         res,
       );
       await res.waitForResponse();
-      res.statusCode.should.equal(400);
-      res.body.message.should.equal('confirm email failed');
+      res.statusCode.should.equal(200);
+      res.body.message.should.equal('Password changed successfully!');
     });
   });
 });
