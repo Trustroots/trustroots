@@ -1,11 +1,11 @@
-import mongoose from 'mongoose';
-import webPush from 'web-push';
-import config from '../../../../config/config.js';
-import log from '../../../../config/lib/logger.js';
+const mongoose = require('mongoose');
+const webPush = require('web-push');
+const config = require('../../../../config/config');
+const log = require('../../../../config/lib/logger');
 
 const Registration = mongoose.model('UnifiedPushRegistration');
 
-export function pushConfiguration() {
+function pushConfiguration() {
   const { publicKey, privateKey, subject, allowedHosts } = config.webPush;
   return {
     enabled: Boolean(publicKey && privateKey && subject && allowedHosts.length),
@@ -13,7 +13,7 @@ export function pushConfiguration() {
   };
 }
 
-export function validRegistration({ endpoint, publicKey, auth }) {
+function validRegistration({ endpoint, publicKey, auth }) {
   if (
     typeof endpoint !== 'string' ||
     endpoint.length > 2048 ||
@@ -38,7 +38,7 @@ export function validRegistration({ endpoint, publicKey, auth }) {
   }
 }
 
-export async function register(userId, registration) {
+async function register(userId, registration) {
   await Registration.findOneAndUpdate(
     { endpoint: registration.endpoint },
     {
@@ -53,11 +53,11 @@ export async function register(userId, registration) {
   );
 }
 
-export async function unregister(userId, endpoint) {
+async function unregister(userId, endpoint) {
   await Registration.deleteOne({ user: userId, endpoint });
 }
 
-export async function notifyUnread(userId, senderId) {
+async function notifyUnread(userId, senderId) {
   if (!pushConfiguration().enabled) return;
   const registrations = await Registration.find({ user: userId });
   webPush.setVapidDetails(
@@ -88,3 +88,11 @@ export async function notifyUnread(userId, senderId) {
     }),
   );
 }
+
+module.exports = {
+  pushConfiguration,
+  validRegistration,
+  register,
+  unregister,
+  notifyUnread,
+};

@@ -544,6 +544,11 @@ describe('Profile controller unit tests', () => {
       userDoc.removeProfileExpires = Date.now() + 3600000;
       await userDoc.save();
 
+      const pushCleanup = sinon
+        .stub(UnifiedPushRegistration, 'deleteMany')
+        .callsFake((query, callback) =>
+          callback(new Error('push cleanup failed')),
+        );
       const { res } = await runHandler(res =>
         controller.removeProfile(
           {
@@ -553,6 +558,7 @@ describe('Profile controller unit tests', () => {
           res,
         ),
       );
+      pushCleanup.restore();
 
       res.statusCode.should.equal(200);
       const gone = await User.findById(saved._id);

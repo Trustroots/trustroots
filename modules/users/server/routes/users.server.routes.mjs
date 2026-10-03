@@ -4,7 +4,7 @@ import userAvatar from '../controllers/users.avatar.server.controller.js';
 import userPassword from '../controllers/users.password.server.controller.js';
 import userAuthentication from '../controllers/users.authentication.server.controller.js';
 import userExport from '../controllers/users.export.server.controller.js';
-import * as unifiedPush from '../controllers/users.unified-push.server.controller.mjs';
+import unifiedPush from '../controllers/users.unified-push.server.controller.js';
 
 /**
  * Module dependencies.

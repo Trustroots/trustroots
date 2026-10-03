@@ -1,15 +1,15 @@
-import {
+const {
   pushConfiguration,
   validRegistration,
   register,
   unregister,
-} from '../services/unified-push.server.service.mjs';
+} = require('../services/unified-push.server.service');
 
-export function configuration(req, res) {
+function configuration(req, res) {
   res.json(pushConfiguration());
 }
 
-export async function add(req, res) {
+async function add(req, res) {
   if (!pushConfiguration().enabled)
     return res
       .status(503)
@@ -28,7 +28,7 @@ export async function add(req, res) {
   }
 }
 
-export async function remove(req, res) {
+async function remove(req, res) {
   const endpoint = req.body && req.body.endpoint;
   if (typeof endpoint !== 'string' || !endpoint)
     return res.status(400).json({ message: 'Endpoint is required.' });
@@ -41,3 +41,5 @@ export async function remove(req, res) {
       .json({ message: 'Could not remove message alerts.' });
   }
 }
+
+module.exports = { configuration, add, remove };

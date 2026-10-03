@@ -7,7 +7,7 @@ const config = require('../../../../config/config');
 const express = require('../../../../config/lib/express');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
-const push = require('../../server/services/unified-push.server.service.mjs');
+const push = require('../../server/services/unified-push.server.service');
 const Registration = mongoose.model('UnifiedPushRegistration');
 const key =
   'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ';
@@ -48,6 +48,10 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     const settings = await agent.get('/api/users/unified-push').expect(200);
     settings.body.enabled.should.equal(false);
     await agent.post('/api/users/unified-push').send(registration).expect(503);
+    config.webPush = { ...originalConfiguration, publicKey: '' };
+    const missingKey = await agent.get('/api/users/unified-push').expect(200);
+    missingKey.body.enabled.should.equal(false);
+    (missingKey.body.publicKey === null).should.equal(true);
   });
 
   it('rejects unsafe endpoints and invalid keys', async function () {
@@ -72,6 +76,20 @@ describe('UnifiedPush registration and unread-message delivery', function () {
       .post('/api/users/unified-push')
       .send({ ...registration, endpoint: 'http://ntfy.sh/a' })
       .expect(400);
+    await agent.post('/api/users/unified-push').expect(400);
+  });
+
+  it('rejects requests without a parsed body', async function () {
+    const controller = require('../../server/controllers/users.unified-push.server.controller');
+    const response = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.stub(),
+    };
+
+    await controller.add({}, response);
+
+    response.status.calledOnceWithExactly(400).should.equal(true);
+    response.json.calledOnce.should.equal(true);
   });
 
   it('attaches an endpoint to the current account and removes it on opt-out', async function () {
@@ -97,6 +115,21 @@ describe('UnifiedPush registration and unread-message delivery', function () {
       .send({ endpoint: registration.endpoint })
       .expect(204);
     (await Registration.countDocuments()).should.equal(1);
+  });
+
+  it('reports storage failures without accepting a registration', async function () {
+    const save = sinon
+      .stub(Registration, 'findOneAndUpdate')
+      .rejects(new Error('database unavailable'));
+    await agent.post('/api/users/unified-push').send(registration).expect(500);
+    save.restore();
+    sinon
+      .stub(Registration, 'deleteOne')
+      .rejects(new Error('database unavailable'));
+    await agent
+      .delete('/api/users/unified-push')
+      .send({ endpoint: registration.endpoint })
+      .expect(500);
   });
 
   it('sends an encrypted generic payload and removes a gone endpoint', async function () {
