@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { nip19 } from 'nostr-tools';
 
+import NostrootsOnboarding from '@/modules/core/client/components/NostrootsOnboarding.component';
 import ProfileEditPage from './ProfileEditPage.component';
 import { removeSocialAccount, update } from '../api/users.api';
 import { useAuth } from '@/modules/core/client/react-app/auth';
@@ -126,6 +127,10 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                   Nostroots
                 </a>
               </h4>
+              <NostrootsOnboarding
+                username={user.username}
+                source="network-settings"
+              />
               <div className="form-group">
                 <div className="input-group">
                   <label className="input-group-addon" htmlFor="nostrNpub">
