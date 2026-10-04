@@ -83,7 +83,7 @@
     "test:server:watch": "npm run check-environment && NODE_ENV=test nodemon --watch modules --watch config --watch migrations --watch server.js --ext js,mjs --ignore 'modules/*/client/**' --ignore 'modules/*/tests/client/**' --exec 'node ./scripts/test-server.js'",
     "test:server": "NODE_ENV=test node ./scripts/test-server.js",
     "test": "npm run check-environment && npm run lint && npm run test:client && npm run test:server",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.tests.json",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.tests.json && tsc --noEmit -p tsconfig.contracts.json",
     "webpack": "webpack --config config/webpack/webpack.config.js",
     "webpack:server": "webpack serve --hot --config config/webpack/webpack.config.js",
     "ensure-indexes": "node ./bin/db-maintenance/ensure-indexes.js",
