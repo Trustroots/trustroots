@@ -627,6 +627,7 @@ describe('API route registrations', () => {
     );
     assertHandlers(routeByPath(routes, '/api/admin/user').post, [
       auditLog.record,
+      users.usernameToUserId,
       users.getUser,
     ]);
     assertHandlers(routeByPath(routes, '/api/admin/user/change-role').post, [
