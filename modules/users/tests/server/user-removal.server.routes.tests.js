@@ -108,6 +108,7 @@ describe('User removal CRUD tests', function () {
   it('should not be able to initiate removing profile when not logged in', function (done) {
     agent
       .del('/api/users')
+      .set('X-Trustroots-Request', '1')
       .expect(403)
       .end(function (deleteErr) {
         // Handle signup error
@@ -172,6 +173,7 @@ describe('User removal CRUD tests', function () {
 
         agent
           .del('/api/users')
+          .set('X-Trustroots-Request', '1')
           .expect(200)
           .end(function (deleteErr, deleteRes) {
             // Handle signup error
@@ -224,6 +226,7 @@ describe('User removal CRUD tests', function () {
 
         agent
           .del('/api/users')
+          .set('X-Trustroots-Request', '1')
           .expect(200)
           .end(function (deleteErr1, deleteRes1) {
             // Handle signup error
@@ -260,6 +263,7 @@ describe('User removal CRUD tests', function () {
                 // This should refresh token to new one so check everything again
                 agent
                   .del('/api/users')
+                  .set('X-Trustroots-Request', '1')
                   .expect(200)
                   .end(function (deleteErr2, deleteRes2) {
                     // Handle signup error
@@ -321,6 +325,7 @@ describe('User removal CRUD tests', function () {
 
           agent
             .del('/api/users/remove/' + savedUser.removeProfileToken)
+            .set('X-Trustroots-Request', '1')
             .expect(200)
             .end(function (deleteErr, deleteRes) {
               // Handle signup error
@@ -371,6 +376,7 @@ describe('User removal CRUD tests', function () {
 
           agent
             .del('/api/users')
+            .set('X-Trustroots-Request', '1')
             .expect(403)
             .end(function (deleteErr, deleteRes) {
               should.not.exist(deleteErr);
@@ -395,6 +401,7 @@ describe('User removal CRUD tests', function () {
 
       agent
         .del('/api/users/remove/' + savedUser.removeProfileToken)
+        .set('X-Trustroots-Request', '1')
         .expect(403)
         .end(function (deleteErr, deleteRes) {
           // Handle signup error
@@ -439,6 +446,7 @@ describe('User removal CRUD tests', function () {
 
           agent
             .del('/api/users/remove/wrongtoken')
+            .set('X-Trustroots-Request', '1')
             .expect(400)
             .end(function (deleteErr, deleteRes) {
               // Handle signup error
@@ -488,6 +496,7 @@ describe('User removal CRUD tests', function () {
 
           agent
             .del('/api/users/remove/' + userA.removeProfileToken)
+            .set('X-Trustroots-Request', '1')
             .expect(400)
             .end(function (deleteErr, deleteRes) {
               // Handle signup error
@@ -537,6 +546,7 @@ describe('User removal CRUD tests', function () {
 
           agent
             .del('/api/users/remove/' + userA.removeProfileToken)
+            .set('X-Trustroots-Request', '1')
             .expect(400)
             .end(function (deleteErr, deleteRes) {
               // Handle signup error
@@ -585,6 +595,7 @@ describe('User removal CRUD tests', function () {
     function sendDeleteRequest(cb) {
       agent
         .del('/api/users/remove/' + userA.removeProfileToken)
+        .set('X-Trustroots-Request', '1')
         .expect(200)
         .end(function (deleteErr) {
           cb(deleteErr);
@@ -636,6 +647,7 @@ describe('User removal CRUD tests', function () {
           function (cb) {
             agent
               .post('/api/users-avatar')
+              .set('X-Trustroots-Request', '1')
               .attach('avatar', './modules/users/tests/server/img/avatar.png')
               .expect(200)
               .end(function (err) {
@@ -752,6 +764,7 @@ describe('User removal CRUD tests', function () {
           function (cb) {
             agent
               .post('/api/users/memberships/' + tribeA._id)
+              .set('X-Trustroots-Request', '1')
               .send()
               .expect(200)
               .end(function (err) {

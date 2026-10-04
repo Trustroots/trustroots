@@ -115,7 +115,9 @@ test.describe.serial('search offers and circles feature coverage', () => {
       type: 'meet',
       description: 'A walk with fellow members.',
     });
-    await page.request.delete(`/api/offers/${meeting._id}`);
+    await page.request.delete(`/api/offers/${meeting._id}`, {
+      headers: { 'X-Trustroots-Request': '1' },
+    });
   });
 
   test('hosting location follows place searches and map dragging', async ({
@@ -276,7 +278,10 @@ test.describe.serial('search offers and circles feature coverage', () => {
     });
     expect(update.ok()).toBeTruthy();
 
-    const remove = await page.request.delete(`/api/offers/${createdOffer._id}`);
+    const remove = await page.request.delete(
+      `/api/offers/${createdOffer._id}`,
+      { headers: { 'X-Trustroots-Request': '1' } },
+    );
     expect(remove.ok()).toBeTruthy();
   });
 
@@ -337,6 +342,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
 
       const join = await page.request.post(
         `/api/users/memberships/${families._id}`,
+        { headers: { 'X-Trustroots-Request': '1' } },
       );
       expect(join.ok()).toBeTruthy();
       joinedFamilies = true;
@@ -352,7 +358,9 @@ test.describe.serial('search offers and circles feature coverage', () => {
       ).toContain(aliceOffer._id.toString());
     } finally {
       if (joinedFamilies) {
-        await page.request.delete(`/api/users/memberships/${families._id}`);
+        await page.request.delete(`/api/users/memberships/${families._id}`, {
+          headers: { 'X-Trustroots-Request': '1' },
+        });
       }
 
       await hostContext.request.put(`/api/offers/${aliceOffer._id}`, {
@@ -438,7 +446,10 @@ test.describe.serial('search offers and circles feature coverage', () => {
       true,
     );
 
-    const remove = await page.request.delete(`/api/offers/${createdOffer._id}`);
+    const remove = await page.request.delete(
+      `/api/offers/${createdOffer._id}`,
+      { headers: { 'X-Trustroots-Request': '1' } },
+    );
     expect(remove.ok()).toBeTruthy();
   });
 
@@ -573,6 +584,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
 
       const leave = await memberPage.request.delete(
         `/api/users/memberships/${hitchhikers._id}`,
+        { headers: { 'X-Trustroots-Request': '1' } },
       );
       expect(leave.ok()).toBeTruthy();
 

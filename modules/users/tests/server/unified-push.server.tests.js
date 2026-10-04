@@ -76,7 +76,7 @@ describe('UnifiedPush registration and unread-message delivery', function () {
       .post('/api/users/unified-push')
       .send({ ...registration, endpoint: 'http://ntfy.sh/a' })
       .expect(400);
-    await agent.post('/api/users/unified-push').expect(400);
+    await agent.post('/api/users/unified-push').send({}).expect(400);
   });
 
   it('rejects requests without a parsed body', async function () {

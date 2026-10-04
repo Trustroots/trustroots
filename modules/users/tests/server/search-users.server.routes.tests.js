@@ -107,7 +107,7 @@ describe('Search users: GET /users?search=string', function () {
     afterEach(function (done) {
       agent
         .post('/api/auth/signout')
-        .set('X-Trustroots-Request', '1')
+        .set('Origin', 'http://localhost:3000')
         .expect(302)
         .end(done);
     });

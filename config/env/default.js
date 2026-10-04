@@ -48,6 +48,12 @@ module.exports = {
   sessionSecret: 'MEAN',
   sessionCollection: 'sessions',
   domain: 'localhost:3000',
+  // Additional trusted browser origins for reverse-proxy or multi-origin
+  // deployments. Values are configuration, never derived from request headers.
+  csrfAllowedOrigins: (process.env.TRUSTROOTS_CSRF_ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean),
   supportEmail: 'support@trustroots.org', // TO-address for support requests
   supportVolunteerNames: ['Dario', 'Noah'], // Used as "from" name to send some automated emails
   surveyReactivateHosts: 'https://ideas.trustroots.org/?p=1302#page-1302', // Survey to send with host reactivation emails

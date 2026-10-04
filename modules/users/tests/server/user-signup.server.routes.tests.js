@@ -241,6 +241,7 @@ describe('User signup and authentication CRUD tests', function () {
                 // POST does the actual job
                 agent
                   .post('/api/auth/confirm-email/' + userRes1.emailToken)
+                  .set('X-Trustroots-Request', '1')
                   .expect(200)
                   .end(function (confirmEmailPostErr, confirmEmailPostRes) {
                     if (confirmEmailPostErr) {
@@ -317,6 +318,7 @@ describe('User signup and authentication CRUD tests', function () {
                 // POST does the actual job
                 agent
                   .post('/api/auth/confirm-email/WRONG_TOKEN')
+                  .set('X-Trustroots-Request', '1')
                   .expect(400)
                   .end(function (confirmEmailPostErr, confirmEmailPostRes) {
                     if (confirmEmailPostErr) {
@@ -354,7 +356,7 @@ describe('User signup and authentication CRUD tests', function () {
         // Logout
         agent
           .post('/api/auth/signout')
-          .set('X-Trustroots-Request', '1')
+          .set('Origin', 'http://localhost:3000')
           .expect(302)
           .end(function (signoutErr, signoutRes) {
             if (signoutErr) {
@@ -386,7 +388,7 @@ describe('User signup and authentication CRUD tests', function () {
         // Logout
         agent
           .post('/api/auth/signout')
-          .set('X-Trustroots-Request', '1')
+          .set('Origin', 'http://localhost:3000')
           .expect(302)
           .end(function (signoutErr, signoutRes) {
             if (signoutErr) {
@@ -582,6 +584,7 @@ describe('User signup and authentication CRUD tests', function () {
     it('should not resend confirmation token', function (done) {
       agent
         .post('/api/auth/resend-confirmation')
+        .set('X-Trustroots-Request', '1')
         .expect(400)
         .end(function (err, resendRes) {
           if (err) return done(err);
@@ -599,6 +602,7 @@ describe('User signup and authentication CRUD tests', function () {
       it('should resend confirmation token for email change', function (done) {
         agent
           .post('/api/auth/resend-confirmation')
+          .set('X-Trustroots-Request', '1')
           .expect(200)
           .end(function (err, resendRes) {
             if (err) return done(err);
@@ -632,6 +636,7 @@ describe('User signup and authentication CRUD tests', function () {
     it('should resend confirmation token', function (done) {
       agent
         .post('/api/auth/resend-confirmation')
+        .set('X-Trustroots-Request', '1')
         .expect(200)
         .end(function (err, resendRes) {
           if (err) return done(err);

@@ -237,6 +237,20 @@ test.describe.serial('message action feature coverage', () => {
       expect(unreadBefore.ok()).toBeTruthy();
       expect((await unreadBefore.json()).unread).toBeGreaterThan(0);
 
+      await page.goto('/search');
+      const messagesLink = page.locator('#tr-header a[href="/messages"]');
+      const unreadBadge = messagesLink.locator('.notification-badge');
+      for (const width of [1280, 390]) {
+        await page.setViewportSize({ width, height: 844 });
+        await expect(unreadBadge).toBeVisible();
+        const linkBounds = await messagesLink.boundingBox();
+        const badgeBounds = await unreadBadge.boundingBox();
+        expect(badgeBounds.x).toBeGreaterThanOrEqual(linkBounds.x);
+        expect(badgeBounds.x + badgeBounds.width).toBeLessThanOrEqual(
+          linkBounds.x + linkBounds.width,
+        );
+      }
+
       const sync = await page.request.get('/api/messages-sync');
       expect(sync.ok()).toBeTruthy();
       const syncBody = await sync.json();

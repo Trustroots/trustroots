@@ -44,6 +44,16 @@ module.exports = {
   maxUploadSize: 10000, // =10kb in bytes. Set ridiculously small just for tests
   host: process.env.TRUSTROOTS_E2E_HOST || 'localhost',
   port: Number(process.env.PORT) || 3001,
+  csrfAllowedOrigins: [
+    `http://localhost:${process.env.TRUSTROOTS_E2E_WEB_PORT || 4300}`,
+    `http://localhost:${
+      process.env.TRUSTROOTS_E2E_API_PORT || process.env.PORT || 4301
+    }`,
+    `http://127.0.0.1:${process.env.TRUSTROOTS_E2E_WEB_PORT || 4300}`,
+    `http://127.0.0.1:${
+      process.env.TRUSTROOTS_E2E_API_PORT || process.env.PORT || 4301
+    }`,
+  ],
   // Subset of `default.js` illegalStrings for route tests. The full production
   // list lives in default.js; extend this when adding reserved names that need
   // explicit signup/profile test coverage.

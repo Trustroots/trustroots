@@ -41,4 +41,17 @@
 .navbar-fixed-top-below {
   top: @navbar-height;
   z-index: @zindex-navbar-fixed;
+
+  // Bootstrap 5 makes .navbar-nav a column; keep profile actions in one row.
+  .navbar-nav {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    width: 100%;
+    overflow-x: auto;
+
+    > li {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+  }
 }

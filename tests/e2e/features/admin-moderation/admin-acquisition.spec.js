@@ -54,7 +54,9 @@ test.describe('admin acquisition feature coverage', () => {
       /\/api\/users\/.+\/avatar\?size=32/,
     );
 
-    const stories = await page.request.post('/api/admin/acquisition-stories');
+    const stories = await page.request.post('/api/admin/acquisition-stories', {
+      headers: { 'X-Trustroots-Request': '1' },
+    });
     expect(stories.ok()).toBeTruthy();
     const storyRows = await stories.json();
     const aliceStory = storyRows.find(item =>
@@ -78,6 +80,7 @@ test.describe('admin acquisition feature coverage', () => {
 
     const analysis = await page.request.post(
       '/api/admin/acquisition-stories/analysis',
+      { headers: { 'X-Trustroots-Request': '1' } },
     );
     expect(analysis.ok()).toBeTruthy();
     expect(Object.keys(await analysis.json()).length).toBeGreaterThan(0);

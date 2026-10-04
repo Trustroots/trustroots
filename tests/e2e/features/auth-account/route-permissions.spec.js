@@ -24,7 +24,13 @@ test.describe('route permission regression coverage', () => {
       expect(circles.status()).toBe(200);
       expect(Array.isArray(await circles.json())).toBeTruthy();
 
-      expect((await context.request.post('/api/tribes')).status()).toBe(403);
+      expect(
+        (
+          await context.request.post('/api/tribes', {
+            headers: { 'X-Trustroots-Request': '1' },
+          })
+        ).status(),
+      ).toBe(403);
       expect((await context.request.get('/api/messages')).status()).toBe(403);
     } finally {
       await context.close();
@@ -68,7 +74,11 @@ test.describe('route permission regression coverage', () => {
       const offers = await findOffersByUser(memberId, { description });
       expect(offers).toHaveLength(1);
       expect(
-        (await context.request.delete(`/api/offers/${offers[0]._id}`)).status(),
+        (
+          await context.request.delete(`/api/offers/${offers[0]._id}`, {
+            headers: { 'X-Trustroots-Request': '1' },
+          })
+        ).status(),
       ).toBe(200);
 
       await updateUserByUsername(member.username, {

@@ -84,6 +84,7 @@ test.describe.serial('auth email and token feature coverage', () => {
 
     const confirm = await request.post(
       `/api/auth/confirm-email/${storedUser.emailToken}`,
+      { headers: { 'X-Trustroots-Request': '1' } },
     );
     expect(confirm.ok()).toBeTruthy();
     expect(await confirm.json()).toMatchObject({ profileMadePublic: true });
@@ -109,6 +110,7 @@ test.describe.serial('auth email and token feature coverage', () => {
 
     const invalidPost = await request.post(
       '/api/auth/confirm-email/not-a-valid-token',
+      { headers: { 'X-Trustroots-Request': '1' } },
     );
     expect(invalidPost.status()).toBe(400);
   });
@@ -126,7 +128,9 @@ test.describe.serial('auth email and token feature coverage', () => {
     await registerViaApi(request, unconfirmed);
     await signInViaApi(page, request, unconfirmed);
 
-    const resend = await page.request.post('/api/auth/resend-confirmation');
+    const resend = await page.request.post('/api/auth/resend-confirmation', {
+      headers: { 'X-Trustroots-Request': '1' },
+    });
     expect(resend.ok()).toBeTruthy();
     expect(await resend.json()).toMatchObject({
       message: 'Sent confirmation email.',
@@ -135,6 +139,7 @@ test.describe.serial('auth email and token feature coverage', () => {
     await signInViaApi(page, request, SEEDED_MEMBERS[0]);
     const alreadyConfirmed = await page.request.post(
       '/api/auth/resend-confirmation',
+      { headers: { 'X-Trustroots-Request': '1' } },
     );
     expect(alreadyConfirmed.status()).toBe(400);
   });
