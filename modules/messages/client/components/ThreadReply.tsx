@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
@@ -8,14 +8,25 @@ import { plainTextLength } from '@/modules/core/client/utils/filters';
 type ThreadReplyProps = {
   onSend: (content: string) => Promise<unknown>;
   cacheKey?: string;
+  autoFocus?: boolean;
 };
 
-export default function ThreadReply({ onSend, cacheKey }: ThreadReplyProps) {
+export default function ThreadReply({
+  onSend,
+  cacheKey,
+  autoFocus = false,
+}: ThreadReplyProps) {
   const { t } = useTranslation('messages');
 
   const [sending, setSending] = useState(false);
   const [editorKeyCounter, setEditorKeyCounter] = useState(0);
   const [content, setContent] = useState(() => getDraft() || '');
+
+  useEffect(() => {
+    if (autoFocus || editorKeyCounter > 0) {
+      document.getElementById('message-reply-content')?.focus();
+    }
+  }, [autoFocus, editorKeyCounter]);
 
   async function send(event: React.SyntheticEvent | KeyboardEvent) {
     event.preventDefault();
@@ -113,4 +124,5 @@ export default function ThreadReply({ onSend, cacheKey }: ThreadReplyProps) {
 ThreadReply.propTypes = {
   onSend: PropTypes.func.isRequired,
   cacheKey: PropTypes.string,
+  autoFocus: PropTypes.bool,
 };

@@ -215,10 +215,12 @@ service.inbox = function (req, res) {
 
   Thread.paginate(
     excludeBlockedUsers(
-      {
-        // Returns only threads where currently authenticated user is participating member
-        $or: [{ userFrom: req.user }, { userTo: req.user }],
-      },
+      req.query.filter === 'unread'
+        ? { read: false, userTo: req.user._id }
+        : {
+            // Returns only threads where currently authenticated user is participating member
+            $or: [{ userFrom: req.user }, { userTo: req.user }],
+          },
       req.user,
     ),
     {

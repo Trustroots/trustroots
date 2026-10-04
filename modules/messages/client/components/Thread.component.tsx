@@ -419,6 +419,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
               {!isBlocked && showReply && (
                 <ThreadReply
                   cacheKey={cacheKey}
+                  autoFocus={!isExtraSmall}
                   onSend={content => sendMessage(content)}
                 />
               )}
