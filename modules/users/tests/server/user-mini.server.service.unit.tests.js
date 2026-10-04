@@ -4,19 +4,11 @@ const userRolesService = require('../../server/services/user-roles.server.servic
 require('should');
 
 describe('Service: user mini', function () {
-  it('exposes callable named ESM exports', async function () {
+  it('can be imported by ESM controllers', async function () {
     const esmService = await import(
-      '../../server/services/user-mini.server.service.mjs'
+      '../../server/services/user-mini.server.service.js'
     );
-    for (const name of [
-      'userMiniProfileFields',
-      'userMiniProjectionMap',
-      'userMiniProjection',
-      'miniUserPopulate',
-      'visibleUserLookupStages',
-    ]) {
-      esmService[name].should.equal(userMiniService[name]);
-    }
+    esmService.default.should.equal(userMiniService);
   });
 
   describe('userMiniProfileFields', function () {

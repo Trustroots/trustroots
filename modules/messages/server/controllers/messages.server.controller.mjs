@@ -13,7 +13,7 @@ import spamService from '../../../core/server/services/spam.server.service.js';
 import userRolesService from '../../../users/server/services/user-roles.server.service.js';
 import statService from '../../../stats/server/services/stats.server.service.js';
 import paginationService from '../../../core/server/services/pagination.server.service.js';
-import * as userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
+import userMiniService from '../../../users/server/services/user-mini.server.service.js';
 
 const service = {};
 

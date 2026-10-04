@@ -19,7 +19,7 @@ import * as nip19 from 'nostr-tools/nip19';
 import validator from 'validator';
 import deprecatedLanguages from '../../../../config/languages/deprecated.js';
 import { selectProfileResponse } from '../services/profile-response.server.service.mjs';
-import { userMiniProfileFields as miniProfileFields } from '../services/user-mini.server.service.mjs';
+import userMiniService from '../services/user-mini.server.service.js';
 
 const require = createRequire(import.meta.url);
 // JSON import attributes are not supported by the pinned formatter.
@@ -77,7 +77,7 @@ service.userProfileFields = [
 
 // Restricted set of profile fields when only really "miniprofile" is needed.
 // Single source of truth lives in the user-mini service.
-service.userMiniProfileFields = miniProfileFields;
+service.userMiniProfileFields = userMiniService.userMiniProfileFields;
 
 // Mini + a few fields we'll need at listings
 service.userListingProfileFields =
