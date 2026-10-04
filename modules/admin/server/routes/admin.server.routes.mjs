@@ -9,6 +9,7 @@ import adminDashboard from './../controllers/admin.dashboard.server.controller.m
 import adminNotes from './../controllers/admin.notes.server.controller.mjs';
 import adminReferenceThreads from './../controllers/admin.reference-threads.server.controller.mjs';
 import adminHackerspaces from './../controllers/admin.hackerspaces.server.controller.mjs';
+import adminExperienceChanges from '../controllers/admin.experience-changes.server.controller.mjs';
 
 /**
  * Module dependencies.
@@ -94,6 +95,26 @@ const registerRoutes = app => {
     .route('/api/admin/reference-threads')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminReferenceThreads.list);
+  app
+    .route('/api/admin/experiences')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminExperienceChanges.findExperiences);
+
+  app
+    .route('/api/admin/experiences/:id/change-links')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminExperienceChanges.issueLink);
+
+  app
+    .route('/api/admin/experience-change-requests')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminExperienceChanges.listRequests);
+
+  app
+    .route('/api/admin/experience-change-requests/:id/decision')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminExperienceChanges.decide);
+
   app
     .route('/api/admin/newsletter-subscribers/split')
     .all(adminPolicy.isAllowed)
