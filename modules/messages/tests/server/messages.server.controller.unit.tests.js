@@ -421,16 +421,18 @@ describe('Messages controller unit tests', () => {
       });
 
       const messages = await Message.find().sort('content');
-      messages
-        .filter(message => message.userTo.equals(recipient._id))
-        .length.should.equal(2);
-      messages
-        .filter(message => message.userTo.equals(recipient._id))
+      const recipientMessages = messages.filter(message =>
+        message.userTo.equals(recipient._id),
+      );
+      const otherMessages = messages.filter(message =>
+        message.userTo.equals(otherRecipient._id),
+      );
+      recipientMessages.length.should.equal(2);
+      recipientMessages
         .every(message => message.notificationCount === 2)
         .should.be.true();
-      messages
-        .filter(message => message.userTo.equals(otherRecipient._id))
-        .every(message => message.notificationCount !== 2)
+      otherMessages
+        .every(message => message.notificationCount === 0)
         .should.be.true();
     });
   });
