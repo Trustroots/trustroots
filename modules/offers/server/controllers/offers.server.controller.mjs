@@ -23,6 +23,16 @@ function getUserProfile() {
  */
 const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
+const DEFAULT_MAP_LOCATION = [48.6908333333, 9.14055555556];
+
+function isDefaultMapLocation(location) {
+  return (
+    Array.isArray(location) &&
+    location.length === 2 &&
+    location[0] === DEFAULT_MAP_LOCATION[0] &&
+    location[1] === DEFAULT_MAP_LOCATION[1]
+  );
+}
 
 // Selected fields to return publicly for offers
 const publicOfferFields = [
@@ -195,6 +205,11 @@ service.create = function (req, res) {
       message: 'Missing offer location.',
     });
   }
+  if (isDefaultMapLocation(req.body.location)) {
+    return res.status(400).send({
+      message: 'Choose a location for your offer.',
+    });
+  }
 
   const validUntil = normaliseOfferExpiry(
     req.body.type,
@@ -251,6 +266,11 @@ service.update = function (req, res) {
         if (!req.body.location) {
           return res.status(400).send({
             message: 'Missing offer location.',
+          });
+        }
+        if (isDefaultMapLocation(req.body.location)) {
+          return res.status(400).send({
+            message: 'Choose a location for your offer.',
           });
         }
 

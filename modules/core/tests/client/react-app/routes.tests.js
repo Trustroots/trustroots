@@ -41,6 +41,10 @@ jest.mock(
   () => () => <main>Admin messages</main>,
 );
 jest.mock(
+  '@/modules/admin/client/components/AdminLocationCorrections.component',
+  () => () => <main>Location corrections</main>,
+);
+jest.mock(
   '@/modules/admin/client/components/AdminNewsletter.component',
   () => () => <main>Admin newsletter</main>,
 );

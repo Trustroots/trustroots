@@ -4,10 +4,9 @@ import React, { useEffect } from 'react';
 import { getCurrentUser } from '../../../core/client/services/client-runtime';
 
 export default function AdminHeader() {
-  const isAdmin = (getCurrentUser()?.roles || []).includes('admin');
-  const isWelcomeTeam = (getCurrentUser()?.roles || []).includes(
-    'welcome-team',
-  );
+  const roles = getCurrentUser()?.roles || [];
+  const isAdmin = roles.includes('admin');
+  const isWelcomeTeam = roles.includes('welcome-team');
   const currentPath = window.location.pathname.replace('/admin/', '');
 
   useEffect(() => {
@@ -46,6 +45,10 @@ export default function AdminHeader() {
       label: 'Analysis',
     },
     {
+      path: 'location-corrections',
+      label: 'Location corrections',
+    },
+    {
       path: 'newsletter',
       label: 'Newsletter',
     },
@@ -80,7 +83,8 @@ export default function AdminHeader() {
                 isAdmin ||
                 (page.path === 'staff-blockers' && isWelcomeTeam) ||
                 page.path === 'acquisition-stories' ||
-                page.path === 'acquisition-stories/analysis',
+                page.path === 'acquisition-stories/analysis' ||
+                (isWelcomeTeam && page.path === 'location-corrections'),
             )
             .map(page => renderTab(page))}
         </ul>

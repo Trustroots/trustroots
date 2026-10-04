@@ -2,6 +2,7 @@ import adminAcquisitionStories from '../controllers/admin.acquisition-stories.se
 import adminAuditLog from '../controllers/admin.audit-log.server.controller.js';
 import adminMessages from '../controllers/admin.messages.server.controller.js';
 import adminNewsletter from '../controllers/admin.newsletter.server.controller.js';
+import adminLocationCorrections from '../controllers/admin.location-corrections.server.controller.js';
 import adminPolicy from '../policies/admin.server.policy.js';
 import adminThreads from '../controllers/admin.threads.server.controller.js';
 import adminUsers from '../controllers/admin.users.server.controller.js';
@@ -23,6 +24,16 @@ const registerRoutes = app => {
     .route('/api/admin/acquisition-stories/analysis')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminAcquisitionStories.getAnalysis);
+
+  app
+    .route('/api/admin/location-corrections')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminLocationCorrections.list);
+
+  app
+    .route('/api/admin/location-corrections/send')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminLocationCorrections.send);
 
   app
     .route('/api/admin/audit-log')

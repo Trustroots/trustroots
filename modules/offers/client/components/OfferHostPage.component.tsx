@@ -6,7 +6,6 @@ import {
   getCurrentRouteParams,
   trackEvent,
 } from '@/modules/core/client/services/client-runtime';
-import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import {
   createOffer,
@@ -25,7 +24,7 @@ interface HostOffer {
   status: HostStatus;
   description: string;
   noOfferDescription: string;
-  location: [number, number];
+  location: [number, number] | null;
   maxGuests: number;
   showOnlyInMyCircles: boolean;
 }
@@ -65,7 +64,7 @@ function defaultHostOffer(): HostOffer {
     status: 'yes',
     description: '',
     noOfferDescription: '',
-    location: [DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng],
+    location: null,
     maxGuests: 1,
     showOnlyInMyCircles: false,
   };
@@ -150,11 +149,13 @@ export default function OfferHostPage({ user }: HostPageProps) {
 
   const isDescriptionTooShort =
     offer.status !== 'no' && plainTextLength(offer.description) < 5;
+  const hasLocation =
+    Array.isArray(offer.location) && offer.location.length === 2;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (isSaving || isDescriptionTooShort) {
+    if (isSaving || isDescriptionTooShort || !hasLocation) {
       return;
     }
 
@@ -168,7 +169,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
         noOfferDescription: offer.noOfferDescription,
         maxGuests: offer.maxGuests,
         showOnlyInMyCircles: offer.showOnlyInMyCircles,
-        location: offer.location,
+        location: offer.location ?? undefined,
       };
 
       if (offer._id) {
@@ -194,9 +195,13 @@ export default function OfferHostPage({ user }: HostPageProps) {
       <form autoComplete="off" noValidate onSubmit={handleSubmit}>
         <button
           className="btn btn-lg btn-inverse-primary pull-right"
-          disabled={isSaving || isDescriptionTooShort}
+          disabled={isSaving || isDescriptionTooShort || !hasLocation}
           title={
-            isDescriptionTooShort ? 'Write longer description first' : undefined
+            isDescriptionTooShort
+              ? 'Write longer description first'
+              : !hasLocation
+              ? 'Choose a location first'
+              : undefined
           }
           type="submit"
         >
@@ -212,6 +217,12 @@ export default function OfferHostPage({ user }: HostPageProps) {
           }}
         >
           <Tab eventKey={0} title="Availability">
+            {!hasLocation && (
+              <p className="alert alert-info" role="status">
+                Choose a location in the Location tab before saving, even if you
+                cannot host.
+              </p>
+            )}
             <div className="row">
               <div className="col-xs-12 col-sm-6">
                 <div className="panel panel-default offer-meta">
@@ -406,11 +417,12 @@ export default function OfferHostPage({ user }: HostPageProps) {
               </div>
             </div>
           </Tab>
-          <Tab
-            disabled={offer.status === 'no' || isDescriptionTooShort}
-            eventKey={2}
-            title="Location"
-          >
+          <Tab disabled={isDescriptionTooShort} eventKey={2} title="Location">
+            {!hasLocation && (
+              <p className="alert alert-info" role="status">
+                Search for a place or move the map to set your hosting location.
+              </p>
+            )}
             {firstTimeAround && (
               <div
                 aria-describedby="firstTimeAroundDescription"

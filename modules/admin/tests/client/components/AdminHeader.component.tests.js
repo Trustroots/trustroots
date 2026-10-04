@@ -42,6 +42,11 @@ describe('<AdminHeader />', () => {
         'href',
         '/admin/acquisition-stories/analysis',
       );
+      if (user?.roles?.includes('welcome-team')) {
+        expect(
+          screen.getByRole('link', { name: 'Location corrections' }),
+        ).toHaveAttribute('href', '/admin/location-corrections');
+      }
     },
   );
 
