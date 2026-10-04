@@ -366,7 +366,7 @@ const features = [
     area: AREA.publicCore,
     status: STATUS.active,
     description: 'Bugs and features FAQ page is available to visitors.',
-    roles: ['visitor'],
+    roles: ['visitor', 'member'],
     references: {
       clientRoutes: [
         clientRoute(
@@ -378,11 +378,20 @@ const features = [
       ],
       apiRoutes: [],
     },
-    requiredScenarios: ['Bugs and features FAQ page loads.'],
+    requiredScenarios: [
+      'Bugs and features FAQ page loads.',
+      'Bug reporting guidance loads.',
+      'The FAQ links primarily to the support form and retains GitHub as an optional route.',
+      'Obsolete GitHub search and signup instructions are absent.',
+    ],
     relatedSpecs: [
       spec(
         'public-pages.spec.js',
         'public marketing page /faq/bugs-and-features loads',
+      ),
+      spec(
+        'support-categories.spec.js',
+        'signed-in support menu opens the bug report form and the FAQ keeps GitHub optional',
       ),
     ],
   },
@@ -549,10 +558,15 @@ const features = [
       'Support page accepts the report query parameter.',
       'Profile report links prefill the reported member without replacing the reporter.',
       'Support contact form is visible.',
+      'Signed-in members can open the preselected bug report category from the support menu.',
     ],
     relatedSpecs: [
       spec('public-pages.spec.js', 'public marketing page /support loads'),
       spec('public-pages.spec.js', 'support page renders the contact form'),
+      spec(
+        'support-categories.spec.js',
+        'signed-in support menu opens the bug report form and the FAQ keeps GitHub optional',
+      ),
     ],
   },
   {
@@ -571,6 +585,7 @@ const features = [
       'Support request submission succeeds with valid data.',
       'Support request validation errors are shown without sending email.',
       'Account help requests retain their category in storage and email.',
+      'Bug reports retain their category in storage and email.',
       'Other requests retain their category in storage and email.',
       'Profile reports retain the reported member and reporter in storage and email.',
     ],
@@ -578,6 +593,10 @@ const features = [
       spec(
         'support-categories.spec.js',
         'visitor can send a support request in the account category',
+      ),
+      spec(
+        'support-categories.spec.js',
+        'visitor can send a support request in the reportBug category',
       ),
       spec(
         'support-categories.spec.js',
@@ -2652,7 +2671,8 @@ const features = [
     id: 'admin.audit-log',
     area: AREA.adminModeration,
     status: STATUS.active,
-    description: 'Admins can view audit log entries.',
+    description:
+      'Admins can view compact audit history and filter staff activity.',
     roles: ['admin'],
     references: {
       clientRoutes: [
@@ -2661,13 +2681,24 @@ const features = [
           requiresRole: 'admin',
         }),
       ],
-      apiRoutes: [apiRoute('GET', '/api/admin/audit-log', source.adminServer)],
+      apiRoutes: [
+        apiRoute('GET', '/api/admin/audit-log', source.adminServer),
+        apiRoute('GET', '/api/admin/audit-log/actors', source.adminServer),
+      ],
     },
     requiredScenarios: [
       'Audit log page loads.',
       'Audit log API returns deterministic entries.',
+      'Audit history summarises requests with raw details collapsed.',
+      'Actor and team filters select matching staff activity.',
     ],
-    relatedSpecs: [spec('admin-pages.spec.js', 'admin audit log page loads')],
+    relatedSpecs: [
+      spec('admin-pages.spec.js', 'admin audit log page loads'),
+      spec(
+        'features/admin-moderation/admin-audit-filters.spec.js',
+        'audit history has compact summaries and staff/team filters',
+      ),
+    ],
   },
   {
     id: 'admin.acquisition-stories',

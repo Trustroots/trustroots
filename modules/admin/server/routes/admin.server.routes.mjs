@@ -30,6 +30,11 @@ const registerRoutes = app => {
     .get(adminAuditLog.list);
 
   app
+    .route('/api/admin/audit-log/actors')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.actors);
+
+  app
     .route('/api/admin/dashboard')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminDashboard.getDashboard);

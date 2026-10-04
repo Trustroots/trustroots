@@ -80,10 +80,6 @@ export default function Admin() {
       <div className="container admin-landing">
         <header className="admin-landing__hero">
           <h1 className="admin-landing__title">Admin Dashboard</h1>
-          <p className="admin-landing__subtitle">
-            Search members and jump directly to moderation, messaging and
-            community tools.
-          </p>
         </header>
 
         <div className="admin-landing__search">
