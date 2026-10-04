@@ -14,6 +14,7 @@ const should = require('should');
 
 const User = mongoose.model('User');
 const Tribe = mongoose.model('Tribe');
+const UnifiedPushRegistration = mongoose.model('UnifiedPushRegistration');
 
 const validNpub =
   'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
@@ -461,6 +462,13 @@ describe('Profile controller unit tests', () => {
       userDoc.removeProfileToken = 'valid-remove-token';
       userDoc.removeProfileExpires = Date.now() + 3600000;
       await userDoc.save();
+      await UnifiedPushRegistration.create({
+        user: saved._id,
+        endpoint: 'https://ntfy.sh/anonymous-deleted-account',
+        publicKey:
+          'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
+        auth: 'abcdefghijklmnopqrstuv',
+      });
 
       const { res } = await runHandler(res =>
         profileController.removeProfile(
@@ -477,6 +485,9 @@ describe('Profile controller unit tests', () => {
 
       const gone = await User.findById(saved._id);
       should.not.exist(gone);
+      (
+        await UnifiedPushRegistration.countDocuments({ user: saved._id })
+      ).should.equal(0);
     });
 
     it('returns 400 when profile removal fails in the waterfall', async () => {
@@ -533,6 +544,11 @@ describe('Profile controller unit tests', () => {
       userDoc.removeProfileExpires = Date.now() + 3600000;
       await userDoc.save();
 
+      const pushCleanup = sinon
+        .stub(UnifiedPushRegistration, 'deleteMany')
+        .callsFake((query, callback) =>
+          callback(new Error('push cleanup failed')),
+        );
       const { res } = await runHandler(res =>
         controller.removeProfile(
           {
@@ -542,6 +558,7 @@ describe('Profile controller unit tests', () => {
           res,
         ),
       );
+      pushCleanup.restore();
 
       res.statusCode.should.equal(200);
       const gone = await User.findById(saved._id);

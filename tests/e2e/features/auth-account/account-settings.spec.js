@@ -445,4 +445,38 @@ test.describe.serial('account settings feature coverage', () => {
     const storedUser = await findUserByUsername(user.username);
     expect(storedUser.pushRegistration || []).toEqual([]);
   });
+
+  test('Android members can register and remove a UnifiedPush endpoint', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.android-message-alerts', [
+      'A signed-in Android member can register an encrypted UnifiedPush endpoint.',
+      'Only allowlisted HTTPS endpoints are accepted and the member can opt out.',
+    ]);
+    const user = createUser();
+    await registerViaApi(request, user);
+    await signInViaApi(page, request, user);
+    const config = await page.request.get('/api/users/unified-push');
+    expect(config.ok()).toBeTruthy();
+    expect(await config.json()).toMatchObject({ enabled: true });
+    const registration = {
+      endpoint: `https://ntfy.sh/trustroots-e2e-${Date.now()}`,
+      publicKey:
+        'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
+      auth: 'abcdefghijklmnopqrstuv',
+    };
+    const rejected = await page.request.post('/api/users/unified-push', {
+      data: { ...registration, endpoint: 'https://example.org/push' },
+    });
+    expect(rejected.status()).toBe(400);
+    const added = await page.request.post('/api/users/unified-push', {
+      data: registration,
+    });
+    expect(added.status()).toBe(204);
+    const removed = await page.request.delete('/api/users/unified-push', {
+      data: { endpoint: registration.endpoint },
+    });
+    expect(removed.status()).toBe(204);
+  });
 });

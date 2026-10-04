@@ -23,6 +23,117 @@ For an API running on the development Mac, use the Android emulator host alias:
 
 Release builds are fixed to `https://www.trustroots.org`.
 
+## APK update alerts
+
+The signed GitHub preview APK lets members opt in to update alerts from Account
+→ APK updates. It checks GitHub Releases daily and links to the release page
+when a newer signed Android preview is available. Android 13 and later asks for
+notification permission when alerts are enabled. A member can also check
+immediately from Account. The app does not download or install updates.
+
+The preview release workflow enables this feature with
+`-PtrustrootsPreviewUpdateAlerts=true`. Local and F-Droid builds leave it off:
+F-Droid's build may have a different signing key, so linking its members to a
+GitHub APK could suggest an update they cannot install. Members using
+[Obtainium](https://obtainium.imranr.dev/) can leave the in-app option off and
+use Obtainium's GitHub prerelease alerts instead. Keep the signing key stable
+and increase Android version codes for every preview update.
+
+## Message alerts without Google services
+
+Signed-in members can opt in under Account → Message alerts. The phone needs an
+installed [UnifiedPush distributor](https://unifiedpush.org/users/distributors/),
+such as ntfy, and Android notification permission. The app asks the member to
+choose a distributor, then registers a Web Push endpoint with Trustroots.
+Email reminders continue whether or not message alerts are enabled. An alert
+appears after the first unread-message reminder, around ten minutes after the
+message was sent, and shows only generic text on the lock screen. It opens the
+conversation when tapped. The APK does not use Firebase or Google Play
+services for message delivery.
+
+The server requires `TRUSTROOTS_WEB_PUSH_VAPID_PUBLIC_KEY`,
+`TRUSTROOTS_WEB_PUSH_VAPID_PRIVATE_KEY`, and
+`TRUSTROOTS_WEB_PUSH_VAPID_SUBJECT` (a `mailto:` or HTTPS contact URL).
+Generate one VAPID pair with `npx web-push generate-vapid-keys` and keep its
+private key in the server's secret configuration. Set
+`TRUSTROOTS_WEB_PUSH_ALLOWED_HOSTS` to a comma-separated list of trusted HTTPS
+push endpoint hosts. It defaults to `ntfy.sh`; include self-hosted distributor
+hosts explicitly. The server rejects other hosts so registered endpoints
+cannot be used to contact arbitrary addresses. Without VAPID configuration,
+the Account control reports that message alerts are unavailable.
+
+## Android preview distribution
+
+The [GitHub release workflow](../../.github/workflows/android-preview-release.yml)
+publishes a signed APK as a prerelease after a successful Android build on
+`main`. The [Obtainium link](../../README.md#android-preview) imports this source
+with prereleases enabled. Keep publishing updates with the same Android signing
+key and increasing version codes so existing installations can update.
+
+| Channel | How updates reach members | Trustroots status |
+| --- | --- | --- |
+| [GitHub Releases](https://github.com/Trustroots/trustroots/releases) | Download the signed preview APK directly | Publishing previews |
+| [Obtainium](https://obtainium.imranr.dev/) | Watches GitHub prereleases for newer APKs | Import link in the root README |
+| [Zapstore](https://zapstore.dev/) | Lists and updates the project-signed GitHub APK | Configured; first Nostr publication and signing-certificate link remain |
+| [F-Droid](https://f-droid.org/) | Builds from source and distributes updates after review | Listing assets and a draft recipe prepared; build validation and submission remain |
+| [IzzyOnDroid](https://apt.izzysoft.de/fdroid/) | Indexes upstream APK releases | No submission planned under its current inclusion policy |
+| [Google Play](https://play.google.com/store) | Distributes updates through Play App Signing | Requirements documented below; no Play release prepared |
+
+The repository's [Zapstore configuration](../../zapstore.yaml) selects those
+Android preview APKs. To check the source without publishing:
+
+```sh
+zsp publish zapstore.yaml --pre-release --channel beta --check
+```
+
+The public Trustroots Nostr key is in `zapstore.yaml` for Zapstore's repository
+verification. Commit that configuration before the first publication. A project
+publisher can then sign and publish from the repository root:
+
+```sh
+zsp publish zapstore.yaml --pre-release --channel beta
+```
+
+Zapstore's first publication also needs a one-time link between the project
+Nostr identity and the Android signing certificate. Keep the Nostr private key,
+Android keystore and their credentials outside the repository. After the first
+publication succeeds, set the GitHub Actions secret `ZAPSTORE_SIGN_WITH` to a
+project-controlled NIP-46 bunker URL and the repository variable
+`ZAPSTORE_PUBLISH_ENABLED` to `true`. The Android preview workflow will then
+publish each new APK to Zapstore after creating its GitHub prerelease.
+
+The [F-Droid submission draft](../../distribution/fdroid/README.md) includes
+the source build recipe and next steps. Submit it after a release containing
+the upstream Fastlane listing files has been published and its build has been
+validated in F-Droid's environment.
+
+### Google Play requirements
+
+Publishing on Google Play would require a verified
+[Play Console account](https://support.google.com/googleplay/android-developer/answer/6112435)
+with its one-time US$25 registration fee, a release Android App Bundle (`.aab`),
+and [Play App Signing](https://developer.android.com/guide/app-bundle/faq).
+The current workflow publishes an APK, so it would need an AAB upload path.
+The project's signing key must be planned with Play App Signing if existing
+GitHub APK installations should receive Play updates. Because the package
+`org.trustroots.android` is already distributed outside Play, the publisher
+may need to [prove ownership of its signing key](https://developer.android.com/developer-verification/guides/google-play-console).
+
+The publisher would also need to complete the
+[store listing and app-content declarations](https://support.google.com/googleplay/android-developer/answer/9859455):
+graphics and screenshots, privacy policy, Data safety information, content
+rating, target audience, and reviewer access to the signed-in parts of the app.
+For a new *personal* developer account, Google requires a
+[closed test with at least 12 opted-in testers for 14 continuous days](https://support.google.com/googleplay/android-developer/answer/14151465)
+before applying for production access. The app's current target SDK is 37,
+above the [API 36 minimum for new phone apps](https://support.google.com/googleplay/android-developer/answer/11926878)
+as of October 2026.
+
+We will not submit the Android app to IzzyOnDroid. We respect its current
+[app inclusion policy](https://izzyondroid.org/docs/general/AppInclusionPolicy/),
+including its criteria concerning AI-generated code, and will not seek an
+exception for this app.
+
 ## Build and verify locally
 
 The app deliberately uses the light Trustroots colour scheme regardless of the

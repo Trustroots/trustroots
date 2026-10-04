@@ -19,6 +19,12 @@ native clients must send `X-Trustroots-Request: 1` on bodyless or multipart
 state-changing requests. The shared browser API client adds this marker to
 state-changing requests automatically. When uploading `FormData`, leave
 `Content-Type` unset so the browser can add the multipart boundary.
+## Avatar upload staging
+
+Deploy the updated Nginx location rules in
+`deploy/files/prod-conf/nginx-location.conf` with the avatar processing
+change. Nginx serves static files before requests reach Express middleware,
+so the rules must deny requests for unpublished staging thumbnails.
 
 
 Kasper, Robin and Callum have access, can deploy and are maintaining off-site encrypted backups.

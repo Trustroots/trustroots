@@ -9,6 +9,14 @@
  */
 
 module.exports = {
+  // Test-only VAPID pair. Production keys must be supplied through environment variables.
+  webPush: {
+    publicKey:
+      'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
+    privateKey: 'dhrEzewvJiOg7Q0oC5goPiL6TUiAItTMMqhu8-u1qcw',
+    subject: 'mailto:push-test@example.org',
+    allowedHosts: ['ntfy.sh'],
+  },
   featureFlags: {
     reference: true,
   },

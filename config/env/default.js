@@ -234,7 +234,15 @@ module.exports = {
   google: {
     page: '',
   },
-  // Future push: restore FCM (or another transport) config here.
+  webPush: {
+    publicKey: process.env.TRUSTROOTS_WEB_PUSH_VAPID_PUBLIC_KEY || '',
+    privateKey: process.env.TRUSTROOTS_WEB_PUSH_VAPID_PRIVATE_KEY || '',
+    subject: process.env.TRUSTROOTS_WEB_PUSH_VAPID_SUBJECT || '',
+    allowedHosts: (process.env.TRUSTROOTS_WEB_PUSH_ALLOWED_HOSTS || 'ntfy.sh')
+      .split(',')
+      .map(host => host.trim().toLowerCase())
+      .filter(Boolean),
+  },
   googleAnalytics: {
     enabled: false,
     code: '',

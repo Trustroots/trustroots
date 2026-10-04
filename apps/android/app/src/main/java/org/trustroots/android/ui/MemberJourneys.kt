@@ -733,6 +733,7 @@ internal fun MessageInboxScreen(
     api: MobileApiClient,
     session: MemberSession,
     onSessionInvalidated: () -> Unit,
+    initialMemberID: String? = null,
 ) {
     var threads by remember { mutableStateOf<List<MessageThread>>(emptyList()) }
     var selected by remember { mutableStateOf<MessageMember?>(null) }
@@ -767,6 +768,9 @@ internal fun MessageInboxScreen(
             }
             collected += batch
             threads = collected.distinctBy { it.id }
+            if (initialMemberID != null && selected == null) {
+                selected = threads.firstOrNull { it.otherMember.id == initialMemberID }?.otherMember
+            }
             page++
         } while (batch.size == 50)
         loaded = true

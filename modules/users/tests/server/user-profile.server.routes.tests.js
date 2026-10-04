@@ -788,6 +788,37 @@ describe('User profile CRUD tests', function () {
     });
   });
 
+  it('should not be able to set the server-owned avatar version', function (done) {
+    user.roles = ['user'];
+
+    user.save(function (err) {
+      should.not.exist(err);
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          if (signinErr) {
+            return done(signinErr);
+          }
+
+          agent
+            .put('/api/users')
+            .send({ avatarVersion: '../another-member' })
+            .expect(200)
+            .end(function (userInfoErr) {
+              should.not.exist(userInfoErr);
+
+              User.findById(user._id, function (lookupErr, savedUser) {
+                should.not.exist(lookupErr);
+                (savedUser.avatarVersion === undefined).should.be.true();
+                done();
+              });
+            });
+        });
+    });
+  });
+
   it('should not be able to update profile details with existing email', function (done) {
     const _user2 = _user;
 

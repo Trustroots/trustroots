@@ -100,6 +100,10 @@ service.invokeRolesPolicies = function () {
           permissions: ['delete'],
         },
         {
+          resources: '/api/users/unified-push',
+          permissions: ['get', 'post', 'delete'],
+        },
+        {
           resources: '/api/blocked-users',
           permissions: ['get'],
         },
