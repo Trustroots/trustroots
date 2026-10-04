@@ -273,7 +273,8 @@ describe('<Thread>', () => {
       mockIsExtraSmall = false;
       render(<Thread user={me} profileMinimumLength={0} />);
 
-      expect(await screen.findByRole('textbox')).toHaveFocus();
+      const editor = await screen.findByRole('textbox');
+      await waitFor(() => expect(editor).toHaveFocus());
     });
 
     it('sends a typed reply and appends the API response to the thread', async () => {
