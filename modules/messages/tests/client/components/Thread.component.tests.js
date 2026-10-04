@@ -269,6 +269,14 @@ describe('<Thread>', () => {
       ).toHaveAttribute('href', '/rules');
     });
 
+    it('focuses the reply editor when a conversation opens on desktop', async () => {
+      mockIsExtraSmall = false;
+      render(<Thread user={me} profileMinimumLength={0} />);
+
+      const editor = await screen.findByRole('textbox');
+      await waitFor(() => expect(editor).toHaveFocus());
+    });
+
     it('sends a typed reply and appends the API response to the thread', async () => {
       api.messages.sendMessage.mockResolvedValueOnce({
         data: {

@@ -2201,6 +2201,8 @@ const features = [
       'Inbox lists seeded conversation.',
       'Inbox empty state is visible when there are no conversations.',
       'Inbox excludes shadow-hidden conversations.',
+      'Unread conversations beyond the first page can be opened.',
+      'Conversation text filter finds older names and previews.',
     ],
     relatedSpecs: [
       spec(
@@ -2212,6 +2214,10 @@ const features = [
         'inbox API returns sanitized thread excerpts',
       ),
       spec('messages.spec.js', 'inbox does not list the shadowbanned sender'),
+      spec(
+        'messages.spec.js',
+        'older unread conversations can be filtered and opened',
+      ),
     ],
   },
   {
@@ -2315,6 +2321,29 @@ const features = [
         'message send API rejects invalid recipients',
       ),
     ],
+  },
+  {
+    id: 'messages.reply-focus',
+    area: AREA.messages,
+    status: STATUS.active,
+    description:
+      'The desktop reply editor stays ready for consecutive replies.',
+    roles: ['member'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'messageThread',
+          '/messages/:username?userId',
+          source.messagesClient,
+          { requiresAuth: true },
+        ),
+      ],
+    },
+    requiredScenarios: [
+      'The desktop reply editor receives focus when a conversation opens.',
+      'The recreated reply editor receives focus after sending.',
+    ],
+    relatedSpecs: [],
   },
   {
     id: 'messages.read-count-sync',

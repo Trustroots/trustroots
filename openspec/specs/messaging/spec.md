@@ -25,18 +25,34 @@ messaging pages.
 
 ### Requirement: Inbox and conversation viewing
 
-The system SHALL show a member's available conversation summaries and let them
-open a conversation with its message history.
+The system SHALL show a member's available conversation summaries, let them
+filter to unread conversations, and let them open a conversation with its message
+history. The unread view SHALL include conversations counted by the unread badge
+and preserve the filter while paginating. The inbox SHALL let members filter
+conversations by the other member's name or username and the latest message
+preview, including conversations beyond the first page.
 
 #### Scenario: Member opens their inbox
 
 - **WHEN** a member opens their inbox
 - **THEN** the system displays available conversation summaries
 
+#### Scenario: Member filters to unread conversations
+
+- **WHEN** a member selects the unread inbox view
+- **THEN** the system displays their unread conversations, including ones older
+  than the first page of the full inbox
+- **AND** the member can open those conversations
+
 #### Scenario: Member opens a conversation
 
 - **WHEN** a member opens an available conversation
 - **THEN** the system displays its message history and paginated replies
+
+#### Scenario: Member filters conversations by text
+
+- **WHEN** a member enters text matching another member or a latest message preview
+- **THEN** matching conversations appear even if they were on an older inbox page
 
 ### Requirement: Message visibility protection
 
@@ -54,6 +70,9 @@ The system SHALL let eligible members start a conversation and send a reply,
 while rejecting invalid recipients and empty message content. Before an
 opening message is sent, and until the current member sends their first reply,
 the conversation experience SHALL provide a link to the public safety guidance.
+On desktop, the reply editor SHALL receive focus when it appears. After a
+successful send, the recreated reply editor SHALL receive focus so the member
+can continue typing.
 
 #### Scenario: Member opens a new conversation
 
@@ -65,6 +84,16 @@ the conversation experience SHALL provide a link to the public safety guidance.
 - **WHEN** a member opens a conversation containing messages only from the
   other member
 - **THEN** the reply experience provides a link to the public safety guidance
+
+#### Scenario: Member opens a conversation on desktop
+
+- **WHEN** a member opens a conversation with an available reply editor on desktop
+- **THEN** the reply editor receives keyboard focus
+
+#### Scenario: Member sends a reply
+
+- **WHEN** a member successfully sends a reply
+- **THEN** the recreated reply editor receives keyboard focus
 
 #### Scenario: Member sends an opening message
 

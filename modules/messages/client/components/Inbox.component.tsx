@@ -20,12 +20,29 @@ export default function Inbox({ user }: InboxProps) {
     );
   }
   const { t } = useTranslation('messages');
+  const unreadOnly =
+    new URLSearchParams(window.location.search).get('filter') === 'unread';
 
   const [nextParams, setNextParams] = useState<PageParams | null>(null);
   const [isFetching, setIsFetching] = useState(false);
+  const [isLoadingForSearch, setIsLoadingForSearch] = useState(false);
+  const [searchLoadFailed, setSearchLoadFailed] = useState(false);
+  const [searchText, setSearchText] = useState('');
   const [threads, setThreads] = useState<MessageThreadSummary[]>([]);
 
   const hasMore = Boolean(nextParams);
+  const query = searchText.trim().toLocaleLowerCase();
+  const visibleThreads = query
+    ? threads.filter(thread => {
+        const otherUser =
+          thread.userFrom._id === user._id ? thread.userTo : thread.userFrom;
+        return [
+          otherUser.displayName,
+          otherUser.username,
+          thread.message.excerpt,
+        ].some(value => value?.toLocaleLowerCase().includes(query));
+      })
+    : threads;
 
   async function fetchThreads(next = false) {
     setIsFetching(true);
@@ -37,8 +54,9 @@ export default function Inbox({ user }: InboxProps) {
         });
       }
 
+      const params = next ? (nextParams as PageParams) : {};
       const data = await api.fetchThreads(
-        next ? (nextParams as PageParams) : {},
+        unreadOnly ? { ...params, filter: 'unread' } : params,
       );
       setThreads(threads =>
         next ? threads.concat(data.threads) : data.threads,
@@ -54,22 +72,106 @@ export default function Inbox({ user }: InboxProps) {
     fetchThreads();
   }, []);
 
+  useEffect(() => {
+    if (
+      !query ||
+      !nextParams ||
+      isFetching ||
+      isLoadingForSearch ||
+      searchLoadFailed
+    ) {
+      return;
+    }
+
+    async function loadOlderConversations() {
+      setIsLoadingForSearch(true);
+      let params = nextParams;
+      const olderThreads: MessageThreadSummary[] = [];
+      try {
+        while (params) {
+          const data = await api.fetchThreads(
+            unreadOnly ? { ...params, filter: 'unread' } : params,
+          );
+          olderThreads.push(...data.threads);
+          params = data.nextParams || null;
+        }
+        setThreads(current => current.concat(olderThreads));
+        setNextParams(null);
+      } catch {
+        setSearchLoadFailed(true);
+      } finally {
+        setIsLoadingForSearch(false);
+      }
+    }
+
+    loadOlderConversations();
+  }, [query, nextParams, isFetching, isLoadingForSearch, searchLoadFailed]);
+
   return (
     <section className="container-spacer">
-      {!isFetching && threads.length === 0 && (
-        <div className="content-empty">
-          <i className="icon-3x icon-messages-alt" />
-          <h4 role="alert">{t<string>('No conversations yet.')}</h4>
-        </div>
+      <nav aria-label={t<string>('Conversation filter')} className="container">
+        <a
+          href="/messages"
+          rel="external"
+          aria-current={unreadOnly ? undefined : 'page'}
+          className="btn btn-default"
+        >
+          {t<string>('All conversations')}
+        </a>{' '}
+        <a
+          href="/messages?filter=unread"
+          rel="external"
+          aria-current={unreadOnly ? 'page' : undefined}
+          className="btn btn-default"
+        >
+          {t<string>('Unread conversations')}
+        </a>
+      </nav>
+      <div className="container">
+        <input
+          type="search"
+          className="form-control"
+          aria-label={t<string>('Filter conversations')}
+          placeholder={t<string>('Filter conversations')}
+          value={searchText}
+          onChange={event => {
+            setSearchText(event.target.value);
+            setSearchLoadFailed(false);
+          }}
+        />
+      </div>
+      {isLoadingForSearch && (
+        <p>{t<string>('Searching older conversations…')}</p>
       )}
-      {threads.length > 0 && (
+      {searchLoadFailed && (
+        <p role="alert">
+          {t<string>('Older conversations could not be loaded.')}
+        </p>
+      )}
+      {!isFetching &&
+        !isLoadingForSearch &&
+        !searchLoadFailed &&
+        (!query || !hasMore) &&
+        visibleThreads.length === 0 && (
+          <div className="content-empty">
+            <i className="icon-3x icon-messages-alt" />
+            <h4 role="alert">
+              {query
+                ? t<string>('No matching conversations.')
+                : unreadOnly
+                ? t<string>('No unread conversations.')
+                : t<string>('No conversations yet.')}
+            </h4>
+          </div>
+        )}
+      {visibleThreads.length > 0 && (
         <ul className="list-group threadlist">
-          {threads.map(thread => (
+          {visibleThreads.map(thread => (
             <InboxThread key={thread._id} user={user} thread={thread} />
           ))}
         </ul>
       )}
-      {!isFetching && hasMore && (
+      {!isFetching && !query && hasMore && (
         <div className="text-center">
           <button
             className="btn btn-primary btn-lg"
