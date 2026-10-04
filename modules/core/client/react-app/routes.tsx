@@ -251,6 +251,9 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/admin/search-users': () => <AdminSearchUsers />,
     '/admin/threads': () => <AdminThreads />,
     '/admin/user': () => <AdminUser />,
+    '/admin/user/:username': ({ params }) => (
+      <AdminUser username={params.username} />
+    ),
     '/circles': renderWithUser(TribesPageRoute),
     '/circles/:circle': renderCircleDetail,
     '/contact': renderWithUser(SupportPage),

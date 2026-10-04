@@ -141,79 +141,99 @@ describe('<AdminUser />', () => {
 
   it('loads a valid member id from the URL and renders the report card', async () => {
     window.history.pushState({}, '', `/admin/user?id=${userId}`);
-    usersApi.getUser.mockResolvedValueOnce(
-      makeReportCard({
-        contacts: [{ _id: 'contact-1', user: 'bob' }],
-        offers: [
-          {
-            _id: 'offer-1',
-            location: [24.94, 60.17],
-            type: 'host',
-          },
-        ],
-        threadReferences: [
-          {
-            _id: 'reference-1',
-            reference: 'yes',
-            userFrom: {
-              _id: otherUserId,
-              displayName: 'Bob Example',
-              username: 'bob',
-            },
-            userTo: {
-              _id: userId,
-              displayName: 'Alice Example',
-              username: 'alice',
-            },
-          },
-          {
-            _id: 'reference-2',
-            reference: 'no',
-            userFrom: {
-              _id: userId,
-              displayName: 'Alice Example',
-              username: 'alice',
-            },
-            userTo: {
-              _id: otherUserId,
-              displayName: 'Bob Example',
-              username: 'bob',
-            },
-          },
-        ],
-        profile: {
-          _id: userId,
-          displayName: 'Alice Example',
-          email: 'alice@example.org',
-          emailTemporary: 'alice-new@example.org',
-          lastIpAddress: '203.0.113.10',
-          roles: ['user'],
-          username: 'alice',
-        },
+    let resolveUser;
+    usersApi.getUser.mockReturnValueOnce(
+      new Promise(resolve => {
+        resolveUser = resolve;
       }),
     );
 
     render(<AdminUser />);
 
     expect(screen.getByLabelText('Member username, email or ID')).toHaveValue(
-      userId,
+      '',
     );
+    expect(screen.getByText('Loading member...')).toBeInTheDocument();
+
+    await act(async () => {
+      resolveUser(
+        makeReportCard({
+          contacts: [{ _id: 'contact-1', user: 'bob' }],
+          offers: [
+            {
+              _id: 'offer-1',
+              location: [24.94, 60.17],
+              type: 'host',
+            },
+          ],
+          threadReferences: [
+            {
+              _id: 'reference-1',
+              reference: 'yes',
+              userFrom: {
+                _id: otherUserId,
+                displayName: 'Bob Example',
+                username: 'bob',
+              },
+              userTo: {
+                _id: userId,
+                displayName: 'Alice Example',
+                username: 'alice',
+              },
+            },
+            {
+              _id: 'reference-2',
+              reference: 'no',
+              userFrom: {
+                _id: userId,
+                displayName: 'Alice Example',
+                username: 'alice',
+              },
+              userTo: {
+                _id: otherUserId,
+                displayName: 'Bob Example',
+                username: 'bob',
+              },
+            },
+          ],
+          profile: {
+            _id: userId,
+            displayName: 'Alice Example',
+            email: 'alice@example.org',
+            emailTemporary: 'alice-new@example.org',
+            lastIpAddress: '203.0.113.10',
+            roles: ['user'],
+            username: 'alice',
+          },
+        }),
+      );
+    });
+    expect(
+      screen.queryByLabelText('Member username, email or ID'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Member report card' }),
+    ).not.toBeInTheDocument();
     expect(
       await screen.findByRole('heading', {
-        name: 'Alice Example report card',
+        name: 'Alice Example',
       }),
     ).toBeInTheDocument();
     expect(usersApi.getUser).toHaveBeenCalledWith(userId);
     expect(screen.getByText('State for alice')).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: 'Role management' }),
-    ).toHaveAttribute('href', '#roles');
+    expect(screen.queryByText('Role management')).not.toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Add to Welcome team' }),
-    ).toBeInTheDocument();
+    ).toHaveAttribute(
+      'title',
+      'Welcome team members can view acquisition stories and analysis, and see members who blocked their account.',
+    );
     expect(
-      screen.getByText('Standard Trustroots member access.'),
-    ).toBeInTheDocument();
+      screen.queryByText('Standard Trustroots member access.'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('Hide obvious spam'),
+    ).not.toBeInTheDocument();
     expect(screen.getByText('3 sent')).toBeInTheDocument();
     expect(screen.getByText('4 received')).toBeInTheDocument();
     expect(
@@ -286,21 +306,36 @@ describe('<AdminUser />', () => {
     window.history.pushState({}, '', `/admin/user?id=${userId}`);
     render(<AdminUser />);
 
-    await screen.findByRole('heading', { name: 'alice report card' });
+    await screen.findByRole('heading', { name: 'alice' });
     expect(
-      screen.getByText('Full access to administration and moderation tools.'),
-    ).toBeInTheDocument();
+      screen.getByText('admin', { selector: '.admin-user-roles li' }),
+    ).toHaveAttribute(
+      'title',
+      'Full access to administration and moderation tools.',
+    );
     expect(
-      screen.getByText(
-        'Legacy moderation role retained for historical accounts.',
-      ),
-    ).toBeInTheDocument();
+      screen.getByText('moderator', { selector: '.admin-user-roles li' }),
+    ).toHaveAttribute(
+      'title',
+      'Legacy moderation role retained for historical accounts.',
+    );
     expect(
-      screen.getByText(
-        'Member can use the site, but their profile and outreach are hidden from others.',
-      ),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Role stored on this member.')).toBeInTheDocument();
+      screen.getByText('shadowban', { selector: '.admin-user-roles li' }),
+    ).toHaveAttribute(
+      'title',
+      'Member can use the site, but their profile and outreach are hidden from others.',
+    );
+    expect(
+      screen.getByText('custom-legacy-role', {
+        selector: '.admin-user-roles li',
+      }),
+    ).toHaveAttribute('title', 'Role stored on this member.');
+    expect(
+      screen.queryByText('user', { selector: '.admin-user-roles li' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Standard Trustroots member access.'),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: /remove role/i }),
     ).not.toBeInTheDocument();
@@ -412,7 +447,7 @@ describe('<AdminUser />', () => {
     render(<AdminUser />);
 
     expect(
-      await screen.findByRole('heading', { name: 'alice report card' }),
+      await screen.findByRole('heading', { name: 'alice' }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole('link', { name: 'Public profile' }),
@@ -551,6 +586,19 @@ describe('<AdminUser />', () => {
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
   });
 
+  it('loads a profile from a deep-link username', async () => {
+    window.history.pushState({}, '', '/admin/user/river');
+    usersApi.searchUsers.mockResolvedValueOnce(
+      makeMemberList([{ _id: userId, username: 'river' }]),
+    );
+    usersApi.getUser.mockResolvedValueOnce(makeReportCard());
+    render(<AdminUser username="river" />);
+    await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
+    expect(
+      screen.queryByLabelText('Member username, email or ID'),
+    ).not.toBeInTheDocument();
+  });
+
   it('submits short queries without querying the API', () => {
     render(<AdminUser />);
 
@@ -588,7 +636,7 @@ describe('<AdminUser />', () => {
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
     expect(
       await screen.findByRole('heading', {
-        name: 'Alice Example report card',
+        name: 'Alice Example',
       }),
     ).toBeInTheDocument();
   });
@@ -619,7 +667,7 @@ describe('<AdminUser />', () => {
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
     expect(
       await screen.findByRole('heading', {
-        name: 'Alice Example report card',
+        name: 'Alice Example',
       }),
     ).toBeInTheDocument();
   });
@@ -817,7 +865,7 @@ describe('<AdminUser />', () => {
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
     expect(
       await screen.findByRole('heading', {
-        name: 'Hot Daria Wants To Date report card',
+        name: 'Hot Daria Wants To Date',
       }),
     ).toBeInTheDocument();
   });
@@ -912,7 +960,7 @@ describe('<AdminUser />', () => {
 
     submitMemberSearch(userId);
 
-    await screen.findByRole('heading', { name: 'alice report card' });
+    await screen.findByRole('heading', { name: 'alice' });
     expect(
       screen.queryByRole('link', { name: 'Show location on map' }),
     ).not.toBeInTheDocument();
@@ -968,12 +1016,12 @@ describe('<AdminUser />', () => {
         }),
       );
 
-    const { rerender } = render(<AdminUser />);
+    const { unmount } = render(<AdminUser />);
 
     submitMemberSearch(userId);
 
     expect(
-      await screen.findByRole('heading', { name: 'alice report card' }),
+      await screen.findByRole('heading', { name: 'alice' }),
     ).toBeInTheDocument();
     expect(screen.getByText('0 sent')).toBeInTheDocument();
     expect(screen.getByText('0 received')).toBeInTheDocument();
@@ -981,13 +1029,15 @@ describe('<AdminUser />', () => {
       screen.getByRole('link', { name: '0 threads total' }),
     ).toHaveAttribute('href', `/admin/threads?userId=${userId}`);
 
-    rerender(<AdminUser />);
+    unmount();
+    window.history.pushState({}, '', '/');
+    render(<AdminUser />);
     submitMemberSearch(userId);
 
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledTimes(2));
     expect(
       await screen.findByRole('heading', {
-        name: 'Unknown member report card',
+        name: 'Unknown member',
       }),
     ).toBeInTheDocument();
   });
@@ -1011,7 +1061,7 @@ describe('<AdminUser />', () => {
 
     submitMemberSearch(userId);
 
-    await screen.findByRole('heading', { name: 'Alice Example report card' });
+    await screen.findByRole('heading', { name: 'Alice Example' });
     expect(
       screen.queryByRole('button', { name: 'Unshadowban' }),
     ).not.toBeInTheDocument();
@@ -1159,9 +1209,59 @@ describe('<AdminUser />', () => {
 
     submitMemberSearch(userId);
 
-    await screen.findByRole('heading', { name: 'Alice Example report card' });
+    await screen.findByRole('heading', { name: 'Alice Example' });
     fireEvent.click(screen.getByRole('button', { name: 'Suspend' }));
 
     expect(usersApi.setUserRole).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['Suspend', ['user']],
+    ['Shadow ban', ['user']],
+    ['Make volunteer', ['user']],
+    ['Make volunteer alumni', ['user']],
+    ['Add to Welcome team', ['user']],
+    ['Remove from Welcome team', ['user', 'welcome-team']],
+    ['Unshadowban', ['user', 'shadowban']],
+  ])(
+    'does not apply %s when its confirmation is declined',
+    async (label, roles) => {
+      window.confirm = jest.fn(() => false);
+      usersApi.getUser.mockResolvedValueOnce(
+        makeReportCard({
+          profile: { _id: userId, username: 'river', roles },
+        }),
+      );
+
+      render(<AdminUser />);
+      submitMemberSearch(userId);
+      fireEvent.click(await screen.findByRole('button', { name: label }));
+
+      expect(window.confirm).toHaveBeenCalled();
+      expect(usersApi.setUserRole).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    ['Shadow ban', 'shadowban'],
+    ['Make volunteer', 'volunteer'],
+    ['Make volunteer alumni', 'volunteer-alumni'],
+  ])('applies %s after confirmation', async (label, role) => {
+    window.confirm = jest.fn(() => true);
+    usersApi.getUser.mockResolvedValue(
+      makeReportCard({
+        profile: { _id: userId, username: 'river', roles: ['user'] },
+      }),
+    );
+    usersApi.setUserRole.mockResolvedValueOnce({});
+
+    render(<AdminUser />);
+    submitMemberSearch(userId);
+    fireEvent.click(await screen.findByRole('button', { name: label }));
+
+    expect(window.confirm).toHaveBeenCalledWith(`Set river role to ${role}?`);
+    await waitFor(() =>
+      expect(usersApi.setUserRole).toHaveBeenCalledWith(userId, role),
+    );
   });
 });

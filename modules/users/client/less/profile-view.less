@@ -10,6 +10,37 @@
   }
 }
 
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+
+  > li {
+    float: none;
+    margin: 0;
+
+    > a,
+    > button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0;
+      padding: 10px 0;
+      line-height: 1.4;
+      text-align: left;
+      white-space: nowrap;
+
+      > i {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1em;
+      }
+    }
+  }
+}
+
 @media (max-width: @screen-xs-max) {
   .profile-view-navbar-mobile {
     .navbar-nav {

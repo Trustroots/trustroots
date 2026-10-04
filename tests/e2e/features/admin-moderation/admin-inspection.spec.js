@@ -233,22 +233,23 @@ test.describe('admin moderation inspection flows', () => {
 
     await expect(
       page.getByRole('heading', {
-        name: `${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName} report card`,
+        name: `${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName}`,
       }),
     ).toBeVisible();
     await expect(page.getByText('shadowban').first()).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Role management' }),
-    ).toHaveAttribute('href', '#roles');
+    ).toHaveCount(0);
     const rolePanel = page.locator('.admin-user-roles');
     await expect(
-      rolePanel.locator('dt').filter({ hasText: /^shadowban$/ }),
+      rolePanel.locator('li').filter({ hasText: /^shadowban$/ }),
     ).toBeVisible();
     await expect(
-      rolePanel.getByText(
-        'Member can use the site, but their profile and outreach are hidden from others.',
-      ),
-    ).toBeVisible();
+      rolePanel.locator('li').filter({ hasText: /^shadowban$/ }),
+    ).toHaveAttribute(
+      'title',
+      'Member can use the site, but their profile and outreach are hidden from others.',
+    );
     await expect(
       rolePanel.getByRole('button', {
         name: 'Add to Welcome team',

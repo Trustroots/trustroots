@@ -70,6 +70,15 @@ export default function NavigationLoggedIn({
       </Nav>
 
       <Nav as="ul" className="nav-header-primary">
+        {user.roles?.includes('admin') && (
+          <MenuItem
+            currentPath={currentPath}
+            path="/admin"
+            className="hidden-xs"
+          >
+            Admin
+          </MenuItem>
+        )}
         <MenuItem
           currentPath={currentPath}
           path="/circles"

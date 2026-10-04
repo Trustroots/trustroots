@@ -461,3 +461,69 @@ explain its compact column headings, and allow profile visibility to be sorted.
 - **THEN** each story shows whether the member's profile is visible
 - **AND** compact column headings provide accessible explanations
 - **AND** the administrator can sort the rows by profile visibility
+
+### Requirement: Acquisition welcome context
+
+The acquisition-stories list SHALL show a sortable Welcomer column derived from
+the first non-self, non-hidden incoming message from a current welcome-team
+member, including the sender's linked identity and date. Unread messages SHALL
+count. Members without a qualifying message SHALL show Unassigned. Contacted
+rows SHALL be subtly faded while preserving readable text and usable controls.
+The API SHALL batch contact metadata without returning message content.
+
+#### Scenario: First welcome message establishes the welcomer
+
+- **WHEN** a welcome-team member sends a visible message to a listed member
+- **THEN** reloading the list shows that sender and date and subtly fades the row
+- **AND** subsequent messages do not replace the first welcomer
+
+#### Scenario: Non-qualifying messages
+
+- **WHEN** only self-messages, hidden messages or messages from non-team senders exist
+- **THEN** the member remains Unassigned
+
+### Requirement: Acquisition language context
+
+The list SHALL display declared language names with languages shared with the
+signed-in viewer first, preserving profile order within both groups. Shared
+languages SHALL be bold except English, which SHALL retain normal weight.
+Empty language lists SHALL show Not specified. A viewer without languages SHALL
+see the original recipient language order without emphasis.
+
+#### Scenario: Shared languages
+
+- **WHEN** a member and viewer share English and another language
+- **THEN** those languages appear before unshared languages
+- **AND** only the shared non-English language is bold
+
+#### Scenario: Missing languages
+
+- **WHEN** a member has no declared languages
+- **THEN** the Languages column shows Not specified
+
+### Requirement: Profile admin navigation
+
+Public profile action links SHALL be consistently aligned. Administrators SHALL
+see an Admin action linking to `/admin/user?id=<viewed-member-id>`, on desktop
+and mobile. Other members, including the welcome team, SHALL not see it.
+
+#### Scenario: Administrator views a member
+
+- **WHEN** an administrator opens a member's profile
+- **THEN** the Admin action opens that member's existing admin record
+
+#### Scenario: Non-administrator views a member
+
+- **WHEN** a non-administrator opens a profile
+- **THEN** no Admin action is displayed
+
+### Requirement: Admin member username URLs
+
+The application SHALL support `/admin/user/:username` with the same admin-only
+access as `/admin/user`. It SHALL run the existing member lookup for that
+username, while preserving ID, IP and query URL support.
+
+#### Scenario: Username deep link
+
+- **WHEN** an administrator opens `/admin/user/fictional-member`
+- **THEN** the admin page looks up fictional-member and shows its member record

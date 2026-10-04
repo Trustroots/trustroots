@@ -9,9 +9,11 @@ import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 export default function LanguageList({
   languages = [],
   className,
+  emphasisedLanguages = [],
 }: {
   languages?: string[];
   className?: string;
+  emphasisedLanguages?: string[];
 }) {
   const { t } = useTranslation(['languages']) as {
     t: (key: string, options?: Record<string, unknown>) => string;
@@ -27,14 +29,21 @@ export default function LanguageList({
 
   return (
     <ul className={className}>
-      {languages.map(code => (
-        <li key={code}>
-          {languageNames?.[code]
-            ? // i18next-extract-disable-next-line
-              t(languageNames[code], { ns: 'languages' })
-            : code}
-        </li>
-      ))}
+      {languages.map(code => {
+        const name = languageNames?.[code]
+          ? // i18next-extract-disable-next-line
+            t(languageNames[code], { ns: 'languages' })
+          : code;
+        return (
+          <li key={code}>
+            {emphasisedLanguages.includes(code) ? (
+              <strong>{name}</strong>
+            ) : (
+              name
+            )}
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -42,4 +51,5 @@ export default function LanguageList({
 LanguageList.propTypes = {
   className: PropTypes.string,
   languages: PropTypes.array.isRequired,
+  emphasisedLanguages: PropTypes.arrayOf(PropTypes.string),
 };

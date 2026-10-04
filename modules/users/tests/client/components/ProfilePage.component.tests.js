@@ -212,6 +212,34 @@ describe('ProfilePage', () => {
     expect(usersApi.fetch).toHaveBeenCalledWith('bob');
   });
 
+  it.each([
+    ['admin', true],
+    ['welcome-team', false],
+    ['user', false],
+  ])(
+    'shows the desktop Admin action only for an admin viewer (%s)',
+    async (role, visible) => {
+      renderPage({ ...authUser, roles: [role] });
+      await screen.findByText('About Bob Example');
+      const link = screen.queryByRole('link', { name: 'Admin', exact: true });
+      if (visible) {
+        expect(link).toHaveAttribute('href', '/admin/user?id=user-2');
+      } else {
+        expect(link).not.toBeInTheDocument();
+      }
+    },
+  );
+
+  it('shows an Admin action on an administrator’s own profile without member actions', async () => {
+    renderPage({ ...authUser, _id: profile._id, roles: ['admin'] });
+    expect(
+      await screen.findByRole('link', { name: 'Admin', exact: true }),
+    ).toHaveAttribute('href', '/admin/user?id=user-2');
+    expect(
+      screen.queryByRole('link', { name: 'Send a message' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('changes tabs without reloading the profile', async () => {
     const { rerender } = renderPage(
       authUser,

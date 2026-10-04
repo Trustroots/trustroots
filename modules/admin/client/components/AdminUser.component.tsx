@@ -79,13 +79,12 @@ const DEFAULT_MEMBER_LIST_SORT: MemberSort = {
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
   'welcome-team':
-    'Can view acquisition stories, analysis, and members who blocked their account.',
+    'Welcome team members can view acquisition stories and analysis, and see members who blocked their account.',
   admin: 'Full access to administration and moderation tools.',
   moderator: 'Legacy moderation role retained for historical accounts.',
   shadowban:
     'Member can use the site, but their profile and outreach are hidden from others.',
   suspended: 'Member access is blocked until an administrator intervenes.',
-  user: 'Standard Trustroots member access.',
   volunteer: 'Current Trustroots volunteer.',
   'volunteer-alumni': 'Former Trustroots volunteer.',
 };
@@ -238,10 +237,10 @@ InfoTable.propTypes = {
 };
 
 export default class AdminUser extends Component<
-  Record<string, never>,
+  { username?: string },
   AdminUserState
 > {
-  constructor(props: Record<string, never>) {
+  constructor(props: { username?: string }) {
     super(props);
     this.getUserById = this.getUserById.bind(this);
     this.getUsersByLastIpAddress = this.getUsersByLastIpAddress.bind(this);
@@ -274,8 +273,10 @@ export default class AdminUser extends Component<
     const ipAddress = urlParams.get('ip');
     const query = urlParams.get('q');
 
-    if (id && isMongoObjectId(id)) {
-      this.setState({ query: id }, () => this.queryUser(null));
+    if (this.props.username) {
+      this.setState({ query: this.props.username }, () => this.queryUser(null));
+    } else if (id && isMongoObjectId(id)) {
+      this.getUserById(id);
     } else if (ipAddress) {
       this.getUsersByLastIpAddress(ipAddress);
     } else if (query) {
@@ -290,6 +291,7 @@ export default class AdminUser extends Component<
 
     // Update URL
     const url = new URL(document.location.href);
+    url.pathname = '/admin/user';
     url.searchParams.delete('id');
     url.searchParams.delete('ip');
     url.searchParams.delete('q');
@@ -587,38 +589,40 @@ export default class AdminUser extends Component<
       <>
         <AdminHeader />
         <div className="container admin-user-page">
-          <div className="admin-user-page__search">
-            <h2>Member report card</h2>
+          {!isProfile && (
+            <div className="admin-user-page__search">
+              <form
+                onSubmit={this.queryUser}
+                className="form-inline admin-user-search-form"
+              >
+                <input
+                  aria-label="Member username, email or ID"
+                  className="form-control input-lg"
+                  onChange={this.onQueryChange}
+                  placeholder="Member username, email or ID"
+                  size={32}
+                  type="search"
+                  value={query}
+                />
+                <div className="checkbox">
+                  <label>
+                    <input
+                      checked={hideObviousSpamUsers}
+                      onChange={this.onHideObviousSpamUsersChange}
+                      type="checkbox"
+                    />{' '}
+                    Hide obvious spam
+                  </label>
+                </div>
+              </form>
 
-            <form
-              onSubmit={this.queryUser}
-              className="form-inline admin-user-search-form"
-            >
-              <input
-                aria-label="Member username, email or ID"
-                className="form-control input-lg"
-                onChange={this.onQueryChange}
-                placeholder="Member username, email or ID"
-                size={32}
-                type="search"
-                value={query}
-              />
-              <div className="checkbox">
-                <label>
-                  <input
-                    checked={hideObviousSpamUsers}
-                    onChange={this.onHideObviousSpamUsersChange}
-                    type="checkbox"
-                  />{' '}
-                  Hide obvious spam
-                </label>
-              </div>
-            </form>
-
-            {isSearching && (
-              <p className="admin-user-loading text-muted">Loading member...</p>
-            )}
-          </div>
+              {isSearching && (
+                <p className="admin-user-loading text-muted">
+                  Loading member...
+                </p>
+              )}
+            </div>
+          )}
 
           {!isProfile && (
             <AdminUserResultsTable
@@ -647,7 +651,7 @@ export default class AdminUser extends Component<
             <>
               <div className="admin-user-report-header">
                 <h3>
-                  <strong>{profileLabel}</strong> report card
+                  <strong>{profileLabel}</strong>
                 </h3>
 
                 <div className="admin-user-actions">
@@ -711,15 +715,8 @@ export default class AdminUser extends Component<
                 </div>
               </div>
 
-              <h4 id="roles">
-                <a href="#roles">Role management</a>{' '}
-              </h4>
-              <div className="panel panel-default admin-user-roles">
+              <div id="roles" className="panel panel-default admin-user-roles">
                 <div className="panel-body">
-                  <p className="text-muted">
-                    Welcome team members can view acquisition stories and
-                    analysis, and see members who blocked their account.
-                  </p>
                   {this.state.roleChangeError && (
                     <p role="alert">
                       Could not change the role. Please try again.
@@ -728,6 +725,7 @@ export default class AdminUser extends Component<
                   <button
                     type="button"
                     className="btn btn-default"
+                    title={ROLE_DESCRIPTIONS['welcome-team']}
                     disabled={isSettingUserRole}
                     onClick={() =>
                       this.handleUserRoleChange(
@@ -740,19 +738,21 @@ export default class AdminUser extends Component<
                       ? 'Remove from Welcome team'
                       : 'Add to Welcome team'}
                   </button>
-                  <dl>
-                    {user.profile.roles.map(role => (
-                      <React.Fragment key={role}>
-                        <dt>
+                  <ul className="list-inline">
+                    {user.profile.roles
+                      .filter(role => role !== 'user')
+                      .map(role => (
+                        <li
+                          key={role}
+                          title={
+                            ROLE_DESCRIPTIONS[role] ||
+                            'Role stored on this member.'
+                          }
+                        >
                           {role === 'welcome-team' ? 'Welcome team' : role}
-                        </dt>
-                        <dd>
-                          {ROLE_DESCRIPTIONS[role] ||
-                            'Role stored on this member.'}
-                        </dd>
-                      </React.Fragment>
-                    ))}
-                  </dl>
+                        </li>
+                      ))}
+                  </ul>
                 </div>
               </div>
 
