@@ -15,6 +15,7 @@ function run(job, agendaDone) {
     {
       created: { $lt: moment().subtract(config.limits.timeToReplyExperience) },
       public: false,
+      removedAt: { $exists: false },
     },
     { public: true },
   ).exec(agendaDone);

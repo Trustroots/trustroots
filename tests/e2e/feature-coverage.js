@@ -91,6 +91,8 @@ const specPaths = {
   'account-email-tokens.spec.js':
     'features/auth-account/account-email-tokens.spec.js',
   'account-settings.spec.js': 'features/auth-account/account-settings.spec.js',
+  'experience-changes.spec.js':
+    'features/experiences-references/experience-changes.spec.js',
   'admin-acquisition.spec.js':
     'features/admin-moderation/admin-acquisition.spec.js',
   'admin-inspection.spec.js':
@@ -2429,6 +2431,75 @@ const features = [
       spec(
         'authenticated.spec.js',
         'inbox prompts an unconfirmed member to activate their profile',
+      ),
+    ],
+  },
+  {
+    id: 'experiences.change-requests',
+    area: AREA.experiencesReferences,
+    status: STATUS.active,
+    description:
+      'Support-issued links let members request Experience edits or removal for admin review.',
+    roles: ['member', 'admin'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'experience.change',
+          '/experiences/:id/change',
+          source.coreClient,
+          { requiresAuth: true },
+        ),
+        clientRoute(
+          'admin.experience-changes',
+          '/admin/experience-changes',
+          source.adminClient,
+          { requiresAuth: true, requiresRole: 'admin' },
+        ),
+      ],
+      apiRoutes: [
+        apiRoute(
+          'GET',
+          '/api/experiences/:id/change-access',
+          source.experiencesServer,
+        ),
+        apiRoute(
+          'GET',
+          '/api/experiences/:id/change-requests/mine',
+          source.experiencesServer,
+        ),
+        apiRoute(
+          'POST',
+          '/api/experiences/:id/change-requests',
+          source.experiencesServer,
+        ),
+        apiRoute('GET', '/api/admin/experiences', source.adminServer),
+        apiRoute(
+          'POST',
+          '/api/admin/experiences/:id/change-links',
+          source.adminServer,
+        ),
+        apiRoute(
+          'GET',
+          '/api/admin/experience-change-requests',
+          source.adminServer,
+        ),
+        apiRoute(
+          'POST',
+          '/api/admin/experience-change-requests/:id/decision',
+          source.adminServer,
+        ),
+      ],
+    },
+    requiredScenarios: [
+      'Admin generates a scoped support link.',
+      'Author proposes an edit that stays pending until approval.',
+      'Approved edit appears on the profile.',
+      'Approved removal hides the Experience.',
+    ],
+    relatedSpecs: [
+      spec(
+        'experience-changes.spec.js',
+        'support link lets an author request an edit and removal for admin review',
       ),
     ],
   },
