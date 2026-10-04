@@ -25,6 +25,23 @@ service.tribeFields = [
   'created',
 ].join(' ');
 
+/**
+ * Populate options for the tribe of a member document
+ * @param select String Fields to select, defaults to `tribeFields`
+ * @return Object Mongoose populate options
+ */
+service.tribePopulateOptions = function (select = service.tribeFields) {
+  return {
+    path: 'member.tribe',
+    select,
+    model: 'Tribe',
+    // Not possible at the moment due bug in Mongoose
+    // http://mongoosejs.com/docs/faq.html#populate_sort_order
+    // https://github.com/Automattic/mongoose/issues/2202
+    // options: { sort: { count: -1 } }
+  };
+};
+
 function visibleTribesQuery(req) {
   const query = { public: true };
 
@@ -130,12 +147,14 @@ const getTribe = service.getTribe;
 const listTribes = service.listTribes;
 const tribeBySlug = service.tribeBySlug;
 const tribeFields = service.tribeFields;
+const tribePopulateOptions = service.tribePopulateOptions;
 const updateCount = service.updateCount;
 export {
   getTribe as getTribe,
   listTribes as listTribes,
   tribeBySlug as tribeBySlug,
   tribeFields as tribeFields,
+  tribePopulateOptions as tribePopulateOptions,
   updateCount as updateCount,
 };
 export default service;

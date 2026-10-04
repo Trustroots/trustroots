@@ -19,6 +19,7 @@ import * as nip19 from 'nostr-tools/nip19';
 import validator from 'validator';
 import deprecatedLanguages from '../../../../config/languages/deprecated.js';
 import { selectProfileResponse } from '../services/profile-response.server.service.mjs';
+import { userMiniProfileFields as miniProfileFields } from '../services/user-mini.server.service.mjs';
 
 const require = createRequire(import.meta.url);
 // JSON import attributes are not supported by the pinned formatter.
@@ -74,18 +75,9 @@ service.userProfileFields = [
   'additionalProvidersData.github.login', // For GitHub profile links
 ].join(' ');
 
-// Restricted set of profile fields when only really "miniprofile" is needed
-service.userMiniProfileFields = [
-  'id',
-  'updated', // Used as local-avatar cache buster
-  'displayName',
-  'username',
-  'avatarSource',
-  'avatarUploaded',
-  'avatarVersion',
-  'emailHash',
-  'additionalProvidersData.facebook.id', // For FB avatars
-].join(' ');
+// Restricted set of profile fields when only really "miniprofile" is needed.
+// Single source of truth lives in the user-mini service.
+service.userMiniProfileFields = miniProfileFields;
 
 // Mini + a few fields we'll need at listings
 service.userListingProfileFields =

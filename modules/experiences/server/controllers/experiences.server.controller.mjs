@@ -6,6 +6,7 @@ import textService from '../../../core/server/services/text.server.service.js';
 import errorService from '../../../core/server/services/error.server.service.js';
 import emailService from '../../../core/server/services/email.server.service.js';
 import userProfile from '../../../users/server/controllers/users.profile.server.controller.js';
+import userMiniService from '../../../users/server/services/user-mini.server.service.js';
 import userRolesService from '../../../users/server/services/user-roles.server.service.js';
 
 const service = {};
@@ -487,23 +488,10 @@ service.readMany = async function readMany(req, res, next) {
     };
 
     // Aggregate projection for User in experience
-    const userKeys = {
-      _id: 1,
-      updated: 1,
-      displayName: 1,
-      username: 1,
-      avatarSource: 1,
-      avatarUploaded: 1,
-      avatarVersion: 1,
-      emailHash: 1,
+    const userKeys = userMiniService.userMiniProjectionMap({
       created: 1,
       gender: 1,
-      additionalProvidersData: {
-        facebook: {
-          id: 1,
-        },
-      },
-    };
+    });
 
     // Find experiences
     const experiences = await Experience.aggregate([
@@ -715,16 +703,12 @@ service.getCount = async function getCount(req, res, next) {
 
     const counts = await Experience.aggregate([
       { $match: { ...query, ...(isSelf ? {} : { public: true }) } },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'userFrom',
-          foreignField: '_id',
-          as: 'author',
-        },
-      },
-      { $unwind: '$author' },
-      { $match: { 'author.roles': visibleAuthorRoles } },
+      // Drop counts authored by members with restricted roles
+      // (suspended, shadowbanned)
+      ...userMiniService.visibleUserLookupStages({
+        localField: 'userFrom',
+        as: 'author',
+      }),
       { $group: { _id: '$public', count: { $sum: 1 } } },
     ]).exec();
     const { publicCount, privateCount } = counts.reduce(

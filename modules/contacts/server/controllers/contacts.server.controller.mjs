@@ -1,20 +1,15 @@
-import { createRequire } from 'module';
 import _ from 'lodash';
 import errorService from '../../../core/server/services/error.server.service.js';
 import textService from '../../../core/server/services/text.server.service.js';
 import emailService from '../../../core/server/services/email.server.service.js';
 import userRolesService from '../../../users/server/services/user-roles.server.service.js';
+import userMiniService from '../../../users/server/services/user-mini.server.service.js';
 import sanitizeHtml from 'sanitize-html';
 import htmlToText from 'html-to-text';
 import async from 'async';
 import mongoose from 'mongoose';
 
 const service = {};
-const require = createRequire(import.meta.url);
-
-function getUserProfile() {
-  return require('../../../users/server/controllers/users.profile.server.controller.js');
-}
 
 /**
  * Module dependencies.
@@ -253,11 +248,11 @@ service.contactByUserId = function (req, res, next, userId) {
         },
       ],
     })
-      .populate({
-        path: 'userTo userFrom',
-        select: getUserProfile().userMiniProfileFields,
-        match: { roles: { $nin: userRolesService.restrictedMessagingRoles } },
-      })
+      .populate(
+        userMiniService.miniUserPopulate('userTo userFrom', {
+          excludeRestrictedRoles: true,
+        }),
+      )
       .exec(function (err, contact) {
         if (err) return next(err);
         if (!contact || !contact.userFrom || !contact.userTo) {
@@ -282,11 +277,11 @@ service.contactById = function (req, res, next, contactId) {
 
   if (req.user && req.user.public) {
     Contact.findById(contactId)
-      .populate({
-        path: 'userTo userFrom',
-        select: getUserProfile().userMiniProfileFields,
-        match: { roles: { $nin: userRolesService.restrictedMessagingRoles } },
-      })
+      .populate(
+        userMiniService.miniUserPopulate('userTo userFrom', {
+          excludeRestrictedRoles: true,
+        }),
+      )
       .exec(function (err, contact) {
         if (err) return next(err);
 
@@ -429,25 +424,14 @@ service.contactListByUser = function (req, res, next, listUserId) {
     },
 
     // Populate user field: receives whole document of user
-    {
-      $lookup: {
-        from: 'users', // collection to join
-        localField: 'user',
-        foreignField: '_id', // field(s) from the documents of the "from" collection
-        as: 'user', // output array field
-      },
-    },
-    // Because above `$lookup`s return and array with one user
-    // `[{userObject}]`, we have to unwind it back to `{userObject}`
-    { $unwind: '$user' },
-
+    // Because `$lookup`s return an array with one user `[{userObject}]`,
+    // the helper unwinds it back to `{userObject}`
     // Existing relationship records may outlive a moderation action. Keep
     // restricted members out of all user-facing contact lists.
-    {
-      $match: {
-        'user.roles': { $nin: userRolesService.restrictedMessagingRoles },
-      },
-    },
+    ...userMiniService.visibleUserLookupStages({
+      localField: 'user',
+      as: 'user',
+    }),
 
     // Another round of formating results as we now have `user` field populated
     {
@@ -460,23 +444,12 @@ service.contactListByUser = function (req, res, next, listUserId) {
         userTo: '$userTo',
         // Project here fields for the user which isn't the user who's list
         // we requested. I.e. "the other party"
-        user: {
-          // These should be fields listed at `userProfile.userMiniProfileFields`
-          _id: '$user._id',
-          updated: '$user.updated',
-          displayName: '$user.displayName',
-          username: '$user.username',
-          avatarSource: '$user.avatarSource',
-          avatarUploaded: '$user.avatarUploaded',
+        // Projection is derived from the shared mini profile service,
+        // extended with contact-specific location fields.
+        user: userMiniService.userMiniProjection('$user', {
           locationFrom: '$user.locationFrom',
           locationLiving: '$user.locationLiving',
-          emailHash: '$user.emailHash',
-          additionalProvidersData: {
-            facebook: {
-              id: '$user.additionalProvidersData.facebook.id',
-            },
-          },
-        },
+        }),
       },
     },
   ]).exec(function (err, contacts) {

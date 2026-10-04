@@ -1,4 +1,3 @@
-import { createRequire } from 'module';
 import _ from 'lodash';
 import async from 'async';
 import sanitizeHtml from 'sanitize-html';
@@ -14,13 +13,9 @@ import spamService from '../../../core/server/services/spam.server.service.js';
 import userRolesService from '../../../users/server/services/user-roles.server.service.js';
 import statService from '../../../stats/server/services/stats.server.service.js';
 import paginationService from '../../../core/server/services/pagination.server.service.js';
+import * as userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
 
 const service = {};
-const require = createRequire(import.meta.url);
-
-function getUserProfile() {
-  return require('../../../users/server/controllers/users.profile.server.controller.js');
-}
 
 /**
  * Module dependencies.
@@ -216,11 +211,7 @@ service.inbox = function (req, res) {
           path: 'message',
           select: 'content',
         },
-        {
-          path: 'userFrom userTo',
-          select: getUserProfile().userMiniProfileFields,
-          model: 'User',
-        },
+        userMiniService.miniUserPopulate('userFrom userTo'),
       ],
     },
     function (err, data) {
@@ -558,16 +549,7 @@ service.send = async function (req, res) {
       // We'll need some info about related users, populate some fields
       function (message, done) {
         message.populate(
-          [
-            {
-              path: 'userFrom',
-              select: getUserProfile().userMiniProfileFields,
-            },
-            {
-              path: 'userTo',
-              select: getUserProfile().userMiniProfileFields,
-            },
-          ],
+          [userMiniService.miniUserPopulate('userFrom userTo')],
           function (err, message) {
             if (err) {
               return done(err);
@@ -677,10 +659,7 @@ service.threadByUser = function (req, res, next, userId) {
             limit: req.query.limit || 20,
             sort: '-created',
             select: messageFields,
-            populate: {
-              path: 'userFrom userTo',
-              select: getUserProfile().userMiniProfileFields,
-            },
+            populate: userMiniService.miniUserPopulate('userFrom userTo'),
           },
           function (err, data) {
             if (err) {
@@ -945,7 +924,7 @@ service.sync = function (req, res) {
             $in: userIds,
           },
         })
-          .select(getUserProfile().userMiniProfileFields)
+          .select(userMiniService.userMiniProfileFields)
           .exec(function (err, users) {
             data.users = users;
             done(err);

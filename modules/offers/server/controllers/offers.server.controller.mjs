@@ -671,15 +671,7 @@ service.getOffer = function (req, res) {
 
         User.populate(
           offer.user,
-          {
-            path: 'member.tribe',
-            select: tribes.tribeFields,
-            model: 'Tribe',
-            // Not possible at the moment due bug in Mongoose
-            // http://mongoosejs.com/docs/faq.html#populate_sort_order
-            // https://github.com/Automattic/mongoose/issues/2202
-            // options: { sort: { count: -1 } }
-          },
+          tribes.tribePopulateOptions(),
           function (err, user) {
             // Overwrite old `offer.user` with new `user` object
             // containing populated `member.tribe` to `offer`

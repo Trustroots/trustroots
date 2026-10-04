@@ -294,4 +294,20 @@ describe('Tribes controller unit tests', () => {
       response.statusCode.should.equal(400);
     });
   });
+
+  describe('tribePopulateOptions', () => {
+    it('defaults to the public tribe fields', () => {
+      tribesController.tribePopulateOptions().should.eql({
+        path: 'member.tribe',
+        select: tribesController.tribeFields,
+        model: 'Tribe',
+      });
+    });
+
+    it('accepts a reduced field selection', () => {
+      const options = tribesController.tribePopulateOptions('slug label');
+      options.select.should.equal('slug label');
+      options.path.should.equal('member.tribe');
+    });
+  });
 });
