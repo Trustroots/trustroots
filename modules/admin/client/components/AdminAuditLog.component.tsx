@@ -128,8 +128,11 @@ export default function AdminAuditLog() {
             <option value="welcome-team">Welcome team</option>
           </select>
         </div>
-        {(error || actorsError) && (
+        {error && (
           <p role="alert">Could not load the audit log. Please try again.</p>
+        )}
+        {actorsError && (
+          <p role="alert">Could not load the staff list. Please try again.</p>
         )}
         {loading ? (
           <p role="status">Loading audit log...</p>

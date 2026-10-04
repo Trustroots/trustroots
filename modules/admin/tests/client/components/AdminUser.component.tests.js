@@ -224,8 +224,7 @@ describe('<AdminUser />', () => {
     expect(screen.queryByText('Role management')).not.toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Add to Welcome team' }),
-    ).toHaveAttribute(
-      'title',
+    ).toHaveAccessibleDescription(
       'Welcome team members can view acquisition stories and analysis, and see members who blocked their account.',
     );
     expect(
@@ -308,30 +307,40 @@ describe('<AdminUser />', () => {
 
     await screen.findByRole('heading', { name: 'alice' });
     expect(
-      screen.getByText('admin', { selector: '.admin-user-roles li' }),
-    ).toHaveAttribute(
-      'title',
+      screen.getByText('admin', { selector: '.admin-user-roles li > span' }),
+    ).toHaveAccessibleDescription(
       'Full access to administration and moderation tools.',
     );
     expect(
-      screen.getByText('moderator', { selector: '.admin-user-roles li' }),
-    ).toHaveAttribute(
-      'title',
+      screen.getByText('moderator', {
+        selector: '.admin-user-roles li > span',
+      }),
+    ).toHaveAccessibleDescription(
       'Legacy moderation role retained for historical accounts.',
     );
     expect(
-      screen.getByText('shadowban', { selector: '.admin-user-roles li' }),
-    ).toHaveAttribute(
-      'title',
+      screen.getByText('shadowban', {
+        selector: '.admin-user-roles li > span',
+      }),
+    ).toHaveAccessibleDescription(
       'Member can use the site, but their profile and outreach are hidden from others.',
     );
     expect(
       screen.getByText('custom-legacy-role', {
-        selector: '.admin-user-roles li',
+        selector: '.admin-user-roles li > span',
       }),
-    ).toHaveAttribute('title', 'Role stored on this member.');
+    ).toHaveAccessibleDescription('Role stored on this member.');
+    const roleHelp = screen.getByText('admin', {
+      selector: '.admin-user-roles li > span',
+    });
+    expect(roleHelp).toHaveAttribute('tabindex', '0');
+    fireEvent.focus(roleHelp);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'Full access to administration and moderation tools.',
+    );
+    fireEvent.blur(roleHelp);
     expect(
-      screen.queryByText('user', { selector: '.admin-user-roles li' }),
+      screen.queryByText('user', { selector: '.admin-user-roles li > span' }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByText('Standard Trustroots member access.'),
@@ -586,17 +595,34 @@ describe('<AdminUser />', () => {
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
   });
 
-  it('loads a profile from a deep-link username', async () => {
-    window.history.pushState({}, '', '/admin/user/river');
-    usersApi.searchUsers.mockResolvedValueOnce(
-      makeMemberList([{ _id: userId, username: 'river' }]),
+  it('loads a deep-link username exactly, independent of search pagination', async () => {
+    window.history.pushState({}, '', '/admin/user/alex');
+    usersApi.getUserByUsername.mockResolvedValueOnce(
+      makeReportCard({
+        profile: { _id: userId, roles: ['user'], username: 'alex' },
+      }),
     );
-    usersApi.getUser.mockResolvedValueOnce(makeReportCard());
-    render(<AdminUser username="river" />);
-    await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
+    render(<AdminUser username="alex" />);
+    await screen.findByRole('heading', { name: 'alex' });
+    expect(usersApi.getUserByUsername).toHaveBeenCalledWith('alex');
+    expect(usersApi.searchUsers).not.toHaveBeenCalled();
+    expect(usersApi.getUser).not.toHaveBeenCalled();
     expect(
       screen.queryByLabelText('Member username, email or ID'),
     ).not.toBeInTheDocument();
+  });
+
+  it('shows the no-match state when a deep-link username does not exist', async () => {
+    window.history.pushState({}, '', '/admin/user/missing-member');
+    usersApi.getUserByUsername.mockRejectedValueOnce(new Error('Not found'));
+
+    render(<AdminUser username="missing-member" />);
+
+    expect(
+      await screen.findByText('No matching members found.'),
+    ).toBeInTheDocument();
+    expect(usersApi.searchUsers).not.toHaveBeenCalled();
+    expect(screen.queryByText('Loading member...')).not.toBeInTheDocument();
   });
 
   it('submits short queries without querying the API', () => {

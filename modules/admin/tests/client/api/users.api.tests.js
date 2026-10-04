@@ -5,6 +5,7 @@ import {
   listUsersByLastIpAddress,
   listUsersByRole,
   getUser,
+  getUserByUsername,
   setUserRole,
 } from '@/modules/admin/client/api/users.api';
 
@@ -76,6 +77,16 @@ describe('admin users api', () => {
     await expect(getUser('user-1')).resolves.toBe(data);
     expect(axios.post).toHaveBeenCalledWith('/api/admin/user', {
       id: 'user-1',
+    });
+  });
+
+  it('gets a single user by exact username', async () => {
+    const data = { _id: 'user-1' };
+    axios.post.mockResolvedValueOnce({ data });
+
+    await expect(getUserByUsername('common-name-member')).resolves.toBe(data);
+    expect(axios.post).toHaveBeenCalledWith('/api/admin/user', {
+      username: 'common-name-member',
     });
   });
 

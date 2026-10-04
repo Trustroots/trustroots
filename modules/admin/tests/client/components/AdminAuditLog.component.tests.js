@@ -110,16 +110,21 @@ describe('Compact audit log', () => {
     api.getAuditLog.mockRejectedValue(new Error('Failed'));
     render(<AdminAuditLog />);
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Could not load',
+      'Could not load the audit log. Please try again.',
     );
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
   });
-  it('handles actor option errors', async () => {
+  it('reports actor option errors while keeping the loaded audit table visible', async () => {
     api.getAuditLogActors.mockRejectedValue(new Error('Failed'));
-    api.getAuditLog.mockResolvedValue([]);
+    api.getAuditLog.mockResolvedValue([
+      { _id: 'audit-actor-error', route: '/api/admin/users' },
+    ]);
     render(<AdminAuditLog />);
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Could not load',
+      'Could not load the staff list. Please try again.',
     );
+    expect(screen.getByRole('table')).toBeInTheDocument();
+    expect(screen.getByText('/api/admin/users')).toBeInTheDocument();
   });
   it.each(['resolve', 'reject'])(
     'ignores requests that %s after unmount',

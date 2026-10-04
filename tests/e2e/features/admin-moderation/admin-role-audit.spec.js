@@ -42,17 +42,14 @@ async function assertMemberProfileCleanup(page, member) {
 
   const welcomeButton = page.locator('#roles button');
   await expect(welcomeButton).toHaveAttribute(
-    'title',
+    'aria-describedby',
+    'welcome-team-role-description',
+  );
+  await welcomeButton.focus();
+  await expect(page.getByRole('tooltip')).toHaveText(
     'Welcome team members can view acquisition stories and analysis, and see members who blocked their account.',
   );
-  await expect(
-    page
-      .locator('#roles')
-      .getByText(
-        'Welcome team members can view acquisition stories and analysis, and see members who blocked their account.',
-        { exact: true },
-      ),
-  ).toHaveCount(0);
+  await welcomeButton.blur();
 
   let roleChangeRequests = 0;
   const onRequest = request => {

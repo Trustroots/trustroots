@@ -137,6 +137,13 @@ The system SHALL let authorised administrators apply permitted moderation-role
 changes, including removing a member's `shadowban` role, and review the
 administration audit history. Removing the role SHALL leave messages already
 hidden during the shadowban hidden.
+Role descriptions SHALL be available on hover and keyboard focus, and exposed
+to assistive technology without requiring visible explanatory paragraphs.
+
+#### Scenario: Administrator focuses role help
+
+- **WHEN** an administrator focuses a role label or the Welcome team control
+- **THEN** its explanation appears and is available to screen readers
 
 #### Scenario: Administrator unshadowbans a member
 
@@ -520,13 +527,15 @@ and mobile. Other members, including the welcome team, SHALL not see it.
 ### Requirement: Admin member username URLs
 
 The application SHALL support `/admin/user/:username` with the same admin-only
-access as `/admin/user`. It SHALL run the existing member lookup for that
-username, while preserving ID, IP and query URL support.
+access as `/admin/user`. It SHALL look up the exact username independently of
+fuzzy search results and their pagination, while preserving ID, IP and query
+URL support.
 
-#### Scenario: Username deep link
+#### Scenario: Exact username deep link despite a matching prefix
 
+- **GIVEN** members named `fictional-member` and `fictional-member-extra`
 - **WHEN** an administrator opens `/admin/user/fictional-member`
-- **THEN** the admin page looks up fictional-member and shows its member record
+- **THEN** the admin page shows the record for the exact `fictional-member` username
 
 ### Requirement: Compact audit history
 

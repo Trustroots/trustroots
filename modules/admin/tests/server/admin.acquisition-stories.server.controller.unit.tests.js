@@ -93,8 +93,14 @@ describe('Admin acquisition stories controller unit tests', () => {
         { _id: saved[4]._id },
         { $pull: { roles: 'welcome-team' } },
       );
+      const aggregate = sinon.spy(Message, 'aggregate');
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
+      aggregate.firstCall.args[0][0].$match.userFrom.$in.should.deepEqual([
+        recipient._id,
+        saved[1]._id,
+        saved[2]._id,
+      ]);
       res.body[0].languages.should.deepEqual(['fre', 'eng']);
       res.body[0].welcomer.should.deepEqual({
         _id: saved[1]._id,
@@ -173,6 +179,9 @@ describe('Admin acquisition stories controller unit tests', () => {
         sort: () => ({ limit: storyLimit }),
       });
       find.onSecondCall().returns({
+        select: () => ({ exec: async () => [] }),
+      });
+      find.onThirdCall().returns({
         select: () => ({
           sort: () => ({
             limit: () => ({ exec: async () => restrictedUsers }),

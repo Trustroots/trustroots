@@ -6,6 +6,7 @@ import React, { Component, type ChangeEvent, type FormEvent } from 'react';
 // Internal dependencies
 import {
   getUser,
+  getUserByUsername as getUserRecordByUsername,
   listUsersByLastIpAddress,
   searchUsers,
   setUserRole,
@@ -17,6 +18,7 @@ import AdminUserResultsTable from './AdminUserResultsTable.component';
 import Json from './Json.component';
 import UserEmailConfirmLink from './UserEmailConfirmLink.component';
 import UserState from './UserState.component';
+import Tooltip from '@/modules/core/client/components/Tooltip';
 import {
   SEARCH_STRING_LIMIT,
   getReferenceUserId,
@@ -274,7 +276,9 @@ export default class AdminUser extends Component<
     const query = urlParams.get('q');
 
     if (this.props.username) {
-      this.setState({ query: this.props.username }, () => this.queryUser(null));
+      this.setState({ query: this.props.username }, () =>
+        this.getUserByUsername(this.props.username as string),
+      );
     } else if (id && isMongoObjectId(id)) {
       this.getUserById(id);
     } else if (ipAddress) {
@@ -421,6 +425,22 @@ export default class AdminUser extends Component<
         if (isMongoObjectId(id)) {
           const user: MemberRecord | false = await getUser(id);
           this.setState({ isSearching: false, user });
+        }
+      },
+    );
+  }
+
+  getUserByUsername(username: string) {
+    this.setState(
+      { hasSearched: true, isSearching: true, matchingUsers: [], user: false },
+      async () => {
+        try {
+          const user: MemberRecord | false = await getUserRecordByUsername(
+            username,
+          );
+          this.setState({ isSearching: false, user });
+        } catch {
+          this.setState({ isSearching: false, user: false });
         }
       },
     );
@@ -722,34 +742,58 @@ export default class AdminUser extends Component<
                       Could not change the role. Please try again.
                     </p>
                   )}
-                  <button
-                    type="button"
-                    className="btn btn-default"
-                    title={ROLE_DESCRIPTIONS['welcome-team']}
-                    disabled={isSettingUserRole}
-                    onClick={() =>
-                      this.handleUserRoleChange(
-                        'welcome-team',
-                        this.hasRole('welcome-team') ? 'remove' : 'add',
-                      )
-                    }
+                  <Tooltip
+                    id="welcome-team-role-help"
+                    placement="bottom"
+                    tooltip={ROLE_DESCRIPTIONS['welcome-team']}
                   >
-                    {this.hasRole('welcome-team')
-                      ? 'Remove from Welcome team'
-                      : 'Add to Welcome team'}
-                  </button>
+                    <button
+                      type="button"
+                      className="btn btn-default"
+                      aria-describedby="welcome-team-role-description"
+                      disabled={isSettingUserRole}
+                      onClick={() =>
+                        this.handleUserRoleChange(
+                          'welcome-team',
+                          this.hasRole('welcome-team') ? 'remove' : 'add',
+                        )
+                      }
+                    >
+                      {this.hasRole('welcome-team')
+                        ? 'Remove from Welcome team'
+                        : 'Add to Welcome team'}
+                    </button>
+                  </Tooltip>
+                  <span id="welcome-team-role-description" className="sr-only">
+                    {ROLE_DESCRIPTIONS['welcome-team']}
+                  </span>
                   <ul className="list-inline">
                     {user.profile.roles
                       .filter(role => role !== 'user')
                       .map(role => (
-                        <li
-                          key={role}
-                          title={
-                            ROLE_DESCRIPTIONS[role] ||
-                            'Role stored on this member.'
-                          }
-                        >
-                          {role === 'welcome-team' ? 'Welcome team' : role}
+                        <li key={role}>
+                          <Tooltip
+                            id={`member-role-${role}-help`}
+                            placement="bottom"
+                            tooltip={
+                              ROLE_DESCRIPTIONS[role] ||
+                              'Role stored on this member.'
+                            }
+                          >
+                            <span
+                              tabIndex={0}
+                              aria-describedby={`member-role-${role}-description`}
+                            >
+                              {role === 'welcome-team' ? 'Welcome team' : role}
+                            </span>
+                          </Tooltip>
+                          <span
+                            id={`member-role-${role}-description`}
+                            className="sr-only"
+                          >
+                            {ROLE_DESCRIPTIONS[role] ||
+                              'Role stored on this member.'}
+                          </span>
                         </li>
                       ))}
                   </ul>

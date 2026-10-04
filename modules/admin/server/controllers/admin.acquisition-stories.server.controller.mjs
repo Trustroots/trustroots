@@ -437,12 +437,16 @@ export const list = async (req, res) => {
   }
 
   const storyUserIds = stories.map(story => story._id);
+  const currentWelcomerIds = (
+    await User.find({ roles: 'welcome-team' }).select('_id').exec()
+  ).map(user => user._id);
   // Filter current team membership before selecting the first contact. Fetch
   // metadata for all recipients together, never loading message content.
   const welcomeContacts = await Message.aggregate([
     {
       $match: {
         userTo: { $in: storyUserIds },
+        userFrom: { $in: currentWelcomerIds },
         shadowHidden: { $ne: true },
         $expr: { $ne: ['$userFrom', '$userTo'] },
       },

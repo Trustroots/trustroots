@@ -14,7 +14,7 @@ test('profile actions align and expose admin records only to administrators', as
 }, testInfo) => {
   annotateFeature(testInfo, 'admin.user-report', [
     'Administrator profile actions link to the viewed member record.',
-    'Username admin links load the same member record.',
+    'Exact username admin links load the same member record without paginated search.',
     'Ordinary members do not see profile admin actions.',
     'Administrators see a header shortcut before Circles; other members do not.',
   ]);
@@ -41,10 +41,24 @@ test('profile actions align and expose admin records only to administrators', as
   await expect(
     page.getByRole('link', { name: 'Public profile', exact: true }),
   ).toHaveAttribute('href', `/profile/${member.username}`);
+  let usernameSearchRequested = false;
+  await page.route('**/api/admin/users', async route => {
+    usernameSearchRequested = true;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        pagination: { page: 1, pageSize: 150, total: 0, totalPages: 0 },
+        sort: { column: 'username', direction: 'ascending' },
+        users: [],
+      }),
+    });
+  });
   await page.goto(`/admin/user/${member.username}`);
   await expect(
     page.getByRole('link', { name: 'Public profile', exact: true }),
   ).toHaveAttribute('href', `/profile/${member.username}`);
+  expect(usernameSearchRequested).toBe(false);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`/profile/${member.username}`);
   await expect(

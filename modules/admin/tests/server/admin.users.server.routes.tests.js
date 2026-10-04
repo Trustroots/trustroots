@@ -351,6 +351,10 @@ describe('Admin User CRUD tests', () => {
           .post('/api/admin/user')
           .send({ id: userRegularId })
           .expect(403);
+        await agent
+          .post('/api/admin/user')
+          .send({ username: userRegular.username })
+          .expect(403);
       });
 
       it('admin users should be allowed to query and get correct result', async () => {
@@ -372,6 +376,29 @@ describe('Admin User CRUD tests', () => {
         should(body.profile.removeProfileToken).equal('(Hidden from admins.)');
         should(body.profile.resetPasswordToken).equal('(Hidden from admins.)');
         body.potentialMatches.should.deepEqual([]);
+      });
+
+      it('admin users can resolve an exact username with a matching prefix', async () => {
+        const similarUser = new User({
+          displayName: 'Similar Member',
+          email: 'similar@example.com',
+          firstName: 'Similar',
+          lastName: 'Member',
+          password: 'Password123!',
+          provider: 'local',
+          public: true,
+          username: 'user-regular-extra',
+        });
+        await similarUser.save();
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/user')
+          .send({ username: userRegular.username })
+          .expect(200);
+
+        body.profile._id.should.equal(userRegularId);
+        body.profile.username.should.equal('user-regular');
       });
 
       it('shows bounded identity and acquisition-story leads for restricted members', async () => {
