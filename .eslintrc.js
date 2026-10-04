@@ -186,6 +186,35 @@ module.exports = {
     },
 
     /**
+     * Server TypeScript uses Node's module rules and remains separately opted in.
+     */
+    {
+      files: [
+        'config/lib/**/*.{ts,cts,mts}',
+        'modules/*/server/**/*.{ts,cts,mts}',
+      ],
+      env: {
+        node: true,
+      },
+      parser: '@typescript-eslint/parser',
+      extends: ['plugin:@typescript-eslint/recommended', 'prettier'],
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: 'module',
+      },
+    },
+
+    /**
+     * Native .cts implementations use CommonJS exports.
+     */
+    {
+      files: ['config/lib/**/*.cts', 'modules/*/server/**/*.cts'],
+      parserOptions: {
+        sourceType: 'commonjs',
+      },
+    },
+
+    /**
      * Overrides for server side test files
      */
     {

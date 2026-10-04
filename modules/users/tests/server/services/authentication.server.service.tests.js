@@ -1,19 +1,34 @@
-const sinon = require('sinon');
-const config = require('../../../../../config/config');
+const proxyquire = require('proxyquire').noCallThru();
+const typedAuthentication = require('../../../server/services/authentication.server.service.cts');
 
 require('should');
 
-const authenticationService = require('../../../server/services/authentication.server.service');
+const authenticationService = proxyquire(
+  '../../../server/services/authentication.server.service',
+  {
+    '../../../../config/config': {
+      illegalStrings: ['trustroots', 'trust', 'roots'],
+    },
+  },
+);
 
 describe('Service: authentication', function () {
-  beforeEach(function () {
-    sinon
-      .stub(config, 'illegalStrings')
-      .value(['trustroots', 'trust', 'roots']);
+  it('runs the typed implementation through the CommonJS adapter', function () {
+    const token = typedAuthentication.generateEmailToken(
+      { email: 'member@example.org' },
+      Buffer.from('salt:'),
+    );
+    token.should.equal(
+      authenticationService.generateEmailToken(
+        { email: 'member@example.org' },
+        Buffer.from('salt:'),
+      ),
+    );
+    typedAuthentication
+      .validateUsername('traveller', () => false)
+      .should.be.true();
   });
-  afterEach(function () {
-    sinon.restore();
-  });
+
   describe('generateEmailToken', function () {
     it('generates a hex token from salt and email', function () {
       const salt = Buffer.from('salt:');

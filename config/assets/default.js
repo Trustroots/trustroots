@@ -5,8 +5,10 @@ module.exports = {
     allJS: [
       'server.js',
       'config/**/*.js',
+      'config/**/*.cts',
       'modules/*/server/**/*.js',
       'modules/*/server/**/*.mjs',
+      'modules/*/server/**/*.cts',
     ],
     models: 'modules/*/server/models/**/*.js',
     routes: [
