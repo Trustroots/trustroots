@@ -1,5 +1,5 @@
 import errorService from '../../../core/server/services/error.server.service.js';
-import paginate from 'express-paginate';
+import { setLinkHeader } from '../../../core/server/services/pagination.server.service.mjs';
 import mongoose from 'mongoose';
 
 const service = {};
@@ -36,17 +36,6 @@ function visibleTribesQuery(req) {
 }
 
 /**
- * Constructs link headers for pagination
- */
-const setLinkHeader = function (req, res, pageCount) {
-  if (paginate.hasNextPages(req)(pageCount)) {
-    const nextPage = { page: req.query.page + 1 };
-    const linkHead = `<${res.locals.paginate.href(nextPage)}>; rel="next"`;
-    res.set('Link', linkHead);
-  }
-};
-
-/**
  * List all tribes
  */
 service.listTribes = function (req, res) {
@@ -79,7 +68,7 @@ service.listTribes = function (req, res) {
         }
         const pages = Math.ceil(total / limit);
         if (pages > page) {
-          setLinkHeader(req, res, pages);
+          setLinkHeader(req, res, pages, { relative: true });
         }
         res.json(docs);
       });

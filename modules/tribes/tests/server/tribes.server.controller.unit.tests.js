@@ -42,6 +42,12 @@ function deferredResponse() {
     res.headers[key] = value;
     return res;
   };
+  res.links = links => {
+    res.headers.Link = Object.entries(links)
+      .map(([rel, href]) => `<${href}>; rel="${rel}"`)
+      .join(', ');
+    return res;
+  };
   res.waitForResponse = () => promise;
   return res;
 }

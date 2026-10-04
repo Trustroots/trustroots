@@ -2,7 +2,6 @@ import { createRequire } from 'module';
 import _ from 'lodash';
 import async from 'async';
 import sanitizeHtml from 'sanitize-html';
-import paginate from 'express-paginate';
 import moment from 'moment';
 import mongoose from 'mongoose';
 import config from '../../../../config/config.js';
@@ -14,6 +13,7 @@ import textService from '../../../core/server/services/text.server.service.js';
 import spamService from '../../../core/server/services/spam.server.service.js';
 import userRolesService from '../../../users/server/services/user-roles.server.service.js';
 import statService from '../../../stats/server/services/stats.server.service.js';
+import { setLinkHeader } from '../../../core/server/services/pagination.server.service.mjs';
 
 const service = {};
 const require = createRequire(import.meta.url);
@@ -186,21 +186,6 @@ function sanitizeThreads(threads, authenticatedUserId, callback) {
     callback,
   );
 }
-
-/**
- * Constructs link headers for pagination
- */
-const setLinkHeader = function (req, res, pageCount) {
-  if (paginate.hasNextPages(req)(pageCount)) {
-    const url = (config.https ? 'https' : 'http') + '://' + config.domain;
-    const nextPage =
-      url + res.locals.paginate.href({ page: req.query.page + 1 });
-    res.links({
-      next: nextPage,
-      // last: ''
-    });
-  }
-};
 
 /**
  * List of threads aka inbox
