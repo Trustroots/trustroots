@@ -117,7 +117,19 @@ describe('FAQ page sections', () => {
     expect(
       screen.getByRole('heading', { name: 'How do I report a bug?' }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/search bar/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'contact us' })).toHaveAttribute(
+      'href',
+      '/support?category=reportBug',
+    );
+    expect(
+      screen.getByRole('link', { name: 'GitHub', exact: true }),
+    ).toHaveAttribute(
+      'href',
+      'https://github.com/Trustroots/trustroots/issues',
+    );
+    expect(screen.getByText(/Using GitHub is optional/)).toBeInTheDocument();
+    expect(screen.queryByText(/search bar/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/sign up at Github/i)).not.toBeInTheDocument();
     expect(screen.getByText(/active development again/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Nostroots' })).toHaveAttribute(
       'href',

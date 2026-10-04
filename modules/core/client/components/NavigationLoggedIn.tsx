@@ -60,7 +60,7 @@ export default function NavigationLoggedIn({
             {t<string>('Frequently Asked Questions')}
           </Dropdown.Item>
           <Dropdown.Item href="/safety">{t<string>('Safety')}</Dropdown.Item>
-          <Dropdown.Item href="/faq/bugs-and-features">
+          <Dropdown.Item href="/support?category=reportBug">
             {t<string>('Report a bug')}
           </Dropdown.Item>
           <Dropdown.Item href="/support">

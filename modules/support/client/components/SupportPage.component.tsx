@@ -39,7 +39,9 @@ export default function SupportPage({ user }: SupportPageProps) {
                 <a href="/faq">{t<string>('Frequently Asked Questions')}</a>
               </li>
               <li>
-                <a href="/faq/bugs-and-features">{t<string>('Report a bug')}</a>
+                <a href="/support?category=reportBug">
+                  {t<string>('Report a bug')}
+                </a>
               </li>
               {user && (
                 <li>

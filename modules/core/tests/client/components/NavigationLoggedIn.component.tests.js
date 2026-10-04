@@ -47,6 +47,9 @@ describe('<NavigationLoggedIn />', () => {
     expect(
       within(supportMenu).getByRole('link', { name: 'Safety' }),
     ).toHaveAttribute('href', '/safety');
+    expect(
+      within(supportMenu).getByRole('link', { name: 'Report a bug' }),
+    ).toHaveAttribute('href', '/support?category=reportBug');
     fireEvent.click(screen.getByRole('button', { name: /avatar/i }));
     expect(screen.getAllByText('Alice Example').length).toBe(2);
     expect(screen.getByRole('link', { name: 'About' })).toHaveAttribute(

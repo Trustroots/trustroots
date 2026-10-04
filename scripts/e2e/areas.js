@@ -41,6 +41,7 @@ const AREA_BY_SPEC = {
   'admin-newsletter-api.spec.js': 'Admin',
   'admin-notes.spec.js': 'Admin',
   'admin-pages.spec.js': 'Admin',
+  'admin-profile-navigation.spec.js': 'Admin',
   'admin-reference-errors.spec.js': 'Admin',
   'admin-role-audit.spec.js': 'Admin',
   'admin-search.spec.js': 'Admin',
