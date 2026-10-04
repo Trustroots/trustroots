@@ -5,6 +5,7 @@ interface Window {
     public?: boolean;
     roles?: string[];
     username?: string;
+    languages?: string[];
     [key: string]: unknown;
   } | null;
   settings?: {

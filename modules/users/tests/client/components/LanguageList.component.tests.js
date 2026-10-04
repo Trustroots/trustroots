@@ -46,6 +46,30 @@ describe('<LanguageList />', () => {
     expect(screen.getByText('zzz')).toBeInTheDocument();
   });
 
+  it('emphasises only languages listed in emphasisedLanguages', () => {
+    useLanguagesQuery.mockReturnValue({
+      data: {
+        eng: 'English',
+        fre: 'French',
+        spa: 'Spanish',
+      },
+      isLoading: false,
+    });
+
+    render(
+      <LanguageList
+        languages={['eng', 'fre', 'spa']}
+        emphasisedLanguages={['fre']}
+      />,
+    );
+
+    const items = screen.getByRole('list').children;
+    expect(items[0]).toHaveTextContent('English');
+    expect(items[0].querySelector('strong')).toBeNull();
+    expect(items[1].querySelector('strong')).toHaveTextContent('French');
+    expect(items[2].querySelector('strong')).toBeNull();
+  });
+
   it('renders nothing when language codes are omitted', () => {
     useLanguagesQuery.mockReturnValue({
       data: { eng: 'English' },

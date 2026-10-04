@@ -33,6 +33,7 @@ export const invokeRolesPolicies = () => {
         },
         { resources: '/api/admin/staff-blockers', permissions: ['get'] },
         { resources: '/api/admin/audit-log', permissions: ['get'] },
+        { resources: '/api/admin/audit-log/actors', permissions: ['get'] },
         { resources: '/api/admin/dashboard', permissions: ['get'] },
         { resources: '/api/admin/messages', permissions: ['post'] },
         {

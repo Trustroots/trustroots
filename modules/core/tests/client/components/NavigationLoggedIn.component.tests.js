@@ -47,6 +47,9 @@ describe('<NavigationLoggedIn />', () => {
     expect(
       within(supportMenu).getByRole('link', { name: 'Safety' }),
     ).toHaveAttribute('href', '/safety');
+    expect(
+      within(supportMenu).getByRole('link', { name: 'Report a bug' }),
+    ).toHaveAttribute('href', '/support?category=reportBug');
     fireEvent.click(screen.getByRole('button', { name: /avatar/i }));
     expect(screen.getAllByText('Alice Example').length).toBe(2);
     expect(screen.getByRole('link', { name: 'About' })).toHaveAttribute(
@@ -73,6 +76,38 @@ describe('<NavigationLoggedIn />', () => {
       screen.queryByRole('link', { name: 'Contribute' }),
     ).not.toBeInTheDocument();
   });
+
+  it('places the administrator shortcut immediately before Circles', () => {
+    render(
+      <NavigationLoggedIn
+        currentPath="/admin"
+        onSignout={jest.fn()}
+        user={{ ...user, roles: ['user', 'admin'] }}
+      />,
+    );
+    const admin = screen.getByRole('link', { name: 'Admin', exact: true });
+    expect(admin).toHaveAttribute('href', '/admin');
+    expect(admin.closest('li')).toHaveClass('active', 'hidden-xs');
+    expect(admin.closest('li').nextElementSibling).toBe(
+      screen.getByRole('link', { name: 'Circles' }).closest('li'),
+    );
+  });
+
+  it.each([undefined, [], ['user'], ['welcome-team']])(
+    'omits the administrator shortcut for non-admin roles %j',
+    roles => {
+      render(
+        <NavigationLoggedIn
+          currentPath="/circles"
+          onSignout={jest.fn()}
+          user={{ ...user, roles }}
+        />,
+      );
+      expect(
+        screen.queryByRole('link', { name: 'Admin', exact: true }),
+      ).not.toBeInTheDocument();
+    },
+  );
 
   it('forwards signout click to callback', () => {
     const onSignout = jest.fn();

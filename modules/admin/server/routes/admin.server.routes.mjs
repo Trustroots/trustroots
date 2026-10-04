@@ -30,6 +30,11 @@ const registerRoutes = app => {
     .get(adminAuditLog.list);
 
   app
+    .route('/api/admin/audit-log/actors')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.actors);
+
+  app
     .route('/api/admin/dashboard')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminDashboard.getDashboard);
@@ -82,7 +87,11 @@ const registerRoutes = app => {
   app
     .route('/api/admin/user')
     .all(adminPolicy.isAllowed)
-    .post(adminAuditLog.record, adminUsers.getUser);
+    .post(
+      adminAuditLog.record,
+      adminUsers.usernameToUserId,
+      adminUsers.getUser,
+    );
 
   app
     .route('/api/admin/staff-blockers')

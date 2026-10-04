@@ -6,6 +6,7 @@ import React, { Component, type ChangeEvent, type FormEvent } from 'react';
 // Internal dependencies
 import {
   getUser,
+  getUserByUsername as getUserRecordByUsername,
   listUsersByLastIpAddress,
   searchUsers,
   setUserRole,
@@ -17,6 +18,7 @@ import AdminUserResultsTable from './AdminUserResultsTable.component';
 import Json from './Json.component';
 import UserEmailConfirmLink from './UserEmailConfirmLink.component';
 import UserState from './UserState.component';
+import Tooltip from '@/modules/core/client/components/Tooltip';
 import {
   SEARCH_STRING_LIMIT,
   getReferenceUserId,
@@ -79,13 +81,12 @@ const DEFAULT_MEMBER_LIST_SORT: MemberSort = {
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
   'welcome-team':
-    'Can view acquisition stories, analysis, and members who blocked their account.',
+    'Welcome team members can view acquisition stories and analysis, and see members who blocked their account.',
   admin: 'Full access to administration and moderation tools.',
   moderator: 'Legacy moderation role retained for historical accounts.',
   shadowban:
     'Member can use the site, but their profile and outreach are hidden from others.',
   suspended: 'Member access is blocked until an administrator intervenes.',
-  user: 'Standard Trustroots member access.',
   volunteer: 'Current Trustroots volunteer.',
   'volunteer-alumni': 'Former Trustroots volunteer.',
 };
@@ -238,10 +239,10 @@ InfoTable.propTypes = {
 };
 
 export default class AdminUser extends Component<
-  Record<string, never>,
+  { username?: string },
   AdminUserState
 > {
-  constructor(props: Record<string, never>) {
+  constructor(props: { username?: string }) {
     super(props);
     this.getUserById = this.getUserById.bind(this);
     this.getUsersByLastIpAddress = this.getUsersByLastIpAddress.bind(this);
@@ -274,8 +275,12 @@ export default class AdminUser extends Component<
     const ipAddress = urlParams.get('ip');
     const query = urlParams.get('q');
 
-    if (id && isMongoObjectId(id)) {
-      this.setState({ query: id }, () => this.queryUser(null));
+    if (this.props.username) {
+      this.setState({ query: this.props.username }, () =>
+        this.getUserByUsername(this.props.username as string),
+      );
+    } else if (id && isMongoObjectId(id)) {
+      this.getUserById(id);
     } else if (ipAddress) {
       this.getUsersByLastIpAddress(ipAddress);
     } else if (query) {
@@ -290,6 +295,7 @@ export default class AdminUser extends Component<
 
     // Update URL
     const url = new URL(document.location.href);
+    url.pathname = '/admin/user';
     url.searchParams.delete('id');
     url.searchParams.delete('ip');
     url.searchParams.delete('q');
@@ -419,6 +425,22 @@ export default class AdminUser extends Component<
         if (isMongoObjectId(id)) {
           const user: MemberRecord | false = await getUser(id);
           this.setState({ isSearching: false, user });
+        }
+      },
+    );
+  }
+
+  getUserByUsername(username: string) {
+    this.setState(
+      { hasSearched: true, isSearching: true, matchingUsers: [], user: false },
+      async () => {
+        try {
+          const user: MemberRecord | false = await getUserRecordByUsername(
+            username,
+          );
+          this.setState({ isSearching: false, user });
+        } catch {
+          this.setState({ isSearching: false, user: false });
         }
       },
     );
@@ -587,38 +609,40 @@ export default class AdminUser extends Component<
       <>
         <AdminHeader />
         <div className="container admin-user-page">
-          <div className="admin-user-page__search">
-            <h2>Member report card</h2>
+          {!isProfile && (
+            <div className="admin-user-page__search">
+              <form
+                onSubmit={this.queryUser}
+                className="form-inline admin-user-search-form"
+              >
+                <input
+                  aria-label="Member username, email or ID"
+                  className="form-control input-lg"
+                  onChange={this.onQueryChange}
+                  placeholder="Member username, email or ID"
+                  size={32}
+                  type="search"
+                  value={query}
+                />
+                <div className="checkbox">
+                  <label>
+                    <input
+                      checked={hideObviousSpamUsers}
+                      onChange={this.onHideObviousSpamUsersChange}
+                      type="checkbox"
+                    />{' '}
+                    Hide obvious spam
+                  </label>
+                </div>
+              </form>
 
-            <form
-              onSubmit={this.queryUser}
-              className="form-inline admin-user-search-form"
-            >
-              <input
-                aria-label="Member username, email or ID"
-                className="form-control input-lg"
-                onChange={this.onQueryChange}
-                placeholder="Member username, email or ID"
-                size={32}
-                type="search"
-                value={query}
-              />
-              <div className="checkbox">
-                <label>
-                  <input
-                    checked={hideObviousSpamUsers}
-                    onChange={this.onHideObviousSpamUsersChange}
-                    type="checkbox"
-                  />{' '}
-                  Hide obvious spam
-                </label>
-              </div>
-            </form>
-
-            {isSearching && (
-              <p className="admin-user-loading text-muted">Loading member...</p>
-            )}
-          </div>
+              {isSearching && (
+                <p className="admin-user-loading text-muted">
+                  Loading member...
+                </p>
+              )}
+            </div>
+          )}
 
           {!isProfile && (
             <AdminUserResultsTable
@@ -647,7 +671,7 @@ export default class AdminUser extends Component<
             <>
               <div className="admin-user-report-header">
                 <h3>
-                  <strong>{profileLabel}</strong> report card
+                  <strong>{profileLabel}</strong>
                 </h3>
 
                 <div className="admin-user-actions">
@@ -711,48 +735,68 @@ export default class AdminUser extends Component<
                 </div>
               </div>
 
-              <h4 id="roles">
-                <a href="#roles">Role management</a>{' '}
-              </h4>
-              <div className="panel panel-default admin-user-roles">
+              <div id="roles" className="panel panel-default admin-user-roles">
                 <div className="panel-body">
-                  <p className="text-muted">
-                    Welcome team members can view acquisition stories and
-                    analysis, and see members who blocked their account.
-                  </p>
                   {this.state.roleChangeError && (
                     <p role="alert">
                       Could not change the role. Please try again.
                     </p>
                   )}
-                  <button
-                    type="button"
-                    className="btn btn-default"
-                    disabled={isSettingUserRole}
-                    onClick={() =>
-                      this.handleUserRoleChange(
-                        'welcome-team',
-                        this.hasRole('welcome-team') ? 'remove' : 'add',
-                      )
-                    }
+                  <Tooltip
+                    id="welcome-team-role-help"
+                    placement="bottom"
+                    tooltip={ROLE_DESCRIPTIONS['welcome-team']}
                   >
-                    {this.hasRole('welcome-team')
-                      ? 'Remove from Welcome team'
-                      : 'Add to Welcome team'}
-                  </button>
-                  <dl>
-                    {user.profile.roles.map(role => (
-                      <React.Fragment key={role}>
-                        <dt>
-                          {role === 'welcome-team' ? 'Welcome team' : role}
-                        </dt>
-                        <dd>
-                          {ROLE_DESCRIPTIONS[role] ||
-                            'Role stored on this member.'}
-                        </dd>
-                      </React.Fragment>
-                    ))}
-                  </dl>
+                    <button
+                      type="button"
+                      className="btn btn-default"
+                      aria-describedby="welcome-team-role-description"
+                      disabled={isSettingUserRole}
+                      onClick={() =>
+                        this.handleUserRoleChange(
+                          'welcome-team',
+                          this.hasRole('welcome-team') ? 'remove' : 'add',
+                        )
+                      }
+                    >
+                      {this.hasRole('welcome-team')
+                        ? 'Remove from Welcome team'
+                        : 'Add to Welcome team'}
+                    </button>
+                  </Tooltip>
+                  <span id="welcome-team-role-description" className="sr-only">
+                    {ROLE_DESCRIPTIONS['welcome-team']}
+                  </span>
+                  <ul className="list-inline">
+                    {user.profile.roles
+                      .filter(role => role !== 'user')
+                      .map(role => (
+                        <li key={role}>
+                          <Tooltip
+                            id={`member-role-${role}-help`}
+                            placement="bottom"
+                            tooltip={
+                              ROLE_DESCRIPTIONS[role] ||
+                              'Role stored on this member.'
+                            }
+                          >
+                            <span
+                              tabIndex={0}
+                              aria-describedby={`member-role-${role}-description`}
+                            >
+                              {role === 'welcome-team' ? 'Welcome team' : role}
+                            </span>
+                          </Tooltip>
+                          <span
+                            id={`member-role-${role}-description`}
+                            className="sr-only"
+                          >
+                            {ROLE_DESCRIPTIONS[role] ||
+                              'Role stored on this member.'}
+                          </span>
+                        </li>
+                      ))}
+                  </ul>
                 </div>
               </div>
 

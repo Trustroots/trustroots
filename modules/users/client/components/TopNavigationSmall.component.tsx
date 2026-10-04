@@ -5,6 +5,7 @@ import RemoveContact from '@/modules/contacts/client/components/RemoveContactCon
 import type { ContactRecord } from '@/modules/contacts/client/types';
 
 interface TopNavigationSmallProps {
+  isAdmin?: boolean;
   username: string;
   contact?: ContactRecord | null;
   referencesEnabled: boolean;
@@ -22,6 +23,7 @@ interface NavigationLink {
 }
 
 export default function TopNavigationSmall({
+  isAdmin = false,
   username,
   contact,
   referencesEnabled,
@@ -97,6 +99,14 @@ export default function TopNavigationSmall({
     }
   }
 
+  if (isAdmin && userId) {
+    links.push({
+      id: 'admin',
+      label: 'Admin',
+      link: `/admin/user?id=${userId}`,
+    });
+  }
+
   function handleRemoveSuccess() {
     setShowRemoveModal(false);
 
@@ -133,6 +143,7 @@ export default function TopNavigationSmall({
 }
 
 TopNavigationSmall.propTypes = {
+  isAdmin: PropTypes.bool,
   username: PropTypes.string.isRequired,
   selfId: PropTypes.string.isRequired,
   userId: PropTypes.string.isRequired,

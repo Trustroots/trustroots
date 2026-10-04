@@ -15,7 +15,7 @@ jest.mock('@/modules/core/client/components/Board.js', () => {
 });
 
 describe('<Foundation />', () => {
-  it('renders foundation headings and board members', () => {
+  it('renders foundation heading without Board sections', () => {
     render(
       <Foundation
         user={{
@@ -27,12 +27,15 @@ describe('<Foundation />', () => {
     );
 
     expect(screen.getByText('Trustroots Foundation')).toBeInTheDocument();
-    expect(screen.getByText('Board')).toBeInTheDocument();
-    expect(screen.getByText('Mikael')).toBeInTheDocument();
-    expect(screen.getByText('Past board members')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Board' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Past board members' }),
+    ).not.toBeInTheDocument();
   });
 
-  it('renders core mission copy and trustees details', () => {
+  it('renders core mission and foundation copy', () => {
     render(
       <Foundation user={{ _id: 'me', username: 'me', displayName: 'Me' }} />,
     );

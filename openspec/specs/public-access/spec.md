@@ -61,8 +61,8 @@ unknown browser route.
 ### Requirement: Public support requests
 
 The system SHALL let a visitor or signed-in member submit a valid support
-request, select Account help, Report a member, Volunteering, or Other, and
-explain when the request cannot be accepted or sent. The category SHALL be
+request, select Account help, Report a member, Report a bug, Volunteering, or
+Other, and explain when the request cannot be accepted or sent. The category SHALL be
 retained with the request and included in the support email body and subject.
 
 #### Scenario: Visitor submits a valid support request
@@ -104,6 +104,18 @@ retained with the request and included in the support email body and subject.
 
 - **WHEN** an API client submits an unsupported category
 - **THEN** the request is rejected before storage or email delivery
+
+#### Scenario: Bug report contact route
+
+- **WHEN** a member selects Report a bug from the menu
+- **THEN** the support form opens with Report a bug selected
+- **AND** submitting retains reportBug in storage and its readable label in email
+
+#### Scenario: Bug reporting FAQ
+
+- **WHEN** a visitor reads the bugs-and-features FAQ
+- **THEN** the FAQ links to the bug-report contact form as the primary route
+- **AND** GitHub is optional without issue-search or account-registration instructions
 
 ### Requirement: Public service information
 
