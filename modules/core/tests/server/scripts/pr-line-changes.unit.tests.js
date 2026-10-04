@@ -174,34 +174,34 @@ describe('PR line-change summaries', () => {
       assert.equal(summary.groups[0].net, -4);
       assert.equal(summary.groups[1].net, 2);
       assert.equal(summary.groups[2].added, 0);
+      const root = path.resolve(__dirname, '../../../../..');
+      fs.mkdirSync(path.join(dir, 'scripts/coverage'), { recursive: true });
+      for (const name of ['generate-pr-summary.js', 'line-changes.js']) {
+        fs.copyFileSync(
+          path.join(root, 'scripts/coverage', name),
+          path.join(dir, 'scripts/coverage', name),
+        );
+      }
+      const output = execFileSync(
+        process.execPath,
+        ['scripts/coverage/generate-pr-summary.js'],
+        {
+          cwd: dir,
+          env: {
+            ...process.env,
+            PR_BASE_SHA: git(['rev-parse', 'HEAD']),
+            PR_HEAD_SHA: headSha,
+            TRUSTROOTS_PR_INCLUDE_COVERAGE: 'false',
+          },
+          encoding: 'utf8',
+        },
+      );
+      assert.match(output, /Pull request overview/);
+      assert.match(output, /Tests and fixtures/);
+      assert.doesNotMatch(output, /Coverage overview|Status:/);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
-  });
-
-  it('runs the actual summary CLI for a documentation-only PR', () => {
-    const root = path.resolve(__dirname, '../../../../..');
-    const sha = execFileSync('git', ['rev-parse', 'HEAD'], {
-      cwd: root,
-      encoding: 'utf8',
-    }).trim();
-    const output = execFileSync(
-      process.execPath,
-      ['scripts/coverage/generate-pr-summary.js'],
-      {
-        cwd: root,
-        env: {
-          ...process.env,
-          PR_BASE_SHA: sha,
-          PR_HEAD_SHA: sha,
-          TRUSTROOTS_PR_INCLUDE_COVERAGE: 'false',
-        },
-        encoding: 'utf8',
-      },
-    );
-    assert.match(output, /Pull request overview/);
-    assert.match(output, /Tests and fixtures/);
-    assert.doesNotMatch(output, /Coverage overview|Status:/);
   });
 
   it('backfills only older open PRs and keeps existing coverage', async () => {
