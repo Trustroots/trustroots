@@ -8,14 +8,12 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 const Tribe = mongoose.model('Tribe');
-const User = mongoose.model('User');
 
 /**
  * Globals
  */
 let app;
 let agent;
-let _user;
 let user;
 let userId;
 let credentials;
@@ -76,18 +74,13 @@ describe('Configuration Tests:', function () {
       };
 
       // Create a new user
-      _user = {
-        public: true,
-        firstName: 'Full',
+      user = utils.createTestUser({
         lastName: 'Name A',
         displayName: 'Full Name A',
         email: 'user_a@example.com',
         username: credentials.username,
         password: credentials.password,
-        provider: 'local',
-      };
-
-      user = new User(_user);
+      });
 
       // Save a user to the test db
       user.save(function (saveErr, saveRes) {

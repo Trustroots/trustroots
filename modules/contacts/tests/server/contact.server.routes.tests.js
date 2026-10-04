@@ -7,7 +7,6 @@ const testutils = require('../../../../testutils/server/server.testutil');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const errorService = require('../../../core/server/services/error.server.service');
 
-const User = mongoose.model('User');
 const Contact = mongoose.model('Contact');
 
 /**
@@ -51,15 +50,13 @@ describe('Contact CRUD tests', function () {
     };
 
     // Create a new user
-    user1 = new User({
+    user1 = utils.createTestUser({
       firstName: 'Full1',
       lastName: 'Name1',
       displayName: 'Full1 Name1',
       email: 'test1@test.com',
       username: credentials.username,
       password: credentials.password,
-      provider: 'local',
-      public: true,
       additionalProvidersData: {
         facebook: {
           id: '123',
@@ -68,39 +65,30 @@ describe('Contact CRUD tests', function () {
     });
 
     // Create a new user
-    user2 = new User({
+    user2 = utils.createTestUser({
       firstName: 'Full2',
       lastName: 'Name2',
       displayName: 'Full2 Name2',
       email: 'test2@test.com',
       username: credentials.username + '2',
       password: credentials.password,
-      provider: 'local',
-      public: true,
     });
 
     // Create a new user
-    user3 = new User({
+    user3 = utils.createTestUser({
       firstName: 'Full3',
       lastName: 'Name3',
       displayName: 'Full3 Name3',
       email: 'test3@test.com',
       username: credentials.username + '3',
       password: credentials.password,
-      provider: 'local',
-      public: true,
     });
 
     // Create a new user
-    user4 = new User({
-      firstName: 'Full',
-      lastName: 'Name',
-      displayName: 'Full Name',
+    user4 = utils.createTestUser({
       email: 'test4@test.com',
       username: credentials.username + '4',
       password: credentials.password,
-      provider: 'local',
-      public: true,
     });
 
     // Set dates to the past to make sure contacts are storted in right order for tests

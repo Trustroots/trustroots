@@ -88,15 +88,13 @@ describe('Count Message Statistics of User', function () {
       .then(() => {
         for (let i = 0; i < 29; ++i) {
           users.push(
-            new User({
+            utils.createTestUser({
               firstName: 'firstName',
               lastName: 'lastName',
               displayName: 'displayName',
               email: 'user' + i + '@example.com',
               username: 'username' + i,
               password: 'password123',
-              provider: 'local',
-              public: true,
             }),
           );
         }
@@ -286,27 +284,17 @@ describe('MessageStat Creation & Updating Test', function () {
   beforeEach(function () {
     // create means create without saving to database, unless explicit
     // create the initiator (User)
-    initiator = new User({
-      firstName: 'Full',
-      lastName: 'Name',
-      displayName: 'Full Name',
+    initiator = utils.createTestUser({
       email: 'user1@test.com',
       username: 'username1',
       password: 'password123',
-      provider: 'local',
-      public: true,
     });
 
     // create the receiver (User)
-    receiver = new User({
-      firstName: 'Full',
-      lastName: 'Name',
-      displayName: 'Full Name',
+    receiver = utils.createTestUser({
       email: 'user2@test.com',
       username: 'username2',
       password: 'password123',
-      provider: 'local',
-      public: true,
     });
 
     // create a first message

@@ -5,7 +5,6 @@ const mongoose = require('mongoose');
 const express = require('../../../../config/lib/express');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
-const User = mongoose.model('User');
 const MessageStat = mongoose.model('MessageStat');
 
 describe('Display Message Statistics in User Route', function () {
@@ -30,15 +29,13 @@ describe('Display Message Statistics in User Route', function () {
   before(function (done) {
     for (let i = 0; i < 23; ++i) {
       users.push(
-        new User({
+        utils.createTestUser({
           firstName: 'firstName',
           lastName: 'lastName',
           displayName: 'displayName',
           email: 'user' + i + '@example.com',
           username: 'username' + i,
           password,
-          provider: 'local',
-          public: true,
         }),
       );
     }

@@ -235,21 +235,15 @@ describe('Core CRUD tests', function () {
     afterEach(utils.clearDatabase);
 
     function createUser(overrides) {
-      return new User(
-        Object.assign(
-          {
-            email: 'frontend-root-user@example.com',
-            firstName: 'Frontend',
-            lastName: 'User',
-            password: 'Password123!',
-            provider: 'local',
-            public: true,
-            roles: ['user'],
-            username: 'frontend-root-user',
-          },
-          overrides,
-        ),
-      ).save();
+      return utils
+        .createTestUser({
+          email: 'frontend-root-user@example.com',
+          firstName: 'Frontend',
+          lastName: 'User',
+          username: 'frontend-root-user',
+          ...overrides,
+        })
+        .save();
     }
 
     it('renders React assets and root for React-owned pages', function (done) {
@@ -479,22 +473,15 @@ describe('Core CRUD tests', function () {
 
     function createNostrUser(overrides, done) {
       const username = overrides.username || 'nostruser';
-      const user = new User(
-        Object.assign(
-          {
-            public: true,
-            firstName: 'Nostr',
-            lastName: 'User',
-            email: `${username}@example.com`,
-            username,
-            password: 'M3@n.jsI$Aw3$0m3',
-            provider: 'local',
-            roles: ['user'],
-            nostrNpub: validNpub,
-          },
-          overrides,
-        ),
-      );
+      const user = utils.createTestUser({
+        firstName: 'Nostr',
+        lastName: 'User',
+        email: `${username}@example.com`,
+        username,
+        password: 'M3@n.jsI$Aw3$0m3',
+        nostrNpub: validNpub,
+        ...overrides,
+      });
 
       user.save(done);
     }
@@ -740,22 +727,15 @@ describe('Core CRUD tests', function () {
     afterEach(utils.clearDatabase);
 
     function createNostrUser(overrides, done) {
-      const user = new User(
-        Object.assign(
-          {
-            public: true,
-            firstName: 'Nostr',
-            lastName: 'User',
-            email: 'nostruser@example.com',
-            username: 'nostruser',
-            password: 'M3@n.jsI$Aw3$0m3',
-            provider: 'local',
-            roles: ['user'],
-            nostrNpub: validNpub,
-          },
-          overrides,
-        ),
-      );
+      const user = utils.createTestUser({
+        firstName: 'Nostr',
+        lastName: 'User',
+        email: 'nostruser@example.com',
+        username: 'nostruser',
+        password: 'M3@n.jsI$Aw3$0m3',
+        nostrNpub: validNpub,
+        ...overrides,
+      });
 
       user.save(done);
     }
