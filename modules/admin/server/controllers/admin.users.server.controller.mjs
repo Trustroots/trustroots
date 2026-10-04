@@ -377,6 +377,12 @@ const handleAdminApiError = (res, err) => {
 export const getUser = async (req, res) => {
   const userId = req.userIdFromUsername || _.get(req, ['body', 'id']);
 
+  if (!userId && _.get(req, ['body', 'username'])) {
+    return res.status(404).send({
+      message: errorService.getErrorMessageByKey('not-found'),
+    });
+  }
+
   // Check that the search string is provided
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({

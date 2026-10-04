@@ -378,6 +378,14 @@ describe('Admin User CRUD tests', () => {
         body.potentialMatches.should.deepEqual([]);
       });
 
+      it('returns 404 for an unknown username', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+        await agent
+          .post('/api/admin/user')
+          .send({ username: 'missing-fictional-member' })
+          .expect(404);
+      });
+
       it('admin users can resolve an exact username with a matching prefix', async () => {
         const similarUser = new User({
           displayName: 'Similar Member',
