@@ -80,41 +80,25 @@ describe('Count Message Statistics of User', function () {
     );
   }
 
-  beforeEach(function (done) {
+  beforeEach(async function () {
     users.length = 0;
 
-    utils
-      .clearDatabase()
-      .then(() => {
-        for (let i = 0; i < 29; ++i) {
-          users.push(
-            new User({
-              firstName: 'firstName',
-              lastName: 'lastName',
-              displayName: 'displayName',
-              email: 'user' + i + '@example.com',
-              username: 'username' + i,
-              password: 'password123',
-              provider: 'local',
-              public: true,
-            }),
-          );
-        }
+    await utils.clearDatabase();
 
-        async.each(
-          users,
-          (user, callback) => {
-            user.save(callback);
-          },
-          err => {
-            if (err) {
-              return done(err);
-            }
-            seedMessageStats(done);
-          },
-        );
-      })
-      .catch(done);
+    // This statistics test never authenticates its users. Use one valid
+    // adaptive hash for all fixtures and insert the schema-shaped documents
+    // directly, keeping password-hook/KDF tests in the user model suite.
+    const fixturePassword = await User.hashPassword('fixture-password');
+    const fixtureUsers = utils.generateUsers(29).map(user => new User(user));
+    fixtureUsers.forEach(user => {
+      user.password = fixturePassword;
+      users.push(user);
+    });
+    await User.collection.insertMany(fixtureUsers.map(user => user.toObject()));
+
+    await new Promise((resolve, reject) => {
+      seedMessageStats(err => (err ? reject(err) : resolve()));
+    });
   });
 
   afterEach(utils.clearDatabase);

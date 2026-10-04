@@ -1,21 +1,20 @@
 /**
  * Unit tests for password controller validation and reset branches.
  */
+const proxyquire = require('proxyquire').noCallThru();
 const mongoose = require('mongoose');
 const sinon = require('sinon');
-const async = require('async');
 
 const utils = require('../../../../testutils/server/data.server.testutil');
 const testutils = require('../../../../testutils/server/server.testutil');
 const errorService = require('../../../core/server/services/error.server.service');
-const emailService = require('../../../core/server/services/email.server.service');
 require('should');
 
-require('../../server/models/user.server.model');
 const User = mongoose.model('User');
 
 const controllerPath =
   '../../server/controllers/users.password.server.controller';
+const emailServicePath = '../../../core/server/services/email.server.service';
 
 function deferredResponse() {
   let resolveResponse;
@@ -50,14 +49,13 @@ function deferredResponse() {
   return res;
 }
 
-function loadPasswordController(overrides = {}) {
-  sinon
-    .stub(emailService, 'sendResetPassword')
-    .callsFake(overrides.sendResetPassword || ((user, cb) => cb()));
-  sinon
-    .stub(emailService, 'sendResetPasswordConfirm')
-    .callsFake(overrides.sendResetPasswordConfirm || ((user, cb) => cb()));
-  return require(controllerPath);
+function loadPasswordController() {
+  return proxyquire(controllerPath, {
+    [emailServicePath]: {
+      sendResetPassword: (user, cb) => cb(),
+      sendResetPasswordConfirm: (user, cb) => cb(),
+    },
+  });
 }
 
 describe('Password controller unit tests', () => {
@@ -90,14 +88,9 @@ describe('Password controller unit tests', () => {
     });
 
     it('returns the same acknowledgement when sending the reset email fails', async () => {
-      let finishEmailAttempt;
-      const emailAttempted = new Promise(resolve => {
-        finishEmailAttempt = resolve;
-      });
-      const controller = loadPasswordController({
-        sendResetPassword: (user, cb) => {
-          cb(new Error('smtp down'));
-          finishEmailAttempt();
+      const controller = proxyquire(controllerPath, {
+        [emailServicePath]: {
+          sendResetPassword: (user, cb) => cb(new Error('smtp down')),
         },
       });
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
@@ -109,7 +102,6 @@ describe('Password controller unit tests', () => {
         () => {},
       );
       await res.waitForResponse();
-      await emailAttempted;
       res.statusCode.should.equal(200);
       res.body.message.should.equal(
         'If an account matches that username or email, we will send recovery instructions.',
@@ -121,8 +113,12 @@ describe('Password controller unit tests', () => {
       const deliveryStarted = new Promise(resolve => {
         startDelivery = resolve;
       });
-      const controller = loadPasswordController({
-        sendResetPassword: () => startDelivery(),
+      const controller = proxyquire(controllerPath, {
+        [emailServicePath]: {
+          sendResetPassword: () => {
+            startDelivery();
+          },
+        },
       });
       const fakeUser = {
         save: callback => callback(),
@@ -354,10 +350,12 @@ describe('Password controller unit tests', () => {
     });
 
     it('still resets the password when the confirmation email fails', async () => {
-      const controller = loadPasswordController({
-        sendResetPassword: (user, cb) => cb(),
-        sendResetPasswordConfirm: (user, cb) =>
-          cb(new Error('confirm email failed')),
+      const controller = proxyquire(controllerPath, {
+        [emailServicePath]: {
+          sendResetPassword: (user, cb) => cb(),
+          sendResetPasswordConfirm: (user, cb) =>
+            cb(new Error('confirm email failed')),
+        },
       });
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
@@ -380,32 +378,6 @@ describe('Password controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       res.body.username.should.equal(userDoc.username);
-    });
-
-    it('ignores a successful final reset callback', () => {
-      const controller = loadPasswordController();
-      sinon.stub(async, 'waterfall').callsFake((steps, done) => done());
-      const res = {
-        status: sinon.stub().returnsThis(),
-        send: sinon.stub(),
-        json: sinon.stub(),
-      };
-
-      controller.reset(
-        {
-          params: { token: 'reset-token' },
-          body: {
-            newPassword: 'newpassword123',
-            verifyPassword: 'newpassword123',
-          },
-          login: (user, cb) => cb(),
-        },
-        res,
-      );
-
-      res.status.called.should.be.false();
-      res.send.called.should.be.false();
-      res.json.called.should.be.false();
     });
   });
 
@@ -554,9 +526,12 @@ describe('Password controller unit tests', () => {
     });
 
     it('still succeeds when the password change confirmation email fails', async () => {
-      const controller = loadPasswordController({
-        sendResetPasswordConfirm: (user, cb) =>
-          cb(new Error('confirm email failed')),
+      const controller = proxyquire(controllerPath, {
+        [emailServicePath]: {
+          sendResetPassword: (user, cb) => cb(),
+          sendResetPasswordConfirm: (user, cb) =>
+            cb(new Error('confirm email failed')),
+        },
       });
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);

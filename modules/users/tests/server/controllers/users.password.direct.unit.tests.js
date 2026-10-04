@@ -1,14 +1,5 @@
-const sinon = require('sinon');
+const proxyquire = require('proxyquire').noCallThru();
 require('should');
-const crypto = require('crypto');
-const mongoose = require('mongoose');
-const analyticsHandler = require('../../../../core/server/controllers/analytics.server.controller');
-const emailService = require('../../../../core/server/services/email.server.service');
-require('../../../server/models/user.server.model');
-const User = mongoose.model('User');
-const profileHandler = require('../../../server/controllers/users.profile.server.controller');
-const statService = require('../../../../stats/server/services/stats.server.service');
-const controller = require('../../../server/controllers/users.password.server.controller');
 
 function deferredResponse() {
   let resolveResponse;
@@ -37,6 +28,7 @@ function deferredResponse() {
 function loadController({
   user,
   confirmEmailError,
+  hashPassword,
   findOneError,
   findOneAndUpdateError,
   findOneAndUpdateUser = user || null,
@@ -44,37 +36,66 @@ function loadController({
   randomBytes,
   onStat = () => {},
 } = {}) {
-  sinon.restore();
-  sinon.stub(User, 'isValidPassword').callsFake(() => validPassword);
-  sinon.stub(User, 'hashPassword').callsFake(password => password);
-  sinon
-    .stub(User, 'findOne')
-    .callsFake((query, projectionOrCallback, callback) => {
+  const User = {
+    hashPassword: hashPassword || (async password => `$scrypt$${password}`),
+    isValidPassword: password =>
+      validPassword && typeof password === 'string' && password.length >= 8,
+    findOne(query, projectionOrCallback, callback) {
       const cb = callback || projectionOrCallback;
       cb(findOneError || null, user || null);
-    });
-  sinon.stub(User, 'findById').callsFake((id, cb) => cb(null, user || null));
-  sinon
-    .stub(User, 'findOneAndUpdate')
-    .callsFake((query, update, options, cb) =>
-      cb(findOneAndUpdateError || null, findOneAndUpdateUser),
-    );
-  sinon
-    .stub(profileHandler, 'sanitizeOwnProfile')
-    .callsFake(profile => profile);
-  sinon.stub(analyticsHandler, 'appendUTMParams').callsFake(url => url);
-  sinon
-    .stub(emailService, 'sendResetPassword')
-    .callsFake((profile, cb) => cb());
-  sinon
-    .stub(emailService, 'sendResetPasswordConfirm')
-    .callsFake((profile, cb) => cb(confirmEmailError));
-  sinon.stub(statService, 'stat').callsFake((payload, cb) => {
-    onStat(payload);
-    cb();
-  });
-  if (randomBytes) sinon.stub(crypto, 'randomBytes').callsFake(randomBytes);
-  return controller;
+    },
+    findById(id, cb) {
+      cb(null, user || null);
+    },
+    findOneAndUpdate(query, update, options, cb) {
+      const error = findOneAndUpdateError || null;
+      if (!error && user && findOneAndUpdateUser === user) {
+        user.lastPasswordUpdate = { query, update, options };
+        Object.assign(user, update.$set || {});
+        if (update.$unset) {
+          Object.keys(update.$unset).forEach(key => delete user[key]);
+        }
+        if (update.$inc && update.$inc.authVersion) {
+          user.authVersion = (user.authVersion || 0) + update.$inc.authVersion;
+        }
+      }
+      if (cb) {
+        cb(error, findOneAndUpdateUser);
+        return undefined;
+      }
+      return error
+        ? Promise.reject(error)
+        : Promise.resolve(findOneAndUpdateUser);
+    },
+  };
+
+  return proxyquire(
+    '../../../server/controllers/users.password.server.controller',
+    {
+      mongoose: {
+        model: () => User,
+      },
+      crypto: randomBytes ? { randomBytes } : require('crypto'),
+      './users.profile.server.controller': {
+        sanitizeProfile: profile => profile,
+        sanitizeOwnProfile: profile => profile,
+      },
+      '../../../core/server/controllers/analytics.server.controller': {
+        appendUTMParams: url => url,
+      },
+      '../../../core/server/services/email.server.service': {
+        sendResetPassword: (profile, cb) => cb(),
+        sendResetPasswordConfirm: (profile, cb) => cb(confirmEmailError),
+      },
+      '../../../stats/server/services/stats.server.service': {
+        stat: (payload, cb) => {
+          onStat(payload);
+          cb();
+        },
+      },
+      '../../../../config/lib/logger': () => {},
+    },
+  );
 }
 
 function fakeUser(overrides = {}) {
@@ -82,15 +103,13 @@ function fakeUser(overrides = {}) {
     displayName: 'Direct User',
     email: 'direct@example.test',
     password: 'oldpassword1',
-    salt: 'old-salt',
-    _id: 'user-id',
     resetPasswordToken: 'reset-token',
     resetPasswordExpires: Date.now() + 3600000,
     save(cb) {
       cb();
     },
     authenticate(password) {
-      return password === 'oldpassword1';
+      return Promise.resolve(password === 'oldpassword1');
     },
     ...overrides,
   };
@@ -115,10 +134,21 @@ describe('Password controller direct unit tests', () => {
 
     it('handles account lookup and token persistence failures in the background', async () => {
       const completed = [];
-      const lookupController = loadController({
+      let completeStats;
+      const statsComplete = new Promise(resolve => {
+        completeStats = resolve;
+      });
+      const makeController = options =>
+        loadController({
+          ...options,
+          randomBytes: (length, cb) => cb(null, Buffer.from('token')),
+          onStat: payload => {
+            completed.push(payload.tags.status);
+            if (completed.length === 2) completeStats();
+          },
+        });
+      const lookupController = makeController({
         findOneError: new Error('lookup'),
-        randomBytes: (length, cb) => cb(null, Buffer.from('token')),
-        onStat: payload => completed.push(payload.tags.status),
       });
       const lookupResponse = deferredResponse();
       lookupController.forgot(
@@ -126,30 +156,26 @@ describe('Password controller direct unit tests', () => {
         lookupResponse,
       );
       (await lookupResponse.waitForResponse()).statusCode.should.equal(200);
-      await new Promise(resolve => setImmediate(resolve));
 
       const saveFailure = fakeUser({ save: cb => cb(new Error('save')) });
-      const saveController = loadController({
-        user: saveFailure,
-        randomBytes: (length, cb) => cb(null, Buffer.from('token')),
-        onStat: payload => completed.push(payload.tags.status),
-      });
+      const saveController = makeController({ user: saveFailure });
       const saveResponse = deferredResponse();
       saveController.forgot(
         { body: { username: 'person@example.test' } },
         saveResponse,
       );
       (await saveResponse.waitForResponse()).statusCode.should.equal(200);
-      await new Promise(resolve => setImmediate(resolve));
+
+      await statsComplete;
       completed.should.containEql('failed:lookup');
       completed.should.containEql('failed:tokenSave');
     });
   });
-  afterEach(() => sinon.restore());
 
   describe('reset', () => {
-    it('returns the reset failure response when login fails after save', async () => {
-      const controller = loadController({ user: fakeUser() });
+    it('returns the reset failure response when login fails after the atomic update', async () => {
+      const user = fakeUser();
+      const controller = loadController({ user });
       const res = deferredResponse();
 
       controller.reset(
@@ -167,12 +193,41 @@ describe('Password controller direct unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(400);
       res.body.message.should.equal('Password reset failed.');
+      user.lastPasswordUpdate.update.$set.password.should.match(/^\$scrypt\$/);
+      user.lastPasswordUpdate.update.$unset.should.have.property('salt', 1);
+      user.lastPasswordUpdate.update.$inc.authVersion.should.equal(1);
     });
 
-    it('returns a controlled failure when credential generation fails', async () => {
+    it('returns retryable service unavailable when hashing is overloaded', async () => {
+      const error = new Error('busy');
+      error.code = 'KDF_OVERLOADED';
+      error.status = 503;
       const controller = loadController({
-        randomBytes: () => {
-          throw new Error('random source unavailable');
+        user: fakeUser(),
+        hashPassword: async () => {
+          throw error;
+        },
+      });
+      const res = deferredResponse();
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (authenticatedUser, cb) => cb(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(503);
+    });
+
+    it('returns a controlled failure when the hash provider fails', async () => {
+      const controller = loadController({
+        hashPassword: async () => {
+          throw new Error('hash provider unavailable');
         },
       });
       const res = deferredResponse();
@@ -230,6 +285,7 @@ describe('Password controller direct unit tests', () => {
             newPassword: 'newpassword123',
             verifyPassword: 'newpassword123',
           },
+          login: (authenticatedUser, callback) => callback(),
         },
         res,
       );
@@ -240,11 +296,11 @@ describe('Password controller direct unit tests', () => {
       );
     });
 
-    it('reports a controlled error when credential generation fails', async () => {
+    it('reports a controlled error when the hash provider fails', async () => {
       const controller = loadController({
         user: fakeUser(),
-        randomBytes: () => {
-          throw new Error('random source unavailable');
+        hashPassword: async () => {
+          throw new Error('hash provider unavailable');
         },
       });
       const res = deferredResponse();
@@ -261,7 +317,7 @@ describe('Password controller direct unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('random source unavailable');
+      res.body.message.should.equal('hash provider unavailable');
     });
 
     it('rejects a stale password compare-and-set', async () => {
@@ -284,6 +340,30 @@ describe('Password controller direct unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(400);
       res.body.message.should.equal('Current password is incorrect.');
+    });
+
+    it('includes a legacy salt and non-zero auth version in its compare-and-set', async () => {
+      const user = fakeUser({ salt: 'legacy-salt', authVersion: 3 });
+      const controller = loadController({ user });
+      const res = deferredResponse();
+
+      controller.changePassword(
+        {
+          user: { id: 'user-id' },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (authenticatedUser, callback) => callback(),
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      user.lastPasswordUpdate.query.salt.should.equal('legacy-salt');
+      user.lastPasswordUpdate.query.authVersion.should.equal(3);
     });
 
     it('reports a password update database error', async () => {
@@ -329,9 +409,10 @@ describe('Password controller direct unit tests', () => {
       res.body.message.should.equal('login failed');
     });
 
-    it('succeeds when the confirmation email fails after saving and logging in', async () => {
+    it('returns the confirmation email failure after saving and logging in', async () => {
+      const user = fakeUser();
       const controller = loadController({
-        user: fakeUser(),
+        user,
         confirmEmailError: new Error('confirm email failed'),
       });
       const res = deferredResponse();
@@ -352,6 +433,38 @@ describe('Password controller direct unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       res.body.message.should.equal('Password changed successfully!');
+      user.lastPasswordUpdate.update.$set.password.should.match(/^\$scrypt\$/);
+      user.lastPasswordUpdate.update.$unset.should.have.property('salt', 1);
+      user.lastPasswordUpdate.update.$inc.authVersion.should.equal(1);
+    });
+
+    it('returns retryable service unavailable when password hashing is overloaded', async () => {
+      const error = new Error('busy');
+      error.code = 'KDF_OVERLOADED';
+      error.status = 503;
+      const controller = loadController({
+        user: fakeUser(),
+        hashPassword: async () => {
+          throw error;
+        },
+      });
+      const res = deferredResponse();
+
+      controller.changePassword(
+        {
+          user: { id: 'user-id' },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (user, cb) => cb(),
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      res.statusCode.should.equal(503);
     });
   });
 });
