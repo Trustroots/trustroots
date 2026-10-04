@@ -29,6 +29,18 @@ service.invokeRolesPolicies = function () {
           resources: '/api/experiences/:experienceId',
           permissions: ['get'],
         },
+        {
+          resources: '/api/experiences/:id/change-access',
+          permissions: ['get'],
+        },
+        {
+          resources: '/api/experiences/:id/change-requests',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/experiences/:id/change-requests/mine',
+          permissions: ['get'],
+        },
       ],
     },
   ]);
@@ -57,9 +69,35 @@ service.isAllowed = async function (req, res, next) {
   }
 };
 
+service.isAllowedChange = async function (req, res, next) {
+  try {
+    const roles = req.user && req.user.roles ? req.user.roles : ['guest'];
+    if (
+      req.user &&
+      (await acl.areAnyRolesAllowed(
+        roles,
+        req.route.path,
+        req.method.toLowerCase(),
+      ))
+    ) {
+      return next();
+    }
+    return res.status(403).json({
+      message: errorService.getErrorMessageByKey('forbidden'),
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const invokeRolesPolicies = service.invokeRolesPolicies;
 const isAllowed = service.isAllowed;
-export { invokeRolesPolicies as invokeRolesPolicies, isAllowed as isAllowed };
+const isAllowedChange = service.isAllowedChange;
+export {
+  invokeRolesPolicies as invokeRolesPolicies,
+  isAllowed as isAllowed,
+  isAllowedChange as isAllowedChange,
+};
 export default service;
 
 // Expose the ACL dependency for native ESM boundary stubs.

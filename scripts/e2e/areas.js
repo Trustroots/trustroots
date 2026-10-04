@@ -34,6 +34,7 @@ const AREA_BY_SPEC = {
   'messages-layout.spec.js': 'Messages',
   'experiences.spec.js': 'Experiences',
   'experience-actions.spec.js': 'Experiences',
+  'experience-changes.spec.js': 'Experiences',
   'admin.spec.js': 'Admin',
   'admin-actions.spec.js': 'Admin',
   'admin-acquisition.spec.js': 'Admin',

@@ -59,6 +59,8 @@ const ExperienceSchema = new Schema({
     type: String,
     trim: true,
   },
+  removedAt: Date,
+  removedBy: { type: Schema.ObjectId, ref: 'User' },
 });
 
 /**

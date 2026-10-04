@@ -1,6 +1,7 @@
 import config from '../../../../config/config.js';
 import experiencesPolicy from '../policies/experiences.server.policy.js';
 import experiences from '../controllers/experiences.server.controller.js';
+import changes from '../controllers/experience-changes.server.controller.js';
 
 function register(app) {
   if (config.featureFlags.reference) {
@@ -29,6 +30,21 @@ function register(app) {
       .route('/api/experiences/:experienceId')
       .all(experiencesPolicy.isAllowed)
       .get(experiences.readOne);
+
+    app
+      .route('/api/experiences/:id/change-access')
+      .all(experiencesPolicy.isAllowedChange)
+      .get(changes.readAccess);
+
+    app
+      .route('/api/experiences/:id/change-requests')
+      .all(experiencesPolicy.isAllowedChange)
+      .post(changes.submit);
+
+    app
+      .route('/api/experiences/:id/change-requests/mine')
+      .all(experiencesPolicy.isAllowedChange)
+      .get(changes.readMine);
 
     app.param('experienceId', experiences.experienceById);
   }
