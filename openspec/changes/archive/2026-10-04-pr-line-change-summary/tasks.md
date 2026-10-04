@@ -1,0 +1,5 @@
+- [x] Validate the proposal before implementation.
+- [x] Collect and render categorised additions, removals and net changes.
+- [x] Update the existing PR comment workflow for all PRs.
+- [x] Verify classification, colours, renames, binaries and Git-backed CLI output.
+- [x] Update the living specification and archive the proposal.

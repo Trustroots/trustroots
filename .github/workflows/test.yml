@@ -370,7 +370,7 @@ jobs:
           if-no-files-found: ignore
 
   coverage-summary:
-    if: always() && !cancelled() && needs.changes.outputs.run-code != 'false' && github.event_name == 'pull_request'
+    if: always() && !cancelled() && github.event_name == 'pull_request'
     needs: [changes, client, server, e2e]
     runs-on: ubuntu-latest
     permissions:
@@ -380,39 +380,52 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
       - name: Download client coverage
+        if: needs.changes.outputs.run-code != 'false'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         continue-on-error: true
         with:
           name: coverage-client
           path: coverage/client
       - name: Download server coverage
+        if: needs.changes.outputs.run-code != 'false'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         continue-on-error: true
         with:
           name: coverage-server
           path: coverage/server
       - name: Download end-to-end status
+        if: needs.changes.outputs.run-code != 'false'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         continue-on-error: true
         with:
           name: coverage-e2e
           path: coverage/e2e
       - name: Download Playwright report
+        if: needs.changes.outputs.run-code != 'false'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         continue-on-error: true
         with:
           name: playwright-report
           path: playwright-report
       - name: Record skipped end-to-end status
-        if: needs.e2e.result == 'skipped'
+        if: needs.changes.outputs.run-code != 'false' && needs.e2e.result == 'skipped'
         run: |
           mkdir -p coverage/e2e
           node -e "const fs = require('fs'); const status = { status: 'skipped', exitCode: 0, message: 'End-to-end tests were not requested for this pull request run.', generatedAt: new Date().toISOString(), command: 'npm run test:e2e', reportPath: 'playwright-report/index.html', metrics: null }; fs.writeFileSync('coverage/e2e/status.json', JSON.stringify(status, null, 2) + '\n');"
       - name: Generate coverage overview
+        if: needs.changes.outputs.run-code != 'false'
         run: npm run coverage:report
       - name: Generate pull request summary
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          TRUSTROOTS_PR_INCLUDE_COVERAGE: ${{ needs.changes.outputs.run-code != 'false' }}
         run: |
+          mkdir -p coverage-report
           npm run coverage:pr-summary > coverage-report/pr-summary.md
           cat coverage-report/pr-summary.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload coverage overview
@@ -430,6 +443,11 @@ jobs:
             const body = fs.readFileSync('coverage-report/pr-summary.md', 'utf8');
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
+            const { data: latest } = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+            if (latest.head.sha !== context.payload.pull_request.head.sha) {
+              core.info('Skipping a summary for an outdated PR head.');
+              return;
+            }
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner,
               repo,
@@ -456,6 +474,7 @@ jobs:
               });
             }
       - name: Require full client and server coverage
+        if: needs.changes.outputs.run-code != 'false'
         run: npm run coverage:check -- --require-full
 
   pages:
