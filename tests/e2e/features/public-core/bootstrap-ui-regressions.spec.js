@@ -56,6 +56,21 @@ test('home circles have room below the preceding image', async ({
   expect(mobileCircle.y - mobileSection.y).toBeGreaterThanOrEqual(75);
 });
 
+test('primary navigation links show a hover state', async ({ page }) => {
+  await signInViaApi(page, undefined, SEEDED_ADMIN);
+  await page.goto('/search');
+
+  const circlesLink = page.locator(
+    '#tr-header .nav-header-primary a[href="/circles"]',
+  );
+  const background = await circlesLink.evaluate(
+    link => getComputedStyle(link).backgroundColor,
+  );
+
+  await circlesLink.hover();
+  await expect(circlesLink).not.toHaveCSS('background-color', background);
+});
+
 test('place borders and account checkbox spacing survive Bootstrap 5', async ({
   page,
 }, testInfo) => {
