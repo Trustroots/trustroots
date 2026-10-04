@@ -323,6 +323,18 @@ test.describe('public pages and unauthenticated flows', () => {
       await expect(page).toHaveURL(new RegExp(pagePath.replace(/\//g, '\\/')));
       await expect(page).toHaveTitle(title);
 
+      if (pagePath === '/foundation') {
+        await expect(
+          page.getByRole('heading', { name: 'Board', exact: true }),
+        ).toHaveCount(0);
+        await expect(
+          page.getByRole('heading', {
+            name: 'Past board members',
+            exact: true,
+          }),
+        ).toHaveCount(0);
+      }
+
       if (pagePath === '/team') {
         const volunteers = await request.get('/api/volunteers');
         expect(volunteers.ok()).toBeTruthy();
