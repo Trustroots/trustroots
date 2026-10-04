@@ -84,6 +84,7 @@ test.describe('seeded message flows', () => {
     const senders = Array.from({ length: 21 }, (_, index) => ({
       _id: new ObjectId(),
       username: `inbox-sender-${new ObjectId()}`,
+      email: `inbox-sender-${new ObjectId()}@example.test`,
       displayName:
         index === 0 ? 'Older Unread Member' : `Earlier Member ${index}`,
       public: true,
