@@ -18,6 +18,13 @@
     {% endfor %} {% if env === 'development' or env === 'test' %} {% for jsFile
     in reactJsFiles %}
     <script
+      {%
+      if
+      reactUsesVite
+      %}type="module"
+      {%
+      endif
+      %}
       src="/{{jsFile}}?c={{appSettings.commit}}"
       nonce="{{ nonce }}"
     ></script>

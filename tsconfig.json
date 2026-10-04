@@ -20,6 +20,10 @@
     "types": [],
     "resolveJsonModule": true
   },
-  "include": ["modules/*/client/**/*.ts", "modules/*/client/**/*.tsx"],
+  "include": [
+    "config/vite/react-main.tsx",
+    "modules/*/client/**/*.ts",
+    "modules/*/client/**/*.tsx"
+  ],
   "exclude": ["node_modules"]
 }
