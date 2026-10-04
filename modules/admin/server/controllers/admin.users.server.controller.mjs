@@ -375,7 +375,13 @@ const handleAdminApiError = (res, err) => {
  * This middleware sends response with an array of found users
  */
 export const getUser = async (req, res) => {
-  const userId = _.get(req, ['body', 'id']);
+  const userId = req.userIdFromUsername || _.get(req, ['body', 'id']);
+
+  if (!userId && _.get(req, ['body', 'username'])) {
+    return res.status(404).send({
+      message: errorService.getErrorMessageByKey('not-found'),
+    });
+  }
 
   // Check that the search string is provided
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {

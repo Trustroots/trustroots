@@ -23,6 +23,29 @@ afterEach(() => {
 });
 
 describe('<SupportForm />', () => {
+  it('opens and submits the bug-report category without a reported member', async () => {
+    send.mockResolvedValueOnce({});
+    window.history.pushState({}, '', '/support?category=reportBug');
+    render(<SupportForm user={{}} />);
+    expect(screen.getByRole('option', { name: 'Report a bug' })).toHaveValue(
+      'reportBug',
+    );
+    expect(screen.getByLabelText('What can we help with?')).toHaveValue(
+      'reportBug',
+    );
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: { value: 'A fictional button does not respond.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() =>
+      expect(send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'reportBug',
+          reportMember: '',
+        }),
+      ),
+    );
+  });
   it('renders message field and shows the logged-in user details', () => {
     render(
       <SupportForm

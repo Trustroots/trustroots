@@ -139,12 +139,16 @@ ProfileAboutTab.propTypes = {
 };
 
 function ProfileDesktopActions({
+  isAdmin,
+  isSelf,
   contact,
   contactResolved,
   onRemoveClick,
   profile,
   referencesEnabled,
 }: {
+  isAdmin: boolean;
+  isSelf: boolean;
   contact: ContactState;
   contactResolved: boolean;
   onRemoveClick: () => void;
@@ -156,59 +160,76 @@ function ProfileDesktopActions({
   };
 
   return (
-    <ul className="nav nav-pills nav-narrow" role="navigation">
-      <li>
-        <a href={`/messages/${profile.username}`} className="btn btn-link">
-          <i className="fa icon-message-alt" />
-          {t('Send a message') as string}
-        </a>
-      </li>
-      {referencesEnabled && (
+    <ul className="nav nav-pills nav-narrow profile-actions" role="navigation">
+      {!isSelf && (
+        <>
+          <li>
+            <a href={`/messages/${profile.username}`} className="btn btn-link">
+              <i className="fa icon-message-alt" />
+              {t('Send a message') as string}
+            </a>
+          </li>
+          {referencesEnabled && (
+            <li>
+              <a
+                className="btn btn-link"
+                href={`/profile/${profile.username}/experiences/new`}
+              >
+                <i className="icon-plus-squared-alt" />
+                {t('Share your experience') as string}
+              </a>
+            </li>
+          )}
+          <li>
+            {contactResolved && !contact._id && (
+              <a className="btn btn-link" href={`/contact-add/${profile._id}`}>
+                <i className="icon-plus-squared-alt" />
+                {t('Add contact') as string}
+              </a>
+            )}
+            {contactResolved && contact._id && (
+              <TooltipWithContent
+                tooltip={
+                  contact.confirmed
+                    ? (t('Contacts since {{date, LL}}', {
+                        date: new Date(contact.created || ''),
+                      }) as string)
+                    : (t('Request sent {{date, LL}}', {
+                        date: new Date(contact.created || ''),
+                      }) as string)
+                }
+                placement="bottom"
+              >
+                <button
+                  type="button"
+                  className="btn btn-link"
+                  onClick={onRemoveClick}
+                >
+                  <i className="icon-minus-squared-alt" />
+                  {contact.confirmed
+                    ? (t('Remove contact') as string)
+                    : (t('Delete contact request') as string)}
+                </button>
+              </TooltipWithContent>
+            )}
+          </li>
+        </>
+      )}
+      {isAdmin && (
         <li>
-          <a href={`/profile/${profile.username}/experiences/new`}>
-            <i className="icon-plus-squared-alt" />
-            {t('Share your experience') as string}
+          <a className="btn btn-link" href={`/admin/user?id=${profile._id}`}>
+            <i className="icon-cog" aria-hidden="true" />
+            Admin
           </a>
         </li>
       )}
-      <li>
-        {contactResolved && !contact._id && (
-          <a className="btn btn-link" href={`/contact-add/${profile._id}`}>
-            <i className="icon-plus-squared-alt" />
-            {t('Add contact') as string}
-          </a>
-        )}
-        {contactResolved && contact._id && (
-          <TooltipWithContent
-            tooltip={
-              contact.confirmed
-                ? (t('Contacts since {{date, LL}}', {
-                    date: new Date(contact.created || ''),
-                  }) as string)
-                : (t('Request sent {{date, LL}}', {
-                    date: new Date(contact.created || ''),
-                  }) as string)
-            }
-            placement="bottom"
-          >
-            <button
-              type="button"
-              className="btn btn-link"
-              onClick={onRemoveClick}
-            >
-              <i className="icon-minus-squared-alt" />
-              {contact.confirmed
-                ? (t('Remove contact') as string)
-                : (t('Delete contact request') as string)}
-            </button>
-          </TooltipWithContent>
-        )}
-      </li>
     </ul>
   );
 }
 
 ProfileDesktopActions.propTypes = {
+  isAdmin: PropTypes.bool.isRequired,
+  isSelf: PropTypes.bool.isRequired,
   contact: PropTypes.object.isRequired,
   contactResolved: PropTypes.bool.isRequired,
   onRemoveClick: PropTypes.func.isRequired,
@@ -444,6 +465,7 @@ export default function ProfilePage({
   return (
     <>
       <TopNavigationSmall
+        isAdmin={authUser.roles?.includes('admin') || false}
         contact={contact}
         isResolved={contact.$resolved}
         onContactRemoved={removeContact}
@@ -569,10 +591,12 @@ export default function ProfilePage({
                       </div>
                     </div>
 
-                    {!isSelf && (
+                    {(!isSelf || authUser.roles?.includes('admin')) && (
                       <div className="row hidden-xs">
                         <div className="col-xs-12">
                           <ProfileDesktopActions
+                            isAdmin={authUser.roles?.includes('admin') || false}
+                            isSelf={isSelf}
                             contact={contact}
                             contactResolved={contact.$resolved}
                             onRemoveClick={() => setShowRemoveModal(true)}

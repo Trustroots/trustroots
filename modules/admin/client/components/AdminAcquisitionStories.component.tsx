@@ -9,6 +9,7 @@ import AdminAcquisitionStoriesMenu from './AdminAcquisitionStoriesMenu';
 import AdminHeader from './AdminHeader.component';
 import UserLink from './UserLink.component';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import LanguageList from '@/modules/users/client/components/LanguageList';
 import HoverTooltip from '@/modules/core/client/components/Tooltip';
 
 type StorySortColumn =
@@ -16,7 +17,8 @@ type StorySortColumn =
   | 'circleCount'
   | 'created'
   | 'member'
-  | 'public';
+  | 'public'
+  | 'welcomer';
 type SortDirection = 'ascending' | 'descending';
 
 interface RestrictedMatch {
@@ -38,6 +40,13 @@ interface AcquisitionStory {
   acquisitionStory?: string;
   public?: boolean;
   restrictedMatches?: RestrictedMatch[];
+  languages?: string[];
+  welcomer?: {
+    _id: string;
+    username: string;
+    displayName?: string;
+    created: string;
+  } | null;
 }
 
 interface StorySort {
@@ -104,6 +113,7 @@ const storySortValues: Record<
   },
   member: story => String(story.username).toLowerCase(),
   public: story => (story.public === true ? 1 : 0),
+  welcomer: story => (story.welcomer ? 1 : 0),
 };
 
 function SortableHeader({
@@ -175,6 +185,7 @@ StaticHeader.propTypes = {
 };
 
 export default function AdminAcquisitionStories() {
+  const viewerLanguages = getCurrentUser()?.languages || [];
   const [stories, setStories] = useState<AcquisitionStory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sort, setSort] = useState<StorySort>({
@@ -275,11 +286,30 @@ export default function AdminAcquisitionStories() {
                   label="Restricted matches"
                   tooltip="Suspended or shadowbanned accounts with a matching username or email identifier"
                 />
+                <SortableHeader
+                  column="welcomer"
+                  label="Welcomer"
+                  onSort={sortBy}
+                  sort={sort}
+                  tooltip="First current welcome-team member to send a message; sending a message assigns the welcomer"
+                />
+                <StaticHeader
+                  label="Languages"
+                  tooltip="Shared languages appear first and in bold, except English"
+                />
               </tr>
             </thead>
             <tbody>
               {sortedStories.map((story, index) => (
-                <tr key={story._id} id={`acquisition-story-${index + 1}`}>
+                <tr
+                  key={story._id}
+                  id={`acquisition-story-${index + 1}`}
+                  className={
+                    story.welcomer
+                      ? 'admin-acquisition-stories-contacted'
+                      : undefined
+                  }
+                >
                   <td>
                     <a href={`#acquisition-story-${index + 1}`}>
                       <time className="text-muted">
@@ -346,6 +376,46 @@ export default function AdminAcquisitionStories() {
                         </small>
                       </div>
                     ))}
+                  </td>
+                  <td>
+                    {story.welcomer ? (
+                      <>
+                        <UserLink
+                          user={story.welcomer}
+                          publicProfile={
+                            !(getCurrentUser()?.roles || []).includes('admin')
+                          }
+                        />
+                        <div>
+                          <time dateTime={story.welcomer.created}>
+                            {formatDate(story.welcomer.created)}
+                          </time>
+                        </div>
+                      </>
+                    ) : (
+                      'Unassigned'
+                    )}
+                  </td>
+                  <td>
+                    {story.languages?.length ? (
+                      <LanguageList
+                        className="list-unstyled"
+                        languages={[
+                          ...story.languages.filter(code =>
+                            viewerLanguages.includes(code),
+                          ),
+                          ...story.languages.filter(
+                            code => !viewerLanguages.includes(code),
+                          ),
+                        ]}
+                        emphasisedLanguages={story.languages.filter(
+                          code =>
+                            code !== 'eng' && viewerLanguages.includes(code),
+                        )}
+                      />
+                    ) : (
+                      'Not specified'
+                    )}
                   </td>
                 </tr>
               ))}

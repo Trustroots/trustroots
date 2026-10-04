@@ -538,7 +538,7 @@ describe('API route registrations', () => {
       ['getAnalysis', 'list'],
       'adminAcquisitionStories',
     );
-    const auditLog = controller(['list', 'record'], 'adminAuditLog');
+    const auditLog = controller(['list', 'record', 'actors'], 'adminAuditLog');
     const messages = controller(['getMessages'], 'adminMessages');
     const newsletter = controller(
       [
@@ -593,6 +593,9 @@ describe('API route registrations', () => {
     assertHandlers(routeByPath(routes, '/api/admin/audit-log').get, [
       auditLog.list,
     ]);
+    assertHandlers(routeByPath(routes, '/api/admin/audit-log/actors').get, [
+      auditLog.actors,
+    ]);
     assertHandlers(routeByPath(routes, '/api/admin/messages').post, [
       auditLog.record,
       messages.getMessages,
@@ -624,6 +627,7 @@ describe('API route registrations', () => {
     );
     assertHandlers(routeByPath(routes, '/api/admin/user').post, [
       auditLog.record,
+      users.usernameToUserId,
       users.getUser,
     ]);
     assertHandlers(routeByPath(routes, '/api/admin/user/change-role').post, [

@@ -44,6 +44,40 @@ function renderNavigation(props = {}) {
 }
 
 describe('<TopNavigationSmall />', () => {
+  it('adds an Admin link for administrators on another member and their own profile', () => {
+    const { rerender } = renderNavigation({ isAdmin: true });
+    expect(
+      screen.getByRole('link', { name: 'Admin', exact: true }),
+    ).toHaveAttribute('href', '/admin/user?id=alice-id');
+    rerender(
+      <TopNavigationSmall
+        isAdmin
+        userId="me"
+        selfId="me"
+        username="river"
+        referencesEnabled={false}
+        isResolved={false}
+        onContactRemoved={jest.fn()}
+      />,
+    );
+    expect(
+      screen.getByRole('link', { name: 'Admin', exact: true }),
+    ).toHaveAttribute('href', '/admin/user?id=me');
+  });
+
+  it('omits Admin navigation before the member ID is loaded', () => {
+    renderNavigation({ isAdmin: true, userId: '' });
+    expect(
+      screen.queryByRole('link', { name: 'Admin', exact: true }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('omits Admin navigation for ordinary viewers', () => {
+    renderNavigation();
+    expect(
+      screen.queryByRole('link', { name: 'Admin', exact: true }),
+    ).not.toBeInTheDocument();
+  });
   it('links own profile visitors to profile editing', () => {
     renderNavigation({
       contact: null,

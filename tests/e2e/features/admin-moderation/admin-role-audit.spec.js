@@ -15,18 +15,78 @@ const {
   withE2eDb,
 } = require('../../support/db');
 
-async function signInRequest(request, user) {
-  const response = await request.post('/api/auth/signin', {
-    data: {
-      username: user.username,
-      password: user.password,
-    },
-  });
+async function assertMemberProfileCleanup(page, member) {
+  await expect(
+    page.getByRole('heading', {
+      level: 3,
+      name: member.displayName,
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page.getByText(/Member report card/i)).toHaveCount(0);
+  await expect(
+    page.getByRole('heading', { name: 'Role management' }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('searchbox', { name: 'Member username, email or ID' }),
+  ).toHaveCount(0);
+  await expect(page.getByText(String(member._id), { exact: true })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByText('Hide obvious spam', { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.locator('#roles li').filter({ hasText: /^user$/ }),
+  ).toHaveCount(0);
 
-  expect(
-    response.ok(),
-    `Signin API responded with ${response.status()}: ${await response.text()}`,
-  ).toBeTruthy();
+  const welcomeButton = page.locator('#roles button');
+  await expect(welcomeButton).toHaveAttribute(
+    'aria-describedby',
+    'welcome-team-role-description',
+  );
+  await welcomeButton.focus();
+  await expect(page.getByRole('tooltip')).toHaveText(
+    'Welcome team members can view acquisition stories and analysis, and see members who blocked their account.',
+  );
+  await welcomeButton.blur();
+
+  let roleChangeRequests = 0;
+  const onRequest = request => {
+    if (
+      request.method() === 'POST' &&
+      request.url().includes('/api/admin/user/change-role')
+    ) {
+      roleChangeRequests += 1;
+    }
+  };
+  const confirmations = [];
+  const onDialog = async dialog => {
+    confirmations.push({ type: dialog.type(), message: dialog.message() });
+    await dialog.dismiss();
+  };
+  page.on('request', onRequest);
+  page.on('dialog', onDialog);
+  try {
+    const controls = page.locator(
+      '.admin-user-actions button:enabled, #roles button:enabled',
+    );
+    const count = await controls.count();
+    expect(count).toBeGreaterThan(0);
+    for (let index = 0; index < count; index += 1) {
+      await controls.nth(index).click();
+    }
+    expect(confirmations).toHaveLength(count);
+    for (const confirmation of confirmations) {
+      expect(confirmation.type).toBe('confirm');
+      expect(confirmation.message).toContain(member.username);
+    }
+    await page.waitForTimeout(100);
+    expect(roleChangeRequests).toBe(0);
+  } finally {
+    page.off('request', onRequest);
+    page.off('dialog', onDialog);
+  }
 }
 
 test.describe('admin role and audit feature coverage', () => {
@@ -148,6 +208,7 @@ test.describe('admin role and audit feature coverage', () => {
   test('admin can change roles and audit invalid role errors', async ({
     browser,
     baseURL,
+    page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.change-role', [
@@ -173,7 +234,10 @@ test.describe('admin role and audit feature coverage', () => {
       },
     });
     const target = await findUserByUsername(user.username);
-    await signInRequest(request, SEEDED_ADMIN);
+    await signInViaApi(page, request, SEEDED_ADMIN);
+
+    await page.goto(`/admin/user?id=${target._id}`);
+    await assertMemberProfileCleanup(page, target);
 
     const invalid = await request.post('/api/admin/user/change-role', {
       data: {
@@ -233,6 +297,7 @@ test.describe('admin role and audit feature coverage', () => {
     await withE2eDb(db => db.collection('messages').insertOne(hiddenMessage));
 
     await page.goto(`/admin/user?id=${target._id}`);
+    await assertMemberProfileCleanup(page, target);
     page.on('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: 'Unshadowban' }).click();
     await expect(page.getByRole('button', { name: 'Unshadowban' })).toHaveCount(

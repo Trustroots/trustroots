@@ -1,0 +1,4 @@
+- [x] Add server-side actor/team filters and actor options with unchanged permissions.
+- [x] Render compact rows, summaries, expandable details and filter controls.
+- [x] Test filtering before the limit, role combinations, failures and UI behaviour.
+- [x] Add end-to-end coverage, validate, update living specs and archive.

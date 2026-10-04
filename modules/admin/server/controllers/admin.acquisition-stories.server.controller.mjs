@@ -8,6 +8,7 @@ import winkTokenizer from 'wink-tokenizer';
 
 const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
+const Message = mongoose.model('Message');
 
 /**
  * Detect commonly misspelled compound terms
@@ -320,7 +321,7 @@ function getStories(limit) {
     {
       acquisitionStory: { $exists: true, $ne: '' },
     },
-    '_id acquisitionStory created displayName email emailTemporary locationFrom locationLiving member public username',
+    '_id acquisitionStory created displayName email emailTemporary languages locationFrom locationLiving member public username',
   )
     .sort('-created')
     .limit(limit)
@@ -411,7 +412,7 @@ function getRestrictedUsers() {
     .exec();
 }
 
-function storyForList(story, hostingLocation, restrictedMatches) {
+function storyForList(story, hostingLocation, restrictedMatches, welcomer) {
   return {
     _id: story._id,
     acquisitionStory: story.acquisitionStory,
@@ -421,6 +422,8 @@ function storyForList(story, hostingLocation, restrictedMatches) {
     hostingLocation,
     locationFrom: story.locationFrom,
     locationLiving: story.locationLiving,
+    languages: story.languages || [],
+    welcomer,
     public: story.public === true,
     restrictedMatches,
     username: story.username,
@@ -434,6 +437,57 @@ export const list = async (req, res) => {
   }
 
   const storyUserIds = stories.map(story => story._id);
+  const currentWelcomerIds = (
+    await User.find({ roles: 'welcome-team' }).select('_id').exec()
+  ).map(user => user._id);
+  // Filter current team membership before selecting the first contact. Fetch
+  // metadata for all recipients together, never loading message content.
+  const welcomeContacts = await Message.aggregate([
+    {
+      $match: {
+        userTo: { $in: storyUserIds },
+        userFrom: { $in: currentWelcomerIds },
+        shadowHidden: { $ne: true },
+        $expr: { $ne: ['$userFrom', '$userTo'] },
+      },
+    },
+    {
+      $lookup: {
+        from: User.collection.name,
+        localField: 'userFrom',
+        foreignField: '_id',
+        as: 'sender',
+      },
+    },
+    { $unwind: '$sender' },
+    { $match: { 'sender.roles': 'welcome-team' } },
+    {
+      $project: {
+        userTo: 1,
+        created: 1,
+        'sender._id': 1,
+        'sender.username': 1,
+        'sender.displayName': 1,
+      },
+    },
+    { $sort: { created: 1, _id: 1 } },
+    {
+      $group: {
+        _id: '$userTo',
+        welcomer: {
+          $first: {
+            _id: '$sender._id',
+            username: '$sender.username',
+            displayName: '$sender.displayName',
+            created: '$created',
+          },
+        },
+      },
+    },
+  ]).exec();
+  const welcomersByUser = new Map(
+    welcomeContacts.map(contact => [contact._id.toString(), contact.welcomer]),
+  );
   const restrictedUsers = (await getRestrictedUsers()).map(user => ({
     user,
     identifiers: getRestrictedIdentifiers(user),
@@ -467,6 +521,7 @@ export const list = async (req, res) => {
         story,
         hostingLocationsByUser[story._id.toString()] || null,
         await getRestrictedMatches(story, restrictedUsers),
+        welcomersByUser.get(story._id.toString()) || null,
       ),
     );
   }

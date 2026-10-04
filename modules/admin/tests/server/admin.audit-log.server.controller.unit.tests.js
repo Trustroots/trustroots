@@ -164,7 +164,7 @@ describe('Admin audit log controller unit tests', () => {
         sort: () => ({
           limit: () => ({
             populate: () => ({
-              exec: cb => cb(null, null),
+              exec: async () => null,
             }),
           }),
         }),
@@ -182,7 +182,9 @@ describe('Admin audit log controller unit tests', () => {
         sort: () => ({
           limit: () => ({
             populate: () => ({
-              exec: cb => cb(new Error('lookup failed')),
+              exec: async () => {
+                throw new Error('lookup failed');
+              },
             }),
           }),
         }),

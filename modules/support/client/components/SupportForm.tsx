@@ -18,6 +18,7 @@ export default function SupportForm({ user }: SupportFormProps) {
   const categoryLabels: Record<SupportCategory, string> = {
     account: t<string>('Account help'),
     reportMember: t<string>('Report a member'),
+    reportBug: t<string>('Report a bug'),
     volunteering: t<string>('Volunteering'),
     other: t<string>('Other'),
   };

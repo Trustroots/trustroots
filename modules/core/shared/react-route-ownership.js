@@ -356,6 +356,11 @@ const REACT_ROUTE_POLICIES = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/user/:username',
+    title: 'Admin - User',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/reference-threads',
     title: 'Admin - Reference threads',
   },

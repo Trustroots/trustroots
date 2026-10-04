@@ -1,0 +1,4 @@
+- [x] Add the shared bug-report category and translated form label.
+- [x] Update bug-report links and FAQ text.
+- [x] Verify client, server and end-to-end coverage.
+- [x] Update living specifications and archive the proposal.

@@ -60,7 +60,7 @@ export default function NavigationLoggedIn({
             {t<string>('Frequently Asked Questions')}
           </Dropdown.Item>
           <Dropdown.Item href="/safety">{t<string>('Safety')}</Dropdown.Item>
-          <Dropdown.Item href="/faq/bugs-and-features">
+          <Dropdown.Item href="/support?category=reportBug">
             {t<string>('Report a bug')}
           </Dropdown.Item>
           <Dropdown.Item href="/support">
@@ -70,6 +70,15 @@ export default function NavigationLoggedIn({
       </Nav>
 
       <Nav as="ul" className="nav-header-primary">
+        {user.roles?.includes('admin') && (
+          <MenuItem
+            currentPath={currentPath}
+            path="/admin"
+            className="hidden-xs"
+          >
+            Admin
+          </MenuItem>
+        )}
         <MenuItem
           currentPath={currentPath}
           path="/circles"
