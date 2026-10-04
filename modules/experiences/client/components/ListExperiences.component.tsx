@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
 import { read as readExperiences } from '../api/experiences.api';
+import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import ExperienceCounts from './read-experiences/ExperienceCounts';
 import ExperiencesSection from './read-experiences/ExperiencesSection';
@@ -85,7 +86,7 @@ export default function ListExperiences({
             <br />
             <a
               className="btn btn-primary"
-              href={`/profile/${profile.username}/experiences/new`}
+              href={getProfileExperiencesPath(profile.username)}
             >
               {t('Share your experience') as string}
             </a>
