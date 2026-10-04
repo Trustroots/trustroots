@@ -93,6 +93,12 @@
   .nav-header-primary {
     margin-left: auto;
 
+    > li > a:hover,
+    > li > a:focus-visible {
+      color: @navbar-default-link-hover-color;
+      background: @navbar-default-link-hover-bg;
+    }
+
     // Bootstrap 5 no longer colours an active item from the legacy li class.
     > li.active > a,
     > li.active > a:hover,
