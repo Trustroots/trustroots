@@ -73,6 +73,7 @@ module.exports = {
     {
       files: [
         '*.js',
+        '*.mjs',
         'config/**',
         'migrations/**',
         'modules/*/shared/**/*.js',
@@ -82,6 +83,15 @@ module.exports = {
       ],
       env: {
         node: true,
+      },
+    },
+
+    /** Native server implementations must not regain CommonJS syntax. */
+    {
+      files: ['modules/*/server/**/*.mjs'],
+      rules: {
+        'import/no-commonjs': 2,
+        'import/no-dynamic-require': 2,
       },
     },
 
@@ -155,11 +165,12 @@ module.exports = {
     },
 
     /**
-     * TypeScript is introduced for client code only. Keep JS linting unchanged.
+     * TypeScript source in client code, tests and shared contracts.
      */
     {
       files: [
         'modules/*/client/**/*.{ts,tsx}',
+        'modules/*/shared/**/*.{ts,tsx}',
         'modules/*/tests/client/**/*.{ts,tsx}',
       ],
       parser: '@typescript-eslint/parser',

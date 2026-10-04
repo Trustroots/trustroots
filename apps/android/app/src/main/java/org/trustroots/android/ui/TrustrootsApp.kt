@@ -1,5 +1,13 @@
 package org.trustroots.android.ui
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -20,14 +28,20 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Public
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.Button
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
@@ -80,6 +94,9 @@ import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.api.SecureResponseCache
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.TrustrootsBrowser
+import org.trustroots.android.updates.ApkUpdateAlerts
+import org.trustroots.android.updates.ApkUpdateCheckResult
+import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.ui.theme.TrustrootsGreen
 import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 
@@ -324,6 +341,9 @@ private enum class Destination(val label: String) {
 private enum class MenuPage {
     Menu,
     Profile,
+    EditProfile,
+    Contacts,
+    Host,
     Account,
 }
 
@@ -335,24 +355,65 @@ private fun MemberShell(
     onSignedOut: () -> Unit,
     onSessionInvalidated: () -> Unit,
 ) {
+    val context = LocalContext.current
     var destination by remember { mutableStateOf(Destination.Circles) }
+    var destinationHistory by remember { mutableStateOf(emptyList<Destination>()) }
     var menuPage by remember { mutableStateOf(MenuPage.Menu) }
     var browserRoute by remember { mutableStateOf<BrowserRoute?>(null) }
-    var accountMessage by remember { mutableStateOf<String?>(null) }
-    var isAccountActionRunning by remember { mutableStateOf(false) }
-    var accountActionLabel by remember { mutableStateOf<String?>(null) }
     var hasUnreadMessages by remember { mutableStateOf(false) }
+    var unreadMessageCount by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var messagesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var circlesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
-    val scope = rememberCoroutineScope()
+    var searchNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var searchInitialTab by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val api = remember(session.member.username) {
         MobileApiClient(BuildConfig.API_BASE_URL, responseCache, session.member.username)
     }
     val offlineSavedAt by api.offlineSavedAt.collectAsState()
+    val alertDestination by MessageAlerts.destination.collectAsState()
+    var initialMessageSender by remember { mutableStateOf<String?>(null) }
+    val navigateTo: (Destination) -> Unit = { next ->
+        if (next != destination) {
+            destinationHistory = destinationHistory + destination
+            destination = next
+        }
+        menuPage = MenuPage.Menu
+        browserRoute = null
+    }
+    LaunchedEffect(session.member.username, alertDestination) {
+        val requested = alertDestination ?: return@LaunchedEffect
+        if (requested.account != session.member.username) {
+            MessageAlerts.clearDestination()
+            return@LaunchedEffect
+        }
+        initialMessageSender = requested.senderId
+        messagesNavigationID++
+        navigateTo(Destination.Messages)
+        MessageAlerts.clearDestination()
+    }
+    LaunchedEffect(session.member.username) {
+        MessageAlerts.reconcile(context, session)
+    }
+    BackHandler(
+        enabled = browserRoute != null ||
+            (destination == Destination.Menu && menuPage != MenuPage.Menu) ||
+            destinationHistory.isNotEmpty(),
+    ) {
+        when {
+            browserRoute != null -> browserRoute = null
+            destination == Destination.Menu && menuPage != MenuPage.Menu -> menuPage = MenuPage.Menu
+            destinationHistory.isNotEmpty() -> {
+                destination = destinationHistory.last()
+                destinationHistory = destinationHistory.dropLast(1)
+                menuPage = MenuPage.Menu
+            }
+        }
+    }
     LaunchedEffect(session, destination, messagesNavigationID) {
         while (true) {
             api.inbox(session).onSuccess { threads ->
-                hasUnreadMessages = threads.any { !it.read }
+                unreadMessageCount = threads.count { !it.read }
+                hasUnreadMessages = unreadMessageCount > 0
             }
             delay(60_000)
         }
@@ -364,7 +425,7 @@ private fun MemberShell(
                     .fillMaxWidth()
                     .background(TrustrootsGreen)
                     .statusBarsPadding()
-                    .padding(horizontal = 10.dp, vertical = 12.dp),
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
             ) {
                 Destination.entries.forEach { item ->
@@ -372,9 +433,11 @@ private fun MemberShell(
                         onClick = {
                             if (item == Destination.Messages) messagesNavigationID++
                             if (item == Destination.Circles) circlesNavigationID++
-                            destination = item
-                            menuPage = MenuPage.Menu
-                            browserRoute = null
+                            if (item == Destination.Search) {
+                                searchInitialTab = 0
+                                searchNavigationID++
+                            }
+                            navigateTo(item)
                         },
                     ) {
                         Box {
@@ -382,18 +445,23 @@ private fun MemberShell(
                             imageVector = when (item) {
                                 Destination.Circles -> Icons.Default.Groups
                                 Destination.Search -> Icons.Default.Search
-                                Destination.Messages -> Icons.AutoMirrored.Filled.Send
+                                Destination.Messages -> Icons.AutoMirrored.Filled.Chat
                                 Destination.Menu -> Icons.Default.Menu
                             },
                             contentDescription = item.label,
                             tint = Color.White,
+                            modifier = Modifier.size(32.dp),
                         )
                         if (item == Destination.Messages && hasUnreadMessages) {
                             Badge(
                                 modifier = Modifier.align(Alignment.TopEnd),
                                 containerColor = Color.Red,
                                 contentColor = Color.White,
-                            ) { Text("1") }
+                            ) {
+                                Text(
+                                    if (unreadMessageCount > 99) "99+" else unreadMessageCount.toString(),
+                                )
+                            }
                         }
                         }
                     }
@@ -419,6 +487,25 @@ private fun MemberShell(
                     MenuPage.Menu -> MenuScreen(
                         session = session,
                         openProfile = { menuPage = MenuPage.Profile },
+                        openEditProfile = { menuPage = MenuPage.EditProfile },
+                        openHost = { menuPage = MenuPage.Host },
+                        openNostroots = {
+                            browserRoute = BrowserRoute(
+                                title = "Nostroots",
+                                url = "https://nos.trustroots.org/",
+                                sessionCookie = session.cookieHeader,
+                            )
+                        },
+                        openContacts = { menuPage = MenuPage.Contacts },
+                        openFindPeople = {
+                            searchInitialTab = 1
+                            searchNavigationID++
+                            navigateTo(Destination.Search)
+                        },
+                        openCircles = {
+                            circlesNavigationID++
+                            navigateTo(Destination.Circles)
+                        },
                         openAccount = { menuPage = MenuPage.Account },
                         openBrowser = { browserRoute = it },
                     )
@@ -432,29 +519,34 @@ private fun MemberShell(
                             onMemberUpdated(MobileMember(updated.username, updated.displayName))
                         },
                     )
-                    MenuPage.Account -> AccountScreen(
+                    MenuPage.EditProfile -> MemberProfileScreen(
+                        api = api,
                         session = session,
-                        accountMessage = accountMessage,
-                        isActionRunning = isAccountActionRunning,
-                        actionLabel = accountActionLabel,
+                        username = session.member.username,
+                        onSessionInvalidated = onSessionInvalidated,
+                        startInEditMode = true,
                         onBack = { menuPage = MenuPage.Menu },
-                        onCheckAccount = {
-                            scope.launch {
-                                isAccountActionRunning = true
-                                accountActionLabel = "Checking account…"
-                                api.currentMember(session)
-                                    .onSuccess { accountMessage = "Signed in as ${it.displayName}." }
-                                    .onFailure {
-                                        if ((it as? MobileApiException)?.isAuthenticationFailure == true) {
-                                            onSessionInvalidated()
-                                        } else {
-                                            accountMessage = it.message ?: "Could not refresh account."
-                                        }
-                                    }
-                                isAccountActionRunning = false
-                                accountActionLabel = null
-                            }
+                        onOwnProfileSaved = { updated ->
+                            onMemberUpdated(MobileMember(updated.username, updated.displayName))
                         },
+                    )
+                    MenuPage.Contacts -> ContactsScreen(
+                        api = api,
+                        session = session,
+                        onSessionInvalidated = onSessionInvalidated,
+                        onBack = { menuPage = MenuPage.Menu },
+                    )
+                    MenuPage.Host -> HostOfferScreen(
+                        api = api,
+                        session = session,
+                        onSessionInvalidated = onSessionInvalidated,
+                        onBack = { menuPage = MenuPage.Menu },
+                    )
+                    MenuPage.Account -> AccountSettingsScreen(
+                        api = api,
+                        session = session,
+                        onSessionInvalidated = onSessionInvalidated,
+                        onBack = { menuPage = MenuPage.Menu },
                         onResetPassword = {
                             browserRoute = BrowserRoute(
                                 title = "Reset password",
@@ -462,9 +554,10 @@ private fun MemberShell(
                             )
                         },
                         onSignedOut = {
-                            onSignedOut()
                             CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                                MessageAlerts.disable(context, session)
                                 api.signOut(session)
+                                withContext(Dispatchers.Main) { onSignedOut() }
                             }
                         },
                     )
@@ -474,9 +567,16 @@ private fun MemberShell(
                     Destination.Circles -> key(circlesNavigationID) {
                         CirclesScreen(api, session, onSessionInvalidated)
                     }
-                    Destination.Search -> SearchHubScreen(api, session, onSessionInvalidated)
+                    Destination.Search -> key(searchNavigationID) {
+                        SearchHubScreen(
+                            api,
+                            session,
+                            onSessionInvalidated,
+                            initialTab = searchInitialTab,
+                        )
+                    }
                     Destination.Messages -> key(messagesNavigationID) {
-                        MessageInboxScreen(api, session, onSessionInvalidated)
+                        MessageInboxScreen(api, session, onSessionInvalidated, initialMessageSender)
                     }
                     else -> PlaceholderScreen(destination = destination, session = session)
                 }
@@ -490,6 +590,12 @@ private fun MemberShell(
 internal fun MenuScreen(
     session: MemberSession,
     openProfile: () -> Unit,
+    openEditProfile: () -> Unit,
+    openHost: () -> Unit,
+    openNostroots: () -> Unit,
+    openContacts: () -> Unit,
+    openFindPeople: () -> Unit,
+    openCircles: () -> Unit,
     openAccount: () -> Unit,
     openBrowser: (BrowserRoute) -> Unit,
 ) {
@@ -500,26 +606,62 @@ internal fun MenuScreen(
             .verticalScroll(rememberScrollState())
             .padding(top = 12.dp),
     ) {
-        Text(
-            "${session.member.displayName}",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 20.dp),
-        )
-        Text(
-            "@${session.member.username}",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 2.dp),
-        )
-        Spacer(Modifier.height(16.dp))
-        MenuLink("My profile", Icons.Default.AccountCircle, openProfile)
-        MenuLink("Account", Icons.Default.Settings, openAccount)
-        HorizontalDivider()
-        MenuLink("Frequently asked questions", Icons.AutoMirrored.Filled.HelpOutline) {
-            openBrowser(BrowserRoute("Frequently asked questions", "https://www.trustroots.org/faq"))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = openProfile)
+                .padding(horizontal = 20.dp, vertical = 4.dp),
+        ) {
+            Text(
+                session.member.displayName,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                "@${session.member.username}",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                "View your profile",
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(top = 4.dp),
+            )
         }
-        MenuLink("About Trustroots", Icons.Default.Info) {
-            openBrowser(BrowserRoute("About Trustroots", "https://www.trustroots.org/about"))
+        Spacer(Modifier.height(12.dp))
+        MenuLink("Edit profile", Icons.Default.Edit, openEditProfile)
+        MenuLink("Host", Icons.Default.Home, openHost)
+        MenuLink("Nostroots", Icons.Default.Public, openNostroots)
+        MenuLink("Contacts", Icons.Default.People, openContacts)
+        MenuLink("Find people", Icons.Default.PersonSearch, openFindPeople)
+        MenuLink("Circles", Icons.Default.Groups, openCircles)
+        MenuLink("Account", Icons.Default.Settings, openAccount)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        Text(
+            "Info and support",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
+        )
+        MenuLink("About", Icons.Default.Info) {
+            openBrowser(BrowserRoute("About", "https://www.trustroots.org/about"))
+        }
+        MenuLink("Blog", Icons.Default.Info) {
+            openBrowser(BrowserRoute("Blog", "https://ideas.trustroots.org/"))
+        }
+        MenuLink("Contact and support", Icons.AutoMirrored.Filled.HelpOutline) {
+            openBrowser(BrowserRoute("Contact and support", "https://www.trustroots.org/support"))
+        }
+        MenuLink("FAQ", Icons.AutoMirrored.Filled.HelpOutline) {
+            openBrowser(BrowserRoute("FAQ", "https://www.trustroots.org/faq"))
+        }
+        MenuLink("Foundation", Icons.Default.Info) {
+            openBrowser(BrowserRoute("Foundation", "https://www.trustroots.org/foundation"))
+        }
+        MenuLink("Media", Icons.Default.Info) {
+            openBrowser(BrowserRoute("Media", "https://www.trustroots.org/media"))
+        }
+        MenuLink("Wiki", Icons.Default.Info) {
+            openBrowser(BrowserRoute("Wiki", "https://wiki.trustroots.org/"))
         }
         MenuLink("Privacy", Icons.Default.Info) {
             openBrowser(BrowserRoute("Privacy", "https://www.trustroots.org/privacy"))
@@ -527,8 +669,11 @@ internal fun MenuScreen(
         MenuLink("Rules", Icons.Default.Info) {
             openBrowser(BrowserRoute("Rules", "https://www.trustroots.org/rules"))
         }
+        MenuLink("Safety", Icons.Default.Info) {
+            openBrowser(BrowserRoute("Safety", "https://www.trustroots.org/safety"))
+        }
         MenuLink("Statistics", Icons.Default.Info) {
-            openBrowser(BrowserRoute("Trustroots statistics", "https://www.trustroots.org/statistics"))
+            openBrowser(BrowserRoute("Statistics", "https://www.trustroots.org/statistics"))
         }
         Spacer(Modifier.height(24.dp))
         Column(
@@ -629,6 +774,35 @@ internal fun AccountScreen(
     onResetPassword: () -> Unit,
     onSignedOut: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var updateAlertsEnabled by remember { mutableStateOf(ApkUpdateAlerts.isEnabled(context)) }
+    var updateStatus by remember { mutableStateOf<String?>(null) }
+    var updateReleaseUrl by remember { mutableStateOf<String?>(null) }
+    var checkingUpdates by remember { mutableStateOf(false) }
+    val checkForUpdates: () -> Unit = {
+        scope.launch {
+            checkingUpdates = true
+            when (val result = ApkUpdateAlerts.checkNow(context)) {
+                ApkUpdateCheckResult.UpToDate -> updateStatus = "You have the latest Android preview."
+                is ApkUpdateCheckResult.NewVersion -> {
+                    updateStatus = "${result.release.versionName} is available."
+                    updateReleaseUrl = result.release.pageUrl
+                }
+                ApkUpdateCheckResult.Unavailable -> updateStatus = "Could not check for updates. Try again later."
+            }
+            checkingUpdates = false
+        }
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            ApkUpdateAlerts.setEnabled(context, true)
+            updateAlertsEnabled = true
+            checkForUpdates()
+        } else {
+            updateStatus = "Allow Trustroots notifications in Android settings to receive update alerts."
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -661,8 +835,65 @@ internal fun AccountScreen(
                 modifier = Modifier.padding(top = 10.dp),
             )
         }
+        if (BuildConfig.PREVIEW_UPDATE_ALERTS) {
+            HorizontalDivider(Modifier.padding(vertical = 20.dp))
+            ApkUpdateSettings(
+                enabled = updateAlertsEnabled,
+                checking = checkingUpdates,
+                status = updateStatus,
+                releaseUrl = updateReleaseUrl,
+                onToggle = {
+                    if (updateAlertsEnabled) {
+                        ApkUpdateAlerts.setEnabled(context, false)
+                        updateAlertsEnabled = false
+                        updateStatus = "Update alerts are off."
+                        updateReleaseUrl = null
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        ApkUpdateAlerts.setEnabled(context, true)
+                        updateAlertsEnabled = true
+                        checkForUpdates()
+                    }
+                },
+                onCheck = checkForUpdates,
+                onOpenRelease = { url -> context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) },
+            )
+        }
         HorizontalDivider(Modifier.padding(vertical = 20.dp))
         Button(onClick = onSignedOut, enabled = !isActionRunning) { Text("Sign out") }
+    }
+}
+
+@Composable
+internal fun ApkUpdateSettings(
+    enabled: Boolean,
+    checking: Boolean,
+    status: String?,
+    releaseUrl: String?,
+    onToggle: () -> Unit,
+    onCheck: () -> Unit,
+    onOpenRelease: (String) -> Unit,
+) {
+    Text("APK updates", style = MaterialTheme.typography.titleMedium)
+    Text(
+        "Receive an alert when a new signed Android preview is available on GitHub.",
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 6.dp),
+    )
+    Button(onClick = onToggle, modifier = Modifier.padding(top = 12.dp)) {
+        Text(if (enabled) "Turn off update alerts" else "Turn on update alerts")
+    }
+    if (enabled) {
+        TextButton(onClick = onCheck, enabled = !checking) {
+            Text(if (checking) "Checking for updates…" else "Check for updates now")
+        }
+    }
+    status?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    releaseUrl?.let { url ->
+        TextButton(onClick = { onOpenRelease(url) }) { Text("Open release page") }
     }
 }
 

@@ -78,6 +78,7 @@ describe('User tribe memberships CRUD tests', function () {
 
           agent
             .post('/api/users/memberships/' + tribe._id)
+            .set('X-Trustroots-Request', '1')
             .send()
             .expect(200)
             .end(function (userTribeErr, userTribeRes) {
@@ -137,6 +138,7 @@ describe('User tribe memberships CRUD tests', function () {
           // Join tribe
           agent
             .post('/api/users/memberships/' + tribe._id)
+            .set('X-Trustroots-Request', '1')
             .send()
             .expect(200)
             .end(function (userTribeJoinErr, userTribeJoinRes) {
@@ -155,6 +157,7 @@ describe('User tribe memberships CRUD tests', function () {
               // Leave tribe
               agent
                 .delete('/api/users/memberships/' + tribe._id)
+                .set('X-Trustroots-Request', '1')
                 .send()
                 .expect(200)
                 .end(function (userTagLeaveErr, userTagLeaveRes) {
@@ -200,6 +203,7 @@ describe('User tribe memberships CRUD tests', function () {
           // Join tribe
           agent
             .post('/api/users/memberships/' + tribe._id)
+            .set('X-Trustroots-Request', '1')
             .send()
             .expect(200)
             .end(function (userTribeJoinErr, userTribeJoinRes) {
@@ -218,6 +222,7 @@ describe('User tribe memberships CRUD tests', function () {
               // Join tribe again
               agent
                 .post('/api/users/memberships/' + tribe._id)
+                .set('X-Trustroots-Request', '1')
                 .send()
                 .expect(409)
                 .end(function (userTagJoin2Err, userTagJoin2Res) {
@@ -260,6 +265,7 @@ describe('User tribe memberships CRUD tests', function () {
           // Leave tribe
           agent
             .delete('/api/users/memberships/' + tribe._id)
+            .set('X-Trustroots-Request', '1')
             .send()
             .expect(409)
             .end(function (userTribeJoinErr, userTribeJoinRes) {
@@ -292,6 +298,7 @@ describe('User tribe memberships CRUD tests', function () {
         // Join tribe
         agent
           .post('/api/users/memberships/572a3d36f905fe5c53bf1d1f')
+          .set('X-Trustroots-Request', '1')
           .send()
           .expect(400)
           .end(function (userTribeJoinErr, userTribeJoinRes) {
@@ -321,6 +328,7 @@ describe('User tribe memberships CRUD tests', function () {
         // Join tribe
         agent
           .post('/api/users/memberships/123456')
+          .set('X-Trustroots-Request', '1')
           .send()
           .expect(400)
           .end(function (userTribeJoinErr, userTribeJoinRes) {

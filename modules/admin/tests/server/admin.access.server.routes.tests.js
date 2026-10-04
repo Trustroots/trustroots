@@ -42,6 +42,7 @@ describe('Admin access route tests', () => {
       method: 'get',
       path: '/api/admin/audit-log',
     },
+    { method: 'get', path: '/api/admin/audit-log/actors' },
     {
       method: 'get',
       path: '/api/admin/dashboard',
@@ -104,6 +105,10 @@ describe('Admin access route tests', () => {
   async function expectAdminRequestsForbidden(agent) {
     for (const adminRequest of adminRequests()) {
       let pendingRequest = agent[adminRequest.method](adminRequest.path);
+
+      if (adminRequest.method !== 'get') {
+        pendingRequest = pendingRequest.set('X-Trustroots-Request', '1');
+      }
 
       if (adminRequest.body) {
         pendingRequest = pendingRequest.send(adminRequest.body);

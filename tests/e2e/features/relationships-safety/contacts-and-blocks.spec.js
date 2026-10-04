@@ -313,7 +313,9 @@ test.describe.serial('contacts and safety feature coverage', () => {
     const contact = await findContactByUsers(bob.id, alice.id);
     expect(contact).toBeTruthy();
 
-    const unauthorized = await page.request.put(`/api/contact/${contact._id}`);
+    const unauthorized = await page.request.put(`/api/contact/${contact._id}`, {
+      headers: { 'X-Trustroots-Request': '1' },
+    });
     expect(unauthorized.status()).toBe(404);
 
     const context = await createIsolatedContext(browser, baseURL);
@@ -327,6 +329,7 @@ test.describe.serial('contacts and safety feature coverage', () => {
 
       const confirm = await alicePage.request.put(
         `/api/contact/${contact._id}`,
+        { headers: { 'X-Trustroots-Request': '1' } },
       );
       expect(confirm.ok()).toBeTruthy();
       expect((await confirm.json()).confirmed).toBe(true);
@@ -366,7 +369,9 @@ test.describe.serial('contacts and safety feature coverage', () => {
       expect(Array.isArray(await common.json())).toBeTruthy();
 
       const contact = await findContactByUsers(bob.id, alice.id);
-      const remove = await page.request.delete(`/api/contact/${contact._id}`);
+      const remove = await page.request.delete(`/api/contact/${contact._id}`, {
+        headers: { 'X-Trustroots-Request': '1' },
+      });
       expect(remove.ok()).toBeTruthy();
 
       const removed = await page.request.get(`/api/contact/${contact._id}`);
@@ -402,11 +407,13 @@ test.describe.serial('contacts and safety feature coverage', () => {
 
       const unblock = await page.request.delete(
         `/api/blocked-users/${bob.username}`,
+        { headers: { 'X-Trustroots-Request': '1' } },
       );
       expect(unblock.ok()).toBeTruthy();
 
       const block = await page.request.put(
         `/api/blocked-users/${bob.username}`,
+        { headers: { 'X-Trustroots-Request': '1' } },
       );
       expect(block.ok()).toBeTruthy();
     } finally {
@@ -438,6 +445,78 @@ test.describe.serial('contacts and safety feature coverage', () => {
 
       const blockedList = await page.request.get('/api/blocked-users');
       expect(blockedList.ok()).toBeTruthy();
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('blocked members receive default avatars while blockers can still unblock', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'safety.block-effects', [
+      'Blocked profile actions are hidden or disabled.',
+      'Blocked users cannot start or continue conversations where prohibited.',
+      'Blocked members receive default avatars while blockers can still unblock.',
+    ]);
+
+    const blocker = createUser();
+    const blocked = createUser();
+    const context = await createIsolatedContext(browser, baseURL);
+    const page = await context.newPage();
+
+    try {
+      await registerViaApi(context.request, blocker);
+      await registerViaApi(context.request, blocked);
+      await Promise.all(
+        [blocker, blocked].map(user =>
+          updateUserByUsername(user.username, {
+            $set: { public: true, avatarUploaded: true, avatarSource: 'local' },
+          }),
+        ),
+      );
+
+      await signInViaApi(page, context.request, blocker);
+      const block = await page.request.put(
+        `/api/blocked-users/${blocked.username}`,
+        { headers: { 'X-Trustroots-Request': '1' } },
+      );
+      expect(block.ok()).toBeTruthy();
+
+      const blockerProfile = await page.request.get(
+        `/api/users/${blocked.username}`,
+      );
+      expect(blockerProfile.ok()).toBeTruthy();
+      const blockedId = await fetchUserIdByUsername(
+        context.request,
+        blocked.username,
+      );
+      const blockerId = await fetchUserIdByUsername(
+        context.request,
+        blocker.username,
+      );
+      const blockedUserAvatar = await page.request.get(
+        `/api/users/${blockedId}/avatar?size=128`,
+        { maxRedirects: 0 },
+      );
+      expect(blockedUserAvatar.headers().location).toContain(
+        '/uploads-profile/',
+      );
+
+      await signInViaApi(page, context.request, blocked);
+      const hiddenBlockerProfile = await page.request.get(
+        `/api/users/${blocker.username}`,
+      );
+      expect(hiddenBlockerProfile.status()).toBe(404);
+
+      const hiddenBlockerAvatar = await page.request.get(
+        `/api/users/${blockerId}/avatar?size=128`,
+        { maxRedirects: 0 },
+      );
+      expect(hiddenBlockerAvatar.status()).toBe(302);
+      expect(hiddenBlockerAvatar.headers().location).toContain(
+        '/img/avatar-128.png',
+      );
     } finally {
       await context.close();
     }

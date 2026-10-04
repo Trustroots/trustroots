@@ -36,6 +36,18 @@ afterEach(() => {
 });
 
 describe('<ThreadReply>', () => {
+  it('focuses the editor when desktop autofocus is enabled', () => {
+    const { getByRole } = render(<ThreadReply autoFocus onSend={jest.fn()} />);
+
+    expect(getByRole('textbox')).toHaveFocus();
+  });
+
+  it('does not focus the editor on initial mobile render', () => {
+    const { getByRole } = render(<ThreadReply onSend={jest.fn()} />);
+
+    expect(getByRole('textbox')).not.toHaveFocus();
+  });
+
   it('loads and saves the draft for a cached thread', () => {
     window.localStorage.setItem('messages-draft-user', 'Hello there');
 
@@ -69,6 +81,7 @@ describe('<ThreadReply>', () => {
       expect(onSend).toHaveBeenCalledWith('<p>Can I stay?</p>'),
     );
     await waitFor(() => expect(getByRole('textbox')).toHaveValue(''));
+    expect(getByRole('textbox')).toHaveFocus();
     expect(window.localStorage.getItem('messages-draft-user')).toBeNull();
   });
 

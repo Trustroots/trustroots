@@ -69,6 +69,13 @@ test.describe.serial('account settings feature coverage', () => {
       },
     });
     expect(changed.ok()).toBeTruthy();
+    const changedProfile = (await changed.json()).user;
+    expect(changedProfile.username).toBe(user.username);
+    expect(changedProfile).not.toHaveProperty('password');
+    expect(changedProfile).not.toHaveProperty('salt');
+    expect(changedProfile).not.toHaveProperty('emailToken');
+    expect(changedProfile).not.toHaveProperty('resetPasswordToken');
+    expect(changedProfile).not.toHaveProperty('pushRegistration');
   });
 
   test('members can change their password through account settings', async ({
@@ -123,16 +130,22 @@ test.describe.serial('account settings feature coverage', () => {
     await signInViaApi(page, request, user);
 
     const invalid = await page.request.put('/api/users', {
+      headers: { Origin: new URL(page.url()).origin },
       data: { locale: 'definitely-invalid-locale' },
     });
     expect(invalid.status()).toBe(400);
 
     const tagline = 'E2E account update tagline';
     const valid = await page.request.put('/api/users', {
+      headers: { Origin: new URL(page.url()).origin },
       data: { tagline },
     });
     expect(valid.ok()).toBeTruthy();
-    expect((await valid.json()).tagline).toBe(tagline);
+    const updatedProfile = await valid.json();
+    expect(updatedProfile.tagline).toBe(tagline);
+    expect(updatedProfile.email).toBe(user.email);
+    expect(updatedProfile.locale).toBeDefined();
+    expect(updatedProfile.blocked).toEqual([]);
   });
 
   test('older members who sign in through the UI can change username', async ({
@@ -143,6 +156,7 @@ test.describe.serial('account settings feature coverage', () => {
       'Account edit page is reachable.',
       'Valid account details update persists.',
       'Invalid account details show validation errors.',
+      'Username change rules are visible in account settings.',
     ]);
 
     const user = createUser();
@@ -165,6 +179,8 @@ test.describe.serial('account settings feature coverage', () => {
 
     await expect(page).toHaveURL(/\/profile\/edit\/account/);
     await expect(page.getByLabel('Username', { exact: true })).toBeEnabled();
+    await expect(page.getByText(/three months after joining/)).toBeVisible();
+    await expect(page.getByText(/at least one letter or number/)).toBeVisible();
 
     const nextUsername = createUser().username;
     await page.getByLabel('Username', { exact: true }).fill(nextUsername);
@@ -223,10 +239,14 @@ test.describe.serial('account settings feature coverage', () => {
     await registerViaApi(request, user);
     await signInViaApi(page, request, user);
 
-    const invalid = await page.request.delete('/api/users/remove/bad-token');
+    const invalid = await page.request.delete('/api/users/remove/bad-token', {
+      headers: { 'X-Trustroots-Request': '1' },
+    });
     expect(invalid.status()).toBe(400);
 
-    const requestRemoval = await page.request.delete('/api/users');
+    const requestRemoval = await page.request.delete('/api/users', {
+      headers: { 'X-Trustroots-Request': '1' },
+    });
     expect(requestRemoval.ok()).toBeTruthy();
 
     const storedUser = await findUserByUsername(user.username);
@@ -341,7 +361,13 @@ test.describe.serial('account settings feature coverage', () => {
       expect(removedRoute.status()).toBe(404);
     }
 
-    expect((await page.request.put('/api/auth/facebook')).status()).toBe(404);
+    expect(
+      (
+        await page.request.put('/api/auth/facebook', {
+          headers: { 'X-Trustroots-Request': '1' },
+        })
+      ).status(),
+    ).toBe(404);
     for (const provider of ['facebook', 'github']) {
       const removedCallback = await page.request.get(
         `/api/auth/${provider}/callback`,
@@ -351,6 +377,7 @@ test.describe.serial('account settings feature coverage', () => {
 
     const invalidProvider = await page.request.delete(
       '/api/users/accounts/not-a-provider',
+      { headers: { 'X-Trustroots-Request': '1' } },
     );
     expect(invalidProvider.status()).toBe(400);
 
@@ -411,10 +438,45 @@ test.describe.serial('account settings feature coverage', () => {
 
     const remove = await page.request.delete(
       `/api/users/push/registrations/${token}`,
+      { headers: { 'X-Trustroots-Request': '1' } },
     );
     expect(remove.ok()).toBeTruthy();
 
     const storedUser = await findUserByUsername(user.username);
     expect(storedUser.pushRegistration || []).toEqual([]);
+  });
+
+  test('Android members can register and remove a UnifiedPush endpoint', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.android-message-alerts', [
+      'A signed-in Android member can register an encrypted UnifiedPush endpoint.',
+      'Only allowlisted HTTPS endpoints are accepted and the member can opt out.',
+    ]);
+    const user = createUser();
+    await registerViaApi(request, user);
+    await signInViaApi(page, request, user);
+    const config = await page.request.get('/api/users/unified-push');
+    expect(config.ok()).toBeTruthy();
+    expect(await config.json()).toMatchObject({ enabled: true });
+    const registration = {
+      endpoint: `https://ntfy.sh/trustroots-e2e-${Date.now()}`,
+      publicKey:
+        'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
+      auth: 'abcdefghijklmnopqrstuv',
+    };
+    const rejected = await page.request.post('/api/users/unified-push', {
+      data: { ...registration, endpoint: 'https://example.org/push' },
+    });
+    expect(rejected.status()).toBe(400);
+    const added = await page.request.post('/api/users/unified-push', {
+      data: registration,
+    });
+    expect(added.status()).toBe(204);
+    const removed = await page.request.delete('/api/users/unified-push', {
+      data: { endpoint: registration.endpoint },
+    });
+    expect(removed.status()).toBe(204);
   });
 });

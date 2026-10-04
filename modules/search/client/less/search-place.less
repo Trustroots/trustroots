@@ -1,6 +1,17 @@
 @import '~less/global-variables';
 @import './variables';
 
+// Match the legacy large input's explicit height. Bootstrap 5's large button
+// otherwise ends up two pixels taller and breaks the shared bottom border.
+.search-place .input-group-btn {
+  display: flex;
+  align-items: stretch;
+
+  .btn {
+    height: @input-height-large;
+  }
+}
+
 // Search input at sidebar (bigger screens)
 .search-sidebar-section {
   .search-place {

@@ -12,6 +12,18 @@ const {
 const should = require('should');
 
 describe('React route ownership', function () {
+  it('owns username admin links with the same admin-only access as ID links', () => {
+    const matched = matchReactRoute('/admin/user/fictional-member');
+    matched.params.should.deepEqual({ username: 'fictional-member' });
+    matched.policy.path.should.equal('/admin/user/:username');
+    should(
+      getReactRouteAccessRedirect(matched.policy, { roles: ['admin'] }),
+    ).be.null();
+    getReactRouteAccessRedirect(matched.policy, {
+      roles: ['welcome-team'],
+    }).should.equal('/volunteering');
+    getReactRouteAccessRedirect(matched.policy, null).should.equal('/signin');
+  });
   it('lists the first React-owned route group', function () {
     REACT_OWNED_PATHS.should.containEql('/support');
     REACT_OWNED_PATHS.should.containEql('/statistics');

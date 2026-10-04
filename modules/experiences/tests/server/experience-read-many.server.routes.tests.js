@@ -97,19 +97,21 @@ describe('Read experiences by userTo Id', () => {
         .expect(200);
 
       for (const ref of body) {
+        const expectedMiniFields = userProfile.userMiniProfileFields
+          .split(' ')
+          .slice(2, -1)
+          .filter(field => field !== 'avatarVersion');
         should(ref)
           .have.property('userFrom')
           .which.is.Object()
-          .with.properties(
-            userProfile.userMiniProfileFields.split(' ').slice(2, -1),
-          );
+          .with.properties(expectedMiniFields);
+        should(ref.userFrom).not.have.property('avatarVersion');
 
         should(ref)
           .have.property('userTo')
           .which.is.Object()
-          .with.properties(
-            userProfile.userMiniProfileFields.split(' ').slice(2, -1),
-          );
+          .with.properties(expectedMiniFields);
+        should(ref.userTo).not.have.property('avatarVersion');
 
         should(ref).have.propertyByPath('interactions', 'met').Boolean();
         should(ref).have.propertyByPath('interactions', 'guest').Boolean();
@@ -141,6 +143,22 @@ describe('Read experiences by userTo Id', () => {
 
       should(body[0].userFrom._id).eql(users[0].id);
       should(body[1].userFrom._id).eql(users[4].id);
+    });
+
+    it('includes an avatar version when a member has a versioned avatar', async () => {
+      const version = 'a'.repeat(32);
+      users[0].avatarVersion = version;
+      await users[0].save();
+
+      const { body } = await agent
+        .get(`/api/experiences?userTo=${users[1]._id}`)
+        .expect(200);
+
+      const experience = body.find(
+        ref => String(ref.userFrom._id) === String(users[0]._id),
+      );
+      should(experience).not.be.undefined();
+      should(experience.userFrom.avatarVersion).eql(version);
     });
 
     it('[param userTo] userTo is self, respond with all public and pending experiences to userTo', async () => {

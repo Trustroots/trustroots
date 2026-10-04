@@ -49,3 +49,55 @@ test('switching profile tabs keeps the loaded profile visible', async ({
   await expect(page.locator('.profile-tabs')).toBeVisible();
   expect(profileRequests).toBe(0);
 });
+
+test('mobile profile navigation stays compact and readable', async ({
+  page,
+  request,
+}) => {
+  const member = SEEDED_MEMBERS[0];
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signInViaApi(page, request, member);
+  await page.goto(`/profile/${member.username}/overview`);
+
+  const bottomNavigation = page.locator('.profile-view-navbar-mobile');
+  await expect(bottomNavigation).toBeVisible();
+  const tabs = bottomNavigation.getByRole('tab');
+  await expect(tabs).toHaveCount(4);
+  const tabBounds = await tabs.evaluateAll(links =>
+    links.map(link => link.getBoundingClientRect().toJSON()),
+  );
+  expect(Math.max(...tabBounds.map(bounds => bounds.y))).toBeLessThanOrEqual(
+    Math.min(...tabBounds.map(bounds => bounds.y)) + 1,
+  );
+  const bottomBounds = await bottomNavigation.boundingBox();
+  expect(bottomBounds.height).toBeLessThanOrEqual(60);
+  for (const tab of await tabs.all()) {
+    await expect(tab).toHaveCSS('color', 'rgb(255, 255, 255)');
+  }
+
+  const headerLinks = page.locator(
+    '#tr-header .nav-header-primary > li:visible > a',
+  );
+  await expect(headerLinks).toHaveCount(4);
+  const headerBounds = await headerLinks.evaluateAll(links =>
+    links.map(link => link.getBoundingClientRect().toJSON()),
+  );
+  const widths = headerBounds.map(bounds => bounds.width);
+  expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(2);
+  expect(headerBounds[0].x).toBeLessThan(40);
+  expect(headerBounds[3].right).toBeGreaterThan(350);
+
+  const otherMember = SEEDED_MEMBERS[1];
+  await page.goto(`/profile/${otherMember.username}/overview`);
+  const profileActions = page.locator('.navbar-fixed-top-below');
+  const actionLinks = profileActions.getByRole('link');
+  await expect(actionLinks).toHaveCount(3);
+  const actionBounds = await actionLinks.evaluateAll(links =>
+    links.map(link => link.getBoundingClientRect().toJSON()),
+  );
+  expect(Math.max(...actionBounds.map(bounds => bounds.y))).toBeLessThanOrEqual(
+    Math.min(...actionBounds.map(bounds => bounds.y)) + 1,
+  );
+  const actionsBar = await profileActions.boundingBox();
+  expect(actionsBar.height).toBeLessThanOrEqual(60);
+});

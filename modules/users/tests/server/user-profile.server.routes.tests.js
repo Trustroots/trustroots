@@ -788,6 +788,37 @@ describe('User profile CRUD tests', function () {
     });
   });
 
+  it('should not be able to set the server-owned avatar version', function (done) {
+    user.roles = ['user'];
+
+    user.save(function (err) {
+      should.not.exist(err);
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          if (signinErr) {
+            return done(signinErr);
+          }
+
+          agent
+            .put('/api/users')
+            .send({ avatarVersion: '../another-member' })
+            .expect(200)
+            .end(function (userInfoErr) {
+              should.not.exist(userInfoErr);
+
+              User.findById(user._id, function (lookupErr, savedUser) {
+                should.not.exist(lookupErr);
+                (savedUser.avatarVersion === undefined).should.be.true();
+                done();
+              });
+            });
+        });
+    });
+  });
+
   it('should not be able to update profile details with existing email', function (done) {
     const _user2 = _user;
 
@@ -903,6 +934,7 @@ describe('User profile CRUD tests', function () {
 
           agent
             .post('/api/users-avatar')
+            .set('X-Trustroots-Request', '1')
             .attach('avatar', './modules/users/tests/server/img/avatar.jpg')
             .expect(200)
             .end(function (userInfoErr, userInfoRes) {
@@ -931,6 +963,7 @@ describe('User profile CRUD tests', function () {
 
           agent
             .post('/api/users-avatar')
+            .set('X-Trustroots-Request', '1')
             .attach('avatar', './modules/users/tests/server/img/avatar.gif')
             .expect(200)
             .end(function (userInfoErr, userInfoRes) {
@@ -959,6 +992,7 @@ describe('User profile CRUD tests', function () {
 
           agent
             .post('/api/users-avatar')
+            .set('X-Trustroots-Request', '1')
             .attach('avatar', './modules/users/tests/server/img/avatar.png')
             .expect(200)
             .end(function (userInfoErr, userInfoRes) {
@@ -987,6 +1021,7 @@ describe('User profile CRUD tests', function () {
 
           agent
             .post('/api/users-avatar')
+            .set('X-Trustroots-Request', '1')
             .attach(
               'fieldThatDoesntWork',
               './modules/users/tests/server/img/avatar.jpg',
@@ -1014,6 +1049,7 @@ describe('User profile CRUD tests', function () {
 
           agent
             .post('/api/users-avatar')
+            .set('X-Trustroots-Request', '1')
             .attach('avatar', './modules/users/tests/server/img/test.pdf')
             .expect(415)
             .end(function (userInfoErr, userInfoRes) {
@@ -1042,6 +1078,7 @@ describe('User profile CRUD tests', function () {
 
           agent
             .post('/api/users-avatar')
+            .set('X-Trustroots-Request', '1')
             .attach(
               'avatar',
               './modules/users/tests/server/img/test-actually-pdf-looks-like-jpg.jpg',
@@ -1073,6 +1110,7 @@ describe('User profile CRUD tests', function () {
 
           agent
             .post('/api/users-avatar')
+            .set('X-Trustroots-Request', '1')
             .attach('avatar', './modules/users/tests/server/img/test.svg')
             .expect(415)
             .end(function (userInfoErr, userInfoRes) {
@@ -1101,6 +1139,7 @@ describe('User profile CRUD tests', function () {
 
           agent
             .post('/api/users-avatar')
+            .set('X-Trustroots-Request', '1')
             .attach(
               'avatar',
               './modules/users/tests/server/img/this-is-text-file.jpg',
@@ -1132,6 +1171,7 @@ describe('User profile CRUD tests', function () {
 
           agent
             .post('/api/users-avatar')
+            .set('X-Trustroots-Request', '1')
             .attach(
               'avatar',
               './modules/users/tests/server/img/too-big-file.png',

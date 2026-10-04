@@ -56,7 +56,10 @@ describe('Admin acquisition stories CRUD tests', () => {
 
   describe('Acquisition stories', () => {
     it('non-authenticated users should not be allowed to read acquisition stories', async () => {
-      await agent.post('/api/admin/acquisition-stories').expect(403);
+      await agent
+        .post('/api/admin/acquisition-stories')
+        .set('X-Trustroots-Request', '1')
+        .expect(403);
     });
 
     describe('As authenticated user...', () => {
@@ -66,13 +69,17 @@ describe('Admin acquisition stories CRUD tests', () => {
 
       it('non-admin users should not be allowed to read acquisition stories', async () => {
         await utils.signIn(credentialsRegular, agent);
-        await agent.post('/api/admin/acquisition-stories').expect(403);
+        await agent
+          .post('/api/admin/acquisition-stories')
+          .set('X-Trustroots-Request', '1')
+          .expect(403);
       });
 
       it('admin users should be allowed to read acquisition stories', async () => {
         await utils.signIn(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/acquisition-stories')
+          .set('X-Trustroots-Request', '1')
           .expect(200);
 
         body.length.should.equal(acquisitionStories.length);
@@ -82,7 +89,10 @@ describe('Admin acquisition stories CRUD tests', () => {
 
   describe('Acquisition stories analysis', () => {
     it('non-authenticated users should not be allowed to read acquisition stories analysis', async () => {
-      await agent.post('/api/admin/acquisition-stories/analysis').expect(403);
+      await agent
+        .post('/api/admin/acquisition-stories/analysis')
+        .set('X-Trustroots-Request', '1')
+        .expect(403);
     });
 
     describe('As authenticated user...', () => {
@@ -92,13 +102,17 @@ describe('Admin acquisition stories CRUD tests', () => {
 
       it('non-admin users should not be allowed to read acquisition stories analysis', async () => {
         await utils.signIn(credentialsRegular, agent);
-        await agent.post('/api/admin/acquisition-stories/analysis').expect(403);
+        await agent
+          .post('/api/admin/acquisition-stories/analysis')
+          .set('X-Trustroots-Request', '1')
+          .expect(403);
       });
 
       it('admin users should be allowed to read acquisition stories analysis and analysis have certain shape', async () => {
         await utils.signIn(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/acquisition-stories/analysis')
+          .set('X-Trustroots-Request', '1')
           .expect(200);
 
         const sortByCategory = rows =>

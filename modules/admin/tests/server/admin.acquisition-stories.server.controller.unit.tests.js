@@ -9,6 +9,7 @@ const adminAcquisitionStories = require('../../server/controllers/admin.acquisit
 const utils = require('../../../../testutils/server/data.server.testutil');
 const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
+const Message = mongoose.model('Message');
 
 function mockResponse() {
   const res = { statusCode: 200, body: null };
@@ -30,6 +31,132 @@ describe('Admin acquisition stories controller unit tests', () => {
   });
 
   describe('list', () => {
+    it('uses the first visible current-team message and returns only welcome metadata', async () => {
+      const users = utils.generateUsers(5);
+      users[0].acquisitionStory = 'A fictional recommendation.';
+      users[0].languages = ['fre', 'eng'];
+      users[0].roles = ['user', 'welcome-team'];
+      users[1].roles = ['user', 'welcome-team'];
+      users[2].roles = ['user', 'welcome-team'];
+      users[3].roles = ['user', 'admin'];
+      users[4].roles = ['user', 'welcome-team'];
+      const saved = await utils.saveUsers(users);
+      const recipient = saved[0];
+      const firstDate = new Date('2026-01-02T12:00:00Z');
+      await Message.create([
+        {
+          userFrom: saved[3]._id,
+          userTo: recipient._id,
+          content: 'Admin message.',
+          created: new Date('2026-01-01'),
+        },
+        {
+          userFrom: recipient._id,
+          userTo: recipient._id,
+          content: 'Self message.',
+          created: new Date('2026-01-01'),
+        },
+        {
+          userFrom: saved[2]._id,
+          userTo: recipient._id,
+          content: 'Hidden message.',
+          shadowHidden: true,
+          created: new Date('2026-01-01'),
+        },
+        {
+          userFrom: recipient._id,
+          userTo: saved[2]._id,
+          content: 'Outgoing message.',
+          created: new Date('2026-01-01'),
+        },
+        {
+          userFrom: saved[1]._id,
+          userTo: recipient._id,
+          content: 'First welcome.',
+          read: false,
+          created: firstDate,
+        },
+        {
+          userFrom: saved[2]._id,
+          userTo: recipient._id,
+          content: 'Later welcome.',
+          created: new Date('2026-01-03'),
+        },
+        {
+          userFrom: saved[4]._id,
+          userTo: recipient._id,
+          content: 'Former team message.',
+          created: new Date('2026-01-01'),
+        },
+      ]);
+      await User.updateOne(
+        { _id: saved[4]._id },
+        { $pull: { roles: 'welcome-team' } },
+      );
+      const aggregate = sinon.spy(Message, 'aggregate');
+      const res = mockResponse();
+      await adminAcquisitionStories.list({}, res);
+      aggregate.firstCall.args[0][0].$match.userFrom.$in.should.deepEqual([
+        recipient._id,
+        saved[1]._id,
+        saved[2]._id,
+      ]);
+      res.body[0].languages.should.deepEqual(['fre', 'eng']);
+      res.body[0].welcomer.should.deepEqual({
+        _id: saved[1]._id,
+        username: saved[1].username,
+        displayName: saved[1].displayName,
+        created: firstDate,
+      });
+      res.body[0].welcomer.should.not.have.property('content');
+      // Revoking the first sender's role exposes the next eligible contact.
+      await User.updateOne(
+        { _id: saved[1]._id },
+        { $pull: { roles: 'welcome-team' } },
+      );
+      await adminAcquisitionStories.list({}, res);
+      res.body[0].welcomer._id.should.eql(saved[2]._id);
+      await User.updateOne(
+        { _id: saved[2]._id },
+        { $pull: { roles: 'welcome-team' } },
+      );
+      await adminAcquisitionStories.list({}, res);
+      should(res.body[0].welcomer).equal(null);
+    });
+
+    it('breaks equal contact timestamps by message ID and ignores deleted senders', async () => {
+      const users = utils.generateUsers(3);
+      users[0].acquisitionStory = 'Another fictional recommendation.';
+      users[1].roles = users[2].roles = ['user', 'welcome-team'];
+      const saved = await utils.saveUsers(users);
+      const created = new Date('2026-01-01');
+      await Message.create([
+        {
+          _id: new mongoose.Types.ObjectId('666000000000000000000002'),
+          userFrom: saved[2]._id,
+          userTo: saved[0]._id,
+          content: 'Second tied welcome.',
+          created,
+        },
+        {
+          _id: new mongoose.Types.ObjectId('666000000000000000000001'),
+          userFrom: saved[1]._id,
+          userTo: saved[0]._id,
+          content: 'First tied welcome.',
+          created,
+        },
+        {
+          userFrom: new mongoose.Types.ObjectId(),
+          userTo: saved[0]._id,
+          content: 'Deleted sender.',
+          created: new Date('2025-01-01'),
+        },
+      ]);
+      const res = mockResponse();
+      await adminAcquisitionStories.list({}, res);
+      res.body[0].welcomer._id.should.eql(saved[1]._id);
+    });
+
     it('yields to I/O while comparing the bounded data sources', async function () {
       this.timeout(30000);
       const stories = Array.from({ length: 500 }, (_, index) => ({
@@ -52,6 +179,9 @@ describe('Admin acquisition stories controller unit tests', () => {
         sort: () => ({ limit: storyLimit }),
       });
       find.onSecondCall().returns({
+        select: () => ({ exec: async () => [] }),
+      });
+      find.onThirdCall().returns({
         select: () => ({
           sort: () => ({
             limit: () => ({ exec: async () => restrictedUsers }),
@@ -61,6 +191,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       sinon.stub(Offer, 'find').returns({
         select: () => ({ sort: () => ({ exec: async () => [] }) }),
       });
+      sinon.stub(Message, 'aggregate').returns({ exec: async () => [] });
       let ioTurns = 0;
       let pending;
       const heartbeat = () => {
@@ -373,6 +504,33 @@ describe('Admin acquisition stories controller unit tests', () => {
       categories.should.containEql('example');
       categories.should.containEql('single');
       categories.should.containEql('something');
+    });
+
+    it('corrects one edit but does not treat a transposition as one edit', async () => {
+      const stories = [
+        'community',
+        'comunity',
+        'commuunity',
+        'commanity',
+        'commuinty',
+        'coxxunity',
+      ].map(acquisitionStory => ({ acquisitionStory }));
+      const storyQuery = {
+        exec: sinon.stub().resolves(stories),
+      };
+      storyQuery.sort = sinon.stub().returns(storyQuery);
+      storyQuery.limit = sinon.stub().returns(storyQuery);
+      sinon.stub(User, 'find').returns(storyQuery);
+
+      const res = mockResponse();
+      await adminAcquisitionStories.getAnalysis({}, res);
+
+      const counts = Object.fromEntries(
+        res.body.table.map(({ category, observed }) => [category, observed]),
+      );
+      counts.community.should.equal(4);
+      counts.commuinty.should.equal(1);
+      counts.coxxunity.should.equal(1);
     });
 
     it('ignores URL tokens that cannot be parsed', async () => {

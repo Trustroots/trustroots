@@ -1,4 +1,6 @@
-const proxyquire = require('proxyquire').noCallThru();
+const sinon = require('sinon');
+const winston = require('winston');
+const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
 const languagesObject = require('../../../../config/languages/languages.json');
 const languagesArray = require('../../../../config/languages/languages-array.json');
 const deprecatedLanguages = require('../../../../config/languages/deprecated');
@@ -9,14 +11,7 @@ const sanitizeOwnProfile = user => ({
   sanitized: true,
   username: user.username,
 });
-const coreController = proxyquire(
-  '../../server/controllers/core.server.controller',
-  {
-    '../../../users/server/controllers/users.profile.server.controller': {
-      sanitizeOwnProfile,
-    },
-  },
-);
+const coreController = require('../../server/controllers/core.server.controller');
 
 /**
  * Minimal Express-like response mock for unit-testing controller actions
@@ -69,6 +64,13 @@ function mockResponse(acceptType) {
 }
 
 describe('Controller: core', function () {
+  beforeEach(function () {
+    sinon.stub(userProfile, 'sanitizeOwnProfile').callsFake(sanitizeOwnProfile);
+  });
+
+  afterEach(function () {
+    sinon.restore();
+  });
   describe('renderIndex', function () {
     it('marks the signup page as an invite', function () {
       const res = mockResponse();
@@ -163,6 +165,34 @@ describe('Controller: core', function () {
       res.statusCode.should.equal(204);
     });
 
+    it('redacts report URLs before logging security reports', function () {
+      const originalLog = winston.log;
+      const calls = [];
+      winston.log = function () {
+        calls.push(Array.from(arguments));
+      };
+
+      try {
+        const res = mockResponse();
+        coreController.receiveCSPViolationReport(
+          {
+            body: {
+              'blocked-uri': 'https://example.test/?token=private-token',
+            },
+          },
+          res,
+        );
+
+        const report = calls.find(
+          ([level, event]) =>
+            level === 'warn' && event === 'CSP violation report #ljeanw',
+        );
+        report[2].should.deepEqual({ report: '[REDACTED]' });
+      } finally {
+        winston.log = originalLog;
+      }
+    });
+
     it('responds with status 204 when no report body is present', function () {
       const res = mockResponse();
       coreController.receiveCSPViolationReport({ body: null }, res);
@@ -197,6 +227,34 @@ describe('Controller: core', function () {
         res,
       );
       res.statusCode.should.equal(204);
+    });
+
+    it('redacts report URLs before logging security reports', function () {
+      const originalLog = winston.log;
+      const calls = [];
+      winston.log = function () {
+        calls.push(Array.from(arguments));
+      };
+
+      try {
+        const res = mockResponse();
+        coreController.receiveExpectCTViolationReport(
+          {
+            body: {
+              'blocked-uri': 'https://example.test/?token=private-token',
+            },
+          },
+          res,
+        );
+
+        const report = calls.find(
+          ([level, event]) =>
+            level === 'warn' && event === 'Expect-CT violation report #3hg8ha',
+        );
+        report[2].should.deepEqual({ report: '[REDACTED]' });
+      } finally {
+        winston.log = originalLog;
+      }
     });
 
     it('responds with status 204 when no report body is present', function () {

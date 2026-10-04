@@ -9,6 +9,14 @@
  */
 
 module.exports = {
+  // Test-only VAPID pair. Production keys must be supplied through environment variables.
+  webPush: {
+    publicKey:
+      'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
+    privateKey: 'dhrEzewvJiOg7Q0oC5goPiL6TUiAItTMMqhu8-u1qcw',
+    subject: 'mailto:push-test@example.org',
+    allowedHosts: ['ntfy.sh'],
+  },
   featureFlags: {
     reference: true,
   },
@@ -36,6 +44,16 @@ module.exports = {
   maxUploadSize: 10000, // =10kb in bytes. Set ridiculously small just for tests
   host: process.env.TRUSTROOTS_E2E_HOST || 'localhost',
   port: Number(process.env.PORT) || 3001,
+  csrfAllowedOrigins: [
+    `http://localhost:${process.env.TRUSTROOTS_E2E_WEB_PORT || 4300}`,
+    `http://localhost:${
+      process.env.TRUSTROOTS_E2E_API_PORT || process.env.PORT || 4301
+    }`,
+    `http://127.0.0.1:${process.env.TRUSTROOTS_E2E_WEB_PORT || 4300}`,
+    `http://127.0.0.1:${
+      process.env.TRUSTROOTS_E2E_API_PORT || process.env.PORT || 4301
+    }`,
+  ],
   // Subset of `default.js` illegalStrings for route tests. The full production
   // list lives in default.js; extend this when adding reserved names that need
   // explicit signup/profile test coverage.

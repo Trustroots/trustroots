@@ -8,6 +8,7 @@ const express = require('express');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const session = require('express-session');
+const csrfProtection = require('./csrf-protection');
 const mongoStore = require('connect-mongo');
 const favicon = require('serve-favicon');
 const compress = require('compression');
@@ -184,12 +185,16 @@ module.exports.initSession = function (app, connection) {
   // https://www.npmjs.com/package/express-session
   app.use(
     session({
-      saveUninitialized: true,
-      resave: true,
+      saveUninitialized: false,
+      resave: false,
       secret: config.sessionSecret,
+      // Trust forwarded protocol only when explicitly enabled for a trusted
+      // HTTPS frontend. Direct TLS (for example Passenger) needs no proxy.
+      proxy: config.sessionProxy === true,
       cookie: {
-        // If secure is true, and you access your site over HTTP, the cookie will not be set.
-        secure: false, // ...or you could use `config.https`, but it screws things up with Nginx proxy.
+        secure: config.https === true,
+        httpOnly: true,
+        sameSite: 'lax',
 
         // Specifies the number (in milliseconds) to use when calculating the
         // Expires Set-Cookie attribute. This is done by taking the current
@@ -419,9 +424,26 @@ module.exports.initHelmetHeaders = function (app) {
  */
 module.exports.initModulesClientRoutes = function (app) {
   // Setting the app router and static folder
+  app.use(denyAvatarStagingRequests);
   app.use('/', express.static(path.resolve('./public')));
   app.use('/', express.static(path.resolve('./public/assets')));
 };
+
+function denyAvatarStagingRequests(req, res, next) {
+  let decodedPath;
+  try {
+    decodedPath = decodeURIComponent(req.path);
+  } catch (error) {
+    return res.sendStatus(404);
+  }
+
+  if (decodedPath.split('/').some(segment => segment.startsWith('.staging-'))) {
+    return res.sendStatus(404);
+  }
+  return next();
+}
+
+module.exports.denyAvatarStagingRequests = denyAvatarStagingRequests;
 
 /**
  * Configure the modules ACL policies
@@ -458,11 +480,27 @@ module.exports.init = function (connection) {
   const app = express();
   app.set('query parser', query => qs.parse(query));
 
+  // Express 5 returns a fresh query object on every access. Keep one mutable
+  // object per request for middleware and local variables that normalise or
+  // read query values.
+  app.use((req, res, next) => {
+    Object.defineProperty(req, 'query', {
+      configurable: true,
+      enumerable: true,
+      value: req.query,
+    });
+    next();
+  });
+
   // Initialize local variables
   this.initLocalVariables(app);
 
   // Initialize Express middleware
   this.initMiddleware(app);
+
+  // Reject cross-origin state changes after method override and body parsing,
+  // but before session and route middleware.
+  app.use(csrfProtection(config));
 
   // Initialize Express view engine
   this.initViewEngine(app);

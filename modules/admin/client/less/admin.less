@@ -1,8 +1,18 @@
 @import '~less/global-variables';
 
 .navbar-admin {
-  margin-top: 36px;
+  margin-top: @navbar-height;
   margin-bottom: 0;
+
+  .navbar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .navbar-nav > li > a {
+    display: block;
+    padding: 10px 12px;
+  }
 
   + .container {
     padding-top: 18px;
@@ -141,7 +151,59 @@
   }
 }
 
+.admin-audit-log-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+
+  .form-control {
+    width: auto;
+    max-width: 100%;
+  }
+
+  label {
+    margin-bottom: 0;
+  }
+}
+
+.admin-audit-log-summary {
+  max-width: 32em;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.admin-audit-log-table details {
+  min-width: 7em;
+  summary {
+    cursor: pointer;
+  }
+  pre {
+    max-width: 32em;
+  }
+}
+
 .admin-acquisition-stories-table {
+  // A slight fade without lowering opacity on controls or focus indicators.
+  .admin-acquisition-stories-contacted {
+    &,
+    > td {
+      color: #474747;
+    }
+
+    a {
+      color: #98612a;
+    }
+
+    .text-muted {
+      color: #707070;
+    }
+  }
+
   th:first-child,
   th:nth-child(2),
   th:nth-child(3),

@@ -134,7 +134,28 @@ allow them to record moderation notes about that member.
 ### Requirement: Role changes and audit history
 
 The system SHALL let authorised administrators apply permitted moderation-role
-changes and review the administration audit history.
+changes, including removing a member's `shadowban` role, and review the
+administration audit history. Removing the role SHALL leave messages already
+hidden during the shadowban hidden.
+Role descriptions SHALL be available on hover and keyboard focus, and exposed
+to assistive technology without requiring visible explanatory paragraphs.
+
+#### Scenario: Administrator focuses role help
+
+- **WHEN** an administrator focuses a role label or the Welcome team control
+- **THEN** its explanation appears and is available to screen readers
+
+#### Scenario: Administrator unshadowbans a member
+
+- **WHEN** an authorised administrator confirms Unshadowban on a shadowbanned member report
+- **THEN** the `shadowban` role is removed and the member report reflects the change
+- **AND** the removal is recorded in moderation notes and the audit history
+- **AND** previously hidden messages remain hidden
+
+#### Scenario: Member attempts to remove a shadowban
+
+- **WHEN** a member without the `admin` role requests removal of a shadowban
+- **THEN** the system denies access
 
 #### Scenario: Administrator changes a member's moderation role
 
@@ -463,3 +484,111 @@ explain its compact column headings, and allow profile visibility to be sorted.
 - **THEN** each story shows whether the member's profile is visible
 - **AND** compact column headings provide accessible explanations
 - **AND** the administrator can sort the rows by profile visibility
+
+### Requirement: Acquisition welcome context
+
+The acquisition-stories list SHALL show a sortable Welcomer column derived from
+the first non-self, non-hidden incoming message from a current welcome-team
+member, including the sender's linked identity and date. Unread messages SHALL
+count. Members without a qualifying message SHALL show Unassigned. Contacted
+rows SHALL be subtly faded while preserving readable text and usable controls.
+The API SHALL batch contact metadata without returning message content.
+
+#### Scenario: First welcome message establishes the welcomer
+
+- **WHEN** a welcome-team member sends a visible message to a listed member
+- **THEN** reloading the list shows that sender and date and subtly fades the row
+- **AND** subsequent messages do not replace the first welcomer
+
+#### Scenario: Non-qualifying messages
+
+- **WHEN** only self-messages, hidden messages or messages from non-team senders exist
+- **THEN** the member remains Unassigned
+
+### Requirement: Acquisition language context
+
+The list SHALL display declared language names with languages shared with the
+signed-in viewer first, preserving profile order within both groups. Shared
+languages SHALL be bold except English, which SHALL retain normal weight.
+Empty language lists SHALL show Not specified. A viewer without languages SHALL
+see the original recipient language order without emphasis.
+
+#### Scenario: Shared languages
+
+- **WHEN** a member and viewer share English and another language
+- **THEN** those languages appear before unshared languages
+- **AND** only the shared non-English language is bold
+
+#### Scenario: Missing languages
+
+- **WHEN** a member has no declared languages
+- **THEN** the Languages column shows Not specified
+
+### Requirement: Profile admin navigation
+
+Public profile action links SHALL be consistently aligned. Administrators SHALL
+see an Admin action linking to `/admin/user?id=<viewed-member-id>`, on desktop
+and mobile. Other members, including the welcome team, SHALL not see it.
+
+#### Scenario: Administrator views a member
+
+- **WHEN** an administrator opens a member's profile
+- **THEN** the Admin action opens that member's existing admin record
+
+#### Scenario: Non-administrator views a member
+
+- **WHEN** a non-administrator opens a profile
+- **THEN** no Admin action is displayed
+
+### Requirement: Admin member username URLs
+
+The application SHALL support `/admin/user/:username` with the same admin-only
+access as `/admin/user`. It SHALL look up the exact username independently of
+fuzzy search results and their pagination, while preserving ID, IP and query
+URL support.
+
+#### Scenario: Exact username deep link despite a matching prefix
+
+- **GIVEN** members named `fictional-member` and `fictional-member-extra`
+- **WHEN** an administrator opens `/admin/user/fictional-member`
+- **THEN** the admin page shows the record for the exact `fictional-member` username
+
+### Requirement: Compact audit history
+
+The admin audit log SHALL display compact rows containing time, acting member,
+request route and a concise summary. Empty request fields and pagination fields
+SHALL be omitted from summaries. Raw body, params, query, IP address and log ID
+SHALL remain available through expandable details without changing stored logs.
+
+#### Scenario: Request summary
+
+- **WHEN** an entry contains an empty userId, a username and pagination criteria
+- **THEN** its summary shows the username without empty or pagination fields
+- **AND** its full request data remains available in expandable details
+
+### Requirement: Audit actor filters
+
+Administrators SHALL filter audit history by the staff username that performed
+the action and by current admin or welcome-team membership. Combined filters
+SHALL intersect. Filters SHALL apply before the latest 100 entries are selected.
+Username options SHALL include existing actors from all recorded history.
+The existing response array and admin-only access SHALL remain compatible.
+
+#### Scenario: Older matching staff activity
+
+- **WHEN** an administrator filters by an actor whose records precede the latest
+  100 unfiltered entries
+- **THEN** the actor's latest matching entries are returned
+
+#### Scenario: Team and username filters
+
+- **WHEN** an administrator selects a username and a team
+- **THEN** only that actor's entries are returned if they currently belong to that team
+- **AND** members holding both roles match either team
+
+#### Scenario: Invalid or missing results
+
+- **WHEN** an invalid team or non-string filter is supplied
+- **THEN** the API rejects the filter
+- **WHEN** no actors match valid filters
+- **THEN** the list returns an empty array

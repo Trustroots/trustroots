@@ -200,6 +200,7 @@ describe('Contact CRUD tests', function () {
   it('should not be able to delete contact if not logged in', function (done) {
     agent
       .delete('/api/contact/' + contact1Id)
+      .set('X-Trustroots-Request', '1')
       .expect(403)
       .end(function (contactDelErr, contactDelRes) {
         // Handle contact del error
@@ -497,6 +498,7 @@ describe('Contact CRUD tests', function () {
       // Confirm the un-confirmed Contact1 between User1 -> User2
       agent
         .put('/api/contact/' + contact1Id)
+        .set('X-Trustroots-Request', '1')
         .expect(200)
         .end(function (contactConfirmErr, contactConfirmRes) {
           // Handle contact confirm error
@@ -518,6 +520,7 @@ describe('Contact CRUD tests', function () {
     it('should be able to delete contact', function (done) {
       agent
         .delete('/api/contact/' + contact1Id)
+        .set('X-Trustroots-Request', '1')
         .expect(200)
         .end(function (contactDelErr) {
           // Handle contact del error

@@ -247,6 +247,7 @@ async function run() {
   // Screenshot runs intentionally select only changed specs. Keep their actual
   // coverage metrics, but require complete feature coverage for normal CI runs.
   const incompleteFeatureCoverage =
+    process.env.TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE !== 'true' &&
     process.env.TRUSTROOTS_E2E_REQUIRE_FULL_FEATURE_COVERAGE !== 'false' &&
     featureCoverageIncomplete(metrics);
   if (incompleteFeatureCoverage && status === 'passed') {

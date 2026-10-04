@@ -1,14 +1,54 @@
 @import '~less/global-variables';
-@import '~bootstrap/less/mixins/size';
+@import '~less/bootstrap/legacy-mixins';
 
 // Make space for .profile-edit-navbar-mobile
 .profile-edit {
   margin-bottom: @navbar-height;
+
+  @media (max-width: @screen-xs-max) {
+    margin-bottom: 80px;
+  }
+}
+
+.profile-edit-navbar-mobile .navbar-nav {
+  flex-direction: row;
+  width: 100%;
+
+  > li {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+.profile-newsletter label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  input[type='checkbox'] {
+    margin: 0;
+  }
+}
+
+.profile-remove-confirmation label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  input[type='checkbox'] {
+    margin: 0;
+  }
 }
 
 // Profile edit navbar, visible only on bigger screens
-.profile-edit-navbar a {
+.profile-edit-navbar > li > a {
   color: @text-color;
+  padding: 12px 15px;
+  line-height: 22px;
+}
+
+.profile-edit-navbar > li + li {
+  margin-top: 4px;
 }
 
 .profile-edit-description.medium-editor-element {
@@ -67,6 +107,29 @@
 .profile-avatar-choises .profile-edit-avatar-choise:last-child {
   border-bottom: 0;
   padding-bottom: 0;
+}
+
+.profile-edit-avatar-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 12px;
+
+  @media (max-width: @screen-sm-max) {
+    justify-content: center;
+  }
+
+  .radio {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+  }
+
+  .radio input[type='radio'] {
+    margin: 0;
+  }
 }
 
 // When avatar image works as a link

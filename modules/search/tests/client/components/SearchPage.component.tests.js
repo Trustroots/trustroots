@@ -39,7 +39,7 @@ jest.mock('use-debounce', () => {
         [],
       );
 
-      return [stable];
+      return stable;
     },
   };
 });
@@ -91,6 +91,25 @@ jest.mock(
 jest.mock('@/modules/core/client/api/languages.api', () => ({
   useLanguagesQuery: () => ({ data: { en: 'English', fi: 'Finnish' } }),
 }));
+
+jest.mock('@/modules/search/client/components/SearchSidebar.component', () => {
+  const React = require('react');
+  const ActualSearchSidebar = jest.requireActual(
+    '@/modules/search/client/components/SearchSidebar.component',
+  ).default;
+
+  return {
+    __esModule: true,
+    default: props => (
+      <>
+        <button onClick={() => props.onTabSelect('unexpected')} type="button">
+          Select unexpected tab
+        </button>
+        <ActualSearchSidebar {...props} />
+      </>
+    ),
+  };
+});
 
 jest.mock('@/modules/users/client/components/Avatar.component', () => ({
   __esModule: true,
@@ -227,6 +246,16 @@ describe('<SearchPage />', () => {
     );
 
     expect(document.querySelector('.search.is-sidebar-open')).toBeTruthy();
+  });
+
+  it('ignores unknown sidebar tab keys', () => {
+    renderSearchPage();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Select unexpected tab' }),
+    );
+
+    expect(screen.getByTestId('search-map')).toBeInTheDocument();
   });
 
   it('opens the filters tab from the mobile toolbar', () => {
@@ -523,6 +552,18 @@ describe('<SearchPage />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Preview offer' }));
 
     const resultsTab = await screen.findByRole('tab', { name: /^results$/i });
+    expect(resultsTab).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('switches between the filters and results tabs directly', () => {
+    renderSearchPage();
+
+    const filtersTab = screen.getByRole('tab', { name: /filters/i });
+    const resultsTab = screen.getByRole('tab', { name: /^results$/i });
+
+    fireEvent.click(filtersTab);
+    expect(filtersTab).toHaveAttribute('aria-selected', 'true');
+    fireEvent.click(resultsTab);
     expect(resultsTab).toHaveAttribute('aria-selected', 'true');
   });
 

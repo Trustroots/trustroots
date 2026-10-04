@@ -3,13 +3,15 @@
  */
 require('should');
 const moment = require('moment');
-const proxyquire = require('proxyquire').noCallThru();
+const emailService = require('../../../../core/server/services/email.server.service');
 const sinon = require('sinon');
 const async = require('async');
 const testutils = require('../../../../../testutils/server/server.testutil');
 const mongoose = require('mongoose');
+const webPush = require('web-push');
 const User = mongoose.model('User');
 const Message = mongoose.model('Message');
+const Registration = mongoose.model('UnifiedPushRegistration');
 
 /**
  * Globals
@@ -126,6 +128,69 @@ describe('Job: message unread', function () {
         });
       });
     });
+  });
+
+  it('sends one generic UnifiedPush alert with the first eligible reminder', async function () {
+    const pushService = require('../../../../users/server/services/unified-push.server.service');
+    await pushService.register(userToId, {
+      endpoint: 'https://ntfy.sh/anonymous-unread-test',
+      publicKey:
+        'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
+      auth: 'abcdefghijklmnopqrstuv',
+    });
+    message.created = moment().subtract({ minutes: 10, seconds: 1 });
+    await message.save();
+    await new Message({
+      ..._message,
+      created: moment().subtract({ minutes: 11 }),
+    }).save();
+    let finishPush;
+    const pushed = new Promise(resolve => {
+      finishPush = resolve;
+    });
+    const sent = sinon.stub(webPush, 'sendNotification').callsFake(() => {
+      finishPush();
+      return Promise.resolve();
+    });
+    sinon.stub(webPush, 'setVapidDetails');
+    try {
+      await new Promise((resolve, reject) => {
+        messageUnreadJobHandler({}, error =>
+          error ? reject(error) : resolve(),
+        );
+      });
+      await pushed;
+      sent.calledOnce.should.equal(true);
+      sent.firstCall.args[1].should.equal(
+        JSON.stringify({ senderId: userFromId.toString() }),
+      );
+      jobs.length.should.equal(1);
+    } finally {
+      sinon.restore();
+    }
+  });
+
+  it('still schedules the email when UnifiedPush delivery fails', async function () {
+    const pushService = require('../../../../users/server/services/unified-push.server.service');
+    const notifyUnread = sinon
+      .stub(pushService, 'notifyUnread')
+      .rejects(new Error('push unavailable'));
+    message.created = moment().subtract({ minutes: 10, seconds: 1 });
+    await message.save();
+
+    try {
+      await new Promise((resolve, reject) => {
+        messageUnreadJobHandler({}, error =>
+          error ? reject(error) : resolve(),
+        );
+      });
+      await new Promise(resolve => setImmediate(resolve));
+      notifyUnread.calledOnce.should.equal(true);
+      jobs.length.should.equal(1);
+      jobs[0].type.should.equal('send email');
+    } finally {
+      notifyUnread.restore();
+    }
   });
 
   it('Remind user about multiple unread messages from same user in one notification email', function (done) {
@@ -267,6 +332,32 @@ describe('Job: message unread', function () {
         });
       });
     });
+  });
+
+  it('does not push when a sender is shadowbanned', async function () {
+    const pushService = require('../../../../users/server/services/unified-push.server.service');
+    await pushService.register(userToId, {
+      endpoint: 'https://ntfy.sh/anonymous-restricted-test',
+      publicKey:
+        'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
+      auth: 'abcdefghijklmnopqrstuv',
+    });
+    message.created = moment().subtract({ minutes: 10, seconds: 1 });
+    await message.save();
+    userFrom.roles = ['user', 'shadowban'];
+    await userFrom.save();
+    const sent = sinon.stub(webPush, 'sendNotification');
+    try {
+      await new Promise((resolve, reject) => {
+        messageUnreadJobHandler({}, error =>
+          error ? reject(error) : resolve(),
+        );
+      });
+      sent.called.should.equal(false);
+      jobs.length.should.equal(0);
+    } finally {
+      sinon.restore();
+    }
   });
 
   it('Suppress reminder emails when recipient is suspended', function (done) {
@@ -569,26 +660,18 @@ describe('Job: message unread', function () {
     });
 
     it('logs queue drain errors but still completes', function (done) {
-      const jobPath = '../../../server/jobs/message-unread.server.job';
-      const jobWithQueueError = proxyquire(jobPath, {
-        async: {
-          eachSeries: async.eachSeries,
-          series: async.series,
-          waterfall: async.waterfall,
-          queue() {
-            const queue = {
-              push() {
-                setImmediate(() => {
-                  if (typeof queue.drain === 'function') {
-                    queue.drain(new Error('queue failed'));
-                  }
-                });
-              },
-              drain: null,
-            };
-            return queue;
+      const jobWithQueueError = require('../../../server/jobs/message-unread.server.job');
+      sinon.stub(async, 'queue').callsFake(() => {
+        const queue = {
+          push() {
+            setImmediate(() => {
+              if (typeof queue.drain === 'function')
+                queue.drain(new Error('queue failed'));
+            });
           },
-        },
+          drain: null,
+        };
+        return queue;
       });
 
       sinon.stub(Message, 'aggregate').yields(null, [
@@ -626,18 +709,8 @@ describe('Job: message unread', function () {
     });
 
     it('continues when notifications have no message ids', function (done) {
-      const jobPath = '../../../server/jobs/message-unread.server.job';
-      const jobWithEmptyMessages = proxyquire(jobPath, {
-        async: {
-          eachSeries: async.eachSeries,
-          series: async.series,
-          waterfall: async.waterfall,
-          queue: async.queue,
-        },
-        '../../../core/server/services/email.server.service': {
-          sendMessagesUnread: (from, to, notification, cb) => cb(),
-        },
-      });
+      const jobWithEmptyMessages = require('../../../server/jobs/message-unread.server.job');
+      sinon.stub(emailService, 'sendMessagesUnread').callsArg(3);
 
       sinon.stub(Message, 'aggregate').yields(null, [
         {
@@ -691,7 +764,9 @@ describe('Job: message unread', function () {
 
   afterEach(function (done) {
     User.deleteMany().exec(function () {
-      Message.deleteMany().exec(done);
+      Message.deleteMany().exec(function () {
+        Registration.deleteMany().exec(done);
+      });
     });
   });
 });

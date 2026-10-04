@@ -427,6 +427,33 @@ describe('Messages controller unit tests', () => {
       const reloaded = await Message.findById(message._id);
       reloaded.read.should.be.true();
     });
+
+    it('does not mark another member’s incoming message as read', async () => {
+      const [sender, receiver, stranger] = await utils.saveUsers(
+        utils.generateUsers(3, { public: true }),
+      );
+      const Message = mongoose.model('Message');
+      const message = await new Message({
+        content: 'Unread hello',
+        userFrom: sender._id,
+        userTo: receiver._id,
+        read: false,
+      }).save();
+
+      const res = deferredResponse();
+      messagesController.markRead(
+        {
+          user: { _id: stranger._id, id: stranger._id.toString() },
+          body: { messageIds: [message._id.toString()] },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+
+      const reloaded = await Message.findById(message._id);
+      reloaded.read.should.be.false();
+    });
   });
 
   describe('messagesCount', () => {
@@ -499,6 +526,64 @@ describe('Messages controller unit tests', () => {
       messagesController.inbox({ user: { _id: sender._id }, query: {} }, res);
       await res.waitForResponse();
       res.body[0].read.should.be.true();
+    });
+
+    it('shows exactly the threads counted as unread', async () => {
+      const [viewer, sender, other] = await utils.saveUsers(
+        utils.generateUsers(3, { public: true }),
+      );
+      const messages = await Message.create([
+        {
+          content: 'Unread conversation',
+          userFrom: sender._id,
+          userTo: viewer._id,
+        },
+        {
+          content: 'Read conversation',
+          userFrom: other._id,
+          userTo: viewer._id,
+        },
+        {
+          content: 'Sent conversation',
+          userFrom: viewer._id,
+          userTo: other._id,
+        },
+      ]);
+      await Thread.create([
+        {
+          userFrom: sender._id,
+          userTo: viewer._id,
+          message: messages[0]._id,
+          read: false,
+        },
+        {
+          userFrom: other._id,
+          userTo: viewer._id,
+          message: messages[1]._id,
+          read: true,
+        },
+        {
+          userFrom: viewer._id,
+          userTo: other._id,
+          message: messages[2]._id,
+          read: false,
+        },
+      ]);
+
+      const count = deferredResponse();
+      messagesController.messagesCount({ user: viewer }, count);
+      await count.waitForResponse();
+
+      const inbox = deferredResponse();
+      messagesController.inbox(
+        { user: viewer, query: { filter: 'unread' } },
+        inbox,
+      );
+      await inbox.waitForResponse();
+
+      count.body.unread.should.equal(1);
+      inbox.body.should.be.an.Array().with.lengthOf(1);
+      inbox.body[0].message.excerpt.should.equal('Unread conversation');
     });
   });
 

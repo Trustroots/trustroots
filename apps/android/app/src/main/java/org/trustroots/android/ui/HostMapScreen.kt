@@ -1,5 +1,6 @@
 package org.trustroots.android.ui
 
+import androidx.activity.compose.BackHandler
 import android.text.Html
 import android.location.Geocoder
 import android.graphics.Bitmap
@@ -100,10 +101,23 @@ internal fun HostMapScreen(
     var includeHosts by remember { mutableStateOf(true) }
     var includeMeet by remember { mutableStateOf(false) }
     var seenMonths by remember { mutableStateOf<Int?>(6) }
-    var selectedCircle by remember { mutableStateOf<TrustrootsCircle?>(null) }
+    var selectedCircleIDs by remember { mutableStateOf(emptySet<String>()) }
+    var selectedLanguages by remember { mutableStateOf(setOf<String>()) }
+    var languageMenuOpen by remember { mutableStateOf(false) }
     var circles by remember { mutableStateOf<List<TrustrootsCircle>>(emptyList()) }
     var circleMenuOpen by remember { mutableStateOf(false) }
+    var mapOverlay by remember { mutableStateOf(MapOverlay.None) }
     var mapRevision by remember { mutableIntStateOf(0) }
+    BackHandler(
+        enabled = profileUsername == null &&
+            (mapOverlay != MapOverlay.None || host != null || selectedNotes.isNotEmpty()),
+    ) {
+        when {
+            mapOverlay != MapOverlay.None -> mapOverlay = MapOverlay.None
+            host != null -> host = null
+            selectedNotes.isNotEmpty() -> selectedNotes = emptyList()
+        }
+    }
     val searchGeneration = remember { AtomicInteger() }
     val searchJob = remember { AtomicReference<Job?>() }
     val map = remember(context) {
@@ -157,8 +171,9 @@ internal fun HostMapScreen(
                 bounds.latNorth.coerceAtMost(90.0),
                 bounds.lonEast.coerceAtMost(180.0),
                 types,
-                selectedCircle?.let { setOf(it.id) } ?: emptySet(),
+                selectedCircleIDs,
                 seenMonths,
+                selectedLanguages,
             ).onSuccess {
                 if (generation == searchGeneration.get()) offers = it
             }.onFailure {
@@ -195,10 +210,7 @@ internal fun HostMapScreen(
         val visible = api.visibleNostrAuthors(session, authors).getOrNull() ?: authors
         communityNotes = incomingNotes.filter { it.author in visible }
     }
-    LaunchedEffect(circleMenuOpen) {
-        if (circleMenuOpen && circles.isEmpty()) api.circles(session).onSuccess { circles = it }
-    }
-    LaunchedEffect(includeHosts, includeMeet, seenMonths, selectedCircle) {
+    LaunchedEffect(includeHosts, includeMeet, seenMonths, selectedCircleIDs, selectedLanguages) {
         searchVisibleArea()
     }
     val findLocation: () -> Unit = find@{
@@ -315,45 +327,161 @@ internal fun HostMapScreen(
                 .testTag("map-controls")
                 .background(TrustrootsPaleGreen.copy(alpha = 0.97f)),
         ) {
-            OutlinedTextField(
-                locationQuery, { locationQuery = it },
-                placeholder = { Text("Search place") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { findLocation() }),
-                trailingIcon = {
-                    TextButton(onClick = findLocation, enabled = locationQuery.isNotBlank()) { Text("Go") }
-                },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-            )
-            Text(
-                if (loading) "Searching this area…" else "${offers.size} offers · ${communityNotes.size} Nostroots notes",
-                modifier = Modifier.padding(start = 12.dp),
-            )
-            if (noteError && includeMeet) Text("Nostroots notes are temporarily unavailable.", color = MaterialTheme.colorScheme.error)
-            Row(Modifier.horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically) {
-                FilterChip(includeHosts, onClick = { includeHosts = !includeHosts }, label = { Text("Hosting") })
-                Spacer(Modifier.width(6.dp))
-                FilterChip(includeMeet, onClick = { includeMeet = !includeMeet }, label = { Text("Meet") })
-                Spacer(Modifier.width(6.dp))
-                FilterChip(
-                    selected = seenMonths != null,
-                    onClick = { seenMonths = when (seenMonths) { 1 -> 6; 6 -> null; else -> 1 } },
-                    label = { Text(when (seenMonths) {
-                        1 -> "Last active: 1 month"
-                        6 -> "Last active: 6 months"
-                        else -> "Last active: any time"
-                    }) },
-                )
-                Spacer(Modifier.width(6.dp))
-                Box {
-                    FilterChip(selectedCircle != null, onClick = { circleMenuOpen = true }, label = { Text(selectedCircle?.label ?: "All circles") })
-                    DropdownMenu(expanded = circleMenuOpen, onDismissRequest = { circleMenuOpen = false }) {
-                        DropdownMenuItem(text = { Text("All circles") }, onClick = { selectedCircle = null; circleMenuOpen = false })
-                        circles.forEach { circle ->
-                            DropdownMenuItem(text = { Text(circle.label) }, onClick = { selectedCircle = circle; circleMenuOpen = false })
+            when (mapOverlay) {
+                MapOverlay.None -> {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Button(
+                            onClick = { mapOverlay = MapOverlay.PlaceSearch },
+                            modifier = Modifier.weight(1f).testTag("searchPlaces"),
+                        ) { Text("Search places") }
+                        Button(
+                            onClick = {
+                                mapOverlay = MapOverlay.Filters
+                                if (circles.isEmpty()) {
+                                    scope.launch { api.circles(session).onSuccess { circles = it } }
+                                }
+                            },
+                            modifier = Modifier.weight(1f).testTag("openFilters"),
+                        ) { Text("Filters") }
+                    }
+                    Text(
+                        if (loading) "Searching this area…" else "${offers.size} offers · ${communityNotes.size} Nostroots notes",
+                        modifier = Modifier.padding(start = 12.dp, bottom = 8.dp),
+                    )
+                    if (noteError && includeMeet) {
+                        Text(
+                            "Nostroots notes are temporarily unavailable.",
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 8.dp),
+                        )
+                    }
+                }
+                MapOverlay.PlaceSearch -> {
+                    OutlinedTextField(
+                        locationQuery, { locationQuery = it },
+                        placeholder = { Text("Search place") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { findLocation() }),
+                        trailingIcon = {
+                            TextButton(onClick = findLocation, enabled = locationQuery.isNotBlank()) { Text("Go") }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(52.dp).testTag("placeSearchField"),
+                    )
+                    Button(
+                        onClick = { mapOverlay = MapOverlay.None },
+                        modifier = Modifier.fillMaxWidth().padding(8.dp).testTag("backToMapFromPlace"),
+                    ) { Text("Back to map") }
+                }
+                MapOverlay.Filters -> {
+                    Text(
+                        "Filters",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    )
+                    Row(
+                        Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        FilterChip(includeHosts, onClick = { includeHosts = !includeHosts }, label = { Text("Hosting") })
+                        Spacer(Modifier.width(6.dp))
+                        FilterChip(includeMeet, onClick = { includeMeet = !includeMeet }, label = { Text("Meet") })
+                        Spacer(Modifier.width(6.dp))
+                        FilterChip(
+                            selected = seenMonths != null,
+                            onClick = { seenMonths = when (seenMonths) { 1 -> 6; 6 -> null; else -> 1 } },
+                            label = { Text(when (seenMonths) {
+                                1 -> "Last active: 1 month"
+                                6 -> "Last active: 6 months"
+                                else -> "Last active: any time"
+                            }) },
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Box {
+                            FilterChip(
+                                selectedCircleIDs.isNotEmpty(),
+                                onClick = { circleMenuOpen = true },
+                                label = {
+                                    Text(
+                                        when (selectedCircleIDs.size) {
+                                            0 -> "All circles"
+                                            1 -> circles.firstOrNull { it.id in selectedCircleIDs }?.label ?: "1 circle"
+                                            else -> "${selectedCircleIDs.size} circles"
+                                        },
+                                    )
+                                },
+                            )
+                            DropdownMenu(expanded = circleMenuOpen, onDismissRequest = { circleMenuOpen = false }) {
+                                DropdownMenuItem(
+                                    text = { Text("All circles") },
+                                    onClick = { selectedCircleIDs = emptySet(); circleMenuOpen = false },
+                                )
+                                circles.forEach { circle ->
+                                    DropdownMenuItem(
+                                        text = { Text("${if (circle.id in selectedCircleIDs) "✓ " else ""}${circle.label}") },
+                                        onClick = {
+                                            selectedCircleIDs = if (circle.id in selectedCircleIDs) {
+                                                selectedCircleIDs - circle.id
+                                            } else {
+                                                selectedCircleIDs + circle.id
+                                            }
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(Modifier.width(6.dp))
+                        Box {
+                            FilterChip(
+                                selectedLanguages.isNotEmpty(),
+                                onClick = { languageMenuOpen = true },
+                                label = {
+                                    Text(
+                                        if (selectedLanguages.isEmpty()) "Spoken languages"
+                                        else selectedLanguages.sorted().joinToString { languageName(it) },
+                                    )
+                                },
+                            )
+                            DropdownMenu(expanded = languageMenuOpen, onDismissRequest = { languageMenuOpen = false }) {
+                                DropdownMenuItem(
+                                    text = { Text("Any language") },
+                                    onClick = { selectedLanguages = emptySet(); languageMenuOpen = false },
+                                )
+                                mapFilterLanguages.forEach { code ->
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text("${if (code in selectedLanguages) "✓ " else ""}${languageName(code)}")
+                                        },
+                                        onClick = {
+                                            selectedLanguages = if (code in selectedLanguages) {
+                                                selectedLanguages - code
+                                            } else {
+                                                selectedLanguages + code
+                                            }
+                                        },
+                                    )
+                                }
+                            }
                         }
                     }
+                    Text(
+                        if (loading) "Searching this area…" else "${offers.size} offers · ${communityNotes.size} Nostroots notes",
+                        modifier = Modifier.padding(start = 12.dp, top = 8.dp),
+                    )
+                    if (noteError && includeMeet) {
+                        Text(
+                            "Nostroots notes are temporarily unavailable.",
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                        )
+                    }
+                    Button(
+                        onClick = { mapOverlay = MapOverlay.None },
+                        modifier = Modifier.fillMaxWidth().padding(8.dp).testTag("backToMapFromFilters"),
+                    ) { Text("Back to map") }
                 }
             }
         }
@@ -406,6 +534,16 @@ internal fun HostMapScreen(
         }
     }
 }
+
+private enum class MapOverlay {
+    None,
+    PlaceSearch,
+    Filters,
+}
+
+private val mapFilterLanguages = listOf(
+    "eng", "por", "spa", "fra", "deu", "ita", "nld", "rus", "ara", "zho", "hin", "jpn", "tur", "pol", "swe", "ukr", "fin",
+)
 
 internal fun clusterOffers(offers: List<MapOffer>, map: MapView): List<List<MapOffer>> {
     if (map.zoomLevelDouble >= 14) return offers.map(::listOf)

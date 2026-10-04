@@ -42,9 +42,18 @@ module.exports = {
   host: 'localhost',
   fd: null, // listen on a file descriptor (instead of host/port)
   https: false,
+  // Trust X-Forwarded-Proto for session cookies only when the HTTPS frontend
+  // overwrites the header and the application cannot be reached directly.
+  sessionProxy: false,
   sessionSecret: 'MEAN',
   sessionCollection: 'sessions',
   domain: 'localhost:3000',
+  // Additional trusted browser origins for reverse-proxy or multi-origin
+  // deployments. Values are configuration, never derived from request headers.
+  csrfAllowedOrigins: (process.env.TRUSTROOTS_CSRF_ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean),
   supportEmail: 'support@trustroots.org', // TO-address for support requests
   supportVolunteerNames: ['Dario', 'Noah'], // Used as "from" name to send some automated emails
   surveyReactivateHosts: 'https://ideas.trustroots.org/?p=1302#page-1302', // Survey to send with host reactivation emails
@@ -225,7 +234,15 @@ module.exports = {
   google: {
     page: '',
   },
-  // Future push: restore FCM (or another transport) config here.
+  webPush: {
+    publicKey: process.env.TRUSTROOTS_WEB_PUSH_VAPID_PUBLIC_KEY || '',
+    privateKey: process.env.TRUSTROOTS_WEB_PUSH_VAPID_PRIVATE_KEY || '',
+    subject: process.env.TRUSTROOTS_WEB_PUSH_VAPID_SUBJECT || '',
+    allowedHosts: (process.env.TRUSTROOTS_WEB_PUSH_ALLOWED_HOSTS || 'ntfy.sh')
+      .split(',')
+      .map(host => host.trim().toLowerCase())
+      .filter(Boolean),
+  },
   googleAnalytics: {
     enabled: false,
     code: '',

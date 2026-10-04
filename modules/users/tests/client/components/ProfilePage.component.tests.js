@@ -212,6 +212,34 @@ describe('ProfilePage', () => {
     expect(usersApi.fetch).toHaveBeenCalledWith('bob');
   });
 
+  it.each([
+    ['admin', true],
+    ['welcome-team', false],
+    ['user', false],
+  ])(
+    'shows the desktop Admin action only for an admin viewer (%s)',
+    async (role, visible) => {
+      renderPage({ ...authUser, roles: [role] });
+      await screen.findByText('About Bob Example');
+      const link = screen.queryByRole('link', { name: 'Admin', exact: true });
+      if (visible) {
+        expect(link).toHaveAttribute('href', '/admin/user?id=user-2');
+      } else {
+        expect(link).not.toBeInTheDocument();
+      }
+    },
+  );
+
+  it('shows an Admin action on an administrator’s own profile without member actions', async () => {
+    renderPage({ ...authUser, _id: profile._id, roles: ['admin'] });
+    expect(
+      await screen.findByRole('link', { name: 'Admin', exact: true }),
+    ).toHaveAttribute('href', '/admin/user?id=user-2');
+    expect(
+      screen.queryByRole('link', { name: 'Send a message' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('changes tabs without reloading the profile', async () => {
     const { rerender } = renderPage(
       authUser,
@@ -288,6 +316,39 @@ describe('ProfilePage', () => {
     expect(
       screen.getByRole('link', { name: 'Confirm Request' }),
     ).toHaveAttribute('href', '/contact-confirm/contact-1');
+  });
+
+  it('renders contact tooltips when the creation timestamp is absent', async () => {
+    contactsApi.getByUserId.mockResolvedValue({
+      _id: 'contact-1',
+      confirmed: true,
+      userFrom: authUser._id,
+      userTo: profile._id,
+    });
+    renderPage();
+
+    const confirmedContact = await screen.findByRole('button', {
+      name: 'Remove contact',
+    });
+    fireEvent.mouseOver(confirmedContact);
+    expect(await screen.findByText(/Contacts since/)).toBeVisible();
+  });
+
+  it('renders incoming contact tooltips when the creation timestamp is absent', async () => {
+    contactsApi.getByUserId.mockResolvedValue({
+      _id: 'contact-1',
+      confirmed: false,
+      userFrom: profile._id,
+      userTo: authUser._id,
+    });
+    renderPage();
+
+    expect(await screen.findByText(/sent you a contact request/)).toBeVisible();
+    const deleteRequest = await screen.findByRole('button', {
+      name: 'Delete contact request',
+    });
+    fireEvent.mouseOver(deleteRequest);
+    expect(await screen.findByText(/Request sent/)).toBeVisible();
   });
 
   it('opens the remove contact modal and clears contact state on success', async () => {

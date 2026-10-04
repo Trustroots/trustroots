@@ -7,6 +7,59 @@ account.
 
 ## Requirements
 
+### Requirement: Explicit profile response fields
+
+Profile responses SHALL include only explicitly approved fields. Account-owner
+responses SHALL preserve fields required for profile editing, account settings,
+and blocking. Public responses SHALL omit email addresses, account settings, IP
+addresses, push credentials, provider credentials, and unrecognised document
+fields. Existing sanitisation and viewer-dependent privacy rules SHALL still
+apply.
+
+#### Scenario: Public profile response excludes private fields
+
+- **WHEN** a member requests another member's profile
+- **THEN** the response includes only approved public profile fields
+- **AND** account, credential, and unrecognised fields are omitted
+
+#### Scenario: Account holder receives profile editing fields
+
+- **WHEN** an account holder requests their own profile
+- **THEN** the response includes the fields required to edit their profile and
+  account settings
+- **AND** IP addresses, push credentials, provider credentials, and
+  unrecognised fields are omitted
+
+### Requirement: Session cookie security and persistence
+
+The system SHALL issue session cookies with HttpOnly and SameSite=Lax. When
+HTTPS is enabled, it SHALL mark session cookies Secure and issue them only for
+HTTPS requests. Forwarded protocol headers SHALL be trusted for this decision
+only when the session proxy setting is explicitly enabled. The system SHALL
+not persist or issue cookies for uninitialised sessions, SHALL avoid rewriting
+unchanged sessions, and SHALL refresh their expiry through the session store.
+
+#### Scenario: Visitor makes an uninitialised request
+
+- **WHEN** a visitor makes a request without changing session state
+- **THEN** the system does not issue a session cookie or persist a session
+
+#### Scenario: HTTPS session is changed
+
+- **WHEN** a person changes session state through a verified HTTPS request
+- **THEN** the system issues an HttpOnly, SameSite=Lax, Secure session cookie
+
+#### Scenario: Forwarded protocol is not trusted by default
+
+- **WHEN** a request over HTTP includes `X-Forwarded-Proto: https` while the
+  session proxy setting is disabled
+- **THEN** the system does not treat the request as HTTPS for session cookies
+
+#### Scenario: Existing session remains unchanged
+
+- **WHEN** a person makes a request without changing an existing session
+- **THEN** the system refreshes the session expiry without rewriting the session
+
 ### Requirement: Account registration
 
 The system SHALL allow a person to create an account with valid, unique
@@ -103,20 +156,65 @@ JSON file containing their profile, contacts, and hosting offers.
 - **WHEN** an unauthenticated visitor requests the data-export endpoint
 - **THEN** the system refuses the request
 
-### Requirement: Sign-out
+### Requirement: Browser-origin mutation protection
 
-The system SHALL end an account holder's session when they sign out.
+The system SHALL reject state-changing requests with a foreign Origin or
+non-same-origin Fetch Metadata value. Originless API mutations SHALL require
+JSON content or the dedicated `X-Trustroots-Request: 1` header, and multipart
+mutations SHALL always require that header. The system SHALL end an account
+holder's session only after a same-origin state-changing POST sign-out request.
+Originless JSON requests remain compatible and do not carry synchroniser-token
+proof, so this is a bounded defence-in-depth measure.
 
 #### Scenario: Account holder signs out
 
-- **WHEN** an account holder signs out
+- **WHEN** an account holder submits a same-origin POST sign-out request
 - **THEN** the system clears their session
 - **AND** member-only routes require them to sign in again
+
+#### Scenario: Browser submits a cross-origin state-changing account request
+
+- **WHEN** a state-changing request includes a foreign `Origin` or
+  non-same-origin Fetch Metadata value
+- **THEN** the system rejects it without applying the mutation
+
+#### Scenario: Legacy client omits browser-origin metadata
+
+- **WHEN** a state-changing request omits both `Origin` and Fetch Metadata
+- **AND** the request uses JSON content or includes the dedicated request
+  header
+- **THEN** the system preserves existing API compatibility
+- **AND** the request remains outside this bounded browser-origin mitigation
+
+#### Scenario: Originless API request has no JSON content or request marker
+
+- **WHEN** an API mutation omits both browser-origin signals and has neither
+  JSON content nor the dedicated request header
+- **THEN** the system rejects it without applying the mutation
+
+#### Scenario: Client requests sign-out with GET
+
+- **WHEN** a client requests the sign-out endpoint with GET
+- **THEN** the system does not end the account holder's session
+
+#### Scenario: Native API client sends an originless mutation
+
+- **WHEN** a supported native client sends a state-changing API request with
+  the dedicated request header
+- **THEN** the system preserves the native API flow
+
+#### Scenario: Reporting or authenticated webhook client posts
+
+- **WHEN** a CSP or Expect-CT report is posted, or SparkPost posts a webhook
+  authenticated with its configured credentials
+- **THEN** the system accepts the request for its dedicated handler
 
 ### Requirement: Account settings
 
 The system SHALL let an authenticated account holder update valid account
-details and change their password after providing their current password.
+details and change their password after providing their current password. The
+account settings page SHALL explain the existing username format, availability,
+and change timing rules beside the username field.
 
 #### Scenario: Account holder updates account details
 
@@ -128,6 +226,12 @@ details and change their password after providing their current password.
 - **WHEN** an authenticated account holder provides their current password and matching valid new passwords
 - **THEN** the system updates their password
 - **AND** the account holder can sign in with the new password
+
+#### Scenario: Account holder reads username change rules
+
+- **WHEN** an authenticated account holder opens account settings
+- **THEN** the username field explains when changes are allowed and what makes
+  a username valid and available
 
 ### Requirement: Account removal
 

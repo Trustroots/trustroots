@@ -9,7 +9,11 @@ const {
   registerViaApi,
   signInViaApi,
 } = require('../../support/helpers');
-const { updateUserByUsername } = require('../../support/db');
+const {
+  findContactByUsers,
+  updateUserByUsername,
+  withE2eDb,
+} = require('../../support/db');
 
 async function createPublicUser(request, overrides = {}) {
   const user = createUser(overrides);
@@ -89,6 +93,133 @@ test.describe.serial('experience and reference feature coverage', () => {
       });
       expect(response.status()).toBe(201);
       expect((await response.json()).public).toBe(true);
+    } finally {
+      await context.close();
+    }
+  });
+
+  for (const role of ['suspended', 'shadowban']) {
+    test(`direct contact access and confirmation hide a ${role} member`, async ({
+      browser,
+      baseURL,
+    }, testInfo) => {
+      annotateFeature(testInfo, 'contacts.confirm', [
+        'Restricted contacts cannot be accessed or confirmed.',
+      ]);
+      const context = await createIsolatedContext(browser, baseURL);
+      const page = await context.newPage();
+      try {
+        const sender = await createPublicUser(context.request);
+        const recipient = await createPublicUser(context.request);
+        const senderId = await fetchUserIdByUsername(
+          context.request,
+          sender.username,
+        );
+        const recipientId = await fetchUserIdByUsername(
+          context.request,
+          recipient.username,
+        );
+        await signInViaApi(page, context.request, sender);
+        const added = await context.request.post('/api/contact', {
+          data: { friendUserId: recipientId },
+        });
+        expect(added.ok()).toBeTruthy();
+        const contact = await findContactByUsers(senderId, recipientId);
+        await updateUserByUsername(sender.username, {
+          $addToSet: { roles: role },
+        });
+        await signInViaApi(page, context.request, recipient);
+        expect(
+          (await context.request.get(`/api/contact-by/${senderId}`)).status(),
+        ).toBe(404);
+        expect(
+          (await context.request.get(`/api/contact/${contact._id}`)).status(),
+        ).toBe(404);
+        expect(
+          (
+            await context.request.put(`/api/contact/${contact._id}`, {
+              data: {},
+            })
+          ).status(),
+        ).toBe(404);
+        expect(
+          (await findContactByUsers(senderId, recipientId)).confirmed,
+        ).toBe(false);
+      } finally {
+        await context.close();
+      }
+    });
+  }
+
+  test('shadowbanned experience submissions remain private and send no notification', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'experiences.create', [
+      'Restricted authors cannot expose reciprocal feedback or notify recipients.',
+    ]);
+    const context = await createIsolatedContext(browser, baseURL);
+    const page = await context.newPage();
+    try {
+      const author = await createPublicUser(context.request);
+      const recipient = await createPublicUser(context.request);
+      const authorId = await fetchUserIdByUsername(
+        context.request,
+        author.username,
+      );
+      const recipientId = await fetchUserIdByUsername(
+        context.request,
+        recipient.username,
+      );
+      await signInViaApi(page, context.request, recipient);
+      const opposite = await context.request.post('/api/experiences', {
+        data: {
+          userTo: authorId,
+          interactions: { met: true },
+          recommend: 'yes',
+          feedbackPublic: 'Reciprocal private feedback.',
+        },
+      });
+      expect(opposite.status()).toBe(201);
+      const oppositeExperience = await opposite.json();
+      await signInViaApi(page, context.request, author);
+      await updateUserByUsername(author.username, {
+        $addToSet: { roles: 'shadowban' },
+      });
+      const emailQuery = {
+        name: 'send email',
+        'data.to.address': recipient.email,
+      };
+      const countEmails = () =>
+        withE2eDb(db => db.collection('agendaJobs').countDocuments(emailQuery));
+      const emailsBefore = await countEmails();
+      const submitted = await context.request.post('/api/experiences', {
+        data: {
+          userTo: recipientId,
+          interactions: { met: true },
+          recommend: 'no',
+          feedbackPublic: 'Hidden feedback.',
+        },
+      });
+      expect(submitted.status()).toBe(201);
+      expect(await submitted.json()).toMatchObject({
+        public: false,
+        response: null,
+      });
+      const emailsAfter = await countEmails();
+      expect(emailsAfter).toBe(emailsBefore);
+      await signInViaApi(page, context.request, recipient);
+      const detail = await context.request.get(
+        `/api/experiences/${oppositeExperience._id}`,
+      );
+      expect(await detail.json()).toMatchObject({
+        public: false,
+        response: null,
+      });
+      const list = await context.request.get('/api/experiences', {
+        params: { userTo: recipientId },
+      });
+      expect(await list.json()).toEqual([]);
     } finally {
       await context.close();
     }

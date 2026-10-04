@@ -375,7 +375,13 @@ const handleAdminApiError = (res, err) => {
  * This middleware sends response with an array of found users
  */
 export const getUser = async (req, res) => {
-  const userId = _.get(req, ['body', 'id']);
+  const userId = req.userIdFromUsername || _.get(req, ['body', 'id']);
+
+  if (!userId && _.get(req, ['body', 'username'])) {
+    return res.status(404).send({
+      message: errorService.getErrorMessageByKey('not-found'),
+    });
+  }
 
   // Check that the search string is provided
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
@@ -490,10 +496,6 @@ export const getUser = async (req, res) => {
   }
 };
 
-/**
- * This middleware changes user roles by ID
- * Used for suspending users or setting them a "shadow ban"
- */
 /** Admins inspect blockers of all staff; Welcome team members inspect their own. */
 export const listStaffBlockers = async (req, res) => {
   try {
@@ -513,26 +515,30 @@ export const listStaffBlockers = async (req, res) => {
           .lean()
       : [];
 
-    res.send(
-      staffMembers.map(staff => ({
-        _id: staff._id,
-        username: staff.username,
-        displayName: staff.displayName,
-        blockedBy: blockers
-          .filter(blocker => blocker.blocked.some(id => id.equals(staff._id)))
-          .map(({ _id, username, displayName }) => ({
-            _id,
-            username,
-            displayName,
-          })),
-      })),
-    );
+    /** @type {import('../../shared/staff-blockers').StaffBlocker<import('mongoose').Types.ObjectId>[]} */
+    const staffBlockers = staffMembers.map(staff => ({
+      _id: staff._id,
+      username: staff.username,
+      displayName: staff.displayName,
+      blockedBy: blockers
+        .filter(blocker => blocker.blocked.some(id => id.equals(staff._id)))
+        .map(({ _id, username, displayName }) => ({
+          _id,
+          username,
+          displayName,
+        })),
+    }));
+    res.send(staffBlockers);
   } catch (err) {
     log('error', 'Failed to load members who blocked staff.', { error: err });
     handleAdminApiError(res, err);
   }
 };
 
+/**
+ * This middleware changes user roles by ID
+ * Used for suspending, shadowbanning, and restoring users
+ */
 export const changeRole = async (req, res) => {
   const userId = _.get(req, ['body', 'id']);
   const role = _.get(req, ['body', 'role']);
@@ -541,7 +547,7 @@ export const changeRole = async (req, res) => {
   if (
     !ADMIN_CHANGEABLE_ROLES.includes(role) ||
     !['add', 'remove'].includes(action) ||
-    (action === 'remove' && role !== 'welcome-team')
+    (action === 'remove' && !['welcome-team', 'shadowban'].includes(role))
   ) {
     return res.status(400).send({
       message: 'Invalid role.',
@@ -557,7 +563,9 @@ export const changeRole = async (req, res) => {
 
   // If switching role to 'suspended', change also these settings straight up
   const additionalChangesForSuspended =
-    role === 'suspended' ? { $set: { newsletter: false, public: false } } : {};
+    action === 'add' && role === 'suspended'
+      ? { $set: { newsletter: false, public: false } }
+      : {};
 
   try {
     const user = await User.updateOne(
@@ -582,13 +590,13 @@ export const changeRole = async (req, res) => {
     }.`;
 
     // If adding role 'volunteer-alumni', remove 'volunteer' role
-    if (role === 'volunteer-alumni') {
+    if (action === 'add' && role === 'volunteer-alumni') {
       await User.updateOne({ _id: userId }, { $pull: { roles: 'volunteer' } });
       roleChangeMessage = 'User made into volunteer-alumni.';
     }
 
     // If adding role 'volunteer', remove 'volunteer-alumni' role
-    if (role === 'volunteer') {
+    if (action === 'add' && role === 'volunteer') {
       await User.updateOne(
         { _id: userId },
         { $pull: { roles: 'volunteer-alumni' } },
@@ -597,13 +605,17 @@ export const changeRole = async (req, res) => {
     }
 
     // If adding role 'shadowban', remove 'suspended' role
-    if (role === 'shadowban') {
+    if (action === 'add' && role === 'shadowban') {
       await User.updateOne({ _id: userId }, { $pull: { roles: 'suspended' } });
       roleChangeMessage = 'User shadowbanned.';
     }
 
+    if (action === 'remove' && role === 'shadowban') {
+      roleChangeMessage = 'User unshadowbanned.';
+    }
+
     // If adding role 'suspended', remove 'shadowban' role
-    if (role === 'suspended') {
+    if (action === 'add' && role === 'suspended') {
       await User.updateOne({ _id: userId }, { $pull: { roles: 'shadowban' } });
       roleChangeMessage = 'User suspended.';
     }

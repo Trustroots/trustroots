@@ -1,7 +1,6 @@
 // External dependencies
 import _ from 'lodash';
 import mongoose from 'mongoose';
-import natural from 'natural';
 import pluralize from 'pluralize';
 import stopword from 'stopword';
 import winkStatistics from 'wink-statistics';
@@ -9,6 +8,7 @@ import winkTokenizer from 'wink-tokenizer';
 
 const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
+const Message = mongoose.model('Message');
 
 /**
  * Detect commonly misspelled compound terms
@@ -85,8 +85,31 @@ function getSynonym(value) {
   return synonyms[value] || false;
 }
 
+/** Match exactly one insertion, deletion, or substitution. */
+function isOneEditApart(first, second) {
+  if (Math.abs(first.length - second.length) > 1 || first === second) {
+    return false;
+  }
+
+  let index = 0;
+  while (
+    index < Math.min(first.length, second.length) &&
+    first[index] === second[index]
+  ) {
+    index += 1;
+  }
+
+  if (first.length === second.length) {
+    return first.slice(index + 1) === second.slice(index + 1);
+  }
+  if (first.length > second.length) {
+    return first.slice(index + 1) === second.slice(index);
+  }
+  return first.slice(index) === second.slice(index + 1);
+}
+
 /**
- * Detect typos by comparing to most popular terms using Levenshtein distance.
+ * Detect typos by comparing to most popular terms using one edit.
  *
  * @param value {string} Term to check
  * @return {string} Correct term, or false if nothing found
@@ -142,11 +165,7 @@ function getCorrectTerm(value) {
     return false;
   }
 
-  const correctedTerm = correctTerms.find(term =>
-    // To increase hits (but also likelyhood of false positives), use 2 or 3 as distance instead of 1
-    // eslint-disable-next-line new-cap
-    natural.LevenshteinDistance(term, value) === 1 ? term : false,
-  );
+  const correctedTerm = correctTerms.find(term => isOneEditApart(term, value));
 
   // If Levenshtein distance was one, consider value a typo and return correct term instead
   return correctedTerm || false;
@@ -201,7 +220,7 @@ function getDomain(hostname) {
 /*
  * Does some language manipulation to analyse common terms from answers
  *
- * @TODO: group terms into classes? https://www.npmjs.com/package/natural#classifiers
+ * @TODO: consider grouping terms into classes.
  */
 function analyseStories(stories) {
   const tokenizer = winkTokenizer();
@@ -302,7 +321,7 @@ function getStories(limit) {
     {
       acquisitionStory: { $exists: true, $ne: '' },
     },
-    '_id acquisitionStory created displayName email emailTemporary locationFrom locationLiving member public username',
+    '_id acquisitionStory created displayName email emailTemporary languages locationFrom locationLiving member public username',
   )
     .sort('-created')
     .limit(limit)
@@ -393,7 +412,7 @@ function getRestrictedUsers() {
     .exec();
 }
 
-function storyForList(story, hostingLocation, restrictedMatches) {
+function storyForList(story, hostingLocation, restrictedMatches, welcomer) {
   return {
     _id: story._id,
     acquisitionStory: story.acquisitionStory,
@@ -403,6 +422,8 @@ function storyForList(story, hostingLocation, restrictedMatches) {
     hostingLocation,
     locationFrom: story.locationFrom,
     locationLiving: story.locationLiving,
+    languages: story.languages || [],
+    welcomer,
     public: story.public === true,
     restrictedMatches,
     username: story.username,
@@ -416,6 +437,57 @@ export const list = async (req, res) => {
   }
 
   const storyUserIds = stories.map(story => story._id);
+  const currentWelcomerIds = (
+    await User.find({ roles: 'welcome-team' }).select('_id').exec()
+  ).map(user => user._id);
+  // Filter current team membership before selecting the first contact. Fetch
+  // metadata for all recipients together, never loading message content.
+  const welcomeContacts = await Message.aggregate([
+    {
+      $match: {
+        userTo: { $in: storyUserIds },
+        userFrom: { $in: currentWelcomerIds },
+        shadowHidden: { $ne: true },
+        $expr: { $ne: ['$userFrom', '$userTo'] },
+      },
+    },
+    {
+      $lookup: {
+        from: User.collection.name,
+        localField: 'userFrom',
+        foreignField: '_id',
+        as: 'sender',
+      },
+    },
+    { $unwind: '$sender' },
+    { $match: { 'sender.roles': 'welcome-team' } },
+    {
+      $project: {
+        userTo: 1,
+        created: 1,
+        'sender._id': 1,
+        'sender.username': 1,
+        'sender.displayName': 1,
+      },
+    },
+    { $sort: { created: 1, _id: 1 } },
+    {
+      $group: {
+        _id: '$userTo',
+        welcomer: {
+          $first: {
+            _id: '$sender._id',
+            username: '$sender.username',
+            displayName: '$sender.displayName',
+            created: '$created',
+          },
+        },
+      },
+    },
+  ]).exec();
+  const welcomersByUser = new Map(
+    welcomeContacts.map(contact => [contact._id.toString(), contact.welcomer]),
+  );
   const restrictedUsers = (await getRestrictedUsers()).map(user => ({
     user,
     identifiers: getRestrictedIdentifiers(user),
@@ -449,6 +521,7 @@ export const list = async (req, res) => {
         story,
         hostingLocationsByUser[story._id.toString()] || null,
         await getRestrictedMatches(story, restrictedUsers),
+        welcomersByUser.get(story._id.toString()) || null,
       ),
     );
   }

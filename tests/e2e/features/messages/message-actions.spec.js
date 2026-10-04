@@ -91,6 +91,35 @@ test.describe.serial('message action feature coverage', () => {
     await expect(page.getByText(replyText)).toBeVisible();
   });
 
+  test('desktop reply editor is focused on opening and after sending', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.reply-focus', [
+      'The desktop reply editor receives focus when a conversation opens.',
+      'The recreated reply editor receives focus after sending.',
+    ]);
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const recipientId = await fetchUserIdByUsername(request, portland.username);
+    await page.goto(`/messages/${portland.username}?userId=${recipientId}`);
+    const editor = page.locator('#message-reply-content');
+    await expect(editor).toBeFocused();
+
+    const replyText = `Fictional focus check ${Date.now()}`;
+    await page.keyboard.insertText(replyText);
+    const sent = page.waitForResponse(
+      response =>
+        response.url().endsWith('/api/messages') &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
+    await page.locator('#messageReplySubmit').click();
+    await sent;
+    await expect(page.getByText(replyText)).toBeVisible();
+    await expect(editor).toBeFocused();
+  });
+
   test('external links in messages are displayed as plain text', async ({
     page,
     request,
@@ -236,6 +265,20 @@ test.describe.serial('message action feature coverage', () => {
       const unreadBefore = await page.request.get('/api/messages-count');
       expect(unreadBefore.ok()).toBeTruthy();
       expect((await unreadBefore.json()).unread).toBeGreaterThan(0);
+
+      await page.goto('/search');
+      const messagesLink = page.locator('#tr-header a[href="/messages"]');
+      const unreadBadge = messagesLink.locator('.notification-badge');
+      for (const width of [1280, 390]) {
+        await page.setViewportSize({ width, height: 844 });
+        await expect(unreadBadge).toBeVisible();
+        const linkBounds = await messagesLink.boundingBox();
+        const badgeBounds = await unreadBadge.boundingBox();
+        expect(badgeBounds.x).toBeGreaterThanOrEqual(linkBounds.x);
+        expect(badgeBounds.x + badgeBounds.width).toBeLessThanOrEqual(
+          linkBounds.x + linkBounds.width,
+        );
+      }
 
       const sync = await page.request.get('/api/messages-sync');
       expect(sync.ok()).toBeTruthy();

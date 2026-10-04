@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { collectLineChanges, renderLineChanges } = require('./line-changes');
 
 const root = path.resolve(__dirname, '../..');
 const reportDir = path.join(root, 'coverage-report');
@@ -290,6 +291,14 @@ function overallStatus(lanes) {
 }
 
 function buildMarkdown(lanes, options = {}) {
+  if (options.includeCoverage === false) {
+    return `${[
+      marker,
+      '## Pull request overview',
+      '',
+      renderLineChanges(options.lineChanges),
+    ].join('\n')}\n`;
+  }
   const runUrl = options.runUrl || process.env.GITHUB_RUN_URL;
   const e2eLane = lanes.find(lane => lane.name === 'e2e');
   const details = [
@@ -301,6 +310,10 @@ function buildMarkdown(lanes, options = {}) {
     renderOverviewTable(lanes),
   ];
   const areaTable = renderE2eAreaTable(e2eLane);
+
+  if (options.lineChanges) {
+    details.push('', renderLineChanges(options.lineChanges));
+  }
 
   if (areaTable) {
     details.push('', areaTable);
@@ -320,6 +333,15 @@ function run() {
   const lanes = readLanes();
   process.stdout.write(
     buildMarkdown(lanes, {
+      includeCoverage: process.env.TRUSTROOTS_PR_INCLUDE_COVERAGE !== 'false',
+      lineChanges:
+        process.env.PR_BASE_SHA && process.env.PR_HEAD_SHA
+          ? collectLineChanges(
+              process.env.PR_BASE_SHA,
+              process.env.PR_HEAD_SHA,
+              root,
+            )
+          : undefined,
       runUrl:
         process.env.GITHUB_SERVER_URL &&
         process.env.GITHUB_REPOSITORY &&

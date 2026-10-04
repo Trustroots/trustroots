@@ -112,6 +112,29 @@ path as an adapter until all consumers have migrated.
 - **WHEN** an ESM consumer imports the implementation
 - **THEN** it can access the service functions through named ESM exports
 
+### Requirement: Redact sensitive diagnostic metadata
+
+The application logger SHALL redact credential, recovery-token, and private
+message and security-report fields from structured metadata before sending it to configured
+transports. Redaction SHALL preserve stable event descriptions and
+non-sensitive classifications, avoid mutating caller objects, and bound
+traversal of cyclic or unusually large metadata. Error messages and stacks SHALL
+not be emitted through structured error metadata.
+
+#### Scenario: Structured log metadata contains sensitive values
+
+- **WHEN** a caller logs nested passwords, reset tokens, cookies, authorization values, or private message content
+- **THEN** configured transports receive redacted values and retain useful event metadata
+
+#### Scenario: Log metadata contains cycles, accessors, or deep structures
+
+- **WHEN** metadata contains a cycle, accessor, excessive nesting, or more than 1,000 visited entries
+- **THEN** logging completes with safe placeholders without invoking accessors or exposing skipped payloads
+
+#### Scenario: Error metadata may contain request values
+
+- **WHEN** a caller logs an Error object as metadata
+- **THEN** the transport receives only recognised error-name, machine-code and status classifications without message or stack text
 ### Requirement: Shared route authorisation middleware
 
 The users, offers, messages, contacts, tribes and reference-thread callback-based route policies SHALL share role lookup and ACL response handling while preserving route grants, guest fallback, domain prechecks, ownership shortcuts and existing HTTP status and response bodies. The admin policy and asynchronous experiences policy remain outside this shared middleware.
@@ -150,6 +173,44 @@ Migrated spam, upload, statistics and Influx services SHALL expose named ESM fun
 - **WHEN** a CommonJS consumer requires the existing path and an ESM consumer imports the implementation
 - **THEN** their default service objects are identical and the implementation provides named function exports without top-level await
 
+### Requirement: Member interactions server ESM preserves registration and consumers
+
+Server implementations in messages, contacts, experiences, offers, references-thread, tribes SHALL use native ESM while retaining existing synchronous CommonJS entry paths, export shapes and registration behaviour during incremental migration.
+
+#### Scenario: Existing bootstrap loads migrated modules
+
+- **WHEN** existing application bootstrap discovers and loads models, configuration, policies, routes or jobs in these domains
+- **THEN** registration occurs exactly once in the existing order with unchanged names and callable signatures
+
+#### Scenario: Existing consumers invoke migrated handlers
+
+- **WHEN** controllers, services or tests load these domains through existing CommonJS paths
+- **THEN** handlers retain their behaviour, function context and shared mutable replacement semantics
+
+#### Scenario: Migration regression checks run
+
+- **WHEN** the migrated domains are validated
+- **THEN** named exports are available for applicable ESM functions, coverage remains at the existing 100% baselines and existing end-to-end scenarios are retained
+
+### Requirement: Identity platform server ESM preserves registration and consumers
+
+Server implementations in users, core, sparkpost SHALL use native ESM while retaining existing synchronous CommonJS entry paths, export shapes and registration behaviour during incremental migration.
+
+#### Scenario: Existing bootstrap loads migrated modules
+
+- **WHEN** existing application bootstrap discovers and loads models, configuration, policies, routes or jobs in these domains
+- **THEN** registration occurs exactly once in the existing order with unchanged names and callable signatures
+
+#### Scenario: Existing consumers invoke migrated handlers
+
+- **WHEN** controllers, services or tests load these domains through existing CommonJS paths
+- **THEN** handlers retain their behaviour, function context and shared mutable replacement semantics
+
+#### Scenario: Migration regression checks run
+
+- **WHEN** the migrated domains are validated
+- **THEN** named exports are available for applicable ESM functions, coverage remains at the existing 100% baselines and existing end-to-end scenarios are retained
+
 ### Requirement: Administration server ESM preserves registration and consumers
 
 Server implementations in admin, statistics, support, pages SHALL use native ESM while retaining existing synchronous CommonJS entry paths, export shapes and registration behaviour during incremental migration.
@@ -168,3 +229,31 @@ Server implementations in admin, statistics, support, pages SHALL use native ESM
 
 - **WHEN** the migrated domains are validated
 - **THEN** named exports are available for applicable ESM functions, coverage remains at the existing 100% baselines and existing end-to-end scenarios are retained
+
+### Requirement: Server production implementations use native ESM
+
+Production implementations under `modules/*/server` SHALL use native `.mjs` modules while existing synchronous CommonJS entry paths remain available for consumers that have not migrated.
+
+#### Scenario: Offer expiry is loaded through both module systems
+
+- **WHEN** an ESM consumer imports the offer expiry implementation and a CommonJS consumer requires its existing `.js` path
+- **THEN** both receive the same callable function and expiry behaviour
+
+#### Scenario: A native server module introduces CommonJS syntax
+
+- **WHEN** server `.mjs` files are linted
+- **THEN** CommonJS exports and new dynamic `require()` calls are rejected except documented synchronous bootstrap and JSON-loading exceptions
+
+### Requirement: Production process entry implementations use native ESM
+
+The server and background worker startup implementations SHALL use native ESM while retaining their existing synchronous `.js` launch paths.
+
+#### Scenario: Existing server command starts the application
+
+- **WHEN** deployment or local scripts run `node server.js`
+- **THEN** the native ESM implementation starts the application through the existing app initialisation service
+
+#### Scenario: Existing worker command starts background jobs
+
+- **WHEN** deployment or local scripts run `node worker.js`
+- **THEN** database connection, model loading, job unlock and worker start run in order with unchanged error handling

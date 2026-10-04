@@ -270,7 +270,13 @@ describe('Support controller unit tests', () => {
       .should.be.true();
   });
 
-  for (const category of ['account', 'reportMember', 'volunteering', 'other']) {
+  for (const category of [
+    'account',
+    'reportMember',
+    'reportBug',
+    'volunteering',
+    'other',
+  ]) {
     it(`stores and emails the ${category} category`, async () => {
       const harness = await loadController();
       const res = mockResponse();

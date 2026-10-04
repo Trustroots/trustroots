@@ -2,14 +2,17 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
+import '@/config/client/i18n';
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
 import * as acquisitionStoriesApi from '@/modules/admin/client/api/acquisition-stories.api';
+import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   getCurrentUser: () => global.window.user,
 }));
 
 jest.mock('@/modules/admin/client/api/acquisition-stories.api');
+jest.mock('@/modules/core/client/api/languages.api');
 jest.mock('@/modules/core/client/components/LoadingIndicator', () => {
   const React = require('react');
 
@@ -20,6 +23,10 @@ jest.mock('@/modules/core/client/components/LoadingIndicator', () => {
 
 beforeEach(() => {
   window.user = { roles: ['admin'] };
+  useLanguagesQuery.mockReturnValue({
+    data: { eng: 'English', fre: 'French', spa: 'Spanish', ger: 'German' },
+    isLoading: false,
+  });
 });
 
 afterEach(() => {
@@ -157,6 +164,153 @@ describe('<AdminAcquisitionStories />', () => {
     expect(screen.getAllByText('', { selector: 'time' })).toHaveLength(2);
   });
 
+  it('puts shared languages first and emphasises shared non-English languages', async () => {
+    window.user = { roles: ['admin'], languages: ['fre', 'eng'] };
+    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      {
+        _id: '333333333333333333333333',
+        username: 'casey',
+        languages: ['spa', 'eng', 'ger', 'fre'],
+      },
+    ]);
+
+    render(<AdminAcquisitionStories />);
+
+    await screen.findByRole('table');
+    const list = screen.getByRole('table').querySelector('tbody ul');
+    expect(Array.from(list.children).map(item => item.textContent)).toEqual([
+      'English',
+      'French',
+      'Spanish',
+      'German',
+    ]);
+    expect(list.children[0].querySelector('strong')).toBeNull();
+    expect(list.children[1].querySelector('strong')).toHaveTextContent(
+      'French',
+    );
+    expect(list.children[2].querySelector('strong')).toBeNull();
+    expect(list.children[3].querySelector('strong')).toBeNull();
+  });
+
+  it.each([
+    ['viewer is absent', null],
+    ['viewer has no language list', { roles: ['admin'] }],
+    ['viewer shares no languages', { roles: ['admin'], languages: ['ger'] }],
+  ])(
+    'renders the language column without emphasis when %s',
+    async (_label, viewer) => {
+      window.user = viewer;
+      acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+        {
+          _id: '333333333333333333333333',
+          username: 'casey',
+          languages: ['fre', 'eng'],
+        },
+      ]);
+
+      render(<AdminAcquisitionStories />);
+
+      await screen.findByRole('table');
+      const list = screen.getByRole('table').querySelector('tbody ul');
+      expect(Array.from(list.children).map(item => item.textContent)).toEqual([
+        'French',
+        'English',
+      ]);
+      expect(list.querySelector('strong')).toBeNull();
+    },
+  );
+
+  it.each([[], undefined])(
+    'shows Not specified for recipient languages %j',
+    async languages => {
+      acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+        { _id: '333333333333333333333333', username: 'casey', languages },
+      ]);
+
+      render(<AdminAcquisitionStories />);
+
+      expect(await screen.findByText('Not specified')).toBeInTheDocument();
+    },
+  );
+
+  it('renders the welcomer with contact date and public links for non-admins', async () => {
+    window.user = {};
+    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      {
+        _id: '333333333333333333333333',
+        username: 'casey',
+        welcomer: {
+          _id: '444444444444444444444444',
+          username: 'welcomer',
+          displayName: 'Welcomer Example',
+          created: '2026-03-04T05:06:07.000Z',
+        },
+      },
+    ]);
+
+    render(<AdminAcquisitionStories />);
+
+    expect(
+      await screen.findByRole('link', { name: 'welcomer (Welcomer Example)' }),
+    ).toHaveAttribute('href', '/profile/welcomer');
+    expect(screen.getByText('2026-03-04')).toHaveAttribute(
+      'dateTime',
+      '2026-03-04T05:06:07.000Z',
+    );
+    expect(screen.getByRole('link', { name: 'casey' })).toHaveAttribute(
+      'href',
+      '/profile/casey',
+    );
+  });
+
+  it('uses admin links and marks contacted stories with a row class', async () => {
+    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      {
+        _id: '333333333333333333333333',
+        username: 'contacted',
+        welcomer: {
+          _id: '444444444444444444444444',
+          username: 'welcomer',
+          created: '2026-03-04T05:06:07.000Z',
+        },
+      },
+      { _id: '555555555555555555555555', username: 'unassigned' },
+    ]);
+
+    render(<AdminAcquisitionStories />);
+
+    const welcomerLink = await screen.findByRole('link', { name: 'welcomer' });
+    expect(welcomerLink).toHaveAttribute(
+      'href',
+      '/admin/user?id=444444444444444444444444',
+    );
+    const contactedRow = welcomerLink.closest('tr');
+    expect(contactedRow).toHaveClass('admin-acquisition-stories-contacted');
+    expect(screen.getByText('Unassigned').closest('tr')).not.toHaveClass(
+      'admin-acquisition-stories-contacted',
+    );
+    expect(screen.getByRole('link', { name: 'contacted' })).toHaveAttribute(
+      'href',
+      '/admin/user?id=333333333333333333333333',
+    );
+  });
+
+  it('renders an empty acquisition story when the field is absent', async () => {
+    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      {
+        _id: '333333333333333333333333',
+        username: 'casey',
+      },
+    ]);
+
+    render(<AdminAcquisitionStories />);
+
+    expect(
+      await screen.findByRole('link', { name: 'casey' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('table')).toHaveTextContent('casey');
+  });
+
   it('sorts stories by every table column', async () => {
     acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {
@@ -170,7 +324,6 @@ describe('<AdminAcquisitionStories />', () => {
       },
       {
         _id: '222222222222222222222222',
-        acquisitionStory: 'A friend recommended it',
         circleCount: 0,
         created: '2026-02-01T00:00:00.000Z',
         displayName: 'Bob Example',
@@ -213,6 +366,34 @@ describe('<AdminAcquisitionStories />', () => {
     expect(storyOrder()).toEqual(['bob', 'alice']);
     fireEvent.click(screen.getByRole('button', { name: 'Profile visible ▲' }));
     expect(storyOrder()).toEqual(['alice', 'bob']);
+  });
+
+  it('sorts by welcomer assignment in both directions', async () => {
+    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      {
+        _id: '111111111111111111111111',
+        username: 'contacted',
+        welcomer: {
+          _id: '333333333333333333333333',
+          username: 'welcome-team',
+          created: '2026-01-01T00:00:00.000Z',
+        },
+      },
+      { _id: '222222222222222222222222', username: 'unassigned' },
+    ]);
+
+    render(<AdminAcquisitionStories />);
+    await screen.findByText('Unassigned');
+
+    const memberOrder = () =>
+      Array.from(document.querySelectorAll('tbody tr')).map(row =>
+        row.textContent.includes('contacted') ? 'contacted' : 'unassigned',
+      );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Welcomer' }));
+    expect(memberOrder()).toEqual(['unassigned', 'contacted']);
+    fireEvent.click(screen.getByRole('button', { name: 'Welcomer ▲' }));
+    expect(memberOrder()).toEqual(['contacted', 'unassigned']);
   });
 
   it('explains its compact sortable and static column headings', async () => {

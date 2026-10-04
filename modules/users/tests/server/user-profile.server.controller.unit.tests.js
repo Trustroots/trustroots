@@ -5,15 +5,16 @@
  */
 const crypto = require('crypto');
 const mongoose = require('mongoose');
-const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 
+require('../../server/models/user.server.model');
 const profileController = require('../../server/controllers/users.profile.server.controller');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const should = require('should');
 
 const User = mongoose.model('User');
 const Tribe = mongoose.model('Tribe');
+const UnifiedPushRegistration = mongoose.model('UnifiedPushRegistration');
 
 const validNpub =
   'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
@@ -53,6 +54,17 @@ function runHandler(invoke) {
 const controllerPath =
   '../../server/controllers/users.profile.server.controller';
 const emailServicePath = '../../../core/server/services/email.server.service';
+
+function stubControllerDependencies(controllerPath, dependencyStubs) {
+  for (const [dependencyPath, methods] of Object.entries(dependencyStubs)) {
+    const dependency = require(dependencyPath);
+    for (const [method, implementation] of Object.entries(methods)) {
+      sinon.stub(dependency, method).callsFake(implementation);
+    }
+  }
+
+  return require(controllerPath);
+}
 
 describe('Profile controller unit tests', () => {
   afterEach(() => {
@@ -281,7 +293,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('ignores a successful final waterfall callback', () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         async: {
           waterfall(steps, done) {
             done();
@@ -376,7 +388,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('returns 400 when sending the removal email fails', async () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         [emailServicePath]: {
           sendRemoveProfile: (user, cb) => cb(new Error('smtp down')),
         },
@@ -406,7 +418,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('ignores a successful final removal initialization callback', () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         async: {
           waterfall(steps, done) {
             done();
@@ -450,6 +462,13 @@ describe('Profile controller unit tests', () => {
       userDoc.removeProfileToken = 'valid-remove-token';
       userDoc.removeProfileExpires = Date.now() + 3600000;
       await userDoc.save();
+      await UnifiedPushRegistration.create({
+        user: saved._id,
+        endpoint: 'https://ntfy.sh/anonymous-deleted-account',
+        publicKey:
+          'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
+        auth: 'abcdefghijklmnopqrstuv',
+      });
 
       const { res } = await runHandler(res =>
         profileController.removeProfile(
@@ -466,12 +485,15 @@ describe('Profile controller unit tests', () => {
 
       const gone = await User.findById(saved._id);
       should.not.exist(gone);
+      (
+        await UnifiedPushRegistration.countDocuments({ user: saved._id })
+      ).should.equal(0);
     });
 
     it('returns 400 when profile removal fails in the waterfall', async () => {
       const messageHandlerPath =
         '../../../messages/server/controllers/messages.server.controller';
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         [messageHandlerPath]: {
           markAllMessagesToUserNotified: (userId, cb) =>
             cb(new Error('messages failed')),
@@ -503,7 +525,7 @@ describe('Profile controller unit tests', () => {
         '../../../offers/server/controllers/offers.server.controller';
       const contactHandlerPath =
         '../../../contacts/server/controllers/contacts.server.controller';
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         [emailServicePath]: {
           sendRemoveProfileConfirmed: (user, cb) =>
             cb(new Error('confirm email failed')),
@@ -522,6 +544,11 @@ describe('Profile controller unit tests', () => {
       userDoc.removeProfileExpires = Date.now() + 3600000;
       await userDoc.save();
 
+      const pushCleanup = sinon
+        .stub(UnifiedPushRegistration, 'deleteMany')
+        .callsFake((query, callback) =>
+          callback(new Error('push cleanup failed')),
+        );
       const { res } = await runHandler(res =>
         controller.removeProfile(
           {
@@ -531,6 +558,7 @@ describe('Profile controller unit tests', () => {
           res,
         ),
       );
+      pushCleanup.restore();
 
       res.statusCode.should.equal(200);
       const gone = await User.findById(saved._id);
@@ -538,7 +566,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('ignores a successful final removal callback', () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         async: {
           waterfall(steps, done) {
             done();
@@ -622,6 +650,12 @@ describe('Profile controller unit tests', () => {
   });
 
   describe('userMiniByID', () => {
+    it('includes avatarVersion in mini-profile query fields', () => {
+      profileController.userMiniProfileFields
+        .split(/\s+/)
+        .should.containEql('avatarVersion');
+    });
+
     it('responds with 400 for an invalid id', async () => {
       const { res } = await runHandler((res, next) =>
         profileController.userMiniByID({ user: {} }, res, next, 'bad-id'),
@@ -804,7 +838,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('passes unexpected middleware errors to next', async () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         async: {
           waterfall(steps, done) {
             done(new Error('unexpected profile middleware failure'));
@@ -826,7 +860,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('continues when reply statistics lookup fails', async () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         '../../../messages/server/services/message-stat.server.service': {
           readFormattedMessageStatsOfUser(userId, now, cb) {
             cb(new Error('stats unavailable'));
@@ -852,7 +886,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('ignores a successful final username middleware callback', () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = stubControllerDependencies(controllerPath, {
         async: {
           waterfall(steps, done) {
             done();
@@ -1205,6 +1239,40 @@ describe('Profile controller unit tests', () => {
   describe('sanitizeProfile', () => {
     it('returns undefined for a missing profile', () => {
       (profileController.sanitizeProfile(null) === undefined).should.be.true();
+    });
+
+    it('omits private and unrecognised document fields after sanitisation', () => {
+      const profile = {
+        toObject: () => ({
+          _id: new mongoose.Types.ObjectId(),
+          created: new Date('2020-01-01T00:00:00.000Z'),
+          displayName: 'Fictional Member',
+          email: 'member@example.test',
+          locale: 'en',
+          blocked: [],
+          description: '',
+          member: [],
+          roles: ['user'],
+          lastIpAddress: '192.0.2.1',
+          pushRegistration: [{ token: 'fictional-push-token' }],
+          providerData: [{ accessToken: 'fictional-provider-token' }],
+          futurePrivateField: 'must stay private',
+        }),
+      };
+
+      const sanitized = profileController.sanitizeOwnProfile(profile);
+
+      sanitized.displayName.should.equal('Fictional Member');
+      sanitized.email.should.equal('member@example.test');
+      sanitized.locale.should.equal('en');
+      for (const field of [
+        'lastIpAddress',
+        'pushRegistration',
+        'providerData',
+        'futurePrivateField',
+      ]) {
+        (sanitized[field] === undefined).should.be.true();
+      }
     });
 
     it('marks active volunteers on the sanitized profile', async () => {

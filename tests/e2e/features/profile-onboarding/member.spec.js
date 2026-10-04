@@ -163,7 +163,7 @@ test.describe('confirmed member flows', () => {
       'Profile API returns public profile data.',
     ]);
 
-    const host = SEEDED_MEMBERS[0];
+    const host = SEEDED_MEMBERS[1];
     const response = await request.get(`/api/users/${host.username}`);
 
     expect(response.ok()).toBeTruthy();
@@ -171,6 +171,20 @@ test.describe('confirmed member flows', () => {
     const profile = await response.json();
     expect(profile.username).toBe(host.username);
     expect(profile.displayName).toBe(`${host.firstName} ${host.lastName}`);
+    for (const privateField of [
+      'email',
+      'emailTemporary',
+      'newsletter',
+      'locale',
+      'blocked',
+      'lastIpAddress',
+      'pushRegistration',
+      'providerData',
+      'password',
+      'roles',
+    ]) {
+      expect(profile[privateField]).toBeUndefined();
+    }
   });
 
   test('another host accommodation page shows hosting details', async ({
@@ -290,6 +304,7 @@ test.describe('confirmed member flows', () => {
     if (memberships.some(item => item.tribe._id === hikers._id)) {
       const leave = await request.delete(
         `/api/users/memberships/${hikers._id}`,
+        { headers: { 'X-Trustroots-Request': '1' } },
       );
       expect(leave.ok()).toBeTruthy();
     }

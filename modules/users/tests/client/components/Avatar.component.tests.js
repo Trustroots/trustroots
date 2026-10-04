@@ -31,6 +31,14 @@ describe('<Avatar />', () => {
     );
   });
 
+  it('uses the username when the display name is unavailable', () => {
+    render(<Avatar user={{ ...user, displayName: '' }} />);
+
+    expect(
+      screen.getByRole('link', { name: 'Open user profile for alice' }),
+    ).toBeInTheDocument();
+  });
+
   it('uses the next generated local avatar size with a cache buster', () => {
     render(<Avatar user={user} source="local" size={36} link={false} />);
 
@@ -51,6 +59,38 @@ describe('<Avatar />', () => {
     expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
       'src',
       '/uploads-profile/user-1/avatar/64.jpg?',
+    );
+  });
+
+  it('uses the server-generated version for a newly published avatar set', () => {
+    render(
+      <Avatar
+        user={{ ...user, avatarVersion: '0123456789abcdef0123456789abcdef' }}
+        source="local"
+        size={64}
+        link={false}
+      />,
+    );
+
+    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+      'src',
+      '/uploads-profile/user-1/avatar/0123456789abcdef0123456789abcdef/64.jpg?1767323045000',
+    );
+  });
+
+  it('uses the legacy avatar path for an invalid version value', () => {
+    render(
+      <Avatar
+        user={{ ...user, avatarVersion: '../other-user' }}
+        source="local"
+        size={64}
+        link={false}
+      />,
+    );
+
+    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+      'src',
+      '/uploads-profile/user-1/avatar/64.jpg?1767323045000',
     );
   });
 

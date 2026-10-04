@@ -487,9 +487,18 @@ describe('API route registrations', () => {
     assertHandlers(routeByPath(routes, '/api/auth/signin').post, [
       authentication.signin,
     ]);
-    assertHandlers(routeByPath(routes, '/api/auth/signout').get, [
-      authentication.signout,
-    ]);
+    const signoutRoute = routeByPath(routes, '/api/auth/signout');
+    let getSignoutStatus;
+    signoutRoute.get[0](
+      {},
+      {
+        sendStatus(status) {
+          getSignoutStatus = status;
+        },
+      },
+    );
+    assert.equal(getSignoutStatus, 405);
+    assertHandlers(signoutRoute.post, [authentication.signout]);
     assert.equal(
       routes.some(route => /\/api\/auth\/(facebook|github)/.test(route.path)),
       false,
@@ -529,7 +538,7 @@ describe('API route registrations', () => {
       ['getAnalysis', 'list'],
       'adminAcquisitionStories',
     );
-    const auditLog = controller(['list', 'record'], 'adminAuditLog');
+    const auditLog = controller(['list', 'record', 'actors'], 'adminAuditLog');
     const messages = controller(['getMessages'], 'adminMessages');
     const newsletter = controller(
       [
@@ -589,6 +598,9 @@ describe('API route registrations', () => {
     assertHandlers(routeByPath(routes, '/api/admin/audit-log').get, [
       auditLog.list,
     ]);
+    assertHandlers(routeByPath(routes, '/api/admin/audit-log/actors').get, [
+      auditLog.actors,
+    ]);
     assertHandlers(routeByPath(routes, '/api/admin/messages').post, [
       auditLog.record,
       messages.getMessages,
@@ -620,6 +632,7 @@ describe('API route registrations', () => {
     );
     assertHandlers(routeByPath(routes, '/api/admin/user').post, [
       auditLog.record,
+      users.usernameToUserId,
       users.getUser,
     ]);
     assertHandlers(routeByPath(routes, '/api/admin/user/change-role').post, [

@@ -89,7 +89,7 @@ async function submitEnquiry(page, message, category) {
   return stored;
 }
 
-for (const category of ['account', 'other']) {
+for (const category of ['account', 'reportBug', 'other']) {
   test(`visitor can send a support request in the ${category} category`, async ({
     page,
   }, testInfo) => {
@@ -97,6 +97,8 @@ for (const category of ['account', 'other']) {
       'Support request submission succeeds with valid data.',
       category === 'account'
         ? 'Account help requests retain their category in storage and email.'
+        : category === 'reportBug'
+        ? 'Bug reports retain their category in storage and email.'
         : 'Other requests retain their category in storage and email.',
     ]);
     await page.goto('/support');
@@ -116,6 +118,50 @@ for (const category of ['account', 'other']) {
     expect(stored.reportMember).toBeUndefined();
   });
 }
+
+test('signed-in support menu opens the bug report form and the FAQ keeps GitHub optional', async ({
+  page,
+}, testInfo) => {
+  annotateFeature(testInfo, 'public.faq-bugs-and-features', [
+    'Bug reporting guidance loads.',
+    'The FAQ links primarily to the support form and retains GitHub as an optional route.',
+    'Obsolete GitHub search and signup instructions are absent.',
+  ]);
+  annotateFeature(testInfo, 'public.support-page', [
+    'Support contact form is visible.',
+    'Signed-in members can open the preselected bug report category from the support menu.',
+  ]);
+  await signInViaApi(page, null, SEEDED_MEMBERS[0]);
+  await page.goto('/faq/bugs-and-features');
+
+  const faqQuestion = page.locator('#how-do-i-report-a-bug');
+  await expect(
+    faqQuestion.locator('a[href="/support?category=reportBug"]'),
+  ).toBeVisible();
+  await expect(
+    faqQuestion.getByRole('link', { name: 'GitHub', exact: true }),
+  ).toHaveAttribute('href', 'https://github.com/Trustroots/trustroots/issues');
+  await expect(faqQuestion).not.toContainText(/search bar|sign up at github/i);
+
+  const supportToggle = page.getByRole('button', {
+    name: 'Support',
+    exact: true,
+  });
+  await supportToggle.click();
+  const reportBug = supportToggle.locator('..').getByRole('link', {
+    name: 'Report a bug',
+    exact: true,
+  });
+  await expect(reportBug).toHaveAttribute(
+    'href',
+    '/support?category=reportBug',
+  );
+  await reportBug.click();
+  await expect(page).toHaveURL(/\/support\?category=reportBug$/);
+  await expect(page.getByLabel('What can we help with?')).toHaveValue(
+    'reportBug',
+  );
+});
 
 for (const [path, name, selector] of [
   ['/', 'Volunteering', '.home-footer-pages'],

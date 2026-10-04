@@ -143,6 +143,8 @@ let routeParams = {
 clientRuntime.getCurrentRouteParams.mockReturnValue(routeParams);
 
 describe('<Thread>', () => {
+  let originalVisualViewport;
+
   beforeEach(() => {
     api.users.fetch.mockResolvedValue(otherUser);
     mockIsExtraSmall = true;
@@ -150,6 +152,80 @@ describe('<Thread>', () => {
       username: otherUser.username,
     };
     clientRuntime.getCurrentRouteParams.mockReturnValue(routeParams);
+  });
+
+  afterEach(() => {
+    if (originalVisualViewport) {
+      Object.defineProperty(window, 'visualViewport', originalVisualViewport);
+    } else {
+      delete window.visualViewport;
+    }
+    originalVisualViewport = undefined;
+  });
+
+  it('resizes the mobile thread above the on-screen keyboard', async () => {
+    const windowHeight = window.innerHeight;
+    originalVisualViewport = Object.getOwnPropertyDescriptor(
+      window,
+      'visualViewport',
+    );
+    const viewportListeners = {};
+    const visualViewport = {
+      height: 500.4,
+      offsetTop: 20.2,
+      addEventListener: jest.fn((event, listener) => {
+        viewportListeners[event] = listener;
+      }),
+      removeEventListener: jest.fn(),
+    };
+    Object.defineProperty(window, 'visualViewport', {
+      configurable: true,
+      value: visualViewport,
+    });
+    const { unmount } = render(<Thread user={me} profileMinimumLength={0} />);
+    const editor = await screen.findByRole('textbox');
+
+    expect(
+      document.documentElement.style.getPropertyValue(
+        '--trustroots-keyboard-inset',
+      ),
+    ).toBe('0px');
+
+    editor.focus();
+    fireEvent.focusIn(editor);
+    expect(
+      document.documentElement.style.getPropertyValue(
+        '--trustroots-keyboard-inset',
+      ),
+    ).toBe(`${Math.round(windowHeight - 500.4 - 20.2)}px`);
+
+    visualViewport.height = windowHeight + 30;
+    viewportListeners.resize();
+    expect(
+      document.documentElement.style.getPropertyValue(
+        '--trustroots-keyboard-inset',
+      ),
+    ).toBe('0px');
+
+    const button = screen.getByRole('button', { name: 'Yes, I can host!' });
+    button.focus();
+    fireEvent.focusOut(editor);
+    expect(
+      document.documentElement.style.getPropertyValue(
+        '--trustroots-keyboard-inset',
+      ),
+    ).toBe('0px');
+
+    unmount();
+    expect(visualViewport.removeEventListener).toHaveBeenCalledWith(
+      'resize',
+      expect.any(Function),
+    );
+    expect(
+      document.documentElement.style.getPropertyValue(
+        '--trustroots-keyboard-inset',
+      ),
+    ).toBe('');
   });
 
   it('shows the activation prompt and skips loading for private users', () => {
@@ -191,6 +267,14 @@ describe('<Thread>', () => {
       expect(
         screen.getByRole('link', { name: 'community rules' }),
       ).toHaveAttribute('href', '/rules');
+    });
+
+    it('focuses the reply editor when a conversation opens on desktop', async () => {
+      mockIsExtraSmall = false;
+      render(<Thread user={me} profileMinimumLength={0} />);
+
+      const editor = await screen.findByRole('textbox');
+      await waitFor(() => expect(editor).toHaveFocus());
     });
 
     it('sends a typed reply and appends the API response to the thread', async () => {
