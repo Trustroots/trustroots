@@ -75,9 +75,13 @@ const defaultExport = function (app) {
 
   app
     .route('/api/users/accounts/:provider')
+    .all(usersPolicy.isAllowed)
     .delete(userAuthentication.removeOAuthProvider);
 
-  app.route('/api/users/password').post(userPassword.changePassword);
+  app
+    .route('/api/users/password')
+    .all(usersPolicy.isAllowed)
+    .post(userPassword.changePassword);
 
   app
     .route('/api/users/:username')

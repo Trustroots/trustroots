@@ -1007,9 +1007,13 @@ service.sync = function (req, res) {
  * @param {function} callback - function (?error) {}
  */
 service.markAllMessagesToUserNotified = function (userId, callback) {
-  Message.update({ userTo: userId }, { notificationCount: 2 }, function (err) {
-    callback(err);
-  });
+  Message.updateMany(
+    { userTo: userId },
+    { $set: { notificationCount: 2 } },
+    function (err) {
+      callback(err);
+    },
+  );
 };
 
 const inbox = service.inbox;

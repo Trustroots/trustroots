@@ -391,6 +391,48 @@ describe('Messages controller unit tests', () => {
         },
       );
     });
+
+    it('marks every message to the user without changing other recipients', async () => {
+      const [sender, recipient, otherRecipient] = await utils.saveUsers(
+        utils.generateUsers(3, { public: true }),
+      );
+      await Message.create([
+        {
+          userFrom: sender._id,
+          userTo: recipient._id,
+          content: 'First message',
+        },
+        {
+          userFrom: sender._id,
+          userTo: recipient._id,
+          content: 'Second message',
+        },
+        {
+          userFrom: sender._id,
+          userTo: otherRecipient._id,
+          content: 'Other message',
+        },
+      ]);
+
+      await new Promise((resolve, reject) => {
+        messagesController.markAllMessagesToUserNotified(recipient._id, err =>
+          err ? reject(err) : resolve(),
+        );
+      });
+
+      const messages = await Message.find().sort('content');
+      messages
+        .filter(message => message.userTo.equals(recipient._id))
+        .length.should.equal(2);
+      messages
+        .filter(message => message.userTo.equals(recipient._id))
+        .every(message => message.notificationCount === 2)
+        .should.be.true();
+      messages
+        .filter(message => message.userTo.equals(otherRecipient._id))
+        .every(message => message.notificationCount !== 2)
+        .should.be.true();
+    });
   });
 
   describe('sanitizeMessages', () => {

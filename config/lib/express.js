@@ -364,7 +364,7 @@ module.exports.initHelmetHeaders = function (app) {
       reportOnly: process.env.NODE_ENV === 'development',
     });
 
-    cspMiddleware(res, res, next);
+    cspMiddleware(req, res, next);
   });
 
   // X-Frame protection
