@@ -13,7 +13,7 @@ import textService from '../../../core/server/services/text.server.service.js';
 import spamService from '../../../core/server/services/spam.server.service.js';
 import userRolesService from '../../../users/server/services/user-roles.server.service.js';
 import statService from '../../../stats/server/services/stats.server.service.js';
-import { setLinkHeader } from '../../../core/server/services/pagination.server.service.mjs';
+import paginationService from '../../../core/server/services/pagination.server.service.js';
 
 const service = {};
 const require = createRequire(import.meta.url);
@@ -228,7 +228,7 @@ service.inbox = function (req, res) {
         return errorService.sendBadRequest(res, err);
       } else {
         // Pass pagination data to construct link header
-        setLinkHeader(req, res, data.pages);
+        paginationService.setLinkHeader(req, res, data.pages);
 
         // Sanitize and return threads
         sanitizeThreads(data.docs, req.user._id, function (err, threads) {
@@ -693,7 +693,7 @@ service.threadByUser = function (req, res, next, userId) {
 
             // Pass pagination data to construct link header
             if (data.docs.length > 0) {
-              setLinkHeader(req, res, data.pages);
+              paginationService.setLinkHeader(req, res, data.pages);
             }
 
             done(err, data.docs);

@@ -1,5 +1,5 @@
 import errorService from '../../../core/server/services/error.server.service.js';
-import { setLinkHeader } from '../../../core/server/services/pagination.server.service.mjs';
+import paginationService from '../../../core/server/services/pagination.server.service.js';
 import mongoose from 'mongoose';
 
 const service = {};
@@ -68,7 +68,7 @@ service.listTribes = function (req, res) {
         }
         const pages = Math.ceil(total / limit);
         if (pages > page) {
-          setLinkHeader(req, res, pages, { relative: true });
+          paginationService.setLinkHeader(req, res, pages, { relative: true });
         }
         res.json(docs);
       });
