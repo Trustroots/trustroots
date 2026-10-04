@@ -6,10 +6,9 @@
 
 const config = require('../config/config');
 const fs = require('fs');
-const mkdirRecursive = require('mkdir-recursive');
 
 if (!fs.existsSync(config.uploadDir)) {
-  mkdirRecursive.mkdir(config.uploadDir, err => {
+  fs.mkdir(config.uploadDir, { recursive: true }, err => {
     if (err) {
       console.error(err);
     }

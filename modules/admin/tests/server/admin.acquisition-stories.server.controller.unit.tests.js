@@ -375,6 +375,33 @@ describe('Admin acquisition stories controller unit tests', () => {
       categories.should.containEql('something');
     });
 
+    it('corrects one edit but does not treat a transposition as one edit', async () => {
+      const stories = [
+        'community',
+        'comunity',
+        'commuunity',
+        'commanity',
+        'commuinty',
+        'coxxunity',
+      ].map(acquisitionStory => ({ acquisitionStory }));
+      const storyQuery = {
+        exec: sinon.stub().resolves(stories),
+      };
+      storyQuery.sort = sinon.stub().returns(storyQuery);
+      storyQuery.limit = sinon.stub().returns(storyQuery);
+      sinon.stub(User, 'find').returns(storyQuery);
+
+      const res = mockResponse();
+      await adminAcquisitionStories.getAnalysis({}, res);
+
+      const counts = Object.fromEntries(
+        res.body.table.map(({ category, observed }) => [category, observed]),
+      );
+      counts.community.should.equal(4);
+      counts.commuinty.should.equal(1);
+      counts.coxxunity.should.equal(1);
+    });
+
     it('ignores URL tokens that cannot be parsed', async () => {
       sinon.stub(global, 'URL').callsFake(() => {
         throw new TypeError('invalid URL');

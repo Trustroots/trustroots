@@ -6,7 +6,6 @@ import mongoosePaginate from 'mongoose-paginate';
 import uniqueValidation from '../../../../config/lib/mongoose-unique-validation.js';
 import integerValidator from 'mongoose-integer';
 import urlslugs from 'mongoose-url-slugs';
-import randomColor from 'randomcolor';
 import speakingurl from 'speakingurl';
 import validator from 'validator';
 import sanitizeHtml from 'sanitize-html';
@@ -19,14 +18,25 @@ const service = {};
 const Schema = mongoose.Schema;
 const { sanitizeOptions } = dependency0;
 
-/**
- * Return random dark hex color without leading `#`
- */
+// White circle labels remain readable on every colour in this palette.
+const circleColours = [
+  '1e3a8a',
+  '1e40af',
+  '065f46',
+  '166534',
+  '854d0e',
+  '92400e',
+  '9a3412',
+  '991b1b',
+  '6b21a8',
+  '86198f',
+  '155e75',
+  '334155',
+];
+
+/** Return a dark six-character hex colour without a leading `#`. */
 function randomHex() {
-  return randomColor({
-    luminosity: 'dark',
-    format: 'hex',
-  }).substr(1);
+  return circleColours[Math.floor(Math.random() * circleColours.length)];
 }
 
 /**

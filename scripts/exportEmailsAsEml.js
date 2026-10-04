@@ -14,7 +14,6 @@
 var path = require('path'),
     fs = require('fs'),
     del = require('del'),
-    mkdirRecursive = require('mkdir-recursive'),
     async = require('async'),
     nodemailer = require('nodemailer'),
     config = require('../config/config'),
@@ -116,7 +115,7 @@ function generateParams(params) {
 // Ensure temp directory exists
 function ensureTempDir(done) {
   console.log('Ensuring temp directory exists.');
-  mkdirRecursive.mkdir(tempFolder, function(err) {
+  fs.mkdir(tempFolder, { recursive: true }, function(err) {
     if (err && err.code !== 'EEXIST') {
       console.error(err);
     }
