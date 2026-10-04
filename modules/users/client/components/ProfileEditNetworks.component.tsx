@@ -139,7 +139,7 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                 </a>
               </h4>
               <NostrootsOnboarding
-                username={viewer.username}
+                username={viewer?.username}
                 source="network-settings"
                 linkRef={undefined}
               />
