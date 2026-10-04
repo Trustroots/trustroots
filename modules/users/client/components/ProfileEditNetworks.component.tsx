@@ -37,7 +37,7 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
   const { user: viewer, setUser } = useAuth() as {
-    user: UserProfile;
+    user: UserProfile | null;
     setUser: (user: UserProfile) => void;
   };
   const [draftUser, setDraftUser] = useState({ ...user });
@@ -131,7 +131,7 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                 </a>
               </h4>
               <NostrootsOnboarding
-                username={viewer.username}
+                username={viewer?.username}
                 source="network-settings"
                 linkRef={undefined}
               />
