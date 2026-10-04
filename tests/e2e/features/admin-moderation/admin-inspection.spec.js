@@ -241,15 +241,17 @@ test.describe('admin moderation inspection flows', () => {
       page.getByRole('link', { name: 'Role management' }),
     ).toHaveCount(0);
     const rolePanel = page.locator('.admin-user-roles');
-    await expect(
-      rolePanel.locator('li').filter({ hasText: /^shadowban$/ }),
-    ).toBeVisible();
-    await expect(
-      rolePanel.locator('li').filter({ hasText: /^shadowban$/ }),
-    ).toHaveAttribute(
-      'title',
+    const shadowRole = rolePanel.getByText('shadowban', { exact: true });
+    await expect(shadowRole).toBeVisible();
+    await expect(shadowRole).toHaveAttribute(
+      'aria-describedby',
+      'member-role-shadowban-description',
+    );
+    await shadowRole.focus();
+    await expect(page.getByRole('tooltip')).toHaveText(
       'Member can use the site, but their profile and outreach are hidden from others.',
     );
+    await shadowRole.blur();
     await expect(
       rolePanel.getByRole('button', {
         name: 'Add to Welcome team',
