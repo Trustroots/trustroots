@@ -98,9 +98,7 @@ service.userSearchProfileFields =
  */
 service.update = function (req, res) {
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   if (
@@ -123,9 +121,7 @@ service.update = function (req, res) {
     (typeof req.body.locale !== 'string' ||
       !localeCodes.includes(req.body.locale))
   ) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('bad-request'),
-    });
+    return errorService.sendBadRequest(res);
   }
 
   if (req.body.languages) {
@@ -329,9 +325,7 @@ service.update = function (req, res) {
     ],
     function (err) {
       if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       }
     },
   );
@@ -342,9 +336,7 @@ service.update = function (req, res) {
  */
 service.initializeRemoveProfile = function (req, res) {
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   // Don't let suspended or shadowbanned users remove themself, ask them to get in touch with support instead.
@@ -438,9 +430,7 @@ service.initializeRemoveProfile = function (req, res) {
  */
 service.removeProfile = function (req, res) {
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   async.waterfall(
@@ -725,9 +715,7 @@ function createBlockingUserFilter(loggedUser) {
 service.userMiniByID = function (req, res, next, userId) {
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
+    return errorService.sendInvalidId(res);
   }
 
   User.findById(
@@ -736,9 +724,7 @@ service.userMiniByID = function (req, res, next, userId) {
   ).exec(function (err, profile) {
     // Something went wrong or no profile
     if (err || !profile) {
-      return res.status(404).send({
-        message: errorService.getErrorMessageByKey('not-found'),
-      });
+      return errorService.sendNotFound(res);
     }
     const { isAdmin, isOwnProfile, isBannedProfile, isBlocked, hasBlocked } =
       classifyPermission(req.user, profile);
@@ -748,9 +734,7 @@ service.userMiniByID = function (req, res, next, userId) {
       !isOwnProfile &&
       (!profile.public || isBannedProfile || isBlocked || hasBlocked)
     ) {
-      return res.status(404).send({
-        message: errorService.getErrorMessageByKey('not-found'),
-      });
+      return errorService.sendNotFound(res);
     }
 
     req.profile = profile;
@@ -764,9 +748,7 @@ service.userMiniByID = function (req, res, next, userId) {
 service.userByUsername = function (req, res, next, username) {
   // Require user
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   // Proper 'username' value required
@@ -1043,18 +1025,14 @@ service.sanitizeOwnProfile = function (profile) {
  */
 service.joinTribe = function (req, res) {
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   const tribeId = req.params.tribeId;
 
   // Not a valid ObjectId
   if (!tribeId || !mongoose.Types.ObjectId.isValid(tribeId)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
+    return errorService.sendInvalidId(res);
   }
 
   async.waterfall(
@@ -1158,18 +1136,14 @@ service.joinTribe = function (req, res) {
  */
 service.leaveTribe = function (req, res) {
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   const tribeId = req.params.tribeId;
 
   // Not a valid ObjectId
   if (!tribeId || !mongoose.Types.ObjectId.isValid(tribeId)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
+    return errorService.sendInvalidId(res);
   }
 
   async.waterfall(
@@ -1272,9 +1246,7 @@ service.leaveTribe = function (req, res) {
  */
 service.getUserMemberships = function (req, res) {
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   User.findById(req.user._id, 'member')
@@ -1304,9 +1276,7 @@ service.getUserMemberships = function (req, res) {
  */
 service.removePushRegistration = function (req, res) {
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   const user = req.user;
@@ -1348,9 +1318,7 @@ service.removePushRegistration = function (req, res) {
  */
 service.addPushRegistration = function (req, res) {
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   return res.status(400).send({

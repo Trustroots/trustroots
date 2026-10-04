@@ -682,9 +682,7 @@ service.readMine = async function readMine(req, res) {
     : null;
 
   if (experience === null && otherExperience === null) {
-    return res.status(404).json({
-      message: errorService.getErrorMessageByKey('not-found'),
-    });
+    return errorService.sendNotFound(res);
   }
 
   if (experience === null) {

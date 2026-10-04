@@ -208,9 +208,7 @@ const setLinkHeader = function (req, res, pageCount) {
 service.inbox = function (req, res) {
   // No user
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   Thread.paginate(
@@ -242,9 +240,7 @@ service.inbox = function (req, res) {
     },
     function (err, data) {
       if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       } else {
         // Pass pagination data to construct link header
         setLinkHeader(req, res, data.pages);
@@ -294,9 +290,7 @@ async function shouldThottleUser(userId) {
 service.send = async function (req, res) {
   // No user
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   const senderIsRestricted = userRolesService.hasRestrictedMessagingRole(
@@ -312,9 +306,7 @@ service.send = async function (req, res) {
 
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
+    return errorService.sendInvalidId(res);
   }
 
   // Don't allow sending messages to myself
@@ -613,9 +605,7 @@ service.send = async function (req, res) {
       /* istanbul ignore else */
       if (err) {
         log('error', 'Message failed to send. #sa239', err);
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       }
     },
   );
@@ -637,16 +627,12 @@ service.thread = function (req, res) {
  */
 service.threadByUser = function (req, res, next, userId) {
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   // Not user id or its not a valid ObjectId
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
+    return errorService.sendInvalidId(res);
   }
 
   // TODO do we want to allow to see the messages from suspended or banned users
@@ -764,9 +750,7 @@ service.threadByUser = function (req, res, next, userId) {
     ],
     function (err) {
       if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       }
 
       next();
@@ -780,9 +764,7 @@ service.threadByUser = function (req, res, next, userId) {
  */
 service.markRead = function (req, res) {
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   const messages = [];

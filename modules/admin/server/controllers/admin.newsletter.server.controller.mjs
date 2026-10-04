@@ -461,11 +461,8 @@ export const list = async (req, res) => {
 export const listCircleMembers = async (req, res) => {
   const circleId = req?.query?.circleId;
 
-  if (!circleId || !mongoose.Types.ObjectId.isValid(circleId)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
-  }
+  if (!circleId || !mongoose.Types.ObjectId.isValid(circleId))
+    return errorService.sendInvalidId(res);
 
   const onlyNewsletterCircleMembers = !req?.query?.onlyNewsletterCircleMembers;
   const query = onlyNewsletterCircleMembers

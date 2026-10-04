@@ -41,11 +41,8 @@ service.add = function (req, res) {
       // Validate
       function (done) {
         // Not a valid ObjectId
-        if (!mongoose.Types.ObjectId.isValid(req.body.friendUserId)) {
-          return res.status(400).json({
-            message: errorService.getErrorMessageByKey('invalid-id'),
-          });
-        }
+        if (!mongoose.Types.ObjectId.isValid(req.body.friendUserId))
+          return errorService.sendInvalidId(res);
 
         // Check if contact already exists
         Contact.findOne({
@@ -151,14 +148,10 @@ service.add = function (req, res) {
       if (err) {
         if (contact) {
           contact.remove(function () {
-            return res.status(400).send({
-              message: errorService.getErrorMessage(err),
-            });
+            return errorService.sendBadRequest(res, err);
           });
         } else {
-          return res.status(400).send({
-            message: errorService.getErrorMessage(err),
-          });
+          return errorService.sendBadRequest(res, err);
         }
       }
     },
@@ -173,9 +166,7 @@ service.remove = function (req, res) {
 
   contact.remove(function (err) {
     if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err),
-      });
+      return errorService.sendBadRequest(res, err);
     } else {
       res.status(200).send({ message: 'Contact removed.' });
     }
@@ -204,9 +195,7 @@ service.removeAllByUserId = function (userId, callback) {
 service.confirm = function (req, res) {
   // Only receiving user can confirm user connections
   if (!req.contact || !req.contact.userTo._id.equals(req.user._id.valueOf())) {
-    return res.status(403).json({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   // Ta'da!
@@ -215,9 +204,7 @@ service.confirm = function (req, res) {
 
   contact.save(function (err) {
     if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err),
-      });
+      return errorService.sendBadRequest(res, err);
     } else {
       res.json(contact);
     }
@@ -245,17 +232,12 @@ service.get = function (req, res) {
  */
 service.contactByUserId = function (req, res, next, userId) {
   // Not a valid ObjectId
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).json({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
-  }
+  if (!mongoose.Types.ObjectId.isValid(userId))
+    return errorService.sendInvalidId(res);
 
   // User's own profile, don't bother hitting the DB
   if (req.user && req.user._id === userId) {
-    return res.status(400).json({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
+    return errorService.sendInvalidId(res);
   }
 
   if (req.user && req.user.public) {
@@ -279,9 +261,7 @@ service.contactByUserId = function (req, res, next, userId) {
       .exec(function (err, contact) {
         if (err) return next(err);
         if (!contact || !contact.userFrom || !contact.userTo) {
-          return res.status(404).json({
-            message: errorService.getErrorMessageByKey('not-found'),
-          });
+          return errorService.sendNotFound(res);
         }
 
         req.contact = contact;
@@ -297,11 +277,8 @@ service.contactByUserId = function (req, res, next, userId) {
  */
 service.contactById = function (req, res, next, contactId) {
   // Not a valid ObjectId
-  if (!mongoose.Types.ObjectId.isValid(contactId)) {
-    return res.status(400).json({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
-  }
+  if (!mongoose.Types.ObjectId.isValid(contactId))
+    return errorService.sendInvalidId(res);
 
   if (req.user && req.user.public) {
     Contact.findById(contactId)
@@ -322,9 +299,7 @@ service.contactById = function (req, res, next, contactId) {
           (!contact.userFrom._id.equals(req.user._id.valueOf()) &&
             !contact.userTo._id.equals(req.user._id.valueOf()))
         ) {
-          return res.status(404).json({
-            message: errorService.getErrorMessageByKey('not-found'),
-          });
+          return errorService.sendNotFound(res);
         }
 
         req.contact = contact;
@@ -409,11 +384,8 @@ service.filterByCommon = function (req, res, next) {
  */
 service.contactListByUser = function (req, res, next, listUserId) {
   // Not a valid ObjectId
-  if (!mongoose.Types.ObjectId.isValid(listUserId)) {
-    return res.status(400).json({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
-  }
+  if (!mongoose.Types.ObjectId.isValid(listUserId))
+    return errorService.sendInvalidId(res);
 
   // Turn `listUserId` String into a Mongo ObjectId
   listUserId = new mongoose.Types.ObjectId(listUserId);

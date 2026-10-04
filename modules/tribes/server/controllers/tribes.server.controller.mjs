@@ -71,15 +71,11 @@ service.listTribes = function (req, res) {
     .skip((page - 1) * limit)
     .exec(function (err, docs) {
       if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       }
       Tribe.countDocuments(query, function (countErr, total) {
         if (countErr) {
-          return res.status(400).send({
-            message: errorService.getErrorMessage(countErr),
-          });
+          return errorService.sendBadRequest(res, countErr);
         }
         const pages = Math.ceil(total / limit);
         if (pages > page) {
@@ -102,9 +98,7 @@ service.getTribe = function (req, res) {
  */
 service.tribeBySlug = function (req, res, next, slug) {
   if (!req.user && MEMBER_ONLY_TRIBE_SLUGS.includes(slug)) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   Tribe.findOne(
@@ -115,9 +109,7 @@ service.tribeBySlug = function (req, res, next, slug) {
     service.tribeFields,
   ).exec(function (err, tribe) {
     if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err),
-      });
+      return errorService.sendBadRequest(res, err);
     } else {
       req.tribe = tribe;
       return next();
