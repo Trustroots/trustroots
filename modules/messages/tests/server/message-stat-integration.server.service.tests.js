@@ -2,10 +2,10 @@ const mongoose = require('mongoose');
 const should = require('should');
 const _ = require('lodash');
 const sinon = require('sinon');
-const config = require('../../../../config/config');
+const config = require('./../../../../config/config.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
-const messageStatService = require('../../server/services/message-stat.server.service');
-const messageController = require('../../server/controllers/messages.server.controller');
+const messageStatService = require('./../../server/services/message-stat.server.service.mjs');
+const messageController = require('./../../server/controllers/messages.server.controller.mjs');
 
 const EventEmitter = require('events');
 const Message = mongoose.model('Message');

@@ -4,8 +4,8 @@ const sinon = require('sinon');
 require('should');
 
 describe('Worker tests', function () {
-  const agenda = require('../../../../config/lib/agenda');
-  const worker = require('../../../../config/lib/worker');
+  const agenda = require('./../../../../config/lib/agenda.mjs');
+  const worker = require('./../../../../config/lib/worker.mjs');
 
   const workerOptions = {
     maxAttempts: 3,

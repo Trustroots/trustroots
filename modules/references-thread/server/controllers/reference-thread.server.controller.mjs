@@ -1,9 +1,8 @@
 import async from 'async';
 import mongoose from 'mongoose';
-import errorService from '../../../core/server/services/error.server.service.js';
-import statService from '../../../stats/server/services/stats.server.service.js';
-import log from '../../../../config/lib/logger.js';
-
+import errorService from './../../../core/server/services/error.server.service.mjs';
+import statService from './../../../stats/server/services/stats.server.service.mjs';
+import log from './../../../../config/lib/logger.mjs';
 const service = {};
 
 /**
@@ -26,7 +25,6 @@ service.createReferenceThread = function (req, res) {
   if (!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
     return errorService.sendInvalidId(res);
   }
-
   async.waterfall(
     [
       // Make sure referenced thread exists and that UserFrom is participating in it
@@ -35,8 +33,14 @@ service.createReferenceThread = function (req, res) {
         Thread.findOne(
           {
             $or: [
-              { userFrom: req.user._id, userTo: req.body.userTo },
-              { userTo: req.user._id, userFrom: req.body.userTo },
+              {
+                userFrom: req.user._id,
+                userTo: req.body.userTo,
+              },
+              {
+                userTo: req.user._id,
+                userFrom: req.body.userTo,
+              },
             ],
           },
           'userTo userFrom',
@@ -46,7 +50,6 @@ service.createReferenceThread = function (req, res) {
                 message: 'Thread does not exist.',
               });
             }
-
             if (thread.userTo && thread.userTo.equals(req.user._id)) {
               // UserTo at the thread is currently authenticated user
               done(null, thread._id, thread.userFrom);
@@ -63,7 +66,6 @@ service.createReferenceThread = function (req, res) {
           },
         );
       },
-
       // Make sure targeted user has actually sent messages to user who is leaving the reference
       function (threadId, referenceUserToId, done) {
         Message.findOne(
@@ -83,7 +85,6 @@ service.createReferenceThread = function (req, res) {
                   error: err || null,
                 },
               );
-
               return res.status(403).send({
                 message: 'Referenced person has not sent messages to to you.',
               });
@@ -94,7 +95,6 @@ service.createReferenceThread = function (req, res) {
           },
         );
       },
-
       // Get user
       function (threadId, referenceUserToId, done) {
         User.findById(
@@ -105,11 +105,9 @@ service.createReferenceThread = function (req, res) {
           },
         );
       },
-
       // Save referenceThread
       function (threadId, referenceUserTo, done) {
         const referenceThread = new ReferenceThread(req.body);
-
         referenceThread.thread = threadId;
         referenceThread.userFrom = req.user._id;
         referenceThread.userTo = referenceUserTo._id;
@@ -173,7 +171,6 @@ service.readReferenceThreadById = function (req, res, next, userToId) {
   if (!mongoose.Types.ObjectId.isValid(userToId)) {
     return errorService.sendInvalidId(res);
   }
-
   async.waterfall(
     [
       // Check if we have refference thread stored
@@ -196,7 +193,6 @@ service.readReferenceThreadById = function (req, res, next, userToId) {
             }
           });
       },
-
       // Since no pre-existing reference thread found,
       // check if authenticated user would be allowed to send reference to this user at all
       function (done) {
@@ -225,13 +221,9 @@ service.readReferenceThreadById = function (req, res, next, userToId) {
     },
   );
 };
-
 const createReferenceThread = service.createReferenceThread;
 const readReferenceThread = service.readReferenceThread;
 const readReferenceThreadById = service.readReferenceThreadById;
-export {
-  createReferenceThread as createReferenceThread,
-  readReferenceThread as readReferenceThread,
-  readReferenceThreadById as readReferenceThreadById,
-};
+export { createReferenceThread, readReferenceThread, readReferenceThreadById };
 export default service;
+export { service as 'module.exports' };

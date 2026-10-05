@@ -6,13 +6,13 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const contactsController = require('../../server/controllers/contacts.server.controller');
+const contactsController = require('./../../server/controllers/contacts.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 const Contact = mongoose.model('Contact');
 
-const emailService = require('../../../core/server/services/email.server.service');
+const emailService = require('./../../../core/server/services/email.server.service.mjs');
 
 function runHandler(invoke) {
   return new Promise(resolve => {

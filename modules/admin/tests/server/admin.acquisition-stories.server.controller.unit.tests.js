@@ -5,7 +5,7 @@ const should = require('should');
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const adminAcquisitionStories = require('../../server/controllers/admin.acquisition-stories.server.controller');
+const adminAcquisitionStories = require('./../../server/controllers/admin.acquisition-stories.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');

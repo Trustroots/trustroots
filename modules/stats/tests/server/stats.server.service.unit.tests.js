@@ -1,7 +1,7 @@
 const sinon = require('sinon');
 require('should');
-const statsService = require('../../server/services/stats.server.service');
-const influxService = require('../../server/services/influx.server.service');
+const statsService = require('./../../server/services/stats.server.service.mjs');
+const influxService = require('./../../server/services/influx.server.service.mjs');
 
 function loadStatsService() {
   sinon.stub(influxService, 'stat').callsArg(1);

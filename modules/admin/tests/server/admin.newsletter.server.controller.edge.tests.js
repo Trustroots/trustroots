@@ -1,11 +1,11 @@
 const sinon = require('sinon');
 const mongoose = require('mongoose');
-const config = require('../../../../config/config');
-const userRolesService = require('../../../users/server/services/user-roles.server.service');
-require('../../../users/server/models/user.server.model');
-require('../../../offers/server/models/offer.server.model');
+const config = require('./../../../../config/config.mjs');
+const userRolesService = require('./../../../users/server/services/user-roles.server.service.mjs');
+require('./../../../users/server/models/user.server.model.mjs');
+require('./../../../offers/server/models/offer.server.model.mjs');
 
-const errorService = require('../../../core/server/services/error.server.service');
+const errorService = require('./../../../core/server/services/error.server.service.mjs');
 require('should');
 
 function mockResponse() {
@@ -47,7 +47,7 @@ async function loadController({
   const rolesLength = roles.length;
   roleReset = { roles, rolesLength };
   roles.push('custom-restricted');
-  const controller = require('../../server/controllers/admin.newsletter.server.controller');
+  const controller = require('./../../server/controllers/admin.newsletter.server.controller.mjs');
 
   return { controller, findStub };
 }

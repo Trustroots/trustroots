@@ -1,9 +1,8 @@
 const should = require('should');
 const request = require('supertest');
 const mongoose = require('mongoose');
-const express = require('../../../../config/lib/express');
+const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
-
 const User = mongoose.model('User');
 const Tribe = mongoose.model('Tribe');
 
@@ -25,13 +24,13 @@ let _tribeNonPublic;
  */
 describe('Tribe CRUD tests', function () {
   before(function (done) {
-    // Get application
-    app = express.init(mongoose.connection);
-    agent = request.agent(app);
-
-    done();
+    (async () => {
+      // Get application
+      app = await express.init(mongoose.connection);
+      agent = request.agent(app);
+      done();
+    })().catch(done);
   });
-
   beforeEach(function (done) {
     // Create user credentials
     credentials = {
@@ -67,7 +66,6 @@ describe('Tribe CRUD tests', function () {
       tribe: true,
       public: false,
     };
-
     user = new User(_user);
     tribe = new Tribe(_tribe);
     tribeNonPublic = new Tribe(_tribeNonPublic);
@@ -84,9 +82,7 @@ describe('Tribe CRUD tests', function () {
       });
     });
   });
-
   afterEach(utils.clearDatabase);
-
   it('formats stored descriptions consistently in catalogue and detail responses', async () => {
     tribe.description =
       '<p>Sample <b>formatted</b> text</p><iframe src="about:blank"></iframe>';
@@ -97,9 +93,10 @@ describe('Tribe CRUD tests', function () {
       circle.description.should.equal('<p>Sample <b>formatted</b> text</p>');
     }
   });
-
   it('builds catalogue page links with ordinary nested query fields', async () => {
-    await new Tribe({ label: 'Another Sample Circle' }).save();
+    await new Tribe({
+      label: 'Another Sample Circle',
+    }).save();
     const response = await agent
       .get(
         '/api/tribes?limit=1&filter[label]=sample&filter[constructor][label]=unused',
@@ -109,7 +106,6 @@ describe('Tribe CRUD tests', function () {
     response.headers.link.should.not.containEql('constructor');
     response.body.should.have.length(1);
   });
-
   it('serves the catalogue and details through the React root', async () => {
     for (const url of ['/circles', `/circles/${tribe.slug}`]) {
       const response = await agent.get(url).expect(200);
@@ -117,7 +113,6 @@ describe('Tribe CRUD tests', function () {
       response.text.should.not.containEql('data-ui-view');
     }
   });
-
   it('should be able to read tribes when not logged in', function (done) {
     // Read tribes
     agent
@@ -150,7 +145,6 @@ describe('Tribe CRUD tests', function () {
         return done(tribesReadErr);
       });
   });
-
   it('should be able to read tribes when logged in', function (done) {
     agent
       .post('/api/auth/signin')
@@ -192,7 +186,6 @@ describe('Tribe CRUD tests', function () {
           });
       });
   });
-
   it('should be able to read only 2 most popular tribes from page 1', function (done) {
     // Create more tribes
     const tribe1 = new Tribe(_tribe);
@@ -233,7 +226,6 @@ describe('Tribe CRUD tests', function () {
       });
     });
   });
-
   it('should be able to read most popular tribes from page 2', function (done) {
     // Create more tribes
     const tribe1 = new Tribe(_tribe);

@@ -1,13 +1,12 @@
-import errorService from '../../../core/server/services/error.server.service.js';
-import analyticsHandler from '../../../core/server/controllers/analytics.server.controller.js';
-import emailService from '../../../core/server/services/email.server.service.js';
-import profileHandler from './users.profile.server.controller.js';
-import statService from '../../../stats/server/services/stats.server.service.js';
-import log from '../../../../config/lib/logger.js';
+import errorService from './../../../core/server/services/error.server.service.mjs';
+import analyticsHandler from './../../../core/server/controllers/analytics.server.controller.mjs';
+import emailService from './../../../core/server/services/email.server.service.mjs';
+import profileHandler from './users.profile.server.controller.mjs';
+import statService from './../../../stats/server/services/stats.server.service.mjs';
+import log from './../../../../config/lib/logger.mjs';
 import async from 'async';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
-
 const service = {};
 
 /**
@@ -29,7 +28,6 @@ service.forgot = function (req, res, next) {
           done(err, token);
         });
       },
-
       // Lookup user by username
       function (token, done) {
         // Missing username, return error
@@ -38,12 +36,17 @@ service.forgot = function (req, res, next) {
             message: 'Please, we really need your username or email first...',
           });
         }
-
         const userHandle = req.body.username.toString().toLowerCase();
-
         User.findOne(
           {
-            $or: [{ username: userHandle }, { email: userHandle }],
+            $or: [
+              {
+                username: userHandle,
+              },
+              {
+                email: userHandle,
+              },
+            ],
           },
           '-salt -password',
           function (err, user) {
@@ -78,7 +81,6 @@ service.forgot = function (req, res, next) {
           },
         );
       },
-
       // Send email
       function (user) {
         emailService.sendResetPassword(user, function (err) {
@@ -135,7 +137,6 @@ service.validateResetToken = function (req, res) {
       if (!user) {
         return res.redirect('/password/reset/invalid');
       }
-
       let passwordResetUrl = '/password/reset/' + req.params.token;
 
       // Re-apply possible UTM variables to the redirect URL
@@ -151,7 +152,6 @@ service.validateResetToken = function (req, res) {
           campaign: req.query.utm_campaign,
         });
       }
-
       res.redirect(passwordResetUrl);
     },
   );
@@ -163,7 +163,6 @@ service.validateResetToken = function (req, res) {
 service.reset = function (req, res) {
   // Init Variables
   const passwordDetails = req.body;
-
   async.waterfall(
     [
       function (done) {
@@ -195,7 +194,6 @@ service.reset = function (req, res) {
             user.password = passwordDetails.newPassword;
             user.resetPasswordToken = undefined;
             user.resetPasswordExpires = undefined;
-
             user.passwordUpdated = Date.now();
 
             // Save user with new password
@@ -206,13 +204,11 @@ service.reset = function (req, res) {
                   message: 'Password reset failed.',
                 });
               }
-
               done(null, user);
             });
           },
         );
       },
-
       // Authenticate
       function (user, done) {
         req.login(user, function (err) {
@@ -235,7 +231,6 @@ service.reset = function (req, res) {
           done(null, user);
         });
       },
-
       // Send email
       function (user, done) {
         emailService.sendResetPasswordConfirm(
@@ -256,12 +251,10 @@ service.reset = function (req, res) {
                 },
               );
             }
-
             done(null, user);
           },
         );
       },
-
       // Return authenticated user
       function (user) {
         return res.json(profileHandler.sanitizeOwnProfile(user));
@@ -301,17 +294,14 @@ service.changePassword = function (req, res) {
         if (req.body.newPassword !== req.body.verifyPassword) {
           return done(new Error('Passwords do not match.'));
         }
-
         done(null);
       },
-
       // Find currently logged in user
       function (done) {
         User.findById(req.user.id, function (err, user) {
           done(err, user);
         });
       },
-
       // Authenticate with old password to check if it was correct
       function (user, done) {
         if (user.authenticate(req.body.currentPassword)) {
@@ -320,17 +310,14 @@ service.changePassword = function (req, res) {
           done(new Error('Current password is incorrect.'));
         }
       },
-
       // Save user with new password
       function (user, done) {
         user.password = req.body.newPassword;
         user.passwordUpdated = Date.now();
-
         user.save(function (err) {
           done(err, user);
         });
       },
-
       // Login again and return new user
       function (user, done) {
         req.login(user, function (err) {
@@ -338,7 +325,6 @@ service.changePassword = function (req, res) {
           done(null, user);
         });
       },
-
       // Send email
       function (user, done) {
         emailService.sendResetPasswordConfirm(user, function (err) {
@@ -360,10 +346,10 @@ service.changePassword = function (req, res) {
     },
   );
 };
-
 const defaultExport = service;
 export default defaultExport;
 export const changePassword = defaultExport.changePassword;
 export const forgot = defaultExport.forgot;
 export const reset = defaultExport.reset;
 export const validateResetToken = defaultExport.validateResetToken;
+export { defaultExport as 'module.exports' };

@@ -1,4 +1,4 @@
-import sparkpost from '../controllers/sparkpost-webhooks.server.controller.js';
+import sparkpost from './../controllers/sparkpost-webhooks.server.controller.mjs';
 
 /**
  * Module dependencies.
@@ -10,3 +10,4 @@ const defaultExport = function (app) {
     .post(sparkpost.basicAuthenticate, sparkpost.receiveBatch);
 };
 export default defaultExport;
+export { defaultExport as 'module.exports' };

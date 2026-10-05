@@ -1,4 +1,4 @@
-const textService = require('../../../server/services/text.server.service');
+const textService = require('./../../../server/services/text.server.service.mjs');
 
 require('should');
 

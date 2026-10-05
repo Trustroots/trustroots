@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
-require('../../server/models/request-limit.server.model');
-const requestLimitService = require('../../server/services/targeted-request-limits.server.service');
+require('../../server/models/request-limit.server.model.mjs');
+const requestLimitService = require('../../server/services/targeted-request-limits.server.service.mjs');
 require('should');
 
 const RequestLimit = mongoose.model('RequestLimit');

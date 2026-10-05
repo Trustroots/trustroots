@@ -4,8 +4,8 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const adminUsers = require('../../server/controllers/admin.users.server.controller');
-const errorService = require('../../../core/server/services/error.server.service');
+const adminUsers = require('./../../server/controllers/admin.users.server.controller.mjs');
+const errorService = require('./../../../core/server/services/error.server.service.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const should = require('should');
 

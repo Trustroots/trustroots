@@ -1,12 +1,12 @@
-const userMiniService = require('../../server/services/user-mini.server.service');
-const userRolesService = require('../../server/services/user-roles.server.service');
+const userMiniService = require('../../server/services/user-mini.server.service.mjs');
+const userRolesService = require('../../server/services/user-roles.server.service.mjs');
 
 require('should');
 
 describe('Service: user mini', function () {
   it('can be imported by ESM controllers', async function () {
     const esmService = await import(
-      '../../server/services/user-mini.server.service.js'
+      '../../server/services/user-mini.server.service.mjs'
     );
     esmService.default.should.equal(userMiniService);
   });

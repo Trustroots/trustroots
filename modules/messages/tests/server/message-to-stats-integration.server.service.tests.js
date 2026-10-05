@@ -1,11 +1,11 @@
 const should = require('should');
 const _ = require('lodash');
 const sinon = require('sinon');
-const config = require('../../../../config/config');
+const config = require('./../../../../config/config.mjs');
 const EventEmitter = require('events');
 const influx = require('influx');
 const Promise = require('promise');
-const messageController = require('../../server/controllers/messages.server.controller');
+const messageController = require('./../../server/controllers/messages.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
 describe('Message to Stats API server service Integration Test', function () {

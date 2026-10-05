@@ -1,8 +1,8 @@
 const should = require('should');
 const sinon = require('sinon');
-const agenda = require('../../../../../config/lib/agenda');
+const agenda = require('./../../../../../config/lib/agenda.mjs');
 const nunjucks = require('nunjucks');
-const config = require('../../../../../config/config');
+const config = require('./../../../../../config/config.mjs');
 
 let emailService;
 
@@ -33,7 +33,7 @@ describe('Service: email', function () {
     const render = stubs['../../../../config/lib/render'];
     if (render)
       sandbox.stub(nunjucks.Environment.prototype, 'render').callsFake(render);
-    return require('../../../server/services/email.server.service');
+    return require('./../../../server/services/email.server.service.mjs');
   }
 
   afterEach(function () {

@@ -1,5 +1,5 @@
 /* global getComputedStyle, window */
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
 
 test('invalid circle addresses show a stable not-found page', async ({

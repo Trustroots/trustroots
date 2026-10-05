@@ -101,7 +101,7 @@ function completeEntries() {
 function ungroupedPlaywrightProjects() {
   const configuredGroup = process.env.TRUSTROOTS_E2E_GROUP;
   delete process.env.TRUSTROOTS_E2E_GROUP;
-  const configPath = require.resolve('../../../../../playwright.config');
+  const configPath = require.resolve('../../../../../playwright.config.cjs');
   delete require.cache[configPath];
 
   try {

@@ -3,7 +3,7 @@ const {
   test,
   expect,
   useElementScreenshot,
-} = require('../../support/test');
+} = require('../../support/fixtures');
 const { SEEDED_MEMBERS, signInViaApi } = require('../../support/helpers');
 const { withE2eDb } = require('../../support/db');
 const {

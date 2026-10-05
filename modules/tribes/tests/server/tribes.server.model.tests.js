@@ -5,7 +5,7 @@ const should = require('should');
 const sinon = require('sinon');
 const mongoose = require('mongoose');
 const validator = require('validator');
-const config = require('../../../../config/config');
+const config = require('./../../../../config/config.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
 const Tribe = mongoose.model('Tribe');

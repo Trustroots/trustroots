@@ -45,7 +45,7 @@ const SupportRequestSchema = new Schema({
     type: String,
   },
 });
-
 mongoose.model('SupportRequest', SupportRequestSchema);
-
-export default {};
+const defaultInterop = {};
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

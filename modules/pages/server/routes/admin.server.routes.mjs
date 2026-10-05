@@ -1,4 +1,4 @@
-import volunteers from '../controllers/pages.volunteers.server.controller.js';
+import volunteers from './../controllers/pages.volunteers.server.controller.mjs';
 
 /**
  * Module dependencies.
@@ -7,6 +7,6 @@ import volunteers from '../controllers/pages.volunteers.server.controller.js';
 const registerRoutes = app => {
   app.route('/api/volunteers').get(volunteers.list);
 };
-
 export { registerRoutes };
 export default registerRoutes;
+export { registerRoutes as 'module.exports' };

@@ -1,5 +1,9 @@
 const { request: playwrightRequest } = require('@playwright/test');
-const { annotateFeature, test: base, expect } = require('../../support/test');
+const {
+  annotateFeature,
+  test: base,
+  expect,
+} = require('../../support/fixtures');
 const { ObjectId } = require('mongodb');
 const {
   findUserByUsername,

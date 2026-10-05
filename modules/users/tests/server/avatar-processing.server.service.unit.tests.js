@@ -2,10 +2,10 @@ const assert = require('assert');
 const EventEmitter = require('events');
 const fs = require('fs').promises;
 const path = require('path');
-const proxyquire = require('proxyquire').noCallThru();
+const proxyquire = require('./../../../../testutils/server/mock-module');
 
-const config = require('../../../../config/config');
-const avatarProcessing = require('../../server/services/avatar-processing.server.service');
+const config = require('./../../../../config/config.mjs');
+const avatarProcessing = require('./../../server/services/avatar-processing.server.service.mjs');
 require('should');
 
 describe('Avatar processing service', () => {
@@ -62,9 +62,11 @@ describe('Avatar processing service', () => {
         },
       });
       const service = proxyquire(
-        '../../server/services/avatar-processing.server.service',
+        require.resolve(
+          './../../server/services/avatar-processing.server.service.mjs',
+        ),
         {
-          '../../../../config/config': imageMagickConfig,
+          './../../../../config/config.mjs': imageMagickConfig,
           gm: imageMagick,
         },
       );
@@ -153,9 +155,11 @@ describe('Avatar processing service', () => {
       await fs.mkdir(tempDir);
       await fs.writeFile(inputPath, 'anonymous image bytes');
       const service = proxyquire(
-        '../../server/services/avatar-processing.server.service',
+        require.resolve(
+          './../../server/services/avatar-processing.server.service.mjs',
+        ),
         {
-          '../../../../config/config': {
+          './../../../../config/config.mjs': {
             ...config,
             uploadDir,
             uploadTmpDir: tempDir,
@@ -327,9 +331,11 @@ describe('Avatar processing service', () => {
         return command;
       };
       const service = proxyquire(
-        '../../server/services/avatar-processing.server.service',
+        require.resolve(
+          './../../server/services/avatar-processing.server.service.mjs',
+        ),
         {
-          '../../../../config/config': {
+          './../../../../config/config.mjs': {
             ...config,
             uploadDir,
             uploadTmpDir: tempDir,

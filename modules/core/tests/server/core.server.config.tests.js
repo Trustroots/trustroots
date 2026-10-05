@@ -3,10 +3,9 @@
  */
 const mongoose = require('mongoose');
 const request = require('supertest');
-const express = require('../../../../config/lib/express');
+const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
-
 const Tribe = mongoose.model('Tribe');
 
 /**
@@ -17,7 +16,6 @@ let agent;
 let user;
 let userId;
 let credentials;
-
 describe('Configuration Tests:', function () {
   describe('avatar staging static-file guard', function () {
     it('denies staging paths before public static middleware', function () {
@@ -25,7 +23,6 @@ describe('Configuration Tests:', function () {
       express.initModulesClientRoutes({
         use: (...args) => middleware.push(args),
       });
-
       middleware[0][0].should.equal(express.denyAvatarStagingRequests);
       const res = {
         sendStatus: status => {
@@ -35,38 +32,41 @@ describe('Configuration Tests:', function () {
       };
       let nextCalled = false;
       express.denyAvatarStagingRequests(
-        { path: '/uploads-profile/member/avatar/%2Estaging-secret/128.jpg' },
+        {
+          path: '/uploads-profile/member/avatar/%2Estaging-secret/128.jpg',
+        },
         res,
         () => {
           nextCalled = true;
         },
       );
-
       res.statusCode.should.equal(404);
       nextCalled.should.be.false();
     });
-
     it('allows ordinary static paths through the staging guard', function () {
       let nextCalled = false;
       express.denyAvatarStagingRequests(
-        { path: '/uploads-profile/member/avatar/version/128.jpg' },
-        { sendStatus: () => {} },
+        {
+          path: '/uploads-profile/member/avatar/version/128.jpg',
+        },
+        {
+          sendStatus: () => {},
+        },
         () => {
           nextCalled = true;
         },
       );
-
       nextCalled.should.be.true();
     });
   });
-
   describe('Exposing authenticated user to pages', function () {
     before(function (done) {
-      app = express.init(mongoose.connection);
-      agent = request.agent(app);
-      done();
+      (async () => {
+        app = await express.init(mongoose.connection);
+        agent = request.agent(app);
+        done();
+      })().catch(done);
     });
-
     beforeEach(function (done) {
       credentials = {
         username: 'helloworld',
@@ -88,15 +88,11 @@ describe('Configuration Tests:', function () {
         if (saveErr) {
           return done(saveErr);
         }
-
         userId = saveRes._id;
-
         return done();
       });
     });
-
     afterEach(utils.clearDatabase);
-
     it('should have user set to "null" if not authenticated and loading index page', function (done) {
       // Get rendered layout
       agent
@@ -112,7 +108,6 @@ describe('Configuration Tests:', function () {
           return done();
         });
     });
-
     it('should have user set to user object when authenticated and loading index page', function (done) {
       // Authenticate user
       agent
@@ -140,12 +135,10 @@ describe('Configuration Tests:', function () {
               res.text.should.match(
                 new RegExp('user = \\{.*"_id":"' + userId + '"'),
               );
-
               return done();
             });
         });
     });
-
     it('should allow an authenticated user to load the Naturists circle', function (done) {
       // Create a new tribe
       const _tribe = {
@@ -153,7 +146,6 @@ describe('Configuration Tests:', function () {
         label: 'Naturists',
         tribe: true,
       };
-
       const tribe = new Tribe(_tribe);
 
       // Save a user to the test db
@@ -189,40 +181,39 @@ describe('Configuration Tests:', function () {
                 res.text.should.match(
                   new RegExp('user = \\{.*"_id":"' + userId + '"'),
                 );
-
                 Tribe.deleteMany().exec(done);
               });
           });
       });
     });
   });
-
   describe('Exposing environment as a variable to layout', function () {
     ['development', 'production', 'test'].forEach(function (env) {
       it('should expose environment set to ' + env, function (done) {
-        // Set env to development for this test
-        process.env.NODE_ENV = env;
+        (async () => {
+          // Set env to development for this test
+          process.env.NODE_ENV = env;
 
-        // Get application
-        app = express.init(mongoose.connection);
-        agent = request.agent(app);
+          // Get application
+          app = await express.init(mongoose.connection);
+          agent = request.agent(app);
 
-        // Get rendered layout
-        agent
-          .get('/')
-          .expect('Content-Type', 'text/html; charset=utf-8')
-          .expect(200)
-          .end(function (err, res) {
-            // Handle errors
-            if (err) {
-              return done(err);
-            }
-            res.text.should.containEql('env = "' + env + '"');
-            return done();
-          });
+          // Get rendered layout
+          agent
+            .get('/')
+            .expect('Content-Type', 'text/html; charset=utf-8')
+            .expect(200)
+            .end(function (err, res) {
+              // Handle errors
+              if (err) {
+                return done(err);
+              }
+              res.text.should.containEql('env = "' + env + '"');
+              return done();
+            });
+        })().catch(done);
       });
     });
-
     afterEach(function () {
       // Set env back to test
       process.env.NODE_ENV = 'test';

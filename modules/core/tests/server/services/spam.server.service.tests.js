@@ -1,10 +1,10 @@
 const sinon = require('sinon');
 const { AkismetClient } = require('akismet-api');
-const config = require('../../../../../config/config');
+const config = require('./../../../../../config/config.mjs');
 
 require('should');
 
-const servicePath = '../../../server/services/spam.server.service';
+const servicePath = './../../../server/services/spam.server.service.mjs';
 
 /**
  * Stub Akismet's shared client prototype so checks never touch the network.

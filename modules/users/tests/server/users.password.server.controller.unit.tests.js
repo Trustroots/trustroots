@@ -7,15 +7,15 @@ const async = require('async');
 
 const utils = require('../../../../testutils/server/data.server.testutil');
 const testutils = require('../../../../testutils/server/server.testutil');
-const errorService = require('../../../core/server/services/error.server.service');
-const emailService = require('../../../core/server/services/email.server.service');
+const errorService = require('./../../../core/server/services/error.server.service.mjs');
+const emailService = require('./../../../core/server/services/email.server.service.mjs');
 const should = require('should');
 
-require('../../server/models/user.server.model');
+require('./../../server/models/user.server.model.mjs');
 const User = mongoose.model('User');
 
 const controllerPath =
-  '../../server/controllers/users.password.server.controller';
+  './../../server/controllers/users.password.server.controller.mjs';
 
 function deferredResponse() {
   let resolveResponse;

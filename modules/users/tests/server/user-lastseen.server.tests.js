@@ -3,13 +3,11 @@ const moment = require('moment');
 const mongoose = require('mongoose');
 const should = require('should');
 const sinon = require('sinon');
-const config = require('../../../../config/config');
-const express = require('../../../../config/lib/express');
+const config = require('./../../../../config/config.mjs');
+const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
-const lastSeen = require('../../server/controllers/users.lastseen.server.controller');
-
+const lastSeen = require('./../../server/controllers/users.lastseen.server.controller.mjs');
 const User = mongoose.model('User');
-
 describe('User last seen CRUD tests', function () {
   /**
    * Globals
@@ -18,19 +16,20 @@ describe('User last seen CRUD tests', function () {
   let agent;
   let _confirmedUser;
   let confirmedUser;
-
   before(function (done) {
-    // Get application
-    app = express.init(mongoose.connection);
-    agent = request.agent(app);
-
-    done();
+    (async () => {
+      // Get application
+      app = await express.init(mongoose.connection);
+      agent = request.agent(app);
+      done();
+    })().catch(done);
   });
-
   beforeEach(function () {
-    sinon.useFakeTimers({ now: 1500000000000, toFake: ['Date'] });
+    sinon.useFakeTimers({
+      now: 1500000000000,
+      toFake: ['Date'],
+    });
   });
-
   afterEach(function () {
     sinon.restore();
   });
@@ -48,15 +47,12 @@ describe('User last seen CRUD tests', function () {
       password: 'aPassWoRd_*....',
       provider: 'local',
     };
-
     confirmedUser = new User(_confirmedUser);
 
     // Save a user to the test db
     confirmedUser.save(done);
   });
-
   afterEach(utils.clearDatabase);
-
   context('logged in', function () {
     // Sign in
     beforeEach(async () => {
@@ -71,9 +67,7 @@ describe('User last seen CRUD tests', function () {
     afterEach(async () => {
       await utils.signOut(agent);
     });
-
     afterEach(utils.clearDatabase);
-
     it('should update the last seen date of logged user when accessing api', function (done) {
       // Read statistics
       sinon.clock.tick(20);
@@ -85,7 +79,9 @@ describe('User last seen CRUD tests', function () {
 
           // read user from database
           User.findOne(
-            { username: _confirmedUser.username },
+            {
+              username: _confirmedUser.username,
+            },
             function (err, user) {
               try {
                 should(user.seen).eql(new Date());
@@ -98,35 +94,28 @@ describe('User last seen CRUD tests', function () {
           );
         });
     });
-
     it('prefers the trusted Passenger client address', () => {
       const req = {
         get: header =>
           header === '!~Passenger-Client-Address' ? '203.0.113.24' : undefined,
         ip: '198.51.100.24',
       };
-
       lastSeen.getClientIpAddress(req).should.equal('203.0.113.24');
     });
-
     it('uses the socket-derived request address when Passenger is unavailable', () => {
       const req = {
         get: () => undefined,
         ip: '2001:db8::1',
       };
-
       lastSeen.getClientIpAddress(req).should.equal('2001:db8::1');
     });
-
     it('does not store an invalid client address', () => {
       const req = {
         get: () => 'not-an-ip-address',
         ip: 'not-an-ip-address',
       };
-
       should(lastSeen.getClientIpAddress(req)).be.undefined();
     });
-
     it('updates a changed IP address without advancing the last-seen timestamp', async () => {
       const findByIdAndUpdate = sinon
         .stub(User, 'findByIdAndUpdate')
@@ -140,31 +129,28 @@ describe('User last seen CRUD tests', function () {
           seen: new Date(),
         },
       };
-
       await new Promise((resolve, reject) => {
         lastSeen(req, {}, err => (err ? reject(err) : resolve()));
       });
-
       sinon.assert.calledOnce(findByIdAndUpdate);
       findByIdAndUpdate.firstCall.args[0].should.equal('user-id');
       findByIdAndUpdate.firstCall.args[1].should.deepEqual({
         lastIpAddress: '203.0.113.24',
       });
     });
-
     it('should update the last seen date only if a specific time passed since the last update', function (done) {
       // the user's username, shortcut
       const username = _confirmedUser.username;
 
       // how long should we wait between updates on minimum
-      const minutesToUpdate = { minutes: 1 }; // 1 minute
+      const minutesToUpdate = {
+        minutes: 1,
+      }; // 1 minute
 
       sinon
         .stub(config.limits, 'timeToUpdateLastSeenUser')
         .value(minutesToUpdate);
-
       const timeToUpdate = moment.duration(minutesToUpdate).asMilliseconds();
-
       const originalTime = new Date();
       // update for the first time, OK
       agent
@@ -172,44 +158,57 @@ describe('User last seen CRUD tests', function () {
         .expect(200)
         .end(function () {
           // read user from database
-          User.findOne({ username }, function (err, user) {
-            try {
-              should(user.seen).eql(originalTime);
+          User.findOne(
+            {
+              username,
+            },
+            function (err, user) {
+              try {
+                should(user.seen).eql(originalTime);
 
-              // now wait almost for the time to update
-              sinon.clock.tick(timeToUpdate - 1);
-              agent
-                .get('/api/messages')
-                .expect(200)
-                .end(function () {
-                  // and the User.seen should not be updated (too early)
-                  User.findOne({ username }, function (err, user) {
-                    try {
-                      should(user.seen).eql(originalTime);
+                // now wait almost for the time to update
+                sinon.clock.tick(timeToUpdate - 1);
+                agent
+                  .get('/api/messages')
+                  .expect(200)
+                  .end(function () {
+                    // and the User.seen should not be updated (too early)
+                    User.findOne(
+                      {
+                        username,
+                      },
+                      function (err, user) {
+                        try {
+                          should(user.seen).eql(originalTime);
 
-                      // now wait for another 2 milliseconds
-                      sinon.clock.tick(2);
-
-                      agent
-                        .get('/api/messages')
-                        .expect(200)
-                        .end(function () {
-                          // and the User.seen should be updated now
-                          User.findOne({ username }, function (err, user) {
-                            should(user.seen).eql(new Date());
-
-                            return done();
-                          });
-                        });
-                    } catch (err) {
-                      return done(err);
-                    }
+                          // now wait for another 2 milliseconds
+                          sinon.clock.tick(2);
+                          agent
+                            .get('/api/messages')
+                            .expect(200)
+                            .end(function () {
+                              // and the User.seen should be updated now
+                              User.findOne(
+                                {
+                                  username,
+                                },
+                                function (err, user) {
+                                  should(user.seen).eql(new Date());
+                                  return done();
+                                },
+                              );
+                            });
+                        } catch (err) {
+                          return done(err);
+                        }
+                      },
+                    );
                   });
-                });
-            } catch (err) {
-              return done(err);
-            }
-          });
+              } catch (err) {
+                return done(err);
+              }
+            },
+          );
         });
     });
   });

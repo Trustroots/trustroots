@@ -1,18 +1,15 @@
-import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
 import passport from 'passport';
 import mongoose from 'mongoose';
 import path from 'path';
-import config from '../../../../config/config.js';
-import usersSuspended from '../controllers/users.suspended.server.controller.js';
-
-const require = createRequire(import.meta.url);
+import config from './../../../../config/config.mjs';
+import usersSuspended from './../controllers/users.suspended.server.controller.mjs';
 /**
  * Module dependencies.
  */
 
 const User = mongoose.model('User');
-
-const defaultExport = function (app) {
+const defaultExport = async function (app) {
   // Serialize sessions
   passport.serializeUser(function (user, done) {
     done(null, user.id);
@@ -32,13 +29,14 @@ const defaultExport = function (app) {
   });
 
   // Initialize strategies
-  config.utils
-    .getGlobbedPaths(path.join(import.meta.dirname, './strategies/**/*.js'))
-    .forEach(function (strategy) {
-      // Passport setup requires these CommonJS strategies to register synchronously.
-      // eslint-disable-next-line import/no-dynamic-require
-      require(path.resolve(strategy))(config);
-    });
+  for (const strategy of config.utils.getGlobbedPaths(
+    path.join(import.meta.dirname, './strategies/**/*.mjs'),
+  )) {
+    const { default: configure } = await import(
+      pathToFileURL(path.resolve(strategy)).href
+    );
+    configure(config);
+  }
 
   // Add passport's middleware
   app.use(passport.initialize());
@@ -48,3 +46,4 @@ const defaultExport = function (app) {
   app.use(usersSuspended.invalidateSuspendedSessions);
 };
 export default defaultExport;
+export { defaultExport as 'module.exports' };

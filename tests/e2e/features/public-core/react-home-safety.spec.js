@@ -1,4 +1,4 @@
-const { expect, test } = require('../../support/test');
+const { expect, test } = require('../../support/fixtures');
 
 test('homepage keeps circle landing links and photo credits in React', async ({
   page,

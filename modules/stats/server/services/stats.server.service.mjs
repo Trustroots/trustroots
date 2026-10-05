@@ -23,7 +23,7 @@
 
 import _ from 'lodash';
 // Use the adapter while NYC instruments native ESM through require hooks.
-import influxService from './influx.server.service.js';
+import influxService from './influx.server.service.mjs';
 
 /**
  * The object which stats api .stat method expects as parameter
@@ -91,18 +91,15 @@ function count(name, count, time, callback) {
   // set the defaults
   count = count || 1;
   callback = callback || function () {};
-
   const statObject = {
     namespace: name,
     counts: {
       count,
     },
   };
-
   if (time) {
     statObject.time = time;
   }
-
   stat(statObject, callback);
 }
 
@@ -130,9 +127,7 @@ function value(name, value, time, callback) {
       value,
     },
   };
-
   if (time) statObject.time = time;
-
   stat(statObject, callback);
 }
 
@@ -169,18 +164,14 @@ function validateStat(stat) {
     // to the function
     const keys = [];
     let keyLength = 0;
-
     for (let i = 0, len = arguments.length; i < len; i++) {
       const currentKeys = _.keys(arguments[i]);
       keys.push(currentKeys);
       keyLength += currentKeys.length;
     }
-
     const unionKeys = _.union.apply(this, keys);
-
     return keyLength === unionKeys.length;
   }
-
   if (!areKeysUnique(stat.counts, stat.values, stat.meta, stat.tags)) {
     throw new Error(
       'Every key of stat counts, values, meta and tags must be unique',
@@ -189,9 +180,7 @@ function validateStat(stat) {
 
   // Every value in 'counts' and 'values' should be a number
   const vals = _.concat(_.values(stat.counts), _.values(stat.values));
-
   const areNumbers = _.every(vals, _.isNumber);
-
   if (!areNumbers) {
     throw new Error('Each of counts and values should be a number');
   }
@@ -277,6 +266,11 @@ export { count, value, stat };
 
 // Pseudo-private exports for tests
 export const _validateStat = validateStat;
-
-const statsService = { count, value, stat, _validateStat };
+const statsService = {
+  count,
+  value,
+  stat,
+  _validateStat,
+};
 export default statsService;
+export { statsService as 'module.exports' };

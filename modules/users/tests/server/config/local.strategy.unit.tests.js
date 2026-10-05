@@ -6,9 +6,9 @@ const passport = require('passport');
 const sinon = require('sinon');
 
 const should = require('should');
-require('../../../server/models/user.server.model');
+require('./../../../server/models/user.server.model.mjs');
 const User = mongoose.model('User');
-const configureStrategy = require('../../../server/config/strategies/local');
+const configureStrategy = require('./../../../server/config/strategies/local.mjs');
 
 describe('Local passport strategy unit tests', () => {
   let verify;

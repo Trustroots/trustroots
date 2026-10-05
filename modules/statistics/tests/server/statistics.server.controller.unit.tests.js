@@ -4,13 +4,13 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-require('../../../offers/server/models/offer.server.model');
-require('../../../users/server/models/user.server.model');
-require('../../../experiences/server/models/experiences.server.model');
-require('../../../messages/server/models/message-stat.server.model');
-require('../../../references-thread/server/models/reference-thread.server.model');
-const statistics = require('../../server/controllers/statistics.server.controller');
-const statService = require('../../../stats/server/services/stats.server.service');
+require('./../../../offers/server/models/offer.server.model.mjs');
+require('./../../../users/server/models/user.server.model.mjs');
+require('./../../../experiences/server/models/experiences.server.model.mjs');
+require('./../../../messages/server/models/message-stat.server.model.mjs');
+require('./../../../references-thread/server/models/reference-thread.server.model.mjs');
+const statistics = require('./../../server/controllers/statistics.server.controller.mjs');
+const statService = require('./../../../stats/server/services/stats.server.service.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 

@@ -4,11 +4,9 @@
 import multer from 'multer';
 import mongoose from 'mongoose';
 import path from 'path';
-import config from '../../../../config/config.js';
-
-import errorService from '../../../core/server/services/error.server.service.js';
-import userRolesService from '../../../users/server/services/user-roles.server.service.js';
-
+import config from './../../../../config/config.mjs';
+import errorService from './../../../core/server/services/error.server.service.mjs';
+import userRolesService from './../../../users/server/services/user-roles.server.service.mjs';
 const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
 const EARTH_RADIUS_KM = 6378.1;
@@ -17,17 +15,28 @@ const NEWSLETTER_LOCATION_SOURCES = ['from', 'hosting', 'living'];
 const MAX_AUDIENCE_CIRCLES = 100;
 const MAX_HOSTING_RADIUS_KM = 500;
 const CSV_COLUMNS = [
-  { key: 'email', label: 'Email Address' },
-  { key: 'firstName', label: 'First Name' },
-  { key: 'lastName', label: 'Last Name' },
+  {
+    key: 'email',
+    label: 'Email Address',
+  },
+  {
+    key: 'firstName',
+    label: 'First Name',
+  },
+  {
+    key: 'lastName',
+    label: 'Last Name',
+  },
 ];
 const UNSUBSCRIBED_CSV_COLUMNS = [
   ...CSV_COLUMNS,
-  { key: 'reason', label: 'Reason' },
+  {
+    key: 'reason',
+    label: 'Reason',
+  },
 ];
 const RECIPIENT_UPLOAD_EXTENSIONS = ['.csv', '.jsonl', '.ndjson'];
 const JSON_LINES_EXTENSIONS = ['.jsonl', '.ndjson'];
-
 const newsletterRecipientUpload = multer({
   limits: {
     fileSize: config.maxUploadSize,
@@ -40,77 +49,76 @@ const newsletterRecipientUpload = multer({
       err.code = 'UNSUPPORTED_MEDIA_TYPE';
       return callback(err);
     }
-
     return callback(null, true);
   },
 }).single('newsletterCsv');
-
 function isNewsletterSubscriber(user) {
   if (!user || !user.public || !user.newsletter) {
     return false;
   }
-
   if (userRolesService.hasRestrictedMessagingRole(user)) {
     return false;
   }
-
   if (isProfileDeletionPending(user)) {
     return false;
   }
-
   return true;
 }
-
 function isProfileDeletionPending(user) {
   if (!user || !user.removeProfileToken) {
     return false;
   }
-
   if (!user.removeProfileExpires) {
     return true;
   }
-
   const expiresAt = new Date(user.removeProfileExpires);
   if (Number.isNaN(expiresAt.getTime())) {
     return true;
   }
-
   return expiresAt.getTime() > Date.now();
 }
-
 function buildEligibleSubscribersQuery(query = {}) {
   return {
     ...query,
     newsletter: true,
     public: true,
-    roles: { $nin: userRolesService.restrictedMessagingRoles },
+    roles: {
+      $nin: userRolesService.restrictedMessagingRoles,
+    },
     $or: [
-      { removeProfileToken: { $exists: false } },
-      { removeProfileToken: null },
       {
-        removeProfileToken: { $exists: true, $ne: null },
-        removeProfileExpires: { $lte: new Date() },
+        removeProfileToken: {
+          $exists: false,
+        },
+      },
+      {
+        removeProfileToken: null,
+      },
+      {
+        removeProfileToken: {
+          $exists: true,
+          $ne: null,
+        },
+        removeProfileExpires: {
+          $lte: new Date(),
+        },
       },
     ],
   };
 }
-
 function escapeRegularExpression(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-
 function invalidAudienceCriteria(message) {
   const error = new Error(message);
   error.statusCode = 400;
   return error;
 }
-
 function parseAudienceCriteria(body = {}) {
   const format = body.format || 'preview';
   if (!NEWSLETTER_AUDIENCE_FORMATS.includes(format)) {
     throw invalidAudienceCriteria('Choose preview or CSV audience output.');
   }
-
   const sources = Array.isArray(body.sources) ? [...new Set(body.sources)] : [];
   if (
     sources.length > NEWSLETTER_LOCATION_SOURCES.length ||
@@ -118,7 +126,6 @@ function parseAudienceCriteria(body = {}) {
   ) {
     throw invalidAudienceCriteria('Choose valid newsletter location sources.');
   }
-
   const locationText =
     typeof body.locationText === 'string' ? body.locationText.trim() : '';
   const usesTextLocation =
@@ -128,7 +135,6 @@ function parseAudienceCriteria(body = {}) {
       'Enter a location for living or origin matching.',
     );
   }
-
   let hosting = null;
   if (sources.includes('hosting')) {
     const hasCoordinates =
@@ -163,9 +169,12 @@ function parseAudienceCriteria(body = {}) {
         `Enter a hosting radius between 0 and ${MAX_HOSTING_RADIUS_KM} kilometres.`,
       );
     }
-    hosting = { latitude, longitude, radiusKm };
+    hosting = {
+      latitude,
+      longitude,
+      radiusKm,
+    };
   }
-
   const circleIds = Array.isArray(body.circleIds)
     ? [...new Set(body.circleIds)]
     : [];
@@ -175,13 +184,11 @@ function parseAudienceCriteria(body = {}) {
   ) {
     throw invalidAudienceCriteria('Choose valid newsletter circles.');
   }
-
   if (sources.length === 0 && circleIds.length === 0) {
     throw invalidAudienceCriteria(
       'Choose at least one location source or circle.',
     );
   }
-
   return {
     circleIds: circleIds.map(circleId => new mongoose.Types.ObjectId(circleId)),
     format,
@@ -190,7 +197,6 @@ function parseAudienceCriteria(body = {}) {
     sources,
   };
 }
-
 function buildHostingQuery(hosting) {
   const { latitude, longitude, radiusKm } = hosting;
   return {
@@ -203,29 +209,44 @@ function buildHostingQuery(hosting) {
     $and: [
       {
         $or: [
-          { status: { $in: ['yes', 'maybe'] } },
-          { status: { $exists: false } },
+          {
+            status: {
+              $in: ['yes', 'maybe'],
+            },
+          },
+          {
+            status: {
+              $exists: false,
+            },
+          },
         ],
       },
       {
         $or: [
-          { validUntil: { $gte: new Date() } },
-          { validUntil: { $exists: false } },
+          {
+            validUntil: {
+              $gte: new Date(),
+            },
+          },
+          {
+            validUntil: {
+              $exists: false,
+            },
+          },
         ],
       },
     ],
   };
 }
-
 function buildAudienceQuery(criteria, hostingUserIds) {
   const conditions = [buildEligibleSubscribersQuery()];
-
   if (criteria.circleIds.length > 0) {
     conditions.push({
-      'member.tribe': { $in: criteria.circleIds },
+      'member.tribe': {
+        $in: criteria.circleIds,
+      },
     });
   }
-
   if (criteria.sources.length > 0) {
     const locationMatches = [];
     if (criteria.sources.includes('living')) {
@@ -246,84 +267,71 @@ function buildAudienceQuery(criteria, hostingUserIds) {
     }
     if (criteria.hosting) {
       locationMatches.push({
-        _id: { $in: hostingUserIds },
+        _id: {
+          $in: hostingUserIds,
+        },
       });
     }
-    conditions.push({ $or: locationMatches });
+    conditions.push({
+      $or: locationMatches,
+    });
   }
-
-  return { $and: conditions };
+  return {
+    $and: conditions,
+  };
 }
-
 function normaliseEmail(value) {
   if (!value) {
     return null;
   }
-
   const normalised = String(value).trim().toLowerCase().replace(/^<|>$/g, '');
-
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalised)) {
     return null;
   }
-
   return normalised;
 }
-
 function csvCell(value) {
   return String(value || '')
     .trim()
     .replace(/[,'"]/g, '');
 }
-
 function rowsToCSV(rows, columns = CSV_COLUMNS) {
   // First CSV line is the header
   let data = columns.map(({ label }) => csvCell(label)).join(',');
-
   if (rows && rows.length > 0) {
     rows.forEach(row => {
       data += '\n';
       data += columns.map(({ key }) => csvCell(row[key])).join(',');
     });
   }
-
   return data;
 }
-
 function getUnsubscribedReason(user) {
   if (!user) {
     return 'Email not found';
   }
-
   if (userRolesService.hasRole(user, 'suspended')) {
     return 'Account suspended';
   }
-
   if (userRolesService.hasRole(user, 'shadowban')) {
     return 'Account shadowbanned';
   }
-
   if (isProfileDeletionPending(user)) {
     return 'Profile deletion pending';
   }
-
   if (!user.public) {
     return 'Profile not public';
   }
-
   if (!user.newsletter) {
     return 'Newsletter disabled';
   }
-
   return 'Not eligible for newsletter emails';
 }
-
 function parseFirstCsvField(line) {
   let value = '';
   let inQuotes = false;
-
   for (let i = 0; i < line.length; i += 1) {
     const character = line[i];
-
     if (character === '"') {
       if (inQuotes && line[i + 1] === '"') {
         value += '"';
@@ -333,60 +341,48 @@ function parseFirstCsvField(line) {
       }
       continue;
     }
-
     if (character === ',' && !inQuotes) {
       break;
     }
-
     value += character;
   }
-
   return value.trim();
 }
-
 function extractEmailsFromCsv(csvText) {
   const lines = String(csvText || '')
     .replace(/^\uFEFF/, '')
     .split(/\r?\n/);
   const emails = [];
   const seenEmails = new Set();
-
   lines.forEach((line, lineIndex) => {
     const trimmedLine = line.trim();
     if (!trimmedLine) {
       return;
     }
-
     const firstField = parseFirstCsvField(trimmedLine);
     if (lineIndex === 0 && /email/i.test(firstField)) {
       return;
     }
-
     const email = normaliseEmail(firstField || trimmedLine);
     if (!email || seenEmails.has(email)) {
       return;
     }
-
     seenEmails.add(email);
     emails.push(email);
   });
-
   return emails;
 }
-
 function extractEmailsFromJsonLines(jsonLinesText) {
   const lines = String(jsonLinesText)
     .replace(/^\uFEFF/, '')
     .split(/\r?\n/);
   const emails = [];
   const seenEmails = new Set();
-
   lines.forEach((line, lineIndex) => {
     const trimmedLine = line.trim();
     if (!trimmedLine) {
       return;
     }
-
     let record;
     try {
       record = JSON.parse(trimmedLine);
@@ -395,7 +391,6 @@ function extractEmailsFromJsonLines(jsonLinesText) {
         `Could not parse JSON on line ${lineIndex + 1}.`,
       );
     }
-
     const value =
       typeof record === 'string'
         ? record
@@ -404,14 +399,11 @@ function extractEmailsFromJsonLines(jsonLinesText) {
     if (!email || seenEmails.has(email)) {
       return;
     }
-
     seenEmails.add(email);
     emails.push(email);
   });
-
   return emails;
 }
-
 function extractEmailsFromUpload(file) {
   const extension = path.extname(file.originalname || '').toLowerCase();
   let outputFormat = 'csv';
@@ -420,7 +412,6 @@ function extractEmailsFromUpload(file) {
   }
   const isJsonLines = outputFormat !== 'csv';
   const content = file.buffer.toString('utf8');
-
   return {
     emails: isJsonLines
       ? extractEmailsFromJsonLines(content)
@@ -428,7 +419,6 @@ function extractEmailsFromUpload(file) {
     outputFormat,
   };
 }
-
 function rowsToJsonLines(rows, includeReason = false) {
   return rows
     .map(row => {
@@ -446,18 +436,15 @@ function rowsToJsonLines(rows, includeReason = false) {
     })
     .join('\n');
 }
-
 export const list = async (req, res) => {
   const users = await User.find(buildEligibleSubscribersQuery(), {
     email: 1,
     firstName: 1,
     lastName: 1,
   }).exec();
-
   const csv = rowsToCSV(users);
   res.set('Content-Type', 'text/csv').send(csv);
 };
-
 export const listCircleMembers = async (req, res) => {
   const circleId = req?.query?.circleId;
 
@@ -472,9 +459,10 @@ export const listCircleMembers = async (req, res) => {
     : {
         public: true,
         'member.tribe': circleId,
-        roles: { $nin: userRolesService.restrictedMessagingRoles },
+        roles: {
+          $nin: userRolesService.restrictedMessagingRoles,
+        },
       };
-
   const users = await User.find(query, {
     email: 1,
     firstName: 1,
@@ -485,13 +473,11 @@ export const listCircleMembers = async (req, res) => {
     removeProfileExpires: 1,
     removeProfileToken: 1,
   }).exec();
-
   const csv = rowsToCSV(
     onlyNewsletterCircleMembers ? users.filter(isNewsletterSubscriber) : users,
   );
   res.set('Content-Type', 'text/csv').send(csv);
 };
-
 export const audience = async (req, res) => {
   let criteria;
   try {
@@ -501,70 +487,64 @@ export const audience = async (req, res) => {
       message: error.message,
     });
   }
-
   const hostingUserIds = criteria.hosting
     ? await Offer.distinct('user', buildHostingQuery(criteria.hosting)).exec()
     : [];
   const audienceQuery = buildAudienceQuery(criteria, hostingUserIds);
   if (criteria.format === 'preview') {
     const count = await User.countDocuments(audienceQuery).exec();
-    return res.send({ count });
+    return res.send({
+      count,
+    });
   }
-
   const users = await User.find(audienceQuery, {
     email: 1,
     firstName: 1,
     lastName: 1,
   })
-    .sort({ email: 1 })
+    .sort({
+      email: 1,
+    })
     .exec();
   return res.set('Content-Type', 'text/csv').send(rowsToCSV(users));
 };
-
 export const uploadSubscribersCsv = (req, res, next) => {
   newsletterRecipientUpload(req, res, err => {
     if (!err && req.file && req.file.buffer) {
       return next();
     }
-
     if (err && err.code === 'UNSUPPORTED_MEDIA_TYPE') {
       return res.status(415).send({
         message: errorService.getErrorMessageByKey('unsupported-media-type'),
       });
     }
-
     if (err && err.code === 'LIMIT_FILE_SIZE') {
       const maxUploadSizeMb = (config.maxUploadSize / (1024 * 1024)).toFixed(2);
       return res.status(413).send({
         message: `File too big. Please maximum ${maxUploadSizeMb} Mb files.`,
       });
     }
-
     if (err && err.code === 'LIMIT_UNEXPECTED_FILE') {
       return res.status(400).send({
         message: 'Missing "newsletterCsv" field from the API call.',
       });
     }
-
     if (err) {
       return res.status(400).send({
         message: errorService.getErrorMessageByKey('default'),
       });
     }
-
     return res.status(422).send({
       message: errorService.getErrorMessageByKey('unprocessable-entity'),
     });
   });
 };
-
 export const splitSubscribers = async (req, res) => {
   if (!req.file || !req.file.buffer) {
     return res.status(422).send({
       message: errorService.getErrorMessageByKey('unprocessable-entity'),
     });
   }
-
   let upload;
   try {
     upload = extractEmailsFromUpload(req.file);
@@ -573,16 +553,18 @@ export const splitSubscribers = async (req, res) => {
       message: error.message,
     });
   }
-
   const { emails, outputFormat } = upload;
   if (emails.length === 0) {
     return res.status(400).send({
       message: 'Could not find any email addresses in the uploaded file.',
     });
   }
-
   const users = await User.find(
-    { email: { $in: emails } },
+    {
+      email: {
+        $in: emails,
+      },
+    },
     {
       email: 1,
       displayName: 1,
@@ -596,7 +578,6 @@ export const splitSubscribers = async (req, res) => {
       username: 1,
     },
   ).exec();
-
   const usersByEmail = new Map(
     users
       .map(user => [normaliseEmail(user.email), user])
@@ -604,7 +585,6 @@ export const splitSubscribers = async (req, res) => {
   );
   const subscribed = [];
   const unsubscribed = [];
-
   emails.forEach(email => {
     const user = usersByEmail.get(email);
     const userForOutput = {
@@ -614,18 +594,15 @@ export const splitSubscribers = async (req, res) => {
       lastName: user ? user.lastName : '',
       username: user ? user.username : '',
     };
-
     if (isNewsletterSubscriber(user)) {
       subscribed.push(userForOutput);
       return;
     }
-
     unsubscribed.push({
       ...userForOutput,
       reason: getUnsubscribedReason(user),
     });
   });
-
   const outputsJsonLines = outputFormat !== 'csv';
   return res.send({
     outputFormat,
@@ -640,11 +617,12 @@ export const splitSubscribers = async (req, res) => {
       : rowsToCSV(unsubscribed, UNSUBSCRIBED_CSV_COLUMNS),
   });
 };
-
-export default {
+const defaultInterop = {
   list,
   listCircleMembers,
   audience,
   uploadSubscribersCsv,
   splitSubscribers,
 };
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

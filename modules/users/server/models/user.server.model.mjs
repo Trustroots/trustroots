@@ -1,23 +1,23 @@
-import { createRequire } from 'node:module';
+import { readFileSync } from 'node:fs';
 import _ from 'lodash';
-import textService from '../../../core/server/services/text.server.service.js';
-import authenticationService from '../services/authentication.server.service.js';
+import textService from './../../../core/server/services/text.server.service.mjs';
+import authenticationService from './../services/authentication.server.service.mjs';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
-import uniqueValidation from '../../../../config/lib/mongoose-unique-validation.js';
+import uniqueValidation from './../../../../config/lib/mongoose-unique-validation.mjs';
 import validator from 'validator';
-
-const require = createRequire(import.meta.url);
-// JSON import attributes are not supported by the pinned formatter.
-// eslint-disable-next-line import/no-commonjs
-const languages = require('../../../../config/languages/languages.json');
+const languages = JSON.parse(
+  readFileSync(
+    new URL('../../../../config/languages/languages.json', import.meta.url),
+    'utf8',
+  ),
+);
 
 /**
  * Module dependencies.
  */
 
 const Schema = mongoose.Schema;
-
 const passwordMinLength = 8;
 
 /**
@@ -52,11 +52,9 @@ const validateUsername = function (username) {
     authenticationService.validateUsername(username)
   );
 };
-
 const setPlainTextField = function (value) {
   return textService.plainText(value, true);
 };
-
 const setPlainTextFieldAndLimit = function (limit) {
   return function (value) {
     return setPlainTextField(value).substring(0, limit);
@@ -81,7 +79,9 @@ const UserMemberSchema = new Schema(
       required: true,
     },
   },
-  { _id: false },
+  {
+    _id: false,
+  },
 );
 
 /**
@@ -113,7 +113,9 @@ const UserPushRegistrationSchema = new Schema(
       trim: true,
     },
   },
-  { _id: false },
+  {
+    _id: false,
+  },
 );
 
 /**
@@ -205,7 +207,8 @@ const UserSchema = new Schema({
       validateUsername,
       'Please fill in valid username: 3+ characters long, non banned word, characters "_-.", no consecutive dots, does not begin or end with dots, letters a-z and numbers 0-9.',
     ],
-    lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
+    lowercase: true,
+    // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
     trim: true,
   },
   usernameUpdated: {
@@ -411,7 +414,6 @@ UserSchema.pre('save', function (next) {
   if (this.isModified('firstName') || this.isModified('lastName')) {
     this.displayName = this.firstName + ' ' + this.lastName;
   }
-
   next();
 });
 
@@ -439,17 +441,26 @@ UserSchema.methods.authenticate = function (password) {
  * Convert duplicate unique values into field validation errors.
  */
 UserSchema.plugin(uniqueValidation);
-
 UserSchema.index(
-  { nostrNpub: 1 },
+  {
+    nostrNpub: 1,
+  },
   {
     unique: true,
-    partialFilterExpression: { nostrNpub: { $type: 'string', $gt: '' } },
+    partialFilterExpression: {
+      nostrNpub: {
+        $type: 'string',
+        $gt: '',
+      },
+    },
   },
 );
-UserSchema.index({ username: 'text', firstName: 'text', lastName: 'text' });
-
+UserSchema.index({
+  username: 'text',
+  firstName: 'text',
+  lastName: 'text',
+});
 mongoose.model('User', UserSchema);
-
 const defaultExport = {};
 export default defaultExport;
+export { defaultExport as 'module.exports' };

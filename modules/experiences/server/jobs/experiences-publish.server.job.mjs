@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 import moment from 'moment';
-import config from '../../../../config/config.js';
-
+import config from './../../../../config/config.mjs';
 const Experience = mongoose.model('Experience');
 
 /**
@@ -13,12 +12,16 @@ const Experience = mongoose.model('Experience');
 function run(job, agendaDone) {
   Experience.updateMany(
     {
-      created: { $lt: moment().subtract(config.limits.timeToReplyExperience) },
+      created: {
+        $lt: moment().subtract(config.limits.timeToReplyExperience),
+      },
       public: false,
     },
-    { public: true },
+    {
+      public: true,
+    },
   ).exec(agendaDone);
 }
-
 export { run };
 export default run;
+export { run as 'module.exports' };

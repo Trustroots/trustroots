@@ -1,15 +1,14 @@
-import dependency0 from '../../../core/server/services/text.server.service.js';
-import config from '../../../../config/config.js';
+import dependency0 from './../../../core/server/services/text.server.service.mjs';
+import config from './../../../../config/config.mjs';
 import mongoose from 'mongoose';
 import moment from 'moment';
 import mongoosePaginate from 'mongoose-paginate';
-import uniqueValidation from '../../../../config/lib/mongoose-unique-validation.js';
+import uniqueValidation from './../../../../config/lib/mongoose-unique-validation.mjs';
 import integerValidator from 'mongoose-integer';
 import urlslugs from 'mongoose-url-slugs';
 import speakingurl from 'speakingurl';
 import validator from 'validator';
 import sanitizeHtml from 'sanitize-html';
-
 const service = {};
 
 /**
@@ -48,9 +47,11 @@ function randomHex() {
 const validateLabel = function (label) {
   return (
     label &&
-    label.match(/[a-zA-Z]/) && // Should have at least one a-zA-Z (non case-insensitive regex)
+    label.match(/[a-zA-Z]/) &&
+    // Should have at least one a-zA-Z (non case-insensitive regex)
     config.illegalStrings.indexOf(label.trim().toLowerCase()) < 0 &&
-    label.charAt(0) !== '.' && // Don't start with `.`
+    label.charAt(0) !== '.' &&
+    // Don't start with `.`
     label.slice(-1) !== '.' // Don't end with `.`
   );
 };
@@ -154,7 +155,9 @@ const TribeSchema = new Schema({
  *   by default. Pass { virtuals: true } to either toObject() or toJSON()."
  * @link http://mongoosejs.com/docs/guide.html#virtuals
  */
-TribeSchema.set('toJSON', { getters: true });
+TribeSchema.set('toJSON', {
+  getters: true,
+});
 
 /**
  * Create a field `new` based on field `created`
@@ -185,8 +188,10 @@ TribeSchema.plugin(
     field: 'slug',
     generator(string) {
       return speakingurl(string, {
-        separator: '-', // char that replaces the whitespaces
-        maintainCase: false, // maintain case (true, convert all chars to lower case (false)
+        separator: '-',
+        // char that replaces the whitespaces
+        maintainCase: false,
+        // maintain case (true, convert all chars to lower case (false)
         truncate: 255, // trim to max length ({number}), don't truncate (0)
       });
     },
@@ -207,13 +212,15 @@ TribeSchema.plugin(integerValidator);
 /**
  * Indexing
  */
-TribeSchema.index({ slug: 1, label: 1 });
+TribeSchema.index({
+  slug: 1,
+  label: 1,
+});
 
 /**
  * Pagination (together with `paginate-express`)
  */
 TribeSchema.plugin(mongoosePaginate);
-
 mongoose.model('Tribe', TribeSchema);
-
 export default service;
+export { service as 'module.exports' };

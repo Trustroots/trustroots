@@ -1,5 +1,5 @@
 const { ObjectId } = require('mongodb');
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
 const { withE2eDb } = require('../../support/db');
 

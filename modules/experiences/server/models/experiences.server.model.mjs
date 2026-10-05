@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
-import uniqueValidation from '../../../../config/lib/mongoose-unique-validation.js';
-
+import uniqueValidation from './../../../../config/lib/mongoose-unique-validation.mjs';
 const service = {};
 
 /**
@@ -14,7 +13,8 @@ const Schema = mongoose.Schema;
 const ExperienceSchema = new Schema({
   created: {
     type: Date,
-    default: () => Date.now(), // Date.now is wrapped for sinon.useFakeTimers()
+    default: () => Date.now(),
+    // Date.now is wrapped for sinon.useFakeTimers()
     required: true,
   },
   public: {
@@ -65,9 +65,21 @@ const ExperienceSchema = new Schema({
  * Indexing
  */
 ExperienceSchema.plugin(uniqueValidation);
-ExperienceSchema.index({ userFrom: 1, userTo: 1, public: 1, created: 1 });
-ExperienceSchema.index({ userFrom: 1, userTo: 1 }, { unique: true });
-
+ExperienceSchema.index({
+  userFrom: 1,
+  userTo: 1,
+  public: 1,
+  created: 1,
+});
+ExperienceSchema.index(
+  {
+    userFrom: 1,
+    userTo: 1,
+  },
+  {
+    unique: true,
+  },
+);
 mongoose.model('Experience', ExperienceSchema);
-
 export default service;
+export { service as 'module.exports' };

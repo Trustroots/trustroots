@@ -5,7 +5,6 @@ import pluralize from 'pluralize';
 import stopword from 'stopword';
 import winkStatistics from 'wink-statistics';
 import winkTokenizer from 'wink-tokenizer';
-
 const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
 const Message = mongoose.model('Message');
@@ -27,11 +26,9 @@ function joinCompoundWords(value) {
     'you tube',
     'hitch gathering',
   ];
-
   compounds.forEach(compound => {
     value = value.replace(compound, compound.replace(' ', ''));
   });
-
   return value;
 }
 
@@ -81,7 +78,6 @@ function getSynonym(value) {
     вконтакте: 'vkontakte',
     интернет: 'internet',
   };
-
   return synonyms[value] || false;
 }
 
@@ -90,7 +86,6 @@ function isOneEditApart(first, second) {
   if (Math.abs(first.length - second.length) > 1 || first === second) {
     return false;
   }
-
   let index = 0;
   while (
     index < Math.min(first.length, second.length) &&
@@ -98,7 +93,6 @@ function isOneEditApart(first, second) {
   ) {
     index += 1;
   }
-
   if (first.length === second.length) {
     return first.slice(index + 1) === second.slice(index + 1);
   }
@@ -164,7 +158,6 @@ function getCorrectTerm(value) {
   if (correctTerms.includes(value)) {
     return false;
   }
-
   const correctedTerm = correctTerms.find(term => isOneEditApart(term, value));
 
   // If Levenshtein distance was one, consider value a typo and return correct term instead
@@ -225,7 +218,6 @@ function getDomain(hostname) {
 function analyseStories(stories) {
   const tokenizer = winkTokenizer();
   const ft = winkStatistics.streaming.freqTable();
-
   stories.forEach(({ acquisitionStory }) => {
     const tokens = _.chain(acquisitionStory)
       .thru(removeStopwords)
@@ -271,7 +263,6 @@ function analyseStories(stories) {
         'number',
         'alien',
       ];
-
       if (
         skipTokens.includes(tag) ||
         skipTerms.includes(value) ||
@@ -301,13 +292,10 @@ function analyseStories(stories) {
 
       // Ensure we have singulars for consistency
       value = getSingular(value);
-
       ft.build(value);
     });
   });
-
   const result = ft.result();
-
   return result;
 }
 
@@ -319,7 +307,10 @@ function analyseStories(stories) {
 function getStories(limit) {
   return User.find(
     {
-      acquisitionStory: { $exists: true, $ne: '' },
+      acquisitionStory: {
+        $exists: true,
+        $ne: '',
+      },
     },
     '_id acquisitionStory created displayName email emailTemporary languages locationFrom locationLiving member public username',
   )
@@ -327,23 +318,22 @@ function getStories(limit) {
     .limit(limit)
     .exec();
 }
-
 const RESTRICTED_MATCH_LIMIT = 10;
 const RESTRICTED_SOURCE_LIMIT = 1000;
 const MIN_IDENTIFIER_LENGTH = 4;
 const MATCH_BATCH_SIZE = 100;
-
 function normalizeIdentifier(value) {
   return value.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
-
 function emailLocalPart(value) {
   return value.split('@')[0];
 }
-
 function getRestrictedIdentifiers(user) {
   return [
-    { label: 'Username identifier', value: normalizeIdentifier(user.username) },
+    {
+      label: 'Username identifier',
+      value: normalizeIdentifier(user.username),
+    },
     {
       label: 'Email identifier',
       value: normalizeIdentifier(emailLocalPart(user.email)),
@@ -358,7 +348,6 @@ function getRestrictedIdentifiers(user) {
       identifiers.findIndex(identifier => identifier.value === value) === index,
   );
 }
-
 function getRestrictedMatchReasons(story, restrictedUser) {
   return restrictedUser.identifiers
     .filter(({ value }) =>
@@ -366,7 +355,6 @@ function getRestrictedMatchReasons(story, restrictedUser) {
     )
     .map(({ label }) => label);
 }
-
 async function getRestrictedMatches(story, restrictedUsers) {
   const preparedStory = {
     identifiers: [
@@ -403,15 +391,20 @@ async function getRestrictedMatches(story, restrictedUsers) {
   }
   return matches;
 }
-
 function getRestrictedUsers() {
-  return User.find({ roles: { $in: ['shadowban', 'suspended'] } })
+  return User.find({
+    roles: {
+      $in: ['shadowban', 'suspended'],
+    },
+  })
     .select('_id displayName email emailTemporary roles username')
-    .sort({ created: -1, _id: 1 })
+    .sort({
+      created: -1,
+      _id: 1,
+    })
     .limit(RESTRICTED_SOURCE_LIMIT)
     .exec();
 }
-
 function storyForList(story, hostingLocation, restrictedMatches, welcomer) {
   return {
     _id: story._id,
@@ -429,13 +422,11 @@ function storyForList(story, hostingLocation, restrictedMatches, welcomer) {
     username: story.username,
   };
 }
-
 export const list = async (req, res) => {
   const stories = await getStories(500);
   if (!stories || stories.length === 0) {
     return res.send([]);
   }
-
   const storyUserIds = stories.map(story => story._id);
   const currentWelcomerIds = (
     await User.find({ roles: 'welcome-team' }).select('_id').exec()
@@ -493,9 +484,13 @@ export const list = async (req, res) => {
     identifiers: getRestrictedIdentifiers(user),
   }));
   const hostingOffers = await Offer.find({
-    user: { $in: storyUserIds },
+    user: {
+      $in: storyUserIds,
+    },
     type: 'host',
-    status: { $in: ['yes', 'maybe'] },
+    status: {
+      $in: ['yes', 'maybe'],
+    },
   })
     .select('location locationFuzzy updated user')
     .sort('-updated')
@@ -513,7 +508,6 @@ export const list = async (req, res) => {
     },
     {},
   );
-
   const results = [];
   for (const story of stories) {
     results.push(
@@ -527,11 +521,14 @@ export const list = async (req, res) => {
   }
   return res.send(results);
 };
-
 export const getAnalysis = async (req, res) => {
   const stories = await getStories(3000);
   const analysis = analyseStories(stories);
   res.send(analysis);
 };
-
-export default { list, getAnalysis };
+const defaultInterop = {
+  list,
+  getAnalysis,
+};
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

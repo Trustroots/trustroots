@@ -7,11 +7,11 @@
  */
 
 var async = require('async'),
-    config = require('../../config/config'),
-    configMongoose = require('../../config/lib/mongoose'),
-    configExpress = require('../../config/lib/express'),
+    config = require('./../../config/config.mjs'),
+    configMongoose = require('./../../config/lib/mongoose.mjs'),
+    configExpress = require('./../../config/lib/express.mjs'),
     mongoose = require('mongoose'),
-    contactsModels = require('../../modules/contacts/server/models/contacts.server.model'),
+    contactsModels = require('./../../modules/contacts/server/models/contacts.server.model.mjs'),
     Contact = mongoose.model('Contact');
 
 console.log('--');
