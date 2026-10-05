@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+
 const {
   annotateFeature,
   test,
@@ -11,6 +14,9 @@ const {
   signOut,
   signInViaApi,
 } = require('../../support/helpers');
+
+const SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK =
+  'E2E seeded negative experience for admin coverage.';
 
 async function gotoAdminPage(page, path, expectedUrl) {
   let lastError;
@@ -70,6 +76,9 @@ test.describe('admin moderation page flows', () => {
     ).toBe(true);
     expect(dashboardData.negativeExperiences).toHaveLength(1);
     expect(dashboardData.negativeExperiences[0].recommend).toBe('no');
+    expect(dashboardData.negativeExperiences[0].feedbackPublic).toBe(
+      SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK,
+    );
 
     const footer = page.locator('#tr-footer');
     await expect(footer).toBeVisible();
@@ -101,6 +110,88 @@ test.describe('admin moderation page flows', () => {
     expect(metaBox.x + metaBox.width).toBeGreaterThan(
       contentBox.x + contentBox.width - 1,
     );
+  });
+
+  test('admin dashboard previews negative experience feedback', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.dashboard', [
+      'Dashboard previews negative-experience feedback.',
+    ]);
+
+    let dashboardRequests = 0;
+    page.on('request', request => {
+      if (request.url().includes('/api/admin/dashboard')) {
+        dashboardRequests += 1;
+      }
+    });
+    await gotoAdminPage(page, '/admin', /\/admin$/);
+    const trigger = page.getByRole('button', {
+      name: /Preview public feedback from/,
+    });
+    const preview = page.getByRole('tooltip');
+
+    await expect(trigger).toBeVisible();
+    await expect(preview).toBeHidden();
+    await trigger.hover();
+    await expect(preview).toHaveText(SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK);
+    await expect(preview).toBeVisible();
+    await preview.evaluate(node => {
+      node.textContent = Array.from(
+        { length: 40 },
+        (_, index) => `Anonymous feedback line ${index + 1}`,
+      ).join('\n');
+    });
+    await preview.hover();
+    await expect(preview).toBeVisible();
+    fs.mkdirSync(path.join(process.cwd(), '.artifacts'), { recursive: true });
+    await page.screenshot({
+      path: path.join(
+        process.cwd(),
+        '.artifacts/admin-dashboard-feedback-desktop.png',
+      ),
+    });
+    await preview.evaluate(node => {
+      node.scrollTop = node.scrollHeight;
+    });
+    expect(await preview.evaluate(node => node.scrollTop)).toBeGreaterThan(0);
+    expect(dashboardRequests).toBe(1);
+
+    await trigger.focus();
+    await page.keyboard.press('Escape');
+    await expect(preview).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    const touchContext = await page
+      .context()
+      .browser()
+      .newContext({
+        baseURL: new URL(page.url()).origin,
+        hasTouch: true,
+        isMobile: true,
+        storageState: await page.context().storageState(),
+        viewport: { width: 390, height: 844 },
+      });
+    const touchPage = await touchContext.newPage();
+    await touchPage.goto('/admin');
+    const touchTrigger = touchPage.getByRole('button', {
+      name: /Preview public feedback from/,
+    });
+    const touchPreview = touchPage.getByRole('tooltip');
+    await touchTrigger.tap();
+    await expect(touchPreview).toBeVisible();
+    await expect(touchPreview).toHaveText(SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK);
+    await touchPreview.scrollIntoViewIfNeeded();
+    await touchPage.screenshot({
+      path: path.join(
+        process.cwd(),
+        '.artifacts/admin-dashboard-feedback-mobile.png',
+      ),
+    });
+    await touchTrigger.tap();
+    await expect(touchPreview).toBeHidden();
+    await touchContext.close();
+    expect(dashboardRequests).toBe(1);
   });
 
   test('admin audit log page loads', async ({ page }, testInfo) => {

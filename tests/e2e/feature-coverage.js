@@ -2657,11 +2657,16 @@ const features = [
       'Authenticated non-admin direct loads of React-owned admin pages redirect away.',
       'Dashboard shows ten most recent negative thread votes.',
       'Dashboard shows ten most recent negative experiences.',
+      'Dashboard previews negative-experience feedback.',
     ],
     relatedSpecs: [
       spec(
         'admin-pages.spec.js',
         'admin dashboard welcomes the signed in admin',
+      ),
+      spec(
+        'admin-pages.spec.js',
+        'admin dashboard previews negative experience feedback',
       ),
       spec(
         'authenticated.spec.js',

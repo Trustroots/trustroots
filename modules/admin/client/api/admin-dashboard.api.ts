@@ -21,6 +21,7 @@ interface DashboardMessenger {
 interface DashboardExperience {
   _id: string;
   created?: string;
+  feedbackPublic?: string | null;
   userFrom?: AdminUserSummary;
   userTo?: AdminUserSummary;
 }
