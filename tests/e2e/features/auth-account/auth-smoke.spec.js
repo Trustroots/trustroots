@@ -1,3 +1,6 @@
+const { MongoClient } = require('mongodb');
+const config = require('../../../../config/config');
+const crypto = require('crypto');
 const {
   annotateFeature,
   test,
@@ -270,4 +273,54 @@ test.describe.serial('authentication smoke', () => {
 
     await expect(page).toHaveURL(/\/messages\?filter=unread/);
   });
+});
+
+test('sign-in returns 429 with Retry-After after repeated attempts', async ({
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'auth.signin', [
+    'Repeated sign-in attempts are limited for a client and account pair.',
+    'Limited requests include a Retry-After header.',
+  ]);
+
+  const attemptedAccount = createUser();
+  const policy = config.targetedRequestLimits.signin;
+  const now = Date.now();
+  const windowStart = Math.floor(now / policy.windowMs) * policy.windowMs;
+  const clientIp = '203.0.113.64';
+  const dimension = 'ip-and-identity';
+  const identity = JSON.stringify([
+    clientIp,
+    attemptedAccount.username.toLowerCase(),
+  ]);
+  const key = crypto
+    .createHmac('sha256', config.sessionSecret)
+    .update(JSON.stringify(['signin', dimension, identity, windowStart]))
+    .digest('hex');
+  const mongo = await MongoClient.connect(config.db.uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+  try {
+    await mongo
+      .db()
+      .collection('requestlimits')
+      .insertOne({
+        key,
+        count: policy.identityLimit,
+        expiresAt: new Date(windowStart + policy.windowMs),
+      });
+  } finally {
+    await mongo.close();
+  }
+
+  const limited = await request.post('/api/auth/signin', {
+    headers: { '!~Passenger-Client-Address': clientIp },
+    data: {
+      username: attemptedAccount.username,
+      password: attemptedAccount.password,
+    },
+  });
+  expect(limited.status()).toBe(429);
+  expect(limited.headers()['retry-after']).toMatch(/^\d+$/);
 });
