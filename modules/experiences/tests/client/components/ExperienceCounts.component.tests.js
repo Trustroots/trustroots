@@ -30,6 +30,15 @@ function experience(overrides = {}) {
 }
 
 describe('<ExperienceCounts />', () => {
+  it('handles omitted private interaction fields', () => {
+    render(
+      <ExperienceCounts
+        experiences={[experience({ interactions: undefined }), experience()]}
+      />,
+    );
+    expect(screen.getByText('Did not meet with anyone.')).toBeInTheDocument();
+  });
+
   it('summarizes a single positive experience', () => {
     render(
       <ExperienceCounts experiences={[experience({ recommend: 'yes' })]} />,
