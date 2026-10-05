@@ -70,7 +70,7 @@ test('member search supports deep links, empty results and profile navigation', 
   });
   await expect(search).toHaveValue(member.username);
   await page
-    .locator(`#tr-main h4 a[href="/profile/${member.username}"]`)
+    .locator(`#tr-main .member-search-card[href="/profile/${member.username}"]`)
     .click();
   await expect(page).toHaveURL(new RegExp(`/profile/${member.username}$`));
   await expect(page.locator('#tr-react-root')).toBeVisible();

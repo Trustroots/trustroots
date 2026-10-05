@@ -285,6 +285,7 @@ test.describe('admin inspection APIs', () => {
     annotateFeature(testInfo, 'admin.user-report', [
       'Admin report shows the member public profile below moderation information.',
     ]);
+    await signInViaApi(page, undefined, SEEDED_ADMIN);
     const member = SEEDED_MEMBERS[1];
     const profileResponsePromise = page.waitForResponse(response =>
       response.url().endsWith(`/api/users/${member.username}`),
