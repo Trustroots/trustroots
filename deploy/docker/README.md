@@ -131,6 +131,10 @@ docker compose up -d -V --force-recreate dev
 
 ## Building the production image
 
+GitHub Actions validates production image builds on pull requests and publishes
+`linux/amd64` images tagged `latest` and `git-<short-commit>` to GHCR after
+code-bearing pushes to `main`.
+
 Build and push the production images:
 
 ```bash
