@@ -1,4 +1,4 @@
-import log from '../../../../config/lib/logger.js';
+import log from './../../../../config/lib/logger.mjs';
 
 // Default error message when unsure how to respond
 const defaultErrorMessage =
@@ -16,14 +16,17 @@ export function getErrorMessageByKey(key) {
     'not-found': 'Not found.',
     forbidden: 'Forbidden.',
     'invalid-id': 'Cannot interpret id.',
-    'unprocessable-entity': 'Unprocessable Entity.', // Status 422, @link http://www.restpatterns.org/HTTP_Status_Codes/422_-_Unprocessable_Entity
-    'unsupported-media-type': 'Unsupported Media Type.', // Status 415
-    'bad-request': 'Bad request.', // Status 400
-    conflict: 'Conflict.', // Status 409
+    'unprocessable-entity': 'Unprocessable Entity.',
+    // Status 422, @link http://www.restpatterns.org/HTTP_Status_Codes/422_-_Unprocessable_Entity
+    'unsupported-media-type': 'Unsupported Media Type.',
+    // Status 415
+    'bad-request': 'Bad request.',
+    // Status 400
+    conflict: 'Conflict.',
+    // Status 409
     suspended: 'Your account has been suspended.',
     default: defaultErrorMessage,
   };
-
   return key && errorMessages[key] ? errorMessages[key] : defaultErrorMessage;
 }
 
@@ -34,11 +37,9 @@ export function getErrorMessageByKey(key) {
  */
 export function getErrorMessage(err) {
   let message = false;
-
   for (const errName in err.errors) {
     if (err.errors[errName].message) message = err.errors[errName].message;
   }
-
   return message || defaultErrorMessage;
 }
 
@@ -120,3 +121,14 @@ export function errorResponse(err, req, res, next) {
     },
   });
 }
+const defaultInterop = {
+  getErrorMessageByKey,
+  getErrorMessage,
+  errorResponse,
+  sendInvalidId,
+  sendBadRequest,
+  sendNotFound,
+  sendForbidden,
+};
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

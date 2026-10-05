@@ -3,7 +3,7 @@ const {
   expect,
   test: base,
   useElementScreenshot,
-} = require('../../support/test');
+} = require('../../support/fixtures');
 
 const test = base.extend({ mapZoom: [6, { option: true }] });
 const { finalizeEvent } = require('nostr-tools');

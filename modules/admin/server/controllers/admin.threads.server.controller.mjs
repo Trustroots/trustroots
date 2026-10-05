@@ -2,7 +2,7 @@
  * Module dependencies.
  */
 import _ from 'lodash';
-import errorService from '../../../core/server/services/error.server.service.js';
+import errorService from './../../../core/server/services/error.server.service.mjs';
 import mongoose from 'mongoose';
 const Thread = mongoose.model('Thread');
 
@@ -24,9 +24,13 @@ export const getThreads = async (req, res) => {
       $match: {
         $or: [
           // eslint-disable-next-line new-cap
-          { userFrom: new mongoose.Types.ObjectId(userId) },
+          {
+            userFrom: new mongoose.Types.ObjectId(userId),
+          },
           // eslint-disable-next-line new-cap
-          { userTo: new mongoose.Types.ObjectId(userId) },
+          {
+            userTo: new mongoose.Types.ObjectId(userId),
+          },
         ],
       },
     },
@@ -61,15 +65,19 @@ export const getThreads = async (req, res) => {
       },
     },
     {
-      $sort: { updated: -1 },
+      $sort: {
+        updated: -1,
+      },
     },
   ]).exec((err, threads) => {
     if (err) {
       return errorService.sendBadRequest(res, err);
     }
-
     return res.send(threads);
   });
 };
-
-export default { getThreads };
+const defaultInterop = {
+  getThreads,
+};
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

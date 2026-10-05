@@ -1,14 +1,12 @@
-import errorService from '../../../core/server/services/error.server.service.js';
-import paginationService from '../../../core/server/services/pagination.server.service.js';
+import errorService from '../../../core/server/services/error.server.service.mjs';
+import paginationService from '../../../core/server/services/pagination.server.service.mjs';
 import mongoose from 'mongoose';
-
 const service = {};
 
 /**
  * Module dependencies.
  */
 const Tribe = mongoose.model('Tribe');
-
 const MEMBER_ONLY_TRIBE_SLUGS = ['naturists'];
 
 // Publicly exposed fields from tribes
@@ -43,12 +41,14 @@ service.tribePopulateOptions = function (select = service.tribeFields) {
 };
 
 function visibleTribesQuery(req) {
-  const query = { public: true };
-
+  const query = {
+    public: true,
+  };
   if (!req.user) {
-    query.slug = { $nin: MEMBER_ONLY_TRIBE_SLUGS };
+    query.slug = {
+      $nin: MEMBER_ONLY_TRIBE_SLUGS,
+    };
   }
-
   return query;
 }
 
@@ -59,17 +59,18 @@ service.listTribes = function (req, res) {
   // Sort either by count or alphabetically
   const sort =
     req?.query?.sortBy === 'alphabetically'
-      ? { label: 'desc' }
-      : { count: 'desc' };
-
+      ? {
+          label: 'desc',
+        }
+      : {
+          count: 'desc',
+        };
   const page = parseInt(req.query.page, 10) || 1;
   const limitMatch = req.originalUrl?.match(/limit=(\d+)/);
   const limit = limitMatch
     ? parseInt(limitMatch[1], 10)
     : parseInt(req.query.limit, 10) || 0;
-
   const query = visibleTribesQuery(req);
-
   Tribe.find(query)
     .select(service.tribeFields)
     .sort(sort)
@@ -106,7 +107,6 @@ service.tribeBySlug = function (req, res, next, slug) {
   if (!req.user && MEMBER_ONLY_TRIBE_SLUGS.includes(slug)) {
     return errorService.sendForbidden(res);
   }
-
   Tribe.findOne(
     {
       public: true,
@@ -134,15 +134,19 @@ service.tribeBySlug = function (req, res, next, slug) {
 service.updateCount = function (id, difference, returnUpdated, callback) {
   Tribe.findByIdAndUpdate(
     id,
-    { $inc: { count: parseInt(difference) } },
     {
-      safe: false, // @link http://stackoverflow.com/a/4975054/1984644
+      $inc: {
+        count: parseInt(difference),
+      },
+    },
+    {
+      safe: false,
+      // @link http://stackoverflow.com/a/4975054/1984644
       new: Boolean(returnUpdated), // get the updated document in return?
     },
     callback,
   );
 };
-
 const getTribe = service.getTribe;
 const listTribes = service.listTribes;
 const tribeBySlug = service.tribeBySlug;
@@ -158,3 +162,4 @@ export {
   updateCount as updateCount,
 };
 export default service;
+export { service as 'module.exports' };

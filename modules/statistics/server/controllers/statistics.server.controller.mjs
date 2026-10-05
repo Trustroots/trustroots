@@ -3,26 +3,22 @@
  */
 import _ from 'lodash';
 import moment from 'moment';
-import errorService from '../../../core/server/services/error.server.service.js';
-import statService from '../../../stats/server/services/stats.server.service.js';
+import errorService from './../../../core/server/services/error.server.service.mjs';
+import statService from './../../../stats/server/services/stats.server.service.mjs';
 import async from 'async';
 import semver from 'semver';
 import mongoose from 'mongoose';
 const statisticsService = {};
-
 const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
 const Experience = mongoose.model('Experience');
 const MessageStat = mongoose.model('MessageStat');
 const ReferenceThread = mongoose.model('ReferenceThread');
-
 const PUBLIC_STATISTICS_CACHE_SECONDS = 60 * 60;
 let publicStatisticsCache;
-
 function connectionPercentage(count, total) {
   return total ? Math.round((count / total) * 1000) / 10 : 0;
 }
-
 export const clearPublicStatisticsCache = function () {
   publicStatisticsCache = undefined;
 };
@@ -31,12 +27,17 @@ export const clearPublicStatisticsCache = function () {
  * Get count of all public users
  */
 export const getUsersCount = function (callback) {
-  User.countDocuments({ public: true }, function (err, count) {
-    if (err) {
-      return callback(err);
-    }
-    callback(null, parseInt(count, 10) || 0);
-  });
+  User.countDocuments(
+    {
+      public: true,
+    },
+    function (err, count) {
+      if (err) {
+        return callback(err);
+      }
+      callback(null, parseInt(count, 10) || 0);
+    },
+  );
 };
 
 /**
@@ -60,35 +61,56 @@ export const getExternalSiteCount = function (site, callback) {
   }
 
   // Build the query
-  const query = { public: true };
-
+  const query = {
+    public: true,
+  };
   switch (site) {
     case 'couchers':
-      query.extSitesCouchers = { $exists: true, $ne: '' };
+      query.extSitesCouchers = {
+        $exists: true,
+        $ne: '',
+      };
       break;
     case 'bewelcome':
-      query.extSitesBW = { $exists: true, $ne: '' };
+      query.extSitesBW = {
+        $exists: true,
+        $ne: '',
+      };
       break;
     case 'couchsurfing':
-      query.extSitesCS = { $exists: true, $ne: '' };
+      query.extSitesCS = {
+        $exists: true,
+        $ne: '',
+      };
       break;
     case 'warmshowers':
-      query.extSitesWS = { $exists: true, $ne: '' };
+      query.extSitesWS = {
+        $exists: true,
+        $ne: '',
+      };
       break;
     case 'facebook':
-      query['additionalProvidersData.facebook'] = { $exists: true };
+      query['additionalProvidersData.facebook'] = {
+        $exists: true,
+      };
       break;
     case 'twitter':
-      query['additionalProvidersData.twitter'] = { $exists: true };
+      query['additionalProvidersData.twitter'] = {
+        $exists: true,
+      };
       break;
     case 'github':
-      query['additionalProvidersData.github'] = { $exists: true };
+      query['additionalProvidersData.github'] = {
+        $exists: true,
+      };
       break;
     case 'nostr':
-      query.nostrNpub = { $exists: true, $ne: '' };
+      query.nostrNpub = {
+        $exists: true,
+        $ne: '',
+      };
       break;
   }
-
   User.countDocuments(query, function (err, count) {
     if (err) {
       return callback(err);
@@ -105,8 +127,16 @@ export const getMeetOffersCount = function (callback) {
     {
       type: 'meet',
       $or: [
-        { validUntil: { $gte: new Date() } },
-        { validUntil: { $exists: false } },
+        {
+          validUntil: {
+            $gte: new Date(),
+          },
+        },
+        {
+          validUntil: {
+            $exists: false,
+          },
+        },
       ],
     },
     function (err, count) {
@@ -165,7 +195,6 @@ export const getHostOffersCount = function (callback) {
         maybe: 0,
         no: 0,
       };
-
       if (counters && counters.length > 0) {
         counters.forEach(function (counter) {
           if (['yes', 'maybe', 'no'].indexOf(counter._id) !== -1) {
@@ -173,7 +202,6 @@ export const getHostOffersCount = function (callback) {
           }
         });
       }
-
       callback(null, values);
     },
   );
@@ -209,7 +237,6 @@ export const getLastSeenStatistic = function (since, callback) {
       $gte: moment().subtract(since).toDate(),
     },
   };
-
   User.countDocuments(query, function (err, count) {
     if (err) {
       return callback(err);
@@ -227,15 +254,25 @@ export const getLastSeenStatistic = function (since, callback) {
 export const getUserLanguagesCount = function (limit, callback) {
   User.aggregate(
     [
-      { $unwind: '$languages' },
+      {
+        $unwind: '$languages',
+      },
       {
         $group: {
           _id: '$languages',
-          count: { $sum: 1 },
+          count: {
+            $sum: 1,
+          },
         },
       },
-      { $sort: { count: -1 } },
-      { $limit: limit },
+      {
+        $sort: {
+          count: -1,
+        },
+      },
+      {
+        $limit: limit,
+      },
     ],
     callback,
   );
@@ -256,20 +293,40 @@ export const getExperienceStatistics = function (since, callback) {
             {
               $group: {
                 _id: null,
-                total: { $sum: 1 },
+                total: {
+                  $sum: 1,
+                },
                 recommended: {
                   $sum: {
-                    $cond: [{ $eq: ['$recommend', 'yes'] }, 1, 0],
+                    $cond: [
+                      {
+                        $eq: ['$recommend', 'yes'],
+                      },
+                      1,
+                      0,
+                    ],
                   },
                 },
                 notRecommended: {
                   $sum: {
-                    $cond: [{ $eq: ['$recommend', 'no'] }, 1, 0],
+                    $cond: [
+                      {
+                        $eq: ['$recommend', 'no'],
+                      },
+                      1,
+                      0,
+                    ],
                   },
                 },
                 recentTotal: {
                   $sum: {
-                    $cond: [{ $gte: ['$created', since] }, 1, 0],
+                    $cond: [
+                      {
+                        $gte: ['$created', since],
+                      },
+                      1,
+                      0,
+                    ],
                   },
                 },
                 recentRecommended: {
@@ -277,8 +334,12 @@ export const getExperienceStatistics = function (since, callback) {
                     $cond: [
                       {
                         $and: [
-                          { $gte: ['$created', since] },
-                          { $eq: ['$recommend', 'yes'] },
+                          {
+                            $gte: ['$created', since],
+                          },
+                          {
+                            $eq: ['$recommend', 'yes'],
+                          },
                         ],
                       },
                       1,
@@ -291,8 +352,12 @@ export const getExperienceStatistics = function (since, callback) {
                     $cond: [
                       {
                         $and: [
-                          { $gte: ['$created', since] },
-                          { $eq: ['$recommend', 'no'] },
+                          {
+                            $gte: ['$created', since],
+                          },
+                          {
+                            $eq: ['$recommend', 'no'],
+                          },
                         ],
                       },
                       1,
@@ -320,14 +385,18 @@ export const getExperienceStatistics = function (since, callback) {
                 created: 1,
                 memberOne: {
                   $cond: [
-                    { $lt: ['$userFrom', '$userTo'] },
+                    {
+                      $lt: ['$userFrom', '$userTo'],
+                    },
                     '$userFrom',
                     '$userTo',
                   ],
                 },
                 memberTwo: {
                   $cond: [
-                    { $lt: ['$userFrom', '$userTo'] },
+                    {
+                      $lt: ['$userFrom', '$userTo'],
+                    },
                     '$userTo',
                     '$userFrom',
                   ],
@@ -336,17 +405,30 @@ export const getExperienceStatistics = function (since, callback) {
             },
             {
               $group: {
-                _id: { memberOne: '$memberOne', memberTwo: '$memberTwo' },
-                latestCreated: { $max: '$created' },
+                _id: {
+                  memberOne: '$memberOne',
+                  memberTwo: '$memberTwo',
+                },
+                latestCreated: {
+                  $max: '$created',
+                },
               },
             },
             {
               $group: {
                 _id: null,
-                total: { $sum: 1 },
+                total: {
+                  $sum: 1,
+                },
                 recent: {
                   $sum: {
-                    $cond: [{ $gte: ['$latestCreated', since] }, 1, 0],
+                    $cond: [
+                      {
+                        $gte: ['$latestCreated', since],
+                      },
+                      1,
+                      0,
+                    ],
                   },
                 },
               },
@@ -360,10 +442,8 @@ export const getExperienceStatistics = function (since, callback) {
       if (err) {
         return callback(err);
       }
-
       const experienceCounts = results.experiences[0] || {};
       const connectionCounts = results.realLifeConnections[0] || {};
-
       return callback(null, {
         total: parseInt(experienceCounts.total, 10) || 0,
         recommended: parseInt(experienceCounts.recommended, 10) || 0,
@@ -395,14 +475,29 @@ export const getMessageInteractionStatistics = function (since, callback) {
       repliedThreads: done => {
         MessageStat.aggregate(
           [
-            { $match: { firstReplyCreated: { $exists: true, $ne: null } } },
+            {
+              $match: {
+                firstReplyCreated: {
+                  $exists: true,
+                  $ne: null,
+                },
+              },
+            },
             {
               $group: {
                 _id: null,
-                total: { $sum: 1 },
+                total: {
+                  $sum: 1,
+                },
                 recentTotal: {
                   $sum: {
-                    $cond: [{ $gte: ['$firstReplyCreated', since] }, 1, 0],
+                    $cond: [
+                      {
+                        $gte: ['$firstReplyCreated', since],
+                      },
+                      1,
+                      0,
+                    ],
                   },
                 },
               },
@@ -414,12 +509,24 @@ export const getMessageInteractionStatistics = function (since, callback) {
       feedback: done => {
         ReferenceThread.aggregate(
           [
-            { $sort: { created: -1, _id: -1 } },
+            {
+              $sort: {
+                created: -1,
+                _id: -1,
+              },
+            },
             {
               $group: {
-                _id: { userFrom: '$userFrom', userTo: '$userTo' },
-                reference: { $first: '$reference' },
-                created: { $first: '$created' },
+                _id: {
+                  userFrom: '$userFrom',
+                  userTo: '$userTo',
+                },
+                reference: {
+                  $first: '$reference',
+                },
+                created: {
+                  $first: '$created',
+                },
               },
             },
             {
@@ -434,7 +541,9 @@ export const getMessageInteractionStatistics = function (since, callback) {
                     $match: {
                       $expr: {
                         $and: [
-                          { $ne: ['$firstReplyCreated', null] },
+                          {
+                            $ne: ['$firstReplyCreated', null],
+                          },
                           {
                             $or: [
                               {
@@ -475,28 +584,56 @@ export const getMessageInteractionStatistics = function (since, callback) {
                       },
                     },
                   },
-                  { $limit: 1 },
+                  {
+                    $limit: 1,
+                  },
                 ],
                 as: 'repliedThreads',
               },
             },
-            { $match: { 'repliedThreads.0': { $exists: true } } },
+            {
+              $match: {
+                'repliedThreads.0': {
+                  $exists: true,
+                },
+              },
+            },
             {
               $group: {
                 _id: null,
                 positive: {
-                  $sum: { $cond: [{ $eq: ['$reference', 'yes'] }, 1, 0] },
+                  $sum: {
+                    $cond: [
+                      {
+                        $eq: ['$reference', 'yes'],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
                 },
                 negative: {
-                  $sum: { $cond: [{ $eq: ['$reference', 'no'] }, 1, 0] },
+                  $sum: {
+                    $cond: [
+                      {
+                        $eq: ['$reference', 'no'],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
                 },
                 recentPositive: {
                   $sum: {
                     $cond: [
                       {
                         $and: [
-                          { $gte: ['$created', since] },
-                          { $eq: ['$reference', 'yes'] },
+                          {
+                            $gte: ['$created', since],
+                          },
+                          {
+                            $eq: ['$reference', 'yes'],
+                          },
                         ],
                       },
                       1,
@@ -509,8 +646,12 @@ export const getMessageInteractionStatistics = function (since, callback) {
                     $cond: [
                       {
                         $and: [
-                          { $gte: ['$created', since] },
-                          { $eq: ['$reference', 'no'] },
+                          {
+                            $gte: ['$created', since],
+                          },
+                          {
+                            $eq: ['$reference', 'no'],
+                          },
                         ],
                       },
                       1,
@@ -529,10 +670,8 @@ export const getMessageInteractionStatistics = function (since, callback) {
       if (err) {
         return callback(err);
       }
-
       const threadCounts = results.repliedThreads[0] || {};
       const feedbackCounts = results.feedback[0] || {};
-
       return callback(null, {
         total: parseInt(threadCounts.total, 10) || 0,
         positive: parseInt(feedbackCounts.positive, 10) || 0,
@@ -559,14 +698,12 @@ export const getPublicStatistics = function (req, res) {
       )
       .json(publicStatisticsCache.statistics);
   }
-
   req.statistics = {
     connections: [],
     experiences: {},
     hosting: {},
     messageInteractions: {},
   };
-
   async.waterfall(
     [
       // Total users
@@ -579,7 +716,6 @@ export const getPublicStatistics = function (req, res) {
           done();
         });
       },
-
       // External sites - BeWelcome
       function (done) {
         statisticsService.getExternalSiteCount(
@@ -588,7 +724,6 @@ export const getPublicStatistics = function (req, res) {
             if (err) {
               return done(err);
             }
-
             req.statistics.connections.push({
               network: 'bewelcome',
               count,
@@ -598,7 +733,6 @@ export const getPublicStatistics = function (req, res) {
           },
         );
       },
-
       // External sites - Couchsurfing
       function (done) {
         statisticsService.getExternalSiteCount(
@@ -616,7 +750,6 @@ export const getPublicStatistics = function (req, res) {
           },
         );
       },
-
       // External sites - Warmshowers
       function (done) {
         statisticsService.getExternalSiteCount(
@@ -634,7 +767,6 @@ export const getPublicStatistics = function (req, res) {
           },
         );
       },
-
       // External sites - Facebook
       function (done) {
         statisticsService.getExternalSiteCount(
@@ -652,7 +784,6 @@ export const getPublicStatistics = function (req, res) {
           },
         );
       },
-
       // External sites - GitHub
       function (done) {
         statisticsService.getExternalSiteCount('github', function (err, count) {
@@ -667,7 +798,6 @@ export const getPublicStatistics = function (req, res) {
           done();
         });
       },
-
       // External sites - Nostr
       function (done) {
         statisticsService.getExternalSiteCount('nostr', function (err, count) {
@@ -682,7 +812,6 @@ export const getPublicStatistics = function (req, res) {
           done();
         });
       },
-
       // Newsletter subscribers
       function (done) {
         statisticsService.getNewsletterSubscriptionsCount(function (
@@ -699,7 +828,6 @@ export const getPublicStatistics = function (req, res) {
           done();
         });
       },
-
       // Experience statistics
       function (done) {
         statisticsService.getExperienceStatistics(
@@ -713,7 +841,6 @@ export const getPublicStatistics = function (req, res) {
           },
         );
       },
-
       // Replied message threads and their feedback
       function (done) {
         statisticsService.getMessageInteractionStatistics(
@@ -727,16 +854,13 @@ export const getPublicStatistics = function (req, res) {
           },
         );
       },
-
       // Hosting stats
       function (done) {
         statisticsService.getHostOffersCount(function (err, counter) {
           if (err) {
             return done(err);
           }
-
           const totalHosting = counter.yes + counter.maybe;
-
           req.statistics.hosting = {
             total: totalHosting,
             percentage: Math.round((totalHosting / req.statistics.total) * 100),
@@ -745,11 +869,9 @@ export const getPublicStatistics = function (req, res) {
             maybe: counter.maybe,
             maybePercentage: Math.round((counter.maybe / totalHosting) * 100),
           };
-
           done();
         });
       },
-
       // Done!
       function () {
         publicStatisticsCache = {
@@ -790,24 +912,19 @@ export const getPublicStatistics = function (req, res) {
  */
 export const collectStatistics = function (req, res) {
   const collection = String(_.get(req, 'body.collection', ''));
-
   const validCollections = ['mobileAppInit'];
-
   const updateMsg =
     'You should update Trustroots app or otherwise it will not continue functioning.';
-
   if (!_.has(req, 'body.stats') || !_.isObject(req.body.stats)) {
     return res.header('x-tr-update-needed', updateMsg).status(400).send({
       message: 'Missing or invalid `stats`.',
     });
   }
-
   if (!collection || validCollections.indexOf(collection) === -1) {
     return res.header('x-tr-update-needed', updateMsg).status(400).send({
       message: 'Missing or invalid `collection`.',
     });
   }
-
   const appVersion = String(_.get(req, 'body.stats.version', 'unknown'));
   const needsUpdate = semver.satisfies(appVersion, '< 1.0.0');
 
@@ -838,15 +955,15 @@ export const collectStatistics = function (req, res) {
   statService.stat(stats, function () {
     // Add update header if app version so requires
     if (needsUpdate) {
-      return res
-        .header('x-tr-update-needed', updateMsg)
-        .json({ message: updateMsg });
+      return res.header('x-tr-update-needed', updateMsg).json({
+        message: updateMsg,
+      });
     }
-
-    return res.json({ message: 'OK' });
+    return res.json({
+      message: 'OK',
+    });
   });
 };
-
 Object.assign(statisticsService, {
   clearPublicStatisticsCache,
   getUsersCount,
@@ -861,5 +978,5 @@ Object.assign(statisticsService, {
   getPublicStatistics,
   collectStatistics,
 });
-
 export default statisticsService;
+export { statisticsService as 'module.exports' };

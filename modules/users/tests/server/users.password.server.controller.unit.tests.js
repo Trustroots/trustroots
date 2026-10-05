@@ -1,20 +1,21 @@
 /**
  * Unit tests for password controller validation and reset branches.
  */
-const proxyquire = require('proxyquire').noCallThru();
+const mockModule = require('../../../../testutils/server/mock-module');
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
 const utils = require('../../../../testutils/server/data.server.testutil');
 const testutils = require('../../../../testutils/server/server.testutil');
-const errorService = require('../../../core/server/services/error.server.service');
+const errorService = require('../../../core/server/services/error.server.service.mjs');
 require('should');
 
 const User = mongoose.model('User');
 
 const controllerPath =
-  '../../server/controllers/users.password.server.controller';
-const emailServicePath = '../../../core/server/services/email.server.service';
+  '../../server/controllers/users.password.server.controller.mjs';
+const emailServicePath =
+  '../../../core/server/services/email.server.service.mjs';
 
 function deferredResponse() {
   let resolveResponse;
@@ -50,7 +51,7 @@ function deferredResponse() {
 }
 
 function loadPasswordController() {
-  return proxyquire(controllerPath, {
+  return mockModule(require.resolve(controllerPath), {
     [emailServicePath]: {
       sendResetPassword: (user, cb) => cb(),
       sendResetPasswordConfirm: (user, cb) => cb(),
@@ -88,7 +89,7 @@ describe('Password controller unit tests', () => {
     });
 
     it('returns the same acknowledgement when sending the reset email fails', async () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = mockModule(require.resolve(controllerPath), {
         [emailServicePath]: {
           sendResetPassword: (user, cb) => cb(new Error('smtp down')),
         },
@@ -113,7 +114,7 @@ describe('Password controller unit tests', () => {
       const deliveryStarted = new Promise(resolve => {
         startDelivery = resolve;
       });
-      const controller = proxyquire(controllerPath, {
+      const controller = mockModule(require.resolve(controllerPath), {
         [emailServicePath]: {
           sendResetPassword: () => {
             startDelivery();
@@ -350,7 +351,7 @@ describe('Password controller unit tests', () => {
     });
 
     it('still resets the password when the confirmation email fails', async () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = mockModule(require.resolve(controllerPath), {
         [emailServicePath]: {
           sendResetPassword: (user, cb) => cb(),
           sendResetPasswordConfirm: (user, cb) =>
@@ -526,7 +527,7 @@ describe('Password controller unit tests', () => {
     });
 
     it('still succeeds when the password change confirmation email fails', async () => {
-      const controller = proxyquire(controllerPath, {
+      const controller = mockModule(require.resolve(controllerPath), {
         [emailServicePath]: {
           sendResetPassword: (user, cb) => cb(),
           sendResetPasswordConfirm: (user, cb) =>

@@ -4,18 +4,18 @@ const path = require('path');
 const { pathToFileURL } = require('url');
 
 describe('API payload native ESM imports', () => {
-  it('exposes adapter functions to named imports without coverage hooks', () => {
+  it('exposes native payload functions to named imports without coverage hooks', () => {
     const root = path.resolve(__dirname, '../../../..');
     const staff = pathToFileURL(
       path.join(
         root,
-        'modules/admin/server/services/staff-blockers-payload.server.service.js',
+        'modules/admin/server/services/staff-blockers-payload.server.service.mjs',
       ),
     ).href;
     const experiences = pathToFileURL(
       path.join(
         root,
-        'modules/experiences/server/services/experience-payload.server.service.js',
+        'modules/experiences/server/services/experience-payload.server.service.mjs',
       ),
     ).href;
     const source = `

@@ -95,7 +95,7 @@ jobs:
       - name: Run Windows wheel scenarios
         run: |
           node -p "JSON.stringify({ platform: process.platform, release: require('os').release(), node: process.version, playwright: require('@playwright/test/package.json').version })"
-          npx playwright test --config playwright.windows-wheel.config.js
+          npx playwright test --config playwright.windows-wheel.config.cjs
       - name: Upload browser diagnostics
         if: always()
         uses: actions/upload-artifact@v7

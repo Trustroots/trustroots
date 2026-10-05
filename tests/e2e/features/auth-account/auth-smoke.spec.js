@@ -1,12 +1,12 @@
 const { MongoClient } = require('mongodb');
-const config = require('../../../../config/config');
+const config = require('../../support/app-config');
 const crypto = require('crypto');
 const {
   annotateFeature,
   test,
   expect,
   useElementScreenshot,
-} = require('../../support/test');
+} = require('../../support/fixtures');
 
 const {
   SEEDED_MEMBERS,

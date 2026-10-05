@@ -1,21 +1,19 @@
-import { createRequire } from 'module';
+import userProfile from '../../../users/server/controllers/users.profile.server.controller.mjs';
+import { readFileSync } from 'node:fs';
 import _ from 'lodash';
 import async from 'async';
-import config from '../../../../config/config.js';
-import errorService from '../../../core/server/services/error.server.service.js';
-import tribes from '../../../tribes/server/controllers/tribes.server.controller.js';
-import textService from '../../../core/server/services/text.server.service.js';
-import log from '../../../../config/lib/logger.js';
+import config from './../../../../config/config.mjs';
+import errorService from './../../../core/server/services/error.server.service.mjs';
+import tribes from './../../../tribes/server/controllers/tribes.server.controller.mjs';
+import textService from './../../../core/server/services/text.server.service.mjs';
+import log from './../../../../config/lib/logger.mjs';
 import sanitizeHtml from 'sanitize-html';
 import moment from 'moment';
 import mongoose from 'mongoose';
-import normaliseOfferExpiry from '../services/offer-expiry.server.service.js';
-const require = createRequire(import.meta.url);
-
+import normaliseOfferExpiry from './../services/offer-expiry.server.service.mjs';
 const service = {};
-
 function getUserProfile() {
-  return require('../../../users/server/controllers/users.profile.server.controller.js');
+  return userProfile;
 }
 
 /**
@@ -77,7 +75,6 @@ function sanitizeOffer(offer, authenticatedUser, alwaysFuzzyLocation) {
   // offer is a Mongo document, turn it into regular JS object
   // so that we can modify it on the fly
   offer = offer.toObject();
-
   const offerUserId = offer.user._id || offer.user;
   const isOwnOffer =
     authenticatedUser && authenticatedUser._id.equals(offerUserId);
@@ -124,7 +121,6 @@ function sanitizeOffer(offer, authenticatedUser, alwaysFuzzyLocation) {
 
   // Pick fields to send out, leaves out e.g. `locationFuzzy` and `reactivateReminderSent`
   offer = _.pick(offer, publicOfferFields);
-
   return offer;
 }
 
@@ -151,7 +147,6 @@ function sanitizeOffer(offer, authenticatedUser, alwaysFuzzyLocation) {
  */
 function isValidCoordinate(coordinate) {
   const regexp = /^[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?$/;
-
   return (
     !_.isUndefined(coordinate) &&
     _.isFinite(parseFloat(coordinate)) &&
@@ -168,7 +163,6 @@ function isValidCoordinate(coordinate) {
 function isValidOfferType(type) {
   // Get list of valid offer types directly from Mongoose Schema
   const validOfferTypes = Offer.schema.path('type').enumValues || [];
-
   return type && validOfferTypes.indexOf(type) > -1;
 }
 
@@ -193,7 +187,6 @@ service.create = function (req, res) {
       message: 'Missing offer location.',
     });
   }
-
   const validUntil = normaliseOfferExpiry(
     req.body.type,
     req.body.validUntil,
@@ -211,19 +204,16 @@ service.create = function (req, res) {
   const offer = new Offer(
     _.pick(req.body, _.concat(allowedOfferFields, 'type')),
   );
-
   offer.user = req.user._id;
 
   // Update timestamp
   offer.updated = new Date();
-
   offer.save(function (err) {
     if (err) {
       return res.status(400).send({
         message: 'Failed to save offer.',
       });
     }
-
     res.json({
       message: 'Offer saved.',
     });
@@ -256,10 +246,8 @@ service.update = function (req, res) {
             message: 'You cannot update offer type.',
           });
         }
-
         done();
       },
-
       // Create offer object and modify it
       function (done) {
         const validUntil = normaliseOfferExpiry(
@@ -286,17 +274,14 @@ service.update = function (req, res) {
         // Reset reactivate reminders
         // Setting this to undefined will remove the field
         offer.set('reactivateReminderSent', undefined);
-
         done(null, offer);
       },
-
       // Save offer
       function (offer, done) {
         offer.save(function (err) {
           done(err);
         });
       },
-
       // Done!
       function () {
         return res.json({
@@ -320,7 +305,6 @@ service.delete = function (req, res) {
   if (!req.user || !req.offer.user._id.equals(req.user._id)) {
     return errorService.sendForbidden(res);
   }
-
   Offer.findOneAndRemove(
     {
       _id: req.offer._id,
@@ -330,7 +314,6 @@ service.delete = function (req, res) {
       if (err) {
         return errorService.sendBadRequest(res, err);
       }
-
       res.json({
         message: 'Offer removed.',
       });
@@ -393,7 +376,6 @@ service.list = function (req, res) {
       });
     }
   }
-
   filters.hasArrayFilter = function (filterType) {
     return (
       _.has(this, filterType) &&
@@ -401,7 +383,6 @@ service.list = function (req, res) {
       this[filterType].length > 0
     );
   };
-
   filters.hasObjectFilter = function (filterType) {
     return (
       _.has(this, filterType) &&
@@ -440,9 +421,17 @@ service.list = function (req, res) {
   query.push({
     $match: {
       $or: [
-        { status: 'yes' },
-        { status: 'maybe' },
-        { status: { $exists: false } },
+        {
+          status: 'yes',
+        },
+        {
+          status: 'maybe',
+        },
+        {
+          status: {
+            $exists: false,
+          },
+        },
       ],
     },
   });
@@ -451,8 +440,16 @@ service.list = function (req, res) {
   query.push({
     $match: {
       $or: [
-        { validUntil: { $gte: new Date() } },
-        { validUntil: { $exists: false } },
+        {
+          validUntil: {
+            $gte: new Date(),
+          },
+        },
+        {
+          validUntil: {
+            $exists: false,
+          },
+        },
       ],
     },
   });
@@ -501,7 +498,9 @@ service.list = function (req, res) {
     $match: {
       // We could simply do this as performance improvement, but shadowbanned users are "public".
       'user.public': true,
-      'user.roles': { $nin: ['suspended', 'shadowban'] },
+      'user.roles': {
+        $nin: ['suspended', 'shadowban'],
+      },
     },
   });
 
@@ -518,7 +517,12 @@ service.list = function (req, res) {
 
   // Languages filter
   if (filters.hasArrayFilter('languages')) {
-    let languages = require('../../../../config/languages/languages.json');
+    let languages = JSON.parse(
+      readFileSync(
+        new URL('../../../../config/languages/languages.json', import.meta.url),
+        'utf8',
+      ),
+    );
 
     // Above json `languages` object contains language names, but we need just keys.
     languages = _.keys(languages);
@@ -544,7 +548,6 @@ service.list = function (req, res) {
   // Tribes filter
   if (filters.hasArrayFilter('tribes')) {
     const tribeQueries = [];
-
     const isTribeFilterValid = filters.tribes.every(function (tribeId) {
       // Return failure if tribe id is invalid, otherwise add id to query array
       return (
@@ -554,7 +557,6 @@ service.list = function (req, res) {
         })
       );
     });
-
     if (!isTribeFilterValid) {
       return res.status(400).send({
         message: errorService.getErrorMessageByKey('invalid-id'),
@@ -579,7 +581,11 @@ service.list = function (req, res) {
 
   // Filter out users that do not share any circles with the authenticated user
   // and chose to not appear in those searches.
-  const showOnlyInMyCirclesQueries = [{ showOnlyInMyCircles: false }];
+  const showOnlyInMyCirclesQueries = [
+    {
+      showOnlyInMyCircles: false,
+    },
+  ];
   req.user.member?.forEach(function (membership) {
     // Add all the circles that the authenticated user is member of. One of them
     // must match for an offer to appear in the search result.
@@ -602,7 +608,9 @@ service.list = function (req, res) {
         id: '$_id',
         status: '$status',
         type: '$type',
-        offer: { $concat: ['$type', '-', '$status'] },
+        offer: {
+          $concat: ['$type', '-', '$status'],
+        },
       },
       geometry: {
         coordinates: '$locationFuzzy',
@@ -610,7 +618,6 @@ service.list = function (req, res) {
       },
     },
   });
-
   Offer.aggregate(query)
     .exec()
     .then(
@@ -658,17 +665,14 @@ service.getOffer = function (req, res) {
         if (!req.offer || !req.offer.user || !req.offer.location) {
           return errorService.sendNotFound(res);
         }
-
         done(null, req.offer);
       },
-
       // Populate `tribe` fields from objects at `offer.user.member` array
       function (offer, done) {
         // Nothing to populate
         if (!offer.user.member || offer.user.member.length === 0) {
           return done(null, offer);
         }
-
         User.populate(
           offer.user,
           tribes.tribePopulateOptions(),
@@ -680,11 +684,9 @@ service.getOffer = function (req, res) {
           },
         );
       },
-
       function (offer) {
         // Sanitize offer before returning it
         offer = sanitizeOffer(offer, req.user);
-
         res.json(offer);
       },
     ],
@@ -718,8 +720,16 @@ service.offersByUserId = function (req, res, next, userId) {
   const query = {
     user: userId,
     $or: [
-      { validUntil: { $gte: new Date() } },
-      { validUntil: { $exists: false } },
+      {
+        validUntil: {
+          $gte: new Date(),
+        },
+      },
+      {
+        validUntil: {
+          $exists: false,
+        },
+      },
     ],
   };
 
@@ -732,7 +742,6 @@ service.offersByUserId = function (req, res, next, userId) {
     // 3rd parameter sets max limit for array length,
     // ensuring users can't send insanely long arrays for our queries
     const queryTypes = _.split(req.query.types, ',', validOfferTypes.length);
-
     queryTypes.forEach(function (paramType) {
       // Return failure if type is invalid, otherwise add type to query array
       if (paramType && validOfferTypes.indexOf(paramType) > -1) {
@@ -763,7 +772,6 @@ service.offersByUserId = function (req, res, next, userId) {
     if (err) {
       return next(err);
     }
-
     if (!offers || offers.length === 0) {
       return errorService.sendNotFound(res);
     }
@@ -772,7 +780,6 @@ service.offersByUserId = function (req, res, next, userId) {
     req.offers = _.map(offers, function (offer) {
       return sanitizeOffer(offer, req.user);
     });
-
     next();
   });
 };
@@ -788,7 +795,6 @@ service.offerById = function (req, res, next, offerId) {
   if (!mongoose.Types.ObjectId.isValid(offerId)) {
     return errorService.sendInvalidId(res);
   }
-
   async.waterfall(
     [
       // Find offer
@@ -802,19 +808,15 @@ service.offerById = function (req, res, next, offerId) {
                 error: err,
               });
             }
-
             if (err || !offer) {
               return errorService.sendNotFound(res);
             }
-
             done(null, offer);
           });
       },
-
       // Continue
       function (offer, done) {
         req.offer = offer;
-
         done();
       },
     ],
@@ -844,7 +846,6 @@ service.removeAllByUserId = function (userId, callback) {
     },
   );
 };
-
 const create = service.create;
 const deleteExport = service.delete;
 const getOffer = service.getOffer;
@@ -855,14 +856,15 @@ const offersByUserId = service.offersByUserId;
 const removeAllByUserId = service.removeAllByUserId;
 const update = service.update;
 export {
-  create as create,
+  create,
   deleteExport as delete,
-  getOffer as getOffer,
-  list as list,
-  listOffersByUser as listOffersByUser,
-  offerById as offerById,
-  offersByUserId as offersByUserId,
-  removeAllByUserId as removeAllByUserId,
-  update as update,
+  getOffer,
+  list,
+  listOffersByUser,
+  offerById,
+  offersByUserId,
+  removeAllByUserId,
+  update,
 };
 export default service;
+export { service as 'module.exports' };

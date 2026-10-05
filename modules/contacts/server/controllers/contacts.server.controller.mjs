@@ -1,14 +1,13 @@
 import _ from 'lodash';
-import errorService from '../../../core/server/services/error.server.service.js';
-import textService from '../../../core/server/services/text.server.service.js';
-import emailService from '../../../core/server/services/email.server.service.js';
-import userRolesService from '../../../users/server/services/user-roles.server.service.js';
-import userMiniService from '../../../users/server/services/user-mini.server.service.js';
+import errorService from '../../../core/server/services/error.server.service.mjs';
+import textService from '../../../core/server/services/text.server.service.mjs';
+import emailService from '../../../core/server/services/email.server.service.mjs';
+import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
+import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
 import sanitizeHtml from 'sanitize-html';
 import htmlToText from 'html-to-text';
 import async from 'async';
 import mongoose from 'mongoose';
-
 const service = {};
 
 /**
@@ -30,7 +29,6 @@ service.add = function (req, res) {
       message: 'An email was sent to your contact.',
     });
   }
-
   async.waterfall(
     [
       // Validate
@@ -53,7 +51,6 @@ service.add = function (req, res) {
           ],
         }).exec(function (err, existingContact) {
           if (err) return done(err);
-
           if (existingContact) {
             // Contact already exists!
             return res.status(409).json({
@@ -61,11 +58,9 @@ service.add = function (req, res) {
               confirmed: existingContact.confirmed,
             });
           }
-
           done();
         });
       },
-
       // Sanitize message
       function (done) {
         // Catch message separately
@@ -81,17 +76,17 @@ service.add = function (req, res) {
           });
         }
         delete req.body.message;
-
         done(null, messageHTML, messagePlain);
       },
-
       // Find friend before creating a contact, so restricted profiles do not
       // receive a request or reveal that they exist.
       function (messageHTML, messagePlain, done) {
         User.findOne(
           {
             _id: req.body.friendUserId,
-            roles: { $nin: userRolesService.restrictedMessagingRoles },
+            roles: {
+              $nin: userRolesService.restrictedMessagingRoles,
+            },
           },
           'email displayName roles',
         ).exec(function (err, friend) {
@@ -99,28 +94,23 @@ service.add = function (req, res) {
             return done(
               new Error('Failed to load user ' + req.body.friendUserId),
             );
-
           done(err, messageHTML, messagePlain, friend);
         });
       },
-
       // Create Contact
       function (messageHTML, messagePlain, friend, done) {
         contact = new Contact(req.body);
         contact.confirmed = false;
         contact.userFrom = req.user._id;
         contact.userTo = req.body.friendUserId;
-
         done(null, messageHTML, messagePlain, friend);
       },
-
       // Save contact
       function (messageHTML, messagePlain, friend, done) {
         contact.save(function (err) {
           done(err, messageHTML, messagePlain, friend);
         });
       },
-
       // Send email
       function (messageHTML, messagePlain, friend, done) {
         emailService.sendConfirmContact(
@@ -158,12 +148,13 @@ service.add = function (req, res) {
  */
 service.remove = function (req, res) {
   const contact = req.contact;
-
   contact.remove(function (err) {
     if (err) {
       return errorService.sendBadRequest(res, err);
     } else {
-      res.status(200).send({ message: 'Contact removed.' });
+      res.status(200).send({
+        message: 'Contact removed.',
+      });
     }
   });
 };
@@ -174,7 +165,14 @@ service.remove = function (req, res) {
 service.removeAllByUserId = function (userId, callback) {
   Contact.deleteMany(
     {
-      $or: [{ userTo: userId }, { userFrom: userId }],
+      $or: [
+        {
+          userTo: userId,
+        },
+        {
+          userFrom: userId,
+        },
+      ],
     },
     function (err) {
       if (callback) {
@@ -196,7 +194,6 @@ service.confirm = function (req, res) {
   // Ta'da!
   const contact = req.contact;
   contact.confirmed = true;
-
   contact.save(function (err) {
     if (err) {
       return errorService.sendBadRequest(res, err);
@@ -234,7 +231,6 @@ service.contactByUserId = function (req, res, next, userId) {
   if (req.user && req.user._id === userId) {
     return errorService.sendInvalidId(res);
   }
-
   if (req.user && req.user.public) {
     Contact.findOne({
       $or: [
@@ -258,7 +254,6 @@ service.contactByUserId = function (req, res, next, userId) {
         if (!contact || !contact.userFrom || !contact.userTo) {
           return errorService.sendNotFound(res);
         }
-
         req.contact = contact;
         next();
       });
@@ -296,7 +291,6 @@ service.contactById = function (req, res, next, contactId) {
         ) {
           return errorService.sendNotFound(res);
         }
-
         req.contact = contact;
         next();
       });
@@ -319,7 +313,14 @@ service.filterByCommon = function (req, res, next) {
   // Get currently authenticated user's contact list
   Contact.find(
     {
-      $or: [{ userFrom: req.user._id }, { userTo: req.user._id }],
+      $or: [
+        {
+          userFrom: req.user._id,
+        },
+        {
+          userTo: req.user._id,
+        },
+      ],
       // Include only confirmed contacts
       confirmed: true,
     },
@@ -369,7 +370,6 @@ service.filterByCommon = function (req, res, next) {
       // returning falsy will hold it back.
       return authUserContactUsers.indexOf(contact.user._id.toString()) > -1;
     });
-
     next();
   });
 };
@@ -384,9 +384,15 @@ service.contactListByUser = function (req, res, next, listUserId) {
 
   // Turn `listUserId` String into a Mongo ObjectId
   listUserId = new mongoose.Types.ObjectId(listUserId);
-
   const contactQuery = {
-    $or: [{ userFrom: listUserId }, { userTo: listUserId }],
+    $or: [
+      {
+        userFrom: listUserId,
+      },
+      {
+        userTo: listUserId,
+      },
+    ],
     confirmed: true,
   };
 
@@ -395,12 +401,12 @@ service.contactListByUser = function (req, res, next, listUserId) {
   if (req.user && req.user._id.equals(listUserId)) {
     delete contactQuery.confirmed;
   }
-
   Contact.aggregate([
     // Finds all documents where requested user id equals `userFrom` OR `userTo`
     // Optionally limits to documents with `confirmed:true` only
-    { $match: contactQuery },
-
+    {
+      $match: contactQuery,
+    },
     // Format results
     {
       $project: {
@@ -415,14 +421,15 @@ service.contactListByUser = function (req, res, next, listUserId) {
         // requested user's profile, as it would just repeat on every document.
         user: {
           $cond: {
-            if: { $eq: ['$userFrom', listUserId] },
+            if: {
+              $eq: ['$userFrom', listUserId],
+            },
             then: '$userTo',
             else: '$userFrom',
           },
         },
       },
     },
-
     // Populate user field: receives whole document of user
     // Because `$lookup`s return an array with one user `[{userObject}]`,
     // the helper unwinds it back to `{userObject}`
@@ -455,12 +462,10 @@ service.contactListByUser = function (req, res, next, listUserId) {
   ]).exec(function (err, contacts) {
     if (err) return next(err);
     if (!contacts) return next(new Error('Failed to load contacts.'));
-
     req.contacts = contacts;
     next();
   });
 };
-
 const add = service.add;
 const confirm = service.confirm;
 const contactById = service.contactById;
@@ -472,15 +477,16 @@ const list = service.list;
 const remove = service.remove;
 const removeAllByUserId = service.removeAllByUserId;
 export {
-  add as add,
-  confirm as confirm,
-  contactById as contactById,
-  contactByUserId as contactByUserId,
-  contactListByUser as contactListByUser,
-  filterByCommon as filterByCommon,
-  get as get,
-  list as list,
-  remove as remove,
-  removeAllByUserId as removeAllByUserId,
+  add,
+  confirm,
+  contactById,
+  contactByUserId,
+  contactListByUser,
+  filterByCommon,
+  get,
+  list,
+  remove,
+  removeAllByUserId,
 };
 export default service;
+export { service as 'module.exports' };

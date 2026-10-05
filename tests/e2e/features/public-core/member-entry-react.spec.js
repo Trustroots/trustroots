@@ -1,4 +1,4 @@
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 const { SEEDED_MEMBERS, signInViaApi } = require('../../support/helpers');
 
 test('member entry pages require sign-in', async ({ page }, testInfo) => {

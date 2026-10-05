@@ -2,13 +2,13 @@ const should = require('should');
 const sinon = require('sinon');
 const mongoose = require('mongoose');
 const passport = require('passport');
-const config = require('../../../../config/config');
+const config = require('../../../../config/config.mjs');
 
-const controllerPath = '../../server/config/users.config.server';
-require('../../server/models/user.server.model');
+const controllerPath = '../../server/config/users.config.server.mjs';
+require('../../server/models/user.server.model.mjs');
 const User = mongoose.model('User');
 
-function installSessionHandlers() {
+async function installSessionHandlers() {
   let serialize;
   let deserialize;
   sinon
@@ -20,7 +20,7 @@ function installSessionHandlers() {
   sinon.stub(config.utils, 'getGlobbedPaths').returns([]);
   const app = { use: sinon.stub() };
 
-  require(controllerPath)(app);
+  await require(controllerPath)(app);
 
   return { serialize, deserialize };
 }
@@ -28,11 +28,11 @@ function installSessionHandlers() {
 describe('Users Passport session configuration', () => {
   afterEach(() => sinon.restore());
 
-  it('serializes the authentication version and rejects legacy ID-only sessions', done => {
+  it('serializes the authentication version and rejects legacy ID-only sessions', async () => {
     const user = { id: 'member-id', authVersion: 3 };
     const findOne = sinon.stub();
     sinon.stub(User, 'findOne').callsFake(findOne);
-    const handlers = installSessionHandlers();
+    const handlers = await installSessionHandlers();
 
     handlers.serialize(user, (serializeErr, session) => {
       should.not.exist(serializeErr);
@@ -41,12 +41,11 @@ describe('Users Passport session configuration', () => {
         should.not.exist(legacyErr);
         should(legacyUser).equal(false);
         findOne.called.should.equal(false);
-        done();
       });
     });
   });
 
-  it('rejects stale versions and deleted accounts while accepting the current version', done => {
+  it('rejects stale versions and deleted accounts while accepting the current version', async () => {
     const currentUser = { id: 'member-id', authVersion: 4 };
     const findOne = sinon.stub().callsFake((query, fields, callback) => {
       if (query._id === 'deleted-id') {
@@ -55,7 +54,7 @@ describe('Users Passport session configuration', () => {
       return callback(null, currentUser);
     });
     sinon.stub(User, 'findOne').callsFake(findOne);
-    const handlers = installSessionHandlers();
+    const handlers = await installSessionHandlers();
 
     handlers.deserialize(
       { id: 'member-id', authVersion: 3 },
@@ -72,7 +71,6 @@ describe('Users Passport session configuration', () => {
               (deletedErr, deletedUser) => {
                 should.not.exist(deletedErr);
                 should(deletedUser).equal(null);
-                done();
               },
             );
           },

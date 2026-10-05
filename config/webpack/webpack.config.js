@@ -18,7 +18,7 @@ const { join } = require('path');
 const shims = require('./webpack.shims');
 const basedir = join(__dirname, '../..');
 
-const config = require('../config');
+const config = require('./../config.mjs');
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';

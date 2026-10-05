@@ -1,4 +1,4 @@
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 
 test('visitors can filter FAQ questions', async ({ page }, testInfo) => {
   annotateFeature(testInfo, 'public.faq-general', [

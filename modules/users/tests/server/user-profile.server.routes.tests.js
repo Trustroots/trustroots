@@ -2,12 +2,10 @@ const should = require('should');
 const request = require('supertest');
 const mongoose = require('mongoose');
 const moment = require('moment');
-const config = require('../../../../config/config');
-const express = require('../../../../config/lib/express');
+const config = require('./../../../../config/config.mjs');
+const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
-
 const User = mongoose.model('User');
-
 const validNpub =
   'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
 const nsec = 'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqwkhnav';
@@ -31,11 +29,12 @@ let _unConfirmedUser;
  */
 describe('User profile CRUD tests', function () {
   before(function (done) {
-    // Get application
-    app = express.init(mongoose.connection);
-    agent = request.agent(app);
-
-    done();
+    (async () => {
+      // Get application
+      app = await express.init(mongoose.connection);
+      agent = request.agent(app);
+      done();
+    })().catch(done);
   });
 
   // Create a confirmed user
@@ -58,7 +57,6 @@ describe('User profile CRUD tests', function () {
       provider: 'local',
       roles: ['user'],
     };
-
     user = new User(_user);
 
     // Save a user to the test db
@@ -88,28 +86,25 @@ describe('User profile CRUD tests', function () {
       username: 'TR_username_unconfirmed',
       password: 'TR-I$Aw3$0m4',
     };
-
     _unConfirmedUser = {
       firstName: 'Full',
       lastName: 'Name',
       displayName: 'Full Name',
       email: 'unconfirmed-test@example.org',
-      emailTemporary: 'unconfirmed-test@example.org', // unconfirmed users have this set
+      emailTemporary: 'unconfirmed-test@example.org',
+      // unconfirmed users have this set
       emailToken: 'initial email token',
       username: unConfirmedCredentials.username.toLowerCase(),
       password: unConfirmedCredentials.password,
       provider: 'local',
       roles: ['user'],
     };
-
     unConfirmedUser = new User(_unConfirmedUser);
 
     // Save a user to the test db
     unConfirmedUser.save(done);
   });
-
   afterEach(utils.clearDatabase);
-
   it('should be able to get own user details successfully even when profile is still non-public', function (done) {
     agent
       .post('/api/auth/signin')
@@ -129,7 +124,6 @@ describe('User profile CRUD tests', function () {
             if (err) {
               return done(err);
             }
-
             res.body.should.be.instanceof(Object);
             res.body.username.should.equal(unConfirmedUser.username);
             res.body.public.should.equal(false); // Unpublic right after signup
@@ -149,10 +143,8 @@ describe('User profile CRUD tests', function () {
           });
       });
   });
-
   it('should be able to get own user details successfully with role "shadowban"', function (done) {
     user.roles = ['user', 'shadowban'];
-
     user.save(function (err) {
       should.not.exist(err);
       agent
@@ -170,10 +162,8 @@ describe('User profile CRUD tests', function () {
         });
     });
   });
-
   it('should be able to get other user details successfully when with role "shadowban"', function (done) {
     user.roles = ['user', 'shadowban'];
-
     user.save(function (err) {
       should.not.exist(err);
       agent
@@ -191,10 +181,8 @@ describe('User profile CRUD tests', function () {
         });
     });
   });
-
   it('should not be able to get other users details successfully that have "shadowban" role', function (done) {
     user2.roles = ['user', 'shadowban'];
-
     user2.save(function (err) {
       should.not.exist(err);
       agent
@@ -212,11 +200,9 @@ describe('User profile CRUD tests', function () {
         });
     });
   });
-
   it('should not be able to get other users details successfully that have "shadowban" role when with legacy role "moderator"', function (done) {
     user.roles = ['user', 'moderator'];
     user2.roles = ['user', 'shadowban'];
-
     user.save(function (err) {
       should.not.exist(err);
       user2.save(function (err) {
@@ -237,11 +223,9 @@ describe('User profile CRUD tests', function () {
       });
     });
   });
-
   it('should be able to get other users details successfully that have "shadowban" role when with role "admin"', function (done) {
     user.roles = ['user', 'admin'];
     user2.roles = ['user', 'shadowban'];
-
     user.save(function (err) {
       should.not.exist(err);
       user2.save(function (err) {
@@ -262,10 +246,8 @@ describe('User profile CRUD tests', function () {
       });
     });
   });
-
   it('should be able to see that someone is volunteer when they have "volunteer" role', function (done) {
     user2.roles = ['user', 'volunteer'];
-
     user2.save(function (err) {
       should.not.exist(err);
       agent
@@ -283,7 +265,6 @@ describe('User profile CRUD tests', function () {
               if (err) {
                 return done(err);
               }
-
               res.body.isVolunteer.should.be.true();
 
               // Get non volunteer's profile
@@ -294,19 +275,15 @@ describe('User profile CRUD tests', function () {
                   if (err) {
                     return done(err);
                   }
-
                   should.not.exist(res.body.isVolunteer);
-
                   return done();
                 });
             });
         });
     });
   });
-
   it('should be able to see that someone is volunteer-alumni when they have "volunteer-alumni" role', function (done) {
     user2.roles = ['user', 'volunteer-alumni'];
-
     user2.save(function (err) {
       should.not.exist(err);
       agent
@@ -324,7 +301,6 @@ describe('User profile CRUD tests', function () {
               if (err) {
                 return done(err);
               }
-
               res.body.isVolunteerAlumni.should.be.true();
 
               // Get non volunteer-alumni's profile
@@ -335,16 +311,13 @@ describe('User profile CRUD tests', function () {
                   if (err) {
                     return done(err);
                   }
-
                   should.not.exist(res.body.isVolunteerAlumni);
-
                   return done();
                 });
             });
         });
     });
   });
-
   it('should not be able to get any user details of confirmed user if not logged in', function (done) {
     // Get own user details
     agent
@@ -354,12 +327,10 @@ describe('User profile CRUD tests', function () {
         if (err) {
           return done(err);
         }
-
         res.body.message.should.equal('Forbidden.');
         return done();
       });
   });
-
   it('should not be able to get any user details of un-confirmed user if not logged in', function (done) {
     // Get own user details
     agent
@@ -369,15 +340,12 @@ describe('User profile CRUD tests', function () {
         if (err) {
           return done(err);
         }
-
         res.body.message.should.equal('Forbidden.');
         return done();
       });
   });
-
   it('should be able to update own profile details', function (done) {
     user.roles = ['user'];
-
     user.save(function (err) {
       should.not.exist(err);
       agent
@@ -389,12 +357,10 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           const userUpdate = {
             firstName: 'user_update_first',
             lastName: 'user_update_last',
           };
-
           agent
             .put('/api/users')
             .send(userUpdate)
@@ -416,45 +382,50 @@ describe('User profile CRUD tests', function () {
         });
     });
   });
-
   it('retains and removes existing deprecated languages but rejects new ones', async function () {
     user.languages = ['enm'];
     await user.save();
     await agent.post('/api/auth/signin').send(credentials).expect(200);
-
     const retained = await agent
       .put('/api/users')
-      .send({ languages: ['enm', 'eng'] })
+      .send({
+        languages: ['enm', 'eng'],
+      })
       .expect(200);
     retained.body.languages.should.deepEqual(['enm', 'eng']);
-
     const removed = await agent
       .put('/api/users')
-      .send({ languages: ['eng'] })
+      .send({
+        languages: ['eng'],
+      })
       .expect(200);
     removed.body.languages.should.deepEqual(['eng']);
-
     const rejected = await agent
       .put('/api/users')
-      .send({ languages: ['eng', 'enm'] })
+      .send({
+        languages: ['eng', 'enm'],
+      })
       .expect(400);
     rejected.body.message.should.equal(
       'This language can no longer be added to profiles.',
     );
-
     await agent
       .put('/api/users')
-      .send({ languages: ['iso_639_3-lfn'] })
+      .send({
+        languages: ['iso_639_3-lfn'],
+      })
       .expect(400);
-    await agent.put('/api/users').send({ languages: 'enm' }).expect(400);
-
+    await agent
+      .put('/api/users')
+      .send({
+        languages: 'enm',
+      })
+      .expect(400);
     const stored = await User.findById(user._id);
     Array.from(stored.languages).should.deepEqual(['eng']);
   });
-
   it('should be able to update own nostr npub', function (done) {
     user.roles = ['user'];
-
     user.save(function (err) {
       should.not.exist(err);
       agent
@@ -465,22 +436,20 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           const signinSessionCookie = signinRes.headers['set-cookie'].find(
             cookie => cookie.startsWith('connect.sid='),
           );
-
           agent
             .put('/api/users')
-            .send({ nostrNpub: validNpub })
+            .send({
+              nostrNpub: validNpub,
+            })
             .expect(200)
             .end(function (userInfoErr, userInfoRes) {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
-
               userInfoRes.body.nostrNpub.should.equal(validNpub);
-
               const updateSessionCookie = (
                 userInfoRes.headers['set-cookie'] || []
               ).find(cookie => cookie.startsWith('connect.sid='));
@@ -489,21 +458,17 @@ describe('User profile CRUD tests', function () {
                   .split(';')[0]
                   .should.equal(signinSessionCookie.split(';')[0]);
               }
-
               User.findById(user._id, function (findErr, userFindRes) {
                 should.not.exist(findErr);
                 userFindRes.nostrNpub.should.equal(validNpub);
-
                 return done();
               });
             });
         });
     });
   });
-
   it('should trim and canonicalize nostr npub when updating own profile', function (done) {
     user.roles = ['user'];
-
     user.save(function (err) {
       should.not.exist(err);
       agent
@@ -514,33 +479,29 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .put('/api/users')
-            .send({ nostrNpub: '  ' + validNpub.toUpperCase() + '  ' })
+            .send({
+              nostrNpub: '  ' + validNpub.toUpperCase() + '  ',
+            })
             .expect(200)
             .end(function (userInfoErr, userInfoRes) {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
-
               userInfoRes.body.nostrNpub.should.equal(validNpub);
-
               User.findById(user._id, function (findErr, userFindRes) {
                 should.not.exist(findErr);
                 userFindRes.nostrNpub.should.equal(validNpub);
-
                 return done();
               });
             });
         });
     });
   });
-
   it('should allow saving own existing nostr npub', function (done) {
     user.roles = ['user'];
     user.nostrNpub = validNpub;
-
     user.save(function (err) {
       should.not.exist(err);
       agent
@@ -551,28 +512,25 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .put('/api/users')
-            .send({ nostrNpub: validNpub })
+            .send({
+              nostrNpub: validNpub,
+            })
             .expect(200)
             .end(function (userInfoErr, userInfoRes) {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
-
               userInfoRes.body.nostrNpub.should.equal(validNpub);
-
               return done();
             });
         });
     });
   });
-
   it('should reject nostr npub claimed by another user', function (done) {
     user.roles = ['user'];
     user2.nostrNpub = validNpub;
-
     user2.save(function (saveUser2Err) {
       should.not.exist(saveUser2Err);
       user.save(function (saveUserErr) {
@@ -585,31 +543,28 @@ describe('User profile CRUD tests', function () {
             if (signinErr) {
               return done(signinErr);
             }
-
             agent
               .put('/api/users')
-              .send({ nostrNpub: validNpub })
+              .send({
+                nostrNpub: validNpub,
+              })
               .expect(403)
               .end(function (userInfoErr, userInfoRes) {
                 if (userInfoErr) {
                   return done(userInfoErr);
                 }
-
                 userInfoRes.body.message.should.equal(
                   'This nostr npub is already in use. Please use another one.',
                 );
-
                 return done();
               });
           });
       });
     });
   });
-
   it('should be able to clear nostr npub when updating own profile', function (done) {
     user.roles = ['user'];
     user.nostrNpub = validNpub;
-
     user.save(function (err) {
       should.not.exist(err);
       agent
@@ -620,32 +575,28 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .put('/api/users')
-            .send({ nostrNpub: '' })
+            .send({
+              nostrNpub: '',
+            })
             .expect(200)
             .end(function (userInfoErr, userInfoRes) {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
-
               userInfoRes.body.nostrNpub.should.equal('');
-
               User.findById(user._id, function (findErr, userFindRes) {
                 should.not.exist(findErr);
                 userFindRes.nostrNpub.should.equal('');
-
                 return done();
               });
             });
         });
     });
   });
-
   it('should reject malformed nostr npub when updating own profile', function (done) {
     user.roles = ['user'];
-
     user.save(function (err) {
       should.not.exist(err);
       agent
@@ -656,29 +607,26 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .put('/api/users')
-            .send({ nostrNpub: 'npub1invalid' })
+            .send({
+              nostrNpub: 'npub1invalid',
+            })
             .expect(400)
             .end(function (userInfoErr, userInfoRes) {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
-
               userInfoRes.body.message.should.equal(
                 'Invalid nostr key. Please provide your npub (public key) starting with "npub". Never use your nsec (secret key).',
               );
-
               return done();
             });
         });
     });
   });
-
   it('should reject nostr secret keys when updating own profile', function (done) {
     user.roles = ['user'];
-
     user.save(function (err) {
       should.not.exist(err);
       agent
@@ -689,29 +637,26 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .put('/api/users')
-            .send({ nostrNpub: nsec })
+            .send({
+              nostrNpub: nsec,
+            })
             .expect(400)
             .end(function (userInfoErr, userInfoRes) {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
-
               userInfoRes.body.message.should.equal(
                 'Invalid nostr key. Please provide your npub (public key) starting with "npub". Never use your nsec (secret key).',
               );
-
               return done();
             });
         });
     });
   });
-
   it('should reject a non-string nostr npub when updating own profile', function (done) {
     user.roles = ['user'];
-
     user.save(function (err) {
       should.not.exist(err);
       agent
@@ -722,29 +667,26 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .put('/api/users')
-            .send({ nostrNpub: 12345 })
+            .send({
+              nostrNpub: 12345,
+            })
             .expect(400)
             .end(function (userInfoErr, userInfoRes) {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
-
               userInfoRes.body.message.should.equal(
                 'Invalid nostr key. Please provide your npub (public key) starting with "npub". Never use your nsec (secret key).',
               );
-
               return done();
             });
         });
     });
   });
-
   it('should not be able to add roles to own profile', function (done) {
     user.roles = ['user'];
-
     user.save(function (err) {
       should.not.exist(err);
       agent
@@ -756,23 +698,19 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           const userUpdate = {
             firstName: 'user_update_first',
             lastName: 'user_update_last',
             roles: ['user', 'admin'], // This admin role should not appear in their profile
           };
-
           agent
             .put('/api/users')
             .send(userUpdate)
             .expect(200)
             .end(function (userInfoErr) {
               should.not.exist(userInfoErr);
-
               User.findById(user._id, function (err, userFindRes) {
                 should.not.exist(userInfoErr);
-
                 userFindRes.firstName.should.be.equal('user_update_first');
                 userFindRes.lastName.should.be.equal('user_update_last');
                 userFindRes._id.toString().should.be.equal(user._id.toString());
@@ -780,17 +718,14 @@ describe('User profile CRUD tests', function () {
                   .instanceof(Array)
                   .and.have.lengthOf(1);
                 userFindRes.roles.indexOf('user').should.equal(0);
-
                 return done();
               });
             });
         });
     });
   });
-
   it('should not be able to set the server-owned avatar version', function (done) {
     user.roles = ['user'];
-
     user.save(function (err) {
       should.not.exist(err);
       agent
@@ -801,14 +736,14 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .put('/api/users')
-            .send({ avatarVersion: '../another-member' })
+            .send({
+              avatarVersion: '../another-member',
+            })
             .expect(200)
             .end(function (userInfoErr) {
               should.not.exist(userInfoErr);
-
               User.findById(user._id, function (lookupErr, savedUser) {
                 should.not.exist(lookupErr);
                 (savedUser.avatarVersion === undefined).should.be.true();
@@ -818,27 +753,20 @@ describe('User profile CRUD tests', function () {
         });
     });
   });
-
   it('should not be able to update profile details with existing email', function (done) {
     const _user2 = _user;
-
     _user2.username = 'user2_username';
     _user2.email = 'user2_email@example.org';
     _user2.emailTemporary = 'user2_email@example.org';
-
     const credentials2 = {
       username: 'username2',
       password: 'TR-I$Aw3$0m4',
     };
-
     _user2.username = credentials2.username;
     _user2.password = credentials2.password;
-
     const user2 = new User(_user2);
-
     user2.save(function (err) {
       should.not.exist(err);
-
       agent
         .post('/api/auth/signin')
         .send(credentials2)
@@ -848,13 +776,11 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           const userUpdate = {
             firstName: 'user_update_first',
             lastName: 'user_update_last',
             email: user.email,
           };
-
           agent
             .put('/api/users')
             .send(userUpdate)
@@ -868,24 +794,19 @@ describe('User profile CRUD tests', function () {
               userInfoRes.body.message.should.equal(
                 'This email is already in use. Please use another one.',
               );
-
               return done();
             });
         });
     });
   });
-
   it('should not be able to update profile if not logged-in', function (done) {
     user.roles = ['user'];
-
     user.save(function (err) {
       should.not.exist(err);
-
       const userUpdate = {
         firstName: 'user_update_first',
         lastName: 'user_update_last',
       };
-
       agent
         .put('/api/users')
         .send(userUpdate)
@@ -894,7 +815,6 @@ describe('User profile CRUD tests', function () {
           if (userInfoErr) {
             return done(userInfoErr);
           }
-
           userInfoRes.body.message.should.equal('Forbidden.');
 
           // Call the assertion callback
@@ -902,7 +822,6 @@ describe('User profile CRUD tests', function () {
         });
     });
   });
-
   describe('Profile picture tests', function () {
     it('should not be able to update profile picture without being logged-in', function (done) {
       agent
@@ -913,14 +832,12 @@ describe('User profile CRUD tests', function () {
           if (userInfoErr) {
             return done(userInfoErr);
           }
-
           userInfoRes.body.message.should.equal('Forbidden.');
 
           // Call the assertion callback
           return done();
         });
     });
-
     it('should be able to change profile picture to a jpg file when logged-in', function (done) {
       agent
         .post('/api/auth/signin')
@@ -931,7 +848,6 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .post('/api/users-avatar')
             .set('X-Trustroots-Request', '1')
@@ -942,14 +858,11 @@ describe('User profile CRUD tests', function () {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
-
               userInfoRes.body.message.should.equal('Avatar image uploaded.');
-
               return done();
             });
         });
     });
-
     it('should be able to change profile picture to a gif file when logged-in', function (done) {
       agent
         .post('/api/auth/signin')
@@ -960,7 +873,6 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .post('/api/users-avatar')
             .set('X-Trustroots-Request', '1')
@@ -971,14 +883,11 @@ describe('User profile CRUD tests', function () {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
-
               userInfoRes.body.message.should.equal('Avatar image uploaded.');
-
               return done();
             });
         });
     });
-
     it('should be able to change profile picture to a png file when logged-in', function (done) {
       agent
         .post('/api/auth/signin')
@@ -989,7 +898,6 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .post('/api/users-avatar')
             .set('X-Trustroots-Request', '1')
@@ -1000,14 +908,11 @@ describe('User profile CRUD tests', function () {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
-
               userInfoRes.body.message.should.equal('Avatar image uploaded.');
-
               return done();
             });
         });
     });
-
     it('should not be able to change profile picture if attach a picture with a different field name', function (done) {
       agent
         .post('/api/auth/signin')
@@ -1018,7 +923,6 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .post('/api/users-avatar')
             .set('X-Trustroots-Request', '1')
@@ -1035,7 +939,6 @@ describe('User profile CRUD tests', function () {
             });
         });
     });
-
     it('should not be able to change profile picture to a pdf file', function (done) {
       agent
         .post('/api/auth/signin')
@@ -1046,7 +949,6 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .post('/api/users-avatar')
             .set('X-Trustroots-Request', '1')
@@ -1057,14 +959,11 @@ describe('User profile CRUD tests', function () {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
-
               userInfoRes.body.message.should.equal('Unsupported Media Type.');
-
               return done();
             });
         });
     });
-
     it('should not be able to change profile picture to a pdf file disguised as jpg file', function (done) {
       agent
         .post('/api/auth/signin')
@@ -1075,7 +974,6 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .post('/api/users-avatar')
             .set('X-Trustroots-Request', '1')
@@ -1089,14 +987,11 @@ describe('User profile CRUD tests', function () {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
-
               userInfoRes.body.message.should.equal('Unsupported Media Type.');
-
               return done();
             });
         });
     });
-
     it('should not be able to change profile picture to a svg file', function (done) {
       agent
         .post('/api/auth/signin')
@@ -1107,7 +1002,6 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .post('/api/users-avatar')
             .set('X-Trustroots-Request', '1')
@@ -1118,14 +1012,11 @@ describe('User profile CRUD tests', function () {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
-
               userInfoRes.body.message.should.equal('Unsupported Media Type.');
-
               return done();
             });
         });
     });
-
     it('should not be able to change profile picture to a text file with jpg extension', function (done) {
       agent
         .post('/api/auth/signin')
@@ -1136,7 +1027,6 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .post('/api/users-avatar')
             .set('X-Trustroots-Request', '1')
@@ -1150,14 +1040,11 @@ describe('User profile CRUD tests', function () {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
-
               userInfoRes.body.message.should.equal('Unsupported Media Type.');
-
               return done();
             });
         });
     });
-
     it('should not be able to change profile picture to a too big file', function (done) {
       agent
         .post('/api/auth/signin')
@@ -1168,7 +1055,6 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .post('/api/users-avatar')
             .set('X-Trustroots-Request', '1')
@@ -1182,19 +1068,16 @@ describe('User profile CRUD tests', function () {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
-
               userInfoRes.body.message.should.equal(
                 'Image too big. Please maximum ' +
                   (config.maxUploadSize / (1024 * 1024)).toFixed(2) +
                   ' Mb files.',
               );
-
               return done();
             });
         });
     });
   });
-
   describe('Username change', function () {
     it('should not let a new user to change username', function (done) {
       agent
@@ -1223,149 +1106,170 @@ describe('User profile CRUD tests', function () {
             });
         });
     });
-
     it('should allow changing username for users created 3 months ago who never changed their username', function (done) {
       const threeMonthsAgo = moment(user.created)
         .subtract(3, 'months')
         .toDate();
-      user.update({ $set: { created: threeMonthsAgo } }, function (err) {
-        should.not.exist(err);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (err) {
-            if (err) {
-              return done(err);
-            }
-            const user2 = _user;
-            user2.username = _user.username + '01';
-            delete user2.email;
-            agent
-              .put('/api/users')
-              .send(user2)
-              .expect(200)
-              .end(function (err, res) {
-                if (err) {
-                  return done(err);
-                }
-                res.body.username.should.equal(user2.username);
-                return done();
-              });
-          });
-      });
+      user.update(
+        {
+          $set: {
+            created: threeMonthsAgo,
+          },
+        },
+        function (err) {
+          should.not.exist(err);
+          agent
+            .post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function (err) {
+              if (err) {
+                return done(err);
+              }
+              const user2 = _user;
+              user2.username = _user.username + '01';
+              delete user2.email;
+              agent
+                .put('/api/users')
+                .send(user2)
+                .expect(200)
+                .end(function (err, res) {
+                  if (err) {
+                    return done(err);
+                  }
+                  res.body.username.should.equal(user2.username);
+                  return done();
+                });
+            });
+        },
+      );
     });
-
     it('should not be able to change username if username was changed within previous 3 months', function (done) {
       const threeMonthsAgo = moment(user.created)
         .subtract(3, 'months')
         .toDate();
-      user.update({ $set: { created: threeMonthsAgo } }, function (err) {
-        should.not.exist(err);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (err) {
-            if (err) {
-              return done(err);
-            }
-            const user2 = _user;
-            user2.username = _user.username + '01';
-            delete user2.email;
-            // First username change
-            // First we're setting usernameUpdate
-            // This should succeed
-            agent
-              .put('/api/users')
-              .send(user2)
-              .expect(200)
-              .end(function (err, res) {
-                if (err) {
-                  return done(err);
-                }
-                res.body.username.should.equal(user2.username);
-                user2.username = _user.username + '02';
-                // Second username change for the same user
-                // Then we're testing that previous usernameUpdate prevents further changes
-                // This should fail
-                agent
-                  .put('/api/users')
-                  .send(user2)
-                  .end(function (err, res) {
-                    if (err) {
-                      return done(err);
-                    }
-                    res.body.message.should.equal(
-                      'You cannot change your username at this time.',
-                    );
-                    return done();
-                  });
-              });
-          });
-      });
+      user.update(
+        {
+          $set: {
+            created: threeMonthsAgo,
+          },
+        },
+        function (err) {
+          should.not.exist(err);
+          agent
+            .post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function (err) {
+              if (err) {
+                return done(err);
+              }
+              const user2 = _user;
+              user2.username = _user.username + '01';
+              delete user2.email;
+              // First username change
+              // First we're setting usernameUpdate
+              // This should succeed
+              agent
+                .put('/api/users')
+                .send(user2)
+                .expect(200)
+                .end(function (err, res) {
+                  if (err) {
+                    return done(err);
+                  }
+                  res.body.username.should.equal(user2.username);
+                  user2.username = _user.username + '02';
+                  // Second username change for the same user
+                  // Then we're testing that previous usernameUpdate prevents further changes
+                  // This should fail
+                  agent
+                    .put('/api/users')
+                    .send(user2)
+                    .end(function (err, res) {
+                      if (err) {
+                        return done(err);
+                      }
+                      res.body.message.should.equal(
+                        'You cannot change your username at this time.',
+                      );
+                      return done();
+                    });
+                });
+            });
+        },
+      );
     });
-
     it('should be able to change username if username was changed more than 3 months ago', function (done) {
       const threeMonthsAgo = moment(user.created)
         .subtract(3, 'months')
         .toDate();
-      user.update({ $set: { created: threeMonthsAgo } }, function (err) {
-        should.not.exist(err);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (err) {
-            if (err) {
-              return done(err);
-            }
-            // First change
-            const user2 = _user;
-            user2.username = _user.username + '01';
-            delete user2.email;
-            agent
-              .put('/api/users')
-              .send(user2)
-              .expect(200)
-              .end(function (err, res) {
-                if (err) {
-                  return done(err);
-                }
-                res.body.username.should.equal(user2.username);
-                User.findById(user._id, function (err, user) {
+      user.update(
+        {
+          $set: {
+            created: threeMonthsAgo,
+          },
+        },
+        function (err) {
+          should.not.exist(err);
+          agent
+            .post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function (err) {
+              if (err) {
+                return done(err);
+              }
+              // First change
+              const user2 = _user;
+              user2.username = _user.username + '01';
+              delete user2.email;
+              agent
+                .put('/api/users')
+                .send(user2)
+                .expect(200)
+                .end(function (err, res) {
                   if (err) {
                     return done(err);
                   }
-                  const threeMonthsAgo = moment(user.usernameUpdated)
-                    .subtract(3, 'months')
-                    .toDate();
-                  user.update(
-                    { $set: { usernameUpdated: threeMonthsAgo } },
-                    function (err) {
-                      if (err) {
-                        return done(err);
-                      }
-                      // Second time changing it
-                      user2.username = _user.username + '02';
-                      agent
-                        .put('/api/users')
-                        .send(user2)
-                        .end(function (err, res) {
-                          if (err) {
-                            return done(err);
-                          }
-                          res.body.username.should.equal(user2.username);
-                          return done();
-                        });
-                    },
-                  );
+                  res.body.username.should.equal(user2.username);
+                  User.findById(user._id, function (err, user) {
+                    if (err) {
+                      return done(err);
+                    }
+                    const threeMonthsAgo = moment(user.usernameUpdated)
+                      .subtract(3, 'months')
+                      .toDate();
+                    user.update(
+                      {
+                        $set: {
+                          usernameUpdated: threeMonthsAgo,
+                        },
+                      },
+                      function (err) {
+                        if (err) {
+                          return done(err);
+                        }
+                        // Second time changing it
+                        user2.username = _user.username + '02';
+                        agent
+                          .put('/api/users')
+                          .send(user2)
+                          .end(function (err, res) {
+                            if (err) {
+                              return done(err);
+                            }
+                            res.body.username.should.equal(user2.username);
+                            return done();
+                          });
+                      },
+                    );
+                  });
                 });
-              });
-          });
-      });
+            });
+        },
+      );
     });
-
     it('should not be allowed to change the usernameUpdateAllowed status', function (done) {
       agent
         .post('/api/auth/signin')
@@ -1385,11 +1289,11 @@ describe('User profile CRUD tests', function () {
               if (err) {
                 return done(err);
               }
-
               res.body.usernameUpdateAllowed.should.equal(false);
-
               User.findOne(
-                { username: credentials.username },
+                {
+                  username: credentials.username,
+                },
                 function (err, newUser) {
                   should.not.exist(newUser.usernameUpdateAllowed);
                   done(err);
@@ -1398,7 +1302,6 @@ describe('User profile CRUD tests', function () {
             });
         });
     });
-
     it('should not be allowed to change the date when their username was last changed', function (done) {
       agent
         .post('/api/auth/signin')
@@ -1419,7 +1322,9 @@ describe('User profile CRUD tests', function () {
                 return done(err);
               }
               User.findOne(
-                { username: credentials.username },
+                {
+                  username: credentials.username,
+                },
                 function (err, newUser) {
                   should.not.exist(newUser.usernameUpdated);
                   done(err);

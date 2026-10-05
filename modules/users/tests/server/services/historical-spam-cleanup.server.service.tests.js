@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const should = require('should');
 const sinon = require('sinon');
 
-const cleanup = require('../../../server/services/historical-spam-cleanup.server.service');
+const cleanup = require('./../../../server/services/historical-spam-cleanup.server.service.mjs');
 
 const AdminNote = mongoose.model('AdminNote');
 const Contact = mongoose.model('Contact');

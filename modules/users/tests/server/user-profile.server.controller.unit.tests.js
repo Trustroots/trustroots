@@ -7,8 +7,8 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-require('../../server/models/user.server.model');
-const profileController = require('../../server/controllers/users.profile.server.controller');
+require('./../../server/models/user.server.model.mjs');
+const profileController = require('./../../server/controllers/users.profile.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const should = require('should');
 
@@ -52,8 +52,9 @@ function runHandler(invoke) {
 }
 
 const controllerPath =
-  '../../server/controllers/users.profile.server.controller';
-const emailServicePath = '../../../core/server/services/email.server.service';
+  './../../server/controllers/users.profile.server.controller.mjs';
+const emailServicePath =
+  './../../../core/server/services/email.server.service.mjs';
 
 function stubControllerDependencies(controllerPath, dependencyStubs) {
   for (const [dependencyPath, methods] of Object.entries(dependencyStubs)) {
@@ -492,7 +493,7 @@ describe('Profile controller unit tests', () => {
 
     it('returns 400 when profile removal fails in the waterfall', async () => {
       const messageHandlerPath =
-        '../../../messages/server/controllers/messages.server.controller';
+        './../../../messages/server/controllers/messages.server.controller.mjs';
       const controller = stubControllerDependencies(controllerPath, {
         [messageHandlerPath]: {
           markAllMessagesToUserNotified: (userId, cb) =>
@@ -522,9 +523,9 @@ describe('Profile controller unit tests', () => {
 
     it('still removes the profile when ancillary cleanup steps fail', async () => {
       const offerHandlerPath =
-        '../../../offers/server/controllers/offers.server.controller';
+        './../../../offers/server/controllers/offers.server.controller.mjs';
       const contactHandlerPath =
-        '../../../contacts/server/controllers/contacts.server.controller';
+        './../../../contacts/server/controllers/contacts.server.controller.mjs';
       const controller = stubControllerDependencies(controllerPath, {
         [emailServicePath]: {
           sendRemoveProfileConfirmed: (user, cb) =>
@@ -861,7 +862,7 @@ describe('Profile controller unit tests', () => {
 
     it('continues when reply statistics lookup fails', async () => {
       const controller = stubControllerDependencies(controllerPath, {
-        '../../../messages/server/services/message-stat.server.service': {
+        './../../../messages/server/services/message-stat.server.service.mjs': {
           readFormattedMessageStatsOfUser(userId, now, cb) {
             cb(new Error('stats unavailable'));
           },

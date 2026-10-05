@@ -1,4 +1,4 @@
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 const { SEEDED_MEMBERS } = require('../../support/helpers');
 
 test('recovery prefill submits through the existing API', async ({ page }) => {

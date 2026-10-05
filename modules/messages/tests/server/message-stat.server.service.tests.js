@@ -2,7 +2,7 @@ const should = require('should');
 const async = require('async');
 const mongoose = require('mongoose');
 const sinon = require('sinon');
-const messageStatService = require('../../server/services/message-stat.server.service');
+const messageStatService = require('./../../server/services/message-stat.server.service.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');

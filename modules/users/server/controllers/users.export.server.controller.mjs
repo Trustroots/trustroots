@@ -1,11 +1,8 @@
-import contacts from '../../../contacts/server/controllers/contacts.server.controller.js';
-import offers from '../../../offers/server/controllers/offers.server.controller.js';
-import profiles from './users.profile.server.controller.js';
-
+import contacts from './../../../contacts/server/controllers/contacts.server.controller.mjs';
+import offers from './../../../offers/server/controllers/offers.server.controller.mjs';
+import profiles from './users.profile.server.controller.mjs';
 const service = {};
-
 const EXPORT_FILENAME = 'trustroots-data.json';
-
 function invokeMiddleware(middleware, req, value) {
   return new Promise((resolve, reject) => {
     const response = {
@@ -19,7 +16,6 @@ function invokeMiddleware(middleware, req, value) {
         };
       },
     };
-
     middleware(
       req,
       response,
@@ -34,12 +30,10 @@ function invokeMiddleware(middleware, req, value) {
     );
   });
 }
-
 service.download = async function (req, res, next) {
   try {
     await invokeMiddleware(profiles.userByUsername, req, req.user.username);
     await invokeMiddleware(contacts.contactListByUser, req, req.user._id);
-
     let hostingOffers = [];
     try {
       await invokeMiddleware(offers.offersByUserId, req, req.user._id);
@@ -49,7 +43,6 @@ service.download = async function (req, res, next) {
         throw error;
       }
     }
-
     res
       .type('application/json')
       .attachment(EXPORT_FILENAME)
@@ -65,10 +58,9 @@ service.download = async function (req, res, next) {
     next(error);
   }
 };
-
 service.EXPORT_FILENAME = EXPORT_FILENAME;
-
 const defaultExport = service;
 export default defaultExport;
 export { EXPORT_FILENAME };
 export const download = defaultExport.download;
+export { defaultExport as 'module.exports' };

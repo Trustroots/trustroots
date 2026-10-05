@@ -2,7 +2,7 @@ const crypto = require('node:crypto');
 const sinon = require('sinon');
 require('should');
 
-const passwordHashing = require('../../../server/services/password-hashing.server.service');
+const passwordHashing = require('../../../server/services/password-hashing.server.service.mjs');
 
 describe('Service: password hashing', function () {
   this.timeout(15000);

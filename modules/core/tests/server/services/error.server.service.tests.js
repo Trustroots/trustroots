@@ -1,4 +1,4 @@
-const errorService = require('../../../server/services/error.server.service');
+const errorService = require('./../../../server/services/error.server.service.mjs');
 const winston = require('winston');
 
 const should = require('should');

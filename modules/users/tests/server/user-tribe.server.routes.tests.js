@@ -1,9 +1,8 @@
 const should = require('should');
 const request = require('supertest');
 const mongoose = require('mongoose');
-const express = require('../../../../config/lib/express');
+const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
-
 const User = mongoose.model('User');
 const Tribe = mongoose.model('Tribe');
 
@@ -21,13 +20,13 @@ let _user;
  */
 describe('User tribe memberships CRUD tests', function () {
   before(function (done) {
-    // Get application
-    app = express.init(mongoose.connection);
-    agent = request.agent(app);
-
-    done();
+    (async () => {
+      // Get application
+      app = await express.init(mongoose.connection);
+      agent = request.agent(app);
+      done();
+    })().catch(done);
   });
-
   beforeEach(function (done) {
     // Create user credentials
     credentials = {
@@ -47,15 +46,12 @@ describe('User tribe memberships CRUD tests', function () {
       password: credentials.password,
       provider: 'local',
     };
-
     user = new User(_user);
 
     // Save a user to the test db
     user.save(done);
   });
-
   afterEach(utils.clearDatabase);
-
   it('should be able to join a tribe', function (done) {
     agent
       .post('/api/auth/signin')
@@ -75,7 +71,6 @@ describe('User tribe memberships CRUD tests', function () {
         // Add tribe to test DB
         tribe.save(function (err, tribe) {
           should.not.exist(err);
-
           agent
             .post('/api/users/memberships/' + tribe._id)
             .set('X-Trustroots-Request', '1')
@@ -108,13 +103,11 @@ describe('User tribe memberships CRUD tests', function () {
                 tribe._id.toString(),
               );
               should.exist(userTribeRes.body.user.member[0].since);
-
               return done();
             });
         });
       });
   });
-
   it('should be able to leave tribes', function (done) {
     agent
       .post('/api/auth/signin')
@@ -172,14 +165,12 @@ describe('User tribe memberships CRUD tests', function () {
                   // No more tribes left on user's array
                   userTagLeaveRes.body.user.memberIds.length.should.be.equal(0);
                   userTagLeaveRes.body.user.member.length.should.be.equal(0);
-
                   return done();
                 });
             });
         });
       });
   });
-
   it('should be able to show error if trying to join same tribe twice', function (done) {
     agent
       .post('/api/auth/signin')
@@ -230,18 +221,15 @@ describe('User tribe memberships CRUD tests', function () {
                   if (userTagJoin2Err) {
                     return done(userTagJoin2Err);
                   }
-
                   userTagJoin2Res.body.message.should.be.equal(
                     'You are already a member of this tribe.',
                   );
-
                   return done();
                 });
             });
         });
       });
   });
-
   it('should be able to show error if trying to leave tribe user is not member', function (done) {
     agent
       .post('/api/auth/signin')
@@ -273,17 +261,14 @@ describe('User tribe memberships CRUD tests', function () {
               if (userTribeJoinErr) {
                 return done(userTribeJoinErr);
               }
-
               userTribeJoinRes.body.message.should.be.equal(
                 'You are not a member of this tribe.',
               );
-
               return done();
             });
         });
       });
   });
-
   it('should be able to show error if trying to join non-existing tribe', function (done) {
     agent
       .post('/api/auth/signin')
@@ -306,14 +291,11 @@ describe('User tribe memberships CRUD tests', function () {
             if (userTribeJoinErr) {
               return done(userTribeJoinErr);
             }
-
             userTribeJoinRes.body.message.should.be.equal('Bad request.');
-
             return done();
           });
       });
   });
-
   it('should be able to show error if trying to join tribe with non standard ID', function (done) {
     agent
       .post('/api/auth/signin')
@@ -336,11 +318,9 @@ describe('User tribe memberships CRUD tests', function () {
             if (userTribeJoinErr) {
               return done(userTribeJoinErr);
             }
-
             userTribeJoinRes.body.message.should.be.equal(
               'Cannot interpret id.',
             );
-
             return done();
           });
       });

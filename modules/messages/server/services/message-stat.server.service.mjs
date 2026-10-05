@@ -2,9 +2,7 @@ import async from 'async';
 import mongoose from 'mongoose';
 import _ from 'lodash';
 import moment from 'moment';
-
 const service = {};
-
 const Message = mongoose.model('Message');
 const MessageStat = mongoose.model('MessageStat');
 
@@ -18,7 +16,6 @@ function createMessageStat(message, done) {
     firstMessageCreated: message.created,
     firstMessageLength: message.content.length,
   });
-
   messageStat.save(function (err) {
     if (err) return done(err);
     return done(null, messageStat);
@@ -85,7 +82,6 @@ service.updateMessageStat = function (message, callback) {
           done(err, messageStat);
         });
       },
-
       // After searching for the MessageStat, next we take one of three actions:
       // - No MessageStat found, create a new one with the first message
       // - MessageStat found, no reply information saved, update the reply
@@ -136,12 +132,13 @@ service.updateMessageStat = function (message, callback) {
           })
             // Sort by the `created` field to find the first message
             // sent or received between these two users
-            .sort({ created: 1 })
+            .sort({
+              created: 1,
+            })
             .exec(function (err, firstMessage) {
               return done(err, firstMessage);
             });
         },
-
         // Create the MessageStat filling only the first message part
         function (firstMessage, done) {
           if (firstMessage) {
@@ -150,7 +147,6 @@ service.updateMessageStat = function (message, callback) {
             return done(new Error('The Thread is Empty'));
           }
         },
-
         // Then do the same search for the firstReply from above
         // We do this because we can't be sure that this process has been run on
         // the first message between two users, so we check here if there is
@@ -158,7 +154,6 @@ service.updateMessageStat = function (message, callback) {
         function (messageStat, done) {
           findMessagesUpdateMessageStat(messageStat, done);
         },
-
         function (response, done) {
           if (response === 'other') {
             response = 'first';
@@ -186,12 +181,13 @@ service.updateMessageStat = function (message, callback) {
             userTo: messageStat.firstMessageUserFrom,
           })
             // Sort by `created` to get the *first* reply
-            .sort({ created: 1 })
+            .sort({
+              created: 1,
+            })
             .exec(function (err, firstReply) {
               return done(err, firstReply);
             });
         },
-
         function (firstReply, done) {
           // If we do:
           if (firstReply) {
@@ -234,7 +230,6 @@ service.updateMessageStat = function (message, callback) {
  */
 service.readMessageStatsOfUser = function (userId, timeNow, callback) {
   const DAY = 24 * 3600 * 1000;
-
   async.waterfall(
     [
       /**
@@ -249,13 +244,14 @@ service.readMessageStatsOfUser = function (userId, timeNow, callback) {
             $gt: new Date(timeNow - 90 * DAY),
           },
         })
-          .sort({ firstMessageCreated: -1 })
+          .sort({
+            firstMessageCreated: -1,
+          })
           .populate('firstMessageUserFrom', '_id')
           .exec(function (err, resp) {
             return done(err, resp);
           });
       },
-
       /**
        * Count the statistics
        */
@@ -333,10 +329,11 @@ service.readMessageStatsOfUser = function (userId, timeNow, callback) {
             replyRate = repliedCount / allCount;
             replyTime = replyTimeCumulated / repliedCount;
           }
-
-          return { replyRate, replyTime };
+          return {
+            replyRate,
+            replyTime,
+          };
         })(chosenStats);
-
         return done(null, stats);
       },
     ],
@@ -377,8 +374,10 @@ service.formatStats = function (stats) {
   const replyTime = _.isFinite(stats.replyTime)
     ? moment.duration(stats.replyTime).humanize()
     : '';
-
-  return { replyRate, replyTime };
+  return {
+    replyRate,
+    replyTime,
+  };
 };
 
 /**
@@ -402,7 +401,6 @@ service.readFormattedMessageStatsOfUser = function (userId, timeNow, callback) {
       function (done) {
         service.readMessageStatsOfUser(userId, timeNow, done);
       },
-
       // format message stats (this one is synchronous)
       function (stats, done) {
         const formatted = service.formatStats(stats);
@@ -412,15 +410,15 @@ service.readFormattedMessageStatsOfUser = function (userId, timeNow, callback) {
     callback,
   );
 };
-
 const formatStats = service.formatStats;
 const readFormattedMessageStatsOfUser = service.readFormattedMessageStatsOfUser;
 const readMessageStatsOfUser = service.readMessageStatsOfUser;
 const updateMessageStat = service.updateMessageStat;
 export {
-  formatStats as formatStats,
-  readFormattedMessageStatsOfUser as readFormattedMessageStatsOfUser,
-  readMessageStatsOfUser as readMessageStatsOfUser,
-  updateMessageStat as updateMessageStat,
+  formatStats,
+  readFormattedMessageStatsOfUser,
+  readMessageStatsOfUser,
+  updateMessageStat,
 };
 export default service;
+export { service as 'module.exports' };

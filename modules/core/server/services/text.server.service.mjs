@@ -53,12 +53,12 @@ export const sanitizeOptions = {
     ) {
       return true;
     }
-
     return false;
   },
   selfClosing: ['br'],
   // URL schemes we permit
-  allowProtocolRelative: true, // Allows `//www.example.com`
+  allowProtocolRelative: true,
+  // Allows `//www.example.com`
   allowedSchemesByTag: {
     a: [
       'http',
@@ -69,7 +69,8 @@ export const sanitizeOptions = {
       'mailto',
       'geo',
       'irc',
-      'ge0', // Maps.me
+      'ge0',
+      // Maps.me
       'tg', // Telegram
     ],
   },
@@ -100,7 +101,6 @@ export function html(content) {
     .replace(/&nbsp;/g, ' ')
     .replace(/<p><br><\/p>/g, ' ')
     .trim();
-
   if (!content || isEmpty(content)) {
     // If content is actually empty without html (e.g. `<p><br></p>`)
     // Set it really to be empty string
@@ -112,19 +112,14 @@ export function html(content) {
   content = Autolinker.link(content, {
     // Don't auto-link mention handles (@username)
     mention: false,
-
     // Don't auto-link hashtags (#tag)
     hashtag: false,
-
     // Auto-link emails
     email: true,
-
     // Auto-link URLs
     urls: true,
-
     // Auto-link phone numbers
     phone: true,
-
     // A number for how many characters long URLs/emails/handles/hashtags should be truncated to
     // inside the text of a link. If the match is over the number of characters, it will be truncated to this length
     // by replacing the end of the string with a two period ellipsis ('..').
@@ -132,14 +127,12 @@ export function html(content) {
       length: 150,
       location: 'middle', // end|middle|smart
     },
-
     // Strip 'http://' or 'https://' and/or the 'www.' from the beginning of links.
     // I.e.: `https://www.wikipedia.org/` => `<a href="https://www.wikipedia.org/">www.wikipedia.org</a>`
     stripPrefix: {
       scheme: true,
       www: false,
     },
-
     // Don't add target="_blank" because of rel-noopener attack.
     // @link https://mathiasbynens.github.io/rel-noopener/
     newWindow: false,
@@ -147,7 +140,6 @@ export function html(content) {
 
   // Some html is allowed
   content = sanitizeHtml(content, sanitizeOptions);
-
   return content;
 }
 
@@ -190,7 +182,9 @@ export function plainText(content, cleanWhitespace) {
    * to stop html entity attacks.
    */
   content = he.decode(content);
-  content = sanitizeHtml(content, { allowedTags: [] });
+  content = sanitizeHtml(content, {
+    allowedTags: [],
+  });
   content = he.decode(content);
 
   // Remove white space.
@@ -201,7 +195,6 @@ export function plainText(content, cleanWhitespace) {
 
   // Trim
   content = content.trim();
-
   return content;
 }
 
@@ -225,11 +218,9 @@ export function stripContactDetails(content) {
     },
   });
   content = plainText(content);
-
   if (!content) {
     return '';
   }
-
   return Autolinker.link(content, {
     email: true,
     hashtag: false,
@@ -239,3 +230,12 @@ export function stripContactDetails(content) {
     replaceFn: () => '',
   });
 }
+const defaultInterop = {
+  sanitizeOptions,
+  html,
+  isEmpty,
+  plainText,
+  stripContactDetails,
+};
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

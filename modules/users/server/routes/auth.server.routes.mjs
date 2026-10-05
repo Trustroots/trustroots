@@ -1,6 +1,6 @@
-import userAuthentication from '../controllers/users.authentication.server.controller.js';
-import userPassword from '../controllers/users.password.server.controller.js';
-import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.js';
+import userAuthentication from './../controllers/users.authentication.server.controller.mjs';
+import userPassword from './../controllers/users.password.server.controller.mjs';
+import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mjs';
 
 /**
  * Module dependencies.
@@ -46,3 +46,4 @@ const defaultExport = function (app) {
   // Validate username
 };
 export default defaultExport;
+export { defaultExport as 'module.exports' };

@@ -2,7 +2,7 @@ require('should');
 const {
   profileQueryFields,
   selectProfileResponse,
-} = require('../../../server/services/profile-response.server.service');
+} = require('./../../../server/services/profile-response.server.service.mjs');
 
 describe('Service: profile-response', function () {
   let esmService;

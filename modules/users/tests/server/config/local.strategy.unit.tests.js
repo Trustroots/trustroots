@@ -1,7 +1,7 @@
 /**
  * Unit tests for uncovered local passport strategy branches.
  */
-const proxyquire = require('proxyquire').noCallThru();
+const mockModule = require('../../../../../testutils/server/mock-module');
 const sinon = require('sinon');
 
 const should = require('should');
@@ -29,8 +29,8 @@ describe('Local passport strategy unit tests', () => {
     }
 
     const passportUse = sinon.spy();
-    const configureStrategy = proxyquire(
-      '../../../server/config/strategies/local',
+    const configureStrategy = mockModule(
+      require.resolve('../../../server/config/strategies/local.mjs'),
       {
         mongoose: {
           model: () => User,

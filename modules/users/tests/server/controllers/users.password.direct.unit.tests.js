@@ -1,4 +1,4 @@
-const proxyquire = require('proxyquire').noCallThru();
+const mockModule = require('../../../../../testutils/server/mock-module');
 require('should');
 
 function deferredResponse() {
@@ -69,8 +69,10 @@ function loadController({
     },
   };
 
-  return proxyquire(
-    '../../../server/controllers/users.password.server.controller',
+  return mockModule(
+    require.resolve(
+      '../../../server/controllers/users.password.server.controller.mjs',
+    ),
     {
       mongoose: {
         model: () => User,

@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const csrfProtection = require('../../../../config/lib/csrf-protection');
+const csrfProtection = require('./../../../../config/lib/csrf-protection.mjs');
 
 describe('CSRF origin protection', () => {
   const middleware = csrfProtection({

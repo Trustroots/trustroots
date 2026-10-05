@@ -3,7 +3,7 @@ const {
   test,
   expect,
   useElementScreenshot,
-} = require('../../support/test');
+} = require('../../support/fixtures');
 const { ObjectId } = require('mongodb');
 
 const {

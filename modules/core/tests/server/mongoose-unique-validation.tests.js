@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const uniqueValidation = require('../../../../config/lib/mongoose-unique-validation');
+const uniqueValidation = require('./../../../../config/lib/mongoose-unique-validation.mjs');
 require('should');
 
 describe('Mongoose unique validation adapter', function () {

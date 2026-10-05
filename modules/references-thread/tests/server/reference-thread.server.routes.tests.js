@@ -3,9 +3,8 @@ const async = require('async');
 const request = require('supertest');
 const moment = require('moment');
 const mongoose = require('mongoose');
-const express = require('../../../../config/lib/express');
+const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
-
 const User = mongoose.model('User');
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');
@@ -35,25 +34,23 @@ let threadNonpublicId;
  */
 describe('Reference Thread CRUD tests', function () {
   before(function (done) {
-    // Get application
-    app = express.init(mongoose.connection);
-    agent = request.agent(app);
-
-    done();
+    (async () => {
+      // Get application
+      app = await express.init(mongoose.connection);
+      agent = request.agent(app);
+      done();
+    })().catch(done);
   });
-
   beforeEach(function (done) {
     // Create userFrom credentials
     referenceUserFromCredentials = {
       username: 'user_from',
       password: 'password123!',
     };
-
     referenceUserNonpublicCredentials = {
       username: 'user_non_public',
       password: 'password123!',
     };
-
     userFrom = new User({
       firstName: 'Full',
       lastName: 'Name',
@@ -64,7 +61,6 @@ describe('Reference Thread CRUD tests', function () {
       provider: 'local',
       public: true,
     });
-
     userTo = new User({
       firstName: 'Full',
       lastName: 'Name',
@@ -75,7 +71,6 @@ describe('Reference Thread CRUD tests', function () {
       provider: 'local',
       public: true,
     });
-
     userNonPublic = new User({
       firstName: 'Full',
       lastName: 'Name',
@@ -86,7 +81,6 @@ describe('Reference Thread CRUD tests', function () {
       provider: 'local',
       public: false,
     });
-
     message = {
       content: 'Lorem ipsum',
       notified: true,
@@ -95,7 +89,6 @@ describe('Reference Thread CRUD tests', function () {
       read: true,
       created: new Date(),
     };
-
     thread = {
       message: null,
       userTo: null,
@@ -103,7 +96,6 @@ describe('Reference Thread CRUD tests', function () {
       read: true,
       updated: new Date(),
     };
-
     referenceThread = {
       // thread: null,
       // userFrom: null,
@@ -123,7 +115,6 @@ describe('Reference Thread CRUD tests', function () {
             stepDone(err);
           });
         },
-
         // Create userFrom
         function (stepDone) {
           userFrom.save(function (err, res) {
@@ -131,7 +122,6 @@ describe('Reference Thread CRUD tests', function () {
             stepDone(err);
           });
         },
-
         // Create userTo
         function (stepDone) {
           userTo.save(function (err, res) {
@@ -140,7 +130,6 @@ describe('Reference Thread CRUD tests', function () {
             stepDone(err);
           });
         },
-
         // Create message+thread between referenceUserTo and referenceUserFrom
         function (stepDone) {
           // Note that from/to are opposite in these by purpose
@@ -151,7 +140,6 @@ describe('Reference Thread CRUD tests', function () {
           thread.userFrom = referenceUserToId;
           new Message(message).save(function (err, messageRes) {
             if (err) return stepDone(err);
-
             thread.message = messageRes._id;
             new Thread(thread).save(function (err, threadRes) {
               threadId = threadRes._id;
@@ -159,7 +147,6 @@ describe('Reference Thread CRUD tests', function () {
             });
           });
         },
-
         // Create message+thread between userTo and userNonPublic
         function (stepDone) {
           // Note that from/to are opposite in these by purpose
@@ -170,7 +157,6 @@ describe('Reference Thread CRUD tests', function () {
           thread.userFrom = referenceUserToId;
           new Message(message).save(function (err, messageRes) {
             if (err) return stepDone(err);
-
             thread.message = messageRes._id;
             new Thread(thread).save(function (err, threadRes) {
               threadNonpublicId = threadRes._id;
@@ -186,9 +172,7 @@ describe('Reference Thread CRUD tests', function () {
       },
     );
   });
-
   afterEach(utils.clearDatabase);
-
   it('should not be able to read references if not logged in', function (done) {
     agent
       .get('/api/references-thread/' + referenceUserToId)
@@ -200,7 +184,6 @@ describe('Reference Thread CRUD tests', function () {
         return done(referenceReadErr);
       });
   });
-
   it('should be able to read reference even if logged in as non-public user', function (done) {
     agent
       .post('/api/auth/signin')
@@ -242,7 +225,6 @@ describe('Reference Thread CRUD tests', function () {
         });
       });
   });
-
   it('should be able to read reference if logged in', function (done) {
     agent
       .post('/api/auth/signin')
@@ -282,7 +264,6 @@ describe('Reference Thread CRUD tests', function () {
         });
       });
   });
-
   it('should be able to attempt reading non-existing reference and told she can create a reference', function (done) {
     agent
       .post('/api/auth/signin')
@@ -308,7 +289,6 @@ describe('Reference Thread CRUD tests', function () {
           });
       });
   });
-
   it('should be able to attempt reading non-existing reference and told she cannot create a reference', function (done) {
     agent
       .post('/api/auth/signin')
@@ -341,7 +321,6 @@ describe('Reference Thread CRUD tests', function () {
         });
       });
   });
-
   it('should not be able to create reference if not logged in', function (done) {
     agent
       .post('/api/references-thread')
@@ -354,7 +333,6 @@ describe('Reference Thread CRUD tests', function () {
         return done(referenceSaveErr);
       });
   });
-
   it('should not be able to create reference if logged in as non-public user, even if there are messages', function (done) {
     agent
       .post('/api/auth/signin')
@@ -372,14 +350,11 @@ describe('Reference Thread CRUD tests', function () {
           .end(function (referenceSaveErr, referenceSaveRes) {
             // Handle reference save error
             if (referenceSaveErr) return done(referenceSaveErr);
-
             referenceSaveRes.body.message.should.equal('Forbidden.');
-
             return done();
           });
       });
   });
-
   it('should not be able to create reference for myself', function (done) {
     agent
       .post('/api/auth/signin')
@@ -391,7 +366,6 @@ describe('Reference Thread CRUD tests', function () {
 
         // Save a new reference
         referenceThread.userTo = referenceUserFromId;
-
         agent
           .post('/api/references-thread')
           .send(referenceThread)
@@ -399,16 +373,13 @@ describe('Reference Thread CRUD tests', function () {
           .end(function (referenceSaveErr, referenceSaveRes) {
             // Handle reference save error
             if (referenceSaveErr) return done(referenceSaveErr);
-
             referenceSaveRes.body.message.should.equal(
               'Thread does not exist.',
             );
-
             return done();
           });
       });
   });
-
   it('should be able to create reference if logged in', function (done) {
     agent
       .post('/api/auth/signin')
@@ -426,7 +397,6 @@ describe('Reference Thread CRUD tests', function () {
           .end(function (referenceSaveErr, referenceSaveRes) {
             // Handle reference save error
             if (referenceSaveErr) return done(referenceSaveErr);
-
             referenceSaveRes.body.userFrom.should.equal(
               referenceUserFromId.toString(),
             );
@@ -436,12 +406,10 @@ describe('Reference Thread CRUD tests', function () {
             referenceSaveRes.body.thread.should.equal(threadId.toString());
             referenceSaveRes.body.reference.should.equal('yes');
             should.exist(referenceSaveRes.body.created);
-
             return done();
           });
       });
   });
-
   it('should be able to create two references and receive only latest one when reading', function (done) {
     agent
       .post('/api/auth/signin')
@@ -450,14 +418,17 @@ describe('Reference Thread CRUD tests', function () {
       .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
-
         referenceThread.reference = 'yes';
         referenceThread.userFrom = referenceUserFromId;
         referenceThread.thread = threadId;
 
         // Set date to past for reference to be saved directly to the DB:
         referenceThread.created = moment()
-          .subtract(moment.duration({ hours: 24 }))
+          .subtract(
+            moment.duration({
+              hours: 24,
+            }),
+          )
           .toDate();
 
         // Save 1st new reference ("yes") directly to the DB:
@@ -477,7 +448,9 @@ describe('Reference Thread CRUD tests', function () {
               if (referenceSaveErr) return done(referenceSaveErr);
 
               // Check DB has two entries
-              ReferenceThread.find({ userFrom: referenceUserFromId })
+              ReferenceThread.find({
+                userFrom: referenceUserFromId,
+              })
                 .sort('-created') // Latest first
                 .exec(function (
                   referenceThreadFindErr,
@@ -516,7 +489,6 @@ describe('Reference Thread CRUD tests', function () {
                     .expect(200)
                     .end(function (referenceReadErr, referenceReadRes) {
                       if (referenceReadErr) return done(referenceReadErr);
-
                       referenceReadRes.body.userFrom.should.equal(
                         referenceUserFromId.toString(),
                       );

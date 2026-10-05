@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import mongoose from 'mongoose';
-import textService from '../../../core/server/services/text.server.service.js';
-
+import textService from './../../../core/server/services/text.server.service.mjs';
 const service = {};
 
 /**
@@ -26,7 +25,6 @@ function fuzzyOffset(minimum, maximum) {
 
   const horizontal = randomDistance * Math.cos(randomDirection);
   const vertical = randomDistance * Math.sin(randomDirection);
-
   return [horizontal, vertical]; // The order doesn't matter here
 }
 
@@ -55,7 +53,6 @@ function getFuzzyLocation(location) {
   // OffsetPosition, decimal degrees
   const latO = lat + (dLat * 180) / Math.PI;
   const lngO = lng + (dLng * 180) / Math.PI;
-
   return [latO, lngO];
 }
 
@@ -69,7 +66,6 @@ const validateLocation = function (coordinates) {
   if (!_.isArray(coordinates) || coordinates.length !== 2) {
     return false;
   }
-
   if (!_.isFinite(coordinates[0]) || !_.isFinite(coordinates[1])) {
     return false;
   }
@@ -82,7 +78,6 @@ const validateLocation = function (coordinates) {
   // Maximum length of digits after `.` is 30
   const lonRegexp =
     /^\s?[+-]?(180(\.0+)?|1[0-7]\d(\.\d+)?|\d{1,2}(\.\d{1,30})?)\)?$/;
-
   return latRegexp.test(coordinates[0]) && lonRegexp.test(coordinates[1]);
 };
 
@@ -165,9 +160,12 @@ const OfferSchema = new Schema({
 });
 
 // Geospatial index (lat,lon)
-OfferSchema.index({ location: '2d' });
-OfferSchema.index({ locationFuzzy: '2d' });
-
+OfferSchema.index({
+  location: '2d',
+});
+OfferSchema.index({
+  locationFuzzy: '2d',
+});
 mongoose.model('Offer', OfferSchema);
-
 export default service;
+export { service as 'module.exports' };

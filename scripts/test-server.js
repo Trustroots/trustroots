@@ -5,8 +5,8 @@ const glob = require('glob');
 const Mocha = require('mocha');
 const path = require('path');
 
-const mongooseService = require('../config/lib/mongoose');
-const agenda = require('../config/lib/agenda');
+const mongooseService = require('./../config/lib/mongoose.mjs');
+const agenda = require('./../config/lib/agenda.mjs');
 const configuredTestFiles = process.env.SERVER_TEST_FILES
   ? process.env.SERVER_TEST_FILES.split(',').filter(Boolean)
   : [];
@@ -31,18 +31,19 @@ async function finish(error) {
 
 mongooseService.connect(db => {
   mongooseService.dropDatabase(db, () => {
-    mongooseService.loadModels(() => {
+    mongooseService.loadModels(async () => {
       const modelNames = require('mongoose').connection.modelNames();
 
       mongooseService
         .ensureIndexes(modelNames)
-        .then(() => {
+        .then(async () => {
           const mochaRunner = new Mocha({ reporter: 'spec', timeout: 10000 });
 
           testFiles.forEach(testFile =>
             mochaRunner.addFile(path.resolve(testFile)),
           );
 
+          await mochaRunner.loadFilesAsync();
           mochaRunner.run(failures => {
             if (typeof mochaRunner.unloadFiles === 'function') {
               mochaRunner.unloadFiles();

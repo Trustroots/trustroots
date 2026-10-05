@@ -1,13 +1,12 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const express = require('../../../../config/lib/express');
+const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
-
 describe('Extracted React route responses', function () {
   let agent;
-  before(() => {
-    agent = request.agent(express.init(mongoose.connection));
+  before(async () => {
+    agent = request.agent(await express.init(mongoose.connection));
   });
   afterEach(utils.clearDatabase);
   it('renders the React root for the extracted pages', async () => {

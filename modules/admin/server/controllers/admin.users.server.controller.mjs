@@ -4,10 +4,10 @@
 import _ from 'lodash';
 import mongoose from 'mongoose';
 import net from 'net';
-import { prepareStaffBlockers } from '../services/staff-blockers-payload.server.service.js';
+import { prepareStaffBlockers } from '../services/staff-blockers-payload.server.service.mjs';
 
-import errorService from '../../../core/server/services/error.server.service.js';
-import log from '../../../../config/lib/logger.js';
+import errorService from '../../../core/server/services/error.server.service.mjs';
+import log from '../../../../config/lib/logger.mjs';
 
 const AdminNote = mongoose.model('AdminNote');
 const Contact = mongoose.model('Contact');
@@ -664,7 +664,7 @@ export const usernameToUserId = async (req, res, next) => {
   next();
 };
 
-export default {
+const service = {
   searchUsers,
   listUsersByRole,
   listUsersByLastIpAddress,
@@ -674,3 +674,7 @@ export default {
   changeRole,
   usernameToUserId,
 };
+
+export default service;
+
+export { service as 'module.exports' };

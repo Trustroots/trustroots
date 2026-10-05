@@ -5,7 +5,7 @@ const should = require('should');
 const crypto = require('node:crypto');
 const mongoose = require('mongoose');
 const sinon = require('sinon');
-const config = require('../../../../config/config');
+const config = require('../../../../config/config.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');

@@ -1,7 +1,7 @@
 import _ from 'lodash';
-import core from '../controllers/core.server.controller.js';
-import tribes from '../../../tribes/server/controllers/tribes.server.controller.js';
-import authenticationService from '../../../users/server/services/authentication.server.service.js';
+import core from './../controllers/core.server.controller.mjs';
+import tribes from './../../../tribes/server/controllers/tribes.server.controller.mjs';
+import authenticationService from './../../../users/server/services/authentication.server.service.mjs';
 import * as nip19 from 'nostr-tools/nip19';
 import mongoose from 'mongoose';
 
@@ -15,7 +15,6 @@ const defaultExport = function (app) {
       res.redirect(301, dst);
     });
   };
-
   redirect('/invite', '/signup');
   redirect('/tribes/lgbt', '/circles/lgbtq');
   redirect('/tribes/vegans-vegetarians', '/circles/veg');
@@ -48,39 +47,37 @@ const defaultExport = function (app) {
   app
     .route('/api/report-expect-ct-violation')
     .post(core.receiveExpectCTViolationReport);
-
   app.route('/api/languages').get(core.getLanguages);
-
   app.route('/api/nostr/author-visibility').get(function (req, res) {
     const User = mongoose.model('User');
     const rawPubkeys = req.query.pubkey;
     const pubkeys = Array.isArray(rawPubkeys) ? rawPubkeys : [rawPubkeys];
-
     if (
       pubkeys.length > 100 ||
       pubkeys.some(
         pubkey => typeof pubkey !== 'string' || !/^[0-9a-f]{64}$/i.test(pubkey),
       )
     ) {
-      return res
-        .status(400)
-        .send({ error: 'One to 100 valid public keys required.' });
+      return res.status(400).send({
+        error: 'One to 100 valid public keys required.',
+      });
     }
-
     const normalizedPubkeys = [
       ...new Set(pubkeys.map(pubkey => pubkey.toLowerCase())),
     ];
     const npubs = normalizedPubkeys.map(pubkey => nip19.npubEncode(pubkey));
-
     User.find(
       {
-        nostrNpub: { $in: npubs },
+        nostrNpub: {
+          $in: npubs,
+        },
       },
       function (err, users) {
         if (err) {
-          return res.status(500).send({ error: 'Internal server error' });
+          return res.status(500).send({
+            error: 'Internal server error',
+          });
         }
-
         const linkedNpubs = new Set(users.map(user => user.nostrNpub));
         const visibleNpubs = new Set(
           users
@@ -94,7 +91,6 @@ const defaultExport = function (app) {
             )
             .map(user => user.nostrNpub),
         );
-
         return res.json({
           linkedPubkeys: normalizedPubkeys.filter(pubkey =>
             linkedNpubs.has(nip19.npubEncode(pubkey)),
@@ -116,55 +112,53 @@ const defaultExport = function (app) {
     if (!req.user) {
       return res.redirect('/signin');
     }
-
     return next();
   });
 
   // Define a tribes route to ensure we'll pass tribe object to index
   // Object is passed to layout at `core.renderIndex()`
   app.route('/circles/:tribe').get(core.renderIndex);
-
   app.route('/.well-known/nostr.json').get(function (req, res) {
     // NIP05 work in progress, https://github.com/Trustroots/trustroots/issues/2692
     const User = mongoose.model('User');
-
     res.set('Access-Control-Allow-Origin', '*');
-
     const rawName = req.query.name;
-
     if (
       typeof rawName !== 'string' ||
       !authenticationService.validateUsername(rawName)
     ) {
-      return res.status(400).send({ error: 'Valid username required.' });
+      return res.status(400).send({
+        error: 'Valid username required.',
+      });
     }
-
     const name = rawName.toLowerCase();
-
     User.findOne(
       {
         username: name,
         public: true,
-        email: { $exists: true, $nin: ['', null] },
-        roles: { $nin: ['suspended', 'shadowban'] },
+        email: {
+          $exists: true,
+          $nin: ['', null],
+        },
+        roles: {
+          $nin: ['suspended', 'shadowban'],
+        },
       },
       function (err, user) {
         if (err) {
-          res.status(500).send({ error: 'Internal server error' });
+          res.status(500).send({
+            error: 'Internal server error',
+          });
           return;
         }
-
         const obj = {
           names: {},
         };
-
         if (!user) {
           res.json(obj);
           return;
         }
-
         const nostrNpub = user.nostrNpub;
-
         try {
           if (nostrNpub) {
             const result = nip19.decode(nostrNpub);
@@ -176,7 +170,6 @@ const defaultExport = function (app) {
           // Malformed stored Nostr keys should fail closed.
           _.noop(err);
         }
-
         res.json(obj);
       },
     );
@@ -189,3 +182,4 @@ const defaultExport = function (app) {
   app.param('tribe', tribes.tribeBySlug);
 };
 export default defaultExport;
+export { defaultExport as 'module.exports' };
