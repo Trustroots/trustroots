@@ -148,7 +148,11 @@ describe('Read experiences by userTo Id', () => {
           .String()
           .match(/[0-9a-f]{24}/);
       }
-      const response = body[0].response;
+      const withResponse = body.find(ref => ref.userFrom._id === users[0].id);
+      const withoutResponse = body.find(
+        ref => ref.userFrom._id === users[4].id,
+      );
+      const response = withResponse.response;
       should(response).have.property('created', new Date().toISOString());
       should(response).have.propertyByPath('interactions', 'met').Boolean();
       should(response).have.propertyByPath('interactions', 'guest').Boolean();
@@ -156,11 +160,9 @@ describe('Read experiences by userTo Id', () => {
       should(response)
         .have.property('recommend')
         .which.is.equalOneOf(['no', 'yes', 'unknown']);
-      should(body[1].response).eql(null);
-      should(body[0].userTo._id).eql(users[1].id);
-      should(body[1].userTo._id).eql(users[1].id);
-      should(body[0].userFrom._id).eql(users[0].id);
-      should(body[1].userFrom._id).eql(users[4].id);
+      should(withoutResponse.response).eql(null);
+      should(withResponse.userTo._id).eql(users[1].id);
+      should(withoutResponse.userTo._id).eql(users[1].id);
     });
     it('includes an avatar version when a member has a versioned avatar', async () => {
       const version = 'a'.repeat(32);
