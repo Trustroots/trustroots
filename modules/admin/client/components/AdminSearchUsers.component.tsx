@@ -1,6 +1,7 @@
 // External dependencies
 import React, { Component, type ChangeEvent, type FormEvent } from 'react';
 import PropTypes from 'prop-types';
+import { formatRoleLabel } from '../utils/role-label';
 
 // Internal dependencies
 import { searchUsers, listUsersByRole } from '../api/users.api';
@@ -262,7 +263,7 @@ export class AdminSearchUsersContent extends Component<
                   'volunteer',
                 ].map(role => (
                   <option value={role} key={role}>
-                    {role === 'welcome-team' ? 'Welcome team' : role}
+                    {formatRoleLabel(role)}
                   </option>
                 ))}
               </select>

@@ -387,9 +387,9 @@ describe('<AdminAcquisitionStories />', () => {
         row.textContent.includes('contacted') ? 'contacted' : 'unassigned',
       );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Welcomer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Greeter' }));
     expect(memberOrder()).toEqual(['unassigned', 'contacted']);
-    fireEvent.click(screen.getByRole('button', { name: 'Welcomer ▲' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Greeter ▲' }));
     expect(memberOrder()).toEqual(['contacted', 'unassigned']);
   });
 

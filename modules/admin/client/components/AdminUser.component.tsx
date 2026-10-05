@@ -1,5 +1,6 @@
 // External dependencies
 import get from 'lodash/get';
+import { formatRoleLabel } from '../utils/role-label';
 import { getAdminUserHref } from '../utils/member-url';
 import PropTypes from 'prop-types';
 import React, { Component, type ChangeEvent, type FormEvent } from 'react';
@@ -82,7 +83,7 @@ const DEFAULT_MEMBER_LIST_SORT: MemberSort = {
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
   'welcome-team':
-    'Welcome team members can view acquisition stories and analysis, and see members who blocked their account.',
+    'Greeters can view acquisition stories and analysis, and see members who blocked their account.',
   admin: 'Full access to administration and moderation tools.',
   moderator: 'Legacy moderation role retained for historical accounts.',
   shadowban:
@@ -345,7 +346,9 @@ export default class AdminUser extends Component<
           action === 'remove'
             ? role === 'shadowban'
               ? `Unshadowban ${username}? Past hidden messages will stay hidden.`
-              : `Remove ${username} from Welcome team?`
+              : `Remove ${username} as a greeter?`
+            : role === 'welcome-team'
+            ? `Make ${username} a greeter?`
             : `Set ${username} role to ${role}?`,
         )
       ) {
@@ -506,7 +509,9 @@ export default class AdminUser extends Component<
       hasSearched && !isSearching && visibleMatchingUsers.length === 0;
     const userId = get(user, ['profile', '_id']);
     const profileLabel = isProfile
-      ? user.profile.displayName || user.profile.username || 'Unknown member'
+      ? [user.profile.username, user.profile.displayName]
+          .filter(Boolean)
+          .join(': ') || 'Unknown member'
       : '';
     const profileRows: InfoTableProps['rows'] = isProfile
       ? ([
@@ -533,7 +538,7 @@ export default class AdminUser extends Component<
           [
             'Roles',
             user.profile.roles && user.profile.roles.length
-              ? user.profile.roles.join(', ')
+              ? user.profile.roles.map(formatRoleLabel).join(', ')
               : null,
           ],
           ['Profile visible', user.profile.public ? 'Yes' : 'No'],
@@ -740,16 +745,6 @@ export default class AdminUser extends Component<
                       </button>
                     ),
                   )}
-                </div>
-              </div>
-
-              <div id="roles" className="panel panel-default admin-user-roles">
-                <div className="panel-body">
-                  {this.state.roleChangeError && (
-                    <p role="alert">
-                      Could not change the role. Please try again.
-                    </p>
-                  )}
                   <Tooltip
                     id="welcome-team-role-help"
                     placement="bottom"
@@ -757,7 +752,7 @@ export default class AdminUser extends Component<
                   >
                     <button
                       type="button"
-                      className="btn btn-default"
+                      className="btn btn-success"
                       aria-describedby="welcome-team-role-description"
                       disabled={isSettingUserRole}
                       onClick={() =>
@@ -768,13 +763,23 @@ export default class AdminUser extends Component<
                       }
                     >
                       {this.hasRole('welcome-team')
-                        ? 'Remove from Welcome team'
-                        : 'Add to Welcome team'}
+                        ? 'Remove greeter'
+                        : 'Make greeter'}
                     </button>
                   </Tooltip>
                   <span id="welcome-team-role-description" className="sr-only">
                     {ROLE_DESCRIPTIONS['welcome-team']}
                   </span>
+                </div>
+              </div>
+
+              <div id="roles" className="admin-user-roles">
+                <div className="panel-body">
+                  {this.state.roleChangeError && (
+                    <p role="alert">
+                      Could not change the role. Please try again.
+                    </p>
+                  )}
                   <ul className="list-inline">
                     {user.profile.roles
                       .filter(role => role !== 'user')
@@ -792,7 +797,7 @@ export default class AdminUser extends Component<
                               tabIndex={0}
                               aria-describedby={`member-role-${role}-description`}
                             >
-                              {role === 'welcome-team' ? 'Welcome team' : role}
+                              {formatRoleLabel(role)}
                             </span>
                           </Tooltip>
                           <span
@@ -945,7 +950,9 @@ export default class AdminUser extends Component<
                                 </div>
                               </td>
                               <td>{match.email}</td>
-                              <td>{match.roles.join(', ')}</td>
+                              <td>
+                                {match.roles.map(formatRoleLabel).join(', ')}
+                              </td>
                               <td>{match.matchReasons.join(', ')}</td>
                               <td>{match.acquisitionStory}</td>
                             </tr>

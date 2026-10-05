@@ -288,10 +288,10 @@ export default function AdminAcquisitionStories() {
                 />
                 <SortableHeader
                   column="welcomer"
-                  label="Welcomer"
+                  label="Greeter"
                   onSort={sortBy}
                   sort={sort}
-                  tooltip="First current welcome-team member to send a message; sending a message assigns the welcomer"
+                  tooltip="First current greeter to send a message; sending a message assigns the greeter"
                 />
                 <StaticHeader
                   label="Languages"

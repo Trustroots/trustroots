@@ -37,8 +37,8 @@ afterEach(() => {
 
 it.each([
   ['Suspend', ['user']],
-  ['Add to Welcome team', ['user']],
-  ['Remove from Welcome team', ['user', 'welcome-team']],
+  ['Make greeter', ['user']],
+  ['Remove greeter', ['user', 'welcome-team']],
 ])(
   'refreshes audit notes after %s without discarding a draft',
   async (label, roles) => {

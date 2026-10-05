@@ -19,10 +19,33 @@ async function assertMemberProfileCleanup(page, member) {
   await expect(
     page.getByRole('heading', {
       level: 3,
-      name: member.displayName,
+      name: `${member.username}: ${member.displayName}`,
       exact: true,
     }),
   ).toBeVisible();
+  const originalViewport = page.viewportSize();
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 844 });
+    const heading = await page
+      .getByRole('heading', {
+        level: 3,
+        name: `${member.username}: ${member.displayName}`,
+        exact: true,
+      })
+      .boundingBox();
+    const actions = await page.locator('.admin-user-actions').boundingBox();
+    expect(heading).not.toBeNull();
+    expect(actions).not.toBeNull();
+    expect(actions.y).toBeGreaterThanOrEqual(heading.y + heading.height);
+    const buttons = await page.locator('.admin-user-actions .btn').all();
+    for (const button of buttons) {
+      const box = await button.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(width);
+    }
+  }
+  await page.setViewportSize(originalViewport);
   await expect(page.getByText(/Member report card/i)).toHaveCount(0);
   await expect(
     page.getByRole('heading', { name: 'Role management' }),
@@ -40,14 +63,16 @@ async function assertMemberProfileCleanup(page, member) {
     page.locator('#roles li').filter({ hasText: /^user$/ }),
   ).toHaveCount(0);
 
-  const welcomeButton = page.locator('#roles button');
+  const welcomeButton = page
+    .locator('.admin-user-actions')
+    .getByRole('button', { name: /^(Make|Remove) greeter$/ });
   await expect(welcomeButton).toHaveAttribute(
     'aria-describedby',
     'welcome-team-role-description',
   );
   await welcomeButton.focus();
   await expect(page.getByRole('tooltip')).toHaveText(
-    'Welcome team members can view acquisition stories and analysis, and see members who blocked their account.',
+    'Greeters can view acquisition stories and analysis, and see members who blocked their account.',
   );
   await welcomeButton.blur();
 
@@ -94,19 +119,19 @@ test.describe('admin role and audit feature coverage', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
   });
 
-  test('administrator can grant and revoke limited Welcome team access', async ({
+  test('administrator can grant and revoke limited greeter access', async ({
     page,
     browser,
     baseURL,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.change-role', [
-      'Administrator grants and revokes Welcome team membership.',
+      'Administrator grants and revokes greeter status.',
     ]);
     annotateFeature(testInfo, 'admin.acquisition-stories', [
-      'Welcome team can view stories without other administrator access.',
+      'Greeters can view stories without other administrator access.',
     ]);
     annotateFeature(testInfo, 'admin.acquisition-analysis', [
-      'Welcome team can view analysis.',
+      'Greeters can view analysis.',
     ]);
     const member = createUser();
     const memberContext = await browser.newContext({ baseURL });
@@ -132,17 +157,17 @@ test.describe('admin role and audit feature coverage', () => {
       await page.goto(`/admin/user?id=${target._id}`);
       page.on('dialog', dialog => dialog.accept());
       await page
-        .getByRole('button', { name: 'Add to Welcome team', exact: true })
+        .getByRole('button', { name: 'Make greeter', exact: true })
         .click();
       await expect(
         page.getByRole('button', {
-          name: 'Remove from Welcome team',
+          name: 'Remove greeter',
           exact: true,
         }),
       ).toBeVisible();
       await memberPage.goto('/admin/acquisition-stories');
       await expect(
-        memberPage.getByRole('link', { name: 'Welcome team', exact: true }),
+        memberPage.getByRole('link', { name: 'Greeters', exact: true }),
       ).toBeVisible();
       await expect(
         memberPage
@@ -178,10 +203,10 @@ test.describe('admin role and audit feature coverage', () => {
       await memberPage.goto('/admin');
       await expect(memberPage).toHaveURL(/\/volunteering/);
       await page
-        .getByRole('button', { name: 'Remove from Welcome team', exact: true })
+        .getByRole('button', { name: 'Remove greeter', exact: true })
         .click();
       await expect(
-        page.getByRole('button', { name: 'Add to Welcome team', exact: true }),
+        page.getByRole('button', { name: 'Make greeter', exact: true }),
       ).toBeVisible();
       expect(
         (
