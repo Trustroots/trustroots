@@ -7,6 +7,11 @@ import errorService from '../../../core/server/services/error.server.service.js'
 import emailService from '../../../core/server/services/email.server.service.js';
 import userProfile from '../../../users/server/controllers/users.profile.server.controller.js';
 import userRolesService from '../../../users/server/services/user-roles.server.service.js';
+import {
+  prepareExperienceCount,
+  prepareNewExperience,
+  prepareSendingToClient,
+} from '../services/experience-payload.server.service.js';
 
 const service = {};
 
@@ -177,44 +182,6 @@ class ResponseError {
   }
 }
 
-const nonpublicExperienceFields = [
-  '_id',
-  'created',
-  'public',
-  'userFrom',
-  'userTo',
-];
-
-const experienceFields = nonpublicExperienceFields.concat([
-  'feedbackPublic',
-  'interactions.guest',
-  'interactions.host',
-  'interactions.met',
-  'recommend',
-]);
-
-const responseFields = [
-  '_id',
-  'created',
-  'feedbackPublic',
-  'interactions.guest',
-  'interactions.host',
-  'interactions.met',
-  'recommend',
-];
-
-function prepareSendingToClient(experience, response, authUserId) {
-  const fields_to_pick =
-    experience.public || authUserId.equals(experience.userFrom._id)
-      ? experienceFields
-      : nonpublicExperienceFields;
-  const prepared_experience = _.pick(experience, fields_to_pick);
-
-  const preparedResponse = response ? _.pick(response, responseFields) : null;
-
-  return { ...prepared_experience, response: preparedResponse };
-}
-
 async function findMyExperience(req, userTo) {
   return await Experience.findOne({
     userFrom: req.user._id,
@@ -382,11 +349,9 @@ service.create = async function (req, res, next) {
     validateReplyToPublicExperience(otherExperience, req);
 
     // save the experience...
-    const savedExperience = await saveNewExperience({
-      ...req.body,
-      userFrom: selfId,
-      public: !!otherExperience,
-    });
+    const savedExperience = await saveNewExperience(
+      prepareNewExperience(req.body, selfId, !!otherExperience),
+    );
 
     // ...and if this is an experience reply, make the other experience public, too
     await publishOtherExperience(otherExperience);
@@ -737,11 +702,9 @@ service.getCount = async function getCount(req, res, next) {
       { publicCount: 0, privateCount: 0 },
     );
 
-    return res.status(200).json({
-      count: privateCount + publicCount,
-      // `hasPending` included only for own profile
-      ...(isSelf ? { hasPending: Boolean(privateCount) } : {}),
-    });
+    return res
+      .status(200)
+      .json(prepareExperienceCount(publicCount, privateCount, isSelf));
   } catch (error) {
     processResponses(res, next, error);
   }
