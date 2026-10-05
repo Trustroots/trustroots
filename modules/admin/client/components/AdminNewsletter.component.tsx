@@ -18,10 +18,10 @@ import {
   type NewsletterAudienceCriteria,
 } from '../api/newsletter.api';
 import AdminHeader from './AdminHeader.component';
+import { newsletterAudienceFilename } from '../utils/newsletter-audience-filename';
 import { read as readCircles } from '@/modules/tribes/client/api/tribes.api';
 
 const ALL_SUBSCRIBERS_FILE_NAME = 'newsletter-subscribers.csv';
-const AUDIENCE_FILE_NAME = 'newsletter-audience.csv';
 const CIRCLE_SUBSCRIBERS_FILE_PREFIX = 'newsletter-circle-';
 const ELIGIBLE_FILE_PREFIX = 'newsletter-eligible';
 const EXCLUDED_FILE_PREFIX = 'newsletter-excluded';
@@ -251,7 +251,10 @@ export default function AdminNewsletter() {
 
     try {
       const csv = await getNewsletterAudienceCsv(audienceCriteria);
-      triggerCsvDownload(AUDIENCE_FILE_NAME, csv);
+      triggerCsvDownload(
+        newsletterAudienceFilename(audienceCriteria, circles),
+        csv,
+      );
     } catch (error) {
       setAudienceErrorMessage(
         audienceError(error, 'Could not export this newsletter audience.'),

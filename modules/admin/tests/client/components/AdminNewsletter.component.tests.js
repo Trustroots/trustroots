@@ -303,6 +303,9 @@ describe('<AdminNewsletter />', () => {
       ),
     );
     expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
+    expect(
+      HTMLAnchorElement.prototype.click.mock.instances[0].download,
+    ).toMatch(/^newsletter-audience-Berlin-living-origin-\d{8}-\d{4}\.csv$/);
   });
 
   it('clears an audience preview after criteria change', async () => {
