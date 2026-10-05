@@ -2,7 +2,7 @@ name: Tests
 
 on:
   pull_request:
-    branches: [main, 'codex/**']
+    branches: [main, 'codex/**', 'chore/**']
     types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
