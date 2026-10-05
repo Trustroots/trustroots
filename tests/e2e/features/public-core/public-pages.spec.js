@@ -75,12 +75,7 @@ test.describe('public pages and unauthenticated flows', () => {
   test('sign in and sign up pages link to each other', async ({
     page,
   }, testInfo) => {
-    annotateFeature(testInfo, 'auth.signin', [
-      'Sign in page links to signup.',
-      'Username sign in succeeds.',
-      'Email sign in succeeds.',
-      'Continue query redirects to the original protected destination.',
-    ]);
+    annotateFeature(testInfo, 'auth.signin', ['Sign in page links to signup.']);
 
     await page.goto('/signin');
 
