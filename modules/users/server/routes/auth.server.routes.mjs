@@ -1,5 +1,6 @@
 import userAuthentication from '../controllers/users.authentication.server.controller.js';
 import userPassword from '../controllers/users.password.server.controller.js';
+import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.js';
 
 /**
  * Module dependencies.
@@ -15,21 +16,28 @@ const defaultExport = function (app) {
   // Resend email confirmation
   app
     .route('/api/auth/resend-confirmation')
-    .post(userAuthentication.resendConfirmation);
+    .post(
+      targetedRequestLimit.resendConfirmation,
+      userAuthentication.resendConfirmation,
+    );
 
   // Setting up the users password api
-  app.route('/api/auth/forgot').post(userPassword.forgot);
+  app
+    .route('/api/auth/forgot')
+    .post(targetedRequestLimit.forgotPassword, userPassword.forgot);
   app
     .route('/api/auth/reset/:token')
     .get(userPassword.validateResetToken)
-    .post(userPassword.reset);
+    .post(targetedRequestLimit.resetPassword, userPassword.reset);
 
   // Setting up the users authentication api
   app.route('/api/auth/signup').post(userAuthentication.signup);
   app
     .route('/api/auth/signup/validate')
     .post(userAuthentication.signupValidation);
-  app.route('/api/auth/signin').post(userAuthentication.signin);
+  app
+    .route('/api/auth/signin')
+    .post(targetedRequestLimit.signin, userAuthentication.signin);
   app
     .route('/api/auth/signout')
     .get((req, res) => res.sendStatus(405))
