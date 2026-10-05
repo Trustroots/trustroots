@@ -517,6 +517,16 @@ describe('User password CRUD tests', function () {
       });
   });
 
+  it('requires the current password when changing credentials', async function () {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const response = await agent
+      .post('/api/users/password')
+      .send({ newPassword: 'ExampleNew123!', verifyPassword: 'ExampleNew123!' })
+      .expect(400);
+    response.body.message.should.equal('Current password is incorrect.');
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+  });
+
   it('should not be able to change password if wrong verifyPassword is given', function (done) {
     agent
       .post('/api/auth/signin')

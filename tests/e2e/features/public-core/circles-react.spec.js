@@ -54,6 +54,7 @@ test('circle membership retains account roles and legacy member links', async ({
     'Member search loads the existing map workflow.',
   ]);
   await signInViaApi(page, undefined, SEEDED_ADMIN);
+  await page.goto('/circles');
   const circleResponse = await page.request.get('/api/tribes/hitchhikers');
   expect(circleResponse.ok()).toBeTruthy();
   const circle = await circleResponse.json();
