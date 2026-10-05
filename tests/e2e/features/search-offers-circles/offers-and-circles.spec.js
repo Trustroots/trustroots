@@ -521,17 +521,13 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await expect(scrollingOverview).toBeVisible();
       await expect(scrollingOverview).toHaveCSS('overflow-y', 'auto');
       await expect(scrollingOverview).toHaveCSS('touch-action', 'pan-y');
-      const isOverviewScrollable = await scrollingOverview.evaluate(
-        element => element.scrollHeight > element.clientHeight,
+      const documentScrollBeforeJoin = await memberPage.evaluate(
+        () => window.scrollY,
       );
-      if (isOverviewScrollable) {
-        await scrollingOverview.evaluate(element => {
-          element.scrollTop = element.scrollHeight;
-        });
-        await expect
-          .poll(() => scrollingOverview.evaluate(element => element.scrollTop))
-          .toBeGreaterThan(0);
-      }
+      await swipeUpFrom(memberPage, scrollingOverview);
+      await expect
+        .poll(() => memberPage.evaluate(() => window.scrollY))
+        .toBeGreaterThan(documentScrollBeforeJoin);
 
       const scrollingOverviewJoinButton =
         memberPage.locator('button.tribe-join');
@@ -566,19 +562,13 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await expect(scrollingOverview).toBeVisible();
       await expect(scrollingOverview).toHaveCSS('overflow-y', 'auto');
       await expect(scrollingOverview).toHaveCSS('touch-action', 'pan-y');
+      const documentScrollAfterJoin = await memberPage.evaluate(
+        () => window.scrollY,
+      );
+      await swipeUpFrom(memberPage, scrollingOverview);
       await expect
-        .poll(() =>
-          scrollingOverview.evaluate(
-            element => element.scrollHeight > element.clientHeight,
-          ),
-        )
-        .toBe(true);
-      await scrollingOverview.evaluate(element => {
-        element.scrollTop = element.scrollHeight;
-      });
-      await expect
-        .poll(() => scrollingOverview.evaluate(element => element.scrollTop))
-        .toBeGreaterThan(0);
+        .poll(() => memberPage.evaluate(() => window.scrollY))
+        .toBeGreaterThan(documentScrollAfterJoin);
 
       await expect(
         memberPage.getByRole('button', {
