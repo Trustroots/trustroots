@@ -145,7 +145,6 @@ test.describe('seeded message flows', () => {
       'Thread view shows seeded replies.',
       'Thread can be opened by username or userId route/query.',
     ]);
-    useElementScreenshot(testInfo, '.message-reply-actions');
 
     const portland = SEEDED_MEMBERS[1];
     const portlandId = await fetchUserIdByUsername(request, portland.username);
@@ -158,6 +157,18 @@ test.describe('seeded message flows', () => {
     await expect(
       page.getByText(SEEDED_CONVERSATIONS.berlinPortland.openingMessage),
     ).toBeVisible();
+    const incoming = page
+      .getByText(SEEDED_CONVERSATIONS.berlinPortland.openingMessage)
+      .locator('xpath=ancestor::*[contains(@class, "message-sender-other")]');
+    const outgoing = page
+      .getByText(SEEDED_CONVERSATIONS.berlinPortland.latestReply)
+      .locator('xpath=ancestor::*[contains(@class, "message-sender-me")]');
+    await expect(incoming).toHaveCSS('justify-content', 'normal');
+    await expect(outgoing).toHaveCSS('justify-content', 'flex-end');
+    const incomingBubble = await incoming.locator('.panel').boundingBox();
+    const outgoingBubble = await outgoing.locator('.panel').boundingBox();
+    expect(incomingBubble.x).toBeLessThan(outgoingBubble.x);
+    await expect(outgoing.getByText('You', { exact: true })).toBeVisible();
     await expect(page.locator('#messageReplySubmit')).toHaveCSS(
       'background-color',
       'rgb(18, 181, 145)',
