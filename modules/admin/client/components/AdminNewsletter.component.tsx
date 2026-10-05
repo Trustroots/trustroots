@@ -18,10 +18,10 @@ import {
   type NewsletterAudienceCriteria,
 } from '../api/newsletter.api';
 import AdminHeader from './AdminHeader.component';
+import { newsletterAudienceFilename } from '../utils/newsletter-audience-filename';
 import { read as readCircles } from '@/modules/tribes/client/api/tribes.api';
 
 const ALL_SUBSCRIBERS_FILE_NAME = 'newsletter-subscribers.csv';
-const AUDIENCE_FILE_NAME = 'newsletter-audience.csv';
 const CIRCLE_SUBSCRIBERS_FILE_PREFIX = 'newsletter-circle-';
 const ELIGIBLE_FILE_PREFIX = 'newsletter-eligible';
 const EXCLUDED_FILE_PREFIX = 'newsletter-excluded';
@@ -123,9 +123,9 @@ export default function AdminNewsletter() {
   const [audienceCriteria, setAudienceCriteria] =
     useState<NewsletterAudienceCriteria>({
       circleIds: [],
-      latitude: '',
-      locationText: '',
-      longitude: '',
+      latitude: '52.5200',
+      locationText: 'Berlin',
+      longitude: '13.4050',
       radiusKm: '50',
       sources: ['from', 'hosting', 'living'],
     });
@@ -144,9 +144,9 @@ export default function AdminNewsletter() {
   const [result, setResult] = useState<SplitResult | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const audiencePreviewRequestId = useRef(0);
-  const audiencePreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  const audiencePreviewTimer = useRef<
+    ReturnType<typeof setTimeout> | undefined
+  >(undefined);
 
   useEffect(() => {
     async function loadCircles() {
@@ -198,7 +198,7 @@ export default function AdminNewsletter() {
   );
 
   useEffect(() => {
-    if (audiencePreviewTimer.current !== null) {
+    if (audiencePreviewTimer.current !== undefined) {
       clearTimeout(audiencePreviewTimer.current);
     }
 
@@ -242,9 +242,7 @@ export default function AdminNewsletter() {
 
   async function onAudiencePreview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (audiencePreviewTimer.current !== null) {
-      clearTimeout(audiencePreviewTimer.current);
-    }
+    clearTimeout(audiencePreviewTimer.current);
     await refreshAudienceCount(audienceCriteria);
   }
 
@@ -253,7 +251,10 @@ export default function AdminNewsletter() {
 
     try {
       const csv = await getNewsletterAudienceCsv(audienceCriteria);
-      triggerCsvDownload(AUDIENCE_FILE_NAME, csv);
+      triggerCsvDownload(
+        newsletterAudienceFilename(audienceCriteria, circles),
+        csv,
+      );
     } catch (error) {
       setAudienceErrorMessage(
         audienceError(error, 'Could not export this newsletter audience.'),
@@ -400,7 +401,8 @@ export default function AdminNewsletter() {
                 onChange={event =>
                   updateAudienceCriteria({ locationText: event.target.value })
                 }
-                placeholder="Berlin"
+                placeholder="Enter a city or region"
+                required
                 type="text"
                 value={audienceCriteria.locationText}
               />
@@ -419,7 +421,7 @@ export default function AdminNewsletter() {
                     onChange={event =>
                       updateAudienceCriteria({ latitude: event.target.value })
                     }
-                    placeholder="52.5200"
+                    required
                     type="number"
                     step="any"
                     value={audienceCriteria.latitude}
@@ -435,7 +437,7 @@ export default function AdminNewsletter() {
                     onChange={event =>
                       updateAudienceCriteria({ longitude: event.target.value })
                     }
-                    placeholder="13.4050"
+                    required
                     type="number"
                     step="any"
                     value={audienceCriteria.longitude}
