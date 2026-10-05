@@ -85,13 +85,7 @@ async function assertMemberProfileCleanup(page, member) {
       roleChangeRequests += 1;
     }
   };
-  const confirmations = [];
-  const onDialog = async dialog => {
-    confirmations.push({ type: dialog.type(), message: dialog.message() });
-    await dialog.dismiss();
-  };
   page.on('request', onRequest);
-  page.on('dialog', onDialog);
   try {
     const controls = page.locator(
       '.admin-user-actions button:enabled, #roles button:enabled',
@@ -100,17 +94,15 @@ async function assertMemberProfileCleanup(page, member) {
     expect(count).toBeGreaterThan(0);
     for (let index = 0; index < count; index += 1) {
       await controls.nth(index).click();
-    }
-    expect(confirmations).toHaveLength(count);
-    for (const confirmation of confirmations) {
-      expect(confirmation.type).toBe('confirm');
-      expect(confirmation.message).toContain(member.username);
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+      expect(await dialog.innerText()).toContain(member.username);
+      await dialog.getByRole('button', { name: 'Cancel' }).click();
     }
     await page.waitForTimeout(100);
     expect(roleChangeRequests).toBe(0);
   } finally {
     page.off('request', onRequest);
-    page.off('dialog', onDialog);
   }
 }
 
@@ -155,8 +147,11 @@ test.describe('admin role and audit feature coverage', () => {
         ).status(),
       ).toBe(403);
       await page.goto(`/admin/user?id=${target._id}`);
-      page.on('dialog', dialog => dialog.accept());
       await page
+        .getByRole('button', { name: 'Make greeter', exact: true })
+        .click();
+      await page
+        .getByRole('dialog')
         .getByRole('button', { name: 'Make greeter', exact: true })
         .click();
       await expect(
@@ -203,6 +198,10 @@ test.describe('admin role and audit feature coverage', () => {
       await memberPage.goto('/admin');
       await expect(memberPage).toHaveURL(/\/volunteering/);
       await page
+        .getByRole('button', { name: 'Remove greeter', exact: true })
+        .click();
+      await page
+        .getByRole('dialog')
         .getByRole('button', { name: 'Remove greeter', exact: true })
         .click();
       await expect(
@@ -323,8 +322,11 @@ test.describe('admin role and audit feature coverage', () => {
 
     await page.goto(`/admin/user?id=${target._id}`);
     await assertMemberProfileCleanup(page, target);
-    page.on('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: 'Unshadowban' }).click();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Unshadowban', exact: true })
+      .click();
     await expect(page.getByRole('button', { name: 'Unshadowban' })).toHaveCount(
       0,
     );
