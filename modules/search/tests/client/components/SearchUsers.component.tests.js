@@ -23,6 +23,8 @@ describe('<SearchUsers />', () => {
     render(<SearchUsers />);
 
     const input = screen.getByRole('textbox', { name: 'Search members' });
+    expect(input).toHaveFocus();
+    expect(input).toHaveAttribute('maxlength', '120');
     const searchButton = screen.getByRole('button', {
       name: 'Search members',
     });
@@ -83,9 +85,7 @@ describe('<SearchUsers />', () => {
       'traveler',
     );
     await waitFor(() => expect(searchUsers).toHaveBeenCalledWith('traveler'));
-    expect(
-      await screen.findByText('No members found by this name.'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('No members found.')).toBeInTheDocument();
   });
 
   it('shows empty results when the search response has no users array', async () => {
@@ -99,9 +99,7 @@ describe('<SearchUsers />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
 
     await waitFor(() => expect(searchUsers).toHaveBeenCalledWith('alice'));
-    expect(
-      await screen.findByText('No members found by this name.'),
-    ).toBeInTheDocument();
+    expect(await screen.findByText('No members found.')).toBeInTheDocument();
   });
 
   it('does not request users for short URL searches', () => {
@@ -110,9 +108,7 @@ describe('<SearchUsers />', () => {
     render(<SearchUsers />);
 
     expect(searchUsers).not.toHaveBeenCalled();
-    expect(
-      screen.getByText('No members found by this name.'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('No members found.')).toBeInTheDocument();
   });
 
   it('clears the current query and rendered results', async () => {
@@ -146,7 +142,7 @@ describe('<SearchUsers />', () => {
     ).toBeDisabled();
   });
 
-  it('hides loading state and shows empty results after a failed search', async () => {
+  it('hides loading state and explains a failed search', async () => {
     searchUsers.mockRejectedValueOnce(new Error('Search failed'));
 
     render(<SearchUsers />);
@@ -160,8 +156,9 @@ describe('<SearchUsers />', () => {
     await waitFor(() =>
       expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument(),
     );
-    expect(
-      screen.getByText('No members found by this name.'),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Could not search members.',
+    );
+    expect(screen.queryByText('No members found.')).not.toBeInTheDocument();
   });
 });

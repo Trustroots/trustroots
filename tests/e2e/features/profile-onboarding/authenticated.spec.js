@@ -125,9 +125,7 @@ test.describe('authenticated member flows', () => {
     await page.locator('#search-users-form button[type="submit"]').click();
     await searchResponse;
 
-    await expect(
-      page.getByText('No members found by this name.'),
-    ).toBeVisible();
+    await expect(page.getByText('No members found.')).toBeVisible();
   });
 
   test('member can download their combined data export', async ({

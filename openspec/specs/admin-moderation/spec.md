@@ -61,6 +61,32 @@ activity.
 - **WHEN** an authorised administrator selects a recent thread vote
 - **THEN** the system opens the associated message-inspection view
 
+### Requirement: Dashboard previews negative-experience feedback
+
+The admin dashboard SHALL expose the public feedback text for each recent
+negative experience in a responsive preview attached to its date. The complete
+text SHALL be available on hover and keyboard focus, and togglable by touch.
+The preview SHALL preserve line breaks, render text without interpreting HTML,
+close on Escape, and show a clear fallback when feedback is unavailable.
+
+#### Scenario: Administrator previews public feedback
+
+- **WHEN** an administrator hovers over, focuses, or taps a negative experience
+  date
+- **THEN** the dashboard shows that experience's complete public feedback
+- **AND** line breaks in the feedback remain visible
+- **AND** the feedback is rendered as plain text without an extra request
+
+#### Scenario: Administrator dismisses a preview
+
+- **WHEN** an administrator presses Escape while a preview is open
+- **THEN** the preview closes and focus remains on its date control
+
+#### Scenario: Public feedback is unavailable
+
+- **WHEN** a negative experience has no public feedback text
+- **THEN** the preview explains that the text is unavailable
+
 ### Requirement: Member search and role filtering
 
 The system SHALL let authorised administrators search for members and list
@@ -130,6 +156,42 @@ allow them to record moderation notes about that member.
 
 - **WHEN** an authorised administrator requests a report with a missing or malformed member identifier
 - **THEN** the system returns a usable error response
+
+### Requirement: Admin member reports include the public profile
+
+The administrator member report SHALL include the viewed member's public
+profile below the moderation information. It SHALL reuse the public profile
+view, use the authenticated administrator as the viewer, and keep the target
+member distinct from the viewer. The embedded profile SHALL not add duplicate
+global navigation.
+
+#### Scenario: Administrator opens a member report
+
+- **WHEN** an administrator opens `/admin/user/<username>`
+- **THEN** the moderation report is followed by that member's public profile
+- **AND** profile actions use the signed-in administrator as the viewer
+- **AND** the profile identifies the reported member as its target
+
+### Requirement: Role changes use accessible confirmation dialogs
+
+Role changes from an administrator member report SHALL use an accessible
+application dialog with clear action-specific text. The dialog SHALL support
+keyboard dismissal before submission, provide progress feedback while saving,
+prevent duplicate submissions, and report mutation or refresh errors accurately.
+
+#### Scenario: Administrator confirms or cancels a role change
+
+- **WHEN** an administrator selects a moderation action on a member report
+- **THEN** a labelled confirmation dialog explains the action
+- **AND** cancelling or dismissing the dialog leaves the member unchanged
+- **AND** confirming applies the action once and refreshes the report
+
+#### Scenario: Role change or report refresh fails
+
+- **WHEN** saving a role change fails
+- **THEN** the dialog reports the failure and allows a retry
+- **WHEN** saving succeeds but refreshing the report fails
+- **THEN** the dialog reports that the role changed and does not offer to repeat it
 
 ### Requirement: Role changes and audit history
 

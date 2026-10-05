@@ -250,9 +250,9 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/admin/reference-threads': () => <AdminReferenceThreads />,
     '/admin/search-users': () => <AdminSearchUsers />,
     '/admin/threads': () => <AdminThreads />,
-    '/admin/user': () => <AdminUser />,
-    '/admin/user/:username': ({ params }) => (
-      <AdminUser username={params.username} />
+    '/admin/user': ({ user }) => <AdminUser viewer={user as AuthUser} />,
+    '/admin/user/:username': ({ params, user }) => (
+      <AdminUser username={params.username} viewer={user as AuthUser} />
     ),
     '/circles': renderWithUser(TribesPageRoute),
     '/circles/:circle': renderCircleDetail,

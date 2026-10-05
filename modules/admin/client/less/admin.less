@@ -84,6 +84,46 @@
   }
 }
 
+.admin-negative-experience-preview {
+  position: relative;
+  display: inline-block;
+
+  .admin-negative-experience-preview__trigger {
+    border: 0;
+    padding: 0;
+    color: @link-color;
+    background: transparent;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+
+    &:focus-visible {
+      outline: 2px solid @link-color;
+      outline-offset: 2px;
+    }
+  }
+
+  .admin-negative-experience-preview__popover {
+    position: absolute;
+    z-index: 1030;
+    top: 100%;
+    right: 0;
+    width: 28rem;
+    max-width: calc(100vw - 32px);
+    max-height: 18rem;
+    overflow: auto;
+    padding: 12px;
+    color: @text-color;
+    background: #fff;
+    border: 1px solid @gray-lighter;
+    border-radius: 4px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+    text-align: left;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-weight: normal;
+  }
+}
+
 .admin-index-links {
   margin-bottom: 0;
   padding-left: 0;
@@ -293,6 +333,16 @@ td:hover .admin-hidden-until-hover {
 
 .admin-user-roles .panel-body {
   padding: 0;
+}
+
+.admin-user-embedded-profile {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid @gray-lighter;
+
+  .profile-view-embedded {
+    margin-top: 20px;
+  }
 }
 
 .admin-user-page h4 {

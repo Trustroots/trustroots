@@ -15,17 +15,19 @@ export default function SearchUsers() {
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [users, setUsers] = useState([]);
+  const [searchFailed, setSearchFailed] = useState(false);
 
   async function fetchUsers(query: string) {
     setIsSearching(true);
     setHasSearched(true);
     setUsers([]);
+    setSearchFailed(false);
     try {
       const { data: users } = await searchUsers(query);
       setUsers(users || []);
       setIsSearching(false);
     } catch {
-      // Do nothing
+      setSearchFailed(true);
     } finally {
       setIsSearching(false);
     }
@@ -57,13 +59,17 @@ export default function SearchUsers() {
       <div className="input-group">
         <input
           aria-label={t('Search members')}
+          autoFocus
+          disabled={isSearching}
           className="form-control input-lg"
           onChange={({ target: { value } }) => {
             setHasSearched(false);
+            setSearchFailed(false);
             setSearchQuery(value);
             setUsers([]);
           }}
-          placeholder={t('Type name, username…')}
+          placeholder={t('Name, username, location or tagline…')}
+          maxLength={120}
           tabIndex={0}
           type="text"
           value={searchQuery}
@@ -73,10 +79,13 @@ export default function SearchUsers() {
             <button
               aria-label={t('Clear members search')}
               className="btn btn-lg btn-default"
-              disabled={searchQuery.length < MINIMUM_QUERY_LENGTH}
+              disabled={
+                isSearching || searchQuery.length < MINIMUM_QUERY_LENGTH
+              }
               onClick={() => {
                 setSearchQuery('');
                 setHasSearched(false);
+                setSearchFailed(false);
                 setUsers([]);
               }}
               type="button"
@@ -88,7 +97,9 @@ export default function SearchUsers() {
             <button
               aria-label={t('Search members')}
               className="btn btn-lg btn-default"
-              disabled={searchQuery.length < MINIMUM_QUERY_LENGTH}
+              disabled={
+                isSearching || searchQuery.length < MINIMUM_QUERY_LENGTH
+              }
               type="submit"
             >
               <i className="icon-search"></i>
@@ -104,7 +115,18 @@ export default function SearchUsers() {
     <section className="container container-spacer">
       {searchForm}
       {isSearching && <LoadingIndicator />}
-      {!isSearching && hasSearched && <UsersResults users={users} />}
+      {searchFailed && (
+        <p role="alert">
+          {String(
+            t(
+              'Could not search members. Please try again with a more specific search.',
+            ),
+          )}
+        </p>
+      )}
+      {!isSearching && !searchFailed && hasSearched && (
+        <UsersResults users={users} query={searchQuery} />
+      )}
     </section>
   );
 }

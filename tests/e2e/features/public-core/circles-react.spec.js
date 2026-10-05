@@ -75,7 +75,41 @@ test('circle membership retains account roles and legacy member links', async ({
     await expect(
       page.getByRole('button', { name: 'Leave circle', exact: true }),
     ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Find members', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Circle Wiki', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Volunteering', exact: true }),
+    ).toBeVisible();
+    const activeMembers = await page.request.get(
+      `/api/tribes/${circle.slug}/members`,
+    );
+    expect(activeMembers.ok()).toBeTruthy();
+    expect(await activeMembers.json()).toEqual({
+      contacts: expect.any(Array),
+      recommenders: expect.any(Array),
+      active: expect.any(Array),
+    });
     expect(await page.evaluate(() => window.user.roles)).toEqual(roles);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(
+      page.getByRole('link', { name: 'Circle Wiki', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Volunteering', exact: true }),
+    ).toBeVisible();
+    const circleActions = await page
+      .locator('.tribe-actions-group')
+      .boundingBox();
+    expect(circleActions.x).toBeGreaterThanOrEqual(0);
+    expect(circleActions.x + circleActions.width).toBeLessThanOrEqual(391);
+    expect(
+      await page.evaluate(() => window.document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(390);
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page
       .getByRole('button', { name: 'Leave circle', exact: true })
       .click();

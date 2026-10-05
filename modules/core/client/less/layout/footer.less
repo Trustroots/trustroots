@@ -98,6 +98,31 @@
   .site-footer-build-commit {
     white-space: nowrap;
   }
+
+  @media (max-width: (@screen-xs-max)) {
+    .site-footer-content {
+      display: block;
+    }
+
+    .site-footer-links {
+      padding-left: 0;
+      text-align: center;
+    }
+
+    .site-footer-meta {
+      margin: 12px 0 0;
+      text-align: center;
+    }
+
+    .site-footer-build {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .site-footer-build-commit {
+      white-space: normal;
+    }
+  }
 }
 
 .site-footer-home {

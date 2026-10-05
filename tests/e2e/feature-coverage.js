@@ -1699,6 +1699,8 @@ const features = [
     },
     requiredScenarios: [
       'Search members page loads.',
+      'Map search links to an autofocused member search.',
+      'Search matches public home locations and shows their context.',
       'Search returns seeded hosts.',
       'Search handles empty or no-result states.',
     ],
@@ -2655,11 +2657,16 @@ const features = [
       'Authenticated non-admin direct loads of React-owned admin pages redirect away.',
       'Dashboard shows ten most recent negative thread votes.',
       'Dashboard shows ten most recent negative experiences.',
+      'Dashboard previews negative-experience feedback.',
     ],
     relatedSpecs: [
       spec(
         'admin-pages.spec.js',
         'admin dashboard welcomes the signed in admin',
+      ),
+      spec(
+        'admin-pages.spec.js',
+        'admin dashboard previews negative experience feedback',
       ),
       spec(
         'authenticated.spec.js',
@@ -2957,6 +2964,7 @@ const features = [
       'Admin user report card loads for a member id.',
       'Report card includes role and message counts.',
       'Report card shows the current role inventory.',
+      'Admin report shows the member public profile below moderation information.',
       'Restricted member report shows potential related accounts.',
       'Missing user id shows a usable error state.',
     ],

@@ -7,6 +7,7 @@ import {
 import AdminHeader from './AdminHeader.component.js';
 import { AdminSearchUsersContent } from './AdminSearchUsers.component.js';
 import UserLink from './UserLink.component.js';
+import AdminNegativeExperiencePreview from './AdminNegativeExperiencePreview.component.js';
 
 function formatDate(value?: string) {
   if (!value) {
@@ -192,7 +193,13 @@ export default function Admin() {
                     <table className="table table-condensed admin-dashboard-table">
                       <tbody>
                         {dashboard.negativeExperiences.map(
-                          ({ _id, created, userFrom, userTo }) => (
+                          ({
+                            _id,
+                            created,
+                            feedbackPublic,
+                            userFrom,
+                            userTo,
+                          }) => (
                             <tr key={_id}>
                               <td>
                                 <UserLink user={userFrom || {}} />
@@ -200,7 +207,12 @@ export default function Admin() {
                                 <UserLink user={userTo || {}} />
                               </td>
                               <td className="text-right">
-                                {formatDate(created) || 'Unknown date'}
+                                <AdminNegativeExperiencePreview
+                                  dateLabel={
+                                    formatDate(created) || 'Unknown date'
+                                  }
+                                  feedbackPublic={feedbackPublic}
+                                />
                               </td>
                             </tr>
                           ),

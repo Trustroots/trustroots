@@ -118,17 +118,23 @@ export default function Inbox({ user }: InboxProps) {
             href="/messages"
             rel="external"
             aria-current={unreadOnly ? undefined : 'page'}
+            aria-label={t<string>('All conversations')}
             className="btn btn-default"
           >
-            {t<string>('All conversations')}
+            <span className="hidden-xs">{t<string>('All conversations')}</span>
+            <span className="visible-xs-inline">{t<string>('All')}</span>
           </a>
           <a
             href="/messages?filter=unread"
             rel="external"
             aria-current={unreadOnly ? 'page' : undefined}
+            aria-label={t<string>('Unread conversations')}
             className="btn btn-default"
           >
-            {t<string>('Unread conversations')}
+            <span className="hidden-xs">
+              {t<string>('Unread conversations')}
+            </span>
+            <span className="visible-xs-inline">{t<string>('Unread')}</span>
           </a>
         </nav>
         <div className="inbox-search">

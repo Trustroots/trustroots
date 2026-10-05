@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import Admin from '@/modules/admin/client/components/Admin.component';
@@ -32,6 +32,7 @@ describe('<Admin />', () => {
         {
           _id: 'experience-1',
           created: '2026-06-21T12:00:00.000Z',
+          feedbackPublic: 'A generous welcome.\nA useful follow-up.',
           userFrom: {
             _id: 'experience-from-1',
             displayName: 'Experience sender',
@@ -132,6 +133,13 @@ describe('<Admin />', () => {
       }),
     ).toHaveAttribute('href', '/admin/user/experience-sender');
     expect(screen.getByText('2026-06-21')).toBeInTheDocument();
+    const feedbackTrigger = screen.getByRole('button', {
+      name: 'Preview public feedback from 2026-06-21',
+    });
+    fireEvent.focus(feedbackTrigger);
+    expect(screen.getByRole('tooltip')).toHaveTextContent(
+      /A generous welcome\.\s+A useful follow-up\./,
+    );
   });
 
   it('shows an error when dashboard activity cannot be loaded', async () => {
@@ -215,6 +223,14 @@ describe('<Admin />', () => {
       screen.queryByRole('link', { name: 'thread-without-users' }),
     ).not.toBeInTheDocument();
     expect(screen.getByText('Unknown date')).toBeInTheDocument();
+    fireEvent.focus(
+      screen.getByRole('button', {
+        name: 'Preview public feedback from Unknown date',
+      }),
+    );
+    expect(screen.getByRole('tooltip')).toHaveTextContent(
+      'Public feedback is unavailable.',
+    );
   });
 
   it('uses empty dashboard lists when the API omits them', async () => {

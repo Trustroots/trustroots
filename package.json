@@ -87,6 +87,7 @@
     "webpack": "webpack --config config/webpack/webpack.config.js",
     "webpack:server": "webpack serve --hot --config config/webpack/webpack.config.js",
     "ensure-indexes": "node ./bin/db-maintenance/ensure-indexes.mjs",
+    "ensure-circle-discovery-indexes": "node ./bin/db-maintenance/ensure-circle-discovery-indexes.mjs",
     "prepare": "husky install"
   },
   "dependencies": {

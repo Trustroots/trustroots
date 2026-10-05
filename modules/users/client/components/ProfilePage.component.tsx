@@ -241,9 +241,13 @@ ProfileDesktopActions.propTypes = {
 
 export default function ProfilePage({
   currentPath: routedPath,
+  embedded = false,
+  profileUsername,
   user: authUser,
 }: {
   currentPath?: string;
+  embedded?: boolean;
+  profileUsername?: string;
   user: UserProfile;
 }) {
   const { t } = useTranslation('users') as {
@@ -252,7 +256,7 @@ export default function ProfilePage({
   const { setUser } = useAuth() as { setUser: (user: UserProfile) => void };
   const browserPath = useCurrentPath();
   const currentPath = routedPath || browserPath;
-  const { username } = getCurrentRouteParams();
+  const username = profileUsername || getCurrentRouteParams().username;
   const { profileMinimumLength = 140, referencesEnabled = false } =
     useSettings();
 
@@ -295,12 +299,16 @@ export default function ProfilePage({
   }, []);
 
   useEffect(() => {
+    if (embedded) {
+      return;
+    }
+
     const redirectPath = getMobileProfileRedirect(currentPath, username);
 
     if (redirectPath && redirectPath !== currentPath) {
       window.location.assign(redirectPath);
     }
-  }, [currentPath, username]);
+  }, [currentPath, embedded, username]);
 
   useEffect(() => {
     let isMounted = true;
@@ -466,23 +474,33 @@ export default function ProfilePage({
 
   return (
     <>
-      <TopNavigationSmall
-        isAdmin={authUser.roles?.includes('admin') || false}
-        contact={contact}
-        isResolved={contact.$resolved}
-        onContactRemoved={removeContact}
-        referencesEnabled={referencesEnabled}
-        selfId={authUser._id}
-        userId={profile?._id || ''}
-        username={profile?.username || username}
-      />
-      <BottomNavigationSmall
-        contactCount={contacts.length || 0}
-        isSelf={isSelf}
-        username={profile?.username || username}
-      />
+      {!embedded && (
+        <TopNavigationSmall
+          isAdmin={authUser.roles?.includes('admin') || false}
+          contact={contact}
+          isResolved={contact.$resolved}
+          onContactRemoved={removeContact}
+          referencesEnabled={referencesEnabled}
+          selfId={authUser._id}
+          userId={profile?._id || ''}
+          username={profile?.username || username}
+        />
+      )}
+      {!embedded && (
+        <BottomNavigationSmall
+          contactCount={contacts.length || 0}
+          isSelf={isSelf}
+          username={profile?.username || username}
+        />
+      )}
 
-      <section className="container container-spacer profile-view">
+      <section
+        className={
+          embedded
+            ? 'container-spacer profile-view profile-view-embedded'
+            : 'container container-spacer profile-view'
+        }
+      >
         {profile && (authUser.blocked || []).includes(profile._id) && (
           <BlockedMemberBanner username={profile.username} />
         )}
@@ -649,5 +667,7 @@ export default function ProfilePage({
 
 ProfilePage.propTypes = {
   currentPath: PropTypes.string,
+  embedded: PropTypes.bool,
+  profileUsername: PropTypes.string,
   user: PropTypes.object.isRequired,
 };

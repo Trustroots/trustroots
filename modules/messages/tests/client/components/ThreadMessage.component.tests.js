@@ -25,7 +25,9 @@ describe('<ThreadMessage />', function () {
       />,
     );
 
-    expect(screen.getByText('You')).toBeInTheDocument();
+    expect(screen.getByText('You').closest('.message')).toHaveClass(
+      'message-sender-me',
+    );
   });
 
   it('links other users by username', () => {
@@ -52,6 +54,7 @@ describe('<ThreadMessage />', function () {
     });
 
     expect(profileLink).toHaveAttribute('href', '/profile/travel');
+    expect(profileLink.closest('.message')).toHaveClass('message-sender-other');
   });
 
   it('shows external message links as text while preserving internal links', () => {
@@ -104,6 +107,25 @@ describe('<ThreadMessage />', function () {
     );
 
     expect(screen.getByText('Unknown member')).toBeInTheDocument();
+  });
+
+  it('preserves the hosting acceptance marker on outgoing bubbles', () => {
+    const { container } = render(
+      <ThreadMessage
+        user={me}
+        message={{
+          _id: 'msg-hosting',
+          created: '2026-06-05T12:00:00.000Z',
+          content: '<p data-hosting="yes">Happy to host</p>',
+          userFrom: me,
+        }}
+      />,
+    );
+
+    expect(container.querySelector('.message-sender-me')).toHaveAttribute(
+      'data-hosting',
+      'yes',
+    );
   });
 
   it('marks messages that explicitly say hosting was declined', () => {

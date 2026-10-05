@@ -5,6 +5,8 @@ const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const User = mongoose.model('User');
 const Tribe = mongoose.model('Tribe');
+const Contact = mongoose.model('Contact');
+const Experience = mongoose.model('Experience');
 
 /**
  * Globals
@@ -112,6 +114,142 @@ describe('Tribe CRUD tests', function () {
       response.text.should.containEql('id="tr-react-root"');
       response.text.should.not.containEql('data-ui-view');
     }
+  });
+  it('lists only recent, visible members of circles the viewer joined', async () => {
+    user.member.push({ tribe: tribe._id });
+    await user.save();
+
+    const createCandidate = (username, attributes = {}) =>
+      new User({
+        ..._user,
+        username,
+        email: `${username}@example.com`,
+        displayName: `Member ${username}`,
+        password: 'M3@n.jsI$Aw3$0m3',
+        public: true,
+        member: [{ tribe: tribe._id }],
+        seen: new Date(),
+        ...attributes,
+      });
+    const activeMember = createCandidate('active-member');
+    const circleContact = createCandidate('circle-contact');
+    const circleRecommender = createCandidate('circle-recommender');
+    const oldMember = createCandidate('old-member', {
+      seen: new Date(Date.now() - 32 * 24 * 60 * 60 * 1000),
+    });
+    const privateMember = createCandidate('private-member', { public: false });
+    const suspendedMember = createCandidate('suspended-member', {
+      roles: ['suspended'],
+    });
+    const blockedViewerMember = createCandidate('blocked-viewer-member', {
+      blocked: [user._id],
+    });
+    await Promise.all([
+      activeMember.save(),
+      circleContact.save(),
+      circleRecommender.save(),
+      oldMember.save(),
+      privateMember.save(),
+      suspendedMember.save(),
+      blockedViewerMember.save(),
+    ]);
+    await Contact.create({
+      userFrom: user._id,
+      userTo: circleContact._id,
+      confirmed: true,
+    });
+    await Experience.create([
+      {
+        userFrom: circleRecommender._id,
+        userTo: user._id,
+        public: true,
+        recommend: 'yes',
+      },
+      {
+        userFrom: circleContact._id,
+        userTo: user._id,
+        public: true,
+        recommend: 'yes',
+      },
+    ]);
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+
+    const response = await agent
+      .get(`/api/tribes/${tribe.slug}/members`)
+      .expect(200);
+    response.body.contacts
+      .map(member => member.username)
+      .should.deepEqual(['circle-contact']);
+    response.body.recommenders
+      .map(member => member.username)
+      .should.deepEqual(['circle-recommender']);
+    response.body.active
+      .map(member => member.username)
+      .should.deepEqual(['active-member']);
+    response.body.active[0].should.have.properties([
+      '_id',
+      'username',
+      'displayName',
+    ]);
+    should.not.exist(response.body.active[0].seen);
+  });
+  it('filters contacts before applying the result limit and deduplicates pairs', async () => {
+    user.member.push({ tribe: tribe._id });
+    await user.save();
+
+    const candidates = Array.from({ length: 21 }, (_, index) => {
+      const username = `unrelated-${index.toString().padStart(2, '0')}`;
+      return new User({
+        ..._user,
+        username,
+        email: `${username}@example.com`,
+        displayName: `A ${username}`,
+        password: 'M3@n.jsI$Aw3$0m3',
+        public: true,
+        member: [],
+      });
+    });
+    const eligibleContact = new User({
+      ..._user,
+      username: 'eligible-contact',
+      email: 'eligible-contact@example.com',
+      displayName: 'Z Eligible contact',
+      password: 'M3@n.jsI$Aw3$0m3',
+      public: true,
+      member: [{ tribe: tribe._id }],
+    });
+    await Promise.all(
+      [...candidates, eligibleContact].map(candidate => candidate.save()),
+    );
+    await Contact.create([
+      ...candidates.map(candidate => ({
+        userFrom: user._id,
+        userTo: candidate._id,
+        confirmed: true,
+      })),
+      {
+        userFrom: user._id,
+        userTo: eligibleContact._id,
+        confirmed: true,
+      },
+      {
+        userFrom: eligibleContact._id,
+        userTo: user._id,
+        confirmed: true,
+      },
+    ]);
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+
+    const response = await agent
+      .get(`/api/tribes/${tribe.slug}/members`)
+      .expect(200);
+    response.body.contacts
+      .map(member => member.username)
+      .should.deepEqual(['eligible-contact']);
+  });
+  it('requires circle membership to list active members', async () => {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    await agent.get(`/api/tribes/${tribe.slug}/members`).expect(403);
   });
   it('should be able to read tribes when not logged in', function (done) {
     // Read tribes

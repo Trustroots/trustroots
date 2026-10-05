@@ -271,6 +271,38 @@ test.describe('admin moderation inspection flows', () => {
       page.getByText('Acquisition story', { exact: true }).last(),
     ).toBeVisible();
   });
+
+  test('admin report includes the reported member public profile below moderation details', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.user-report', [
+      'Admin report shows the member public profile below moderation information.',
+    ]);
+    const member = SEEDED_MEMBERS[1];
+    const profileResponsePromise = page.waitForResponse(response =>
+      response.url().endsWith(`/api/users/${member.username}`),
+    );
+
+    await page.goto(`/admin/user/${member.username}`);
+    await expect(
+      page.getByRole('heading', {
+        name: `${member.username}: ${member.firstName} ${member.lastName}`,
+      }),
+    ).toBeVisible();
+    const profileResponse = await profileResponsePromise;
+    expect(profileResponse.status()).toBe(200);
+    const publicProfile = await profileResponse.json();
+    expect(publicProfile.username).toBe(member.username);
+    expect(publicProfile.email).toBeUndefined();
+    expect(publicProfile.roles).toBeUndefined();
+
+    const embeddedProfile = page.locator('.admin-user-embedded-profile');
+    await expect(
+      embeddedProfile.getByRole('heading', { name: 'Public profile' }),
+    ).toBeVisible();
+    await expect(embeddedProfile.locator('.profile-overview')).toBeVisible();
+    await expect(page.locator('.admin-user-actions')).toBeVisible();
+  });
 });
 
 test.describe('admin inspection APIs', () => {

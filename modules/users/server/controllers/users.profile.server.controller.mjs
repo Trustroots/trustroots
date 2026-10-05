@@ -92,7 +92,7 @@ service.userMiniProfileFields = userMiniService.userMiniProfileFields;
 service.userListingProfileFields =
   service.userMiniProfileFields + ' member birthdate gender tagline';
 service.userSearchProfileFields =
-  service.userMiniProfileFields + ' gender locationFrom locationLiving';
+  service.userMiniProfileFields + ' gender locationFrom locationLiving tagline';
 
 /**
  * Update user profile
@@ -1296,11 +1296,21 @@ service.search = function (req, res, next) {
   }
 
   // validate the query string
-  if (req.query.search.length < 3) {
+  if (
+    typeof req.query.search !== 'string' ||
+    req.query.search.trim().length < 3 ||
+    req.query.search.length > 120
+  ) {
     const errorMessage = errorService.getErrorMessageByKey('bad-request');
     return res.status(400).send({
       message: errorMessage,
-      detail: 'Query string should be at least 3 characters long.',
+      detail: 'Query string should contain between 3 and 120 characters.',
+    });
+  }
+  if (req.skip > 1000) {
+    return res.status(400).send({
+      message:
+        'Please refine your member search instead of requesting more pages.',
     });
   }
   const blocked = req.user.blocked || [];
@@ -1325,7 +1335,7 @@ service.search = function (req, res, next) {
         },
         {
           $text: {
-            $search: req.query.search,
+            $search: req.query.search.trim(),
           },
         },
       ],
@@ -1344,9 +1354,10 @@ service.search = function (req, res, next) {
       },
     })
     // limit the amount of found users
-    .limit(req.query.limit)
+    .limit(Math.min(req.query.limit || config.limits.paginationLimit, 50))
     // skip to the page, automatically handles invalid page number
     .skip(req.skip)
+    .maxTimeMS(2000)
     .exec(function (err, users) {
       if (err) return next(err);
       /** filter ones that have blocked me */
