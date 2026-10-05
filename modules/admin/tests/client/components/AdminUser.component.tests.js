@@ -524,10 +524,10 @@ describe('<AdminUser />', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Related Example' }),
-    ).toHaveAttribute('href', `/admin/user?id=${otherUserId}`);
+    ).toHaveAttribute('href', `/admin/user/related`);
     expect(screen.getByRole('link', { name: 'username-lead' })).toHaveAttribute(
       'href',
-      '/admin/user?id=333333333333333333333333',
+      '/admin/user/username-lead',
     );
     expect(
       screen.getAllByRole('row', {
@@ -729,7 +729,7 @@ describe('<AdminUser />', () => {
 
     expect(
       await screen.findByText('alice-similar (Alice Similar)'),
-    ).toHaveAttribute('href', `/admin/user?id=${otherUserId}`);
+    ).toHaveAttribute('href', `/admin/user/alice-similar`);
     expect(screen.getByText('alice-similar')).toBeInTheDocument();
     expect(screen.getByText(/similar@example\.org/)).toBeInTheDocument();
     expect(screen.getByText(/pending@example\.org/)).toBeInTheDocument();
@@ -1013,7 +1013,7 @@ describe('<AdminUser />', () => {
     expect(screen.getByText('Fallback Contact')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'bob' })).toHaveAttribute(
       'href',
-      `/admin/user?id=${otherUserId}`,
+      `/admin/user/bob`,
     );
   });
 

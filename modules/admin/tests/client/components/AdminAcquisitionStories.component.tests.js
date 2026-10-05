@@ -96,7 +96,7 @@ describe('<AdminAcquisitionStories />', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'alice (Alice Example)' }),
-    ).toHaveAttribute('href', '/admin/user?id=111111111111111111111111');
+    ).toHaveAttribute('href', '/admin/user/alice');
     expect(
       screen.getByRole('link', {
         name: 'Open public profile for Alice Example',
@@ -121,7 +121,7 @@ describe('<AdminAcquisitionStories />', () => {
       screen.getByRole('link', {
         name: 'restricted (Restricted Example)',
       }),
-    ).toHaveAttribute('href', '/admin/user?id=222222222222222222222222');
+    ).toHaveAttribute('href', '/admin/user/restricted');
     expect(screen.getByText(/— Username identifier/)).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Stories' }).closest('li'),
@@ -280,10 +280,7 @@ describe('<AdminAcquisitionStories />', () => {
     render(<AdminAcquisitionStories />);
 
     const welcomerLink = await screen.findByRole('link', { name: 'welcomer' });
-    expect(welcomerLink).toHaveAttribute(
-      'href',
-      '/admin/user?id=444444444444444444444444',
-    );
+    expect(welcomerLink).toHaveAttribute('href', '/admin/user/welcomer');
     const contactedRow = welcomerLink.closest('tr');
     expect(contactedRow).toHaveClass('admin-acquisition-stories-contacted');
     expect(screen.getByText('Unassigned').closest('tr')).not.toHaveClass(
@@ -291,7 +288,7 @@ describe('<AdminAcquisitionStories />', () => {
     );
     expect(screen.getByRole('link', { name: 'contacted' })).toHaveAttribute(
       'href',
-      '/admin/user?id=333333333333333333333333',
+      '/admin/user/contacted',
     );
   });
 

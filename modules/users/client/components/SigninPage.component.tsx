@@ -69,6 +69,25 @@ export default function SigninPage() {
     try {
       const signedInUser = await authApi.signin(credentials);
 
+      let session;
+      try {
+        session = await authApi.getSession();
+      } catch {
+        setIsLoading(false);
+        setErrorMessage(
+          "Your login details were accepted, but we couldn't check your session. Check your connection and try again.",
+        );
+        return;
+      }
+
+      if (session.userId !== signedInUser._id) {
+        setIsLoading(false);
+        setErrorMessage(
+          "Your login details were accepted, but we couldn't keep you signed in. Cookies may be blocked, or there may be a problem with the site. Please try again or contact support.",
+        );
+        return;
+      }
+
       applyAuthenticatedUser(signedInUser, setUser);
 
       trackEvent('login.success', {

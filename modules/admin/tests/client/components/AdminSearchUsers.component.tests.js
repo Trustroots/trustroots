@@ -142,7 +142,7 @@ describe('<AdminSearchUsers />', () => {
 
     expect(await screen.findByText('alice0 (Alice 0)')).toHaveAttribute(
       'href',
-      '/admin/user?id=123456789012345678901200',
+      '/admin/user/alice0',
     );
     expect(usersApi.searchUsers).toHaveBeenCalledWith('alice', {
       page: 1,
@@ -221,7 +221,7 @@ describe('<AdminSearchUsers />', () => {
 
     expect(
       await screen.findByText('boundary (Boundary Search)'),
-    ).toHaveAttribute('href', '/admin/user?id=searchsearchsearchsearch0001');
+    ).toHaveAttribute('href', '/admin/user/boundary');
     expect(usersApi.searchUsers).toHaveBeenCalledWith('ali', {
       page: 1,
       sort: { column: 'username', direction: 'ascending' },
@@ -344,7 +344,7 @@ describe('<AdminSearchUsers />', () => {
 
     expect(
       await screen.findByText('volunteer (Volunteer Example)'),
-    ).toHaveAttribute('href', '/admin/user?id=abcdefabcdefabcdefabcdef');
+    ).toHaveAttribute('href', '/admin/user/volunteer');
     expect(usersApi.listUsersByRole).toHaveBeenCalledWith('volunteer', {
       page: 1,
       sort: { column: 'username', direction: 'ascending' },
@@ -550,7 +550,7 @@ describe('<AdminSearchUsers />', () => {
 
     expect(
       await screen.findByText('suspended-member (Suspended member)'),
-    ).toHaveAttribute('href', '/admin/user?id=123456789012345678901235');
+    ).toHaveAttribute('href', '/admin/user/suspended-member');
     expect(
       screen.queryByRole('link', { name: 'Public profile' }),
     ).not.toBeInTheDocument();

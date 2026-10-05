@@ -266,7 +266,7 @@ test.describe('admin moderation inspection flows', () => {
     await expect(page.getByText('Acquisition story').first()).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Alice Contact' }),
-    ).toHaveAttribute('href', '/admin/user?id=665000000000000000000006');
+    ).toHaveAttribute('href', '/admin/user/e2e-seeded-alice');
     await expect(
       page.getByText('Acquisition story', { exact: true }).last(),
     ).toBeVisible();

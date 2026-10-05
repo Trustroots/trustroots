@@ -58,7 +58,7 @@ describe('Compact audit log', () => {
     expect(container.querySelector('details')).not.toHaveAttribute('open');
     expect(screen.getByRole('link', { name: 'river' })).toHaveAttribute(
       'href',
-      '/admin/user?id=staff-1',
+      '/admin/user/river',
     );
     expect(container.querySelector('details')).toHaveTextContent(
       'Audit log ID: audit-1',

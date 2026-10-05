@@ -55,11 +55,11 @@ describe('<AdminReferenceThreads />', () => {
     ).toBeInTheDocument();
     expect(await screen.findByText('alice (Alice Sender)')).toHaveAttribute(
       'href',
-      `/admin/user?id=${userFrom._id}`,
+      `/admin/user/${userFrom.username}`,
     );
     expect(screen.getByText('bob (Bob Receiver)')).toHaveAttribute(
       'href',
-      `/admin/user?id=${userTo._id}`,
+      `/admin/user/${userTo.username}`,
     );
     expect(screen.getByRole('link', { name: 'See messages' })).toHaveAttribute(
       'href',
@@ -91,7 +91,7 @@ describe('<AdminReferenceThreads />', () => {
     expect(screen.getByText('7')).toHaveClass('label-danger');
     expect(screen.getAllByText('bob (Bob Receiver)')[0]).toHaveAttribute(
       'href',
-      `/admin/user?id=${userTo._id}`,
+      `/admin/user/${userTo.username}`,
     );
     expect(screen.getByText('3')).toHaveClass('label-danger');
     expect(screen.getAllByText('Unknown member')[0]).toBeInTheDocument();

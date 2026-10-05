@@ -1,5 +1,6 @@
 // External dependencies
 import get from 'lodash/get';
+import { getAdminUserHref } from '../utils/member-url';
 import PropTypes from 'prop-types';
 import React, { Component, type ChangeEvent, type FormEvent } from 'react';
 
@@ -929,7 +930,7 @@ export default class AdminUser extends Component<
                           {potentialMatches.map(match => (
                             <tr key={match._id}>
                               <td>
-                                <a href={`/admin/user?id=${match._id}`}>
+                                <a href={getAdminUserHref(match)}>
                                   {match.displayName || match.username}
                                 </a>
                                 <div className="text-muted">
@@ -1058,7 +1059,12 @@ export default class AdminUser extends Component<
                                 <td>
                                   {contactMemberId ? (
                                     <a
-                                      href={`/admin/user?id=${contactMemberId}`}
+                                      href={getAdminUserHref({
+                                        _id: contactMemberId,
+                                        username: get(contactMember, [
+                                          'username',
+                                        ]),
+                                      })}
                                     >
                                       {contactName}
                                     </a>

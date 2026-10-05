@@ -223,7 +223,7 @@ describe('ProfilePage', () => {
       await screen.findByText('About Bob Example');
       const link = screen.queryByRole('link', { name: 'Admin', exact: true });
       if (visible) {
-        expect(link).toHaveAttribute('href', '/admin/user?id=user-2');
+        expect(link).toHaveAttribute('href', '/admin/user/bob');
       } else {
         expect(link).not.toBeInTheDocument();
       }
@@ -234,7 +234,7 @@ describe('ProfilePage', () => {
     renderPage({ ...authUser, _id: profile._id, roles: ['admin'] });
     expect(
       await screen.findByRole('link', { name: 'Admin', exact: true }),
-    ).toHaveAttribute('href', '/admin/user?id=user-2');
+    ).toHaveAttribute('href', '/admin/user/bob');
     expect(
       screen.queryByRole('link', { name: 'Send a message' }),
     ).not.toBeInTheDocument();
