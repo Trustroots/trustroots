@@ -2721,7 +2721,7 @@ const features = [
       ],
     },
     requiredScenarios: [
-      'Welcome team can view stories without other administrator access.',
+      'Greeters can view stories without other administrator access.',
       'Acquisition stories page loads.',
       'Acquisition stories query returns deterministic rows.',
       'Story rows show available member and hosting locations.',
@@ -2754,7 +2754,7 @@ const features = [
       ],
     },
     requiredScenarios: [
-      'Welcome team can view analysis.',
+      'Greeters can view analysis.',
       'Acquisition story analysis page loads.',
       'Analysis API returns deterministic analysis.',
     ],
@@ -2784,14 +2784,14 @@ const features = [
       ],
     },
     requiredScenarios: [
-      'Admins can inspect blockers of any administrator or Welcome team member.',
-      'Welcome team members can inspect only blockers of their own account.',
+      'Admins can inspect blockers of any administrator or Greeter.',
+      'Greeters can inspect only blockers of their own account.',
       'Regular members cannot access staff blocker information.',
     ],
     relatedSpecs: [
       spec(
         'admin-inspection.spec.js',
-        'staff blockers are grouped for admins and limited for Welcome team members',
+        'staff blockers are grouped for admins and limited for Greeters',
       ),
     ],
   },
@@ -3009,7 +3009,7 @@ const features = [
       ],
     },
     requiredScenarios: [
-      'Administrator grants and revokes Welcome team membership.',
+      'Administrator grants and revokes greeter status.',
       'Admin can apply a moderation role change.',
       'Admin can remove a shadowban from a member report.',
       'Role change is recorded in audit log.',
