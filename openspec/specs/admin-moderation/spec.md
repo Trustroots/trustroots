@@ -142,7 +142,7 @@ to assistive technology without requiring visible explanatory paragraphs.
 
 #### Scenario: Administrator focuses role help
 
-- **WHEN** an administrator focuses a role label or the Welcome team control
+- **WHEN** an administrator focuses a role label or the greeter control
 - **THEN** its explanation appears and is available to screen readers
 
 #### Scenario: Administrator unshadowbans a member
@@ -434,7 +434,7 @@ team membership controls.
 
 ### Requirement: Welcome team acquisition access
 
-The system SHALL allow members with the `welcome-team` role to view acquisition stories and analysis, including all existing acquisition data, and the blockers of their own account. Administrator permissions beyond these tools SHALL remain restricted to administrators. The interface SHALL display the role as Welcome team and show only accessible navigation and member links.
+The system SHALL allow members with the `welcome-team` role to view acquisition stories and analysis, including all existing acquisition data, and the blockers of their own account. Administrator permissions beyond these tools SHALL remain restricted to administrators. The interface SHALL display the role as Greeter and show only accessible navigation and member links.
 
 #### Scenario: Welcome team views acquisition pages
 
@@ -511,7 +511,7 @@ see the original recipient language order without emphasis.
 ### Requirement: Profile admin navigation
 
 Public profile action links SHALL be consistently aligned. Administrators SHALL
-see an Admin action linking to `/admin/user?id=<viewed-member-id>`, on desktop
+see an Admin action linking to `/admin/user/<viewed-member-username>`, on desktop
 and mobile. Other members, including the welcome team, SHALL not see it.
 
 #### Scenario: Administrator views a member
@@ -529,7 +529,8 @@ and mobile. Other members, including the welcome team, SHALL not see it.
 The application SHALL support `/admin/user/:username` with the same admin-only
 access as `/admin/user`. It SHALL look up the exact username independently of
 fuzzy search results and their pagination, while preserving ID, IP and query
-URL support.
+URL support. Member links SHALL prefer the encoded username path whenever the
+username is available; ID-only records SHALL retain the legacy ID fallback.
 
 #### Scenario: Exact username deep link despite a matching prefix
 

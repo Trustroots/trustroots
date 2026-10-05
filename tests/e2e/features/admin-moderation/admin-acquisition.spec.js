@@ -51,7 +51,7 @@ test.describe('admin acquisition feature coverage', () => {
       aliceRow.getByRole('link', {
         name: 'e2e-seeded-shadow (Shadow Spammer)',
       }),
-    ).toHaveAttribute('href', '/admin/user?id=665000000000000000000004');
+    ).toHaveAttribute('href', '/admin/user/e2e-seeded-shadow');
     await expect(
       aliceRow.getByText(/Temporary email identifier/),
     ).toBeVisible();

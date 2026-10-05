@@ -351,6 +351,15 @@ service.signin = function (req, res, next) {
 };
 
 /**
+ * Confirm the account recognised on a subsequent browser request.
+ */
+service.session = function (req, res) {
+  res.set('Cache-Control', 'no-store');
+  res.vary('Cookie');
+  res.json({ userId: req.user ? String(req.user._id) : null });
+};
+
+/**
  * Signout
  */
 service.signout = function (req, res, next) {
@@ -600,6 +609,7 @@ export const confirmEmail = defaultExport.confirmEmail;
 export const removeOAuthProvider = defaultExport.removeOAuthProvider;
 export const resendConfirmation = defaultExport.resendConfirmation;
 export const signin = defaultExport.signin;
+export const session = defaultExport.session;
 export const signout = defaultExport.signout;
 export const signup = defaultExport.signup;
 export const signupValidation = defaultExport.signupValidation;

@@ -122,7 +122,7 @@ describe('<Admin />', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'sender (Sender)' }),
-    ).toHaveAttribute('href', '/admin/user?id=user-from-1');
+    ).toHaveAttribute('href', '/admin/user/sender');
     expect(
       screen.getByRole('heading', { name: 'Last 10 Negative Experiences' }),
     ).toBeInTheDocument();
@@ -130,7 +130,7 @@ describe('<Admin />', () => {
       screen.getByRole('link', {
         name: 'experience-sender (Experience sender)',
       }),
-    ).toHaveAttribute('href', '/admin/user?id=experience-from-1');
+    ).toHaveAttribute('href', '/admin/user/experience-sender');
     expect(screen.getByText('2026-06-21')).toBeInTheDocument();
   });
 

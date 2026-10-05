@@ -48,7 +48,7 @@ describe('<TopNavigationSmall />', () => {
     const { rerender } = renderNavigation({ isAdmin: true });
     expect(
       screen.getByRole('link', { name: 'Admin', exact: true }),
-    ).toHaveAttribute('href', '/admin/user?id=alice-id');
+    ).toHaveAttribute('href', '/admin/user/alice');
     rerender(
       <TopNavigationSmall
         isAdmin
@@ -62,7 +62,7 @@ describe('<TopNavigationSmall />', () => {
     );
     expect(
       screen.getByRole('link', { name: 'Admin', exact: true }),
-    ).toHaveAttribute('href', '/admin/user?id=me');
+    ).toHaveAttribute('href', '/admin/user/river');
   });
 
   it('omits Admin navigation before the member ID is loaded', () => {

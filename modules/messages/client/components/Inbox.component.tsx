@@ -109,45 +109,52 @@ export default function Inbox({ user }: InboxProps) {
 
   return (
     <section className="container-spacer">
-      <nav aria-label={t<string>('Conversation filter')} className="container">
-        <a
-          href="/messages"
-          rel="external"
-          aria-current={unreadOnly ? undefined : 'page'}
-          className="btn btn-default"
+      <div className="container inbox-controls">
+        <nav
+          aria-label={t<string>('Conversation filter')}
+          className="inbox-view-filters"
         >
-          {t<string>('All conversations')}
-        </a>{' '}
-        <a
-          href="/messages?filter=unread"
-          rel="external"
-          aria-current={unreadOnly ? 'page' : undefined}
-          className="btn btn-default"
-        >
-          {t<string>('Unread conversations')}
-        </a>
-      </nav>
-      <div className="container">
-        <input
-          type="search"
-          className="form-control"
-          aria-label={t<string>('Filter conversations')}
-          placeholder={t<string>('Filter conversations')}
-          value={searchText}
-          onChange={event => {
-            setSearchText(event.target.value);
-            setSearchLoadFailed(false);
-          }}
-        />
+          <a
+            href="/messages"
+            rel="external"
+            aria-current={unreadOnly ? undefined : 'page'}
+            className="btn btn-default"
+          >
+            {t<string>('All conversations')}
+          </a>
+          <a
+            href="/messages?filter=unread"
+            rel="external"
+            aria-current={unreadOnly ? 'page' : undefined}
+            className="btn btn-default"
+          >
+            {t<string>('Unread conversations')}
+          </a>
+        </nav>
+        <div className="inbox-search">
+          <input
+            type="search"
+            className="form-control"
+            aria-label={t<string>('Filter conversations')}
+            placeholder={t<string>('Filter conversations')}
+            value={searchText}
+            onChange={event => {
+              setSearchText(event.target.value);
+              setSearchLoadFailed(false);
+            }}
+          />
+          {isLoadingForSearch && (
+            <p className="inbox-search-status" role="status">
+              {t<string>('Searching older conversations…')}
+            </p>
+          )}
+          {searchLoadFailed && (
+            <p className="inbox-search-status" role="alert">
+              {t<string>('Older conversations could not be loaded.')}
+            </p>
+          )}
+        </div>
       </div>
-      {isLoadingForSearch && (
-        <p>{t<string>('Searching older conversations…')}</p>
-      )}
-      {searchLoadFailed && (
-        <p role="alert">
-          {t<string>('Older conversations could not be loaded.')}
-        </p>
-      )}
       {!isFetching &&
         !isLoadingForSearch &&
         !searchLoadFailed &&

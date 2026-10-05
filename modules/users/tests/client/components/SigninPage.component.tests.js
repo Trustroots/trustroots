@@ -26,6 +26,8 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
 describe('SigninPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    authApi.getSession.mockReset();
+    authApi.getSession.mockResolvedValue({ userId: 'user-1' });
     const {
       getCurrentRouteParams,
     } = require('@/modules/core/client/services/client-runtime');
@@ -127,6 +129,7 @@ describe('SigninPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Login' }));
 
     expect(await screen.findByText('Invalid credentials.')).toBeInTheDocument();
+    expect(authApi.getSession).not.toHaveBeenCalled();
   });
 
   it('uses the fallback sign-in error and continue label', async () => {
@@ -152,6 +155,83 @@ describe('SigninPage', () => {
     );
 
     expect(await screen.findByText('Something went wrong.')).toBeVisible();
+  });
+
+  it.each([null, 'another-user'])(
+    'explains an unconfirmed session (%s) and allows retry',
+    async userId => {
+      authApi.signin.mockResolvedValue({ _id: 'user-1', username: 'ada' });
+      authApi.getSession.mockResolvedValueOnce({ userId });
+      renderPage();
+      fireEvent.change(screen.getByLabelText('Email or username'), {
+        target: { value: 'ada' },
+      });
+      fireEvent.change(screen.getByLabelText('Password'), {
+        target: { value: 'secret-pass' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'Cookies may be blocked, or there may be a problem with the site.',
+      );
+      expect(redirectAfterSignin).not.toHaveBeenCalled();
+      expect(
+        screen.queryByText('Recover your password'),
+      ).not.toBeInTheDocument();
+      const {
+        trackEvent,
+        broadcastClientEvent,
+      } = require('@/modules/core/client/services/client-runtime');
+      expect(trackEvent).not.toHaveBeenCalled();
+      expect(broadcastClientEvent).not.toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: 'Login' })).toBeEnabled();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Login' }));
+      await waitFor(() => expect(redirectAfterSignin).toHaveBeenCalled());
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    },
+  );
+
+  it('distinguishes a failed session check from blocked cookies', async () => {
+    authApi.signin.mockResolvedValue({ _id: 'user-1', username: 'ada' });
+    authApi.getSession.mockRejectedValueOnce(new Error('offline'));
+    renderPage();
+    fireEvent.change(screen.getByLabelText('Email or username'), {
+      target: { value: 'ada' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'secret-pass' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Login' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      "we couldn't check your session. Check your connection and try again.",
+    );
+    expect(screen.getByRole('alert')).not.toHaveTextContent('Cookies');
+    expect(redirectAfterSignin).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Login' })).toBeEnabled();
+  });
+
+  it('waits for session confirmation before completing sign-in', async () => {
+    authApi.signin.mockResolvedValue({ _id: 'user-1', username: 'ada' });
+    let confirmSession;
+    authApi.getSession.mockReturnValueOnce(
+      new Promise(resolve => {
+        confirmSession = resolve;
+      }),
+    );
+    renderPage();
+    fireEvent.change(screen.getByLabelText('Email or username'), {
+      target: { value: 'ada' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'secret-pass' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Login' }));
+    await waitFor(() => expect(authApi.getSession).toHaveBeenCalled());
+    expect(redirectAfterSignin).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Wait...' })).toBeDisabled();
+    confirmSession({ userId: 'user-1' });
+    await waitFor(() => expect(redirectAfterSignin).toHaveBeenCalled());
   });
 
   it('toggles password visibility', () => {

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
+import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
 import { useTranslation } from 'react-i18next';
 
 import AboutMe from './AboutMe.component';
@@ -218,7 +219,7 @@ function ProfileDesktopActions({
       )}
       {isAdmin && (
         <li>
-          <a className="btn btn-link" href={`/admin/user?id=${profile._id}`}>
+          <a className="btn btn-link" href={getAdminUserHref(profile)}>
             <i className="icon-cog" aria-hidden="true" />
             Admin
           </a>

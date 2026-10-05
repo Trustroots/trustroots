@@ -216,16 +216,16 @@ describe('<AdminUser />', () => {
     ).not.toBeInTheDocument();
     expect(
       await screen.findByRole('heading', {
-        name: 'Alice Example',
+        name: 'alice: Alice Example',
       }),
     ).toBeInTheDocument();
     expect(usersApi.getUser).toHaveBeenCalledWith(userId);
     expect(screen.getByText('State for alice')).toBeInTheDocument();
     expect(screen.queryByText('Role management')).not.toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Add to Welcome team' }),
+      screen.getByRole('button', { name: 'Make greeter' }),
     ).toHaveAccessibleDescription(
-      'Welcome team members can view acquisition stories and analysis, and see members who blocked their account.',
+      'Greeters can view acquisition stories and analysis, and see members who blocked their account.',
     );
     expect(
       screen.queryByText('Standard Trustroots member access.'),
@@ -524,10 +524,10 @@ describe('<AdminUser />', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Related Example' }),
-    ).toHaveAttribute('href', `/admin/user?id=${otherUserId}`);
+    ).toHaveAttribute('href', `/admin/user/related`);
     expect(screen.getByRole('link', { name: 'username-lead' })).toHaveAttribute(
       'href',
-      '/admin/user?id=333333333333333333333333',
+      '/admin/user/username-lead',
     );
     expect(
       screen.getAllByRole('row', {
@@ -662,7 +662,7 @@ describe('<AdminUser />', () => {
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
     expect(
       await screen.findByRole('heading', {
-        name: 'Alice Example',
+        name: 'alice: Alice Example',
       }),
     ).toBeInTheDocument();
   });
@@ -693,7 +693,7 @@ describe('<AdminUser />', () => {
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
     expect(
       await screen.findByRole('heading', {
-        name: 'Alice Example',
+        name: 'alice: Alice Example',
       }),
     ).toBeInTheDocument();
   });
@@ -729,7 +729,7 @@ describe('<AdminUser />', () => {
 
     expect(
       await screen.findByText('alice-similar (Alice Similar)'),
-    ).toHaveAttribute('href', `/admin/user?id=${otherUserId}`);
+    ).toHaveAttribute('href', `/admin/user/alice-similar`);
     expect(screen.getByText('alice-similar')).toBeInTheDocument();
     expect(screen.getByText(/similar@example\.org/)).toBeInTheDocument();
     expect(screen.getByText(/pending@example\.org/)).toBeInTheDocument();
@@ -891,7 +891,7 @@ describe('<AdminUser />', () => {
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
     expect(
       await screen.findByRole('heading', {
-        name: 'Hot Daria Wants To Date',
+        name: '24721768s: Hot Daria Wants To Date',
       }),
     ).toBeInTheDocument();
   });
@@ -1013,7 +1013,7 @@ describe('<AdminUser />', () => {
     expect(screen.getByText('Fallback Contact')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'bob' })).toHaveAttribute(
       'href',
-      `/admin/user?id=${otherUserId}`,
+      `/admin/user/bob`,
     );
   });
 
@@ -1087,7 +1087,7 @@ describe('<AdminUser />', () => {
 
     submitMemberSearch(userId);
 
-    await screen.findByRole('heading', { name: 'Alice Example' });
+    await screen.findByRole('heading', { name: 'alice: Alice Example' });
     expect(
       screen.queryByRole('button', { name: 'Unshadowban' }),
     ).not.toBeInTheDocument();
@@ -1100,7 +1100,7 @@ describe('<AdminUser />', () => {
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledTimes(2));
   });
 
-  it.each(['add', 'remove'])('can %s Welcome team membership', async action => {
+  it.each(['add', 'remove'])('can %s greeter status', async action => {
     window.confirm = jest.fn(() => true);
     const roles = action === 'remove' ? ['user', 'welcome-team'] : ['user'];
     usersApi.getUser.mockResolvedValue(
@@ -1109,8 +1109,7 @@ describe('<AdminUser />', () => {
     usersApi.setUserRole.mockResolvedValue({});
     render(<AdminUser />);
     submitMemberSearch(userId);
-    const label =
-      action === 'remove' ? 'Remove from Welcome team' : 'Add to Welcome team';
+    const label = action === 'remove' ? 'Remove greeter' : 'Make greeter';
     fireEvent.click(await screen.findByRole('button', { name: label }));
     await waitFor(() =>
       expect(usersApi.setUserRole).toHaveBeenCalledWith(
@@ -1122,39 +1121,56 @@ describe('<AdminUser />', () => {
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledTimes(2));
   });
 
-  it('confirms unshadowbanning and refreshes the member report', async () => {
-    window.confirm = jest.fn(() => true);
-    const shadowbanned = makeReportCard({
-      profile: { _id: userId, username: 'river', roles: ['user', 'shadowban'] },
-    });
-    const restored = makeReportCard({
-      profile: { _id: userId, username: 'river', roles: ['user'] },
-    });
-    usersApi.getUser
-      .mockResolvedValueOnce(shadowbanned)
-      .mockResolvedValueOnce(restored);
-    usersApi.setUserRole.mockResolvedValueOnce({});
-    render(<AdminUser />);
-    submitMemberSearch(userId);
+  it.each([
+    ['user', 'shadowban'],
+    ['user', 'suspended', 'shadowban'],
+  ])(
+    'replaces Shadow ban with Unshadowban and refreshes the member report (%s)',
+    async (...roles) => {
+      window.confirm = jest.fn(() => true);
+      const shadowbanned = makeReportCard({
+        profile: { _id: userId, username: 'river', roles },
+      });
+      const restored = makeReportCard({
+        profile: {
+          _id: userId,
+          username: 'river',
+          roles: roles.filter(role => role !== 'shadowban'),
+        },
+      });
+      usersApi.getUser
+        .mockResolvedValueOnce(shadowbanned)
+        .mockResolvedValueOnce(restored);
+      usersApi.setUserRole.mockResolvedValueOnce({});
+      render(<AdminUser />);
+      submitMemberSearch(userId);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Unshadowban' }));
-    expect(window.confirm).toHaveBeenCalledWith(
-      'Unshadowban river? Past hidden messages will stay hidden.',
-    );
-    await waitFor(() =>
-      expect(usersApi.setUserRole).toHaveBeenCalledWith(
-        userId,
-        'shadowban',
-        'remove',
-      ),
-    );
-    await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledTimes(2));
-    await waitFor(() =>
+      const unshadowban = await screen.findByRole('button', {
+        name: 'Unshadowban',
+      });
       expect(
-        screen.queryByRole('button', { name: 'Unshadowban' }),
-      ).not.toBeInTheDocument(),
-    );
-  });
+        screen.queryByRole('button', { name: 'Shadow ban' }),
+      ).not.toBeInTheDocument();
+      expect(unshadowban.previousElementSibling).toHaveTextContent('Suspend');
+      fireEvent.click(unshadowban);
+      expect(window.confirm).toHaveBeenCalledWith(
+        'Unshadowban river? Past hidden messages will stay hidden.',
+      );
+      await waitFor(() =>
+        expect(usersApi.setUserRole).toHaveBeenCalledWith(
+          userId,
+          'shadowban',
+          'remove',
+        ),
+      );
+      await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledTimes(2));
+      await waitFor(() =>
+        expect(
+          screen.queryByRole('button', { name: 'Unshadowban' }),
+        ).not.toBeInTheDocument(),
+      );
+    },
+  );
 
   it('keeps a shadowban when its confirmation is declined', async () => {
     window.confirm = jest.fn(() => false);
@@ -1207,14 +1223,12 @@ describe('<AdminUser />', () => {
     render(<AdminUser />);
     submitMemberSearch(userId);
     fireEvent.click(
-      await screen.findByRole('button', { name: 'Add to Welcome team' }),
+      await screen.findByRole('button', { name: 'Make greeter' }),
     );
     expect(
       await screen.findByText('Could not change the role. Please try again.'),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Add to Welcome team' }),
-    ).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Make greeter' })).toBeEnabled();
   });
 
   it('does not change roles when confirmation is declined', async () => {
@@ -1235,7 +1249,7 @@ describe('<AdminUser />', () => {
 
     submitMemberSearch(userId);
 
-    await screen.findByRole('heading', { name: 'Alice Example' });
+    await screen.findByRole('heading', { name: 'alice: Alice Example' });
     fireEvent.click(screen.getByRole('button', { name: 'Suspend' }));
 
     expect(usersApi.setUserRole).not.toHaveBeenCalled();
@@ -1246,8 +1260,8 @@ describe('<AdminUser />', () => {
     ['Shadow ban', ['user']],
     ['Make volunteer', ['user']],
     ['Make volunteer alumni', ['user']],
-    ['Add to Welcome team', ['user']],
-    ['Remove from Welcome team', ['user', 'welcome-team']],
+    ['Make greeter', ['user']],
+    ['Remove greeter', ['user', 'welcome-team']],
     ['Unshadowban', ['user', 'shadowban']],
   ])(
     'does not apply %s when its confirmation is declined',

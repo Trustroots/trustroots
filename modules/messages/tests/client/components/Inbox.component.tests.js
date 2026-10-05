@@ -240,6 +240,30 @@ describe('<Inbox>', () => {
     });
   });
 
+  it('announces when older conversations are being searched', async () => {
+    const finishOlderPage = jest.fn();
+    api.fetchThreads.mockImplementation(({ page }) =>
+      page === 2
+        ? new Promise(resolve => finishOlderPage.mockImplementation(resolve))
+        : Promise.resolve({ threads, nextParams: { page: 2 } }),
+    );
+    const { findAllByRole, findByRole, getByRole } = render(
+      <Inbox user={me} />,
+    );
+    await findAllByRole('listitem');
+
+    fireEvent.change(getByRole('searchbox', { name: 'Filter conversations' }), {
+      target: { value: 'older' },
+    });
+
+    expect(await findByRole('status')).toHaveTextContent(
+      'Searching older conversations…',
+    );
+    await act(async () => {
+      finishOlderPage({ threads: [] });
+    });
+  });
+
   it('reports a failure while loading older conversations for search', async () => {
     api.fetchThreads.mockImplementation(({ page }) =>
       page === 2

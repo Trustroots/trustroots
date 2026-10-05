@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
 import { useTranslation } from 'react-i18next';
 import RemoveContact from '@/modules/contacts/client/components/RemoveContactContainer';
 import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
@@ -104,7 +105,7 @@ export default function TopNavigationSmall({
     links.push({
       id: 'admin',
       label: 'Admin',
-      link: `/admin/user?id=${userId}`,
+      link: getAdminUserHref({ _id: userId, username }),
     });
   }
 

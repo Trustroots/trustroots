@@ -5,9 +5,9 @@ import '@testing-library/jest-dom';
 import UserState from '@/modules/admin/client/components/UserState.component';
 
 describe('<UserState />', () => {
-  it('displays the Welcome team label', () => {
+  it('displays the Greeters label', () => {
     render(<UserState user={{ roles: ['welcome-team'], public: true }} />);
-    expect(screen.getByText('Welcome team')).toBeInTheDocument();
+    expect(screen.getByText('Greeter')).toBeInTheDocument();
   });
 
   it('renders support-relevant profile state labels', () => {

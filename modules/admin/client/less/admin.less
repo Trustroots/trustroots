@@ -270,8 +270,8 @@ td:hover .admin-hidden-until-hover {
 
 .admin-user-report-header {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   gap: 12px;
   margin-bottom: 14px;
 
@@ -283,12 +283,16 @@ td:hover .admin-hidden-until-hover {
 .admin-user-actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 4px;
+  justify-content: flex-start;
+  gap: 8px;
 
   .btn {
     margin-bottom: 4px;
   }
+}
+
+.admin-user-roles .panel-body {
+  padding: 0;
 }
 
 .admin-user-page h4 {

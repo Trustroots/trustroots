@@ -46,14 +46,11 @@ describe('<UserLink />', () => {
 
     expect(screen.getByText('alice (Alice Example)')).toHaveAttribute(
       'href',
-      '/admin/user?id=user-id-1',
+      '/admin/user/alice',
     );
 
     rerender(<UserLink user={{ _id: 'user-id-2', username: 'bob' }} />);
-    expect(screen.getByText('bob')).toHaveAttribute(
-      'href',
-      '/admin/user?id=user-id-2',
-    );
+    expect(screen.getByText('bob')).toHaveAttribute('href', '/admin/user/bob');
 
     rerender(<UserLink user={{ _id: 'user-id-3' }} />);
     expect(screen.getByText('Unknown member')).toHaveAttribute(

@@ -73,6 +73,7 @@ export default function ForgotPasswordPage() {
                 <label htmlFor="username">Email or username</label>
                 <input
                   type="text"
+                  autoFocus
                   required
                   id="username"
                   name="username"

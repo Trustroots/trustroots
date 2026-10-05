@@ -17,13 +17,13 @@ test.describe('admin moderation inspection flows', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
   });
 
-  test('staff blockers are grouped for admins and limited for Welcome team members', async ({
+  test('staff blockers are grouped for admins and limited for Greeters', async ({
     page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.staff-blockers', [
-      'Admins can inspect blockers of any administrator or Welcome team member.',
-      'Welcome team members can inspect only blockers of their own account.',
+      'Admins can inspect blockers of any administrator or Greeter.',
+      'Greeters can inspect only blockers of their own account.',
       'Regular members cannot access staff blocker information.',
     ]);
     const administrator = createUser();
@@ -234,7 +234,7 @@ test.describe('admin moderation inspection flows', () => {
 
     await expect(
       page.getByRole('heading', {
-        name: `${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName}`,
+        name: `${SEEDED_SHADOW.username}: ${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName}`,
       }),
     ).toBeVisible();
     await expect(page.getByText('shadowban').first()).toBeVisible();
@@ -254,8 +254,8 @@ test.describe('admin moderation inspection flows', () => {
     );
     await shadowRole.blur();
     await expect(
-      rolePanel.getByRole('button', {
-        name: 'Add to Welcome team',
+      page.locator('.admin-user-actions').getByRole('button', {
+        name: 'Make greeter',
         exact: true,
       }),
     ).toBeEnabled();
@@ -266,7 +266,7 @@ test.describe('admin moderation inspection flows', () => {
     await expect(page.getByText('Acquisition story').first()).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Alice Contact' }),
-    ).toHaveAttribute('href', '/admin/user?id=665000000000000000000006');
+    ).toHaveAttribute('href', '/admin/user/e2e-seeded-alice');
     await expect(
       page.getByText('Acquisition story', { exact: true }).last(),
     ).toBeVisible();

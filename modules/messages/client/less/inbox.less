@@ -10,6 +10,53 @@
   margin: 0 auto 30px auto;
 }
 
+.inbox-controls {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.inbox-view-filters {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+
+  .btn {
+    white-space: nowrap;
+  }
+}
+
+.inbox-search {
+  flex: 1 1 320px;
+  max-width: 420px;
+  margin-left: auto;
+}
+
+.inbox-search-status {
+  margin: 6px 0 0;
+}
+
+@media (max-width: @screen-xs-max) {
+  .inbox-controls {
+    display: block;
+  }
+
+  .inbox-view-filters {
+    display: flex;
+    margin-bottom: 10px;
+
+    .btn {
+      flex: 1 1 50%;
+      white-space: normal;
+    }
+  }
+
+  .inbox-search {
+    max-width: none;
+  }
+}
+
 .threadlist-thread {
   &.threadlist-thread-unread {
     font-weight: bold;

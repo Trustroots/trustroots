@@ -25,9 +25,10 @@ describe('<AdminHeader />', () => {
     user => {
       window.user = user;
       render(<AdminHeader />);
-      expect(
-        screen.getByRole('link', { name: 'Welcome team' }),
-      ).toHaveAttribute('href', '/admin/acquisition-stories');
+      expect(screen.getByRole('link', { name: 'Greeters' })).toHaveAttribute(
+        'href',
+        '/admin/acquisition-stories',
+      );
       expect(screen.getAllByRole('link')).toHaveLength(
         user?.roles?.includes('welcome-team') ? 4 : 3,
       );
@@ -45,7 +46,7 @@ describe('<AdminHeader />', () => {
     },
   );
 
-  it('shows the blocked-member support page to Welcome team members', () => {
+  it('shows the blocked-member support page to Greeters', () => {
     window.user = { roles: ['welcome-team'] };
     render(<AdminHeader />);
 
