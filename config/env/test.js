@@ -40,7 +40,6 @@ module.exports = {
       identityLimit: 10000,
     },
   },
-  },
   featureFlags: {
     reference: true,
   },
