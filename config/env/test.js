@@ -17,6 +17,29 @@ module.exports = {
     subject: 'mailto:push-test@example.org',
     allowedHosts: ['ntfy.sh'],
   },
+  targetedRequestLimits: {
+    signin: { windowMs: 60 * 60 * 1000, ipLimit: 10000, identityLimit: 10000 },
+    forgotPassword: {
+      windowMs: 60 * 60 * 1000,
+      ipLimit: 10000,
+      identityLimit: 10000,
+    },
+    resetPassword: {
+      windowMs: 60 * 60 * 1000,
+      ipLimit: 10000,
+      identityLimit: 10000,
+    },
+    resendConfirmation: {
+      windowMs: 60 * 60 * 1000,
+      ipLimit: 10000,
+      identityLimit: 10000,
+    },
+    avatarUpload: {
+      windowMs: 60 * 60 * 1000,
+      ipLimit: 10000,
+      identityLimit: 10000,
+    },
+  },
   featureFlags: {
     reference: true,
   },
