@@ -1,9 +1,4 @@
-const {
-  annotateFeature,
-  test,
-  expect,
-  useElementScreenshot,
-} = require('../../support/fixtures');
+const { annotateFeature, test, expect } = require('../../support/fixtures');
 const { ObjectId } = require('mongodb');
 
 const {
