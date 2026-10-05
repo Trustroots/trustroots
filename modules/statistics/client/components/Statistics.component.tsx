@@ -7,6 +7,7 @@ import styled from 'styled-components';
 // Internal dependencies
 import { get, type StatisticsResponse } from '../api/statistics.api';
 import { getSuggestion } from '@/modules/experiences/client/api/experiences.api';
+import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
 import { getNetworkName } from '@/modules/users/client/utils/networks';
 import BoardImplementation from '@/modules/core/client/components/Board';
 import Stat from './Stat';
@@ -226,7 +227,9 @@ export default function Statistics({
                             <>
                               {t('Help make this picture more complete:')}{' '}
                               <a
-                                href={`/profile/${experienceSuggestion.username}/experiences/new`}
+                                href={getProfileExperiencesPath(
+                                  experienceSuggestion.username,
+                                )}
                               >
                                 {t(
                                   'Why not write some nice words about {{contactName}}?',

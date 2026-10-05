@@ -637,43 +637,15 @@ internal fun MenuScreen(
         MenuLink("Account", Icons.Default.Settings, openAccount)
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Text(
-            "Info and support",
+            SharedNavigationLinks.INFO_AND_SUPPORT_HEADING,
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
         )
-        MenuLink("About", Icons.Default.Info) {
-            openBrowser(BrowserRoute("About", "https://www.trustroots.org/about"))
-        }
-        MenuLink("Blog", Icons.Default.Info) {
-            openBrowser(BrowserRoute("Blog", "https://ideas.trustroots.org/"))
-        }
-        MenuLink("Contact and support", Icons.AutoMirrored.Filled.HelpOutline) {
-            openBrowser(BrowserRoute("Contact and support", "https://www.trustroots.org/support"))
-        }
-        MenuLink("FAQ", Icons.AutoMirrored.Filled.HelpOutline) {
-            openBrowser(BrowserRoute("FAQ", "https://www.trustroots.org/faq"))
-        }
-        MenuLink("Foundation", Icons.Default.Info) {
-            openBrowser(BrowserRoute("Foundation", "https://www.trustroots.org/foundation"))
-        }
-        MenuLink("Media", Icons.Default.Info) {
-            openBrowser(BrowserRoute("Media", "https://www.trustroots.org/media"))
-        }
-        MenuLink("Wiki", Icons.Default.Info) {
-            openBrowser(BrowserRoute("Wiki", "https://wiki.trustroots.org/"))
-        }
-        MenuLink("Privacy", Icons.Default.Info) {
-            openBrowser(BrowserRoute("Privacy", "https://www.trustroots.org/privacy"))
-        }
-        MenuLink("Rules", Icons.Default.Info) {
-            openBrowser(BrowserRoute("Rules", "https://www.trustroots.org/rules"))
-        }
-        MenuLink("Safety", Icons.Default.Info) {
-            openBrowser(BrowserRoute("Safety", "https://www.trustroots.org/safety"))
-        }
-        MenuLink("Statistics", Icons.Default.Info) {
-            openBrowser(BrowserRoute("Statistics", "https://www.trustroots.org/statistics"))
+        SharedNavigationLinks.INFO_AND_SUPPORT.forEach { link ->
+            MenuLink(link.label, infoAndSupportIcon(link.id)) {
+                openBrowser(BrowserRoute(link.label, link.url))
+            }
         }
         Spacer(Modifier.height(24.dp))
         Column(
@@ -703,6 +675,13 @@ internal fun MenuScreen(
         }
     }
 }
+
+private fun infoAndSupportIcon(id: String) =
+    if (id == "contact" || id == "faq") {
+        Icons.AutoMirrored.Filled.HelpOutline
+    } else {
+        Icons.Default.Info
+    }
 
 @Composable
 private fun MenuLink(

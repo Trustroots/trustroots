@@ -210,9 +210,7 @@ export const getMessages = (req, res) => {
     })
     .exec((err, messages) => {
       if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       }
 
       ReferenceThread.find({
@@ -234,9 +232,7 @@ export const getMessages = (req, res) => {
         })
         .exec((referenceThreadErr, referenceThreads) => {
           if (referenceThreadErr) {
-            return res.status(400).send({
-              message: errorService.getErrorMessage(referenceThreadErr),
-            });
+            return errorService.sendBadRequest(res, referenceThreadErr);
           }
 
           return res.send({

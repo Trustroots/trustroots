@@ -1,20 +1,15 @@
-import { createRequire } from 'module';
 import _ from 'lodash';
 import errorService from '../../../core/server/services/error.server.service.js';
 import textService from '../../../core/server/services/text.server.service.js';
 import emailService from '../../../core/server/services/email.server.service.js';
 import userRolesService from '../../../users/server/services/user-roles.server.service.js';
+import userMiniService from '../../../users/server/services/user-mini.server.service.js';
 import sanitizeHtml from 'sanitize-html';
 import htmlToText from 'html-to-text';
 import async from 'async';
 import mongoose from 'mongoose';
 
 const service = {};
-const require = createRequire(import.meta.url);
-
-function getUserProfile() {
-  return require('../../../users/server/controllers/users.profile.server.controller.js');
-}
 
 /**
  * Module dependencies.
@@ -41,11 +36,8 @@ service.add = function (req, res) {
       // Validate
       function (done) {
         // Not a valid ObjectId
-        if (!mongoose.Types.ObjectId.isValid(req.body.friendUserId)) {
-          return res.status(400).json({
-            message: errorService.getErrorMessageByKey('invalid-id'),
-          });
-        }
+        if (!mongoose.Types.ObjectId.isValid(req.body.friendUserId))
+          return errorService.sendInvalidId(res);
 
         // Check if contact already exists
         Contact.findOne({
@@ -151,14 +143,10 @@ service.add = function (req, res) {
       if (err) {
         if (contact) {
           contact.remove(function () {
-            return res.status(400).send({
-              message: errorService.getErrorMessage(err),
-            });
+            return errorService.sendBadRequest(res, err);
           });
         } else {
-          return res.status(400).send({
-            message: errorService.getErrorMessage(err),
-          });
+          return errorService.sendBadRequest(res, err);
         }
       }
     },
@@ -173,9 +161,7 @@ service.remove = function (req, res) {
 
   contact.remove(function (err) {
     if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err),
-      });
+      return errorService.sendBadRequest(res, err);
     } else {
       res.status(200).send({ message: 'Contact removed.' });
     }
@@ -204,9 +190,7 @@ service.removeAllByUserId = function (userId, callback) {
 service.confirm = function (req, res) {
   // Only receiving user can confirm user connections
   if (!req.contact || !req.contact.userTo._id.equals(req.user._id.valueOf())) {
-    return res.status(403).json({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   // Ta'da!
@@ -215,9 +199,7 @@ service.confirm = function (req, res) {
 
   contact.save(function (err) {
     if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err),
-      });
+      return errorService.sendBadRequest(res, err);
     } else {
       res.json(contact);
     }
@@ -245,17 +227,12 @@ service.get = function (req, res) {
  */
 service.contactByUserId = function (req, res, next, userId) {
   // Not a valid ObjectId
-  if (!mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).json({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
-  }
+  if (!mongoose.Types.ObjectId.isValid(userId))
+    return errorService.sendInvalidId(res);
 
   // User's own profile, don't bother hitting the DB
   if (req.user && req.user._id === userId) {
-    return res.status(400).json({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
+    return errorService.sendInvalidId(res);
   }
 
   if (req.user && req.user.public) {
@@ -271,17 +248,15 @@ service.contactByUserId = function (req, res, next, userId) {
         },
       ],
     })
-      .populate({
-        path: 'userTo userFrom',
-        select: getUserProfile().userMiniProfileFields,
-        match: { roles: { $nin: userRolesService.restrictedMessagingRoles } },
-      })
+      .populate(
+        userMiniService.miniUserPopulate('userTo userFrom', {
+          excludeRestrictedRoles: true,
+        }),
+      )
       .exec(function (err, contact) {
         if (err) return next(err);
         if (!contact || !contact.userFrom || !contact.userTo) {
-          return res.status(404).json({
-            message: errorService.getErrorMessageByKey('not-found'),
-          });
+          return errorService.sendNotFound(res);
         }
 
         req.contact = contact;
@@ -297,19 +272,16 @@ service.contactByUserId = function (req, res, next, userId) {
  */
 service.contactById = function (req, res, next, contactId) {
   // Not a valid ObjectId
-  if (!mongoose.Types.ObjectId.isValid(contactId)) {
-    return res.status(400).json({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
-  }
+  if (!mongoose.Types.ObjectId.isValid(contactId))
+    return errorService.sendInvalidId(res);
 
   if (req.user && req.user.public) {
     Contact.findById(contactId)
-      .populate({
-        path: 'userTo userFrom',
-        select: getUserProfile().userMiniProfileFields,
-        match: { roles: { $nin: userRolesService.restrictedMessagingRoles } },
-      })
+      .populate(
+        userMiniService.miniUserPopulate('userTo userFrom', {
+          excludeRestrictedRoles: true,
+        }),
+      )
       .exec(function (err, contact) {
         if (err) return next(err);
 
@@ -322,9 +294,7 @@ service.contactById = function (req, res, next, contactId) {
           (!contact.userFrom._id.equals(req.user._id.valueOf()) &&
             !contact.userTo._id.equals(req.user._id.valueOf()))
         ) {
-          return res.status(404).json({
-            message: errorService.getErrorMessageByKey('not-found'),
-          });
+          return errorService.sendNotFound(res);
         }
 
         req.contact = contact;
@@ -409,11 +379,8 @@ service.filterByCommon = function (req, res, next) {
  */
 service.contactListByUser = function (req, res, next, listUserId) {
   // Not a valid ObjectId
-  if (!mongoose.Types.ObjectId.isValid(listUserId)) {
-    return res.status(400).json({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
-  }
+  if (!mongoose.Types.ObjectId.isValid(listUserId))
+    return errorService.sendInvalidId(res);
 
   // Turn `listUserId` String into a Mongo ObjectId
   listUserId = new mongoose.Types.ObjectId(listUserId);
@@ -457,25 +424,14 @@ service.contactListByUser = function (req, res, next, listUserId) {
     },
 
     // Populate user field: receives whole document of user
-    {
-      $lookup: {
-        from: 'users', // collection to join
-        localField: 'user',
-        foreignField: '_id', // field(s) from the documents of the "from" collection
-        as: 'user', // output array field
-      },
-    },
-    // Because above `$lookup`s return and array with one user
-    // `[{userObject}]`, we have to unwind it back to `{userObject}`
-    { $unwind: '$user' },
-
+    // Because `$lookup`s return an array with one user `[{userObject}]`,
+    // the helper unwinds it back to `{userObject}`
     // Existing relationship records may outlive a moderation action. Keep
     // restricted members out of all user-facing contact lists.
-    {
-      $match: {
-        'user.roles': { $nin: userRolesService.restrictedMessagingRoles },
-      },
-    },
+    ...userMiniService.visibleUserLookupStages({
+      localField: 'user',
+      as: 'user',
+    }),
 
     // Another round of formating results as we now have `user` field populated
     {
@@ -488,23 +444,12 @@ service.contactListByUser = function (req, res, next, listUserId) {
         userTo: '$userTo',
         // Project here fields for the user which isn't the user who's list
         // we requested. I.e. "the other party"
-        user: {
-          // These should be fields listed at `userProfile.userMiniProfileFields`
-          _id: '$user._id',
-          updated: '$user.updated',
-          displayName: '$user.displayName',
-          username: '$user.username',
-          avatarSource: '$user.avatarSource',
-          avatarUploaded: '$user.avatarUploaded',
+        // Projection is derived from the shared mini profile service,
+        // extended with contact-specific location fields.
+        user: userMiniService.userMiniProjection('$user', {
           locationFrom: '$user.locationFrom',
           locationLiving: '$user.locationLiving',
-          emailHash: '$user.emailHash',
-          additionalProvidersData: {
-            facebook: {
-              id: '$user.additionalProvidersData.facebook.id',
-            },
-          },
-        },
+        }),
       },
     },
   ]).exec(function (err, contacts) {

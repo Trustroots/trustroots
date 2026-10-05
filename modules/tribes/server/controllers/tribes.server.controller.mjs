@@ -1,5 +1,5 @@
 import errorService from '../../../core/server/services/error.server.service.js';
-import paginate from 'express-paginate';
+import paginationService from '../../../core/server/services/pagination.server.service.js';
 import mongoose from 'mongoose';
 
 const service = {};
@@ -25,6 +25,23 @@ service.tribeFields = [
   'created',
 ].join(' ');
 
+/**
+ * Populate options for the tribe of a member document
+ * @param select String Fields to select, defaults to `tribeFields`
+ * @return Object Mongoose populate options
+ */
+service.tribePopulateOptions = function (select = service.tribeFields) {
+  return {
+    path: 'member.tribe',
+    select,
+    model: 'Tribe',
+    // Not possible at the moment due bug in Mongoose
+    // http://mongoosejs.com/docs/faq.html#populate_sort_order
+    // https://github.com/Automattic/mongoose/issues/2202
+    // options: { sort: { count: -1 } }
+  };
+};
+
 function visibleTribesQuery(req) {
   const query = { public: true };
 
@@ -34,17 +51,6 @@ function visibleTribesQuery(req) {
 
   return query;
 }
-
-/**
- * Constructs link headers for pagination
- */
-const setLinkHeader = function (req, res, pageCount) {
-  if (paginate.hasNextPages(req)(pageCount)) {
-    const nextPage = { page: req.query.page + 1 };
-    const linkHead = `<${res.locals.paginate.href(nextPage)}>; rel="next"`;
-    res.set('Link', linkHead);
-  }
-};
 
 /**
  * List all tribes
@@ -71,19 +77,15 @@ service.listTribes = function (req, res) {
     .skip((page - 1) * limit)
     .exec(function (err, docs) {
       if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       }
       Tribe.countDocuments(query, function (countErr, total) {
         if (countErr) {
-          return res.status(400).send({
-            message: errorService.getErrorMessage(countErr),
-          });
+          return errorService.sendBadRequest(res, countErr);
         }
         const pages = Math.ceil(total / limit);
         if (pages > page) {
-          setLinkHeader(req, res, pages);
+          paginationService.setLinkHeader(req, res, pages, { relative: true });
         }
         res.json(docs);
       });
@@ -102,9 +104,7 @@ service.getTribe = function (req, res) {
  */
 service.tribeBySlug = function (req, res, next, slug) {
   if (!req.user && MEMBER_ONLY_TRIBE_SLUGS.includes(slug)) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   Tribe.findOne(
@@ -115,9 +115,7 @@ service.tribeBySlug = function (req, res, next, slug) {
     service.tribeFields,
   ).exec(function (err, tribe) {
     if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err),
-      });
+      return errorService.sendBadRequest(res, err);
     } else {
       req.tribe = tribe;
       return next();
@@ -149,12 +147,14 @@ const getTribe = service.getTribe;
 const listTribes = service.listTribes;
 const tribeBySlug = service.tribeBySlug;
 const tribeFields = service.tribeFields;
+const tribePopulateOptions = service.tribePopulateOptions;
 const updateCount = service.updateCount;
 export {
   getTribe as getTribe,
   listTribes as listTribes,
   tribeBySlug as tribeBySlug,
   tribeFields as tribeFields,
+  tribePopulateOptions as tribePopulateOptions,
   updateCount as updateCount,
 };
 export default service;

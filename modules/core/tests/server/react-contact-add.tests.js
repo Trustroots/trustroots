@@ -2,7 +2,6 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const express = require('../../../../config/lib/express');
 const utils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User');
 require('should');
 
 describe('React contact creation route responses', function () {
@@ -30,14 +29,14 @@ describe('React contact creation route responses', function () {
       username: 'sampleaddmember',
       password: 'SamplePassword123',
     };
-    await new User({
-      ...credentials,
-      firstName: 'Sample',
-      lastName: 'Member',
-      email: 'sample-add@example.test',
-      provider: 'local',
-      public: true,
-    }).save();
+    await utils
+      .createTestUser({
+        ...credentials,
+        firstName: 'Sample',
+        lastName: 'Member',
+        email: 'sample-add@example.test',
+      })
+      .save();
     await utils.signIn(credentials, agent);
     for (const path of [
       '/contact-add/665000000000000000000090',

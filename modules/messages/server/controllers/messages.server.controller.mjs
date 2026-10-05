@@ -1,8 +1,6 @@
-import { createRequire } from 'module';
 import _ from 'lodash';
 import async from 'async';
 import sanitizeHtml from 'sanitize-html';
-import paginate from 'express-paginate';
 import moment from 'moment';
 import mongoose from 'mongoose';
 import config from '../../../../config/config.js';
@@ -14,13 +12,10 @@ import textService from '../../../core/server/services/text.server.service.js';
 import spamService from '../../../core/server/services/spam.server.service.js';
 import userRolesService from '../../../users/server/services/user-roles.server.service.js';
 import statService from '../../../stats/server/services/stats.server.service.js';
+import paginationService from '../../../core/server/services/pagination.server.service.js';
+import userMiniService from '../../../users/server/services/user-mini.server.service.js';
 
 const service = {};
-const require = createRequire(import.meta.url);
-
-function getUserProfile() {
-  return require('../../../users/server/controllers/users.profile.server.controller.js');
-}
 
 /**
  * Module dependencies.
@@ -188,29 +183,12 @@ function sanitizeThreads(threads, authenticatedUserId, callback) {
 }
 
 /**
- * Constructs link headers for pagination
- */
-const setLinkHeader = function (req, res, pageCount) {
-  if (paginate.hasNextPages(req)(pageCount)) {
-    const url = (config.https ? 'https' : 'http') + '://' + config.domain;
-    const nextPage =
-      url + res.locals.paginate.href({ page: req.query.page + 1 });
-    res.links({
-      next: nextPage,
-      // last: ''
-    });
-  }
-};
-
-/**
  * List of threads aka inbox
  */
 service.inbox = function (req, res) {
   // No user
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   Thread.paginate(
@@ -233,21 +211,15 @@ service.inbox = function (req, res) {
           path: 'message',
           select: 'content',
         },
-        {
-          path: 'userFrom userTo',
-          select: getUserProfile().userMiniProfileFields,
-          model: 'User',
-        },
+        userMiniService.miniUserPopulate('userFrom userTo'),
       ],
     },
     function (err, data) {
       if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       } else {
         // Pass pagination data to construct link header
-        setLinkHeader(req, res, data.pages);
+        paginationService.setLinkHeader(req, res, data.pages);
 
         // Sanitize and return threads
         sanitizeThreads(data.docs, req.user._id, function (err, threads) {
@@ -294,9 +266,7 @@ async function shouldThottleUser(userId) {
 service.send = async function (req, res) {
   // No user
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   const senderIsRestricted = userRolesService.hasRestrictedMessagingRole(
@@ -312,9 +282,7 @@ service.send = async function (req, res) {
 
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
+    return errorService.sendInvalidId(res);
   }
 
   // Don't allow sending messages to myself
@@ -581,16 +549,7 @@ service.send = async function (req, res) {
       // We'll need some info about related users, populate some fields
       function (message, done) {
         message.populate(
-          [
-            {
-              path: 'userFrom',
-              select: getUserProfile().userMiniProfileFields,
-            },
-            {
-              path: 'userTo',
-              select: getUserProfile().userMiniProfileFields,
-            },
-          ],
+          [userMiniService.miniUserPopulate('userFrom userTo')],
           function (err, message) {
             if (err) {
               return done(err);
@@ -613,9 +572,7 @@ service.send = async function (req, res) {
       /* istanbul ignore else */
       if (err) {
         log('error', 'Message failed to send. #sa239', err);
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       }
     },
   );
@@ -637,16 +594,12 @@ service.thread = function (req, res) {
  */
 service.threadByUser = function (req, res, next, userId) {
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   // Not user id or its not a valid ObjectId
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
+    return errorService.sendInvalidId(res);
   }
 
   // TODO do we want to allow to see the messages from suspended or banned users
@@ -706,10 +659,7 @@ service.threadByUser = function (req, res, next, userId) {
             limit: req.query.limit || 20,
             sort: '-created',
             select: messageFields,
-            populate: {
-              path: 'userFrom userTo',
-              select: getUserProfile().userMiniProfileFields,
-            },
+            populate: userMiniService.miniUserPopulate('userFrom userTo'),
           },
           function (err, data) {
             if (err) {
@@ -722,7 +672,7 @@ service.threadByUser = function (req, res, next, userId) {
 
             // Pass pagination data to construct link header
             if (data.docs.length > 0) {
-              setLinkHeader(req, res, data.pages);
+              paginationService.setLinkHeader(req, res, data.pages);
             }
 
             done(err, data.docs);
@@ -764,9 +714,7 @@ service.threadByUser = function (req, res, next, userId) {
     ],
     function (err) {
       if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       }
 
       next();
@@ -780,9 +728,7 @@ service.threadByUser = function (req, res, next, userId) {
  */
 service.markRead = function (req, res) {
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   const messages = [];
@@ -978,7 +924,7 @@ service.sync = function (req, res) {
             $in: userIds,
           },
         })
-          .select(getUserProfile().userMiniProfileFields)
+          .select(userMiniService.userMiniProfileFields)
           .exec(function (err, users) {
             data.users = users;
             done(err);

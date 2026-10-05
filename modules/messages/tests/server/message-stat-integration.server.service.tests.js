@@ -7,7 +7,6 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 const messageStatService = require('../../server/services/message-stat.server.service');
 const messageController = require('../../server/controllers/messages.server.controller');
 
-const User = mongoose.model('User');
 const EventEmitter = require('events');
 const Message = mongoose.model('Message');
 
@@ -37,29 +36,17 @@ describe('Integration of the MessageStat service', function () {
   let user2;
 
   beforeEach(function (done) {
-    user1 = new User({
-      firstName: 'Full',
-      lastName: 'Name',
-      displayName: 'Full Name',
+    user1 = utils.createTestUser({
       email: 'user1@test.com',
       username: 'username1',
       password: 'password123',
-      provider: 'local',
-      roles: ['user'],
-      public: true,
       description: _.repeat('.', config.profileMinimumLength),
     });
 
-    user2 = new User({
-      firstName: 'Full',
-      lastName: 'Name',
-      displayName: 'Full Name',
+    user2 = utils.createTestUser({
       email: 'user2@test.com',
       username: 'username2',
       password: 'password123',
-      provider: 'local',
-      roles: ['user'],
-      public: true,
     });
 
     // save those users to mongoDB

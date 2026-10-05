@@ -177,9 +177,7 @@ function isValidOfferType(type) {
  */
 service.create = function (req, res) {
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   // Validate type
@@ -242,9 +240,7 @@ service.update = function (req, res) {
       function (done) {
         // User can modify only their own offers
         if (!req.user || !req.offer.user._id.equals(req.user._id)) {
-          return res.status(403).send({
-            message: errorService.getErrorMessageByKey('forbidden'),
-          });
+          return errorService.sendForbidden(res);
         }
 
         // Missing required fields
@@ -310,9 +306,7 @@ service.update = function (req, res) {
     ],
     function (err) {
       if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       }
     },
   );
@@ -324,9 +318,7 @@ service.update = function (req, res) {
 service.delete = function (req, res) {
   // User can remove only their own offers
   if (!req.user || !req.offer.user._id.equals(req.user._id)) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   Offer.findOneAndRemove(
@@ -336,9 +328,7 @@ service.delete = function (req, res) {
     },
     function (err) {
       if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       }
 
       res.json({
@@ -353,9 +343,7 @@ service.delete = function (req, res) {
  */
 service.list = function (req, res) {
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   // Validate required bounding box query parameters
@@ -647,9 +635,7 @@ service.list = function (req, res) {
         log('error', 'Querying for offers caused an error. #g28fb1', {
           error: err,
         });
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       },
     );
 };
@@ -670,9 +656,7 @@ service.getOffer = function (req, res) {
       function (done) {
         // Don't proceed if offer doesn't have user
         if (!req.offer || !req.offer.user || !req.offer.location) {
-          return res.status(404).send({
-            message: errorService.getErrorMessageByKey('not-found'),
-          });
+          return errorService.sendNotFound(res);
         }
 
         done(null, req.offer);
@@ -687,15 +671,7 @@ service.getOffer = function (req, res) {
 
         User.populate(
           offer.user,
-          {
-            path: 'member.tribe',
-            select: tribes.tribeFields,
-            model: 'Tribe',
-            // Not possible at the moment due bug in Mongoose
-            // http://mongoosejs.com/docs/faq.html#populate_sort_order
-            // https://github.com/Automattic/mongoose/issues/2202
-            // options: { sort: { count: -1 } }
-          },
+          tribes.tribePopulateOptions(),
           function (err, user) {
             // Overwrite old `offer.user` with new `user` object
             // containing populated `member.tribe` to `offer`
@@ -730,16 +706,12 @@ service.getOffer = function (req, res) {
 service.offersByUserId = function (req, res, next, userId) {
   // Authenticated user required
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   // Validate userId is valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
+    return errorService.sendInvalidId(res);
   }
 
   // Database query
@@ -793,9 +765,7 @@ service.offersByUserId = function (req, res, next, userId) {
     }
 
     if (!offers || offers.length === 0) {
-      return res.status(404).send({
-        message: errorService.getErrorMessageByKey('not-found'),
-      });
+      return errorService.sendNotFound(res);
     }
 
     // Sanitize offers
@@ -811,16 +781,12 @@ service.offersByUserId = function (req, res, next, userId) {
 service.offerById = function (req, res, next, offerId) {
   // Require user
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(offerId)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
+    return errorService.sendInvalidId(res);
   }
 
   async.waterfall(
@@ -838,9 +804,7 @@ service.offerById = function (req, res, next, offerId) {
             }
 
             if (err || !offer) {
-              return res.status(404).send({
-                message: errorService.getErrorMessageByKey('not-found'),
-              });
+              return errorService.sendNotFound(res);
             }
 
             done(null, offer);

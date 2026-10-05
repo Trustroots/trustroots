@@ -22,11 +22,8 @@ export const addNote = async (req, res) => {
   }
 
   // Check that the user id is provided
-  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
-  }
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId))
+    return errorService.sendInvalidId(res);
 
   try {
     const adminNoteItem = new AdminNote({
@@ -40,9 +37,7 @@ export const addNote = async (req, res) => {
   } catch (err) {
     /* istanbul ignore else */
     if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err),
-      });
+      return errorService.sendBadRequest(res, err);
     }
   }
 };
@@ -54,11 +49,8 @@ export const getNotes = async (req, res) => {
   const userId = _.get(req, ['query', 'userId']);
 
   // Check that the user id is provided
-  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
-  }
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId))
+    return errorService.sendInvalidId(res);
 
   AdminNote.find({ user: userId })
     .sort('-date')
@@ -69,9 +61,7 @@ export const getNotes = async (req, res) => {
     })
     .exec((err, items) => {
       if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       }
       res.send(items || []);
     });

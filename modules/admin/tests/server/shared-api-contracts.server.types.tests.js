@@ -1,31 +1,22 @@
 const assert = require('assert/strict');
+const { execFileSync } = require('child_process');
 const path = require('path');
-const ts = require('typescript');
 
 describe('Shared API contract compiler regressions', function () {
   this.timeout(30000);
   const root = path.resolve(__dirname, '../../../..');
-  const configPath = path.join(root, 'tsconfig.contracts.json');
-  const config = ts.readConfigFile(configPath, ts.sys.readFile);
-  const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root);
-
   function diagnostics(file, before, after) {
-    const host = ts.createCompilerHost(parsed.options);
-    const original = host.readFile.bind(host);
-    const target = file && path.join(root, file);
-    host.readFile = filename => {
-      const source = original(filename);
-      if (filename !== target) return source;
-      assert(
-        source.includes(before),
-        'The compiler mutation must reach real server code.',
-      );
-      return source.replace(before, after);
-    };
-    const program = ts.createProgram(parsed.fileNames, parsed.options, host);
-    return ts
-      .getPreEmitDiagnostics(program)
-      .filter(item => !target || item.file?.fileName === target);
+    // Release each compiler's memory before the next case and avoid inheriting
+    // coverage hooks: these checks read source code rather than execute it.
+    const output = execFileSync(
+      process.execPath,
+      [
+        path.join(__dirname, '../fixtures/shared-api-contract-diagnostics.js'),
+        JSON.stringify({ root, file, before, after }),
+      ],
+      { env: { ...process.env, NODE_OPTIONS: '' }, encoding: 'utf8' },
+    );
+    return JSON.parse(output);
   }
 
   it('checks the unmodified shared contracts and server payload builders', () => {
@@ -38,13 +29,7 @@ describe('Shared API contract compiler regressions', function () {
       'blockedBy: blockers',
       'blockers: blockers',
     );
-    assert(
-      errors.some(item =>
-        ts
-          .flattenDiagnosticMessageText(item.messageText, '\n')
-          .includes('blockedBy'),
-      ),
-    );
+    assert(errors.some(item => item.messageText.includes('blockedBy')));
   });
 
   it('rejects an invalid recommendation in the actual experience response builder', () => {

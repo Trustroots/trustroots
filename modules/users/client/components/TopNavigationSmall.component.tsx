@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import RemoveContact from '@/modules/contacts/client/components/RemoveContactContainer';
+import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
 import type { ContactRecord } from '@/modules/contacts/client/types';
 
 interface TopNavigationSmallProps {
@@ -72,7 +73,7 @@ export default function TopNavigationSmall({
       links.push({
         id: 'share-experience',
         label: t('Share your experience'),
-        link: `/profile/${username}/experiences/new`,
+        link: getProfileExperiencesPath(username),
       });
     }
 
