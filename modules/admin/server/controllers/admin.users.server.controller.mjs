@@ -4,6 +4,7 @@
 import _ from 'lodash';
 import mongoose from 'mongoose';
 import net from 'net';
+import { prepareStaffBlockers } from '../services/staff-blockers-payload.server.service.js';
 
 import errorService from '../../../core/server/services/error.server.service.js';
 import log from '../../../../config/lib/logger.js';
@@ -515,19 +516,7 @@ export const listStaffBlockers = async (req, res) => {
           .lean()
       : [];
 
-    /** @type {import('../../shared/staff-blockers').StaffBlocker<import('mongoose').Types.ObjectId>[]} */
-    const staffBlockers = staffMembers.map(staff => ({
-      _id: staff._id,
-      username: staff.username,
-      displayName: staff.displayName,
-      blockedBy: blockers
-        .filter(blocker => blocker.blocked.some(id => id.equals(staff._id)))
-        .map(({ _id, username, displayName }) => ({
-          _id,
-          username,
-          displayName,
-        })),
-    }));
+    const staffBlockers = prepareStaffBlockers(staffMembers, blockers);
     res.send(staffBlockers);
   } catch (err) {
     log('error', 'Failed to load members who blocked staff.', { error: err });
