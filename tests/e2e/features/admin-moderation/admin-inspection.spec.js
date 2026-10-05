@@ -271,6 +271,13 @@ test.describe('admin moderation inspection flows', () => {
       page.getByText('Acquisition story', { exact: true }).last(),
     ).toBeVisible();
   });
+});
+
+test.describe('admin inspection APIs', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+  test.beforeEach(async ({ request }) => {
+    await authenticateViaApi(request, SEEDED_ADMIN);
+  });
 
   test('admin report includes the reported member public profile below moderation details', async ({
     page,

@@ -120,6 +120,18 @@ moves between pages.
 - **WHEN** an authorised administrator selects a moderation role
 - **THEN** the first page of members with that role is displayed
 
+#### Scenario: Administrator opens a role list URL
+
+- **WHEN** an authorised administrator opens `/admin/search-users?role=<role>` for a valid role
+- **THEN** the first page of members with that role is displayed
+- **AND** the selected role is visible in the role filter
+- **AND** the URL retains the role while the administrator changes pages or sorting
+
+#### Scenario: Administrator follows a member role link
+
+- **WHEN** an administrator selects the Greeter or volunteer role on a member record
+- **THEN** the application opens the corresponding role-filtered member list at its unique URL
+
 #### Scenario: Administrator sorts member search results
 
 - **WHEN** an authorised administrator selects a member-table column header

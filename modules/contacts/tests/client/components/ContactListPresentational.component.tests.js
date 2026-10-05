@@ -101,6 +101,43 @@ describe('<ContactListPresentational />', () => {
     expect(screen.queryByText('contact-undefined')).not.toBeInTheDocument();
   });
 
+  it('orders by newest date, then switches to names without mutating contacts', () => {
+    const contacts = [
+      { ...contact('zebra'), created: '2025-01-02' },
+      { ...contact('amber'), created: '2024-01-02' },
+      { ...contact('birch'), user: { username: 'birch', displayName: '' } },
+    ];
+    render(
+      <ContactListPresentational
+        selfId="me"
+        filter=""
+        contacts={contacts}
+        onContactRemoved={() => {}}
+        onFilterChange={() => {}}
+      />,
+    );
+    const names = () =>
+      screen.getAllByRole('button').map(button => button.textContent);
+    expect(names()).toEqual([
+      'contact-zebra',
+      'contact-amber',
+      'contact-birch',
+    ]);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Sort by' }), {
+      target: { value: 'name' },
+    });
+    expect(names()).toEqual([
+      'contact-amber',
+      'contact-birch',
+      'contact-zebra',
+    ]);
+    expect(contacts.map(item => item.user.username)).toEqual([
+      'zebra',
+      'amber',
+      'birch',
+    ]);
+  });
+
   it('reports the removed contact from the clicked row', () => {
     const onContactRemoved = jest.fn();
     const alice = contact('alice');
@@ -119,4 +156,25 @@ describe('<ContactListPresentational />', () => {
 
     expect(onContactRemoved).toHaveBeenCalledWith(alice);
   });
+});
+
+it('orders unnamed contacts using their usernames on either side of a comparison', () => {
+  render(
+    <ContactListPresentational
+      selfId="viewer"
+      filter=""
+      contacts={[
+        { ...contact('amber'), user: { username: 'amber', displayName: '' } },
+        contact('birch'),
+      ]}
+      onContactRemoved={() => {}}
+      onFilterChange={() => {}}
+    />,
+  );
+  fireEvent.change(screen.getByRole('combobox', { name: 'Sort by' }), {
+    target: { value: 'name' },
+  });
+  expect(
+    screen.getAllByRole('button').map(button => button.textContent),
+  ).toEqual(['contact-amber', 'contact-birch']);
 });

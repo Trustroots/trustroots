@@ -154,6 +154,61 @@ describe('<AdminSearchUsers />', () => {
     expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled();
   });
 
+  it('loads the selected role from a direct URL', async () => {
+    window.history.pushState({}, '', '/admin/search-users?role=welcome-team');
+    usersApi.listUsersByRole.mockResolvedValueOnce(
+      makeMemberList([makeUser({ username: 'greeter-one' })]),
+    );
+
+    render(<AdminSearchUsers />);
+
+    expect(
+      await screen.findByText('greeter-one (Alice Example)'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('combobox')).toHaveValue('welcome-team');
+    expect(usersApi.listUsersByRole).toHaveBeenCalledWith('welcome-team', {
+      page: 1,
+      sort: { column: 'username', direction: 'ascending' },
+    });
+  });
+
+  it('updates the role URL on list submit and clears the role for text search', async () => {
+    window.history.pushState({}, '', '/admin/search-users?role=admin');
+    usersApi.listUsersByRole.mockResolvedValue(
+      makeMemberList([makeUser({ username: 'selected-volunteer' })]),
+    );
+    usersApi.searchUsers.mockResolvedValueOnce(
+      makeMemberList([makeUser({ username: 'searched-member' })]),
+    );
+    render(<AdminSearchUsers />);
+
+    fireEvent.change(screen.getByRole('combobox'), {
+      target: { value: 'volunteer' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'List users in role' }));
+    expect(
+      await screen.findByText('selected-volunteer (Alice Example)'),
+    ).toBeInTheDocument();
+    expect(window.location.search).toBe('?role=volunteer');
+    expect(usersApi.listUsersByRole).toHaveBeenCalledWith('volunteer', {
+      page: 1,
+      sort: { column: 'username', direction: 'ascending' },
+    });
+
+    fireEvent.change(screen.getByLabelText('Name, username or email'), {
+      target: { value: 'alice' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    expect(
+      await screen.findByText('searched-member (Alice Example)'),
+    ).toBeInTheDocument();
+    expect(window.location.search).toBe('?search=alice');
+    expect(usersApi.searchUsers).toHaveBeenCalledWith('alice', {
+      page: 1,
+      sort: { column: 'username', direction: 'ascending' },
+    });
+  });
+
   it('updates the URL on submit and blocks too-short searches', () => {
     render(<AdminSearchUsers />);
 
@@ -405,6 +460,7 @@ describe('<AdminSearchUsers />', () => {
         name: 'first-page (Alice Example)',
       }),
     ).toBeInTheDocument();
+    const historyLengthAfterSelectingRole = window.history.length;
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(
@@ -416,6 +472,7 @@ describe('<AdminSearchUsers />', () => {
       page: 2,
       sort: { column: 'username', direction: 'ascending' },
     });
+    expect(window.history.length).toBe(historyLengthAfterSelectingRole);
 
     fireEvent.click(screen.getByRole('button', { name: 'Name' }));
     expect(
@@ -427,6 +484,7 @@ describe('<AdminSearchUsers />', () => {
       page: 1,
       sort: { column: 'displayName', direction: 'ascending' },
     });
+    expect(window.history.length).toBe(historyLengthAfterSelectingRole);
   });
 
   it('retains server sorting while paginating search results', async () => {

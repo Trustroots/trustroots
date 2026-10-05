@@ -623,7 +623,11 @@ test('member search is reachable, focused and explains location matches', async 
       .locator('.member-search-card')
       .filter({ hasText: '@' + berlin.username });
     await expect(card).toContainText('Lives in: Exampleville');
-    await expect(card).toContainText('Matches:');
+    await expect(card.locator('strong')).toHaveText('Exampleville');
+    await expect(card).not.toContainText('Matches:');
+    await expect(
+      page.getByRole('link', { name: 'Search this place on the map' }),
+    ).toHaveAttribute('href', '/search?location=Exampleville');
     await page.screenshot({
       path: '.artifacts/member-search-desktop.png',
       fullPage: true,

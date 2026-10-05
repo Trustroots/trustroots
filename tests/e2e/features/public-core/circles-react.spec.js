@@ -69,9 +69,26 @@ test('circle membership retains account roles and legacy member links', async ({
     await page.goto('/circles/hitchhikers');
     const roles = await page.evaluate(() => window.user.roles);
     expect(roles).toContain('admin');
+    await page.route('**/api/tribes/hitchhikers/members', route =>
+      route.fulfill({
+        status: 503,
+        json: { message: 'Temporarily unavailable' },
+      }),
+    );
     await page
       .getByRole('button', { name: 'Join (Hitchhikers)', exact: true })
       .click();
+    await expect(page.getByRole('alert')).toContainText(
+      'Could not load circle members. Please try again.',
+    );
+    await expect(page.getByText('No members to show yet')).toHaveCount(0);
+    await page.unroute('**/api/tribes/hitchhikers/members');
+    const retryResponse = page.waitForResponse(response =>
+      response.url().endsWith('/api/tribes/hitchhikers/members'),
+    );
+    await page.getByRole('button', { name: 'Try again', exact: true }).click();
+    expect((await retryResponse).ok()).toBeTruthy();
+    await expect(page.locator('.circle-member-error')).toHaveCount(0);
     await expect(
       page.getByRole('button', { name: 'Leave circle', exact: true }),
     ).toBeVisible();
