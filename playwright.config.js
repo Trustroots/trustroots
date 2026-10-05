@@ -1,5 +1,6 @@
 // @ts-check
 const path = require('path');
+const { selectProjects } = require('./scripts/e2e/groups');
 const { defineConfig, devices } = require('@playwright/test');
 
 const apiPort = process.env.TRUSTROOTS_E2E_API_PORT || 4301;
@@ -70,7 +71,7 @@ const webServers = useWebpackDevServer
       },
     ];
 
-module.exports = defineConfig({
+const config = defineConfig({
   testDir: './tests/e2e',
   globalSetup: require.resolve('./tests/e2e/setup/global-setup.js'),
   globalTeardown: require.resolve('./tests/e2e/setup/global-teardown.js'),
@@ -354,3 +355,11 @@ module.exports = defineConfig({
   ],
   webServer: webServers,
 });
+
+config.projects = selectProjects(
+  config.projects,
+  process.env.TRUSTROOTS_E2E_GROUP,
+  serializeProjects,
+);
+
+module.exports = config;

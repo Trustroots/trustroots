@@ -1,5 +1,5 @@
 const { request: playwrightRequest } = require('@playwright/test');
-const { annotateFeature, test, expect } = require('../../support/test');
+const { annotateFeature, test: base, expect } = require('../../support/test');
 const { ObjectId } = require('mongodb');
 const {
   findUserByUsername,
@@ -13,22 +13,27 @@ const {
   SEEDED_SHADOW,
   SEEDED_SHADOW_MESSAGE,
   fetchUserIdByUsername,
-  signInViaApi,
+  authenticateViaApi,
 } = require('../../support/helpers');
 
-test.describe('seeded message API flows', () => {
-  test.beforeEach(async ({ page, request }) => {
-    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
-  });
+const test = base.extend({
+  request: async ({ request }, use) => {
+    await authenticateViaApi(request, SEEDED_MEMBERS[0]);
+    await use(request);
+  },
+});
 
+test.use({ storageState: { cookies: [], origins: [] } });
+
+test.describe('seeded message API flows', () => {
   test('a sent message is populated and persists through the native client', async ({
-    page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'messages.reply-send', [
       'Sending a reply appends it to the thread.',
     ]);
     const content = `Database integration ${new ObjectId()}`;
-    const response = await page.request.post('/api/messages', {
+    const response = await request.post('/api/messages', {
       data: { userTo: SEEDED_MEMBERS[1].id, content },
     });
     expect(response.ok()).toBeTruthy();
@@ -40,9 +45,7 @@ test.describe('seeded message API flows', () => {
       db.collection('messages').findOne({ _id: new ObjectId(message._id) }),
     );
     expect(persisted.content).toBe(content);
-    const thread = await page.request.get(
-      `/api/messages/${SEEDED_MEMBERS[1].id}`,
-    );
+    const thread = await request.get(`/api/messages/${SEEDED_MEMBERS[1].id}`);
     expect((await thread.json()).map(reply => reply.content)).toContain(
       content,
     );
@@ -50,7 +53,7 @@ test.describe('seeded message API flows', () => {
 
   for (const role of ['welcome-team', 'admin']) {
     test(`${role} can message above the recipient limit until the role is removed`, async ({
-      page,
+      request,
     }, testInfo) => {
       annotateFeature(testInfo, 'messages.reply-send', [
         'Sending a reply appends it to the thread.',
@@ -66,7 +69,7 @@ test.describe('seeded message API flows', () => {
       }));
       const content = `Welcome team throttle regression ${new ObjectId()}`;
       const send = () =>
-        page.request.post('/api/messages', {
+        request.post('/api/messages', {
           data: { userTo: SEEDED_MEMBERS[1].id, content },
         });
       try {
@@ -79,7 +82,7 @@ test.describe('seeded message API flows', () => {
           $set: { roles: ['user', role] },
         });
         expect((await send()).ok()).toBeTruthy();
-        const thread = await page.request.get(
+        const thread = await request.get(
           `/api/messages/${SEEDED_MEMBERS[1].id}`,
         );
         expect((await thread.json()).map(message => message.content)).toContain(
@@ -153,7 +156,6 @@ test.describe('seeded message API flows', () => {
   });
 
   test('inbox API returns sanitized thread excerpts', async ({
-    page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'messages.inbox', [
@@ -161,7 +163,7 @@ test.describe('seeded message API flows', () => {
       'Inbox excludes shadow-hidden conversations.',
     ]);
 
-    const inbox = await page.request.get('/api/messages', {
+    const inbox = await request.get('/api/messages', {
       params: { limit: 5 },
     });
     expect(inbox.ok()).toBeTruthy();
@@ -182,7 +184,7 @@ test.describe('seeded message API flows', () => {
 
     const portland = SEEDED_MEMBERS[1];
     const portlandId = await fetchUserIdByUsername(request, portland.username);
-    const thread = await page.request.get(`/api/messages/${portlandId}`);
+    const thread = await request.get(`/api/messages/${portlandId}`);
     expect(thread.ok()).toBeTruthy();
     const threadContents = (await thread.json()).map(
       message => message.content,
@@ -195,10 +197,7 @@ test.describe('seeded message API flows', () => {
     );
   });
 
-  test('thread API paginates seeded replies', async ({
-    page,
-    request,
-  }, testInfo) => {
+  test('thread API paginates seeded replies', async ({ request }, testInfo) => {
     annotateFeature(testInfo, 'messages.thread-open', [
       'Thread view shows seeded replies.',
       'Thread can be opened by username or userId route/query.',
@@ -206,7 +205,7 @@ test.describe('seeded message API flows', () => {
 
     const portland = SEEDED_MEMBERS[1];
     const portlandId = await fetchUserIdByUsername(request, portland.username);
-    const response = await page.request.get(`/api/messages/${portlandId}`, {
+    const response = await request.get(`/api/messages/${portlandId}`, {
       params: { page: 1, limit: 1 },
     });
     expect(response.ok()).toBeTruthy();
@@ -217,7 +216,7 @@ test.describe('seeded message API flows', () => {
   });
 
   test('message send API rejects invalid recipients', async ({
-    page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'messages.reply-send', [
       'Validation prevents empty or forbidden replies.',
@@ -226,7 +225,7 @@ test.describe('seeded message API flows', () => {
       'Sending an opening message creates the conversation.',
     ]);
 
-    const invalidRecipient = await page.request.post('/api/messages', {
+    const invalidRecipient = await request.post('/api/messages', {
       data: {
         userTo: 'not-a-mongo-id',
         content: 'This should not be sent',
@@ -234,7 +233,7 @@ test.describe('seeded message API flows', () => {
     });
     expect(invalidRecipient.status()).toBe(400);
 
-    const selfMessage = await page.request.post('/api/messages', {
+    const selfMessage = await request.post('/api/messages', {
       data: {
         userTo: SEEDED_MEMBERS[0].id,
         content: 'This should not be sent to myself',
@@ -244,7 +243,7 @@ test.describe('seeded message API flows', () => {
   });
 
   test('message status APIs expose unread and sync payloads', async ({
-    page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'messages.read-count-sync', [
       'Unread count changes after opening or marking a thread read.',
@@ -252,13 +251,13 @@ test.describe('seeded message API flows', () => {
       'Sync handles no-new-message state.',
     ]);
 
-    const unread = await page.request.get('/api/messages-count');
+    const unread = await request.get('/api/messages-count');
     expect(unread.ok()).toBeTruthy();
     expect(await unread.json()).toMatchObject({
       unread: expect.any(Number),
     });
 
-    const sync = await page.request.get('/api/messages-sync', {
+    const sync = await request.get('/api/messages-sync', {
       params: {
         dateFrom: '2020-01-01T00:00:00.000Z',
         dateTo: new Date(Date.now() + 1000).toISOString(),
@@ -272,7 +271,6 @@ test.describe('seeded message API flows', () => {
   });
 
   test('message read and sync APIs validate request payloads', async ({
-    page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'messages.read-count-sync', [
@@ -282,19 +280,19 @@ test.describe('seeded message API flows', () => {
 
     const portland = SEEDED_MEMBERS[1];
     const portlandId = await fetchUserIdByUsername(request, portland.username);
-    const thread = await page.request.get(`/api/messages/${portlandId}`);
+    const thread = await request.get(`/api/messages/${portlandId}`);
     expect(thread.ok()).toBeTruthy();
     const messages = await thread.json();
     expect(messages.length).toBeGreaterThan(0);
 
-    const markRead = await page.request.post('/api/messages-read', {
+    const markRead = await request.post('/api/messages-read', {
       data: {
         messageIds: messages.map(message => message._id),
       },
     });
     expect(markRead.ok()).toBeTruthy();
 
-    const invalidDate = await page.request.get('/api/messages-sync', {
+    const invalidDate = await request.get('/api/messages-sync', {
       params: { dateFrom: '2025-01-01', dateTo: '2024-01-01' },
     });
     expect(invalidDate.status()).toBe(400);

@@ -279,7 +279,7 @@ jobs:
           path: coverage/server
           if-no-files-found: ignore
 
-  e2e:
+  e2e-groups:
     needs: [changes, build-dev-image]
     if: >
       always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
@@ -289,6 +289,10 @@ jobs:
         github.event_name == 'pull_request'
       ) &&
       (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [account-public, community, admin-search]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -325,7 +329,7 @@ jobs:
       - name: Start MongoDB
         working-directory: deploy/docker
         run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d mongodb
-      - name: Test end-to-end smoke suite
+      - name: Test end-to-end group
         working-directory: deploy/docker
         run: |
           export TRUSTROOTS_BUILD_COMMIT="$(git rev-parse HEAD)"
@@ -340,6 +344,8 @@ jobs:
             -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
             -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
             -e TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test \
+            -e TRUSTROOTS_E2E_GROUP=${{ matrix.group }} \
+            -e TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE=true \
             -e TRUSTROOTS_E2E_WORKERS=2 \
             -e TRUSTROOTS_E2E_SERIAL_PROJECTS=true \
             -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
@@ -351,23 +357,60 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.group }}
           path: playwright-report
           if-no-files-found: ignore
       - name: Upload e2e coverage status
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: coverage-e2e
+          name: coverage-e2e-${{ matrix.group }}
           path: coverage/e2e
           if-no-files-found: ignore
       - name: Upload Playwright test results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: playwright-test-results
+          name: playwright-test-results-${{ matrix.group }}
           path: test-results
           if-no-files-found: ignore
+
+  e2e:
+    needs: [changes, e2e-groups]
+    if: always() && !cancelled() && needs.e2e-groups.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Download group results
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: coverage-e2e-*
+          path: coverage/e2e/groups
+      - name: Download group HTML reports
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: playwright-report-*
+          path: playwright-report
+      - name: Enforce complete combined e2e coverage
+        env:
+          TRUSTROOTS_E2E_GROUP_JOB_RESULT: ${{ needs.e2e-groups.result }}
+        run: node scripts/e2e/aggregate-results.js
+      - name: Upload combined e2e status
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-e2e
+          path: coverage/e2e
+          if-no-files-found: error
+      - name: Upload combined report index
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: playwright-report
+          path: playwright-report
+          if-no-files-found: error
 
   coverage-summary:
     if: always() && !cancelled() && github.event_name == 'pull_request'
