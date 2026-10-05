@@ -6,6 +6,9 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 const userProfile = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
 const express = require('./../../../../config/lib/express.mjs');
 describe('Read experiences by userTo Id', () => {
+  let app;
+  let agent;
+  let users;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
@@ -16,9 +19,6 @@ describe('Read experiences by userTo Id', () => {
   // ...                   can read all public and private experiences to self
   // ...                   can not read private experiences to self
   // when userFrom or userTo doesn't exist, we simply return empty list
-  let app;
-  let agent;
-  let users;
   const _usersPublic = utils.generateUsers(6, {
     public: true,
   });
