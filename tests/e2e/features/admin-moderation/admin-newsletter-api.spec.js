@@ -211,6 +211,8 @@ test.describe('admin newsletter API feature coverage', () => {
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export audience CSV' }).click();
     const download = await downloadPromise;
-    expect(download.suggestedFilename()).toBe('newsletter-audience.csv');
+    expect(download.suggestedFilename()).toMatch(
+      /^newsletter-audience-Northbridge-living-origin-circles-Hitchhikers-\d{8}-\d{4}\.csv$/,
+    );
   });
 });

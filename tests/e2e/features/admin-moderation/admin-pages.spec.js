@@ -155,6 +155,71 @@ test.describe('admin moderation page flows', () => {
     await expect(
       page.getByRole('button', { name: 'Count recipients' }),
     ).toBeVisible();
+
+    const location = page.getByLabel('Location name');
+    const latitude = page.getByLabel('Latitude', { exact: true });
+    const longitude = page.getByLabel('Longitude', { exact: true });
+    await expect(location).toHaveValue('Berlin');
+    await expect(location).toHaveAttribute(
+      'placeholder',
+      'Enter a city or region',
+    );
+    await expect(latitude).toHaveValue('52.5200');
+    await expect(longitude).toHaveValue('13.4050');
+    await expect(page.getByLabel('Radius (kilometres)')).toHaveValue('50');
+    await expect(
+      page.getByText(/\d+ eligible recipients? match(?:es)? these filters\./),
+    ).toBeVisible();
+
+    await location.fill('');
+    await latitude.fill('');
+    await longitude.fill('');
+    await page.getByRole('button', { name: 'Count recipients' }).click();
+    await expect(location).toBeFocused();
+    await expect(
+      page.getByText('Enter a location for living or origin matching.'),
+    ).toHaveCount(0);
+
+    await location.fill('Exampleville');
+    await page.getByRole('button', { name: 'Count recipients' }).click();
+    await expect(latitude).toBeFocused();
+    await latitude.fill('12.34');
+    await longitude.fill('56.78');
+    await expect(
+      page.getByText(/\d+ eligible recipients? match(?:es)? these filters\./),
+    ).toBeVisible();
+  });
+
+  test('admin newsletter exports have dated audience filenames', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.newsletter-page', [
+      'Audience filenames include the selected location, radius and local export datetime.',
+      'Changing location filters changes the exported filename.',
+    ]);
+    await gotoAdminPage(page, '/admin/newsletter', /\/admin\/newsletter/);
+    await expect(
+      page.getByRole('button', { name: 'Export audience CSV' }),
+    ).toBeVisible();
+
+    const defaultDownloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Export audience CSV' }).click();
+    const defaultDownload = await defaultDownloadPromise;
+    expect(defaultDownload.suggestedFilename()).toMatch(
+      /^newsletter-audience-Berlin-50km-\d{8}-\d{4}\.csv$/,
+    );
+
+    await page.getByLabel('Location name').fill('Exampleville');
+    await page.getByLabel('Radius (kilometres)').fill('25');
+    await expect(
+      page.getByRole('button', { name: 'Export audience CSV' }),
+    ).toBeVisible();
+    const customDownloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Export audience CSV' }).click();
+    const customDownload = await customDownloadPromise;
+    expect(customDownload.suggestedFilename()).toMatch(
+      /^newsletter-audience-Exampleville-25km-\d{8}-\d{4}\.csv$/,
+    );
   });
 });
 
