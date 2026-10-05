@@ -91,6 +91,43 @@ describe('<AdminNewsletter />', () => {
     ).toBeVisible();
   });
 
+  it('uses the displayed location defaults and blocks counting after clearing them', async () => {
+    newsletterApi.previewNewsletterAudience.mockResolvedValueOnce({ count: 2 });
+    render(<AdminNewsletter />);
+
+    const location = screen.getByLabelText('Location name');
+    const latitude = screen.getByLabelText('Latitude');
+    const longitude = screen.getByLabelText('Longitude');
+    expect(location).toHaveValue('Berlin');
+    expect(location).toHaveAttribute('placeholder', 'Enter a city or region');
+    expect(latitude).toHaveValue(52.52);
+    expect(longitude).toHaveValue(13.405);
+    expect(screen.getByLabelText('Radius (kilometres)')).toHaveValue(50);
+    expect(latitude).not.toHaveAttribute('placeholder');
+    expect(longitude).not.toHaveAttribute('placeholder');
+
+    await waitFor(() =>
+      expect(newsletterApi.previewNewsletterAudience).toHaveBeenCalledWith({
+        circleIds: [],
+        latitude: '52.5200',
+        locationText: 'Berlin',
+        longitude: '13.4050',
+        radiusKm: '50',
+        sources: ['from', 'hosting', 'living'],
+      }),
+    );
+    newsletterApi.previewNewsletterAudience.mockClear();
+
+    for (const field of [location, latitude, longitude]) {
+      fireEvent.change(field, { target: { value: '' } });
+      expect(field).toBeRequired();
+      expect(field).toBeInvalid();
+    }
+
+    fireEvent.click(screen.getByRole('button', { name: 'Count recipients' }));
+    expect(newsletterApi.previewNewsletterAudience).not.toHaveBeenCalled();
+  });
+
   it('automatically refreshes the count after valid filters change', async () => {
     newsletterApi.previewNewsletterAudience.mockResolvedValueOnce({ count: 3 });
     render(<AdminNewsletter />);
@@ -297,6 +334,10 @@ describe('<AdminNewsletter />', () => {
       .mockRejectedValueOnce(new Error('Network issue'))
       .mockRejectedValueOnce({ response: { data: {} } });
     render(<AdminNewsletter />);
+
+    fireEvent.click(screen.getByLabelText('Living location'));
+    fireEvent.click(screen.getByLabelText('Origin location'));
+    fireEvent.click(screen.getByLabelText('Hosting location'));
 
     fireEvent.click(screen.getByRole('button', { name: 'Count recipients' }));
     expect(await screen.findByText('Choose valid criteria.')).toBeVisible();
