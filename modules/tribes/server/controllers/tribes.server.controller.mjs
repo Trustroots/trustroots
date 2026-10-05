@@ -106,7 +106,7 @@ service.getTribe = function (req, res) {
   res.json(req.tribe || {});
 };
 
-function visibleMemberMatch(req, excludedIDs = [], prefix = '') {
+function visibleMemberMatch(req, excludedIDs, prefix = '') {
   return {
     [`${prefix}_id`]: {
       $nin: [req.user._id, ...(req.user.blocked || []), ...excludedIDs],

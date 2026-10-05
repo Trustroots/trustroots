@@ -187,7 +187,13 @@ describe('Read experiences by userTo Id', () => {
       const { body } = await agent
         .get(`/api/experiences?userTo=${users[0]._id}`)
         .expect(200);
-      for (const ref of [body[0], body[1]]) {
+      const experiencesBySender = new Map(
+        body.map(ref => [String(ref.userFrom._id), ref]),
+      );
+      const publicExperiences = [users[1], users[4]].map(user =>
+        experiencesBySender.get(String(user._id)),
+      );
+      for (const ref of publicExperiences) {
         should(ref).have.properties(
           '_id',
           'userFrom',
@@ -201,7 +207,8 @@ describe('Read experiences by userTo Id', () => {
         should(ref).have.propertyByPath('interactions', 'guest');
         should(ref).have.propertyByPath('interactions', 'host');
       }
-      should(body[2]).have.only.properties(
+      const privateExperience = experiencesBySender.get(String(users[5]._id));
+      should(privateExperience).have.only.properties(
         '_id',
         'userFrom',
         'userTo',
@@ -209,15 +216,12 @@ describe('Read experiences by userTo Id', () => {
         'created',
         'response',
       );
-      should(body[0]).have.property('response').not.eql(null);
-      should(body[1].response).eql(null);
-      should(body[2].response).eql(null);
-      should(body[0].userTo._id).eql(users[0].id);
-      should(body[1].userTo._id).eql(users[0].id);
-      should(body[2].userTo._id).eql(users[0].id);
-      should(body[0].userFrom._id).eql(users[1].id);
-      should(body[1].userFrom._id).eql(users[4].id);
-      should(body[2].userFrom._id).eql(users[5].id);
+      should(publicExperiences[0].response).not.eql(null);
+      should(publicExperiences[1].response).eql(null);
+      should(privateExperience.response).eql(null);
+      for (const experience of [...publicExperiences, privateExperience]) {
+        should(experience.userTo._id).eql(users[0].id);
+      }
     });
     it('[param userTo] response should contain private experience from self', async () => {
       const { body } = await agent

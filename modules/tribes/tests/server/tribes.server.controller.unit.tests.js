@@ -297,6 +297,25 @@ describe('Tribes controller unit tests', () => {
   });
 
   describe('listMembers', () => {
+    it('supports legacy viewers without a blocked list', async () => {
+      const circleId = new mongoose.Types.ObjectId();
+      const res = deferredResponse();
+
+      await tribesController.listMembers(
+        {
+          user: {
+            _id: new mongoose.Types.ObjectId(),
+            member: [{ tribe: circleId }],
+          },
+          tribe: { _id: circleId },
+        },
+        res,
+        sinon.stub(),
+      );
+
+      res.body.should.eql({ contacts: [], recommenders: [], active: [] });
+    });
+
     it('passes discovery query failures to the error handler', async () => {
       const userId = new mongoose.Types.ObjectId();
       const tribeId = new mongoose.Types.ObjectId();
