@@ -123,6 +123,9 @@ test.describe.serial('authentication smoke', () => {
     await page.goto('/signup');
     await expect(
       page.getByRole('button', { name: 'Please fill in the form' }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole('button', { name: 'Please fill in the form' }),
     ).toHaveCSS('background-color', 'rgb(18, 181, 145)');
   });
 
@@ -234,24 +237,14 @@ test.describe.serial('authentication smoke', () => {
   test('signed out user can sign in with username', async ({
     page,
   }, testInfo) => {
-    annotateFeature(testInfo, 'auth.signin', [
-      'Sign in page links to signup.',
-      'Username sign in succeeds.',
-      'Email sign in succeeds.',
-      'Continue query redirects to the original protected destination.',
-    ]);
+    annotateFeature(testInfo, 'auth.signin', ['Username sign in succeeds.']);
 
     await signOut(page);
     await signInExisting(page, user.username);
   });
 
   test('signed out user can sign in with email', async ({ page }, testInfo) => {
-    annotateFeature(testInfo, 'auth.signin', [
-      'Sign in page links to signup.',
-      'Username sign in succeeds.',
-      'Email sign in succeeds.',
-      'Continue query redirects to the original protected destination.',
-    ]);
+    annotateFeature(testInfo, 'auth.signin', ['Email sign in succeeds.']);
 
     await signOut(page);
     await signInExisting(page, user.email);
@@ -260,6 +253,9 @@ test.describe.serial('authentication smoke', () => {
   test('sign-in continues to the protected destination', async ({
     page,
   }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signin', [
+      'Continue query redirects to the original protected destination.',
+    ]);
     annotateFeature(testInfo, 'auth.protected-route-redirect', [
       'Protected routes preserve their path and query when redirecting to sign in.',
     ]);

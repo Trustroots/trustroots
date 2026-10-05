@@ -6,6 +6,7 @@ const {
   createIsolatedContext,
   createUser,
   registerViaApi,
+  authenticateViaApi,
   signInViaApi,
 } = require('../../support/helpers');
 const {
@@ -117,7 +118,6 @@ test.describe.serial('auth email and token feature coverage', () => {
   });
 
   test('members can request confirmation email resends', async ({
-    page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'auth.email-resend', [
@@ -127,9 +127,9 @@ test.describe.serial('auth email and token feature coverage', () => {
 
     const unconfirmed = createUser();
     await registerViaApi(request, unconfirmed);
-    await signInViaApi(page, request, unconfirmed);
+    await authenticateViaApi(request, unconfirmed);
 
-    const resend = await page.request.post('/api/auth/resend-confirmation', {
+    const resend = await request.post('/api/auth/resend-confirmation', {
       headers: { 'X-Trustroots-Request': '1' },
     });
     expect(resend.ok()).toBeTruthy();
@@ -137,8 +137,8 @@ test.describe.serial('auth email and token feature coverage', () => {
       message: 'Sent confirmation email.',
     });
 
-    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
-    const alreadyConfirmed = await page.request.post(
+    await authenticateViaApi(request, SEEDED_MEMBERS[0]);
+    const alreadyConfirmed = await request.post(
       '/api/auth/resend-confirmation',
       { headers: { 'X-Trustroots-Request': '1' } },
     );

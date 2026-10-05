@@ -8,6 +8,7 @@ const {
   SEEDED_SHADOW,
   SEEDED_SHADOW_MESSAGE,
   signInViaApi,
+  authenticateViaApi,
 } = require('../../support/helpers');
 const { findUserByUsername, withE2eDb } = require('../../support/db');
 
@@ -270,28 +271,35 @@ test.describe('admin moderation inspection flows', () => {
       page.getByText('Acquisition story', { exact: true }).last(),
     ).toBeVisible();
   });
+});
+
+test.describe('admin inspection APIs', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+  test.beforeEach(async ({ request }) => {
+    await authenticateViaApi(request, SEEDED_ADMIN);
+  });
 
   test('admin user report API rejects malformed ids', async ({
-    page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.user-report', [
       'Missing user id shows a usable error state.',
     ]);
 
-    const malformed = await page.request.post('/api/admin/user', {
+    const malformed = await request.post('/api/admin/user', {
       data: { id: 'not-a-mongo-id' },
     });
     expect(malformed.status()).toBe(400);
   });
 
   test('admin messages API rejects malformed member ids', async ({
-    page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.messages', [
       'Admin can query messages between two users.',
     ]);
 
-    const response = await page.request.post('/api/admin/messages', {
+    const response = await request.post('/api/admin/messages', {
       data: {
         user1: 'not-a-mongo-id',
         user2: SEEDED_SHADOW.id,
@@ -304,13 +312,13 @@ test.describe('admin moderation inspection flows', () => {
   });
 
   test('admin threads API accepts explicit member ids', async ({
-    page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.threads', [
       'Admin can query threads by username/user id.',
     ]);
 
-    const response = await page.request.post('/api/admin/threads', {
+    const response = await request.post('/api/admin/threads', {
       data: { userId: SEEDED_MEMBERS[0].id },
     });
     expect(response.ok()).toBeTruthy();

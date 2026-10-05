@@ -30,7 +30,6 @@ test.describe('seeded content and public API flows', () => {
   }, testInfo) => {
     annotateFeature(testInfo, 'public.statistics', [
       'Statistics page loads for visitors.',
-      'Statistics page loads for signed-in members.',
       'Public statistics API returns deterministic connection and message-interaction data.',
       'Visitors do not see an experience-writing encouragement.',
     ]);

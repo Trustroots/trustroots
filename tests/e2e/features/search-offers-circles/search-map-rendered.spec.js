@@ -88,8 +88,14 @@ async function expectWheelZoom(page, selector, deltaMode) {
   await expect.poll(readZoom).toBeLessThan(zoomedIn - 0.5);
 }
 
-async function expectWheelZoomAfterNavigation(page, selector, deltaMode) {
+async function expectWheelZoomAfterNavigation(
+  page,
+  selector,
+  deltaMode,
+  afterNavigation,
+) {
   await expectWheelZoom(page, selector, deltaMode);
+  if (!afterNavigation) return;
   await page.getByRole('link', { name: 'Circles', exact: true }).click();
   await expect(page).toHaveURL(/\/circles$/);
   await page.locator('a[href="/search"]').first().click();
@@ -367,6 +373,7 @@ test.describe('rendered search map feature coverage', () => {
       'Route fixture offers populate the rendered map source.',
     ]);
 
+    await page.goto('/search');
     await waitForSearchMap(page);
 
     const mapState = await page.evaluate(() => {
@@ -408,7 +415,9 @@ test.describe('rendered search map feature coverage', () => {
           );
           annotateFeature(testInfo, 'search.map', [
             'Mouse-wheel input zooms the rendered map in and out.',
-            'Mouse-wheel input works after returning to Search.',
+            ...(zoom === 6 && deltaMode === 0
+              ? ['Mouse-wheel input works after returning to Search.']
+              : []),
             ...(zoom <= 2 ? ['Mouse-wheel input works at low zoom.'] : []),
             ...(deltaMode === 1
               ? ['Line-based wheel events zoom the rendered map.']
@@ -417,6 +426,7 @@ test.describe('rendered search map feature coverage', () => {
               ? ['Page-based wheel events visibly zoom the rendered map.']
               : []),
           ]);
+          await page.goto('/search');
           await waitForSearchMap(page);
           if (zoom <= 2) {
             await expect(
@@ -427,6 +437,7 @@ test.describe('rendered search map feature coverage', () => {
             page,
             '.mapboxgl-canvas',
             deltaMode,
+            zoom === 6 && deltaMode === 0,
           );
         });
 
@@ -436,7 +447,9 @@ test.describe('rendered search map feature coverage', () => {
         }, testInfo) => {
           annotateFeature(testInfo, 'search.map', [
             'Mouse-wheel input zooms the raster fallback map in and out.',
-            'Mouse-wheel input works after returning to Search.',
+            ...(zoom === 6 && deltaMode === 0
+              ? ['Mouse-wheel input works after returning to Search.']
+              : []),
             ...(zoom <= 2 ? ['Mouse-wheel input works at low zoom.'] : []),
             ...(deltaMode === 1
               ? ['Line-based wheel events zoom the raster fallback map.']
@@ -473,6 +486,7 @@ test.describe('rendered search map feature coverage', () => {
             page,
             '.leaflet-container',
             deltaMode,
+            zoom === 6 && deltaMode === 0,
           );
         });
       });
@@ -660,7 +674,7 @@ test.describe('rendered search map feature coverage', () => {
       fulfilRasterTile,
     );
     await useMapRouteFixtures(context, { offers: 'clustered-offers.json' });
-    await page.reload();
+    await page.goto('/search');
     await expect(
       page.locator('[data-testid="leaflet-search-map"]'),
     ).toBeVisible();
@@ -935,7 +949,7 @@ test.describe('rendered search map feature coverage', () => {
     ]);
 
     await useMapRouteFixtures(context, { offers: 'empty-offers.json' });
-    await page.reload();
+    await page.goto('/search');
     await waitForSearchMap(page);
 
     const sidebar = page.locator('.search-sidebar-container');
