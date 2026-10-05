@@ -420,6 +420,20 @@ UserSchema.pre('save', function (next) {
 });
 
 /**
+ * Create static helpers used by password reset/change flows.
+ */
+UserSchema.statics.isValidPassword = validatePassword;
+UserSchema.statics.hashPassword = function (password, salt) {
+  if (salt && password) {
+    return crypto
+      .pbkdf2Sync(password, Buffer.from(salt, 'base64'), 10000, 64, 'SHA1')
+      .toString('base64');
+  }
+
+  return password;
+};
+
+/**
  * Create instance method for hashing a password
  */
 UserSchema.methods.hashPassword = function (password) {
