@@ -47,6 +47,7 @@ const AREA_BY_SPEC = {
   'admin-reference-errors.spec.js': 'Admin',
   'admin-role-audit.spec.js': 'Admin',
   'admin-search.spec.js': 'Admin',
+  'admin-role-links.spec.js': 'Admin',
   'auth.setup.js': 'Setup',
 };
 
