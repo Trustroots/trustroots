@@ -35,7 +35,7 @@ jobs:
       TRUSTROOTS_WEBPACK_SKIP_ESLINT: 'true'
       BROWSERSLIST_IGNORE_OLD_DATA: '1'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: '24.21.0'
