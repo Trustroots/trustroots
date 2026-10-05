@@ -32,7 +32,8 @@ jobs:
     needs: changes
     if: >
       always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
-      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -43,9 +44,50 @@ jobs:
         with:
           context: .
           file: production.Dockerfile
+          platforms: linux/amd64
           cache-from: type=gha,scope=production
           cache-to: type=gha,mode=max,scope=production
           push: false
+
+  publish-production-image:
+    needs: changes
+    if: >
+      always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
+      github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - name: Set image tags
+        id: image
+        run: |
+          echo "short-sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push production image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: production.Dockerfile
+          platforms: linux/amd64
+          build-args: |
+            TRUSTROOTS_BUILD_COMMIT=${{ github.sha }}
+            TRUSTROOTS_BUILD_COMMITTED_AT=${{ github.event.head_commit.timestamp }}
+            TRUSTROOTS_BUILD_BRANCH=${{ github.ref_name }}
+          tags: |
+            ghcr.io/trustrootsops/trustroots:latest
+            ghcr.io/trustrootsops/trustroots:git-${{ steps.image.outputs.short-sha }}
+          cache-from: type=gha,scope=production
+          cache-to: type=gha,mode=max,scope=production
+          push: true
 
   build-dev-image:
     needs: changes
