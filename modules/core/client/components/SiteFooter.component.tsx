@@ -93,7 +93,7 @@ function FooterLinks() {
 }
 
 function SharedFooter({ build, photoCredits, variant }: Props) {
-  const showOnMobile = variant === 'admin';
+  const showOnMobile = variant === 'admin' || variant === 'circle';
 
   return (
     <footer
@@ -101,6 +101,7 @@ function SharedFooter({ build, photoCredits, variant }: Props) {
       role="contentinfo"
       className={classnames('container hidden-print', {
         'hidden-xs': !showOnMobile,
+        'site-footer-circle': variant === 'circle',
       })}
     >
       <div className="site-footer-content">

@@ -73,6 +73,15 @@ ExperienceSchema.index({
 });
 ExperienceSchema.index(
   {
+    userTo: 1,
+    public: 1,
+    recommend: 1,
+    created: -1,
+  },
+  { name: 'circle_discovery_recommenders' },
+);
+ExperienceSchema.index(
+  {
     userFrom: 1,
     userTo: 1,
   },

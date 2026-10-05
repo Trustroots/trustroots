@@ -116,7 +116,7 @@ const REACT_ROUTE_POLICIES = [
   {
     path: '/circles/:circle',
     title: 'Circle',
-    footerHidden: true,
+    footerVariant: 'circle',
     requiresAuthParams: {
       circle: ['naturists'],
     },

@@ -475,6 +475,14 @@ UserSchema.index(
     },
   },
 );
+UserSchema.index(
+  {
+    'member.tribe': 1,
+    seen: -1,
+    _id: 1,
+  },
+  { name: 'circle_discovery_member_seen' },
+);
 mongoose.model('User', UserSchema);
 const defaultExport = {};
 export default defaultExport;

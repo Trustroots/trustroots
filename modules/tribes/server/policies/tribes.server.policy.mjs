@@ -23,6 +23,10 @@ service.invokeRolesPolicies = function () {
           resources: '/api/tribes/:tribe',
           permissions: ['get'],
         },
+        {
+          resources: '/api/tribes/:tribe/members',
+          permissions: ['get'],
+        },
       ],
     },
     {
@@ -34,6 +38,10 @@ service.invokeRolesPolicies = function () {
         },
         {
           resources: '/api/tribes/:tribe',
+          permissions: ['get'],
+        },
+        {
+          resources: '/api/tribes/:tribe/members',
           permissions: ['get'],
         },
       ],

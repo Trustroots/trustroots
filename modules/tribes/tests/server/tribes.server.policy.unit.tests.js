@@ -128,4 +128,20 @@ describe('Tribes policy unit tests', () => {
       .should.be.true();
     next.calledOnce.should.be.true();
   });
+
+  it('keeps active circle-member listings private to signed-in roles', () => {
+    const { policy, mockAcl } = loadPolicy();
+    policy.invokeRolesPolicies();
+
+    const policies = mockAcl.allow.firstCall.args[0];
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/tribes/:tribe/members');
+    policies[1].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/tribes/:tribe/members');
+    policies[2].allows
+      .map(allow => allow.resources)
+      .should.not.containEql('/api/tribes/:tribe/members');
+  });
 });

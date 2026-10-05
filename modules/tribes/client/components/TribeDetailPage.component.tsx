@@ -5,6 +5,7 @@ import styled, { css } from 'styled-components';
 
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import JoinButton from './JoinButton';
+import CircleMemberDiscovery from './CircleMemberDiscovery';
 import { getCircleBackgroundStyle } from '../utils';
 import * as api from '../api/tribes.api';
 import type { MembershipUpdate, TribeSummary } from '../api/tribes.api';
@@ -58,6 +59,7 @@ export default function TribeDetailPage({
   };
   const [tribe, setTribe] = useState<TribeSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMember, setIsMember] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -70,6 +72,7 @@ export default function TribeDetailPage({
 
         if (isMounted) {
           setTribe(data);
+          setIsMember(Boolean(user?.memberIds?.includes(data._id)));
         }
       } catch {
         if (isMounted) {
@@ -87,11 +90,15 @@ export default function TribeDetailPage({
     return () => {
       isMounted = false;
     };
-  }, [circle]);
+  }, [circle, user]);
 
   const handleMembershipUpdated = (data: MembershipUpdate) => {
     if (data?.tribe) {
       setTribe(data.tribe);
+    }
+    const updatedTribeId = data?.tribe?._id || tribe?._id;
+    if (data?.user?.memberIds && updatedTribeId) {
+      setIsMember(data.user.memberIds.includes(updatedTribeId));
     }
 
     onMembershipUpdated(data);
@@ -139,130 +146,145 @@ export default function TribeDetailPage({
   const wikiUrl = circleWikiUrl(tribe);
 
   return (
-    <Header tribe={tribe} className={user ? undefined : 'is-guest'}>
-      <div className="tribe-header-info">
-        <div className="container">
-          <div className="row no-gutters">
-            <div className="col-xs-12">
-              <a
-                href="/circles"
-                className="btn btn-lg btn-link tribe-header-back"
+    <>
+      <Header tribe={tribe} className={user ? undefined : 'is-guest'}>
+        <div className="tribe-header-info">
+          <div className="container">
+            <div className="row no-gutters">
+              <div className="col-xs-12">
+                <a
+                  href="/circles"
+                  className="btn btn-lg btn-link tribe-header-back"
+                >
+                  <i className="icon-left"></i> {t('More circles') as string}
+                </a>
+              </div>
+            </div>
+            <div className="row">
+              <div
+                className={`${
+                  user ? 'col-xs-10' : 'col-xs-12'
+                } col-sm-offset-1 col-sm-7 col-md-6 col-lg-6`}
               >
-                <i className="icon-left"></i> {t('More circles') as string}
-              </a>
-            </div>
-          </div>
-          <div className="row">
-            <div
-              className={`${
-                user ? 'col-xs-10' : 'col-xs-12'
-              } col-sm-offset-1 col-sm-7 col-md-6 col-lg-5`}
-            >
-              <p className="lead tribe-pre">
-                {user
-                  ? (t('Circle') as string)
-                  : (t('Trustroots circle') as string)}
-              </p>
-              <h2 className="font-brand-regular tribe-title">{tribe.label}</h2>
-              <span className="tribe-meta">{countInfo}</span>
-              {tribe.description && (
-                <div
-                  className="lead tribe-meta"
-                  dangerouslySetInnerHTML={{ __html: tribe.description }}
-                />
-              )}
-              <br />
-              <br />
-              {!user && (
-                <p className="lead tribe-intro">
-                  {
-                    t(
-                      "Trustroots is a travellers' community for sharing, hosting and getting people together.",
-                    ) as string
-                  }
-                  <br />
-                  <br />
-                  {
-                    t(
-                      'Join to meet, host and get hosted by this and other communities.',
-                    ) as string
-                  }
+                <p className="lead tribe-pre">
+                  {user
+                    ? (t('Circle') as string)
+                    : (t('Trustroots circle') as string)}
                 </p>
-              )}
-              {user ? (
-                <>
-                  <JoinButton
-                    tribe={tribe}
-                    user={user}
-                    className="btn btn-lg btn-default"
-                    activeClassName="btn btn-lg btn-primary btn-action"
-                    icon={false}
-                    memberLabel={t("You're a member") as string}
-                    onUpdated={handleMembershipUpdated}
+                <h2 className="font-brand-regular tribe-title">
+                  {tribe.label}
+                </h2>
+                <span className="tribe-meta">{countInfo}</span>
+                {tribe.description && (
+                  <div
+                    className="lead tribe-meta"
+                    dangerouslySetInnerHTML={{ __html: tribe.description }}
                   />
-                  &nbsp;
+                )}
+                <br />
+                <br />
+                {!user && (
+                  <p className="lead tribe-intro">
+                    {
+                      t(
+                        "Trustroots is a travellers' community for sharing, hosting and getting people together.",
+                      ) as string
+                    }
+                    <br />
+                    <br />
+                    {
+                      t(
+                        'Join to meet, host and get hosted by this and other communities.',
+                      ) as string
+                    }
+                  </p>
+                )}
+                {user ? (
+                  <div className="tribe-actions-group">
+                    <JoinButton
+                      tribe={tribe}
+                      user={user}
+                      className="btn btn-lg btn-default"
+                      activeClassName="btn btn-lg btn-primary btn-action"
+                      icon={false}
+                      memberLabel={t("You're a member") as string}
+                      onUpdated={handleMembershipUpdated}
+                    />
+                    &nbsp;
+                    <a
+                      className="btn btn-lg btn-default"
+                      href={`/search?tribe=${tribe.slug}`}
+                    >
+                      {t('Find members') as string}
+                    </a>
+                    {wikiUrl && (
+                      <a
+                        className="btn btn-lg btn-default"
+                        href={wikiUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {t('Circle Wiki') as string}
+                      </a>
+                    )}
+                  </div>
+                ) : (
                   <a
-                    className="btn btn-lg btn-default"
-                    href={`/search?tribe=${tribe.slug}`}
+                    className="btn btn-lg btn-primary btn-action tribe-join"
+                    href={`/signup?tribe=${tribe.slug}`}
                   >
-                    {t('Find members') as string}
+                    {
+                      t('Join {{label}} on Trustroots', {
+                        label: tribe.label,
+                      }) as string
+                    }
                   </a>
-                </>
-              ) : (
-                <a
-                  className="btn btn-lg btn-primary btn-action tribe-join"
-                  href={`/signup?tribe=${tribe.slug}`}
-                >
-                  {
-                    t('Join {{label}} on Trustroots', {
-                      label: tribe.label,
-                    }) as string
-                  }
-                </a>
-              )}
-              {!user && (
-                <a
-                  className="btn btn-lg btn-link tribe-readmore"
-                  href={`/?circle=${tribe.slug}`}
-                >
-                  <i className="icon-right"></i>{' '}
-                  {t('How does it work?') as string}
-                </a>
-              )}
-              {wikiUrl && (
-                <a
-                  className="btn btn-lg btn-link tribe-readmore"
-                  href={wikiUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {t('Circle Wiki') as string}
-                </a>
-              )}
-              {user && (
-                <p className="lead tribe-intro">
-                  {
-                    t(
-                      'Trustroots is built on communities. Share this page within your community and invite them to join!',
-                    ) as string
-                  }
-                </p>
-              )}
+                )}
+                {!user && (
+                  <a
+                    className="btn btn-lg btn-link tribe-readmore"
+                    href={`/?circle=${tribe.slug}`}
+                  >
+                    <i className="icon-right"></i>{' '}
+                    {t('How does it work?') as string}
+                  </a>
+                )}
+                {wikiUrl && !user && (
+                  <a
+                    className="btn btn-lg btn-link tribe-readmore"
+                    href={wikiUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {t('Circle Wiki') as string}
+                  </a>
+                )}
+                {user && (
+                  <p className="lead tribe-intro">
+                    {
+                      t(
+                        'Trustroots is built on communities. Share this page within your community and invite them to join!',
+                      ) as string
+                    }
+                  </p>
+                )}
+              </div>
             </div>
           </div>
+          {tribe.attribution && (
+            <small className="hidden-xs font-brand-light tribe-attribution">
+              {t('Photo by') as string}{' '}
+              {tribe.attribution_url ? (
+                <a href={tribe.attribution_url}>{tribe.attribution}</a>
+              ) : (
+                tribe.attribution
+              )}
+            </small>
+          )}
         </div>
-        {tribe.attribution && (
-          <small className="hidden-xs font-brand-light tribe-attribution">
-            {t('Photo by') as string}{' '}
-            {tribe.attribution_url ? (
-              <a href={tribe.attribution_url}>{tribe.attribution}</a>
-            ) : (
-              tribe.attribution
-            )}
-          </small>
-        )}
-      </div>
-    </Header>
+      </Header>
+      {user && isMember && <CircleMemberDiscovery circle={tribe} user={user} />}
+    </>
   );
 }
 

@@ -7,6 +7,10 @@ import tribes from './../controllers/tribes.server.controller.mjs';
 function register(app) {
   app.route('/api/tribes').all(tribesPolicy.isAllowed).get(tribes.listTribes);
   app
+    .route('/api/tribes/:tribe/members')
+    .all(tribesPolicy.isAllowed)
+    .get(tribes.listMembers);
+  app
     .route('/api/tribes/:tribe')
     .all(tribesPolicy.isAllowed)
     .get(tribes.getTribe);
