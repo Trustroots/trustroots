@@ -15,11 +15,8 @@ export const getThreads = async (req, res) => {
   const userId = req.userIdFromUsername || _.get(req, ['body', 'userId']);
 
   // Check that provided ID is valid
-  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
-  }
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId))
+    return errorService.sendInvalidId(res);
 
   Thread.aggregate([
     {
@@ -68,9 +65,7 @@ export const getThreads = async (req, res) => {
     },
   ]).exec((err, threads) => {
     if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err),
-      });
+      return errorService.sendBadRequest(res, err);
     }
 
     return res.send(threads);

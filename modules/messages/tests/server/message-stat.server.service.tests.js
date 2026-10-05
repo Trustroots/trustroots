@@ -89,11 +89,10 @@ describe('Count Message Statistics of User', function () {
     // adaptive hash for all fixtures and insert the schema-shaped documents
     // directly, keeping password-hook/KDF tests in the user model suite.
     const fixturePassword = await User.hashPassword('fixture-password');
-    const fixtureUsers = utils.generateUsers(29).map(user => new User(user));
-    fixtureUsers.forEach(user => {
-      user.password = fixturePassword;
-      users.push(user);
-    });
+    const fixtureUsers = Array.from({ length: 29 }, () =>
+      utils.createTestUser({ password: fixturePassword }),
+    );
+    users.push(...fixtureUsers);
     await User.collection.insertMany(fixtureUsers.map(user => user.toObject()));
 
     await new Promise((resolve, reject) => {
@@ -270,27 +269,17 @@ describe('MessageStat Creation & Updating Test', function () {
   beforeEach(function () {
     // create means create without saving to database, unless explicit
     // create the initiator (User)
-    initiator = new User({
-      firstName: 'Full',
-      lastName: 'Name',
-      displayName: 'Full Name',
+    initiator = utils.createTestUser({
       email: 'user1@test.com',
       username: 'username1',
       password: 'password123',
-      provider: 'local',
-      public: true,
     });
 
     // create the receiver (User)
-    receiver = new User({
-      firstName: 'Full',
-      lastName: 'Name',
-      displayName: 'Full Name',
+    receiver = utils.createTestUser({
       email: 'user2@test.com',
       username: 'username2',
       password: 'password123',
-      provider: 'local',
-      public: true,
     });
 
     // create a first message

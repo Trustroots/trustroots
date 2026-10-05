@@ -30,17 +30,16 @@ describe('Display Message Statistics in User Route', function () {
   before(async function () {
     const fixturePassword = await User.hashPassword(password);
     for (let i = 0; i < 23; ++i) {
-      const user = new User({
-        firstName: 'firstName',
-        lastName: 'lastName',
-        displayName: 'displayName',
-        email: 'user' + i + '@example.com',
-        username: 'username' + i,
-        password: fixturePassword,
-        provider: 'local',
-        public: true,
-      });
-      users.push(user);
+      users.push(
+        utils.createTestUser({
+          firstName: 'firstName',
+          lastName: 'lastName',
+          displayName: 'displayName',
+          email: 'user' + i + '@example.com',
+          username: 'username' + i,
+          password: fixturePassword,
+        }),
+      );
     }
 
     // The route test logs in as one fixture user; seed the shared valid hash

@@ -19,16 +19,12 @@ const ReferenceThread = mongoose.model('ReferenceThread');
  */
 service.createReferenceThread = function (req, res) {
   if (!req.user || (req.user && !req.user.public)) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   // Validate userTo ID
   if (!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
+    return errorService.sendInvalidId(res);
   }
 
   async.waterfall(
@@ -62,9 +58,7 @@ service.createReferenceThread = function (req, res) {
               done(null, thread._id, thread.userTo);
             } else {
               // Currently authenticated user is not participating in this thread!
-              return res.status(403).send({
-                message: errorService.getErrorMessageByKey('forbidden'),
-              });
+              return errorService.sendForbidden(res);
             }
           },
         );
@@ -124,9 +118,7 @@ service.createReferenceThread = function (req, res) {
         referenceThread.save(function (err, savedReferenceThread) {
           // Handle errors
           if (err) {
-            return res.status(400).send({
-              message: errorService.getErrorMessage(err),
-            });
+            return errorService.sendBadRequest(res, err);
           }
 
           // Send result to the API
@@ -157,9 +149,7 @@ service.createReferenceThread = function (req, res) {
     ],
     function (err) {
       if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       }
     },
   );
@@ -176,16 +166,12 @@ service.readReferenceThread = function (req, res) {
 service.readReferenceThreadById = function (req, res, next, userToId) {
   // Check if user is authenticated
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(userToId)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
+    return errorService.sendInvalidId(res);
   }
 
   async.waterfall(

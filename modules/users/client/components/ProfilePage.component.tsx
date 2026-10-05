@@ -22,6 +22,7 @@ import {
   getProfileViewTabStateName,
 } from '../utils/profile-routes';
 import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
+import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import { useSettings } from '@/modules/core/client/react-app/AppProviders';
 import { useCurrentPath } from '@/modules/core/client/react-app/useCurrentPath';
@@ -173,7 +174,7 @@ function ProfileDesktopActions({
             <li>
               <a
                 className="btn btn-link"
-                href={`/profile/${profile.username}/experiences/new`}
+                href={getProfileExperiencesPath(profile.username)}
               >
                 <i className="icon-plus-squared-alt" />
                 {t('Share your experience') as string}
