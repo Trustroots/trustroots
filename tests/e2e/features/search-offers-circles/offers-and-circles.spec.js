@@ -12,7 +12,11 @@ const {
   registerViaApi,
   signInViaApi,
 } = require('../../support/helpers');
-const { findOffersByUser } = require('../../support/db');
+const {
+  findOffersByUser,
+  updateUserByUsername,
+  findUserByUsername,
+} = require('../../support/db');
 
 const berlin = SEEDED_MEMBERS[0];
 const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
@@ -599,4 +603,58 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await context.close();
     }
   });
+});
+
+test('member search is reachable, focused and explains location matches', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'search.members', [
+    'Map search links to an autofocused member search.',
+    'Search matches public home locations and shows their context.',
+  ]);
+  const original = await findUserByUsername(berlin.username);
+  await updateUserByUsername(berlin.username, {
+    $set: { locationLiving: 'Exampleville' },
+  });
+  try {
+    await signInViaApi(page, request, berlin);
+    await page.goto('/search');
+    await page
+      .getByRole('link', { name: 'Find members by name or location' })
+      .click();
+    const input = page.getByRole('textbox', { name: 'Search members' });
+    await expect(input).toBeFocused();
+    await input.fill('Exampleville');
+    await page
+      .getByRole('button', { name: 'Search members', exact: true })
+      .click();
+    const card = page
+      .locator('.member-search-card')
+      .filter({ hasText: '@' + berlin.username });
+    await expect(card).toContainText('Lives in: Exampleville');
+    await expect(card).toContainText('Matches:');
+    await page.screenshot({
+      path: '.artifacts/member-search-desktop.png',
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+      path: '.artifacts/member-search-mobile.png',
+      fullPage: true,
+    });
+    await page.goto('/search');
+    await page.getByRole('link', { name: 'Members', exact: true }).click();
+    await expect(page).toHaveURL(/\/search\/members$/);
+    await expect(
+      page.getByRole('textbox', { name: 'Search members' }),
+    ).toBeFocused();
+  } finally {
+    await updateUserByUsername(
+      berlin.username,
+      original.locationLiving === undefined
+        ? { $unset: { locationLiving: '' } }
+        : { $set: { locationLiving: original.locationLiving } },
+    );
+  }
 });

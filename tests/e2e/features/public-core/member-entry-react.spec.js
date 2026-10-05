@@ -80,5 +80,5 @@ test('member search supports deep links, empty results and profile navigation', 
   await page
     .getByRole('button', { name: 'Search members', exact: true })
     .click();
-  await expect(page.getByText('No members found by this name.')).toBeVisible();
+  await expect(page.getByText('No members found.')).toBeVisible();
 });

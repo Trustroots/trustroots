@@ -316,6 +316,11 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
               Filters
             </button>
           </div>
+          <div className="btn-group btn-group-lg" role="group">
+            <a className="btn btn-default" href="/search/members">
+              Members
+            </a>
+          </div>
         </div>
       </div>
 

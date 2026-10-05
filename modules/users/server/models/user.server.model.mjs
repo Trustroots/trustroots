@@ -455,11 +455,26 @@ UserSchema.index(
     },
   },
 );
-UserSchema.index({
-  username: 'text',
-  firstName: 'text',
-  lastName: 'text',
-});
+UserSchema.index(
+  {
+    username: 'text',
+    firstName: 'text',
+    lastName: 'text',
+    locationLiving: 'text',
+    locationFrom: 'text',
+    tagline: 'text',
+  },
+  {
+    weights: {
+      username: 10,
+      firstName: 8,
+      lastName: 8,
+      locationLiving: 4,
+      locationFrom: 2,
+      tagline: 1,
+    },
+  },
+);
 mongoose.model('User', UserSchema);
 const defaultExport = {};
 export default defaultExport;

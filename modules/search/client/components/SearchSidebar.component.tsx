@@ -77,6 +77,12 @@ export default function SearchSidebar({
 }: SearchSidebarProps) {
   return (
     <>
+      <div className="search-sidebar-section">
+        <a className="btn btn-default btn-block" href="/search/members">
+          <i className="icon-users" aria-hidden="true" /> Find members by name
+          or location
+        </a>
+      </div>
       <div className="search-sidebar-section hidden-xs">
         <SearchPlaceInput
           onPlaceSearch={onPlaceSearch}
