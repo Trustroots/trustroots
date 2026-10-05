@@ -6,10 +6,10 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const messagesController = require('../../server/controllers/messages.server.controller');
-const config = require('../../../../config/config');
-const spamService = require('../../../core/server/services/spam.server.service');
-const messageStatService = require('../../server/services/message-stat.server.service');
+const messagesController = require('./../../server/controllers/messages.server.controller.mjs');
+const config = require('./../../../../config/config.mjs');
+const spamService = require('./../../../core/server/services/spam.server.service.mjs');
+const messageStatService = require('./../../server/services/message-stat.server.service.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 

@@ -1,16 +1,15 @@
 import _ from 'lodash';
-import errorService from '../../../core/server/services/error.server.service.js';
-import emailService from '../../../core/server/services/email.server.service.js';
-import userProfile from './users.profile.server.controller.js';
-import authenticationService from '../services/authentication.server.service.js';
-import signupSafety from '../services/signup-safety.server.service.js';
-import statService from '../../../stats/server/services/stats.server.service.js';
-import log from '../../../../config/lib/logger.js';
+import errorService from './../../../core/server/services/error.server.service.mjs';
+import emailService from './../../../core/server/services/email.server.service.mjs';
+import userProfile from './users.profile.server.controller.mjs';
+import authenticationService from './../services/authentication.server.service.mjs';
+import signupSafety from './../services/signup-safety.server.service.mjs';
+import statService from './../../../stats/server/services/stats.server.service.mjs';
+import log from './../../../../config/lib/logger.mjs';
 import passport from 'passport';
 import async from 'async';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
-
 const service = {};
 
 /**
@@ -18,7 +17,6 @@ const service = {};
  */
 
 const User = mongoose.model('User');
-
 function isNameSpam(input) {
   if (
     // The username field says it limits to 34, so apply that to all the fields
@@ -33,7 +31,6 @@ function isNameSpam(input) {
   }
   return false;
 }
-
 function isUsernameInvalid(input) {
   if (
     input.includes(' ') ||
@@ -63,17 +60,14 @@ service.signup = function (req, res) {
         ) {
           return done(new Error('Please provide required fields.'));
         }
-
         done();
       },
-
       // Simple anti spam check on name input fields
       function (done) {
         const { firstName, lastName, username } = req.body;
         if (isNameSpam(firstName) || isNameSpam(lastName)) {
           return done(new Error('Invalid signup attempt'));
         }
-
         if (isNameSpam(username) || isUsernameInvalid(username)) {
           const err = new Error(
             'Use 3-34 letters, numbers, periods or hyphens. Underscores are not allowed at signup.',
@@ -81,10 +75,8 @@ service.signup = function (req, res) {
           err.userFacing = true;
           return done(err);
         }
-
         done();
       },
-
       // Generate random token
       function (done) {
         crypto.randomBytes(20, function (err, buffer) {
@@ -92,7 +84,6 @@ service.signup = function (req, res) {
           done(err, salt);
         });
       },
-
       // Save user
       function (salt, done) {
         // For security measurement we remove the roles from the `req.body` object
@@ -102,7 +93,6 @@ service.signup = function (req, res) {
         delete req.body.avatarUploaded;
         delete req.body.created;
         delete req.body.updated;
-
         const user = new User(req.body);
 
         // Add missing user fields
@@ -116,7 +106,6 @@ service.signup = function (req, res) {
         // we'll have to have the email also at emailTemporary field
         // (from where it's then again moved to email field)
         user.emailTemporary = user.email;
-
         user.emailToken = authenticationService.generateEmailToken(user, salt);
 
         // Then save the user
@@ -124,11 +113,9 @@ service.signup = function (req, res) {
           // Remove sensitive data before login
           user.password = undefined;
           user.salt = undefined;
-
           done(err, user);
         });
       },
-
       // Send email
       function (user, done) {
         const matchedKeywords = signupSafety.matchSignupProfile(user);
@@ -145,18 +132,15 @@ service.signup = function (req, res) {
             },
           );
         }
-
         emailService.sendSignupEmailConfirmation(user, function (err) {
           done(err, user);
         });
       },
-
       // Login
       function (user, done) {
         req.login(user, function (err) {
           // Remove sensitive data befor sending user
           user = userProfile.sanitizeOwnProfile(user);
-
           done(err, user);
         });
       },
@@ -187,7 +171,6 @@ service.signup = function (req, res) {
               : errorService.getErrorMessage(err),
           });
         });
-
         return;
       }
 
@@ -207,7 +190,6 @@ service.signup = function (req, res) {
  */
 service.signupValidation = function (req, res) {
   const username = String(req.body.username || '').toLowerCase();
-
   async.waterfall(
     [
       // Validate username
@@ -236,10 +218,8 @@ service.signupValidation = function (req, res) {
             'username-invalid',
           );
         }
-
         done();
       },
-
       // Check username availability against database
       function (done) {
         User.findOne(
@@ -253,7 +233,6 @@ service.signupValidation = function (req, res) {
                 'username-not-available',
               );
             }
-
             done();
           },
         );
@@ -282,7 +261,6 @@ service.signupValidation = function (req, res) {
             message: err.message || errorService.getErrorMessage(err),
           });
         });
-
         return;
       }
 
@@ -310,7 +288,6 @@ service.signin = function (req, res, next) {
     },
     tags: {},
   };
-
   passport.authenticate('local', function (err, user, info) {
     if (err || !user) {
       // Log the failure to signin
@@ -325,7 +302,6 @@ service.signin = function (req, res, next) {
         // Send error to the API
         res.status(400).send(info);
       });
-
       return;
     }
 
@@ -344,10 +320,8 @@ service.signin = function (req, res, next) {
           message: errorService.getErrorMessageByKey('suspended'),
         });
       });
-
       return;
     }
-
     req.login(user, function (err) {
       if (err) {
         // Log the failure to signin
@@ -362,7 +336,6 @@ service.signin = function (req, res, next) {
           // Send error to the API
           res.status(400).send(err);
         });
-
         return;
       }
 
@@ -409,7 +382,6 @@ service.removeOAuthProvider = function (req, res) {
       message: 'No provider defined.',
     });
   }
-
   let user = req.user;
   const provider = req.params.provider;
 
@@ -420,11 +392,9 @@ service.removeOAuthProvider = function (req, res) {
     // Then tell mongoose that we've updated the additionalProvidersData field
     user.markModified('additionalProvidersData');
   }
-
   if (provider === 'facebook' && user.avatarSource === 'facebook') {
     user.avatarSource = 'gravatar';
   }
-
   user.save(function (err) {
     if (err) {
       return res.status(400).send({
@@ -480,7 +450,6 @@ service.confirmEmail = function (req, res) {
 
               // If users profile was hidden, it means it was first confirmation email after registration.
               result.profileMadePublic = !user.public;
-
               done(null, result, user);
             } else {
               return res.status(400).send({
@@ -490,13 +459,14 @@ service.confirmEmail = function (req, res) {
           },
         );
       },
-
       // Update user
       // We can't do regular `user.save()` here because we've got user document with password and we'd just override it:
       // Instead we'll do normal Mongoose update with previously fetched user ID
       function (result, user, done) {
         User.findOneAndUpdate(
-          { _id: user._id },
+          {
+            _id: user._id,
+          },
           {
             $unset: {
               emailTemporary: 1,
@@ -530,18 +500,15 @@ service.confirmEmail = function (req, res) {
           },
         );
       },
-
       function (result, user, done) {
         req.login(user, function (err) {
           done(err, result, user);
         });
       },
-
       function (result, user) {
         // Return authenticated user
         // Remove sensitive data befor sending user
         result.user = userProfile.sanitizeOwnProfile(user);
-
         return res.json(result);
       },
     ],
@@ -577,9 +544,7 @@ service.resendConfirmation = function (req, res) {
       message: 'Already confirmed.',
     });
   }
-
   const isEmailChange = !!req.user.public;
-
   async.waterfall(
     [
       // Generate random token
@@ -589,7 +554,6 @@ service.resendConfirmation = function (req, res) {
           done(null, buffer);
         });
       },
-
       // Save token
       function (salt, done) {
         const user = req.user;
@@ -600,7 +564,6 @@ service.resendConfirmation = function (req, res) {
           done(null, user);
         });
       },
-
       // Send email
       function (user, done) {
         if (isEmailChange) {
@@ -614,10 +577,11 @@ service.resendConfirmation = function (req, res) {
           });
         }
       },
-
       // Return confirmation
       function () {
-        return res.json({ message: 'Sent confirmation email.' });
+        return res.json({
+          message: 'Sent confirmation email.',
+        });
       },
     ],
     function (err) {
@@ -630,7 +594,6 @@ service.resendConfirmation = function (req, res) {
     },
   );
 };
-
 const defaultExport = service;
 export default defaultExport;
 export const confirmEmail = defaultExport.confirmEmail;
@@ -641,3 +604,4 @@ export const signout = defaultExport.signout;
 export const signup = defaultExport.signup;
 export const signupValidation = defaultExport.signupValidation;
 export const validateEmailToken = defaultExport.validateEmailToken;
+export { defaultExport as 'module.exports' };

@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate';
-
 const service = {};
 
 /**
@@ -36,9 +35,7 @@ const ThreadSchema = new Schema({
     default: false,
   },
 });
-
 ThreadSchema.plugin(mongoosePaginate);
-
 mongoose.model('Thread', ThreadSchema);
-
 export default service;
+export { service as 'module.exports' };

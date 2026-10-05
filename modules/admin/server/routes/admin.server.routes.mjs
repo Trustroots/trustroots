@@ -1,13 +1,13 @@
-import adminAcquisitionStories from '../controllers/admin.acquisition-stories.server.controller.js';
-import adminAuditLog from '../controllers/admin.audit-log.server.controller.js';
-import adminMessages from '../controllers/admin.messages.server.controller.js';
-import adminNewsletter from '../controllers/admin.newsletter.server.controller.js';
-import adminPolicy from '../policies/admin.server.policy.js';
-import adminThreads from '../controllers/admin.threads.server.controller.js';
-import adminUsers from '../controllers/admin.users.server.controller.js';
-import adminDashboard from '../controllers/admin.dashboard.server.controller.js';
-import adminNotes from '../controllers/admin.notes.server.controller.js';
-import adminReferenceThreads from '../controllers/admin.reference-threads.server.controller.js';
+import adminAcquisitionStories from './../controllers/admin.acquisition-stories.server.controller.mjs';
+import adminAuditLog from './../controllers/admin.audit-log.server.controller.mjs';
+import adminMessages from './../controllers/admin.messages.server.controller.mjs';
+import adminNewsletter from './../controllers/admin.newsletter.server.controller.mjs';
+import adminPolicy from './../policies/admin.server.policy.mjs';
+import adminThreads from './../controllers/admin.threads.server.controller.mjs';
+import adminUsers from './../controllers/admin.users.server.controller.mjs';
+import adminDashboard from './../controllers/admin.dashboard.server.controller.mjs';
+import adminNotes from './../controllers/admin.notes.server.controller.mjs';
+import adminReferenceThreads from './../controllers/admin.reference-threads.server.controller.mjs';
 
 /**
  * Module dependencies.
@@ -18,17 +18,14 @@ const registerRoutes = app => {
     .route('/api/admin/acquisition-stories')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminAcquisitionStories.list);
-
   app
     .route('/api/admin/acquisition-stories/analysis')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminAcquisitionStories.getAnalysis);
-
   app
     .route('/api/admin/audit-log')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.list);
-
   app
     .route('/api/admin/audit-log/actors')
     .all(adminPolicy.isAllowed)
@@ -38,22 +35,18 @@ const registerRoutes = app => {
     .route('/api/admin/dashboard')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminDashboard.getDashboard);
-
   app
     .route('/api/admin/messages')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminMessages.getMessages);
-
   app
     .route('/api/admin/messages/scammer-recipients')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminMessages.getScammerRecipients);
-
   app
     .route('/api/admin/messages/scammer-warning')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminMessages.sendScammerWarning);
-
   app
     .route('/api/admin/threads')
     .all(adminPolicy.isAllowed)
@@ -62,28 +55,23 @@ const registerRoutes = app => {
       adminUsers.usernameToUserId,
       adminThreads.getThreads,
     );
-
   app
     .route('/api/admin/notes')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminNotes.getNotes)
     .post(adminAuditLog.record, adminNotes.addNote);
-
   app
     .route('/api/admin/users')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminUsers.searchUsers);
-
   app
     .route('/api/admin/users/by-role')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminUsers.listUsersByRole);
-
   app
     .route('/api/admin/users/by-last-ip-address')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminUsers.listUsersByLastIpAddress);
-
   app
     .route('/api/admin/user')
     .all(adminPolicy.isAllowed)
@@ -97,17 +85,14 @@ const registerRoutes = app => {
     .route('/api/admin/staff-blockers')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminUsers.listStaffBlockers);
-
   app
     .route('/api/admin/user/change-role')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminUsers.changeRole);
-
   app
     .route('/api/admin/reference-threads')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminReferenceThreads.list);
-
   app
     .route('/api/admin/newsletter-subscribers/split')
     .all(adminPolicy.isAllowed)
@@ -116,22 +101,19 @@ const registerRoutes = app => {
       adminNewsletter.uploadSubscribersCsv,
       adminNewsletter.splitSubscribers,
     );
-
   app
     .route('/api/admin/newsletter-subscribers')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminNewsletter.list);
-
   app
     .route('/api/admin/newsletter-subscribers/audience')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminNewsletter.audience);
-
   app
     .route('/api/admin/newsletter-subscribers/circle')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminNewsletter.listCircleMembers);
 };
-
 export { registerRoutes };
 export default registerRoutes;
+export { registerRoutes as 'module.exports' };

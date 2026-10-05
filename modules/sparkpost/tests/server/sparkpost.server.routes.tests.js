@@ -1,7 +1,7 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const express = require('../../../../config/lib/express');
-const config = require('../../../../config/config');
+const express = require('./../../../../config/lib/express.mjs');
+const config = require('./../../../../config/config.mjs');
 require('should');
 
 /**
@@ -17,30 +17,29 @@ let events;
 describe('Sparkpost CRUD tests', function () {
   describe('Webhook endpoint', function () {
     before(function (done) {
-      // Get application
-      app = express.init(mongoose.connection);
-      agent = request.agent(app);
+      (async () => {
+        // Get application
+        app = await express.init(mongoose.connection);
+        agent = request.agent(app);
 
-      // Sparkpost webhook event example
-      events = [
-        {
-          msys: {
-            message_event: {
-              type: 'delivery',
-              campaign_id: 'example',
-              timestamp: '1454442600',
+        // Sparkpost webhook event example
+        events = [
+          {
+            msys: {
+              message_event: {
+                type: 'delivery',
+                campaign_id: 'example',
+                timestamp: '1454442600',
+              },
             },
           },
-        },
-      ];
-
-      done();
+        ];
+        done();
+      })().catch(done);
     });
-
     it('Should not be able to request using GET method', function (done) {
       agent.get('/api/sparkpost/webhook').expect(404).end(done);
     });
-
     it('Should not be allowed to access endpoint without credentials', function (done) {
       agent
         .post('/api/sparkpost/webhook')
@@ -55,7 +54,6 @@ describe('Sparkpost CRUD tests', function () {
           return done(err);
         });
     });
-
     it('Should not be allowed to access endpoint with wrong credentials', function (done) {
       agent
         .post('/api/sparkpost/webhook')
@@ -63,7 +61,6 @@ describe('Sparkpost CRUD tests', function () {
         .expect(401)
         .end(done);
     });
-
     it('Should be allowed to access endpoint with credentials', function (done) {
       agent
         .post('/api/sparkpost/webhook')

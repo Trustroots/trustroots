@@ -1,6 +1,6 @@
 /* global document, window */
 
-const { annotateFeature, test, expect } = require('../../support/test');
+const { annotateFeature, test, expect } = require('../../support/fixtures');
 
 const { SEEDED_MEMBERS, signInViaApi } = require('../../support/helpers');
 const {

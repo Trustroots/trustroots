@@ -16,8 +16,8 @@ var path = require('path'),
     del = require('del'),
     async = require('async'),
     nodemailer = require('nodemailer'),
-    config = require('../config/config'),
-    emailService = require('../modules/core/server/services/email.server.service');
+    config = require('./../config/config.mjs'),
+    emailService = require('./../modules/core/server/services/email.server.service.mjs');
 
 // Default temp folder
 var tempFolder = (process.argv[2] == null) ? path.resolve('./tmp/renderedEmails') : process.argv[2];

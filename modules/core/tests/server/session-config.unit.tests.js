@@ -1,9 +1,9 @@
 const express = require('express');
 const session = require('express-session');
-const proxyquire = require('proxyquire').noCallThru();
+const proxyquire = require('./../../../../testutils/server/mock-module');
 const request = require('supertest');
 const should = require('should');
-const config = require('../../../../config/config');
+const config = require('./../../../../config/config.mjs');
 
 class TestStore extends session.Store {
   constructor() {
@@ -54,9 +54,12 @@ describe('Session configuration', function () {
 
   function createApp() {
     app = express();
-    const expressConfig = proxyquire('../../../../config/lib/express', {
-      'connect-mongo': { create: () => store },
-    });
+    const expressConfig = proxyquire(
+      require.resolve('./../../../../config/lib/express.mjs'),
+      {
+        'connect-mongo': { create: () => store },
+      },
+    );
 
     expressConfig.initSession(app, {});
     app.get('/visit', (req, res) => res.send('visited'));

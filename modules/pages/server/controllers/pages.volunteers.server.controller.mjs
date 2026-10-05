@@ -3,10 +3,8 @@
  */
 import _ from 'lodash';
 import mongoose from 'mongoose';
-import errorService from '../../../core/server/services/error.server.service.js';
-
+import errorService from './../../../core/server/services/error.server.service.mjs';
 const User = mongoose.model('User');
-
 function filterAndCleanVolunteers(users, role) {
   return users
     .filter(user => user.roles.includes(role))
@@ -22,7 +20,9 @@ function filterAndCleanVolunteers(users, role) {
  */
 export const list = (req, res) => {
   User.find({
-    roles: { $in: ['volunteer', 'volunteer-alumni'] },
+    roles: {
+      $in: ['volunteer', 'volunteer-alumni'],
+    },
   })
     .select('username firstName roles')
     .sort('firstName username')
@@ -37,12 +37,14 @@ export const list = (req, res) => {
       // Put to two groups based on role
       const volunteers = filterAndCleanVolunteers(users, 'volunteer');
       const alumni = filterAndCleanVolunteers(users, 'volunteer-alumni');
-
       res.send({
         volunteers: _.shuffle(volunteers),
         alumni: _.shuffle(alumni),
       });
     });
 };
-
-export default { list };
+const defaultInterop = {
+  list,
+};
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

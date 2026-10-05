@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 const should = require('should');
 const sinon = require('sinon');
 const util = require('util');
-const config = require('../../../../config/config');
-const jobPublishExperience = require('../../server/jobs/experiences-publish.server.job');
+const config = require('./../../../../config/config.mjs');
+const jobPublishExperience = require('./../../server/jobs/experiences-publish.server.job.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const Experience = mongoose.model('Experience');
 

@@ -8,7 +8,6 @@ import mongoose from 'mongoose';
 
 const LocalStrategy = passportLocal.Strategy;
 const User = mongoose.model('User');
-
 const defaultExport = function () {
   // Use local strategy
   passport.use(
@@ -21,8 +20,12 @@ const defaultExport = function () {
         User.findOne(
           {
             $or: [
-              { username: username.toLowerCase() },
-              { email: username.toLowerCase() },
+              {
+                username: username.toLowerCase(),
+              },
+              {
+                email: username.toLowerCase(),
+              },
             ],
           },
           function (err, user) {
@@ -34,7 +37,6 @@ const defaultExport = function () {
                 message: 'Unknown user or invalid password',
               });
             }
-
             return done(null, user);
           },
         );
@@ -43,3 +45,4 @@ const defaultExport = function () {
   );
 };
 export default defaultExport;
+export { defaultExport as 'module.exports' };

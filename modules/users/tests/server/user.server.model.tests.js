@@ -3,7 +3,7 @@
  */
 const should = require('should');
 const mongoose = require('mongoose');
-const config = require('../../../../config/config');
+const config = require('./../../../../config/config.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');

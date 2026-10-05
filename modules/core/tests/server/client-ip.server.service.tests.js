@@ -1,4 +1,4 @@
-const clientIpService = require('../../server/services/client-ip.server.service');
+const clientIpService = require('../../server/services/client-ip.server.service.mjs');
 require('should');
 
 describe('Trusted client IP service', function () {

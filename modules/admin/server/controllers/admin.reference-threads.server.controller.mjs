@@ -2,22 +2,19 @@
  * Module dependencies.
  */
 import mongoose from 'mongoose';
-
-import errorService from '../../../core/server/services/error.server.service.js';
-
+import errorService from './../../../core/server/services/error.server.service.mjs';
 const ReferenceThread = mongoose.model('ReferenceThread');
 const User = mongoose.model('User');
-
 const REFERENCE_THREADS_LIMIT = 500;
 const TOP_NEGATIVE_RECIPIENTS_LIMIT = 10;
-
 export const list = async (req, res) => {
   try {
     const topScoreCutoff = new Date();
     topScoreCutoff.setUTCFullYear(topScoreCutoff.getUTCFullYear() - 1);
-
     const [items, topNegativeRecipientCounts] = await Promise.all([
-      ReferenceThread.find({ reference: 'no' })
+      ReferenceThread.find({
+        reference: 'no',
+      })
         .sort('-created')
         .limit(REFERENCE_THREADS_LIMIT)
         .populate({
@@ -34,21 +31,39 @@ export const list = async (req, res) => {
       ReferenceThread.aggregate([
         {
           $match: {
-            created: { $gte: topScoreCutoff },
+            created: {
+              $gte: topScoreCutoff,
+            },
             reference: 'no',
           },
         },
-        { $group: { _id: '$userTo', count: { $sum: 1 } } },
-        { $sort: { count: -1 } },
-        { $limit: TOP_NEGATIVE_RECIPIENTS_LIMIT },
+        {
+          $group: {
+            _id: '$userTo',
+            count: {
+              $sum: 1,
+            },
+          },
+        },
+        {
+          $sort: {
+            count: -1,
+          },
+        },
+        {
+          $limit: TOP_NEGATIVE_RECIPIENTS_LIMIT,
+        },
       ]).exec(),
     ]);
-
     const userIds = (topNegativeRecipientCounts || [])
       .map(({ _id }) => _id)
       .filter(Boolean);
     const users = userIds.length
-      ? await User.find({ _id: { $in: userIds } })
+      ? await User.find({
+          _id: {
+            $in: userIds,
+          },
+        })
           .select('username displayName _id')
           .exec()
       : [];
@@ -56,14 +71,12 @@ export const list = async (req, res) => {
       result[user._id.toString()] = user;
       return result;
     }, {});
-
     const topNegativeRecipients = (topNegativeRecipientCounts || []).map(
       ({ _id, count }) => ({
         count,
         user: _id ? usersById[_id.toString()] || _id : _id,
       }),
     );
-
     res.send({
       items: items || [],
       topNegativeRecipients,
@@ -74,5 +87,8 @@ export const list = async (req, res) => {
     });
   }
 };
-
-export default { list };
+const defaultInterop = {
+  list,
+};
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

@@ -6,10 +6,13 @@ const faker = require('faker');
 const Experience = mongoose.model('Experience');
 const testutils = require('../../../../testutils/server/server.testutil');
 const utils = require('../../../../testutils/server/data.server.testutil');
-const express = require('../../../../config/lib/express');
-const config = require('../../../../config/config');
-
+const express = require('./../../../../config/lib/express.mjs');
+const config = require('./../../../../config/config.mjs');
 describe('Create an experience', () => {
+  before(async function () {
+    app = await express.init(mongoose.connection);
+    agent = request.agent(app);
+  });
   // user can leave an experience to anyone
   //  - types of interaction
   //  - recommend
@@ -24,42 +27,41 @@ describe('Create an experience', () => {
 
   // we'll catch email notifications (push delivery is retired)
   const jobs = testutils.catchJobs();
-
   let user1;
   let user2;
   let user3Nonpublic;
-
-  const app = express.init(mongoose.connection);
-  const agent = request.agent(app);
-
-  const _usersPublic = utils.generateUsers(2, { public: true });
+  let app;
+  let agent;
+  const _usersPublic = utils.generateUsers(2, {
+    public: true,
+  });
   const _usersNonpublic = utils.generateUsers(1, {
     public: false,
     username: 'nonpublic',
     email: 'nonpublic@example.com',
   });
-
   const _users = [..._usersPublic, ..._usersNonpublic];
-
   beforeEach(() => {
-    sinon.useFakeTimers({ now: 1500000000000, toFake: ['Date'] });
+    sinon.useFakeTimers({
+      now: 1500000000000,
+      toFake: ['Date'],
+    });
   });
-
   afterEach(() => {
     sinon.restore();
   });
-
   beforeEach(async () => {
     [user1, user2, user3Nonpublic] = await utils.saveUsers(_users);
   });
-
   afterEach(utils.clearDatabase);
-
   context('logged in', () => {
     // Sign in and sign out
-    beforeEach(utils.signIn.bind(this, _users[0], agent));
-    afterEach(utils.signOut.bind(this, agent));
-
+    beforeEach(function () {
+      return utils.signIn.call(this, _users[0], agent);
+    });
+    afterEach(function () {
+      return utils.signOut.call(this, agent);
+    });
     context('valid request', () => {
       context('every experience', () => {
         it('respond with 201 Created and the new experience in body', async () => {
@@ -77,7 +79,6 @@ describe('Create an experience', () => {
               feedbackPublic,
             })
             .expect(201);
-
           should(body).match({
             public: false,
             userFrom: user1._id.toString(),
@@ -94,7 +95,6 @@ describe('Create an experience', () => {
             _id: /^[0-9a-f]{24}$/,
           });
         });
-
         it('save experience to database', async () => {
           // before, experience shouldn't be found in the database
           const beforeExperiences = await Experience.find({
@@ -133,7 +133,6 @@ describe('Create an experience', () => {
             },
           });
         });
-
         it('[duplicate experience (the same (from, to) combination)] 409 Conflict', async () => {
           // send the first request and expect 201 Created
           await agent
@@ -163,12 +162,12 @@ describe('Create an experience', () => {
             })
             .expect(409);
         });
-
         it('[creating an experience for self] 400', async () => {
           const { body } = await agent
             .post('/api/experiences')
             .send({
-              userTo: user1._id, // the same user as logged in user
+              userTo: user1._id,
+              // the same user as logged in user
               interactions: {
                 met: false,
                 guest: true,
@@ -177,7 +176,6 @@ describe('Create an experience', () => {
               recommend: 'no',
             })
             .expect(400);
-
           should(body).match({
             message: 'Bad request.',
             details: {
@@ -185,12 +183,12 @@ describe('Create an experience', () => {
             },
           });
         });
-
         it('[creating an experience for nonexistent user] 404', async () => {
           const { body } = await agent
             .post('/api/experiences')
             .send({
-              userTo: '0'.repeat(24), // nonexistent user id
+              userTo: '0'.repeat(24),
+              // nonexistent user id
               interactions: {
                 met: false,
                 guest: true,
@@ -199,7 +197,6 @@ describe('Create an experience', () => {
               recommend: 'no',
             })
             .expect(404);
-
           should(body).match({
             message: 'Not found.',
             details: {
@@ -207,12 +204,12 @@ describe('Create an experience', () => {
             },
           });
         });
-
         it('[creating an experience for non-public user] 404', async () => {
           const { body } = await agent
             .post('/api/experiences')
             .send({
-              userTo: user3Nonpublic._id, // non-public user id
+              userTo: user3Nonpublic._id,
+              // non-public user id
               interactions: {
                 met: false,
                 guest: true,
@@ -221,7 +218,6 @@ describe('Create an experience', () => {
               recommend: 'no',
             })
             .expect(404);
-
           should(body).match({
             message: 'Not found.',
             details: {
@@ -230,7 +226,6 @@ describe('Create an experience', () => {
           });
         });
       });
-
       context('initial experience', () => {
         it('the experience is saved as private', async () => {
           // send request
@@ -246,7 +241,6 @@ describe('Create an experience', () => {
               recommend: 'yes',
             })
             .expect(201);
-
           should(body).have.property('public', false);
 
           // after, experience should be found in the database
@@ -256,10 +250,8 @@ describe('Create an experience', () => {
           }).exec();
           should(experience).have.property('public', false);
         });
-
         it('send email notification to target user', async () => {
           should(jobs.length).equal(0);
-
           await agent
             .post('/api/experiences')
             .send({
@@ -272,10 +264,8 @@ describe('Create an experience', () => {
               recommend: 'yes',
             })
             .expect(201);
-
           const emailJobs = jobs.filter(job => job.type === 'send email');
           should(emailJobs.length).equal(1);
-
           const [job] = emailJobs;
           should(job.data.subject).equal(
             `${user1.displayName} shared their experience with you`,
@@ -294,7 +284,6 @@ describe('Create an experience', () => {
             `${config.limits.timeToReplyExperience.days} days`,
           );
         });
-
         it('does not enqueue a push notification', async () => {
           await agent
             .post('/api/experiences')
@@ -314,7 +303,6 @@ describe('Create an experience', () => {
           should(pushJobs.length).equal(0);
         });
       });
-
       context('reply experience', () => {
         it('set both experiences as public', async () => {
           // first create a non-public experience in the opposite direction
@@ -325,7 +313,6 @@ describe('Create an experience', () => {
             recommend: 'no',
             public: false,
           });
-
           await experience.save();
 
           // create the opposite direction experience
@@ -341,7 +328,6 @@ describe('Create an experience', () => {
               recommend: 'yes',
             })
             .expect(201);
-
           should(body).have.property('public', true);
 
           // after, both experiences should be found in the database and public
@@ -350,14 +336,12 @@ describe('Create an experience', () => {
             userTo: user1._id,
           }).exec();
           should(experience2To1).have.property('public', true);
-
           const experience1To2 = await Experience.findOne({
             userFrom: user1._id,
             userTo: user2._id,
           }).exec();
           should(experience1To2).have.property('public', true);
         });
-
         it('only positive recommendation is allowed when opposite-direction public experience exists', async () => {
           // first create a public experience in the opposite direction
           const experience = new Experience({
@@ -367,7 +351,6 @@ describe('Create an experience', () => {
             recommend: 'no',
             public: true,
           });
-
           await experience.save();
 
           // create a response experience with recommend: 'no'
@@ -384,7 +367,6 @@ describe('Create an experience', () => {
               recommend: 'no',
             })
             .expect(400);
-
           should(body).match({
             message: 'Bad request.',
             details: {
@@ -407,7 +389,6 @@ describe('Create an experience', () => {
             })
             .expect(201);
         });
-
         it('send email notification about the received experience', async () => {
           should(jobs.length).equal(0);
 
@@ -433,15 +414,12 @@ describe('Create an experience', () => {
               recommend: 'yes',
             })
             .expect(201);
-
           const emailJobs = jobs.filter(job => job.type === 'send email');
           should(emailJobs.length).equal(1);
-
           const [job] = emailJobs;
           should(job.data.subject).equal(
             `${user1.displayName} shared also their experience with you`,
           );
-
           should(job.data.to.address).equal(user2.email);
           should(job.data.text).containEql(
             `/profile/${user2.username}/experiences#${experienceResponse._id}`,
@@ -450,7 +428,6 @@ describe('Create an experience', () => {
             `/profile/${user2.username}/experiences?utm_source=transactional-email&amp;utm_medium=email&amp;utm_campaign=experience-notification-second&amp;utm_content=see-experiences#${experienceResponse._id}`,
           );
         });
-
         it('does not enqueue a push notification', async () => {
           should(jobs.length).equal(0);
 
@@ -485,7 +462,6 @@ describe('Create an experience', () => {
         });
       });
     });
-
     context('invalid request', () => {
       it('[invalid value in interaction types] 400', async () => {
         const { body } = await agent
@@ -499,7 +475,6 @@ describe('Create an experience', () => {
             recommend: 'unknown',
           })
           .expect(400);
-
         should(body).match({
           message: 'Bad request.',
           details: {
@@ -509,7 +484,6 @@ describe('Create an experience', () => {
           },
         });
       });
-
       it('[invalid recommendation] 400', async () => {
         const { body } = await agent
           .post('/api/experiences')
@@ -522,7 +496,6 @@ describe('Create an experience', () => {
             recommend: 'invalid',
           })
           .expect(400);
-
         should(body).match({
           message: 'Bad request.',
           details: {
@@ -530,7 +503,6 @@ describe('Create an experience', () => {
           },
         });
       });
-
       it('[invalid userTo] 400', async () => {
         const { body } = await agent
           .post('/api/experiences')
@@ -542,7 +514,6 @@ describe('Create an experience', () => {
             recommend: 'yes',
           })
           .expect(400);
-
         should(body).match({
           message: 'Bad request.',
           details: {
@@ -550,7 +521,6 @@ describe('Create an experience', () => {
           },
         });
       });
-
       it('[missing userTo] 400', async () => {
         const { body } = await agent
           .post('/api/experiences')
@@ -561,7 +531,6 @@ describe('Create an experience', () => {
             recommend: 'yes',
           })
           .expect(400);
-
         should(body).match({
           message: 'Bad request.',
           details: {
@@ -569,7 +538,6 @@ describe('Create an experience', () => {
           },
         });
       });
-
       it('[unexpected fields] 400', async () => {
         const { body } = await agent
           .post('/api/experiences')
@@ -582,7 +550,6 @@ describe('Create an experience', () => {
             foo: 'bar',
           })
           .expect(400);
-
         should(body).match({
           message: 'Bad request.',
           details: {
@@ -590,7 +557,6 @@ describe('Create an experience', () => {
           },
         });
       });
-
       it('[too long public feedback] 400', async () => {
         const { body } = await agent
           .post('/api/experiences')
@@ -604,7 +570,6 @@ describe('Create an experience', () => {
             feedbackPublic: faker.lorem.words(2000), // probably longer than the limit
           })
           .expect(400);
-
         should(body).match({
           message: 'Bad request.',
           details: {
@@ -612,7 +577,6 @@ describe('Create an experience', () => {
           },
         });
       });
-
       it('[all interaction types false or missing] 400', async () => {
         const { body } = await agent
           .post('/api/experiences')
@@ -625,7 +589,6 @@ describe('Create an experience', () => {
             recommend: 'yes',
           })
           .expect(400);
-
         should(body).match({
           message: 'Bad request.',
           details: {
@@ -637,17 +600,18 @@ describe('Create an experience', () => {
       });
     });
   });
-
   context('logged in as non-public user', () => {
     // Sign in and sign out
-    beforeEach(utils.signIn.bind(this, _usersNonpublic[0], agent));
-    afterEach(utils.signOut.bind(this, agent));
-
+    beforeEach(function () {
+      return utils.signIn.call(this, _usersNonpublic[0], agent);
+    });
+    afterEach(function () {
+      return utils.signOut.call(this, agent);
+    });
     it('403', async () => {
       await agent.post('/api/experiences').send({}).expect(403);
     });
   });
-
   context('not logged in', () => {
     it('403', async () => {
       await agent.post('/api/experiences').send({}).expect(403);

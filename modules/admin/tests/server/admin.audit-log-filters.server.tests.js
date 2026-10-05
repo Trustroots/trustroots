@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 require('should');
-const controller = require('../../server/controllers/admin.audit-log.server.controller');
+const controller = require('../../server/controllers/admin.audit-log.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const AuditLog = mongoose.model('AuditLog');
 const User = mongoose.model('User');

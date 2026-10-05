@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { expect } = require('./test');
+const { expect } = require('./fixtures');
 
 const fixturesDir = path.join(__dirname, '../fixtures/maps');
 const providerHosts = [

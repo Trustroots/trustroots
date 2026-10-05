@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-
 const service = {};
 
 /**
@@ -30,11 +29,15 @@ const ContactSchema = new Schema({
     required: 'Missing user!',
   },
 });
-
-ContactSchema.index({ userFrom: 1 });
-ContactSchema.index({ userTo: 1 });
-ContactSchema.index({ confirmed: 1 });
-
+ContactSchema.index({
+  userFrom: 1,
+});
+ContactSchema.index({
+  userTo: 1,
+});
+ContactSchema.index({
+  confirmed: 1,
+});
 mongoose.model('Contact', ContactSchema);
-
 export default service;
+export { service as 'module.exports' };

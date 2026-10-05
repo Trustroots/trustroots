@@ -1,18 +1,18 @@
 import mongoose from 'mongoose';
 import _ from 'lodash';
 import util from 'util';
-import config from '../../../../config/config.js';
-import textService from '../../../core/server/services/text.server.service.js';
-import errorService from '../../../core/server/services/error.server.service.js';
-import emailService from '../../../core/server/services/email.server.service.js';
-import userProfile from '../../../users/server/controllers/users.profile.server.controller.js';
-import userMiniService from '../../../users/server/services/user-mini.server.service.js';
-import userRolesService from '../../../users/server/services/user-roles.server.service.js';
+import config from '../../../../config/config.mjs';
+import textService from '../../../core/server/services/text.server.service.mjs';
+import errorService from '../../../core/server/services/error.server.service.mjs';
+import emailService from '../../../core/server/services/email.server.service.mjs';
+import userProfile from '../../../users/server/controllers/users.profile.server.controller.mjs';
+import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
+import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
 import {
   prepareExperienceCount,
   prepareNewExperience,
   prepareSendingToClient,
-} from '../services/experience-payload.server.service.js';
+} from '../services/experience-payload.server.service.mjs';
 
 const service = {};
 
@@ -709,3 +709,5 @@ export {
   readOne as readOne,
 };
 export default service;
+
+export { service as 'module.exports' };

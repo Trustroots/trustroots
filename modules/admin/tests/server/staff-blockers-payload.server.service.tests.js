@@ -1,7 +1,7 @@
 const assert = require('assert/strict');
 const {
   prepareStaffBlockers,
-} = require('../../server/services/staff-blockers-payload.server.service.js');
+} = require('../../server/services/staff-blockers-payload.server.service.mjs');
 
 describe('Staff-blocker response payload', () => {
   it('selects matching blockers without exposing blocked lists or private fields', () => {

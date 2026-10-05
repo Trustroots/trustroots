@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { test: setup } = require('../support/test');
+const { test: setup } = require('../support/fixtures');
 
 setup.describe.configure({ mode: 'serial' });
 const {

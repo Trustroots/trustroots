@@ -1,5 +1,5 @@
-const paginationService = require('../../../server/services/pagination.server.service');
-const config = require('../../../../../config/config');
+const paginationService = require('../../../server/services/pagination.server.service.mjs');
+const config = require('../../../../../config/config.mjs');
 
 const should = require('should');
 

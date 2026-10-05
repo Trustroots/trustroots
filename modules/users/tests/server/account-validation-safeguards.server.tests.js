@@ -1,13 +1,12 @@
 const should = require('should');
 const request = require('supertest');
 const mongoose = require('mongoose');
-const express = require('../../../../config/lib/express');
-const config = require('../../../../config/config');
-const defaults = require('../../../../config/env/default');
+const express = require('./../../../../config/lib/express.mjs');
+const config = require('./../../../../config/config.mjs');
+const defaults = require('./../../../../config/env/default.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const testutils = require('../../../../testutils/server/server.testutil');
 const User = mongoose.model('User');
-
 const reservedNames = [
   'about',
   'abuse',
@@ -38,7 +37,6 @@ const reservedNames = [
   'team',
   'volunteering',
 ];
-
 function member() {
   return {
     firstName: 'Amina',
@@ -50,15 +48,13 @@ function member() {
     public: true,
   };
 }
-
 describe('Account validation safeguards', function () {
   let app;
   const jobs = testutils.catchJobs();
-  before(function () {
-    app = express.init(mongoose.connection);
+  before(async function () {
+    app = await express.init(mongoose.connection);
   });
   afterEach(utils.clearDatabase);
-
   for (const username of reservedNames) {
     it(
       'reserves ' + username + ' in configuration and signup',
@@ -67,27 +63,55 @@ describe('Account validation safeguards', function () {
         config.illegalStrings.should.containEql(username);
         const validation = await request(app)
           .post('/api/auth/signup/validate')
-          .send({ username })
+          .send({
+            username,
+          })
           .expect(200);
         validation.body.valid.should.be.false();
         validation.body.message.should.equal('Username is not available.');
         await request(app)
           .post('/api/auth/signup')
-          .send({ ...member(), username })
+          .send({
+            ...member(),
+            username,
+          })
           .expect(400);
-        should.not.exist(await User.findOne({ username }));
+        should.not.exist(
+          await User.findOne({
+            username,
+          }),
+        );
       },
     );
   }
-
   it('rejects profile changes for an existing reserved username', async function () {
     const [user] = await utils.saveUsers([member()]);
-    await User.updateOne({ _id: user._id }, { $set: { username: 'nostr' } });
+    await User.updateOne(
+      {
+        _id: user._id,
+      },
+      {
+        $set: {
+          username: 'nostr',
+        },
+      },
+    );
     const agent = request.agent(app);
-    await utils.signIn({ ...member(), username: 'nostr' }, agent);
+    await utils.signIn(
+      {
+        ...member(),
+        username: 'nostr',
+      },
+      agent,
+    );
     for (const body of [
-      { lastName: 'River' },
-      { username: 'nostr', lastName: 'River' },
+      {
+        lastName: 'River',
+      },
+      {
+        username: 'nostr',
+        lastName: 'River',
+      },
     ]) {
       await agent.put('/api/users').send(body).expect(400);
       const saved = await User.findById(user._id);
@@ -95,21 +119,22 @@ describe('Account validation safeguards', function () {
       saved.lastName.should.equal(member().lastName);
     }
   });
-
   it('rejects changing an existing username to a reserved name', async function () {
     const [user] = await utils.saveUsers([member()]);
     user.username = 'nostr';
     const error = user.validateSync();
     should.exist(error.errors.username);
   });
-
   for (const email of [
     'member@example.org extra',
     'two@@example.org',
     'plain-text',
   ]) {
     it('rejects malformed pending email ' + email, function () {
-      const user = new User({ ...member(), emailTemporary: email });
+      const user = new User({
+        ...member(),
+        emailTemporary: email,
+      });
       user
         .validateSync()
         .errors.emailTemporary.message.should.equal(
@@ -117,18 +142,19 @@ describe('Account validation safeguards', function () {
         );
     });
   }
-
   for (const emailTemporary of ['', 'member+confirmation@example.org']) {
     it(
       'allows valid or empty pending email ' + emailTemporary,
       async function () {
-        const user = new User({ ...member(), emailTemporary });
+        const user = new User({
+          ...member(),
+          emailTemporary,
+        });
         await user.save();
         user.emailTemporary.should.equal(emailTemporary);
       },
     );
   }
-
   for (const email of [
     'member@example.org extra',
     {},
@@ -146,7 +172,9 @@ describe('Account validation safeguards', function () {
         await utils.signIn(member(), agent);
         const response = await agent
           .put('/api/users')
-          .send({ email })
+          .send({
+            email,
+          })
           .expect(400);
         response.body.message.should.equal(
           'Please enter a valid email address.',
@@ -157,15 +185,18 @@ describe('Account validation safeguards', function () {
       },
     );
   }
-
   it('keeps an empty email update as an unchanged email', async function () {
     const [user] = await utils.saveUsers([member()]);
     const agent = request.agent(app);
     await utils.signIn(member(), agent);
-    await agent.put('/api/users').send({ email: '' }).expect(200);
+    await agent
+      .put('/api/users')
+      .send({
+        email: '',
+      })
+      .expect(200);
     (await User.findById(user._id)).email.should.equal(member().email);
   });
-
   for (const step of ['first', 'second', 'third']) {
     it(
       'acknowledges the disabled ' +
@@ -174,7 +205,7 @@ describe('Account validation safeguards', function () {
       function () {
         const handler = require('../../server/jobs/user-welcome-sequence-' +
           step +
-          '.server.job');
+          '.server.job.mjs');
         let calls = 0;
         const jobCount = jobs.length;
         handler({}, function (err) {

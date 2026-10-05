@@ -4,10 +4,10 @@
 const sinon = require('sinon');
 const mongoose = require('mongoose');
 
-const emailService = require('../../../../core/server/services/email.server.service');
-const reactivateHostsJobHandler = require('../../../server/jobs/reactivate-hosts.server.job');
+const emailService = require('./../../../../core/server/services/email.server.service.mjs');
+const reactivateHostsJobHandler = require('./../../../server/jobs/reactivate-hosts.server.job.mjs');
 const testutils = require('../../../../../testutils/server/server.testutil');
-const config = require('../../../../../config/config');
+const config = require('./../../../../../config/config.mjs');
 const moment = require('moment');
 require('should');
 

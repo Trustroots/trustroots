@@ -3,7 +3,7 @@ const {
   expect,
   test,
   useElementScreenshot,
-} = require('../../support/test');
+} = require('../../support/fixtures');
 
 const { SEEDED_MEMBERS, waitForTribesList } = require('../../support/helpers');
 

@@ -1,4 +1,4 @@
-const userRoles = require('../../../server/services/user-roles.server.service');
+const userRoles = require('./../../../server/services/user-roles.server.service.mjs');
 
 require('should');
 

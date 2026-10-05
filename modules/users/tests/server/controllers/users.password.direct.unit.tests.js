@@ -3,17 +3,17 @@ require('should');
 
 const path = require('path');
 const mongoose = require('mongoose');
-const config = require('../../../../../config/config');
+const config = require('./../../../../../config/config.mjs');
 config.files.server.models.forEach(modelPath =>
   require(path.resolve(modelPath)),
 );
-const analyticsHandler = require('../../../../core/server/controllers/analytics.server.controller');
-const emailService = require('../../../../core/server/services/email.server.service');
-require('../../../server/models/user.server.model');
+const analyticsHandler = require('./../../../../core/server/controllers/analytics.server.controller.mjs');
+const emailService = require('./../../../../core/server/services/email.server.service.mjs');
+require('./../../../server/models/user.server.model.mjs');
 const User = mongoose.model('User');
-const profileHandler = require('../../../server/controllers/users.profile.server.controller');
-const statService = require('../../../../stats/server/services/stats.server.service');
-const controller = require('../../../server/controllers/users.password.server.controller');
+const profileHandler = require('./../../../server/controllers/users.profile.server.controller.mjs');
+const statService = require('./../../../../stats/server/services/stats.server.service.mjs');
+const controller = require('./../../../server/controllers/users.password.server.controller.mjs');
 
 function deferredResponse() {
   let resolveResponse;

@@ -4,7 +4,7 @@
 const _ = require('lodash');
 const should = require('should');
 const testutils = require('../../../../../testutils/server/server.testutil');
-const config = require('../../../../../config/config');
+const config = require('./../../../../../config/config.mjs');
 const moment = require('moment');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
@@ -22,7 +22,7 @@ describe('Job: user finish signup', function () {
   const jobs = testutils.catchJobs();
 
   before(function () {
-    userFinishSignupJobHandler = require('../../../server/jobs/user-finish-signup.server.job');
+    userFinishSignupJobHandler = require('./../../../server/jobs/user-finish-signup.server.job.mjs');
   });
 
   // Create an unconfirmed user

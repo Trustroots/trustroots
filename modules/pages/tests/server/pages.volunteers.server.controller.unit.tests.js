@@ -3,7 +3,7 @@
  */
 const mongoose = require('mongoose');
 const lodash = require('lodash');
-require('../../../users/server/models/user.server.model');
+require('./../../../users/server/models/user.server.model.mjs');
 const sinon = require('sinon');
 
 require('should');

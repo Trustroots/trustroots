@@ -6,8 +6,8 @@ const winston = require('winston');
 const should = require('should');
 
 const testutils = require('../../../../testutils/server/server.testutil');
-require('../../server/models/user.server.model');
-const authController = require('../../server/controllers/users.authentication.server.controller');
+require('./../../server/models/user.server.model.mjs');
+const authController = require('./../../server/controllers/users.authentication.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
@@ -258,7 +258,7 @@ describe('Authentication controller OAuth unit tests', () => {
 
     it('returns 400 when resending the confirmation email fails', async () => {
       const controller = stubControllerDependencies({
-        '../../../core/server/services/email.server.service': {
+        './../../../core/server/services/email.server.service.mjs': {
           sendSignupEmailConfirmation: (user, cb) => cb(new Error('smtp down')),
         },
       });
@@ -333,7 +333,7 @@ describe('Authentication controller OAuth unit tests', () => {
   describe('signup', () => {
     function loadSignupController() {
       return stubControllerDependencies({
-        '../../../core/server/services/email.server.service': {
+        './../../../core/server/services/email.server.service.mjs': {
           sendSignupEmailConfirmation: (user, cb) => cb(),
         },
       });
@@ -458,7 +458,7 @@ describe('Authentication controller OAuth unit tests', () => {
         .stub()
         .callsFake((user, matchedKeywords, callback) => callback());
       const controller = stubControllerDependencies({
-        '../../../core/server/services/email.server.service': {
+        './../../../core/server/services/email.server.service.mjs': {
           sendFlaggedSignupAlert,
           sendSignupEmailConfirmation: (user, callback) => callback(),
         },
@@ -492,7 +492,7 @@ describe('Authentication controller OAuth unit tests', () => {
         return this;
       });
       const controller = stubControllerDependencies({
-        '../../../core/server/services/email.server.service': {
+        './../../../core/server/services/email.server.service.mjs': {
           sendFlaggedSignupAlert: (user, matchedKeywords, callback) =>
             callback(new Error('alert mail failed')),
           sendSignupEmailConfirmation: (user, callback) => callback(),
@@ -531,7 +531,7 @@ describe('Authentication controller OAuth unit tests', () => {
             done(null);
           },
         },
-        '../../../stats/server/services/stats.server.service': {
+        './../../../stats/server/services/stats.server.service.mjs': {
           stat: (statsObject, callback) => callback(),
         },
       });
@@ -573,7 +573,7 @@ describe('Authentication controller OAuth unit tests', () => {
             done({ errors: {} });
           },
         },
-        '../../../stats/server/services/stats.server.service': {
+        './../../../stats/server/services/stats.server.service.mjs': {
           stat: (statsObject, callback) => {
             stats = statsObject;
             callback();

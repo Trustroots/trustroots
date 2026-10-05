@@ -4,7 +4,7 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const tribesController = require('../../server/controllers/tribes.server.controller');
+const tribesController = require('./../../server/controllers/tribes.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
