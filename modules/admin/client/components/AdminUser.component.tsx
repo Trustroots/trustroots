@@ -492,6 +492,7 @@ export default class AdminUser extends Component<
     } = this.state;
     const isProfile = user && user.profile;
     const isSuspended = isSuspendedUser(get(user, ['profile']));
+    const isShadowbanned = this.hasRole('shadowban');
     const isRestricted = get(user, ['profile', 'roles'], []).some(
       (role: string) => ['shadowban', 'suspended'].includes(role),
     );
@@ -690,14 +691,18 @@ export default class AdminUser extends Component<
                       color: 'danger',
                       label: 'Suspend',
                     },
-                    ...(isSuspended
-                      ? []
-                      : [
+                    ...(!isSuspended || isShadowbanned
+                      ? [
                           {
                             role: 'shadowban',
                             color: 'danger',
                             label: 'Shadow ban',
                           },
+                        ]
+                      : []),
+                    ...(isSuspended
+                      ? []
+                      : [
                           {
                             role: 'volunteer',
                             color: 'success',
@@ -709,29 +714,31 @@ export default class AdminUser extends Component<
                             label: 'Make volunteer alumni',
                           },
                         ]),
-                  ].map(({ role, color, label }) => (
-                    <button
-                      key={role}
-                      className={`btn btn-${color}`}
-                      disabled={
-                        user.profile.roles.includes(role) || isSettingUserRole
-                      }
-                      onClick={() => this.handleUserRoleChange(role)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                  {this.hasRole('shadowban') && (
-                    <button
-                      type="button"
-                      className="btn btn-default"
-                      disabled={isSettingUserRole}
-                      onClick={() =>
-                        this.handleUserRoleChange('shadowban', 'remove')
-                      }
-                    >
-                      Unshadowban
-                    </button>
+                  ].map(({ role, color, label }) =>
+                    role === 'shadowban' && isShadowbanned ? (
+                      <button
+                        key={role}
+                        type="button"
+                        className="btn btn-default"
+                        disabled={isSettingUserRole}
+                        onClick={() =>
+                          this.handleUserRoleChange('shadowban', 'remove')
+                        }
+                      >
+                        Unshadowban
+                      </button>
+                    ) : (
+                      <button
+                        key={role}
+                        className={`btn btn-${color}`}
+                        disabled={
+                          user.profile.roles.includes(role) || isSettingUserRole
+                        }
+                        onClick={() => this.handleUserRoleChange(role)}
+                      >
+                        {label}
+                      </button>
+                    ),
                   )}
                 </div>
               </div>
