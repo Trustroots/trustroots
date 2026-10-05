@@ -39,6 +39,10 @@ service.invokeRolesPolicies = function () {
           permissions: [],
         },
         {
+          resources: '/api/users/accounts/:provider',
+          permissions: [],
+        },
+        {
           resources: '/api/users/memberships',
           permissions: [],
         },
@@ -82,6 +86,10 @@ service.invokeRolesPolicies = function () {
         {
           resources: '/api/users/password',
           permissions: ['post'],
+        },
+        {
+          resources: '/api/users/accounts/:provider',
+          permissions: ['delete'],
         },
         {
           resources: '/api/users/memberships',

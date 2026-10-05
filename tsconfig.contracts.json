@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": []
+  },
+  "include": [
+    "modules/*/shared/**/*.ts",
+    "modules/admin/server/services/staff-blockers-payload.server.service.mjs",
+    "modules/experiences/server/services/experience-payload.server.service.mjs"
+  ]
+}

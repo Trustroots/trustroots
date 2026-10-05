@@ -424,10 +424,7 @@ describe('API route registrations', () => {
     assertHandlers(routeByPath(routes, '/api/users/:username').get, [
       profile.getUser,
     ]);
-    routes
-      .filter(route => route.path !== '/api/users/accounts/:provider')
-      .filter(route => route.path !== '/api/users/password')
-      .forEach(route => assertPolicy(route, policy));
+    routes.forEach(route => assertPolicy(route, policy));
     assert.deepStrictEqual(
       params.map(param => [param.name, param.middleware.routeTestName]),
       [
