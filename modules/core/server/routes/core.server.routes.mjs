@@ -15,6 +15,13 @@ const defaultExport = function (app) {
       res.redirect(301, dst);
     });
   };
+  app.route('/login').get(function (req, res) {
+    const query = req.originalUrl.indexOf('?');
+    res.redirect(
+      302,
+      '/signin' + (query === -1 ? '' : req.originalUrl.slice(query)),
+    );
+  });
   redirect('/invite', '/signup');
   redirect('/tribes/lgbt', '/circles/lgbtq');
   redirect('/tribes/vegans-vegetarians', '/circles/veg');
