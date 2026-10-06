@@ -77,6 +77,23 @@ describe('Core CRUD tests', function () {
           return done(err);
         });
     });
+    it('loads analytics asynchronously without delaying document readiness', async function () {
+      const response = await agent.get('/').expect(200);
+      response.text.should.match(
+        /<script\s+async\s+src="https:\/\/1p\.trustroots\.org\/script\.js"/,
+      );
+    });
+    it('can disable analytics without changing the application scripts', async function () {
+      const previous = app.locals.umami;
+      try {
+        app.locals.umami = { ...previous, enabled: false };
+        const response = await agent.get('/').expect(200);
+        response.text.should.not.match(/data-website-id=/);
+        response.text.should.match(/react-main\.js/);
+      } finally {
+        app.locals.umami = previous;
+      }
+    });
     it('should be able to receive CSP report with "application/json" accept header', function (done) {
       agent
         .post('/api/report-csp-violation')

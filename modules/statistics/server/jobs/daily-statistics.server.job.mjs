@@ -251,7 +251,7 @@ export default defaultInterop;
 function writeDailyStat(statObject, callback) {
   // Save to influx via Stats api
   // eslint-disable-next-line no-unused-vars
-  statsService.stat(statObject, function (err, result) {
+  statsService.deliver(statObject, function (err, result) {
     // Log errors
     if (err) {
       // if there exist stat-service specific errors, log them separately

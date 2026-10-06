@@ -18,7 +18,14 @@ const getClient = function (callback) {
   }
 
   // Init Influx client with configuration
-  const client = new Influx.InfluxDB(config.influxdb.options);
+  const client = new Influx.InfluxDB({
+    ...config.influxdb.options,
+    pool: {
+      ...config.influxdb.options.pool,
+      requestTimeout: 2000,
+      maxRetries: 0,
+    },
+  });
   callback(null, client);
 };
 const influxService = {

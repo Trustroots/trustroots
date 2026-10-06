@@ -158,3 +158,108 @@ docker build \
   -f ./production.Dockerfile . \
   -t ghcr.io/trustrootsops/trustroots:latest
 ```
+
+## Production resilience
+
+Application telemetry is best effort: statistics callbacks acknowledge local
+validation, not InfluxDB persistence. Outstanding writes are capped at 32;
+InfluxDB requests use a two-second timeout without retries. Daily statistics
+jobs use the delivery-aware API. Lost telemetry is not replayed.
+
+Use explicit rotated local logging for `webapp`, `worker` and `mongodb` in the
+production-owned Compose file, rather than inheriting a host Loki driver:
+
+```yaml
+logging:
+  driver: local
+  options:
+    max-size: '10m'
+    max-file: '3'
+```
+
+Recreate existing containers to apply the logging change. This does not unblock
+containers already stuck in the old driver. A separate Grafana Alloy collector
+can ship Docker logs to Loki without coupling remote delivery to shutdown.
+
+For HTTPS behind a trusted frontend proxy, the deployment-owned `local.js`
+must specify `https: true`, the canonical `domain` (without a scheme), and
+`sessionProxy: true`. The frontend must overwrite `X-Forwarded-Proto` and prevent
+untrusted direct access to the app. Keep CSRF protection enabled.
+
+### Require media storage at boot
+
+Ensure `/etc/fstab` specifies the filesystem type, for example:
+
+```text
+/dev/disk/by-id/YOUR_MEDIA_VOLUME /mnt/media ext4 defaults 0 2
+```
+
+On a dedicated production Docker host, run `sudo systemctl edit docker.service`
+and add:
+
+```ini
+[Unit]
+RequiresMountsFor=/mnt/media
+BindsTo=mnt-media.mount
+After=mnt-media.mount
+```
+
+Then run `sudo systemctl daemon-reload`. This deliberately makes **all Docker
+services on that host** depend on the media mount and stops Docker if systemd
+observes the mount disappearing. Apply it during a maintenance window. Do not
+restart Docker until the correct volume is mounted. Verify with
+`findmnt /mnt/media`; never format an existing media volume to repair a mount.
+
+### Checked deployments and rollback
+
+Install Python 3.9 or newer and copy `production-deploy.py` to the deployment
+host. Run as an operator with Docker access (or through `sudo`). The script
+expects the existing `webapp`, `worker`, and `mongodb` services and the photo
+bind mount at `/home/app/trustroots/public/uploads-profile`.
+
+```bash
+sudo python3 production-deploy.py preflight \
+  --compose /var/local/tr-deploy/compose.yml \
+  --media-mount /mnt/media --url https://www.trustroots.org
+sudo python3 production-deploy.py deploy \
+  --compose /var/local/tr-deploy/compose.yml \
+  --media-mount /mnt/media --url https://www.trustroots.org
+```
+
+Deployment checks Compose configuration, required media storage, local logging,
+HTTPS session settings and MongoDB connectivity before pulling. Use a dedicated
+non-admin verification account with no personal data: the script prompts for
+its username and password, checks readiness and a real login/session round trip,
+and signs out. For automation supply `TRUSTROOTS_DEPLOY_USERNAME` and
+`TRUSTROOTS_DEPLOY_PASSWORD` through the runner's secret environment; never put
+the password in command-line arguments. Account rate limits still apply.
+
+The script tags both previous image IDs with `<project>-<service>-rollback:previous`,
+saves them in `.trustroots-previous-images.json` beside Compose, and uses immutable
+IDs during replacement. It serialises invocations with a file lock and restores
+previous images if replacement or verification fails. Rollback itself can fail
+if Docker, storage, or the previous image is broken; inspect the result rather
+than assuming recovery. Container replacement interrupts active work and does
+not undo database migrations. Worker verification checks running state only.
+
+Explicit rollback uses saved image IDs without pulling or needing a healthy
+current application:
+
+```bash
+sudo python3 production-deploy.py rollback \
+  --compose /var/local/tr-deploy/compose.yml \
+  --media-mount /mnt/media --url https://www.trustroots.org
+```
+
+Do not run the old update script concurrently. These safeguards require adopting
+the script and configuration on the production host; an image update alone does
+not change mounts, logging, proxy configuration or systemd dependencies.
+
+### Analytics outages
+
+Umami loads asynchronously and does not gate document readiness or login.
+Operators can disable script loading during an outage by adding
+`umami: { enabled: false }` to deployment-owned `local.js` and restarting the
+webapp. Failed external requests may still appear in browser network diagnostics;
+they are not application failures. Existing trackers already loaded in an open
+browser tab are removed only when the page reloads.
