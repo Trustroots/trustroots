@@ -1,7 +1,10 @@
 // External dependencies
 import get from 'lodash/get';
+import { formatRoleLabel } from '../utils/role-label';
+import { getAdminUserHref } from '../utils/member-url';
 import PropTypes from 'prop-types';
 import React, { Component, type ChangeEvent, type FormEvent } from 'react';
+import { Modal } from 'react-bootstrap';
 
 // Internal dependencies
 import {
@@ -19,6 +22,9 @@ import Json from './Json.component';
 import UserEmailConfirmLink from './UserEmailConfirmLink.component';
 import UserState from './UserState.component';
 import Tooltip from '@/modules/core/client/components/Tooltip';
+import ProfilePage from '@/modules/users/client/components/ProfilePage.component';
+import type { AuthUser } from '@/modules/core/client/react-app/auth';
+import type { UserProfile } from '@/modules/users/client/types';
 import {
   SEARCH_STRING_LIMIT,
   getReferenceUserId,
@@ -81,7 +87,7 @@ const DEFAULT_MEMBER_LIST_SORT: MemberSort = {
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
   'welcome-team':
-    'Welcome team members can view acquisition stories and analysis, and see members who blocked their account.',
+    'Greeters can view acquisition stories and analysis, and see members who blocked their account.',
   admin: 'Full access to administration and moderation tools.',
   moderator: 'Legacy moderation role retained for historical accounts.',
   shadowban:
@@ -148,7 +154,12 @@ interface AdminUserState {
   matchingUsers: MemberRecord[];
   query: string;
   user: MemberRecord | false;
-  roleChangeError?: boolean;
+  roleChangeError?: 'change' | 'refresh' | false;
+  roleChangeSucceeded: boolean;
+  pendingRoleChange: {
+    role: string;
+    action?: 'add' | 'remove';
+  } | null;
 }
 
 interface InfoTableProps {
@@ -182,6 +193,53 @@ function formatLocationForSearch(location?: string[] | null) {
   }
 
   return `${location[1]},${location[0]}`;
+}
+
+function getRoleChangeConfirmation(
+  role: string,
+  action: 'add' | 'remove' | undefined,
+  username: string,
+) {
+  if (role === 'shadowban' && action === 'remove') {
+    return {
+      title: `Unshadowban ${username}?`,
+      message: 'Past hidden messages will stay hidden.',
+      confirmLabel: 'Unshadowban',
+    };
+  }
+  if (role === 'suspended' && action !== 'remove') {
+    return {
+      title: `Suspend ${username}?`,
+      message:
+        'This will block their access until an administrator intervenes.',
+      confirmLabel: 'Suspend',
+    };
+  }
+  if (role === 'shadowban' && action !== 'remove') {
+    return {
+      title: `Shadow ban ${username}?`,
+      message: 'Their profile and outreach will be hidden from others.',
+      confirmLabel: 'Shadow ban',
+    };
+  }
+  if (role === 'welcome-team') {
+    return action === 'remove'
+      ? {
+          title: `Remove ${username} as a greeter?`,
+          message: '',
+          confirmLabel: 'Remove greeter',
+        }
+      : {
+          title: `Make ${username} a greeter?`,
+          message: ROLE_DESCRIPTIONS['welcome-team'],
+          confirmLabel: 'Make greeter',
+        };
+  }
+  return {
+    title: `Set ${username}'s role to ${role}?`,
+    message: '',
+    confirmLabel: 'Confirm role change',
+  };
 }
 
 function getUserId(user: MemberContact['userFrom']): string | undefined {
@@ -239,7 +297,7 @@ InfoTable.propTypes = {
 };
 
 export default class AdminUser extends Component<
-  { username?: string },
+  { username?: string; viewer?: AuthUser | null },
   AdminUserState
 > {
   constructor(props: { username?: string }) {
@@ -247,6 +305,8 @@ export default class AdminUser extends Component<
     this.getUserById = this.getUserById.bind(this);
     this.getUsersByLastIpAddress = this.getUsersByLastIpAddress.bind(this);
     this.handleUserRoleChange = this.handleUserRoleChange.bind(this);
+    this.cancelUserRoleChange = this.cancelUserRoleChange.bind(this);
+    this.confirmUserRoleChange = this.confirmUserRoleChange.bind(this);
     this.onHideObviousSpamUsersChange =
       this.onHideObviousSpamUsersChange.bind(this);
     this.onMatchingUsersPageChange = this.onMatchingUsersPageChange.bind(this);
@@ -266,6 +326,8 @@ export default class AdminUser extends Component<
       matchingUsers: [],
       query: '',
       user: false,
+      pendingRoleChange: null,
+      roleChangeSucceeded: false,
     };
   }
 
@@ -336,41 +398,66 @@ export default class AdminUser extends Component<
   }
 
   handleUserRoleChange(role: string, action?: 'add' | 'remove') {
-    const id = get(this, ['state', 'user', 'profile', '_id']);
-    if (id) {
-      const username = get(this, ['state', 'user', 'profile', 'username']);
-      if (
-        window.confirm(
-          action === 'remove'
-            ? role === 'shadowban'
-              ? `Unshadowban ${username}? Past hidden messages will stay hidden.`
-              : `Remove ${username} from Welcome team?`
-            : `Set ${username} role to ${role}?`,
-        )
-      ) {
-        this.setState(
-          { isSettingUserRole: true, roleChangeError: false },
-          async () => {
-            try {
-              if (action) {
-                await setUserRole(id, role, action);
-              } else {
-                await setUserRole(id, role);
-              }
-              this.setState(({ notesRevision }) => ({
-                notesRevision: notesRevision + 1,
-              }));
-              const user = await getUser(id);
-              this.setState({ user });
-            } catch {
-              this.setState({ roleChangeError: true });
-            } finally {
-              this.setState({ isSettingUserRole: false });
-            }
-          },
-        );
-      }
+    if (get(this, ['state', 'user', 'profile', '_id'])) {
+      this.setState({
+        pendingRoleChange: { role, action },
+        roleChangeError: false,
+        roleChangeSucceeded: false,
+      });
     }
+  }
+
+  cancelUserRoleChange() {
+    if (!this.state.isSettingUserRole) {
+      this.setState({
+        pendingRoleChange: null,
+        roleChangeError: false,
+        roleChangeSucceeded: false,
+      });
+    }
+  }
+
+  confirmUserRoleChange() {
+    const id = get(this, ['state', 'user', 'profile', '_id']);
+    const pendingRoleChange = this.state.pendingRoleChange;
+    if (!id || !pendingRoleChange || this.state.isSettingUserRole) {
+      return;
+    }
+    if (this.state.roleChangeSucceeded) {
+      this.cancelUserRoleChange();
+      return;
+    }
+
+    this.setState(
+      { isSettingUserRole: true, roleChangeError: false },
+      async () => {
+        try {
+          if (pendingRoleChange.action) {
+            await setUserRole(
+              id,
+              pendingRoleChange.role,
+              pendingRoleChange.action,
+            );
+          } else {
+            await setUserRole(id, pendingRoleChange.role);
+          }
+          this.setState(({ notesRevision }) => ({
+            notesRevision: notesRevision + 1,
+            roleChangeSucceeded: true,
+          }));
+          try {
+            const user = await getUser(id);
+            this.setState({ user, pendingRoleChange: null });
+          } catch {
+            this.setState({ roleChangeError: 'refresh' });
+          }
+        } catch {
+          this.setState({ roleChangeError: 'change' });
+        } finally {
+          this.setState({ isSettingUserRole: false });
+        }
+      },
+    );
   }
 
   queryUser(
@@ -483,14 +570,18 @@ export default class AdminUser extends Component<
       hideObviousSpamUsers,
       isSearching,
       isSettingUserRole,
+      pendingRoleChange,
       matchingUsers,
       matchingUsersPagination,
       matchingUsersSort,
       query,
+      roleChangeError,
+      roleChangeSucceeded,
       user,
     } = this.state;
     const isProfile = user && user.profile;
     const isSuspended = isSuspendedUser(get(user, ['profile']));
+    const isShadowbanned = this.hasRole('shadowban');
     const isRestricted = get(user, ['profile', 'roles'], []).some(
       (role: string) => ['shadowban', 'suspended'].includes(role),
     );
@@ -504,7 +595,9 @@ export default class AdminUser extends Component<
       hasSearched && !isSearching && visibleMatchingUsers.length === 0;
     const userId = get(user, ['profile', '_id']);
     const profileLabel = isProfile
-      ? user.profile.displayName || user.profile.username || 'Unknown member'
+      ? [user.profile.username, user.profile.displayName]
+          .filter(Boolean)
+          .join(': ') || 'Unknown member'
       : '';
     const profileRows: InfoTableProps['rows'] = isProfile
       ? ([
@@ -531,7 +624,7 @@ export default class AdminUser extends Component<
           [
             'Roles',
             user.profile.roles && user.profile.roles.length
-              ? user.profile.roles.join(', ')
+              ? user.profile.roles.map(formatRoleLabel).join(', ')
               : null,
           ],
           ['Profile visible', user.profile.public ? 'Yes' : 'No'],
@@ -604,6 +697,15 @@ export default class AdminUser extends Component<
         ]
       : [];
     const hasThreadVotes = threadVoteGroups.some(({ votes }) => votes.length);
+    const roleChangeConfirmation =
+      isProfile && pendingRoleChange
+        ? getRoleChangeConfirmation(
+            pendingRoleChange.role,
+            pendingRoleChange.action,
+            user.profile.username || 'this member',
+          )
+        : null;
+    const viewer = this.props.viewer;
 
     return (
       <>
@@ -689,14 +791,18 @@ export default class AdminUser extends Component<
                       color: 'danger',
                       label: 'Suspend',
                     },
-                    ...(isSuspended
-                      ? []
-                      : [
+                    ...(!isSuspended || isShadowbanned
+                      ? [
                           {
                             role: 'shadowban',
                             color: 'danger',
                             label: 'Shadow ban',
                           },
+                        ]
+                      : []),
+                    ...(isSuspended
+                      ? []
+                      : [
                           {
                             role: 'volunteer',
                             color: 'success',
@@ -708,39 +814,31 @@ export default class AdminUser extends Component<
                             label: 'Make volunteer alumni',
                           },
                         ]),
-                  ].map(({ role, color, label }) => (
-                    <button
-                      key={role}
-                      className={`btn btn-${color}`}
-                      disabled={
-                        user.profile.roles.includes(role) || isSettingUserRole
-                      }
-                      onClick={() => this.handleUserRoleChange(role)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                  {this.hasRole('shadowban') && (
-                    <button
-                      type="button"
-                      className="btn btn-default"
-                      disabled={isSettingUserRole}
-                      onClick={() =>
-                        this.handleUserRoleChange('shadowban', 'remove')
-                      }
-                    >
-                      Unshadowban
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div id="roles" className="panel panel-default admin-user-roles">
-                <div className="panel-body">
-                  {this.state.roleChangeError && (
-                    <p role="alert">
-                      Could not change the role. Please try again.
-                    </p>
+                  ].map(({ role, color, label }) =>
+                    role === 'shadowban' && isShadowbanned ? (
+                      <button
+                        key={role}
+                        type="button"
+                        className="btn btn-default"
+                        disabled={isSettingUserRole}
+                        onClick={() =>
+                          this.handleUserRoleChange('shadowban', 'remove')
+                        }
+                      >
+                        Unshadowban
+                      </button>
+                    ) : (
+                      <button
+                        key={role}
+                        className={`btn btn-${color}`}
+                        disabled={
+                          user.profile.roles.includes(role) || isSettingUserRole
+                        }
+                        onClick={() => this.handleUserRoleChange(role)}
+                      >
+                        {label}
+                      </button>
+                    ),
                   )}
                   <Tooltip
                     id="welcome-team-role-help"
@@ -749,7 +847,7 @@ export default class AdminUser extends Component<
                   >
                     <button
                       type="button"
-                      className="btn btn-default"
+                      className="btn btn-success"
                       aria-describedby="welcome-team-role-description"
                       disabled={isSettingUserRole}
                       onClick={() =>
@@ -760,13 +858,18 @@ export default class AdminUser extends Component<
                       }
                     >
                       {this.hasRole('welcome-team')
-                        ? 'Remove from Welcome team'
-                        : 'Add to Welcome team'}
+                        ? 'Remove greeter'
+                        : 'Make greeter'}
                     </button>
                   </Tooltip>
                   <span id="welcome-team-role-description" className="sr-only">
                     {ROLE_DESCRIPTIONS['welcome-team']}
                   </span>
+                </div>
+              </div>
+
+              <div id="roles" className="admin-user-roles">
+                <div className="panel-body">
                   <ul className="list-inline">
                     {user.profile.roles
                       .filter(role => role !== 'user')
@@ -780,12 +883,25 @@ export default class AdminUser extends Component<
                               'Role stored on this member.'
                             }
                           >
-                            <span
-                              tabIndex={0}
-                              aria-describedby={`member-role-${role}-description`}
-                            >
-                              {role === 'welcome-team' ? 'Welcome team' : role}
-                            </span>
+                            {role === 'welcome-team' ||
+                            role === 'volunteer' ||
+                            role === 'volunteer-alumni' ? (
+                              <a
+                                href={`/admin/search-users?role=${encodeURIComponent(
+                                  role,
+                                )}`}
+                                aria-describedby={`member-role-${role}-description`}
+                              >
+                                {formatRoleLabel(role)}
+                              </a>
+                            ) : (
+                              <span
+                                tabIndex={0}
+                                aria-describedby={`member-role-${role}-description`}
+                              >
+                                {formatRoleLabel(role)}
+                              </span>
+                            )}
                           </Tooltip>
                           <span
                             id={`member-role-${role}-description`}
@@ -929,7 +1045,7 @@ export default class AdminUser extends Component<
                           {potentialMatches.map(match => (
                             <tr key={match._id}>
                               <td>
-                                <a href={`/admin/user?id=${match._id}`}>
+                                <a href={getAdminUserHref(match)}>
                                   {match.displayName || match.username}
                                 </a>
                                 <div className="text-muted">
@@ -937,7 +1053,9 @@ export default class AdminUser extends Component<
                                 </div>
                               </td>
                               <td>{match.email}</td>
-                              <td>{match.roles.join(', ')}</td>
+                              <td>
+                                {match.roles.map(formatRoleLabel).join(', ')}
+                              </td>
                               <td>{match.matchReasons.join(', ')}</td>
                               <td>{match.acquisitionStory}</td>
                             </tr>
@@ -1058,7 +1176,12 @@ export default class AdminUser extends Component<
                                 <td>
                                   {contactMemberId ? (
                                     <a
-                                      href={`/admin/user?id=${contactMemberId}`}
+                                      href={getAdminUserHref({
+                                        _id: contactMemberId,
+                                        username: get(contactMember, [
+                                          'username',
+                                        ]),
+                                      })}
                                     >
                                       {contactName}
                                     </a>
@@ -1081,7 +1204,83 @@ export default class AdminUser extends Component<
               </div>
             </>
           )}
+          {isProfile && user.profile.username && viewer?._id && (
+            <section
+              className="admin-user-embedded-profile"
+              aria-labelledby="reported-member-profile-heading"
+            >
+              <h4 id="reported-member-profile-heading">Public profile</h4>
+              <ProfilePage
+                currentPath={`/profile/${encodeURIComponent(
+                  user.profile.username,
+                )}`}
+                embedded
+                profileUsername={user.profile.username}
+                user={viewer as UserProfile}
+              />
+            </section>
+          )}
         </div>
+        <Modal
+          show={Boolean(roleChangeConfirmation)}
+          onHide={this.cancelUserRoleChange}
+          keyboard={!isSettingUserRole}
+          backdrop={isSettingUserRole ? 'static' : true}
+          aria-labelledby="admin-role-change-title"
+        >
+          {roleChangeConfirmation && (
+            <>
+              <Modal.Header>
+                <Modal.Title id="admin-role-change-title">
+                  {roleChangeConfirmation.title}
+                </Modal.Title>
+              </Modal.Header>
+              <Modal.Body>
+                {roleChangeConfirmation.message && (
+                  <p>{roleChangeConfirmation.message}</p>
+                )}
+                {roleChangeError === 'change' && (
+                  <p role="alert">
+                    Could not change the role. Please try again.
+                  </p>
+                )}
+                {roleChangeError === 'refresh' && (
+                  <p role="alert">
+                    The role was updated, but member details could not be
+                    refreshed. Close this dialog and reload the report.
+                  </p>
+                )}
+                {isSettingUserRole && (
+                  <p role="status" aria-live="polite">
+                    Updating role…
+                  </p>
+                )}
+              </Modal.Body>
+              <Modal.Footer>
+                <button
+                  type="button"
+                  className="btn btn-default"
+                  onClick={this.cancelUserRoleChange}
+                  disabled={isSettingUserRole}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={this.confirmUserRoleChange}
+                  disabled={isSettingUserRole}
+                >
+                  {isSettingUserRole
+                    ? 'Updating…'
+                    : roleChangeSucceeded
+                    ? 'Close'
+                    : roleChangeConfirmation.confirmLabel}
+                </button>
+              </Modal.Footer>
+            </>
+          )}
+        </Modal>
       </>
     );
   }

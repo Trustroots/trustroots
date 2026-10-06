@@ -70,7 +70,7 @@ export default function AdminHeader() {
             className="navbar-brand"
             href={isAdmin ? '/admin' : '/admin/acquisition-stories'}
           >
-            {isAdmin ? 'Admin' : 'Welcome team'}
+            {isAdmin ? 'Admin' : 'Greeters'}
           </a>
         </div>
         <ul className="nav navbar-nav">

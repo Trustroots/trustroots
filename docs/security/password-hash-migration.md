@@ -40,6 +40,13 @@ code that only understands PBKDF2 would lock out accounts whose passwords were
 created or transparently upgraded after deployment. A rollback plan must
 preserve the compatible verifier and the authentication-version checks.
 
+Passport sessions now store `{ id, authVersion }` instead of a bare user id.
+Deploying this change invalidates every existing signed-in session, so every
+member must sign in again. Treat that logout as an expected release effect and
+announce it with the deployment. Transparent legacy-to-scrypt upgrades do not
+bump `authVersion` and therefore do not revoke other sessions; password reset,
+password change, and real admin role changes do.
+
 The application security maintainers own the format and cost review. The
 service operators own process-count and memory-budget checks, 503-rate
 monitoring, and incident response for sustained queue saturation. Review these

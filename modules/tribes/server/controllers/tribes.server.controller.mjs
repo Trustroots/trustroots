@@ -1,12 +1,18 @@
 import errorService from '../../../core/server/services/error.server.service.mjs';
 import paginationService from '../../../core/server/services/pagination.server.service.mjs';
 import mongoose from 'mongoose';
+import moment from 'moment';
+import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
+import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
 const service = {};
 
 /**
  * Module dependencies.
  */
 const Tribe = mongoose.model('Tribe');
+const User = mongoose.model('User');
+const Contact = mongoose.model('Contact');
+const Experience = mongoose.model('Experience');
 const MEMBER_ONLY_TRIBE_SLUGS = ['naturists'];
 
 // Publicly exposed fields from tribes
@@ -100,6 +106,119 @@ service.getTribe = function (req, res) {
   res.json(req.tribe || {});
 };
 
+function visibleMemberMatch(req, excludedIDs, prefix = '') {
+  return {
+    [`${prefix}_id`]: {
+      $nin: [req.user._id, ...(req.user.blocked || []), ...excludedIDs],
+    },
+    [`${prefix}public`]: true,
+    [`${prefix}roles`]: { $nin: userRolesService.restrictedMessagingRoles },
+    [`${prefix}blocked`]: { $nin: [req.user._id] },
+    [`${prefix}member.tribe`]: req.tribe._id,
+  };
+}
+
+const DISCOVERY_QUERY_TIMEOUT_MS = 1000;
+
+async function listCircleContacts(req) {
+  const selfId = req.user._id;
+  return Contact.aggregate([
+    {
+      $match: {
+        confirmed: true,
+        $or: [{ userFrom: selfId }, { userTo: selfId }],
+      },
+    },
+    {
+      $project: {
+        userId: {
+          $cond: [{ $eq: ['$userFrom', selfId] }, '$userTo', '$userFrom'],
+        },
+      },
+    },
+    { $group: { _id: '$userId' } },
+    {
+      $lookup: {
+        from: 'users',
+        localField: '_id',
+        foreignField: '_id',
+        as: 'user',
+      },
+    },
+    { $unwind: '$user' },
+    { $match: visibleMemberMatch(req, [], 'user.') },
+    { $sort: { 'user.displayName': 1, 'user._id': 1 } },
+    { $limit: 20 },
+    { $project: userMiniService.userMiniProjection('$user') },
+  ])
+    .option({ maxTimeMS: DISCOVERY_QUERY_TIMEOUT_MS })
+    .exec();
+}
+
+async function listCircleRecommenders(req, excludedIDs) {
+  const selfId = req.user._id;
+  return Experience.aggregate([
+    {
+      $match: {
+        userTo: selfId,
+        userFrom: {
+          $nin: [selfId, ...(req.user.blocked || []), ...excludedIDs],
+        },
+        public: true,
+        recommend: 'yes',
+      },
+    },
+    { $sort: { created: -1 } },
+    { $group: { _id: '$userFrom', created: { $first: '$created' } } },
+    {
+      $lookup: {
+        from: 'users',
+        localField: '_id',
+        foreignField: '_id',
+        as: 'user',
+      },
+    },
+    { $unwind: '$user' },
+    { $match: visibleMemberMatch(req, excludedIDs, 'user.') },
+    { $sort: { created: -1, _id: 1 } },
+    { $limit: 20 },
+    { $project: userMiniService.userMiniProjection('$user') },
+  ])
+    .option({ maxTimeMS: DISCOVERY_QUERY_TIMEOUT_MS })
+    .exec();
+}
+
+/** List a signed-in circle member's bounded, privacy-filtered discovery groups. */
+service.listMembers = async function listMembers(req, res, next) {
+  try {
+    const isMember = req.user?.member?.some(member =>
+      member.tribe.equals(req.tribe._id),
+    );
+    if (!isMember) {
+      return errorService.sendForbidden(res);
+    }
+
+    const contacts = await listCircleContacts(req);
+    const contactIDs = contacts.map(member => member._id);
+    const recommenders = await listCircleRecommenders(req, contactIDs);
+    const recommenderIDs = recommenders.map(member => member._id);
+    const active = await User.find({
+      ...visibleMemberMatch(req, [...contactIDs, ...recommenderIDs]),
+      seen: { $gte: moment().subtract(1, 'month').toDate() },
+    })
+      .select(userMiniService.userMiniProfileFields)
+      .sort({ seen: -1, _id: 1 })
+      .limit(8)
+      .maxTimeMS(DISCOVERY_QUERY_TIMEOUT_MS)
+      .lean()
+      .exec();
+
+    return res.json({ contacts, recommenders, active });
+  } catch (err) {
+    return next(err);
+  }
+};
+
 /**
  * Tribe middleware
  */
@@ -148,6 +267,7 @@ service.updateCount = function (id, difference, returnUpdated, callback) {
   );
 };
 const getTribe = service.getTribe;
+const listMembers = service.listMembers;
 const listTribes = service.listTribes;
 const tribeBySlug = service.tribeBySlug;
 const tribeFields = service.tribeFields;
@@ -155,6 +275,7 @@ const tribePopulateOptions = service.tribePopulateOptions;
 const updateCount = service.updateCount;
 export {
   getTribe as getTribe,
+  listMembers as listMembers,
   listTribes as listTribes,
   tribeBySlug as tribeBySlug,
   tribeFields as tribeFields,

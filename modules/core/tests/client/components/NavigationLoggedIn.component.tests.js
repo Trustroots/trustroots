@@ -93,7 +93,7 @@ describe('<NavigationLoggedIn />', () => {
     );
   });
 
-  it.each([undefined, [], ['user'], ['welcome-team']])(
+  it.each([undefined, [], ['user']])(
     'omits the administrator shortcut for non-admin roles %j',
     roles => {
       render(
@@ -108,6 +108,29 @@ describe('<NavigationLoggedIn />', () => {
       ).not.toBeInTheDocument();
     },
   );
+
+  it('links Greeters to acquisition stories and administrators to admin tools', () => {
+    const { rerender } = render(
+      <NavigationLoggedIn
+        currentPath="/admin/acquisition-stories"
+        onSignout={jest.fn()}
+        user={{ ...user, roles: ['user', 'welcome-team'] }}
+      />,
+    );
+    expect(
+      screen.getByRole('link', { name: 'Admin', exact: true }),
+    ).toHaveAttribute('href', '/admin/acquisition-stories');
+    rerender(
+      <NavigationLoggedIn
+        currentPath="/admin"
+        onSignout={jest.fn()}
+        user={{ ...user, roles: ['user', 'admin'] }}
+      />,
+    );
+    expect(
+      screen.getByRole('link', { name: 'Admin', exact: true }),
+    ).toHaveAttribute('href', '/admin');
+  });
 
   it('forwards signout click to callback', () => {
     const onSignout = jest.fn();

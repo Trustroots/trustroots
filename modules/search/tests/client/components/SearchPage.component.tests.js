@@ -533,6 +533,16 @@ describe('<SearchPage />', () => {
     await new Promise(resolve => setTimeout(resolve, 0));
   });
 
+  it('ignores malformed offer identifiers in the route', () => {
+    mockGetRouteParams.mockReturnValue({ offer: 'invalid' });
+    renderSearchPage();
+    expect(offersApi.getOffer).not.toHaveBeenCalled();
+    expect(screen.getByRole('link', { name: 'Members' })).toHaveAttribute(
+      'href',
+      '/search/members',
+    );
+  });
+
   it('passes public visibility through to the map', () => {
     renderSearchPage({ _id: 'user-1', public: true, username: 'alice' });
 

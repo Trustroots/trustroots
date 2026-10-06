@@ -55,8 +55,10 @@ describe('Search users: GET /users?search=string', function () {
           provider: 'local',
           public: _.has(user, 'public') ? user.public : true,
           gender: 'non-binary',
-          locationFrom: 'Wonderland',
-          locationLiving: 'La Islantilla',
+          locationFrom: user.locationFrom || 'Wonderland',
+          locationLiving: user.locationLiving || 'Sampleton',
+          tagline: user.tagline || '',
+          roles: user.roles || ['user'],
         });
         createdUsers.push(createdUser);
         createdUser.save(cb);
@@ -111,6 +113,109 @@ describe('Search users: GET /users?search=string', function () {
         .end(done);
     });
     context('valid request', function () {
+      it('caps result count even when a larger limit is requested', function (done) {
+        createUsers(
+          Array.from({ length: 55 }, (_, index) => ({
+            username: 'boundedmember' + index,
+            firstName: 'Capped',
+          })),
+          function (err) {
+            if (err) return done(err);
+            agent
+              .get('/api/users?search=Capped&limit=100')
+              .expect(200)
+              .end(function (error, response) {
+                if (error) return done(error);
+                response.body.should.have.length(50);
+                done();
+              });
+          },
+        );
+      });
+      it('excludes members blocked in either direction from location results', function (done) {
+        createUsers(
+          [
+            { username: 'blockedbyviewer', locationLiving: 'Exampleville' },
+            { username: 'blockingviewer', locationLiving: 'Exampleville' },
+            { username: 'visiblemember', locationLiving: 'Exampleville' },
+          ],
+          function (err, members) {
+            if (err) return done(err);
+            Promise.all([
+              User.updateOne(
+                { _id: loggedUser._id },
+                { $set: { blocked: [members[0]._id] } },
+              ),
+              User.updateOne(
+                { _id: members[1]._id },
+                { $set: { blocked: [loggedUser._id] } },
+              ),
+            ])
+              .then(() => {
+                agent
+                  .get('/api/users?search=Exampleville')
+                  .expect(200)
+                  .end(function (error, response) {
+                    if (error) return done(error);
+                    response.body
+                      .map(member => member.username)
+                      .should.eql(['visiblemember']);
+                    done();
+                  });
+              })
+              .catch(done);
+          },
+        );
+      });
+      it('finds public locations and taglines, ranking names higher', function (done) {
+        createUsers(
+          [
+            { username: 'riverside' },
+            { username: 'location-match', locationLiving: 'Riverside' },
+            { username: 'origin-match', locationFrom: 'Riverside' },
+            {
+              username: 'tagline-match',
+              tagline: 'Riverside pottery enthusiast',
+            },
+            {
+              username: 'private-match',
+              locationLiving: 'Riverside',
+              public: false,
+            },
+            {
+              username: 'suspended-match',
+              locationLiving: 'Riverside',
+              roles: ['suspended'],
+            },
+            {
+              username: 'shadow-match',
+              locationLiving: 'Riverside',
+              roles: ['shadowban'],
+            },
+          ],
+          function (err) {
+            if (err) return done(err);
+            agent
+              .get('/api/users?search=Riverside')
+              .expect(200)
+              .end(function (error, response) {
+                if (error) return done(error);
+                response.body
+                  .map(member => member.username)
+                  .should.eql([
+                    'riverside',
+                    'location-match',
+                    'origin-match',
+                    'tagline-match',
+                  ]);
+                response.body[3].tagline.should.eql(
+                  'Riverside pottery enthusiast',
+                );
+                done();
+              });
+          },
+        );
+      });
       it('[a username matched] return array of users', function (done) {
         async.waterfall(
           [
@@ -596,6 +701,9 @@ describe('Search users: GET /users?search=string', function () {
       });
     });
     context('invalid request', function () {
+      it('rejects excessive pagination', function (done) {
+        agent.get('/api/users?search=example&page=1000').expect(400).end(done);
+      });
       it('[query string is less than 3 characters long] respond with 400', function (done) {
         agent
           .get('/api/users?search=aa')
@@ -603,11 +711,23 @@ describe('Search users: GET /users?search=string', function () {
           .end(function (err, res) {
             should(res.body.message).eql('Bad request.');
             should(res.body.detail).eql(
-              'Query string should be at least 3 characters long.',
+              'Query string should contain between 3 and 120 characters.',
             );
             done(err);
           });
       });
+      for (const query of [
+        'search=aaa&search=bbb',
+        'search=' + 'a'.repeat(121),
+        'search=%20%20%20',
+      ]) {
+        it('rejects invalid query ' + query.slice(0, 30), function (done) {
+          agent
+            .get('/api/users?' + query)
+            .expect(400)
+            .end(done);
+        });
+      }
     });
   });
 });

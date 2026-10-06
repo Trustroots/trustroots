@@ -544,8 +544,18 @@ describe('User Model Unit Tests:', function () {
         password: legacyPassword,
         salt: legacySalt.toString('base64'),
       });
+      const resetHash = await User.hashPassword('other-password');
       const update = sinon.stub(User, 'updateOne').returns({
         exec: async () => ({ matchedCount: 0 }),
+      });
+      const findById = sinon.stub(User, 'findById').returns({
+        select() {
+          return this;
+        },
+        lean() {
+          return this;
+        },
+        exec: async () => ({ password: resetHash, salt: undefined }),
       });
 
       try {
@@ -553,8 +563,46 @@ describe('User Model Unit Tests:', function () {
         candidate.password.should.equal(legacyPassword);
         candidate.salt.should.equal(legacySalt.toString('base64'));
         update.calledOnce.should.be.true();
+        findById.calledOnce.should.be.true();
       } finally {
         update.restore();
+        findById.restore();
+      }
+    });
+
+    it('accepts a legacy login when a concurrent upgrade already stored scrypt', async function () {
+      const legacySalt = crypto.randomBytes(16);
+      const legacyPassword = crypto
+        .pbkdf2Sync('legacy-password', legacySalt, 10000, 64, 'sha1')
+        .toString('base64');
+      const candidate = new User({
+        ...baseUser,
+        password: legacyPassword,
+        salt: legacySalt.toString('base64'),
+      });
+      const upgraded = await User.hashPassword('legacy-password');
+      const update = sinon.stub(User, 'updateOne').returns({
+        exec: async () => ({ matchedCount: 0 }),
+      });
+      const findById = sinon.stub(User, 'findById').returns({
+        select() {
+          return this;
+        },
+        lean() {
+          return this;
+        },
+        exec: async () => ({ password: upgraded, salt: undefined }),
+      });
+
+      try {
+        (await candidate.authenticate('legacy-password')).should.be.true();
+        candidate.password.should.equal(upgraded);
+        should(candidate.salt).be.undefined();
+        update.calledOnce.should.be.true();
+        findById.calledOnce.should.be.true();
+      } finally {
+        update.restore();
+        findById.restore();
       }
     });
   });

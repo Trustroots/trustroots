@@ -17,13 +17,13 @@ test.describe('admin moderation inspection flows', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
   });
 
-  test('staff blockers are grouped for admins and limited for Welcome team members', async ({
+  test('staff blockers are grouped for admins and limited for Greeters', async ({
     page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.staff-blockers', [
-      'Admins can inspect blockers of any administrator or Welcome team member.',
-      'Welcome team members can inspect only blockers of their own account.',
+      'Admins can inspect blockers of any administrator or Greeter.',
+      'Greeters can inspect only blockers of their own account.',
       'Regular members cannot access staff blocker information.',
     ]);
     const administrator = createUser();
@@ -234,7 +234,7 @@ test.describe('admin moderation inspection flows', () => {
 
     await expect(
       page.getByRole('heading', {
-        name: `${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName}`,
+        name: `${SEEDED_SHADOW.username}: ${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName}`,
       }),
     ).toBeVisible();
     await expect(page.getByText('shadowban').first()).toBeVisible();
@@ -254,8 +254,8 @@ test.describe('admin moderation inspection flows', () => {
     );
     await shadowRole.blur();
     await expect(
-      rolePanel.getByRole('button', {
-        name: 'Add to Welcome team',
+      page.locator('.admin-user-actions').getByRole('button', {
+        name: 'Make greeter',
         exact: true,
       }),
     ).toBeEnabled();
@@ -266,10 +266,50 @@ test.describe('admin moderation inspection flows', () => {
     await expect(page.getByText('Acquisition story').first()).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Alice Contact' }),
-    ).toHaveAttribute('href', '/admin/user?id=665000000000000000000006');
+    ).toHaveAttribute('href', '/admin/user/e2e-seeded-alice');
     await expect(
       page.getByText('Acquisition story', { exact: true }).last(),
     ).toBeVisible();
+  });
+});
+
+test.describe('admin inspection APIs', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+  test.beforeEach(async ({ request }) => {
+    await authenticateViaApi(request, SEEDED_ADMIN);
+  });
+
+  test('admin report includes the reported member public profile below moderation details', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.user-report', [
+      'Admin report shows the member public profile below moderation information.',
+    ]);
+    await signInViaApi(page, undefined, SEEDED_ADMIN);
+    const member = SEEDED_MEMBERS[1];
+    const profileResponsePromise = page.waitForResponse(response =>
+      response.url().endsWith(`/api/users/${member.username}`),
+    );
+
+    await page.goto(`/admin/user/${member.username}`);
+    await expect(
+      page.getByRole('heading', {
+        name: `${member.username}: ${member.firstName} ${member.lastName}`,
+      }),
+    ).toBeVisible();
+    const profileResponse = await profileResponsePromise;
+    expect(profileResponse.status()).toBe(200);
+    const publicProfile = await profileResponse.json();
+    expect(publicProfile.username).toBe(member.username);
+    expect(publicProfile.email).toBeUndefined();
+    expect(publicProfile.roles).toBeUndefined();
+
+    const embeddedProfile = page.locator('.admin-user-embedded-profile');
+    await expect(
+      embeddedProfile.getByRole('heading', { name: 'Public profile' }),
+    ).toBeVisible();
+    await expect(embeddedProfile.locator('.profile-overview')).toBeVisible();
+    await expect(page.locator('.admin-user-actions')).toBeVisible();
   });
 });
 

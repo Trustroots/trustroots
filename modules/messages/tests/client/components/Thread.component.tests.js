@@ -207,7 +207,7 @@ describe('<Thread>', () => {
       ),
     ).toBe('0px');
 
-    const button = screen.getByRole('button', { name: 'Yes, I can host!' });
+    const button = screen.getByRole('button', { name: 'Send', exact: true });
     button.focus();
     fireEvent.focusOut(editor);
     expect(
@@ -267,6 +267,15 @@ describe('<Thread>', () => {
       expect(
         screen.getByRole('link', { name: 'community rules' }),
       ).toHaveAttribute('href', '/rules');
+    });
+
+    it('does not offer hosting quick replies to start a conversation', async () => {
+      render(<Thread user={me} profileMinimumLength={0} />);
+      await screen.findByRole('textbox');
+      expect(screen.queryByTestId('quick-reply')).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Yes, I can host!' }),
+      ).not.toBeInTheDocument();
     });
 
     it('focuses the reply editor when a conversation opens on desktop', async () => {
@@ -692,6 +701,18 @@ describe('<Thread>', () => {
     expect(
       screen.getByRole('button', { name: `Block ${otherUser.username}` }),
     ).toBeInTheDocument();
+  });
+
+  it('does not offer hosting replies while waiting for the other member to respond', async () => {
+    api.messages.fetchMessages.mockResolvedValueOnce({
+      messages: [generateMessage(me)],
+    });
+    render(<Thread user={me} profileMinimumLength={0} />);
+    await screen.findByRole('textbox');
+    expect(screen.queryByTestId('quick-reply')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Yes, I can host!' }),
+    ).not.toBeInTheDocument();
   });
 
   describe('only messages from other user', () => {

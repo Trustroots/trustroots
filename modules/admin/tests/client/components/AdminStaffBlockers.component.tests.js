@@ -27,7 +27,7 @@ it('shows a loading message while waiting for the support list', () => {
   expect(screen.getByText('Loading members…')).toBeInTheDocument();
 });
 
-it('shows the members who blocked the signed-in Welcome team member', async () => {
+it('shows the members who blocked the signed-in Greeter', async () => {
   getStaffBlockers.mockResolvedValueOnce([
     {
       _id: 'staff-1',

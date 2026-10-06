@@ -73,6 +73,7 @@ export default function ForgotPasswordPage() {
                 <label htmlFor="username">Email or username</label>
                 <input
                   type="text"
+                  autoFocus
                   required
                   id="username"
                   name="username"
@@ -105,6 +106,11 @@ export default function ForgotPasswordPage() {
                       If an account matches that username or email, we will send
                       recovery instructions.
                     </strong>
+                  </p>
+                  <p>
+                    If you don&apos;t see this email in your inbox within 15
+                    minutes, look for it in your junk mail folder. If you find
+                    it there, please mark it as &quot;Not Junk&quot;.
                   </p>
                 </div>
               )}

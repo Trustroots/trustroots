@@ -12,7 +12,11 @@ const {
   registerViaApi,
   signInViaApi,
 } = require('../../support/helpers');
-const { findOffersByUser } = require('../../support/db');
+const {
+  findOffersByUser,
+  updateUserByUsername,
+  findUserByUsername,
+} = require('../../support/db');
 
 const berlin = SEEDED_MEMBERS[0];
 const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
@@ -517,17 +521,13 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await expect(scrollingOverview).toBeVisible();
       await expect(scrollingOverview).toHaveCSS('overflow-y', 'auto');
       await expect(scrollingOverview).toHaveCSS('touch-action', 'pan-y');
-      const isOverviewScrollable = await scrollingOverview.evaluate(
-        element => element.scrollHeight > element.clientHeight,
+      const documentScrollBeforeJoin = await memberPage.evaluate(
+        () => window.scrollY,
       );
-      if (isOverviewScrollable) {
-        await scrollingOverview.evaluate(element => {
-          element.scrollTop = element.scrollHeight;
-        });
-        await expect
-          .poll(() => scrollingOverview.evaluate(element => element.scrollTop))
-          .toBeGreaterThan(0);
-      }
+      await swipeUpFrom(memberPage, scrollingOverview);
+      await expect
+        .poll(() => memberPage.evaluate(() => window.scrollY))
+        .toBeGreaterThan(documentScrollBeforeJoin);
 
       const scrollingOverviewJoinButton =
         memberPage.locator('button.tribe-join');
@@ -562,19 +562,13 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await expect(scrollingOverview).toBeVisible();
       await expect(scrollingOverview).toHaveCSS('overflow-y', 'auto');
       await expect(scrollingOverview).toHaveCSS('touch-action', 'pan-y');
+      const documentScrollAfterJoin = await memberPage.evaluate(
+        () => window.scrollY,
+      );
+      await swipeUpFrom(memberPage, scrollingOverview);
       await expect
-        .poll(() =>
-          scrollingOverview.evaluate(
-            element => element.scrollHeight > element.clientHeight,
-          ),
-        )
-        .toBe(true);
-      await scrollingOverview.evaluate(element => {
-        element.scrollTop = element.scrollHeight;
-      });
-      await expect
-        .poll(() => scrollingOverview.evaluate(element => element.scrollTop))
-        .toBeGreaterThan(0);
+        .poll(() => memberPage.evaluate(() => window.scrollY))
+        .toBeGreaterThan(documentScrollAfterJoin);
 
       await expect(
         memberPage.getByRole('button', {
@@ -599,4 +593,62 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await context.close();
     }
   });
+});
+
+test('member search is reachable, focused and explains location matches', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'search.members', [
+    'Map search links to an autofocused member search.',
+    'Search matches public home locations and shows their context.',
+  ]);
+  const original = await findUserByUsername(berlin.username);
+  await updateUserByUsername(berlin.username, {
+    $set: { locationLiving: 'Exampleville' },
+  });
+  try {
+    await signInViaApi(page, request, berlin);
+    await page.goto('/search');
+    await page
+      .getByRole('link', { name: 'Find members by name or location' })
+      .click();
+    const input = page.getByRole('textbox', { name: 'Search members' });
+    await expect(input).toBeFocused();
+    await input.fill('Exampleville');
+    await page
+      .getByRole('button', { name: 'Search members', exact: true })
+      .click();
+    const card = page
+      .locator('.member-search-card')
+      .filter({ hasText: '@' + berlin.username });
+    await expect(card).toContainText('Lives in: Exampleville');
+    await expect(card.locator('strong')).toHaveText('Exampleville');
+    await expect(card).not.toContainText('Matches:');
+    await expect(
+      page.getByRole('link', { name: 'Search this place on the map' }),
+    ).toHaveAttribute('href', '/search?location=Exampleville');
+    await page.screenshot({
+      path: '.artifacts/member-search-desktop.png',
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.screenshot({
+      path: '.artifacts/member-search-mobile.png',
+      fullPage: true,
+    });
+    await page.goto('/search');
+    await page.getByRole('link', { name: 'Members', exact: true }).click();
+    await expect(page).toHaveURL(/\/search\/members$/);
+    await expect(
+      page.getByRole('textbox', { name: 'Search members' }),
+    ).toBeFocused();
+  } finally {
+    await updateUserByUsername(
+      berlin.username,
+      original.locationLiving === undefined
+        ? { $unset: { locationLiving: '' } }
+        : { $set: { locationLiving: original.locationLiving } },
+    );
+  }
 });

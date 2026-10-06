@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import { Offers } from '@/modules/offers/client/components/Offers.component';
@@ -65,6 +65,24 @@ describe('<Offers />', () => {
     expect(screen.getByText('username:alice')).toBeInTheDocument();
   });
 
+  it('does not present a not-hosting status while an offer is loading', async () => {
+    let resolveOffers;
+    getOffers.mockReturnValue(
+      new Promise(resolve => {
+        resolveOffers = resolve;
+      }),
+    );
+    render(
+      <Offers
+        authUser={{ _id: 'viewer', public: true }}
+        profile={{ _id: 'host-member', username: 'forest-host' }}
+      />,
+    );
+    expect(screen.queryByText(/status:/)).not.toBeInTheDocument();
+    await act(async () => resolveOffers([{ status: 'yes' }]));
+    expect(await screen.findByText('status:yes')).toBeInTheDocument();
+  });
+
   it('falls back to not-hosting when the profile has no host offers', async () => {
     getOffers.mockResolvedValue([]);
 
@@ -91,7 +109,7 @@ describe('<Offers />', () => {
     );
 
     expect(getOffers).not.toHaveBeenCalled();
-    expect(screen.getByText('status:loading')).toBeInTheDocument();
+    expect(screen.queryByText('status:loading')).not.toBeInTheDocument();
   });
 
   it('handles a missing profile without fetching offers', async () => {
@@ -99,8 +117,8 @@ describe('<Offers />', () => {
 
     await waitFor(() => expect(getOffers).not.toHaveBeenCalled());
 
-    expect(screen.getByText('status:loading')).toBeInTheDocument();
-    expect(screen.getByText('username:none')).toBeInTheDocument();
+    expect(screen.queryByText('status:loading')).not.toBeInTheDocument();
+    expect(screen.queryByText('username:none')).not.toBeInTheDocument();
   });
 
   it('treats missing authenticated user data as a public false visitor', async () => {

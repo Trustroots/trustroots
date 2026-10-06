@@ -1699,6 +1699,8 @@ const features = [
     },
     requiredScenarios: [
       'Search members page loads.',
+      'Map search links to an autofocused member search.',
+      'Search matches public home locations and shows their context.',
       'Search returns seeded hosts.',
       'Search handles empty or no-result states.',
     ],
@@ -2655,11 +2657,16 @@ const features = [
       'Authenticated non-admin direct loads of React-owned admin pages redirect away.',
       'Dashboard shows ten most recent negative thread votes.',
       'Dashboard shows ten most recent negative experiences.',
+      'Dashboard previews negative-experience feedback.',
     ],
     relatedSpecs: [
       spec(
         'admin-pages.spec.js',
         'admin dashboard welcomes the signed in admin',
+      ),
+      spec(
+        'admin-pages.spec.js',
+        'admin dashboard previews negative experience feedback',
       ),
       spec(
         'authenticated.spec.js',
@@ -2721,7 +2728,7 @@ const features = [
       ],
     },
     requiredScenarios: [
-      'Welcome team can view stories without other administrator access.',
+      'Greeters can view stories without other administrator access.',
       'Acquisition stories page loads.',
       'Acquisition stories query returns deterministic rows.',
       'Story rows show available member and hosting locations.',
@@ -2754,7 +2761,7 @@ const features = [
       ],
     },
     requiredScenarios: [
-      'Welcome team can view analysis.',
+      'Greeters can view analysis.',
       'Acquisition story analysis page loads.',
       'Analysis API returns deterministic analysis.',
     ],
@@ -2784,14 +2791,14 @@ const features = [
       ],
     },
     requiredScenarios: [
-      'Admins can inspect blockers of any administrator or Welcome team member.',
-      'Welcome team members can inspect only blockers of their own account.',
+      'Admins can inspect blockers of any administrator or Greeter.',
+      'Greeters can inspect only blockers of their own account.',
       'Regular members cannot access staff blocker information.',
     ],
     relatedSpecs: [
       spec(
         'admin-inspection.spec.js',
-        'staff blockers are grouped for admins and limited for Welcome team members',
+        'staff blockers are grouped for admins and limited for Greeters',
       ),
     ],
   },
@@ -2957,6 +2964,7 @@ const features = [
       'Admin user report card loads for a member id.',
       'Report card includes role and message counts.',
       'Report card shows the current role inventory.',
+      'Admin report shows the member public profile below moderation information.',
       'Restricted member report shows potential related accounts.',
       'Missing user id shows a usable error state.',
     ],
@@ -3009,7 +3017,7 @@ const features = [
       ],
     },
     requiredScenarios: [
-      'Administrator grants and revokes Welcome team membership.',
+      'Administrator grants and revokes greeter status.',
       'Admin can apply a moderation role change.',
       'Admin can remove a shadowban from a member report.',
       'Role change is recorded in audit log.',

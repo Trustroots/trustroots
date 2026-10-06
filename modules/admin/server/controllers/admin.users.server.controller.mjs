@@ -585,7 +585,7 @@ export const changeRole = async (req, res) => {
         ? current.roles
         : { $exists: false };
       const update = { $set: { roles: nextRoles } };
-      if (role === 'suspended') {
+      if (action === 'add' && role === 'suspended') {
         update.$set.newsletter = false;
         update.$set.public = false;
       }

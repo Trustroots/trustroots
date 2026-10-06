@@ -55,7 +55,7 @@ test('audit history has compact summaries and staff/team filters', async ({
     await expect(rows).toHaveCount(1);
     await expect(
       rows.getByRole('link', { name: `${username} (Fictional Welcomer)` }),
-    ).toHaveAttribute('href', `/admin/user?id=${actorId}`);
+    ).toHaveAttribute('href', `/admin/user/${username}`);
     const filtered = await request.get(
       `/api/admin/audit-log?username=${username}&team=welcome-team`,
     );

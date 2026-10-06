@@ -1,9 +1,4 @@
-const {
-  annotateFeature,
-  test,
-  expect,
-  useElementScreenshot,
-} = require('../../support/fixtures');
+const { annotateFeature, test, expect } = require('../../support/fixtures');
 const { ObjectId } = require('mongodb');
 
 const {
@@ -19,6 +14,7 @@ const {
 } = require('../../support/helpers');
 const {
   findUserByUsername,
+  removeUserByUsername,
   updateUserByUsername,
   withE2eDb,
 } = require('../../support/db');
@@ -145,7 +141,6 @@ test.describe('seeded message flows', () => {
       'Thread view shows seeded replies.',
       'Thread can be opened by username or userId route/query.',
     ]);
-    useElementScreenshot(testInfo, '.message-reply-actions');
 
     const portland = SEEDED_MEMBERS[1];
     const portlandId = await fetchUserIdByUsername(request, portland.username);
@@ -158,10 +153,81 @@ test.describe('seeded message flows', () => {
     await expect(
       page.getByText(SEEDED_CONVERSATIONS.berlinPortland.openingMessage),
     ).toBeVisible();
+    const incoming = page
+      .getByText(SEEDED_CONVERSATIONS.berlinPortland.openingMessage)
+      .locator('xpath=ancestor::*[contains(@class, "message-sender-other")]');
+    const outgoing = page
+      .getByText(SEEDED_CONVERSATIONS.berlinPortland.latestReply)
+      .locator('xpath=ancestor::*[contains(@class, "message-sender-me")]');
+    await expect(incoming).toHaveCSS('justify-content', 'normal');
+    await expect(outgoing).toHaveCSS('justify-content', 'flex-end');
+    const incomingBubble = await incoming.locator('.panel').boundingBox();
+    const outgoingBubble = await outgoing.locator('.panel').boundingBox();
+    expect(incomingBubble.x).toBeLessThan(outgoingBubble.x);
+    await expect(outgoing.getByText('You', { exact: true })).toBeVisible();
     await expect(page.locator('#messageReplySubmit')).toHaveCSS(
       'background-color',
       'rgb(18, 181, 145)',
     );
+  });
+
+  test('received messages offer quick reply buttons', async ({
+    page,
+    request,
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.thread-open', [
+      'Thread view shows seeded replies.',
+    ]);
+    const recipient = createUser();
+    const setupContext = await createIsolatedContext(browser, baseURL);
+    try {
+      await registerViaApi(setupContext.request, recipient);
+    } finally {
+      await setupContext.close();
+    }
+    const senderDoc = await findUserByUsername(SEEDED_MEMBERS[0].username);
+    const recipientDoc = await findUserByUsername(recipient.username);
+    const message = {
+      _id: new ObjectId(),
+      userFrom: senderDoc._id,
+      userTo: recipientDoc._id,
+      content: 'A fictional member asks about hosting.',
+      created: new Date(),
+      read: false,
+      shadowHidden: false,
+    };
+    const thread = {
+      _id: new ObjectId(),
+      userFrom: senderDoc._id,
+      userTo: recipientDoc._id,
+      message: message._id,
+      updated: message.created,
+      read: false,
+    };
+    try {
+      await withE2eDb(async db => {
+        await db.collection('messages').insertOne(message);
+        await db.collection('threads').insertOne(thread);
+      });
+      await updateUserByUsername(recipient.username, {
+        $set: { public: true },
+      });
+      await signInViaApi(page, request, recipient);
+      await page.goto(`/messages/${SEEDED_MEMBERS[0].username}`);
+      const quickReplies = page.getByTestId('quick-reply');
+      await expect(quickReplies).toBeVisible();
+      await expect(
+        quickReplies.getByRole('button', { name: 'Yes, I can host!' }),
+      ).toBeVisible();
+    } finally {
+      await withE2eDb(async db => {
+        await db.collection('threads').deleteOne({ _id: thread._id });
+        await db.collection('messages').deleteOne({ _id: message._id });
+      });
+      await removeUserByUsername(recipient.username);
+    }
   });
 
   test('inbox does not list the shadowbanned sender', async ({

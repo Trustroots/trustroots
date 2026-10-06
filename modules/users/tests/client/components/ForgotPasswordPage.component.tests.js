@@ -41,6 +41,9 @@ describe('ForgotPasswordPage', () => {
         'If an account matches that username or email, we will send recovery instructions.',
       ),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(/look for it in your junk mail folder/i),
+    ).toBeInTheDocument();
   });
 
   it('shows an error when the reset request fails', async () => {

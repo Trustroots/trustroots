@@ -9,6 +9,7 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 const Tribe = mongoose.model('Tribe');
+const Contact = mongoose.model('Contact');
 
 function deferredResponse() {
   let resolveResponse;
@@ -292,6 +293,51 @@ describe('Tribes controller unit tests', () => {
       tribesController.tribeBySlug({}, res, () => {}, 'missing-slug');
       const response = await res.waitForResponse();
       response.statusCode.should.equal(400);
+    });
+  });
+
+  describe('listMembers', () => {
+    it('supports legacy viewers without a blocked list', async () => {
+      const circleId = new mongoose.Types.ObjectId();
+      const res = deferredResponse();
+
+      await tribesController.listMembers(
+        {
+          user: {
+            _id: new mongoose.Types.ObjectId(),
+            member: [{ tribe: circleId }],
+          },
+          tribe: { _id: circleId },
+        },
+        res,
+        sinon.stub(),
+      );
+
+      res.body.should.eql({ contacts: [], recommenders: [], active: [] });
+    });
+
+    it('passes discovery query failures to the error handler', async () => {
+      const userId = new mongoose.Types.ObjectId();
+      const tribeId = new mongoose.Types.ObjectId();
+      const error = new Error('discovery failed');
+      sinon.stub(Contact, 'aggregate').returns({
+        option: () => ({
+          exec: () => Promise.reject(error),
+        }),
+      });
+      const next = sinon.stub();
+      const res = deferredResponse();
+
+      await tribesController.listMembers(
+        {
+          user: { _id: userId, member: [{ tribe: tribeId }], blocked: [] },
+          tribe: { _id: tribeId },
+        },
+        res,
+        next,
+      );
+
+      next.calledOnceWithExactly(error).should.be.true();
     });
   });
 

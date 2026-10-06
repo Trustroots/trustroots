@@ -58,6 +58,17 @@ export interface UserProfile {
 }
 
 export interface UserSummary
-  extends Pick<UserProfile, '_id' | 'username' | 'displayName'> {
+  extends Pick<
+    UserProfile,
+    | '_id'
+    | 'username'
+    | 'displayName'
+    | 'avatarSource'
+    | 'avatarUploaded'
+    | 'avatarVersion'
+    | 'updated'
+    | 'emailHash'
+    | 'additionalProvidersData'
+  > {
   avatar?: string;
 }

@@ -8,6 +8,7 @@ const AREA_BY_SPEC = {
   'circles-react.spec.js': 'Member flows',
   'member-entry-react.spec.js': 'Member flows',
   'auth-smoke.spec.js': 'Authentication',
+  'signin-session.spec.js': 'Authentication',
   'route-permissions.spec.js': 'Authentication',
   'account-lifecycle.spec.js': 'Authentication',
   'account-email-tokens.spec.js': 'Authentication',
@@ -46,6 +47,7 @@ const AREA_BY_SPEC = {
   'admin-reference-errors.spec.js': 'Admin',
   'admin-role-audit.spec.js': 'Admin',
   'admin-search.spec.js': 'Admin',
+  'admin-role-links.spec.js': 'Admin',
   'auth.setup.js': 'Setup',
 };
 

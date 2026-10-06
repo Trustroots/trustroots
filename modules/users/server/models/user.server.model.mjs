@@ -479,10 +479,31 @@ UserSchema.methods.authenticate = async function (password) {
     })
     .exec();
   const matchedCount = result.matchedCount ?? result.n;
-  if (matchedCount !== 1) return false;
+  if (matchedCount === 1) {
+    this.password = newPassword;
+    this.salt = undefined;
+    return true;
+  }
 
-  this.password = newPassword;
-  this.salt = undefined;
+  // Another request may already have upgraded the same password, or a
+  // concurrent reset/change may have replaced it. Re-check stored
+  // credentials so concurrent upgrades succeed and true password changes fail.
+  const fresh = await this.constructor
+    .findById(this._id)
+    .select('password salt')
+    .lean()
+    .exec();
+  if (!fresh) return false;
+
+  const retry = await passwordHashing.verifyPassword(
+    password,
+    fresh.password,
+    fresh.salt,
+  );
+  if (!retry.valid) return false;
+
+  this.password = fresh.password;
+  this.salt = fresh.salt;
   return true;
 };
 
@@ -498,8 +519,34 @@ UserSchema.index(
     partialFilterExpression: { nostrNpub: { $type: 'string', $gt: '' } },
   },
 );
-UserSchema.index({ username: 'text', firstName: 'text', lastName: 'text' });
-
+UserSchema.index(
+  {
+    username: 'text',
+    firstName: 'text',
+    lastName: 'text',
+    locationLiving: 'text',
+    locationFrom: 'text',
+    tagline: 'text',
+  },
+  {
+    weights: {
+      username: 10,
+      firstName: 8,
+      lastName: 8,
+      locationLiving: 4,
+      locationFrom: 2,
+      tagline: 1,
+    },
+  },
+);
+UserSchema.index(
+  {
+    'member.tribe': 1,
+    seen: -1,
+    _id: 1,
+  },
+  { name: 'circle_discovery_member_seen' },
+);
 mongoose.model('User', UserSchema);
 
 const defaultExport = {};

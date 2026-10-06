@@ -1533,7 +1533,10 @@ describe('Profile controller unit tests', () => {
             sort: () => ({
               limit: () => ({
                 skip: () => ({
-                  exec: cb => cb(null, [visibleDoc]),
+                  maxTimeMS: budget => {
+                    budget.should.equal(2000);
+                    return { exec: cb => cb(null, [visibleDoc]) };
+                  },
                 }),
               }),
             }),
@@ -1568,7 +1571,10 @@ describe('Profile controller unit tests', () => {
             sort: () => ({
               limit: () => ({
                 skip: () => ({
-                  exec: cb => cb(null, [visibleDoc]),
+                  maxTimeMS: budget => {
+                    budget.should.equal(2000);
+                    return { exec: cb => cb(null, [visibleDoc]) };
+                  },
                 }),
               }),
             }),
@@ -1601,7 +1607,10 @@ describe('Profile controller unit tests', () => {
             sort: () => ({
               limit: () => ({
                 skip: () => ({
-                  exec: cb => cb(null, [visibleDoc]),
+                  maxTimeMS: budget => {
+                    budget.should.equal(2000);
+                    return { exec: cb => cb(null, [visibleDoc]) };
+                  },
                 }),
               }),
             }),
@@ -1631,7 +1640,10 @@ describe('Profile controller unit tests', () => {
           sort: () => ({
             limit: () => ({
               skip: () => ({
-                exec: cb => cb(new Error('search failed')),
+                maxTimeMS: budget => {
+                  budget.should.equal(2000);
+                  return { exec: cb => cb(new Error('search failed')) };
+                },
               }),
             }),
           }),

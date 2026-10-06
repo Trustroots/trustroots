@@ -37,7 +37,32 @@ jest.mock('@/modules/tribes/client/components/JoinButton', () => ({
       <button onClick={() => onUpdated({})} type="button">
         Ignore circle update
       </button>
+      <button
+        onClick={() =>
+          onUpdated({
+            tribe: {
+              _id: 'tribe-1',
+              slug: 'hitchhikers',
+              label: 'Hitchhikers',
+              count: 42,
+            },
+            user: { memberIds: ['tribe-1'] },
+          })
+        }
+        type="button"
+      >
+        Join as circle member
+      </button>
     </>
+  ),
+}));
+
+jest.mock('@/modules/tribes/client/components/CircleMemberDiscovery', () => ({
+  __esModule: true,
+  default: ({ circle, user }) => (
+    <div data-testid="circle-member-discovery">
+      {circle.slug}:{user._id}
+    </div>
   ),
 }));
 
@@ -190,6 +215,34 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
       tribe: expect.objectContaining({ _id: 'tribe-1', count: 42 }),
     });
     expect(await screen.findByText('42 members')).toBeInTheDocument();
+  });
+
+  it('shows member discovery for current and newly joined members', async () => {
+    const { rerender } = render(
+      <TribeDetailPage
+        circle="hitchhikers"
+        onMembershipUpdated={jest.fn()}
+        user={{ _id: 'member-1', memberIds: ['tribe-1'] }}
+      />,
+    );
+    expect(
+      await screen.findByTestId('circle-member-discovery'),
+    ).toHaveTextContent('hitchhikers:member-1');
+
+    rerender(
+      <TribeDetailPage
+        circle="hitchhikers"
+        onMembershipUpdated={jest.fn()}
+        user={{ _id: 'member-2' }}
+      />,
+    );
+    await screen.findByRole('heading', { name: 'Hitchhikers' });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Join as circle member' }),
+    );
+    expect(
+      await screen.findByTestId('circle-member-discovery'),
+    ).toHaveTextContent('hitchhikers:member-2');
   });
 
   it('shows the empty-member copy when a circle has no members', async () => {

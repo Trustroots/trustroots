@@ -131,6 +131,14 @@ docker compose up -d -V --force-recreate dev
 
 ## Building the production image
 
+GitHub Actions validates production image builds on pull requests and publishes
+`linux/amd64` images tagged `latest` and `git-<short-commit>` to GHCR after
+code-bearing pushes to `main`.
+
+Production publishing requires the Actions variable `GHCR_PRODUCTION_USERNAME`
+and secret `GHCR_PRODUCTION_TOKEN`. The token must be a classic personal access
+token with `write:packages` and write access to `trustrootsops/trustroots`.
+
 Build and push the production images:
 
 ```bash
@@ -150,3 +158,36 @@ docker build \
   -f ./production.Dockerfile . \
   -t ghcr.io/trustrootsops/trustroots:latest
 ```
+
+## Logging without a remote service dependency
+
+MongoDB, webapp and worker explicitly use Docker's `local` logging driver with
+rotation (three files of 10 MB per container). This overrides the host's default
+logging driver, so an unavailable Loki server cannot block these containers
+while Docker flushes remote logs. Read logs with `docker compose logs`.
+
+Production hosts using a separate Compose file, such as
+`/var/local/tr-deploy/compose.yml`, must apply this configuration there too.
+Replace each service's existing `logging` block with:
+
+```yaml
+logging:
+  driver: local
+  options:
+    max-size: '10m'
+    max-file: '3'
+```
+
+Apply it to `webapp`, `worker` and `mongodb`, plus any other services that inherit
+Loki logging. Containers must be recreated for logging changes to take effect:
+
+```bash
+sudo docker compose up -d --force-recreate webapp worker mongodb
+```
+
+Recreating MongoDB interrupts database access; schedule this step appropriately.
+Changes do not unblock existing containers already stuck in the Loki driver.
+Recover the Docker daemon before recreating them. No application image rebuild
+is needed. Logs are retained locally; this configuration does not send them to
+Loki. For central collection, run a separate Grafana Alloy collector using
+`loki.source.docker`, so remote delivery is outside the container logging driver.
