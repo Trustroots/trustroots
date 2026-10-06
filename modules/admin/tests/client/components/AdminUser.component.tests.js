@@ -315,7 +315,7 @@ describe('<AdminUser />', () => {
     ).toHaveAttribute('href', '/search?location=60.17,24.94');
   });
 
-  it('describes recognised and historical roles without adding edit controls', async () => {
+  it('links listable roles and describes recognised and historical roles', async () => {
     usersApi.getUser.mockResolvedValueOnce(
       makeReportCard({
         profile: {
@@ -373,6 +373,33 @@ describe('<AdminUser />', () => {
     expect(
       screen.queryByRole('button', { name: /remove role/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it('links greeter and volunteer role badges to their filtered lists', async () => {
+    usersApi.getUser.mockResolvedValueOnce(
+      makeReportCard({
+        profile: {
+          _id: userId,
+          roles: ['user', 'welcome-team', 'volunteer', 'volunteer-alumni'],
+          username: 'alice',
+        },
+      }),
+    );
+    window.history.pushState({}, '', `/admin/user?id=${userId}`);
+    render(<AdminUser />);
+
+    await screen.findByRole('heading', { name: 'alice' });
+    expect(screen.getByRole('link', { name: 'Greeter' })).toHaveAttribute(
+      'href',
+      '/admin/search-users?role=welcome-team',
+    );
+    expect(screen.getByRole('link', { name: 'volunteer' })).toHaveAttribute(
+      'href',
+      '/admin/search-users?role=volunteer',
+    );
+    expect(
+      screen.getByRole('link', { name: 'volunteer-alumni' }),
+    ).toHaveAttribute('href', '/admin/search-users?role=volunteer-alumni');
   });
 
   it('lists members with the selected current IP address from the URL', async () => {

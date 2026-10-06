@@ -271,6 +271,13 @@ test.describe('admin moderation inspection flows', () => {
       page.getByText('Acquisition story', { exact: true }).last(),
     ).toBeVisible();
   });
+});
+
+test.describe('admin inspection APIs', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+  test.beforeEach(async ({ request }) => {
+    await authenticateViaApi(request, SEEDED_ADMIN);
+  });
 
   test('admin report includes the reported member public profile below moderation details', async ({
     page,
@@ -278,6 +285,7 @@ test.describe('admin moderation inspection flows', () => {
     annotateFeature(testInfo, 'admin.user-report', [
       'Admin report shows the member public profile below moderation information.',
     ]);
+    await signInViaApi(page, undefined, SEEDED_ADMIN);
     const member = SEEDED_MEMBERS[1];
     const profileResponsePromise = page.waitForResponse(response =>
       response.url().endsWith(`/api/users/${member.username}`),

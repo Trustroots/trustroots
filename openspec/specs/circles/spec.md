@@ -76,6 +76,14 @@ timestamps.
 - **THEN** hidden profiles, blocked members, suspended accounts, and shadow-hidden accounts are omitted
 - **AND** each group limit is applied only after these exclusions
 
+#### Scenario: Circle member discovery request fails
+
+- **WHEN** the request to load circle members fails
+- **THEN** the page explains that members could not be loaded and offers a retry
+- **AND** does not present the failure as an empty member list
+- **WHEN** the member retries and the request succeeds
+- **THEN** the page displays the returned groups or the genuine empty state
+
 ### Requirement: Circle page actions and footer
 
 The system SHALL keep membership, member search, and circle wiki actions usable

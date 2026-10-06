@@ -69,7 +69,7 @@ describe('<SearchUsers />', () => {
     await waitFor(() => expect(searchUsers).toHaveBeenCalledWith('alice'));
 
     expect(await screen.findByText('1 members found')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Alice Example' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Alice Example/ })).toHaveAttribute(
       'href',
       '/profile/alice',
     );

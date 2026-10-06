@@ -69,17 +69,21 @@ export default function CircleMemberDiscovery({ circle, user }: Props) {
   };
   const [sections, setSections] = useState(EMPTY_SECTIONS);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
+    setHasError(false);
+    setSections(EMPTY_SECTIONS);
     tribesApi
       .listMembers(circle.slug)
       .then(groups => {
         if (isMounted) setSections(withoutDuplicates(groups));
       })
       .catch(() => {
-        if (isMounted) setSections(EMPTY_SECTIONS);
+        if (isMounted) setHasError(true);
       })
       .finally(() => {
         if (isMounted) setIsLoading(false);
@@ -87,7 +91,7 @@ export default function CircleMemberDiscovery({ circle, user }: Props) {
     return () => {
       isMounted = false;
     };
-  }, [circle, user]);
+  }, [circle.slug, user._id, attempt]);
 
   return (
     <div className="circle-member-discovery container">
@@ -108,7 +112,20 @@ export default function CircleMemberDiscovery({ circle, user }: Props) {
         )}
         members={sections.active}
       />
+      {!isLoading && hasError && (
+        <div className="circle-member-error" role="alert">
+          <p>{t('Could not load circle members. Please try again.')}</p>
+          <button
+            type="button"
+            className="btn btn-default"
+            onClick={() => setAttempt(value => value + 1)}
+          >
+            {t('Try again')}
+          </button>
+        </div>
+      )}
       {!isLoading &&
+        !hasError &&
         !sections.contacts.length &&
         !sections.recommenders.length &&
         !sections.active.length && (

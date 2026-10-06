@@ -883,12 +883,25 @@ export default class AdminUser extends Component<
                               'Role stored on this member.'
                             }
                           >
-                            <span
-                              tabIndex={0}
-                              aria-describedby={`member-role-${role}-description`}
-                            >
-                              {formatRoleLabel(role)}
-                            </span>
+                            {role === 'welcome-team' ||
+                            role === 'volunteer' ||
+                            role === 'volunteer-alumni' ? (
+                              <a
+                                href={`/admin/search-users?role=${encodeURIComponent(
+                                  role,
+                                )}`}
+                                aria-describedby={`member-role-${role}-description`}
+                              >
+                                {formatRoleLabel(role)}
+                              </a>
+                            ) : (
+                              <span
+                                tabIndex={0}
+                                aria-describedby={`member-role-${role}-description`}
+                              >
+                                {formatRoleLabel(role)}
+                              </span>
+                            )}
                           </Tooltip>
                           <span
                             id={`member-role-${role}-description`}

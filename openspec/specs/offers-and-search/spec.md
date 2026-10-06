@@ -4,7 +4,9 @@
 
 Help members find community offers and manage their own hosting and meeting
 offers.
+
 ## Requirements
+
 ### Requirement: Map search
 
 The system SHALL let signed-in members search for offers on a map by location,
@@ -98,14 +100,27 @@ equivalents.
 - **THEN** the system redirects them to the corresponding current offer route
 
 ### Requirement: Discover members through indexed public profile fields
+
 Authenticated members SHALL be able to reach member search from map search and search names, usernames, home locations, origins and short taglines using a weighted text index. Queries SHALL have bounded length, result count, pagination and execution time. Existing profile visibility and mutual blocking rules SHALL apply.
+
 #### Scenario: Find a member by home location
+
 - **WHEN** an authenticated member submits a home-location query of at least three characters
 - **THEN** eligible matching members are returned in relevance order with a bounded result count
-- **AND** cards display public location and profile context and identify literal matching fields
+- **AND** cards display public location and profile context with literal matching text emphasised in bold
+
 #### Scenario: Reach member search from the map
+
 - **WHEN** a member follows the visible member-search link from map search
 - **THEN** the member-search page opens with its search input focused
+
 #### Scenario: Reject excessive search input
+
 - **WHEN** a query exceeds the supported length or is not a scalar string
 - **THEN** the request is rejected before a database search
+
+#### Scenario: Return to map search from member results
+
+- **WHEN** a member follows the map-search link from member results
+- **THEN** the map-search page opens with the query supplied as its location search
+- **AND** the link is also available when no members match

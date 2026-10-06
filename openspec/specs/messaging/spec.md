@@ -193,3 +193,17 @@ The system SHALL display external links in message bodies as plain text while pr
 
 - **WHEN** a member opens a conversation containing a link to the current Trustroots origin
 - **THEN** that link remains clickable
+
+### Requirement: Hosting replies require an incoming conversation
+
+Hosting quick replies SHALL appear only when the thread contains a received message and the current member has not yet replied. Empty conversations and conversations containing only the current member's messages SHALL offer the normal message editor without hosting quick replies.
+
+#### Scenario: Member starts a conversation or waits for a response
+
+- **WHEN** a member opens an empty conversation or a conversation containing only their own messages
+- **THEN** hosting quick reply buttons are hidden
+
+#### Scenario: Member receives their first message
+
+- **WHEN** a member opens a conversation containing messages from the other member and has not replied yet
+- **THEN** hosting quick replies are available as reply options

@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
@@ -67,14 +67,65 @@ describe('<CircleMemberDiscovery />', () => {
     expect(tribesApi.listMembers).toHaveBeenCalledWith('hitchhikers');
   });
 
-  it('shows an empty state when the discovery request fails', async () => {
+  it('only reloads when the circle or signed-in member changes', async () => {
+    const { rerender } = render(
+      <CircleMemberDiscovery circle={circle} user={user} />,
+    );
+    await screen.findByText('Member known');
+    rerender(
+      <CircleMemberDiscovery circle={{ ...circle }} user={{ ...user }} />,
+    );
+    expect(tribesApi.listMembers).toHaveBeenCalledTimes(1);
+    rerender(
+      <CircleMemberDiscovery
+        circle={{ ...circle, slug: 'cyclists' }}
+        user={user}
+      />,
+    );
+    await act(async () => {});
+    expect(tribesApi.listMembers).toHaveBeenLastCalledWith('cyclists');
+    rerender(
+      <CircleMemberDiscovery circle={circle} user={{ _id: 'viewer-2' }} />,
+    );
+    await act(async () => {});
+    expect(tribesApi.listMembers).toHaveBeenCalledTimes(3);
+  });
+
+  it('shows a recoverable error when the discovery request fails', async () => {
     tribesApi.listMembers.mockRejectedValue(new Error('members unavailable'));
 
     render(<CircleMemberDiscovery circle={circle} user={user} />);
 
     expect(
+      await screen.findByText(
+        'Could not load circle members. Please try again.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('No members to show yet'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('retries a failed request and shows the returned members', async () => {
+    tribesApi.listMembers.mockRejectedValueOnce(new Error('unavailable'));
+    render(<CircleMemberDiscovery circle={circle} user={user} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+    expect(await screen.findByText('Member known')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(tribesApi.listMembers).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows the empty state only after a successful empty response', async () => {
+    tribesApi.listMembers.mockResolvedValue({
+      contacts: [],
+      recommenders: [],
+      active: [],
+    });
+    render(<CircleMemberDiscovery circle={circle} user={user} />);
+    expect(
       await screen.findByText('No members to show yet'),
     ).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('ignores a result that arrives after the component unmounts', async () => {

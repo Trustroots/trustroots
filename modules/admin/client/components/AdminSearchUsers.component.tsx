@@ -62,6 +62,15 @@ const DEFAULT_MEMBER_LIST_SORT: MemberSort = {
   direction: 'ascending',
 };
 
+const USER_LIST_ROLES = [
+  'admin',
+  'welcome-team',
+  'shadowban',
+  'suspended',
+  'volunteer-alumni',
+  'volunteer',
+];
+
 export class AdminSearchUsersContent extends Component<
   SearchUsersProps,
   SearchUsersState
@@ -97,6 +106,11 @@ export class AdminSearchUsersContent extends Component<
 
   componentDidMount() {
     const urlParams = new URLSearchParams(window.location.search);
+    const role = urlParams.get('role');
+    if (role && USER_LIST_ROLES.includes(role)) {
+      this.setState({ role }, () => this.doListUsersByRole(null));
+      return;
+    }
     const search = normalizeAdminQuery(urlParams.get('search'));
     if (search) {
       this.setState({ search }, () => this.doSearch(null));
@@ -142,6 +156,19 @@ export class AdminSearchUsersContent extends Component<
       event.preventDefault();
     }
     const { role, sort } = this.state;
+    const url = new URL(document.location.href);
+    url.searchParams.set('role', role);
+    url.searchParams.delete('search');
+    const state = { role };
+    if (
+      options.page ||
+      options.sort ||
+      url.toString() === document.location.href
+    ) {
+      window.history.replaceState(state, window.document.title, url.toString());
+    } else {
+      window.history.pushState(state, window.document.title, url.toString());
+    }
     const memberList: MemberList = await listUsersByRole(role, {
       page: options.page || 1,
       sort: options.sort || sort,
@@ -167,12 +194,22 @@ export class AdminSearchUsersContent extends Component<
       this.setState({ search });
     }
     const url = new URL(document.location.href);
+    url.searchParams.delete('role');
     if (search) {
       url.searchParams.set('search', search);
     } else {
       url.searchParams.delete('search');
     }
-    window.history.pushState({ search }, window.document.title, url.toString());
+    const state = { search };
+    if (
+      options.page ||
+      options.sort ||
+      url.toString() === document.location.href
+    ) {
+      window.history.replaceState(state, window.document.title, url.toString());
+    } else {
+      window.history.pushState(state, window.document.title, url.toString());
+    }
     if (search.length >= SEARCH_STRING_LIMIT) {
       const memberList: MemberList = await searchUsers(search, {
         page: options.page || 1,
@@ -254,14 +291,7 @@ export class AdminSearchUsersContent extends Component<
                 onChange={this.onRoleChange}
                 value={this.state.role}
               >
-                {[
-                  'admin',
-                  'welcome-team',
-                  'shadowban',
-                  'suspended',
-                  'volunteer-alumni',
-                  'volunteer',
-                ].map(role => (
+                {USER_LIST_ROLES.map(role => (
                   <option value={role} key={role}>
                     {formatRoleLabel(role)}
                   </option>
