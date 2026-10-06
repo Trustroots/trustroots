@@ -393,6 +393,16 @@ describe('Core CRUD tests', function () {
   });
   describe('Legacy redirect routes', function () {
     afterEach(utils.clearDatabase);
+    it('redirects /login to /signin', function (done) {
+      agent.get('/login').expect(302).expect('Location', '/signin').end(done);
+    });
+    it('preserves query parameters when redirecting /login', function (done) {
+      agent
+        .get('/login?continue=true&returnTo=%2Fmessages')
+        .expect(302)
+        .expect('Location', '/signin?continue=true&returnTo=%2Fmessages')
+        .end(done);
+    });
     it('redirects /invite to /signup', function (done) {
       agent.get('/invite').expect(301).expect('Location', '/signup').end(done);
     });

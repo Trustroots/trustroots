@@ -4,9 +4,7 @@
 
 Allow people to create, secure, recover, and end access to their Trustroots
 account.
-
 ## Requirements
-
 ### Requirement: Explicit profile response fields
 
 Profile responses SHALL include only explicitly approved fields. Account-owner
@@ -345,3 +343,17 @@ an anonymous session. Session cookie security settings SHALL remain unchanged.
 - **WHEN** credentials are accepted but the subsequent session request fails
 - **THEN** the client explains that it could not check the session and offers a retry
 - **AND** it does not claim cookies are blocked or redirect
+
+### Requirement: Account access deployed version
+The system SHALL display the deployed build date and commit link on signin, signup, password recovery/reset and not-found pages when build metadata is available.
+
+#### Scenario: Visitor diagnoses account access
+- **WHEN** a visitor opens an account access page with build metadata available
+- **THEN** a compact footer exposes the deployed date and commit
+
+### Requirement: Login route alias
+The system SHALL redirect /login to /signin while preserving query parameters.
+
+#### Scenario: Visitor uses the login alias
+- **WHEN** a visitor requests /login with a returnTo query parameter
+- **THEN** the visitor is redirected to /signin with the same parameter
