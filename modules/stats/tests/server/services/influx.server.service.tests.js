@@ -86,6 +86,19 @@ describe('Service: influx', function () {
       );
     });
 
+    it('enforces bounded network requests even when configuration asks for retries', function (done) {
+      config.influxdb.options.pool = { requestTimeout: 60000, maxRetries: 10 };
+      const constructor = sinon.stub(influx, 'InfluxDB').returns({});
+      influxService._getClient(function (err) {
+        should.not.exist(err);
+        constructor.firstCall.args[0].pool.should.deepEqual({
+          requestTimeout: 2000,
+          maxRetries: 0,
+        });
+        done();
+      });
+    });
+
     context('invalid data', function () {
       it('Writing point returns error with no measurementName', function (done) {
         influxService._writeMeasurement(

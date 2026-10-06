@@ -17,10 +17,53 @@ describe('Stats service unit tests', () => {
     );
 
     esmService.default.should.equal(statsService);
-    ['count', 'value', 'stat', '_validateStat'].forEach(name => {
+    ['count', 'value', 'stat', 'deliver', '_validateStat'].forEach(name => {
       esmService.default[name].should.equal(esmService[name]);
     });
   });
+
+  it('acknowledges telemetry when the backend never calls back', () => {
+    const backend = sinon.stub(influxService, 'stat');
+    const accepted = sinon.spy();
+    statsService.stat({ namespace: 'outage', counts: { count: 1 } }, accepted);
+    accepted.calledOnce.should.be.true();
+    backend.firstCall.args[1](new Error('unavailable'));
+    accepted.calledOnce.should.be.true();
+  });
+
+  it('caps outstanding writes and resumes after completion', () => {
+    const backend = sinon.stub(influxService, 'stat');
+    const accepted = sinon.spy();
+    const point = { namespace: 'outage', counts: { count: 1 } };
+    for (let i = 0; i < 33; i += 1) statsService.stat(point, accepted);
+    backend.callCount.should.equal(32);
+    accepted.callCount.should.equal(33);
+    backend.getCalls().forEach(call => call.args[1]());
+    backend.firstCall.args[1]();
+    statsService.stat(point);
+    backend.callCount.should.equal(33);
+    backend.lastCall.args[1]();
+  });
+
+  it('acknowledges telemetry when the backend throws synchronously', () => {
+    sinon.stub(influxService, 'stat').throws(new Error('unavailable'));
+    const accepted = sinon.spy();
+    statsService.stat({ namespace: 'outage', counts: { count: 1 } }, accepted);
+    accepted.calledOnce.should.be.true();
+  });
+
+  it('preserves backend acknowledgement and errors for delivery-aware jobs', () => {
+    const backend = sinon.stub(influxService, 'stat');
+    const callback = sinon.spy();
+    statsService.deliver({ namespace: 'job', counts: { count: 1 } }, callback);
+    callback.called.should.be.false();
+    const error = new Error('unavailable');
+    backend.firstCall.args[1](error);
+    callback.calledOnceWithExactly(error).should.be.true();
+    statsService.deliver({}, callback);
+    callback.callCount.should.equal(2);
+  });
+
   it('records a count stat', done => {
     const { influxService, statsService } = loadStatsService();
 
@@ -221,13 +264,16 @@ describe('Stats service unit tests', () => {
     }).should.not.throw();
   });
 
-  it('passes influx errors through to the callback', done => {
+  it('passes influx errors to delivery-aware callbacks', done => {
     const influxError = new Error('influx failed');
     sinon.stub(influxService, 'stat').callsArgWith(1, influxError);
 
-    statsService.count('unitCount', err => {
-      err.should.equal(influxError);
-      done();
-    });
+    statsService.deliver(
+      { namespace: 'unitCount', counts: { count: 1 } },
+      err => {
+        err.should.equal(influxError);
+        done();
+      },
+    );
   });
 });

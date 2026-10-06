@@ -720,6 +720,26 @@ describe('Service: email', function () {
     emailService.addEmailBaseTemplateParams(null).should.deepEqual({});
   });
 
+  it('builds HTTPS account links when loaded with production proxy settings', async function () {
+    sandbox.stub(config, 'https').value(true);
+    sandbox.stub(config, 'domain').value('secure.example.test');
+    const { default: secureService } = await import(
+      '../../../server/services/email.server.service.mjs?production-https'
+    );
+    const send = sandbox.stub(secureService, 'renderEmailAndSend');
+    secureService.sendResetPassword(
+      {
+        displayName: 'Example Member',
+        email: 'member@example.test',
+        resetPasswordToken: 'fictional-token',
+      },
+      function () {},
+    );
+    send.firstCall.args[1].urlConfirmPlainText.should.equal(
+      'https://secure.example.test/api/auth/reset/fictional-token',
+    );
+  });
+
   it('builds HTTPS base template URLs when HTTPS is configured', function () {
     const service = loadEmailService({
       '../../../../config/config': {

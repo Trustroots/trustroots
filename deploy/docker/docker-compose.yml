@@ -1,4 +1,4 @@
-# Keep container lifecycle operations independent of remote logging services.
+# Remote log delivery must not hold up container lifecycle operations.
 x-local-logging: &local-logging
   driver: local
   options:
@@ -9,7 +9,7 @@ services:
   mongodb:
     logging: *local-logging
     image: mongo:4.4
-    command: ["mongod", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.5"]
+    command: ['mongod', '--bind_ip_all', '--wiredTigerCacheSizeGB', '0.5']
     volumes:
       - mongodb_data:/data/db
     restart: unless-stopped
@@ -19,8 +19,8 @@ services:
   mongodb-localhost:
     image: alpine/socat
     command:
-      - "tcp-listen:27017,fork,reuseaddr,bind=0.0.0.0"
-      - "tcp-connect:mongodb:27017"
+      - 'tcp-listen:27017,fork,reuseaddr,bind=0.0.0.0'
+      - 'tcp-connect:mongodb:27017'
     depends_on:
       - mongodb
     ports:
@@ -97,7 +97,7 @@ services:
       - NODE_ENV=production
     # Override the container's start command (which will start passenger) to
     # start the worker
-    command: ["node", "worker.js"]
+    command: ['node', 'worker.js']
 
   influxdb:
     image: influxdb:1.8.10

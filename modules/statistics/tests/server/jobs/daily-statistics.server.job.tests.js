@@ -133,7 +133,7 @@ describe('Daily Statistics Job - Unit Test', function () {
 
     it('continues when writing to influx fails with a general error', function (done) {
       sinon
-        .stub(statsService, 'stat')
+        .stub(statsService, 'deliver')
         .callsFake((statObject, cb) => cb(new Error('influx unavailable')));
 
       statsJob(null, function (e) {
@@ -143,7 +143,7 @@ describe('Daily Statistics Job - Unit Test', function () {
     });
 
     it('continues when writing to influx fails with an influx-specific error', function (done) {
-      sinon.stub(statsService, 'stat').callsFake((statObject, cb) =>
+      sinon.stub(statsService, 'deliver').callsFake((statObject, cb) =>
         cb({
           message: 'Writing to Influx service failed.',
           errors: { influx: new Error('influx write failed') },
@@ -157,7 +157,7 @@ describe('Daily Statistics Job - Unit Test', function () {
     });
 
     it('continues when an influx-specific error lacks nested details', function (done) {
-      sinon.stub(statsService, 'stat').callsFake((statObject, cb) =>
+      sinon.stub(statsService, 'deliver').callsFake((statObject, cb) =>
         cb({
           message: 'Writing to Influx service failed.',
         }),

@@ -48,6 +48,7 @@ const webServers = useWebpackDevServer
   ? [
       {
         command: 'npm run start:e2e:api',
+        env: { TRUSTROOTS_TEST_STATS_OUTAGE: 'true' },
         url: `http://${applicationUrlHost}:${apiPort}/api/languages?format=array`,
         timeout: 120 * 1000,
         reuseExistingServer:
@@ -64,6 +65,7 @@ const webServers = useWebpackDevServer
   : [
       {
         command: 'npm run start:e2e:api',
+        env: { TRUSTROOTS_TEST_STATS_OUTAGE: 'true' },
         url: `http://${applicationUrlHost}:${apiPort}/api/languages?format=array`,
         timeout: 120 * 1000,
         reuseExistingServer:
