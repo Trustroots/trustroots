@@ -166,8 +166,12 @@ validation, not InfluxDB persistence. Outstanding writes are capped at 32;
 InfluxDB requests use a two-second timeout without retries. Daily statistics
 jobs use the delivery-aware API. Lost telemetry is not replayed.
 
-Use explicit rotated local logging for `webapp`, `worker` and `mongodb` in the
-production-owned Compose file, rather than inheriting a host Loki driver:
+MongoDB, webapp and worker explicitly use Docker's rotated `local` logging driver
+(three files of 10 MB per container). Read logs with `docker compose logs`.
+Production hosts using a separate Compose file, such as
+`/var/local/tr-deploy/compose.yml`, must apply this configuration there too,
+replacing each service's existing logging block rather than inheriting a host
+Loki driver:
 
 ```yaml
 logging:
@@ -177,8 +181,11 @@ logging:
     max-file: '3'
 ```
 
-Recreate existing containers to apply the logging change. This does not unblock
-containers already stuck in the old driver. A separate Grafana Alloy collector
+Apply local logging to other services that inherit Loki logging too. Recreate
+existing containers to apply the change; recreating MongoDB interrupts database
+access and should be scheduled appropriately. This does not unblock containers
+already stuck in the old driver. Recover Docker before recreating them. Logs
+remain local and are not sent to Loki; no application image rebuild is needed. A separate Grafana Alloy collector
 can ship Docker logs to Loki without coupling remote delivery to shutdown.
 
 For HTTPS behind a trusted frontend proxy, the deployment-owned `local.js`
