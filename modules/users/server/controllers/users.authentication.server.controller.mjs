@@ -298,10 +298,8 @@ service.signin = function (req, res, next) {
 
       // Send signin failure to stats servers
       statsObject.tags.status = 'failed:wrong-credentials';
-      statService.stat(statsObject, function () {
-        // Send error to the API
-        res.status(400).send(info);
-      });
+      statService.stat(statsObject, function () {});
+      res.status(400).send(info);
       return;
     }
 
@@ -314,11 +312,9 @@ service.signin = function (req, res, next) {
 
       // Send signin failure to stats servers
       statsObject.tags.status = 'failed:suspended';
-      statService.stat(statsObject, function () {
-        // Send error to the API
-        res.status(403).send({
-          message: errorService.getErrorMessageByKey('suspended'),
-        });
+      statService.stat(statsObject, function () {});
+      res.status(403).send({
+        message: errorService.getErrorMessageByKey('suspended'),
       });
       return;
     }
@@ -332,20 +328,17 @@ service.signin = function (req, res, next) {
 
         // Send signin failure to stats servers
         statsObject.tags.status = 'failed:other';
-        statService.stat(statsObject, function () {
-          // Send error to the API
-          res.status(400).send(err);
-        });
+        statService.stat(statsObject, function () {});
+        res.status(400).send(err);
         return;
       }
 
       // Send signin success to stats servers
       statsObject.tags.status = 'success';
-      statService.stat(statsObject, function () {
-        // Remove sensitive data before sending out
-        user = userProfile.sanitizeOwnProfile(user);
-        res.json(user);
-      });
+      // Statistics delivery must not hold up authentication during an outage.
+      statService.stat(statsObject, function () {});
+      user = userProfile.sanitizeOwnProfile(user);
+      res.json(user);
     });
   })(req, res, next);
 };
