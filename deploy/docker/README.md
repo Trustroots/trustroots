@@ -135,6 +135,10 @@ GitHub Actions validates production image builds on pull requests and publishes
 `linux/amd64` images tagged `latest` and `git-<short-commit>` to GHCR after
 code-bearing pushes to `main`.
 
+Production publishing requires the Actions variable `GHCR_PRODUCTION_USERNAME`
+and secret `GHCR_PRODUCTION_TOKEN`. The token must be a classic personal access
+token with `write:packages` and write access to `trustrootsops/trustroots`.
+
 Build and push the production images:
 
 ```bash
