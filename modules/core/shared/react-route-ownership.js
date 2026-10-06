@@ -72,7 +72,7 @@ const REACT_ROUTE_POLICIES = [
   {
     path: '/not-found',
     title: 'Not found',
-    footerHidden: true,
+    footerVariant: 'account',
     headerHidden: true,
   },
   {
@@ -259,13 +259,13 @@ const REACT_ROUTE_POLICIES = [
     path: '/signin',
     title: 'Sign in',
     headerHidden: true,
-    footerHidden: true,
+    footerVariant: 'account',
   },
   {
     path: '/signup',
     title: 'Sign up',
     headerHidden: true,
-    footerHidden: true,
+    footerVariant: 'account',
   },
   {
     path: '/confirm-email/:token',
@@ -278,22 +278,22 @@ const REACT_ROUTE_POLICIES = [
   {
     path: '/password/forgot',
     title: 'Reset password',
-    footerHidden: true,
+    footerVariant: 'account',
   },
   {
     path: '/password/reset/invalid',
     title: 'Reset password',
-    footerHidden: true,
+    footerVariant: 'account',
   },
   {
     path: '/password/reset/success',
     title: 'Reset password',
-    footerHidden: true,
+    footerVariant: 'account',
   },
   {
     path: '/password/reset/:token',
     title: 'Reset password',
-    footerHidden: true,
+    footerVariant: 'account',
   },
   {
     path: '/remove/:token',

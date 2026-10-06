@@ -126,6 +126,14 @@ export default function SiteFooter({
   photoCredits,
   variant = 'standard',
 }: Props) {
+  if (variant === 'account') {
+    return (
+      <footer className="site-footer-account hidden-print" role="contentinfo">
+        <BuildLink build={build} />
+      </footer>
+    );
+  }
+
   if (variant === 'home') {
     return (
       <footer className="site-footer-home hidden-print" role="contentinfo">
