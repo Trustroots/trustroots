@@ -19,7 +19,7 @@ export default function SupportForm({ user }: SupportFormProps) {
     account: t<string>('Account help'),
     reportMember: t<string>('Report a member'),
     reportBug: t<string>('Report a bug'),
-    volunteering: t<string>('Volunteering'),
+    volunteering: t<string>('Help run Trustroots'),
     other: t<string>('Other'),
   };
   const [isSent, setIsSent] = useState(false);
@@ -214,12 +214,23 @@ export default function SupportForm({ user }: SupportFormProps) {
               {t<string>('Message')}
             </label>
             <div className="col-sm-9">
+              {category === 'volunteering' && (
+                <p className="help-block" id="volunteering-help">
+                  {t<string>(
+                    'Volunteer with the team that runs Trustroots, helping with development, design, translation, community support or organisation. This form is not for finding farm work, jobs, or work in exchange for food and accommodation.',
+                  )}
+                </p>
+              )}
               <textarea
                 className="form-control input-lg"
                 rows={7}
                 id="message"
                 required
-                aria-describedby="message-help"
+                aria-describedby={
+                  category === 'volunteering'
+                    ? 'volunteering-help message-help'
+                    : 'message-help'
+                }
                 disabled={isSending}
                 defaultValue={supportMessage}
                 onChange={event => {

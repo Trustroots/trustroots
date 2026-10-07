@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Production image publishing
+
+## Purpose
+
+Build and publish traceable production images from trusted main commits while validating pull request builds without publishing privileges.
+
+## Requirements
 
 ### Requirement: Publish production container images from trusted main builds
 

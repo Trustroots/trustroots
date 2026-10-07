@@ -74,6 +74,10 @@ interface SearchMapProps {
   locationBounds?: Partial<MapBounds> | null;
   onOfferClose: () => void;
   onOfferOpen: (offer: SearchResultOffer) => void;
+  onVisibleOffersChange?: (offerIds: string[]) => void;
+  onVisibleCommunityNoteThreadsChange?: (
+    threads: { notes: NostrEvent[]; plusCode: string | null }[],
+  ) => void;
   onCommunityNoteOpen: (note: {
     notes: NostrEvent[];
     plusCode: string | null;
@@ -151,7 +155,18 @@ const COMMUNITY_NOTES_RECONNECT_DELAY_MS = 1000;
 const MISSING_MAP_LAYER_ERROR =
   /^The layer '.*' does not exist in the map's style and cannot be queried for features\.$/;
 
+function isLongitudeVisible(longitude: number, west: number, east: number) {
+  let span = east - west;
+  if (span < 0) span += 360;
+  if (span >= 360) return true;
+
+  const relativeLongitude = (((longitude - west) % 360) + 360) % 360;
+  return relativeLongitude <= span;
+}
+
 const olc = new OpenLocationCode();
+const ignoreVisibleOfferIds = () => {};
+const ignoreVisibleCommunityNoteThreads = () => {};
 const TypedLayer = Layer as unknown as React.ComponentType<SearchMapLayerProps>;
 const TypedSource = Source as unknown as React.ComponentType<
   React.ComponentProps<typeof Source> & {
@@ -271,6 +286,8 @@ export default function SearchMap({
   locationBounds: bounds,
   onOfferClose,
   onOfferOpen,
+  onVisibleOffersChange = ignoreVisibleOfferIds,
+  onVisibleCommunityNoteThreadsChange = ignoreVisibleCommunityNoteThreads,
   onCommunityNoteOpen,
 }: SearchMapProps) {
   /**
@@ -308,6 +325,7 @@ export default function SearchMap({
     features: [],
     type: 'FeatureCollection',
   });
+  const offersRequestRef = useRef(0);
   const [communityNotes, setCommunityNotes] = useState<FeatureCollection>({
     type: 'FeatureCollection',
     features: [],
@@ -727,31 +745,41 @@ export default function SearchMap({
       return;
     }
 
-    const layerId = features[0]?.layer?.id;
+    // A point from any source should win over an overlapping cluster. The
+    // returned features follow rendered layer order, so this keeps the
+    // topmost individual offer or note while avoiding an unexpected cluster
+    // expansion when another source's cluster covers the same location.
+    const clickedFeature =
+      features.find(
+        feature =>
+          feature.layer?.id === unclusteredPointLayer.id ||
+          feature.layer?.id === communityNotesLayer.id,
+      ) || features[0];
+    const layerId = clickedFeature?.layer?.id;
 
     // Community notes click — open thread in sidebar
     if (layerId === communityNotesLayer.id) {
-      openCommunityNote(features[0]);
+      openCommunityNote(clickedFeature);
       return;
     }
 
     // Community notes cluster click — zoom in
     if (layerId === communityNotesClusterLayer.id) {
-      openCommunityNotesCluster(features[0]);
+      openCommunityNotesCluster(clickedFeature);
       return;
     }
 
     switch (layerId) {
       // Hosting or meeting offer
       case unclusteredPointLayer.id:
-        if (features[0]?.id) {
-          setSelectedState(features[0]);
-          openOfferById(features[0].id);
+        if (clickedFeature?.id) {
+          setSelectedState(clickedFeature);
+          openOfferById(clickedFeature.id);
         }
         break;
       // Clusters
       case clusterLayer.id:
-        zoomToCluster(features[0]);
+        zoomToCluster(clickedFeature);
         break;
     }
   };
@@ -778,13 +806,16 @@ export default function SearchMap({
       return;
     }
 
+    const requestId = ++offersRequestRef.current;
     try {
       // @TODO: cancellation when need to re-fetch
       const data = await queryOffers({
         filters,
         ...boundingBox,
       });
-      setOffers(data as unknown as FeatureCollection);
+      if (requestId === offersRequestRef.current) {
+        setOffers(data as unknown as FeatureCollection);
+      }
     } catch {
       // @TODO Error handling
       if (process.env.NODE_ENV === 'development') {
@@ -793,6 +824,112 @@ export default function SearchMap({
       }
     }
   }
+
+  // The search request has a small buffer so offers near the edge remain
+  // available while panning. The Results pane should include pins within the
+  // actual map viewport only.
+  useEffect(() => {
+    const leafletBounds = leafletMapState?.bounds;
+    const mapBounds = webGLSupported ? getMapRef()?.getBounds() : undefined;
+    const northEast = mapBounds
+      ? mapBounds.getNorthEast()
+      : leafletBounds?.northEast;
+    const southWest = mapBounds
+      ? mapBounds.getSouthWest()
+      : leafletBounds?.southWest;
+
+    const zoom = leafletMapState?.zoom ?? viewport.zoom;
+    if (!northEast || !southWest || zoom <= MIN_ZOOM) {
+      onVisibleOffersChange([]);
+      return;
+    }
+
+    const visibleIds = offers.features
+      .filter(feature => {
+        const [longitude, latitude] = feature.geometry.coordinates;
+        const insideLongitude = isLongitudeVisible(
+          longitude,
+          southWest.lng,
+          northEast.lng,
+        );
+        return (
+          latitude >= southWest.lat &&
+          latitude <= northEast.lat &&
+          insideLongitude
+        );
+      })
+      .map(feature => feature.properties.id);
+
+    onVisibleOffersChange(visibleIds);
+  }, [leafletMapState, map, offers, onVisibleOffersChange, viewport]);
+
+  // The Results pane lists only author-visible community notes inside the
+  // current viewport. `communityNotes` is built from the visibility-filtered
+  // events, unlike `communityNotesEventsRef`, which retains the raw stream.
+  useEffect(() => {
+    const leafletBounds = leafletMapState?.bounds;
+    const mapBounds = webGLSupported ? getMapRef()?.getBounds() : undefined;
+    const northEast = mapBounds
+      ? mapBounds.getNorthEast()
+      : leafletBounds?.northEast;
+    const southWest = mapBounds
+      ? mapBounds.getSouthWest()
+      : leafletBounds?.southWest;
+    const zoom = leafletMapState?.zoom ?? viewport.zoom;
+
+    if (
+      !communityNotesEnabled ||
+      !northEast ||
+      !southWest ||
+      zoom <= MIN_ZOOM
+    ) {
+      onVisibleCommunityNoteThreadsChange([]);
+      return;
+    }
+
+    const threads = new Map<
+      string,
+      { notes: NostrEvent[]; plusCode: string }
+    >();
+
+    communityNotes.features.forEach(feature => {
+      const [longitude, latitude] = feature.geometry.coordinates;
+      const insideLongitude = isLongitudeVisible(
+        longitude,
+        southWest.lng,
+        northEast.lng,
+      );
+      if (
+        latitude < southWest.lat ||
+        latitude > northEast.lat ||
+        !insideLongitude
+      ) {
+        return;
+      }
+
+      const note = reconstructEvent(
+        feature.properties as OfferFeatureProperties,
+      );
+      const plusCode = getPlusCodeFromEvent(
+        feature.properties as OfferFeatureProperties,
+      )!;
+
+      const key = plusCode;
+      const thread = threads.get(key) || { notes: [], plusCode };
+      thread.notes.push(note);
+      threads.set(key, thread);
+    });
+
+    onVisibleCommunityNoteThreadsChange([...threads.values()]);
+  }, [
+    communityNotes,
+    communityNotesEnabled,
+    leafletMapState,
+    map,
+    onVisibleCommunityNoteThreadsChange,
+    viewport,
+    webGLSupported,
+  ]);
 
   // Load and store Mapbox object for quick reference on render
   useEffect(() => {
@@ -823,6 +960,7 @@ export default function SearchMap({
     clearPreviouslyHoveredState();
 
     // Update map offers
+    setOffers({ features: [], type: 'FeatureCollection' });
     updateOffers(webGLSupported ? undefined : leafletMapState);
   }, [filters]);
 
@@ -945,13 +1083,12 @@ export default function SearchMap({
   }
 
   return (
-    <div ref={gestureSurfaceRef}>
+    <div data-map-zoom={viewport.zoom} ref={gestureSurfaceRef}>
       <TypedReactMapGL
         reuseMaps
         controller={mapController}
         className="search-map"
         dragRotate={false}
-        height="100%"
         /*
          * Pointer event callbacks will only query the features under the pointer
          * of `interactiveLayerIds` layers. The getCursor callback will receive
@@ -981,9 +1118,9 @@ export default function SearchMap({
         ref={mapRef}
         touchRotate={false}
         {...viewport}
-        width={
-          '100%' /* this must come after viewport, or width gets set to fixed size via onViewportChange */
-        }
+        /* Keep viewport pixel dimensions from overriding responsive sizing. */
+        height="100%"
+        width="100%"
       >
         {viewport.zoom <= MIN_ZOOM && <SearchMapNoContent />}
         <MapScaleControl />
@@ -1047,4 +1184,6 @@ SearchMap.propTypes = {
   onOfferClose: PropTypes.func,
   onOfferOpen: PropTypes.func,
   onCommunityNoteOpen: PropTypes.func,
+  onVisibleOffersChange: PropTypes.func,
+  onVisibleCommunityNoteThreadsChange: PropTypes.func,
 };

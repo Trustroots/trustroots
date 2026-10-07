@@ -21,6 +21,12 @@ interface SearchSidebarProps {
   filters: SearchFilters;
   isLoadingOffer?: boolean;
   offer?: SearchResultOffer | null;
+  offers: SearchResultOffer[];
+  communityNoteThreads: SearchCommunityNoteSummary[];
+  onOfferSelect: (offer: SearchResultOffer) => void;
+  onCommunityNoteSelect: (note: SearchCommunityNoteSummary) => void;
+  onBackToOffers: () => void;
+  isLoadingOffers?: boolean;
   onCloseSidebar: () => void;
   onCommunityNotesToggle: () => void;
   onFiltersChange: (filters: Partial<SearchFilters>) => void;
@@ -65,6 +71,12 @@ export default function SearchSidebar({
   filters,
   isLoadingOffer,
   offer,
+  offers,
+  communityNoteThreads,
+  onOfferSelect,
+  onCommunityNoteSelect,
+  onBackToOffers,
+  isLoadingOffers,
   onCloseSidebar,
   onCommunityNotesToggle,
   onFiltersChange,
@@ -130,6 +142,12 @@ export default function SearchSidebar({
             communityNote={communityNote}
             isLoadingOffer={isLoadingOffer}
             offer={offer}
+            offers={offers}
+            communityNoteThreads={communityNoteThreads}
+            onOfferSelect={onOfferSelect}
+            onCommunityNoteSelect={onCommunityNoteSelect}
+            onBackToOffers={onBackToOffers}
+            isLoadingOffers={isLoadingOffers}
             onCloseSidebar={onCloseSidebar}
           />
         </Tab>
@@ -145,6 +163,12 @@ SearchSidebar.propTypes = {
   filters: PropTypes.object.isRequired,
   isLoadingOffer: PropTypes.bool,
   offer: PropTypes.object,
+  offers: PropTypes.array.isRequired,
+  communityNoteThreads: PropTypes.array.isRequired,
+  onOfferSelect: PropTypes.func.isRequired,
+  onCommunityNoteSelect: PropTypes.func.isRequired,
+  onBackToOffers: PropTypes.func.isRequired,
+  isLoadingOffers: PropTypes.bool,
   onCloseSidebar: PropTypes.func.isRequired,
   onCommunityNotesToggle: PropTypes.func.isRequired,
   onFiltersChange: PropTypes.func.isRequired,

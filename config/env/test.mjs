@@ -124,10 +124,10 @@ service = {
     websiteId: '6c518160-cd10-4233-a3e4-4491ee387a01',
   },
   influxdb: {
-    enabled: false,
+    enabled: process.env.TRUSTROOTS_TEST_STATS_OUTAGE === 'true',
     options: {
-      host: 'localhost',
-      port: 8086,
+      host: '127.0.0.1',
+      port: 1,
       protocol: 'http',
       database: 'trustroots-test',
     },

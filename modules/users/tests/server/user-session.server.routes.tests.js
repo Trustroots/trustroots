@@ -1,4 +1,6 @@
 const should = require('should');
+const sinon = require('sinon');
+const influxService = require('../../../stats/server/services/influx.server.service.mjs');
 const request = require('supertest');
 const mongoose = require('mongoose');
 const express = require('../../../../config/lib/express.mjs');
@@ -13,6 +15,7 @@ describe('Sign-in session confirmation', function () {
     app = await express.init(mongoose.connection);
   });
 
+  afterEach(() => sinon.restore());
   afterEach(utils.clearDatabase);
 
   it('returns an anonymous identity without creating a cookie or allowing caching', async function () {
@@ -37,8 +40,11 @@ describe('Sign-in session confirmation', function () {
       provider: 'local',
       roles: ['user'],
     }).save();
+    const backend = sinon.stub(influxService, 'stat');
     const agent = request.agent(app);
     await agent.post('/api/auth/signin').send(credentials).expect(200);
+    backend.called.should.be.true();
+    backend.getCalls().forEach(call => call.args[1](new Error('unavailable')));
     const response = await agent.get('/api/auth/session').expect(200);
     response.body.should.deepEqual({ userId: String(user._id) });
     response.headers['cache-control'].should.equal('no-store');

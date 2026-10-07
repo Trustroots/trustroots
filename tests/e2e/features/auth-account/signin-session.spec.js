@@ -61,3 +61,57 @@ test('a failed session check shows a connection message without blaming cookies'
   ).toBeEnabled();
   await expect(page).toHaveURL(/\/signin$/);
 });
+
+// Playwright starts its API with an enabled but unreachable loopback statistics
+// backend. This exercises the real browser, API, cookies and statistics path.
+test('login retains a session while the statistics backend is unavailable', async ({
+  page,
+}, testInfo) => {
+  annotateFeature(testInfo, 'auth.signin', [
+    'Remote statistics failure does not delay login or session persistence.',
+  ]);
+  await page.goto('/signin');
+  await page.getByLabel('Email or username').fill(user.username);
+  await page.getByLabel('Password', { exact: true }).fill(user.password);
+  await page.getByRole('button', { name: 'Login', exact: true }).click();
+  await expect(page).not.toHaveURL(/\/signin/);
+  const response = await page.request.get('/api/auth/session');
+  expect(response.ok()).toBeTruthy();
+  expect((await response.json()).userId).toBeTruthy();
+});
+
+test('login works while the analytics script stalls and fails', async ({
+  page,
+}, testInfo) => {
+  annotateFeature(testInfo, 'auth.signin', [
+    'An unavailable analytics script does not hold up document readiness or login.',
+  ]);
+  let releaseAnalytics;
+  const stalled = new Promise(resolve => {
+    releaseAnalytics = resolve;
+  });
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.route('https://1p.trustroots.org/**', async route => {
+    await stalled;
+    await route.abort('failed');
+  });
+  try {
+    await page.goto('/signin', {
+      waitUntil: 'domcontentloaded',
+      timeout: 10000,
+    });
+    await page.getByLabel('Email or username').fill(user.username);
+    await page.getByLabel('Password', { exact: true }).fill(user.password);
+    await page
+      .getByRole('button', { name: 'Login', exact: true })
+      .click({ noWaitAfter: true });
+    await expect(page).not.toHaveURL(/\/signin/);
+    const response = await page.request.get('/api/auth/session');
+    expect((await response.json()).userId).toBeTruthy();
+  } finally {
+    releaseAnalytics();
+  }
+  await page.unroute('https://1p.trustroots.org/**');
+  expect(errors).toEqual([]);
+});

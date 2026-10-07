@@ -26,12 +26,17 @@ describe('<Volunteering />', () => {
     expect(
       screen.getByRole('heading', { name: 'Volunteering' }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Volunteer with the team that runs Trustroots, helping with development, design, translation, community support or organisation. This form is not for finding farm work, jobs, or work in exchange for food and accommodation.',
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Team Guide' })).toHaveAttribute(
       'href',
       'https://team.trustroots.org/',
     );
     expect(
-      screen.getByRole('link', { name: 'I’d like to volunteer' }),
+      screen.getByRole('link', { name: 'I’d like to help run Trustroots' }),
     ).toHaveAttribute('href', '/support?category=volunteering');
   });
 });

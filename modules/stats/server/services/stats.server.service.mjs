@@ -192,7 +192,7 @@ function validateStat(stat) {
 }
 
 /**
- * Record a complex stat
+ * Deliver a complex stat and wait for backend acknowledgement
  *
  * Example usage and documentation of the propeties:
 
@@ -249,7 +249,7 @@ stats.stat({
  * @param {StatObject} stat
  * @param {statCallback} callback
  */
-function stat(stat, callback) {
+function deliver(stat, callback) {
   // validateStat will throw an error if invalid
   try {
     validateStat(stat); // Wrap in if() or make it throw depend on implementation
@@ -261,8 +261,32 @@ function stat(stat, callback) {
   influxService.stat(stat, callback);
 }
 
+// Request telemetry is best effort. Background jobs can use deliver() when
+// acknowledgement matters. Cap outstanding writes during a backend outage.
+let outstandingWrites = 0;
+function stat(point, callback = function () {}) {
+  try {
+    validateStat(point);
+  } catch (err) {
+    return callback(err);
+  }
+  if (outstandingWrites < 32) {
+    outstandingWrites += 1;
+    const release = _.once(function () {
+      outstandingWrites -= 1;
+    });
+    try {
+      influxService.stat(point, release);
+    } catch (err) {
+      release();
+    }
+  }
+  // This acknowledges local validation, not remote persistence.
+  return callback();
+}
+
 // Public exports
-export { count, value, stat };
+export { count, value, stat, deliver };
 
 // Pseudo-private exports for tests
 export const _validateStat = validateStat;
@@ -270,6 +294,7 @@ const statsService = {
   count,
   value,
   stat,
+  deliver,
   _validateStat,
 };
 export default statsService;
