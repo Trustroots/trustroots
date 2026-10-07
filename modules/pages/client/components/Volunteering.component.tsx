@@ -38,6 +38,11 @@ export default function Volunteering() {
             </p>
             <p>
               {t(
+                'Volunteer with the team that runs Trustroots, helping with development, design, translation, community support or organisation. This form is not for finding farm work, jobs, or work in exchange for food and accommodation.',
+              )}
+            </p>
+            <p>
+              {t(
                 'Please head over to our Team Guide to learn how to get started.',
               )}
             </p>
@@ -47,7 +52,7 @@ export default function Volunteering() {
                   href="/support?category=volunteering"
                   className="btn btn-primary"
                 >
-                  {t('I’d like to volunteer')}
+                  {t('I’d like to help run Trustroots')}
                 </a>
               </li>
               <li>
