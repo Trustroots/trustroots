@@ -7,6 +7,7 @@ import http.cookiejar
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import time
@@ -37,14 +38,37 @@ def image_ids(args):
     return images
 
 
+def validate_logging(service, driver, options):
+    if driver != 'local':
+        raise RuntimeError(service + ' must explicitly use local logging; migrate existing containers separately')
+    if not re.fullmatch(r'[1-9][0-9]*[kKmMgG]', str(options.get('max-size', ''))) or \
+            not re.fullmatch(r'[1-9][0-9]*', str(options.get('max-file', ''))):
+        raise RuntimeError(service + ' must set positive local logging max-size and max-file limits')
+
+
+def check_existing_logging(args):
+    for service in (*SERVICES, 'mongodb'):
+        # Include stopped containers: they can still be removed during recreation.
+        containers = run(compose(args) + ['ps', '--all', '--quiet', service], timeout=15).split()
+        if not containers:
+            continue
+        configs = run(['docker', 'inspect', '--format', '{{json .HostConfig.LogConfig}}',
+                       *containers], timeout=15).splitlines()
+        if len(configs) != len(containers):
+            raise RuntimeError('Could not inspect existing ' + service + ' logging')
+        for value in configs:
+            config = json.loads(value)
+            validate_logging('Existing ' + service, config.get('Type'), config.get('Config') or {})
+
+
 def preflight(args, runtime=True):
     if not os.path.ismount(args.media_mount):
         raise RuntimeError('Required media filesystem is not mounted: ' + str(args.media_mount))
     config = json.loads(run(compose(args) + ['config', '--format', 'json']))
     for service in (*SERVICES, 'mongodb'):
         definition = config['services'][service]
-        if definition.get('logging', {}).get('driver') != 'local':
-            raise RuntimeError(service + ' must explicitly use local logging')
+        logging = definition.get('logging', {})
+        validate_logging(service, logging.get('driver'), logging.get('options') or {})
     for service in SERVICES:
         mounts = [v for v in config['services'][service].get('volumes', [])
                   if v.get('target') == '/home/app/trustroots/public/uploads-profile']
@@ -54,6 +78,7 @@ def preflight(args, runtime=True):
         media = args.media_mount.resolve()
         if not source.is_relative_to(media) or not source.is_dir():
             raise RuntimeError('Photo directory must exist on the required media mount')
+    check_existing_logging(args)
     if not runtime:
         return
     # Emit only non-secret settings. Never print the loaded configuration.
@@ -179,7 +204,6 @@ def main():
 
 
 def validate_images(images):
-    import re
     if set(images) != set(SERVICES) or any(not re.fullmatch(r'sha256:[0-9a-f]{64}', image) for image in images.values()):
         raise RuntimeError('Invalid rollback image state')
 
