@@ -5,7 +5,12 @@ import {
   fetchLocationSuggestions,
   locatePlace,
 } from '@/modules/search/client/api/location.api';
-import { getBounds, getCenter } from '@/modules/search/client/utils/location';
+import {
+  getBounds,
+  getCenter,
+  type MapBounds,
+  type MapPoint,
+} from '@/modules/search/client/utils/location';
 
 jest.mock('axios', () =>
   jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
@@ -16,8 +21,18 @@ jest.mock('@/modules/core/client/utils/map', () => ({
 jest.mock('@/modules/search/client/utils/location', () => ({
   getBounds: jest.fn(),
   getCenter: jest.fn(),
-  shortTitle: jest.fn(feature => feature.text || feature.place_name || ''),
+  shortTitle: jest.fn(
+    (feature: { text?: string; place_name?: string }) =>
+      feature.text || feature.place_name || '',
+  ),
 }));
+
+const mockedAxios = axios as jest.Mocked<typeof axios>;
+const getMapBoxTokenMock = getMapBoxToken as jest.MockedFunction<
+  typeof getMapBoxToken
+>;
+const getBoundsMock = getBounds as jest.MockedFunction<typeof getBounds>;
+const getCenterMock = getCenter as jest.MockedFunction<typeof getCenter>;
 
 describe('location api', () => {
   beforeEach(() => {
@@ -25,15 +40,15 @@ describe('location api', () => {
   });
 
   it('returns an empty list when the token or query is missing', async () => {
-    getMapBoxToken.mockReturnValue(null);
+    getMapBoxTokenMock.mockReturnValue(false);
 
     await expect(fetchLocationSuggestions('Paris')).resolves.toEqual([]);
-    expect(axios.get).not.toHaveBeenCalled();
+    expect(mockedAxios.get).not.toHaveBeenCalled();
   });
 
   it('returns mapped suggestions when Mapbox responds with features', async () => {
-    getMapBoxToken.mockReturnValue('mapbox-token');
-    axios.get.mockResolvedValue({
+    getMapBoxTokenMock.mockReturnValue('mapbox-token');
+    mockedAxios.get.mockResolvedValue({
       status: 200,
       data: {
         features: [
@@ -51,7 +66,7 @@ describe('location api', () => {
       },
     ]);
 
-    expect(axios.get).toHaveBeenCalledWith(
+    expect(mockedAxios.get).toHaveBeenCalledWith(
       'https://api.mapbox.com/geocoding/v5/mapbox.places/Paris.json',
       {
         params: {
@@ -64,28 +79,31 @@ describe('location api', () => {
   });
 
   it('returns an empty list when the Mapbox request fails', async () => {
-    getMapBoxToken.mockReturnValue('mapbox-token');
-    axios.get.mockRejectedValue(new Error('Network error'));
+    getMapBoxTokenMock.mockReturnValue('mapbox-token');
+    mockedAxios.get.mockRejectedValue(new Error('Network error'));
 
     await expect(fetchLocationSuggestions('Paris')).resolves.toEqual([]);
   });
 
   it('returns an empty list for unsuccessful or empty Mapbox responses', async () => {
-    getMapBoxToken.mockReturnValue('mapbox-token');
-    axios.get.mockResolvedValueOnce({ status: 500, data: { features: [] } });
+    getMapBoxTokenMock.mockReturnValue('mapbox-token');
+    mockedAxios.get.mockResolvedValueOnce({
+      status: 500,
+      data: { features: [] },
+    });
     await expect(fetchLocationSuggestions('Paris')).resolves.toEqual([]);
 
-    axios.get.mockResolvedValueOnce({ status: 200, data: {} });
+    mockedAxios.get.mockResolvedValueOnce({ status: 200, data: {} });
     await expect(fetchLocationSuggestions('Paris')).resolves.toEqual([]);
   });
 
   it('locates a place using bounds when available', () => {
-    const bounds = {
+    const bounds: MapBounds = {
       northEast: { lat: 1, lng: 2 },
       southWest: { lat: 0, lng: 1 },
     };
-    getBounds.mockReturnValue(bounds);
-    getCenter.mockReturnValue(false);
+    getBoundsMock.mockReturnValue(bounds);
+    getCenterMock.mockReturnValue(false);
 
     expect(locatePlace({ id: 'place-1' })).toEqual({
       data: bounds,
@@ -94,9 +112,9 @@ describe('location api', () => {
   });
 
   it('locates a place using centre coordinates when bounds are unavailable', () => {
-    const center = { lat: 48.8, lng: 2.3 };
-    getBounds.mockReturnValue(false);
-    getCenter.mockReturnValue(center);
+    const center: MapPoint = { lat: 48.8, lng: 2.3 };
+    getBoundsMock.mockReturnValue(false);
+    getCenterMock.mockReturnValue(center);
 
     expect(locatePlace({ id: 'place-1' })).toEqual({
       data: center,
@@ -105,8 +123,8 @@ describe('location api', () => {
   });
 
   it('returns null when neither bounds nor centre are available', () => {
-    getBounds.mockReturnValue(false);
-    getCenter.mockReturnValue(false);
+    getBoundsMock.mockReturnValue(false);
+    getCenterMock.mockReturnValue(false);
 
     expect(locatePlace({ id: 'place-1' })).toBeNull();
   });

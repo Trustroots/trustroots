@@ -5,9 +5,14 @@ import '@testing-library/jest-dom';
 import SearchSidebarResults, {
   OfferDescription,
   formatAge,
+  type CommunityNoteSummary,
+  type SearchResultOffer,
 } from '@/modules/search/client/components/SearchSidebarResults.component';
 
-let mockLanguagesData = { en: 'English', fi: 'Finnish' };
+let mockLanguagesData: Record<string, string> | undefined = {
+  en: 'English',
+  fi: 'Finnish',
+};
 
 jest.mock('@/modules/core/client/api/languages.api', () => ({
   useLanguagesQuery: () => ({ data: mockLanguagesData }),
@@ -22,11 +27,18 @@ jest.mock(
   '@/modules/search/client/components/CommunityNotesSidebar.component',
   () => ({
     __esModule: true,
-    default: ({ plusCode }) => (
+    default: ({ plusCode }: { plusCode?: string | null }) => (
       <div data-testid="community-notes-sidebar">{plusCode}</div>
     ),
   }),
 );
+
+function noteEvent(partial: {
+  id: string;
+  content?: string;
+}): CommunityNoteSummary['notes'][number] {
+  return partial as CommunityNoteSummary['notes'][number];
+}
 
 describe('<SearchSidebarResults />', () => {
   beforeEach(() => {
@@ -75,7 +87,7 @@ describe('<SearchSidebarResults />', () => {
 
   it('lists visible offers and opens the selected offer details', () => {
     const onOfferSelect = jest.fn();
-    const visibleOffer = {
+    const visibleOffer: SearchResultOffer = {
       _id: 'offer-1',
       type: 'host',
       status: 'yes',
@@ -99,9 +111,9 @@ describe('<SearchSidebarResults />', () => {
 
   it('lists visible community note threads and opens the selected thread', () => {
     const onCommunityNoteSelect = jest.fn();
-    const thread = {
+    const thread: CommunityNoteSummary = {
       plusCode: '9F2X+XX',
-      notes: [{ id: 'note-1', content: 'A useful local note' }],
+      notes: [noteEvent({ id: 'note-1', content: 'A useful local note' })],
     };
 
     render(
@@ -149,9 +161,9 @@ describe('<SearchSidebarResults />', () => {
 
   it('keeps a community note result usable when its location or text is missing', () => {
     const onCommunityNoteSelect = jest.fn();
-    const thread = {
+    const thread: CommunityNoteSummary = {
       plusCode: null,
-      notes: [{ id: 'unlocated-note' }],
+      notes: [noteEvent({ id: 'unlocated-note' })],
     };
 
     render(
@@ -172,14 +184,14 @@ describe('<SearchSidebarResults />', () => {
   });
 
   it('allows optional result callbacks to be omitted', () => {
-    const result = {
+    const result: SearchResultOffer = {
       _id: 'offer-optional-callback',
       type: 'host',
       user: { username: 'anonymous-host' },
     };
-    const noteThread = {
+    const noteThread: CommunityNoteSummary = {
       plusCode: '9F2X+XX',
-      notes: [{ id: 'note-optional-callback' }],
+      notes: [noteEvent({ id: 'note-optional-callback' })],
     };
 
     const offerList = render(
@@ -275,7 +287,7 @@ describe('<SearchSidebarResults />', () => {
     render(
       <SearchSidebarResults
         communityNote={{
-          notes: [{ id: 'note-1' }],
+          notes: [noteEvent({ id: 'note-1' })],
           plusCode: '9F2X+XX',
         }}
         onCloseSidebar={onCloseSidebar}

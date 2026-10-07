@@ -10,11 +10,14 @@ export type Locale = {
 
 const localeList = locales as Locale[];
 
-const deburr = (value: string): string =>
+export const deburr = (value: string): string =>
   value?.normalize('NFD').replace(/[\u0300-\u036f]/g, '') ?? '';
 
+export const normaliseForSearch = (value: string): string =>
+  deburr(value).toLowerCase();
+
 const getSearchableFields = ({ label, code, english }: Locale): string[] =>
-  [label, code, english].map(deburr).map(name => name.toLowerCase());
+  [label, code, english].map(normaliseForSearch);
 
 export function getLocales(): Locale[] {
   if (process.env.NODE_ENV === 'production') {
@@ -27,9 +30,9 @@ export function getLocales(): Locale[] {
 
 export function getSearchedLocales(
   availableLocales: readonly Locale[],
-  search: string,
+  search = '',
 ): Locale[] {
-  const searchString = deburr(search).toLowerCase();
+  const searchString = normaliseForSearch(search);
   return availableLocales.filter(language =>
     getSearchableFields(language).some(name => name.includes(searchString)),
   );

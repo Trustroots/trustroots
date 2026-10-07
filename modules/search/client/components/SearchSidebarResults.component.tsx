@@ -6,7 +6,7 @@ import Avatar from '@/modules/users/client/components/Avatar.component';
 import CommunityNotesSidebar from './CommunityNotesSidebar.component';
 
 interface SearchOfferUser {
-  _id: string;
+  _id?: string;
   username: string;
   displayName?: string;
   birthdate?: string | number;
@@ -25,7 +25,7 @@ export interface SearchResultOffer {
   updated?: string | number;
 }
 
-interface CommunityNoteSummary {
+export interface CommunityNoteSummary {
   notes: import('nostr-tools').Event[];
   plusCode: string | null;
 }
@@ -34,11 +34,11 @@ interface SearchSidebarResultsProps {
   communityNote?: CommunityNoteSummary | null;
   isLoadingOffer?: boolean;
   offer?: SearchResultOffer | null;
-  offers: SearchResultOffer[];
-  communityNoteThreads: CommunityNoteSummary[];
-  onOfferSelect: (offer: SearchResultOffer) => void;
-  onCommunityNoteSelect: (note: CommunityNoteSummary) => void;
-  onBackToOffers: () => void;
+  offers?: SearchResultOffer[];
+  communityNoteThreads?: CommunityNoteSummary[];
+  onOfferSelect?: (offer: SearchResultOffer) => void;
+  onCommunityNoteSelect?: (note: CommunityNoteSummary) => void;
+  onBackToOffers?: () => void;
   isLoadingOffers?: boolean;
   onCloseSidebar: () => void;
 }
@@ -362,11 +362,11 @@ SearchSidebarResults.propTypes = {
   communityNote: PropTypes.object,
   isLoadingOffer: PropTypes.bool,
   offer: PropTypes.object,
-  offers: PropTypes.array.isRequired,
-  communityNoteThreads: PropTypes.array.isRequired,
-  onOfferSelect: PropTypes.func.isRequired,
-  onCommunityNoteSelect: PropTypes.func.isRequired,
-  onBackToOffers: PropTypes.func.isRequired,
+  offers: PropTypes.array,
+  communityNoteThreads: PropTypes.array,
+  onOfferSelect: PropTypes.func,
+  onCommunityNoteSelect: PropTypes.func,
+  onBackToOffers: PropTypes.func,
   isLoadingOffers: PropTypes.bool,
   onCloseSidebar: PropTypes.func.isRequired,
 };
