@@ -225,6 +225,18 @@ describe('<SupportForm />', () => {
       'volunteering',
     );
     expect(
+      screen.getByRole('option', { name: 'Help run Trustroots' }),
+    ).toHaveValue('volunteering');
+    expect(
+      screen.getByText(
+        'Volunteer with the team that runs Trustroots, helping with development, design, translation, community support or organisation. This form is not for finding farm work, jobs, or work in exchange for food and accommodation.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Message')).toHaveAttribute(
+      'aria-describedby',
+      'volunteering-help message-help',
+    );
+    expect(
       screen.getByText(
         /Briefly tell us about your interests, skills, and availability\./,
       ),
@@ -263,7 +275,18 @@ describe('<SupportForm />', () => {
     window.history.pushState({}, '', '/support?report=example-member');
     render(<SupportForm user={{}} />);
     const category = screen.getByLabelText('What can we help with?');
+    fireEvent.change(category, { target: { value: 'volunteering' } });
+    expect(
+      screen.getByText(/Volunteer with the team that runs Trustroots/),
+    ).toBeInTheDocument();
     fireEvent.change(category, { target: { value: 'account' } });
+    expect(
+      screen.queryByText(/Volunteer with the team that runs Trustroots/),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Message')).toHaveAttribute(
+      'aria-describedby',
+      'message-help',
+    );
     expect(
       screen.queryByRole('link', { name: 'Team Guide' }),
     ).not.toBeInTheDocument();
