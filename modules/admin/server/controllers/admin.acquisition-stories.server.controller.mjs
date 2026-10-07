@@ -2,7 +2,6 @@
 import _ from 'lodash';
 import mongoose from 'mongoose';
 import pluralize from 'pluralize';
-import stopword from 'stopword';
 import winkStatistics from 'wink-statistics';
 import winkTokenizer from 'wink-tokenizer';
 const Offer = mongoose.model('Offer');
@@ -173,14 +172,130 @@ function getSingular(value) {
   return pluralize.singular(value);
 }
 
+/*
+ * Common English function words. This list is the English list from stopword
+ * 1.0.11, Copyright (c) 2011 Chris Umbel, used under the MIT licence.
+ */
+const ENGLISH_STOPWORDS = new Set([
+  'about',
+  'after',
+  'all',
+  'also',
+  'am',
+  'an',
+  'and',
+  'another',
+  'any',
+  'are',
+  'as',
+  'at',
+  'be',
+  'because',
+  'been',
+  'before',
+  'being',
+  'between',
+  'both',
+  'but',
+  'by',
+  'came',
+  'can',
+  'come',
+  'could',
+  'did',
+  'do',
+  'each',
+  'for',
+  'from',
+  'get',
+  'got',
+  'has',
+  'had',
+  'he',
+  'have',
+  'her',
+  'here',
+  'him',
+  'himself',
+  'his',
+  'how',
+  'if',
+  'in',
+  'into',
+  'is',
+  'it',
+  'like',
+  'make',
+  'many',
+  'me',
+  'might',
+  'more',
+  'most',
+  'much',
+  'must',
+  'my',
+  'never',
+  'now',
+  'of',
+  'on',
+  'only',
+  'or',
+  'other',
+  'our',
+  'out',
+  'over',
+  'said',
+  'same',
+  'should',
+  'since',
+  'some',
+  'still',
+  'such',
+  'take',
+  'than',
+  'that',
+  'the',
+  'their',
+  'them',
+  'then',
+  'there',
+  'these',
+  'they',
+  'this',
+  'those',
+  'through',
+  'to',
+  'too',
+  'under',
+  'up',
+  'very',
+  'was',
+  'way',
+  'we',
+  'well',
+  'were',
+  'what',
+  'where',
+  'which',
+  'while',
+  'who',
+  'with',
+  'would',
+  'you',
+  'your',
+  'a',
+  'i',
+]);
+
 /**
- * Strip "meaningless" English words
- * In natural language processing, "stopwords" are words that are so frequent
- * that they can safely be removed from a text without altering its meaning.
+ * Strip frequent English words before term counting.
  */
 function removeStopwords(string) {
-  const lowerCaseString = string.toLowerCase();
-  return stopword.removeStopwords(lowerCaseString.split(' ')).join(' ');
+  return string
+    .toLowerCase()
+    .split(' ')
+    .filter(word => !ENGLISH_STOPWORDS.has(word))
+    .join(' ');
 }
 
 /**

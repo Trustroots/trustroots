@@ -181,25 +181,29 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     messages.find(message => message.userFrom._id === user._id),
   );
   const showReply = (messages.length > 0 || !hasEmptyProfile) && !removed;
-  const showQuickReply = showReply && messages.length > 0 && !userHasReplied;
+  const showQuickReply = showReply && !userHasReplied;
 
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
 
   useEffect(() => {
     const viewport = window.visualViewport;
     if (!viewport) return;
+    let keyboardInset = 0;
 
     const updateKeyboardInset = () => {
       const isWritingMessage =
         document.activeElement?.id === 'message-reply-content';
-      const keyboardInset = isWritingMessage
-        ? Math.max(
-            0,
-            Math.round(
-              window.innerHeight - viewport.height - viewport.offsetTop,
-            ),
-          )
-        : 0;
+      // Native text menus can temporarily take focus from the editor. Keep
+      // the composer in place until the viewport shows the keyboard has closed.
+      keyboardInset =
+        isWritingMessage || keyboardInset > 0
+          ? Math.max(
+              0,
+              Math.round(
+                window.innerHeight - viewport.height - viewport.offsetTop,
+              ),
+            )
+          : 0;
       document.documentElement.style.setProperty(
         '--trustroots-keyboard-inset',
         `${keyboardInset}px`,

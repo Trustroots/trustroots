@@ -1,33 +1,29 @@
-import PropTypes from 'prop-types';
 import React from 'react';
 import * as ReactBootstrap from 'react-bootstrap';
 
 import SearchPlaceInput from './SearchPlaceInput.component';
 import SearchSidebarFilters from './SearchSidebarFilters.component';
-import SearchSidebarResults, {
-  type SearchResultOffer,
-} from './SearchSidebarResults.component';
+import SearchSidebarResults from './SearchSidebarResults.component';
 import type { SearchFilters } from '../utils/search-filters';
 
-interface SearchCommunityNoteSummary {
-  notes: import('nostr-tools').Event[];
-  plusCode: string | null;
-}
+type SearchSidebarResultsPassthrough = Pick<
+  React.ComponentProps<typeof SearchSidebarResults>,
+  | 'communityNote'
+  | 'communityNoteThreads'
+  | 'isLoadingOffer'
+  | 'isLoadingOffers'
+  | 'offer'
+  | 'offers'
+  | 'onBackToOffers'
+  | 'onCloseSidebar'
+  | 'onCommunityNoteSelect'
+  | 'onOfferSelect'
+>;
 
-interface SearchSidebarProps {
+interface SearchSidebarProps extends SearchSidebarResultsPassthrough {
   activeTab: 'filters' | 'results';
-  communityNote?: SearchCommunityNoteSummary | null;
   communityNotesEnabled: boolean;
   filters: SearchFilters;
-  isLoadingOffer?: boolean;
-  offer?: SearchResultOffer | null;
-  offers: SearchResultOffer[];
-  communityNoteThreads: SearchCommunityNoteSummary[];
-  onOfferSelect: (offer: SearchResultOffer) => void;
-  onCommunityNoteSelect: (note: SearchCommunityNoteSummary) => void;
-  onBackToOffers: () => void;
-  isLoadingOffers?: boolean;
-  onCloseSidebar: () => void;
   onCommunityNotesToggle: () => void;
   onFiltersChange: (filters: Partial<SearchFilters>) => void;
   onPlaceSearch: (
@@ -66,18 +62,8 @@ const { Tab, Tabs } = ReactBootstrap as unknown as {
 
 export default function SearchSidebar({
   activeTab,
-  communityNote,
   communityNotesEnabled,
   filters,
-  isLoadingOffer,
-  offer,
-  offers,
-  communityNoteThreads,
-  onOfferSelect,
-  onCommunityNoteSelect,
-  onBackToOffers,
-  isLoadingOffers,
-  onCloseSidebar,
   onCommunityNotesToggle,
   onFiltersChange,
   onPlaceSearch,
@@ -86,6 +72,7 @@ export default function SearchSidebar({
   onOnlineInPast6MonthsChange,
   searchQuery,
   setSearchQuery,
+  ...resultsProps
 }: SearchSidebarProps) {
   return (
     <>
@@ -124,7 +111,7 @@ export default function SearchSidebar({
           <SearchSidebarFilters
             communityNotesEnabled={communityNotesEnabled}
             filters={filters}
-            onCloseSidebar={onCloseSidebar}
+            onCloseSidebar={resultsProps.onCloseSidebar}
             onCommunityNotesToggle={onCommunityNotesToggle}
             onFiltersChange={onFiltersChange}
             onlineInPast6Months={onlineInPast6Months}
@@ -138,44 +125,9 @@ export default function SearchSidebar({
           eventKey="results"
           title="Results"
         >
-          <SearchSidebarResults
-            communityNote={communityNote}
-            isLoadingOffer={isLoadingOffer}
-            offer={offer}
-            offers={offers}
-            communityNoteThreads={communityNoteThreads}
-            onOfferSelect={onOfferSelect}
-            onCommunityNoteSelect={onCommunityNoteSelect}
-            onBackToOffers={onBackToOffers}
-            isLoadingOffers={isLoadingOffers}
-            onCloseSidebar={onCloseSidebar}
-          />
+          <SearchSidebarResults {...resultsProps} />
         </Tab>
       </Tabs>
     </>
   );
 }
-
-SearchSidebar.propTypes = {
-  activeTab: PropTypes.oneOf(['filters', 'results']).isRequired,
-  communityNote: PropTypes.object,
-  communityNotesEnabled: PropTypes.bool.isRequired,
-  filters: PropTypes.object.isRequired,
-  isLoadingOffer: PropTypes.bool,
-  offer: PropTypes.object,
-  offers: PropTypes.array.isRequired,
-  communityNoteThreads: PropTypes.array.isRequired,
-  onOfferSelect: PropTypes.func.isRequired,
-  onCommunityNoteSelect: PropTypes.func.isRequired,
-  onBackToOffers: PropTypes.func.isRequired,
-  isLoadingOffers: PropTypes.bool,
-  onCloseSidebar: PropTypes.func.isRequired,
-  onCommunityNotesToggle: PropTypes.func.isRequired,
-  onFiltersChange: PropTypes.func.isRequired,
-  onPlaceSearch: PropTypes.func.isRequired,
-  onTabSelect: PropTypes.func.isRequired,
-  onlineInPast6Months: PropTypes.bool.isRequired,
-  onOnlineInPast6MonthsChange: PropTypes.func.isRequired,
-  searchQuery: PropTypes.string.isRequired,
-  setSearchQuery: PropTypes.func.isRequired,
-};

@@ -2,9 +2,10 @@ import type { PageTranslator } from '../types';
 import React from 'react';
 import Board from './PageBoard';
 import { useTranslation } from 'react-i18next';
+import { VOLUNTEERING_DISCLAIMER } from '@/modules/support/shared/volunteering-copy';
 
 export default function Volunteering() {
-  const { t: rawT } = useTranslation('pages');
+  const { t: rawT } = useTranslation(['pages', 'support']);
   const t = rawT as unknown as PageTranslator;
 
   return (
@@ -36,11 +37,7 @@ export default function Volunteering() {
                 'Help us build Trustroots! Nobody can do everything, but everyone can do something…',
               )}
             </p>
-            <p>
-              {t(
-                'Volunteer with the team that runs Trustroots, helping with development, design, translation, community support or organisation. This form is not for finding farm work, jobs, or work in exchange for food and accommodation.',
-              )}
-            </p>
+            <p>{t(VOLUNTEERING_DISCLAIMER, { ns: 'support' })}</p>
             <p>
               {t(
                 'Please head over to our Team Guide to learn how to get started.',

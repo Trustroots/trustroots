@@ -1,30 +1,40 @@
 import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import type { UseQueryResult } from 'react-query';
 
 import '@/config/client/i18n';
 import LanguageSelect from '@/modules/core/client/components/LanguageSelect';
-import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
+import {
+  useLanguagesQuery,
+  type LanguageOption,
+} from '@/modules/core/client/api/languages.api';
 
-const asyncSelectProps = [];
+type CapturedAsyncSelectProps = {
+  placeholder?: React.ReactNode;
+  value?: LanguageOption[];
+  isLoading?: boolean;
+  isDisabled?: boolean;
+  loadOptions?: (inputValue?: string) => Promise<LanguageOption[]>;
+  onChange?: (value: LanguageOption[] | null) => void;
+  loadingMessage?: () => string;
+  noOptionsMessage?: (args: { inputValue: string }) => string;
+};
+
+const asyncSelectProps: CapturedAsyncSelectProps[] = [];
+const useLanguagesQueryMock = useLanguagesQuery as jest.MockedFunction<
+  typeof useLanguagesQuery
+>;
+
 jest.mock('react-select/async', () => {
-  const React = require('react');
-  const PropTypes = require('prop-types');
-
-  function MockAsyncSelect(props) {
+  return function MockAsyncSelect(props: CapturedAsyncSelectProps) {
     asyncSelectProps.push(props);
     return (
       <div>
         <div>{props.placeholder}</div>
       </div>
     );
-  }
-
-  MockAsyncSelect.propTypes = {
-    placeholder: PropTypes.string,
   };
-
-  return MockAsyncSelect;
 });
 
 jest.mock('@/modules/core/client/api/languages.api');
@@ -34,9 +44,29 @@ afterEach(() => {
   asyncSelectProps.length = 0;
 });
 
+function latestSelectProps(): CapturedAsyncSelectProps {
+  const props = asyncSelectProps[asyncSelectProps.length - 1];
+  if (!props) {
+    throw new Error('AsyncSelect was not rendered');
+  }
+  return props;
+}
+
+function mockLanguagesQuery(
+  partial: Partial<UseQueryResult<LanguageOption[], unknown>> & {
+    data?: LanguageOption[] | undefined;
+    isLoading: boolean;
+    isError: boolean;
+  },
+) {
+  useLanguagesQueryMock.mockReturnValue(
+    partial as UseQueryResult<LanguageOption[], unknown>,
+  );
+}
+
 describe('<LanguageSelect />', () => {
   it('renders the select once languages are loaded', () => {
-    useLanguagesQuery.mockReturnValue({
+    mockLanguagesQuery({
       data: [
         { value: 'eng', label: 'English' },
         { value: 'fin', label: 'Finnish' },
@@ -51,7 +81,7 @@ describe('<LanguageSelect />', () => {
   });
 
   it('shows an error alert when languages fail to load', async () => {
-    useLanguagesQuery.mockReturnValue({
+    mockLanguagesQuery({
       data: undefined,
       isLoading: false,
       isError: true,
@@ -60,13 +90,13 @@ describe('<LanguageSelect />', () => {
     render(<LanguageSelect />);
 
     expect(screen.getByRole('alert')).toHaveTextContent('Something went wrong');
-    await expect(
-      asyncSelectProps.at(-1).loadOptions('English'),
-    ).resolves.toEqual([]);
+    await expect(latestSelectProps().loadOptions!('English')).resolves.toEqual(
+      [],
+    );
   });
 
   it('prefills selected languages from preSelectedLanguages', async () => {
-    useLanguagesQuery.mockReturnValue({
+    mockLanguagesQuery({
       data: [
         { value: 'eng', label: 'English' },
         { value: 'fin', label: 'Finnish' },
@@ -79,7 +109,7 @@ describe('<LanguageSelect />', () => {
     render(<LanguageSelect preSelectedLanguages={['fin', 'eng']} />);
 
     await waitFor(() => {
-      expect(asyncSelectProps.at(-1).value).toEqual([
+      expect(latestSelectProps().value).toEqual([
         { value: 'eng', label: 'English' },
         { value: 'fin', label: 'Finnish' },
       ]);
@@ -87,17 +117,17 @@ describe('<LanguageSelect />', () => {
   });
 
   it('retains a deprecated selection without offering it in search', async () => {
-    const existing = {
+    const existing: LanguageOption = {
       value: 'enm',
       label: 'Middle English (1100-1500)',
       deprecated: true,
     };
-    const selectable = {
+    const selectable: LanguageOption = {
       value: 'eng',
       label: 'English',
       deprecated: false,
     };
-    useLanguagesQuery.mockReturnValue({
+    mockLanguagesQuery({
       data: [existing, selectable],
       isLoading: false,
       isError: false,
@@ -106,21 +136,21 @@ describe('<LanguageSelect />', () => {
     render(<LanguageSelect excludeDeprecated preSelectedLanguages={['enm']} />);
 
     await waitFor(() => {
-      expect(asyncSelectProps.at(-1).value).toEqual([existing]);
+      expect(latestSelectProps().value).toEqual([existing]);
     });
-    expect(await asyncSelectProps.at(-1).loadOptions('Middle')).toEqual([]);
-    expect(await asyncSelectProps.at(-1).loadOptions('English')).toEqual([
+    expect(await latestSelectProps().loadOptions!('Middle')).toEqual([]);
+    expect(await latestSelectProps().loadOptions!('English')).toEqual([
       selectable,
     ]);
   });
 
   it('offers deprecated languages when used as a search filter', async () => {
-    const historical = {
+    const historical: LanguageOption = {
       value: 'enm',
       label: 'Middle English (1100-1500)',
       deprecated: true,
     };
-    useLanguagesQuery.mockReturnValue({
+    mockLanguagesQuery({
       data: [historical],
       isLoading: false,
       isError: false,
@@ -128,14 +158,14 @@ describe('<LanguageSelect />', () => {
 
     render(<LanguageSelect />);
 
-    expect(await asyncSelectProps.at(-1).loadOptions('Middle')).toEqual([
+    expect(await latestSelectProps().loadOptions!('Middle')).toEqual([
       historical,
     ]);
   });
 
   it('forwards selected values to onChangeLanguages', async () => {
     const onChangeLanguages = jest.fn();
-    useLanguagesQuery.mockReturnValue({
+    mockLanguagesQuery({
       data: [
         { value: 'eng', label: 'English' },
         { value: 'fin', label: 'Finnish' },
@@ -152,10 +182,10 @@ describe('<LanguageSelect />', () => {
     );
 
     await waitFor(() => {
-      expect(asyncSelectProps.at(-1).onChange).toBeTruthy();
+      expect(latestSelectProps().onChange).toBeTruthy();
     });
     act(() => {
-      asyncSelectProps.at(-1).onChange([
+      latestSelectProps().onChange?.([
         { value: 'eng', label: 'English' },
         { value: 'fin', label: 'Finnish' },
       ]);
@@ -166,7 +196,7 @@ describe('<LanguageSelect />', () => {
 
   it('forwards an empty selection when onChange emits nothing', async () => {
     const onChangeLanguages = jest.fn();
-    useLanguagesQuery.mockReturnValue({
+    mockLanguagesQuery({
       data: [{ value: 'eng', label: 'English' }],
       isLoading: false,
       isError: false,
@@ -175,17 +205,17 @@ describe('<LanguageSelect />', () => {
     render(<LanguageSelect onChangeLanguages={onChangeLanguages} />);
 
     await waitFor(() => {
-      expect(asyncSelectProps.at(-1).onChange).toBeTruthy();
+      expect(latestSelectProps().onChange).toBeTruthy();
     });
     act(() => {
-      asyncSelectProps.at(-1).onChange(null);
+      latestSelectProps().onChange?.(null);
     });
 
     expect(onChangeLanguages).toHaveBeenCalledWith([]);
   });
 
   it('updates local selected state without an onChangeLanguages callback', async () => {
-    useLanguagesQuery.mockReturnValue({
+    mockLanguagesQuery({
       data: [{ value: 'eng', label: 'English' }],
       isLoading: false,
       isError: false,
@@ -194,22 +224,22 @@ describe('<LanguageSelect />', () => {
     render(<LanguageSelect />);
 
     await waitFor(() => {
-      expect(asyncSelectProps.at(-1).onChange).toBeTruthy();
+      expect(latestSelectProps().onChange).toBeTruthy();
     });
     act(() => {
-      asyncSelectProps.at(-1).onChange([{ value: 'eng', label: 'English' }]);
+      latestSelectProps().onChange?.([{ value: 'eng', label: 'English' }]);
     });
 
     await waitFor(() => {
-      expect(asyncSelectProps.at(-1).value).toEqual([
+      expect(latestSelectProps().value).toEqual([
         { value: 'eng', label: 'English' },
       ]);
     });
   });
 
   it('uses the translated placeholder by default', () => {
-    useLanguagesQuery.mockReturnValue({
-      data: [],
+    mockLanguagesQuery({
+      data: [] as LanguageOption[],
       isLoading: false,
       isError: false,
     });
@@ -220,7 +250,7 @@ describe('<LanguageSelect />', () => {
   });
 
   it('uses the translated loading message while languages are loading', async () => {
-    useLanguagesQuery.mockReturnValue({
+    mockLanguagesQuery({
       data: undefined,
       isLoading: true,
       isError: false,
@@ -229,13 +259,13 @@ describe('<LanguageSelect />', () => {
     render(<LanguageSelect />);
 
     await waitFor(() => {
-      expect(asyncSelectProps.at(-1).loadingMessage()).toBe('Loading…');
+      expect(latestSelectProps().loadingMessage?.()).toBe('Loading…');
     });
-    expect(asyncSelectProps.at(-1).isLoading).toBe(true);
+    expect(latestSelectProps().isLoading).toBe(true);
   });
 
   it('treats missing input as a short language search', async () => {
-    useLanguagesQuery.mockReturnValue({
+    mockLanguagesQuery({
       data: [{ value: 'eng', label: 'English' }],
       isLoading: false,
       isError: false,
@@ -244,14 +274,14 @@ describe('<LanguageSelect />', () => {
     render(<LanguageSelect />);
 
     await waitFor(() => {
-      expect(asyncSelectProps.at(-1).loadOptions).toBeTruthy();
+      expect(latestSelectProps().loadOptions).toBeTruthy();
     });
 
-    expect(await asyncSelectProps.at(-1).loadOptions()).toEqual([]);
+    expect(await latestSelectProps().loadOptions!()).toEqual([]);
   });
 
   it('loads matching options only once input is long enough', async () => {
-    useLanguagesQuery.mockReturnValue({
+    mockLanguagesQuery({
       data: [
         { value: 'eng', label: 'English' },
         { value: 'fin', label: 'Finnish' },
@@ -264,18 +294,21 @@ describe('<LanguageSelect />', () => {
     render(<LanguageSelect />);
 
     await waitFor(() => {
-      expect(asyncSelectProps.at(-1).loadOptions).toBeTruthy();
+      expect(latestSelectProps().loadOptions).toBeTruthy();
     });
-    const short = await asyncSelectProps.at(-1).loadOptions('E');
-    const long = await asyncSelectProps.at(-1).loadOptions('Eng');
+    const short = await latestSelectProps().loadOptions!('E');
+    const long = await latestSelectProps().loadOptions!('Eng');
 
     expect(short).toEqual([]);
     expect(long).toEqual([{ value: 'eng', label: 'English' }]);
   });
 
-  it('shows the right no-options message for short and long inputs', async () => {
-    useLanguagesQuery.mockReturnValue({
-      data: [],
+  it('matches language labels without requiring accents', async () => {
+    mockLanguagesQuery({
+      data: [
+        { value: 'rcf', label: 'Réunion Creole French' },
+        { value: 'fin', label: 'Finnish' },
+      ],
       isLoading: false,
       isError: false,
     });
@@ -283,42 +316,58 @@ describe('<LanguageSelect />', () => {
     render(<LanguageSelect />);
 
     await waitFor(() => {
-      expect(asyncSelectProps.at(-1).noOptionsMessage).toBeTruthy();
+      expect(latestSelectProps().loadOptions).toBeTruthy();
     });
 
-    expect(asyncSelectProps.at(-1).noOptionsMessage({ inputValue: 'E' })).toBe(
+    expect(await latestSelectProps().loadOptions!('reunion')).toEqual([
+      { value: 'rcf', label: 'Réunion Creole French' },
+    ]);
+  });
+
+  it('shows the right no-options message for short and long inputs', async () => {
+    mockLanguagesQuery({
+      data: [] as LanguageOption[],
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<LanguageSelect />);
+
+    await waitFor(() => {
+      expect(latestSelectProps().noOptionsMessage).toBeTruthy();
+    });
+
+    expect(latestSelectProps().noOptionsMessage!({ inputValue: 'E' })).toBe(
       'Start typing a language…',
     );
-    expect(asyncSelectProps.at(-1).noOptionsMessage({ inputValue: 'En' })).toBe(
+    expect(latestSelectProps().noOptionsMessage!({ inputValue: 'En' })).toBe(
       'No languages found; try typing something else.',
     );
   });
 
   it('disables selector until language data is available', async () => {
-    const makeQuery = value => ({
-      data: value,
-      isLoading: false,
-      isError: false,
-    });
-    const props = [
-      makeQuery(undefined),
-      makeQuery([{ value: 'eng', label: 'English' }]),
-    ];
-
-    useLanguagesQuery
-      .mockReturnValueOnce(props[0])
-      .mockReturnValueOnce(props[1]);
+    useLanguagesQueryMock
+      .mockReturnValueOnce({
+        data: undefined,
+        isLoading: false,
+        isError: false,
+      } as UseQueryResult<LanguageOption[], unknown>)
+      .mockReturnValueOnce({
+        data: [{ value: 'eng', label: 'English' }],
+        isLoading: false,
+        isError: false,
+      } as UseQueryResult<LanguageOption[], unknown>);
 
     const { rerender } = render(<LanguageSelect />);
 
     await waitFor(() => {
-      expect(asyncSelectProps.at(-1).isDisabled).toBe(true);
+      expect(latestSelectProps().isDisabled).toBe(true);
     });
 
     rerender(<LanguageSelect />);
 
     await waitFor(() => {
-      expect(asyncSelectProps.at(-1).isDisabled).toBe(false);
+      expect(latestSelectProps().isDisabled).toBe(false);
     });
   });
 });
