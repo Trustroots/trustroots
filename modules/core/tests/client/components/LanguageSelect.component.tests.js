@@ -273,6 +273,27 @@ describe('<LanguageSelect />', () => {
     expect(long).toEqual([{ value: 'eng', label: 'English' }]);
   });
 
+  it('matches language labels without requiring accents', async () => {
+    useLanguagesQuery.mockReturnValue({
+      data: [
+        { value: 'rcf', label: 'Réunion Creole French' },
+        { value: 'fin', label: 'Finnish' },
+      ],
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<LanguageSelect />);
+
+    await waitFor(() => {
+      expect(asyncSelectProps.at(-1).loadOptions).toBeTruthy();
+    });
+
+    expect(await asyncSelectProps.at(-1).loadOptions('reunion')).toEqual([
+      { value: 'rcf', label: 'Réunion Creole French' },
+    ]);
+  });
+
   it('shows the right no-options message for short and long inputs', async () => {
     useLanguagesQuery.mockReturnValue({
       data: [],

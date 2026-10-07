@@ -506,6 +506,25 @@ describe('Admin acquisition stories controller unit tests', () => {
       categories.should.containEql('something');
     });
 
+    it('drops common English words before counting terms', async () => {
+      const storyQuery = {
+        exec: sinon
+          .stub()
+          .resolves([{ acquisitionStory: 'I found it through friends' }]),
+      };
+      storyQuery.sort = sinon.stub().returns(storyQuery);
+      storyQuery.limit = sinon.stub().returns(storyQuery);
+      sinon.stub(User, 'find').returns(storyQuery);
+
+      const res = mockResponse();
+      await adminAcquisitionStories.getAnalysis({}, res);
+
+      const categories = res.body.table.map(row => row.category);
+      categories.should.containEql('found');
+      categories.should.containEql('friend');
+      categories.should.not.containEql('through');
+    });
+
     it('corrects one edit but does not treat a transposition as one edit', async () => {
       const stories = [
         'community',
