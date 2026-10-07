@@ -188,6 +188,7 @@ export default function AdminAcquisitionStories() {
   const viewerLanguages = getCurrentUser()?.languages || [];
   const [stories, setStories] = useState<AcquisitionStory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [unassignedOnly, setUnassignedOnly] = useState(false);
   const [sort, setSort] = useState<StorySort>({
     column: 'created',
     direction: 'descending',
@@ -207,16 +208,18 @@ export default function AdminAcquisitionStories() {
     const direction = sort.direction === 'ascending' ? 1 : -1;
     const valueFor = storySortValues[sort.column];
 
-    return stories.slice().sort((left, right) => {
-      const leftValue = valueFor(left);
-      const rightValue = valueFor(right);
-      const comparison =
-        typeof leftValue === 'number' && typeof rightValue === 'number'
-          ? leftValue - rightValue
-          : String(leftValue).localeCompare(String(rightValue));
-      return comparison * direction;
-    });
-  }, [sort, stories]);
+    return stories
+      .filter(story => !unassignedOnly || !story.welcomer)
+      .sort((left, right) => {
+        const leftValue = valueFor(left);
+        const rightValue = valueFor(right);
+        const comparison =
+          typeof leftValue === 'number' && typeof rightValue === 'number'
+            ? leftValue - rightValue
+            : String(leftValue).localeCompare(String(rightValue));
+        return comparison * direction;
+      });
+  }, [sort, stories, unassignedOnly]);
 
   function sortBy(column: StorySortColumn) {
     setSort(currentSort => ({
@@ -237,9 +240,25 @@ export default function AdminAcquisitionStories() {
 
         <AdminAcquisitionStoriesMenu active="stories" />
 
+        <div className="form-check mb-3">
+          <input
+            checked={unassignedOnly}
+            className="form-check-input"
+            id="acquisition-stories-unassigned-only"
+            onChange={event => setUnassignedOnly(event.target.checked)}
+            type="checkbox"
+          />
+          <label
+            className="form-check-label"
+            htmlFor="acquisition-stories-unassigned-only"
+          >
+            Unassigned only
+          </label>
+        </div>
+
         {isLoading && <LoadingIndicator />}
 
-        {!isLoading && stories.length > 0 && (
+        {!isLoading && sortedStories.length > 0 && (
           <table className="table table-condensed table-striped admin-acquisition-stories-table">
             <thead>
               <tr>
@@ -423,8 +442,12 @@ export default function AdminAcquisitionStories() {
           </table>
         )}
 
-        {!isLoading && stories.length === 0 && (
-          <p>No acquisition stories found.</p>
+        {!isLoading && sortedStories.length === 0 && (
+          <p>
+            {unassignedOnly
+              ? 'No unassigned acquisition stories found.'
+              : 'No acquisition stories found.'}
+          </p>
         )}
       </div>
     </>

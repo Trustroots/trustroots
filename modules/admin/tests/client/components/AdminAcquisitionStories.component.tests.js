@@ -35,6 +35,81 @@ afterEach(() => {
 });
 
 describe('<AdminAcquisitionStories />', () => {
+  it.each(['admin', 'welcome-team'])(
+    'filters unassigned members and preserves sorting for %s',
+    async role => {
+      window.user = { roles: [role] };
+      acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+        { _id: 'river-id', username: 'river', welcomer: null },
+        {
+          _id: 'forest-id',
+          username: 'forest',
+          welcomer: {
+            _id: 'greeter-id',
+            username: 'greeter',
+            created: '2026-01-01T00:00:00.000Z',
+          },
+        },
+        { _id: 'brook-id', username: 'brook' },
+      ]);
+
+      render(<AdminAcquisitionStories />);
+      await screen.findByRole('table');
+      const checkbox = screen.getByRole('checkbox', {
+        name: 'Unassigned only',
+      });
+      const memberOrder = () =>
+        Array.from(document.querySelectorAll('tbody tr')).map(
+          row => row.querySelector('td:nth-child(2)').textContent,
+        );
+
+      expect(checkbox).not.toBeChecked();
+      fireEvent.click(screen.getByRole('button', { name: 'Member' }));
+      expect(memberOrder()).toEqual(['brook', 'forest', 'river']);
+      fireEvent.click(checkbox);
+      expect(checkbox).toBeChecked();
+      expect(memberOrder()).toEqual(['brook', 'river']);
+      expect(screen.getAllByText('Unassigned', { exact: true })).toHaveLength(
+        2,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Member ▲' }));
+      expect(memberOrder()).toEqual(['river', 'brook']);
+      fireEvent.click(checkbox);
+      expect(memberOrder()).toEqual(['river', 'forest', 'brook']);
+      expect(acquisitionStoriesApi.getAcquisitionStories).toHaveBeenCalledTimes(
+        1,
+      );
+    },
+  );
+
+  it('keeps the filter available when all members are assigned', async () => {
+    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      {
+        _id: 'forest-id',
+        username: 'forest',
+        welcomer: {
+          _id: 'greeter-id',
+          username: 'greeter',
+          created: '2026-01-01T00:00:00.000Z',
+        },
+      },
+    ]);
+
+    render(<AdminAcquisitionStories />);
+    await screen.findByRole('table');
+    const checkbox = screen.getByRole('checkbox', { name: 'Unassigned only' });
+    fireEvent.click(checkbox);
+    expect(
+      screen.getByText('No unassigned acquisition stories found.'),
+    ).toBeVisible();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(checkbox).toBeVisible();
+    fireEvent.click(checkbox);
+    expect(
+      screen.getByRole('link', { name: 'forest', exact: true }),
+    ).toBeVisible();
+  });
+
   it.each([{ roles: ['welcome-team'] }, {}, null])(
     'uses public member links for a non-administrator %j',
     async user => {
