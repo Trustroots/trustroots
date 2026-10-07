@@ -114,10 +114,19 @@ describe('Search users: GET /users?search=string', function () {
     });
     context('valid request', function () {
       it('caps result count even when a larger limit is requested', function (done) {
-        createUsers(
+        // These profiles are only searched, so reuse the signed-in fixture's
+        // hash and insert them without running password hashing for every row.
+        User.insertMany(
           Array.from({ length: 55 }, (_, index) => ({
             username: 'boundedmember' + index,
             firstName: 'Capped',
+            lastName: 'Member',
+            displayName: 'Capped Member',
+            email: 'boundedmember' + index + '@example.com',
+            password: loggedUser.password,
+            provider: 'local',
+            public: true,
+            roles: ['user'],
           })),
           function (err) {
             if (err) return done(err);
