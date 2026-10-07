@@ -199,6 +199,24 @@ describe('<Thread>', () => {
       ),
     ).toBe(`${Math.round(windowHeight - 500.4 - 20.2)}px`);
 
+    // Opening a native text menu must not move the composer while the
+    // keyboard still occupies the same part of the visual viewport.
+    editor.blur();
+    fireEvent.contextMenu(editor);
+    expect(
+      document.documentElement.style.getPropertyValue(
+        '--trustroots-keyboard-inset',
+      ),
+    ).toBe(`${Math.round(windowHeight - 500.4 - 20.2)}px`);
+
+    visualViewport.height = 550.4;
+    viewportListeners.scroll();
+    expect(
+      document.documentElement.style.getPropertyValue(
+        '--trustroots-keyboard-inset',
+      ),
+    ).toBe(`${Math.round(windowHeight - 550.4 - 20.2)}px`);
+
     visualViewport.height = windowHeight + 30;
     viewportListeners.resize();
     expect(
