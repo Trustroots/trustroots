@@ -1,4 +1,4 @@
-import { canUseWebP, ready } from '@/modules/core/client/utils/dom';
+import { ready } from '@/modules/core/client/utils/dom';
 
 function withReadyState(state, fn) {
   const originalReadyStateDescriptor = Object.getOwnPropertyDescriptor(
@@ -59,30 +59,66 @@ describe('ready', () => {
 });
 
 describe('canUseWebP', () => {
+  let detectWebP;
+  let image;
+  let imageConstructor;
+
+  beforeEach(() => {
+    jest.isolateModules(() => {
+      detectWebP = require('@/modules/core/client/utils/dom').canUseWebP;
+    });
+    image = { naturalWidth: 0, naturalHeight: 0 };
+    imageConstructor = jest
+      .spyOn(window, 'Image')
+      .mockImplementation(() => image);
+  });
+
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
-  it('returns false when canvas context is unavailable', () => {
-    const createElement = jest
-      .spyOn(document, 'createElement')
-      .mockReturnValue({
-        getContext: jest.fn(() => null),
-      });
+  it('uses JPEG while decoding a single cached image probe without canvas access', () => {
+    const createElement = jest.spyOn(document, 'createElement');
+    const getContext = jest.spyOn(HTMLCanvasElement.prototype, 'getContext');
+    const toDataURL = jest.spyOn(HTMLCanvasElement.prototype, 'toDataURL');
 
-    expect(canUseWebP()).toBe(false);
-    expect(createElement).toHaveBeenCalledWith('canvas');
+    expect(detectWebP()).toBe(false);
+    expect(detectWebP()).toBe(false);
+    expect(imageConstructor).toHaveBeenCalledTimes(1);
+    expect(image.src).toMatch(/^data:image\/webp;base64,/);
+    expect(createElement).not.toHaveBeenCalled();
+    expect(getContext).not.toHaveBeenCalled();
+    expect(toDataURL).not.toHaveBeenCalled();
   });
 
-  it('returns true when browser reports webp support', () => {
-    const createElement = jest
-      .spyOn(document, 'createElement')
-      .mockReturnValue({
-        getContext: jest.fn(() => ({})),
-        toDataURL: jest.fn(() => 'data:image/webp;base64,foobar'),
-      });
+  it('caches support after the WebP image decodes successfully', () => {
+    detectWebP();
+    image.naturalWidth = 1;
+    image.naturalHeight = 1;
+    image.onload();
 
-    expect(canUseWebP()).toBe(true);
-    expect(createElement).toHaveBeenCalledWith('canvas');
+    expect(detectWebP()).toBe(true);
+    expect(detectWebP()).toBe(true);
+    expect(imageConstructor).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps JPEG when the image cannot be decoded or is blocked', () => {
+    detectWebP();
+    image.onerror();
+
+    expect(detectWebP()).toBe(false);
+    expect(imageConstructor).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    [0, 1],
+    [1, 0],
+  ])('rejects a decoded probe with dimensions %s by %s', (width, height) => {
+    detectWebP();
+    image.naturalWidth = width;
+    image.naturalHeight = height;
+    image.onload();
+
+    expect(detectWebP()).toBe(false);
   });
 });

@@ -114,6 +114,21 @@ describe('<SiteFooter />', () => {
     expect(footer).not.toHaveClass('hidden-xs');
   });
 
+  it('renders account footer build metadata without the standard navigation', () => {
+    render(<SiteFooter variant="account" build={build} />);
+
+    expect(screen.getByRole('contentinfo')).toHaveClass(
+      'site-footer-account',
+      'hidden-print',
+    );
+    expect(
+      screen.getByRole('link', {
+        name: 'Currently deployed code: 2026-06-21 18:06 UTC (7a1d639)',
+      }),
+    ).toHaveAttribute('href', build.commitUrl);
+    expect(screen.queryByRole('link', { name: 'FAQ' })).not.toBeInTheDocument();
+  });
+
   it('renders the home footer with photo credits and build metadata', () => {
     render(
       <SiteFooter
