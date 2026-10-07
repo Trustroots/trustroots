@@ -7,10 +7,12 @@ const {
 
 const test = base.extend({ mapZoom: [6, { option: true }] });
 const { finalizeEvent } = require('nostr-tools');
+const { OpenLocationCode } = require('open-location-code');
 
 const { SEEDED_MEMBERS, signInViaApi } = require('../../support/helpers');
 const {
   blockUnexpectedMapNetwork,
+  fixturePath,
   seedMapState,
   useMapProviderHar,
   useMapRouteFixtures,
@@ -24,7 +26,14 @@ const communityNoteText = 'E2E community note: quiet courtyard with good tea.';
 const readMapZoom = page =>
   page.evaluate(() => {
     const raw = window.localStorage.getItem('search-map-location');
-    return raw ? JSON.parse(raw).zoom : null;
+    const liveZoom = document
+      .querySelector('[data-map-zoom]')
+      ?.getAttribute('data-map-zoom');
+    return liveZoom === null || liveZoom === undefined
+      ? raw
+        ? JSON.parse(raw).zoom
+        : null
+      : Number(liveZoom);
   });
 
 async function wheelOverMap(page, selector, delta, deltaMode) {
@@ -392,6 +401,144 @@ test.describe('rendered search map feature coverage', () => {
       hasCanvas: true,
       persistedStyleName: 'E2E Offline Map',
     });
+  });
+
+  test('map fills the pane after the browser viewport grows', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Search map renders with deterministic offline style.',
+    ]);
+    await page.goto('/search');
+    await waitForSearchMap(page);
+
+    for (const viewport of [
+      { width: 1280, height: 720 },
+      { width: 1920, height: 1080 },
+      { width: 1280, height: 720 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await expect
+        .poll(async () => {
+          const pane = await page
+            .locator('.search-map-container')
+            .boundingBox();
+          const canvas = await page.locator('.mapboxgl-canvas').boundingBox();
+          return (
+            !!pane && !!canvas && Math.abs(pane.height - canvas.height) < 1
+          );
+        })
+        .toBe(true);
+    }
+  });
+
+  test('selecting an individual host preserves the map zoom', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Route fixture offers populate the rendered map source.',
+    ]);
+    await page.goto('/search');
+    await waitForSearchMap(page);
+    const previousZoom = await readMapZoom(page);
+    await page.waitForTimeout(300);
+    const canvas = page.locator('.mapboxgl-canvas');
+    const originalCanvas = await canvas.elementHandle();
+    const surface = page.locator('.search-map-container .overlays');
+    const box = await surface.boundingBox();
+
+    // The fixture host is at the seeded map centre.
+    await surface.click({ position: { x: box.width / 2, y: box.height / 2 } });
+    await expect(page).toHaveURL(/offer=665100000000000000000001/);
+    await expect(
+      page.locator('.search-sidebar-container.is-offer-open'),
+    ).toBeVisible();
+    // Allow camera changes and debounced persistence to settle before comparing.
+    await page.waitForTimeout(3200);
+    await expect.poll(() => readMapZoom(page)).toBe(previousZoom);
+    expect(await originalCanvas.evaluate(element => element.isConnected)).toBe(
+      true,
+    );
+  });
+
+  test('selecting an individual host with the sidebar closed preserves the map zoom', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Route fixture offers populate the rendered map source.',
+    ]);
+    await page.goto('/search');
+    await waitForSearchMap(page);
+    const previousZoom = await readMapZoom(page);
+    await page
+      .locator(
+        '.search-sidebar-toggle button[aria-label="Hide search filters"]',
+      )
+      .click();
+    await expect(
+      page.locator(
+        '.search-sidebar-toggle button[aria-label="Open search filters"]',
+      ),
+    ).toBeVisible();
+
+    const surface = page.locator('.search-map-container .overlays');
+    const box = await surface.boundingBox();
+    // The fixture host is at the seeded map centre.
+    await surface.click({ position: { x: box.width / 2, y: box.height / 2 } });
+    await expect(page).toHaveURL(/offer=665100000000000000000001/);
+    await expect(
+      page.locator('.search-sidebar-container.is-offer-open'),
+    ).toBeVisible();
+    await page.waitForTimeout(3200);
+    await expect.poll(() => readMapZoom(page)).toBe(previousZoom);
+  });
+
+  test('selecting a host beneath an overlapping community-note cluster preserves zoom', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'An individual host pin remains selectable beneath an overlapping note cluster.',
+      'Selecting the host does not expand the overlapping cluster.',
+    ]);
+    const plusCodes = [52.519, 52.52, 52.521].map(latitude =>
+      new OpenLocationCode().encode(latitude, 13.405, 10),
+    );
+    const events = plusCodes.map((plusCode, index) =>
+      finalizeEvent(
+        {
+          content: `Synthetic map note ${index + 1}`,
+          created_at: 1700000000 + index,
+          kind: 30397,
+          tags: [['l', plusCode, 'open-location-code']],
+        },
+        new Uint8Array(32).fill(1),
+      ),
+    );
+    const authors = [...new Set(events.map(event => event.pubkey))];
+    await page.route('**/api/nostr/author-visibility?*', route =>
+      route.fulfill({ json: { linkedPubkeys: authors, pubkeys: authors } }),
+    );
+    await installNostrRelayStub(page, events);
+    const visibilityResponse = page.waitForResponse(response =>
+      response.url().includes('/api/nostr/author-visibility?'),
+    );
+
+    await page.goto('/search');
+    await visibilityResponse;
+    await waitForSearchMap(page);
+    const previousZoom = await readMapZoom(page);
+    // Let the visibility response update the note source before the hit test.
+    await page.waitForTimeout(300);
+    const surface = page.locator('.search-map-container .overlays');
+    const box = await surface.boundingBox();
+    await surface.click({ position: { x: box.width / 2, y: box.height / 2 } });
+
+    await expect(page).toHaveURL(/offer=665100000000000000000001/);
+    await expect(
+      page.locator('.search-sidebar-container.is-offer-open'),
+    ).toBeVisible();
+    await page.waitForTimeout(3200);
+    await expect.poll(() => readMapZoom(page)).toBe(previousZoom);
   });
 
   // Seed each starting zoom once. Persisted viewport updates are debounced,
@@ -836,6 +983,36 @@ test.describe('rendered search map feature coverage', () => {
     await expect(sidebar.getByText(communityNoteText)).toBeVisible();
   });
 
+  test('visible Community Note threads can be reopened from the Results list', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Visible Community Note threads appear in the Results list.',
+      'Selecting a listed thread opens its notes in the sidebar.',
+    ]);
+    const signedNote = finalizeEvent(
+      {
+        content: communityNoteText,
+        created_at: 1700000000,
+        kind: 30397,
+        tags: [['l', communityNotePlusCode, 'open-location-code']],
+      },
+      new Uint8Array(32).fill(1),
+    );
+    await showCommunityNotesSidebar(page, [signedNote]);
+
+    await page.getByRole('button', { name: 'Back to results' }).click();
+    const threadButton = page.getByRole('button', {
+      name: `Open community note thread at ${communityNotePlusCode}`,
+    });
+    await expect(threadButton).toBeVisible();
+    await threadButton.click();
+    await expect(page.locator('.community-notes-sidebar')).toBeVisible();
+    await expect(
+      page.locator('.community-notes-sidebar').getByText(communityNoteText),
+    ).toBeVisible();
+  });
+
   test('Community Notes are visible and controllable on mobile maps', async ({
     page,
   }, testInfo) => {
@@ -958,8 +1135,43 @@ test.describe('rendered search map feature coverage', () => {
     await expect(
       sidebar
         .locator('.search-sidebar-results')
-        .getByText(/choose something from the map/i),
+        .getByText(/no results are visible in this map area/i),
     ).toBeVisible();
+  });
+
+  test('Results lists visible offers and opens their details', async ({
+    context,
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Results lists offers whose pins are visible in the current map area.',
+      'Selecting a listed offer opens its details without moving the map.',
+    ]);
+
+    await context.route('**/api/offers/665100000000000000000002', route =>
+      route.fulfill({
+        contentType: 'application/json',
+        path: fixturePath('offers', 'selected-meet-offer.json'),
+        status: 200,
+      }),
+    );
+    await page.goto('/search');
+    await waitForSearchMap(page);
+    const sidebar = page.locator('.search-sidebar-container');
+    await sidebar.getByRole('tab', { name: 'Results' }).click();
+
+    const visibleHost = sidebar.getByRole('button', {
+      name: /open hosting offer from berlin host/i,
+    });
+    await expect(visibleHost).toBeVisible();
+    await visibleHost.click();
+
+    await expect(
+      sidebar.locator('.search-result').getByText(/berlin host/i),
+    ).toBeVisible();
+    await expect(page).toHaveURL(/offer=665100000000000000000001/);
+    await sidebar.getByRole('button', { name: 'Back to results' }).click();
+    await expect(visibleHost).toBeVisible();
   });
 
   test('offer deep-link uses fixture offer data in the sidebar', async ({

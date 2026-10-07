@@ -3,6 +3,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
+import { OpenLocationCode } from 'open-location-code';
 import { MAP_STYLE_OSM } from '@/modules/core/client/components/Map/constants';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import SearchMap from '@/modules/search/client/components/SearchMap.component';
@@ -330,6 +331,7 @@ describe('Search', () => {
     expect(mockMapProps.longitude).toBe(12);
     expect(mockMapProps.zoom).toBe(9);
     expect(mockMapProps.width).toBe('100%');
+    expect(mockMapProps.height).toBe('100%');
   });
 
   it('zooms the map on a Firefox trackpad pinch without zooming the page', () => {
@@ -497,6 +499,109 @@ describe('Search', () => {
       features: [],
       type: 'FeatureCollection',
     });
+  });
+
+  it('keeps a newer offer response when an older viewport request finishes last', async () => {
+    const onVisibleOffersChange = jest.fn();
+    const requests = [];
+    mockQueryOffers.mockImplementation(
+      () => new Promise(resolve => requests.push(resolve)),
+    );
+
+    renderSearchMap({ onVisibleOffersChange });
+    act(() =>
+      mockMapProps.onViewportChange({ latitude: 0, longitude: 0, zoom: 8 }),
+    );
+    act(() => mockMapProps.onInteractionStateChange());
+    await waitFor(() => expect(requests).toHaveLength(1));
+
+    act(() =>
+      mockMapProps.onViewportChange({ latitude: 1, longitude: 1, zoom: 9 }),
+    );
+    act(() => mockMapProps.onInteractionStateChange());
+    await waitFor(() => expect(requests).toHaveLength(2));
+
+    await act(async () => {
+      requests[1]({
+        features: [
+          { geometry: { coordinates: [13, 52] }, properties: { id: 'new' } },
+        ],
+        type: 'FeatureCollection',
+      });
+      await Promise.resolve();
+    });
+    await waitFor(() =>
+      expect(onVisibleOffersChange).toHaveBeenLastCalledWith(['new']),
+    );
+
+    await act(async () => {
+      requests[0]({
+        features: [
+          { geometry: { coordinates: [12, 51] }, properties: { id: 'old' } },
+        ],
+        type: 'FeatureCollection',
+      });
+      await Promise.resolve();
+    });
+
+    expect(mockSourceProps.data.features).toEqual([
+      { geometry: { coordinates: [13, 52] }, properties: { id: 'new' } },
+    ]);
+    expect(onVisibleOffersChange).toHaveBeenLastCalledWith(['new']);
+  });
+
+  it('reports only offer pins inside a viewport crossing the dateline', async () => {
+    const onVisibleOffersChange = jest.fn();
+    mockMap.getBounds.mockReturnValue({
+      getNorthEast: () => ({ lat: 10, lng: -170 }),
+      getSouthWest: () => ({ lat: -10, lng: 170 }),
+    });
+    mockQueryOffers.mockResolvedValue({
+      features: [
+        { geometry: { coordinates: [179, 0] }, properties: { id: 'east' } },
+        { geometry: { coordinates: [-179, 0] }, properties: { id: 'west' } },
+        { geometry: { coordinates: [0, 0] }, properties: { id: 'middle' } },
+        { geometry: { coordinates: [179, 20] }, properties: { id: 'north' } },
+      ],
+      type: 'FeatureCollection',
+    });
+
+    renderSearchMap({ onVisibleOffersChange });
+
+    act(() => {
+      mockMapProps.onViewportChange({ latitude: 0, longitude: 180, zoom: 8 });
+    });
+    act(() => {
+      mockMapProps.onInteractionStateChange();
+    });
+
+    await waitFor(() =>
+      expect(onVisibleOffersChange).toHaveBeenLastCalledWith(['east', 'west']),
+    );
+
+    mockMap.getBounds.mockReturnValue({
+      getNorthEast: () => ({ lat: 90, lng: 180 }),
+      getSouthWest: () => ({ lat: -90, lng: -180 }),
+    });
+    mockQueryOffers.mockResolvedValue({
+      features: [
+        { geometry: { coordinates: [179, 0] }, properties: { id: 'east' } },
+        { geometry: { coordinates: [-179, 0] }, properties: { id: 'west' } },
+        { geometry: { coordinates: [0, 0] }, properties: { id: 'middle' } },
+        { geometry: { coordinates: [179, 20] }, properties: { id: 'north' } },
+      ],
+      type: 'FeatureCollection',
+    });
+    act(() => mockMapProps.onInteractionStateChange());
+
+    await waitFor(() =>
+      expect(onVisibleOffersChange).toHaveBeenLastCalledWith([
+        'east',
+        'west',
+        'middle',
+        'north',
+      ]),
+    );
   });
 
   it('does not query private member map offers', async () => {
@@ -1220,6 +1325,186 @@ describe('Search', () => {
       ],
       plusCode: '8FVC9G8F+5W',
     });
+  });
+
+  it('selects an individual offer when a community note cluster overlaps it', async () => {
+    const onOfferOpen = jest.fn();
+    renderSearchMap({
+      filters: '{"communityNotes":true}',
+      onOfferOpen,
+    });
+
+    await act(async () => {
+      mockMapProps.onClick({
+        // Mapbox reports features in rendered layer order. Community note
+        // layers are drawn above offers, so their cluster can be first here.
+        features: [
+          {
+            id: 12,
+            geometry: { coordinates: [9.14, 48.69] },
+            layer: { id: 'community-notes-clusters' },
+            properties: { cluster_id: 12, point_count: 3 },
+          },
+          {
+            id: 'offer-1',
+            source: 'offers',
+            layer: { id: 'unclustered-point' },
+            properties: { id: 'offer-1' },
+          },
+        ],
+      });
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(onOfferOpen).toHaveBeenCalledWith({ _id: 'offer-1' }),
+    );
+    expect(mockSource.getClusterLeaves).not.toHaveBeenCalled();
+  });
+
+  it('reports visible community note threads from visibility-filtered map features', async () => {
+    jest.useFakeTimers();
+    const onVisibleCommunityNoteThreadsChange = jest.fn();
+    const visiblePlusCode = '8FVC9G8F+5W';
+    const outsidePlusCode = '7FG49Q00+';
+    const visibleArea = new OpenLocationCode().decode(visiblePlusCode);
+    mockMap.getBounds.mockReturnValue({
+      getNorthEast: () => ({
+        lat: visibleArea.latitudeCenter + 0.01,
+        lng: visibleArea.longitudeCenter + 0.01,
+      }),
+      getSouthWest: () => ({
+        lat: visibleArea.latitudeCenter - 0.01,
+        lng: visibleArea.longitudeCenter - 0.01,
+      }),
+    });
+    mockFilterCommunityNotesByAuthorVisibility.mockImplementationOnce(notes =>
+      Promise.resolve(notes.filter(note => note.id !== 'hidden-note')),
+    );
+    mockSubscribeMapNotes.mockImplementationOnce(onEvent => {
+      onEvent({
+        id: 'visible-note-one',
+        content: 'First visible note',
+        pubkey: 'fictional-author',
+        created_at: 1700000000,
+        kind: 30398,
+        tags: [['l', visiblePlusCode, 'open-location-code']],
+      });
+      onEvent({
+        id: 'visible-note-two',
+        content: 'Second visible note',
+        pubkey: 'fictional-author',
+        created_at: 1700000100,
+        kind: 30398,
+        tags: [['l', visiblePlusCode, 'open-location-code']],
+      });
+      onEvent({
+        id: 'outside-note',
+        content: 'Outside the viewport',
+        pubkey: 'fictional-author',
+        created_at: 1700000200,
+        kind: 30398,
+        tags: [['l', outsidePlusCode, 'open-location-code']],
+      });
+      onEvent({
+        id: 'hidden-note',
+        content: 'Filtered by author visibility',
+        pubkey: 'fictional-author',
+        created_at: 1700000300,
+        kind: 30398,
+        tags: [['l', visiblePlusCode, 'open-location-code']],
+      });
+      return Promise.resolve();
+    });
+
+    renderSearchMap({
+      filters: '{"communityNotes":true}',
+      onVisibleCommunityNoteThreadsChange,
+    });
+
+    act(() => {
+      mockMapProps.onViewportChange({
+        latitude: visibleArea.latitudeCenter,
+        longitude: visibleArea.longitudeCenter,
+        zoom: 8,
+      });
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(200);
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(onVisibleCommunityNoteThreadsChange).toHaveBeenLastCalledWith([
+        {
+          notes: [
+            expect.objectContaining({ id: 'visible-note-one' }),
+            expect.objectContaining({ id: 'visible-note-two' }),
+          ],
+          plusCode: visiblePlusCode,
+        },
+      ]),
+    );
+    expect(mockSourcePropsById['community-notes'].data.features).toHaveLength(
+      3,
+    );
+    jest.useRealTimers();
+  });
+
+  it('excludes community notes outside a viewport that crosses the dateline', async () => {
+    jest.useFakeTimers();
+    const onVisibleCommunityNoteThreadsChange = jest.fn();
+    const olc = new OpenLocationCode();
+    const eastPlusCode = olc.encode(0, 179, 10);
+    const westPlusCode = olc.encode(0, -179, 10);
+    const middlePlusCode = olc.encode(0, 0, 10);
+    mockMap.getBounds.mockReturnValue({
+      getNorthEast: () => ({ lat: 10, lng: -170 }),
+      getSouthWest: () => ({ lat: -10, lng: 170 }),
+    });
+    mockSubscribeMapNotes.mockImplementationOnce(onEvent => {
+      [eastPlusCode, westPlusCode, middlePlusCode].forEach((plusCode, index) =>
+        onEvent({
+          id: `note-${index}`,
+          content: `Note ${index}`,
+          pubkey: 'fictional-author',
+          created_at: 1700000000 + index,
+          kind: 30398,
+          tags: [['l', plusCode, 'open-location-code']],
+        }),
+      );
+      return Promise.resolve();
+    });
+
+    renderSearchMap({
+      filters: '{"communityNotes":true}',
+      onVisibleCommunityNoteThreadsChange,
+    });
+    act(() => {
+      mockMapProps.onViewportChange({
+        latitude: 0,
+        longitude: 180,
+        zoom: 8,
+      });
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(200);
+      await Promise.resolve();
+    });
+
+    await waitFor(() =>
+      expect(onVisibleCommunityNoteThreadsChange).toHaveBeenLastCalledWith([
+        {
+          notes: [expect.objectContaining({ id: 'note-0' })],
+          plusCode: eastPlusCode,
+        },
+        {
+          notes: [expect.objectContaining({ id: 'note-1' })],
+          plusCode: westPlusCode,
+        },
+      ]),
+    );
+    jest.useRealTimers();
   });
 
   it('reconstructs a clicked community note when no stored thread is available', () => {
