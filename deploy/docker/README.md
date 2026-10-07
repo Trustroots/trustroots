@@ -241,6 +241,15 @@ and signs out. For automation supply `TRUSTROOTS_DEPLOY_USERNAME` and
 `TRUSTROOTS_DEPLOY_PASSWORD` through the runner's secret environment; never put
 the password in command-line arguments. Account rate limits still apply.
 
+Local logging must include explicit positive `max-size` (an integer followed by
+`k`, `m` or `g`) and `max-file` (an integer) options. Preflight also inspects all
+existing webapp, worker and MongoDB containers, including stopped containers,
+with a 15-second timeout per Docker inspection. Editing Compose does not change
+existing containers' logging. If one still uses Loki or lacks explicit rotation
+limits, deployment and rollback stop before pulling or replacing anything.
+Migrate those containers separately during an agreed maintenance window, then
+rerun preflight. A successful check does not migrate logging for you.
+
 The script tags both previous image IDs with `<project>-<service>-rollback:previous`,
 saves them in `.trustroots-previous-images.json` beside Compose, and uses immutable
 IDs during replacement. It serialises invocations with a file lock and restores
@@ -261,6 +270,67 @@ sudo python3 production-deploy.py rollback \
 Do not run the old update script concurrently. These safeguards require adopting
 the script and configuration on the production host; an image update alone does
 not change mounts, logging, proxy configuration or systemd dependencies.
+
+### Adopt independent log shipping
+
+Keep the optional collector in its own Compose project or systemd service. Do
+not add it to `depends_on` for the application, worker or database. Each of those
+containers must retain rotated local logging even when the collector is stopped.
+Read through the Docker API; do not tail Docker's internal local-driver files.
+See [Docker's local logging documentation](https://docs.docker.com/engine/logging/drivers/local/).
+
+Before enabling a collector, configure finite HTTP connection/request timeouts,
+retry limits, queue/disk limits, CPU and memory limits, and rotation for its own
+logs. Dropping telemetry when those limits are reached is preferable to filling
+the host disk. Use a service allowlist and exclude secrets from labels. Treat
+Docker socket access as privileged even with a read-only bind mount; isolate the
+collector and use a restricted API proxy where available. Keep endpoint
+credentials in deployment-owned secret files, outside this repository.
+
+### Rehearse telemetry outages
+
+Use a staging deployment and a verification account with fictional data. Record
+the Compose revision and image IDs, plus the observed duration and outcome of
+each check. Keep host addresses, credentials and incident records private.
+
+1. Inspect the desired Compose logging and existing containers with `preflight`.
+   Deliberately leave a staging container on the remote driver while Compose
+   specifies local logging; verify preflight rejects it before an image pull or
+   replacement. Restore rotated local logging before continuing.
+2. Stop the separate collector and make its telemetry endpoints unavailable in
+   the staging environment. Check its retry/queue/resource limits when restarted.
+   Do not block the application's database or frontend proxy.
+3. With remote telemetry still unavailable, start and stop the application and
+   worker, then run the checked deployment and login/session verification. Confirm
+   their logs remain readable through `docker compose logs`, new containers retain
+   local logging, and replacement finishes without waiting for remote delivery.
+   Test a MongoDB restart only during a planned staging database interruption.
+4. Make InfluxDB unavailable and verify login and another member action complete.
+   Check that background statistics jobs report delivery failure without delaying
+   member requests. Lost best-effort statistics are not replayed.
+5. Stall or block the analytics host in a browser and verify document readiness,
+   login and session persistence. Repeat with `umami: { enabled: false }` and a
+   fresh page load.
+6. Restore telemetry and confirm the collector resumes within its configured
+   bounds. Inspect local disk usage and collector errors. If the collector remains
+   unhealthy, leave it stopped while the application continues using local logs.
+
+If Docker commands already hang in an old logging driver, stop the deployment
+attempt and recover Docker during a maintenance window. Do not repeatedly run
+replacement, remove database storage, or delete Docker's internal log files.
+After recovery, recreate affected containers with local logging and rerun
+preflight. Verify rollback separately using the saved immutable image IDs.
+
+The repository tests simulate stale remote logging, invalid rotation limits,
+Docker timeouts and failed deployment recovery without touching containers:
+
+```bash
+python3 deploy/docker/test-production-deploy.py
+```
+
+These checks do not certify a production host. Track collector adoption and the
+staging outage rehearsal against issue #3038 before marking the operational work
+complete.
 
 ### Analytics outages
 
