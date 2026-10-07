@@ -46,7 +46,8 @@ jobs:
           file: production.Dockerfile
           platforms: linux/amd64
           cache-from: type=gha,scope=production
-          cache-to: type=gha,mode=max,scope=production
+          # Cache availability must not fail a successful build or image push.
+          cache-to: type=gha,ignore-error=true,mode=max,scope=production
           push: false
 
   publish-production-image:
@@ -86,7 +87,8 @@ jobs:
             ghcr.io/trustrootsops/trustroots:latest
             ghcr.io/trustrootsops/trustroots:git-${{ steps.image.outputs.short-sha }}
           cache-from: type=gha,scope=production
-          cache-to: type=gha,mode=max,scope=production
+          # Cache availability must not fail a successful build or image push.
+          cache-to: type=gha,ignore-error=true,mode=max,scope=production
           push: true
 
   build-dev-image:
@@ -122,7 +124,8 @@ jobs:
           file: deploy/docker/dev.Dockerfile
           tags: ${{ steps.image.outputs.image-ref }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Cache availability must not fail a successful build or image push.
+          cache-to: type=gha,ignore-error=true,mode=max
           push: true
 
   client:
@@ -160,7 +163,8 @@ jobs:
           file: deploy/docker/dev.Dockerfile
           tags: trustroots-dev:ci
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Cache availability must not fail a successful build or image push.
+          cache-to: type=gha,ignore-error=true,mode=max
           load: true
       - name: Prepare compose local config
         run: node ./scripts/ci/ensure-compose-local.js
@@ -261,7 +265,8 @@ jobs:
           file: deploy/docker/dev.Dockerfile
           tags: trustroots-dev:ci
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Cache availability must not fail a successful build or image push.
+          cache-to: type=gha,ignore-error=true,mode=max
           load: true
       - name: Prepare compose local config
         run: node ./scripts/ci/ensure-compose-local.js
@@ -366,7 +371,8 @@ jobs:
           file: deploy/docker/dev.Dockerfile
           tags: trustroots-dev:ci
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Cache availability must not fail a successful build or image push.
+          cache-to: type=gha,ignore-error=true,mode=max
           load: true
       - name: Prepare compose local config
         run: node ./scripts/ci/ensure-compose-local.js
