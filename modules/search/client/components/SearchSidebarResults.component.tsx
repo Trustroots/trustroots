@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useRef } from 'react';
 
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 import Avatar from '@/modules/users/client/components/Avatar.component';
@@ -34,6 +34,12 @@ interface SearchSidebarResultsProps {
   communityNote?: CommunityNoteSummary | null;
   isLoadingOffer?: boolean;
   offer?: SearchResultOffer | null;
+  offers: SearchResultOffer[];
+  communityNoteThreads: CommunityNoteSummary[];
+  onOfferSelect: (offer: SearchResultOffer) => void;
+  onCommunityNoteSelect: (note: CommunityNoteSummary) => void;
+  onBackToOffers: () => void;
+  isLoadingOffers?: boolean;
   onCloseSidebar: () => void;
 }
 
@@ -105,6 +111,12 @@ export default function SearchSidebarResults({
   communityNote,
   isLoadingOffer,
   offer,
+  offers = [],
+  communityNoteThreads = [],
+  onOfferSelect = () => {},
+  onCommunityNoteSelect = () => {},
+  onBackToOffers = () => {},
+  isLoadingOffers,
   onCloseSidebar,
 }: SearchSidebarResultsProps) {
   /* istanbul ignore next -- the language query always returns its cache object. */
@@ -112,6 +124,7 @@ export default function SearchSidebarResults({
     data?: Record<string, string>;
   };
   const languageNames = languageQuery.data || {};
+  const selectedResultId = useRef<string | undefined>();
 
   return (
     <section className="search-sidebar-results">
@@ -124,18 +137,96 @@ export default function SearchSidebarResults({
         </div>
       )}
 
-      {!offer && !isLoadingOffer && !communityNote && (
-        <section
-          aria-label="Search results: nothing selected, please choose offers from the map to load them here."
-          aria-live="polite"
-          className="content-empty text-muted text-center"
-          tabIndex={0}
-        >
-          <br />
-          <br />
-          <em>Choose something from the map.</em>
-        </section>
+      {!offer && !isLoadingOffer && !communityNote && offers.length > 0 && (
+        <ul aria-label="Visible search results" className="search-result-list">
+          {offers.map(item => (
+            <li key={item._id}>
+              <button
+                aria-label={`Open ${
+                  item.type === 'host' ? 'hosting' : 'meet'
+                } offer from ${item.user.displayName || item.user.username}`}
+                className="panel panel-default search-result-list-item"
+                data-result-id={item._id}
+                onClick={() => {
+                  selectedResultId.current = item._id;
+                  onOfferSelect(item);
+                }}
+                type="button"
+              >
+                <Avatar link={false} size={32} user={item.user} />
+                <span>
+                  <strong>{item.user.displayName || item.user.username}</strong>
+                  <span className="text-muted"> @{item.user.username}</span>
+                  <br />
+                  {item.type === 'host' ? 'Hosting' : 'Meet'}
+                  {item.type === 'host' && item.status && ` · ${item.status}`}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
+
+      {!offer &&
+        !isLoadingOffer &&
+        !communityNote &&
+        communityNoteThreads.length > 0 && (
+          <ul
+            aria-label="Visible community note results"
+            className="search-result-list"
+          >
+            {communityNoteThreads.map(thread => {
+              const firstNote = thread.notes[0];
+              return (
+                <li key={thread.plusCode || firstNote?.id}>
+                  <button
+                    aria-label={`Open community note thread at ${
+                      thread.plusCode || 'map location'
+                    }`}
+                    className="panel panel-default search-result-list-item"
+                    data-result-id={thread.plusCode || firstNote?.id}
+                    onClick={() => {
+                      selectedResultId.current =
+                        thread.plusCode || firstNote?.id;
+                      onCommunityNoteSelect(thread);
+                    }}
+                    type="button"
+                  >
+                    <span>
+                      <strong>Community note</strong>
+                      <span className="text-muted">
+                        {thread.plusCode ? ` · ${thread.plusCode}` : ''}
+                      </span>
+                      <br />
+                      {firstNote?.content?.slice(0, 140) || 'Open note thread'}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+      {!offer &&
+        !isLoadingOffer &&
+        !communityNote &&
+        offers.length === 0 &&
+        communityNoteThreads.length === 0 && (
+          <section
+            aria-label="Search results: no results are visible in this map area."
+            aria-live="polite"
+            className="content-empty text-muted text-center"
+            tabIndex={0}
+          >
+            <br />
+            <br />
+            <em>
+              {isLoadingOffers
+                ? 'Loading visible offers…'
+                : 'No results are visible in this map area.'}
+            </em>
+          </section>
+        )}
 
       {!offer && isLoadingOffer && (
         <div
@@ -231,6 +322,31 @@ export default function SearchSidebarResults({
         </div>
       )}
 
+      {(offer || communityNote) && (
+        <button
+          className="btn btn-default search-results-back"
+          onClick={() => {
+            onBackToOffers();
+            window.requestAnimationFrame(() => {
+              const resultButtons = Array.from(
+                document.querySelectorAll<HTMLButtonElement>(
+                  '[data-result-id]',
+                ),
+              );
+              resultButtons
+                .find(
+                  button =>
+                    button.dataset.resultId === selectedResultId.current,
+                )
+                ?.focus();
+            });
+          }}
+          type="button"
+        >
+          Back to results
+        </button>
+      )}
+
       <button
         className="btn btn-action btn-primary visible-xs-block search-sidebar-close"
         onClick={onCloseSidebar}
@@ -246,5 +362,11 @@ SearchSidebarResults.propTypes = {
   communityNote: PropTypes.object,
   isLoadingOffer: PropTypes.bool,
   offer: PropTypes.object,
+  offers: PropTypes.array.isRequired,
+  communityNoteThreads: PropTypes.array.isRequired,
+  onOfferSelect: PropTypes.func.isRequired,
+  onCommunityNoteSelect: PropTypes.func.isRequired,
+  onBackToOffers: PropTypes.func.isRequired,
+  isLoadingOffers: PropTypes.bool,
   onCloseSidebar: PropTypes.func.isRequired,
 };

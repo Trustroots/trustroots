@@ -70,9 +70,145 @@ describe('<SearchSidebarResults />', () => {
   it('shows the empty state when nothing is selected', () => {
     render(<SearchSidebarResults onCloseSidebar={jest.fn()} />);
 
-    expect(
-      screen.getByText(/choose something from the map/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/no results are visible/i)).toBeInTheDocument();
+  });
+
+  it('lists visible offers and opens the selected offer details', () => {
+    const onOfferSelect = jest.fn();
+    const visibleOffer = {
+      _id: 'offer-1',
+      type: 'host',
+      status: 'yes',
+      user: { username: 'anonymous-host', displayName: 'A Host' },
+    };
+
+    render(
+      <SearchSidebarResults
+        offers={[visibleOffer]}
+        onOfferSelect={onOfferSelect}
+        onCloseSidebar={jest.fn()}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /open hosting offer from a host/i }),
+    );
+
+    expect(onOfferSelect).toHaveBeenCalledWith(visibleOffer);
+  });
+
+  it('lists visible community note threads and opens the selected thread', () => {
+    const onCommunityNoteSelect = jest.fn();
+    const thread = {
+      plusCode: '9F2X+XX',
+      notes: [{ id: 'note-1', content: 'A useful local note' }],
+    };
+
+    render(
+      <SearchSidebarResults
+        communityNoteThreads={[thread]}
+        onCommunityNoteSelect={onCommunityNoteSelect}
+        onCloseSidebar={jest.fn()}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: /community note thread at 9f2x\+xx/i,
+      }),
+    );
+
+    expect(onCommunityNoteSelect).toHaveBeenCalledWith(thread);
+    expect(screen.getByText(/a useful local note/i)).toBeInTheDocument();
+  });
+
+  it('labels a meet result by username when the profile has no display name', () => {
+    const onOfferSelect = jest.fn();
+
+    render(
+      <SearchSidebarResults
+        offers={[
+          {
+            _id: 'meet-offer',
+            type: 'meet',
+            user: { username: 'meet-member' },
+          },
+        ]}
+        onOfferSelect={onOfferSelect}
+        onCloseSidebar={jest.fn()}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Open meet offer from meet-member' }),
+    );
+    expect(onOfferSelect).toHaveBeenCalledWith(
+      expect.objectContaining({ _id: 'meet-offer', type: 'meet' }),
+    );
+  });
+
+  it('keeps a community note result usable when its location or text is missing', () => {
+    const onCommunityNoteSelect = jest.fn();
+    const thread = {
+      plusCode: null,
+      notes: [{ id: 'unlocated-note' }],
+    };
+
+    render(
+      <SearchSidebarResults
+        communityNoteThreads={[thread]}
+        onCommunityNoteSelect={onCommunityNoteSelect}
+        onCloseSidebar={jest.fn()}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open community note thread at map location',
+      }),
+    );
+    expect(screen.getByText('Open note thread')).toBeInTheDocument();
+    expect(onCommunityNoteSelect).toHaveBeenCalledWith(thread);
+  });
+
+  it('allows optional result callbacks to be omitted', () => {
+    const result = {
+      _id: 'offer-optional-callback',
+      type: 'host',
+      user: { username: 'anonymous-host' },
+    };
+    const noteThread = {
+      plusCode: '9F2X+XX',
+      notes: [{ id: 'note-optional-callback' }],
+    };
+
+    const offerList = render(
+      <SearchSidebarResults offers={[result]} onCloseSidebar={jest.fn()} />,
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: /open hosting offer from/i }),
+    );
+    offerList.unmount();
+
+    const noteList = render(
+      <SearchSidebarResults
+        communityNoteThreads={[noteThread]}
+        onCloseSidebar={jest.fn()}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: /community note thread/i }),
+    );
+    noteList.unmount();
+
+    render(
+      <SearchSidebarResults
+        offer={result}
+        offers={[result]}
+        onCloseSidebar={jest.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Back to results' }));
   });
 
   it('shows a loading placeholder while an offer is loading', () => {
