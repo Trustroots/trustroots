@@ -35,6 +35,11 @@ service = {
       ipLimit: 10000,
       identityLimit: 10000,
     },
+    manageSessions: {
+      windowMs: 60 * 60 * 1000,
+      ipLimit: 10000,
+      identityLimit: 10000,
+    },
     avatarUpload: {
       windowMs: 60 * 60 * 1000,
       ipLimit: 10000,

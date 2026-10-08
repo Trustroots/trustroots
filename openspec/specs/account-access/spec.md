@@ -4,7 +4,9 @@
 
 Allow people to create, secure, recover, and end access to their Trustroots
 account.
+
 ## Requirements
+
 ### Requirement: Explicit profile response fields
 
 Profile responses SHALL include only explicitly approved fields. Account-owner
@@ -491,16 +493,59 @@ an anonymous session. Session cookie security settings SHALL remain unchanged.
 - **THEN** the client explains that it could not check the session and offers a retry
 - **AND** it does not claim cookies are blocked or redirect
 
+### Requirement: Member session controls and expiry
+
+The system SHALL let an authenticated member list their own active sessions
+using opaque identifiers and identify the current session. Session controls
+SHALL expose no browser fingerprint or precise location. Individual revocation
+and account-wide sign-out SHALL require the member's current password. The
+system SHALL enforce a seven-day idle and 28-day absolute lifetime for regular
+members, and a 30-minute idle and 12-hour absolute lifetime for administrators,
+moderators, and welcome-team members. Revoked records SHALL remain as tombstones until absolute expiry
+so concurrent requests cannot recreate revoked sessions. Session-control
+responses SHALL not be cached, and mutations SHALL use a dedicated shared
+request limit. Deployments SHALL create the MemberSession TTL index because
+production disables automatic index creation.
+
+#### Scenario: Member reviews active sessions
+
+- **WHEN** a member opens session controls
+- **THEN** they see active sessions for their own account, including which one
+  is current
+- **AND** the response does not expose browser fingerprints or precise location
+
+#### Scenario: Member revokes one session
+
+- **WHEN** a member submits the current password to revoke one of their sessions
+- **THEN** that session cannot access authenticated routes again
+- **AND** other sessions remain active
+
+#### Scenario: Member signs out everywhere
+
+- **WHEN** a member submits the current password to sign out everywhere
+- **THEN** the account authentication version increments
+- **AND** every existing session requires sign-in again
+
+#### Scenario: Session reaches an idle or absolute lifetime
+
+- **WHEN** a regular or privileged session reaches its applicable idle or
+  absolute lifetime
+- **THEN** the server destroys the session and requires sign-in again
+
 ### Requirement: Account access deployed version
+
 The system SHALL display the deployed build date and commit link on signin, signup, password recovery/reset and not-found pages when build metadata is available.
 
 #### Scenario: Visitor diagnoses account access
+
 - **WHEN** a visitor opens an account access page with build metadata available
 - **THEN** a compact footer exposes the deployed date and commit
 
 ### Requirement: Login route alias
+
 The system SHALL redirect /login to /signin while preserving query parameters.
 
 #### Scenario: Visitor uses the login alias
+
 - **WHEN** a visitor requests /login with a returnTo query parameter
 - **THEN** the visitor is redirected to /signin with the same parameter

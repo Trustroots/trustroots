@@ -40,6 +40,55 @@ test.describe.serial('account settings feature coverage', () => {
     expect(download.suggestedFilename()).toBe('trustroots-data.json');
   });
 
+  test('members can revoke another active session from account settings', async ({
+    browser,
+    baseURL,
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.session-controls', [
+      'Members can identify the current session and see another active session.',
+      'A member can revoke another session after confirming their password.',
+      'A revoked session can no longer access authenticated APIs.',
+    ]);
+
+    const user = createUser();
+    const registrationContext = await createIsolatedContext(browser, baseURL);
+    await registerViaApi(registrationContext.request, user);
+    await registrationContext.close();
+    await signInViaApi(page, request, user);
+    const otherContext = await createIsolatedContext(browser, baseURL);
+    try {
+      await signInViaApi(
+        await otherContext.newPage(),
+        otherContext.request,
+        user,
+      );
+      await otherContext.request.get('/api/auth/sessions');
+
+      await page.goto('/profile/edit/account');
+      await expect(
+        page.getByRole('listitem').filter({ hasText: /^This session/ }),
+      ).toBeVisible();
+      const otherSession = page
+        .getByRole('listitem')
+        .filter({ hasText: 'Another session' });
+      await expect(otherSession).toBeVisible();
+      await page.getByLabel('Password for session changes').fill(user.password);
+      await otherSession
+        .getByRole('button', { name: 'Sign out this session' })
+        .click();
+
+      await expect(page.getByRole('status')).toHaveText('Session signed out.');
+      expect((await page.request.get('/api/users/export')).ok()).toBeTruthy();
+      expect(
+        (await otherContext.request.get('/api/users/export')).status(),
+      ).toBe(403);
+    } finally {
+      await otherContext.close();
+    }
+  });
+
   test('password changes refresh the current browser and revoke other sessions', async ({
     browser,
     baseURL,

@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import path from 'path';
 import config from './../../../../config/config.mjs';
 import usersSuspended from './../controllers/users.suspended.server.controller.mjs';
+import { checkMemberSession } from '../services/member-session.server.service.mjs';
 /**
  * Module dependencies.
  */
@@ -62,6 +63,7 @@ const defaultExport = async function (app) {
 
   // Handle logging out suspended users
   app.use(usersSuspended.invalidateSuspendedSessions);
+  app.use(checkMemberSession);
 };
 export default defaultExport;
 export { defaultExport as 'module.exports' };

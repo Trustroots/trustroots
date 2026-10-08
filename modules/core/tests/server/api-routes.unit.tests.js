@@ -542,6 +542,49 @@ describe('API route registrations', () => {
     routes.forEach(route => assertPolicy(route, policy));
   });
 
+  it('registers member session management routes with password confirmation and a dedicated limit', async () => {
+    const [
+      { default: memberSessionRoutes },
+      memberSessionController,
+      { default: targetedRequestLimit },
+    ] = await Promise.all([
+      import('../../../users/server/routes/sessions.server.routes.mjs'),
+      import('../../../users/server/controllers/users.sessions.server.controller.mjs'),
+      import('../../server/middleware/targeted-request-limit.server.middleware.mjs'),
+    ]);
+    const { app, routes } = createAppRecorder();
+    memberSessionRoutes(app);
+
+    assertHandlers(
+      routeByPath(routes, '/api/auth/sessions').all.concat(
+        routeByPath(routes, '/api/auth/sessions').get,
+      ),
+      [memberSessionController.requireMember, memberSessionController.list],
+    );
+    assertHandlers(
+      routeByPath(routes, '/api/auth/sessions').all.concat(
+        routeByPath(routes, '/api/auth/sessions').delete,
+      ),
+      [
+        memberSessionController.requireMember,
+        targetedRequestLimit.manageSessions,
+        memberSessionController.confirmPassword,
+        memberSessionController.revokeAll,
+      ],
+    );
+    assertHandlers(
+      routeByPath(routes, '/api/auth/sessions/:id').all.concat(
+        routeByPath(routes, '/api/auth/sessions/:id').delete,
+      ),
+      [
+        memberSessionController.requireMember,
+        targetedRequestLimit.manageSessions,
+        memberSessionController.confirmPassword,
+        memberSessionController.revoke,
+      ],
+    );
+  });
+
   it('registers admin routes with audit log middleware where required', () => {
     const policy = { isAllowed: handler('adminPolicy.isAllowed') };
     const acquisitionStories = controller(
