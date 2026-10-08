@@ -1,3 +1,4 @@
+const assert = require('node:assert/strict');
 const should = require('should');
 const sinon = require('sinon');
 const request = require('supertest');
@@ -13,12 +14,16 @@ describe('Member session controls', function () {
   let checkMemberSession;
   let sessionId;
   let sessionLifetimes;
+  let sessionsController;
 
   before(async function () {
     app = await express.init(mongoose.connection);
     ({ checkMemberSession, sessionId, sessionLifetimes } = await import(
       '../../server/services/member-session.server.service.mjs'
     ));
+    sessionsController = await import(
+      '../../server/controllers/users.sessions.server.controller.mjs'
+    );
   });
 
   afterEach(utils.clearDatabase);
@@ -52,7 +57,8 @@ describe('Member session controls', function () {
       );
 
     const user = {
-      _id: record?.user || new mongoose.Types.ObjectId(),
+      _id:
+        options.requestUserId || record?.user || new mongoose.Types.ObjectId(),
       authVersion: 0,
       roles: ['user'],
     };
@@ -82,6 +88,43 @@ describe('Member session controls', function () {
     };
   }
 
+  function createResponse() {
+    return {
+      headers: {},
+      statusCode: null,
+      body: null,
+      set(name, value) {
+        this.headers[name] = value;
+        return this;
+      },
+      vary(value) {
+        this.headers.vary = value;
+        return this;
+      },
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+      json(body) {
+        this.body = body;
+        return this;
+      },
+      sendStatus(code) {
+        this.statusCode = code;
+        return this;
+      },
+    };
+  }
+
+  function createNext() {
+    const result = { called: false, error: null };
+    result.next = error => {
+      result.called = true;
+      result.error = error;
+    };
+    return result;
+  }
+
   it('uses deterministic opaque identifiers and shorter privileged lifetimes', function () {
     sessionId('session-value').should.equal(sessionId('session-value'));
     sessionId('session-value').should.match(/^[a-f0-9]{64}$/);
@@ -98,8 +141,8 @@ describe('Member session controls', function () {
       absolute: 12 * 60 * 60000,
     });
     sessionLifetimes({ roles: ['welcome-team'] }).should.deepEqual({
-      idle: 30 * 60000,
-      absolute: 12 * 60 * 60000,
+      idle: 7 * 86400000,
+      absolute: 28 * 86400000,
     });
   });
 
@@ -147,14 +190,17 @@ describe('Member session controls', function () {
           lastSeenAt: new Date(now - 8 * 86400000),
         }),
       },
-      { record: activeSessionRecord({ user: new mongoose.Types.ObjectId() }) },
+      {
+        record: activeSessionRecord({ user: new mongoose.Types.ObjectId() }),
+        requestUserId: new mongoose.Types.ObjectId(),
+      },
       { record: activeSessionRecord({ authVersion: 1 }) },
     ];
 
     for (const testCase of testCases) {
       const result = await runMiddleware(testCase.record, testCase);
-      result.options.destroyed.should.equal(true);
-      result.req.user.should.equal(undefined);
+      assert.equal(result.options.destroyed, true);
+      assert.equal(result.req.user, undefined);
       result.nextCalled.should.equal(true);
       should.not.exist(result.nextError);
       sinon.restore();
@@ -174,15 +220,172 @@ describe('Member session controls', function () {
       updatedRecord: null,
     });
     revokedDuringRefresh.options.destroyed.should.equal(true);
-    revokedDuringRefresh.req.user.should.equal(undefined);
+    assert.equal(revokedDuringRefresh.req.user, undefined);
   });
 
   it('forwards failures while destroying a session', async function () {
     const destroyError = new Error('session store unavailable');
-    const result = await runMiddleware(activeSessionRecord({ revoked: true }), {
-      destroyError,
-    });
+    const invalidSession = await runMiddleware(
+      activeSessionRecord({ revoked: true }),
+      { destroyError },
+    );
+    invalidSession.nextError.should.equal(destroyError);
+
+    sinon.restore();
+    const result = await runMiddleware(
+      activeSessionRecord({ lastSeenAt: new Date(Date.now() - 61000) }),
+      { updatedRecord: null, destroyError },
+    );
     result.nextError.should.equal(destroyError);
+  });
+
+  it('handles controller validation, storage errors, and current-session revoke', async function () {
+    const userId = new mongoose.Types.ObjectId();
+    const user = { _id: userId, authVersion: 0, roles: ['user'] };
+    const req = {
+      user,
+      body: {},
+      params: {},
+      sessionID: 'opaque-session-id',
+      session: { destroy: callback => callback() },
+    };
+    let res = createResponse();
+    let next = createNext();
+
+    sessionsController.requireMember({ user: null }, res, next.next);
+    res.statusCode.should.equal(403);
+    res.headers['Cache-Control'].should.equal('no-store');
+    res.headers.vary.should.equal('Cookie');
+    next.called.should.equal(false);
+    sessionsController.requireMember(req, res, next.next);
+    next.called.should.equal(true);
+
+    sinon.stub(MemberSession, 'find').throws(new Error('list failed'));
+    next = createNext();
+    await sessionsController.list(req, createResponse(), next.next);
+    next.error.message.should.equal('list failed');
+    sinon.restore();
+
+    for (const body of [{}, { password: 42 }, { password: 'x'.repeat(1025) }]) {
+      res = createResponse();
+      await sessionsController.confirmPassword({ ...req, body }, res, () => {});
+      res.statusCode.should.equal(400);
+    }
+
+    sinon.stub(User, 'findById').resolves(null);
+    res = createResponse();
+    await sessionsController.confirmPassword(
+      { ...req, body: { password: 'valid' } },
+      res,
+      () => {},
+    );
+    res.statusCode.should.equal(400);
+    sinon.restore();
+
+    sinon.stub(User, 'findById').resolves({
+      authVersion: 1,
+      authenticate: async () => true,
+    });
+    res = createResponse();
+    await sessionsController.confirmPassword(
+      { ...req, body: { password: 'valid' } },
+      res,
+      () => {},
+    );
+    res.statusCode.should.equal(403);
+    sinon.restore();
+
+    sinon.stub(User, 'findById').throws(new Error('password lookup failed'));
+    next = createNext();
+    await sessionsController.confirmPassword(
+      { ...req, body: { password: 'valid' } },
+      createResponse(),
+      next.next,
+    );
+    next.error.message.should.equal('password lookup failed');
+    sinon.restore();
+
+    res = createResponse();
+    await sessionsController.revoke(
+      { ...req, params: { id: 'bad' } },
+      res,
+      () => {},
+    );
+    res.statusCode.should.equal(404);
+
+    sinon.stub(MemberSession, 'findOneAndUpdate').resolves(null);
+    res = createResponse();
+    await sessionsController.revoke(
+      { ...req, params: { id: 'a'.repeat(64) } },
+      res,
+      () => {},
+    );
+    res.statusCode.should.equal(404);
+    sinon.restore();
+
+    const currentId = sessionId(req.sessionID);
+    sinon.stub(MemberSession, 'findOneAndUpdate').resolves({});
+    req.session.destroy = callback => callback();
+    res = createResponse();
+    await sessionsController.revoke(
+      { ...req, params: { id: currentId } },
+      res,
+      () => {},
+    );
+    res.statusCode.should.equal(204);
+    sinon.restore();
+
+    sinon.stub(MemberSession, 'findOneAndUpdate').resolves({});
+    req.session.destroy = callback =>
+      callback(new Error('revoke destroy failed'));
+    next = createNext();
+    await sessionsController.revoke(
+      { ...req, params: { id: currentId } },
+      createResponse(),
+      next.next,
+    );
+    next.error.message.should.equal('revoke destroy failed');
+    sinon.restore();
+
+    sinon
+      .stub(MemberSession, 'findOneAndUpdate')
+      .throws(new Error('revoke failed'));
+    next = createNext();
+    await sessionsController.revoke(
+      { ...req, params: { id: 'a'.repeat(64) } },
+      createResponse(),
+      next.next,
+    );
+    next.error.message.should.equal('revoke failed');
+    sinon.restore();
+
+    sinon.stub(User, 'updateOne').throws(new Error('version update failed'));
+    next = createNext();
+    await sessionsController.revokeAll(req, createResponse(), next.next);
+    next.error.message.should.equal('version update failed');
+    sinon.restore();
+
+    sinon.stub(User, 'updateOne').resolves({});
+    sinon
+      .stub(MemberSession, 'updateMany')
+      .throws(new Error('revoke all failed'));
+    next = createNext();
+    await sessionsController.revokeAll(req, createResponse(), next.next);
+    next.error.message.should.equal('revoke all failed');
+    sinon.restore();
+
+    sinon.stub(User, 'updateOne').resolves({});
+    sinon.stub(MemberSession, 'updateMany').resolves({});
+    req.session.destroy = callback => callback(new Error('destroy failed'));
+    next = createNext();
+    await sessionsController.revokeAll(req, createResponse(), next.next);
+    next.error.message.should.equal('destroy failed');
+    sinon.restore();
+
+    req.session.destroy = callback => callback();
+    res = createResponse();
+    await sessionsController.revokeAll(req, res, () => {});
+    res.statusCode.should.equal(204);
   });
 
   async function createMember() {
