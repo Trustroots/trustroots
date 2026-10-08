@@ -444,6 +444,7 @@ describe('API route registrations', () => {
   });
 
   it('registers local authentication routes without social OAuth', async () => {
+    const signinChallenge = handler('signinChallenge');
     const authentication = controller(
       [
         'cancelEmailChange',
@@ -475,6 +476,7 @@ describe('API route registrations', () => {
     const { routes } = await register(
       './../../../users/server/routes/auth.server.routes.mts',
       {
+        '../services/signin-challenge.server.service': { default: signinChallenge },
         '../controllers/users.authentication.server.controller': authentication,
         '../controllers/users.password.server.controller': password,
         '../../../core/server/middleware/targeted-request-limit.server.middleware':
@@ -520,6 +522,7 @@ describe('API route registrations', () => {
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/signin').post, [
       targetedRequestLimit.signin,
+      signinChallenge,
       authentication.signin,
     ]);
     const signoutRoute = routeByPath(routes, '/api/auth/signout');

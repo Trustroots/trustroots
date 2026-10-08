@@ -4,6 +4,7 @@ import path from 'path';
 const AREA_BY_SPEC: Record<string, string> = {
   'hashed-action-tokens.spec.js': 'Authentication',
   'csp.spec.js': 'Public pages',
+  'signin-challenge.spec.js': 'Authentication',
   'react-recovery-pages.spec.js': 'Public pages',
   'react-member-connections.spec.js': 'Public pages',
   'react-contact-confirmation.spec.js': 'Public pages',

@@ -1,0 +1,9 @@
+# Account-wide sign-in checks
+
+Sign-in keeps the existing trusted-IP and IP-plus-account limits and bounded password-verification queue. An additional Mongo-backed counter combines a normalised username or email across addresses. After 20 attempts within a 15-minute window, password verification requires a short-lived proof-of-work challenge. Username and email aliases have separate counters. This adds friction; it does not replace monitoring or prevent a determined distributed attacker from investing computation.
+
+The browser solves SHA-256 proofs in a worker, keeping the form responsive, and retries once. Work and worker lifetime are bounded. Android and iOS API clients receiving HTTP 429 with `signinChallenge` solve the same challenge off the UI thread: find a non-negative integer solution for which SHA-256(`token + ':' + solution`) starts with fourteen zero bits, then retry credentials with `signinProof: { token, solution }`. Native work is bounded to 4,194,304 candidates and 25 seconds, with a 30-second cancellation bound. Ordinary IP throttling returns no challenge and retains `Retry-After`.
+
+Challenges carry a random nonce and authenticated account/address digests, expire within two minutes, and cannot cross their replay-counter window. A valid proof is consumed atomically through a unique-key Mongo counter before password verification. Replays and cross-account/address reuse receive a fresh challenge. Storage failure fails closed. No account is permanently locked by this account-wide check, and no new personal data is stored in plaintext counters.
+
+Deploy all application instances together: the counter store and session-signing secret must be shared. No external challenge provider, new deployment secret or data migration is needed. Browser clients require worker support and Web Crypto in a secure context (HTTPS or localhost). Native clients must implement the same challenge protocol before enabling this behaviour for them.
