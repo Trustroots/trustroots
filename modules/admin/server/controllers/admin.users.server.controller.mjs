@@ -8,6 +8,7 @@ import { prepareStaffBlockers } from '../services/staff-blockers-payload.server.
 
 import errorService from '../../../core/server/services/error.server.service.mjs';
 import log from '../../../../config/lib/logger.mjs';
+import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../../../users/server/lib/account-identifier.server.mjs';
 
 const AdminNote = mongoose.model('AdminNote');
 const Contact = mongoose.model('Contact');
@@ -654,7 +655,8 @@ export const usernameToUserId = async (req, res, next) => {
 
   if (
     username !== undefined &&
-    (typeof username !== 'string' || username.length > 320)
+    (typeof username !== 'string' ||
+      username.length > ACCOUNT_IDENTIFIER_MAX_LENGTH)
   ) {
     return res.status(400).send({ message: 'Invalid username.' });
   }

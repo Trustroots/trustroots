@@ -54,7 +54,14 @@ service.signup = function (req, res) {
         if (
           !['firstName', 'lastName', 'username', 'password', 'email'].every(
             field => typeof req.body?.[field] === 'string' && req.body[field],
-          ) ||
+          )
+        ) {
+          const err = new Error('Please provide required fields.');
+          err.userFacing = true;
+          return done(err);
+        }
+
+        if (
           ['locale', 'acquisitionStory'].some(
             field =>
               req.body[field] !== undefined &&
@@ -63,7 +70,9 @@ service.signup = function (req, res) {
           (req.body.newsletter !== undefined &&
             typeof req.body.newsletter !== 'boolean')
         ) {
-          return done(new Error('Please provide required fields.'));
+          const err = new Error('Please provide valid signup preferences.');
+          err.userFacing = true;
+          return done(err);
         }
 
         done();
