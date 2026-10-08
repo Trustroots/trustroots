@@ -128,7 +128,7 @@
     "mapbox-gl": "1.13.2",
     "medium-editor": "5.23.3",
     "method-override": "3.0.0",
-    "migrate": "1.7.0",
+    "migrate": "2.1.0",
     "moment": "2.31.0",
     "mongodb": "4.17.2",
     "mongoose": "6.13.11",
