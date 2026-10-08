@@ -162,6 +162,7 @@ function createTargetedRequestLimits(deps?: LimitDependencies) {
     forgotPassword: createLimiter('forgotPassword', 'account', deps),
     resetPassword: createLimiter('resetPassword', 'token', deps),
     resendConfirmation: createLimiter('resendConfirmation', 'member', deps),
+    manageSessions: createLimiter('manageSessions', 'member', deps),
     avatarUpload: createLimiter('avatarUpload', 'member', deps),
     getRequestIdentity,
   };

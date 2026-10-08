@@ -9,6 +9,7 @@ import type {
   UserServerModel,
   UserServerRecord,
 } from '../models/user.server.types.mts';
+import { checkMemberSession } from '../services/member-session.server.service.mjs';
 /**
  * Module dependencies.
  */
@@ -83,6 +84,7 @@ const defaultExport = async function (app: UsersApplication): Promise<void> {
 
   // Handle logging out suspended users
   app.use(usersSuspended.invalidateSuspendedSessions);
+  app.use(checkMemberSession);
 };
 export default defaultExport;
 export { defaultExport as 'module.exports' };
