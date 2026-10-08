@@ -4,6 +4,7 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Volunteering from '@/modules/pages/client/components/Volunteering.component';
+import { VOLUNTEERING_DISCLAIMER } from '@/modules/support/shared/volunteering-copy';
 
 jest.mock('@/modules/core/client/components/Board.js', () => {
   const React = require('react');
@@ -26,11 +27,7 @@ describe('<Volunteering />', () => {
     expect(
       screen.getByRole('heading', { name: 'Volunteering' }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Volunteer with the team that runs Trustroots, helping with development, design, translation, community support or organisation. This form is not for finding farm work, jobs, or work in exchange for food and accommodation.',
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText(VOLUNTEERING_DISCLAIMER)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Team Guide' })).toHaveAttribute(
       'href',
       'https://team.trustroots.org/',

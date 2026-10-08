@@ -117,19 +117,29 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
     initialFilters.seen?.months === 6,
   );
 
+  const clearSelection = useCallback(
+    ({ clearOfferParam = true }: { clearOfferParam?: boolean } = {}) => {
+      locallyPreviewedOfferIdRef.current = null;
+      setOffer(null);
+      setCommunityNote(null);
+      setIsLoadingOffer(false);
+      if (clearOfferParam) {
+        setOfferQueryParam('');
+      }
+    },
+    [],
+  );
+
   const updateFilters = useCallback(
     (partialFilters: Partial<ReturnType<typeof getSearchFilters>>) => {
-      locallyPreviewedOfferIdRef.current = null;
       const nextFilters = setSearchFilters(user?._id, partialFilters);
       setFiltersState(nextFilters);
       setFiltersJson(JSON.stringify(nextFilters));
       setCommunityNotesEnabled(nextFilters.communityNotes);
       setOnlineInPast6Months(nextFilters.seen?.months === 6);
-      setOffer(null);
-      setCommunityNote(null);
-      setOfferQueryParam('');
+      clearSelection();
     },
-    [user?._id],
+    [clearSelection, user?._id],
   );
 
   const openSidebar = useCallback((tab?: 'filters' | 'results') => {
@@ -150,13 +160,9 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
   }, []);
 
   const closeSidebar = useCallback(() => {
-    locallyPreviewedOfferIdRef.current = null;
     setIsSidebarOpen(false);
-    setOffer(null);
-    setCommunityNote(null);
-    setIsLoadingOffer(false);
-    setOfferQueryParam('');
-  }, []);
+    clearSelection();
+  }, [clearSelection]);
 
   const toggleSidebar = useCallback(
     (tab?: 'filters' | 'results') => {
@@ -203,22 +209,16 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
 
   const previewCommunityNote = useCallback(
     (data: SearchCommunityNote) => {
-      locallyPreviewedOfferIdRef.current = null;
-      setOffer(null);
+      clearSelection({ clearOfferParam: false });
       setCommunityNote(data);
-      setIsLoadingOffer(false);
       openSidebar('results');
     },
-    [openSidebar],
+    [clearSelection, openSidebar],
   );
 
   const closeOffer = useCallback(() => {
-    locallyPreviewedOfferIdRef.current = null;
-    setOffer(null);
-    setCommunityNote(null);
-    setIsLoadingOffer(false);
-    setOfferQueryParam('');
-  }, []);
+    clearSelection();
+  }, [clearSelection]);
 
   useEffect(() => {
     if (!isSidebarOpen || sidebarTab !== 'results' || offer || communityNote) {
@@ -355,11 +355,8 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
     ) {
       return;
     }
-    locallyPreviewedOfferIdRef.current = null;
-
     let isMounted = true;
-    setOffer(null);
-    setIsLoadingOffer(false);
+    clearSelection({ clearOfferParam: false });
 
     async function loadOfferFromUrl() {
       if (routeParams.offer && routeParams.offer.length === 24) {
@@ -375,8 +372,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
           }
         } catch {
           if (isMounted) {
-            setIsLoadingOffer(false);
-            setOffer(null);
+            clearSelection({ clearOfferParam: false });
             trackEvent('offer-not-found', {
               category: 'search.map',
               label: 'Offer not found',

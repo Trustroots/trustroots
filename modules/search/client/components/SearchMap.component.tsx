@@ -1,6 +1,5 @@
 // External dependencies
 import { useDebouncedCallback } from 'use-debounce';
-import PropTypes from 'prop-types';
 import React, { createRef, useEffect, useRef, useState } from 'react';
 import ReactMapGL, {
   FlyToInterpolator,
@@ -155,6 +154,8 @@ const COMMUNITY_NOTES_RECONNECT_DELAY_MS = 1000;
 const MISSING_MAP_LAYER_ERROR =
   /^The layer '.*' does not exist in the map's style and cannot be queried for features\.$/;
 
+type MapCorner = { lat: number; lng: number };
+
 function isLongitudeVisible(longitude: number, west: number, east: number) {
   let span = east - west;
   if (span < 0) span += 360;
@@ -164,9 +165,33 @@ function isLongitudeVisible(longitude: number, west: number, east: number) {
   return relativeLongitude <= span;
 }
 
+function normalizeBoundsCorners(mapBounds: {
+  getNorthEast?: () => MapCorner;
+  getSouthWest?: () => MapCorner;
+  northEast?: MapCorner;
+  southWest?: MapCorner;
+}): { northEast?: MapCorner; southWest?: MapCorner } {
+  return {
+    northEast: mapBounds.getNorthEast?.() ?? mapBounds.northEast,
+    southWest: mapBounds.getSouthWest?.() ?? mapBounds.southWest,
+  };
+}
+
+function isCoordinateInViewport(
+  longitude: number,
+  latitude: number,
+  southWest: MapCorner,
+  northEast: MapCorner,
+) {
+  return (
+    latitude >= southWest.lat &&
+    latitude <= northEast.lat &&
+    isLongitudeVisible(longitude, southWest.lng, northEast.lng)
+  );
+}
+
 const olc = new OpenLocationCode();
-const ignoreVisibleOfferIds = () => {};
-const ignoreVisibleCommunityNoteThreads = () => {};
+const ignoreVisibleCallback = () => {};
 const TypedLayer = Layer as unknown as React.ComponentType<SearchMapLayerProps>;
 const TypedSource = Source as unknown as React.ComponentType<
   React.ComponentProps<typeof Source> & {
@@ -286,8 +311,8 @@ export default function SearchMap({
   locationBounds: bounds,
   onOfferClose,
   onOfferOpen,
-  onVisibleOffersChange = ignoreVisibleOfferIds,
-  onVisibleCommunityNoteThreadsChange = ignoreVisibleCommunityNoteThreads,
+  onVisibleOffersChange = ignoreVisibleCallback,
+  onVisibleCommunityNoteThreadsChange = ignoreVisibleCallback,
   onCommunityNoteOpen,
 }: SearchMapProps) {
   /**
@@ -414,12 +439,10 @@ export default function SearchMap({
     }
 
     // https://docs.mapbox.com/mapbox-gl-js/api/geography/#lnglatbounds
-    const northEast = mapBounds.getNorthEast
-      ? mapBounds.getNorthEast()
-      : mapBounds.northEast;
-    const southWest = mapBounds.getSouthWest
-      ? mapBounds.getSouthWest()
-      : mapBounds.southWest;
+    const { northEast, southWest } = normalizeBoundsCorners(mapBounds);
+    if (!northEast || !southWest) {
+      return;
+    }
 
     // Expand bounding box depending on the zoom level slightly to load more offers over the edge of the viewport
     const boundsBuffer = 10 / zoom;
@@ -826,63 +849,39 @@ export default function SearchMap({
   }
 
   // The search request has a small buffer so offers near the edge remain
-  // available while panning. The Results pane should include pins within the
-  // actual map viewport only.
+  // available while panning. The Results pane lists only pins and
+  // author-visible community notes inside the actual map viewport.
   useEffect(() => {
-    const leafletBounds = leafletMapState?.bounds;
-    const mapBounds = webGLSupported ? getMapRef()?.getBounds() : undefined;
-    const northEast = mapBounds
-      ? mapBounds.getNorthEast()
-      : leafletBounds?.northEast;
-    const southWest = mapBounds
-      ? mapBounds.getSouthWest()
-      : leafletBounds?.southWest;
-
+    const mapBounds = webGLSupported
+      ? getMapRef()?.getBounds()
+      : leafletMapState?.bounds;
+    const corners = mapBounds ? normalizeBoundsCorners(mapBounds) : undefined;
+    const northEast = corners?.northEast;
+    const southWest = corners?.southWest;
     const zoom = leafletMapState?.zoom ?? viewport.zoom;
-    if (!northEast || !southWest || zoom <= MIN_ZOOM) {
+    const hasViewport = Boolean(northEast && southWest) && zoom > MIN_ZOOM;
+
+    if (!hasViewport) {
       onVisibleOffersChange([]);
+      onVisibleCommunityNoteThreadsChange([]);
       return;
     }
 
-    const visibleIds = offers.features
-      .filter(feature => {
-        const [longitude, latitude] = feature.geometry.coordinates;
-        const insideLongitude = isLongitudeVisible(
-          longitude,
-          southWest.lng,
-          northEast.lng,
-        );
-        return (
-          latitude >= southWest.lat &&
-          latitude <= northEast.lat &&
-          insideLongitude
-        );
-      })
-      .map(feature => feature.properties.id);
+    onVisibleOffersChange(
+      offers.features
+        .filter(feature => {
+          const [longitude, latitude] = feature.geometry.coordinates;
+          return isCoordinateInViewport(
+            longitude,
+            latitude,
+            southWest!,
+            northEast!,
+          );
+        })
+        .map(feature => feature.properties.id),
+    );
 
-    onVisibleOffersChange(visibleIds);
-  }, [leafletMapState, map, offers, onVisibleOffersChange, viewport]);
-
-  // The Results pane lists only author-visible community notes inside the
-  // current viewport. `communityNotes` is built from the visibility-filtered
-  // events, unlike `communityNotesEventsRef`, which retains the raw stream.
-  useEffect(() => {
-    const leafletBounds = leafletMapState?.bounds;
-    const mapBounds = webGLSupported ? getMapRef()?.getBounds() : undefined;
-    const northEast = mapBounds
-      ? mapBounds.getNorthEast()
-      : leafletBounds?.northEast;
-    const southWest = mapBounds
-      ? mapBounds.getSouthWest()
-      : leafletBounds?.southWest;
-    const zoom = leafletMapState?.zoom ?? viewport.zoom;
-
-    if (
-      !communityNotesEnabled ||
-      !northEast ||
-      !southWest ||
-      zoom <= MIN_ZOOM
-    ) {
+    if (!communityNotesEnabled) {
       onVisibleCommunityNoteThreadsChange([]);
       return;
     }
@@ -894,30 +893,17 @@ export default function SearchMap({
 
     communityNotes.features.forEach(feature => {
       const [longitude, latitude] = feature.geometry.coordinates;
-      const insideLongitude = isLongitudeVisible(
-        longitude,
-        southWest.lng,
-        northEast.lng,
-      );
       if (
-        latitude < southWest.lat ||
-        latitude > northEast.lat ||
-        !insideLongitude
+        !isCoordinateInViewport(longitude, latitude, southWest!, northEast!)
       ) {
         return;
       }
 
-      const note = reconstructEvent(
-        feature.properties as OfferFeatureProperties,
-      );
-      const plusCode = getPlusCodeFromEvent(
-        feature.properties as OfferFeatureProperties,
-      )!;
-
-      const key = plusCode;
-      const thread = threads.get(key) || { notes: [], plusCode };
-      thread.notes.push(note);
-      threads.set(key, thread);
+      const properties = feature.properties as OfferFeatureProperties;
+      const plusCode = getPlusCodeFromEvent(properties)!;
+      const thread = threads.get(plusCode) || { notes: [], plusCode };
+      thread.notes.push(reconstructEvent(properties));
+      threads.set(plusCode, thread);
     });
 
     onVisibleCommunityNoteThreadsChange([...threads.values()]);
@@ -926,7 +912,9 @@ export default function SearchMap({
     communityNotesEnabled,
     leafletMapState,
     map,
+    offers,
     onVisibleCommunityNoteThreadsChange,
+    onVisibleOffersChange,
     viewport,
     webGLSupported,
   ]);
@@ -1175,15 +1163,3 @@ export default function SearchMap({
     </div>
   );
 }
-
-SearchMap.propTypes = {
-  filters: PropTypes.string,
-  isUserPublic: PropTypes.bool,
-  location: PropTypes.object,
-  locationBounds: PropTypes.object,
-  onOfferClose: PropTypes.func,
-  onOfferOpen: PropTypes.func,
-  onCommunityNoteOpen: PropTypes.func,
-  onVisibleOffersChange: PropTypes.func,
-  onVisibleCommunityNoteThreadsChange: PropTypes.func,
-};

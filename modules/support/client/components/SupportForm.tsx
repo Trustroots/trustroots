@@ -7,6 +7,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { send } from '../api/support.api';
 import usePersistentSupportMessage from '../hooks/use-persistent-support-message';
 import { SUPPORT_CATEGORIES } from '../../shared/categories';
+import { VOLUNTEERING_DISCLAIMER } from '../../shared/volunteering-copy';
 
 type SupportUser = { displayName?: string; username?: string; email?: string };
 type SupportFormProps = { user?: SupportUser | null };
@@ -216,9 +217,7 @@ export default function SupportForm({ user }: SupportFormProps) {
             <div className="col-sm-9">
               {category === 'volunteering' && (
                 <p className="help-block" id="volunteering-help">
-                  {t<string>(
-                    'Volunteer with the team that runs Trustroots, helping with development, design, translation, community support or organisation. This form is not for finding farm work, jobs, or work in exchange for food and accommodation.',
-                  )}
+                  {t<string>(VOLUNTEERING_DISCLAIMER)}
                 </p>
               )}
               <textarea

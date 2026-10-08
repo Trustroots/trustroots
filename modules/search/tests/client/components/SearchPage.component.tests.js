@@ -207,6 +207,11 @@ function renderSearchPage(
   return render(<SearchPage user={user} />);
 }
 
+function openResultsWithVisibleOfferIds(offerIds) {
+  fireEvent.click(screen.getByRole('tab', { name: /^results$/i }));
+  act(() => searchMapProps.onVisibleOffersChange(offerIds));
+}
+
 describe('<SearchPage />', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -241,8 +246,7 @@ describe('<SearchPage />', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'Report visible offer' }),
     );
-    act(() => searchMapProps.onVisibleOffersChange([mockOffer._id]));
-    fireEvent.click(screen.getByRole('tab', { name: /^results$/i }));
+    openResultsWithVisibleOfferIds([mockOffer._id]);
 
     const resultButton = await screen.findByRole('button', {
       name: /open hosting offer from host person/i,
@@ -276,8 +280,7 @@ describe('<SearchPage />', () => {
     }));
 
     renderSearchPage();
-    act(() => searchMapProps.onVisibleOffersChange(offerIds));
-    fireEvent.click(screen.getByRole('tab', { name: /^results$/i }));
+    openResultsWithVisibleOfferIds(offerIds);
 
     await waitFor(() =>
       expect(offersApi.getOffer).toHaveBeenCalledTimes(offerIds.length),
@@ -316,8 +319,7 @@ describe('<SearchPage />', () => {
     );
 
     renderSearchPage();
-    fireEvent.click(screen.getByRole('tab', { name: /^results$/i }));
-    act(() => searchMapProps.onVisibleOffersChange(['offer-a', 'offer-b']));
+    openResultsWithVisibleOfferIds(['offer-a', 'offer-b']);
     await waitFor(() => expect(offersApi.getOffer).toHaveBeenCalledTimes(2));
 
     act(() => searchMapProps.onVisibleOffersChange(['offer-b', 'offer-c']));
@@ -349,8 +351,7 @@ describe('<SearchPage />', () => {
     const offerIds = Array.from({ length: 17 }, (_, index) => `offer-${index}`);
     const { unmount } = renderSearchPage();
 
-    fireEvent.click(screen.getByRole('tab', { name: /^results$/i }));
-    act(() => searchMapProps.onVisibleOffersChange(offerIds));
+    openResultsWithVisibleOfferIds(offerIds);
     await waitFor(() => expect(offersApi.getOffer).toHaveBeenCalledTimes(8));
 
     unmount();
@@ -370,8 +371,7 @@ describe('<SearchPage />', () => {
         }),
     );
     const { unmount } = renderSearchPage();
-    fireEvent.click(screen.getByRole('tab', { name: /^results$/i }));
-    act(() => searchMapProps.onVisibleOffersChange(['offer-after-unmount']));
+    openResultsWithVisibleOfferIds(['offer-after-unmount']);
     await waitFor(() => expect(offersApi.getOffer).toHaveBeenCalledTimes(1));
 
     unmount();
@@ -385,8 +385,7 @@ describe('<SearchPage />', () => {
   it('skips visible offers when the offer endpoint returns no result', async () => {
     offersApi.getOffer.mockResolvedValue(null);
     renderSearchPage();
-    fireEvent.click(screen.getByRole('tab', { name: /^results$/i }));
-    act(() => searchMapProps.onVisibleOffersChange(['missing-offer']));
+    openResultsWithVisibleOfferIds(['missing-offer']);
 
     expect(
       await screen.findByText(/no results are visible in this map area/i),
