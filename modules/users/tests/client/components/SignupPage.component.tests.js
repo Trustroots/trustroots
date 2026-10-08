@@ -428,13 +428,13 @@ describe('SignupPage', () => {
     fireEvent.blur(usernameInput);
     expect(
       await screen.findByText(
-        'Use 3-34 letters, numbers, periods or hyphens. Underscores are not allowed at signup.',
+        'Use 3–34 letters and numbers, including at least one letter.',
       ),
     ).toBeVisible();
     fireEvent.change(usernameInput, { target: { value: 'sample_member' } });
     expect(
       screen.getByText(
-        'Use 3-34 letters, numbers, periods or hyphens. Underscores are not allowed at signup.',
+        'Use 3–34 letters and numbers, including at least one letter.',
       ),
     ).toBeVisible();
   });
@@ -448,7 +448,7 @@ describe('SignupPage', () => {
     try {
       renderPage();
       fireEvent.change(screen.getByLabelText('Username'), {
-        target: { value: 'sample-service' },
+        target: { value: 'sampleservice' },
       });
       fireEvent.blur(screen.getByLabelText('Username'));
       await act(async () => {

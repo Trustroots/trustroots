@@ -45,7 +45,7 @@ describe('User Model Unit Tests:', function () {
       lastName: 'User',
       displayName: 'Full Different Name',
       email: 'test3@test.com',
-      username: 'different_username',
+      username: 'differentusername',
       password: 'different_password',
       provider: 'local',
     };
@@ -346,12 +346,12 @@ describe('User Model Unit Tests:', function () {
       });
     });
 
-    it('should save username with dot', function (done) {
+    it('should reject a new username with dot', function (done) {
       const _user = new User(user);
 
       _user.username = 'log.in';
       _user.save(function (err) {
-        should.not.exist(err);
+        should.exist(err);
         done();
       });
     });
@@ -476,7 +476,7 @@ describe('User Model Unit Tests:', function () {
       firstName: 'Anonymous',
       lastName: 'Traveller',
       email: 'hash-migration@example.org',
-      username: 'hash_migration_user',
+      username: 'hashmigrationuser',
       provider: 'local',
     };
 

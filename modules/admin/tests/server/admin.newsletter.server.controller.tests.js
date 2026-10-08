@@ -433,7 +433,7 @@ describe('Admin newsletter controller unit tests', () => {
       _users[0].email = 'eligible@example.com';
       _users[0].firstName = 'Eligible';
       _users[0].lastName = 'Member';
-      _users[0].username = 'eligible-member';
+      _users[0].username = 'eligiblemember';
       await utils.saveUsers(_users);
 
       const res = mockResponse();
@@ -466,7 +466,7 @@ describe('Admin newsletter controller unit tests', () => {
       JSON.parse(res.body.subscribedContent).should.containDeep({
         displayName: 'Eligible Member',
         email: 'eligible@example.com',
-        username: 'eligible-member',
+        username: 'eligiblemember',
       });
       res.body.unsubscribedContent.should.match(/missing-one@example.com/);
       res.body.unsubscribedContent.should.match(/missing-two@example.com/);

@@ -76,14 +76,14 @@ describe('User signup validation CRUD tests', function () {
         displayName: 'Full Name',
         email: 'test@example.org',
         emailToken: 'initial email token',
-        username: 'taken-username',
+        username: 'takenusername',
         password: 'TR-I$Aw3$0m4',
         provider: 'local',
       });
       user.save(function () {
         validationFailure(
           {
-            username: 'taken-username',
+            username: 'takenusername',
           },
           'username-not-available',
           'Username is not available.',
@@ -99,14 +99,14 @@ describe('User signup validation CRUD tests', function () {
         displayName: 'Full Name',
         email: 'case@example.org',
         emailToken: 'initial email token',
-        username: 'taken_case_username',
+        username: 'takencaseusername',
         password: 'TR-I$Aw3$0m4',
         provider: 'local',
       });
       user.save(function () {
         validationFailure(
           {
-            username: 'TAKEN_CASE_USERNAME',
+            username: 'TAKENCASEUSERNAME',
           },
           'username-not-available',
           'Username is not available.',
@@ -128,7 +128,8 @@ describe('User signup validation CRUD tests', function () {
       );
     });
     describe('Username is in invalid format', function () {
-      const invalidMessage = 'Username is in invalid format.';
+      const invalidMessage =
+        'Use 3–34 letters and numbers, including at least one letter.';
       it('should show error to validate username beginning with "." (dot)', function (done) {
         validationFailure(
           {
@@ -191,10 +192,10 @@ describe('User signup validation CRUD tests', function () {
       });
     });
     describe('Username is valid', function () {
-      it('should validate username with dot in the middle', function (done) {
+      it('should validate an uppercase username with digits', function (done) {
         validationSuccess(
           {
-            username: 'log.in',
+            username: 'Member42',
           },
           done,
         );

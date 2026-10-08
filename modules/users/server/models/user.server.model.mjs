@@ -44,11 +44,13 @@ const validatePassword = function (password) {
 };
 
 /**
- * A Validation function for username
+ * Enforce selection policy on new/changed identities only. Unrelated saves must
+ * preserve legacy and newly reserved usernames; requiredness and uniqueness
+ * remain enforced by the schema.
  */
 const validateUsername = function (username) {
   return (
-    this.provider !== 'local' ||
+    (!this.isNew && !this.isModified('username')) ||
     authenticationService.validateUsername(username)
   );
 };
@@ -201,10 +203,7 @@ const UserSchema = new Schema({
     type: String,
     unique: 'Username exists already.',
     required: true,
-    validate: [
-      validateUsername,
-      'Please fill in valid username: 3+ characters long, non banned word, characters "_-.", no consecutive dots, does not begin or end with dots, letters a-z and numbers 0-9.',
-    ],
+    validate: [validateUsername, authenticationService.usernameFormatMessage],
     lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
     trim: true,
   },

@@ -69,7 +69,10 @@ function createTestUser(overrides = {}) {
     firstName: 'Full',
     lastName: 'Name',
     displayName: 'Full Name',
-    username: faker.internet.userName(),
+    username: faker.internet
+      .userName()
+      .replace(/[^a-z0-9]/gi, '')
+      .slice(0, 34),
     email: faker.internet.email(),
     password: 'Password123!',
     provider: 'local',

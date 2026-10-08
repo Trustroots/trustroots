@@ -56,7 +56,7 @@ describe('User removal CRUD tests', function () {
   beforeEach(function (done) {
     // Create user credentials for user A
     credentialsA = {
-      username: 'user_a',
+      username: 'usera',
       password: 'M3@n.jsI$Aw3$0m3',
     };
 
@@ -81,7 +81,7 @@ describe('User removal CRUD tests', function () {
   beforeEach(function (done) {
     // Create user credentials for user B
     credentialsB = {
-      username: 'user_b',
+      username: 'userb',
       password: 'M3@n.jsI$Aw3$0m3',
     };
 

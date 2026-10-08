@@ -17,7 +17,10 @@ const selectRandom = (list, fraction = 0.5) => {
 
 function generateBaseUser() {
   return {
-    username: faker.internet.userName(),
+    username: faker.internet
+      .userName()
+      .replace(/[^a-z0-9]/gi, '')
+      .slice(0, 34),
     firstName: faker.name.firstName(),
     lastName: faker.name.lastName(),
     email: faker.internet.email(),

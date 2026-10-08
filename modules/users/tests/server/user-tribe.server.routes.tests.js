@@ -30,7 +30,7 @@ describe('User tribe memberships CRUD tests', function () {
   beforeEach(function (done) {
     // Create user credentials
     credentials = {
-      username: 'TR_username',
+      username: 'TRusername',
       password: 'TR-I$Aw3$0m4',
     };
 

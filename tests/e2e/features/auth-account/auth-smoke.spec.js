@@ -14,7 +14,15 @@ const {
   registerViaApi,
   signOut,
   signUp,
+  signIn,
 } = require('../../support/helpers');
+
+const {
+  updateUserByUsername,
+  findUserByUsername,
+  removeUserByUsername,
+} = require('../../support/db');
+const nip19 = require('nostr-tools/nip19');
 
 const user = createUser();
 
@@ -212,7 +220,7 @@ test.describe.serial('authentication smoke', () => {
     await expect(
       page
         .getByText(
-          'Use 3-34 letters, numbers, periods or hyphens. Underscores are not allowed at signup.',
+          'Use 3–34 letters and numbers, including at least one letter.',
         )
         .first(),
     ).toBeVisible();
@@ -221,7 +229,7 @@ test.describe.serial('authentication smoke', () => {
     });
     expect(rejected.status()).toBe(400);
     expect((await rejected.json()).message).toContain(
-      'Underscores are not allowed at signup.',
+      'Use 3–34 letters and numbers, including at least one letter.',
     );
     await page.locator('#username').fill(member.username);
     try {
@@ -233,6 +241,155 @@ test.describe.serial('authentication smoke', () => {
     }
     await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
   });
+
+  test('signup selection rejects punctuation and digits-only input consistently', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signup', [
+      'Signup form validates required fields.',
+    ]);
+    const member = createUser();
+    await page.goto('/signup');
+    await page.locator('#firstName').fill(member.firstName);
+    await page.locator('#lastName').fill(member.lastName);
+    await page.locator('#email').fill(member.email);
+    await page.locator('#password').fill(member.password);
+    for (const username of [
+      'sample_member',
+      'sample-member',
+      'sample.member',
+      '123456',
+    ]) {
+      await page.locator('#username').fill(username);
+      await expect(
+        page.getByRole('button', { name: 'Please fill in the form' }),
+      ).toBeDisabled();
+      const availability = await request.post('/api/auth/signup/validate', {
+        data: { username },
+      });
+      expect((await availability.json()).valid).toBe(false);
+      expect(
+        (
+          await request.post('/api/auth/signup', {
+            data: { ...member, username },
+          })
+        ).status(),
+      ).toBe(400);
+    }
+    const uppercase = { ...member, username: member.username.toUpperCase() };
+    await signUp(page, uppercase);
+    expect((await findUserByUsername(member.username)).username).toBe(
+      member.username,
+    );
+  });
+
+  for (const legacyKind of [
+    'underscore',
+    'hyphen',
+    'dot',
+    'digits',
+    'reserved',
+  ]) {
+    test(
+      'existing ' +
+        legacyKind +
+        ' username survives saves and can change under the new policy',
+      async ({ page, request }, testInfo) => {
+        annotateFeature(testInfo, 'auth.signin', [
+          'Username sign in succeeds.',
+        ]);
+        const member = createUser();
+        await registerViaApi(request, member);
+        const legacyUsername = {
+          underscore: `old_${member.username}`,
+          hyphen: `old-${member.username}`,
+          dot: `old.${member.username}`,
+          digits: member.username.slice(3),
+          reserved: 'nostr',
+        }[legacyKind];
+        const publicKey = crypto.randomBytes(32).toString('hex');
+        await updateUserByUsername(member.username, {
+          $set: {
+            username: legacyUsername,
+            public: true,
+            nostrNpub: nip19.npubEncode(publicKey),
+            created: new Date('2020-01-01'),
+          },
+        });
+        await page.context().clearCookies();
+        await signIn(page, { ...member, username: legacyUsername });
+        await page.goto('/profile/edit/account');
+        await expect(
+          page.getByText(/Your current username can stay/),
+        ).toBeVisible();
+        const saved = await page.request.put('/api/users', {
+          data: {
+            username: ` ${legacyUsername.toUpperCase()} `,
+            lastName: 'River',
+          },
+        });
+        expect(saved.ok()).toBeTruthy();
+        expect((await saved.json()).username).toBe(legacyUsername);
+        expect(
+          (await findUserByUsername(legacyUsername)).usernameUpdated,
+        ).toBeUndefined();
+        expect(
+          (await page.request.get('/api/users/' + legacyUsername)).ok(),
+        ).toBeTruthy();
+        const identity = await page.request.get(
+          '/.well-known/nostr.json?name=' + legacyUsername,
+        );
+        expect((await identity.json()).names[legacyUsername]).toBe(publicKey);
+        for (const username of [
+          false,
+          0,
+          true,
+          null,
+          [],
+          {},
+          'invalid_member',
+          '123456',
+        ]) {
+          expect(
+            (
+              await page.request.put('/api/users', { data: { username } })
+            ).status(),
+          ).toBe(400);
+        }
+        expect(
+          (await findUserByUsername(legacyUsername)).usernameUpdated,
+        ).toBeUndefined();
+        const newUsername = `new${member.username}`;
+        await page.locator('#username').fill(newUsername.toUpperCase());
+        const change = page.waitForResponse(
+          response =>
+            response.url().endsWith('/api/users') &&
+            response.request().method() === 'PUT',
+        );
+        await page
+          .getByRole('button', { name: 'Change username', exact: true })
+          .click();
+        expect((await change).ok()).toBeTruthy();
+        await expect(
+          page.getByText('Username updated.', { exact: true }),
+        ).toBeVisible();
+        const changed = await findUserByUsername(newUsername);
+        expect(changed.usernameUpdated).toBeTruthy();
+        expect(
+          (
+            await page.request.put('/api/users', {
+              data: { username: `again${member.username}` },
+            })
+          ).status(),
+        ).toBe(403);
+        expect(
+          (await findUserByUsername(newUsername)).usernameUpdated.getTime(),
+        ).toBe(changed.usernameUpdated.getTime());
+        await removeUserByUsername(newUsername);
+      },
+    );
+  }
 
   test('signed out user can sign in with username', async ({
     page,

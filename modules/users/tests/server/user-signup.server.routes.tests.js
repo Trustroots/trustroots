@@ -37,7 +37,7 @@ describe('User signup and authentication CRUD tests', function () {
   beforeEach(function (done) {
     // Create user credentials
     confirmedCredentials = {
-      username: 'TR_username',
+      username: 'TRusername',
       password: 'TR-I$Aw3$0m4',
     };
 
@@ -62,7 +62,7 @@ describe('User signup and authentication CRUD tests', function () {
   // Create an unconfirmed user
   beforeEach(function (done) {
     unConfirmedCredentials = {
-      username: 'TR_username_unconfirmed',
+      username: 'TRusernameunconfirmed',
       password: 'TR-I$Aw3$0m4',
     };
     _unConfirmedUser = {
@@ -96,7 +96,7 @@ describe('User signup and authentication CRUD tests', function () {
       })
       .expect(400);
     response.body.message.should.equal(
-      'Use 3-34 letters, numbers, periods or hyphens. Underscores are not allowed at signup.',
+      'Use 3–34 letters and numbers, including at least one letter.',
     );
     should.not.exist(
       await User.findOne({
@@ -104,7 +104,7 @@ describe('User signup and authentication CRUD tests', function () {
       }),
     );
   });
-  for (const username of ['Sample.Member', 'sample-member', '12345678']) {
+  for (const username of ['SampleMember', 'samplemember1']) {
     it('preserves signup support for ' + username, async function () {
       const response = await agent
         .post('/api/auth/signup')

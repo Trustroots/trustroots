@@ -26,13 +26,13 @@ describe('Admin User CRUD tests', () => {
     try {
       // Create admin credentials
       credentialsAdmin = {
-        username: 'user-admin',
+        username: 'useradmin',
         password: 'Password123!',
       };
 
       // Create regular user credentials
       credentialsRegular = {
-        username: 'user-regular',
+        username: 'userregular',
         password: 'Password123!',
       };
 
@@ -161,8 +161,8 @@ describe('Admin User CRUD tests', () => {
         });
         should.exist(users[0].created);
         should.exist(users[1].created);
-        should(users[0].username).equal('user-admin');
-        should(users[1].username).equal('user-regular');
+        should(users[0].username).equal('useradmin');
+        should(users[1].username).equal('userregular');
         users.forEach(user => {
           // These should have been removed
           should.not.exist(user.password);
@@ -177,11 +177,11 @@ describe('Admin User CRUD tests', () => {
         const { body } = await agent
           .post('/api/admin/users')
           .send({
-            search: 'user-regular',
+            search: 'userregular',
           })
           .expect(200);
         should(body.users.length).equal(1);
-        should(body.users[0].username).equal('user-regular');
+        should(body.users[0].username).equal('userregular');
       });
       it('should sort matching users on the server', async () => {
         await utils.signIn(credentialsAdmin, agent);
@@ -209,11 +209,11 @@ describe('Admin User CRUD tests', () => {
         const { body } = await agent
           .post('/api/admin/users')
           .send({
-            search: '  user-regular  ',
+            search: '  userregular  ',
           })
           .expect(200);
         should(body.users.length).equal(1);
-        should(body.users[0].username).equal('user-regular');
+        should(body.users[0].username).equal('userregular');
       });
       it('should ignore whitespace between search words', async () => {
         await utils.signIn(credentialsAdmin, agent);
@@ -270,7 +270,7 @@ describe('Admin User CRUD tests', () => {
           .expect(200);
         should(body.users.length).equal(1);
         const user = body.users[0];
-        should(user.username).equal('user-admin');
+        should(user.username).equal('useradmin');
 
         // These should have been removed
         should.not.exist(user.password);
@@ -312,7 +312,7 @@ describe('Admin User CRUD tests', () => {
           password: 'Password123!',
           provider: 'local',
           public: true,
-          username: 'user-other',
+          username: 'userother',
         });
         await otherUser.save();
         await utils.signIn(credentialsAdmin, agent);
@@ -323,7 +323,7 @@ describe('Admin User CRUD tests', () => {
           })
           .expect(200);
         body.users.should.have.length(1);
-        body.users[0].username.should.equal('user-regular');
+        body.users[0].username.should.equal('userregular');
         body.users[0].lastIpAddress.should.equal('203.0.113.10');
       });
       it('rejects malformed IP addresses', async () => {
@@ -361,7 +361,7 @@ describe('Admin User CRUD tests', () => {
             id: userRegularId,
           })
           .expect(200);
-        should(body.profile.username).equal('user-regular');
+        should(body.profile.username).equal('userregular');
         should(body.profile.emailToken).equal('test-token');
 
         // These should have been removed
@@ -391,7 +391,7 @@ describe('Admin User CRUD tests', () => {
           password: 'Password123!',
           provider: 'local',
           public: true,
-          username: 'user-regular-extra',
+          username: 'userregularextra',
         });
         await similarUser.save();
         await utils.signIn(credentialsAdmin, agent);
@@ -402,7 +402,7 @@ describe('Admin User CRUD tests', () => {
           })
           .expect(200);
         body.profile._id.should.equal(userRegularId);
-        body.profile.username.should.equal('user-regular');
+        body.profile.username.should.equal('userregular');
       });
       it('shows bounded identity and acquisition-story leads for restricted members', async () => {
         userRegular.roles = ['user', 'shadowban'];
@@ -419,7 +419,7 @@ describe('Admin User CRUD tests', () => {
             password: 'Password123!',
             provider: 'local',
             roles: ['user'],
-            username: 'user_regular_copy',
+            username: 'userregularcopy',
           }),
           new User({
             displayName: 'Email Lead',
@@ -429,7 +429,7 @@ describe('Admin User CRUD tests', () => {
             password: 'Password123!',
             provider: 'local',
             roles: ['user'],
-            username: 'different-member',
+            username: 'differentmember',
           }),
           new User({
             displayName: 'Temporary Email Lead',
@@ -439,7 +439,7 @@ describe('Admin User CRUD tests', () => {
             password: 'Password123!',
             provider: 'local',
             roles: ['user'],
-            username: 'another-member',
+            username: 'anothermember',
           }),
           new User({
             acquisitionStory:
@@ -451,7 +451,7 @@ describe('Admin User CRUD tests', () => {
             password: 'Password123!',
             provider: 'local',
             roles: ['user'],
-            username: 'story-member',
+            username: 'storymember',
           }),
         ];
         await Promise.all(possibleMatches.map(user => user.save()));
@@ -464,22 +464,22 @@ describe('Admin User CRUD tests', () => {
           .expect(200);
         body.potentialMatches.should.have.length(4);
         const usernameLead = body.potentialMatches.find(
-          user => user.username === 'user_regular_copy',
+          user => user.username === 'userregularcopy',
         );
         usernameLead.matchReasons.should.containEql('Username identifier');
         usernameLead.matchReasons.should.containEql('Email identifier');
         const emailLead = body.potentialMatches.find(
-          user => user.username === 'different-member',
+          user => user.username === 'differentmember',
         );
         emailLead.matchReasons.should.deepEqual(['Email identifier']);
         const temporaryEmailLead = body.potentialMatches.find(
-          user => user.username === 'another-member',
+          user => user.username === 'anothermember',
         );
         temporaryEmailLead.matchReasons.should.deepEqual([
           'Temporary email identifier',
         ]);
         const storyLead = body.potentialMatches.find(
-          user => user.username === 'story-member',
+          user => user.username === 'storymember',
         );
         storyLead.matchReasons.should.deepEqual(['Acquisition story']);
         storyLead.acquisitionStory.should.match(/fictional travel club/i);

@@ -36,7 +36,7 @@ describe('Tribe CRUD tests', function () {
   beforeEach(function (done) {
     // Create user credentials
     credentials = {
-      username: 'tr_username',
+      username: 'trusername',
       password: 'M3@n.jsI$Aw3$0m3',
     };
 
@@ -131,17 +131,17 @@ describe('Tribe CRUD tests', function () {
         seen: new Date(),
         ...attributes,
       });
-    const activeMember = createCandidate('active-member');
-    const circleContact = createCandidate('circle-contact');
-    const circleRecommender = createCandidate('circle-recommender');
-    const oldMember = createCandidate('old-member', {
+    const activeMember = createCandidate('activemember');
+    const circleContact = createCandidate('circlecontact');
+    const circleRecommender = createCandidate('circlerecommender');
+    const oldMember = createCandidate('oldmember', {
       seen: new Date(Date.now() - 32 * 24 * 60 * 60 * 1000),
     });
-    const privateMember = createCandidate('private-member', { public: false });
-    const suspendedMember = createCandidate('suspended-member', {
+    const privateMember = createCandidate('privatemember', { public: false });
+    const suspendedMember = createCandidate('suspendedmember', {
       roles: ['suspended'],
     });
-    const blockedViewerMember = createCandidate('blocked-viewer-member', {
+    const blockedViewerMember = createCandidate('blockedviewermember', {
       blocked: [user._id],
     });
     await Promise.all([
@@ -179,13 +179,13 @@ describe('Tribe CRUD tests', function () {
       .expect(200);
     response.body.contacts
       .map(member => member.username)
-      .should.deepEqual(['circle-contact']);
+      .should.deepEqual(['circlecontact']);
     response.body.recommenders
       .map(member => member.username)
-      .should.deepEqual(['circle-recommender']);
+      .should.deepEqual(['circlerecommender']);
     response.body.active
       .map(member => member.username)
-      .should.deepEqual(['active-member']);
+      .should.deepEqual(['activemember']);
     response.body.active[0].should.have.properties([
       '_id',
       'username',
@@ -198,7 +198,7 @@ describe('Tribe CRUD tests', function () {
     await user.save();
 
     const candidates = Array.from({ length: 21 }, (_, index) => {
-      const username = `unrelated-${index.toString().padStart(2, '0')}`;
+      const username = `unrelated${index.toString().padStart(2, '0')}`;
       return new User({
         ..._user,
         username,
@@ -211,7 +211,7 @@ describe('Tribe CRUD tests', function () {
     });
     const eligibleContact = new User({
       ..._user,
-      username: 'eligible-contact',
+      username: 'eligiblecontact',
       email: 'eligible-contact@example.com',
       displayName: 'Z Eligible contact',
       password: 'M3@n.jsI$Aw3$0m3',
@@ -245,7 +245,7 @@ describe('Tribe CRUD tests', function () {
       .expect(200);
     response.body.contacts
       .map(member => member.username)
-      .should.deepEqual(['eligible-contact']);
+      .should.deepEqual(['eligiblecontact']);
   });
   it('requires circle membership to list active members', async () => {
     await agent.post('/api/auth/signin').send(credentials).expect(200);
