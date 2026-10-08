@@ -1,3 +1,4 @@
+import CryptoKit
 import MapKit
 import XCTest
 @testable import Trustroots
@@ -545,6 +546,48 @@ final class TrustrootsTests: XCTestCase {
                 username: "traveller"
             )
         )
+    }
+
+    func testSignInSolvesChallengeAndRetriesCredentialsOnce() async throws {
+        var requestBodies: [[String: Any]] = []
+        APIURLProtocol.handler = { request in
+            let requestBody = request.httpBody ?? Data()
+            requestBodies.append(
+                (try? JSONSerialization.jsonObject(with: requestBody) as? [String: Any]) ?? [:]
+            )
+            let attempt = requestBodies.count
+            let status = attempt == 1 ? 429 : 200
+            let headers = attempt == 2 ? [
+                "Set-Cookie": "connect.sid=session-value; Path=/; HttpOnly"
+            ] : [:]
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: status, httpVersion: nil, headerFields: headers
+            )!
+            let body = attempt == 1
+                ? Data(#"{"signinChallenge":{"token":"fictional-challenge","difficulty":14}}"#.utf8)
+                : Data(#"{"username":"quiet-fox","displayName":"Quiet Fox","public":true}"#.utf8)
+            return (response, body)
+        }
+        defer { APIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [APIURLProtocol.self]
+        let api = TrustrootsAPI(session: URLSession(configuration: configuration))
+        let result = try await api.signIn(
+            serverURLString: "https://api.example.test",
+            usernameOrEmail: "quiet-fox",
+            password: "fictional-password"
+        )
+
+        XCTAssertEqual(requestBodies.count, 2)
+        XCTAssertNil(requestBodies[0]["signinProof"])
+        let proof = try XCTUnwrap(requestBodies[1]["signinProof"] as? [String: Any])
+        XCTAssertEqual(proof["token"] as? String, "fictional-challenge")
+        let solution = try XCTUnwrap(proof["solution"] as? Int)
+        let digest = Array(SHA256.hash(data: Data("fictional-challenge:\(solution)".utf8)))
+        XCTAssertEqual(digest[0], 0)
+        XCTAssertEqual(digest[1] & 0xfc, 0)
+        XCTAssertEqual(result.credentials.cookieHeader, "connect.sid=session-value")
     }
 
     func testOfflineResponseCacheIsScopedAndRetainsTimestamp() async throws {

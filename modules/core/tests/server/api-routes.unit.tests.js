@@ -435,6 +435,8 @@ describe('API route registrations', () => {
   });
 
   it('registers local authentication routes without social OAuth', () => {
+    const signinChallenge =
+      require('../../../users/server/services/signin-challenge.server.service.mjs').default;
     const authentication = controller(
       [
         'confirmEmail',
@@ -495,8 +497,13 @@ describe('API route registrations', () => {
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/signin').post, [
       targetedRequestLimit.signin,
+      signinChallenge,
       authentication.signin,
     ]);
+    assert.equal(
+      routeByPath(routes, '/api/auth/signin').post[1],
+      signinChallenge,
+    );
     const signoutRoute = routeByPath(routes, '/api/auth/signout');
     let getSignoutStatus;
     signoutRoute.get[0](
