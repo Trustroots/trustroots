@@ -164,7 +164,7 @@ test.describe('authenticated member flows', () => {
     const page = await context.newPage();
     try {
       await signInViaApi(page, context.request, SEEDED_MEMBERS[0]);
-      await page.goto(`/profile/${SEEDED_MEMBERS[0].username}`);
+      await page.goto(`/profile/${SEEDED_RELATIONSHIP_MEMBERS.alice.username}`);
       const response = await page.evaluate(async username => {
         const result = await fetch(`/api/users/${username}`);
         return {
@@ -172,12 +172,13 @@ test.describe('authenticated member flows', () => {
           cacheControl: result.headers.get('cache-control') || '',
           profile: await result.json(),
         };
-      }, SEEDED_MEMBERS[1].username);
+      }, SEEDED_RELATIONSHIP_MEMBERS.alice.username);
       expect(response.status).toBe(200);
       expect(response.cacheControl).not.toMatch(/public/i);
 
       const profile = response.profile;
-      expect(profile.locationLiving).toEqual(expect.any(String));
+      expect(profile.locationLiving).toBe('Fictional home');
+      expect(profile.locationFrom).toBe('Fictional origin');
       for (const privateField of [
         'email',
         'blocked',
