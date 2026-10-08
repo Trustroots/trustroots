@@ -103,7 +103,8 @@ export default function ForgotPasswordPage() {
                 <div className="text-center alert alert-success" role="alert">
                   <p>
                     <strong>
-                      We sent you an email with further instructions.
+                      If an account matches that username or email, we will send
+                      recovery instructions.
                     </strong>
                   </p>
                   <p>

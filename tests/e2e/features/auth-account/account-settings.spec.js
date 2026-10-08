@@ -2,6 +2,7 @@ const { annotateFeature, expect, test } = require('../../support/fixtures');
 
 const {
   DEFAULT_PASSWORD,
+  createIsolatedContext,
   createUser,
   registerViaApi,
   signIn,
@@ -37,6 +38,131 @@ test.describe.serial('account settings feature coverage', () => {
     await downloadLink.click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toBe('trustroots-data.json');
+  });
+
+  test('password changes refresh the current browser and revoke other sessions', async ({
+    browser,
+    baseURL,
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.password-change', [
+      'Current password is required.',
+      'Password change succeeds with valid current and new password.',
+      'Validation errors are visible for invalid data.',
+    ]);
+
+    const user = createUser();
+    await registerViaApi(request, user);
+    await signInViaApi(page, request, user);
+    const otherContext = await createIsolatedContext(browser, baseURL);
+    const otherPage = await otherContext.newPage();
+    try {
+      await signInViaApi(otherPage, otherContext.request, user);
+
+      const missingCurrent = await page.request.post('/api/users/password', {
+        data: {
+          newPassword: `${DEFAULT_PASSWORD}Changed`,
+          verifyPassword: `${DEFAULT_PASSWORD}Changed`,
+        },
+      });
+      expect(missingCurrent.status()).toBe(400);
+
+      const newPassword = `${DEFAULT_PASSWORD}Changed`;
+      const changed = await page.request.post('/api/users/password', {
+        data: {
+          currentPassword: user.password,
+          newPassword,
+          verifyPassword: newPassword,
+        },
+      });
+      expect(changed.ok()).toBeTruthy();
+      const changedBody = await changed.json();
+      expect(changedBody.user).not.toHaveProperty('password');
+      expect(changedBody.user).not.toHaveProperty('salt');
+      expect(changedBody.user).not.toHaveProperty('emailToken');
+      expect(changedBody.user).not.toHaveProperty('resetPasswordToken');
+      expect(changedBody.user).not.toHaveProperty('pushRegistration');
+      expect((await page.request.get('/api/users/export')).ok()).toBeTruthy();
+      expect(
+        (await otherContext.request.get('/api/users/export')).status(),
+      ).toBe(403);
+
+      await signInViaApi(otherPage, otherContext.request, {
+        ...user,
+        password: newPassword,
+      });
+      expect(
+        (await otherContext.request.get('/api/users/export')).ok(),
+      ).toBeTruthy();
+    } finally {
+      await otherContext.close();
+    }
+  });
+
+  test('concurrent password changes cannot overwrite each other or lose a version increment', async ({
+    browser,
+    baseURL,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.password-change', [
+      'Concurrent password changes using the same current password cannot both succeed.',
+      'The successful password change atomically updates the scrypt hash, clears the legacy salt, and increments the session version.',
+    ]);
+
+    const user = createUser();
+    await registerViaApi(request, user);
+    const contexts = await Promise.all([
+      createIsolatedContext(browser, baseURL),
+      createIsolatedContext(browser, baseURL),
+    ]);
+    try {
+      await Promise.all(
+        contexts.map(async context => {
+          const page = await context.newPage();
+          await signInViaApi(page, context.request, user);
+        }),
+      );
+
+      const passwords = [
+        `${DEFAULT_PASSWORD}FirstChange`,
+        `${DEFAULT_PASSWORD}SecondChange`,
+      ];
+      const responses = await Promise.all(
+        contexts.map((context, index) =>
+          context.request.post('/api/users/password', {
+            data: {
+              currentPassword: user.password,
+              newPassword: passwords[index],
+              verifyPassword: passwords[index],
+            },
+          }),
+        ),
+      );
+      expect(responses.map(response => response.status()).sort()).toEqual([
+        200, 400,
+      ]);
+
+      const changedUser = await findUserByUsername(user.username);
+      expect(changedUser.authVersion).toBe(1);
+      expect(changedUser.passwordUpdated).toBeTruthy();
+      expect(changedUser.salt).toBeFalsy();
+      expect(changedUser.password).toMatch(/^\$scrypt\$/);
+      expect(changedUser.password).not.toBe(user.password);
+
+      const successfulPassword = passwords[responses[0].ok() ? 0 : 1];
+      const checkContext = await createIsolatedContext(browser, baseURL);
+      try {
+        const signin = await checkContext.request.post('/api/auth/signin', {
+          data: { username: user.username, password: successfulPassword },
+        });
+        expect(signin.ok()).toBeTruthy();
+      } finally {
+        await checkContext.close();
+      }
+    } finally {
+      await Promise.all(contexts.map(context => context.close()));
+    }
   });
 
   test('members can change their password through account settings', async ({

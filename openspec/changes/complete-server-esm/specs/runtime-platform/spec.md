@@ -40,7 +40,6 @@ Server modules SHALL use native ESM. CommonJS test and build consumers SHALL loa
 
 Compatibility constraints: CommonJS test and build tooling SHALL use Node 24 native interoperability at the implementation path. Mutable service objects remain shared; named ESM exports are replaced at the import boundary by native module hooks. Server implementation adapters are removed.
 
-
 ### Requirement: Incremental server ESM services preserve CommonJS consumers
 
 Each server service SHALL use a native ESM implementation without a CommonJS adapter. CommonJS test and build consumers SHALL use the native implementation path.
@@ -54,7 +53,6 @@ Each server service SHALL use a native ESM implementation without a CommonJS ada
 
 - **WHEN** an ESM consumer imports the implementation
 - **THEN** it can access the service functions through named ESM exports
-
 
 ### Requirement: Migrated service objects preserve shared method replacements
 
@@ -75,7 +73,6 @@ Migrated spam, upload, statistics and Influx services SHALL expose named ESM fun
 - **WHEN** a CommonJS consumer requires the native implementation path and an ESM consumer imports the implementation
 - **THEN** their default service objects are identical and the implementation provides named function exports without top-level await
 
-
 ### Requirement: Member interactions server ESM preserves registration and consumers
 
 Server implementations in messages, contacts, experiences, offers, references-thread, tribes SHALL use native ESM without CommonJS implementation adapters, preserving export shapes and registration behaviour.
@@ -94,7 +91,6 @@ Server implementations in messages, contacts, experiences, offers, references-th
 
 - **WHEN** the migrated domains are validated
 - **THEN** named exports are available for applicable ESM functions, coverage remains at the existing 100% baselines and existing end-to-end scenarios are retained
-
 
 ### Requirement: Identity platform server ESM preserves registration and consumers
 
@@ -115,7 +111,6 @@ Server implementations in users, core, sparkpost SHALL use native ESM without Co
 - **WHEN** the migrated domains are validated
 - **THEN** named exports are available for applicable ESM functions, coverage remains at the existing 100% baselines and existing end-to-end scenarios are retained
 
-
 ### Requirement: Administration server ESM preserves registration and consumers
 
 Server implementations in admin, statistics, support, pages SHALL use native ESM without CommonJS implementation adapters, preserving export shapes and registration behaviour.
@@ -135,7 +130,6 @@ Server implementations in admin, statistics, support, pages SHALL use native ESM
 - **WHEN** the migrated domains are validated
 - **THEN** named exports are available for applicable ESM functions, coverage remains at the existing 100% baselines and existing end-to-end scenarios are retained
 
-
 ### Requirement: Server production implementations use native ESM
 
 Production implementations under `modules/*/server` SHALL use native `.mjs` modules without CommonJS implementation adapters. CommonJS test and build consumers SHALL load the native implementation paths through Node 24 interoperability.
@@ -149,7 +143,6 @@ Production implementations under `modules/*/server` SHALL use native `.mjs` modu
 
 - **WHEN** server `.mjs` files are linted
 - **THEN** CommonJS exports and new dynamic `require()` calls are rejected except documented synchronous bootstrap and JSON-loading exceptions
-
 
 ### Requirement: Production process entry implementations use native ESM
 

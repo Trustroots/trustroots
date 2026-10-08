@@ -1,4 +1,4 @@
-const { expect, test } = require('../../support/fixtures');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 const { SEEDED_MEMBERS } = require('../../support/helpers');
 
 test('recovery prefill submits through the existing API', async ({ page }) => {
@@ -9,11 +9,16 @@ test('recovery prefill submits through the existing API', async ({ page }) => {
   );
   await page.getByRole('button', { name: 'Restore' }).click();
   await expect(
-    page.getByText('We sent you an email with further instructions.'),
+    page.getByText(
+      'If an account matches that username or email, we will send recovery instructions.',
+    ),
   ).toBeVisible();
 });
 
 test('outcome pages retain their onward links', async ({ page }) => {
+  annotateFeature(test.info(), 'auth.password-reset', [
+    'Success page is shown after reset.',
+  ]);
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   await page.goto('/password/reset/invalid');

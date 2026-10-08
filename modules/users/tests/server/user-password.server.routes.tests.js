@@ -14,6 +14,23 @@ let credentials;
 let user;
 let _user;
 
+function findUserWithResetToken(query, callback) {
+  const timeout = Date.now() + 3000;
+  const check = () => {
+    User.findOne(query, (err, foundUser) => {
+      if (err || (foundUser && foundUser.resetPasswordToken)) {
+        return callback(err, foundUser);
+      }
+      if (Date.now() >= timeout) {
+        return callback(new Error('Password recovery token was not saved.'));
+      }
+      return setTimeout(check, 10);
+    });
+  };
+
+  check();
+}
+
 /**
  * User routes tests
  */
@@ -54,7 +71,8 @@ describe('User password CRUD tests', function () {
     user.save(done);
   });
   afterEach(utils.clearDatabase);
-  it('forgot password should return 400 for non-existent username', function (done) {
+
+  it('forgot password acknowledges non-existent usernames consistently', function (done) {
     user.roles = ['user'];
     user.save(function (err) {
       should.not.exist(err);
@@ -63,14 +81,14 @@ describe('User password CRUD tests', function () {
         .send({
           username: 'some_username_that_doesnt_exist',
         })
-        .expect(404)
+        .expect(200)
         .end(function (err, res) {
           // Handle error
           if (err) {
             return done(err);
           }
           res.body.message.should.equal(
-            'We could not find an account with that username or email. Make sure you have it spelled correctly.',
+            'If an account matches that username or email, we will send recovery instructions.',
           );
           return done();
         });
@@ -116,12 +134,11 @@ describe('User password CRUD tests', function () {
             return done(err);
           }
           res.body.message.should.be.equal(
-            'We sent you an email with further instructions.',
+            'If an account matches that username or email, we will send recovery instructions.',
           );
-          User.findOne(
-            {
-              username: user.username.toLowerCase(),
-            },
+
+          findUserWithResetToken(
+            { username: user.username.toLowerCase() },
             function (err, userRes) {
               userRes.resetPasswordToken.should.not.be.empty();
               should.exist(userRes.resetPasswordExpires);
@@ -147,12 +164,11 @@ describe('User password CRUD tests', function () {
             return done(err);
           }
           res.body.message.should.be.equal(
-            'We sent you an email with further instructions.',
+            'If an account matches that username or email, we will send recovery instructions.',
           );
-          User.findOne(
-            {
-              username: user.username.toLowerCase(),
-            },
+
+          findUserWithResetToken(
+            { username: user.username.toLowerCase() },
             function (err, userRes) {
               userRes.resetPasswordToken.should.not.be.empty();
               should.exist(userRes.resetPasswordExpires);
@@ -178,12 +194,11 @@ describe('User password CRUD tests', function () {
             return done(err);
           }
           res.body.message.should.be.equal(
-            'We sent you an email with further instructions.',
+            'If an account matches that username or email, we will send recovery instructions.',
           );
-          User.findOne(
-            {
-              email: user.email.toLowerCase(),
-            },
+
+          findUserWithResetToken(
+            { email: user.email.toLowerCase() },
             function (err, userRes) {
               userRes.resetPasswordToken.should.not.be.empty();
               should.exist(userRes.resetPasswordExpires);
@@ -209,12 +224,11 @@ describe('User password CRUD tests', function () {
             return done(err);
           }
           res.body.message.should.be.equal(
-            'We sent you an email with further instructions.',
+            'If an account matches that username or email, we will send recovery instructions.',
           );
-          User.findOne(
-            {
-              email: user.email.toLowerCase(),
-            },
+
+          findUserWithResetToken(
+            { email: user.email.toLowerCase() },
             function (err, userRes) {
               userRes.resetPasswordToken.should.not.be.empty();
               should.exist(userRes.resetPasswordExpires);
@@ -239,10 +253,9 @@ describe('User password CRUD tests', function () {
           if (err) {
             return done(err);
           }
-          User.findOne(
-            {
-              username: user.username.toLowerCase(),
-            },
+
+          findUserWithResetToken(
+            { username: user.username.toLowerCase() },
             function (err, userRes) {
               userRes.resetPasswordToken.should.not.be.empty();
               should.exist(userRes.resetPasswordExpires);
@@ -308,10 +321,9 @@ describe('User password CRUD tests', function () {
           if (forgotErr) {
             return done(forgotErr);
           }
-          User.findOne(
-            {
-              username: user.username.toLowerCase(),
-            },
+
+          findUserWithResetToken(
+            { username: user.username.toLowerCase() },
             function (findErr, userRes) {
               should.not.exist(findErr);
               agent
@@ -352,10 +364,9 @@ describe('User password CRUD tests', function () {
           if (forgotErr) {
             return done(forgotErr);
           }
-          User.findOne(
-            {
-              username: user.username.toLowerCase(),
-            },
+
+          findUserWithResetToken(
+            { username: user.username.toLowerCase() },
             function (findErr, userRes) {
               should.not.exist(findErr);
               agent

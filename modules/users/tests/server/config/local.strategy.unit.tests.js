@@ -1,28 +1,49 @@
 /**
  * Unit tests for uncovered local passport strategy branches.
  */
-const mongoose = require('mongoose');
-const passport = require('passport');
+const mockModule = require('../../../../../testutils/server/mock-module');
 const sinon = require('sinon');
 
 const should = require('should');
-require('./../../../server/models/user.server.model.mjs');
-const User = mongoose.model('User');
-const configureStrategy = require('./../../../server/config/strategies/local.mjs');
 
 describe('Local passport strategy unit tests', () => {
+  let User;
   let verify;
   let strategyOptions;
+  let passwordHashing;
 
   beforeEach(() => {
-    sinon.stub(User, 'findOne');
-    const passportUse = sinon.stub(passport, 'use').callsFake(strategy => {
-      strategyOptions = {
-        usernameField: strategy._usernameField,
-        passwordField: strategy._passwordField,
-      };
-      verify = strategy._verify;
-    });
+    User = {
+      findOne: sinon.stub(),
+    };
+    passwordHashing = {
+      verifyPassword: sinon.stub().resolves({
+        valid: false,
+        needsRehash: false,
+      }),
+    };
+
+    function FakeLocalStrategy(options, strategyVerify) {
+      strategyOptions = options;
+      verify = strategyVerify;
+    }
+
+    const passportUse = sinon.spy();
+    const configureStrategy = mockModule(
+      require.resolve('../../../server/config/strategies/local.mjs'),
+      {
+        mongoose: {
+          model: () => User,
+        },
+        passport: {
+          use: passportUse,
+        },
+        'passport-local': {
+          Strategy: FakeLocalStrategy,
+        },
+        '../../services/password-hashing.server.service': passwordHashing,
+      },
+    );
 
     configureStrategy();
 
@@ -66,7 +87,7 @@ describe('Local passport strategy unit tests', () => {
 
   it('returns false when the password is invalid', done => {
     const user = {
-      authenticate: sinon.stub().returns(false),
+      authenticate: sinon.stub().resolves(false),
     };
 
     User.findOne.callsFake((query, cb) => {
@@ -83,7 +104,7 @@ describe('Local passport strategy unit tests', () => {
 
   it('finds users by lowercase username or email and returns the user on valid password', done => {
     const user = {
-      authenticate: sinon.stub().withArgs('right-password').returns(true),
+      authenticate: sinon.stub().withArgs('right-password').resolves(true),
     };
 
     User.findOne.callsFake((query, cb) => {
@@ -109,5 +130,32 @@ describe('Local passport strategy unit tests', () => {
         done();
       },
     );
+  });
+
+  it('does current-cost dummy verification when the user does not exist', done => {
+    User.findOne.callsFake((query, cb) => cb(null, null));
+
+    verify('missinguser', 'candidate-password', (err, user, info) => {
+      should(err).be.null();
+      user.should.equal(false);
+      info.message.should.equal('Unknown user or invalid password');
+      passwordHashing.verifyPassword
+        .calledOnceWithExactly('candidate-password', null, null)
+        .should.be.true();
+      done();
+    });
+  });
+
+  it('passes KDF errors to Passport for retryable handling', done => {
+    const error = new Error('capacity full');
+    error.code = 'KDF_OVERLOADED';
+    const user = { authenticate: sinon.stub().rejects(error) };
+    User.findOne.callsFake((query, cb) => cb(null, user));
+
+    verify('localstrategy', 'candidate-password', (err, foundUser) => {
+      err.should.equal(error);
+      should(foundUser).be.undefined();
+      done();
+    });
   });
 });

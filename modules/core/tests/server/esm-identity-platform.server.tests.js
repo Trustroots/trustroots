@@ -26,6 +26,7 @@ const modules = [
   'modules/users/server/routes/users.server.routes.mjs',
   'modules/users/server/services/authentication.server.service.mjs',
   'modules/users/server/services/historical-spam-cleanup.server.service.mjs',
+  'modules/users/server/services/password-hashing.server.service.mjs',
   'modules/core/server/controllers/analytics.server.controller.mjs',
   'modules/core/server/controllers/core.server.controller.mjs',
   'modules/core/server/jobs/send-email.server.job.mjs',
