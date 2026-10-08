@@ -38,6 +38,9 @@ const defaultExport = function (app) {
   app
     .route('/api/auth/signin')
     .post(targetedRequestLimit.signin, userAuthentication.signin);
+  app
+    .route('/api/auth/mfa/verify')
+    .post(targetedRequestLimit.mfaVerify, userAuthentication.verifyMfa);
   app.route('/api/auth/session').get(userAuthentication.session);
   app
     .route('/api/auth/signout')

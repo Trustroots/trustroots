@@ -755,6 +755,36 @@ describe('Authentication controller OAuth unit tests', () => {
       should.not.exist(reloaded.emailToken);
     });
 
+    it('does not create a session when confirming email for an MFA account', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            mfaEnabled: true,
+            mfaSecretEncrypted: 'encrypted-secret',
+            emailTemporary: 'new@example.test',
+            emailToken: 'mfa-confirm-token',
+          },
+        },
+      );
+      const login = sinon.spy((user, cb) => cb());
+      const res = deferredResponse();
+
+      authController.confirmEmail(
+        {
+          params: { token: 'mfa-confirm-token' },
+          login,
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      res.body.mfaRequired.should.be.true();
+      login.called.should.be.false();
+    });
+
     it('returns 400 when the token is invalid', async () => {
       const res = deferredResponse();
       authController.confirmEmail({ params: { token: 'missing' } }, res);

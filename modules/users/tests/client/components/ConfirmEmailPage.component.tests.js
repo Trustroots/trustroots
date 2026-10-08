@@ -55,6 +55,43 @@ describe('ConfirmEmailPage', () => {
     expect(authApi.confirmEmail).toHaveBeenCalledWith('confirm-token');
   });
 
+  it('requires sign-in again when confirming email for an MFA account', async () => {
+    authApi.confirmEmail.mockResolvedValue({
+      mfaRequired: true,
+      profileMadePublic: true,
+      user: { _id: 'user-1', email: 'ada@example.com' },
+    });
+
+    render(
+      <AppProviders
+        bootstrapData={{
+          env: 'test',
+          isNativeMobileApp: false,
+          settings: {},
+          title: 'Trustroots',
+          user: { _id: 'user-1', email: 'ada@example.com' },
+        }}
+      >
+        <ConfirmEmailPage />
+      </AppProviders>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+
+    expect(
+      await screen.findByText(
+        /Sign in with your password and authenticator code/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute(
+      'href',
+      '/signin',
+    );
+    expect(
+      screen.queryByRole('link', { name: 'Edit your profile' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('redirects to welcome when the profile becomes public', async () => {
     const {
       navigate,

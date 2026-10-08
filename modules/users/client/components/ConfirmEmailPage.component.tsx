@@ -14,10 +14,13 @@ import {
 export default function ConfirmEmailPage() {
   const { user, setUser } = useAuth() as {
     user: { email?: string } | null;
-    setUser: (user: { _id: string; username: string; email?: string }) => void;
+    setUser: (
+      user: { _id: string; username: string; email?: string } | null,
+    ) => void;
   };
   const { signup, token } = getCurrentRouteParams();
   const [success, setSuccess] = useState(false);
+  const [mfaRequired, setMfaRequired] = useState(false);
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const email = getEmailFromToken(token || '');
@@ -30,6 +33,13 @@ export default function ConfirmEmailPage() {
 
     try {
       const response = await authApi.confirmEmail(token);
+
+      if (response.mfaRequired) {
+        setUser(null);
+        setMfaRequired(true);
+        setSuccess(true);
+        return;
+      }
 
       applyAuthenticatedUser(response.user, setUser);
 
@@ -132,12 +142,29 @@ export default function ConfirmEmailPage() {
               )}
               {success && (
                 <div className="alert alert-success text-center" role="alert">
-                  <p>
-                    <strong>Your email is now confirmed!</strong>
-                  </p>
-                  <p>
-                    <a href="/profile/edit">Edit your profile</a>
-                  </p>
+                  {mfaRequired ? (
+                    <>
+                      <p>
+                        <strong>Your email is now confirmed.</strong>
+                      </p>
+                      <p>
+                        Sign in with your password and authenticator code to
+                        continue.
+                      </p>
+                      <p>
+                        <a href="/signin">Sign in</a>
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p>
+                        <strong>Your email is now confirmed!</strong>
+                      </p>
+                      <p>
+                        <a href="/profile/edit">Edit your profile</a>
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
             </div>

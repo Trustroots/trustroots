@@ -1,4 +1,5 @@
 const { annotateFeature, expect, test } = require('../../support/fixtures');
+const crypto = require('node:crypto');
 
 const {
   DEFAULT_PASSWORD,
@@ -15,7 +16,111 @@ const {
   updateUserByUsername,
 } = require('../../support/db');
 
+function decodeBase32(value) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = 0;
+  let buffer = 0;
+  const output = [];
+  for (const character of value) {
+    buffer = (buffer << 5) | alphabet.indexOf(character);
+    bits += 5;
+    if (bits >= 8) {
+      output.push((buffer >>> (bits - 8)) & 255);
+      bits -= 8;
+    }
+  }
+  return Buffer.from(output);
+}
+
+function currentTotp(secret) {
+  const counter = Math.floor(Date.now() / 1000 / 30);
+  const counterBuffer = Buffer.alloc(8);
+  counterBuffer.writeUInt32BE(Math.floor(counter / 0x100000000), 0);
+  counterBuffer.writeUInt32BE(counter % 0x100000000, 4);
+  const digest = crypto
+    .createHmac('sha1', decodeBase32(secret))
+    .update(counterBuffer)
+    .digest();
+  const offset = digest[digest.length - 1] & 15;
+  const binary = digest.readUInt32BE(offset) & 0x7fffffff;
+  return String(binary % 1000000).padStart(6, '0');
+}
+
 test.describe.serial('account settings feature coverage', () => {
+  test('members can enrol an authenticator and use it at sign-in', async ({
+    page,
+    request,
+  }, testInfo) => {
+    test.setTimeout(120_000);
+    annotateFeature(testInfo, 'account.mfa', [
+      'Member confirms their password before enrolling an authenticator.',
+      'Authenticator enrolment returns recovery codes only once.',
+      'MFA-enabled sign-in requires a second factor before establishing a session.',
+      'Profile API responses do not expose MFA secrets or recovery hashes.',
+    ]);
+
+    const user = createUser();
+    await registerViaApi(request, user);
+    await signInViaApi(page, request, user);
+    await page.goto('/profile/edit/account');
+    await page.getByLabel('Confirm your password').fill(user.password);
+    await page.getByRole('button', { name: 'Set up authenticator' }).click();
+    const provisioningText = await page.locator('code').first().textContent();
+    const secret = new URL(provisioningText).searchParams.get('secret');
+    expect(secret).toBeTruthy();
+    await page
+      .getByLabel('Current authenticator code')
+      .fill(currentTotp(secret));
+    await page
+      .getByRole('button', { name: 'Enable authenticator MFA' })
+      .click();
+    await expect(
+      page.getByRole('list', { name: 'Recovery codes' }).locator('li'),
+    ).toHaveCount(10);
+    const recoveryCode = await page
+      .getByRole('list', { name: 'Recovery codes' })
+      .locator('li code')
+      .first()
+      .textContent();
+    await page
+      .getByRole('button', { name: 'I have saved these codes' })
+      .click();
+
+    const profileResponse = await page.request.get(
+      `/api/users/${user.username}`,
+    );
+    const profile = await profileResponse.json();
+    expect(profile).not.toHaveProperty('mfaSecretEncrypted');
+    expect(profile).not.toHaveProperty('mfaRecoveryCodeHashes');
+    expect(profile).not.toHaveProperty('mfaPendingSecretEncrypted');
+
+    await signOut(page);
+    await page.goto('/signin');
+    await page.getByLabel('Email or username').fill(user.username);
+    await page.getByLabel('Password', { exact: true }).fill(user.password);
+    await page.getByRole('button', { name: 'Login', exact: true }).click();
+    await expect(
+      page.getByLabel('Authenticator or recovery code'),
+    ).toBeVisible();
+    await page.getByLabel('Authenticator or recovery code').fill(recoveryCode);
+    await page.getByRole('button', { name: 'Verify and sign in' }).click();
+    await expect(page).not.toHaveURL(/\/signin/);
+    const session = await page.request.get('/api/auth/session');
+    expect((await session.json()).userId).toBeTruthy();
+
+    await signOut(page);
+    await page.goto('/signin');
+    await page.getByLabel('Email or username').fill(user.username);
+    await page.getByLabel('Password', { exact: true }).fill(user.password);
+    await page.getByRole('button', { name: 'Login', exact: true }).click();
+    await page.getByLabel('Authenticator or recovery code').fill(recoveryCode);
+    await page.getByRole('button', { name: 'Verify and sign in' }).click();
+    await expect(page.getByRole('alert')).toContainText('invalid');
+    expect(
+      (await (await page.request.get('/api/auth/session')).json()).userId,
+    ).toBeNull();
+  });
+
   test('members can download their data from account settings', async ({
     page,
     request,

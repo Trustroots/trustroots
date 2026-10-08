@@ -83,6 +83,34 @@ describe('SigninPage', () => {
     });
   });
 
+  it('requires and verifies a second factor before checking the session', async () => {
+    authApi.signin.mockResolvedValue({ mfaRequired: true });
+    authApi.verifyMfa.mockResolvedValue({ _id: 'user-1', username: 'ada' });
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText('Email or username'), {
+      target: { value: 'ada' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'secret-pass' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    expect(
+      await screen.findByLabelText('Authenticator or recovery code'),
+    ).toBeInTheDocument();
+    expect(authApi.getSession).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Authenticator or recovery code'), {
+      target: { value: '123456' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Verify and sign in' }));
+
+    await waitFor(() => {
+      expect(authApi.verifyMfa).toHaveBeenCalledWith('123456');
+      expect(redirectAfterSignin).toHaveBeenCalledWith(false, undefined);
+    });
+  });
+
   it('preserves the protected destination after successful sign-in', async () => {
     const {
       getCurrentRouteParams,

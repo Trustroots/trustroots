@@ -87,6 +87,26 @@ service.invokeRolesPolicies = function () {
           permissions: ['post'],
         },
         {
+          resources: '/api/users/mfa',
+          permissions: ['get'],
+        },
+        {
+          resources: '/api/users/mfa/enrol',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/users/mfa/enrol/verify',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/users/mfa/recovery-codes',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/users/mfa/disable',
+          permissions: ['post'],
+        },
+        {
           resources: '/api/users/accounts/:provider',
           permissions: ['delete'],
         },

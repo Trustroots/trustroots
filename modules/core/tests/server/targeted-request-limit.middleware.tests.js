@@ -15,6 +15,7 @@ function loadMiddleware(
       resetPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       resendConfirmation: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       avatarUpload: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
+      mfaVerify: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
     },
   };
   Object.entries(policyOverrides).forEach(([name, policy]) => {
@@ -202,6 +203,40 @@ describe('Targeted request limit middleware', function () {
     );
     options.dimensions.should.deepEqual([
       { name: 'member', value: 'fictional-member', limit: 2 },
+    ]);
+  });
+
+  it('limits MFA attempts by account across different IP addresses', async function () {
+    let options;
+    const middleware = loadMiddleware(
+      async value => {
+        options = value;
+        return { allowed: true };
+      },
+      () => '198.51.100.30',
+    );
+    await middleware.mfaVerify(
+      { session: { mfaChallenge: { userId: 'fictional-member-id' } } },
+      response(),
+      () => {},
+    );
+
+    options.dimensions.should.deepEqual([
+      {
+        name: 'ip',
+        value: '198.51.100.30',
+        limit: 60,
+      },
+      {
+        name: 'ip-and-identity',
+        value: JSON.stringify(['198.51.100.30', 'fictional-member-id']),
+        limit: 10,
+      },
+      {
+        name: 'member',
+        value: 'fictional-member-id',
+        limit: 10,
+      },
     ]);
   });
 

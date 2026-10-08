@@ -10,13 +10,16 @@ jest.mock('@/modules/core/client/components/Board', () => ({
 }));
 
 describe('ResetPasswordSuccessPage', () => {
-  it('renders the success message and continue link', () => {
+  it('renders the success message and sign-in link', () => {
     render(<ResetPasswordSuccessPage />);
 
     expect(screen.getByText('Password successfully reset')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Continue' })).toHaveAttribute(
+    expect(
+      screen.getByText(/Sign in with your new password and authenticator code/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute(
       'href',
-      '/',
+      '/signin',
     );
   });
 });
