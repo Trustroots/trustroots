@@ -2,6 +2,7 @@ import locales from '@/config/shared/locales.json';
 import {
   getLocales,
   getSearchedLocales,
+  type Locale,
 } from '@/modules/core/client/utils/locales';
 
 describe('locales utils', () => {
@@ -20,7 +21,9 @@ describe('locales utils', () => {
     process.env.NODE_ENV = 'production';
 
     const productionLocales = getLocales();
-    const expected = locales.filter(({ production }) => production);
+    const expected = (locales as Locale[]).filter(
+      ({ production }) => production,
+    );
     const sortedExpected = [...expected].sort((a, b) =>
       a.label.localeCompare(b.label),
     );
@@ -31,28 +34,27 @@ describe('locales utils', () => {
   });
 
   it('searches locales by label, code, or English name without accents', () => {
-    const searchData = [
-      { label: 'Café', code: 'fr', english: 'French' },
-      { label: 'English', code: 'en', english: 'English' },
-      { label: 'Español', code: 'es', english: 'Spanish' },
+    const searchData: Locale[] = [
+      { label: 'Café', code: 'fr', english: 'French', production: true },
+      { label: 'English', code: 'en', english: 'English', production: true },
+      { label: 'Español', code: 'es', english: 'Spanish', production: true },
     ];
 
-    expect(getSearchedLocales(searchData, 'cafe')).toEqual([
-      { label: 'Café', code: 'fr', english: 'French' },
-    ]);
-    expect(getSearchedLocales(searchData, 'ES')).toEqual([
-      { label: 'Español', code: 'es', english: 'Spanish' },
-    ]);
-    expect(getSearchedLocales(searchData, 'spani')).toEqual([
-      { label: 'Español', code: 'es', english: 'Spanish' },
-    ]);
+    expect(getSearchedLocales(searchData, 'cafe')).toEqual([searchData[0]]);
+    expect(getSearchedLocales(searchData, 'ES')).toEqual([searchData[2]]);
+    expect(getSearchedLocales(searchData, 'spani')).toEqual([searchData[2]]);
   });
 
   it('treats missing search text and missing locale fields as empty strings', () => {
     const searchData = [
-      { label: 'English', code: 'en', english: 'English' },
-      { label: undefined, code: undefined, english: undefined },
-    ];
+      { label: 'English', code: 'en', english: 'English', production: true },
+      {
+        label: undefined,
+        code: undefined,
+        english: undefined,
+        production: true,
+      },
+    ] as unknown as Locale[];
 
     expect(getSearchedLocales(searchData)).toEqual(searchData);
     expect(getSearchedLocales(searchData, 'english')).toEqual([searchData[0]]);

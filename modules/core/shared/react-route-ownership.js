@@ -11,6 +11,8 @@ const ADMIN_ROUTE_DEFAULTS = {
   requiresRole: 'admin',
 };
 
+const ACCOUNT_ACCESS_FOOTER = { footerVariant: 'account' };
+
 const REACT_ROUTE_POLICIES = [
   {
     path: '/',
@@ -72,7 +74,7 @@ const REACT_ROUTE_POLICIES = [
   {
     path: '/not-found',
     title: 'Not found',
-    footerVariant: 'account',
+    ...ACCOUNT_ACCESS_FOOTER,
     headerHidden: true,
   },
   {
@@ -259,13 +261,13 @@ const REACT_ROUTE_POLICIES = [
     path: '/signin',
     title: 'Sign in',
     headerHidden: true,
-    footerVariant: 'account',
+    ...ACCOUNT_ACCESS_FOOTER,
   },
   {
     path: '/signup',
     title: 'Sign up',
     headerHidden: true,
-    footerVariant: 'account',
+    ...ACCOUNT_ACCESS_FOOTER,
   },
   {
     path: '/confirm-email/:token',
@@ -278,22 +280,22 @@ const REACT_ROUTE_POLICIES = [
   {
     path: '/password/forgot',
     title: 'Reset password',
-    footerVariant: 'account',
+    ...ACCOUNT_ACCESS_FOOTER,
   },
   {
     path: '/password/reset/invalid',
     title: 'Reset password',
-    footerVariant: 'account',
+    ...ACCOUNT_ACCESS_FOOTER,
   },
   {
     path: '/password/reset/success',
     title: 'Reset password',
-    footerVariant: 'account',
+    ...ACCOUNT_ACCESS_FOOTER,
   },
   {
     path: '/password/reset/:token',
     title: 'Reset password',
-    footerVariant: 'account',
+    ...ACCOUNT_ACCESS_FOOTER,
   },
   {
     path: '/remove/:token',

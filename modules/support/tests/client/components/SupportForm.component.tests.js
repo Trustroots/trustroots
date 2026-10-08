@@ -5,6 +5,7 @@ import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import SupportForm from '@/modules/support/client/components/SupportForm';
 import { send } from '@/modules/support/client/api/support.api';
+import { VOLUNTEERING_DISCLAIMER } from '@/modules/support/shared/volunteering-copy';
 
 jest.mock('@/modules/support/client/api/support.api');
 
@@ -227,11 +228,7 @@ describe('<SupportForm />', () => {
     expect(
       screen.getByRole('option', { name: 'Help run Trustroots' }),
     ).toHaveValue('volunteering');
-    expect(
-      screen.getByText(
-        'Volunteer with the team that runs Trustroots, helping with development, design, translation, community support or organisation. This form is not for finding farm work, jobs, or work in exchange for food and accommodation.',
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText(VOLUNTEERING_DISCLAIMER)).toBeInTheDocument();
     expect(screen.getByLabelText('Message')).toHaveAttribute(
       'aria-describedby',
       'volunteering-help message-help',

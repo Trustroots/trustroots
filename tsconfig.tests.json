@@ -5,6 +5,7 @@
   },
   "include": [
     "modules/*/tests/client/**/*.ts",
-    "modules/*/tests/client/**/*.tsx"
+    "modules/*/tests/client/**/*.tsx",
+    "modules/*/client/**/*.d.ts"
   ]
 }
