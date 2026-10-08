@@ -1,8 +1,9 @@
 # F-Droid submission draft
 
 The build recipe in `metadata/org.trustroots.android.yml` is a draft for
-F-Droid's [fdroiddata repository](https://gitlab.com/fdroid/fdroiddata). It has
-not been submitted or accepted.
+F-Droid's [fdroiddata repository](https://gitlab.com/fdroid/fdroiddata). It was
+submitted on 2026-10-08 in [merge request !51684](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/51684)
+and is awaiting review and acceptance.
 
 The first build targets the published `android-preview-100014-v0.1-20261005-2310`
 release: version name `0.1-20261005-2310`, version code `100014`, source commit
@@ -42,8 +43,10 @@ for F-Droid signing.
 
 The build emitted upstream API deprecation warnings and a warning that
 `libandroidx.graphics.path.so` was packaged without stripping. These did not
-prevent a successful build. The remaining step is to submit the recipe to
-fdroiddata for review; successful local validation does not mean acceptance.
+prevent a successful build. The submitted fork pipelines failed immediately before creating jobs, with no
+YAML errors reported. The merge request asks F-Droid maintainers to run CI on
+their runners. Review and successful upstream CI remain outstanding; local
+validation does not mean acceptance.
 
 ## Reproduce and submit
 
@@ -64,8 +67,10 @@ opening a merge request to fdroiddata. After a successful build, commit the
 recipe on a branch in a GitLab fork of fdroiddata and open a merge request
 with the title `New App: org.trustroots.android`. Include the upstream release
 tag and commit, validation results, and the signing arrangement below. A
-GitLab account with permission to push to the fork is required; none was
-configured in the validation environment.
+GitLab account with permission to push to the fork is required. The current
+submission uses the public [guaka/fdroiddata fork](https://gitlab.com/guaka/fdroiddata)
+and its `codex/trustroots-android` branch. Do not open a duplicate merge request
+while !51684 is open; update that branch when responding to review.
 
 ## Signing
 
