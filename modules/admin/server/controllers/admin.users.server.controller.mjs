@@ -652,9 +652,18 @@ export const changeRole = async (req, res) => {
 export const usernameToUserId = async (req, res, next) => {
   const username = _.get(req, ['body', 'username']);
 
+  if (
+    username !== undefined &&
+    (typeof username !== 'string' || username.length > 320)
+  ) {
+    return res.status(400).send({ message: 'Invalid username.' });
+  }
+
   // Get userID based on provided username
   if (username) {
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ username }).setOptions({
+      sanitizeFilter: true,
+    });
 
     if (user) {
       req.userIdFromUsername = user._id;

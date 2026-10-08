@@ -17,7 +17,11 @@ const User = mongoose.model('User');
  * Forgot for reset password (forgot POST)
  */
 service.forgot = function (req, res) {
-  if (!req.body.username) {
+  if (
+    typeof req.body?.username !== 'string' ||
+    !req.body.username ||
+    req.body.username.length > 320
+  ) {
     return res.status(400).send({
       message: 'Please, we really need your username or email first...',
     });
@@ -28,7 +32,7 @@ service.forgot = function (req, res) {
       message:
         'If an account matches that username or email, we will send recovery instructions.',
     });
-  const userHandle = req.body.username.toString().toLowerCase();
+  const userHandle = req.body.username.toLowerCase();
   acknowledge();
 
   // Account lookup, persistence, and email delivery must not affect the

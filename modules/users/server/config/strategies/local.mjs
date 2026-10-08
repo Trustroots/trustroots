@@ -17,6 +17,16 @@ const defaultExport = function () {
         passwordField: 'password',
       },
       function (username, password, done) {
+        if (
+          typeof username !== 'string' ||
+          typeof password !== 'string' ||
+          username.length > 320
+        ) {
+          return done(null, false, {
+            message: 'Unknown user or invalid password',
+          });
+        }
+
         User.findOne(
           {
             $or: [

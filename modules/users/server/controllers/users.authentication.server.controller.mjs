@@ -52,11 +52,16 @@ service.signup = function (req, res) {
       // Check if we have the required data before hitting more strict validations at Mongo
       function (done) {
         if (
-          !req.body.firstName ||
-          !req.body.lastName ||
-          !req.body.username ||
-          !req.body.password ||
-          !req.body.email
+          !['firstName', 'lastName', 'username', 'password', 'email'].every(
+            field => typeof req.body?.[field] === 'string' && req.body[field],
+          ) ||
+          ['locale', 'acquisitionStory'].some(
+            field =>
+              req.body[field] !== undefined &&
+              typeof req.body[field] !== 'string',
+          ) ||
+          (req.body.newsletter !== undefined &&
+            typeof req.body.newsletter !== 'boolean')
         ) {
           return done(new Error('Please provide required fields.'));
         }
@@ -92,15 +97,18 @@ service.signup = function (req, res) {
 
       // Save user
       function (salt, done) {
-        // For security measurement we remove the roles from the `req.body` object
-        delete req.body.roles;
-
-        // These shouldn't be there neither
-        delete req.body.avatarUploaded;
-        delete req.body.created;
-        delete req.body.updated;
-
-        const user = new User(req.body);
+        const user = new User(
+          _.pick(req.body, [
+            'firstName',
+            'lastName',
+            'username',
+            'password',
+            'email',
+            'newsletter',
+            'locale',
+            'acquisitionStory',
+          ]),
+        );
 
         // Add missing user fields
         user.public = false;
