@@ -4,7 +4,9 @@
 
 Allow people to create, secure, recover, and end access to their Trustroots
 account.
+
 ## Requirements
+
 ### Requirement: Explicit profile response fields
 
 Profile responses SHALL include only explicitly approved fields. Account-owner
@@ -358,17 +360,17 @@ shadowbanned members.
 
 ### Requirement: Service usernames remain reserved
 
-New accounts and username changes SHALL reject the configured reserved names, including organisation, support, application-route and Nostr names. Existing members with reserved usernames SHALL be prevented from saving unrelated profile changes while retaining their reserved username.
+New accounts and username changes SHALL reject configured reserved names. Existing members SHALL retain unchanged reserved usernames when saving unrelated profile changes and using identity lookups.
 
 #### Scenario: A new member selects a reserved service name
 
-- **WHEN** a signup uses a configured reserved name
-- **THEN** the account is not created
+- **WHEN** a signup or username change selects a configured reserved name
+- **THEN** the request is rejected without changing the stored identity
 
 #### Scenario: An existing member retains a newly reserved name
 
-- **WHEN** a member saves an unrelated profile change without changing their username
-- **THEN** the save is rejected and the profile remains unchanged
+- **WHEN** a member saves an unrelated profile change without changing their reserved username
+- **THEN** the save succeeds and the username remains unchanged
 
 ### Requirement: Pending email addresses are valid
 
@@ -492,15 +494,57 @@ an anonymous session. Session cookie security settings SHALL remain unchanged.
 - **AND** it does not claim cookies are blocked or redirect
 
 ### Requirement: Account access deployed version
+
 The system SHALL display the deployed build date and commit link on signin, signup, password recovery/reset and not-found pages when build metadata is available.
 
 #### Scenario: Visitor diagnoses account access
+
 - **WHEN** a visitor opens an account access page with build metadata available
 - **THEN** a compact footer exposes the deployed date and commit
 
 ### Requirement: Login route alias
+
 The system SHALL redirect /login to /signin while preserving query parameters.
 
 #### Scenario: Visitor uses the login alias
+
 - **WHEN** a visitor requests /login with a returnTo query parameter
 - **THEN** the visitor is redirected to /signin with the same parameter
+
+### Requirement: Username selection is consistent and type safe
+
+Signup, signup availability checks, profile username changes and model validation for new or changed usernames SHALL require 3–34 ASCII letters and digits including at least one letter. Uppercase input SHALL be accepted and stored lowercase. Explicitly supplied non-string usernames SHALL be rejected by the APIs before coercion. Profile updates MAY omit the username.
+
+#### Scenario: A person selects a username
+
+- **WHEN** a new username contains punctuation, only digits, or an invalid length
+- **THEN** signup, availability checks and username changes reject it with validation feedback
+
+#### Scenario: A person selects uppercase letters
+
+- **WHEN** an otherwise valid new username contains uppercase letters
+- **THEN** it is accepted and stored lowercase
+
+#### Scenario: An API caller supplies a non-string username
+
+- **WHEN** signup, signup availability or a profile update supplies a null, boolean, number, array or object username
+- **THEN** it returns HTTP 400 without changing the stored identity or username-change timestamp
+
+### Requirement: Existing username identities remain compatible
+
+Unchanged existing usernames, including underscores, hyphens, dots, digits-only names and reserved names, SHALL remain usable for sign-in, profile lookup, NIP-05 lookup and unrelated saves. NIP-05 SHALL retain existing member visibility restrictions. Model validation SHALL enforce selection policy for new and changed usernames without revalidating unchanged identities.
+
+#### Scenario: A member retains an existing identity
+
+- **WHEN** an existing member signs in, resolves their visible profile or NIP-05 identity, or saves an unrelated change
+- **THEN** their existing username remains usable without being renamed
+
+#### Scenario: A member resubmits their normalised username
+
+- **WHEN** a profile update supplies the same username after trimming and lowercasing
+- **THEN** the update succeeds without applying the change cooldown or changing its timestamp
+
+#### Scenario: A member changes their username
+
+- **WHEN** a member selects a different valid username
+- **THEN** the existing three-month cooldown applies and a successful change records the change timestamp
