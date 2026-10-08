@@ -855,9 +855,9 @@ export default function SearchMap({
     const mapBounds = webGLSupported
       ? getMapRef()?.getBounds()
       : leafletMapState?.bounds;
-    const { northEast, southWest } = mapBounds
-      ? normalizeBoundsCorners(mapBounds)
-      : {};
+    const corners = mapBounds ? normalizeBoundsCorners(mapBounds) : undefined;
+    const northEast = corners?.northEast;
+    const southWest = corners?.southWest;
     const zoom = leafletMapState?.zoom ?? viewport.zoom;
     const hasViewport = Boolean(northEast && southWest) && zoom > MIN_ZOOM;
 

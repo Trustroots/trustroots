@@ -188,6 +188,9 @@ describe('<Thread>', () => {
       configurable: true,
       value: visualViewport,
     });
+    api.messages.fetchMessages.mockResolvedValueOnce({
+      messages: [generateMessage(otherUser)],
+    });
     const { unmount } = render(<Thread user={me} profileMinimumLength={0} />);
     const editor = await screen.findByRole('textbox');
 
@@ -256,6 +259,7 @@ describe('<Thread>', () => {
       const form = await findByRole('form');
       expect(queryByText(/You haven't been talking yet/)).toBeInTheDocument();
       expect(within(form).queryByRole('textbox')).toBeInTheDocument();
+      expect(screen.queryByTestId('quick-reply')).not.toBeInTheDocument();
       expect(screen.getByRole('link', { name: 'safety tips' })).toHaveAttribute(
         'href',
         '/safety',
