@@ -1,5 +1,9 @@
 const { test, expect, annotateFeature } = require('../../support/fixtures');
-const { createUser, registerViaApi } = require('../../support/helpers');
+const {
+  authenticateViaApi,
+  createUser,
+  registerViaApi,
+} = require('../../support/helpers');
 const { withE2eDb } = require('../../support/db');
 const crypto = require('crypto');
 const config = require('../../support/app-config');
@@ -30,6 +34,9 @@ test('a member signs in through the browser after an account-wide challenge', as
       .collection('requestlimits')
       .insertOne({ key, count: 20, expiresAt: new Date(windowStart + 900000) }),
   );
+  const apiLogin = await authenticateViaApi(request, user);
+  expect(apiLogin.ok()).toBe(true);
+
   const challengeResponses = [];
   page.on('response', response => {
     if (
