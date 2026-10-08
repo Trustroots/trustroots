@@ -258,16 +258,10 @@ service.initHelmetHeaders = function (app) {
         defaultSrc: ["'self'"],
         // Defines the origins from which scripts can be loaded.
         scriptSrc: [
-          // For Webpack
-          "'unsafe-eval'",
-          // IE Edge does not support `nonce`, thus we need `unsafe-inline`. :-(
-          // Using sha instead could work.
-          "'unsafe-inline'",
+          // Only the development bundle uses eval-based source maps.
+          ...(process.env.NODE_ENV === 'production' ? [] : ["'unsafe-eval'"]),
           "'self'",
-          '*.twitter.com',
-          '*.google-analytics.com',
-          '*.gstatic.com',
-          // Google analytics related
+          'https://www.google-analytics.com',
           'https://1p.trustroots.org',
           // Umami analytics
           // Use `nonce` for `<script>` tags
@@ -338,7 +332,7 @@ service.initHelmetHeaders = function (app) {
           'https://1p.trustroots.org', // Umami analytics
         ],
         // Allows control over Flash and other plugins.
-        objectSrc: ["'self'"],
+        objectSrc: ["'none'"],
         // Allows control of media elements, e.g. HTML5 `<audio>`, `<video>`.
         mediaSrc: ["'self'"],
         // Lists valid endpoints for submission from `<form>` tags.
@@ -349,7 +343,7 @@ service.initHelmetHeaders = function (app) {
         frameAncestors: ["'none'"],
         // Defines valid sources for web workers and nested browsing contexts
         // loaded using elements such as `<frame>` and `<iframe>`
-        childSrc: ["'self'", 'blob:', '*.twitter.com'],
+        childSrc: ["'self'", 'blob:'],
         workerSrc: ["'self'", 'blob:'],
         // Restricts the URLs that can appear in a page's `<base>` element.
         baseUri: ["'self'"],

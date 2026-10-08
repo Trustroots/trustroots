@@ -4,7 +4,9 @@
 
 Allow people to create, secure, recover, and end access to their Trustroots
 account.
+
 ## Requirements
+
 ### Requirement: Explicit profile response fields
 
 Profile responses SHALL include only explicitly approved fields. Account-owner
@@ -492,16 +494,20 @@ an anonymous session. Session cookie security settings SHALL remain unchanged.
 - **AND** it does not claim cookies are blocked or redirect
 
 ### Requirement: Account access deployed version
+
 The system SHALL display the deployed build date and commit link on signin, signup, password recovery/reset and not-found pages when build metadata is available.
 
 #### Scenario: Visitor diagnoses account access
+
 - **WHEN** a visitor opens an account access page with build metadata available
 - **THEN** a compact footer exposes the deployed date and commit
 
 ### Requirement: Login route alias
+
 The system SHALL redirect /login to /signin while preserving query parameters.
 
 #### Scenario: Visitor uses the login alias
+
 - **WHEN** a visitor requests /login with a returnTo query parameter
 - **THEN** the visitor is redirected to /signin with the same parameter
 
@@ -537,3 +543,23 @@ The system SHALL store SHA-256 digests of newly issued email-confirmation, passw
 - **WHEN** the migration is explicitly applied
 - **THEN** legacy tokens are replaced by digests without changing expiry or restoring concurrently consumed tokens
 - **AND** repeated application is idempotent
+
+### Requirement: Production script policy
+
+The system SHALL forbid JavaScript eval and unnonced inline scripts in production, forbid object content, and restrict script origins to the application and required analytics providers. It SHALL retain nonce-authorised bootstrap scripts, blob map workers and development eval source maps.
+
+#### Scenario: Production document is served
+
+- **WHEN** the production application serves a document
+- **THEN** script-src excludes unsafe-eval and unsafe-inline and includes a fresh per-response nonce
+- **AND** object-src is none and unused wildcard script origins are absent
+
+#### Scenario: Browser executes untrusted inline content
+
+- **WHEN** an unnonced inline script is appended to a document
+- **THEN** the browser blocks its execution while the application remains usable
+
+#### Scenario: Developer uses hot reload
+
+- **WHEN** the development application serves a document
+- **THEN** eval source maps remain supported under a report-only policy
