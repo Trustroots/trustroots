@@ -88,6 +88,7 @@ function apiRoute(method, path, routeSource, extra = {}) {
 }
 
 const specPaths = {
+  'signin-challenge.spec.js': 'features/auth-account/signin-challenge.spec.js',
   'account-email-tokens.spec.js':
     'features/auth-account/account-email-tokens.spec.js',
   'account-settings.spec.js': 'features/auth-account/account-settings.spec.js',
@@ -805,6 +806,7 @@ const features = [
     requiredScenarios: [
       'Sign in page links to signup.',
       'Username sign in succeeds.',
+      'Elevated account activity requires a proof before sign-in succeeds.',
       'Email sign in succeeds.',
       'Continue query redirects to the original protected destination.',
     ],
@@ -814,6 +816,10 @@ const features = [
         'sign in and sign up pages link to each other',
       ),
       spec('auth-smoke.spec.js', 'signed out user can sign in with username'),
+      spec(
+        'signin-challenge.spec.js',
+        'a member signs in through the browser after an account-wide challenge',
+      ),
       spec('auth-smoke.spec.js', 'signed out user can sign in with email'),
     ],
   },

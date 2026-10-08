@@ -4,7 +4,9 @@
 
 Allow people to create, secure, recover, and end access to their Trustroots
 account.
+
 ## Requirements
+
 ### Requirement: Explicit profile response fields
 
 Profile responses SHALL include only explicitly approved fields. Account-owner
@@ -492,15 +494,56 @@ an anonymous session. Session cookie security settings SHALL remain unchanged.
 - **AND** it does not claim cookies are blocked or redirect
 
 ### Requirement: Account access deployed version
+
 The system SHALL display the deployed build date and commit link on signin, signup, password recovery/reset and not-found pages when build metadata is available.
 
 #### Scenario: Visitor diagnoses account access
+
 - **WHEN** a visitor opens an account access page with build metadata available
 - **THEN** a compact footer exposes the deployed date and commit
 
 ### Requirement: Login route alias
+
 The system SHALL redirect /login to /signin while preserving query parameters.
 
 #### Scenario: Visitor uses the login alias
+
 - **WHEN** a visitor requests /login with a returnTo query parameter
 - **THEN** the visitor is redirected to /signin with the same parameter
+
+### Requirement: Account-wide sign-in challenge
+
+The system SHALL enforce a shared account-identifier attempt limit across
+client addresses while retaining the existing address-based limits and bounded
+password-verification queue. After the configured account threshold, it SHALL
+require a short-lived proof-of-work challenge bound to the normalised submitted
+username or email and the trusted client address. The challenge SHALL be
+single-use, and its counter data SHALL not store the identifier in plaintext.
+The system SHALL not permanently lock an account based on submitted sign-in
+attempts.
+
+#### Scenario: Account threshold requires additional work
+
+- **WHEN** sign-in attempts for one normalised account identifier exceed the
+  shared threshold across addresses
+- **THEN** the server returns HTTP 429 with a signed challenge and its fixed
+  difficulty
+- **AND** a valid challenge proof permits one password verification
+
+#### Scenario: Browser and native clients complete the challenge
+
+- **WHEN** a browser, Android client, or iOS client receives the challenge
+- **THEN** it computes the bounded proof without blocking the user interface
+- **AND** retries the credentials with the proof at most once
+
+#### Scenario: Challenge is replayed or bound to another identity
+
+- **WHEN** a challenge is expired, already used, or presented for another
+  account identifier or trusted address
+- **THEN** the server rejects the proof and requires a fresh challenge
+
+#### Scenario: Ordinary address throttling is reached
+
+- **WHEN** a sign-in request reaches an existing address-based limit
+- **THEN** the server returns its ordinary rate-limit response without a
+  proof-of-work challenge

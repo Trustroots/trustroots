@@ -1,6 +1,7 @@
 /* global document */
 
 const { expect } = require('@playwright/test');
+const { createHash } = require('node:crypto');
 
 const DEFAULT_PASSWORD = 'Tester123';
 
@@ -231,9 +232,39 @@ async function signUp(page, user) {
  * Authenticate a request context without opening a browser page.
  */
 async function authenticateViaApi(request, user) {
-  const response = await request.post('/api/auth/signin', {
-    data: { username: user.username, password: user.password },
+  const credentials = { username: user.username, password: user.password };
+  let response = await request.post('/api/auth/signin', {
+    data: credentials,
   });
+  if (response.status() === 429) {
+    const body = await response.json().catch(() => null);
+    const challenge = body?.signinChallenge;
+    if (
+      typeof challenge?.token === 'string' &&
+      challenge.token.length > 0 &&
+      challenge.token.length <= 2048 &&
+      challenge.difficulty === 14
+    ) {
+      let solution;
+      for (let candidate = 0; candidate <= 4_194_304; candidate += 1) {
+        const digest = createHash('sha256')
+          .update(`${challenge.token}:${candidate}`)
+          .digest();
+        if (digest[0] === 0 && (digest[1] & 0xfc) === 0) {
+          solution = candidate;
+          break;
+        }
+      }
+      if (solution !== undefined) {
+        response = await request.post('/api/auth/signin', {
+          data: {
+            ...credentials,
+            signinProof: { token: challenge.token, solution },
+          },
+        });
+      }
+    }
+  }
   expect(
     response.ok(),
     `Signin API responded with ${response.status()}: ${await response.text()}`,
