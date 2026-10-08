@@ -115,6 +115,12 @@ class MobileApiClientTest {
     }
 
     @Test
+    fun verifiesSigninProofUsingTheServerHashFormat() {
+        assertTrue(isSigninProofSolution("fictional-challenge", 13049))
+        assertFalse(isSigninProofSolution("fictional-challenge", 13048))
+    }
+
+    @Test
     fun selectsMemberSessionFromMultipleResponseCookies() {
         val sessionCookie = sessionCookieFrom(
             mapOf(
