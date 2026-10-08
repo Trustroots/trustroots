@@ -287,13 +287,18 @@ async function showCommunityNotesSidebar(page, events) {
   await installNostrRelayStub(page, events);
 
   await page.goto('/search');
-  await page.waitForFunction(
-    () =>
-      document.querySelectorAll('.leaflet-interactive[fill="#1565C0"]').length >
-      0,
-    null,
-    { timeout: 30000 },
-  );
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          () =>
+            document.querySelectorAll('.leaflet-interactive[fill="#1565C0"]')
+              .length > 0,
+          null,
+        ),
+      { timeout: 30000 },
+    )
+    .toBeTruthy();
   await page
     .locator('.leaflet-interactive[fill="#1565C0"]')
     .first()
@@ -304,43 +309,62 @@ async function waitForRasterTileNear(
   page,
   { latitude, longitude, tolerance = 4 },
 ) {
-  await page.waitForFunction(
-    ({ expectedLatitude, expectedLongitude, coordinateTolerance }) =>
-      [...document.querySelectorAll('.leaflet-tile')].some(tile => {
-        const path = new URL(tile.src).pathname;
-        const match = path.match(
-          /\/(?:tiles\/256\/)?(\d+)\/(\d+)\/(\d+)(?:\.png)?$/,
-        );
-        if (!match) return false;
+  await expect
+    .poll(
+      () =>
+        page.evaluate(
+          ({ expectedLatitude, expectedLongitude, coordinateTolerance }) =>
+            [...document.querySelectorAll('.leaflet-tile')].some(tile => {
+              const path = new URL(tile.src).pathname;
+              const match = path.match(
+                /\/(?:tiles\/256\/)?(\d+)\/(\d+)\/(\d+)(?:\.png)?$/,
+              );
+              if (!match) return false;
 
-        const [, rawZoom, rawX, rawY] = match;
-        const zoom = Number(rawZoom);
-        const x = Number(rawX) + 0.5;
-        const y = Number(rawY) + 0.5;
-        const scale = 2 ** zoom;
-        const tileLongitude = (x / scale) * 360 - 180;
-        const tileLatitude =
-          (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / scale))) * 180) /
-          Math.PI;
+              const [, rawZoom, rawX, rawY] = match;
+              const zoom = Number(rawZoom);
+              const x = Number(rawX) + 0.5;
+              const y = Number(rawY) + 0.5;
+              const scale = 2 ** zoom;
+              const tileLongitude = (x / scale) * 360 - 180;
+              const tileLatitude =
+                (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / scale))) * 180) /
+                Math.PI;
 
-        return (
-          zoom >= 8 &&
-          Math.abs(tileLatitude - expectedLatitude) < coordinateTolerance &&
-          Math.abs(tileLongitude - expectedLongitude) < coordinateTolerance
-        );
-      }),
-    {
-      coordinateTolerance: tolerance,
-      expectedLatitude: latitude,
-      expectedLongitude: longitude,
-    },
-    { timeout: 30000 },
-  );
+              return (
+                zoom >= 8 &&
+                Math.abs(tileLatitude - expectedLatitude) <
+                  coordinateTolerance &&
+                Math.abs(tileLongitude - expectedLongitude) <
+                  coordinateTolerance
+              );
+            }),
+          {
+            coordinateTolerance: tolerance,
+            expectedLatitude: latitude,
+            expectedLongitude: longitude,
+          },
+        ),
+      { timeout: 30000 },
+    )
+    .toBeTruthy();
 }
 
 test.describe('rendered search map feature coverage', () => {
   test.beforeEach(
     async ({ context, page, request, mapZoom, browser }, testInfo) => {
+      if (process.env.TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER === 'false') {
+        // The test API allows eval source maps; built assets must also work
+        // with the production policy's eval restriction, including map workers.
+        await page.route(/\/search(?:\?|$)/, async route => {
+          const response = await route.fetch();
+          const headers = response.headers();
+          headers['content-security-policy'] = headers[
+            'content-security-policy'
+          ].replace("'unsafe-eval'", '');
+          await route.fulfill({ response, headers });
+        });
+      }
       if (process.env.TRUSTROOTS_E2E_WHEEL_DIAGNOSTICS === 'true') {
         testInfo.annotations.push({
           type: 'browser-version',
@@ -620,11 +644,16 @@ test.describe('rendered search map feature coverage', () => {
       'naturalWidth',
       1,
     );
-    await page.waitForFunction(
-      () => document.querySelectorAll('.leaflet-interactive').length > 0,
-      null,
-      { timeout: 30000 },
-    );
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            () => document.querySelectorAll('.leaflet-interactive').length > 0,
+            null,
+          ),
+        { timeout: 30000 },
+      )
+      .toBeTruthy();
 
     // The two seeded offers overlap at this zoom. Click the host marker and
     // verify that the fallback requests its offer details.
@@ -674,20 +703,22 @@ test.describe('rendered search map feature coverage', () => {
 
     const map = page.locator('[data-testid="leaflet-search-map"]');
     await expect(map).toBeVisible();
-    await page.waitForFunction(
-      () => {
-        const mapElement = document.querySelector('.leaflet-search-map');
-        return (
-          mapElement?.clientWidth > 0 &&
-          mapElement?.clientHeight > 0 &&
-          [...mapElement.querySelectorAll('.leaflet-tile')].some(
-            tile => tile.complete && tile.naturalWidth > 0,
-          )
-        );
-      },
-      null,
-      { timeout: 30000 },
-    );
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const mapElement = document.querySelector('.leaflet-search-map');
+            return (
+              mapElement?.clientWidth > 0 &&
+              mapElement?.clientHeight > 0 &&
+              [...mapElement.querySelectorAll('.leaflet-tile')].some(
+                tile => tile.complete && tile.naturalWidth > 0,
+              )
+            );
+          }, null),
+        { timeout: 30000 },
+      )
+      .toBeTruthy();
 
     // A visible tile alone would also pass when Leaflet stayed at its broad
     // initial view. Require a city-level tile whose centre is around Berlin.
@@ -730,16 +761,18 @@ test.describe('rendered search map feature coverage', () => {
     await expect(clusterMarker).toBeVisible();
     await clusterMarker.dispatchEvent('click');
 
-    await page.waitForFunction(
-      previousZoom => {
-        const raw = window.localStorage.getItem('search-map-location');
-        if (!raw) return false;
-        const { zoom } = JSON.parse(raw);
-        return typeof zoom === 'number' && zoom > previousZoom + 0.5;
-      },
-      initialZoom,
-      { timeout: 20000 },
-    );
+    await expect
+      .poll(
+        () =>
+          page.evaluate(previousZoom => {
+            const raw = window.localStorage.getItem('search-map-location');
+            if (!raw) return false;
+            const { zoom } = JSON.parse(raw);
+            return typeof zoom === 'number' && zoom > previousZoom + 0.5;
+          }, initialZoom),
+        { timeout: 20000 },
+      )
+      .toBeTruthy();
 
     expect(await readZoom()).toBeGreaterThan(initialZoom);
   });
@@ -975,6 +1008,7 @@ test.describe('rendered search map feature coverage', () => {
     ]);
 
     await useMapRouteFixtures(context, { offers: 'empty-offers.json' });
+    await installNostrRelayStub(page, []);
     await page.goto('/search');
     await waitForSearchMap(page);
 
