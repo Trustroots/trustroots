@@ -3,7 +3,9 @@
 ## Purpose
 
 TBD - created by archiving change upgrade-mongoose-6. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Mongoose and direct MongoDB client alignment
 
 The application SHALL use Mongoose 6 with the MongoDB 4 driver used by its
@@ -44,4 +46,3 @@ The system SHALL record targeted request counters in MongoDB using atomic increm
 - **WHEN** MongoDB cannot record a targeted request
 - **THEN** the request fails closed with HTTP 503
 - **AND** the response does not expose the raw limiting identity or database error
-

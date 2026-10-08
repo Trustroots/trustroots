@@ -4,7 +4,9 @@
 
 Allow members to present themselves to the Trustroots community and manage the
 information shown on their profile.
+
 ## Requirements
+
 ### Requirement: Profile viewing
 
 The system SHALL let signed-in members view their own profile and available
@@ -149,4 +151,3 @@ The system SHALL enforce a configurable, shared request limit for authenticated 
 
 - **WHEN** a member exceeds the configured avatar-upload limit within its window
 - **THEN** the request is rejected with HTTP 429 and a `Retry-After` header
-

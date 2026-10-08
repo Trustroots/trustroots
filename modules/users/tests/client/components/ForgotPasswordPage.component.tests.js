@@ -38,8 +38,11 @@ describe('ForgotPasswordPage', () => {
 
     expect(
       await screen.findByText(
-        'We sent you an email with further instructions.',
+        'If an account matches that username or email, we will send recovery instructions.',
       ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/look for it in your junk mail folder/i),
     ).toBeInTheDocument();
   });
 

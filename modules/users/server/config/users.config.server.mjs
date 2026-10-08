@@ -12,18 +12,36 @@ const User = mongoose.model('User');
 const defaultExport = async function (app) {
   // Serialize sessions
   passport.serializeUser(function (user, done) {
-    done(null, user.id);
+    done(null, {
+      id: user.id,
+      authVersion: user.authVersion || 0,
+    });
   });
 
   // Deserialize sessions
-  passport.deserializeUser(function (id, done) {
+  passport.deserializeUser(function (session, done) {
+    if (
+      !session ||
+      typeof session !== 'object' ||
+      !session.id ||
+      !Number.isInteger(session.authVersion)
+    ) {
+      return done(null, false);
+    }
+
     User.findOne(
       {
-        _id: id,
+        _id: session.id,
       },
       '-salt -password',
       function (err, user) {
-        done(err, user);
+        if (err || !user) {
+          return done(err, user);
+        }
+        if ((user.authVersion || 0) !== session.authVersion) {
+          return done(null, false);
+        }
+        return done(null, user);
       },
     );
   });

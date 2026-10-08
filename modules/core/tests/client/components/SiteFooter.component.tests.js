@@ -153,6 +153,7 @@ describe('<SiteFooter />', () => {
       }),
     ).toHaveAttribute('href', build.commitUrl);
     expect(screen.queryByRole('link', { name: 'FAQ' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Photo by')).not.toBeInTheDocument();
   });
 
   it('renders the home footer with photo credits and build metadata', () => {

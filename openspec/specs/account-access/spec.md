@@ -126,6 +126,90 @@ access through valid password-reset details.
 - **THEN** the system updates their password
 - **AND** the account holder can sign in with the new password
 
+### Requirement: Private password recovery
+
+The system SHALL immediately return the same successful status and generic
+acknowledgement for valid recovery identifiers, whether or not an account
+exists. Account lookup, token creation, persistence, email rendering, and email
+queueing SHALL happen after the acknowledgement and SHALL NOT change its
+status or body. Recovery work is best-effort until it reaches the existing
+durable email queue.
+
+#### Scenario: Recovery is requested for a known account
+
+- **WHEN** a visitor submits a valid username or email address belonging to an
+  account
+- **THEN** the system immediately returns the generic recovery acknowledgement
+- **AND** it attempts to enqueue a password-reset email
+
+#### Scenario: Recovery is requested for an unknown account
+
+- **WHEN** a visitor submits a valid username or email address belonging to no
+  account
+- **THEN** the system immediately returns the same status and acknowledgement
+
+#### Scenario: Recovery email delivery is stalled or fails
+
+- **WHEN** recovery email delivery is stalled or fails after a known account is
+  submitted
+- **THEN** the generic acknowledgement is returned without waiting for delivery
+- **AND** delivery failure does not change the response
+
+### Requirement: Single-use password reset
+
+The system SHALL update a password and consume its reset token in one
+conditional database operation that only matches a valid, unexpired token.
+
+#### Scenario: Account holder resets a password
+
+- **WHEN** an account holder submits matching new passwords with a valid,
+  unexpired reset token
+- **THEN** the password, password-updated timestamp, and authentication version
+  are updated atomically with token consumption
+- **AND** the browser completing the reset is signed in with a new session
+- **AND** sessions created before the reset require sign-in again
+
+#### Scenario: Reset token is reused or submitted concurrently
+
+- **WHEN** a reset token has already been consumed by another request
+- **THEN** the system rejects the reset without changing the password
+
+### Requirement: Account-wide session revocation after credential changes
+
+The system SHALL validate the authentication version stored in each Passport
+session against the account's current version. Password reset, authenticated
+password change, and an actual administrative role change SHALL increment the
+version atomically with the corresponding account update. A role request that
+does not change roles SHALL NOT increment the version. Sessions using the
+legacy account-ID-only format SHALL require sign-in again after deployment.
+
+#### Scenario: Account holder changes their password
+
+- **WHEN** an authenticated account holder changes their password after
+  providing the current password
+- **THEN** the password, password-updated timestamp, and authentication version
+  are updated consistently
+- **AND** the current browser receives a newly established session
+- **AND** sessions in other browsers require sign-in again
+
+#### Scenario: Administrator changes account roles
+
+- **WHEN** an administrator changes an account's roles
+- **THEN** the account's authentication version increments with the role update
+- **AND** sessions created before the change require sign-in again
+
+#### Scenario: Administrator repeats a role request with no effect
+
+- **WHEN** an administrator submits a role request that leaves roles unchanged
+- **THEN** the authentication version is unchanged
+- **AND** existing sessions remain valid
+
+#### Scenario: Legacy session or deleted account is presented
+
+- **WHEN** a session contains only the legacy account ID, or its account no
+  longer exists
+- **THEN** Passport rejects the session and member-only routes require sign-in
+
 ### Requirement: Welcome-sequence delivery
 
 The system SHALL not send welcome-sequence emails to suspended or shadowbanned
@@ -299,6 +383,69 @@ Pending email addresses SHALL pass the existing email validator or be empty when
 
 - **WHEN** an account has an empty pending email address
 - **THEN** email validation allows the account to be saved
+
+### Requirement: Versioned password verifiers
+
+The system SHALL store newly registered, reset, or changed local account passwords using an asynchronous, salted, versioned adaptive password verifier that records its algorithm and work parameters.
+
+#### Scenario: New password is stored
+
+- **WHEN** a person registers or sets a new password
+- **THEN** the system stores only a verifier in the current versioned format
+- **AND** the verifier records its algorithm, work parameters, random salt, and derived key
+- **AND** the plaintext password is not logged or returned
+
+#### Scenario: Current verifier authenticates
+
+- **WHEN** an account holder submits the password matching a supported current verifier
+- **THEN** the system authenticates the account holder
+- **AND** the KDF runs asynchronously
+
+### Requirement: Legacy password verifier compatibility
+
+The system SHALL continue to verify existing PBKDF2-HMAC-SHA1 password records during migration and SHALL upgrade a valid legacy record after successful sign-in without changing the account password or invalidating its sessions.
+
+#### Scenario: Account holder signs in with a legacy password
+
+- **WHEN** an account holder submits the password matching a legacy PBKDF2-HMAC-SHA1 record
+- **THEN** the system authenticates the account holder
+- **AND** the system replaces the legacy verifier with the current versioned verifier if the stored legacy verifier is still unchanged
+- **AND** the system removes the separate legacy salt
+- **AND** the rehash does not change the password-updated timestamp or authentication version
+
+#### Scenario: Legacy password changes during verification
+
+- **WHEN** the stored password record changes after a legacy verifier has been read but before its upgrade is saved
+- **THEN** the system does not overwrite the newer record
+- **AND** the system does not create an authenticated session based only on the stale verification
+
+#### Scenario: Stored verifier uses an unsupported format
+
+- **WHEN** a stored verifier is malformed or uses an unsupported version or algorithm
+- **THEN** the system treats the credentials as invalid
+- **AND** the system does not fall back to plaintext comparison or accept partially parsed parameters
+
+### Requirement: Bounded password verification work
+
+The system SHALL run password derivations asynchronously with current verifier
+parameters restricted to an explicit supported allowlist and SHALL bound active
+and queued derivations per application process.
+
+#### Scenario: Password verifier parameters are malformed or unsupported
+
+- **WHEN** a stored verifier has parameters or encodings outside the supported
+  format
+- **THEN** the system treats the credentials as invalid
+- **AND** it performs dummy current-cost verification work
+- **AND** it does not execute an attacker-selected KDF cost
+
+#### Scenario: Password verification queue is full
+
+- **WHEN** an authentication request arrives after the active derivation and
+  bounded queue are full
+- **THEN** the system returns a generic retryable service-unavailable response
+- **AND** it does not fall back to a cheaper verifier
+- **AND** it exposes only active and queued counts to operational monitoring
 
 ### Requirement: Targeted limits for account access requests
 

@@ -1,21 +1,21 @@
 /**
  * Unit tests for password controller validation and reset branches.
  */
+const mockModule = require('../../../../testutils/server/mock-module');
 const mongoose = require('mongoose');
 const sinon = require('sinon');
-const async = require('async');
 
 const utils = require('../../../../testutils/server/data.server.testutil');
 const testutils = require('../../../../testutils/server/server.testutil');
-const errorService = require('./../../../core/server/services/error.server.service.mjs');
-const emailService = require('./../../../core/server/services/email.server.service.mjs');
-const should = require('should');
+const errorService = require('../../../core/server/services/error.server.service.mjs');
+require('should');
 
-require('./../../server/models/user.server.model.mjs');
 const User = mongoose.model('User');
 
 const controllerPath =
-  './../../server/controllers/users.password.server.controller.mjs';
+  '../../server/controllers/users.password.server.controller.mjs';
+const emailServicePath =
+  '../../../core/server/services/email.server.service.mjs';
 
 function deferredResponse() {
   let resolveResponse;
@@ -50,14 +50,13 @@ function deferredResponse() {
   return res;
 }
 
-function loadPasswordController(overrides = {}) {
-  sinon
-    .stub(emailService, 'sendResetPassword')
-    .callsFake(overrides.sendResetPassword || ((user, cb) => cb()));
-  sinon
-    .stub(emailService, 'sendResetPasswordConfirm')
-    .callsFake(overrides.sendResetPasswordConfirm || ((user, cb) => cb()));
-  return require(controllerPath);
+function loadPasswordController() {
+  return mockModule(require.resolve(controllerPath), {
+    [emailServicePath]: {
+      sendResetPassword: (user, cb) => cb(),
+      sendResetPasswordConfirm: (user, cb) => cb(),
+    },
+  });
 }
 
 describe('Password controller unit tests', () => {
@@ -78,17 +77,22 @@ describe('Password controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
-    it('returns 404 when the account does not exist', async () => {
+    it('returns the generic acknowledgement when the account does not exist', async () => {
       const controller = loadPasswordController();
       const res = deferredResponse();
       controller.forgot({ body: { username: 'nobody-here' } }, res, () => {});
       await res.waitForResponse();
-      res.statusCode.should.equal(404);
+      res.statusCode.should.equal(200);
+      res.body.message.should.equal(
+        'If an account matches that username or email, we will send recovery instructions.',
+      );
     });
 
-    it('returns 400 when sending the reset email fails', async () => {
-      const controller = loadPasswordController({
-        sendResetPassword: (user, cb) => cb(new Error('smtp down')),
+    it('returns the same acknowledgement when sending the reset email fails', async () => {
+      const controller = mockModule(require.resolve(controllerPath), {
+        [emailServicePath]: {
+          sendResetPassword: (user, cb) => cb(new Error('smtp down')),
+        },
       });
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
@@ -99,7 +103,40 @@ describe('Password controller unit tests', () => {
         () => {},
       );
       await res.waitForResponse();
-      res.statusCode.should.equal(400);
+      res.statusCode.should.equal(200);
+      res.body.message.should.equal(
+        'If an account matches that username or email, we will send recovery instructions.',
+      );
+    });
+
+    it('acknowledges before a stalled email provider responds', async () => {
+      let startDelivery;
+      const deliveryStarted = new Promise(resolve => {
+        startDelivery = resolve;
+      });
+      const controller = mockModule(require.resolve(controllerPath), {
+        [emailServicePath]: {
+          sendResetPassword: () => {
+            startDelivery();
+          },
+        },
+      });
+      const fakeUser = {
+        save: callback => callback(),
+      };
+      sinon.stub(User, 'findOne').callsFake((query, fields, callback) => {
+        callback(null, fakeUser);
+      });
+      const res = deferredResponse();
+
+      controller.forgot({ body: { username: 'known-member' } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.message.should.equal(
+        'If an account matches that username or email, we will send recovery instructions.',
+      );
+
+      await deliveryStarted;
     });
 
     it('sends a reset email for a valid account', async () => {
@@ -114,10 +151,12 @@ describe('Password controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(200);
-      res.body.message.should.containEql('sent you an email');
+      res.body.message.should.equal(
+        'If an account matches that username or email, we will send recovery instructions.',
+      );
     });
 
-    it('propagates errors when saving the reset token fails', async () => {
+    it('returns the generic acknowledgement when saving the reset token fails', async () => {
       const controller = loadPasswordController();
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
@@ -132,21 +171,13 @@ describe('Password controller unit tests', () => {
         });
       });
 
-      let nextErr;
       const res = deferredResponse();
-      await new Promise(resolve => {
-        controller.forgot(
-          { body: { username: userDoc.username } },
-          res,
-          err => {
-            nextErr = err;
-            resolve();
-          },
-        );
-      });
-
-      should.exist(nextErr);
-      nextErr.message.should.equal('save failed');
+      controller.forgot({ body: { username: userDoc.username } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.message.should.equal(
+        'If an account matches that username or email, we will send recovery instructions.',
+      );
     });
   });
 
@@ -274,14 +305,11 @@ describe('Password controller unit tests', () => {
       userDoc.resetPasswordExpires = Date.now() + 3600000;
       await userDoc.save();
 
-      sinon.stub(User, 'findOne').callsFake((query, cb) => {
-        cb(null, {
-          password: null,
-          resetPasswordToken: userDoc.resetPasswordToken,
-          resetPasswordExpires: userDoc.resetPasswordExpires,
-          save: saveCb => saveCb(new Error('save failed')),
-        });
-      });
+      sinon
+        .stub(User, 'findOneAndUpdate')
+        .callsFake((query, update, options, callback) =>
+          callback(new Error('save failed')),
+        );
 
       const res = deferredResponse();
       controller.reset(
@@ -323,10 +351,12 @@ describe('Password controller unit tests', () => {
     });
 
     it('still resets the password when the confirmation email fails', async () => {
-      const controller = loadPasswordController({
-        sendResetPassword: (user, cb) => cb(),
-        sendResetPasswordConfirm: (user, cb) =>
-          cb(new Error('confirm email failed')),
+      const controller = mockModule(require.resolve(controllerPath), {
+        [emailServicePath]: {
+          sendResetPassword: (user, cb) => cb(),
+          sendResetPasswordConfirm: (user, cb) =>
+            cb(new Error('confirm email failed')),
+        },
       });
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
@@ -349,32 +379,6 @@ describe('Password controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       res.body.username.should.equal(userDoc.username);
-    });
-
-    it('ignores a successful final reset callback', () => {
-      const controller = loadPasswordController();
-      sinon.stub(async, 'waterfall').callsFake((steps, done) => done());
-      const res = {
-        status: sinon.stub().returnsThis(),
-        send: sinon.stub(),
-        json: sinon.stub(),
-      };
-
-      controller.reset(
-        {
-          params: { token: 'reset-token' },
-          body: {
-            newPassword: 'newpassword123',
-            verifyPassword: 'newpassword123',
-          },
-          login: (user, cb) => cb(),
-        },
-        res,
-      );
-
-      res.status.called.should.be.false();
-      res.send.called.should.be.false();
-      res.json.called.should.be.false();
     });
   });
 
@@ -522,11 +526,13 @@ describe('Password controller unit tests', () => {
       res.body.message.should.equal('login failed');
     });
 
-    it('returns 400 when the password change confirmation email fails', async () => {
-      const controller = loadPasswordController({
-        sendResetPassword: (user, cb) => cb(),
-        sendResetPasswordConfirm: (user, cb) =>
-          cb(new Error('confirm email failed')),
+    it('still succeeds when the password change confirmation email fails', async () => {
+      const controller = mockModule(require.resolve(controllerPath), {
+        [emailServicePath]: {
+          sendResetPassword: (user, cb) => cb(),
+          sendResetPasswordConfirm: (user, cb) =>
+            cb(new Error('confirm email failed')),
+        },
       });
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
@@ -547,8 +553,8 @@ describe('Password controller unit tests', () => {
         res,
       );
       await res.waitForResponse();
-      res.statusCode.should.equal(400);
-      res.body.message.should.equal('confirm email failed');
+      res.statusCode.should.equal(200);
+      res.body.message.should.equal('Password changed successfully!');
     });
   });
 });

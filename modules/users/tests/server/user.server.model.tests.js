@@ -2,8 +2,10 @@
  * Module dependencies.
  */
 const should = require('should');
+const crypto = require('node:crypto');
 const mongoose = require('mongoose');
-const config = require('./../../../../config/config.mjs');
+const sinon = require('sinon');
+const config = require('../../../../config/config.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
@@ -466,6 +468,142 @@ describe('User Model Unit Tests:', function () {
         should.not.exist(err);
         done();
       });
+    });
+  });
+
+  describe('Password hash migration', function () {
+    const baseUser = {
+      firstName: 'Anonymous',
+      lastName: 'Traveller',
+      email: 'hash-migration@example.org',
+      username: 'hash_migration_user',
+      provider: 'local',
+    };
+
+    it('hashes modified plaintext with scrypt and clears the separate salt', async function () {
+      const candidate = new User({ ...baseUser, password: 'new-password-123' });
+      await candidate.save();
+
+      candidate.password.should.match(/^\$scrypt\$v=1\$/);
+      should(candidate.salt).be.undefined();
+      (await candidate.authenticate('new-password-123')).should.be.true();
+      (await candidate.authenticate('wrong-password')).should.be.false();
+    });
+
+    it('hashes a password that resembles a tagged hash as plaintext on save', async function () {
+      const supplied = '$scrypt$v=1$ln=17,r=8,p=1$not-a-salt$not-a-key';
+      const candidate = new User({ ...baseUser, password: supplied });
+      await candidate.save();
+
+      candidate.password.should.not.equal(supplied);
+      (await candidate.authenticate(supplied)).should.be.true();
+    });
+
+    it('upgrades a verified legacy hash with a compare-and-set without changing authVersion', async function () {
+      const legacySalt = crypto.randomBytes(16);
+      const legacyPassword = crypto
+        .pbkdf2Sync('legacy-password', legacySalt, 10000, 64, 'sha1')
+        .toString('base64');
+      const candidate = new User({
+        ...baseUser,
+        password: legacyPassword,
+        salt: legacySalt.toString('base64'),
+      });
+      const update = sinon
+        .stub(User, 'updateOne')
+        .callsFake((filter, changes) => {
+          filter.password.should.equal(legacyPassword);
+          filter.salt.should.equal(legacySalt.toString('base64'));
+          filter.$or.should.deepEqual([
+            { authVersion: { $exists: false } },
+            { authVersion: 0 },
+          ]);
+          changes.$unset.should.deepEqual({ salt: 1 });
+          changes.$set.password.should.match(/^\$scrypt\$v=1\$/);
+          changes.$set.should.not.have.property('authVersion');
+          return { exec: async () => ({ matchedCount: 1 }) };
+        });
+
+      try {
+        (await candidate.authenticate('legacy-password')).should.be.true();
+        candidate.password.should.match(/^\$scrypt\$v=1\$/);
+        should(candidate.salt).be.undefined();
+        update.calledOnce.should.be.true();
+      } finally {
+        update.restore();
+      }
+    });
+
+    it('rejects a legacy login when a concurrent password reset wins the CAS', async function () {
+      const legacySalt = crypto.randomBytes(16);
+      const legacyPassword = crypto
+        .pbkdf2Sync('legacy-password', legacySalt, 10000, 64, 'sha1')
+        .toString('base64');
+      const candidate = new User({
+        ...baseUser,
+        password: legacyPassword,
+        salt: legacySalt.toString('base64'),
+      });
+      const resetHash = await User.hashPassword('other-password');
+      const update = sinon.stub(User, 'updateOne').returns({
+        exec: async () => ({ matchedCount: 0 }),
+      });
+      const findById = sinon.stub(User, 'findById').returns({
+        select() {
+          return this;
+        },
+        lean() {
+          return this;
+        },
+        exec: async () => ({ password: resetHash, salt: undefined }),
+      });
+
+      try {
+        (await candidate.authenticate('legacy-password')).should.be.false();
+        candidate.password.should.equal(legacyPassword);
+        candidate.salt.should.equal(legacySalt.toString('base64'));
+        update.calledOnce.should.be.true();
+        findById.calledOnce.should.be.true();
+      } finally {
+        update.restore();
+        findById.restore();
+      }
+    });
+
+    it('accepts a legacy login when a concurrent upgrade already stored scrypt', async function () {
+      const legacySalt = crypto.randomBytes(16);
+      const legacyPassword = crypto
+        .pbkdf2Sync('legacy-password', legacySalt, 10000, 64, 'sha1')
+        .toString('base64');
+      const candidate = new User({
+        ...baseUser,
+        password: legacyPassword,
+        salt: legacySalt.toString('base64'),
+      });
+      const upgraded = await User.hashPassword('legacy-password');
+      const update = sinon.stub(User, 'updateOne').returns({
+        exec: async () => ({ matchedCount: 0 }),
+      });
+      const findById = sinon.stub(User, 'findById').returns({
+        select() {
+          return this;
+        },
+        lean() {
+          return this;
+        },
+        exec: async () => ({ password: upgraded, salt: undefined }),
+      });
+
+      try {
+        (await candidate.authenticate('legacy-password')).should.be.true();
+        candidate.password.should.equal(upgraded);
+        should(candidate.salt).be.undefined();
+        update.calledOnce.should.be.true();
+        findById.calledOnce.should.be.true();
+      } finally {
+        update.restore();
+        findById.restore();
+      }
     });
   });
 });
