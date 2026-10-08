@@ -183,6 +183,29 @@ describe('<SearchSidebarResults />', () => {
     expect(onCommunityNoteSelect).toHaveBeenCalledWith(thread);
   });
 
+  it('still lists a community note thread when it has no plus code or note id', () => {
+    const onCommunityNoteSelect = jest.fn();
+    const thread = {
+      plusCode: null,
+      notes: [{}],
+    } as CommunityNoteSummary;
+
+    render(
+      <SearchSidebarResults
+        communityNoteThreads={[thread]}
+        onCommunityNoteSelect={onCommunityNoteSelect}
+        onCloseSidebar={jest.fn()}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open community note thread at map location',
+      }),
+    );
+    expect(onCommunityNoteSelect).toHaveBeenCalledWith(thread);
+  });
+
   it('allows optional result callbacks to be omitted', () => {
     const result: SearchResultOffer = {
       _id: 'offer-optional-callback',

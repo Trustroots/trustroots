@@ -598,6 +598,21 @@ describe('Search', () => {
     });
   });
 
+  it('skips offer queries when map bounds lack north-east and south-west corners', async () => {
+    mockMap.getBounds.mockReturnValue({});
+    mockPersistentMapLocation = {
+      ...mockPersistentMapLocation,
+      zoom: 6,
+    };
+
+    renderSearchMap();
+    act(() => {
+      mockMapProps.onInteractionStateChange();
+    });
+
+    await waitFor(() => expect(mockQueryOffers).not.toHaveBeenCalled());
+  });
+
   it('keeps a newer offer response when an older viewport request finishes last', async () => {
     const onVisibleOffersChange = jest.fn();
     const requests = [];
