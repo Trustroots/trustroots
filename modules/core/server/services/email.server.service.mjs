@@ -1,3 +1,4 @@
+import { emailToken } from '../../../users/server/services/action-token.server.service.mjs';
 import _ from 'lodash';
 import path from 'path';
 import async from 'async';
@@ -163,7 +164,7 @@ service.sendConfirmContact = function (
  * Email with a token to initialize removing a user
  */
 service.sendRemoveProfile = function (user, callback) {
-  const urlConfirm = url + '/remove/' + user.removeProfileToken;
+  const urlConfirm = url + '/remove/' + emailToken(user, 'removeProfileToken');
   const campaign = 'remove-profile';
   const params = service.addEmailBaseTemplateParams({
     subject: 'Confirm removing your Trustroots profile',
@@ -196,7 +197,8 @@ service.sendRemoveProfileConfirmed = function (user, callback) {
   service.renderEmailAndSend('remove-profile-confirmed', params, callback);
 };
 service.sendResetPassword = function (user, callback) {
-  const urlConfirm = url + '/api/auth/reset/' + user.resetPasswordToken;
+  const urlConfirm =
+    url + '/api/auth/reset/' + emailToken(user, 'resetPasswordToken');
   const campaign = 'reset-password';
   const params = service.addEmailBaseTemplateParams({
     subject: 'Password Reset',
@@ -232,7 +234,7 @@ service.sendResetPasswordConfirm = function (user, callback) {
   service.renderEmailAndSend('reset-password-confirm', params, callback);
 };
 service.sendChangeEmailConfirmation = function (user, callback) {
-  const urlConfirm = url + '/confirm-email/' + user.emailToken;
+  const urlConfirm = url + '/confirm-email/' + emailToken(user, 'emailToken');
   const campaign = 'confirm-email';
   const params = service.addEmailBaseTemplateParams({
     subject: 'Confirm email change',
@@ -250,7 +252,8 @@ service.sendChangeEmailConfirmation = function (user, callback) {
   service.renderEmailAndSend('email-confirmation', params, callback);
 };
 service.sendSignupEmailConfirmation = function (user, callback) {
-  const urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup=true';
+  const urlConfirm =
+    url + '/confirm-email/' + emailToken(user, 'emailToken') + '?signup=true';
   const campaign = 'confirm-email';
   const params = service.addEmailBaseTemplateParams({
     subject: 'Confirm Email',
@@ -313,7 +316,8 @@ service.sendSupportRequest = function (replyTo, supportRequest, callback) {
   service.renderEmailAndSend('support-request', params, callback);
 };
 service.sendSignupEmailReminder = function (user, callback) {
-  const urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup=true';
+  const urlConfirm =
+    url + '/confirm-email/' + emailToken(user, 'emailToken') + '?signup=true';
   const campaign = 'signup-reminder';
 
   // This email is a reminder number `n` to this user

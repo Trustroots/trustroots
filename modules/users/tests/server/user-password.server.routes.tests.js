@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const User = mongoose.model('User');
+const testutils = require('../../../../testutils/server/server.testutil');
+let jobs;
 
 /**
  * Globals
@@ -18,8 +20,19 @@ function findUserWithResetToken(query, callback) {
   const timeout = Date.now() + 3000;
   const check = () => {
     User.findOne(query, (err, foundUser) => {
-      if (err || (foundUser && foundUser.resetPasswordToken)) {
-        return callback(err, foundUser);
+      if (err) return callback(err);
+      const mail = jobs.find(
+        job =>
+          job.data.to?.address === foundUser?.email &&
+          job.data.text?.includes('/api/auth/reset/'),
+      );
+      if (foundUser?.resetPasswordToken && mail) {
+        foundUser.resetPasswordToken.should.startWith('sha256:');
+        const token = mail.data.text.match(
+          /\/api\/auth\/reset\/([a-f0-9]+)/,
+        )[1];
+        foundUser.resetPasswordToken = token;
+        return callback(null, foundUser);
       }
       if (Date.now() >= timeout) {
         return callback(new Error('Password recovery token was not saved.'));
@@ -35,6 +48,7 @@ function findUserWithResetToken(query, callback) {
  * User routes tests
  */
 describe('User password CRUD tests', function () {
+  jobs = testutils.catchJobs();
   before(function (done) {
     (async () => {
       // Get application

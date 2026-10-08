@@ -212,6 +212,11 @@ describe('User signup and authentication CRUD tests', function () {
             userRes1.email.should.not.be.empty();
             userRes1.emailToken.should.not.be.empty();
 
+            userRes1.emailToken.should.startWith('sha256:');
+            const rawToken = jobs[0].data.text.match(
+              /\/confirm-email\/([a-f0-9]+)/,
+            )[1];
+            userRes1.emailToken = rawToken;
             // GET should give us redirect
             agent
               .get('/api/auth/confirm-email/' + userRes1.emailToken)
