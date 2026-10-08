@@ -112,7 +112,9 @@ describe('MemberSessions', () => {
     fireEvent.change(screen.getByLabelText('Password for session changes'), {
       target: { value: 'ExamplePassword123!' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Sign out everywhere' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Sign out everywhere' }),
+    );
 
     await waitFor(() => {
       expect(navigate).toHaveBeenCalledWith('/signin', undefined, {

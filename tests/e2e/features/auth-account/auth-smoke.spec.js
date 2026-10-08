@@ -44,7 +44,7 @@ test.describe.serial('authentication smoke', () => {
       'Uninitialised anonymous requests do not create a stored browser session.',
     ]);
 
-    const response = await request.get('/');
+    const response = await request.get('/', { headers: { Cookie: '' } });
 
     expect(response.status()).toBe(200);
     expect((await response.headers())['set-cookie']).toBeUndefined();

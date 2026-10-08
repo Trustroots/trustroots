@@ -549,8 +549,12 @@ describe('API route registrations', () => {
       { default: targetedRequestLimit },
     ] = await Promise.all([
       import('../../../users/server/routes/sessions.server.routes.mjs'),
-      import('../../../users/server/controllers/users.sessions.server.controller.mjs'),
-      import('../../server/middleware/targeted-request-limit.server.middleware.mjs'),
+      import(
+        '../../../users/server/controllers/users.sessions.server.controller.mjs'
+      ),
+      import(
+        '../../server/middleware/targeted-request-limit.server.middleware.mjs'
+      ),
     ]);
     const { app, routes } = createAppRecorder();
     memberSessionRoutes(app);
