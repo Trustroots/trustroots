@@ -39,8 +39,7 @@ export default function MemberSessions() {
       setPassword('');
       if (!session || session.current) {
         navigate('/signin', undefined, { reload: true });
-      }
-      else {
+      } else {
         await refresh();
         setMessage(t('Session signed out.'));
       }
