@@ -1467,7 +1467,7 @@ final class TrustrootsTests: XCTestCase {
     func testSignInSolvesChallengeAndRetriesCredentialsOnce() async throws {
         var requestBodies: [[String: Any]] = []
         MobileAPIURLProtocol.handler = { request in
-            let requestBody = request.httpBody ?? Data()
+            let requestBody = Self.body(of: request) ?? Data()
             requestBodies.append(
                 (try? JSONSerialization.jsonObject(with: requestBody) as? [String: Any]) ?? [:]
             )
