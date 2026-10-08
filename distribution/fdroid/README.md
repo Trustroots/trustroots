@@ -1,4 +1,4 @@
-# F-Droid submission draft
+# F-Droid submission
 
 The build recipe in `metadata/org.trustroots.android.yml` is a draft for
 F-Droid's [fdroiddata repository](https://gitlab.com/fdroid/fdroiddata). It was
@@ -43,38 +43,80 @@ for F-Droid signing.
 
 The build emitted upstream API deprecation warnings and a warning that
 `libandroidx.graphics.path.so` was packaged without stripping. These did not
-prevent a successful build. The submitted fork pipelines failed immediately before creating jobs, with no
-YAML errors reported. The merge request asks F-Droid maintainers to run CI on
-their runners. Review and successful upstream CI remain outstanding; local
-validation does not mean acceptance.
+prevent a successful build.
 
-## Reproduce and submit
+The [branch pipeline](https://gitlab.com/guaka/fdroiddata/-/pipelines/2925672801)
+failed immediately with no jobs and no YAML errors. The
+[merge-request pipeline](https://gitlab.com/guaka/fdroiddata/-/pipelines/2925678703)
+also failed before starting. The merge request asks F-Droid maintainers to run
+CI on their runners. Review and successful upstream CI remain outstanding;
+local validation does not mean acceptance.
 
-Follow F-Droid's [submission guide](https://f-droid.org/en/docs/Submitting_to_F-Droid_Quick_Start_Guide/)
-to clone fdroiddata and fdroidserver and launch the official build container.
-Copy this recipe to `metadata/org.trustroots.android.yml` in fdroiddata, then
-run these commands from the fdroiddata directory in the container:
+## Reproduce the validation
+
+From the Trustroots repository root, prepare fresh checkouts and launch the
+same pinned Linux image and server revision used for validation:
 
 ```sh
+git clone --depth 1 https://gitlab.com/fdroid/fdroiddata.git fdroiddata
+git clone https://gitlab.com/fdroid/fdroidserver.git fdroidserver
+git -C fdroidserver checkout c21c177ff6d813697aaf9c988ca9fbb2b571b468
+cp distribution/fdroid/metadata/org.trustroots.android.yml fdroiddata/metadata/
+docker run --rm -it --platform linux/amd64 --user vagrant \
+  --entrypoint /bin/bash \
+  -v "$PWD/fdroiddata:/build" \
+  -v "$PWD/fdroidserver:/home/vagrant/fdroidserver" \
+  registry.gitlab.com/fdroid/fdroidserver:buildserver@sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8
+```
+
+Inside the container:
+
+```sh
+source /etc/profile
+export PATH="$fdroidserver:$PATH" PYTHONPATH="$fdroidserver"
+cd /build
 fdroid readmeta
 fdroid lint org.trustroots.android
 fdroid checkupdates --allow-dirty org.trustroots.android
 fdroid build org.trustroots.android
 ```
 
-Resolve any scanner, dependency, SDK, APK version or build failures before
-opening a merge request to fdroiddata. After a successful build, commit the
-recipe on a branch in a GitLab fork of fdroiddata and open a merge request
-with the title `New App: org.trustroots.android`. Include the upstream release
-tag and commit, validation results, and the signing arrangement below. A
-GitLab account with permission to push to the fork is required. The current
-submission uses the public [guaka/fdroiddata fork](https://gitlab.com/guaka/fdroiddata)
-and its `codex/trustroots-android` branch. Do not open a duplicate merge request
-while !51684 is open; update that branch when responding to review.
+The recorded build used `--no-refresh` after preparing a local clone with the
+published tags. Omit that option for a fresh clone so F-Droid fetches upstream.
+The first build downloads Gradle, SDK components and dependencies; an amd64
+container on an ARM host also runs under emulation.
+
+For general packaging instructions, see F-Droid's
+[submission guide](https://f-droid.org/en/docs/Submitting_to_F-Droid_Quick_Start_Guide/).
+
+## Next steps
+
+1. **Maintainer CI:** the submission already requests a run on F-Droid's
+   runners because the fork pipelines did not start jobs. Check the
+   [merge request's pipelines](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/51684/pipelines)
+   and reports. If GitLab asks for phone or card verification, F-Droid's
+   [app-inclusion template](https://gitlab.com/fdroid/fdroiddata/-/blob/master/.gitlab/merge_request_templates/App%20inclusion.md)
+   says to leave a note requesting their CI instead of supplying those details.
+2. **Respond to review:** resolve recipe or scanner findings on the existing
+   `codex/trustroots-android` branch in the public
+   [guaka/fdroiddata fork](https://gitlab.com/guaka/fdroiddata). Keep the build
+   pinned to the full commit hash, retain only the latest release before
+   acceptance, rerun affected validation, and update this repository's recipe
+   to match. Do not open a duplicate submission while !51684 is open.
+3. **After acceptance:** wait for F-Droid's first build and repository index.
+   Verify the `org.trustroots.android` listing, signing certificate, installation
+   and normal member journeys before adding a download link to
+   [the apps page](../../docs/apps.md). Merge of the recipe alone does not mean
+   the APK is available to install.
+4. **Future releases:** continue publishing tags in the existing
+   `android-preview-<code>-v<name>` format with increasing version codes and
+   upstream Fastlane metadata. F-Droid's update checker can then generate the
+   next build entry; monitor its build and publication results. F-Droid-signed
+   installations continue receiving F-Droid-signed updates.
 
 ## Signing
 
-This draft uses F-Droid's own signing key. An APK installed from GitHub,
+This recipe requests F-Droid's own signing key. An APK installed from GitHub,
 Obtainium or Zapstore has a different signing key and cannot be updated in
 place with that F-Droid build. F-Droid can use the project's signing key only
 after an independently built APK matches the developer-signed APK and the

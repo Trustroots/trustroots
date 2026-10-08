@@ -10,7 +10,7 @@ builds and device tests, see the [Android app README](../../apps/android/README.
 | GitHub Releases | Signed preview APKs published by the Android release workflow | Verify each new release and keep the signing key stable                                                        |
 | Obtainium       | Tracks the same GitHub prereleases                            | Use the [import link and manual setup instructions](../../README.md#android-preview)                           |
 | Zapstore        | Configuration and optional CI publishing step exist           | Complete and verify the [first publication](zapstore.md) before enabling automation                            |
-| F-Droid         | Source-build submission draft exists                          | Follow the [F-Droid submission instructions](../fdroid/README.md) for current validation and submission status |
+| F-Droid         | [Submitted to fdroiddata](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/51684); local build validated | Await maintainer CI and review; follow the [F-Droid next steps](../fdroid/README.md#next-steps) |
 | Google Play     | Current release workflow publishes APKs only                  | Prepare an AAB and [internal testing release](google-play.md)                                                  |
 
 We will not submit this app to IzzyOnDroid under its current
@@ -66,6 +66,6 @@ Keep keystores, passwords, private Nostr keys and signer credentials outside Git
    once the listing is verified.
 
 GitHub, Obtainium and Zapstore distribute the project-signed APK. The current
-F-Droid draft uses F-Droid's own signing key, so switching to that build requires
+F-Droid submission uses F-Droid's own signing key, so switching to that build requires
 reinstallation. Plan Google Play signing before its first upload if updates
 between Play and the project-signed APK should be supported.

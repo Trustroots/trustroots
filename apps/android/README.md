@@ -72,7 +72,8 @@ GitHub preview APKs are also available through the
 See the [Zapstore publishing guide](../../distribution/android/zapstore.md) for
 first publication, certificate linking and automated updates, and the
 [F-Droid submission instructions](../../distribution/fdroid/README.md) for the
-source-build recipe and its validation status.
+validated source-build recipe, submitted merge request and remaining maintainer
+CI and review steps.
 
 ### Google Play requirements
 
