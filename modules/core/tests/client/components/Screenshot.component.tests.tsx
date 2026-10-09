@@ -4,16 +4,17 @@ import '@testing-library/jest-dom';
 
 import Screenshot from '@/modules/core/client/components/Screenshot';
 
+type ScreenshotProps = React.ComponentProps<typeof Screenshot>;
+
 describe('<Screenshot />', () => {
   it('renders browser frame, source sets, and image', () => {
-    const { container } = render(
-      <Screenshot
-        png="/screenshot.png"
-        png2x="/screenshot@2x.png"
-        webp="/screenshot.webp"
-        webp2x="/screenshot@2x.webp"
-      />,
-    );
+    const props: ScreenshotProps = {
+      png: '/screenshot.png',
+      png2x: '/screenshot@2x.png',
+      webp: '/screenshot.webp',
+      webp2x: '/screenshot@2x.webp',
+    };
+    const { container } = render(<Screenshot {...props} />);
 
     const sources = container.querySelectorAll('source');
     expect(sources).toHaveLength(2);

@@ -4,31 +4,46 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import InboxThread from '@/modules/messages/client/components/InboxThread';
+import type {
+  MessageThreadSummary,
+  MessageUser,
+} from '@/modules/messages/client/api/messages.api';
 
 jest.mock('@/modules/core/client/components/TimeAgo', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
   return function MockTimeAgo() {
     return <time>recently</time>;
   };
 });
 
-const me = {
+type MessageUserFixture = MessageUser & { avatarSource: string };
+
+const me: MessageUserFixture = {
   _id: 'me',
   username: 'me',
   displayName: 'Me',
   avatarSource: 'none',
 };
 
-const otherUser = {
+const otherUser: MessageUserFixture = {
   _id: 'other',
   username: 'other',
   displayName: 'Other Member',
   avatarSource: 'none',
 };
 
-function thread(overrides = {}) {
+type ThreadOverrides = Partial<
+  Omit<MessageThreadSummary, 'userFrom' | 'userTo' | 'message'>
+> & {
+  userFrom?: MessageUser;
+  userTo?: MessageUser;
+  message?: MessageThreadSummary['message'];
+};
+
+function thread(overrides: ThreadOverrides = {}): MessageThreadSummary {
   return {
+    _id: 'thread-1',
     read: false,
     updated: '2026-06-05T12:00:00.000Z',
     userFrom: otherUser,

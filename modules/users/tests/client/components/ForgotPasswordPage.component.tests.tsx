@@ -4,36 +4,44 @@ import '@testing-library/jest-dom';
 
 import ForgotPasswordPage from '@/modules/users/client/components/ForgotPasswordPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
+import * as clientRuntime from '@/modules/core/client/services/client-runtime';
+
+type BoardProps = { children?: React.ReactNode };
 
 jest.mock('@/modules/users/client/api/auth.api');
-jest.mock('@/modules/core/client/components/Board', () => ({
-  __esModule: true,
-  default: ({ children }) => <section>{children}</section>,
-}));
+jest.mock('@/modules/core/client/components/Board', () => {
+  const React = jest.requireActual<typeof import('react')>('react');
+  return {
+    __esModule: true,
+    default: ({ children }: BoardProps) => <section>{children}</section>,
+  };
+});
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentRouteParams: jest.fn(() => ({ userhandle: 'ada' })),
+  getCurrentRouteParams: jest.fn(() => ({ userhandle: 'member-one' })),
 }));
+
+const forgotPassword = jest.mocked(authApi.forgotPassword);
+const routeParams = jest.mocked(clientRuntime.getCurrentRouteParams);
 
 describe('ForgotPasswordPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    const {
-      getCurrentRouteParams,
-    } = require('@/modules/core/client/services/client-runtime');
-    getCurrentRouteParams.mockReturnValue({ userhandle: 'ada' });
+    routeParams.mockReturnValue({ userhandle: 'member-one' });
   });
 
   it('prefills the username from route params and submits a reset request', async () => {
-    authApi.forgotPassword.mockResolvedValue({ message: 'Sent.' });
+    forgotPassword.mockResolvedValue({ message: 'Sent.' });
 
     render(<ForgotPasswordPage />);
 
-    expect(screen.getByLabelText('Email or username')).toHaveValue('ada');
+    expect(screen.getByLabelText('Email or username')).toHaveValue(
+      'member-one',
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
 
     await waitFor(() => {
-      expect(authApi.forgotPassword).toHaveBeenCalledWith({ username: 'ada' });
+      expect(forgotPassword).toHaveBeenCalledWith({ username: 'member-one' });
     });
 
     expect(
@@ -47,7 +55,7 @@ describe('ForgotPasswordPage', () => {
   });
 
   it('shows an error when the reset request fails', async () => {
-    authApi.forgotPassword.mockRejectedValue({
+    forgotPassword.mockRejectedValue({
       response: { data: { message: 'Unknown user.' } },
     });
 
@@ -59,7 +67,8 @@ describe('ForgotPasswordPage', () => {
   });
 
   it('keeps the form usable when the rejected value has no API message', async () => {
-    authApi.forgotPassword.mockRejectedValue(null);
+    // This malformed rejection verifies the component's error fallback.
+    forgotPassword.mockRejectedValue(null);
 
     render(<ForgotPasswordPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
@@ -68,10 +77,11 @@ describe('ForgotPasswordPage', () => {
       expect(screen.getByLabelText('Email or username')).toBeEnabled(),
     );
   });
+
   it.each(['ECONNABORTED', 'ETIMEDOUT', 'ERR_NETWORK'])(
     'shows recovery guidance for %s without retrying the request',
     async code => {
-      authApi.forgotPassword.mockRejectedValue({ code });
+      forgotPassword.mockRejectedValue({ code });
 
       render(<ForgotPasswordPage />);
       fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
@@ -80,32 +90,31 @@ describe('ForgotPasswordPage', () => {
         'We could not confirm whether the recovery request completed. Check your inbox before trying again.',
       );
       expect(screen.getByRole('button', { name: 'Restore' })).toBeEnabled();
-      expect(screen.getByLabelText('Email or username')).toHaveValue('ada');
-      expect(authApi.forgotPassword).toHaveBeenCalledTimes(1);
+      expect(screen.getByLabelText('Email or username')).toHaveValue(
+        'member-one',
+      );
+      expect(forgotPassword).toHaveBeenCalledTimes(1);
     },
   );
 
   it('updates the username before submitting', async () => {
-    authApi.forgotPassword.mockResolvedValue({ message: 'Sent.' });
+    forgotPassword.mockResolvedValue({ message: 'Sent.' });
     render(<ForgotPasswordPage />);
 
     fireEvent.change(screen.getByLabelText('Email or username'), {
-      target: { value: 'new-user' },
+      target: { value: 'new-member' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
 
     await waitFor(() => {
-      expect(authApi.forgotPassword).toHaveBeenCalledWith({
-        username: 'new-user',
+      expect(forgotPassword).toHaveBeenCalledWith({
+        username: 'new-member',
       });
     });
   });
 
   it('starts with an empty username when no route handle is present', () => {
-    const {
-      getCurrentRouteParams,
-    } = require('@/modules/core/client/services/client-runtime');
-    getCurrentRouteParams.mockReturnValue({});
+    routeParams.mockReturnValue({});
 
     render(<ForgotPasswordPage />);
 

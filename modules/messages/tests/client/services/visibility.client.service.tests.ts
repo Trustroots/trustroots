@@ -2,10 +2,14 @@ import '@testing-library/jest-dom';
 
 import * as visibilityService from '@/modules/messages/client/services/visibility.client.service';
 
+type VisibilityProperty = 'hidden' | 'msHidden' | 'webkitHidden';
+type VisibilityService =
+  typeof import('@/modules/messages/client/services/visibility.client.service');
+
 describe('visibility service', () => {
-  let originalHiddenDescriptor;
-  let originalMsHiddenDescriptor;
-  let originalWebkitHiddenDescriptor;
+  let originalHiddenDescriptor: PropertyDescriptor | undefined;
+  let originalMsHiddenDescriptor: PropertyDescriptor | undefined;
+  let originalWebkitHiddenDescriptor: PropertyDescriptor | undefined;
 
   beforeEach(() => {
     originalHiddenDescriptor = Object.getOwnPropertyDescriptor(
@@ -34,7 +38,7 @@ describe('visibility service', () => {
     defineDocumentProperty('hidden', false);
     const addListener = jest.spyOn(document, 'addEventListener');
     const removeListener = jest.spyOn(document, 'removeEventListener');
-    const watcher = jest.fn();
+    const watcher = jest.fn<void, [visible: boolean]>();
 
     visibilityService.enable();
     visibilityService.watch(watcher);
@@ -60,8 +64,10 @@ describe('visibility service', () => {
 
   it('does not notify new watchers before visibility is known', () => {
     jest.resetModules();
-    const freshVisibilityService = require('@/modules/messages/client/services/visibility.client.service');
-    const watcher = jest.fn();
+    const freshVisibilityService = jest.requireActual<VisibilityService>(
+      '@/modules/messages/client/services/visibility.client.service',
+    );
+    const watcher = jest.fn<void, [visible: boolean]>();
 
     freshVisibilityService.watch(watcher);
 
@@ -84,7 +90,7 @@ describe('visibility service', () => {
     defineDocumentProperty('webkitHidden', undefined);
 
     const addListener = jest.spyOn(document, 'addEventListener');
-    const watcher = jest.fn();
+    const watcher = jest.fn<void, [visible: boolean]>();
 
     visibilityService.enable();
     visibilityService.watch(watcher);
@@ -99,7 +105,7 @@ describe('visibility service', () => {
     defineDocumentProperty('webkitHidden', undefined);
 
     const addListener = jest.spyOn(document, 'addEventListener');
-    const watcher = jest.fn();
+    const watcher = jest.fn<void, [visible: boolean]>();
 
     visibilityService.enable();
     visibilityService.watch(watcher);
@@ -123,7 +129,7 @@ describe('visibility service', () => {
     defineDocumentProperty('webkitHidden', false);
 
     const addListener = jest.spyOn(document, 'addEventListener');
-    const watcher = jest.fn();
+    const watcher = jest.fn<void, [visible: boolean]>();
 
     visibilityService.enable();
     visibilityService.watch(watcher);
@@ -142,7 +148,10 @@ describe('visibility service', () => {
   });
 });
 
-function defineDocumentProperty(name, value) {
+function defineDocumentProperty(
+  name: VisibilityProperty,
+  value: boolean | undefined,
+): void {
   Object.defineProperty(document, name, {
     configurable: true,
     writable: true,
@@ -150,10 +159,12 @@ function defineDocumentProperty(name, value) {
   });
 }
 
-function restoreProperty(name, descriptor) {
+function restoreProperty(
+  name: VisibilityProperty,
+  descriptor: PropertyDescriptor | undefined,
+): void {
   if (!descriptor) {
-    // eslint-disable-next-line no-param-reassign
-    delete document[name];
+    Reflect.deleteProperty(document, name);
     return;
   }
 

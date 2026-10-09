@@ -5,17 +5,23 @@ import '@testing-library/jest-dom';
 import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 import SigninPage from '@/modules/users/client/components/SigninPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
+import * as clientRuntime from '@/modules/core/client/services/client-runtime';
 import { redirectAfterSignin } from '@/modules/users/client/utils/auth';
+
+type BoardProps = { children?: React.ReactNode };
 
 jest.mock('@/modules/users/client/api/auth.api');
 jest.mock('@/modules/users/client/utils/auth', () => ({
   ...jest.requireActual('@/modules/users/client/utils/auth'),
   redirectAfterSignin: jest.fn(),
 }));
-jest.mock('@/modules/core/client/components/Board', () => ({
-  __esModule: true,
-  default: ({ children }) => <section>{children}</section>,
-}));
+jest.mock('@/modules/core/client/components/Board', () => {
+  const React = jest.requireActual<typeof import('react')>('react');
+  return {
+    __esModule: true,
+    default: ({ children }: BoardProps) => <section>{children}</section>,
+  };
+});
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   broadcastClientEvent: jest.fn(),
   trackEvent: jest.fn(),
@@ -23,32 +29,33 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
   navigate: jest.fn(),
 }));
 
+const signin = jest.mocked(authApi.signin);
+const getSession = jest.mocked(authApi.getSession);
+const routeParams = jest.mocked(clientRuntime.getCurrentRouteParams);
+
+function renderPage() {
+  return render(
+    <AppProviders
+      bootstrapData={{
+        env: 'test',
+        isNativeMobileApp: false,
+        settings: {},
+        title: 'Trustroots',
+        user: null,
+      }}
+    >
+      <SigninPage />
+    </AppProviders>,
+  );
+}
+
 describe('SigninPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    authApi.getSession.mockReset();
-    authApi.getSession.mockResolvedValue({ userId: 'user-1' });
-    const {
-      getCurrentRouteParams,
-    } = require('@/modules/core/client/services/client-runtime');
-    getCurrentRouteParams.mockReturnValue({});
+    getSession.mockReset();
+    getSession.mockResolvedValue({ userId: 'user-1' });
+    routeParams.mockReturnValue({});
   });
-
-  function renderPage() {
-    return render(
-      <AppProviders
-        bootstrapData={{
-          env: 'test',
-          isNativeMobileApp: false,
-          settings: {},
-          title: 'Trustroots',
-          user: null,
-        }}
-      >
-        <SigninPage />
-      </AppProviders>,
-    );
-  }
 
   it('renders the sign-in form', () => {
     renderPage();
@@ -59,12 +66,12 @@ describe('SigninPage', () => {
   });
 
   it('submits credentials and redirects after success', async () => {
-    authApi.signin.mockResolvedValue({ _id: 'user-1', username: 'ada' });
+    signin.mockResolvedValue({ _id: 'user-1', username: 'member-one' });
 
     renderPage();
 
     fireEvent.change(screen.getByLabelText('Email or username'), {
-      target: { value: 'ada' },
+      target: { value: 'member-one' },
     });
     fireEvent.change(screen.getByLabelText('Password'), {
       target: { value: 'secret-pass' },
@@ -72,9 +79,9 @@ describe('SigninPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Login' }));
 
     await waitFor(() => {
-      expect(authApi.signin).toHaveBeenCalledWith({
+      expect(signin).toHaveBeenCalledWith({
         password: 'secret-pass',
-        username: 'ada',
+        username: 'member-one',
       });
     });
 
@@ -84,19 +91,16 @@ describe('SigninPage', () => {
   });
 
   it('preserves the protected destination after successful sign-in', async () => {
-    const {
-      getCurrentRouteParams,
-    } = require('@/modules/core/client/services/client-runtime');
-    getCurrentRouteParams.mockReturnValue({
+    routeParams.mockReturnValue({
       continue: 'true',
       returnTo: '/messages?filter=unread',
     });
-    authApi.signin.mockResolvedValue({ _id: 'user-1', username: 'ada' });
+    signin.mockResolvedValue({ _id: 'user-1', username: 'member-one' });
 
     renderPage();
 
     fireEvent.change(screen.getByLabelText('Email or username'), {
-      target: { value: 'ada' },
+      target: { value: 'member-one' },
     });
     fireEvent.change(screen.getByLabelText('Password'), {
       target: { value: 'secret-pass' },
@@ -114,14 +118,14 @@ describe('SigninPage', () => {
   });
 
   it('shows an error message when sign-in fails', async () => {
-    authApi.signin.mockRejectedValue({
+    signin.mockRejectedValue({
       response: { data: { message: 'Invalid credentials.' } },
     });
 
     renderPage();
 
     fireEvent.change(screen.getByLabelText('Email or username'), {
-      target: { value: 'ada' },
+      target: { value: 'member-one' },
     });
     fireEvent.change(screen.getByLabelText('Password'), {
       target: { value: 'wrong' },
@@ -129,15 +133,12 @@ describe('SigninPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Login' }));
 
     expect(await screen.findByText('Invalid credentials.')).toBeInTheDocument();
-    expect(authApi.getSession).not.toHaveBeenCalled();
+    expect(getSession).not.toHaveBeenCalled();
   });
 
   it('uses the fallback sign-in error and continue label', async () => {
-    const {
-      getCurrentRouteParams,
-    } = require('@/modules/core/client/services/client-runtime');
-    getCurrentRouteParams.mockReturnValue({ continue: '1' });
-    authApi.signin.mockRejectedValue(new Error('offline'));
+    routeParams.mockReturnValue({ continue: '1' });
+    signin.mockRejectedValue(new Error('offline'));
 
     renderPage();
 
@@ -145,7 +146,7 @@ describe('SigninPage', () => {
       screen.getByRole('button', { name: 'Sign in to continue' }),
     ).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Email or username'), {
-      target: { value: 'ada' },
+      target: { value: 'member-one' },
     });
     fireEvent.change(screen.getByLabelText('Password'), {
       target: { value: 'wrong' },
@@ -157,14 +158,14 @@ describe('SigninPage', () => {
     expect(await screen.findByText('Something went wrong.')).toBeVisible();
   });
 
-  it.each([null, 'another-user'])(
+  it.each([null, 'another-member'])(
     'explains an unconfirmed session (%s) and allows retry',
     async userId => {
-      authApi.signin.mockResolvedValue({ _id: 'user-1', username: 'ada' });
-      authApi.getSession.mockResolvedValueOnce({ userId });
+      signin.mockResolvedValue({ _id: 'user-1', username: 'member-one' });
+      getSession.mockResolvedValueOnce({ userId });
       renderPage();
       fireEvent.change(screen.getByLabelText('Email or username'), {
-        target: { value: 'ada' },
+        target: { value: 'member-one' },
       });
       fireEvent.change(screen.getByLabelText('Password'), {
         target: { value: 'secret-pass' },
@@ -178,12 +179,8 @@ describe('SigninPage', () => {
       expect(
         screen.queryByText('Recover your password'),
       ).not.toBeInTheDocument();
-      const {
-        trackEvent,
-        broadcastClientEvent,
-      } = require('@/modules/core/client/services/client-runtime');
-      expect(trackEvent).not.toHaveBeenCalled();
-      expect(broadcastClientEvent).not.toHaveBeenCalled();
+      expect(clientRuntime.trackEvent).not.toHaveBeenCalled();
+      expect(clientRuntime.broadcastClientEvent).not.toHaveBeenCalled();
       expect(screen.getByRole('button', { name: 'Login' })).toBeEnabled();
 
       fireEvent.click(screen.getByRole('button', { name: 'Login' }));
@@ -193,11 +190,11 @@ describe('SigninPage', () => {
   );
 
   it('distinguishes a failed session check from blocked cookies', async () => {
-    authApi.signin.mockResolvedValue({ _id: 'user-1', username: 'ada' });
-    authApi.getSession.mockRejectedValueOnce(new Error('offline'));
+    signin.mockResolvedValue({ _id: 'user-1', username: 'member-one' });
+    getSession.mockRejectedValueOnce(new Error('offline'));
     renderPage();
     fireEvent.change(screen.getByLabelText('Email or username'), {
-      target: { value: 'ada' },
+      target: { value: 'member-one' },
     });
     fireEvent.change(screen.getByLabelText('Password'), {
       target: { value: 'secret-pass' },
@@ -212,22 +209,22 @@ describe('SigninPage', () => {
   });
 
   it('waits for session confirmation before completing sign-in', async () => {
-    authApi.signin.mockResolvedValue({ _id: 'user-1', username: 'ada' });
-    let confirmSession;
-    authApi.getSession.mockReturnValueOnce(
+    signin.mockResolvedValue({ _id: 'user-1', username: 'member-one' });
+    let confirmSession!: (session: { userId: string | null }) => void;
+    getSession.mockReturnValueOnce(
       new Promise(resolve => {
         confirmSession = resolve;
       }),
     );
     renderPage();
     fireEvent.change(screen.getByLabelText('Email or username'), {
-      target: { value: 'ada' },
+      target: { value: 'member-one' },
     });
     fireEvent.change(screen.getByLabelText('Password'), {
       target: { value: 'secret-pass' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Login' }));
-    await waitFor(() => expect(authApi.getSession).toHaveBeenCalled());
+    await waitFor(() => expect(getSession).toHaveBeenCalled());
     expect(redirectAfterSignin).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Wait...' })).toBeDisabled();
     confirmSession({ userId: 'user-1' });

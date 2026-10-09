@@ -7,7 +7,6 @@ import UnreadCount from 'modules/messages/client/components/UnreadCount.componen
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import { getCurrentUser } from '@/modules/core/client/services/client-runtime';
 import { generateClientUser } from '@/testutils/common/data.common.testutil';
-import faker from 'faker';
 import {
   enable as enableVisibilityWatching,
   disable as disableVisibilityWatching,
@@ -22,7 +21,7 @@ beforeAll(enableVisibilityWatching);
 afterAll(disableVisibilityWatching);
 
 const api = {
-  messages: messagesAPI,
+  messages: jest.mocked(messagesAPI),
 };
 
 jest.mock('@/modules/messages/client/api/messages.api');
@@ -32,18 +31,18 @@ afterEach(() => jest.clearAllMocks());
 
 const user = generateClientUser({ public: true });
 
-getCurrentUser.mockReturnValue(user);
+jest.mocked(getCurrentUser).mockReturnValue(user);
 
 afterEach(disableUnreadMessageCountPolling);
 
 describe('<UnreadCount>', () => {
   it('renders with count > 0', async () => {
-    const unreadCount = faker.datatype.number({ min: 1, max: 100 });
+    const unreadCount = 42;
     api.messages.unreadCount.mockResolvedValue(unreadCount);
     enableUnreadMessageCountPolling();
     const { findByLabelText } = render(<UnreadCount />);
     const el = await findByLabelText(`${unreadCount} unread messages`);
-    expect(el).toHaveTextContent(unreadCount);
+    expect(el).toHaveTextContent(String(unreadCount));
   });
 
   it('renders nothing when count is 0', async () => {
