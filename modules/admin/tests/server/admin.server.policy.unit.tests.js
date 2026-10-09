@@ -42,10 +42,6 @@ describe('Admin policy unit tests', () => {
       .sort((a, b) => a.resources.localeCompare(b.resources))
       .should.deepEqual([
         { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
-        {
-          resources: '/api/admin/acquisition-stories/analysis',
-          permissions: ['post'],
-        },
         { resources: '/api/admin/location-corrections', permissions: ['get'] },
         {
           resources: '/api/admin/location-corrections/send',

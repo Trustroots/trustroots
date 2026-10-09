@@ -20,10 +20,6 @@ const registerRoutes = app => {
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminAcquisitionStories.list);
   app
-    .route('/api/admin/acquisition-stories/analysis')
-    .all(adminPolicy.isAllowed)
-    .post(adminAuditLog.record, adminAcquisitionStories.getAnalysis);
-  app
     .route('/api/admin/location-corrections')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminLocationCorrections.list);

@@ -40,10 +40,6 @@ describe('Admin access route tests', () => {
       path: '/api/admin/acquisition-stories',
     },
     {
-      method: 'post',
-      path: '/api/admin/acquisition-stories/analysis',
-    },
-    {
       method: 'get',
       path: '/api/admin/audit-log',
     },

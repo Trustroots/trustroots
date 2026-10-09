@@ -336,12 +336,6 @@ const REACT_ROUTE_POLICIES = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
-    path: '/admin/acquisition-stories/analysis',
-    requiresRole: ['admin', 'welcome-team'],
-    title: 'Admin - Acquisition stories analysis',
-  },
-  {
-    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/location-corrections',
     requiresRole: ['admin', 'welcome-team'],
     title: 'Welcome team - Location corrections',
