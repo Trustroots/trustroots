@@ -77,31 +77,9 @@ async function expectCentreHostPinPreservesZoom(
 async function wheelOverMap(page, selector, delta, deltaMode) {
   const canvas = page.locator(selector);
   await expect(canvas).toBeVisible();
-  // React Map GL receives input through its overlay above the canvas. Hover
-  // waits for that surface to settle after navigation and viewport changes.
-  const surface = page.locator(
-    selector === '.mapboxgl-canvas'
-      ? '.search-map-container .overlays'
-      : selector,
-  );
-  if (selector === '.mapboxgl-canvas') {
-    // A visible overlay can resize before the WebGL canvas and controller do.
-    // Sending input in that interval can put it outside the rendered map.
-    await expect
-      .poll(async () => {
-        const [rendered, input] = await Promise.all([
-          canvas.boundingBox(),
-          surface.boundingBox(),
-        ]);
-        return (
-          !!rendered &&
-          !!input &&
-          Math.abs(rendered.width - input.width) < 1 &&
-          Math.abs(rendered.height - input.height) < 1
-        );
-      })
-      .toBe(true);
-  }
+  // react-map-gl v8 leaves the Mapbox canvas as the map input surface; its
+  // React children container sits below the canvas and cannot receive input.
+  const surface = canvas;
   const box = await surface.boundingBox();
   expect(box, 'map input surface should have a layout box').toBeTruthy();
   // Avoid the current-location marker at the centre of the map.

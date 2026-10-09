@@ -95,11 +95,13 @@ jest.mock('@/modules/search/client/components/LeafletSearchMap', () =>
 
 const mockFitBounds = jest.fn();
 const mockMap = {
+  fitBounds: (...args) => mockFitBounds(...args),
   getBounds: jest.fn(),
   getFeatureState: jest.fn(),
   getSource: jest.fn(),
   getZoom: jest.fn(),
   setFeatureState: jest.fn(),
+  touchZoomRotate: { disableRotation: jest.fn() },
 };
 let mockMapInstance = mockMap;
 let mockMapProps;
@@ -111,7 +113,7 @@ const mockSource = {
   getClusterLeaves: jest.fn(),
 };
 let mockSourceInstance = mockSource;
-jest.mock('react-map-gl', () => {
+jest.mock('react-map-gl/mapbox-legacy', () => {
   const React = require('react');
 
   const MockReactMapGL = React.forwardRef(function MockReactMapGL(
@@ -164,18 +166,9 @@ jest.mock('react-map-gl', () => {
 
   return {
     __esModule: true,
-    default: MockReactMapGL,
-    MapController: jest.requireActual('react-map-gl').MapController,
-    FlyToInterpolator: jest.fn(function FlyToInterpolator(options) {
-      this.options = options;
-    }),
+    Map: MockReactMapGL,
     Layer,
     Source,
-    WebMercatorViewport: jest.fn(function WebMercatorViewport() {
-      return {
-        fitBounds: (...args) => mockFitBounds(...args),
-      };
-    }),
   };
 });
 
@@ -267,10 +260,7 @@ const DATELINE_OFFER_FEATURES = [
 
 function flushMapViewport(viewport) {
   act(() => {
-    mockMapProps.onViewportChange(viewport);
-  });
-  act(() => {
-    mockMapProps.onInteractionStateChange();
+    mockMapProps.onMove({ viewState: viewport });
   });
 }
 
@@ -283,7 +273,7 @@ async function flushCommunityNotesTimers() {
 
 async function flushCommunityNotesViewport(viewport) {
   act(() => {
-    mockMapProps.onViewportChange(viewport);
+    mockMapProps.onMove({ viewState: viewport });
   });
   await flushCommunityNotesTimers();
 }
@@ -342,6 +332,14 @@ describe('Search', () => {
         onOfferOpen={() => {}}
       />,
     );
+  });
+
+  it('disables touch rotation when the Mapbox map loads', () => {
+    renderSearchMap();
+
+    mockMapProps.onLoad({ target: mockMap });
+
+    expect(mockMap.touchZoomRotate.disableRotation).toHaveBeenCalledTimes(1);
   });
 
   it('uses the Leaflet renderer when WebGL is unavailable', async () => {
@@ -410,12 +408,8 @@ describe('Search', () => {
     renderSearchMap();
 
     act(() => {
-      mockMapProps.onViewportChange({
-        height: 400,
-        latitude: 51,
-        longitude: 12,
-        width: 700,
-        zoom: 9,
+      mockMapProps.onMove({
+        viewState: { latitude: 51, longitude: 12, zoom: 9 },
       });
     });
 
@@ -427,8 +421,10 @@ describe('Search', () => {
     expect(mockMapProps.latitude).toBe(51);
     expect(mockMapProps.longitude).toBe(12);
     expect(mockMapProps.zoom).toBe(9);
-    expect(mockMapProps.width).toBe('100%');
-    expect(mockMapProps.height).toBe('100%');
+    expect(screen.getByTestId('react-map-gl').parentElement).toHaveStyle({
+      height: '100%',
+      width: '100%',
+    });
   });
 
   it('zooms the map on a Firefox trackpad pinch without zooming the page', () => {
@@ -513,6 +509,100 @@ describe('Search', () => {
     expect(mockMapProps.zoom).toBe(0);
   });
 
+  it('normalises page-based wheel input to the rendered map height', () => {
+    renderSearchMap();
+    const map = screen.getByTestId('react-map-gl');
+    const gestureSurface = map.closest('.search-map');
+    jest.spyOn(gestureSurface, 'getBoundingClientRect').mockReturnValue({
+      height: 320,
+    });
+    const receivedDeltas = [];
+    map.addEventListener('wheel', event => {
+      receivedDeltas.push([event.deltaMode, event.deltaY]);
+    });
+    const pageWheel = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      deltaMode: 2,
+      deltaY: -1,
+    });
+
+    act(() => map.dispatchEvent(pageWheel));
+
+    expect(pageWheel.defaultPrevented).toBe(true);
+    expect(receivedDeltas).toContainEqual([0, -320]);
+  });
+
+  it('normalises page-based wheel input over a non-HTML map overlay', () => {
+    renderSearchMap();
+    const map = screen.getByTestId('react-map-gl');
+    const gestureSurface = map.closest('.search-map');
+    jest.spyOn(gestureSurface, 'getBoundingClientRect').mockReturnValue({
+      height: 320,
+    });
+    const receivedDeltas = [];
+    const svgOverlay = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'svg',
+    );
+    map.appendChild(svgOverlay);
+    svgOverlay.addEventListener('wheel', event => {
+      receivedDeltas.push([event.deltaMode, event.deltaY]);
+    });
+
+    act(() =>
+      svgOverlay.dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          cancelable: true,
+          deltaMode: 2,
+          deltaY: -1,
+        }),
+      ),
+    );
+
+    expect(receivedDeltas).toContainEqual([0, -320]);
+  });
+
+  it('leaves page wheel input alone when the map has no rendered height', () => {
+    renderSearchMap();
+    const map = screen.getByTestId('react-map-gl');
+    jest
+      .spyOn(map.closest('.search-map'), 'getBoundingClientRect')
+      .mockReturnValue({
+        height: 0,
+      });
+    const pageWheel = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      deltaMode: 2,
+      deltaY: -1,
+    });
+
+    act(() => map.dispatchEvent(pageWheel));
+
+    expect(pageWheel.defaultPrevented).toBe(false);
+  });
+
+  it('ignores feature-state updates before the map instance is ready', () => {
+    mockMapInstance = null;
+    renderSearchMap();
+
+    act(() =>
+      mockMapProps.onMouseMove({
+        features: [
+          {
+            id: 'offer-1',
+            layer: { id: 'unclustered-point' },
+            source: 'offers',
+          },
+        ],
+      }),
+    );
+
+    expect(mockMap.setFeatureState).not.toHaveBeenCalled();
+  });
+
   it('uses the default map location when persisted coordinates are missing', () => {
     mockPersistentMapLocation = {
       zoom: 2,
@@ -520,10 +610,8 @@ describe('Search', () => {
 
     renderSearchMap();
 
-    expect(mockMapProps.location).toEqual([
-      DEFAULT_LOCATION.lat,
-      DEFAULT_LOCATION.lng,
-    ]);
+    expect(mockMapProps.latitude).toBe(DEFAULT_LOCATION.lat);
+    expect(mockMapProps.longitude).toBe(DEFAULT_LOCATION.lng);
     expect(mockMapProps.zoom).toBe(2);
   });
 
@@ -588,7 +676,7 @@ describe('Search', () => {
 
     mockQueryOffers.mockClear();
     act(() => {
-      mockMapProps.onInteractionStateChange();
+      mockMapProps.onMoveEnd();
     });
 
     await waitFor(() => expect(mockQueryOffers).toHaveBeenCalledTimes(1));
@@ -607,7 +695,7 @@ describe('Search', () => {
 
     renderSearchMap();
     act(() => {
-      mockMapProps.onInteractionStateChange();
+      mockMapProps.onMoveEnd();
     });
 
     await waitFor(() => expect(mockQueryOffers).not.toHaveBeenCalled());
@@ -622,15 +710,17 @@ describe('Search', () => {
 
     renderSearchMap({ onVisibleOffersChange });
     act(() =>
-      mockMapProps.onViewportChange({ latitude: 0, longitude: 0, zoom: 8 }),
+      mockMapProps.onMove({
+        viewState: { latitude: 0, longitude: 0, zoom: 8 },
+      }),
     );
-    act(() => mockMapProps.onInteractionStateChange());
     await waitFor(() => expect(requests).toHaveLength(1));
 
     act(() =>
-      mockMapProps.onViewportChange({ latitude: 1, longitude: 1, zoom: 9 }),
+      mockMapProps.onMove({
+        viewState: { latitude: 1, longitude: 1, zoom: 9 },
+      }),
     );
-    act(() => mockMapProps.onInteractionStateChange());
     await waitFor(() => expect(requests).toHaveLength(2));
 
     await act(async () => {
@@ -682,7 +772,7 @@ describe('Search', () => {
       features: DATELINE_OFFER_FEATURES,
       type: 'FeatureCollection',
     });
-    act(() => mockMapProps.onInteractionStateChange());
+    act(() => mockMapProps.onMoveEnd());
 
     await waitFor(() =>
       expect(onVisibleOffersChange).toHaveBeenLastCalledWith([
@@ -757,8 +847,8 @@ describe('Search', () => {
     renderSearchMap();
 
     act(() => {
-      mockMapProps.onHover({ features: [] });
-      mockMapProps.onHover({
+      mockMapProps.onMouseMove({ features: [] });
+      mockMapProps.onMouseMove({
         features: [
           {
             id: 'cluster-1',
@@ -767,7 +857,7 @@ describe('Search', () => {
           },
         ],
       });
-      mockMapProps.onHover({
+      mockMapProps.onMouseMove({
         features: [
           {
             layer: { id: 'unclustered-point' },
@@ -852,7 +942,7 @@ describe('Search', () => {
     };
 
     act(() => {
-      mockMapProps.onHover(hoverEvent);
+      mockMapProps.onMouseMove(hoverEvent);
     });
 
     expect(mockMap.setFeatureState).toHaveBeenLastCalledWith(
@@ -865,7 +955,7 @@ describe('Search', () => {
     const callsAfterFirstHover = mockMap.setFeatureState.mock.calls.length;
 
     act(() => {
-      mockMapProps.onHover(hoverEvent);
+      mockMapProps.onMouseMove(hoverEvent);
     });
 
     expect(mockMap.setFeatureState).toHaveBeenCalledTimes(callsAfterFirstHover);
@@ -887,7 +977,7 @@ describe('Search', () => {
     renderCommunityNotesMap();
 
     act(() => {
-      mockMapProps.onHover({
+      mockMapProps.onMouseMove({
         features: [
           {
             id: 'note-1',
@@ -911,7 +1001,7 @@ describe('Search', () => {
     renderSearchMap();
 
     act(() => {
-      mockMapProps.onHover({
+      mockMapProps.onMouseMove({
         features: [
           {
             id: 'offer-1',
@@ -923,7 +1013,7 @@ describe('Search', () => {
     });
 
     act(() => {
-      mockMapProps.onHover({
+      mockMapProps.onMouseMove({
         features: [
           {
             id: 'offer-2',
@@ -1010,8 +1100,8 @@ describe('Search', () => {
     await waitFor(() =>
       expect(mockFitBounds).toHaveBeenCalledWith(
         [
-          [25, 54],
           [20, 50],
+          [25, 54],
         ],
         { padding: 40 },
       ),
@@ -1698,6 +1788,20 @@ describe('Search', () => {
     mockPersistentMapLocation = {
       latitude: 48.6908333333,
       longitude: 9.14055555556,
+    };
+
+    renderCommunityNotesMap();
+
+    clickCommunityNoteCluster({ coordinates: [13, 52] });
+
+    expect(mockMapProps.zoom).toBe(9);
+  });
+
+  it('uses the default cluster zoom step when viewport zoom is zero', () => {
+    mockPersistentMapLocation = {
+      latitude: 48.6908333333,
+      longitude: 9.14055555556,
+      zoom: 0,
     };
 
     renderCommunityNotesMap();

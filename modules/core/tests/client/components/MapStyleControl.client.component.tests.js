@@ -15,36 +15,8 @@ const mockMapStyleButton = jest.fn();
 const mockMapIcon = jest.fn();
 
 jest.mock('react-i18next', () => ({
-  withTranslation: () => Component => {
-    function TranslatedComponent(props) {
-      return <Component {...props} t={key => `i18n:${key}`} />;
-    }
-    TranslatedComponent.displayName = `withTranslation(${
-      Component.displayName || Component.name || 'Component'
-    })`;
-    return TranslatedComponent;
-  },
+  useTranslation: () => ({ t: key => `i18n:${key}` }),
 }));
-
-jest.mock('react-map-gl', () => {
-  const React = require('react');
-
-  return {
-    __esModule: true,
-    BaseControl: class MockBaseControl extends React.Component {
-      constructor(props) {
-        super(props);
-        this.state = { isOpen: false };
-        this._context = { isDragging: false };
-        this._containerRef = { current: null };
-      }
-
-      render() {
-        return this._render();
-      }
-    },
-  };
-});
 
 jest.mock('@/modules/core/client/components/Map/MapStyleButton', () => {
   const React = require('react');

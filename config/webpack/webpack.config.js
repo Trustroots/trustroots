@@ -82,6 +82,14 @@ module.exports = webpackMerge.merge(shims, {
   },
   resolve: {
     // Keep webpack's defaults explicit for eslint-import-resolver-webpack.
+    conditionNames: [
+      'import',
+      'require',
+      'module',
+      'webpack',
+      'browser',
+      process.env.NODE_ENV === 'production' ? 'production' : 'development',
+    ],
     extensions: ['.ts', '.tsx', '.js', '.json', '.wasm'],
     // Preserve explicit JavaScript imports while client modules move to TypeScript.
     extensionAlias: { '.js': ['.js', '.ts', '.tsx'] },

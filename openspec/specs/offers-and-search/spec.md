@@ -22,6 +22,13 @@ map bounds, and circle membership.
 - **WHEN** a signed-in member applies a circle filter
 - **THEN** the system displays offers matching that circle
 
+#### Scenario: Member navigates the map
+
+- **WHEN** a member pans or zooms the map, including with line- or page-based
+  mouse wheel input
+- **THEN** the map updates its visible offers and retains the selected location
+- **AND** touch gestures zoom without rotating the map
+
 ### Requirement: Map result navigation
 
 The system SHALL let members open a selected offer from a map deep link and

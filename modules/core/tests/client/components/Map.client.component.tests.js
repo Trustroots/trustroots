@@ -12,15 +12,18 @@ jest.mock('@/modules/core/client/utils/map', () => ({
 
 const mockMapGL = jest.fn();
 const mockMapStyleControl = jest.fn();
-jest.mock('react-map-gl', () => {
+jest.mock('react-map-gl/mapbox-legacy', () => {
   const React = require('react');
+  const PropTypes = require('prop-types');
+  function MockMapGL(props) {
+    mockMapGL(props);
+    return <div data-testid="react-map">{props.children}</div>;
+  }
+  MockMapGL.propTypes = { children: PropTypes.node };
+
   return {
     __esModule: true,
-    MapController: jest.requireActual('react-map-gl').MapController,
-    default: function MockMapGL(props) {
-      mockMapGL(props);
-      return <div data-testid="react-map">{props.children}</div>;
-    },
+    Map: MockMapGL,
   };
 });
 
@@ -76,6 +79,94 @@ describe('<Map />', () => {
     );
   });
 
+  it('preserves disabled touch rotation and forwards the load callback', () => {
+    const disableRotation = jest.fn();
+    const canvas = document.createElement('canvas');
+    const container = document.createElement('div');
+    container.appendChild(canvas);
+    container.getBoundingClientRect = () => ({ height: 320 });
+    const onLoad = jest.fn();
+    render(<Map onLoad={onLoad} />);
+
+    const event = {
+      target: {
+        touchZoomRotate: { disableRotation },
+        getCanvas: () => canvas,
+        getContainer: () => container,
+      },
+    };
+    mockMapGL.mock.calls.slice(-1)[0][0].onLoad(event);
+
+    expect(disableRotation).toHaveBeenCalledTimes(1);
+    expect(onLoad).toHaveBeenCalledWith(event);
+  });
+
+  it('normalises page-based wheel input using the map height', () => {
+    const canvas = document.createElement('canvas');
+    const container = document.createElement('div');
+    container.appendChild(canvas);
+    container.getBoundingClientRect = () => ({ height: 320 });
+    const target = {
+      touchZoomRotate: { disableRotation: jest.fn() },
+      getCanvas: () => canvas,
+      getContainer: () => container,
+    };
+    const receivedWheels = [];
+    canvas.addEventListener('wheel', event => {
+      receivedWheels.push(event);
+    });
+    render(<Map />);
+    act(() => mockMapGL.mock.calls.slice(-1)[0][0].onLoad({ target }));
+    const pageWheel = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      deltaMode: 2,
+      deltaY: -1,
+      ctrlKey: true,
+      altKey: true,
+      metaKey: true,
+      shiftKey: true,
+    });
+
+    act(() => canvas.dispatchEvent(pageWheel));
+
+    expect(pageWheel.defaultPrevented).toBe(true);
+    expect(receivedWheels).toContainEqual(
+      expect.objectContaining({
+        deltaMode: 0,
+        deltaY: -320,
+        ctrlKey: true,
+        altKey: true,
+        metaKey: true,
+        shiftKey: true,
+      }),
+    );
+  });
+
+  it('leaves page wheel input alone when the map has zero height', () => {
+    const canvas = document.createElement('canvas');
+    const container = document.createElement('div');
+    container.appendChild(canvas);
+    container.getBoundingClientRect = () => ({ height: 0 });
+    const target = {
+      touchZoomRotate: { disableRotation: jest.fn() },
+      getCanvas: () => canvas,
+      getContainer: () => container,
+    };
+    render(<Map />);
+    act(() => mockMapGL.mock.calls.slice(-1)[0][0].onLoad({ target }));
+    const pageWheel = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      deltaMode: 2,
+      deltaY: -1,
+    });
+
+    act(() => canvas.dispatchEvent(pageWheel));
+
+    expect(pageWheel.defaultPrevented).toBe(false);
+  });
+
   it('uses the raster map when WebGL is unavailable', () => {
     mockIsWebGLSupported.mockReturnValue(false);
 
@@ -99,6 +190,16 @@ describe('<Map />', () => {
       }),
     );
   });
+
+  it('uses fallback dimensions when a raster map receives zero dimensions', () => {
+    mockIsWebGLSupported.mockReturnValue(false);
+
+    render(<Map height={0} width={0} />);
+
+    expect(mockLeafletMap).toHaveBeenCalledWith(
+      expect.objectContaining({ height: 320, width: '100%' }),
+    );
+  });
 });
 
 it('synchronises panning and external place searches while retaining zoom', () => {
@@ -110,7 +211,7 @@ it('synchronises panning and external place searches while retaining zoom', () =
   act(() =>
     mockMapGL.mock.calls
       .slice(-1)[0][0]
-      .onViewportChange({ latitude: 51, longitude: 11, zoom: 15 }),
+      .onMove({ viewState: { latitude: 51, longitude: 11, zoom: 15 } }),
   );
   expect(onLocationChange).toHaveBeenCalledWith([51, 11]);
   rerender(<Map location={[52, 12]} onLocationChange={onLocationChange} />);
@@ -124,7 +225,7 @@ it('allows maps to pan without a location callback', () => {
   act(() =>
     mockMapGL.mock.calls
       .slice(-1)[0][0]
-      .onViewportChange({ latitude: 51, longitude: 11, zoom: 15 }),
+      .onMove({ viewState: { latitude: 51, longitude: 11, zoom: 15 } }),
   );
   expect(mockMapGL.mock.calls.slice(-1)[0][0]).toEqual(
     expect.objectContaining({ latitude: 51, longitude: 11, zoom: 15 }),

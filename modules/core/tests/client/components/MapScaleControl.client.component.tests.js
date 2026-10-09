@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
 
-jest.mock('react-map-gl', () => ({
+jest.mock('react-map-gl/mapbox-legacy', () => ({
   __esModule: true,
   ScaleControl: () => <div data-testid="scale-control" />,
 }));
