@@ -20,6 +20,7 @@ type StorySortColumn =
   | 'public'
   | 'welcomer';
 type SortDirection = 'ascending' | 'descending';
+type ProfileVisibility = 'all' | 'visible' | 'hidden';
 
 interface RestrictedMatch {
   _id: string;
@@ -189,6 +190,8 @@ export default function AdminAcquisitionStories() {
   const [stories, setStories] = useState<AcquisitionStory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [unassignedOnly, setUnassignedOnly] = useState(false);
+  const [profileVisibility, setProfileVisibility] =
+    useState<ProfileVisibility>('all');
   const [sort, setSort] = useState<StorySort>({
     column: 'created',
     direction: 'descending',
@@ -210,6 +213,12 @@ export default function AdminAcquisitionStories() {
 
     return stories
       .filter(story => !unassignedOnly || !story.welcomer)
+      .filter(
+        story =>
+          profileVisibility === 'all' ||
+          (profileVisibility === 'visible' && story.public === true) ||
+          (profileVisibility === 'hidden' && story.public !== true),
+      )
       .sort((left, right) => {
         const leftValue = valueFor(left);
         const rightValue = valueFor(right);
@@ -219,7 +228,7 @@ export default function AdminAcquisitionStories() {
             : String(leftValue).localeCompare(String(rightValue));
         return comparison * direction;
       });
-  }, [sort, stories, unassignedOnly]);
+  }, [profileVisibility, sort, stories, unassignedOnly]);
 
   function sortBy(column: StorySortColumn) {
     setSort(currentSort => ({
@@ -254,6 +263,31 @@ export default function AdminAcquisitionStories() {
           >
             Unassigned only
           </label>
+        </div>
+
+        <div className="mb-3">
+          <label
+            className="form-label"
+            htmlFor="acquisition-stories-profile-visibility"
+          >
+            Profile visibility
+          </label>
+          <select
+            className="form-select"
+            id="acquisition-stories-profile-visibility"
+            onChange={event =>
+              setProfileVisibility(event.target.value as ProfileVisibility)
+            }
+            value={profileVisibility}
+          >
+            <option value="all">All</option>
+            <option value="visible">Visible</option>
+            <option value="hidden">Hidden</option>
+          </select>
+          <small className="form-text text-muted">
+            Hidden profiles have not activated their signup through email
+            confirmation.
+          </small>
         </div>
 
         {isLoading && <LoadingIndicator />}

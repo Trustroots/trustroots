@@ -20,6 +20,7 @@ export interface UserProfile {
   description?: string;
   emailTemporary?: string;
   public?: boolean;
+  isGreeter?: boolean;
   isVolunteer?: boolean;
   isVolunteerAlumni?: boolean;
   member?: TribeMembership[];

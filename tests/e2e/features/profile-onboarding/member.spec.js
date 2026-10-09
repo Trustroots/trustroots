@@ -570,7 +570,11 @@ test.describe('confirmed member flows', () => {
 
     await page.goto(`/messages/${recipient.username}`);
 
-    await expect(page.getByText(/you haven't been talking yet/i)).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        name: `You haven't been talking with ${recipient.firstName} ${recipient.lastName} yet.`,
+      }),
+    ).toBeVisible();
     await expect(page.getByTestId('quick-reply')).toHaveCount(0);
     await expect(
       page.getByRole('link', { name: /safety tips/i }),

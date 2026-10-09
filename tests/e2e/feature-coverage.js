@@ -50,7 +50,7 @@ const source = {
   offersClient: 'modules/offers/client/config/offers.client.routes.js',
   offersServer: 'modules/offers/server/routes/offers.server.routes.js',
   pagesClient: 'modules/pages/client/config/pages.client.routes.js',
-  pagesServer: 'modules/pages/server/routes/admin.server.routes.js',
+  pagesServer: 'modules/pages/server/routes/pages.server.routes.js',
   referencesThreadServer:
     'modules/references-thread/server/routes/reference-thread.server.routes.js',
   searchClient: 'modules/search/client/config/search.client.routes.js',
@@ -117,6 +117,7 @@ const specPaths = {
   'message-actions.spec.js': 'features/messages/message-actions.spec.js',
   'messages-api.spec.js': 'features/messages/messages-api.spec.js',
   'messages.spec.js': 'features/messages/messages.spec.js',
+  'reply-statistics.spec.js': 'features/messages/reply-statistics.spec.js',
   'nostr.spec.js': 'features/public-core/nostr.spec.js',
   'offers-and-circles.spec.js':
     'features/search-offers-circles/offers-and-circles.spec.js',
@@ -2381,6 +2382,26 @@ const features = [
       spec(
         'messages-api.spec.js',
         'message send API rejects invalid recipients',
+      ),
+    ],
+  },
+  {
+    id: 'messages.reply-statistics',
+    area: AREA.messages,
+    status: STATUS.active,
+    description:
+      'Profile reply statistics use eligible member conversations and a minimum sample.',
+    roles: ['confirmed-member'],
+    references: {
+      apiRoutes: [apiRoute('GET', '/api/users/:username', source.usersServer)],
+    },
+    requiredScenarios: [
+      'Profile reply statistics exclude current greeters and require three eligible conversations.',
+    ],
+    relatedSpecs: [
+      spec(
+        'reply-statistics.spec.js',
+        'reply statistics exclude current greeter conversations before the minimum sample',
       ),
     ],
   },

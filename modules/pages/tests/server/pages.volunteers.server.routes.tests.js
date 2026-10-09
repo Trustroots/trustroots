@@ -79,4 +79,77 @@ describe('Volunteers page route tests', function () {
         });
     });
   });
+
+  it('returns only public current greeters with public fields in name order', async function () {
+    await User.create([
+      {
+        public: true,
+        firstName: 'Zed',
+        lastName: 'Greeter',
+        displayName: 'Zed Greeter',
+        email: 'zed@example.com',
+        username: 'zedgreeter',
+        password: 'M3@n.jsI$Aw3$0m3',
+        provider: 'local',
+        roles: ['user', 'welcome-team'],
+      },
+      {
+        public: true,
+        firstName: 'Ada',
+        lastName: 'Greeter',
+        displayName: 'Ada Greeter',
+        email: 'ada@example.com',
+        username: 'adagreeter',
+        password: 'M3@n.jsI$Aw3$0m3',
+        provider: 'local',
+        roles: ['user', 'welcome-team'],
+      },
+      {
+        public: true,
+        firstName: 'Suspended',
+        lastName: 'Greeter',
+        email: 'suspended@example.com',
+        username: 'suspendedgreeter',
+        password: 'M3@n.jsI$Aw3$0m3',
+        provider: 'local',
+        roles: ['user', 'welcome-team', 'suspended'],
+      },
+      {
+        public: true,
+        firstName: 'Shadowbanned',
+        lastName: 'Greeter',
+        email: 'shadow@example.com',
+        username: 'shadowgreeter',
+        password: 'M3@n.jsI$Aw3$0m3',
+        provider: 'local',
+        roles: ['user', 'welcome-team', 'shadowban'],
+      },
+      {
+        public: false,
+        firstName: 'Private',
+        lastName: 'Greeter',
+        email: 'private@example.com',
+        username: 'privategreeter',
+        password: 'M3@n.jsI$Aw3$0m3',
+        provider: 'local',
+        roles: ['user', 'welcome-team'],
+      },
+    ]);
+
+    const response = await agent.get('/api/greeters').expect(200);
+
+    response.body.greeters
+      .map(({ displayName }) => displayName)
+      .should.deepEqual(['Ada Greeter', 'Zed Greeter']);
+    response.body.greeters.forEach(greeter => {
+      Object.keys(greeter)
+        .sort()
+        .should.deepEqual(['_id', 'displayName', 'username']);
+    });
+  });
+
+  it('returns an empty public greeter roster when no current greeters exist', async function () {
+    const response = await agent.get('/api/greeters').expect(200);
+    response.body.should.deepEqual({ greeters: [] });
+  });
 });

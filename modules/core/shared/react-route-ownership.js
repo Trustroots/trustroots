@@ -102,6 +102,10 @@ const REACT_ROUTE_POLICIES = [
     title: 'Team',
   },
   {
+    path: '/team/greeters',
+    title: 'Trustroots greeters',
+  },
+  {
     path: '/volunteering',
     title: 'Volunteering',
   },
