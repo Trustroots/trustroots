@@ -2,6 +2,8 @@ const request: typeof import('supertest') = require('supertest');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const express: import('../../../../testutils/server/model-contracts.mts').TestExpressModule = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
+let app;
+let agent;
 describe('Admin Audit Log CRUD tests', () => {
   let app: import('../../../../testutils/server/model-contracts.mts').TestExpressApp;
   let agent: import('../../../../testutils/server/model-contracts.mts').TestAgent;
