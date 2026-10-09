@@ -50,19 +50,6 @@ jest.mock(
   },
 );
 
-jest.mock(
-  '@/modules/admin/client/components/AdminAcquisitionStoriesAnalysis.component',
-  () => {
-    const React = require('react');
-
-    function MockAdminAcquisitionStoriesAnalysis() {
-      return <main>Admin acquisition stories analysis route</main>;
-    }
-
-    return MockAdminAcquisitionStoriesAnalysis;
-  },
-);
-
 jest.mock('@/modules/admin/client/components/AdminMessages.component', () => {
   const React = require('react');
 

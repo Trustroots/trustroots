@@ -29,10 +29,6 @@ jest.mock(
   () => () => <main>Admin acquisition stories</main>,
 );
 jest.mock(
-  '@/modules/admin/client/components/AdminAcquisitionStoriesAnalysis.component',
-  () => () => <main>Admin acquisition stories analysis</main>,
-);
-jest.mock(
   '@/modules/admin/client/components/AdminAuditLog.component',
   () => () => <main>Admin audit log</main>,
 );

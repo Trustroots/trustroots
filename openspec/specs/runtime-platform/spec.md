@@ -3,7 +3,9 @@
 ## Purpose
 
 Define the supported JavaScript runtime platform and the verification required to keep development, automation, and production environments aligned.
+
 ## Requirements
+
 ### Requirement: Supported JavaScript runtime
 
 The project SHALL require the Node.js 24 release line and npm 11 for development, dependency installation, automated tests, builds, and production execution.
@@ -135,6 +137,7 @@ not be emitted through structured error metadata.
 
 - **WHEN** a caller logs an Error object as metadata
 - **THEN** the transport receives only recognised error-name, machine-code and status classifications without message or stack text
+
 ### Requirement: Shared route authorisation middleware
 
 The users, offers, messages, contacts, tribes and reference-thread callback-based route policies SHALL share role lookup and ACL response handling while preserving route grants, guest fallback, domain prechecks, ownership shortcuts and existing HTTP status and response bodies. The admin policy and asynchronous experiences policy remain outside this shared middleware.
@@ -257,3 +260,30 @@ The server and background worker startup implementations SHALL use native ESM wh
 
 - **WHEN** deployment or local scripts run `node worker.js`
 - **THEN** database connection, model loading, job unlock and worker start run in order with unchanged error handling
+
+### Requirement: Focused native runtime utilities
+
+The application SHALL use native UUID generation and file removal, a schema validator for integer circle member counts, and local pagination middleware instead of direct uuid, del, mongoose-integer and express-paginate dependencies. File removal SHALL refuse the working directory and paths outside it, tolerate missing files and report deletion failures. Pagination SHALL preserve existing defaults, limit bounds, offsets, structured query filters and next-page Link headers.
+
+#### Scenario: A paginated API is requested
+
+- **WHEN** a request supplies page, limit and structured filters
+- **THEN** page and limit are normalised using existing defaults and bounds
+- **AND** the next-page link preserves filters and changes the page number
+
+#### Scenario: A member account is removed
+
+- **WHEN** account removal reaches upload cleanup
+- **THEN** the member's upload folder is removed recursively using native file operations
+- **AND** missing uploads do not fail cleanup
+- **AND** a deletion failure completes the request with the existing removal error response
+
+#### Scenario: A circle member count is validated
+
+- **WHEN** a circle has a fractional member count
+- **THEN** schema validation rejects the count with the existing integer-validation message
+
+#### Scenario: A page nonce is generated
+
+- **WHEN** the server renders a page requiring a CSP nonce
+- **THEN** the nonce is generated using Node.js crypto.randomUUID

@@ -87,7 +87,7 @@ const DEFAULT_MEMBER_LIST_SORT: MemberSort = {
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
   'welcome-team':
-    'Greeters can view acquisition stories and analysis, and see members who blocked their account.',
+    'Greeters can view acquisition stories and see members who blocked their account.',
   admin: 'Full access to administration and moderation tools.',
   moderator: 'Legacy moderation role retained for historical accounts.',
   shadowban:

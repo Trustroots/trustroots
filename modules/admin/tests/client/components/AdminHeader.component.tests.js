@@ -30,7 +30,7 @@ describe('<AdminHeader />', () => {
         '/admin/acquisition-stories',
       );
       expect(screen.getAllByRole('link')).toHaveLength(
-        user?.roles?.includes('welcome-team') ? 4 : 3,
+        user?.roles?.includes('welcome-team') ? 3 : 2,
       );
       expect(
         screen.queryByRole('link', { name: 'Audit log' }),
@@ -39,10 +39,9 @@ describe('<AdminHeader />', () => {
       expect(
         screen.getByRole('link', { name: 'Acquisition stories' }),
       ).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: 'Analysis' })).toHaveAttribute(
-        'href',
-        '/admin/acquisition-stories/analysis',
-      );
+      expect(
+        screen.queryByRole('link', { name: 'Analysis' }),
+      ).not.toBeInTheDocument();
     },
   );
 
@@ -72,17 +71,17 @@ describe('<AdminHeader />', () => {
     ).not.toHaveClass('active');
   });
 
-  it('marks the most specific nested admin page as active', () => {
-    window.history.pushState({}, '', '/admin/acquisition-stories/analysis');
+  it('marks acquisition stories as active', () => {
+    window.history.pushState({}, '', '/admin/acquisition-stories');
 
     render(<AdminHeader />);
 
     expect(
       screen.getByRole('link', { name: 'Acquisition stories' }).closest('li'),
-    ).not.toHaveClass('active');
-    expect(
-      screen.getByRole('link', { name: 'Analysis' }).closest('li'),
     ).toHaveClass('active');
+    expect(
+      screen.queryByRole('link', { name: 'Analysis' }),
+    ).not.toBeInTheDocument();
   });
 
   it('focuses the first available admin input', () => {

@@ -1,9 +1,6 @@
 import axios from 'axios';
 
-import {
-  getAcquisitionStories,
-  getAcquisitionStoriesAnalysis,
-} from '@/modules/admin/client/api/acquisition-stories.api';
+import { getAcquisitionStories } from '@/modules/admin/client/api/acquisition-stories.api';
 
 jest.mock('axios', () =>
   jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
@@ -20,15 +17,5 @@ describe('admin acquisition-stories api', () => {
 
     await expect(getAcquisitionStories()).resolves.toBe(data);
     expect(axios.post).toHaveBeenCalledWith('/api/admin/acquisition-stories');
-  });
-
-  it('fetches acquisition stories analysis', async () => {
-    const data = { total: 5 };
-    axios.post.mockResolvedValueOnce({ data });
-
-    await expect(getAcquisitionStoriesAnalysis()).resolves.toBe(data);
-    expect(axios.post).toHaveBeenCalledWith(
-      '/api/admin/acquisition-stories/analysis',
-    );
   });
 });

@@ -277,8 +277,8 @@ describe('<AdminAcquisitionStories />', () => {
     ).toHaveAttribute('href', '/admin/user/restricted');
     expect(screen.getByText(/— Username identifier/)).toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: 'Stories' }).closest('li'),
-    ).toHaveClass('active');
+      screen.queryByRole('link', { name: 'Analysis' }),
+    ).not.toBeInTheDocument();
   });
 
   it('shows an empty state when no acquisition stories are returned', async () => {
