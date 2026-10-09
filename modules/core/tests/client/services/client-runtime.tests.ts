@@ -8,6 +8,13 @@ import {
   trackEvent,
 } from '@/modules/core/client/services/client-runtime';
 
+type NavigationLocationMock = Pick<Partial<Location>, 'assign' | 'href'>;
+
+function asNavigationLocation(location: NavigationLocationMock): Location {
+  // These tests intentionally provide only the browser fields navigation uses.
+  return location as unknown as Location;
+}
+
 describe('client runtime helpers', () => {
   afterEach(() => {
     delete window.ga;
@@ -16,7 +23,7 @@ describe('client runtime helpers', () => {
   });
 
   it('broadcasts and receives browser events with arguments', () => {
-    const listener = jest.fn();
+    const listener = jest.fn<void, [error: null, ...args: unknown[]]>();
     const unsubscribe = onClientEvent('userUpdated', listener);
 
     broadcastClientEvent('userUpdated', { _id: 'user-1' });
@@ -52,33 +59,50 @@ describe('client runtime helpers', () => {
   });
 
   it('navigates through the browser location', () => {
-    const location = { assign: jest.fn() };
+    const location = { assign: jest.fn<void, [url: string]>() };
 
-    navigate('signup', { tribe: 'nomads' }, undefined, location);
+    navigate(
+      'signup',
+      { tribe: 'nomads' },
+      undefined,
+      asNavigationLocation(location),
+    );
 
     expect(location.assign).toHaveBeenCalledWith('/signup?tribe=nomads');
   });
 
   it('uses href when the location has no assign method', () => {
-    const location = {};
+    const location: NavigationLocationMock = {};
 
-    navigate('/support', { report: 'alice' }, undefined, location);
+    navigate(
+      '/support',
+      { report: 'alice' },
+      undefined,
+      asNavigationLocation(location),
+    );
 
     expect(location.href).toBe('/support?report=alice');
   });
 
   it('can force a full-page navigation', () => {
-    const location = { assign: jest.fn() };
+    const location = { assign: jest.fn<void, [url: string]>() };
 
-    navigate('/messages', undefined, { reload: true }, location);
+    navigate(
+      '/messages',
+      undefined,
+      { reload: true },
+      asNavigationLocation(location),
+    );
 
     expect(location.assign).toHaveBeenCalledWith('/messages');
   });
 
   it('does nothing for an unknown navigation target', () => {
-    const location = { assign: jest.fn() };
+    const location = { assign: jest.fn<void, [url: string]>() };
 
-    expect(navigate('unknown-state', {}, undefined, location)).toBeUndefined();
+    expect(
+      navigate('unknown-state', {}, undefined, asNavigationLocation(location)),
+    ).toBeUndefined();
     expect(location.assign).not.toHaveBeenCalled();
   });
 
@@ -90,12 +114,15 @@ describe('client runtime helpers', () => {
 
   it('returns no route parameters for an unmatched path', () => {
     expect(
-      getCurrentRouteParams({ pathname: '/not-a-route', search: '' }),
+      getCurrentRouteParams({ pathname: '/not-a-route', search: '' } as Pick<
+        Location,
+        'pathname' | 'search'
+      > as Location),
     ).toEqual({});
   });
 
   it('broadcasts events without arguments and tracks safely without analytics', () => {
-    const listener = jest.fn();
+    const listener = jest.fn<void, [error: null, ...args: unknown[]]>();
     const unsubscribe = onClientEvent('empty', listener);
 
     broadcastClientEvent('empty');
@@ -106,7 +133,7 @@ describe('client runtime helpers', () => {
   });
 
   it('handles events without a detail payload and uses default analytics category', () => {
-    const listener = jest.fn();
+    const listener = jest.fn<void, [error: null, ...args: unknown[]]>();
     const unsubscribe = onClientEvent('bare', listener);
     window.dispatchEvent(new Event('tr:bare'));
     expect(listener).toHaveBeenCalledWith(null);

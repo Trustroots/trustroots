@@ -4,11 +4,15 @@ import '@testing-library/jest-dom';
 
 import ReactFooter from '@/modules/core/client/react-app/ReactFooter';
 
+type BuildMetadata = NonNullable<
+  React.ComponentProps<typeof ReactFooter>['build']
+>;
+
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   onClientEvent: jest.fn(() => () => {}),
 }));
 
-const build = {
+const build: BuildMetadata = {
   committedAt: '2026-06-21 18:06',
   commitUrl:
     'https://github.com/Trustroots/trustroots/commit/7a1d63965692fdb3361d3fd9ad1a6a17fb391b92',

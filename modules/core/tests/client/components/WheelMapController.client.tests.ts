@@ -1,23 +1,47 @@
-import { EventManager } from 'mjolnir.js';
+import { EventManager, type EventManagerOptions } from 'mjolnir.js';
 import { Manager } from 'mjolnir.js/dist/es5/utils/hammer.browser';
-import ReactMapGL, { WebMercatorViewport } from 'react-map-gl';
+import ReactMapGL, {
+  WebMercatorViewport,
+  type ViewportProps,
+} from 'react-map-gl';
 import WheelMapController from '@/modules/core/client/components/Map/WheelMapController';
 
+type TestViewport = ViewportProps &
+  Required<
+    Pick<ViewportProps, 'width' | 'height' | 'latitude' | 'longitude' | 'zoom'>
+  >;
+type InteractionState = { isZooming: boolean; isPanning: boolean };
+type CreateMapOptions = {
+  scrollZoom?: boolean | { smooth: boolean };
+  zoom?: number;
+  applyTransitions?: boolean;
+};
+
+// react-map-gl exposes these defaults at runtime, but its function component
+// declaration does not include the legacy static property.
+const mapDefaultProps = (
+  ReactMapGL as typeof ReactMapGL & { defaultProps: Partial<ViewportProps> }
+).defaultProps;
+
 describe('map wheel zoom', () => {
-  let element;
-  let eventManager;
-  let viewport;
-  let interactionState;
+  let element: HTMLDivElement;
+  let eventManager: EventManager;
+  let viewport: TestViewport;
+  let interactionState: InteractionState;
 
   function createMap({
     scrollZoom = true,
     zoom = 6,
     applyTransitions = false,
-  } = {}) {
+  }: CreateMapOptions = {}) {
     element = document.createElement('div');
     // The Node entry point uses a no-op gesture manager. Use the browser
     // implementation so wheel events reach the real map controller.
-    eventManager = new EventManager(element, { Manager });
+    // The browser Hammer implementation and mjolnir's bundled Hammer types
+    // differ across package entry points; runtime constructor is compatible.
+    eventManager = new EventManager(element, {
+      Manager: Manager as unknown as EventManagerOptions['Manager'],
+    });
     const controller = new WheelMapController();
     viewport = {
       width: 640,
@@ -27,14 +51,14 @@ describe('map wheel zoom', () => {
       zoom,
     };
 
-    function onViewportChange(nextViewport) {
+    function onViewportChange(nextViewport: TestViewport) {
       // Apply controlled viewport updates synchronously; browser tests cover
       // the rendered transition and the application's persistence debounce.
       viewport = applyTransitions
         ? nextViewport
         : { ...nextViewport, transitionDuration: 0 };
       controller.setOptions({
-        ...ReactMapGL.defaultProps,
+        ...mapDefaultProps,
         ...viewport,
         eventManager,
         onViewportChange,
@@ -43,12 +67,12 @@ describe('map wheel zoom', () => {
       });
     }
 
-    function onStateChange(nextState) {
+    function onStateChange(nextState: InteractionState) {
       interactionState = { ...nextState };
     }
 
     controller.setOptions({
-      ...ReactMapGL.defaultProps,
+      ...mapDefaultProps,
       ...viewport,
       eventManager,
       onViewportChange,
@@ -57,7 +81,11 @@ describe('map wheel zoom', () => {
     });
   }
 
-  function wheel(deltaMode, deltaY, extra = {}) {
+  function wheel(
+    deltaMode: number,
+    deltaY: number,
+    extra: WheelEventInit = {},
+  ): WheelEvent {
     const event = new WheelEvent('wheel', {
       bubbles: true,
       cancelable: true,
@@ -102,7 +130,7 @@ describe('map wheel zoom', () => {
     ['pixel', 0, 120],
     ['line', 1, 3],
     ['page', 2, 1],
-  ])(
+  ] as Array<[string, number, number]>)(
     'visibly zooms in and out with %s units around the pointer',
     (_, mode, delta) => {
       createMap();

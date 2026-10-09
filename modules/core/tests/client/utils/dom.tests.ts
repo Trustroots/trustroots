@@ -1,6 +1,15 @@
 import { ready } from '@/modules/core/client/utils/dom';
 
-function withReadyState(state, fn) {
+type DetectWebP = typeof import('@/modules/core/client/utils/dom').canUseWebP;
+type ImageProbe = {
+  naturalWidth: number;
+  naturalHeight: number;
+  src: string;
+  onload: ((event: Event) => unknown) | null;
+  onerror: ((event: Event) => unknown) | null;
+};
+
+function withReadyState(state: DocumentReadyState, fn: () => void): void {
   const originalReadyStateDescriptor = Object.getOwnPropertyDescriptor(
     document,
     'readyState',
@@ -59,18 +68,30 @@ describe('ready', () => {
 });
 
 describe('canUseWebP', () => {
-  let detectWebP;
-  let image;
-  let imageConstructor;
+  let detectWebP: DetectWebP;
+  let image: ImageProbe;
+  let imageConstructor: jest.SpyInstance<
+    HTMLImageElement,
+    ConstructorParameters<typeof Image>
+  >;
 
   beforeEach(() => {
     jest.isolateModules(() => {
-      detectWebP = require('@/modules/core/client/utils/dom').canUseWebP;
+      detectWebP = jest.requireActual<
+        typeof import('@/modules/core/client/utils/dom')
+      >('@/modules/core/client/utils/dom').canUseWebP;
     });
-    image = { naturalWidth: 0, naturalHeight: 0 };
+    image = {
+      naturalWidth: 0,
+      naturalHeight: 0,
+      src: '',
+      onload: null,
+      onerror: null,
+    };
     imageConstructor = jest
       .spyOn(window, 'Image')
-      .mockImplementation(() => image);
+      // This deliberately implements only the image fields the probe reads.
+      .mockImplementation(() => image as HTMLImageElement);
   });
 
   afterEach(() => {
@@ -95,7 +116,7 @@ describe('canUseWebP', () => {
     detectWebP();
     image.naturalWidth = 1;
     image.naturalHeight = 1;
-    image.onload();
+    image.onload?.(new Event('load'));
 
     expect(detectWebP()).toBe(true);
     expect(detectWebP()).toBe(true);
@@ -104,7 +125,7 @@ describe('canUseWebP', () => {
 
   it('keeps JPEG when the image cannot be decoded or is blocked', () => {
     detectWebP();
-    image.onerror();
+    image.onerror?.(new Event('error'));
 
     expect(detectWebP()).toBe(false);
     expect(imageConstructor).toHaveBeenCalledTimes(1);
@@ -117,7 +138,7 @@ describe('canUseWebP', () => {
     detectWebP();
     image.naturalWidth = width;
     image.naturalHeight = height;
-    image.onload();
+    image.onload?.(new Event('load'));
 
     expect(detectWebP()).toBe(false);
   });
