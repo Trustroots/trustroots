@@ -42,6 +42,10 @@ jest.mock(
   () => () => <main>Admin audit log</main>,
 );
 jest.mock(
+  '@/modules/admin/client/components/AdminCircles.component',
+  () => () => <main>Admin circles</main>,
+);
+jest.mock(
   '@/modules/admin/client/components/AdminMessages.component',
   () => () => <main>Admin messages</main>,
 );
