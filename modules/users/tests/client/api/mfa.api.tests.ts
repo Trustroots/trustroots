@@ -5,14 +5,16 @@ jest.mock('axios', () =>
   jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
 );
 
+const mockedAxios = jest.mocked(axios);
+
 describe('mfa.api', () => {
   beforeEach(() => {
-    axios.get.mockReset();
-    axios.post.mockReset();
+    mockedAxios.get.mockReset();
+    mockedAxios.post.mockReset();
   });
 
   it('loads MFA status', async () => {
-    axios.get.mockResolvedValue({
+    mockedAxios.get.mockResolvedValue({
       data: { enabled: true, recoveryCodesRemaining: 8 },
     });
     await expect(mfaApi.getMfaStatus()).resolves.toEqual({
@@ -23,7 +25,7 @@ describe('mfa.api', () => {
   });
 
   it('starts enrolment with password confirmation', async () => {
-    axios.post.mockResolvedValue({
+    mockedAxios.post.mockResolvedValue({
       data: {
         provisioningUri: 'otpauth://totp/Trustroots:member',
         expires: 'later',
@@ -39,7 +41,7 @@ describe('mfa.api', () => {
   });
 
   it('confirms enrolment', async () => {
-    axios.post.mockResolvedValue({
+    mockedAxios.post.mockResolvedValue({
       data: { enabled: true, recoveryCodes: ['code'] },
     });
     await expect(mfaApi.verifyMfaEnrollment('123456')).resolves.toEqual({
@@ -49,7 +51,9 @@ describe('mfa.api', () => {
   });
 
   it('replaces recovery codes with password and factor confirmation', async () => {
-    axios.post.mockResolvedValue({ data: { recoveryCodes: ['new-code'] } });
+    mockedAxios.post.mockResolvedValue({
+      data: { recoveryCodes: ['new-code'] },
+    });
     await expect(
       mfaApi.regenerateMfaRecoveryCodes('password', '654321'),
     ).resolves.toEqual({ recoveryCodes: ['new-code'] });
@@ -60,7 +64,7 @@ describe('mfa.api', () => {
   });
 
   it('disables MFA with password and factor confirmation', async () => {
-    axios.post.mockResolvedValue({ data: { enabled: false } });
+    mockedAxios.post.mockResolvedValue({ data: { enabled: false } });
     await expect(mfaApi.disableMfa('password', '654321')).resolves.toEqual({
       enabled: false,
     });

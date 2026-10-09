@@ -251,25 +251,13 @@ describe('Message CRUD tests', function () {
         });
     });
   });
-  it('should be able to send messages to user with role "shadowban" when with role "admin"', function (done) {
+  it('should be able to send messages to user with role "shadowban" when with role "admin"', async () => {
     userTo.roles = ['user', 'shadowban'];
     userFrom.roles = ['user', 'admin'];
-    userFrom.save(function (saveErr) {
-      should.not.exist(saveErr);
-      userTo.save(function (saveErr) {
-        should.not.exist(saveErr);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            should.not.exist(signinErr);
-
-            // Save a new message
-            agent.post('/api/messages').send(message).expect(200).end(done);
-          });
-      });
-    });
+    await userFrom.save();
+    await userTo.save();
+    await utils.signInPrivileged(credentials, agent);
+    await agent.post('/api/messages').send(message).expect(200);
   });
   it('should be able to send basic correctly formatted html in an message', function (done) {
     agent

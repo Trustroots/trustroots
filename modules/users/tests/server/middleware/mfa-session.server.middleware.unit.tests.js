@@ -63,6 +63,11 @@ describe('Middleware: MFA account access', function () {
 
   it('blocks authenticated access for an enrolled but unverified session', function () {
     const user = { roles: ['user'], mfaEnabled: true, $locals: {} };
+    invoke(middleware, {
+      user,
+      path: '/api/auth/signin',
+      method: 'POST',
+    }).nextCalled.should.be.true();
     const blocked = invoke(middleware, {
       user,
       path: '/api/users/export',

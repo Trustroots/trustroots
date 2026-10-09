@@ -4,6 +4,7 @@
 
 const faker = require('faker');
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 const {
   generateUsers,
@@ -134,6 +135,64 @@ async function signIn(user, agent) {
 }
 
 /**
+ * Sign in a privileged test user through the real MFA challenge. The fixture
+ * provisions a fixed test-only secret before password sign-in; access is still
+ * granted only after the server verifies a current TOTP code.
+ * @param {object} user
+ * @param {object} agent - supertest's agent
+ * @returns {Promise<void>}
+ */
+async function signInPrivileged(user, agent) {
+  const User = mongoose.model('User');
+  const storedUser = await User.findOne({ username: user.username }).exec();
+  if (
+    !storedUser ||
+    !storedUser.roles.some(role =>
+      ['admin', 'moderator', 'welcome-team'].includes(role),
+    )
+  ) {
+    return signIn(user, agent);
+  }
+
+  const { default: mfaService } = await import(
+    '../../modules/users/server/services/mfa.server.service.mjs'
+  );
+  const secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+  await User.updateOne(
+    { _id: storedUser._id },
+    {
+      $set: {
+        mfaEnabled: true,
+        mfaSecretEncrypted: mfaService.encryptSecret(secret),
+        mfaLastTotpCounter: -1,
+        mfaRecoveryCodeHashes: [],
+      },
+    },
+  ).exec();
+
+  const { username, password } = user;
+  await agent.post('/api/auth/signin').send({ username, password }).expect(202);
+
+  const counter = Math.floor(Date.now() / 30000);
+  const key = Buffer.from('12345678901234567890');
+  const counterBuffer = Buffer.alloc(8);
+  counterBuffer.writeBigUInt64BE(BigInt(counter));
+  const digest = crypto
+    .createHmac('sha1', key)
+    .update(counterBuffer)
+    .digest();
+  const offset = digest[digest.length - 1] & 0x0f;
+  const binary = digest.readUInt32BE(offset) & 0x7fffffff;
+  const code = String(binary % 1000000).padStart(6, '0');
+
+  await agent
+    .post('/api/auth/mfa/verify')
+    .set('X-Trustroots-Request', '1')
+    .send({ code })
+    .expect(200);
+}
+
+/**
  * Sign out from app
  * @param {object} agent - supertest's agent
  * @returns {Promise<void>}
@@ -153,5 +212,6 @@ module.exports = {
   saveExperiences,
   clearDatabase,
   signIn,
+  signInPrivileged,
   signOut,
 };

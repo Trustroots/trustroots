@@ -46,6 +46,7 @@ const defaultExport = async function (app) {
         }
         // MFA verification is a session fact. Never infer it from the account
         // record or from a password/email recovery login path.
+        user.$locals = user.$locals || {};
         user.$locals.mfaVerified =
           user.mfaEnabled === true && session.mfaVerified === true;
         return done(null, user);

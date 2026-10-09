@@ -225,17 +225,17 @@ describe('Targeted request limit middleware', function () {
       {
         name: 'ip',
         value: '198.51.100.30',
-        limit: 60,
+        limit: 10,
       },
       {
         name: 'ip-and-identity',
         value: JSON.stringify(['198.51.100.30', 'fictional-member-id']),
-        limit: 10,
+        limit: 2,
       },
       {
         name: 'member',
         value: 'fictional-member-id',
-        limit: 10,
+        limit: 2,
       },
     ]);
   });

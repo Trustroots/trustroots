@@ -1,6 +1,7 @@
 import mfaService from '../services/mfa.server.service.mjs';
 
 const allowedMfaPaths = new Set([
+  '/api/auth/signin',
   '/api/auth/session',
   '/api/auth/signout',
   '/api/auth/mfa/verify',

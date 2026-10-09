@@ -1,8 +1,35 @@
 const should = require('should');
+const sinon = require('sinon');
+const config = require('../../../../../config/config.mjs');
 require('./../../../server/models/user.server.model.mjs');
 const mfaService = require('./../../../server/services/mfa.server.service.mjs');
 
 describe('Service: authenticator MFA', function () {
+  afterEach(function () {
+    sinon.restore();
+  });
+
+  it('requires a configured MFA encryption key', function () {
+    sinon.stub(config, 'mfaEncryptionKey').value('');
+    should(() => mfaService.encryptSecret('JBSWY3DPEHPK3PXP')).throw(
+      'MFA_ENCRYPTION_KEY is required.',
+    );
+  });
+
+  it('rejects encryption keys that are not 32 bytes', function () {
+    sinon.stub(config, 'mfaEncryptionKey').value('c2hvcnQ=');
+    should(() => mfaService.encryptSecret('JBSWY3DPEHPK3PXP')).throw(
+      'MFA_ENCRYPTION_KEY must be a base64-encoded 32-byte key.',
+    );
+  });
+
+  it('rejects non-canonical base64 encryption keys', function () {
+    sinon.stub(config, 'mfaEncryptionKey').value('A'.repeat(43));
+    should(() => mfaService.encryptSecret('JBSWY3DPEHPK3PXP')).throw(
+      'MFA_ENCRYPTION_KEY must be a base64-encoded 32-byte key.',
+    );
+  });
+
   it('encrypts TOTP secrets with authenticated encryption', function () {
     const encrypted = mfaService.encryptSecret('JBSWY3DPEHPK3PXP');
     encrypted.should.not.equal('JBSWY3DPEHPK3PXP');

@@ -285,9 +285,11 @@ describe('<SearchPage />', () => {
     await waitFor(() =>
       expect(offersApi.getOffer).toHaveBeenCalledTimes(offerIds.length),
     );
-    expect(
-      screen.getAllByRole('button', { name: /open hosting offer/i }),
-    ).toHaveLength(offerIds.length);
+    await waitFor(() =>
+      expect(
+        screen.getAllByRole('button', { name: /open hosting offer/i }),
+      ).toHaveLength(offerIds.length),
+    );
 
     act(() => searchMapProps.onVisibleOffersChange([offerIds[0]]));
     await waitFor(() =>

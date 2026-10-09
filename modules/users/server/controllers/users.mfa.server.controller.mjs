@@ -219,3 +219,4 @@ export {
   settings,
   verifyEnrollment,
 };
+export { service as 'module.exports' };

@@ -69,7 +69,7 @@ describe('Admin Reference thread CRUD tests', () => {
         body.message.should.equal('Forbidden.');
       });
       it('admin users should be allowed to read reference threads', async () => {
-        await utils.signIn(_users[0], agent);
+        await utils.signInPrivileged(_users[0], agent);
         const { body } = await agent
           .get('/api/admin/reference-threads')
           .expect(200);
