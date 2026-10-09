@@ -1,22 +1,26 @@
 const assert = require('assert');
 const request = require('supertest');
 const mongoose = require('mongoose');
-const express = require('../../../../config/lib/express');
+const express = require('../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
 const Tribe = mongoose.model('Tribe');
 
 describe('Admin circle routes', () => {
-  const app = express.init(mongoose.connection);
+  let app;
   let agent;
   let credentials;
 
+  before(async () => {
+    app = await express.init(mongoose.connection);
+  });
+
   beforeEach(async () => {
     agent = request.agent(app);
-    const users = utils.generateUsers(1);
+    const users = utils.generateUsersWithSharedPassword(1);
     users[0].roles = ['user', 'admin'];
     credentials = { username: users[0].username, password: users[0].password };
-    await utils.saveUsers(users);
+    await utils.saveUsersWithCachedPasswords(users);
   });
 
   afterEach(utils.clearDatabase);
@@ -40,7 +44,9 @@ describe('Admin circle routes', () => {
     const { body: catalogue } = await agent
       .get('/api/admin/circles')
       .expect(200);
-    assert(catalogue.some(circle => circle._id === created._id));
+    assert(
+      catalogue.some(circle => String(circle._id) === String(created._id)),
+    );
     const { body: updated } = await agent
       .put(`/api/admin/circles/${created._id}`)
       .send({
