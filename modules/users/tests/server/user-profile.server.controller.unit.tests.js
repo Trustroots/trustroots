@@ -1276,6 +1276,19 @@ describe('Profile controller unit tests', () => {
       }
     });
 
+    it('derives public greeter recognition from current roles without exposing roles', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.roles = ['user', 'volunteer', 'welcome-team'];
+      const first = profileController.sanitizeProfile(userDoc, userDoc);
+      first.isGreeter.should.be.true();
+      first.isVolunteer.should.be.true();
+      (first.roles === undefined).should.be.true();
+      userDoc.roles = ['user'];
+      const second = profileController.sanitizeProfile(userDoc, userDoc);
+      second.isGreeter.should.be.false();
+    });
+
     it('marks active volunteers on the sanitized profile', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);

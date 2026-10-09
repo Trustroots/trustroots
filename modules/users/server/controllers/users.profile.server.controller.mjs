@@ -914,6 +914,8 @@ function sanitizeProfile(profile, isOwnProfile, authenticatedUser) {
     delete profile.usernameUpdated;
   }
 
+  profile.isGreeter = profile.roles.includes('welcome-team');
+
   // Volunteer status
   if (profile.roles.includes('volunteer-alumni')) {
     profile.isVolunteerAlumni = true;

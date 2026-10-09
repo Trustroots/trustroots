@@ -260,6 +260,12 @@ export default function ProfileViewBasics({
         </div>
       )}
 
+      {profile.isGreeter && (
+        <div className="profile-sidebar-section">
+          👋 <a href="/team/greeters">{t('Trustroots greeter')}</a>
+        </div>
+      )}
+
       {/* reply rate and reply time */}
       {(profile.replyRate || profile.replyTime) &&
         renderReplyData(profile.replyRate, profile.replyTime)}

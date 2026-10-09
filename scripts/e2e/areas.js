@@ -1,6 +1,7 @@
 const path = require('path');
 
 const AREA_BY_SPEC = {
+  'csp.spec.js': 'Public pages',
   'react-recovery-pages.spec.js': 'Public pages',
   'react-member-connections.spec.js': 'Public pages',
   'react-contact-confirmation.spec.js': 'Public pages',
@@ -14,6 +15,7 @@ const AREA_BY_SPEC = {
   'account-lifecycle.spec.js': 'Authentication',
   'account-email-tokens.spec.js': 'Authentication',
   'account-request-timeouts.spec.js': 'Authentication',
+  'account-input-validation.spec.js': 'Authentication',
   'account-settings.spec.js': 'Authentication',
   'authenticated.spec.js': 'Member flows',
   'profile-react.spec.js': 'Member flows',
@@ -31,6 +33,8 @@ const AREA_BY_SPEC = {
   'nostr.spec.js': 'Nostr',
   'seeded-content.spec.js': 'Seeded content',
   'messages-api.spec.js': 'Messages',
+  'reply-statistics.spec.js': 'Messages',
+  'greeter-recognition.spec.js': 'Messages',
   'messages.spec.js': 'Messages',
   'message-actions.spec.js': 'Messages',
   'messages-layout.spec.js': 'Messages',

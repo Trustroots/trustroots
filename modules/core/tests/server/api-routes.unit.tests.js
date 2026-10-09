@@ -673,6 +673,7 @@ describe('API route registrations', () => {
 
   it('registers simple integration routes for pages, statistics, and SparkPost', () => {
     const volunteers = controller(['list'], 'volunteers');
+    const greeters = controller(['list'], 'greeters');
     const statistics = controller(
       ['collectStatistics', 'getPublicStatistics'],
       'statistics',
@@ -683,9 +684,10 @@ describe('API route registrations', () => {
     );
 
     const pagesRoutes = register(
-      './../../../pages/server/routes/admin.server.routes.mjs',
+      './../../../pages/server/routes/pages.server.routes.mjs',
       {
         '../controllers/pages.volunteers.server.controller': volunteers,
+        '../controllers/pages.greeters.server.controller': greeters,
       },
     );
     const statisticsRoutes = register(
@@ -703,6 +705,9 @@ describe('API route registrations', () => {
 
     assertHandlers(routeByPath(pagesRoutes.routes, '/api/volunteers').get, [
       volunteers.list,
+    ]);
+    assertHandlers(routeByPath(pagesRoutes.routes, '/api/greeters').get, [
+      greeters.list,
     ]);
     assertHandlers(
       routeByPath(statisticsRoutes.routes, '/api/statistics').post,
