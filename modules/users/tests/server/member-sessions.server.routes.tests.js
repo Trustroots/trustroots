@@ -125,7 +125,7 @@ describe('Member session controls', function () {
     return result;
   }
 
-  it('uses deterministic opaque identifiers and shorter privileged lifetimes', function () {
+  it('uses deterministic opaque identifiers and equal member lifetimes', function () {
     sessionId('session-value').should.equal(sessionId('session-value'));
     sessionId('session-value').should.match(/^[a-f0-9]{64}$/);
     const expected = {
@@ -133,10 +133,9 @@ describe('Member session controls', function () {
       absolute: 28 * 86400000,
     };
     sessionLifetimes({ roles: ['user'] }).should.deepEqual(expected);
-    const privileged = { idle: 30 * 60000, absolute: 12 * 60 * 60000 };
-    sessionLifetimes({ roles: ['moderator'] }).should.deepEqual(privileged);
-    sessionLifetimes({ roles: ['admin'] }).should.deepEqual(privileged);
-    sessionLifetimes({ roles: ['welcome-team'] }).should.deepEqual(privileged);
+    sessionLifetimes({ roles: ['moderator'] }).should.deepEqual(expected);
+    sessionLifetimes({ roles: ['admin'] }).should.deepEqual(expected);
+    sessionLifetimes({ roles: ['welcome-team'] }).should.deepEqual(expected);
   });
 
   it('continues anonymous requests without creating a member-session record', async function () {

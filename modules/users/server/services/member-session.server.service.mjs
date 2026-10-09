@@ -8,12 +8,11 @@ export function sessionId(id) {
     .update('member-session:' + id)
     .digest('hex');
 }
-export function sessionLifetimes(user) {
-  return user.roles.some(role =>
-    ['admin', 'moderator', 'welcome-team'].includes(role),
-  )
-    ? { idle: 30 * 60 * 1000, absolute: 12 * 60 * 60 * 1000 }
-    : { idle: 7 * 86400000, absolute: 28 * 86400000 };
+export function sessionLifetimes(_user) {
+  // Every signed-in member keeps the same idle and absolute lifetimes.
+  // Privileged admin tooling uses a separate password step-up instead of a
+  // shorter session.
+  return { idle: 7 * 86400000, absolute: 28 * 86400000 };
 }
 
 export async function checkMemberSession(req, res, next) {
