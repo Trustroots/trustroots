@@ -19,7 +19,7 @@ describe('<MapIcon />', () => {
     };
 
     render(<MapIcon mapboxStyle="mapbox/outdoors-v11" />);
-    const image = document.querySelector('img');
+    const image = document.querySelector<HTMLImageElement>('img')!;
     const src = image.getAttribute('src');
 
     expect(src).toContain(
@@ -35,7 +35,7 @@ describe('<MapIcon />', () => {
 
     render(<MapIcon />);
 
-    const image = document.querySelector('img');
+    const image = document.querySelector<HTMLImageElement>('img')!;
 
     expect(image).toHaveAttribute(
       'src',

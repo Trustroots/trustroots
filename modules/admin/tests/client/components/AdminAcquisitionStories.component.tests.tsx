@@ -13,20 +13,68 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
 
 jest.mock('@/modules/admin/client/api/acquisition-stories.api');
 jest.mock('@/modules/core/client/api/languages.api');
+const mockedAcquisitionStoriesApi = jest.mocked(acquisitionStoriesApi);
+const mockedUseLanguagesQuery = jest.mocked(useLanguagesQuery);
 jest.mock('@/modules/core/client/components/LoadingIndicator', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
   return function MockLoadingIndicator() {
     return <div role="alertdialog">Wait a moment</div>;
   };
 });
 
+type ViewerFixture = NonNullable<Window['user']>;
+type AcquisitionStoryFixture = {
+  _id: string;
+  username: string;
+  acquisitionStory?: string;
+  circleCount?: number;
+  created?: string;
+  displayName?: string;
+  hostingLocation?: number[];
+  locationFrom?: string;
+  locationLiving?: string;
+  public?: boolean;
+  restrictedMatches?: Array<{
+    _id: string;
+    username: string;
+    displayName?: string;
+    matchReasons: string[];
+    roles?: string[];
+  }>;
+  languages?: string[];
+  welcomer?: {
+    _id: string;
+    username: string;
+    displayName?: string;
+    created?: string;
+  } | null;
+};
+
+type LanguagesQueryResult = ReturnType<typeof useLanguagesQuery>;
+
+// The page only consumes these fields from the React Query result, so the
+// remaining React Query state is intentionally omitted in this mock fixture.
+function languageQueryFixture(
+  data: Record<string, string>,
+): LanguagesQueryResult {
+  return { data, isLoading: false } as LanguagesQueryResult;
+}
+
+function storyFixture(fixture: AcquisitionStoryFixture) {
+  return fixture;
+}
+
 beforeEach(() => {
   window.user = { roles: ['admin'] };
-  useLanguagesQuery.mockReturnValue({
-    data: { eng: 'English', fre: 'French', spa: 'Spanish', ger: 'German' },
-    isLoading: false,
-  });
+  mockedUseLanguagesQuery.mockReturnValue(
+    languageQueryFixture({
+      eng: 'English',
+      fre: 'French',
+      spa: 'Spanish',
+      ger: 'German',
+    }),
+  );
 });
 
 afterEach(() => {
@@ -35,13 +83,13 @@ afterEach(() => {
 });
 
 describe('<AdminAcquisitionStories />', () => {
-  it.each(['admin', 'welcome-team'])(
+  it.each(['admin', 'welcome-team'] as const)(
     'filters unassigned members and preserves sorting for %s',
     async role => {
       window.user = { roles: [role] };
-      acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
-        { _id: 'river-id', username: 'river', welcomer: null },
-        {
+      mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+        storyFixture({ _id: 'river-id', username: 'river', welcomer: null }),
+        storyFixture({
           _id: 'forest-id',
           username: 'forest',
           welcomer: {
@@ -49,8 +97,8 @@ describe('<AdminAcquisitionStories />', () => {
             username: 'greeter',
             created: '2026-01-01T00:00:00.000Z',
           },
-        },
-        { _id: 'brook-id', username: 'brook' },
+        }),
+        storyFixture({ _id: 'brook-id', username: 'brook' }),
       ]);
 
       render(<AdminAcquisitionStories />);
@@ -60,7 +108,7 @@ describe('<AdminAcquisitionStories />', () => {
       });
       const memberOrder = () =>
         Array.from(document.querySelectorAll('tbody tr')).map(
-          row => row.querySelector('td:nth-child(2)').textContent,
+          row => row.querySelector('td:nth-child(2)')?.textContent || '',
         );
 
       expect(checkbox).not.toBeChecked();
@@ -76,14 +124,14 @@ describe('<AdminAcquisitionStories />', () => {
       expect(memberOrder()).toEqual(['river', 'brook']);
       fireEvent.click(checkbox);
       expect(memberOrder()).toEqual(['river', 'forest', 'brook']);
-      expect(acquisitionStoriesApi.getAcquisitionStories).toHaveBeenCalledTimes(
-        1,
-      );
+      expect(
+        mockedAcquisitionStoriesApi.getAcquisitionStories,
+      ).toHaveBeenCalledTimes(1);
     },
   );
 
   it('keeps the filter available when all members are assigned', async () => {
-    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {
         _id: 'forest-id',
         username: 'forest',
@@ -110,11 +158,15 @@ describe('<AdminAcquisitionStories />', () => {
     ).toBeVisible();
   });
 
-  it.each([{ roles: ['welcome-team'] }, {}, null])(
+  it.each([
+    { roles: ['welcome-team'] },
+    {},
+    null,
+  ] as Array<ViewerFixture | null>)(
     'uses public member links for a non-administrator %j',
     async user => {
       window.user = user;
-      acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
         {
           _id: 'member-id',
           username: 'river',
@@ -139,7 +191,7 @@ describe('<AdminAcquisitionStories />', () => {
   );
 
   it('loads and renders acquisition stories with member links', async () => {
-    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {
         _id: '111111111111111111111111',
         acquisitionStory: 'I met people at a hitchhiking festival.',
@@ -204,20 +256,22 @@ describe('<AdminAcquisitionStories />', () => {
   });
 
   it('shows an empty state when no acquisition stories are returned', async () => {
-    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce(null);
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce(
+      null,
+    );
 
     render(<AdminAcquisitionStories />);
 
     expect(
       await screen.findByText('No acquisition stories found.'),
     ).toBeInTheDocument();
-    expect(acquisitionStoriesApi.getAcquisitionStories).toHaveBeenCalledTimes(
-      1,
-    );
+    expect(
+      mockedAcquisitionStoriesApi.getAcquisitionStories,
+    ).toHaveBeenCalledTimes(1);
   });
 
   it('renders stories with missing or invalid dates', async () => {
-    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {
         _id: '111111111111111111111111',
         acquisitionStory: 'No date story.',
@@ -241,7 +295,7 @@ describe('<AdminAcquisitionStories />', () => {
 
   it('puts shared languages first and emphasises shared non-English languages', async () => {
     window.user = { roles: ['admin'], languages: ['fre', 'eng'] };
-    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {
         _id: '333333333333333333333333',
         username: 'casey',
@@ -252,7 +306,7 @@ describe('<AdminAcquisitionStories />', () => {
     render(<AdminAcquisitionStories />);
 
     await screen.findByRole('table');
-    const list = screen.getByRole('table').querySelector('tbody ul');
+    const list = screen.getByRole('table').querySelector('tbody ul')!;
     expect(Array.from(list.children).map(item => item.textContent)).toEqual([
       'English',
       'French',
@@ -271,11 +325,11 @@ describe('<AdminAcquisitionStories />', () => {
     ['viewer is absent', null],
     ['viewer has no language list', { roles: ['admin'] }],
     ['viewer shares no languages', { roles: ['admin'], languages: ['ger'] }],
-  ])(
+  ] as Array<[string, ViewerFixture | null]>)(
     'renders the language column without emphasis when %s',
     async (_label, viewer) => {
       window.user = viewer;
-      acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
         {
           _id: '333333333333333333333333',
           username: 'casey',
@@ -286,7 +340,7 @@ describe('<AdminAcquisitionStories />', () => {
       render(<AdminAcquisitionStories />);
 
       await screen.findByRole('table');
-      const list = screen.getByRole('table').querySelector('tbody ul');
+      const list = screen.getByRole('table').querySelector('tbody ul')!;
       expect(Array.from(list.children).map(item => item.textContent)).toEqual([
         'French',
         'English',
@@ -295,10 +349,10 @@ describe('<AdminAcquisitionStories />', () => {
     },
   );
 
-  it.each([[], undefined])(
+  it.each([[], undefined] as Array<string[] | undefined>)(
     'shows Not specified for recipient languages %j',
     async languages => {
-      acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
         { _id: '333333333333333333333333', username: 'casey', languages },
       ]);
 
@@ -310,7 +364,7 @@ describe('<AdminAcquisitionStories />', () => {
 
   it('renders the welcomer with contact date and public links for non-admins', async () => {
     window.user = {};
-    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {
         _id: '333333333333333333333333',
         username: 'casey',
@@ -339,7 +393,7 @@ describe('<AdminAcquisitionStories />', () => {
   });
 
   it('uses admin links and marks contacted stories with a row class', async () => {
-    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {
         _id: '333333333333333333333333',
         username: 'contacted',
@@ -368,7 +422,7 @@ describe('<AdminAcquisitionStories />', () => {
   });
 
   it('renders an empty acquisition story when the field is absent', async () => {
-    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {
         _id: '333333333333333333333333',
         username: 'casey',
@@ -384,7 +438,7 @@ describe('<AdminAcquisitionStories />', () => {
   });
 
   it('sorts stories by every table column', async () => {
-    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {
         _id: '111111111111111111111111',
         acquisitionStory: 'Zebra recommendation',
@@ -409,7 +463,9 @@ describe('<AdminAcquisitionStories />', () => {
 
     const storyOrder = () =>
       Array.from(document.querySelectorAll('tbody tr')).map(row =>
-        row.textContent.includes('Zebra recommendation') ? 'alice' : 'bob',
+        (row.textContent || '').includes('Zebra recommendation')
+          ? 'alice'
+          : 'bob',
       );
 
     expect(storyOrder()).toEqual(['bob', 'alice']);
@@ -441,7 +497,7 @@ describe('<AdminAcquisitionStories />', () => {
   });
 
   it('sorts by welcomer assignment in both directions', async () => {
-    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {
         _id: '111111111111111111111111',
         username: 'contacted',
@@ -459,7 +515,9 @@ describe('<AdminAcquisitionStories />', () => {
 
     const memberOrder = () =>
       Array.from(document.querySelectorAll('tbody tr')).map(row =>
-        row.textContent.includes('contacted') ? 'contacted' : 'unassigned',
+        (row.textContent || '').includes('contacted')
+          ? 'contacted'
+          : 'unassigned',
       );
 
     fireEvent.click(screen.getByRole('button', { name: 'Greeter' }));
@@ -469,7 +527,7 @@ describe('<AdminAcquisitionStories />', () => {
   });
 
   it('explains its compact sortable and static column headings', async () => {
-    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {
         _id: '111111111111111111111111',
         acquisitionStory: 'A friend recommended it',

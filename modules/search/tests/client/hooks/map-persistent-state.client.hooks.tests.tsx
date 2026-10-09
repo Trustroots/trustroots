@@ -1,44 +1,51 @@
 import React, { useEffect } from 'react';
-import PropTypes from 'prop-types';
 import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-const getMockMapStateHook = () =>
-  global.__mockMapStateHookMock || (global.__mockMapStateHookMock = jest.fn());
+interface MapLocation {
+  latitude: number;
+  longitude: number;
+  zoom: number;
+}
+
+const mockMapStateHook = jest.fn();
+const mockReact = React;
 
 jest.mock('use-local-storage-state', () => {
-  const React = require('react');
+  const ReactActual = jest.requireActual<typeof import('react')>('react');
   return {
     __esModule: true,
-    default: (key, options) => {
-      const mock = getMockMapStateHook();
-      mock(key, options);
-      const react = global.__mockReact || React;
+    default: <Value,>(key: string, options: { defaultValue: Value }) => {
+      mockMapStateHook(key, options);
+      const react = mockReact || ReactActual;
       return react.useState(options.defaultValue);
     },
   };
 });
 
-beforeAll(() => {
-  global.__mockReact = React;
-});
-
-let usePersistentMapLocation;
-let usePersistentMapStyle;
-let onMapLocationChange = jest.fn();
-let onMapStyleChange = jest.fn();
+type UsePersistentMapLocation =
+  typeof import('@/modules/search/client/hooks/use-persistent-map-location').default;
+type UsePersistentMapStyle =
+  typeof import('@/modules/search/client/hooks/use-persistent-map-style').default;
+type MapStyle =
+  | string
+  | typeof import('@/modules/core/client/components/Map/constants').MAP_STYLE_OSM;
+let usePersistentMapLocation: UsePersistentMapLocation;
+let usePersistentMapStyle: UsePersistentMapStyle;
+let onMapLocationChange: jest.Mock<void, [location: MapLocation]>;
+let onMapStyleChange: jest.Mock<void, [style: MapStyle]>;
 
 const loadHooks = () => {
   jest.resetModules();
-  ({
-    default: usePersistentMapLocation,
-  } = require('@/modules/search/client/hooks/use-persistent-map-location'));
-  ({
-    default: usePersistentMapStyle,
-  } = require('@/modules/search/client/hooks/use-persistent-map-style'));
+  usePersistentMapLocation = jest.requireActual<
+    typeof import('@/modules/search/client/hooks/use-persistent-map-location')
+  >('@/modules/search/client/hooks/use-persistent-map-location').default;
+  usePersistentMapStyle = jest.requireActual<
+    typeof import('@/modules/search/client/hooks/use-persistent-map-style')
+  >('@/modules/search/client/hooks/use-persistent-map-style').default;
 };
 
-function MapLocationTester({ initialValue }) {
+function MapLocationTester({ initialValue }: { initialValue: MapLocation }) {
   const [location, setLocation] = usePersistentMapLocation(initialValue);
 
   useEffect(() => {
@@ -54,11 +61,7 @@ function MapLocationTester({ initialValue }) {
   );
 }
 
-MapLocationTester.propTypes = {
-  initialValue: PropTypes.object.isRequired,
-};
-
-function MapStyleTester({ initialValue }) {
+function MapStyleTester({ initialValue }: { initialValue: MapStyle }) {
   const [style, setStyle] = usePersistentMapStyle(initialValue);
 
   useEffect(() => {
@@ -70,24 +73,20 @@ function MapStyleTester({ initialValue }) {
   );
 }
 
-MapStyleTester.propTypes = {
-  initialValue: PropTypes.string.isRequired,
-};
-
 describe('search map persistent-state hooks', () => {
   beforeEach(() => {
-    getMockMapStateHook().mockClear();
+    mockMapStateHook.mockClear();
     loadHooks();
 
-    onMapLocationChange = jest.fn();
-    onMapStyleChange = jest.fn();
+    onMapLocationChange = jest.fn<void, [location: MapLocation]>();
+    onMapStyleChange = jest.fn<void, [style: MapStyle]>();
   });
 
   it('persists map location state and updates on setter call', () => {
     const initialLocation = { latitude: 1, longitude: 2, zoom: 3 };
     render(<MapLocationTester initialValue={initialLocation} />);
 
-    expect(getMockMapStateHook()).toHaveBeenCalledWith('search-map-location', {
+    expect(mockMapStateHook).toHaveBeenCalledWith('search-map-location', {
       defaultValue: initialLocation,
     });
     expect(onMapLocationChange).toHaveBeenCalledWith(initialLocation);
@@ -104,7 +103,7 @@ describe('search map persistent-state hooks', () => {
   it('persists map style state and updates on setter call', () => {
     render(<MapStyleTester initialValue="streets" />);
 
-    expect(getMockMapStateHook()).toHaveBeenCalledWith('search-map-style', {
+    expect(mockMapStateHook).toHaveBeenCalledWith('search-map-style', {
       defaultValue: 'streets',
     });
     expect(onMapStyleChange).toHaveBeenCalledWith('streets');

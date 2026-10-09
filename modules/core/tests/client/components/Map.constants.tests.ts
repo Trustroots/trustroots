@@ -10,10 +10,9 @@ describe('Map constants', () => {
     }));
 
     jest.isolateModules(() => {
-      const {
-        MAP_STYLE_DEFAULT,
-        MAP_STYLE_OSM,
-      } = require('@/modules/core/client/components/Map/constants');
+      const { MAP_STYLE_DEFAULT, MAP_STYLE_OSM } = jest.requireActual<
+        typeof import('@/modules/core/client/components/Map/constants')
+      >('@/modules/core/client/components/Map/constants');
 
       expect(MAP_STYLE_DEFAULT).toBe(MAP_STYLE_OSM);
     });
@@ -25,10 +24,10 @@ describe('Map constants', () => {
     }));
 
     jest.isolateModules(() => {
-      const {
-        MAP_STYLE_DEFAULT,
-        MAP_STYLE_MAPBOX_STREETS,
-      } = require('@/modules/core/client/components/Map/constants');
+      const { MAP_STYLE_DEFAULT, MAP_STYLE_MAPBOX_STREETS } =
+        jest.requireActual<
+          typeof import('@/modules/core/client/components/Map/constants')
+        >('@/modules/core/client/components/Map/constants');
 
       expect(MAP_STYLE_DEFAULT).toBe(MAP_STYLE_MAPBOX_STREETS);
     });

@@ -3,66 +3,97 @@ import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import L from 'leaflet';
 
 import LeafletSearchMap from '@/modules/search/client/components/LeafletSearchMap';
+type LeafletSearchMapProps = React.ComponentProps<typeof LeafletSearchMap>;
 
-const mockMapHandlers = {};
+type TestPoint = {
+  geometry: { coordinates: [number, number]; type: 'Point' };
+  id?: string | number;
+  properties: Record<string, unknown>;
+  type: 'Feature';
+};
+type TestEvent = { originalEvent?: object };
+type TestHandler = (event?: TestEvent) => void;
+type MockMarker = {
+  location: unknown;
+  on: jest.Mock<MockMarker, [name: string, handler: TestHandler]>;
+  handlers: Record<string, TestHandler>;
+  options: Record<string, unknown>;
+};
+type MockLayerGroup = {
+  addLayer: jest.Mock;
+  addTo: jest.Mock<MockLayerGroup, []>;
+  clearLayers: jest.Mock;
+};
+type MockCluster = {
+  getClusterExpansionZoom: jest.Mock<number, [clusterId: number]>;
+  getClusters: jest.Mock<TestPoint[], []>;
+  load: jest.Mock<MockCluster, [features: TestPoint[]]>;
+};
+
+const mockMapHandlers: Record<string, TestHandler> = {};
 const mockMap = {
   getBounds: jest.fn(),
   getCenter: jest.fn(),
   getZoom: jest.fn(),
   fitBounds: jest.fn(),
   invalidateSize: jest.fn(),
-  on: jest.fn((name, handler) => {
+  on: jest.fn((name: string, handler: TestHandler) => {
     mockMapHandlers[name] = handler;
   }),
   remove: jest.fn(),
   setView: jest.fn(),
 };
 mockMap.setView.mockImplementation(() => mockMap);
-const mockLayerGroups = [];
-const mockMarkers = [];
-const mockCircleMarkers = [];
-const mockClusterResults = [];
-const mockClusterInstances = [];
+const mockLayerGroups: MockLayerGroup[] = [];
+const mockMarkers: MockMarker[] = [];
+const mockCircleMarkers: MockMarker[] = [];
+const mockClusterResults: TestPoint[][] = [];
+const mockClusterInstances: MockCluster[] = [];
 
 jest.mock('leaflet', () => ({
   DomEvent: { stopPropagation: jest.fn() },
-  circleMarker: jest.fn((location, options) => {
-    const marker = {
-      location,
-      on: jest.fn((name, handler) => {
+  circleMarker: jest.fn(
+    (location: unknown, options: Record<string, unknown>) => {
+      const marker: MockMarker = {
+        location,
+        on: jest.fn<MockMarker, [string, TestHandler]>(),
+        handlers: {},
+        options,
+      };
+      marker.on.mockImplementation((name, handler) => {
         marker.handlers[name] = handler;
         return marker;
-      }),
-      handlers: {},
-      options,
-    };
-    mockCircleMarkers.push(marker);
-    return marker;
-  }),
+      });
+      mockCircleMarkers.push(marker);
+      return marker;
+    },
+  ),
   control: {
     zoom: jest.fn(() => ({ addTo: jest.fn() })),
   },
   divIcon: jest.fn(options => options),
   layerGroup: jest.fn(() => {
-    const group = {
+    const group: MockLayerGroup = {
       addLayer: jest.fn(),
-      addTo: jest.fn(() => group),
+      addTo: jest.fn<MockLayerGroup, []>(),
       clearLayers: jest.fn(),
     };
+    group.addTo.mockReturnValue(group);
     mockLayerGroups.push(group);
     return group;
   }),
   map: jest.fn(() => mockMap),
-  marker: jest.fn((location, options) => {
-    const marker = {
+  marker: jest.fn((location: unknown, options: Record<string, unknown>) => {
+    const marker: MockMarker = {
       location,
-      on: jest.fn((name, handler) => {
-        marker.handlers[name] = handler;
-        return marker;
-      }),
+      on: jest.fn<MockMarker, [string, TestHandler]>(),
       handlers: {},
       options,
     };
+    marker.on.mockImplementation((name, handler) => {
+      marker.handlers[name] = handler;
+      return marker;
+    });
     mockMarkers.push(marker);
     return marker;
   }),
@@ -72,10 +103,10 @@ jest.mock('leaflet', () => ({
 jest.mock('supercluster', () =>
   jest.fn().mockImplementation(() => {
     const result = mockClusterResults[mockClusterInstances.length] || [];
-    const instance = {
-      getClusterExpansionZoom: jest.fn(() => 10),
-      getClusters: jest.fn(() => result),
-      load: jest.fn(),
+    const instance: MockCluster = {
+      getClusterExpansionZoom: jest.fn<number, [number]>(() => 10),
+      getClusters: jest.fn<TestPoint[], []>(() => result),
+      load: jest.fn<MockCluster, [TestPoint[]]>(),
     };
     instance.load.mockReturnValue(instance);
     mockClusterInstances.push(instance);
@@ -93,7 +124,10 @@ const bounds = {
 };
 const viewport = { latitude: 52, longitude: 13, zoom: 6 };
 
-function point(id, properties = {}) {
+function point(
+  id: string | number | undefined,
+  properties: Record<string, unknown> = {},
+): TestPoint {
   return {
     geometry: { coordinates: [13, 52], type: 'Point' },
     id,
@@ -102,7 +136,7 @@ function point(id, properties = {}) {
   };
 }
 
-function cluster() {
+function cluster(): TestPoint {
   return {
     geometry: { coordinates: [13, 52], type: 'Point' },
     properties: {
@@ -115,7 +149,17 @@ function cluster() {
   };
 }
 
-function renderMap(props = {}) {
+function pointCollection(
+  features: TestPoint[],
+): LeafletSearchMapProps['offers'] {
+  // Note fixtures intentionally rely on the top-level id without a property id.
+  return {
+    features:
+      features as unknown as LeafletSearchMapProps['offers']['features'],
+  };
+}
+
+function renderMap(props: Partial<LeafletSearchMapProps> = {}) {
   return render(
     <LeafletSearchMap
       communityNotes={{ features: [] }}
@@ -145,10 +189,10 @@ beforeEach(() => {
   mockMap.setView.mockClear();
   mockMap.remove.mockClear();
   mockMap.on.mockClear();
-  L.DomEvent.stopPropagation.mockClear();
-  L.tileLayer.mockClear();
-  L.map.mockClear();
-  L.control.zoom.mockClear();
+  jest.mocked(L.DomEvent.stopPropagation).mockClear();
+  jest.mocked(L.tileLayer).mockClear();
+  jest.mocked(L.map).mockClear();
+  jest.mocked(L.control.zoom).mockClear();
 });
 
 describe('<LeafletSearchMap />', () => {
@@ -163,10 +207,10 @@ describe('<LeafletSearchMap />', () => {
     );
 
     renderMap({
-      communityNotes: { features: [point('note-1', { verified: true })] },
-      offers: {
-        features: [point(undefined, { id: 'offer-1', offer: 'host-yes' })],
-      },
+      communityNotes: pointCollection([point('note-1', { verified: true })]),
+      offers: pointCollection([
+        point(undefined, { id: 'offer-1', offer: 'host-yes' }),
+      ]),
       onCommunityNoteClick,
       onMapChange,
       onMapClick,
@@ -306,8 +350,8 @@ describe('<LeafletSearchMap />', () => {
     mockClusterResults.push([point('offer-1')], [point('note-1')]);
 
     renderMap({
-      communityNotes: { features: [point('note-1')] },
-      offers: { features: [point('offer-1')] },
+      communityNotes: pointCollection([point('note-1')]),
+      offers: pointCollection([point('offer-1')]),
       viewport: { ...viewport, zoom: 2 },
     });
 
@@ -324,8 +368,8 @@ describe('<LeafletSearchMap />', () => {
     );
 
     renderMap({
-      communityNotes: { features: [point('note-1', { verified: false })] },
-      offers: { features: [point('offer-1', { offer: 'unknown' })] },
+      communityNotes: pointCollection([point('note-1', { verified: false })]),
+      offers: pointCollection([point('offer-1', { offer: 'unknown' })]),
     });
 
     expect(mockCircleMarkers[0].options.fillColor).toBe('#ccc');

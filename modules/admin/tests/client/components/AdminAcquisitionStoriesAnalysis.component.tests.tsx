@@ -6,8 +6,9 @@ import AdminAcquisitionStoriesAnalysis from '@/modules/admin/client/components/A
 import * as acquisitionStoriesApi from '@/modules/admin/client/api/acquisition-stories.api';
 
 jest.mock('@/modules/admin/client/api/acquisition-stories.api');
+const mockedAcquisitionStoriesApi = jest.mocked(acquisitionStoriesApi);
 jest.mock('@/modules/core/client/components/LoadingIndicator', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
   return function MockLoadingIndicator() {
     return <div role="alertdialog">Wait a moment</div>;
@@ -18,7 +19,16 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-const analysis = {
+type AnalysisFixture = {
+  df: number;
+  entropy: number;
+  size: number;
+  sum: number;
+  x2: number;
+  table: Array<{ category: string; observed: number; percentage: number }>;
+};
+
+const analysis: AnalysisFixture = {
   df: 2,
   entropy: 1.23,
   size: 3,
@@ -28,19 +38,19 @@ const analysis = {
     {
       category: 'Search',
       observed: 5,
-      percentage: '41.67%',
+      percentage: 41.67,
     },
     {
       category: 'Friend',
       observed: 2,
-      percentage: '16.67%',
+      percentage: 16.67,
     },
   ],
 };
 
 describe('<AdminAcquisitionStoriesAnalysis />', () => {
   it('loads analysis and initially hides low-frequency terms', async () => {
-    acquisitionStoriesApi.getAcquisitionStoriesAnalysis.mockResolvedValueOnce(
+    mockedAcquisitionStoriesApi.getAcquisitionStoriesAnalysis.mockResolvedValueOnce(
       analysis,
     );
 
@@ -51,14 +61,14 @@ describe('<AdminAcquisitionStoriesAnalysis />', () => {
     expect(screen.getByText('Search')).toBeInTheDocument();
     expect(screen.queryByText('Friend')).not.toBeInTheDocument();
     expect(
-      within(document.querySelector('.nav-tabs'))
+      within(document.querySelector('.nav-tabs')!)
         .getByRole('link', { name: 'Analysis' })
         .closest('li'),
     ).toHaveClass('active');
   });
 
   it('reveals all analysis terms on request', async () => {
-    acquisitionStoriesApi.getAcquisitionStoriesAnalysis.mockResolvedValueOnce(
+    mockedAcquisitionStoriesApi.getAcquisitionStoriesAnalysis.mockResolvedValueOnce(
       analysis,
     );
 

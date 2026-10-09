@@ -1,27 +1,87 @@
 import NostrService, {
   getNostrEventAuthorPubkey,
 } from '@/modules/search/client/services/nostr.client.service';
+import type { Event } from 'nostr-tools';
+
+interface MockRelaySubscription {
+  close: jest.Mock;
+}
+type ServiceSubscription = NostrService['subscriptions'] extends Map<
+  string,
+  infer Subscription
+>
+  ? Subscription
+  : never;
+
+type MockNostrEvent = Omit<Partial<Event>, 'tags'> & {
+  tags?: Array<Array<string | undefined>>;
+};
+interface MockSubscriptionCallbacks {
+  onevent: (event: MockNostrEvent) => void;
+  oneose: () => void;
+  onclose: (reason: string) => void;
+}
+
+interface MockRelayInstance {
+  url: string;
+  connected?: boolean;
+  onclose: () => void;
+  connect: jest.Mock<Promise<void>, []>;
+  close: jest.Mock<void, []>;
+  subscribe: jest.Mock<
+    MockRelaySubscription,
+    [filters: unknown, callbacks: MockSubscriptionCallbacks]
+  >;
+}
+
+interface MockRelayConstructor extends jest.Mock {
+  _lastInstance?: MockRelayInstance;
+}
+
+let mockFetch: jest.Mock<Promise<Response>, Parameters<typeof fetch>>;
 
 // Mock nostr-tools/relay
 jest.mock('nostr-tools/relay', () => {
-  const MockRelay = jest.fn().mockImplementation(url => {
+  const MockRelay = jest.fn((url: string): MockRelayInstance => {
     const instance = {
       url,
       connect: jest.fn().mockResolvedValue(undefined),
       close: jest.fn(),
       subscribe: jest.fn(),
+      onclose: jest.fn(),
     };
     // Store last created instance for test access
-    MockRelay._lastInstance = instance;
+    (MockRelay as MockRelayConstructor)._lastInstance = instance;
     return instance;
-  });
+  }) as MockRelayConstructor;
   return { Relay: MockRelay };
 });
 
-const { Relay } = require('nostr-tools/relay');
+const { Relay } = jest.requireMock('nostr-tools/relay') as {
+  Relay: MockRelayConstructor;
+};
+
+function lastRelay(): MockRelayInstance {
+  if (!Relay._lastInstance) {
+    throw new Error('Expected a relay instance to have been created');
+  }
+  return Relay._lastInstance;
+}
+
+function asServiceSubscription(
+  subscription: MockRelaySubscription,
+): ServiceSubscription {
+  // Relay subscription doubles expose only the close method exercised here.
+  return subscription as unknown as ServiceSubscription;
+}
+
+function mockVisibilityResponse(payload: unknown, ok = true): Response {
+  // The tests need only the fetch fields consumed by this service.
+  return { ok, json: async () => payload } as Response;
+}
 
 describe('NostrService', () => {
-  let service;
+  let service: NostrService;
   const RELAY_URL = 'wss://relay.example.com';
 
   beforeEach(() => {
@@ -31,13 +91,12 @@ describe('NostrService', () => {
 
   describe('getNostrEventAuthorPubkey()', () => {
     it('returns the event author', () => {
-      expect(
-        getNostrEventAuthorPubkey({
-          kind: 30397,
-          pubkey: 'direct-author-pubkey',
-          tags: [],
-        }),
-      ).toBe('direct-author-pubkey');
+      const event: Pick<Event, 'pubkey'> & Partial<Event> = {
+        kind: 30397,
+        pubkey: 'direct-author-pubkey',
+        tags: [],
+      };
+      expect(getNostrEventAuthorPubkey(event)).toBe('direct-author-pubkey');
     });
 
     it('returns undefined when event data is missing', () => {
@@ -74,14 +133,14 @@ describe('NostrService', () => {
     });
 
     it('returns existing relay if already connected', async () => {
-      const relay1 = await service.connect();
+      const relay1 = (await service.connect()) as unknown as MockRelayInstance;
       const relay2 = await service.connect();
       expect(relay1).toBe(relay2);
       expect(Relay).toHaveBeenCalledTimes(1);
     });
 
     it('creates a new relay if the previous relay has closed', async () => {
-      const relay1 = await service.connect();
+      const relay1 = (await service.connect()) as unknown as MockRelayInstance;
       relay1.connected = false;
 
       const relay2 = await service.connect();
@@ -91,8 +150,11 @@ describe('NostrService', () => {
     });
 
     it('clears the relay and subscriptions when the active relay closes', async () => {
-      const relay = await service.connect();
-      service.subscriptions.set('mapNotes', { close: jest.fn() });
+      const relay = (await service.connect()) as unknown as MockRelayInstance;
+      service.subscriptions.set(
+        'mapNotes',
+        asServiceSubscription({ close: jest.fn() }),
+      );
 
       relay.onclose();
 
@@ -101,10 +163,13 @@ describe('NostrService', () => {
     });
 
     it('leaves a newer relay in place when an older relay closes', async () => {
-      const relay1 = await service.connect();
+      const relay1 = (await service.connect()) as unknown as MockRelayInstance;
       relay1.connected = false;
       const relay2 = await service.connect();
-      service.subscriptions.set('mapNotes', { close: jest.fn() });
+      service.subscriptions.set(
+        'mapNotes',
+        asServiceSubscription({ close: jest.fn() }),
+      );
 
       relay1.onclose();
 
@@ -117,8 +182,8 @@ describe('NostrService', () => {
     it('closes only the mapNotes subscription', async () => {
       const mapSub = { close: jest.fn() };
       const otherSub = { close: jest.fn() };
-      service.subscriptions.set('mapNotes', mapSub);
-      service.subscriptions.set('other', otherSub);
+      service.subscriptions.set('mapNotes', asServiceSubscription(mapSub));
+      service.subscriptions.set('other', asServiceSubscription(otherSub));
 
       service.unsubscribeMapNotes();
 
@@ -137,7 +202,7 @@ describe('NostrService', () => {
     it('closes all subscriptions and the relay', async () => {
       await service.connect();
       const mockSub = { close: jest.fn() };
-      service.subscriptions.set('mapNotes', mockSub);
+      service.subscriptions.set('mapNotes', asServiceSubscription(mockSub));
 
       service.disconnect();
 
@@ -154,8 +219,8 @@ describe('NostrService', () => {
       await service.connect();
       const sub1 = { close: jest.fn() };
       const sub2 = { close: jest.fn() };
-      service.subscriptions.set('a', sub1);
-      service.subscriptions.set('b', sub2);
+      service.subscriptions.set('a', asServiceSubscription(sub1));
+      service.subscriptions.set('b', asServiceSubscription(sub2));
 
       service.disconnect();
 
@@ -168,13 +233,13 @@ describe('NostrService', () => {
     it('subscribes with correct filters for original notes', async () => {
       const mockSub = { close: jest.fn() };
       await service.connect();
-      Relay._lastInstance.subscribe.mockReturnValue(mockSub);
+      lastRelay().subscribe.mockReturnValue(mockSub);
 
       const onEvent = jest.fn();
 
       const sub = await service.subscribeMapNotes(onEvent);
 
-      expect(Relay._lastInstance.subscribe).toHaveBeenCalledWith(
+      expect(lastRelay().subscribe).toHaveBeenCalledWith(
         [
           {
             kinds: [30397],
@@ -193,7 +258,7 @@ describe('NostrService', () => {
     it('accepts the relay end-of-stored-events callback for map notes', async () => {
       const mockSub = { close: jest.fn() };
       await service.connect();
-      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+      lastRelay().subscribe.mockImplementation((filters, callbacks) => {
         callbacks.oneose();
         return mockSub;
       });
@@ -206,7 +271,7 @@ describe('NostrService', () => {
       const onClose = jest.fn();
       const onEose = jest.fn();
       await service.connect();
-      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+      lastRelay().subscribe.mockImplementation((filters, callbacks) => {
         callbacks.oneose();
         callbacks.onclose('relay connection closed');
         return mockSub;
@@ -221,11 +286,11 @@ describe('NostrService', () => {
     it('allows callers to override the historical map note limit', async () => {
       const mockSub = { close: jest.fn() };
       await service.connect();
-      Relay._lastInstance.subscribe.mockReturnValue(mockSub);
+      lastRelay().subscribe.mockReturnValue(mockSub);
 
       await service.subscribeMapNotes(jest.fn(), 25);
 
-      expect(Relay._lastInstance.subscribe).toHaveBeenCalledWith(
+      expect(lastRelay().subscribe).toHaveBeenCalledWith(
         [
           {
             kinds: [30397],
@@ -241,10 +306,10 @@ describe('NostrService', () => {
       const newSub = { close: jest.fn() };
       await service.connect();
 
-      Relay._lastInstance.subscribe.mockReturnValueOnce(oldSub);
+      lastRelay().subscribe.mockReturnValueOnce(oldSub);
       await service.subscribeMapNotes(jest.fn());
 
-      Relay._lastInstance.subscribe.mockReturnValueOnce(newSub);
+      lastRelay().subscribe.mockReturnValueOnce(newSub);
       await service.subscribeMapNotes(jest.fn());
 
       expect(oldSub.close).toHaveBeenCalled();
@@ -254,12 +319,13 @@ describe('NostrService', () => {
     it('connects lazily if not already connected', async () => {
       const mockSub = { close: jest.fn() };
       // Service starts disconnected — subscribe should trigger connect
-      Relay.mockImplementationOnce(url => {
+      Relay.mockImplementationOnce((url: string): MockRelayInstance => {
         const instance = {
           url,
           connect: jest.fn().mockResolvedValue(undefined),
           close: jest.fn(),
           subscribe: jest.fn().mockReturnValue(mockSub),
+          onclose: jest.fn(),
         };
         Relay._lastInstance = instance;
         return instance;
@@ -274,7 +340,7 @@ describe('NostrService', () => {
   describe('fetchUserNotes()', () => {
     it('resolves with events sorted by created_at desc', async () => {
       await service.connect();
-      const relay = Relay._lastInstance;
+      const relay = lastRelay();
 
       const events = [
         { id: '1', created_at: 100 },
@@ -282,7 +348,7 @@ describe('NostrService', () => {
         { id: '3', created_at: 200 },
       ];
 
-      let sub;
+      let sub!: MockRelaySubscription;
       relay.subscribe.mockImplementation((filters, callbacks) => {
         sub = { close: jest.fn() };
         events.forEach(e => callbacks.onevent(e));
@@ -312,7 +378,7 @@ describe('NostrService', () => {
 
     it('uses default limit of 3', async () => {
       await service.connect();
-      const relay = Relay._lastInstance;
+      const relay = lastRelay();
 
       relay.subscribe.mockImplementation((filters, callbacks) => {
         callbacks.oneose();
@@ -329,7 +395,7 @@ describe('NostrService', () => {
 
     it('resolves with empty array when no events', async () => {
       await service.connect();
-      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+      lastRelay().subscribe.mockImplementation((filters, callbacks) => {
         callbacks.oneose();
         return { close: jest.fn() };
       });
@@ -340,7 +406,7 @@ describe('NostrService', () => {
 
     it('resolves with collected events when the subscription closes early', async () => {
       await service.connect();
-      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+      lastRelay().subscribe.mockImplementation((filters, callbacks) => {
         callbacks.onevent({ id: '1', created_at: 100 });
         callbacks.onclose('relay closed');
         return { close: jest.fn() };
@@ -354,7 +420,7 @@ describe('NostrService', () => {
     it('deduplicates events, applies the limit, and ignores repeated finishes', async () => {
       await service.connect();
       const sub = { close: jest.fn() };
-      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+      lastRelay().subscribe.mockImplementation((filters, callbacks) => {
         callbacks.onevent({ id: '1', created_at: 100, content: 'old' });
         callbacks.onevent({ id: '1', created_at: 500, content: 'new' });
         callbacks.onevent({ id: '2', created_at: 300 });
@@ -383,9 +449,9 @@ describe('NostrService', () => {
 
     it('resolves username from kind 10390 event tags', async () => {
       await service.connect();
-      const relay = Relay._lastInstance;
+      const relay = lastRelay();
 
-      let sub;
+      let sub!: MockRelaySubscription;
       relay.subscribe.mockImplementation((filters, callbacks) => {
         sub = { close: jest.fn() };
         callbacks.onevent({
@@ -406,7 +472,7 @@ describe('NostrService', () => {
 
     it('returns null when no username tag found', async () => {
       await service.connect();
-      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+      lastRelay().subscribe.mockImplementation((filters, callbacks) => {
         callbacks.onevent({
           tags: [['L', 'org.trustroots']],
         });
@@ -420,7 +486,7 @@ describe('NostrService', () => {
 
     it('handles a username tag without a value', async () => {
       await service.connect();
-      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+      lastRelay().subscribe.mockImplementation((filters, callbacks) => {
         callbacks.onevent({
           tags: [['l', undefined, 'org.trustroots:username']],
         });
@@ -435,7 +501,7 @@ describe('NostrService', () => {
 
     it('returns null when no events received', async () => {
       await service.connect();
-      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+      lastRelay().subscribe.mockImplementation((filters, callbacks) => {
         callbacks.oneose();
         return { close: jest.fn() };
       });
@@ -446,7 +512,7 @@ describe('NostrService', () => {
 
     it('caches results and returns cached value on subsequent calls', async () => {
       await service.connect();
-      const relay = Relay._lastInstance;
+      const relay = lastRelay();
 
       relay.subscribe.mockImplementation((filters, callbacks) => {
         callbacks.onevent({
@@ -467,7 +533,7 @@ describe('NostrService', () => {
 
     it('subscribes with correct filters', async () => {
       await service.connect();
-      const relay = Relay._lastInstance;
+      const relay = lastRelay();
 
       relay.subscribe.mockImplementation((filters, callbacks) => {
         callbacks.oneose();
@@ -487,7 +553,7 @@ describe('NostrService', () => {
 
     it('resolves null when the username subscription closes early', async () => {
       await service.connect();
-      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+      lastRelay().subscribe.mockImplementation((filters, callbacks) => {
         callbacks.onclose('relay closed');
         return { close: jest.fn() };
       });
@@ -500,7 +566,7 @@ describe('NostrService', () => {
     it('ignores repeated username subscription finishes', async () => {
       await service.connect();
       const sub = { close: jest.fn() };
-      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+      lastRelay().subscribe.mockImplementation((filters, callbacks) => {
         callbacks.onevent({
           tags: [['l', 'carol', 'org.trustroots:username']],
         });
@@ -522,7 +588,8 @@ describe('NostrService', () => {
     const originalFetch = global.fetch;
 
     beforeEach(() => {
-      global.fetch = jest.fn();
+      mockFetch = jest.fn();
+      global.fetch = mockFetch;
     });
 
     afterEach(() => {
@@ -533,14 +600,12 @@ describe('NostrService', () => {
       const visiblePubkey = 'aa'.repeat(32);
       const hiddenPubkey = 'bb'.repeat(32);
       const unlinkedPubkey = 'cc'.repeat(32);
-      global.fetch.mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            linkedPubkeys: [visiblePubkey, hiddenPubkey],
-            pubkeys: [visiblePubkey],
-          }),
-      });
+      mockFetch.mockResolvedValue(
+        mockVisibilityResponse({
+          linkedPubkeys: [visiblePubkey, hiddenPubkey],
+          pubkeys: [visiblePubkey],
+        }),
+      );
 
       await expect(
         service.filterCommunityNotesByAuthorVisibility([
@@ -555,7 +620,7 @@ describe('NostrService', () => {
         { id: 'visible-by-pubkey', pubkey: visiblePubkey },
         { id: 'unlinked', authorPubkey: unlinkedPubkey },
       ]);
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(mockFetch).toHaveBeenCalledWith(
         '/api/nostr/author-visibility?pubkey=' +
           visiblePubkey +
           '&pubkey=' +
@@ -568,19 +633,18 @@ describe('NostrService', () => {
     it('retries visibility checks after a transient API failure', async () => {
       const pubkey = 'aa'.repeat(32);
       const notes = [{ id: 'note', authorPubkey: pubkey }];
-      global.fetch.mockRejectedValueOnce(new Error('service unavailable'));
+      mockFetch.mockRejectedValueOnce(new Error('service unavailable'));
       await expect(
         service.filterCommunityNotesByAuthorVisibility(notes),
       ).resolves.toEqual(notes);
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ linkedPubkeys: [pubkey], pubkeys: [] }),
-      });
+      mockFetch.mockResolvedValueOnce(
+        mockVisibilityResponse({ linkedPubkeys: [pubkey], pubkeys: [] }),
+      );
 
       await expect(
         service.filterCommunityNotesByAuthorVisibility(notes),
       ).resolves.toEqual([]);
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
     });
 
     it('batches uncached authors and reuses fresh visibility results', async () => {
@@ -588,39 +652,36 @@ describe('NostrService', () => {
         id: `note-${index}`,
         authorPubkey: index.toString(16).padStart(64, '0'),
       }));
-      global.fetch.mockResolvedValue({
-        ok: true,
-        json: () =>
-          Promise.resolve({
-            linkedPubkeys: notes.map(note => note.authorPubkey),
-            pubkeys: [],
-          }),
-      });
+      mockFetch.mockResolvedValue(
+        mockVisibilityResponse({
+          linkedPubkeys: notes.map(note => note.authorPubkey),
+          pubkeys: [],
+        }),
+      );
 
       await expect(
         service.filterCommunityNotesByAuthorVisibility(notes),
       ).resolves.toEqual([]);
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
 
       await expect(
         service.filterCommunityNotesByAuthorVisibility([notes[0]]),
       ).resolves.toEqual([]);
-      expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
     });
 
     it('keeps notes visible when the API response is unsuccessful or invalid', async () => {
       const pubkey = 'cc'.repeat(32);
       const notes = [{ id: 'note', authorPubkey: pubkey }];
-      global.fetch.mockResolvedValueOnce({ ok: false });
+      mockFetch.mockResolvedValueOnce(mockVisibilityResponse(null, false));
 
       await expect(
         service.filterCommunityNotesByAuthorVisibility(notes),
       ).resolves.toEqual(notes);
 
-      global.fetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ linkedPubkeys: [], pubkeys: null }),
-      });
+      mockFetch.mockResolvedValueOnce(
+        mockVisibilityResponse({ linkedPubkeys: [], pubkeys: null }),
+      );
       await expect(
         service.filterCommunityNotesByAuthorVisibility(notes),
       ).resolves.toEqual(notes);

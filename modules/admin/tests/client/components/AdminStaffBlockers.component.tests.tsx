@@ -4,14 +4,18 @@ import '@testing-library/jest-dom';
 import AdminStaffBlockers from '@/modules/admin/client/components/AdminStaffBlockers.component';
 import { getStaffBlockers } from '@/modules/admin/client/api/staff-blockers.api';
 import { getCurrentUser } from '@/modules/core/client/services/client-runtime';
+import type { StaffBlocker } from '@/modules/admin/shared/staff-blockers';
 
 jest.mock('@/modules/admin/client/api/staff-blockers.api');
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   getCurrentUser: jest.fn(),
 }));
 
+const mockedGetStaffBlockers = jest.mocked(getStaffBlockers);
+const mockedGetCurrentUser = jest.mocked(getCurrentUser);
+
 beforeEach(() => {
-  getCurrentUser.mockReturnValue({ roles: ['welcome-team'] });
+  mockedGetCurrentUser.mockReturnValue({ roles: ['welcome-team'] });
 });
 
 afterEach(() => {
@@ -19,8 +23,10 @@ afterEach(() => {
 });
 
 it('shows a loading message while waiting for the support list', () => {
-  getCurrentUser.mockReturnValue({});
-  getStaffBlockers.mockReturnValueOnce(new Promise(() => {}));
+  mockedGetCurrentUser.mockReturnValue({});
+  mockedGetStaffBlockers.mockReturnValueOnce(
+    new Promise<StaffBlocker[]>(() => {}),
+  );
 
   render(<AdminStaffBlockers />);
 
@@ -28,7 +34,7 @@ it('shows a loading message while waiting for the support list', () => {
 });
 
 it('shows the members who blocked the signed-in Greeter', async () => {
-  getStaffBlockers.mockResolvedValueOnce([
+  mockedGetStaffBlockers.mockResolvedValueOnce([
     {
       _id: 'staff-1',
       username: 'staff-member',
@@ -54,8 +60,8 @@ it('shows the members who blocked the signed-in Greeter', async () => {
 });
 
 it('groups blockers by staff account for administrators and omits empty groups', async () => {
-  getCurrentUser.mockReturnValue({ roles: ['admin'] });
-  getStaffBlockers.mockResolvedValueOnce([
+  mockedGetCurrentUser.mockReturnValue({ roles: ['admin'] });
+  mockedGetStaffBlockers.mockResolvedValueOnce([
     {
       _id: 'staff-1',
       username: 'support-admin',
@@ -84,23 +90,28 @@ it('groups blockers by staff account for administrators and omits empty groups',
   ).not.toBeInTheDocument();
 });
 
+type EmptyBlockerCase = [string[], string];
+
 it.each([
   [['welcome-team'], 'No members have blocked your account.'],
   [['admin'], 'No members have blocked staff accounts.'],
-])('shows an empty state for %j', async (roles, message) => {
-  getCurrentUser.mockReturnValue({ roles });
-  getStaffBlockers.mockResolvedValueOnce([
-    { _id: 'staff-1', username: 'staff', blockedBy: [] },
-  ]);
+] as EmptyBlockerCase[])(
+  'shows an empty state for %j',
+  async (roles, message) => {
+    mockedGetCurrentUser.mockReturnValue({ roles });
+    mockedGetStaffBlockers.mockResolvedValueOnce([
+      { _id: 'staff-1', username: 'staff', blockedBy: [] },
+    ]);
 
-  render(<AdminStaffBlockers />);
+    render(<AdminStaffBlockers />);
 
-  expect(await screen.findByText(message)).toBeInTheDocument();
-});
+    expect(await screen.findByText(message)).toBeInTheDocument();
+  },
+);
 
 it('shows a load error instead of reporting an empty blocker list', async () => {
-  getCurrentUser.mockReturnValue(null);
-  getStaffBlockers.mockRejectedValueOnce(new Error('Unavailable'));
+  mockedGetCurrentUser.mockReturnValue(null);
+  mockedGetStaffBlockers.mockRejectedValueOnce(new Error('Unavailable'));
 
   render(<AdminStaffBlockers />);
 

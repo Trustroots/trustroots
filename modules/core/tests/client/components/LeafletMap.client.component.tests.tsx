@@ -5,8 +5,9 @@ import L from 'leaflet';
 
 import LeafletMap from '@/modules/core/client/components/Map/LeafletMap';
 
+type MoveListener = () => void;
 const mockMap = {
-  on: jest.fn(),
+  on: jest.fn<void, [event: string, listener: MoveListener]>(),
   getCenter: jest.fn(),
   getZoom: jest.fn(),
   remove: jest.fn(),
@@ -30,9 +31,9 @@ beforeEach(() => {
   mockMap.remove.mockClear();
   mockMap.setView.mockClear();
   mockMarker.remove.mockClear();
-  L.circleMarker.mockClear();
-  L.map.mockClear();
-  L.tileLayer.mockClear();
+  jest.mocked(L.circleMarker).mockClear();
+  jest.mocked(L.map).mockClear();
+  jest.mocked(L.tileLayer).mockClear();
 });
 
 describe('<LeafletMap />', () => {
@@ -99,7 +100,8 @@ describe('<LeafletMap />', () => {
       .spyOn(console, 'error')
       .mockImplementation(() => {});
 
-    render(<LeafletMap location={null} />);
+    // The null location exercises the component's runtime guard for malformed data.
+    render(<LeafletMap location={null as unknown as [number, number]} />);
 
     expect(mockMap.setView).toHaveBeenCalledTimes(1);
     expect(L.circleMarker).not.toHaveBeenCalled();
@@ -113,7 +115,7 @@ it('reports the panned centre to the latest listener without resetting zoom', ()
   const { rerender } = render(
     <LeafletMap location={[50.12, 19.89]} zoom={11} onLocationChange={first} />,
   );
-  const move = mockMap.on.mock.calls.find(([name]) => name === 'moveend')[1];
+  const move = mockMap.on.mock.calls.find(([name]) => name === 'moveend')?.[1];
   rerender(
     <LeafletMap
       location={[50.12, 19.89]}
@@ -123,7 +125,10 @@ it('reports the panned centre to the latest listener without resetting zoom', ()
   );
   mockMap.getCenter.mockReturnValue({ lat: 51, lng: 20 });
   mockMap.getZoom.mockReturnValue(15);
-  move();
+  if (!move) {
+    throw new Error('Expected Leaflet to register a move listener');
+  }
+  move!();
   expect(latest).toHaveBeenCalledWith([51, 20]);
   expect(first).not.toHaveBeenCalled();
   mockMap.setView.mockClear();
@@ -133,5 +138,5 @@ it('reports the panned centre to the latest listener without resetting zoom', ()
   expect(mockMap.setView).not.toHaveBeenCalled();
   rerender(<LeafletMap location={[52, 21]} zoom={11} />);
   expect(mockMap.setView).toHaveBeenCalledWith([52, 21], 15);
-  expect(() => move()).not.toThrow();
+  expect(() => move!()).not.toThrow();
 });
