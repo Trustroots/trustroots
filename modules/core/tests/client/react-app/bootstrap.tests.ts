@@ -1,21 +1,31 @@
 import { getBootstrapData } from '@/modules/core/client/react-app/bootstrap';
 
 describe('React app bootstrap data', () => {
-  const originalWindowValues = {};
+  const bootstrapKeys = [
+    'env',
+    'gaId',
+    'isNativeMobileApp',
+    'settings',
+    'title',
+    'user',
+  ] as const;
+  type BootstrapKey = typeof bootstrapKeys[number];
+  const originalWindowValues = new Map<BootstrapKey, unknown>();
 
   beforeEach(() => {
-    ['env', 'gaId', 'isNativeMobileApp', 'settings', 'title', 'user'].forEach(
-      key => {
-        originalWindowValues[key] = window[key];
-        delete window[key];
-      },
-    );
+    bootstrapKeys.forEach(key => {
+      originalWindowValues.set(key, window[key]);
+      delete window[key];
+    });
   });
 
   afterEach(() => {
-    Object.keys(originalWindowValues).forEach(key => {
-      window[key] = originalWindowValues[key];
-    });
+    Object.assign(
+      window,
+      Object.fromEntries(
+        bootstrapKeys.map(key => [key, originalWindowValues.get(key)]),
+      ),
+    );
   });
 
   it('returns defaults when the server globals are absent', () => {

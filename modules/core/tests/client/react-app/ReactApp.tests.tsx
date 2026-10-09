@@ -1,4 +1,5 @@
 import React from 'react';
+import { AxiosHeaders } from 'axios';
 import {
   act,
   fireEvent,
@@ -10,15 +11,24 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ReactApp from '@/modules/core/client/react-app/ReactApp';
-import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
+import {
+  AppProviders,
+  type BootstrapData,
+} from '@/modules/core/client/react-app/AppProviders';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import * as messagesApi from '@/modules/messages/client/api/messages.api';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
-import { useAuth } from '@/modules/core/client/react-app/auth';
+import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
 import { REACT_ROUTE_POLICIES } from '@/modules/core/shared/react-route-ownership';
+import type { Message } from '@/modules/messages/client/api/messages.api';
+import type { Offer } from '@/modules/offers/client/api/offers.api';
+
+const mockedUsersApi = jest.mocked(usersApi);
+const mockedMessagesApi = jest.mocked(messagesApi);
+const mockedOffersApi = jest.mocked(offersApi);
 
 jest.mock('@/modules/admin/client/components/Admin.component', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
   function MockAdmin() {
     return <main>Admin route</main>;
@@ -28,7 +38,7 @@ jest.mock('@/modules/admin/client/components/Admin.component', () => {
 });
 
 jest.mock('@/modules/admin/client/components/AdminAuditLog.component', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
   function MockAdminAuditLog() {
     return <main>Admin audit route</main>;
@@ -40,7 +50,7 @@ jest.mock('@/modules/admin/client/components/AdminAuditLog.component', () => {
 jest.mock(
   '@/modules/admin/client/components/AdminAcquisitionStories.component',
   () => {
-    const React = require('react');
+    const React = jest.requireActual<typeof import('react')>('react');
 
     function MockAdminAcquisitionStories() {
       return <main>Admin acquisition stories route</main>;
@@ -53,7 +63,7 @@ jest.mock(
 jest.mock(
   '@/modules/admin/client/components/AdminAcquisitionStoriesAnalysis.component',
   () => {
-    const React = require('react');
+    const React = jest.requireActual<typeof import('react')>('react');
 
     function MockAdminAcquisitionStoriesAnalysis() {
       return <main>Admin acquisition stories analysis route</main>;
@@ -64,7 +74,7 @@ jest.mock(
 );
 
 jest.mock('@/modules/admin/client/components/AdminMessages.component', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
   function MockAdminMessages() {
     return <main>Admin messages route</main>;
@@ -74,7 +84,7 @@ jest.mock('@/modules/admin/client/components/AdminMessages.component', () => {
 });
 
 jest.mock('@/modules/admin/client/components/AdminNewsletter.component', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
   function MockAdminNewsletter() {
     return <main>Admin newsletter route</main>;
@@ -86,7 +96,7 @@ jest.mock('@/modules/admin/client/components/AdminNewsletter.component', () => {
 jest.mock(
   '@/modules/admin/client/components/AdminReferenceThreads.component',
   () => {
-    const React = require('react');
+    const React = jest.requireActual<typeof import('react')>('react');
 
     function MockAdminReferenceThreads() {
       return <main>Admin reference threads route</main>;
@@ -99,7 +109,7 @@ jest.mock(
 jest.mock(
   '@/modules/admin/client/components/AdminSearchUsers.component',
   () => {
-    const React = require('react');
+    const React = jest.requireActual<typeof import('react')>('react');
 
     function MockAdminSearchUsers() {
       return <main>Admin search users route</main>;
@@ -110,7 +120,7 @@ jest.mock(
 );
 
 jest.mock('@/modules/admin/client/components/AdminThreads.component', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
   function MockAdminThreads() {
     return <main>Admin threads route</main>;
@@ -120,7 +130,7 @@ jest.mock('@/modules/admin/client/components/AdminThreads.component', () => {
 });
 
 jest.mock('@/modules/admin/client/components/AdminUser.component', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
   function MockAdminUser() {
     return <main>Admin user route</main>;
@@ -130,7 +140,7 @@ jest.mock('@/modules/admin/client/components/AdminUser.component', () => {
 });
 
 jest.mock('@/modules/pages/client/components/Rules.component', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
   function MockRules() {
     return <main>Rules route</main>;
@@ -140,9 +150,9 @@ jest.mock('@/modules/pages/client/components/Rules.component', () => {
 });
 
 jest.mock('@/modules/support/client/components/SupportPage.component', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockSupportPage({ user }) {
+  function MockSupportPage({ user }: { user?: AuthUser | null }) {
     return (
       <main>
         <span>Support route {user?.username}</span>
@@ -151,17 +161,19 @@ jest.mock('@/modules/support/client/components/SupportPage.component', () => {
     );
   }
 
-  MockSupportPage.propTypes = {
-    user: () => null,
-  };
-
   return MockSupportPage;
 });
 
 jest.mock('@/modules/core/client/components/AppHeader.component', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockAppHeader({ user, onSignout }) {
+  function MockAppHeader({
+    user,
+    onSignout,
+  }: {
+    user?: AuthUser | null;
+    onSignout?: () => void;
+  }) {
     return (
       <header>
         Header {user?.username || 'guest'}
@@ -172,16 +184,11 @@ jest.mock('@/modules/core/client/components/AppHeader.component', () => {
     );
   }
 
-  MockAppHeader.propTypes = {
-    onSignout: () => null,
-    user: () => null,
-  };
-
   return MockAppHeader;
 });
 
 jest.mock('@/modules/core/client/react-app/ReactFooter', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
   function MockReactFooter() {
     return <footer>Footer</footer>;
@@ -202,7 +209,7 @@ jest.mock('@/modules/contacts/client/api/contacts.api', () => ({
 jest.mock(
   '@/modules/messages/client/components/ThreadReply',
   () =>
-    ({ onSend }) =>
+    ({ onSend }: { onSend: (content: string) => void }) =>
       (
         <button type="button" onClick={() => onSend('A fictional message')}>
           Send message
@@ -212,7 +219,7 @@ jest.mock(
 jest.mock(
   '@/modules/messages/client/components/ThreadMessages',
   () =>
-    ({ otherUser }) =>
+    ({ otherUser }: { otherUser: { username: string } }) =>
       <div>Conversation with {otherUser.username}</div>,
 );
 jest.mock('@/modules/users/client/components/Monkeybox', () => () => null);
@@ -227,7 +234,7 @@ jest.mock(
 jest.mock(
   '@/modules/users/client/components/AboutMe.component',
   () =>
-    ({ profile }) =>
+    ({ profile }: { profile: { description?: string } }) =>
       <p>{profile.description}</p>,
 );
 jest.mock(
@@ -237,7 +244,13 @@ jest.mock(
 jest.mock(
   '@/modules/search/client/components/SearchSidebar.component',
   () =>
-    ({ offer, onCloseSidebar }) =>
+    ({
+      offer,
+      onCloseSidebar,
+    }: {
+      offer?: Offer | null;
+      onCloseSidebar: () => void;
+    }) =>
       (
         <aside>
           {offer && <span>Selected offer {offer._id}</span>}
@@ -248,10 +261,19 @@ jest.mock(
       ),
 );
 const mockMapMount = jest.fn();
-const mockOffer = { _id: '665100000000000000000001', location: [10, 20] };
+const mockOffer: Offer = {
+  _id: '665100000000000000000001',
+  location: [10, 20],
+};
 jest.mock('@/modules/search/client/components/SearchMap.component', () => {
-  const React = require('react');
-  return ({ onOfferOpen, location }) => {
+  const React = jest.requireActual<typeof import('react')>('react');
+  return ({
+    onOfferOpen,
+    location,
+  }: {
+    onOfferOpen: (offer: Offer) => void;
+    location: { zoom?: number };
+  }) => {
     React.useEffect(() => {
       mockMapMount();
     }, []);
@@ -291,7 +313,11 @@ describe('<ReactApp />', () => {
     window.scrollTo = originalScrollTo;
   });
 
-  function renderApp(path, bootstrapData = {}, props = {}) {
+  function renderApp(
+    path: string,
+    bootstrapData: Partial<BootstrapData> = {},
+    props: React.ComponentProps<typeof ReactApp> = {},
+  ) {
     window.history.pushState({}, '', path);
 
     return render(
@@ -347,7 +373,7 @@ describe('<ReactApp />', () => {
   });
 
   it('honors headerHidden and noScrollingTop route metadata', async () => {
-    const route = REACT_ROUTE_POLICIES.find(route => route.path === '/rules');
+    const route = REACT_ROUTE_POLICIES.find(route => route.path === '/rules')!;
     route.headerHidden = true;
     route.noScrollingTop = true;
 
@@ -475,28 +501,52 @@ describe('<ReactApp />', () => {
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/not-found'));
   });
   it('sends to the new recipient after direct conversation navigation', async () => {
-    const user = {
+    const user: AuthUser & { _id: string; username: string } = {
       _id: 'sender',
       username: 'sender',
       public: true,
       description: 'Fictional profile',
     };
-    usersApi.fetch.mockImplementation(async username => ({
+    mockedUsersApi.fetch.mockImplementation(async (username: string) => ({
       _id: `${username}-id`,
+      displayName: 'Fictional member',
       username,
     }));
-    messagesApi.fetchMessages.mockResolvedValue({
+    const messagesResponse = {
       messages: [
         {
           _id: 'message-one',
+          content: 'A fictional message',
           created: '2026-01-01',
           read: true,
           userFrom: user,
+          userTo: {
+            _id: 'member-one-id',
+            username: 'member-one',
+          },
         },
       ],
-      nextParams: null,
+      // Preserve the API's explicit terminal null cursor at this mock boundary.
+      nextParams: null as unknown as Awaited<
+        ReturnType<typeof messagesApi.fetchMessages>
+      >['nextParams'],
+    };
+    mockedMessagesApi.fetchMessages.mockResolvedValue(messagesResponse);
+    const sentMessage: Message = {
+      _id: 'message-two',
+      content: 'A fictional message',
+      created: '2026-01-02',
+      read: false,
+      userFrom: user,
+      userTo: { _id: 'member-two-id', username: 'member-two' },
+    };
+    mockedMessagesApi.sendMessage.mockResolvedValue({
+      config: { headers: new AxiosHeaders() },
+      data: sentMessage,
+      headers: new AxiosHeaders(),
+      status: 200,
+      statusText: 'OK',
     });
-    messagesApi.sendMessage.mockResolvedValue({});
     renderApp('/messages/member-one', { user });
     await screen.findByText('Conversation with member-one');
     const link = document.createElement('a');
@@ -507,7 +557,7 @@ describe('<ReactApp />', () => {
       await screen.findByText('Conversation with member-two');
       fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
       await waitFor(() =>
-        expect(messagesApi.sendMessage).toHaveBeenCalledWith(
+        expect(mockedMessagesApi.sendMessage).toHaveBeenCalledWith(
           'member-two-id',
           'A fictional message',
         ),
@@ -518,7 +568,7 @@ describe('<ReactApp />', () => {
   });
 
   it('keeps the map mounted and its zoom unchanged when opening and closing a pin', async () => {
-    offersApi.getOffer.mockResolvedValue(mockOffer);
+    mockedOffersApi.getOffer.mockResolvedValue(mockOffer);
     renderApp('/search', {
       user: { _id: 'viewer', username: 'viewer', public: true },
     });
@@ -532,7 +582,7 @@ describe('<ReactApp />', () => {
     );
     expect(screen.getByText('Requested zoom unchanged')).toBeInTheDocument();
     expect(mockMapMount).toHaveBeenCalledTimes(1);
-    expect(offersApi.getOffer).not.toHaveBeenCalled();
+    expect(mockedOffersApi.getOffer).not.toHaveBeenCalled();
     fireEvent.click(
       screen.getByRole('button', { name: 'Close search sidebar' }),
     );
@@ -541,7 +591,7 @@ describe('<ReactApp />', () => {
   });
 
   it('loads an offer from client navigation without recreating the map', async () => {
-    offersApi.getOffer.mockResolvedValue(mockOffer);
+    mockedOffersApi.getOffer.mockResolvedValue(mockOffer);
     renderApp('/search', {
       user: { _id: 'viewer', username: 'viewer', public: true },
     });
@@ -571,15 +621,16 @@ describe('<ReactApp />', () => {
     await act(async () => {
       window.history.pushState({}, '', '/search?offer=invalid');
     });
-    expect(offersApi.getOffer).not.toHaveBeenCalled();
+    expect(mockedOffersApi.getOffer).not.toHaveBeenCalled();
     expect(mockMapMount).toHaveBeenCalledTimes(1);
   });
 
   it('allows opening About from mobile profile Overview', async () => {
     const originalWidth = window.innerWidth;
     window.innerWidth = 390;
-    usersApi.fetch.mockResolvedValue({
+    mockedUsersApi.fetch.mockResolvedValue({
       _id: 'member-one',
+      displayName: 'Member One',
       username: 'member-one',
       description: 'A fictional member description',
       member: [],
@@ -597,8 +648,9 @@ describe('<ReactApp />', () => {
   });
 
   it('preserves the loaded profile when switching tabs through the router', async () => {
-    usersApi.fetch.mockResolvedValue({
+    mockedUsersApi.fetch.mockResolvedValue({
       _id: 'member-one',
+      displayName: 'Member One',
       username: 'member-one',
       description: 'A fictional member description',
       member: [],
@@ -611,19 +663,19 @@ describe('<ReactApp />', () => {
     fireEvent.click(
       document.querySelector(
         '.profile-tabs a[href="/profile/member-one/contacts"]',
-      ),
+      )!,
     );
     await waitFor(() =>
       expect(window.location.pathname).toBe('/profile/member-one/contacts'),
     );
     expect(screen.queryByText('Wait a moment…')).not.toBeInTheDocument();
-    expect(usersApi.fetch).toHaveBeenCalledTimes(1);
+    expect(mockedUsersApi.fetch).toHaveBeenCalledTimes(1);
 
     fireEvent.click(
-      document.querySelector('.profile-tabs a[href="/profile/member-one"]'),
+      document.querySelector('.profile-tabs a[href="/profile/member-one"]')!,
     );
     await screen.findByText('A fictional member description');
-    expect(usersApi.fetch).toHaveBeenCalledTimes(1);
+    expect(mockedUsersApi.fetch).toHaveBeenCalledTimes(1);
   });
 
   it('updates the current page and header immediately when user state changes', async () => {

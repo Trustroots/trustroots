@@ -3,48 +3,50 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import ProfileOverview from '@/modules/users/client/components/ProfileOverview.component';
+import type Avatar from '@/modules/users/client/components/Avatar.component';
+import type ProfileViewBasics from '@/modules/users/client/components/ProfileViewBasics';
+import type { UserProfile } from '@/modules/users/client/types';
 
 jest.mock('@/modules/users/client/components/Avatar.component', () => {
-  function MockAvatar({ onClick, size, user }) {
+  function MockAvatar({
+    onClick,
+    size,
+    user,
+  }: React.ComponentProps<typeof Avatar>) {
     return (
-      <button data-testid={`avatar-${size}`} onClick={onClick} type="button">
-        {`Avatar ${size} ${user.displayName}`}
-      </button>
+      <div onClick={onClick}>
+        <button data-testid={`avatar-${size}`} type="button">
+          {`Avatar ${size} ${user.displayName}`}
+        </button>
+      </div>
     );
   }
-
-  MockAvatar.propTypes = {
-    onClick: () => null,
-    size: () => null,
-    user: () => null,
-  };
 
   return MockAvatar;
 });
 
 jest.mock('@/modules/users/client/components/ProfileViewBasics', () => {
-  function MockProfileViewBasics({ profile }) {
+  function MockProfileViewBasics({
+    profile,
+  }: React.ComponentProps<typeof ProfileViewBasics>) {
     return (
       <section data-testid="profile-basics">{profile.displayName}</section>
     );
   }
 
-  MockProfileViewBasics.propTypes = {
-    profile: () => null,
-  };
-
   return MockProfileViewBasics;
 });
 
 describe('<ProfileOverview />', () => {
-  const profile = {
+  const profile: UserProfile = {
+    _id: 'user-1',
     avatarSource: 'none',
     displayName: 'Alice Example',
     username: 'alice',
   };
 
   it('renders profile basics and opens the large avatar modal', async () => {
-    render(<ProfileOverview profile={profile} />);
+    render(<ProfileOverview isSelf={false} profile={profile} />);
 
     expect(screen.getByTestId('profile-basics')).toHaveTextContent(
       'Alice Example',

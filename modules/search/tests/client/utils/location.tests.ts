@@ -28,6 +28,9 @@ describe('location utils', () => {
     const bounds = getBounds({
       center: [2.3, 48.8],
     });
+    if (!bounds) {
+      throw new Error('Expected bounds for valid centre coordinates');
+    }
 
     expect(bounds.northEast).toEqual({
       lat: 48.802,

@@ -17,10 +17,23 @@ import {
   getCurrentRouteParams,
   navigate,
 } from '@/modules/core/client/services/client-runtime';
+import type { AuthUser } from '@/modules/core/client/react-app/auth';
+import type JoinButton from '@/modules/tribes/client/components/JoinButton';
+import type {
+  MembershipUpdate,
+  TribeSummary,
+} from '@/modules/tribes/client/api/tribes.api';
+import type { AuthenticatedUser } from '@/modules/users/client/api/auth.api';
 
 jest.mock('lodash/shuffle', () => jest.fn(items => items));
 jest.mock('@/modules/users/client/api/auth.api');
 jest.mock('@/modules/tribes/client/api/tribes.api');
+const signup = jest.mocked(authApi.signup);
+const validateSignup = jest.mocked(authApi.validateSignup);
+const readTribes = jest.mocked(tribesApi.read);
+const getTribe = jest.mocked(tribesApi.get);
+const joinTribe = jest.mocked(tribesApi.join);
+const routeParams = jest.mocked(getCurrentRouteParams);
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   broadcastClientEvent: jest.fn(),
   trackEvent: jest.fn(),
@@ -28,10 +41,12 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
   navigate: jest.fn(),
 }));
 jest.mock('@/modules/tribes/client/components/JoinButton', () => {
-  const React = require('react');
-  const PropTypes = require('prop-types');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockJoinButton({ tribe, onUpdated }) {
+  function MockJoinButton({
+    tribe,
+    onUpdated,
+  }: Pick<React.ComponentProps<typeof JoinButton>, 'tribe' | 'onUpdated'>) {
     return (
       <>
         <button
@@ -42,6 +57,7 @@ jest.mock('@/modules/tribes/client/components/JoinButton', () => {
                 _id: 'user-1',
                 username: 'ada',
                 email: 'ada@example.test',
+                displayName: 'Ada Example',
               },
             })
           }
@@ -55,16 +71,11 @@ jest.mock('@/modules/tribes/client/components/JoinButton', () => {
     );
   }
 
-  MockJoinButton.propTypes = {
-    onUpdated: PropTypes.func,
-    tribe: PropTypes.object.isRequired,
-  };
-
   return MockJoinButton;
 });
 
 describe('SignupPage', () => {
-  const suggestedTribes = [
+  const suggestedTribes: TribeSummary[] = [
     { _id: 'tribe-1', label: 'Cyclists', count: 0, slug: 'cyclists' },
     { _id: 'tribe-2', label: 'Hikers', count: 1, slug: 'hikers' },
     { _id: 'tribe-3', label: 'Climbers', count: 42, slug: 'climbers' },
@@ -74,13 +85,14 @@ describe('SignupPage', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    getCurrentRouteParams.mockReturnValue({});
-    tribesApi.read.mockResolvedValue(suggestedTribes);
-    tribesApi.get.mockResolvedValue(null);
-    authApi.validateSignup.mockResolvedValue({ valid: true });
+    routeParams.mockReturnValue({});
+    readTribes.mockResolvedValue(suggestedTribes);
+    // The missing-tribe response is a supported API edge case.
+    getTribe.mockResolvedValue(null as unknown as TribeSummary);
+    validateSignup.mockResolvedValue({ valid: true });
   });
 
-  function renderPage({ user = null } = {}) {
+  function renderPage({ user = null }: { user?: AuthUser | null } = {}) {
     return render(
       <AppProviders
         bootstrapData={{
@@ -104,6 +116,14 @@ describe('SignupPage', () => {
     newsletter = false,
     password = 'password-123',
     username = 'ada',
+  }: {
+    acquisitionStory?: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    newsletter?: boolean;
+    password?: string;
+    username?: string;
   } = {}) {
     fireEvent.change(screen.getByLabelText('First Name'), {
       target: { value: firstName },
@@ -154,8 +174,8 @@ describe('SignupPage', () => {
   });
 
   it('loads a referred circle from route params', async () => {
-    getCurrentRouteParams.mockReturnValue({ tribe: 'hitchhikers' });
-    tribesApi.get.mockResolvedValue({
+    routeParams.mockReturnValue({ tribe: 'hitchhikers' });
+    getTribe.mockResolvedValue({
       _id: 'tribe-ref',
       label: 'Hitchhikers',
       slug: 'hitchhikers',
@@ -170,8 +190,8 @@ describe('SignupPage', () => {
   });
 
   it('continues without a missing referred circle', async () => {
-    getCurrentRouteParams.mockReturnValue({ tribe: 'missing-circle' });
-    tribesApi.get.mockResolvedValue(null);
+    routeParams.mockReturnValue({ tribe: 'missing-circle' });
+    getTribe.mockResolvedValue(null as unknown as TribeSummary);
 
     renderPage();
 
@@ -182,7 +202,7 @@ describe('SignupPage', () => {
   });
 
   it('keeps a newly signed-up member in the circles step', async () => {
-    authApi.signup.mockResolvedValue({
+    signup.mockResolvedValue({
       _id: 'user-1',
       username: 'ada',
       email: 'ada@example.test',
@@ -198,7 +218,8 @@ describe('SignupPage', () => {
   });
 
   it('renders circle suggestions when signup leaves the current user unavailable', async () => {
-    authApi.signup.mockResolvedValue(null);
+    // Signup may complete while the browser has no current-user payload.
+    signup.mockResolvedValue(null as unknown as AuthenticatedUser);
 
     renderPage();
     fillStepOne();
@@ -210,23 +231,24 @@ describe('SignupPage', () => {
   });
 
   it('joins a referred circle after successful signup', async () => {
-    getCurrentRouteParams.mockReturnValue({ tribe: 'hitchhikers' });
-    tribesApi.get.mockResolvedValue({
+    routeParams.mockReturnValue({ tribe: 'hitchhikers' });
+    getTribe.mockResolvedValue({
       _id: 'tribe-ref',
       label: 'Hitchhikers',
       slug: 'hitchhikers',
       count: 5,
     });
-    authApi.signup.mockResolvedValue({
+    signup.mockResolvedValue({
       _id: 'user-1',
       username: 'ada',
       email: 'ada@example.test',
     });
-    tribesApi.join.mockResolvedValue({
+    joinTribe.mockResolvedValue({
       user: {
         _id: 'user-1',
         username: 'ada',
         email: 'ada@example.test',
+        displayName: 'Ada Example',
         tribes: ['tribe-ref'],
       },
     });
@@ -246,15 +268,16 @@ describe('SignupPage', () => {
   });
 
   it('renders a referred circle when no current user is available', async () => {
-    getCurrentRouteParams.mockReturnValue({ tribe: 'hitchhikers' });
-    tribesApi.get.mockResolvedValue({
+    routeParams.mockReturnValue({ tribe: 'hitchhikers' });
+    getTribe.mockResolvedValue({
       _id: 'tribe-ref',
       label: 'Hitchhikers',
       slug: 'hitchhikers',
       count: 5,
     });
-    authApi.signup.mockResolvedValue(null);
-    tribesApi.join.mockResolvedValue({ user: null });
+    // These responses exercise legacy endpoints that omit their user payload.
+    signup.mockResolvedValue(null as unknown as AuthenticatedUser);
+    joinTribe.mockResolvedValue({ user: null } as unknown as MembershipUpdate);
 
     renderPage();
     await screen.findByText('+ Circle Hitchhikers');
@@ -267,19 +290,19 @@ describe('SignupPage', () => {
   });
 
   it('keeps the signup user when a referred circle join has no user payload', async () => {
-    getCurrentRouteParams.mockReturnValue({ tribe: 'hitchhikers' });
-    tribesApi.get.mockResolvedValue({
+    routeParams.mockReturnValue({ tribe: 'hitchhikers' });
+    getTribe.mockResolvedValue({
       _id: 'tribe-ref',
       label: 'Hitchhikers',
       slug: 'hitchhikers',
       count: 5,
     });
-    authApi.signup.mockResolvedValue({
+    signup.mockResolvedValue({
       _id: 'user-1',
       username: 'ada',
       email: 'ada@example.test',
     });
-    tribesApi.join.mockResolvedValue({});
+    joinTribe.mockResolvedValue({});
 
     renderPage();
 
@@ -292,7 +315,7 @@ describe('SignupPage', () => {
   });
 
   it('shows the welcome step after skipping circles', async () => {
-    authApi.signup.mockResolvedValue({
+    signup.mockResolvedValue({
       _id: 'user-1',
       username: 'ada',
       email: 'ada@example.test',
@@ -312,7 +335,7 @@ describe('SignupPage', () => {
   });
 
   it('shows the welcome step after continuing from the circles step', async () => {
-    authApi.signup.mockResolvedValue({
+    signup.mockResolvedValue({
       _id: 'user-1',
       username: 'ada',
       email: 'ada@example.test',
@@ -329,7 +352,7 @@ describe('SignupPage', () => {
   });
 
   it('shows an error when signup fails with a taken email', async () => {
-    authApi.signup.mockRejectedValue({
+    signup.mockRejectedValue({
       response: {
         data: { message: 'Account with this email exists already.' },
       },
@@ -349,7 +372,7 @@ describe('SignupPage', () => {
   });
 
   it('clears the taken email alert when the email field changes', async () => {
-    authApi.signup.mockRejectedValue({
+    signup.mockRejectedValue({
       response: {
         data: { message: 'Account with this email exists already.' },
       },
@@ -373,7 +396,7 @@ describe('SignupPage', () => {
   });
 
   it('shows a generic error when signup fails for another reason', async () => {
-    authApi.signup.mockRejectedValue({
+    signup.mockRejectedValue({
       response: { data: { message: 'Signup is temporarily unavailable.' } },
     });
 
@@ -388,7 +411,7 @@ describe('SignupPage', () => {
   });
 
   it('shows a fallback error when signup fails without a message', async () => {
-    authApi.signup.mockRejectedValue(new Error('network failure'));
+    signup.mockRejectedValue(new Error('network failure'));
 
     renderPage();
 
@@ -441,7 +464,7 @@ describe('SignupPage', () => {
 
   it('shows the server explanation for a reserved username', async () => {
     jest.useFakeTimers();
-    authApi.validateSignup.mockResolvedValue({
+    validateSignup.mockResolvedValue({
       valid: false,
       message: 'This name is reserved.',
     });
@@ -487,7 +510,7 @@ describe('SignupPage', () => {
 
   it('shows a taken username message after validation', async () => {
     jest.useFakeTimers();
-    authApi.validateSignup.mockResolvedValue({ valid: false });
+    validateSignup.mockResolvedValue({ valid: false });
 
     try {
       renderPage();
@@ -511,8 +534,8 @@ describe('SignupPage', () => {
 
   it('allows signup when username validation fails unexpectedly', async () => {
     jest.useFakeTimers();
-    authApi.validateSignup.mockRejectedValue(new Error('validation offline'));
-    authApi.signup.mockResolvedValue({
+    validateSignup.mockRejectedValue(new Error('validation offline'));
+    signup.mockResolvedValue({
       _id: 'user-1',
       username: 'validuser1',
       email: 'ada@example.test',
@@ -585,7 +608,7 @@ describe('SignupPage', () => {
   });
 
   it('submits optional signup fields', async () => {
-    authApi.signup.mockResolvedValue({
+    signup.mockResolvedValue({
       _id: 'user-1',
       username: 'ada',
       email: 'ada@example.test',
@@ -615,7 +638,7 @@ describe('SignupPage', () => {
   });
 
   it('shows suggested circles without a referred circle', async () => {
-    authApi.signup.mockResolvedValue({
+    signup.mockResolvedValue({
       _id: 'user-1',
       username: 'ada',
       email: 'ada@example.test',
@@ -635,14 +658,14 @@ describe('SignupPage', () => {
   });
 
   it('shows other suggested circles when signing up via a circle link', async () => {
-    getCurrentRouteParams.mockReturnValue({ tribe: 'hitchhikers' });
-    tribesApi.get.mockResolvedValue({
+    routeParams.mockReturnValue({ tribe: 'hitchhikers' });
+    getTribe.mockResolvedValue({
       _id: 'tribe-ref',
       label: 'Hitchhikers',
       slug: 'hitchhikers',
       count: 5,
     });
-    authApi.signup.mockResolvedValue({
+    signup.mockResolvedValue({
       _id: 'user-1',
       username: 'ada',
       email: 'ada@example.test',
@@ -667,7 +690,7 @@ describe('SignupPage', () => {
   });
 
   it('loads more suggested circles', async () => {
-    authApi.signup.mockResolvedValue({
+    signup.mockResolvedValue({
       _id: 'user-1',
       username: 'ada',
       email: 'ada@example.test',
@@ -690,7 +713,7 @@ describe('SignupPage', () => {
   });
 
   it('updates auth state when circle membership changes', async () => {
-    authApi.signup.mockResolvedValue({
+    signup.mockResolvedValue({
       _id: 'user-1',
       username: 'ada',
       email: 'ada@example.test',
@@ -717,7 +740,7 @@ describe('SignupPage', () => {
   });
 
   it('ignores circle membership updates without a user', async () => {
-    authApi.signup.mockResolvedValue({
+    signup.mockResolvedValue({
       _id: 'user-1',
       username: 'ada',
       email: 'ada@example.test',
@@ -737,8 +760,8 @@ describe('SignupPage', () => {
   });
 
   it('ignores suggested circle updates after unmount', async () => {
-    let resolveRead;
-    tribesApi.read.mockReturnValue(
+    let resolveRead!: (value: TribeSummary[]) => void;
+    readTribes.mockReturnValue(
       new Promise(resolve => {
         resolveRead = resolve;
       }),
@@ -756,8 +779,10 @@ describe('SignupPage', () => {
   it('ignores username validation updates after unmount', async () => {
     jest.useFakeTimers();
 
-    let resolveValidation;
-    authApi.validateSignup.mockReturnValue(
+    let resolveValidation!: (
+      value: Awaited<ReturnType<typeof authApi.validateSignup>>,
+    ) => void;
+    validateSignup.mockReturnValue(
       new Promise(resolve => {
         resolveValidation = resolve;
       }),
@@ -788,8 +813,8 @@ describe('SignupPage', () => {
 
   it('ignores validation failures after unmount', async () => {
     jest.useFakeTimers();
-    let rejectValidation;
-    authApi.validateSignup.mockReturnValue(
+    let rejectValidation!: (error: Error) => void;
+    validateSignup.mockReturnValue(
       new Promise((resolve, reject) => {
         rejectValidation = reject;
       }),

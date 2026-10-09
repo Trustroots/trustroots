@@ -27,7 +27,13 @@ describe('AppProviders', () => {
     }
 
     render(
-      <AppProviders bootstrapData={{ title: 'Bootstrap title' }}>
+      <AppProviders
+        bootstrapData={{
+          settings: {},
+          title: 'Bootstrap title',
+          user: null,
+        }}
+      >
         <TestConsumer />
       </AppProviders>,
     );
@@ -45,11 +51,9 @@ describe('AppProviders', () => {
     }
 
     render(
-      React.createElement(
-        AppProviders,
-        null,
-        React.createElement(TestConsumer),
-      ),
+      <AppProviders>
+        <TestConsumer />
+      </AppProviders>,
     );
 
     expect(screen.getByText('Window title')).toBeInTheDocument();

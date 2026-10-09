@@ -4,18 +4,18 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import AboutMe from '@/modules/users/client/components/AboutMe.component';
+import type { UserProfile } from '@/modules/users/client/types';
+
+type AboutMeProfile = Pick<UserProfile, 'description'>;
+const describedProfile: AboutMeProfile = {
+  description:
+    '<p>I host travelers, share meals, and like showing people around.</p>',
+};
 
 describe('<AboutMe />', () => {
   it('renders the profile description without the completion prompt', () => {
     render(
-      <AboutMe
-        isSelf
-        profile={{
-          description:
-            '<p>I host travelers, share meals, and like showing people around.</p>',
-        }}
-        profileMinimumLength={20}
-      />,
+      <AboutMe isSelf profile={describedProfile} profileMinimumLength={20} />,
     );
 
     expect(
@@ -31,7 +31,8 @@ describe('<AboutMe />', () => {
   });
 
   it('prompts the current member to complete a missing description', () => {
-    render(<AboutMe isSelf profile={{}} profileMinimumLength={20} />);
+    const profile: AboutMeProfile = {};
+    render(<AboutMe isSelf profile={profile} profileMinimumLength={20} />);
 
     expect(
       screen.getByLabelText(
@@ -49,7 +50,10 @@ describe('<AboutMe />', () => {
   });
 
   it("does not prompt visitors to fill someone else's profile", () => {
-    render(<AboutMe isSelf={false} profile={{}} profileMinimumLength={20} />);
+    const profile: AboutMeProfile = {};
+    render(
+      <AboutMe isSelf={false} profile={profile} profileMinimumLength={20} />,
+    );
 
     expect(
       screen.queryByText(
