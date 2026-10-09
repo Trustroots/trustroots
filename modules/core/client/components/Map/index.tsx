@@ -66,15 +66,20 @@ export default function Map(props: MapProps) {
   }
   function handleLoad(event: Parameters<NonNullable<MapProps['onLoad']>>[0]) {
     event.target.touchZoomRotate.disableRotation();
+    event.target.scrollZoom.setWheelZoomRate(1 / 100);
     pageWheelCleanup.current?.();
 
     const map = event.target;
     const container = map.getContainer();
-    const handlePageWheel = (wheel: WheelEvent) => {
-      if (wheel.deltaMode !== WheelEvent.DOM_DELTA_PAGE) return;
+    const handleWheelUnit = (wheel: WheelEvent) => {
+      const usesPageUnits = wheel.deltaMode === WheelEvent.DOM_DELTA_PAGE;
+      const usesLineUnits = wheel.deltaMode === WheelEvent.DOM_DELTA_LINE;
+      if (!usesPageUnits && !usesLineUnits) return;
 
-      const pageHeight = map.getContainer().getBoundingClientRect().height;
-      if (pageHeight <= 0) return;
+      const unitScale = usesPageUnits
+        ? map.getContainer().getBoundingClientRect().height
+        : 40;
+      if (unitScale <= 0) return;
 
       wheel.preventDefault();
       wheel.stopPropagation();
@@ -86,20 +91,20 @@ export default function Map(props: MapProps) {
           clientY: wheel.clientY,
           ctrlKey: wheel.ctrlKey,
           deltaMode: WheelEvent.DOM_DELTA_PIXEL,
-          deltaX: wheel.deltaX,
-          deltaY: wheel.deltaY * pageHeight,
+          deltaX: wheel.deltaX * unitScale,
+          deltaY: wheel.deltaY * unitScale,
           altKey: wheel.altKey,
           metaKey: wheel.metaKey,
           shiftKey: wheel.shiftKey,
         }),
       );
     };
-    container.addEventListener('wheel', handlePageWheel, {
+    container.addEventListener('wheel', handleWheelUnit, {
       capture: true,
       passive: false,
     });
     pageWheelCleanup.current = () =>
-      container.removeEventListener('wheel', handlePageWheel, true);
+      container.removeEventListener('wheel', handleWheelUnit, true);
 
     onLoad?.(event);
   }

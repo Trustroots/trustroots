@@ -465,12 +465,16 @@ export default function SearchMap({
     }
 
     const handlePinchWheel = (event: WheelEvent) => {
-      if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE && !event.ctrlKey) {
-        // Mapbox GL v1 treats page units as pixels. Restore the previous
-        // page-to-map-height normalisation before its wheel handler runs.
+      const usesPageUnits = event.deltaMode === WheelEvent.DOM_DELTA_PAGE;
+      const usesLineUnits = event.deltaMode === WheelEvent.DOM_DELTA_LINE;
+      if ((usesPageUnits || usesLineUnits) && !event.ctrlKey) {
+        // Mapbox GL v1 treats page and line units as pixels. Restore standard
+        // wheel-unit normalisation before its wheel handler runs.
         const inputSurface = event.target as EventTarget;
-        const pageHeight = surface.getBoundingClientRect().height;
-        if (pageHeight > 0) {
+        const unitScale = usesPageUnits
+          ? surface.getBoundingClientRect().height
+          : 40;
+        if (unitScale > 0) {
           event.preventDefault();
           event.stopPropagation();
           inputSurface.dispatchEvent(
@@ -480,8 +484,11 @@ export default function SearchMap({
               clientX: event.clientX,
               clientY: event.clientY,
               deltaMode: WheelEvent.DOM_DELTA_PIXEL,
-              deltaX: event.deltaX,
-              deltaY: event.deltaY * pageHeight,
+              deltaX: event.deltaX * unitScale,
+              deltaY: event.deltaY * unitScale,
+              ctrlKey: event.ctrlKey,
+              altKey: event.altKey,
+              metaKey: event.metaKey,
               shiftKey: event.shiftKey,
             }),
           );
@@ -499,7 +506,12 @@ export default function SearchMap({
       event.stopPropagation();
 
       const current = viewportRef.current;
-      const deltaY = event.deltaMode === 1 ? event.deltaY * 40 : event.deltaY;
+      const deltaScale = usesPageUnits
+        ? surface.getBoundingClientRect().height
+        : usesLineUnits
+        ? 40
+        : 1;
+      const deltaY = event.deltaY * deltaScale;
       const zoom = Math.max(0, Math.min(20, current.zoom - deltaY * 0.01));
 
       if (zoom !== current.zoom) {
@@ -1083,6 +1095,7 @@ export default function SearchMap({
   return (
     <div
       className="search-map"
+      data-map-offer-count={offers.features.length}
       data-map-zoom={viewport.zoom}
       ref={gestureSurfaceRef}
       style={{ height: '100%', width: '100%' }}
@@ -1112,7 +1125,18 @@ export default function SearchMap({
         }
         onClick={onClickMap}
         onError={event => handleMapError(event)}
-        onLoad={event => event.target.touchZoomRotate.disableRotation()}
+        onLoad={event => {
+          const loadedMap = event.target;
+          loadedMap.resize();
+          loadedMap.jumpTo({
+            center: [viewport.longitude, viewport.latitude],
+            zoom: viewport.zoom,
+          });
+          setMap(loadedMap);
+          event.target.touchZoomRotate.disableRotation();
+          event.target.scrollZoom.setWheelZoomRate(1 / 100);
+          debouncedUpdateOffers(viewport);
+        }}
         onMouseMove={onHover}
         onMove={event => {
           onViewPortChange(event.viewState as MapViewport);

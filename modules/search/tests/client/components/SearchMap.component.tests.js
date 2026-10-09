@@ -100,7 +100,10 @@ const mockMap = {
   getFeatureState: jest.fn(),
   getSource: jest.fn(),
   getZoom: jest.fn(),
+  jumpTo: jest.fn(),
+  resize: jest.fn(),
   setFeatureState: jest.fn(),
+  scrollZoom: { setWheelZoomRate: jest.fn() },
   touchZoomRotate: { disableRotation: jest.fn() },
 };
 let mockMapInstance = mockMap;
@@ -339,7 +342,26 @@ describe('Search', () => {
 
     mockMapProps.onLoad({ target: mockMap });
 
+    expect(mockMap.resize).toHaveBeenCalledTimes(1);
+    expect(mockMap.jumpTo).toHaveBeenCalledWith({
+      center: [mockMapProps.longitude, mockMapProps.latitude],
+      zoom: mockMapProps.zoom,
+    });
     expect(mockMap.touchZoomRotate.disableRotation).toHaveBeenCalledTimes(1);
+    expect(mockMap.scrollZoom.setWheelZoomRate).toHaveBeenCalledWith(1 / 100);
+  });
+
+  it('fetches initial offers after the Mapbox map is ready', async () => {
+    mockPersistentMapLocation = { ...mockPersistentMapLocation, zoom: 6 };
+    mockMapInstance = null;
+    renderSearchMap();
+
+    expect(mockQueryOffers).not.toHaveBeenCalled();
+
+    mockMapInstance = mockMap;
+    act(() => mockMapProps.onLoad({ target: mockMap }));
+
+    await waitFor(() => expect(mockQueryOffers).toHaveBeenCalledTimes(1));
   });
 
   it('uses the Leaflet renderer when WebGL is unavailable', async () => {
@@ -458,6 +480,30 @@ describe('Search', () => {
     expect(mockMapProps.zoom).toBe(2.9);
   });
 
+  it('scales page-unit Firefox trackpad pinch input by the map height', () => {
+    renderSearchMap();
+    const map = screen.getByTestId('react-map-gl');
+    jest
+      .spyOn(map.closest('.search-map'), 'getBoundingClientRect')
+      .mockReturnValue({
+        height: 320,
+      });
+
+    act(() =>
+      map.dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          cancelable: true,
+          ctrlKey: true,
+          deltaMode: WheelEvent.DOM_DELTA_PAGE,
+          deltaY: -1,
+        }),
+      ),
+    );
+
+    expect(mockMapProps.zoom).toBe(5.2);
+  });
+
   it('leaves ordinary wheel input to the map and clamps pinch zoom', () => {
     renderSearchMap();
     const map = screen.getByTestId('react-map-gl');
@@ -531,6 +577,26 @@ describe('Search', () => {
 
     expect(pageWheel.defaultPrevented).toBe(true);
     expect(receivedDeltas).toContainEqual([0, -320]);
+  });
+
+  it('normalises line-based wheel input to 40 pixels per line', () => {
+    renderSearchMap();
+    const map = screen.getByTestId('react-map-gl');
+    const receivedDeltas = [];
+    map.addEventListener('wheel', event => {
+      receivedDeltas.push([event.deltaMode, event.deltaY]);
+    });
+    const lineWheel = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      deltaMode: WheelEvent.DOM_DELTA_LINE,
+      deltaY: -3,
+    });
+
+    act(() => map.dispatchEvent(lineWheel));
+
+    expect(lineWheel.defaultPrevented).toBe(true);
+    expect(receivedDeltas).toContainEqual([0, -120]);
   });
 
   it('normalises page-based wheel input over a non-HTML map overlay', () => {

@@ -44,17 +44,19 @@ async function expectCentreHostPinPreservesZoom(
 ) {
   await waitForSearchMap(page);
   const previousZoom = await readMapZoom(page);
-  if (beforeClick) {
-    await beforeClick();
-  } else {
-    await page.waitForTimeout(300);
-  }
+  if (beforeClick) await beforeClick();
+
+  await expect
+    .poll(() =>
+      page.locator('.search-map').getAttribute('data-map-offer-count'),
+    )
+    .toBe('2');
 
   const canvas = page.locator('.mapboxgl-canvas');
   const originalCanvas = assertCanvasSurvives
     ? await canvas.elementHandle()
     : null;
-  const surface = page.locator('.search-map-container .overlays');
+  const surface = page.locator('.mapboxgl-canvas');
   const box = await surface.boundingBox();
 
   // The fixture host is at the seeded map centre.

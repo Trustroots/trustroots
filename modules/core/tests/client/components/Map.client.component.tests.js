@@ -81,6 +81,7 @@ describe('<Map />', () => {
 
   it('preserves disabled touch rotation and forwards the load callback', () => {
     const disableRotation = jest.fn();
+    const setWheelZoomRate = jest.fn();
     const canvas = document.createElement('canvas');
     const container = document.createElement('div');
     container.appendChild(canvas);
@@ -90,6 +91,7 @@ describe('<Map />', () => {
 
     const event = {
       target: {
+        scrollZoom: { setWheelZoomRate },
         touchZoomRotate: { disableRotation },
         getCanvas: () => canvas,
         getContainer: () => container,
@@ -98,6 +100,7 @@ describe('<Map />', () => {
     mockMapGL.mock.calls.slice(-1)[0][0].onLoad(event);
 
     expect(disableRotation).toHaveBeenCalledTimes(1);
+    expect(setWheelZoomRate).toHaveBeenCalledWith(1 / 100);
     expect(onLoad).toHaveBeenCalledWith(event);
   });
 
@@ -107,6 +110,7 @@ describe('<Map />', () => {
     container.appendChild(canvas);
     container.getBoundingClientRect = () => ({ height: 320 });
     const target = {
+      scrollZoom: { setWheelZoomRate: jest.fn() },
       touchZoomRotate: { disableRotation: jest.fn() },
       getCanvas: () => canvas,
       getContainer: () => container,
@@ -141,6 +145,20 @@ describe('<Map />', () => {
         shiftKey: true,
       }),
     );
+
+    const lineWheel = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      deltaMode: WheelEvent.DOM_DELTA_LINE,
+      deltaY: -2,
+    });
+
+    act(() => canvas.dispatchEvent(lineWheel));
+
+    expect(lineWheel.defaultPrevented).toBe(true);
+    expect(receivedWheels).toContainEqual(
+      expect.objectContaining({ deltaMode: 0, deltaY: -80 }),
+    );
   });
 
   it('leaves page wheel input alone when the map has zero height', () => {
@@ -149,6 +167,7 @@ describe('<Map />', () => {
     container.appendChild(canvas);
     container.getBoundingClientRect = () => ({ height: 0 });
     const target = {
+      scrollZoom: { setWheelZoomRate: jest.fn() },
       touchZoomRotate: { disableRotation: jest.fn() },
       getCanvas: () => canvas,
       getContainer: () => container,
