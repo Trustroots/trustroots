@@ -3,8 +3,12 @@ import { act, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
-import BoardCredits from '@/modules/core/client/components/BoardCredits';
+import BoardCredits, {
+  type PhotoCredit,
+} from '@/modules/core/client/components/BoardCredits';
 import { onClientEvent } from '@/modules/core/client/services/client-runtime';
+
+const onClientEventMock = jest.mocked(onClientEvent);
 
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   onClientEvent: jest.fn(() => () => {}),
@@ -12,13 +16,15 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
 
 describe('<BoardCredits />', () => {
   afterEach(() => {
-    onClientEvent.mockClear();
+    onClientEventMock.mockClear();
   });
 
-  function getEventHandler(eventName) {
-    return onClientEvent.mock.calls.find(
+  function getEventHandler(eventName: string) {
+    const registration = onClientEventMock.mock.calls.find(
       ([registeredEvent]) => registeredEvent === eventName,
-    )[1];
+    );
+    if (!registration) throw new Error(`Expected ${eventName} listener`);
+    return registration[1];
   }
 
   it('renders nothing when there are no credits', () => {
@@ -35,7 +41,11 @@ describe('<BoardCredits />', () => {
     render(
       <BoardCredits
         photoCredits={{
-          bokeh: { name: 'Alice', url: 'https://example.com/alice' },
+          bokeh: {
+            name: 'Alice',
+            url: 'https://example.com/alice',
+            file: 'alice.jpg',
+          },
         }}
       />,
     );
@@ -51,12 +61,13 @@ describe('<BoardCredits />', () => {
     render(
       <BoardCredits
         photoCredits={{
-          a: { name: 'Alice', url: 'https://example.com/a' },
+          a: { name: 'Alice', url: 'https://example.com/a', file: 'a.jpg' },
           b: {
             name: 'Bob',
             url: 'https://example.com/b',
             license: 'CC-BY',
             license_url: 'https://example.com/license',
+            file: 'b.jpg',
           },
         }}
       />,
@@ -69,10 +80,15 @@ describe('<BoardCredits />', () => {
   it('adds photo credits from update events', () => {
     render(<BoardCredits photoCredits={{}} />);
 
+    const updatedCredit: Record<string, PhotoCredit> = {
+      updated: {
+        name: 'Carol',
+        url: 'https://example.com/carol',
+        file: 'carol.jpg',
+      },
+    };
     act(() => {
-      getEventHandler('photoCreditsUpdated')(null, {
-        updated: { name: 'Carol', url: 'https://example.com/carol' },
-      });
+      getEventHandler('photoCreditsUpdated')(null, updatedCredit);
     });
 
     expect(screen.getByText('Photo by')).toBeInTheDocument();
@@ -86,8 +102,8 @@ describe('<BoardCredits />', () => {
     render(
       <BoardCredits
         photoCredits={{
-          keep: { name: 'Alice', url: 'https://example.com/a' },
-          remove: { name: 'Bob', url: 'https://example.com/b' },
+          keep: { name: 'Alice', url: 'https://example.com/a', file: 'a.jpg' },
+          remove: { name: 'Bob', url: 'https://example.com/b', file: 'b.jpg' },
         }}
       />,
     );

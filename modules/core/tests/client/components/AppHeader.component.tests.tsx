@@ -5,11 +5,16 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import AppHeader from '@/modules/core/client/components/AppHeader.component';
+import type NavigationLoggedIn from '@/modules/core/client/components/NavigationLoggedIn';
+import type NavigationLoggedOut from '@/modules/core/client/components/NavigationLoggedOut';
+
+type LoggedInProps = React.ComponentProps<typeof NavigationLoggedIn>;
+type LoggedOutProps = React.ComponentProps<typeof NavigationLoggedOut>;
 
 jest.mock('@/modules/core/client/components/NavigationLoggedIn', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockNavigationLoggedIn({ currentPath, user }) {
+  function MockNavigationLoggedIn({ currentPath, user }: LoggedInProps) {
     return (
       <div data-testid="logged-in-navigation">
         {currentPath} {user.username}
@@ -17,24 +22,15 @@ jest.mock('@/modules/core/client/components/NavigationLoggedIn', () => {
     );
   }
 
-  MockNavigationLoggedIn.propTypes = {
-    currentPath: () => null,
-    user: () => null,
-  };
-
   return MockNavigationLoggedIn;
 });
 
 jest.mock('@/modules/core/client/components/NavigationLoggedOut', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockNavigationLoggedOut({ currentPath }) {
+  function MockNavigationLoggedOut({ currentPath }: LoggedOutProps) {
     return <div data-testid="logged-out-navigation">{currentPath}</div>;
   }
-
-  MockNavigationLoggedOut.propTypes = {
-    currentPath: () => null,
-  };
 
   return MockNavigationLoggedOut;
 });
@@ -111,16 +107,21 @@ describe('<AppHeader />', () => {
   });
 
   it('tracks the rendered header height as navigation changes size', () => {
-    let resizeHeader;
+    let resizeHeader!: ResizeObserverCallback;
     const originalResizeObserver = global.ResizeObserver;
     const bounds = jest
       .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
-      .mockReturnValue({ height: 54 });
-    global.ResizeObserver = class {
-      constructor(callback) {
+      .mockReturnValue(DOMRect.fromRect({ height: 54 }));
+    global.ResizeObserver = class implements ResizeObserver {
+      constructor(callback: ResizeObserverCallback) {
         resizeHeader = callback;
       }
-      observe() {}
+      observe(target: Element) {
+        void target;
+      }
+      unobserve(target: Element) {
+        void target;
+      }
       disconnect() {}
     };
 
@@ -130,8 +131,10 @@ describe('<AppHeader />', () => {
         document.documentElement.style.getPropertyValue('--tr-header-height'),
       ).toBe('54px');
 
-      bounds.mockReturnValue({ height: 68 });
-      act(() => resizeHeader());
+      bounds.mockReturnValue(DOMRect.fromRect({ height: 68 }));
+      const onResize = resizeHeader;
+      const mockObserver = new global.ResizeObserver(() => {});
+      act(() => onResize([], mockObserver));
       expect(
         document.documentElement.style.getPropertyValue('--tr-header-height'),
       ).toBe('68px');

@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { type ComponentProps } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import axios from 'axios';
 import LocationInput from '@/modules/core/client/components/LocationInput.component';
+import { useSettings } from '@/modules/core/client/react-app/AppProviders';
+
+type LocationInputProps = ComponentProps<typeof LocationInput>;
+type LocationChange = LocationInputProps['onChange'];
+type GeocodingFeature = NonNullable<Parameters<LocationChange>[1]>;
 
 jest.mock('axios', () =>
   jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
@@ -15,17 +20,18 @@ jest.mock('@/modules/core/client/react-app/AppProviders', () => ({
   })),
 }));
 
-const { useSettings } = require('@/modules/core/client/react-app/AppProviders');
+const axiosGetMock = jest.mocked(axios.get);
+const useSettingsMock = jest.mocked(useSettings);
 
 describe('<LocationInput />', () => {
-  const onChange = jest.fn();
+  const onChange = jest.fn<void, Parameters<LocationChange>>();
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useSettings.mockReturnValue({
+    useSettingsMock.mockReturnValue({
       mapbox: { publicKey: 'pk.test-mapbox-token' },
     });
-    axios.get.mockResolvedValue({ data: { features: [] } });
+    axiosGetMock.mockResolvedValue({ data: { features: [] } });
   });
 
   it('renders with the provided value and placeholder', () => {
@@ -54,7 +60,7 @@ describe('<LocationInput />', () => {
   });
 
   it('loads suggestions when the input is focused and typed into', async () => {
-    axios.get.mockResolvedValue({
+    axiosGetMock.mockResolvedValue({
       data: {
         features: [
           {
@@ -76,7 +82,7 @@ describe('<LocationInput />', () => {
     expect(
       await screen.findByRole('button', { name: 'Berlin, Germany' }),
     ).toBeInTheDocument();
-    expect(axios.get).toHaveBeenCalledWith(
+    expect(axiosGetMock).toHaveBeenCalledWith(
       expect.stringContaining('mapbox.places/Berlin.json'),
     );
   });
@@ -88,7 +94,7 @@ describe('<LocationInput />', () => {
       place_name: 'Paris, France',
       context: [{ id: 'country.2', text: 'France' }],
     };
-    axios.get.mockResolvedValue({ data: { features: [feature] } });
+    axiosGetMock.mockResolvedValue({ data: { features: [feature] } });
 
     render(<LocationInput id="location-input" onChange={onChange} value="" />);
 
@@ -111,7 +117,7 @@ describe('<LocationInput />', () => {
   });
 
   it('uses the full place name for US locations', async () => {
-    axios.get.mockResolvedValue({
+    axiosGetMock.mockResolvedValue({
       data: {
         features: [
           {
@@ -190,7 +196,7 @@ describe('<LocationInput />', () => {
   });
 
   it('returns no suggestions when mapbox is not configured', async () => {
-    useSettings.mockReturnValue({ mapbox: {} });
+    useSettingsMock.mockReturnValue({ mapbox: {} });
 
     render(
       <LocationInput id="location-input" onChange={onChange} value="Test" />,
@@ -199,12 +205,12 @@ describe('<LocationInput />', () => {
     fireEvent.focus(screen.getByRole('textbox'));
 
     await waitFor(() => {
-      expect(axios.get).not.toHaveBeenCalled();
+      expect(axiosGetMock).not.toHaveBeenCalled();
     });
   });
 
   it('builds titles from place context items', async () => {
-    axios.get.mockResolvedValue({
+    axiosGetMock.mockResolvedValue({
       data: {
         features: [
           {
@@ -232,7 +238,7 @@ describe('<LocationInput />', () => {
   });
 
   it('falls back to place_name when a feature has no short text', async () => {
-    axios.get.mockResolvedValue({
+    axiosGetMock.mockResolvedValue({
       data: {
         features: [
           {
@@ -257,7 +263,7 @@ describe('<LocationInput />', () => {
   });
 
   it('handles non-US and empty location contexts', async () => {
-    axios.get.mockResolvedValue({
+    axiosGetMock.mockResolvedValue({
       data: {
         features: [
           {
@@ -287,7 +293,7 @@ describe('<LocationInput />', () => {
   });
 
   it('handles missing feature lists, default values, and late suggestions', async () => {
-    axios.get.mockResolvedValueOnce({ data: {} });
+    axiosGetMock.mockResolvedValueOnce({ data: {} });
     const firstRender = render(
       <LocationInput id="location-input" onChange={onChange} />,
     );
@@ -295,12 +301,14 @@ describe('<LocationInput />', () => {
     fireEvent.change(screen.getByRole('textbox'), {
       target: { value: 'Oslo' },
     });
-    await waitFor(() => expect(axios.get).toHaveBeenCalled());
+    await waitFor(() => expect(axiosGetMock).toHaveBeenCalled());
     expect(screen.getByRole('textbox')).toHaveValue('Oslo');
     firstRender.unmount();
 
-    let resolveSuggestions;
-    axios.get.mockReturnValue(
+    let resolveSuggestions!: (response: {
+      data: { features: GeocodingFeature[] };
+    }) => void;
+    axiosGetMock.mockReturnValue(
       new Promise(resolve => {
         resolveSuggestions = resolve;
       }),
@@ -318,7 +326,7 @@ describe('<LocationInput />', () => {
   });
 
   it('closes suggestions after the input loses focus', async () => {
-    axios.get.mockResolvedValue({
+    axiosGetMock.mockResolvedValue({
       data: {
         features: [{ id: 'place.6', text: 'Rome', place_name: 'Rome, Italy' }],
       },
@@ -338,7 +346,7 @@ describe('<LocationInput />', () => {
   });
 
   it('selects a place name when a suggestion has no context', async () => {
-    axios.get.mockResolvedValue({
+    axiosGetMock.mockResolvedValue({
       data: {
         features: [{ id: 'place.10', text: 'Rome', place_name: 'Rome, Italy' }],
       },
@@ -354,7 +362,7 @@ describe('<LocationInput />', () => {
   });
 
   it('selects a suggestion with no location context or place name', async () => {
-    axios.get.mockResolvedValue({
+    axiosGetMock.mockResolvedValue({
       data: {
         features: [{ id: 'place.11', text: 'Unknown' }],
       },

@@ -4,23 +4,44 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Statistics from '@/modules/statistics/client/components/Statistics.component';
-import { get } from '@/modules/statistics/client/api/statistics.api';
+import {
+  get,
+  type StatisticsResponse,
+} from '@/modules/statistics/client/api/statistics.api';
 import { getSuggestion } from '@/modules/experiences/client/api/experiences.api';
+import { AxiosHeaders, type AxiosResponse } from 'axios';
+import type Board from '@/modules/core/client/components/Board';
+
+const getMock = jest.mocked(get);
+const getSuggestionMock = jest.mocked(getSuggestion);
+
+type DetailedStatistics = StatisticsResponse & {
+  experiences?: NonNullable<StatisticsResponse['experiences']> & {
+    total?: number;
+    recent?: NonNullable<StatisticsResponse['experiences']>['recent'] & {
+      total?: number;
+    };
+  };
+};
+
+function response(data: DetailedStatistics): AxiosResponse<StatisticsResponse> {
+  const headers = new AxiosHeaders();
+  return { data, status: 200, statusText: 'OK', headers, config: { headers } };
+}
 
 jest.mock('@/modules/statistics/client/api/statistics.api');
 jest.mock('@/modules/experiences/client/api/experiences.api');
 
 jest.mock('@/modules/core/client/components/Board', () => {
-  const React = require('react');
-  function MockBoard({ children }) {
+  const React = jest.requireActual<typeof import('react')>('react');
+  function MockBoard({ children }: React.ComponentProps<typeof Board>) {
     return <div>{children}</div>;
   }
-  MockBoard.propTypes = { children: () => null };
   return MockBoard;
 });
 
 beforeEach(() => {
-  getSuggestion.mockResolvedValue(null);
+  getSuggestionMock.mockResolvedValue(null);
 });
 
 afterEach(() => {
@@ -29,13 +50,13 @@ afterEach(() => {
 
 describe('<Statistics />', () => {
   it('renders statistics from the api', async () => {
-    getSuggestion.mockResolvedValueOnce({
+    getSuggestionMock.mockResolvedValueOnce({
       _id: 'contact-1',
       displayName: 'Casey Contact',
       username: 'casey-contact',
     });
-    get.mockResolvedValueOnce({
-      data: {
+    getMock.mockResolvedValueOnce(
+      response({
         total: 12345,
         hosting: {
           total: 1000,
@@ -64,8 +85,8 @@ describe('<Statistics />', () => {
           negative: 3,
           recent: { total: 8, positive: 2, negative: 2 },
         },
-      },
-    });
+      }),
+    );
 
     render(<Statistics isAuthenticated={true} />);
 
@@ -124,14 +145,14 @@ describe('<Statistics />', () => {
   });
 
   it('hides the newsletter subscribe link for unauthenticated visitors', async () => {
-    get.mockResolvedValueOnce({
-      data: {
+    getMock.mockResolvedValueOnce(
+      response({
         total: 1,
         hosting: { total: 0, percentage: 0, yesPercentage: 0 },
         connections: [],
         newsletter: { percentage: 0, count: 0 },
-      },
-    });
+      }),
+    );
 
     render(<Statistics isAuthenticated={false} />);
 
@@ -146,7 +167,7 @@ describe('<Statistics />', () => {
   });
 
   it('shows a general encouragement when no suggestion is available', async () => {
-    get.mockResolvedValueOnce({ data: { total: 1, connections: [] } });
+    getMock.mockResolvedValueOnce(response({ total: 1, connections: [] }));
 
     render(<Statistics isAuthenticated={true} />);
 
@@ -158,8 +179,8 @@ describe('<Statistics />', () => {
   });
 
   it('shows the general encouragement when suggestion loading fails', async () => {
-    get.mockResolvedValueOnce({ data: { total: 1, connections: [] } });
-    getSuggestion.mockRejectedValueOnce(new Error('unavailable'));
+    getMock.mockResolvedValueOnce(response({ total: 1, connections: [] }));
+    getSuggestionMock.mockRejectedValueOnce(new Error('unavailable'));
 
     render(<Statistics isAuthenticated={true} />);
 
@@ -171,7 +192,9 @@ describe('<Statistics />', () => {
   });
 
   it('renders network loading placeholders while statistics are pending', () => {
-    get.mockReturnValueOnce(new Promise(() => {}));
+    getMock.mockReturnValueOnce(
+      new Promise<AxiosResponse<StatisticsResponse>>(() => {}),
+    );
 
     const { container } = render(<Statistics isAuthenticated={false} />);
 
@@ -179,13 +202,13 @@ describe('<Statistics />', () => {
   });
 
   it('falls back to zero values when optional statistics are missing', async () => {
-    get.mockResolvedValueOnce({
-      data: {
+    getMock.mockResolvedValueOnce(
+      response({
         total: 0,
         connections: [{ network: 'warmshowers', count: 0, percentage: 0 }],
         messageInteractions: { negative: 1, recent: { negative: 1 } },
-      },
-    });
+      }),
+    );
 
     render(<Statistics isAuthenticated={true} />);
 

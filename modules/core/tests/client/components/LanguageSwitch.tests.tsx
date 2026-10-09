@@ -3,9 +3,9 @@ import { render, fireEvent, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import i18n from '@/config/client/i18n';
 import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch';
-import * as users from '@/modules/users/client/api/users.api';
+import * as usersApi from '@/modules/users/client/api/users.api';
 
-const api = { users };
+const updateUserMock = jest.mocked(usersApi.update);
 
 jest.mock('@/modules/users/client/api/users.api');
 afterEach(() => jest.clearAllMocks());
@@ -48,7 +48,11 @@ describe('default presentation', () => {
   });
 
   it('can save the language to the API', async () => {
-    api.users.update.mockResolvedValue({});
+    updateUserMock.mockResolvedValue({
+      _id: 'member-1',
+      username: 'member',
+      displayName: 'Member',
+    });
 
     render(<LanguageSwitch saveToAPI={true} />);
 
@@ -56,7 +60,7 @@ describe('default presentation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Čeština' }));
 
     await waitFor(() =>
-      expect(api.users.update).toHaveBeenCalledWith({ locale: 'cs' }),
+      expect(updateUserMock).toHaveBeenCalledWith({ locale: 'cs' }),
     );
   });
 

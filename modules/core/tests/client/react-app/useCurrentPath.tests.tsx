@@ -4,13 +4,13 @@ import '@testing-library/jest-dom';
 
 import { useCurrentPath } from '@/modules/core/client/react-app/useCurrentPath';
 
-function PathConsumer() {
+function PathConsumer(): React.ReactElement {
   const currentPath = useCurrentPath();
 
   return <span>{currentPath}</span>;
 }
 
-function LocationConsumer() {
+function LocationConsumer(): React.ReactElement {
   const currentPath = useCurrentPath({ includeSearch: true });
 
   return <span>{currentPath}</span>;

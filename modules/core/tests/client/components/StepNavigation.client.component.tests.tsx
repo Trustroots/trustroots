@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type ComponentProps } from 'react';
 import { render, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
@@ -6,23 +6,30 @@ import '@/config/client/i18n';
 
 import StepNavigation from '@/modules/core/client/components/StepNavigation';
 
-describe('Step Navigation through 3 steps', () => {
-  const f = () => {}; // dummy handler function
+type StepNavigationProps = ComponentProps<typeof StepNavigation>;
+type NavigationAction = 'onBack' | 'onNext' | 'onSubmit';
 
-  const handlers = {
-    onBack: f,
-    onNext: f,
-    onSubmit: f,
+describe('Step Navigation through 3 steps', () => {
+  const handlers: Pick<StepNavigationProps, NavigationAction> = {
+    onBack: () => {},
+    onNext: () => {},
+    onSubmit: () => {},
   };
 
   /**
    * Given current step and amount of steps, test that specific buttons are present
    */
-  [
+  const stepCases: Array<{
+    currentStep: number;
+    numberOfSteps: number;
+    buttons: string[];
+  }> = [
     { currentStep: 0, numberOfSteps: 3, buttons: ['Next'] },
     { currentStep: 1, numberOfSteps: 3, buttons: ['Back', 'Next'] },
     { currentStep: 2, numberOfSteps: 3, buttons: ['Back', 'Finish'] },
-  ].forEach(({ currentStep, numberOfSteps, buttons }) => {
+  ];
+
+  stepCases.forEach(({ currentStep, numberOfSteps, buttons }) => {
     it(`when currentStep=${currentStep} and numberOfSteps=${3} there is only ${buttons.join(
       ' and ',
     )} button`, () => {
@@ -47,7 +54,12 @@ describe('Step Navigation through 3 steps', () => {
   /**
    * Test whether buttons are disabled and enabled in different contexts
    */
-  [
+  const disabledCases: Array<{
+    currentStep: number;
+    numberOfSteps: number;
+    disabled: boolean;
+    buttons: Array<{ name: string; disabled: boolean }>;
+  }> = [
     {
       currentStep: 1,
       numberOfSteps: 3,
@@ -84,7 +96,9 @@ describe('Step Navigation through 3 steps', () => {
         { name: 'Finish', disabled: false },
       ],
     },
-  ].forEach(({ currentStep, numberOfSteps, disabled, buttons }) => {
+  ];
+
+  disabledCases.forEach(({ currentStep, numberOfSteps, disabled, buttons }) => {
     const expectations = buttons.map(
       ({ name, disabled: shouldBeDisabled }) =>
         `the ${name} button should be ${
@@ -122,7 +136,14 @@ describe('Step Navigation through 3 steps', () => {
   /**
    * Test that clicking a button triggers an event handler provided in props
    */
-  [
+  const clickCases: Array<{
+    currentStep: number;
+    numberOfSteps: number;
+    disabled: boolean;
+    button: string;
+    buttonIndex: number;
+    testTrigger: NavigationAction;
+  }> = [
     {
       currentStep: 1,
       numberOfSteps: 3,
@@ -147,7 +168,9 @@ describe('Step Navigation through 3 steps', () => {
       buttonIndex: 1,
       testTrigger: 'onSubmit',
     },
-  ].forEach(
+  ];
+
+  clickCases.forEach(
     ({
       currentStep,
       numberOfSteps,
@@ -157,14 +180,14 @@ describe('Step Navigation through 3 steps', () => {
       testTrigger,
     }) => {
       it(`when ${button} button is clicked, the ${testTrigger} should be triggered`, () => {
-        const handler = jest.fn();
+        const handler = jest.fn<void, []>();
+        const actionHandlers = { ...handlers, [testTrigger]: handler };
         const { getAllByRole } = render(
           <StepNavigation
             currentStep={currentStep}
             disabled={disabled}
             numberOfSteps={numberOfSteps}
-            {...handlers}
-            {...{ [testTrigger]: handler }}
+            {...actionHandlers}
           />,
         );
         const testedButton = getAllByRole('button')[buttonIndex];
