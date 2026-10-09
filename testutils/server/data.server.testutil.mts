@@ -302,16 +302,19 @@ export async function signIn(
 ): Promise<void> {
   const { username, password } = user;
   await agent.post('/api/auth/signin').send({ username, password }).expect(200);
-  // Privileged accounts need a password step-up before admin APIs. Regular
-  // members receive 403 here and continue without elevation.
-  const elevation = await agent
-    .post('/api/admin/elevate')
-    .set('X-Trustroots-Request', '1')
-    .send({ password });
-  if (![200, 403].includes(elevation.status)) {
-    throw new Error(
-      `Unexpected admin elevation status ${elevation.status}: ${elevation.text}`,
-    );
+  // Privileged accounts need a password step-up before admin APIs. Avoid
+  // probing the endpoint for regular members, since that request itself is
+  // authenticated activity and can affect unrelated middleware behaviour.
+  const authenticatedUser = await mongoose
+    .model('User')
+    .findOne({ username }, 'roles')
+    .lean();
+  if (
+    authenticatedUser?.roles?.some(role =>
+      ['admin', 'welcome-team'].includes(role),
+    )
+  ) {
+    await elevateAdminAccess(agent, password);
   }
 }
 

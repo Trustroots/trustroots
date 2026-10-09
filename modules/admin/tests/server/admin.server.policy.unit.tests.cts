@@ -70,6 +70,7 @@ describe('Admin policy unit tests', () => {
     welcome.allows
       .sort((a, b) => a.resources.localeCompare(b.resources))
       .should.deepEqual([
+        { resources: '/api/admin/elevate', permissions: ['post'] },
         { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
         { resources: '/api/admin/location-corrections', permissions: ['get'] },
         {
@@ -79,6 +80,9 @@ describe('Admin policy unit tests', () => {
         { resources: '/api/admin/staff-blockers', permissions: ['get'] },
       ]);
     policies[0].roles.should.deepEqual(['admin']);
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/admin/elevate');
     policies[0].allows
       .map(allow => allow.resources)
       .should.containEql('/api/admin/acquisition-stories');

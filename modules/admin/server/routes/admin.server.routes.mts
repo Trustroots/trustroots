@@ -74,11 +74,6 @@ const registerRoutes = (app: RouteApp): void => {
     .route('/api/admin/location-corrections/send')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminLocationCorrections.send);
-
-  app
-    .route('/api/admin/acquisition-stories/analysis')
-    .all(...privileged)
-    .post(adminAuditLog.record, adminAcquisitionStories.getAnalysis);
   app
     .route('/api/admin/audit-log')
     .all(...privileged)

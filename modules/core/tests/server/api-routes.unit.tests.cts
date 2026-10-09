@@ -108,11 +108,19 @@ function assertHandlers(
   }
 }
 
-function assertPolicy(
-  route: RecordedRoute,
-  policy: { isAllowed: NamedHandler },
-) {
-  assertHandlers(route.all, [policy.isAllowed], `${route.path} policy`);
+function assertPolicy(route: RecordedRoute, policy: { isAllowed: NamedHandler; requireAdminElevation?: NamedHandler }) {
+  const expected = [policy.isAllowed];
+  if (
+    route.path.startsWith('/api/admin/') &&
+    route.path !== '/api/admin/elevate' &&
+    !route.path.startsWith('/api/admin/support') &&
+    !route.path.startsWith('/api/admin/hackerspaces') &&
+    !route.path.startsWith('/api/admin/location-corrections') &&
+    policy.requireAdminElevation
+  ) {
+    expected.push(policy.requireAdminElevation);
+  }
+  assertHandlers(route.all, expected, `${route.path} policy`);
 }
 
 function register(
@@ -669,7 +677,12 @@ describe('API route registrations', () => {
   });
 
   it('registers admin routes with audit log middleware where required', () => {
-    const policy = { isAllowed: handler('adminPolicy.isAllowed') };
+    const policy = {
+      isAllowed: handler('adminPolicy.isAllowed'),
+      requireAdminElevation: handler('adminPolicy.requireAdminElevation'),
+      confirmAdminPassword: handler('adminPolicy.confirmAdminPassword'),
+      elevateAdminSession: handler('adminPolicy.elevateAdminSession'),
+    };
     const support = controller(
       [
         'list',
@@ -751,6 +764,11 @@ describe('API route registrations', () => {
       routeByPath(routes, '/api/admin/location-corrections/send').post,
       [auditLog.record, locationCorrections.send],
     );
+    assertHandlers(routeByPath(routes, '/api/admin/elevate').post, [
+      policy.confirmAdminPassword,
+      policy.elevateAdminSession,
+    ]);
+
     assertHandlers(routeByPath(routes, '/api/admin/acquisition-stories').post, [
       auditLog.record,
       acquisitionStories.list,
