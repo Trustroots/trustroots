@@ -2,14 +2,28 @@ import React, { useEffect, useState } from 'react';
 import {
   getLocationCorrections,
   sendLocationCorrection,
+  type LocationCorrectionCandidate,
+  type LocationCorrectionOffer,
 } from '../api/location-corrections.api';
 import AdminHeader from './AdminHeader.component';
 
-function offerEditUrl(offer) {
+interface SendErrorResponse {
+  status?: number;
+  data?: { message?: string };
+}
+
+function getErrorResponse(error: unknown): SendErrorResponse | undefined {
+  if (typeof error !== 'object' || error === null || !('response' in error)) {
+    return undefined;
+  }
+  return error.response as SendErrorResponse | undefined;
+}
+
+function offerEditUrl(offer: LocationCorrectionOffer): string {
   return offer.type === 'host' ? '/offer/host' : `/offer/meet/${offer._id}`;
 }
 
-function initialMessage(candidate) {
+function initialMessage(candidate: LocationCorrectionCandidate): string {
   const links = Array.from(
     new Set(
       candidate.offers.map(
@@ -23,8 +37,12 @@ function initialMessage(candidate) {
 }
 
 export default function AdminLocationCorrections() {
-  const [candidates, setCandidates] = useState([]);
-  const [selected, setSelected] = useState(null);
+  const [candidates, setCandidates] = useState<LocationCorrectionCandidate[]>(
+    [],
+  );
+  const [selected, setSelected] = useState<LocationCorrectionCandidate | null>(
+    null,
+  );
   const [content, setContent] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
@@ -34,7 +52,7 @@ export default function AdminLocationCorrections() {
   useEffect(() => {
     let mounted = true;
     getLocationCorrections()
-      .then(data => {
+      .then((data: LocationCorrectionCandidate[]) => {
         if (mounted) setCandidates(data);
       })
       .catch(() => {
@@ -48,14 +66,14 @@ export default function AdminLocationCorrections() {
     };
   }, []);
 
-  function review(candidate) {
+  function review(candidate: LocationCorrectionCandidate) {
     setSelected(candidate);
     setContent(initialMessage(candidate));
     setError('');
     setNotice('');
   }
 
-  async function send(event) {
+  async function send(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!selected || !content.trim() || isSending) return;
     setIsSending(true);
@@ -78,8 +96,9 @@ export default function AdminLocationCorrections() {
       );
       setSelected(null);
       setContent('');
-    } catch (sendError) {
-      if (sendError.response?.status === 409) {
+    } catch (sendError: unknown) {
+      const response = getErrorResponse(sendError);
+      if (response?.status === 409) {
         try {
           setCandidates(await getLocationCorrections());
           setSelected(null);
@@ -89,9 +108,7 @@ export default function AdminLocationCorrections() {
           return;
         }
       }
-      setError(
-        sendError.response?.data?.message || 'Could not send the message.',
-      );
+      setError(response?.data?.message || 'Could not send the message.');
     } finally {
       setIsSending(false);
     }
