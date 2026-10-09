@@ -7,14 +7,24 @@ import SupportForm from '@/modules/support/client/components/SupportForm';
 import { send } from '@/modules/support/client/api/support.api';
 import { VOLUNTEERING_DISCLAIMER } from '@/modules/support/shared/volunteering-copy';
 
+const sendMock = jest.mocked(send);
+const supportUser: NonNullable<
+  React.ComponentProps<typeof SupportForm>['user']
+> = {
+  displayName: 'Sample Member',
+  username: 'sample-member',
+  email: 'member@example.test',
+};
+
 jest.mock('@/modules/support/client/api/support.api');
 
-const scrollIntoView = jest.fn();
+const scrollIntoView = jest.fn<void, [ScrollIntoViewOptions?]>();
+const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
 beforeAll(() => {
   HTMLElement.prototype.scrollIntoView = scrollIntoView;
 });
 afterAll(() => {
-  delete HTMLElement.prototype.scrollIntoView;
+  HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
 });
 
 afterEach(() => {
@@ -25,7 +35,7 @@ afterEach(() => {
 
 describe('<SupportForm />', () => {
   it('opens and submits the bug-report category without a reported member', async () => {
-    send.mockResolvedValueOnce({});
+    sendMock.mockResolvedValueOnce({});
     window.history.pushState({}, '', '/support?category=reportBug');
     render(<SupportForm user={{}} />);
     expect(screen.getByRole('option', { name: 'Report a bug' })).toHaveValue(
@@ -39,7 +49,7 @@ describe('<SupportForm />', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() =>
-      expect(send).toHaveBeenCalledWith(
+      expect(sendMock).toHaveBeenCalledWith(
         expect.objectContaining({
           category: 'reportBug',
           reportMember: '',
@@ -48,20 +58,16 @@ describe('<SupportForm />', () => {
     );
   });
   it('renders message field and shows the logged-in user details', () => {
-    render(
-      <SupportForm
-        user={{ displayName: 'Alice', username: 'alice', email: 'a@b.c' }}
-      />,
-    );
+    render(<SupportForm user={supportUser} />);
 
     expect(screen.getByText('Contact us')).toBeInTheDocument();
-    expect(screen.getByText('Alice')).toBeInTheDocument();
-    expect(screen.getByText('alice')).toBeInTheDocument();
-    expect(screen.getByText('a@b.c')).toBeInTheDocument();
+    expect(screen.getByText('Sample Member')).toBeInTheDocument();
+    expect(screen.getByText('sample-member')).toBeInTheDocument();
+    expect(screen.getByText('member@example.test')).toBeInTheDocument();
   });
 
   it('sends a support message and shows a confirmation', async () => {
-    send.mockResolvedValueOnce({});
+    sendMock.mockResolvedValueOnce({});
 
     render(<SupportForm user={{}} />);
 
@@ -80,7 +86,7 @@ describe('<SupportForm />', () => {
     expect(
       await screen.findByRole('link', { name: 'frequently asked questions' }),
     ).toBeInTheDocument();
-    expect(send).toHaveBeenCalledWith({
+    expect(sendMock).toHaveBeenCalledWith({
       category: 'other',
       email: 'alice@example.com',
       message: 'I need help',
@@ -91,7 +97,7 @@ describe('<SupportForm />', () => {
   });
 
   it('shows an error message when sending fails', async () => {
-    send.mockRejectedValueOnce(new Error('boom'));
+    sendMock.mockRejectedValueOnce(new Error('boom'));
 
     render(<SupportForm user={{}} />);
 
@@ -111,7 +117,7 @@ describe('<SupportForm />', () => {
   });
 
   it('refocuses a repeated failure and allows a successful retry', async () => {
-    send
+    sendMock
       .mockRejectedValueOnce(new Error('delivery unavailable'))
       .mockRejectedValueOnce(new Error('delivery unavailable'))
       .mockResolvedValueOnce({});
@@ -162,7 +168,7 @@ describe('<SupportForm />', () => {
   });
 
   it('includes the reported member from the URL', async () => {
-    send.mockResolvedValueOnce({});
+    sendMock.mockResolvedValueOnce({});
     window.history.pushState(
       {},
       '',
@@ -191,7 +197,7 @@ describe('<SupportForm />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() =>
-      expect(send).toHaveBeenCalledWith(
+      expect(sendMock).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'I need to report Bob',
           reportMember: 'bob',
@@ -202,8 +208,7 @@ describe('<SupportForm />', () => {
   });
 
   it('falls back to the raw query string when report URL parsing fails', async () => {
-    const OriginalURL = global.URL;
-    global.URL = jest.fn(() => {
+    const urlParser = jest.spyOn(global, 'URL').mockImplementation(() => {
       throw new Error('broken URL parser');
     });
 
@@ -214,12 +219,12 @@ describe('<SupportForm />', () => {
 
       expect(await screen.findByText('?report=bob')).toBeInTheDocument();
     } finally {
-      global.URL = OriginalURL;
+      urlParser.mockRestore();
     }
   });
 
   it('opens a short volunteer enquiry and submits its category', async () => {
-    send.mockResolvedValueOnce({});
+    sendMock.mockResolvedValueOnce({});
     window.history.pushState({}, '', '/support?category=volunteering');
     render(<SupportForm user={{}} />);
     expect(screen.getByLabelText('What can we help with?')).toHaveValue(
@@ -247,7 +252,7 @@ describe('<SupportForm />', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() =>
-      expect(send).toHaveBeenCalledWith(
+      expect(sendMock).toHaveBeenCalledWith(
         expect.objectContaining({
           category: 'volunteering',
           reportMember: '',
@@ -268,7 +273,7 @@ describe('<SupportForm />', () => {
   );
 
   it('omits the reported member when changing category and restores it when switching back', async () => {
-    send.mockResolvedValueOnce({});
+    sendMock.mockResolvedValueOnce({});
     window.history.pushState({}, '', '/support?report=example-member');
     render(<SupportForm user={{}} />);
     const category = screen.getByLabelText('What can we help with?');
@@ -303,7 +308,7 @@ describe('<SupportForm />', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() =>
-      expect(send).toHaveBeenCalledWith(
+      expect(sendMock).toHaveBeenCalledWith(
         expect.objectContaining({
           category: 'volunteering',
           reportMember: '',
@@ -328,10 +333,10 @@ describe('<SupportForm />', () => {
   });
 
   it('disables category selection while sending', async () => {
-    let finishSending;
-    send.mockImplementationOnce(
+    let finishSending!: (value: unknown) => void;
+    sendMock.mockImplementationOnce(
       () =>
-        new Promise(resolve => {
+        new Promise<unknown>(resolve => {
           finishSending = resolve;
         }),
     );
@@ -348,8 +353,7 @@ describe('<SupportForm />', () => {
   });
 
   it('leaves the default category when URL parsing fails without a query string', () => {
-    const OriginalURL = global.URL;
-    global.URL = jest.fn(() => {
+    const urlParser = jest.spyOn(global, 'URL').mockImplementation(() => {
       throw new Error('broken URL parser');
     });
     try {
@@ -358,7 +362,7 @@ describe('<SupportForm />', () => {
         'other',
       );
     } finally {
-      global.URL = OriginalURL;
+      urlParser.mockRestore();
     }
   });
 });

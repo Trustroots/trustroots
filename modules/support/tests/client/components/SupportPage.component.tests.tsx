@@ -4,27 +4,25 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import SupportPage from '@/modules/support/client/components/SupportPage.component';
+import type Board from '@/modules/core/client/components/Board';
+import type SupportForm from '@/modules/support/client/components/SupportForm';
+
+type BoardProps = React.ComponentProps<typeof Board>;
+type SupportFormProps = React.ComponentProps<typeof SupportForm>;
 
 jest.mock('@/modules/core/client/components/Board.js', () => {
-  const React = require('react');
-  const PropTypes = require('prop-types');
-  function MockBoard({ children, names }) {
+  const React = jest.requireActual<typeof import('react')>('react');
+  function MockBoard({ children, names }: BoardProps) {
     return <div data-board={names}>{children}</div>;
   }
-  MockBoard.propTypes = {
-    children: PropTypes.node.isRequired,
-    names: PropTypes.string.isRequired,
-  };
   return MockBoard;
 });
 
 jest.mock('@/modules/support/client/components/SupportForm', () => {
-  const React = require('react');
-  const PropTypes = require('prop-types');
-  function MockSupportForm({ user }) {
+  const React = jest.requireActual<typeof import('react')>('react');
+  function MockSupportForm({ user }: SupportFormProps) {
     return <div>{user ? `support:${user.username}` : 'support:anonymous'}</div>;
   }
-  MockSupportForm.propTypes = { user: PropTypes.object };
   return MockSupportForm;
 });
 
@@ -47,9 +45,12 @@ describe('<SupportPage />', () => {
   });
 
   it('includes account-removal help for signed-in members', () => {
-    render(<SupportPage user={{ username: 'alice' }} />);
+    const user: React.ComponentProps<typeof SupportPage>['user'] = {
+      username: 'sample-member',
+    };
+    render(<SupportPage user={user} />);
 
-    expect(screen.getByText('support:alice')).toBeInTheDocument();
+    expect(screen.getByText('support:sample-member')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Removing your account' }),
     ).toHaveAttribute('href', '/profile/edit/account#remove');

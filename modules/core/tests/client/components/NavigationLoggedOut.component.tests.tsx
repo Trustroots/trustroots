@@ -4,11 +4,15 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import NavigationLoggedOut from '@/modules/core/client/components/NavigationLoggedOut';
+import type LanguageSwitch from '@/modules/core/client/components/LanguageSwitch';
 
 jest.mock('@/modules/core/client/components/LanguageSwitch', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockLanguageSwitch() {
+  function MockLanguageSwitch(
+    _props: React.ComponentProps<typeof LanguageSwitch>,
+  ) {
+    void _props;
     return <span>language-switch</span>;
   }
 

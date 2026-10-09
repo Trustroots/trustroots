@@ -2,17 +2,30 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import SiteFooter from '@/modules/core/client/components/SiteFooter.component';
+import SiteFooter, {
+  type Build,
+} from '@/modules/core/client/components/SiteFooter.component';
+import type { PhotoCredit } from '@/modules/core/client/components/BoardCredits';
 
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   onClientEvent: jest.fn(() => () => {}),
 }));
 
-const build = {
+const build: Build = {
   committedAt: '2026-06-21 18:06',
   commitUrl:
     'https://github.com/Trustroots/trustroots/commit/7a1d63965692fdb3361d3fd9ad1a6a17fb391b92',
   shortCommit: '7a1d639',
+};
+const photoCredit: PhotoCredit = {
+  name: 'Example Photographer',
+  url: 'https://example.com/photo',
+  file: 'example.jpg',
+};
+const aliceCredit: PhotoCredit = {
+  name: 'Alice',
+  url: 'https://example.com/alice',
+  file: 'alice.jpg',
 };
 
 describe('<SiteFooter />', () => {
@@ -22,10 +35,7 @@ describe('<SiteFooter />', () => {
         variant="account"
         build={build}
         photoCredits={{
-          road: {
-            name: 'Example Photographer',
-            url: 'https://example.com/photo',
-          },
+          road: photoCredit,
         }}
       />,
     );
@@ -45,7 +55,7 @@ describe('<SiteFooter />', () => {
   it('renders the standard footer with links and build metadata', () => {
     const { container } = render(<SiteFooter build={build} />);
 
-    [
+    const footerLinks: Array<[string, string]> = [
       ['Volunteering', '/support?category=volunteering'],
       ['Rules', '/rules'],
       ['Safety', '/safety'],
@@ -53,7 +63,8 @@ describe('<SiteFooter />', () => {
       ['Wiki', 'https://wiki.trustroots.org/'],
       ['Privacy', '/privacy'],
       ['Contact', '/contact'],
-    ].forEach(([name, href]) => {
+    ];
+    footerLinks.forEach(([name, href]) => {
       expect(screen.getByRole('link', { name })).toHaveAttribute('href', href);
     });
     ['Wiki'].forEach(name => {
@@ -110,7 +121,7 @@ describe('<SiteFooter />', () => {
       <SiteFooter
         build={build}
         photoCredits={{
-          road: { name: 'Alice', url: 'https://example.com/alice' },
+          road: aliceCredit,
         }}
       />,
     );
@@ -162,7 +173,7 @@ describe('<SiteFooter />', () => {
         variant="home"
         build={build}
         photoCredits={{
-          road: { name: 'Alice', url: 'https://example.com/alice' },
+          road: aliceCredit,
         }}
       />,
     );

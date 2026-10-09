@@ -4,18 +4,39 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ContactList from '@/modules/contacts/client/components/ContactList.component';
+import type ContactListPresentational from '@/modules/contacts/client/components/ContactListPresentational';
+import type {
+  ContactList as ContactListData,
+  ContactListEntry,
+} from '@/modules/contacts/client/types';
+import type { UserProfile } from '@/modules/users/client/types';
+
+type PresentationalProps = React.ComponentProps<
+  typeof ContactListPresentational
+>;
+
+const appUser: UserProfile = {
+  _id: 'me',
+  username: 'viewer',
+  displayName: 'Circle Viewer',
+};
+
+function resolvedContacts(entries: ContactListEntry[]): ContactListData {
+  return Object.assign(entries, { $resolved: true });
+}
 
 jest.mock(
   '@/modules/contacts/client/components/ContactListPresentational',
   () => {
-    const React = require('react');
-    const PropTypes = require('prop-types');
     function MockContactListPresentational({
       contacts,
       filter,
       onFilterChange,
       selfId,
-    }) {
+    }: Pick<
+      PresentationalProps,
+      'contacts' | 'filter' | 'onFilterChange' | 'selfId'
+    >) {
       return (
         <div>
           <div>{`contacts:${contacts.length}`}</div>
@@ -27,12 +48,6 @@ jest.mock(
         </div>
       );
     }
-    MockContactListPresentational.propTypes = {
-      contacts: PropTypes.array.isRequired,
-      filter: PropTypes.string.isRequired,
-      onFilterChange: PropTypes.func.isRequired,
-      selfId: PropTypes.string.isRequired,
-    };
     return MockContactListPresentational;
   },
 );
@@ -41,7 +56,7 @@ describe('<ContactList />', () => {
   it('shows a loading indicator while contacts are unresolved', () => {
     render(
       <ContactList
-        appUser={{ _id: 'me' }}
+        appUser={appUser}
         contacts={undefined}
         onContactRemoved={() => {}}
       />,
@@ -51,12 +66,11 @@ describe('<ContactList />', () => {
   });
 
   it('shows an empty state when resolved contacts are empty', () => {
-    const contacts = [];
-    contacts.$resolved = true;
+    const contacts = resolvedContacts([]);
 
     render(
       <ContactList
-        appUser={{ _id: 'me' }}
+        appUser={appUser}
         contacts={contacts}
         onContactRemoved={() => {}}
       />,
@@ -66,12 +80,22 @@ describe('<ContactList />', () => {
   });
 
   it('passes resolved contacts and filter changes to the presentational list', () => {
-    const contacts = [{ _id: 'contact-1' }];
-    contacts.$resolved = true;
+    const contacts = resolvedContacts([
+      {
+        _id: 'contact-1',
+        confirmed: true,
+        created: '2025-01-02T00:00:00.000Z',
+        user: {
+          _id: 'member-1',
+          username: 'member',
+          displayName: 'Member',
+        },
+      },
+    ]);
 
     render(
       <ContactList
-        appUser={{ _id: 'me' }}
+        appUser={appUser}
         contacts={contacts}
         onContactRemoved={() => {}}
       />,

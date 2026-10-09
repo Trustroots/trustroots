@@ -5,8 +5,21 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 
 import '@/config/client/i18n';
 import ContactAddPage from '@/modules/contacts/client/components/ContactAddPage.component';
+import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
+import type Avatar from '@/modules/users/client/components/Avatar.component';
+import type TrEditor from '@/modules/core/client/components/TrEditor';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
+
+type AddPageProps = React.ComponentProps<typeof ContactAddPage>;
+type PageUser = AddPageProps['user'];
+type Friend = Awaited<ReturnType<typeof usersApi.fetchMini>>;
+type ExistingContact = Awaited<ReturnType<typeof contactsApi.getByUserId>>;
+
+const fetchMiniMock = jest.mocked(usersApi.fetchMini);
+const getByUserIdMock = jest.mocked(contactsApi.getByUserId);
+const createContactMock = jest.mocked(contactsApi.create);
+const routeParamsMock = jest.mocked(getCurrentRouteParams);
 
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/contacts/client/api/contacts.api');
@@ -14,24 +27,21 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
   getCurrentRouteParams: jest.fn(() => ({ userId: 'friend-1' })),
 }));
 jest.mock('@/modules/users/client/components/Avatar.component', () => {
-  const React = require('react');
-  const PropTypes = require('prop-types');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockAvatar({ user }) {
+  function MockAvatar({ user }: React.ComponentProps<typeof Avatar>) {
     return <div>{user.displayName}</div>;
   }
-
-  MockAvatar.propTypes = {
-    user: PropTypes.object.isRequired,
-  };
 
   return MockAvatar;
 });
 jest.mock('@/modules/core/client/components/TrEditor', () => {
-  const React = require('react');
-  const PropTypes = require('prop-types');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockTrEditor({ onChange, text }) {
+  function MockTrEditor({
+    onChange,
+    text,
+  }: React.ComponentProps<typeof TrEditor>) {
     return (
       <textarea
         aria-label="Contact message"
@@ -41,28 +51,23 @@ jest.mock('@/modules/core/client/components/TrEditor', () => {
     );
   }
 
-  MockTrEditor.propTypes = {
-    onChange: PropTypes.func,
-    text: PropTypes.string,
-  };
-
   return MockTrEditor;
 });
 
-const user = {
+const user: PageUser = {
   _id: 'user-1',
   username: 'ada',
   displayName: 'Ada Example',
   public: true,
 };
 
-const friend = {
+const friend: Friend = {
   _id: 'friend-1',
   username: 'bob',
   displayName: 'Bob Example',
 };
 
-function renderContactAddPage(pageUser = user) {
+function renderContactAddPage(pageUser: PageUser = user) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -77,12 +82,9 @@ function renderContactAddPage(pageUser = user) {
 describe('ContactAddPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    const {
-      getCurrentRouteParams,
-    } = require('@/modules/core/client/services/client-runtime');
-    getCurrentRouteParams.mockReturnValue({ userId: 'friend-1' });
-    usersApi.fetchMini.mockResolvedValue(friend);
-    contactsApi.getByUserId.mockResolvedValue(null);
+    routeParamsMock.mockReturnValue({ userId: 'friend-1' });
+    fetchMiniMock.mockResolvedValue(friend);
+    getByUserIdMock.mockResolvedValue(null);
   });
 
   it('shows activation notice for non-public members', () => {
@@ -94,7 +96,7 @@ describe('ContactAddPage', () => {
   });
 
   it('renders the add contact form and submits a request', async () => {
-    contactsApi.create.mockResolvedValue({});
+    createContactMock.mockResolvedValue({ _id: 'contact-request-1' });
     renderContactAddPage();
 
     expect(
@@ -114,7 +116,7 @@ describe('ContactAddPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add contact' }));
 
     await waitFor(() => {
-      expect(contactsApi.create).toHaveBeenCalledWith({
+      expect(createContactMock).toHaveBeenCalledWith({
         friendUserId: 'friend-1',
         message: expect.stringContaining('Ada Example'),
       });
@@ -125,10 +127,7 @@ describe('ContactAddPage', () => {
   });
 
   it('reports when the user tries to connect with themselves', async () => {
-    const {
-      getCurrentRouteParams,
-    } = require('@/modules/core/client/services/client-runtime');
-    getCurrentRouteParams.mockReturnValue({ userId: user._id });
+    routeParamsMock.mockReturnValue({ userId: user._id });
 
     renderContactAddPage();
 
@@ -140,7 +139,7 @@ describe('ContactAddPage', () => {
   });
 
   it('shows success when a contact already exists', async () => {
-    contactsApi.getByUserId.mockResolvedValue({
+    getByUserIdMock.mockResolvedValue({
       _id: 'contact-1',
       confirmed: true,
     });
@@ -152,7 +151,7 @@ describe('ContactAddPage', () => {
   });
 
   it('shows a pending connection message for unconfirmed contacts', async () => {
-    contactsApi.getByUserId.mockResolvedValue({
+    getByUserIdMock.mockResolvedValue({
       _id: 'contact-1',
       confirmed: false,
     });
@@ -166,14 +165,14 @@ describe('ContactAddPage', () => {
   });
 
   it('reports when the target member does not exist', async () => {
-    usersApi.fetchMini.mockRejectedValue(new Error('not found'));
+    fetchMiniMock.mockRejectedValue(new Error('not found'));
     renderContactAddPage();
 
     expect(await screen.findByText('User does not exist.')).toBeVisible();
   });
 
   it('handles duplicate contact responses from the API', async () => {
-    contactsApi.create.mockRejectedValue({
+    createContactMock.mockRejectedValue({
       response: {
         status: 409,
         data: { confirmed: false },
@@ -196,7 +195,7 @@ describe('ContactAddPage', () => {
   });
 
   it('shows a generic error when contact creation fails', async () => {
-    contactsApi.create.mockRejectedValue({
+    createContactMock.mockRejectedValue({
       response: { data: { message: 'Unable to add contact.' } },
     });
     renderContactAddPage();
@@ -212,7 +211,7 @@ describe('ContactAddPage', () => {
   });
 
   it('handles confirmed duplicate and message-less failures', async () => {
-    contactsApi.create
+    createContactMock
       .mockRejectedValueOnce({
         response: { status: 409, data: { confirmed: true } },
       })
@@ -241,8 +240,8 @@ describe('ContactAddPage', () => {
   });
 
   it('ignores a friend response after unmounting', async () => {
-    let resolveFriend;
-    usersApi.fetchMini.mockReturnValue(
+    let resolveFriend!: (friend: Friend) => void;
+    fetchMiniMock.mockReturnValue(
       new Promise(resolve => {
         resolveFriend = resolve;
       }),
@@ -255,8 +254,8 @@ describe('ContactAddPage', () => {
   });
 
   it('ignores an existing contact response after unmounting', async () => {
-    let resolveContact;
-    contactsApi.getByUserId.mockReturnValue(
+    let resolveContact!: (contact: ExistingContact) => void;
+    getByUserIdMock.mockReturnValue(
       new Promise(resolve => {
         resolveContact = resolve;
       }),
@@ -272,11 +271,13 @@ describe('ContactAddPage', () => {
   });
 
   it('ignores contact creation failures after unmounting', async () => {
-    let rejectCreation;
-    contactsApi.create.mockReturnValue(
-      new Promise((resolve, reject) => {
-        rejectCreation = reject;
-      }),
+    let rejectCreation!: (error: unknown) => void;
+    createContactMock.mockReturnValue(
+      new Promise<Awaited<ReturnType<typeof contactsApi.create>>>(
+        (resolve, reject) => {
+          rejectCreation = reject;
+        },
+      ),
     );
     const { unmount } = renderContactAddPage();
 

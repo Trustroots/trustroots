@@ -1,12 +1,19 @@
-import React from 'react';
+import React, { type ComponentProps } from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import NavigationLoggedIn from '@/modules/core/client/components/NavigationLoggedIn';
 
+type AuthUser = ComponentProps<typeof NavigationLoggedIn>['user'];
+
+function requireElement<T extends HTMLElement>(element: T | null): T {
+  if (!element) throw new Error('Expected navigation element');
+  return element;
+}
+
 jest.mock('@/modules/users/client/components/Avatar.component.js', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
   function MockAvatar() {
     return <span>avatar</span>;
@@ -16,7 +23,7 @@ jest.mock('@/modules/users/client/components/Avatar.component.js', () => {
 });
 
 describe('<NavigationLoggedIn />', () => {
-  const user = {
+  const user: AuthUser = {
     _id: 'user-1',
     username: 'alice',
     displayName: 'Alice Example',
@@ -40,10 +47,11 @@ describe('<NavigationLoggedIn />', () => {
       '/search',
     );
     fireEvent.click(screen.getByRole('button', { name: 'Support' }));
-    const supportMenu = screen
-      .getByRole('button', { name: 'Support' })
-      .closest('li')
-      .querySelector('.dropdown-menu');
+    const supportMenu = requireElement(
+      requireElement(
+        screen.getByRole('button', { name: 'Support' }).closest('li'),
+      ).querySelector<HTMLElement>('.dropdown-menu'),
+    );
     expect(
       within(supportMenu).getByRole('link', { name: 'Safety' }),
     ).toHaveAttribute('href', '/safety');
@@ -88,14 +96,16 @@ describe('<NavigationLoggedIn />', () => {
     const admin = screen.getByRole('link', { name: 'Admin', exact: true });
     expect(admin).toHaveAttribute('href', '/admin');
     expect(admin.closest('li')).toHaveClass('active', 'hidden-xs');
-    expect(admin.closest('li').nextElementSibling).toBe(
+    const adminListItem = requireElement(admin.closest('li'));
+    const circlesListItem = requireElement(
       screen.getByRole('link', { name: 'Circles' }).closest('li'),
     );
+    expect(adminListItem.nextElementSibling).toBe(circlesListItem);
   });
 
   it.each([undefined, [], ['user']])(
     'omits the administrator shortcut for non-admin roles %j',
-    roles => {
+    (roles: string[] | undefined) => {
       render(
         <NavigationLoggedIn
           currentPath="/circles"
