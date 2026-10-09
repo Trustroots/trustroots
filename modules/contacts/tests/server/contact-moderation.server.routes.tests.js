@@ -5,10 +5,10 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 const express = require('./../../../../config/lib/express.mjs');
 const Contact = mongoose.model('Contact');
 describe('Direct contact moderation visibility', () => {
+  let agent;
   before(async function () {
     agent = request.agent(await express.init(mongoose.connection));
   });
-  let agent;
   let users;
   let credentials;
   beforeEach(async () => {

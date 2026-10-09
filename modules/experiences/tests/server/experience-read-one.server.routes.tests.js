@@ -7,6 +7,8 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 const userProfile = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
 const express = require('./../../../../config/lib/express.mjs');
 describe('Read a single experience by experience id', () => {
+  let app;
+  let agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
@@ -15,8 +17,6 @@ describe('Read a single experience by experience id', () => {
   // logged in public user can read a single public experience by id
   // .....                 can read a single private experience if it is from self
   // logged in public user can not read other private experiences
-  let app;
-  let agent;
   const _usersPublic = utils.generateUsersWithSharedPassword(4, {
     public: true,
   });

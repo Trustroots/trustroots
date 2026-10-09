@@ -9,6 +9,8 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 const express = require('./../../../../config/lib/express.mjs');
 const config = require('./../../../../config/config.mjs');
 describe('Create an experience', () => {
+  let app;
+  let agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
@@ -31,8 +33,6 @@ describe('Create an experience', () => {
   let user1;
   let user2;
   let user3Nonpublic;
-  let app;
-  let agent;
   const _usersPublic = utils.generateUsersWithSharedPassword(2, {
     public: true,
   });

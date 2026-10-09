@@ -6,11 +6,11 @@ const express = require('./../../../../config/lib/express.mjs');
 const testutils = require('../../../../testutils/server/server.testutil');
 const Experience = mongoose.model('Experience');
 describe('Experience author moderation visibility', () => {
+  let agent;
   before(async function () {
     agent = request.agent(await express.init(mongoose.connection));
   });
   const jobs = testutils.catchJobs();
-  let agent;
   let users;
   let credentials;
   let experiences;
