@@ -1,15 +1,31 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import AdminCircles from '@/modules/admin/client/components/AdminCircles.component';
 import { getCircles, saveCircle } from '@/modules/admin/client/api/circles.api';
 
 jest.mock('@/modules/admin/client/api/circles.api');
 
+const getCirclesMock = jest.mocked(getCircles);
+const saveCircleMock = jest.mocked(saveCircle);
+
+type CircleFixture = {
+  _id?: string;
+  label: string;
+  count?: number;
+  public: boolean;
+  image?: boolean;
+  slug?: string;
+  color?: string;
+  description?: string;
+  attribution?: string;
+  attribution_url?: string;
+};
+
 describe('<AdminCircles />', () => {
   beforeEach(() => {
-    getCircles.mockResolvedValue([
+    getCirclesMock.mockResolvedValue([
       {
         _id: 'circle-id',
         label: 'Hikers',
@@ -17,14 +33,14 @@ describe('<AdminCircles />', () => {
         public: true,
         image: false,
       },
-    ]);
-    saveCircle.mockResolvedValue({
+    ] as CircleFixture[]);
+    saveCircleMock.mockResolvedValue({
       _id: 'circle-id',
       label: 'Hikers',
       count: 4,
       public: true,
       image: false,
-    });
+    } as CircleFixture);
   });
 
   it('loads circles and lets an administrator edit one', async () => {
@@ -43,27 +59,29 @@ describe('<AdminCircles />', () => {
       target: { value: 'Cyclists' },
     });
     fireEvent.submit(
-      screen.getByRole('button', { name: 'Save circle' }).closest('form'),
+      screen.getByRole('button', { name: 'Save circle' }).closest('form')!,
     );
-    await waitFor(() => expect(saveCircle).toHaveBeenCalled());
-    expect(saveCircle.mock.calls[0][0].label).toBe('Cyclists');
+    await waitFor(() => expect(saveCircleMock).toHaveBeenCalled());
+    expect((saveCircleMock.mock.calls[0][0] as CircleFixture).label).toBe(
+      'Cyclists',
+    );
   });
 });
 
 describe('circle form feedback and fields', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    getCircles.mockResolvedValue([]);
+    getCirclesMock.mockResolvedValue([]);
   });
 
   it('reports catalogue loading errors', async () => {
-    getCircles.mockRejectedValueOnce(new Error('Unavailable'));
+    getCirclesMock.mockRejectedValueOnce(new Error('Unavailable'));
     render(<AdminCircles />);
     expect(await screen.findByText('Could not load circles.')).toBeVisible();
   });
 
   it('edits visibility, optional metadata and the image', async () => {
-    const circle = {
+    const circle: CircleFixture = {
       _id: 'circle-hidden',
       label: 'Walkers',
       public: false,
@@ -74,8 +92,8 @@ describe('circle form feedback and fields', () => {
       attribution: 'Example artist',
       attribution_url: 'https://example.org',
     };
-    getCircles.mockResolvedValue([circle]);
-    saveCircle.mockResolvedValue(circle);
+    getCirclesMock.mockResolvedValue([circle]);
+    saveCircleMock.mockResolvedValue(circle);
     render(<AdminCircles />);
     fireEvent.click(
       await screen.findByRole('button', { name: /Walkers Hidden/ }),
@@ -93,10 +111,10 @@ describe('circle form feedback and fields', () => {
       target: { files: [image] },
     });
     fireEvent.submit(
-      screen.getByRole('button', { name: 'Save circle' }).closest('form'),
+      screen.getByRole('button', { name: 'Save circle' }).closest('form')!,
     );
     expect(await screen.findByText('Circle saved.')).toBeVisible();
-    expect(saveCircle).toHaveBeenCalledWith(
+    expect(saveCircleMock).toHaveBeenCalledWith(
       { ...circle, public: true, description: 'Updated circle' },
       image,
     );
@@ -115,10 +133,10 @@ describe('circle form feedback and fields', () => {
       'Name already exists.',
     ],
   ])('reports save errors (%#)', async (error, message) => {
-    saveCircle.mockRejectedValueOnce(error);
+    saveCircleMock.mockRejectedValueOnce(error);
     render(<AdminCircles />);
     fireEvent.submit(
-      screen.getByRole('button', { name: 'Save circle' }).closest('form'),
+      screen.getByRole('button', { name: 'Save circle' }).closest('form')!,
     );
     expect(await screen.findByText(message)).toBeVisible();
   });

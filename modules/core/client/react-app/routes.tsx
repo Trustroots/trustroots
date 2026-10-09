@@ -20,6 +20,7 @@ import AdminStaffBlockers from '@/modules/admin/client/components/AdminStaffBloc
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
 import AdminAcquisitionStoriesAnalysis from '@/modules/admin/client/components/AdminAcquisitionStoriesAnalysis.component';
 import AdminAuditLog from '@/modules/admin/client/components/AdminAuditLog.component';
+import AdminCircles from '@/modules/admin/client/components/AdminCircles.component';
 import AdminMessages from '@/modules/admin/client/components/AdminMessages.component';
 import AdminNewsletter from '@/modules/admin/client/components/AdminNewsletter.component';
 import AdminReferenceThreads from '@/modules/admin/client/components/AdminReferenceThreads.component';
@@ -246,6 +247,7 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
       <AdminAcquisitionStoriesAnalysis />
     ),
     '/admin/audit-log': () => <AdminAuditLog />,
+    '/admin/circles': () => <AdminCircles />,
     '/admin/messages': () => <AdminMessages />,
     '/admin/newsletter': () => <AdminNewsletter />,
     '/admin/reference-threads': () => <AdminReferenceThreads />,

@@ -15,10 +15,7 @@ export async function saveCircle(circle, image) {
   const url = circle._id
     ? `/api/admin/circles/${circle._id}`
     : '/api/admin/circles';
-  const { data } = await axios({
-    data: payload,
-    method: circle._id ? 'put' : 'post',
-    url,
-  });
+  const method = circle._id ? 'put' : 'post';
+  const { data } = await axios[method](url, payload);
   return data;
 }

@@ -375,6 +375,11 @@ const REACT_ROUTE_POLICIES = [
     path: '/admin/newsletter',
     title: 'Admin - Newsletter',
   },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/circles',
+    title: 'Admin - Circles',
+  },
 ];
 
 const REACT_OWNED_PATHS = REACT_ROUTE_POLICIES.map(route => route.path);

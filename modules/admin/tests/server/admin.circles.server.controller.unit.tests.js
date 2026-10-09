@@ -34,6 +34,10 @@ describe('Admin circles controller', () => {
   const failure = new Error('Storage unavailable');
   const missing = Object.assign(new Error('Missing'), { code: 'ENOENT' });
 
+  afterEach(() => {
+    sinon.restore();
+  });
+
   beforeEach(() => {
     circle = { _id: 'circle-1', slug: 'walkers', image: false, public: false };
     circle.save = sinon.stub().resolves(circle);
