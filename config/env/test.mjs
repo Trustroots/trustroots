@@ -1,3 +1,15 @@
+// Worker overrides are test-only and may never name an application database.
+const workerDatabase =
+  process.env.NODE_ENV === 'test'
+    ? process.env.TRUSTROOTS_SERVER_TEST_DATABASE
+    : undefined;
+if (
+  workerDatabase !== undefined &&
+  !/^trustroots-test-worker-[a-f0-9]{12}-[1-8]$/.test(workerDatabase)
+) {
+  throw new Error('Invalid TRUSTROOTS_SERVER_TEST_DATABASE.');
+}
+
 let service = {};
 /*
  * Please don't make your own config changes to this file!
@@ -62,7 +74,8 @@ service = {
     uri:
       'mongodb://' +
       (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') +
-      '/trustroots-test',
+      '/' +
+      (workerDatabase || 'trustroots-test'),
     options: {
       auth: {
         authMechanism: '',
