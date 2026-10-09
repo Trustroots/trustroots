@@ -12,6 +12,7 @@ const {
   signOut,
   waitForTribesList,
 } = require('../../support/helpers');
+const { stubStatisticsImages } = require('../../support/statistics');
 
 test.describe('authenticated member flows', () => {
   let authenticatedMember;
@@ -366,6 +367,7 @@ test.describe('authenticated member flows', () => {
     const page = await context.newPage();
 
     try {
+      await stubStatisticsImages(context);
       await signInViaApi(page, context.request, SEEDED_MEMBERS[2]);
       await page.goto('/statistics');
 
@@ -394,6 +396,7 @@ test.describe('authenticated member flows', () => {
     const page = await context.newPage();
 
     try {
+      await stubStatisticsImages(context);
       await signInViaApi(page, context.request, SEEDED_MEMBERS[1]);
       await page.goto('/statistics');
 
