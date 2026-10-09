@@ -4,56 +4,26 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import MembershipsList from '@/modules/users/client/components/MembershipsList.component';
+import type { TribeMembership } from '@/modules/users/client/types';
+import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
+
+const membership = (
+  id: string,
+  slug: string,
+  label: string,
+  count: number,
+  image?: string,
+): TribeMembership & { tribe: TribeSummary } => ({
+  tribe: { _id: id, slug, label, count, image },
+});
 
 const memberships = [
-  {
-    tribe: {
-      _id: 'tribe-1',
-      slug: 'cyclists',
-      label: 'Cyclists',
-      count: 1200,
-    },
-  },
-  {
-    tribe: {
-      _id: 'tribe-2',
-      slug: 'hikers',
-      label: 'Hikers',
-      count: 800,
-    },
-  },
-  {
-    tribe: {
-      _id: 'tribe-3',
-      slug: 'artists',
-      label: 'Artists',
-      count: 50,
-    },
-  },
-  {
-    tribe: {
-      _id: 'tribe-4',
-      slug: 'musicians',
-      label: 'Musicians',
-      count: 40,
-    },
-  },
-  {
-    tribe: {
-      _id: 'tribe-5',
-      slug: 'chefs',
-      label: 'Chefs',
-      count: 30,
-    },
-  },
-  {
-    tribe: {
-      _id: 'tribe-6',
-      slug: 'writers',
-      label: 'Writers',
-      count: 20,
-    },
-  },
+  membership('tribe-1', 'cyclists', 'Cyclists', 1200),
+  membership('tribe-2', 'hikers', 'Hikers', 800),
+  membership('tribe-3', 'artists', 'Artists', 50),
+  membership('tribe-4', 'musicians', 'Musicians', 40),
+  membership('tribe-5', 'chefs', 'Chefs', 30),
+  membership('tribe-6', 'writers', 'Writers', 20),
 ];
 
 describe('MembershipsList', () => {
@@ -111,15 +81,7 @@ describe('MembershipsList', () => {
       <MembershipsList
         isOwnProfile={false}
         memberships={[
-          {
-            tribe: {
-              _id: 'tribe-image',
-              slug: 'image',
-              label: 'Image circle',
-              count: 0,
-              image: '/image.jpg',
-            },
-          },
+          membership('tribe-image', 'image', 'Image circle', 0, '/image.jpg'),
         ]}
       />,
     );
@@ -128,8 +90,8 @@ describe('MembershipsList', () => {
       screen.getByRole('link', { name: 'Image circle' }),
     ).toBeInTheDocument();
     expect(screen.getByText('No members yet')).toBeInTheDocument();
-    const badge = document.querySelector('.tribe-badge');
-    const image = document.querySelector('.tribe-badge-image');
+    const badge = document.querySelector<HTMLElement>('.tribe-badge')!;
+    const image = document.querySelector<HTMLElement>('.tribe-badge-image')!;
     expect(badge).not.toHaveAttribute('style');
     expect(image).toHaveClass('tribe-image');
     expect(image.style.backgroundImage).toContain(

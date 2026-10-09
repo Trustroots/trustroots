@@ -4,16 +4,24 @@ import '@testing-library/jest-dom';
 
 import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
 
+type MockNavigationProps = {
+  showCompass?: boolean;
+  zoomInLabel?: string;
+  zoomOutLabel?: string;
+};
+
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: key => `i18n:${key}`,
+    t: (key: string) => `i18n:${key}`,
   }),
 }));
 
 jest.mock('react-map-gl', () => {
-  const PropTypes = require('prop-types');
-
-  function MockNavigationControl({ showCompass, zoomInLabel, zoomOutLabel }) {
+  function MockNavigationControl({
+    showCompass,
+    zoomInLabel,
+    zoomOutLabel,
+  }: MockNavigationProps) {
     return (
       <div
         data-testid="navigation-control"
@@ -23,12 +31,6 @@ jest.mock('react-map-gl', () => {
       />
     );
   }
-
-  MockNavigationControl.propTypes = {
-    showCompass: PropTypes.bool,
-    zoomInLabel: PropTypes.string,
-    zoomOutLabel: PropTypes.string,
-  };
 
   return {
     __esModule: true,

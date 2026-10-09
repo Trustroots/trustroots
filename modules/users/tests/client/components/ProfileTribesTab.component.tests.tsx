@@ -4,25 +4,32 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ProfileTribesTab from '@/modules/users/client/components/ProfileTribesTab.component';
+import type JoinButton from '@/modules/tribes/client/components/JoinButton';
+import type {
+  TribeMembership,
+  UserProfile,
+} from '@/modules/users/client/types';
+import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
 
 jest.mock('@/modules/tribes/client/components/JoinButton', () => {
-  const React = require('react');
-  const PropTypes = require('prop-types');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockJoinButton({ tribe }) {
+  function MockJoinButton({
+    tribe,
+  }: Pick<React.ComponentProps<typeof JoinButton>, 'tribe'>) {
     return <button type="button">Join {tribe.label}</button>;
   }
-
-  MockJoinButton.propTypes = {
-    tribe: PropTypes.object.isRequired,
-  };
 
   return MockJoinButton;
 });
 
-const user = { _id: 'user-1', username: 'ada' };
+const user: UserProfile = {
+  _id: 'user-1',
+  username: 'member-one',
+  displayName: 'Member One',
+};
 
-const memberships = [
+const memberships: (TribeMembership & { tribe: TribeSummary })[] = [
   {
     tribe: {
       _id: 'tribe-1',

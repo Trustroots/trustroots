@@ -4,18 +4,19 @@ import '@testing-library/jest-dom';
 
 import MapStyleButton from '@/modules/core/client/components/Map/MapStyleButton';
 
-const mockMapIcon = jest.fn();
+type MapIconProps = { mapboxStyle?: string };
+const mockMapIcon = jest.fn<void, [props: MapIconProps]>();
 jest.mock('@/modules/core/client/components/Map/MapIcon', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  return function MockMapIcon(props) {
+  return function MockMapIcon(props: MapIconProps) {
     mockMapIcon(props);
     return <div data-testid="map-icon" />;
   };
 });
 
 describe('<MapStyleButton />', () => {
-  const defaultProps = {
+  const defaultProps: React.ComponentProps<typeof MapStyleButton> = {
     label: 'Streets',
     onClick: jest.fn(),
     selectedStyle: 'mapbox://styles/mapbox/outdoors-v11',

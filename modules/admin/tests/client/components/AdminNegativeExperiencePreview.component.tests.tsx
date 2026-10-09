@@ -4,7 +4,11 @@ import '@testing-library/jest-dom';
 
 import AdminNegativeExperiencePreview from '@/modules/admin/client/components/AdminNegativeExperiencePreview.component';
 
-function renderPreview(feedbackPublic) {
+type PreviewFeedback = React.ComponentProps<
+  typeof AdminNegativeExperiencePreview
+>['feedbackPublic'];
+
+function renderPreview(feedbackPublic?: PreviewFeedback) {
   const text =
     arguments.length === 0 ? 'First line\nSecond line' : feedbackPublic;
   return render(
@@ -25,9 +29,10 @@ describe('AdminNegativeExperiencePreview', () => {
     const trigger = screen.getByRole('button', {
       name: 'Preview public feedback from 2026-06-21',
     });
+    const hoverTarget = trigger.parentElement!;
 
     expect(getPreview()).not.toBeVisible();
-    fireEvent.pointerEnter(trigger.parentElement, { pointerType: 'mouse' });
+    fireEvent.pointerEnter(hoverTarget, { pointerType: 'mouse' });
 
     expect(getPreview()).toBeVisible();
     expect(getPreview()).toHaveTextContent(
@@ -67,12 +72,13 @@ describe('AdminNegativeExperiencePreview', () => {
     const trigger = screen.getByRole('button', {
       name: 'Preview public feedback from 2026-06-21',
     });
+    const hoverTarget = trigger.parentElement!;
 
-    const touchPointerEnter = createEvent.pointerOver(trigger.parentElement);
+    const touchPointerEnter = createEvent.pointerOver(hoverTarget);
     Object.defineProperty(touchPointerEnter, 'pointerType', {
       value: 'touch',
     });
-    fireEvent(trigger.parentElement, touchPointerEnter);
+    fireEvent(hoverTarget, touchPointerEnter);
     expect(getPreview()).not.toBeVisible();
     fireEvent.pointerDown(trigger, { pointerType: 'mouse' });
     const touchPointerDown = createEvent.pointerDown(trigger);
@@ -84,32 +90,32 @@ describe('AdminNegativeExperiencePreview', () => {
     expect(getPreview()).not.toBeVisible();
     fireEvent.click(trigger);
     expect(getPreview()).toBeVisible();
-    const touchPointerLeave = createEvent.pointerOut(trigger.parentElement);
+    const touchPointerLeave = createEvent.pointerOut(hoverTarget);
     Object.defineProperty(touchPointerLeave, 'pointerType', {
       value: 'touch',
     });
-    fireEvent(trigger.parentElement, touchPointerLeave);
+    fireEvent(hoverTarget, touchPointerLeave);
     expect(getPreview()).toBeVisible();
     fireEvent.touchStart(trigger);
     fireEvent.click(trigger);
     expect(getPreview()).not.toBeVisible();
 
-    fireEvent.pointerEnter(trigger.parentElement, { pointerType: 'mouse' });
+    fireEvent.pointerEnter(hoverTarget, { pointerType: 'mouse' });
     expect(getPreview()).toBeVisible();
     fireEvent.blur(trigger);
     expect(getPreview()).toBeVisible();
-    fireEvent.pointerLeave(trigger.parentElement, { pointerType: 'mouse' });
+    fireEvent.pointerLeave(hoverTarget, { pointerType: 'mouse' });
     expect(getPreview()).not.toBeVisible();
 
     fireEvent.focus(trigger);
-    fireEvent.pointerEnter(trigger.parentElement, { pointerType: 'mouse' });
-    fireEvent.pointerLeave(trigger.parentElement, { pointerType: 'mouse' });
+    fireEvent.pointerEnter(hoverTarget, { pointerType: 'mouse' });
+    fireEvent.pointerLeave(hoverTarget, { pointerType: 'mouse' });
     expect(getPreview()).toBeVisible();
     fireEvent.blur(trigger);
     expect(getPreview()).not.toBeVisible();
   });
 
-  it.each([undefined, null, '', '  \n  '])(
+  it.each([undefined, null, '', '  \n  '] as PreviewFeedback[])(
     'shows an unavailable message for missing feedback (%s)',
     feedbackPublic => {
       renderPreview(feedbackPublic);

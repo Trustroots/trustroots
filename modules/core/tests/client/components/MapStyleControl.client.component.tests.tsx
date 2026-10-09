@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
+import type MapStyleButton from '@/modules/core/client/components/Map/MapStyleButton';
 import {
   MAP_STYLE_MAPBOX_OUTDOORS,
   MAP_STYLE_MAPBOX_SATELLITE,
@@ -11,32 +12,49 @@ import {
 } from '@/modules/core/client/components/Map/constants';
 import { getMapBoxToken } from '@/modules/core/client/utils/map';
 
-const mockMapStyleButton = jest.fn();
-const mockMapIcon = jest.fn();
+type MapStyleButtonProps = React.ComponentProps<typeof MapStyleButton>;
+type MapIconProps = { mapboxStyle?: string };
+const mockMapStyleButton = jest.fn<void, [props: MapStyleButtonProps]>();
+const mockMapIcon = jest.fn<void, [props: MapIconProps]>();
+const mockedGetMapBoxToken = jest.mocked(getMapBoxToken);
 
 jest.mock('react-i18next', () => ({
-  withTranslation: () => Component => {
-    function TranslatedComponent(props) {
-      return <Component {...props} t={key => `i18n:${key}`} />;
-    }
-    TranslatedComponent.displayName = `withTranslation(${
-      Component.displayName || Component.name || 'Component'
-    })`;
-    return TranslatedComponent;
-  },
+  withTranslation:
+    () =>
+    <Props extends object>(Component: React.ComponentType<Props>) => {
+      function TranslatedComponent(props: Omit<Props, 't'>) {
+        const translatedProps = {
+          ...props,
+          t: (key: string) => `i18n:${key}`,
+        } as Props;
+        return <Component {...translatedProps} />;
+      }
+      TranslatedComponent.displayName = `withTranslation(${
+        Component.displayName || Component.name || 'Component'
+      })`;
+      return TranslatedComponent;
+    },
 }));
 
 jest.mock('react-map-gl', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
   return {
     __esModule: true,
-    BaseControl: class MockBaseControl extends React.Component {
-      constructor(props) {
+    BaseControl: class MockBaseControl extends React.Component<
+      React.ComponentProps<typeof MapStyleControl>,
+      { isOpen: boolean }
+    > {
+      _context = { isDragging: false };
+      _containerRef: { current: HTMLDivElement | null } = { current: null };
+
+      constructor(props: React.ComponentProps<typeof MapStyleControl>) {
         super(props);
         this.state = { isOpen: false };
-        this._context = { isDragging: false };
-        this._containerRef = { current: null };
+      }
+
+      _render(): React.ReactNode {
+        return null;
       }
 
       render() {
@@ -47,10 +65,9 @@ jest.mock('react-map-gl', () => {
 });
 
 jest.mock('@/modules/core/client/components/Map/MapStyleButton', () => {
-  const React = require('react');
-  const PropTypes = require('prop-types');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockMapStyleButton(props) {
+  function MockMapStyleButton(props: MapStyleButtonProps) {
     mockMapStyleButton(props);
     return (
       <button onClick={props.onClick} disabled={props.disabled}>
@@ -59,19 +76,13 @@ jest.mock('@/modules/core/client/components/Map/MapStyleButton', () => {
     );
   }
 
-  MockMapStyleButton.propTypes = {
-    onClick: PropTypes.func,
-    disabled: PropTypes.bool,
-    label: PropTypes.string,
-  };
-
   return MockMapStyleButton;
 });
 
 jest.mock('@/modules/core/client/components/Map/MapIcon', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  return function MockMapIcon(props) {
+  return function MockMapIcon(props: MapIconProps) {
     mockMapIcon(props);
     return <div data-testid="map-icon" />;
   };
@@ -83,7 +94,7 @@ jest.mock('@/modules/core/client/utils/map', () => ({
 
 describe('<MapStyleControl />', () => {
   beforeEach(() => {
-    getMapBoxToken.mockReturnValue('mapbox-test-token');
+    mockedGetMapBoxToken.mockReturnValue('mapbox-test-token');
     mockMapStyleButton.mockClear();
     mockMapIcon.mockClear();
   });
@@ -165,7 +176,10 @@ describe('<MapStyleControl />', () => {
   });
 
   it('disables map style buttons when no Mapbox token exists', () => {
-    getMapBoxToken.mockReturnValue(null);
+    // Preserve the original null token input for this no-token regression.
+    mockedGetMapBoxToken.mockReturnValue(
+      null as unknown as ReturnType<typeof getMapBoxToken>,
+    );
     render(
       <MapStyleControl
         mapStyle={MAP_STYLE_MAPBOX_STREETS}

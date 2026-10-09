@@ -6,14 +6,18 @@ import AdminReferenceVoteItem from '@/modules/admin/client/components/AdminRefer
 
 describe('<AdminReferenceVoteItem />', () => {
   it('shows badge messages for positive votes with raw user ids', () => {
+    const referenceThread: React.ComponentProps<
+      typeof AdminReferenceVoteItem
+    >['referenceThread'] = {
+      reference: 'yes',
+      userFrom: 'member-1',
+      userTo: 'member-2',
+    };
+
     render(
       <ul>
         <AdminReferenceVoteItem
-          referenceThread={{
-            reference: 'yes',
-            userFrom: 'member-1',
-            userTo: 'member-2',
-          }}
+          referenceThread={referenceThread}
           showBadge
           showMessagesLink
         />
@@ -29,9 +33,13 @@ describe('<AdminReferenceVoteItem />', () => {
   });
 
   it('renders a negative vote without a badge or member identities', () => {
+    const referenceThread: React.ComponentProps<
+      typeof AdminReferenceVoteItem
+    >['referenceThread'] = {};
+
     render(
       <ul>
-        <AdminReferenceVoteItem referenceThread={{}} />
+        <AdminReferenceVoteItem referenceThread={referenceThread} />
       </ul>,
     );
 
