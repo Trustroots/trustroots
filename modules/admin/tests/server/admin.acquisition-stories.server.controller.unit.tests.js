@@ -161,6 +161,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       this.timeout(30000);
       const stories = Array.from({ length: 500 }, (_, index) => ({
         _id: `visitor-${index}`,
+        roles: ['user'],
         username: `visitor${index}`,
         email: `visitor${index}@example.test`,
         emailTemporary: '',
@@ -169,6 +170,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       }));
       const restrictedUsers = Array.from({ length: 1000 }, (_, index) => ({
         _id: `restricted-${index}`,
+        roles: ['user', 'suspended'],
         username: `restricted${index}`,
         email: `restricted${index}@example.test`,
         emailTemporary: '',
@@ -306,7 +308,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       users[5].username = 'temporary-match-user';
       users[5].email = 'other@example.test';
       users[5].emailTemporary = 'temporary-clue@example.test';
-      users[5].roles = ['user', 'shadowban'];
+      users[5].roles = ['user', 'shadowban', 'suspended', 'volunteer'];
       users[5].acquisitionStory = 'Yet another unrelated source.';
 
       await utils.saveUsers(users);
@@ -318,6 +320,19 @@ describe('Admin acquisition stories controller unit tests', () => {
         user => user.username === 'identifier-clue-copy',
       );
       story.restrictedMatches.should.have.length(3);
+      story.restrictionStatuses.should.deepEqual([]);
+      res.body
+        .find(user => user.username === 'identifierclue')
+        .restrictionStatuses.should.deepEqual(['shadowban']);
+      res.body
+        .find(user => user.username === 'email-match-user')
+        .restrictionStatuses.should.deepEqual(['suspended']);
+      res.body
+        .find(user => user.username === 'temporary-match-user')
+        .restrictionStatuses.should.deepEqual(['suspended', 'shadowban']);
+      story.restrictedMatches
+        .find(user => user.username === 'temporary-match-user')
+        .restrictionStatuses.should.deepEqual(['suspended', 'shadowban']);
       should(
         story.restrictedMatches.find(
           user => user.username === 'exact-story-user',
@@ -339,8 +354,9 @@ describe('Admin acquisition stories controller unit tests', () => {
         .matchReasons.should.deepEqual(['Temporary email identifier']);
       story.restrictedMatches.forEach(match => {
         should(match.email).be.undefined();
+        should(match.roles).be.undefined();
         ['shadowban', 'suspended']
-          .some(role => match.roles.includes(role))
+          .some(role => match.restrictionStatuses.includes(role))
           .should.equal(true);
       });
     });
