@@ -1,11 +1,12 @@
 const crypto = require('node:crypto');
 const { findUserByUsername, updateUserByUsername, withE2eDb } = require('./db');
 
-// Provision only privileged test fixtures. Authentication still passes through
-// the real password challenge and consumes a fresh single-use recovery code.
-async function provisionPrivilegedMfa(user) {
+// Enrol privileged fixtures and support fixtures already enrolled by a test.
+// Authentication uses the real challenge and a fresh single-use recovery code.
+async function provisionFixtureMfa(user) {
   const stored = await findUserByUsername(user.username);
   if (
+    !stored?.mfaEnabled &&
     !stored?.roles?.some(role =>
       ['admin', 'moderator', 'welcome-team'].includes(role),
     )
@@ -48,4 +49,4 @@ async function provisionPrivilegedMfa(user) {
   return code;
 }
 
-module.exports = { provisionPrivilegedMfa };
+module.exports = { provisionFixtureMfa };

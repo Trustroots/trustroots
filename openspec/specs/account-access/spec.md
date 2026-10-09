@@ -557,6 +557,15 @@ recovery code SHALL be accepted at most once through an atomic database update.
 - **THEN** the system applies shared per-IP and per-account limits across
   application instances
 
+#### Scenario: Privileged member requires verified MFA
+
+- **WHEN** an administrator, moderator, or welcome-team member has no verified
+  MFA session
+- **THEN** account APIs remain blocked until enrolment and verification finish
+- **AND** an unenrolled member can reach the account screen to enrol
+- **AND** sign-in, sign-out, session status, and MFA endpoints remain reachable
+  so the member can establish a verified session
+
 #### Scenario: Native client does not implement MFA challenge
 
 - **WHEN** a member with MFA enabled signs in through a native client that does

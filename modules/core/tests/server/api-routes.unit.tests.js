@@ -444,7 +444,10 @@ describe('API route registrations', () => {
     for (const [path, action] of limitedMfaRoutes) {
       const route = routeByPath(routes, path);
       assertHandlers(route.post, [action]);
-      assertHandlers(route.all, [policy.isAllowed, targetedRequestLimit.mfaManage]);
+      assertHandlers(route.all, [
+        policy.isAllowed,
+        targetedRequestLimit.mfaManage,
+      ]);
     }
     assertHandlers(routeByPath(routes, '/api/users/:username').get, [
       profile.getUser,

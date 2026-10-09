@@ -231,8 +231,8 @@ async function signUp(page, user) {
  * Authenticate a request context without opening a browser page.
  */
 async function authenticateViaApi(request, user) {
-  const { provisionPrivilegedMfa } = require('./mfa');
-  const code = await provisionPrivilegedMfa(user);
+  const { provisionFixtureMfa } = require('./mfa');
+  const code = await provisionFixtureMfa(user);
   let response = await request.post('/api/auth/signin', {
     data: { username: user.username, password: user.password },
   });

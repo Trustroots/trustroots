@@ -176,11 +176,9 @@ async function signInPrivileged(user, agent) {
   const counter = Math.floor(Date.now() / 30000);
   const key = Buffer.from('12345678901234567890');
   const counterBuffer = Buffer.alloc(8);
-  counterBuffer.writeBigUInt64BE(BigInt(counter));
-  const digest = crypto
-    .createHmac('sha1', key)
-    .update(counterBuffer)
-    .digest();
+  counterBuffer.writeUInt32BE(Math.floor(counter / 0x100000000), 0);
+  counterBuffer.writeUInt32BE(counter % 0x100000000, 4);
+  const digest = crypto.createHmac('sha1', key).update(counterBuffer).digest();
   const offset = digest[digest.length - 1] & 0x0f;
   const binary = digest.readUInt32BE(offset) & 0x7fffffff;
   const code = String(binary % 1000000).padStart(6, '0');
