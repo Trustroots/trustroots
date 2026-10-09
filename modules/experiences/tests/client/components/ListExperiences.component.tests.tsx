@@ -5,13 +5,16 @@ import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import ListExperiences from '@/modules/experiences/client/components/ListExperiences.component';
 import { read as readExperiences } from '@/modules/experiences/client/api/experiences.api';
+import type { Experience } from '@/modules/experiences/shared/experience';
+import type ExperiencesSection from '@/modules/experiences/client/components/read-experiences/ExperiencesSection';
 
 jest.mock('@/modules/experiences/client/api/experiences.api');
+const readExperiencesMock = jest.mocked(readExperiences);
 
 jest.mock(
   '@/modules/experiences/client/components/read-experiences/ExperienceCounts',
   () => {
-    const React = require('react');
+    const React = jest.requireActual<typeof import('react')>('react');
     function MockExperienceCounts() {
       return <div>experience-counts</div>;
     }
@@ -22,14 +25,33 @@ jest.mock(
 jest.mock(
   '@/modules/experiences/client/components/read-experiences/ExperiencesSection',
   () => {
-    const React = require('react');
-    function MockExperiencesSection({ experiences }) {
+    const React = jest.requireActual<typeof import('react')>('react');
+    function MockExperiencesSection({
+      experiences,
+    }: React.ComponentProps<typeof ExperiencesSection>) {
       return <div>{`experiences-section-${experiences.length}`}</div>;
     }
-    MockExperiencesSection.propTypes = { experiences: () => null };
     return MockExperiencesSection;
   },
 );
+
+type ExperienceUser = React.ComponentProps<typeof ListExperiences>['profile'];
+const profile: ExperienceUser = { _id: 'user-1', username: 'member-one' };
+const authenticatedMember: ExperienceUser = {
+  _id: 'user-2',
+  username: 'member-two',
+};
+const makeExperience = (id: string, isPublic: boolean): Experience => ({
+  _id: id,
+  created: '2024-01-01T00:00:00.000Z',
+  public: isPublic,
+  userFrom: { _id: 'user-2', username: 'member-two' },
+  userTo: { _id: 'user-1', username: 'member-one' },
+  interactions: { met: true, guest: false, host: false },
+  recommend: 'yes',
+  feedbackPublic: 'A kind experience.',
+  response: null,
+});
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -37,33 +59,30 @@ afterEach(() => {
 
 describe('<ListExperiences />', () => {
   it('shows a no-content message and a share link when there are no experiences', async () => {
-    readExperiences.mockResolvedValueOnce([]);
+    readExperiencesMock.mockResolvedValueOnce([]);
 
     render(
       <ListExperiences
-        profile={{ _id: 'user-1', username: 'alice' }}
-        authenticatedUser={{ _id: 'user-2' }}
+        profile={profile}
+        authenticatedUser={authenticatedMember}
       />,
     );
 
     expect(await screen.findByText('No experiences yet.')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Share your experience' }),
-    ).toHaveAttribute('href', '/profile/alice/experiences/new');
+    ).toHaveAttribute('href', '/profile/member-one/experiences/new');
   });
 
   it('renders public and pending experience sections', async () => {
-    readExperiences.mockResolvedValueOnce([
-      { _id: 'e1', public: true },
-      { _id: 'e2', public: false },
-      { _id: 'e3', public: false },
+    readExperiencesMock.mockResolvedValueOnce([
+      makeExperience('e1', true),
+      makeExperience('e2', false),
+      makeExperience('e3', false),
     ]);
 
     render(
-      <ListExperiences
-        profile={{ _id: 'user-1', username: 'alice' }}
-        authenticatedUser={{ _id: 'user-1' }}
-      />,
+      <ListExperiences profile={profile} authenticatedUser={{ ...profile }} />,
     );
 
     expect(

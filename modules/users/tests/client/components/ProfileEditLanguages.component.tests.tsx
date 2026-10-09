@@ -5,10 +5,20 @@ import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import ProfileEditLanguages from '@/modules/users/client/components/ProfileEditLanguages.component';
 import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
+import type LanguageSelect from '@/modules/core/client/components/LanguageSelect';
+
+type LanguageSelectProps = Pick<
+  React.ComponentProps<typeof LanguageSelect>,
+  'excludeDeprecated' | 'placeholder'
+> & {
+  'aria-label'?: string;
+  onChangeLanguages: (languages: string[]) => void;
+  preSelectedLanguages: string[];
+};
 
 jest.mock('@/modules/core/client/services/client-runtime');
 jest.mock('@/modules/core/client/components/LanguageSelect', () => {
-  function MockLanguageSelect(props) {
+  function MockLanguageSelect(props: LanguageSelectProps) {
     return (
       <button
         aria-label={props['aria-label']}
@@ -22,14 +32,6 @@ jest.mock('@/modules/core/client/components/LanguageSelect', () => {
       </button>
     );
   }
-
-  MockLanguageSelect.propTypes = {
-    'aria-label': () => null,
-    excludeDeprecated: () => null,
-    onChangeLanguages: () => null,
-    placeholder: () => null,
-    preSelectedLanguages: () => null,
-  };
 
   return MockLanguageSelect;
 });
@@ -69,9 +71,13 @@ describe('<ProfileEditLanguages />', () => {
 
   it('does not require an onChangeLanguages callback to update client state', () => {
     render(
+      // The public prop type currently marks this callback as required; this
+      // boundary deliberately supplies it as absent to cover the runtime guard.
       <ProfileEditLanguages
-        profileLanguages={['en']}
-        onChangeLanguages={undefined}
+        {...({
+          profileLanguages: ['en'],
+          onChangeLanguages: undefined,
+        } as unknown as React.ComponentProps<typeof ProfileEditLanguages>)}
       />,
     );
 

@@ -5,6 +5,9 @@ import '@testing-library/jest-dom';
 import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 import ProfileEditNetworks from '@/modules/users/client/components/ProfileEditNetworks.component';
 import * as usersApi from '@/modules/users/client/api/users.api';
+import type { UserProfile } from '@/modules/users/client/types';
+
+const mockedUsersApi = jest.mocked(usersApi);
 
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('nostr-tools', () => ({
@@ -12,7 +15,7 @@ jest.mock('nostr-tools', () => ({
 }));
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key, values) =>
+    t: (key: string, values?: { provider?: string }) =>
       values?.provider ? key.replace('{{provider}}', values.provider) : key,
   }),
 }));
@@ -20,16 +23,19 @@ jest.mock(
   '@/modules/users/client/components/ProfileEditPage.component',
   () => ({
     __esModule: true,
-    default: ({ children }) => <section>{children}</section>,
+    default: ({ children }: { children: React.ReactNode }) => (
+      <section>{children}</section>
+    ),
   }),
 );
 
-const user = {
+const user: UserProfile = {
   _id: 'user-1',
   username: 'ada',
+  displayName: 'Ada Example',
 };
 
-function renderPage(overrides = {}) {
+function renderPage(overrides: Partial<UserProfile> = {}) {
   const profile = { ...user, ...overrides };
 
   return render(
@@ -54,7 +60,7 @@ describe('ProfileEditNetworks', () => {
   });
 
   it('saves hospitality network changes and shows related links', async () => {
-    usersApi.update.mockResolvedValue({
+    mockedUsersApi.update.mockResolvedValue({
       ...user,
       extSitesCouchers: 'ada',
       extSitesWS: 'rainy-cyclist',
@@ -75,7 +81,7 @@ describe('ProfileEditNetworks', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => {
-      expect(usersApi.update).toHaveBeenCalledWith(
+      expect(mockedUsersApi.update).toHaveBeenCalledWith(
         expect.objectContaining({ extSitesCouchers: 'ada' }),
       );
     });
@@ -95,14 +101,14 @@ describe('ProfileEditNetworks', () => {
     expect(
       await screen.findByText(/Invalid nostr key\. Please provide your npub/),
     ).toBeVisible();
-    expect(usersApi.update).not.toHaveBeenCalled();
+    expect(mockedUsersApi.update).not.toHaveBeenCalled();
   });
 
   it('uses a browser Nostr key suggestion and reports save failures', async () => {
     window.nostr = {
       getPublicKey: jest.fn().mockResolvedValue('public-key'),
     };
-    usersApi.update.mockRejectedValue({
+    mockedUsersApi.update.mockRejectedValue({
       response: { data: { message: 'Unable to save networks.' } },
     });
     renderPage();
@@ -120,8 +126,8 @@ describe('ProfileEditNetworks', () => {
   });
 
   it('uses generic messages when network updates cannot provide one', async () => {
-    usersApi.update.mockRejectedValue(new Error('offline'));
-    usersApi.removeSocialAccount.mockRejectedValue(new Error('offline'));
+    mockedUsersApi.update.mockRejectedValue(new Error('offline'));
+    mockedUsersApi.removeSocialAccount.mockRejectedValue(new Error('offline'));
     renderPage({
       additionalProvidersData: {
         github: { id: 'github-id' },
@@ -188,7 +194,7 @@ describe('ProfileEditNetworks', () => {
   });
 
   it('lets members delete stored legacy social connections', async () => {
-    usersApi.removeSocialAccount.mockResolvedValue({ ...user });
+    mockedUsersApi.removeSocialAccount.mockResolvedValue({ ...user });
     renderPage({
       additionalProvidersData: {
         facebook: { id: 'facebook-id' },
@@ -199,7 +205,9 @@ describe('ProfileEditNetworks', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
 
     await waitFor(() => {
-      expect(usersApi.removeSocialAccount).toHaveBeenCalledWith('facebook');
+      expect(mockedUsersApi.removeSocialAccount).toHaveBeenCalledWith(
+        'facebook',
+      );
     });
     expect(
       await screen.findByText('Successfully deleted the facebook connection.'),
@@ -208,7 +216,7 @@ describe('ProfileEditNetworks', () => {
   });
 
   it('reports failures when deleting a legacy social connection', async () => {
-    usersApi.removeSocialAccount.mockRejectedValue({
+    mockedUsersApi.removeSocialAccount.mockRejectedValue({
       response: { data: { message: 'Unable to remove connection.' } },
     });
     renderPage({
@@ -239,7 +247,7 @@ describe('ProfileEditNetworks', () => {
   });
 
   it('uses the profile URL for non-numeric warmshowers ids', async () => {
-    usersApi.update.mockResolvedValue({
+    mockedUsersApi.update.mockResolvedValue({
       ...user,
       extSitesWS: 'rainy-cyclist',
     });
@@ -251,7 +259,7 @@ describe('ProfileEditNetworks', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => {
-      expect(usersApi.update).toHaveBeenCalledWith(
+      expect(mockedUsersApi.update).toHaveBeenCalledWith(
         expect.objectContaining({ extSitesWS: 'rainy-cyclist' }),
       );
     });

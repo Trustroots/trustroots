@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type PropsWithChildren } from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
@@ -6,15 +6,11 @@ import '@/config/client/i18n';
 import Guide from '@/modules/pages/client/components/Guide.component';
 
 jest.mock('@/modules/core/client/components/Board.js', () => {
-  const React = require('react');
+  const actualReact = jest.requireActual<typeof import('react')>('react');
 
-  function MockBoard({ children }) {
-    return <div>{children}</div>;
+  function MockBoard({ children }: PropsWithChildren) {
+    return actualReact.createElement('div', null, children);
   }
-
-  MockBoard.propTypes = {
-    children: () => null,
-  };
 
   return MockBoard;
 });

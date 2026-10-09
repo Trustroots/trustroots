@@ -7,9 +7,18 @@ import ReferenceThread from '@/modules/references-thread/client/components/Refer
 import {
   get,
   send,
+  type ReferenceThreadData,
 } from '@/modules/references-thread/client/api/reference-thread.api';
 
 jest.mock('@/modules/references-thread/client/api/reference-thread.api');
+
+const mockedGet = jest.mocked(get);
+const mockedSend = jest.mocked(send);
+
+function answerWithoutTimestamp(): ReferenceThreadData {
+  // Preserve the malformed API response regression for a missing `created` value.
+  return { reference: 'yes' } as ReferenceThreadData;
+}
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -19,7 +28,7 @@ describe('<ReferenceThread />', () => {
   it('renders an existing reference answer', async () => {
     const created = new Date('2020-01-01T00:00:00.000Z');
 
-    get.mockResolvedValueOnce({
+    mockedGet.mockResolvedValueOnce({
       reference: 'yes',
       created,
     });
@@ -28,11 +37,11 @@ describe('<ReferenceThread />', () => {
 
     expect(await screen.findByText('Change')).toBeInTheDocument();
     expect(screen.getByText('Yes')).toBeInTheDocument();
-    expect(get).toHaveBeenCalledWith('user-1');
+    expect(mockedGet).toHaveBeenCalledWith('user-1');
   });
 
   it('renders an existing answer without a creation timestamp', async () => {
-    get.mockResolvedValueOnce({ reference: 'yes' });
+    mockedGet.mockResolvedValueOnce(answerWithoutTimestamp());
 
     render(<ReferenceThread userToId="user-1" />);
 
@@ -41,7 +50,7 @@ describe('<ReferenceThread />', () => {
   });
 
   it('renders an existing negative reference answer and allows changing it', async () => {
-    get.mockResolvedValueOnce({
+    mockedGet.mockResolvedValueOnce({
       reference: 'no',
       created: new Date('2020-01-01T00:00:00.000Z'),
     });
@@ -59,7 +68,7 @@ describe('<ReferenceThread />', () => {
   });
 
   it('asks the question when no existing reference was found', async () => {
-    get.mockResolvedValueOnce(null);
+    mockedGet.mockResolvedValueOnce(null);
 
     render(<ReferenceThread userToId="user-1" />);
 
@@ -70,7 +79,7 @@ describe('<ReferenceThread />', () => {
   });
 
   it('asks the question when allowed to create a reference', async () => {
-    get.mockRejectedValueOnce({
+    mockedGet.mockRejectedValueOnce({
       response: { status: 404, data: { allowCreatingReference: true } },
     });
 
@@ -84,69 +93,75 @@ describe('<ReferenceThread />', () => {
   });
 
   it('renders nothing when creating a reference is not allowed', async () => {
-    get.mockRejectedValueOnce({
+    mockedGet.mockRejectedValueOnce({
       response: { status: 404, data: { allowCreatingReference: false } },
     });
 
     const { container } = render(<ReferenceThread userToId="user-1" />);
 
-    await waitFor(() => expect(get).toHaveBeenCalled());
+    await waitFor(() => expect(mockedGet).toHaveBeenCalled());
     expect(container).toBeEmptyDOMElement();
   });
 
   it('submits an answer when clicking Yes', async () => {
-    get.mockRejectedValueOnce({
+    mockedGet.mockRejectedValueOnce({
       response: { status: 404, data: { allowCreatingReference: true } },
     });
-    send.mockResolvedValueOnce({});
+    mockedSend.mockResolvedValueOnce({});
 
     render(<ReferenceThread userToId="user-1" />);
 
     const yesButton = await screen.findByRole('button', { name: 'Yes' });
     fireEvent.click(yesButton);
 
-    await waitFor(() => expect(send).toHaveBeenCalledWith('yes', 'user-1'));
+    await waitFor(() =>
+      expect(mockedSend).toHaveBeenCalledWith('yes', 'user-1'),
+    );
     expect(await screen.findByText('Change')).toBeInTheDocument();
   });
 
   it('submits a negative answer when clicking No', async () => {
-    get.mockRejectedValueOnce({
+    mockedGet.mockRejectedValueOnce({
       response: { status: 404, data: { allowCreatingReference: true } },
     });
-    send.mockResolvedValueOnce({});
+    mockedSend.mockResolvedValueOnce({});
 
     render(<ReferenceThread userToId="user-1" />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'No' }));
 
-    await waitFor(() => expect(send).toHaveBeenCalledWith('no', 'user-1'));
+    await waitFor(() =>
+      expect(mockedSend).toHaveBeenCalledWith('no', 'user-1'),
+    );
     expect(await screen.findByText('Change')).toBeInTheDocument();
     expect(screen.getByText('No').closest('p')).toHaveClass('text-danger');
   });
 
   it('uses the fallback deny state for a 404 without response details', async () => {
-    get.mockRejectedValueOnce({
+    mockedGet.mockRejectedValueOnce({
       response: { status: 404 },
     });
 
     const { container } = render(<ReferenceThread userToId="user-1" />);
 
-    await waitFor(() => expect(get).toHaveBeenCalledWith('user-1'));
+    await waitFor(() => expect(mockedGet).toHaveBeenCalledWith('user-1'));
     expect(container).toBeEmptyDOMElement();
   });
 
   it('returns to the question if sending the answer fails', async () => {
-    get.mockRejectedValueOnce({
+    mockedGet.mockRejectedValueOnce({
       response: { status: 404, data: { allowCreatingReference: true } },
     });
-    send.mockRejectedValueOnce(new Error('network error'));
+    mockedSend.mockRejectedValueOnce(new Error('network error'));
 
     render(<ReferenceThread userToId="user-1" />);
 
     const yesButton = await screen.findByRole('button', { name: 'Yes' });
     fireEvent.click(yesButton);
 
-    await waitFor(() => expect(send).toHaveBeenCalledWith('yes', 'user-1'));
+    await waitFor(() =>
+      expect(mockedSend).toHaveBeenCalledWith('yes', 'user-1'),
+    );
     expect(
       await screen.findByRole('button', { name: 'Yes' }),
     ).toBeInTheDocument();
@@ -154,11 +169,11 @@ describe('<ReferenceThread />', () => {
   });
 
   it('hides component when loading fails with non-404 errors', async () => {
-    get.mockRejectedValueOnce({ response: { status: 500, data: {} } });
+    mockedGet.mockRejectedValueOnce({ response: { status: 500, data: {} } });
 
     const { container } = render(<ReferenceThread userToId="user-1" />);
 
-    await waitFor(() => expect(get).toHaveBeenCalledWith('user-1'));
+    await waitFor(() => expect(mockedGet).toHaveBeenCalledWith('user-1'));
     expect(container).toBeEmptyDOMElement();
   });
 });
