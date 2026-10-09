@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type AxiosResponse } from 'axios';
 
 import {
   searchUsers,
@@ -7,11 +7,21 @@ import {
   getUser,
   getUserByUsername,
   setUserRole,
+  type UserSearchOptions,
 } from '@/modules/admin/client/api/users.api';
 
 jest.mock('axios', () =>
   jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
 );
+
+const axiosMock = jest.mocked(axios);
+
+function response<T>(data: T): AxiosResponse<T> {
+  const { AxiosHeaders: ActualAxiosHeaders } =
+    jest.requireActual<typeof import('axios')>('axios');
+  const headers = new ActualAxiosHeaders();
+  return { data, status: 200, statusText: 'OK', headers, config: { headers } };
+}
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -20,51 +30,54 @@ afterEach(() => {
 describe('admin users api', () => {
   it('searches users', async () => {
     const data = [{ _id: 'user-1' }];
-    axios.post.mockResolvedValueOnce({ data });
+    axiosMock.post.mockResolvedValueOnce(response(data));
 
     await expect(searchUsers('alice')).resolves.toBe(data);
-    expect(axios.post).toHaveBeenCalledWith('/api/admin/users', {
+    expect(axiosMock.post).toHaveBeenCalledWith('/api/admin/users', {
       search: 'alice',
     });
   });
 
   it('lists users by role', async () => {
     const data = [{ _id: 'user-1' }];
-    const options = {
+    const options: UserSearchOptions = {
       page: 2,
       sort: { column: 'created', direction: 'descending' },
     };
-    axios.post.mockResolvedValueOnce({ data });
+    axiosMock.post.mockResolvedValueOnce(response(data));
 
     await expect(listUsersByRole('admin', options)).resolves.toBe(data);
-    expect(axios.post).toHaveBeenCalledWith('/api/admin/users/by-role', {
+    expect(axiosMock.post).toHaveBeenCalledWith('/api/admin/users/by-role', {
       role: 'admin',
       ...options,
     });
 
-    axios.post.mockResolvedValueOnce({ data });
+    axiosMock.post.mockResolvedValueOnce(response(data));
     await expect(listUsersByRole('volunteer')).resolves.toBe(data);
-    expect(axios.post).toHaveBeenLastCalledWith('/api/admin/users/by-role', {
-      role: 'volunteer',
-    });
+    expect(axiosMock.post).toHaveBeenLastCalledWith(
+      '/api/admin/users/by-role',
+      {
+        role: 'volunteer',
+      },
+    );
   });
 
   it('lists users by their exact last IP address', async () => {
     const data = [{ _id: 'user-1' }];
-    const options = { page: 3 };
-    axios.post.mockResolvedValueOnce({ data });
+    const options: UserSearchOptions = { page: 3 };
+    axiosMock.post.mockResolvedValueOnce(response(data));
 
     await expect(
       listUsersByLastIpAddress('203.0.113.10', options),
     ).resolves.toBe(data);
-    expect(axios.post).toHaveBeenCalledWith(
+    expect(axiosMock.post).toHaveBeenCalledWith(
       '/api/admin/users/by-last-ip-address',
       { ipAddress: '203.0.113.10', page: 3 },
     );
 
-    axios.post.mockResolvedValueOnce({ data });
+    axiosMock.post.mockResolvedValueOnce(response(data));
     await expect(listUsersByLastIpAddress('203.0.113.20')).resolves.toBe(data);
-    expect(axios.post).toHaveBeenLastCalledWith(
+    expect(axiosMock.post).toHaveBeenLastCalledWith(
       '/api/admin/users/by-last-ip-address',
       { ipAddress: '203.0.113.20' },
     );
@@ -72,28 +85,28 @@ describe('admin users api', () => {
 
   it('gets a single user by id', async () => {
     const data = { _id: 'user-1' };
-    axios.post.mockResolvedValueOnce({ data });
+    axiosMock.post.mockResolvedValueOnce(response(data));
 
     await expect(getUser('user-1')).resolves.toBe(data);
-    expect(axios.post).toHaveBeenCalledWith('/api/admin/user', {
+    expect(axiosMock.post).toHaveBeenCalledWith('/api/admin/user', {
       id: 'user-1',
     });
   });
 
   it('gets a single user by exact username', async () => {
     const data = { _id: 'user-1' };
-    axios.post.mockResolvedValueOnce({ data });
+    axiosMock.post.mockResolvedValueOnce(response(data));
 
     await expect(getUserByUsername('common-name-member')).resolves.toBe(data);
-    expect(axios.post).toHaveBeenCalledWith('/api/admin/user', {
+    expect(axiosMock.post).toHaveBeenCalledWith('/api/admin/user', {
       username: 'common-name-member',
     });
   });
 
   it('passes explicit role removals to the API', async () => {
-    axios.post.mockResolvedValueOnce({ data: {} });
+    axiosMock.post.mockResolvedValueOnce(response({}));
     await setUserRole('member-id', 'welcome-team', 'remove');
-    expect(axios.post).toHaveBeenCalledWith('/api/admin/user/change-role', {
+    expect(axiosMock.post).toHaveBeenCalledWith('/api/admin/user/change-role', {
       id: 'member-id',
       role: 'welcome-team',
       action: 'remove',
@@ -102,10 +115,10 @@ describe('admin users api', () => {
 
   it('changes a user role', async () => {
     const data = { _id: 'user-1', roles: ['admin'] };
-    axios.post.mockResolvedValueOnce({ data });
+    axiosMock.post.mockResolvedValueOnce(response(data));
 
     await expect(setUserRole('user-1', 'admin')).resolves.toBe(data);
-    expect(axios.post).toHaveBeenCalledWith('/api/admin/user/change-role', {
+    expect(axiosMock.post).toHaveBeenCalledWith('/api/admin/user/change-role', {
       id: 'user-1',
       role: 'admin',
     });

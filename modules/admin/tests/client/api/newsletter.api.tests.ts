@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type AxiosResponse } from 'axios';
 
 import {
   getNewsletterAudienceCsv,
@@ -6,11 +6,21 @@ import {
   getNewsletterSubscribersCsv,
   previewNewsletterAudience,
   splitNewsletterSubscribers,
+  type NewsletterAudienceCriteria,
 } from '@/modules/admin/client/api/newsletter.api';
 
 jest.mock('axios', () =>
   jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
 );
+
+const axiosMock = jest.mocked(axios);
+
+function response<T>(data: T): AxiosResponse<T> {
+  const { AxiosHeaders: ActualAxiosHeaders } =
+    jest.requireActual<typeof import('axios')>('axios');
+  const headers = new ActualAxiosHeaders();
+  return { data, status: 200, statusText: 'OK', headers, config: { headers } };
+}
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -20,10 +30,10 @@ describe('admin newsletter api', () => {
   it('fetches all subscribers CSV export', async () => {
     const data =
       'Email Address,First Name,Last Name\nalice@example.com,Alice,Example';
-    axios.get.mockResolvedValueOnce({ data });
+    axiosMock.get.mockResolvedValueOnce(response(data));
 
     await expect(getNewsletterSubscribersCsv()).resolves.toEqual(data);
-    expect(axios.get).toHaveBeenCalledWith(
+    expect(axiosMock.get).toHaveBeenCalledWith(
       '/api/admin/newsletter-subscribers',
       {
         responseType: 'text',
@@ -34,12 +44,12 @@ describe('admin newsletter api', () => {
   it('fetches circle subscribers CSV export', async () => {
     const data =
       'Email Address,First Name,Last Name\nalice@example.com,Alice,Example';
-    axios.get.mockResolvedValueOnce({ data });
+    axiosMock.get.mockResolvedValueOnce(response(data));
 
     await expect(
       getNewsletterCircleSubscribersCsv('5fbab4f7fed63c7ed73276d3'),
     ).resolves.toEqual(data);
-    expect(axios.get).toHaveBeenCalledWith(
+    expect(axiosMock.get).toHaveBeenCalledWith(
       '/api/admin/newsletter-subscribers/circle',
       {
         params: { circleId: '5fbab4f7fed63c7ed73276d3' },
@@ -49,16 +59,19 @@ describe('admin newsletter api', () => {
   });
 
   it('previews a targeted audience', async () => {
-    const criteria = {
+    const criteria: NewsletterAudienceCriteria = {
+      circleIds: [],
+      latitude: '52.52',
       locationText: 'Berlin',
+      longitude: '13.405',
+      radiusKm: '25',
       sources: ['living', 'from'],
     };
-    axios.post.mockResolvedValueOnce({ data: { count: 12 } });
+    const preview = { count: 12 };
+    axiosMock.post.mockResolvedValueOnce(response(preview));
 
-    await expect(previewNewsletterAudience(criteria)).resolves.toEqual({
-      count: 12,
-    });
-    expect(axios.post).toHaveBeenCalledWith(
+    await expect(previewNewsletterAudience(criteria)).resolves.toEqual(preview);
+    expect(axiosMock.post).toHaveBeenCalledWith(
       '/api/admin/newsletter-subscribers/audience',
       {
         ...criteria,
@@ -68,16 +81,20 @@ describe('admin newsletter api', () => {
   });
 
   it('exports a targeted audience CSV', async () => {
-    const criteria = {
+    const criteria: NewsletterAudienceCriteria = {
       circleIds: ['5fbab4f7fed63c7ed73276d3'],
+      latitude: '52.52',
+      locationText: 'Berlin',
+      longitude: '13.405',
+      radiusKm: '25',
       sources: [],
     };
     const data =
       'Email Address,First Name,Last Name\nalice@example.com,Alice,Example';
-    axios.post.mockResolvedValueOnce({ data });
+    axiosMock.post.mockResolvedValueOnce(response(data));
 
     await expect(getNewsletterAudienceCsv(criteria)).resolves.toEqual(data);
-    expect(axios.post).toHaveBeenCalledWith(
+    expect(axiosMock.post).toHaveBeenCalledWith(
       '/api/admin/newsletter-subscribers/audience',
       {
         ...criteria,
@@ -106,11 +123,11 @@ describe('admin newsletter api', () => {
       unsubscribedCount: 0,
       unsubscribedContent: 'Email Address,First Name,Last Name',
     };
-    axios.post.mockResolvedValueOnce({ data });
+    axiosMock.post.mockResolvedValueOnce(response(data));
 
     await expect(splitNewsletterSubscribers(file)).resolves.toEqual(data);
-    expect(axios.post).toHaveBeenCalledTimes(1);
-    expect(axios.post).toHaveBeenCalledWith(
+    expect(axiosMock.post).toHaveBeenCalledTimes(1);
+    expect(axiosMock.post).toHaveBeenCalledWith(
       '/api/admin/newsletter-subscribers/split',
       expect.any(FormData),
       {
