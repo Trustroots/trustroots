@@ -10,7 +10,7 @@ jest.mock('@/modules/experiences/client/api/experiences.api');
 
 describe('<ProfileTabs />', () => {
   beforeEach(() => {
-    getCount.mockResolvedValue({ count: 2, hasPending: true });
+    jest.mocked(getCount).mockResolvedValue({ count: 2, hasPending: true });
   });
 
   afterEach(() => {
@@ -99,7 +99,7 @@ describe('<ProfileTabs />', () => {
   });
 
   it('shows an experiences notification dot when experiences are pending', async () => {
-    getCount.mockResolvedValue({ count: 5, hasPending: true });
+    jest.mocked(getCount).mockResolvedValue({ count: 5, hasPending: true });
 
     render(
       <ProfileTabs
@@ -120,12 +120,12 @@ describe('<ProfileTabs />', () => {
       })
       .closest('li');
 
-    expect(expTab.querySelector('div')).toBeInTheDocument();
+    expect(expTab?.querySelector('div')).toBeInTheDocument();
     expect(screen.getByText('5')).toHaveClass('badge');
   });
 
   it('hides unavailable experience tabs without pending notification', async () => {
-    getCount.mockResolvedValue({ count: -1, hasPending: false });
+    jest.mocked(getCount).mockResolvedValue({ count: -1, hasPending: false });
 
     render(
       <ProfileTabs

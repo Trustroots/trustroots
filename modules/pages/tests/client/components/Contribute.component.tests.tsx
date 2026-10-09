@@ -4,17 +4,16 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Contribute from '@/modules/pages/client/components/Contribute.component';
+import type PageBoard from '@/modules/pages/client/components/PageBoard';
+
+type BoardProps = React.ComponentProps<typeof PageBoard>;
 
 jest.mock('@/modules/core/client/components/Board.js', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockBoard({ children }) {
+  function MockBoard({ children }: BoardProps) {
     return <div>{children}</div>;
   }
-
-  MockBoard.propTypes = {
-    children: () => null,
-  };
 
   return MockBoard;
 });

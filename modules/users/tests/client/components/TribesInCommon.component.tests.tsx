@@ -4,11 +4,12 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import TribesInCommon from '@/modules/users/client/components/TribesInCommon.component';
+import type { TribeMembership } from '@/modules/users/client/types';
 
-const memberships = [
-  { tribe: { _id: 'tribe-1', slug: 'cyclists', label: 'Cyclists' } },
-  { tribe: { _id: 'tribe-2', slug: 'hikers', label: 'Hikers' } },
-  { tribe: { _id: 'tribe-3', slug: 'artists', label: 'Artists' } },
+const memberships: TribeMembership[] = [
+  { tribe: { _id: 'tribe-1', slug: 'cyclists', label: 'Cyclists', count: 1 } },
+  { tribe: { _id: 'tribe-2', slug: 'hikers', label: 'Hikers', count: 1 } },
+  { tribe: { _id: 'tribe-3', slug: 'artists', label: 'Artists', count: 1 } },
 ];
 
 describe('TribesInCommon', () => {

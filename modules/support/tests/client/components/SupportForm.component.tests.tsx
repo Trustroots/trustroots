@@ -111,7 +111,7 @@ describe('<SupportForm />', () => {
       await screen.findByText('Something went wrong sending your message.'),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled();
-    expect(screen.getByRole('alert')).toHaveFocus();
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus());
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center' });
     expect(screen.getByLabelText('Message')).toHaveValue('I need help');
   });

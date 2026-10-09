@@ -3,39 +3,43 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import Navigation from '@/modules/pages/client/components/Navigation.component';
+import type Avatar from '@/modules/users/client/components/Avatar.component';
+
+type AvatarProps = React.ComponentProps<typeof Avatar>;
+type NavigationProps = React.ComponentProps<typeof Navigation>;
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: key => key,
+    t: (key: string) => key,
   }),
 }));
 
 jest.mock('@/modules/users/client/components/Avatar.component.js', () => {
-  const React = require('react');
-  const PropTypes = require('prop-types');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockAvatar({ user }) {
+  function MockAvatar({ user }: AvatarProps) {
     return <div data-testid="avatar">{user.username}</div>;
   }
-
-  MockAvatar.propTypes = {
-    user: PropTypes.object,
-  };
 
   return MockAvatar;
 });
 
 describe('<Navigation />', () => {
-  const user = {
-    _id: '507f1f77bcf86cd799439011',
-    username: 'alice',
-    displayName: 'Alice Example',
+  const user: NavigationProps['user'] = {
+    _id: 'member-1',
+    username: 'sample-member',
+    displayName: 'Sample Member',
   };
 
   it('renders profile and navigation links for a signed-in user', () => {
-    render(<Navigation user={user} onSignout={jest.fn()} />);
+    render(
+      <Navigation
+        user={user}
+        onSignout={jest.fn<void, Parameters<NavigationProps['onSignout']>>()}
+      />,
+    );
 
-    expect(screen.getByText('Alice Example')).toBeInTheDocument();
+    expect(screen.getByText('Sample Member')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Edit profile' })).toHaveAttribute(
       'href',
       '/profile/edit',
@@ -44,11 +48,11 @@ describe('<Navigation />', () => {
       'href',
       '/offer/host',
     );
-    expect(screen.getByText('Alice Example').closest('a')).toHaveAttribute(
+    expect(screen.getByText('Sample Member').closest('a')).toHaveAttribute(
       'href',
-      '/profile/alice',
+      '/profile/sample-member',
     );
-    expect(screen.getByTestId('avatar')).toHaveTextContent('alice');
+    expect(screen.getByTestId('avatar')).toHaveTextContent('sample-member');
     const wikiLink = screen.getByRole('link', { name: 'Wiki' });
     expect(wikiLink).toHaveAttribute('href', 'https://wiki.trustroots.org/');
     expect(wikiLink).toHaveAttribute('target', '_blank');
@@ -65,7 +69,10 @@ describe('<Navigation />', () => {
 
   it('renders the Info and support links from the shared registry in order', () => {
     const { container } = render(
-      <Navigation user={user} onSignout={jest.fn()} />,
+      <Navigation
+        user={user}
+        onSignout={jest.fn<void, Parameters<NavigationProps['onSignout']>>()}
+      />,
     );
 
     expect(screen.getByText('Info & support')).toBeInTheDocument();
@@ -112,7 +119,7 @@ describe('<Navigation />', () => {
   });
 
   it('invokes onSignout when sign out link is clicked', () => {
-    const onSignout = jest.fn();
+    const onSignout = jest.fn<void, Parameters<NavigationProps['onSignout']>>();
     render(<Navigation user={user} onSignout={onSignout} />);
 
     fireEvent.click(screen.getByRole('link', { name: 'Sign out' }));

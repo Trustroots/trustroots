@@ -8,9 +8,14 @@ import ProfilePage from '@/modules/users/client/components/ProfilePage.component
 import * as usersApi from '@/modules/users/client/api/users.api';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import * as profileRoutes from '@/modules/users/client/utils/profile-routes';
+import type { ContactRecord } from '@/modules/contacts/client/types';
+import type { UserProfile, UserSummary } from '@/modules/users/client/types';
 
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/contacts/client/api/contacts.api');
+const fetchProfile = jest.mocked(usersApi.fetch);
+const getContact = jest.mocked(contactsApi.getByUserId);
+const listContacts = jest.mocked(contactsApi.list);
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   getCurrentRouteParams: jest.fn(() => ({ username: 'bob' })),
 }));
@@ -32,7 +37,9 @@ jest.mock(
   '@/modules/users/client/components/ProfileOverview.component',
   () => ({
     __esModule: true,
-    default: ({ profile }) => <div>{profile.displayName}</div>,
+    default: ({ profile }: { profile: UserProfile }) => (
+      <div>{profile.displayName}</div>
+    ),
   }),
 );
 jest.mock('@/modules/users/client/components/ProfileTabs.component', () => ({
@@ -41,7 +48,9 @@ jest.mock('@/modules/users/client/components/ProfileTabs.component', () => ({
 }));
 jest.mock('@/modules/users/client/components/AboutMe.component', () => ({
   __esModule: true,
-  default: ({ profile }) => <div>About {profile.displayName}</div>,
+  default: ({ profile }: { profile: UserProfile }) => (
+    <div>About {profile.displayName}</div>
+  ),
 }));
 jest.mock('@/modules/offers/client/components/Offers.component', () => ({
   __esModule: true,
@@ -77,7 +86,15 @@ jest.mock(
   '@/modules/contacts/client/components/RemoveContactContainer',
   () => ({
     __esModule: true,
-    default: ({ onCancel, onSuccess, show }) =>
+    default: ({
+      onCancel,
+      onSuccess,
+      show,
+    }: {
+      onCancel: () => void;
+      onSuccess: () => void;
+      show: boolean;
+    }) =>
       show ? (
         <div>
           <button type="button" onClick={onCancel}>
@@ -94,12 +111,18 @@ jest.mock(
   '@/modules/users/client/components/AvatarNameMobile.component',
   () => ({
     __esModule: true,
-    default: ({ profile }) => <div>Mobile {profile.displayName}</div>,
+    default: ({ profile }: { profile: UserProfile }) => (
+      <div>Mobile {profile.displayName}</div>
+    ),
   }),
 );
 jest.mock('@/modules/contacts/client/components/ContactList.component', () => ({
   __esModule: true,
-  default: ({ onContactRemoved }) => (
+  default: ({
+    onContactRemoved,
+  }: {
+    onContactRemoved: (contact: ContactRecord) => void;
+  }) => (
     <div>
       Contact list
       <button
@@ -115,16 +138,28 @@ jest.mock(
   '@/modules/users/client/components/ProfileTribesTab.component',
   () => ({
     __esModule: true,
-    default: ({ onMembershipUpdated }) => (
+    default: ({
+      onMembershipUpdated,
+    }: {
+      onMembershipUpdated?: (data: { user?: UserProfile } | null) => void;
+    }) => (
       <div>
         Tribes tab content
         <button
           type="button"
-          onClick={() => onMembershipUpdated({ user: { _id: 'updated-user' } })}
+          onClick={() =>
+            onMembershipUpdated?.({
+              user: {
+                _id: 'updated-user',
+                username: 'updated',
+                displayName: 'Updated User',
+              },
+            })
+          }
         >
           Update membership
         </button>
-        <button type="button" onClick={() => onMembershipUpdated({})}>
+        <button type="button" onClick={() => onMembershipUpdated?.({})}>
           Ignore membership update
         </button>
       </div>
@@ -149,33 +184,53 @@ jest.mock(
   '@/modules/users/client/components/BlockedMemberBanner.component',
   () => ({
     __esModule: true,
-    default: ({ username }) => <div>Blocked banner for {username}</div>,
+    default: ({ username }: { username?: string }) => (
+      <div>Blocked banner for {username}</div>
+    ),
   }),
 );
 
-const authUser = {
+const authUser: UserProfile = {
   _id: 'user-1',
   username: 'ada',
+  displayName: 'Ada Example',
   public: true,
   blocked: [],
   memberIds: ['tribe-1'],
 };
 
-const profile = {
+const profile: UserProfile = {
   _id: 'user-2',
   username: 'bob',
   displayName: 'Bob Example',
   tagline: 'Traveller',
-  member: [{ tribe: { _id: 'tribe-1', label: 'Cyclists' } }],
+  member: [
+    {
+      tribe: { _id: 'tribe-1', slug: 'cyclists', label: 'Cyclists', count: 1 },
+    },
+  ],
+};
+const embeddedAuthUser: UserSummary = {
+  _id: authUser._id,
+  username: 'ada',
+  displayName: 'Ada Example',
+};
+const embeddedProfileUser: UserSummary = {
+  _id: profile._id,
+  username: 'bob',
+  displayName: 'Bob Example',
 };
 const originalInnerWidth = window.innerWidth;
 
 function renderPage(
-  user = authUser,
+  user: UserProfile = authUser,
   path = '/profile/bob',
-  settings = { profileMinimumLength: 140, referencesEnabled: false },
-  routedPath,
-  options = {},
+  settings: NonNullable<Window['settings']> = {
+    profileMinimumLength: 140,
+    referencesEnabled: false,
+  },
+  routedPath?: string,
+  options: { embedded?: boolean; profileUsername?: string } = {},
 ) {
   window.history.pushState({}, '', path);
 
@@ -202,9 +257,9 @@ function renderPage(
 describe('ProfilePage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    usersApi.fetch.mockResolvedValue(profile);
-    contactsApi.getByUserId.mockResolvedValue(null);
-    contactsApi.list.mockResolvedValue([]);
+    fetchProfile.mockResolvedValue(profile);
+    getContact.mockResolvedValue(null);
+    listContacts.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -226,7 +281,7 @@ describe('ProfilePage', () => {
   });
 
   it('renders an embedded profile for its explicit subject without page navigation', async () => {
-    usersApi.fetch.mockResolvedValue({ ...profile, username: 'alice' });
+    fetchProfile.mockResolvedValue({ ...profile, username: 'alice' });
     const mobileRedirect = jest.spyOn(
       profileRoutes,
       'getMobileProfileRedirect',
@@ -322,7 +377,7 @@ describe('ProfilePage', () => {
   });
 
   it('shows remove contact for an existing confirmed contact', async () => {
-    contactsApi.getByUserId.mockResolvedValue({
+    getContact.mockResolvedValue({
       _id: 'contact-1',
       confirmed: true,
       created: '2024-01-01T00:00:00.000Z',
@@ -341,7 +396,7 @@ describe('ProfilePage', () => {
   });
 
   it('shows incoming contact request actions', async () => {
-    contactsApi.getByUserId.mockResolvedValue({
+    getContact.mockResolvedValue({
       _id: 'contact-1',
       confirmed: false,
       created: '2024-01-01T00:00:00.000Z',
@@ -357,7 +412,7 @@ describe('ProfilePage', () => {
   });
 
   it('renders contact tooltips when the creation timestamp is absent', async () => {
-    contactsApi.getByUserId.mockResolvedValue({
+    getContact.mockResolvedValue({
       _id: 'contact-1',
       confirmed: true,
       userFrom: authUser._id,
@@ -373,7 +428,7 @@ describe('ProfilePage', () => {
   });
 
   it('renders incoming contact tooltips when the creation timestamp is absent', async () => {
-    contactsApi.getByUserId.mockResolvedValue({
+    getContact.mockResolvedValue({
       _id: 'contact-1',
       confirmed: false,
       userFrom: profile._id,
@@ -390,7 +445,7 @@ describe('ProfilePage', () => {
   });
 
   it('opens the remove contact modal and clears contact state on success', async () => {
-    contactsApi.getByUserId.mockResolvedValue({
+    getContact.mockResolvedValue({
       _id: 'contact-1',
       confirmed: true,
       created: '2024-01-01T00:00:00.000Z',
@@ -412,7 +467,8 @@ describe('ProfilePage', () => {
   });
 
   it('shows user does not exist for missing profiles', async () => {
-    usersApi.fetch.mockResolvedValue({});
+    // The missing-profile regression exercises an invalid API payload.
+    fetchProfile.mockResolvedValue({} as UserProfile);
     renderPage();
 
     expect(
@@ -423,12 +479,12 @@ describe('ProfilePage', () => {
   });
 
   it('shows email confirmation notice on own unconfirmed profile', async () => {
-    usersApi.fetch.mockResolvedValue({
+    fetchProfile.mockResolvedValue({
       ...profile,
       _id: authUser._id,
       username: 'ada',
     });
-    contactsApi.list.mockResolvedValue([]);
+    listContacts.mockResolvedValue([]);
     renderPage({ ...authUser, public: false }, '/profile/ada');
 
     expect(await screen.findByText(/confirm your email/)).toBeVisible();
@@ -486,7 +542,14 @@ describe('ProfilePage', () => {
   });
 
   it('shows contacts in common and tribes in common on the about tab', async () => {
-    contactsApi.list.mockResolvedValue([{ _id: 'shared-1' }]);
+    listContacts.mockResolvedValue([
+      {
+        _id: 'shared-1',
+        confirmed: true,
+        created: '2024-01-01T00:00:00.000Z',
+        user: profile,
+      },
+    ]);
     renderPage();
 
     expect(await screen.findByText('Contacts in common')).toBeVisible();
@@ -495,12 +558,12 @@ describe('ProfilePage', () => {
   });
 
   it('normalises contact records with embedded user objects', async () => {
-    contactsApi.getByUserId.mockResolvedValue({
+    getContact.mockResolvedValue({
       _id: 'contact-1',
       confirmed: true,
       created: '2024-01-01T00:00:00.000Z',
-      userFrom: { _id: authUser._id },
-      userTo: { _id: profile._id },
+      userFrom: embeddedAuthUser,
+      userTo: embeddedProfileUser,
     });
     renderPage();
 
@@ -510,7 +573,7 @@ describe('ProfilePage', () => {
   });
 
   it('shows delete contact request for an unconfirmed outgoing request', async () => {
-    contactsApi.getByUserId.mockResolvedValue({
+    getContact.mockResolvedValue({
       _id: 'contact-1',
       confirmed: false,
       created: '2024-01-01T00:00:00.000Z',
@@ -537,7 +600,7 @@ describe('ProfilePage', () => {
   });
 
   it('opens remove modal when declining an incoming contact request', async () => {
-    contactsApi.getByUserId.mockResolvedValue({
+    getContact.mockResolvedValue({
       _id: 'contact-1',
       confirmed: false,
       created: '2024-01-01T00:00:00.000Z',
@@ -555,7 +618,7 @@ describe('ProfilePage', () => {
   });
 
   it('handles profile fetch failures gracefully', async () => {
-    usersApi.fetch.mockRejectedValue(new Error('network'));
+    fetchProfile.mockRejectedValue(new Error('network'));
     renderPage();
 
     expect(
@@ -566,14 +629,14 @@ describe('ProfilePage', () => {
   });
 
   it('renders the about tab for the signed-in member viewing their own profile', async () => {
-    usersApi.fetch.mockResolvedValue({
+    fetchProfile.mockResolvedValue({
       ...profile,
       _id: authUser._id,
       username: 'ada',
       displayName: 'Ada Example',
     });
-    contactsApi.getByUserId.mockResolvedValue(null);
-    contactsApi.list.mockResolvedValue([]);
+    getContact.mockResolvedValue(null);
+    listContacts.mockResolvedValue([]);
 
     renderPage(authUser, '/profile/ada');
 
@@ -582,14 +645,21 @@ describe('ProfilePage', () => {
   });
 
   it('removes a contact from the loaded contact list', async () => {
-    contactsApi.getByUserId.mockResolvedValue({
+    getContact.mockResolvedValue({
       _id: 'contact-1',
       confirmed: true,
       created: '2024-01-01T00:00:00.000Z',
       userFrom: authUser._id,
       userTo: profile._id,
     });
-    contactsApi.list.mockResolvedValue([{ _id: 'contact-1' }]);
+    listContacts.mockResolvedValue([
+      {
+        _id: 'contact-1',
+        confirmed: true,
+        created: '2024-01-01T00:00:00.000Z',
+        user: profile,
+      },
+    ]);
     renderPage();
 
     fireEvent.click(
@@ -614,8 +684,8 @@ describe('ProfilePage', () => {
   });
 
   it('ignores a profile response after unmounting', async () => {
-    let resolveProfile;
-    usersApi.fetch.mockReturnValue(
+    let resolveProfile!: (value: UserProfile) => void;
+    fetchProfile.mockReturnValue(
       new Promise(resolve => {
         resolveProfile = resolve;
       }),
@@ -628,22 +698,24 @@ describe('ProfilePage', () => {
   });
 
   it('ignores contact responses after unmounting', async () => {
-    let resolveContact;
-    let resolveContacts;
-    usersApi.fetch.mockResolvedValue(profile);
-    contactsApi.getByUserId.mockReturnValue(
+    let resolveContact!: (value: ContactRecord | null) => void;
+    let resolveContacts!: (
+      value: Awaited<ReturnType<typeof contactsApi.list>>,
+    ) => void;
+    fetchProfile.mockResolvedValue(profile);
+    getContact.mockReturnValue(
       new Promise(resolve => {
         resolveContact = resolve;
       }),
     );
-    contactsApi.list.mockReturnValue(
+    listContacts.mockReturnValue(
       new Promise(resolve => {
         resolveContacts = resolve;
       }),
     );
 
     const { unmount } = renderPage();
-    await waitFor(() => expect(contactsApi.list).toHaveBeenCalled());
+    await waitFor(() => expect(listContacts).toHaveBeenCalled());
     unmount();
     resolveContact(null);
     resolveContacts([]);
@@ -661,9 +733,12 @@ describe('ProfilePage', () => {
   });
 
   it('handles optional member metadata and an absent contact list', async () => {
-    contactsApi.list.mockResolvedValue(undefined);
+    // This endpoint regression covers a legacy response with no list value.
+    listContacts.mockResolvedValue(
+      undefined as unknown as Awaited<ReturnType<typeof contactsApi.list>>,
+    );
     renderPage(
-      { _id: 'user-1', public: true, username: 'ada' },
+      { _id: 'user-1', public: true, username: 'ada' } as UserProfile,
       '/profile/bob',
     );
 
@@ -672,8 +747,8 @@ describe('ProfilePage', () => {
   });
 
   it('keeps a profile visible when contact details are unavailable', async () => {
-    contactsApi.getByUserId.mockRejectedValue(new Error('Contact unavailable'));
-    contactsApi.list.mockRejectedValue(new Error('Contact list unavailable'));
+    getContact.mockRejectedValue(new Error('Contact unavailable'));
+    listContacts.mockRejectedValue(new Error('Contact list unavailable'));
     renderPage();
 
     expect(await screen.findByText('About Bob Example')).toBeVisible();
@@ -704,8 +779,8 @@ describe('ProfilePage', () => {
   });
 
   it('ignores profile fetch failures after unmounting', async () => {
-    let rejectProfile;
-    usersApi.fetch.mockReturnValue(
+    let rejectProfile!: (error: Error) => void;
+    fetchProfile.mockReturnValue(
       new Promise((resolve, reject) => {
         rejectProfile = reject;
       }),
@@ -719,7 +794,7 @@ describe('ProfilePage', () => {
   });
 
   it('handles cancelling the remove contact dialog', async () => {
-    contactsApi.getByUserId.mockResolvedValue({
+    getContact.mockResolvedValue({
       _id: 'contact-1',
       confirmed: true,
       created: '2024-01-01T00:00:00.000Z',

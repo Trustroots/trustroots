@@ -10,13 +10,70 @@ import {
 import '@testing-library/jest-dom';
 
 import AdminUser from '@/modules/admin/client/components/AdminUser.component';
+import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserResultsTable.component';
 import * as usersApi from '@/modules/admin/client/api/users.api';
+
+type AdminUserRecord = Exclude<AdminUser['state']['user'], false>;
+type MemberList = {
+  users: AdminUserRecord[];
+  pagination: NonNullable<AdminUser['state']['matchingUsersPagination']>;
+  sort: AdminUser['state']['matchingUsersSort'];
+};
+type MemberListRow = React.ComponentProps<
+  typeof AdminUserResultsTable
+>['userResults'][number] & { displayName?: string; public?: boolean };
+type ReportCardFixture = Omit<
+  Partial<AdminUserRecord>,
+  'profile' | 'contacts' | 'offers' | 'threadReferences'
+> & {
+  profile: Omit<Partial<AdminUserRecord['profile']>, 'seen'> & {
+    seen?: string | number | null;
+  };
+  contacts?: Array<
+    Omit<AdminUserRecord['contacts'][number], 'user'> & {
+      user?: string | { displayName?: string; _id?: string; username?: string };
+    }
+  >;
+  offers?: Array<
+    Omit<AdminUserRecord['offers'][number], 'location' | 'updated'> & {
+      location?: Array<string | number>;
+      updated?: string | number | null;
+    }
+  >;
+  threadReferences?: Array<
+    Omit<
+      NonNullable<AdminUserRecord['threadReferences']>[number],
+      'created' | 'userFrom' | 'userTo'
+    > & {
+      created?: string | number | null;
+      userFrom?:
+        | string
+        | { _id: string; displayName?: string; username?: string };
+      userTo?:
+        | string
+        | { _id: string; displayName?: string; username?: string };
+    }
+  >;
+};
+type ReportCardOverrides = Omit<ReportCardFixture, 'profile'> & {
+  profile?: ReportCardFixture['profile'];
+};
+
+const mockedUsersApi = jest.mocked(usersApi);
 
 jest.mock('@/modules/admin/client/api/users.api');
 jest.mock('@/modules/users/client/components/ProfilePage.component', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockProfilePage({ embedded, profileUsername, user }) {
+  function MockProfilePage({
+    embedded,
+    profileUsername,
+    user,
+  }: {
+    embedded?: boolean;
+    profileUsername?: string;
+    user: { _id: string; displayName?: string; username?: string };
+  }) {
     return React.createElement('div', {
       'data-testid': 'embedded-profile',
       'data-embedded': String(embedded),
@@ -25,68 +82,50 @@ jest.mock('@/modules/users/client/components/ProfilePage.component', () => {
     });
   }
 
-  MockProfilePage.propTypes = {
-    embedded: () => null,
-    profileUsername: () => null,
-    user: () => null,
-  };
-
   return { __esModule: true, default: MockProfilePage };
 });
 jest.mock('@/modules/admin/client/components/AdminNotes', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockAdminNotes({ id }) {
+  function MockAdminNotes({ id }: { id: string }) {
     return <section>Notes for {id}</section>;
   }
-
-  MockAdminNotes.propTypes = {
-    id: () => null,
-  };
 
   return MockAdminNotes;
 });
 jest.mock('@/modules/admin/client/components/Json.component', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockJson({ content }) {
+  function MockJson({ content }: { content: unknown }) {
     return <pre>{JSON.stringify(content)}</pre>;
   }
-
-  MockJson.propTypes = {
-    content: () => null,
-  };
 
   return MockJson;
 });
 jest.mock(
   '@/modules/admin/client/components/UserEmailConfirmLink.component',
   () => {
-    const React = require('react');
+    const React = jest.requireActual<typeof import('react')>('react');
 
-    function MockUserEmailConfirmLink({ user }) {
+    function MockUserEmailConfirmLink({
+      user,
+    }: {
+      user: { emailTemporary?: string; email?: string };
+    }) {
       return (
         <div>Email confirmation for {user.emailTemporary || user.email}</div>
       );
     }
 
-    MockUserEmailConfirmLink.propTypes = {
-      user: () => null,
-    };
-
     return MockUserEmailConfirmLink;
   },
 );
 jest.mock('@/modules/admin/client/components/UserState.component', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockUserState({ user }) {
+  function MockUserState({ user }: { user: { username?: string } }) {
     return <div>State for {user.username}</div>;
   }
-
-  MockUserState.propTypes = {
-    user: () => null,
-  };
 
   return MockUserState;
 });
@@ -99,13 +138,15 @@ afterEach(() => {
   window.history.pushState({}, '', '/');
 });
 
-function confirmRoleChange(label) {
+function confirmRoleChange(label: string) {
   fireEvent.click(
     within(screen.getByRole('dialog')).getByRole('button', { name: label }),
   );
 }
 
-const makeReportCard = overrides => ({
+const makeReportCard = (
+  overrides: ReportCardOverrides = {},
+): ReportCardFixture => ({
   contacts: [],
   messageFromCount: 3,
   messageToCount: 4,
@@ -126,7 +167,10 @@ const makeReportCard = overrides => ({
   ...overrides,
 });
 
-const makeMemberList = (users, overrides = {}) => ({
+const makeMemberList = (
+  users: MemberListRow[],
+  overrides: Partial<MemberList> = {},
+) => ({
   pagination: {
     page: 1,
     pageSize: 150,
@@ -141,10 +185,10 @@ const makeMemberList = (users, overrides = {}) => ({
   ...overrides,
 });
 
-function submitMemberSearch(value) {
+function submitMemberSearch(value: string) {
   const input = screen.getByLabelText('Member username, email or ID');
   fireEvent.change(input, { target: { value } });
-  fireEvent.submit(input.closest('form'));
+  fireEvent.submit(input.closest('form')!);
 }
 
 describe('<AdminUser />', () => {
@@ -153,12 +197,12 @@ describe('<AdminUser />', () => {
 
     expect(component.hasRole('volunteer')).toBe(false);
     expect(() => component.handleUserRoleChange('volunteer')).not.toThrow();
-    expect(usersApi.setUserRole).not.toHaveBeenCalled();
+    expect(mockedUsersApi.setUserRole).not.toHaveBeenCalled();
 
-    component.state.user = {
-      profile: {
-        roles: ['volunteer'],
-      },
+    // Deliberately partial state exercises role helpers before profile data is complete.
+    component.state = {
+      ...component.state,
+      user: { profile: { roles: ['volunteer'] } } as AdminUserRecord,
     };
 
     expect(component.hasRole('volunteer')).toBe(true);
@@ -166,9 +210,9 @@ describe('<AdminUser />', () => {
 
   it('loads a valid member id from the URL and renders the report card', async () => {
     window.history.pushState({}, '', `/admin/user?id=${userId}`);
-    let resolveUser;
-    usersApi.getUser.mockReturnValueOnce(
-      new Promise(resolve => {
+    let resolveUser!: (user: ReportCardFixture) => void;
+    mockedUsersApi.getUser.mockReturnValueOnce(
+      new Promise<ReportCardFixture>(resolve => {
         resolveUser = resolve;
       }),
     );
@@ -244,7 +288,7 @@ describe('<AdminUser />', () => {
         name: 'alice: Alice Example',
       }),
     ).toBeInTheDocument();
-    expect(usersApi.getUser).toHaveBeenCalledWith(userId);
+    expect(mockedUsersApi.getUser).toHaveBeenCalledWith(userId);
     expect(screen.getByText('State for alice')).toBeInTheDocument();
     expect(screen.queryByText('Role management')).not.toBeInTheDocument();
     expect(
@@ -316,7 +360,7 @@ describe('<AdminUser />', () => {
   });
 
   it('links listable roles and describes recognised and historical roles', async () => {
-    usersApi.getUser.mockResolvedValueOnce(
+    mockedUsersApi.getUser.mockResolvedValueOnce(
       makeReportCard({
         profile: {
           _id: userId,
@@ -376,7 +420,7 @@ describe('<AdminUser />', () => {
   });
 
   it('links greeter and volunteer role badges to their filtered lists', async () => {
-    usersApi.getUser.mockResolvedValueOnce(
+    mockedUsersApi.getUser.mockResolvedValueOnce(
       makeReportCard({
         profile: {
           _id: userId,
@@ -412,7 +456,7 @@ describe('<AdminUser />', () => {
       lastIpAddress: '203.0.113.10',
       username: 'alice',
     };
-    usersApi.listUsersByLastIpAddress
+    mockedUsersApi.listUsersByLastIpAddress
       .mockResolvedValueOnce(
         makeMemberList([matchingUser], {
           pagination: {
@@ -444,7 +488,7 @@ describe('<AdminUser />', () => {
     expect(
       await screen.findByRole('link', { name: 'alice (Alice Example)' }),
     ).toBeInTheDocument();
-    expect(usersApi.listUsersByLastIpAddress).toHaveBeenCalledWith(
+    expect(mockedUsersApi.listUsersByLastIpAddress).toHaveBeenCalledWith(
       '203.0.113.10',
       {
         page: 1,
@@ -456,8 +500,8 @@ describe('<AdminUser />', () => {
     expect(
       await screen.findByText('151 user(s). Page 2 of 2.'),
     ).toBeInTheDocument();
-    expect(usersApi.listUsersByLastIpAddress).toHaveBeenCalledTimes(2);
-    expect(usersApi.listUsersByLastIpAddress).toHaveBeenNthCalledWith(
+    expect(mockedUsersApi.listUsersByLastIpAddress).toHaveBeenCalledTimes(2);
+    expect(mockedUsersApi.listUsersByLastIpAddress).toHaveBeenNthCalledWith(
       2,
       '203.0.113.10',
       {
@@ -468,12 +512,12 @@ describe('<AdminUser />', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Last IP' }));
     await waitFor(() =>
-      expect(usersApi.listUsersByLastIpAddress).toHaveBeenCalledTimes(3),
+      expect(mockedUsersApi.listUsersByLastIpAddress).toHaveBeenCalledTimes(3),
     );
     expect(
       await screen.findByRole('button', { name: 'Last IP ▲' }),
     ).toBeInTheDocument();
-    expect(usersApi.listUsersByLastIpAddress).toHaveBeenNthCalledWith(
+    expect(mockedUsersApi.listUsersByLastIpAddress).toHaveBeenNthCalledWith(
       3,
       '203.0.113.10',
       {
@@ -484,7 +528,7 @@ describe('<AdminUser />', () => {
   });
 
   it('hides public profile and role actions for suspended members', async () => {
-    usersApi.getUser.mockResolvedValueOnce(
+    mockedUsersApi.getUser.mockResolvedValueOnce(
       makeReportCard({
         profile: {
           _id: userId,
@@ -531,7 +575,7 @@ describe('<AdminUser />', () => {
   });
 
   it('shows acquisition context and potential matches for a shadowbanned member', async () => {
-    usersApi.getUser.mockResolvedValueOnce(
+    mockedUsersApi.getUser.mockResolvedValueOnce(
       makeReportCard({
         potentialMatches: [
           {
@@ -589,7 +633,7 @@ describe('<AdminUser />', () => {
   });
 
   it('updates the URL while typing and queries valid member ids', async () => {
-    usersApi.getUser.mockResolvedValueOnce(makeReportCard());
+    mockedUsersApi.getUser.mockResolvedValueOnce(makeReportCard());
 
     render(<AdminUser />);
 
@@ -598,7 +642,7 @@ describe('<AdminUser />', () => {
     fireEvent.change(input, { target: { value: 'short-id' } });
 
     expect(window.location.search).toBe('?q=short-id');
-    expect(usersApi.getUser).not.toHaveBeenCalled();
+    expect(mockedUsersApi.getUser).not.toHaveBeenCalled();
 
     fireEvent.change(input, { target: { value: '' } });
 
@@ -606,24 +650,26 @@ describe('<AdminUser />', () => {
 
     submitMemberSearch(userId);
 
-    await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
+    await waitFor(() =>
+      expect(mockedUsersApi.getUser).toHaveBeenCalledWith(userId),
+    );
   });
 
   it('ignores invalid ids passed directly to the loader', async () => {
-    const ref = React.createRef();
+    const ref = React.createRef<AdminUser>();
 
     render(<AdminUser ref={ref} />);
 
     await act(async () => {
-      ref.current.getUserById('not-a-mongo-id');
+      ref.current?.getUserById('not-a-mongo-id');
     });
 
-    expect(usersApi.getUser).not.toHaveBeenCalled();
+    expect(mockedUsersApi.getUser).not.toHaveBeenCalled();
   });
 
   it('loads a query from the URL', async () => {
     window.history.pushState({}, '', '/admin/user?q=alice');
-    usersApi.searchUsers.mockResolvedValueOnce(
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(
       makeMemberList([
         {
           _id: userId,
@@ -631,7 +677,7 @@ describe('<AdminUser />', () => {
         },
       ]),
     );
-    usersApi.getUser.mockResolvedValueOnce(makeReportCard());
+    mockedUsersApi.getUser.mockResolvedValueOnce(makeReportCard());
 
     render(<AdminUser />);
 
@@ -639,26 +685,28 @@ describe('<AdminUser />', () => {
       'alice',
     );
     await waitFor(() =>
-      expect(usersApi.searchUsers).toHaveBeenCalledWith('alice', {
+      expect(mockedUsersApi.searchUsers).toHaveBeenCalledWith('alice', {
         page: 1,
         sort: { column: 'username', direction: 'ascending' },
       }),
     );
-    await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
+    await waitFor(() =>
+      expect(mockedUsersApi.getUser).toHaveBeenCalledWith(userId),
+    );
   });
 
   it('loads a deep-link username exactly, independent of search pagination', async () => {
     window.history.pushState({}, '', '/admin/user/alex');
-    usersApi.getUserByUsername.mockResolvedValueOnce(
+    mockedUsersApi.getUserByUsername.mockResolvedValueOnce(
       makeReportCard({
         profile: { _id: userId, roles: ['user'], username: 'alex' },
       }),
     );
     render(<AdminUser username="alex" />);
     await screen.findByRole('heading', { name: 'alex' });
-    expect(usersApi.getUserByUsername).toHaveBeenCalledWith('alex');
-    expect(usersApi.searchUsers).not.toHaveBeenCalled();
-    expect(usersApi.getUser).not.toHaveBeenCalled();
+    expect(mockedUsersApi.getUserByUsername).toHaveBeenCalledWith('alex');
+    expect(mockedUsersApi.searchUsers).not.toHaveBeenCalled();
+    expect(mockedUsersApi.getUser).not.toHaveBeenCalled();
     expect(
       screen.queryByLabelText('Member username, email or ID'),
     ).not.toBeInTheDocument();
@@ -666,7 +714,7 @@ describe('<AdminUser />', () => {
 
   it('embeds the reported username using the signed-in viewer', async () => {
     window.history.pushState({}, '', '/admin/user/alex');
-    usersApi.getUserByUsername.mockResolvedValueOnce(
+    mockedUsersApi.getUserByUsername.mockResolvedValueOnce(
       makeReportCard({
         profile: { _id: userId, roles: ['user'], username: 'alex' },
       }),
@@ -687,14 +735,16 @@ describe('<AdminUser />', () => {
 
   it('shows the no-match state when a deep-link username does not exist', async () => {
     window.history.pushState({}, '', '/admin/user/missing-member');
-    usersApi.getUserByUsername.mockRejectedValueOnce(new Error('Not found'));
+    mockedUsersApi.getUserByUsername.mockRejectedValueOnce(
+      new Error('Not found'),
+    );
 
     render(<AdminUser username="missing-member" />);
 
     expect(
       await screen.findByText('No matching members found.'),
     ).toBeInTheDocument();
-    expect(usersApi.searchUsers).not.toHaveBeenCalled();
+    expect(mockedUsersApi.searchUsers).not.toHaveBeenCalled();
     expect(screen.queryByText('Loading member...')).not.toBeInTheDocument();
   });
 
@@ -703,14 +753,14 @@ describe('<AdminUser />', () => {
 
     const input = screen.getByLabelText('Member username, email or ID');
     fireEvent.change(input, { target: { value: 'ab' } });
-    fireEvent.submit(input.closest('form'));
+    fireEvent.submit(input.closest('form')!);
 
-    expect(usersApi.getUser).not.toHaveBeenCalled();
-    expect(usersApi.searchUsers).not.toHaveBeenCalled();
+    expect(mockedUsersApi.getUser).not.toHaveBeenCalled();
+    expect(mockedUsersApi.searchUsers).not.toHaveBeenCalled();
   });
 
   it('loads an exact username match', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce(
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(
       makeMemberList([
         {
           _id: userId,
@@ -720,19 +770,21 @@ describe('<AdminUser />', () => {
         },
       ]),
     );
-    usersApi.getUser.mockResolvedValueOnce(makeReportCard());
+    mockedUsersApi.getUser.mockResolvedValueOnce(makeReportCard());
 
     render(<AdminUser />);
 
     submitMemberSearch('alice');
 
     await waitFor(() =>
-      expect(usersApi.searchUsers).toHaveBeenCalledWith('alice', {
+      expect(mockedUsersApi.searchUsers).toHaveBeenCalledWith('alice', {
         page: 1,
         sort: { column: 'username', direction: 'ascending' },
       }),
     );
-    await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
+    await waitFor(() =>
+      expect(mockedUsersApi.getUser).toHaveBeenCalledWith(userId),
+    );
     expect(
       await screen.findByRole('heading', {
         name: 'alice: Alice Example',
@@ -741,7 +793,7 @@ describe('<AdminUser />', () => {
   });
 
   it('loads an exact email match ignoring case', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce(
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(
       makeMemberList([
         {
           _id: userId,
@@ -751,19 +803,24 @@ describe('<AdminUser />', () => {
         },
       ]),
     );
-    usersApi.getUser.mockResolvedValueOnce(makeReportCard());
+    mockedUsersApi.getUser.mockResolvedValueOnce(makeReportCard());
 
     render(<AdminUser />);
 
     submitMemberSearch('ALICE@EXAMPLE.ORG');
 
     await waitFor(() =>
-      expect(usersApi.searchUsers).toHaveBeenCalledWith('ALICE@EXAMPLE.ORG', {
-        page: 1,
-        sort: { column: 'username', direction: 'ascending' },
-      }),
+      expect(mockedUsersApi.searchUsers).toHaveBeenCalledWith(
+        'ALICE@EXAMPLE.ORG',
+        {
+          page: 1,
+          sort: { column: 'username', direction: 'ascending' },
+        },
+      ),
     );
-    await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
+    await waitFor(() =>
+      expect(mockedUsersApi.getUser).toHaveBeenCalledWith(userId),
+    );
     expect(
       await screen.findByRole('heading', {
         name: 'alice: Alice Example',
@@ -772,7 +829,7 @@ describe('<AdminUser />', () => {
   });
 
   it('shows matching users when there is no exact match', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce(
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(
       makeMemberList([
         {
           _id: otherUserId,
@@ -812,7 +869,7 @@ describe('<AdminUser />', () => {
       screen.queryByText(/Hot Daria Wants To Date/),
     ).not.toBeInTheDocument();
     expect(screen.getByText('1 likely spam hidden.')).toBeInTheDocument();
-    expect(usersApi.getUser).not.toHaveBeenCalled();
+    expect(mockedUsersApi.getUser).not.toHaveBeenCalled();
   });
 
   it('paginates and server-sorts non-exact member matches', async () => {
@@ -823,7 +880,7 @@ describe('<AdminUser />', () => {
       email: 'similar@example.org',
       username: 'alice-similar',
     };
-    usersApi.searchUsers
+    mockedUsersApi.searchUsers
       .mockResolvedValueOnce(
         makeMemberList([matchingUser], {
           pagination: {
@@ -862,25 +919,35 @@ describe('<AdminUser />', () => {
     expect(
       await screen.findByText('151 user(s). Page 2 of 2.'),
     ).toBeInTheDocument();
-    expect(usersApi.searchUsers).toHaveBeenCalledTimes(2);
-    expect(usersApi.searchUsers).toHaveBeenNthCalledWith(2, 'alice similar', {
-      page: 2,
-      sort: { column: 'username', direction: 'ascending' },
-    });
+    expect(mockedUsersApi.searchUsers).toHaveBeenCalledTimes(2);
+    expect(mockedUsersApi.searchUsers).toHaveBeenNthCalledWith(
+      2,
+      'alice similar',
+      {
+        page: 2,
+        sort: { column: 'username', direction: 'ascending' },
+      },
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Email' }));
-    await waitFor(() => expect(usersApi.searchUsers).toHaveBeenCalledTimes(3));
+    await waitFor(() =>
+      expect(mockedUsersApi.searchUsers).toHaveBeenCalledTimes(3),
+    );
     expect(
       await screen.findByRole('button', { name: 'Email ▲' }),
     ).toBeInTheDocument();
-    expect(usersApi.searchUsers).toHaveBeenNthCalledWith(3, 'alice similar', {
-      page: 1,
-      sort: { column: 'email', direction: 'ascending' },
-    });
+    expect(mockedUsersApi.searchUsers).toHaveBeenNthCalledWith(
+      3,
+      'alice similar',
+      {
+        page: 1,
+        sort: { column: 'email', direction: 'ascending' },
+      },
+    );
   });
 
   it('reveals non-exact obvious spam matches when toggled off', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce(
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(
       makeMemberList([
         {
           _id: otherUserId,
@@ -922,11 +989,11 @@ describe('<AdminUser />', () => {
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText('1 likely spam hidden.')).not.toBeInTheDocument();
-    expect(usersApi.searchUsers).toHaveBeenCalledTimes(1);
+    expect(mockedUsersApi.searchUsers).toHaveBeenCalledTimes(1);
   });
 
   it('loads an exact obvious spam match instead of hiding it', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce(
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(
       makeMemberList([
         {
           _id: userId,
@@ -939,7 +1006,7 @@ describe('<AdminUser />', () => {
         },
       ]),
     );
-    usersApi.getUser.mockResolvedValueOnce(
+    mockedUsersApi.getUser.mockResolvedValueOnce(
       makeReportCard({
         profile: {
           _id: userId,
@@ -956,12 +1023,14 @@ describe('<AdminUser />', () => {
     submitMemberSearch('24721768s');
 
     await waitFor(() =>
-      expect(usersApi.searchUsers).toHaveBeenCalledWith('24721768s', {
+      expect(mockedUsersApi.searchUsers).toHaveBeenCalledWith('24721768s', {
         page: 1,
         sort: { column: 'username', direction: 'ascending' },
       }),
     );
-    await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
+    await waitFor(() =>
+      expect(mockedUsersApi.getUser).toHaveBeenCalledWith(userId),
+    );
     expect(
       await screen.findByRole('heading', {
         name: '24721768s: Hot Daria Wants To Date',
@@ -970,7 +1039,7 @@ describe('<AdminUser />', () => {
   });
 
   it('shows an empty state when no users match', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce(makeMemberList([]));
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(makeMemberList([]));
 
     render(<AdminUser />);
 
@@ -982,7 +1051,7 @@ describe('<AdminUser />', () => {
   });
 
   it('renders report fallback data for dates, offers and contacts', async () => {
-    usersApi.getUser.mockResolvedValueOnce(
+    mockedUsersApi.getUser.mockResolvedValueOnce(
       makeReportCard({
         contacts: [
           {
@@ -1091,7 +1160,7 @@ describe('<AdminUser />', () => {
   });
 
   it('uses profile username and a non-id fallback for report headings and counts', async () => {
-    usersApi.getUser
+    mockedUsersApi.getUser
       .mockResolvedValueOnce(
         makeReportCard({
           messageFromCount: undefined,
@@ -1133,7 +1202,9 @@ describe('<AdminUser />', () => {
     render(<AdminUser />);
     submitMemberSearch(userId);
 
-    await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(mockedUsersApi.getUser).toHaveBeenCalledTimes(2),
+    );
     expect(
       await screen.findByRole('heading', {
         name: 'Unknown member',
@@ -1142,7 +1213,7 @@ describe('<AdminUser />', () => {
   });
 
   it('changes a member role after confirmation and refreshes the profile', async () => {
-    usersApi.getUser.mockResolvedValue(
+    mockedUsersApi.getUser.mockResolvedValue(
       makeReportCard({
         profile: {
           _id: userId,
@@ -1153,7 +1224,7 @@ describe('<AdminUser />', () => {
         },
       }),
     );
-    usersApi.setUserRole.mockResolvedValueOnce({});
+    mockedUsersApi.setUserRole.mockResolvedValueOnce({});
 
     render(<AdminUser />);
 
@@ -1168,30 +1239,37 @@ describe('<AdminUser />', () => {
     expect(screen.getByRole('dialog')).toHaveTextContent('Suspend alice?');
     confirmRoleChange('Suspend');
     await waitFor(() =>
-      expect(usersApi.setUserRole).toHaveBeenCalledWith(userId, 'suspended'),
+      expect(mockedUsersApi.setUserRole).toHaveBeenCalledWith(
+        userId,
+        'suspended',
+      ),
     );
-    await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(mockedUsersApi.getUser).toHaveBeenCalledTimes(2),
+    );
   });
 
   it.each(['add', 'remove'])('can %s greeter status', async action => {
     const roles = action === 'remove' ? ['user', 'welcome-team'] : ['user'];
-    usersApi.getUser.mockResolvedValue(
+    mockedUsersApi.getUser.mockResolvedValue(
       makeReportCard({ profile: { _id: userId, username: 'river', roles } }),
     );
-    usersApi.setUserRole.mockResolvedValue({});
+    mockedUsersApi.setUserRole.mockResolvedValue({});
     render(<AdminUser />);
     submitMemberSearch(userId);
     const label = action === 'remove' ? 'Remove greeter' : 'Make greeter';
     fireEvent.click(await screen.findByRole('button', { name: label }));
     confirmRoleChange(label);
     await waitFor(() =>
-      expect(usersApi.setUserRole).toHaveBeenCalledWith(
+      expect(mockedUsersApi.setUserRole).toHaveBeenCalledWith(
         userId,
         'welcome-team',
         action,
       ),
     );
-    await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(mockedUsersApi.getUser).toHaveBeenCalledTimes(2),
+    );
   });
 
   it.each([
@@ -1210,10 +1288,10 @@ describe('<AdminUser />', () => {
           roles: roles.filter(role => role !== 'shadowban'),
         },
       });
-      usersApi.getUser
+      mockedUsersApi.getUser
         .mockResolvedValueOnce(shadowbanned)
         .mockResolvedValueOnce(restored);
-      usersApi.setUserRole.mockResolvedValueOnce({});
+      mockedUsersApi.setUserRole.mockResolvedValueOnce({});
       render(<AdminUser />);
       submitMemberSearch(userId);
 
@@ -1230,13 +1308,15 @@ describe('<AdminUser />', () => {
       );
       confirmRoleChange('Unshadowban');
       await waitFor(() =>
-        expect(usersApi.setUserRole).toHaveBeenCalledWith(
+        expect(mockedUsersApi.setUserRole).toHaveBeenCalledWith(
           userId,
           'shadowban',
           'remove',
         ),
       );
-      await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledTimes(2));
+      await waitFor(() =>
+        expect(mockedUsersApi.getUser).toHaveBeenCalledTimes(2),
+      );
       await waitFor(() =>
         expect(
           screen.queryByRole('button', { name: 'Unshadowban' }),
@@ -1246,7 +1326,7 @@ describe('<AdminUser />', () => {
   );
 
   it('keeps a shadowban when its confirmation is declined', async () => {
-    usersApi.getUser.mockResolvedValueOnce(
+    mockedUsersApi.getUser.mockResolvedValueOnce(
       makeReportCard({
         profile: {
           _id: userId,
@@ -1260,11 +1340,11 @@ describe('<AdminUser />', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Unshadowban' }));
     confirmRoleChange('Cancel');
-    expect(usersApi.setUserRole).not.toHaveBeenCalled();
+    expect(mockedUsersApi.setUserRole).not.toHaveBeenCalled();
   });
 
   it('reports failed unshadowbanning and re-enables the action', async () => {
-    usersApi.getUser.mockResolvedValueOnce(
+    mockedUsersApi.getUser.mockResolvedValueOnce(
       makeReportCard({
         profile: {
           _id: userId,
@@ -1273,7 +1353,7 @@ describe('<AdminUser />', () => {
         },
       }),
     );
-    usersApi.setUserRole.mockRejectedValueOnce(new Error('Unavailable'));
+    mockedUsersApi.setUserRole.mockRejectedValueOnce(new Error('Unavailable'));
     render(<AdminUser />);
     submitMemberSearch(userId);
 
@@ -1290,12 +1370,12 @@ describe('<AdminUser />', () => {
   });
 
   it('shows failed role changes and re-enables the control', async () => {
-    usersApi.getUser.mockResolvedValue(
+    mockedUsersApi.getUser.mockResolvedValue(
       makeReportCard({
         profile: { _id: userId, username: 'river', roles: ['user'] },
       }),
     );
-    usersApi.setUserRole.mockRejectedValueOnce(new Error('Unavailable'));
+    mockedUsersApi.setUserRole.mockRejectedValueOnce(new Error('Unavailable'));
     render(<AdminUser />);
     submitMemberSearch(userId);
     fireEvent.click(
@@ -1313,14 +1393,14 @@ describe('<AdminUser />', () => {
   });
 
   it('reports a refresh failure without offering to repeat a successful change', async () => {
-    usersApi.getUser
+    mockedUsersApi.getUser
       .mockResolvedValueOnce(
         makeReportCard({
           profile: { _id: userId, username: 'river', roles: ['user'] },
         }),
       )
       .mockRejectedValueOnce(new Error('Unavailable'));
-    usersApi.setUserRole.mockResolvedValueOnce({});
+    mockedUsersApi.setUserRole.mockResolvedValueOnce({});
     render(<AdminUser />);
     submitMemberSearch(userId);
     fireEvent.click(
@@ -1334,11 +1414,11 @@ describe('<AdminUser />', () => {
       ),
     ).toBeInTheDocument();
     confirmRoleChange('Close');
-    expect(usersApi.setUserRole).toHaveBeenCalledTimes(1);
+    expect(mockedUsersApi.setUserRole).toHaveBeenCalledTimes(1);
   });
 
   it('keeps focus in the dialog and lets Escape cancel before submission', async () => {
-    usersApi.getUser.mockResolvedValueOnce(
+    mockedUsersApi.getUser.mockResolvedValueOnce(
       makeReportCard({
         profile: { _id: userId, username: 'river', roles: ['user'] },
       }),
@@ -1349,18 +1429,18 @@ describe('<AdminUser />', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Shadow ban' }));
     const dialog = await screen.findByRole('dialog');
     await waitFor(() =>
-      expect(dialog).toContainElement(document.activeElement),
+      expect(dialog.contains(document.activeElement)).toBe(true),
     );
 
     fireEvent.keyDown(document, { key: 'Escape', keyCode: 27 });
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );
-    expect(usersApi.setUserRole).not.toHaveBeenCalled();
+    expect(mockedUsersApi.setUserRole).not.toHaveBeenCalled();
   });
 
   it('uses a neutral prompt when a profile has no username', async () => {
-    usersApi.getUser.mockResolvedValueOnce(
+    mockedUsersApi.getUser.mockResolvedValueOnce(
       makeReportCard({ profile: { _id: userId, roles: ['user'] } }),
     );
     render(<AdminUser />);
@@ -1372,18 +1452,18 @@ describe('<AdminUser />', () => {
   });
 
   it('announces progress and prevents cancelling while a role change is pending', async () => {
-    let finishRoleChange;
-    usersApi.getUser.mockResolvedValue(
+    let finishRoleChange!: (value: unknown) => void;
+    mockedUsersApi.getUser.mockResolvedValue(
       makeReportCard({
         profile: { _id: userId, username: 'river', roles: ['user'] },
       }),
     );
-    usersApi.setUserRole.mockReturnValue(
-      new Promise(resolve => {
+    mockedUsersApi.setUserRole.mockReturnValue(
+      new Promise<unknown>(resolve => {
         finishRoleChange = resolve;
       }),
     );
-    const componentRef = React.createRef();
+    const componentRef = React.createRef<AdminUser>();
     render(<AdminUser ref={componentRef} />);
     submitMemberSearch(userId);
 
@@ -1402,15 +1482,17 @@ describe('<AdminUser />', () => {
     });
     updateButton.removeAttribute('disabled');
     fireEvent.click(updateButton);
-    componentRef.current.confirmUserRoleChange();
-    componentRef.current.cancelUserRoleChange();
-    expect(usersApi.setUserRole).toHaveBeenCalledTimes(1);
+    componentRef.current?.confirmUserRoleChange();
+    componentRef.current?.cancelUserRoleChange();
+    expect(mockedUsersApi.setUserRole).toHaveBeenCalledTimes(1);
     finishRoleChange({});
-    await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledTimes(2));
+    await waitFor(() =>
+      expect(mockedUsersApi.getUser).toHaveBeenCalledTimes(2),
+    );
   });
 
   it('does not change roles when confirmation is declined', async () => {
-    usersApi.getUser.mockResolvedValueOnce(
+    mockedUsersApi.getUser.mockResolvedValueOnce(
       makeReportCard({
         profile: {
           _id: userId,
@@ -1430,7 +1512,7 @@ describe('<AdminUser />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Suspend' }));
 
     confirmRoleChange('Cancel');
-    expect(usersApi.setUserRole).not.toHaveBeenCalled();
+    expect(mockedUsersApi.setUserRole).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -1444,7 +1526,7 @@ describe('<AdminUser />', () => {
   ])(
     'does not apply %s when its confirmation is declined',
     async (label, roles) => {
-      usersApi.getUser.mockResolvedValueOnce(
+      mockedUsersApi.getUser.mockResolvedValueOnce(
         makeReportCard({
           profile: { _id: userId, username: 'river', roles },
         }),
@@ -1456,7 +1538,7 @@ describe('<AdminUser />', () => {
 
       expect(screen.getByRole('dialog')).toBeVisible();
       confirmRoleChange('Cancel');
-      expect(usersApi.setUserRole).not.toHaveBeenCalled();
+      expect(mockedUsersApi.setUserRole).not.toHaveBeenCalled();
     },
   );
 
@@ -1465,12 +1547,12 @@ describe('<AdminUser />', () => {
     ['Make volunteer', 'volunteer'],
     ['Make volunteer alumni', 'volunteer-alumni'],
   ])('applies %s after confirmation', async (label, role) => {
-    usersApi.getUser.mockResolvedValue(
+    mockedUsersApi.getUser.mockResolvedValue(
       makeReportCard({
         profile: { _id: userId, username: 'river', roles: ['user'] },
       }),
     );
-    usersApi.setUserRole.mockResolvedValueOnce({});
+    mockedUsersApi.setUserRole.mockResolvedValueOnce({});
 
     render(<AdminUser />);
     submitMemberSearch(userId);
@@ -1485,7 +1567,7 @@ describe('<AdminUser />', () => {
       role === 'shadowban' ? 'Shadow ban' : 'Confirm role change',
     );
     await waitFor(() =>
-      expect(usersApi.setUserRole).toHaveBeenCalledWith(userId, role),
+      expect(mockedUsersApi.setUserRole).toHaveBeenCalledWith(userId, role),
     );
   });
 });
