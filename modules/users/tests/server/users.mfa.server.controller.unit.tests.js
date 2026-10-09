@@ -89,6 +89,17 @@ describe('Authenticator MFA controller', () => {
       assert.equal(res.body.message, 'Password confirmation failed.');
     });
 
+    it('rejects a non-string current password', async () => {
+      const { user } = member();
+      sinon.stub(User, 'findById').returns(query(user));
+      const req = request(user);
+      req.body.currentPassword = null;
+      const res = response();
+      await controller.beginEnrollment(req, res);
+      assert.equal(res.statusCode, 400);
+      assert.equal(res.body.message, 'Password confirmation failed.');
+    });
+
     it('rejects a missing stored account', async () => {
       sinon.stub(User, 'findById').returns(query(null));
       const res = response();

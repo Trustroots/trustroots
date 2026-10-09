@@ -175,6 +175,77 @@ describe('Password controller direct unit tests', () => {
   });
 
   describe('reset', () => {
+    it('does not log an MFA account in after password recovery', async () => {
+      const user = fakeUser({ mfaEnabled: true });
+      const controller = loadController({
+        user,
+        confirmEmailError: new Error('email temporarily unavailable'),
+      });
+      const res = deferredResponse();
+      let loggedOut = false;
+      const req = {
+        params: { token: 'reset-token' },
+        body: {
+          newPassword: 'newpassword123',
+          verifyPassword: 'newpassword123',
+        },
+        login: () => {
+          throw new Error('MFA account must not be logged in');
+        },
+        logout: callback => {
+          loggedOut = true;
+          callback(null);
+        },
+      };
+
+      controller.reset(req, res);
+
+      await res.waitForResponse();
+      loggedOut.should.be.true();
+      res.body.should.deepEqual({ mfaRequired: true });
+    });
+
+    it('completes the MFA recovery response when confirmation email succeeds', async () => {
+      const user = fakeUser({ mfaEnabled: true });
+      const controller = loadController({ user });
+      const res = deferredResponse();
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          logout: callback => callback(null),
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      res.body.should.deepEqual({ mfaRequired: true });
+    });
+
+    it('returns a controlled error when logout fails for an MFA recovery', async () => {
+      const user = fakeUser({ mfaEnabled: true });
+      const controller = loadController({ user });
+      const res = deferredResponse();
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          logout: callback => callback(new Error('logout failed')),
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Password reset failed.');
+    });
+
     it('returns the reset failure response when login fails after the atomic update', async () => {
       const user = fakeUser();
       const controller = loadController({ user });
