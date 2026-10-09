@@ -67,12 +67,16 @@ const FlexGrow = styled.div`
   flex-grow: 1;
 `;
 
-function YouHaveNotBeenTalkingYet() {
+function YouHaveNotBeenTalkingYet({ name }: { name?: string | null }) {
   const { t } = useTranslation('messages');
   return (
     <div className="content-empty">
       <i className="icon-3x icon-messages-alt" />
-      <h4>{t<string>("You haven't been talking yet.")}</h4>
+      <h4>
+        {name
+          ? t<string>("You haven't been talking with {{name}} yet.", { name })
+          : t<string>("You haven't been talking yet.")}
+      </h4>
       <Flashcard />
     </div>
   );
@@ -181,25 +185,29 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     messages.find(message => message.userFrom._id === user._id),
   );
   const showReply = (messages.length > 0 || !hasEmptyProfile) && !removed;
-  const showQuickReply = showReply && !userHasReplied;
+  const showQuickReply = showReply && messages.length > 0 && !userHasReplied;
 
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
 
   useEffect(() => {
     const viewport = window.visualViewport;
     if (!viewport) return;
+    let keyboardInset = 0;
 
     const updateKeyboardInset = () => {
       const isWritingMessage =
         document.activeElement?.id === 'message-reply-content';
-      const keyboardInset = isWritingMessage
-        ? Math.max(
-            0,
-            Math.round(
-              window.innerHeight - viewport.height - viewport.offsetTop,
-            ),
-          )
-        : 0;
+      // Native text menus can temporarily take focus from the editor. Keep
+      // the composer in place until the viewport shows the keyboard has closed.
+      keyboardInset =
+        isWritingMessage || keyboardInset > 0
+          ? Math.max(
+              0,
+              Math.round(
+                window.innerHeight - viewport.height - viewport.offsetTop,
+              ),
+            )
+          : 0;
       document.documentElement.style.setProperty(
         '--trustroots-keyboard-inset',
         `${keyboardInset}px`,
@@ -390,7 +398,9 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
                   {hasEmptyProfile ? (
                     <YourProfileSeemsQuiteEmpty />
                   ) : (
-                    <YouHaveNotBeenTalkingYet />
+                    <YouHaveNotBeenTalkingYet
+                      name={otherUser?.displayName || otherUser?.username}
+                    />
                   )}
                   <FlexGrow />
                 </>

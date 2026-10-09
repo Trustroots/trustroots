@@ -45,6 +45,7 @@ import Safety from '@/modules/pages/client/components/Safety.component';
 import Statistics from '@/modules/statistics/client/components/Statistics.component';
 import SupportPage from '@/modules/support/client/components/SupportPage.component';
 import Team from '@/modules/pages/client/components/Team.component';
+import Greeters from '@/modules/pages/client/components/Greeters.component';
 import Volunteering from '@/modules/pages/client/components/Volunteering.component';
 import Welcome from '@/modules/users/client/components/Welcome.component';
 import Inbox from '@/modules/messages/client/components/Inbox.component';
@@ -252,9 +253,9 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/admin/reference-threads': () => <AdminReferenceThreads />,
     '/admin/search-users': () => <AdminSearchUsers />,
     '/admin/threads': () => <AdminThreads />,
-    '/admin/user': () => <AdminUser />,
-    '/admin/user/:username': ({ params }) => (
-      <AdminUser username={params.username} />
+    '/admin/user': ({ user }) => <AdminUser viewer={user as AuthUser} />,
+    '/admin/user/:username': ({ params, user }) => (
+      <AdminUser username={params.username} viewer={user as AuthUser} />
     ),
     '/circles': renderWithUser(TribesPageRoute),
     '/circles/:circle': renderCircleDetail,
@@ -310,6 +311,7 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/statistics': renderStatistics,
     '/support': renderWithUser(SupportPage),
     '/team': renderWithUser(Team),
+    '/team/greeters': renderWithUser(Greeters),
     '/volunteering': () => <Volunteering />,
     '/welcome': () => <Welcome />,
   };

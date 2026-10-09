@@ -1,6 +1,6 @@
-const developmentConfig = require('../../../../config/env/development');
-const productionConfig = require('../../../../config/env/production');
-const testConfig = require('../../../../config/env/test');
+const developmentConfig = require('./../../../../config/env/development.mjs');
+const productionConfig = require('./../../../../config/env/production.mjs');
+const testConfig = require('./../../../../config/env/test.mjs');
 require('should');
 
 describe('Umami configuration', function () {

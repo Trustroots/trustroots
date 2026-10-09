@@ -1,5 +1,5 @@
 const path = require('path');
-const { annotateFeature, test, expect } = require('../../support/test');
+const { annotateFeature, test, expect } = require('../../support/fixtures');
 
 const {
   SEEDED_MEMBERS,
@@ -96,10 +96,9 @@ test.describe('authenticated member flows', () => {
     await page.locator('#search-users-form button[type="submit"]').click();
     await searchResponse;
     await expect(
-      page.getByRole('link', {
-        name: `${SEEDED_MEMBERS[0].firstName} ${SEEDED_MEMBERS[0].lastName}`,
-        exact: true,
-      }),
+      page.locator(
+        `.member-search-card[href="/profile/${SEEDED_MEMBERS[0].username}"]`,
+      ),
     ).toBeVisible();
   });
 
@@ -125,9 +124,7 @@ test.describe('authenticated member flows', () => {
     await page.locator('#search-users-form button[type="submit"]').click();
     await searchResponse;
 
-    await expect(
-      page.getByText('No members found by this name.'),
-    ).toBeVisible();
+    await expect(page.getByText('No members found.')).toBeVisible();
   });
 
   test('member can download their combined data export', async ({

@@ -1,9 +1,12 @@
+const fs = require('fs');
+const path = require('path');
+
 const {
   annotateFeature,
   test,
   expect,
   useElementScreenshot,
-} = require('../../support/test');
+} = require('../../support/fixtures');
 
 const {
   SEEDED_ADMIN,
@@ -11,6 +14,9 @@ const {
   signOut,
   signInViaApi,
 } = require('../../support/helpers');
+
+const SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK =
+  'E2E seeded negative experience for admin coverage.';
 
 async function gotoAdminPage(page, path, expectedUrl) {
   let lastError;
@@ -70,6 +76,9 @@ test.describe('admin moderation page flows', () => {
     ).toBe(true);
     expect(dashboardData.negativeExperiences).toHaveLength(1);
     expect(dashboardData.negativeExperiences[0].recommend).toBe('no');
+    expect(dashboardData.negativeExperiences[0].feedbackPublic).toBe(
+      SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK,
+    );
 
     const footer = page.locator('#tr-footer');
     await expect(footer).toBeVisible();
@@ -101,6 +110,88 @@ test.describe('admin moderation page flows', () => {
     expect(metaBox.x + metaBox.width).toBeGreaterThan(
       contentBox.x + contentBox.width - 1,
     );
+  });
+
+  test('admin dashboard previews negative experience feedback', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.dashboard', [
+      'Dashboard previews negative-experience feedback.',
+    ]);
+
+    let dashboardRequests = 0;
+    page.on('request', request => {
+      if (request.url().includes('/api/admin/dashboard')) {
+        dashboardRequests += 1;
+      }
+    });
+    await gotoAdminPage(page, '/admin', /\/admin$/);
+    const trigger = page.getByRole('button', {
+      name: /Preview public feedback from/,
+    });
+    const preview = page.getByRole('tooltip');
+
+    await expect(trigger).toBeVisible();
+    await expect(preview).toBeHidden();
+    await trigger.hover();
+    await expect(preview).toHaveText(SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK);
+    await expect(preview).toBeVisible();
+    await preview.evaluate(node => {
+      node.textContent = Array.from(
+        { length: 40 },
+        (_, index) => `Anonymous feedback line ${index + 1}`,
+      ).join('\n');
+    });
+    await preview.hover();
+    await expect(preview).toBeVisible();
+    fs.mkdirSync(path.join(process.cwd(), '.artifacts'), { recursive: true });
+    await page.screenshot({
+      path: path.join(
+        process.cwd(),
+        '.artifacts/admin-dashboard-feedback-desktop.png',
+      ),
+    });
+    await preview.evaluate(node => {
+      node.scrollTop = node.scrollHeight;
+    });
+    expect(await preview.evaluate(node => node.scrollTop)).toBeGreaterThan(0);
+    expect(dashboardRequests).toBe(1);
+
+    await trigger.focus();
+    await page.keyboard.press('Escape');
+    await expect(preview).toBeHidden();
+    await expect(trigger).toBeFocused();
+
+    const touchContext = await page
+      .context()
+      .browser()
+      .newContext({
+        baseURL: new URL(page.url()).origin,
+        hasTouch: true,
+        isMobile: true,
+        storageState: await page.context().storageState(),
+        viewport: { width: 390, height: 844 },
+      });
+    const touchPage = await touchContext.newPage();
+    await touchPage.goto('/admin');
+    const touchTrigger = touchPage.getByRole('button', {
+      name: /Preview public feedback from/,
+    });
+    const touchPreview = touchPage.getByRole('tooltip');
+    await touchTrigger.tap();
+    await expect(touchPreview).toBeVisible();
+    await expect(touchPreview).toHaveText(SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK);
+    await touchPreview.scrollIntoViewIfNeeded();
+    await touchPage.screenshot({
+      path: path.join(
+        process.cwd(),
+        '.artifacts/admin-dashboard-feedback-mobile.png',
+      ),
+    });
+    await touchTrigger.tap();
+    await expect(touchPreview).toBeHidden();
+    await touchContext.close();
+    expect(dashboardRequests).toBe(1);
   });
 
   test('admin audit log page loads', async ({ page }, testInfo) => {
@@ -155,6 +246,71 @@ test.describe('admin moderation page flows', () => {
     await expect(
       page.getByRole('button', { name: 'Count recipients' }),
     ).toBeVisible();
+
+    const location = page.getByLabel('Location name');
+    const latitude = page.getByLabel('Latitude', { exact: true });
+    const longitude = page.getByLabel('Longitude', { exact: true });
+    await expect(location).toHaveValue('Berlin');
+    await expect(location).toHaveAttribute(
+      'placeholder',
+      'Enter a city or region',
+    );
+    await expect(latitude).toHaveValue('52.5200');
+    await expect(longitude).toHaveValue('13.4050');
+    await expect(page.getByLabel('Radius (kilometres)')).toHaveValue('50');
+    await expect(
+      page.getByText(/\d+ eligible recipients? match(?:es)? these filters\./),
+    ).toBeVisible();
+
+    await location.fill('');
+    await latitude.fill('');
+    await longitude.fill('');
+    await page.getByRole('button', { name: 'Count recipients' }).click();
+    await expect(location).toBeFocused();
+    await expect(
+      page.getByText('Enter a location for living or origin matching.'),
+    ).toHaveCount(0);
+
+    await location.fill('Exampleville');
+    await page.getByRole('button', { name: 'Count recipients' }).click();
+    await expect(latitude).toBeFocused();
+    await latitude.fill('12.34');
+    await longitude.fill('56.78');
+    await expect(
+      page.getByText(/\d+ eligible recipients? match(?:es)? these filters\./),
+    ).toBeVisible();
+  });
+
+  test('admin newsletter exports have dated audience filenames', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.newsletter-page', [
+      'Audience filenames include the selected location, radius and local export datetime.',
+      'Changing location filters changes the exported filename.',
+    ]);
+    await gotoAdminPage(page, '/admin/newsletter', /\/admin\/newsletter/);
+    await expect(
+      page.getByRole('button', { name: 'Export audience CSV' }),
+    ).toBeVisible();
+
+    const defaultDownloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Export audience CSV' }).click();
+    const defaultDownload = await defaultDownloadPromise;
+    expect(defaultDownload.suggestedFilename()).toMatch(
+      /^newsletter-audience-Berlin-50km-\d{8}-\d{4}\.csv$/,
+    );
+
+    await page.getByLabel('Location name').fill('Exampleville');
+    await page.getByLabel('Radius (kilometres)').fill('25');
+    await expect(
+      page.getByRole('button', { name: 'Export audience CSV' }),
+    ).toBeVisible();
+    const customDownloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Export audience CSV' }).click();
+    const customDownload = await customDownloadPromise;
+    expect(customDownload.suggestedFilename()).toMatch(
+      /^newsletter-audience-Exampleville-25km-\d{8}-\d{4}\.csv$/,
+    );
   });
 });
 

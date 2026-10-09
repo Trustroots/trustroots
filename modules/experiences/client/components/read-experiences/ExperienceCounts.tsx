@@ -115,10 +115,10 @@ export default function ExperienceCounts({
     const interactions: string[] = [];
 
     const getInteractionPercentage = (
-      interaction: keyof Experience['interactions'],
+      interaction: keyof NonNullable<Experience['interactions']>,
     ): number => {
       const count = experiences.filter(({ interactions }) =>
-        Boolean(interactions[interaction]),
+        Boolean(interactions?.[interaction]),
       ).length;
 
       return parseInt(String((count / totalCount) * 100), 10);

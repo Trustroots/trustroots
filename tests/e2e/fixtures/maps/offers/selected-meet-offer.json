@@ -1,0 +1,14 @@
+{
+  "_id": "665100000000000000000002",
+  "type": "meet",
+  "status": "yes",
+  "description": "Meet for a walk near the river.",
+  "location": [52.51, 13.42],
+  "updated": "2026-01-02T00:00:00.000Z",
+  "user": {
+    "_id": "665000000000000000000002",
+    "displayName": "Sample Guest",
+    "username": "e2e-sample-guest",
+    "languages": []
+  }
+}

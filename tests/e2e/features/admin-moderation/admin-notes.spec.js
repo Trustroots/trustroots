@@ -1,4 +1,4 @@
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 
 const {
   SEEDED_ADMIN,
@@ -62,7 +62,7 @@ test.describe('admin notes feature coverage', () => {
     await page.goto(`/admin/user?id=${shadowId}`);
     await expect(
       page.getByRole('heading', {
-        name: `${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName}`,
+        name: `${SEEDED_SHADOW.username}: ${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName}`,
       }),
     ).toBeVisible();
     await expect(page.getByText('Admin notes about user')).toBeVisible();

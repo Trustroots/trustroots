@@ -1,0 +1,67 @@
+{
+  "siteUrl": "https://www.trustroots.org",
+  "infoAndSupport": {
+    "heading": "Info & support",
+    "androidHeading": "Info and support",
+    "items": [
+      {
+        "id": "about",
+        "label": "About",
+        "href": "/about"
+      },
+      {
+        "id": "blog",
+        "label": "Blog",
+        "href": "https://ideas.trustroots.org/"
+      },
+      {
+        "id": "contact",
+        "label": "Contact & Support",
+        "href": "/support",
+        "androidLabel": "Contact and support"
+      },
+      {
+        "id": "faq",
+        "label": "FAQ",
+        "href": "/faq"
+      },
+      {
+        "id": "foundation",
+        "label": "Foundation",
+        "href": "/foundation"
+      },
+      {
+        "id": "media",
+        "label": "Media",
+        "href": "/media"
+      },
+      {
+        "id": "wiki",
+        "label": "Wiki",
+        "href": "https://wiki.trustroots.org/",
+        "opensInNewTab": true
+      },
+      {
+        "id": "privacy",
+        "label": "Privacy",
+        "href": "/privacy"
+      },
+      {
+        "id": "rules",
+        "label": "Rules",
+        "href": "/rules"
+      },
+      {
+        "id": "safety",
+        "label": "Safety",
+        "href": "/safety"
+      },
+      {
+        "id": "statistics",
+        "label": "Statistics",
+        "href": "/statistics"
+      }
+    ]
+  },
+  "profileExperiencesPath": "/profile/{username}/experiences/new"
+}

@@ -1,9 +1,9 @@
 const assert = require('assert');
-const proxyquire = require('proxyquire').noCallThru();
+const proxyquire = require('./../../../../testutils/server/mock-module');
 const {
   redactMetadata,
   safeError,
-} = require('../../../../config/lib/log-redaction');
+} = require('./../../../../config/lib/log-redaction.mjs');
 
 describe('diagnostic log redaction', () => {
   it('redacts sensitive nested fields without changing event metadata or input', () => {
@@ -235,11 +235,14 @@ describe('diagnostic log redaction', () => {
         return returnValue;
       },
     };
-    const logger = proxyquire('../../../../config/lib/logger', {
-      winston,
-      '../config': { log: { papertrail: papertrailConfig } },
-      'winston-papertrail': { Papertrail: function Papertrail() {} },
-    });
+    const logger = proxyquire(
+      require.resolve('./../../../../config/lib/logger.mjs'),
+      {
+        winston,
+        '../config': { log: { papertrail: papertrailConfig } },
+        'winston-papertrail': { Papertrail: function Papertrail() {} },
+      },
+    );
     calls.length = 0;
     assert.strictEqual(addCalls.length, 1);
     assert.strictEqual(

@@ -4,37 +4,130 @@
  * Contact list
  */
 .contacts-contact {
-  margin: 0 0 10px 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  min-height: 112px;
+  margin: 0 0 14px;
+  padding: 16px;
   text-align: left;
-  overflow: hidden;
-  display: block;
-  .avatar {
-    border-radius: 0;
-    float: left;
-    margin: 0 10px 0 0;
+  border: 1px solid #e5e8e6;
+  border-radius: 12px;
+  box-shadow: none;
+
+  .contact-avatar {
+    flex: 0 0 auto;
+    .avatar,
+    .member-avatar-fallback {
+      border-radius: 50%;
+    }
   }
+
+  .contact-details {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
   h4 {
-    margin-left: 5px;
-    margin-right: 5px;
+    margin: 2px 0 8px;
     a {
       text-decoration: none;
       color: @text-color;
     }
   }
-  .contact-confirm {
+
+  .contact-locations {
+    display: grid;
+    gap: 4px;
+    margin-bottom: 8px;
+    color: @text-color;
+  }
+
+  .contact-date {
     display: block;
-    padding: 10px 0;
+    margin-top: 6px;
+  }
+
+  .contact-confirm {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    margin-top: 10px;
     small {
-      padding-bottom: 5px;
-      display: block;
+      display: inline-block;
+    }
+  }
+
+  .contact-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .contacts-contact {
+    gap: 12px;
+    padding: 12px;
+
+    .contact-avatar .member-avatar,
+    .contact-avatar .avatar,
+    .contact-avatar .member-avatar-fallback {
+      width: 56px;
+      height: 56px;
     }
   }
 }
 
 .contacts-list {
   margin-bottom: 20px;
+  .contacts-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .contacts-contact {
+      height: 100%;
+      margin: 0;
+    }
+  }
+
   .row:first-child {
     margin-top: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 12px;
+  }
+
+  .contacts-list-controls {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: 12px;
+
+    .form-group {
+      flex: 1 1 0;
+      min-width: 0;
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 4px;
+      color: @text-muted;
+      font-size: 12px;
+      font-weight: normal;
+    }
+  }
+}
+
+@media (max-width: 767px) {
+  .contacts-list .contacts-list-controls {
+    justify-content: flex-start;
+    margin-bottom: 12px;
   }
 }

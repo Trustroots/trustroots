@@ -169,7 +169,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
         noOfferDescription: offer.noOfferDescription,
         maxGuests: offer.maxGuests,
         showOnlyInMyCircles: offer.showOnlyInMyCircles,
-        location: offer.location ?? undefined,
+        location: offer.location!,
       };
 
       if (offer._id) {

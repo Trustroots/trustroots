@@ -1,4 +1,4 @@
-const errorService = require('../../../server/services/error.server.service');
+const errorService = require('./../../../server/services/error.server.service.mjs');
 const winston = require('winston');
 
 const should = require('should');
@@ -51,6 +51,10 @@ describe('Service: error', function () {
       'getErrorMessageByKey',
       'getErrorMessage',
       'errorResponse',
+      'sendInvalidId',
+      'sendBadRequest',
+      'sendNotFound',
+      'sendForbidden',
     ]) {
       esmService[name].should.equal(errorService[name]);
     }
@@ -186,6 +190,62 @@ describe('Service: error', function () {
       process.env.NODE_ENV = originalEnv;
 
       res.body.error.should.equal(err);
+    });
+  });
+
+  describe('sendInvalidId', function () {
+    it('responds with 400 and the invalid-id message', function () {
+      const res = mockResponse();
+      errorService.sendInvalidId(res);
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        errorService.getErrorMessageByKey('invalid-id'),
+      );
+    });
+  });
+
+  describe('sendBadRequest', function () {
+    it('derives the message from a Mongoose error when given', function () {
+      const res = mockResponse();
+      const err = {
+        errors: {
+          username: { message: 'Username is required.' },
+        },
+      };
+      errorService.sendBadRequest(res, err);
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Username is required.');
+    });
+
+    it('falls back to the bad-request message without an error', function () {
+      const res = mockResponse();
+      errorService.sendBadRequest(res);
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        errorService.getErrorMessageByKey('bad-request'),
+      );
+    });
+  });
+
+  describe('sendNotFound', function () {
+    it('responds with 404 and the not-found message', function () {
+      const res = mockResponse();
+      errorService.sendNotFound(res);
+      res.statusCode.should.equal(404);
+      res.body.message.should.equal(
+        errorService.getErrorMessageByKey('not-found'),
+      );
+    });
+  });
+
+  describe('sendForbidden', function () {
+    it('responds with 403 and the forbidden message', function () {
+      const res = mockResponse();
+      errorService.sendForbidden(res);
+      res.statusCode.should.equal(403);
+      res.body.message.should.equal(
+        errorService.getErrorMessageByKey('forbidden'),
+      );
     });
   });
 });

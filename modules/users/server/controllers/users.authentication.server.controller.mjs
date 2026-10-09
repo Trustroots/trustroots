@@ -1,22 +1,19 @@
 import _ from 'lodash';
-import errorService from '../../../core/server/services/error.server.service.js';
-import emailService from '../../../core/server/services/email.server.service.js';
-import userProfile from './users.profile.server.controller.js';
-import authenticationService from '../services/authentication.server.service.js';
-import signupSafety from '../services/signup-safety.server.service.js';
-import statService from '../../../stats/server/services/stats.server.service.js';
-import log from '../../../../config/lib/logger.js';
+import errorService from '../../../core/server/services/error.server.service.mjs';
+import emailService from '../../../core/server/services/email.server.service.mjs';
+import userProfile from './users.profile.server.controller.mjs';
+import authenticationService from '../services/authentication.server.service.mjs';
+import signupSafety from '../services/signup-safety.server.service.mjs';
+import statService from '../../../stats/server/services/stats.server.service.mjs';
+import log from '../../../../config/lib/logger.mjs';
 import passport from 'passport';
 import async from 'async';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
-
 const service = {};
-
 /**
  * Module dependencies.
  */
-
 const User = mongoose.model('User');
 
 function isNameSpam(input) {
@@ -55,13 +52,27 @@ service.signup = function (req, res) {
       // Check if we have the required data before hitting more strict validations at Mongo
       function (done) {
         if (
-          !req.body.firstName ||
-          !req.body.lastName ||
-          !req.body.username ||
-          !req.body.password ||
-          !req.body.email
+          !['firstName', 'lastName', 'username', 'password', 'email'].every(
+            field => typeof req.body?.[field] === 'string' && req.body[field],
+          )
         ) {
-          return done(new Error('Please provide required fields.'));
+          const err = new Error('Please provide required fields.');
+          err.userFacing = true;
+          return done(err);
+        }
+
+        if (
+          ['locale', 'acquisitionStory'].some(
+            field =>
+              req.body[field] !== undefined &&
+              typeof req.body[field] !== 'string',
+          ) ||
+          (req.body.newsletter !== undefined &&
+            typeof req.body.newsletter !== 'boolean')
+        ) {
+          const err = new Error('Please provide valid signup preferences.');
+          err.userFacing = true;
+          return done(err);
         }
 
         done();
@@ -95,15 +106,18 @@ service.signup = function (req, res) {
 
       // Save user
       function (salt, done) {
-        // For security measurement we remove the roles from the `req.body` object
-        delete req.body.roles;
-
-        // These shouldn't be there neither
-        delete req.body.avatarUploaded;
-        delete req.body.created;
-        delete req.body.updated;
-
-        const user = new User(req.body);
+        const user = new User(
+          _.pick(req.body, [
+            'firstName',
+            'lastName',
+            'username',
+            'password',
+            'email',
+            'newsletter',
+            'locale',
+            'acquisitionStory',
+          ]),
+        );
 
         // Add missing user fields
         user.public = false;
@@ -181,7 +195,7 @@ service.signup = function (req, res) {
         statsObject.tags.status = 'failed';
         statService.stat(statsObject, function () {
           // Send error to the API
-          res.status(400).send({
+          res.status(err.code === 'KDF_OVERLOADED' ? 503 : 400).send({
             message: err.userFacing
               ? err.message
               : errorService.getErrorMessage(err),
@@ -312,6 +326,12 @@ service.signin = function (req, res, next) {
   };
 
   passport.authenticate('local', function (err, user, info) {
+    if (err && err.code === 'KDF_OVERLOADED') {
+      return res.status(503).send({
+        message: 'Password service is temporarily busy. Please try again.',
+      });
+    }
+
     if (err || !user) {
       // Log the failure to signin
       log('error', 'User signin failed. #3tfgbg-1', {
@@ -321,11 +341,8 @@ service.signin = function (req, res, next) {
 
       // Send signin failure to stats servers
       statsObject.tags.status = 'failed:wrong-credentials';
-      statService.stat(statsObject, function () {
-        // Send error to the API
-        res.status(400).send(info);
-      });
-
+      statService.stat(statsObject, function () {});
+      res.status(400).send(info);
       return;
     }
 
@@ -338,11 +355,9 @@ service.signin = function (req, res, next) {
 
       // Send signin failure to stats servers
       statsObject.tags.status = 'failed:suspended';
-      statService.stat(statsObject, function () {
-        // Send error to the API
-        res.status(403).send({
-          message: errorService.getErrorMessageByKey('suspended'),
-        });
+      statService.stat(statsObject, function () {});
+      res.status(403).send({
+        message: errorService.getErrorMessageByKey('suspended'),
       });
 
       return;
@@ -358,23 +373,28 @@ service.signin = function (req, res, next) {
 
         // Send signin failure to stats servers
         statsObject.tags.status = 'failed:other';
-        statService.stat(statsObject, function () {
-          // Send error to the API
-          res.status(400).send(err);
-        });
-
+        statService.stat(statsObject, function () {});
+        res.status(400).send(err);
         return;
       }
 
       // Send signin success to stats servers
       statsObject.tags.status = 'success';
-      statService.stat(statsObject, function () {
-        // Remove sensitive data before sending out
-        user = userProfile.sanitizeOwnProfile(user);
-        res.json(user);
-      });
+      // Statistics delivery must not hold up authentication during an outage.
+      statService.stat(statsObject, function () {});
+      user = userProfile.sanitizeOwnProfile(user);
+      res.json(user);
     });
   })(req, res, next);
+};
+
+/**
+ * Confirm the account recognised on a subsequent browser request.
+ */
+service.session = function (req, res) {
+  res.set('Cache-Control', 'no-store');
+  res.vary('Cookie');
+  res.json({ userId: req.user ? String(req.user._id) : null });
 };
 
 /**
@@ -632,12 +652,14 @@ service.resendConfirmation = function (req, res) {
 };
 
 const defaultExport = service;
+export const signup = service.signup;
+export const signupValidation = service.signupValidation;
+export const signin = service.signin;
+export const signout = service.signout;
+export const removeOAuthProvider = service.removeOAuthProvider;
+export const validateEmailToken = service.validateEmailToken;
+export const confirmEmail = service.confirmEmail;
+export const resendConfirmation = service.resendConfirmation;
+export const session = service.session;
 export default defaultExport;
-export const confirmEmail = defaultExport.confirmEmail;
-export const removeOAuthProvider = defaultExport.removeOAuthProvider;
-export const resendConfirmation = defaultExport.resendConfirmation;
-export const signin = defaultExport.signin;
-export const signout = defaultExport.signout;
-export const signup = defaultExport.signup;
-export const signupValidation = defaultExport.signupValidation;
-export const validateEmailToken = defaultExport.validateEmailToken;
+export { defaultExport as 'module.exports' };

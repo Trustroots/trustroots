@@ -5,7 +5,7 @@ const {
   nip19,
 } = require('nostr-tools');
 
-const { annotateFeature, test, expect } = require('../../support/test');
+const { annotateFeature, test, expect } = require('../../support/fixtures');
 
 const {
   createUser,

@@ -5,15 +5,14 @@ import juice from 'juice';
 import moment from 'moment';
 import autolinker from 'autolinker';
 import he from 'he';
-import analyticsHandler from '../controllers/analytics.server.controller.js';
-import textService from './text.server.service.js';
-import render from '../../../../config/lib/render.js';
-import agenda from '../../../../config/lib/agenda.js';
-import config from '../../../../config/config.js';
-import log from '../../../../config/lib/logger.js';
-import userRolesService from '../../../users/server/services/user-roles.server.service.js';
+import analyticsHandler from './../controllers/analytics.server.controller.mjs';
+import textService from './text.server.service.mjs';
+import render from './../../../../config/lib/render.mjs';
+import agenda from './../../../../config/lib/agenda.mjs';
+import config from './../../../../config/config.mjs';
+import log from './../../../../config/lib/logger.mjs';
+import userRolesService from './../../../users/server/services/user-roles.server.service.mjs';
 import categories from '../../../support/shared/categories.js';
-
 const service = {};
 
 /**
@@ -32,17 +31,14 @@ const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 function getSupportVolunteerName() {
   return _.sample(config.supportVolunteerNames);
 }
-
 function defangUrl(value) {
   return value.replace(/:/g, '[:]').replace(/\./g, '[.]');
 }
-
 function removeLinksFromMessagePreview(content) {
   const withoutAnchors = _.toString(content).replace(
     /<a\b[^>]*\bhref\s*=\s*(["'])(.*?)\1[^>]*>[\s\S]*?<\/a>/gi,
     (_anchor, _quote, href) => _.escape(defangUrl(he.decode(href))),
   );
-
   return autolinker.link(withoutAnchors, {
     urls: true,
     email: false,
@@ -52,7 +48,6 @@ function removeLinksFromMessagePreview(content) {
     replaceFn: match => _.escape(defangUrl(match.getMatchedText())),
   });
 }
-
 service.sendMessagesUnread = function (
   userFrom,
   userTo,
@@ -118,10 +113,8 @@ service.sendMessagesUnread = function (
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
   });
-
   service.renderEmailAndSend('messages-unread', params, callback);
 };
-
 service.sendConfirmContact = function (
   user,
   friend,
@@ -136,11 +129,9 @@ service.sendConfirmContact = function (
   ) {
     return callback();
   }
-
   const meURL = url + '/profile/' + user.username;
   const urlConfirm = url + '/contact-confirm/' + contact._id;
   const campaign = 'confirm-contact';
-
   const params = service.addEmailBaseTemplateParams({
     subject: 'Confirm contact',
     name: friend.displayName,
@@ -165,7 +156,6 @@ service.sendConfirmContact = function (
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
   });
-
   service.renderEmailAndSend('confirm-contact', params, callback);
 };
 
@@ -175,7 +165,6 @@ service.sendConfirmContact = function (
 service.sendRemoveProfile = function (user, callback) {
   const urlConfirm = url + '/remove/' + user.removeProfileToken;
   const campaign = 'remove-profile';
-
   const params = service.addEmailBaseTemplateParams({
     subject: 'Confirm removing your Trustroots profile',
     name: user.displayName,
@@ -197,7 +186,6 @@ service.sendRemoveProfile = function (user, callback) {
  */
 service.sendRemoveProfileConfirmed = function (user, callback) {
   const campaign = 'remove-profile-confirmed';
-
   const params = service.addEmailBaseTemplateParams({
     subject: 'Your Trustroots profile has been removed',
     name: user.displayName,
@@ -207,11 +195,9 @@ service.sendRemoveProfileConfirmed = function (user, callback) {
   });
   service.renderEmailAndSend('remove-profile-confirmed', params, callback);
 };
-
 service.sendResetPassword = function (user, callback) {
   const urlConfirm = url + '/api/auth/reset/' + user.resetPasswordToken;
   const campaign = 'reset-password';
-
   const params = service.addEmailBaseTemplateParams({
     subject: 'Password Reset',
     name: user.displayName,
@@ -227,11 +213,9 @@ service.sendResetPassword = function (user, callback) {
   });
   service.renderEmailAndSend('reset-password', params, callback);
 };
-
 service.sendResetPasswordConfirm = function (user, callback) {
   const urlResetPassword = url + '/password/forgot';
   const campaign = 'reset-password-confirm';
-
   const params = service.addEmailBaseTemplateParams({
     subject: 'Your password has been changed',
     name: user.displayName,
@@ -247,11 +231,9 @@ service.sendResetPasswordConfirm = function (user, callback) {
   });
   service.renderEmailAndSend('reset-password-confirm', params, callback);
 };
-
 service.sendChangeEmailConfirmation = function (user, callback) {
   const urlConfirm = url + '/confirm-email/' + user.emailToken;
   const campaign = 'confirm-email';
-
   const params = service.addEmailBaseTemplateParams({
     subject: 'Confirm email change',
     name: user.displayName,
@@ -265,14 +247,11 @@ service.sendChangeEmailConfirmation = function (user, callback) {
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
   });
-
   service.renderEmailAndSend('email-confirmation', params, callback);
 };
-
 service.sendSignupEmailConfirmation = function (user, callback) {
   const urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup=true';
   const campaign = 'confirm-email';
-
   const params = service.addEmailBaseTemplateParams({
     subject: 'Confirm Email',
     name: user.displayName,
@@ -286,10 +265,8 @@ service.sendSignupEmailConfirmation = function (user, callback) {
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
   });
-
   service.renderEmailAndSend('signup', params, callback);
 };
-
 service.sendFlaggedSignupAlert = function (user, matchedKeywords, callback) {
   const params = {
     from: 'Trustroots Support <' + config.supportEmail + '>',
@@ -303,10 +280,8 @@ service.sendFlaggedSignupAlert = function (user, matchedKeywords, callback) {
     skipHtmlTemplate: true,
     sparkpostCampaign: 'flagged-signup-alert',
   };
-
   service.renderEmailAndSend('flagged-signup-alert', params, callback);
 };
-
 service.sendSupportRequest = function (replyTo, supportRequest, callback) {
   let subject = 'Support request';
   const categoryLabel = SUPPORT_CATEGORIES[supportRequest.category] || 'Other';
@@ -319,21 +294,24 @@ service.sendSupportRequest = function (replyTo, supportRequest, callback) {
   if (_.has(supportRequest, 'displayName') && supportRequest.displayName) {
     subject += ' (' + supportRequest.displayName + ')';
   }
-
   const params = {
     from: 'Trustroots Support <' + config.supportEmail + '>',
-    name: 'Trustroots Support', // `To:`
-    email: config.supportEmail, // `To:`
+    name: 'Trustroots Support',
+    // `To:`
+    email: config.supportEmail,
+    // `To:`
     replyTo,
     subject,
-    request: { ...supportRequest, categoryLabel },
-    skipHtmlTemplate: true, // Don't render html template for this email
+    request: {
+      ...supportRequest,
+      categoryLabel,
+    },
+    skipHtmlTemplate: true,
+    // Don't render html template for this email
     sparkpostCampaign: 'support-request',
   };
-
   service.renderEmailAndSend('support-request', params, callback);
 };
-
 service.sendSignupEmailReminder = function (user, callback) {
   const urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup=true';
   const campaign = 'signup-reminder';
@@ -344,7 +322,6 @@ service.sendSignupEmailReminder = function (user, callback) {
   const reminderCount = user.publicReminderCount
     ? user.publicReminderCount + 1
     : 1;
-
   const params = service.addEmailBaseTemplateParams({
     subject: 'Complete your signup to Trustroots',
     name: user.displayName,
@@ -357,8 +334,10 @@ service.sendSignupEmailReminder = function (user, callback) {
     }),
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
-    reminderCount, // This email is a reminder number `n` to this user
-    reminderCountMax: config.limits.maxSignupReminders, // Max n of reminders system sends
+    reminderCount,
+    // This email is a reminder number `n` to this user
+    reminderCountMax: config.limits.maxSignupReminders,
+    // Max n of reminders system sends
     timeAgo: moment(user.created).fromNow(), // A string, e.g. `3 days ago`
   });
 
@@ -366,10 +345,8 @@ service.sendSignupEmailReminder = function (user, callback) {
   if (user.publicReminderCount + 1 === config.limits.maxSignupReminders) {
     params.subject = 'Last chance to complete your signup to Trustroots!';
   }
-
   service.renderEmailAndSend('signup-reminder', params, callback);
 };
-
 service.sendReactivateHosts = function (user, callback) {
   const urlOffer = url + '/offer';
   const campaign = 'reactivate-hosts';
@@ -378,7 +355,6 @@ service.sendReactivateHosts = function (user, callback) {
     medium: 'email',
     campaign,
   };
-
   const params = service.addEmailBaseTemplateParams({
     subject: user.firstName + ', start hosting on Trustroots again?',
     firstName: user.firstName,
@@ -396,7 +372,6 @@ service.sendReactivateHosts = function (user, callback) {
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
   });
-
   service.renderEmailAndSend('reactivate-hosts', params, callback);
 };
 
@@ -412,7 +387,6 @@ service.sendWelcomeSequenceFirst = function (user, callback) {
     medium: 'email',
     campaign,
   };
-
   const params = service.addEmailBaseTemplateParams({
     subject: '👋 Welcome to Trustroots ' + user.firstName + '!',
     from: {
@@ -429,7 +403,6 @@ service.sendWelcomeSequenceFirst = function (user, callback) {
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
   });
-
   service.renderEmailAndSend('welcome-sequence-first', params, callback);
 };
 
@@ -444,7 +417,6 @@ service.sendWelcomeSequenceSecond = function (user, callback) {
     medium: 'email',
     campaign,
   };
-
   const params = service.addEmailBaseTemplateParams({
     subject: 'Meet new people at Trustroots, ' + user.firstName,
     from: {
@@ -460,7 +432,6 @@ service.sendWelcomeSequenceSecond = function (user, callback) {
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
   });
-
   service.renderEmailAndSend('welcome-sequence-second', params, callback);
 };
 
@@ -479,7 +450,6 @@ service.sendWelcomeSequenceThird = function (user, callback) {
     descriptionLength < config.profileMinimumLength
       ? 'fill-profile'
       : 'feedback';
-
   const urlEditProfile = url + '/profile/edit';
   const campaign = 'welcome-sequence-third' + '-' + messageTopic;
   const utmParams = {
@@ -487,7 +457,6 @@ service.sendWelcomeSequenceThird = function (user, callback) {
     medium: 'email',
     campaign,
   };
-
   const params = service.addEmailBaseTemplateParams({
     subject: 'How is it going, ' + user.firstName + '?',
     from: {
@@ -504,7 +473,6 @@ service.sendWelcomeSequenceThird = function (user, callback) {
     sparkpostCampaign: campaign,
     topic: messageTopic,
   });
-
   service.renderEmailAndSend('welcome-sequence-third', params, callback);
 };
 
@@ -522,16 +490,15 @@ service.sendExperienceNotificationFirst = function (
   ) {
     return callback();
   }
-
   const campaign = 'experience-notification-first';
   const userFromProfileUrl = `${url}/profile/${userFrom.username}`;
   const giveExperienceUrl = `${url}/profile/${userFrom.username}/experiences/new`;
-
   const params = service.addEmailBaseTemplateParams({
     subject: `${userFrom.displayName} shared their experience with you`,
     email: userTo.email,
     days: config.limits.timeToReplyExperience.days,
-    username: userTo.username, // data needed for link to profile in footer
+    username: userTo.username,
+    // data needed for link to profile in footer
     userFrom,
     userTo,
     userFromProfileUrlPlainText: userFromProfileUrl,
@@ -549,7 +516,6 @@ service.sendExperienceNotificationFirst = function (
       content: 'give-experience',
     }),
   });
-
   service.renderEmailAndSend('experience-notification-first', params, callback);
 };
 
@@ -568,15 +534,14 @@ service.sendExperienceNotificationSecond = function (
   ) {
     return callback();
   }
-
   const campaign = 'experience-notification-second';
   const seeExperiencesUrl = `${url}/profile/${userTo.username}/experiences#${experience._id}`;
   const userFromProfileUrl = `${url}/profile/${userFrom.username}`;
-
   const params = service.addEmailBaseTemplateParams({
     subject: `${userFrom.displayName} shared also their experience with you`,
     email: userTo.email,
-    username: userTo.username, // data needed for link to profile in footer
+    username: userTo.username,
+    // data needed for link to profile in footer
     userFrom,
     userTo,
     userFromProfileUrlPlainText: userFromProfileUrl,
@@ -594,7 +559,6 @@ service.sendExperienceNotificationSecond = function (
       content: 'see-experiences',
     }),
   });
-
   service.renderEmailAndSend(
     'experience-notification-second',
     params,
@@ -619,12 +583,9 @@ service.addEmailBaseTemplateParams = function (params) {
     );
     return {};
   }
-
   const baseUrl = (config.https ? 'https' : 'http') + '://' + config.domain;
-
   params.urlSupportPlainText = baseUrl + '/support';
   params.footerUrlPlainText = baseUrl;
-
   const buildAnalyticsUrl = function (url, content) {
     return analyticsHandler.appendUTMParams(url, {
       source: 'transactional-email',
@@ -633,7 +594,6 @@ service.addEmailBaseTemplateParams = function (params) {
       content,
     });
   };
-
   params.headerUrl = buildAnalyticsUrl(baseUrl, 'email-header');
   params.footerUrl = buildAnalyticsUrl(baseUrl, 'email-footer');
   params.supportUrl = buildAnalyticsUrl(
@@ -648,7 +608,6 @@ service.addEmailBaseTemplateParams = function (params) {
   }
   return params;
 };
-
 service.renderEmail = function (templateName, params, callback) {
   const templatePaths = {};
 
@@ -657,7 +616,6 @@ service.renderEmail = function (templateName, params, callback) {
     'email-templates-text',
     templateName + '.server.view.html',
   );
-
   if (!params.skipHtmlTemplate) {
     // `./modules/core/server/views/email-templates`
     templatePaths.html = path.join(
@@ -698,7 +656,6 @@ service.renderEmail = function (templateName, params, callback) {
           return '<' + match.getAnchorHref() + '>';
         },
       });
-
       const email = {
         to: {
           name: params.name,
@@ -717,7 +674,11 @@ service.renderEmail = function (templateName, params, callback) {
       }
       // Add SparkPost SMTP API headers
       // @link https://developers.sparkpost.com/api/smtp/#header-using-the-x-msys-api-custom-header
-      const sparkpostHeader = { options: { transactional: true } };
+      const sparkpostHeader = {
+        options: {
+          transactional: true,
+        },
+      };
       if (params.sparkpostCampaign) {
         sparkpostHeader.campaign_id = params.sparkpostCampaign;
       }
@@ -728,7 +689,6 @@ service.renderEmail = function (templateName, params, callback) {
     },
   );
 };
-
 service.renderEmailAndSend = function (templateName, params, callback) {
   service.renderEmail(templateName, params, function (err, email) {
     if (err) return callback(err);
@@ -740,7 +700,6 @@ service.renderEmailAndSend = function (templateName, params, callback) {
       .catch(callback);
   });
 };
-
 const defaultExport = service;
 export default defaultExport;
 export const addEmailBaseTemplateParams =
@@ -770,3 +729,4 @@ export const sendWelcomeSequenceFirst = defaultExport.sendWelcomeSequenceFirst;
 export const sendWelcomeSequenceSecond =
   defaultExport.sendWelcomeSequenceSecond;
 export const sendWelcomeSequenceThird = defaultExport.sendWelcomeSequenceThird;
+export { defaultExport as 'module.exports' };

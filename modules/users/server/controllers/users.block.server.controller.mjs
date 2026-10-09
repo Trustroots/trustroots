@@ -1,7 +1,6 @@
-import errorService from '../../../core/server/services/error.server.service.js';
+import errorService from './../../../core/server/services/error.server.service.mjs';
 import mongoose from 'mongoose';
-import log from '../../../../config/lib/logger.js';
-
+import log from './../../../../config/lib/logger.mjs';
 const service = {};
 
 /**
@@ -46,12 +45,13 @@ service.blockUser = async function (req, res) {
   }
   const idToBeBlocked = req.profile._id;
   let loggedUser;
-
   log('info', `${req.user._id} blocking ${idToBeBlocked}`);
   try {
     // get logged user and update
     loggedUser = await User.updateOne(
-      { _id: req.user._id },
+      {
+        _id: req.user._id,
+      },
       {
         $addToSet: {
           blocked: idToBeBlocked,
@@ -65,7 +65,6 @@ service.blockUser = async function (req, res) {
         message: errorService.getErrorMessageByKey('not-found'),
       });
     }
-
     res.send(`${req.profile.username} added to block list.`);
   } catch (err) {
     log('error', err);
@@ -95,7 +94,9 @@ service.unblockUser = async function (req, res) {
   try {
     // get logged user and update
     const result = await User.updateOne(
-      { _id: req.user._id },
+      {
+        _id: req.user._id,
+      },
       {
         $pullAll: {
           blocked: [idToBeUnBlocked],
@@ -109,8 +110,9 @@ service.unblockUser = async function (req, res) {
         message: errorService.getErrorMessageByKey('not-found'),
       });
     }
-
-    res.send({ message: `${req.profile.username} removed from block list.` });
+    res.send({
+      message: `${req.profile.username} removed from block list.`,
+    });
   } catch (err) {
     log('error', err);
     return res.status(400).send({
@@ -118,9 +120,9 @@ service.unblockUser = async function (req, res) {
     });
   }
 };
-
 const defaultExport = service;
 export default defaultExport;
 export const blockUser = defaultExport.blockUser;
 export const getBlockedUsers = defaultExport.getBlockedUsers;
 export const unblockUser = defaultExport.unblockUser;
+export { defaultExport as 'module.exports' };

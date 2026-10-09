@@ -5,7 +5,7 @@ const should = require('should');
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const adminAcquisitionStories = require('../../server/controllers/admin.acquisition-stories.server.controller');
+const adminAcquisitionStories = require('./../../server/controllers/admin.acquisition-stories.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
@@ -504,6 +504,25 @@ describe('Admin acquisition stories controller unit tests', () => {
       categories.should.containEql('example');
       categories.should.containEql('single');
       categories.should.containEql('something');
+    });
+
+    it('drops common English words before counting terms', async () => {
+      const storyQuery = {
+        exec: sinon
+          .stub()
+          .resolves([{ acquisitionStory: 'I found it through friends' }]),
+      };
+      storyQuery.sort = sinon.stub().returns(storyQuery);
+      storyQuery.limit = sinon.stub().returns(storyQuery);
+      sinon.stub(User, 'find').returns(storyQuery);
+
+      const res = mockResponse();
+      await adminAcquisitionStories.getAnalysis({}, res);
+
+      const categories = res.body.table.map(row => row.category);
+      categories.should.containEql('found');
+      categories.should.containEql('friend');
+      categories.should.not.containEql('through');
     });
 
     it('corrects one edit but does not treat a transposition as one edit', async () => {

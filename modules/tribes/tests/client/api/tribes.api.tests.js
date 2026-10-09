@@ -6,6 +6,7 @@ import {
   leave,
   read,
   get,
+  listMembers,
 } from '@/modules/tribes/client/api/tribes.api';
 
 jest.mock('axios', () =>
@@ -66,5 +67,13 @@ describe('tribes api', () => {
 
     await expect(get('hitchhikers')).resolves.toBe(tribe);
     expect(axios.get).toHaveBeenCalledWith('/api/tribes/hitchhikers');
+  });
+
+  it('lists bounded, deduplicated discovery groups for a circle', async () => {
+    const members = { contacts: [], recommenders: [], active: [] };
+    axios.get.mockResolvedValueOnce({ data: members });
+
+    await expect(listMembers('hitchhikers')).resolves.toBe(members);
+    expect(axios.get).toHaveBeenCalledWith('/api/tribes/hitchhikers/members');
   });
 });

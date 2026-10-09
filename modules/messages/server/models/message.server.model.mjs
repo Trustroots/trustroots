@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate';
-
 const service = {};
 
 /**
@@ -74,7 +73,6 @@ MessageSchema.index(
 );
 
 MessageSchema.plugin(mongoosePaginate);
-
 mongoose.model('Message', MessageSchema);
-
 export default service;
+export { service as 'module.exports' };

@@ -1,8 +1,7 @@
 const assert = require('assert');
-const fs = require('node:fs');
 const { createRequire } = require('node:module');
 const sinon = require('sinon');
-const proxyquire = require('proxyquire').noCallThru();
+const proxyquire = require('./../../../../testutils/server/mock-module');
 
 function handler(name) {
   const fn = (req, res, next) => {
@@ -79,12 +78,12 @@ function assertPolicy(route, policy) {
 function register(modulePath, stubs) {
   const { app, params, routes } = createAppRecorder();
   const file = require.resolve(modulePath);
-  if (fs.existsSync(file.replace(/\.js$/, '.mjs'))) {
+  if (file.endsWith('.mjs')) {
     const sandbox = sinon.createSandbox();
     const dependencyRequire = createRequire(file);
     try {
       for (const [specifier, replacements] of Object.entries(stubs)) {
-        const dependency = dependencyRequire(specifier);
+        const dependency = dependencyRequire(specifier + '.mjs');
         for (const [name, value] of Object.entries(replacements)) {
           if (typeof value === 'function') {
             const replacement = sandbox.stub(dependency, name).callsFake(value);
@@ -123,7 +122,7 @@ describe('API route registrations', () => {
     );
 
     const { params, routes } = register(
-      '../../../../modules/contacts/server/routes/contacts.server.routes',
+      './../../../contacts/server/routes/contacts.server.routes.mjs',
       {
         '../controllers/contacts.server.controller': contacts,
         '../policies/contacts.server.policy': policy,
@@ -177,7 +176,7 @@ describe('API route registrations', () => {
     );
 
     const { params, routes } = register(
-      '../../../../modules/messages/server/routes/messages.server.routes',
+      './../../../messages/server/routes/messages.server.routes.mjs',
       {
         '../controllers/messages.server.controller': messages,
         '../policies/messages.server.policy': policy,
@@ -222,7 +221,7 @@ describe('API route registrations', () => {
     );
 
     const { params, routes } = register(
-      '../../../../modules/offers/server/routes/offers.server.routes',
+      './../../../offers/server/routes/offers.server.routes.mjs',
       {
         '../controllers/offers.server.controller': offers,
         '../policies/offers.server.policy': policy,
@@ -265,7 +264,7 @@ describe('API route registrations', () => {
     );
 
     const { params, routes } = register(
-      '../../../../modules/references-thread/server/routes/reference-thread.server.routes',
+      './../../../references-thread/server/routes/reference-thread.server.routes.mjs',
       {
         '../controllers/reference-thread.server.controller': referenceThread,
         '../policies/reference-thread.server.policy': policy,
@@ -296,14 +295,14 @@ describe('API route registrations', () => {
     const support = controller(['supportRequest'], 'support');
 
     const tribeRoutes = register(
-      '../../../../modules/tribes/server/routes/tribes.server.routes',
+      './../../../tribes/server/routes/tribes.server.routes.mjs',
       {
         '../controllers/tribes.server.controller': tribes,
         '../policies/tribes.server.policy': tribesPolicy,
       },
     );
     const supportRoutes = register(
-      '../../../../modules/support/server/routes/support.server.routes',
+      './../../../support/server/routes/support.server.routes.mjs',
       {
         '../controllers/support.server.controller': support,
       },
@@ -362,15 +361,18 @@ describe('API route registrations', () => {
       ['removeOAuthProvider'],
       'userAuthentication',
     );
+    const targetedRequestLimit = controller(['avatarUpload'], 'requestLimit');
 
     const { params, routes } = register(
-      '../../../../modules/users/server/routes/users.server.routes',
+      './../../../users/server/routes/users.server.routes.mjs',
       {
         '../controllers/users.authentication.server.controller': authentication,
         '../controllers/users.avatar.server.controller': avatar,
         '../controllers/users.password.server.controller': password,
         '../controllers/users.profile.server.controller': profile,
         '../policies/users.server.policy': policy,
+        '../../../core/server/middleware/targeted-request-limit.server.middleware':
+          targetedRequestLimit,
       },
     );
 
@@ -383,6 +385,7 @@ describe('API route registrations', () => {
       profile.removeProfile,
     ]);
     assertHandlers(routeByPath(routes, '/api/users-avatar').post, [
+      targetedRequestLimit.avatarUpload,
       avatar.avatarUploadField,
       avatar.avatarUpload,
     ]);
@@ -420,10 +423,7 @@ describe('API route registrations', () => {
     assertHandlers(routeByPath(routes, '/api/users/:username').get, [
       profile.getUser,
     ]);
-    routes
-      .filter(route => route.path !== '/api/users/accounts/:provider')
-      .filter(route => route.path !== '/api/users/password')
-      .forEach(route => assertPolicy(route, policy));
+    routes.forEach(route => assertPolicy(route, policy));
     assert.deepStrictEqual(
       params.map(param => [param.name, param.middleware.routeTestName]),
       [
@@ -451,12 +451,18 @@ describe('API route registrations', () => {
       ['forgot', 'reset', 'validateResetToken'],
       'userPassword',
     );
+    const targetedRequestLimit = controller(
+      ['resendConfirmation', 'forgotPassword', 'resetPassword', 'signin'],
+      'requestLimit',
+    );
 
     const { routes } = register(
-      '../../../../modules/users/server/routes/auth.server.routes',
+      './../../../users/server/routes/auth.server.routes.mjs',
       {
         '../controllers/users.authentication.server.controller': authentication,
         '../controllers/users.password.server.controller': password,
+        '../../../core/server/middleware/targeted-request-limit.server.middleware':
+          targetedRequestLimit,
       },
     );
 
@@ -467,15 +473,18 @@ describe('API route registrations', () => {
       authentication.confirmEmail,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/resend-confirmation').post, [
+      targetedRequestLimit.resendConfirmation,
       authentication.resendConfirmation,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/forgot').post, [
+      targetedRequestLimit.forgotPassword,
       password.forgot,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/reset/:token').get, [
       password.validateResetToken,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/reset/:token').post, [
+      targetedRequestLimit.resetPassword,
       password.reset,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/signup').post, [
@@ -485,6 +494,7 @@ describe('API route registrations', () => {
       authentication.signupValidation,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/signin').post, [
+      targetedRequestLimit.signin,
       authentication.signin,
     ]);
     const signoutRoute = routeByPath(routes, '/api/auth/signout');
@@ -513,7 +523,7 @@ describe('API route registrations', () => {
     );
 
     const { routes } = register(
-      '../../../../modules/users/server/routes/users-block.server.routes',
+      './../../../users/server/routes/users-block.server.routes.mjs',
       {
         '../controllers/users.block.server.controller': block,
         '../policies/users.server.policy': policy,
@@ -570,7 +580,7 @@ describe('API route registrations', () => {
     );
 
     const { routes } = register(
-      '../../../../modules/admin/server/routes/admin.server.routes',
+      './../../../admin/server/routes/admin.server.routes.mjs',
       {
         '../controllers/admin.acquisition-stories.server.controller':
           acquisitionStories,
@@ -677,6 +687,7 @@ describe('API route registrations', () => {
 
   it('registers simple integration routes for pages, statistics, and SparkPost', () => {
     const volunteers = controller(['list'], 'volunteers');
+    const greeters = controller(['list'], 'greeters');
     const statistics = controller(
       ['collectStatistics', 'getPublicStatistics'],
       'statistics',
@@ -687,19 +698,20 @@ describe('API route registrations', () => {
     );
 
     const pagesRoutes = register(
-      '../../../../modules/pages/server/routes/admin.server.routes',
+      './../../../pages/server/routes/pages.server.routes.mjs',
       {
         '../controllers/pages.volunteers.server.controller': volunteers,
+        '../controllers/pages.greeters.server.controller': greeters,
       },
     );
     const statisticsRoutes = register(
-      '../../../../modules/statistics/server/routes/statistics.server.routes',
+      './../../../statistics/server/routes/statistics.server.routes.mjs',
       {
         '../controllers/statistics.server.controller': statistics,
       },
     );
     const sparkpostRoutes = register(
-      '../../../../modules/sparkpost/server/routes/sparkpost.server.routes',
+      './../../../sparkpost/server/routes/sparkpost.server.routes.mjs',
       {
         '../controllers/sparkpost-webhooks.server.controller': sparkpost,
       },
@@ -707,6 +719,9 @@ describe('API route registrations', () => {
 
     assertHandlers(routeByPath(pagesRoutes.routes, '/api/volunteers').get, [
       volunteers.list,
+    ]);
+    assertHandlers(routeByPath(pagesRoutes.routes, '/api/greeters').get, [
+      greeters.list,
     ]);
     assertHandlers(
       routeByPath(statisticsRoutes.routes, '/api/statistics').post,

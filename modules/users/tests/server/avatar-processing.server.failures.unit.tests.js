@@ -1,9 +1,9 @@
 const assert = require('assert');
 const fs = require('fs').promises;
 const path = require('path');
-const proxyquire = require('proxyquire').noCallThru();
+const proxyquire = require('./../../../../testutils/server/mock-module');
 
-const config = require('../../../../config/config');
+const config = require('./../../../../config/config.mjs');
 const actualFs = require('fs').promises;
 const validUserId = '0123456789abcdef01234567';
 const resourceList = [
@@ -161,14 +161,16 @@ describe('Avatar processing failure handling', () => {
       uploadDir,
       uploadTmpDir,
       service: proxyquire(
-        '../../server/services/avatar-processing.server.service',
+        require.resolve(
+          './../../server/services/avatar-processing.server.service.mjs',
+        ),
         {
-          '../../../../config/config': {
+          './../../../../config/config.mjs': {
             ...serviceConfig,
           },
           fs: { promises: createFsProxy(fsHooks) },
           gm: createBackend({ ...options, inputPath }),
-          '../../../../config/lib/logger': () => {},
+          './../../../../config/lib/logger.mjs': () => {},
         },
       ),
     };
@@ -333,9 +335,11 @@ describe('Avatar processing failure handling', () => {
     });
     const { inputPath } = await makeService();
     const publicCleanupService = proxyquire(
-      '../../server/services/avatar-processing.server.service',
+      require.resolve(
+        './../../server/services/avatar-processing.server.service.mjs',
+      ),
       {
-        '../../../../config/config': {
+        './../../../../config/config.mjs': {
           ...config,
           uploadDir: path.join(temporaryRoot, 'public'),
           uploadTmpDir: path.join(temporaryRoot, 'private'),
@@ -344,7 +348,7 @@ describe('Avatar processing failure handling', () => {
         gm: () => {
           throw new Error('not used');
         },
-        '../../../../config/lib/logger': (...args) => logged.push(args),
+        './../../../../config/lib/logger.mjs': (...args) => logged.push(args),
       },
     );
     process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
@@ -373,16 +377,18 @@ describe('Avatar processing failure handling', () => {
       },
     });
     const privateCleanupService = proxyquire(
-      '../../server/services/avatar-processing.server.service',
+      require.resolve(
+        './../../server/services/avatar-processing.server.service.mjs',
+      ),
       {
-        '../../../../config/config': {
+        './../../../../config/config.mjs': {
           ...config,
           uploadDir: path.join(temporaryRoot, 'public-private-cleanup'),
           uploadTmpDir: path.join(temporaryRoot, 'private'),
         },
         fs: { promises: privateCleanupFs },
         gm: createBackend({ inputPath }),
-        '../../../../config/lib/logger': (...args) => logged.push(args),
+        './../../../../config/lib/logger.mjs': (...args) => logged.push(args),
       },
     );
     await assert.rejects(
@@ -411,9 +417,11 @@ describe('Avatar processing failure handling', () => {
     };
     const { inputPath } = await makeService();
     const service = proxyquire(
-      '../../server/services/avatar-processing.server.service',
+      require.resolve(
+        './../../server/services/avatar-processing.server.service.mjs',
+      ),
       {
-        '../../../../config/config': {
+        './../../../../config/config.mjs': {
           ...config,
           uploadDir: path.join(temporaryRoot, 'public-version-cleanup'),
           uploadTmpDir: path.join(temporaryRoot, 'private'),
@@ -422,7 +430,7 @@ describe('Avatar processing failure handling', () => {
         gm: () => {
           throw new Error('native processor should not be used');
         },
-        '../../../../config/lib/logger': (...args) => logged.push(args),
+        './../../../../config/lib/logger.mjs': (...args) => logged.push(args),
       },
     );
     process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
@@ -488,9 +496,11 @@ describe('Avatar processing failure handling', () => {
 
   it('forwards queue processing failures to each callback and rejects a full queue', async () => {
     const service = proxyquire(
-      '../../server/services/avatar-processing.server.service',
+      require.resolve(
+        './../../server/services/avatar-processing.server.service.mjs',
+      ),
       {
-        '../../../../config/config': config,
+        './../../../../config/config.mjs': config,
         gm: require('gm'),
       },
     );
@@ -522,7 +532,9 @@ describe('Avatar processing failure handling', () => {
   it('rejects uploads when the pending queue reaches its configured limit', () => {
     const pending = [];
     const service = proxyquire(
-      '../../server/services/avatar-processing.server.service',
+      require.resolve(
+        './../../server/services/avatar-processing.server.service.mjs',
+      ),
       {
         async: {
           queue: () => ({
@@ -530,7 +542,7 @@ describe('Avatar processing failure handling', () => {
             push: job => pending.push(job),
           }),
         },
-        '../../../../config/config': config,
+        './../../../../config/config.mjs': config,
         gm: require('gm'),
       },
     );
@@ -546,9 +558,11 @@ describe('Avatar processing failure handling', () => {
     const inputPath = path.join(temporaryRoot, 'queue-input.png');
     await fs.writeFile(inputPath, 'anonymous source bytes');
     const service = proxyquire(
-      '../../server/services/avatar-processing.server.service',
+      require.resolve(
+        './../../server/services/avatar-processing.server.service.mjs',
+      ),
       {
-        '../../../../config/config': {
+        './../../../../config/config.mjs': {
           ...config,
           uploadDir: path.join(temporaryRoot, 'queue-public'),
           uploadTmpDir: path.join(temporaryRoot, 'queue-private'),

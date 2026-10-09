@@ -4,8 +4,8 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const referenceController = require('../../server/controllers/reference-thread.server.controller');
-const statService = require('../../../stats/server/services/stats.server.service');
+const referenceController = require('./../../server/controllers/reference-thread.server.controller.mjs');
+const statService = require('./../../../stats/server/services/stats.server.service.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 

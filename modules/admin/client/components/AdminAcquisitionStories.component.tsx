@@ -20,6 +20,7 @@ type StorySortColumn =
   | 'public'
   | 'welcomer';
 type SortDirection = 'ascending' | 'descending';
+type ProfileVisibility = 'all' | 'visible' | 'hidden';
 
 interface RestrictedMatch {
   _id: string;
@@ -188,6 +189,9 @@ export default function AdminAcquisitionStories() {
   const viewerLanguages = getCurrentUser()?.languages || [];
   const [stories, setStories] = useState<AcquisitionStory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [unassignedOnly, setUnassignedOnly] = useState(false);
+  const [profileVisibility, setProfileVisibility] =
+    useState<ProfileVisibility>('all');
   const [sort, setSort] = useState<StorySort>({
     column: 'created',
     direction: 'descending',
@@ -207,16 +211,24 @@ export default function AdminAcquisitionStories() {
     const direction = sort.direction === 'ascending' ? 1 : -1;
     const valueFor = storySortValues[sort.column];
 
-    return stories.slice().sort((left, right) => {
-      const leftValue = valueFor(left);
-      const rightValue = valueFor(right);
-      const comparison =
-        typeof leftValue === 'number' && typeof rightValue === 'number'
-          ? leftValue - rightValue
-          : String(leftValue).localeCompare(String(rightValue));
-      return comparison * direction;
-    });
-  }, [sort, stories]);
+    return stories
+      .filter(story => !unassignedOnly || !story.welcomer)
+      .filter(
+        story =>
+          profileVisibility === 'all' ||
+          (profileVisibility === 'visible' && story.public === true) ||
+          (profileVisibility === 'hidden' && story.public !== true),
+      )
+      .sort((left, right) => {
+        const leftValue = valueFor(left);
+        const rightValue = valueFor(right);
+        const comparison =
+          typeof leftValue === 'number' && typeof rightValue === 'number'
+            ? leftValue - rightValue
+            : String(leftValue).localeCompare(String(rightValue));
+        return comparison * direction;
+      });
+  }, [profileVisibility, sort, stories, unassignedOnly]);
 
   function sortBy(column: StorySortColumn) {
     setSort(currentSort => ({
@@ -237,9 +249,50 @@ export default function AdminAcquisitionStories() {
 
         <AdminAcquisitionStoriesMenu active="stories" />
 
+        <div className="form-check mb-3">
+          <input
+            checked={unassignedOnly}
+            className="form-check-input"
+            id="acquisition-stories-unassigned-only"
+            onChange={event => setUnassignedOnly(event.target.checked)}
+            type="checkbox"
+          />
+          <label
+            className="form-check-label"
+            htmlFor="acquisition-stories-unassigned-only"
+          >
+            Unassigned only
+          </label>
+        </div>
+
+        <div className="mb-3">
+          <label
+            className="form-label"
+            htmlFor="acquisition-stories-profile-visibility"
+          >
+            Profile visibility
+          </label>
+          <select
+            className="form-select"
+            id="acquisition-stories-profile-visibility"
+            onChange={event =>
+              setProfileVisibility(event.target.value as ProfileVisibility)
+            }
+            value={profileVisibility}
+          >
+            <option value="all">All</option>
+            <option value="visible">Visible</option>
+            <option value="hidden">Hidden</option>
+          </select>
+          <small className="form-text text-muted">
+            Hidden profiles have not activated their signup through email
+            confirmation.
+          </small>
+        </div>
+
         {isLoading && <LoadingIndicator />}
 
-        {!isLoading && stories.length > 0 && (
+        {!isLoading && sortedStories.length > 0 && (
           <table className="table table-condensed table-striped admin-acquisition-stories-table">
             <thead>
               <tr>
@@ -288,10 +341,10 @@ export default function AdminAcquisitionStories() {
                 />
                 <SortableHeader
                   column="welcomer"
-                  label="Welcomer"
+                  label="Greeter"
                   onSort={sortBy}
                   sort={sort}
-                  tooltip="First current welcome-team member to send a message; sending a message assigns the welcomer"
+                  tooltip="First current greeter to send a message; sending a message assigns the greeter"
                 />
                 <StaticHeader
                   label="Languages"
@@ -423,8 +476,12 @@ export default function AdminAcquisitionStories() {
           </table>
         )}
 
-        {!isLoading && stories.length === 0 && (
-          <p>No acquisition stories found.</p>
+        {!isLoading && sortedStories.length === 0 && (
+          <p>
+            {unassignedOnly
+              ? 'No unassigned acquisition stories found.'
+              : 'No acquisition stories found.'}
+          </p>
         )}
       </div>
     </>

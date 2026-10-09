@@ -20,6 +20,7 @@ export interface UserProfile {
   description?: string;
   emailTemporary?: string;
   public?: boolean;
+  isGreeter?: boolean;
   isVolunteer?: boolean;
   isVolunteerAlumni?: boolean;
   member?: TribeMembership[];
@@ -58,6 +59,17 @@ export interface UserProfile {
 }
 
 export interface UserSummary
-  extends Pick<UserProfile, '_id' | 'username' | 'displayName'> {
+  extends Pick<
+    UserProfile,
+    | '_id'
+    | 'username'
+    | 'displayName'
+    | 'avatarSource'
+    | 'avatarUploaded'
+    | 'avatarVersion'
+    | 'updated'
+    | 'emailHash'
+    | 'additionalProvidersData'
+  > {
   avatar?: string;
 }

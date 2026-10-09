@@ -1,8 +1,8 @@
-import emailService from '../../../core/server/services/email.server.service.js';
-import config from '../../../../config/config.js';
+import emailService from './../../../core/server/services/email.server.service.mjs';
+import config from './../../../../config/config.mjs';
 import async from 'async';
 import moment from 'moment';
-import log from '../../../../config/lib/logger.js';
+import log from './../../../../config/lib/logger.mjs';
 import mongoose from 'mongoose';
 
 /**
@@ -17,7 +17,6 @@ import mongoose from 'mongoose';
  * Module dependencies.
  */
 const Offer = mongoose.model('Offer');
-
 function run(job, agendaDone) {
   async.waterfall(
     [
@@ -28,7 +27,6 @@ function run(job, agendaDone) {
         const updatedTimeAgo = moment()
           .subtract(moment.duration(config.limits.timeToReactivateHosts))
           .toDate();
-
         Offer.find({
           type: 'host',
           status: 'no',
@@ -45,14 +43,12 @@ function run(job, agendaDone) {
             done(err, offers || []);
           });
       },
-
       // Send emails
       function (offers, done) {
         // No users to send emails to
         if (!offers.length) {
           return done();
         }
-
         async.eachSeries(
           offers,
           function (offer, callback) {
@@ -89,6 +85,6 @@ function run(job, agendaDone) {
     },
   );
 }
-
 export { run };
 export default run;
+export { run as 'module.exports' };

@@ -1,6 +1,6 @@
 const {
   createRouteAuthorisation,
-} = require('../../server/services/route-authorisation.server.service');
+} = require('./../../server/services/route-authorisation.server.service.mjs');
 require('should');
 
 function mockResponse() {

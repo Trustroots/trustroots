@@ -3,7 +3,7 @@ const {
   test,
   expect,
   useElementScreenshot,
-} = require('../../support/test');
+} = require('../../support/fixtures');
 const { SEEDED_MEMBERS, signInViaApi } = require('../../support/helpers');
 const { withE2eDb } = require('../../support/db');
 const {
@@ -29,6 +29,14 @@ for (const [category, label] of Object.entries(SUPPORT_CATEGORIES)) {
     await expect(page.getByRole('button', { name: /^send$/i })).toBeDisabled();
     if (category === 'volunteering') {
       await expect(
+        page.getByRole('option', { name: 'Help run Trustroots' }),
+      ).toHaveAttribute('value', 'volunteering');
+      await expect(
+        page.getByText(
+          'Volunteer with the team that runs Trustroots, helping with development, design, translation, community support or organisation. This form is not for finding farm work, jobs, or work in exchange for food and accommodation.',
+        ),
+      ).toBeVisible();
+      await expect(
         page.getByRole('link', { name: 'Team Guide', exact: true }),
       ).toHaveAttribute('href', 'https://team.trustroots.org/');
       await expect(
@@ -47,6 +55,9 @@ for (const [category, label] of Object.entries(SUPPORT_CATEGORIES)) {
       ).toBeVisible();
     }
     if (category !== 'volunteering') {
+      await expect(
+        page.getByText(/Volunteer with the team that runs Trustroots/),
+      ).toHaveCount(0);
       await expect(
         page.getByRole('link', { name: 'Team Guide', exact: true }),
       ).toHaveCount(0);
@@ -212,7 +223,26 @@ for (const signedIn of [false, true]) {
     await expect(
       page.getByRole('link', { name: 'Team Guide' }),
     ).toHaveAttribute('href', 'https://team.trustroots.org/');
-    await page.getByRole('link', { name: 'I’d like to volunteer' }).click();
+    await expect(
+      page.getByText(
+        'Volunteer with the team that runs Trustroots, helping with development, design, translation, community support or organisation. This form is not for finding farm work, jobs, or work in exchange for food and accommodation.',
+      ),
+    ).toBeVisible();
+    await page
+      .getByRole('link', { name: 'I’d like to help run Trustroots' })
+      .click();
+    await page.getByLabel('What can we help with?').selectOption('other');
+    await expect(
+      page.getByText(/Volunteer with the team that runs Trustroots/),
+    ).toHaveCount(0);
+    await page
+      .getByLabel('What can we help with?')
+      .selectOption('volunteering');
+    await expect(
+      page.getByText(
+        'Volunteer with the team that runs Trustroots, helping with development, design, translation, community support or organisation. This form is not for finding farm work, jobs, or work in exchange for food and accommodation.',
+      ),
+    ).toBeVisible();
     await expect(page).toHaveURL(/\/support\?category=volunteering$/);
     await expect(page.getByLabel('What can we help with?')).toHaveValue(
       'volunteering',

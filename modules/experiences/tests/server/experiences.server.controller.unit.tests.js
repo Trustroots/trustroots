@@ -4,9 +4,9 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-require('../../../contacts/server/models/contacts.server.model');
-require('../../server/models/experiences.server.model');
-const experiencesController = require('../../server/controllers/experiences.server.controller');
+require('./../../../contacts/server/models/contacts.server.model.mjs');
+require('./../../server/models/experiences.server.model.mjs');
+const experiencesController = require('./../../server/controllers/experiences.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 

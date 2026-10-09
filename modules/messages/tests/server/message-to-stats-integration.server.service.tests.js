@@ -1,15 +1,12 @@
-const mongoose = require('mongoose');
 const should = require('should');
 const _ = require('lodash');
 const sinon = require('sinon');
-const config = require('../../../../config/config');
+const config = require('./../../../../config/config.mjs');
 const EventEmitter = require('events');
 const influx = require('influx');
 const Promise = require('promise');
-const messageController = require('../../server/controllers/messages.server.controller');
+const messageController = require('./../../server/controllers/messages.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
-
-const User = mongoose.model('User');
 
 describe('Message to Stats API server service Integration Test', function () {
   let reachEventEmitter;
@@ -42,29 +39,17 @@ describe('Message to Stats API server service Integration Test', function () {
 
   // here we create the users before each test
   beforeEach(function (done) {
-    user1 = new User({
-      firstName: 'Full',
-      lastName: 'Name',
-      displayName: 'Full Name',
+    user1 = utils.createTestUser({
       email: 'user1@test.com',
       username: 'username1',
       password: 'password123',
-      provider: 'local',
-      public: true,
-      roles: ['user'],
       description: _.repeat('.', config.profileMinimumLength),
     });
 
-    user2 = new User({
-      firstName: 'Full',
-      lastName: 'Name',
-      displayName: 'Full Name',
+    user2 = utils.createTestUser({
       email: 'user2@test.com',
       username: 'username2',
       password: 'password123',
-      provider: 'local',
-      public: true,
-      roles: ['user'],
     });
 
     // save those users to mongoDB

@@ -1,14 +1,12 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const express = require('../../../../config/lib/express');
+const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User');
 require('should');
-
 describe('Extracted React route responses', function () {
   let agent;
-  before(() => {
-    agent = request.agent(express.init(mongoose.connection));
+  before(async () => {
+    agent = request.agent(await express.init(mongoose.connection));
   });
   afterEach(utils.clearDatabase);
   it('redirects guests to sign in', async () => {
@@ -25,14 +23,14 @@ describe('Extracted React route responses', function () {
       username: 'sampleconfirmmember',
       password: 'SamplePassword123',
     };
-    await new User({
-      ...credentials,
-      firstName: 'Sample',
-      lastName: 'Member',
-      email: 'sample-confirm@example.test',
-      provider: 'local',
-      public: true,
-    }).save();
+    await utils
+      .createTestUser({
+        ...credentials,
+        firstName: 'Sample',
+        lastName: 'Member',
+        email: 'sample-confirm@example.test',
+      })
+      .save();
     await utils.signIn(credentials, agent);
     for (const path of ['/contact-confirm/665000000000000000000090']) {
       const response = await agent.get(path).expect(200);

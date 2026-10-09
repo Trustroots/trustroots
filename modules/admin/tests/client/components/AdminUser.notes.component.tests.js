@@ -1,5 +1,11 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import AdminUser from '@/modules/admin/client/components/AdminUser.component';
@@ -26,23 +32,20 @@ jest.mock('@/modules/core/client/components/TrEditor', () => {
   return Editor;
 });
 
-const originalConfirm = window.confirm;
 const userId = '111111111111111111111111';
 
 afterEach(() => {
   jest.resetAllMocks();
-  window.confirm = originalConfirm;
   window.history.pushState({}, '', '/');
 });
 
 it.each([
   ['Suspend', ['user']],
-  ['Add to Welcome team', ['user']],
-  ['Remove from Welcome team', ['user', 'welcome-team']],
+  ['Make greeter', ['user']],
+  ['Remove greeter', ['user', 'welcome-team']],
 ])(
   'refreshes audit notes after %s without discarding a draft',
   async (label, roles) => {
-    window.confirm = jest.fn(() => true);
     window.history.pushState({}, '', `/admin/user?id=${userId}`);
     usersApi.getUser.mockResolvedValue({
       contacts: [],
@@ -64,6 +67,12 @@ it.each([
     await waitFor(() => expect(notesApi.listNotes).toHaveBeenCalledTimes(1));
     fireEvent.change(draft, { target: { value: 'An unfinished note.' } });
     fireEvent.click(screen.getByRole('button', { name: label, exact: true }));
+    fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', {
+        name: label,
+        exact: true,
+      }),
+    );
 
     expect(
       await screen.findByText('Role change recorded.'),

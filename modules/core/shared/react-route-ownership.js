@@ -11,6 +11,8 @@ const ADMIN_ROUTE_DEFAULTS = {
   requiresRole: 'admin',
 };
 
+const ACCOUNT_ACCESS_FOOTER = { footerVariant: 'account' };
+
 const REACT_ROUTE_POLICIES = [
   {
     path: '/',
@@ -72,7 +74,7 @@ const REACT_ROUTE_POLICIES = [
   {
     path: '/not-found',
     title: 'Not found',
-    footerHidden: true,
+    ...ACCOUNT_ACCESS_FOOTER,
     headerHidden: true,
   },
   {
@@ -100,6 +102,10 @@ const REACT_ROUTE_POLICIES = [
     title: 'Team',
   },
   {
+    path: '/team/greeters',
+    title: 'Trustroots greeters',
+  },
+  {
     path: '/volunteering',
     title: 'Volunteering',
   },
@@ -116,7 +122,7 @@ const REACT_ROUTE_POLICIES = [
   {
     path: '/circles/:circle',
     title: 'Circle',
-    footerHidden: true,
+    footerVariant: 'circle',
     requiresAuthParams: {
       circle: ['naturists'],
     },
@@ -259,13 +265,13 @@ const REACT_ROUTE_POLICIES = [
     path: '/signin',
     title: 'Sign in',
     headerHidden: true,
-    footerHidden: true,
+    ...ACCOUNT_ACCESS_FOOTER,
   },
   {
     path: '/signup',
     title: 'Sign up',
     headerHidden: true,
-    footerHidden: true,
+    ...ACCOUNT_ACCESS_FOOTER,
   },
   {
     path: '/confirm-email/:token',
@@ -278,22 +284,22 @@ const REACT_ROUTE_POLICIES = [
   {
     path: '/password/forgot',
     title: 'Reset password',
-    footerHidden: true,
+    ...ACCOUNT_ACCESS_FOOTER,
   },
   {
     path: '/password/reset/invalid',
     title: 'Reset password',
-    footerHidden: true,
+    ...ACCOUNT_ACCESS_FOOTER,
   },
   {
     path: '/password/reset/success',
     title: 'Reset password',
-    footerHidden: true,
+    ...ACCOUNT_ACCESS_FOOTER,
   },
   {
     path: '/password/reset/:token',
     title: 'Reset password',
-    footerHidden: true,
+    ...ACCOUNT_ACCESS_FOOTER,
   },
   {
     path: '/remove/:token',

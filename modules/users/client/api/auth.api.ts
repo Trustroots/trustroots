@@ -37,6 +37,11 @@ export async function signup(
   return data;
 }
 
+export async function getSession(): Promise<{ userId: string | null }> {
+  const { data } = await axios.get('/api/auth/session', { timeout: 10000 });
+  return data;
+}
+
 export interface SignupValidationResponse {
   valid?: boolean;
   message?: string;

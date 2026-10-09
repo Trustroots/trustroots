@@ -1,10 +1,11 @@
-import usersPolicy from '../policies/users.server.policy.js';
-import userProfile from '../controllers/users.profile.server.controller.js';
-import userAvatar from '../controllers/users.avatar.server.controller.js';
-import userPassword from '../controllers/users.password.server.controller.js';
-import userAuthentication from '../controllers/users.authentication.server.controller.js';
-import userExport from '../controllers/users.export.server.controller.js';
-import unifiedPush from '../controllers/users.unified-push.server.controller.js';
+import usersPolicy from './../policies/users.server.policy.mjs';
+import userProfile from './../controllers/users.profile.server.controller.mjs';
+import userAvatar from './../controllers/users.avatar.server.controller.mjs';
+import userPassword from './../controllers/users.password.server.controller.mjs';
+import userAuthentication from './../controllers/users.authentication.server.controller.mjs';
+import userExport from './../controllers/users.export.server.controller.mjs';
+import unifiedPush from './../controllers/users.unified-push.server.controller.mjs';
+import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mjs';
 
 /**
  * Module dependencies.
@@ -24,61 +25,58 @@ const defaultExport = function (app) {
     .route('/api/users/remove/:token')
     .all(usersPolicy.isAllowed)
     .delete(userProfile.removeProfile);
-
   app
     .route('/api/users/export')
     .all(usersPolicy.isAllowed)
     .get(userExport.download);
-
   app
     .route('/api/users-avatar')
     .all(usersPolicy.isAllowed)
-    .post(userAvatar.avatarUploadField, userAvatar.avatarUpload);
-
+    .post(
+      targetedRequestLimit.avatarUpload,
+      userAvatar.avatarUploadField,
+      userAvatar.avatarUpload,
+    );
   app
     .route('/api/users/:avatarUserId/avatar')
     .all(usersPolicy.isAllowed)
     .get(userAvatar.getAvatar);
-
   app
     .route('/api/users/memberships')
     .all(usersPolicy.isAllowed)
     .get(userProfile.getUserMemberships);
-
   app
     .route('/api/users/memberships/:tribeId')
     .all(usersPolicy.isAllowed)
     .post(userProfile.joinTribe)
     .delete(userProfile.leaveTribe);
-
   app
     .route('/api/users/push/registrations')
     .all(usersPolicy.isAllowed)
     .post(userProfile.addPushRegistration);
-
   app
     .route('/api/users/push/registrations/:token')
     .all(usersPolicy.isAllowed)
     .delete(userProfile.removePushRegistration);
-
   app
     .route('/api/users/unified-push')
     .all(usersPolicy.isAllowed)
     .get(unifiedPush.configuration)
     .post(unifiedPush.add)
     .delete(unifiedPush.remove);
-
   app
     .route('/api/users/mini/:userId')
     .all(usersPolicy.isAllowed)
     .get(userProfile.getMiniUser);
-
   app
     .route('/api/users/accounts/:provider')
+    .all(usersPolicy.isAllowed)
     .delete(userAuthentication.removeOAuthProvider);
 
-  app.route('/api/users/password').post(userPassword.changePassword);
-
+  app
+    .route('/api/users/password')
+    .all(usersPolicy.isAllowed)
+    .post(userPassword.changePassword);
   app
     .route('/api/users/:username')
     .all(usersPolicy.isAllowed)
@@ -90,3 +88,4 @@ const defaultExport = function (app) {
   app.param('avatarUserId', userAvatar.userForAvatarByUserId);
 };
 export default defaultExport;
+export { defaultExport as 'module.exports' };

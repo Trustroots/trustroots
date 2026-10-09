@@ -2,6 +2,7 @@
  * Various server functions that repeat in tests a lot
  */
 
+const faker = require('faker');
 const mongoose = require('mongoose');
 
 const {
@@ -44,6 +45,47 @@ async function saveUsers(_docs, done = () => {}) {
     done(e);
     throw e;
   }
+}
+
+/**
+ * Create an unsaved User document with the defaults most tests rely on.
+ *
+ * Username and email default to generated unique values, the same mechanism
+ * `generateUsers` uses, so users from different tests do not collide. Pass
+ * explicit values via overrides when a test needs to know them upfront,
+ * e.g. to sign in with them.
+ *
+ * Overrides are merged shallowly over the defaults. Setting an override key
+ * to `undefined` leaves the key out entirely so the mongoose schema default
+ * applies instead, e.g. `createTestUser({ public: undefined })` keeps the
+ * schema default (`false`) rather than the `true` tests normally use.
+ *
+ * @param {object} [overrides] - user fields overriding the defaults
+ * @returns {User} unsaved mongoose User document
+ */
+function createTestUser(overrides = {}) {
+  const User = mongoose.model('User');
+  const user = {
+    firstName: 'Full',
+    lastName: 'Name',
+    displayName: 'Full Name',
+    username: faker.internet.userName(),
+    email: faker.internet.email(),
+    password: 'Password123!',
+    provider: 'local',
+    public: true,
+    roles: ['user'],
+    ...overrides,
+  };
+
+  // Drop keys overridden with `undefined` so schema defaults apply.
+  for (const key of Object.keys(user)) {
+    if (user[key] === undefined) {
+      delete user[key];
+    }
+  }
+
+  return new User(user);
 }
 
 /**
@@ -106,6 +148,7 @@ async function signOut(agent) {
 module.exports = {
   generateUsers,
   saveUsers,
+  createTestUser,
   generateExperiences,
   saveExperiences,
   clearDatabase,

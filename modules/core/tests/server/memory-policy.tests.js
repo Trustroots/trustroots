@@ -1,4 +1,4 @@
-const createMemoryPolicy = require('../../../core/server/services/memory-policy.server.service');
+const createMemoryPolicy = require('./../../server/services/memory-policy.server.service.mjs');
 require('should');
 
 describe('In-memory route permissions', function () {
@@ -92,7 +92,7 @@ describe('In-memory route permissions', function () {
     );
   });
   it('enforces a real admin route declaration', function () {
-    const adminPolicy = require('../../../admin/server/policies/admin.server.policy');
+    const adminPolicy = require('./../../../admin/server/policies/admin.server.policy.mjs');
     adminPolicy.invokeRolesPolicies();
     const request = {
       user: { roles: ['admin'] },

@@ -1,12 +1,18 @@
 import mongoose from 'mongoose';
 import _ from 'lodash';
 import util from 'util';
-import config from '../../../../config/config.js';
-import textService from '../../../core/server/services/text.server.service.js';
-import errorService from '../../../core/server/services/error.server.service.js';
-import emailService from '../../../core/server/services/email.server.service.js';
-import userProfile from '../../../users/server/controllers/users.profile.server.controller.js';
-import userRolesService from '../../../users/server/services/user-roles.server.service.js';
+import config from '../../../../config/config.mjs';
+import textService from '../../../core/server/services/text.server.service.mjs';
+import errorService from '../../../core/server/services/error.server.service.mjs';
+import emailService from '../../../core/server/services/email.server.service.mjs';
+import userProfile from '../../../users/server/controllers/users.profile.server.controller.mjs';
+import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
+import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
+import {
+  prepareExperienceCount,
+  prepareNewExperience,
+  prepareSendingToClient,
+} from '../services/experience-payload.server.service.mjs';
 
 const service = {};
 
@@ -177,44 +183,6 @@ class ResponseError {
   }
 }
 
-const nonpublicExperienceFields = [
-  '_id',
-  'created',
-  'public',
-  'userFrom',
-  'userTo',
-];
-
-const experienceFields = nonpublicExperienceFields.concat([
-  'feedbackPublic',
-  'interactions.guest',
-  'interactions.host',
-  'interactions.met',
-  'recommend',
-]);
-
-const responseFields = [
-  '_id',
-  'created',
-  'feedbackPublic',
-  'interactions.guest',
-  'interactions.host',
-  'interactions.met',
-  'recommend',
-];
-
-function prepareSendingToClient(experience, response, authUserId) {
-  const fields_to_pick =
-    experience.public || authUserId.equals(experience.userFrom._id)
-      ? experienceFields
-      : nonpublicExperienceFields;
-  const prepared_experience = _.pick(experience, fields_to_pick);
-
-  const preparedResponse = response ? _.pick(response, responseFields) : null;
-
-  return { ...prepared_experience, response: preparedResponse };
-}
-
 async function findMyExperience(req, userTo) {
   return await Experience.findOne({
     userFrom: req.user._id,
@@ -382,11 +350,9 @@ service.create = async function (req, res, next) {
     validateReplyToPublicExperience(otherExperience, req);
 
     // save the experience...
-    const savedExperience = await saveNewExperience({
-      ...req.body,
-      userFrom: selfId,
-      public: !!otherExperience,
-    });
+    const savedExperience = await saveNewExperience(
+      prepareNewExperience(req.body, selfId, !!otherExperience),
+    );
 
     // ...and if this is an experience reply, make the other experience public, too
     await publishOtherExperience(otherExperience);
@@ -487,23 +453,10 @@ service.readMany = async function readMany(req, res, next) {
     };
 
     // Aggregate projection for User in experience
-    const userKeys = {
-      _id: 1,
-      updated: 1,
-      displayName: 1,
-      username: 1,
-      avatarSource: 1,
-      avatarUploaded: 1,
-      avatarVersion: 1,
-      emailHash: 1,
+    const userKeys = userMiniService.userMiniProjectionMap({
       created: 1,
       gender: 1,
-      additionalProvidersData: {
-        facebook: {
-          id: 1,
-        },
-      },
-    };
+    });
 
     // Find experiences
     const experiences = await Experience.aggregate([
@@ -682,9 +635,7 @@ service.readMine = async function readMine(req, res) {
     : null;
 
   if (experience === null && otherExperience === null) {
-    return res.status(404).json({
-      message: errorService.getErrorMessageByKey('not-found'),
-    });
+    return errorService.sendNotFound(res);
   }
 
   if (experience === null) {
@@ -717,16 +668,12 @@ service.getCount = async function getCount(req, res, next) {
 
     const counts = await Experience.aggregate([
       { $match: { ...query, ...(isSelf ? {} : { public: true }) } },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'userFrom',
-          foreignField: '_id',
-          as: 'author',
-        },
-      },
-      { $unwind: '$author' },
-      { $match: { 'author.roles': visibleAuthorRoles } },
+      // Drop counts authored by members with restricted roles
+      // (suspended, shadowbanned)
+      ...userMiniService.visibleUserLookupStages({
+        localField: 'userFrom',
+        as: 'author',
+      }),
       { $group: { _id: '$public', count: { $sum: 1 } } },
     ]).exec();
     const { publicCount, privateCount } = counts.reduce(
@@ -737,11 +684,9 @@ service.getCount = async function getCount(req, res, next) {
       { publicCount: 0, privateCount: 0 },
     );
 
-    return res.status(200).json({
-      count: privateCount + publicCount,
-      // `hasPending` included only for own profile
-      ...(isSelf ? { hasPending: Boolean(privateCount) } : {}),
-    });
+    return res
+      .status(200)
+      .json(prepareExperienceCount(publicCount, privateCount, isSelf));
   } catch (error) {
     processResponses(res, next, error);
   }
@@ -764,3 +709,5 @@ export {
   readOne as readOne,
 };
 export default service;
+
+export { service as 'module.exports' };

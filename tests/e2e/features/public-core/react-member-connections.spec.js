@@ -1,5 +1,5 @@
 /* global window */
-const { expect, test } = require('../../support/test');
+const { expect, test } = require('../../support/fixtures');
 const {
   createUser,
   registerViaApi,

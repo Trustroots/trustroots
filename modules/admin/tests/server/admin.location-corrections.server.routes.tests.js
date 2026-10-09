@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 const request = require('supertest');
 const sinon = require('sinon');
-const express = require('../../../../config/lib/express');
+const express = require('../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
-const controller = require('../../server/controllers/admin.location-corrections.server.controller');
+const controller = require('../../server/controllers/admin.location-corrections.server.controller.mjs');
 require('should');
 
 const Offer = mongoose.model('Offer');
@@ -11,7 +11,6 @@ const Message = mongoose.model('Message');
 const MessageStat = mongoose.model('MessageStat');
 const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
-const app = express.init(mongoose.connection);
 
 const exact = [48.6908333333, 9.14055555556];
 const nearby = [48.691, 9.141];
@@ -22,8 +21,10 @@ describe('Welcome team location corrections', () => {
   let member;
   let teamAgent;
   let secondAgent;
+  let app;
 
   beforeEach(async () => {
+    app = await express.init(mongoose.connection);
     const users = utils.generateUsers(5);
     users.forEach(user => {
       user.public = true;

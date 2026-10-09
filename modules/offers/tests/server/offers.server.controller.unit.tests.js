@@ -7,9 +7,9 @@ const mongoose = require('mongoose');
 const asyncLib = require('async');
 const sinon = require('sinon');
 
-const config = require('../../../../config/config');
-const offersController = require('../../server/controllers/offers.server.controller');
-const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
+const config = require('./../../../../config/config.mjs');
+const offersController = require('./../../server/controllers/offers.server.controller.mjs');
+const userProfile = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
