@@ -2,11 +2,22 @@ import passport from 'passport';
 import passportLocal from 'passport-local';
 import mongoose from 'mongoose';
 import passwordHashing from '../../services/password-hashing.server.service.mjs';
+import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../../lib/account-identifier.server.mjs';
 /**
  * Module dependencies.
  */
 const LocalStrategy = passportLocal.Strategy;
 const User = mongoose.model('User');
+
+const rejectCredentials = (password, done) =>
+  passwordHashing
+    .verifyPassword(typeof password === 'string' ? password : '', null, null)
+    .then(() =>
+      done(null, false, {
+        message: 'Unknown user or invalid password',
+      }),
+    )
+    .catch(done);
 
 const defaultExport = function () {
   // Use local strategy
@@ -17,6 +28,14 @@ const defaultExport = function () {
         passwordField: 'password',
       },
       function (username, password, done) {
+        if (
+          typeof username !== 'string' ||
+          typeof password !== 'string' ||
+          username.length > ACCOUNT_IDENTIFIER_MAX_LENGTH
+        ) {
+          return rejectCredentials(password, done);
+        }
+
         User.findOne(
           {
             $or: [
@@ -29,14 +48,7 @@ const defaultExport = function () {
               return done(err);
             }
             if (!user) {
-              return passwordHashing
-                .verifyPassword(password, null, null)
-                .then(() =>
-                  done(null, false, {
-                    message: 'Unknown user or invalid password',
-                  }),
-                )
-                .catch(done);
+              return rejectCredentials(password, done);
             }
 
             return user
