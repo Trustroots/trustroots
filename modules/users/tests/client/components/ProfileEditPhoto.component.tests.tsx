@@ -11,39 +11,47 @@ import '@testing-library/jest-dom';
 import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 import ProfileEditPhoto from '@/modules/users/client/components/ProfileEditPhoto.component';
 import * as usersApi from '@/modules/users/client/api/users.api';
+import type Avatar from '@/modules/users/client/components/Avatar.component';
+import type { UserProfile } from '@/modules/users/client/types';
 
 jest.mock('@/modules/users/client/api/users.api');
+const updateUser = jest.mocked(usersApi.update);
+const uploadAvatar = jest.mocked(usersApi.uploadAvatar);
 jest.mock(
   '@/modules/users/client/components/ProfileEditPage.component',
   () => ({
     __esModule: true,
-    default: ({ children }) => <section>{children}</section>,
+    default: ({ children }: { children: React.ReactNode }) => (
+      <section>{children}</section>
+    ),
   }),
 );
 jest.mock('@/modules/users/client/components/Avatar.component', () => {
-  const React = require('react');
-  const PropTypes = require('prop-types');
-
-  function MockAvatar({ user }) {
+  function MockAvatar({
+    user,
+  }: Pick<React.ComponentProps<typeof Avatar>, 'user'>) {
     return <div data-testid="avatar">{user.username}</div>;
   }
-
-  MockAvatar.propTypes = {
-    user: PropTypes.object.isRequired,
-  };
 
   return MockAvatar;
 });
 
-const user = {
+const user: UserProfile = {
   _id: 'user-1',
   username: 'ada',
+  displayName: 'Ada Example',
   avatarSource: 'gravatar',
   avatarUploaded: false,
 };
 
-function renderPage(overrides = {}) {
-  const profile = { ...user, ...overrides };
+function renderPage(overrides: Partial<UserProfile> = {}) {
+  const profile: UserProfile = {
+    ...user,
+    ...overrides,
+    _id: user._id,
+    username: user.username,
+    displayName: user.displayName,
+  };
 
   return render(
     <AppProviders
@@ -58,6 +66,31 @@ function renderPage(overrides = {}) {
       <ProfileEditPhoto user={profile} />
     </AppProviders>,
   );
+}
+
+function getFileInput(container: ParentNode = document): HTMLInputElement {
+  const input = container.querySelector('input[type="file"]');
+  if (!(input instanceof HTMLInputElement)) {
+    throw new Error('Expected the avatar file input to render');
+  }
+  return input;
+}
+
+function mockFileReader(result: FileReader['result']): FileReader {
+  const reader = new FileReader();
+  Object.defineProperty(reader, 'result', {
+    configurable: true,
+    value: result,
+  });
+  jest.spyOn(reader, 'readAsDataURL').mockImplementation(() => {});
+  jest.spyOn(window, 'FileReader').mockImplementation(() => reader);
+  return reader;
+}
+
+function completeFileRead(reader: FileReader) {
+  const event = new ProgressEvent('loadend');
+  Object.defineProperty(event, 'target', { value: reader });
+  reader.onloadend?.call(reader, event as ProgressEvent<FileReader>);
 }
 
 describe('ProfileEditPhoto', () => {
@@ -77,7 +110,7 @@ describe('ProfileEditPhoto', () => {
   it('rejects unsupported file types', () => {
     renderPage();
 
-    const input = document.querySelector('input[type="file"]');
+    const input = getFileInput();
     fireEvent.change(input, {
       target: {
         files: [new File(['data'], 'photo.webp', { type: 'image/webp' })],
@@ -93,30 +126,25 @@ describe('ProfileEditPhoto', () => {
   it.each(['image/png', ''])(
     'uploads a valid image with MIME %s and updates the profile',
     async type => {
-      usersApi.uploadAvatar.mockResolvedValue({});
-      usersApi.update.mockResolvedValue({
+      uploadAvatar.mockResolvedValue(undefined);
+      updateUser.mockResolvedValue({
         ...user,
         avatarSource: 'local',
         avatarUploaded: true,
       });
 
-      const fileReaderMock = {
-        readAsDataURL: jest.fn(),
-        onloadend: null,
-        result: 'data:image/png;base64,abc',
-      };
-      jest.spyOn(window, 'FileReader').mockImplementation(() => fileReaderMock);
+      const fileReaderMock = mockFileReader('data:image/png;base64,abc');
 
       renderPage();
 
-      const input = document.querySelector('input[type="file"]');
+      const input = getFileInput();
       fireEvent.change(input, {
         target: {
           files: [new File(['data'], 'photo.png', { type })],
         },
       });
 
-      fileReaderMock.onloadend();
+      completeFileRead(fileReaderMock);
 
       await waitFor(() => {
         expect(usersApi.uploadAvatar).toHaveBeenCalled();
@@ -126,54 +154,44 @@ describe('ProfileEditPhoto', () => {
   );
 
   it('continues the upload when FileReader returns a non-string result', async () => {
-    usersApi.uploadAvatar.mockResolvedValue({});
-    usersApi.update.mockResolvedValue({ ...user, avatarSource: 'local' });
-    const fileReaderMock = {
-      readAsDataURL: jest.fn(),
-      onloadend: null,
-      result: new ArrayBuffer(0),
-    };
-    jest.spyOn(window, 'FileReader').mockImplementation(() => fileReaderMock);
+    uploadAvatar.mockResolvedValue(undefined);
+    updateUser.mockResolvedValue({ ...user, avatarSource: 'local' });
+    const fileReaderMock = mockFileReader(new ArrayBuffer(0));
 
     renderPage();
-    fireEvent.change(document.querySelector('input[type="file"]'), {
+    fireEvent.change(getFileInput(), {
       target: {
         files: [new File(['data'], 'photo.png', { type: 'image/png' })],
       },
     });
-    fileReaderMock.onloadend();
+    completeFileRead(fileReaderMock);
 
     await waitFor(() => expect(usersApi.uploadAvatar).toHaveBeenCalled());
   });
 
   it('shows a preview and progress while an image uploads', async () => {
-    let resolveUpload;
-    usersApi.uploadAvatar.mockReturnValue(
-      new Promise(resolve => {
+    let resolveUpload!: () => void;
+    uploadAvatar.mockReturnValue(
+      new Promise<void>(resolve => {
         resolveUpload = resolve;
       }),
     );
-    usersApi.update.mockResolvedValue({
+    updateUser.mockResolvedValue({
       ...user,
       avatarSource: 'local',
       avatarUploaded: true,
     });
-    const fileReaderMock = {
-      readAsDataURL: jest.fn(),
-      onloadend: null,
-      result: 'data:image/png;base64,preview',
-    };
-    jest.spyOn(window, 'FileReader').mockImplementation(() => fileReaderMock);
+    const fileReaderMock = mockFileReader('data:image/png;base64,preview');
 
     const { container } = renderPage();
-    fireEvent.change(container.querySelector('input[type="file"]'), {
+    fireEvent.change(getFileInput(container), {
       target: {
         files: [new File(['data'], 'photo.png', { type: 'image/png' })],
       },
     });
 
     await act(async () => {
-      fileReaderMock.onloadend();
+      completeFileRead(fileReaderMock);
       await Promise.resolve();
     });
 
@@ -183,13 +201,13 @@ describe('ProfileEditPhoto', () => {
     expect(screen.getByText('Wait a moment…')).toBeVisible();
 
     await act(async () => {
-      resolveUpload({});
+      resolveUpload();
     });
     expect(await screen.findByText('Profile photo updated.')).toBeVisible();
   });
 
   it('switches avatar source to gravatar', async () => {
-    usersApi.update.mockResolvedValue({ ...user, avatarSource: 'gravatar' });
+    updateUser.mockResolvedValue({ ...user, avatarSource: 'gravatar' });
     renderPage({ avatarUploaded: true, avatarSource: 'local' });
 
     fireEvent.click(screen.getByLabelText('Gravatar'));
@@ -205,7 +223,7 @@ describe('ProfileEditPhoto', () => {
   it('rejects files that exceed the upload limit', () => {
     renderPage();
 
-    const input = document.querySelector('input[type="file"]');
+    const input = getFileInput();
     fireEvent.change(input, {
       target: {
         files: [
@@ -225,31 +243,26 @@ describe('ProfileEditPhoto', () => {
   it('ignores empty file selections', () => {
     renderPage();
 
-    const input = document.querySelector('input[type="file"]');
+    const input = getFileInput();
     fireEvent.change(input, { target: { files: [] } });
 
     expect(usersApi.uploadAvatar).not.toHaveBeenCalled();
   });
 
   it('shows a server-side size error after upload failure', async () => {
-    usersApi.uploadAvatar.mockRejectedValue({ response: { status: 413 } });
+    uploadAvatar.mockRejectedValue({ response: { status: 413 } });
 
-    const fileReaderMock = {
-      readAsDataURL: jest.fn(),
-      onloadend: null,
-      result: 'data:image/png;base64,abc',
-    };
-    jest.spyOn(window, 'FileReader').mockImplementation(() => fileReaderMock);
+    const fileReaderMock = mockFileReader('data:image/png;base64,abc');
 
     renderPage();
 
-    const input = document.querySelector('input[type="file"]');
+    const input = getFileInput();
     fireEvent.change(input, {
       target: {
         files: [new File(['data'], 'photo.png', { type: 'image/png' })],
       },
     });
-    fileReaderMock.onloadend();
+    completeFileRead(fileReaderMock);
 
     expect(
       await screen.findByText(
@@ -259,24 +272,19 @@ describe('ProfileEditPhoto', () => {
   });
 
   it('shows a generic upload error message', async () => {
-    usersApi.uploadAvatar.mockRejectedValue(new Error('network'));
+    uploadAvatar.mockRejectedValue(new Error('network'));
 
-    const fileReaderMock = {
-      readAsDataURL: jest.fn(),
-      onloadend: null,
-      result: 'data:image/png;base64,abc',
-    };
-    jest.spyOn(window, 'FileReader').mockImplementation(() => fileReaderMock);
+    const fileReaderMock = mockFileReader('data:image/png;base64,abc');
 
     renderPage();
 
-    const input = document.querySelector('input[type="file"]');
+    const input = getFileInput();
     fireEvent.change(input, {
       target: {
         files: [new File(['data'], 'photo.png', { type: 'image/png' })],
       },
     });
-    fileReaderMock.onloadend();
+    completeFileRead(fileReaderMock);
 
     expect(
       await screen.findByText('Oops! Something went wrong. Try again later.'),
@@ -284,26 +292,21 @@ describe('ProfileEditPhoto', () => {
   });
 
   it('shows a specific message when upload returns media-type error status', async () => {
-    usersApi.uploadAvatar.mockRejectedValue({
+    uploadAvatar.mockRejectedValue({
       response: { status: 415 },
     });
 
-    const fileReaderMock = {
-      readAsDataURL: jest.fn(),
-      onloadend: null,
-      result: 'data:image/png;base64,abc',
-    };
-    jest.spyOn(window, 'FileReader').mockImplementation(() => fileReaderMock);
+    const fileReaderMock = mockFileReader('data:image/png;base64,abc');
 
     renderPage();
 
-    const input = document.querySelector('input[type="file"]');
+    const input = getFileInput();
     fireEvent.change(input, {
       target: {
         files: [new File(['data'], 'photo.png', { type: 'image/png' })],
       },
     });
-    fileReaderMock.onloadend();
+    completeFileRead(fileReaderMock);
 
     expect(
       await screen.findByText('Sorry, we do not support this type of file.'),
@@ -311,7 +314,7 @@ describe('ProfileEditPhoto', () => {
   });
 
   it('handles update failures without a message', async () => {
-    usersApi.update.mockRejectedValue(new Error('network'));
+    updateUser.mockRejectedValue(new Error('network'));
     renderPage({ avatarUploaded: true, avatarSource: 'local' });
 
     fireEvent.click(screen.getByLabelText('None'));
@@ -322,7 +325,7 @@ describe('ProfileEditPhoto', () => {
   });
 
   it('reports avatar source save failures', async () => {
-    usersApi.update.mockRejectedValue({
+    updateUser.mockRejectedValue({
       response: { data: { message: 'Unable to save avatar source.' } },
     });
     renderPage({ avatarUploaded: true, avatarSource: 'local' });
@@ -337,7 +340,7 @@ describe('ProfileEditPhoto', () => {
   it('opens the file picker and handles an empty-sized file', () => {
     renderPage({ avatarUploaded: true, avatarSource: 'gravatar' });
 
-    const input = document.querySelector('input[type="file"]');
+    const input = getFileInput();
     const click = jest.spyOn(input, 'click');
     fireEvent.click(screen.getByRole('button', { name: 'Upload photo' }));
     fireEvent.click(screen.getByLabelText('My own'));

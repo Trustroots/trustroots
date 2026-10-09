@@ -11,15 +11,71 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import SearchPage from '@/modules/search/client/components/SearchPage.component';
-import * as locationApi from '@/modules/search/client/api/location.api';
-import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
-import * as offersApi from '@/modules/offers/client/api/offers.api';
+import type SearchMap from '@/modules/search/client/components/SearchMap.component';
+import * as locationApiModule from '@/modules/search/client/api/location.api';
+import * as tribesApiModule from '@/modules/tribes/client/api/tribes.api';
+import * as offersApiModule from '@/modules/offers/client/api/offers.api';
+import type { SearchResultOffer } from '@/modules/search/client/components/SearchSidebarResults.component';
+import type { Event as NostrEvent } from 'nostr-tools';
+import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
+import type { MapPoint } from '@/modules/search/client/utils/location';
+import type { Offer } from '@/modules/offers/client/api/offers.api';
 
-const mockEventTrack = jest.fn();
-const mockGetRouteParams = jest.fn(() => ({}));
+type SearchMapProps = React.ComponentProps<typeof SearchMap>;
+type SearchMapHarnessProps = Pick<
+  SearchMapProps,
+  'filters' | 'isUserPublic' | 'location' | 'locationBounds'
+> & {
+  onOfferOpen: (offer: Partial<SearchResultOffer>, recenter?: boolean) => void;
+  onCommunityNoteOpen: (note: {
+    notes: Partial<NostrEvent>[];
+    plusCode: string | null;
+  }) => void;
+  onVisibleOffersChange: NonNullable<SearchMapProps['onVisibleOffersChange']>;
+  onOfferClose: () => void;
+};
+type RouteParams = Record<string, string>;
+type LocationSuggestions = Awaited<
+  ReturnType<typeof locationApiModule.fetchLocationSuggestions>
+>;
+const mockEventTrack = jest.fn<
+  undefined,
+  [
+    action: string,
+    options?: { category?: string; label?: string; value?: string | number },
+  ]
+>();
+const mockGetRouteParams = jest.fn<RouteParams, []>();
+// SearchPage tests include a zoom value on located centres, which the map
+// consumes even though the location API's public result type omits it.
+type SearchPageLocation =
+  | ReturnType<typeof locationApiModule.locatePlace>
+  | { data: MapPoint & { zoom: number }; type: 'center' };
+const locationApi = {
+  ...jest.mocked(locationApiModule),
+  locatePlace: jest.mocked(
+    locationApiModule.locatePlace,
+  ) as jest.MockedFunction<
+    (
+      feature: Parameters<typeof locationApiModule.locatePlace>[0],
+    ) => SearchPageLocation
+  >,
+};
+const tribesApi = jest.mocked(tribesApiModule);
+const offersApi = jest.mocked(offersApiModule);
+
+const sampleTribe = (id: string, slug: string): TribeSummary => ({
+  _id: id,
+  slug,
+  label: 'Sample Circle',
+  count: 1,
+});
 
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  trackEvent: (...args) => mockEventTrack(...args),
+  trackEvent: (
+    action: string,
+    options?: { category?: string; label?: string; value?: string | number },
+  ) => mockEventTrack(action, options),
   getCurrentRouteParams: () => mockGetRouteParams(),
 }));
 
@@ -28,19 +84,21 @@ jest.mock('@/modules/tribes/client/api/tribes.api');
 jest.mock('@/modules/offers/client/api/offers.api');
 
 jest.mock('use-debounce', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
   return {
-    useDebouncedCallback: callback => {
+    useDebouncedCallback: <Callback extends (...args: never[]) => unknown>(
+      callback: Callback,
+    ): Callback => {
       const callbackRef = React.useRef(callback);
       callbackRef.current = callback;
 
       const stable = React.useCallback(
-        (...args) => callbackRef.current(...args),
+        (...args: Parameters<Callback>) => callbackRef.current(...args),
         [],
       );
 
-      return stable;
+      return stable as Callback;
     },
   };
 });
@@ -49,7 +107,13 @@ jest.mock(
   '@/modules/search/client/components/SearchTypesToggle.component',
   () => ({
     __esModule: true,
-    default: ({ onChange, types }) => (
+    default: ({
+      onChange,
+      types,
+    }: {
+      onChange: (types: string[]) => void;
+      types: Array<string | { id: string }>;
+    }) => (
       <button
         data-types={types.join(',')}
         onClick={() => onChange(['meet'])}
@@ -81,7 +145,11 @@ jest.mock(
   '@/modules/search/client/components/SearchFilterLanguage.component',
   () => ({
     __esModule: true,
-    default: ({ onChangeLanguages }) => (
+    default: ({
+      onChangeLanguages,
+    }: {
+      onChangeLanguages: (languages: string[]) => void;
+    }) => (
       <button onClick={() => onChangeLanguages(['fi'])} type="button">
         Language filter
       </button>
@@ -94,14 +162,14 @@ jest.mock('@/modules/core/client/api/languages.api', () => ({
 }));
 
 jest.mock('@/modules/search/client/components/SearchSidebar.component', () => {
-  const React = require('react');
-  const ActualSearchSidebar = jest.requireActual(
-    '@/modules/search/client/components/SearchSidebar.component',
-  ).default;
+  const React = jest.requireActual<typeof import('react')>('react');
+  const ActualSearchSidebar = jest.requireActual<
+    typeof import('@/modules/search/client/components/SearchSidebar.component')
+  >('@/modules/search/client/components/SearchSidebar.component').default;
 
   return {
     __esModule: true,
-    default: props => (
+    default: (props: React.ComponentProps<typeof ActualSearchSidebar>) => (
       <>
         <button onClick={() => props.onTabSelect('unexpected')} type="button">
           Select unexpected tab
@@ -121,15 +189,22 @@ jest.mock(
   '@/modules/search/client/components/CommunityNotesSidebar.component',
   () => ({
     __esModule: true,
-    default: ({ plusCode }) => (
+    default: ({ plusCode }: { plusCode: string | null }) => (
       <div data-testid="community-notes-sidebar">{plusCode}</div>
     ),
   }),
 );
 
-let searchMapProps;
+let searchMapProps: SearchMapHarnessProps = {
+  filters: '{}',
+  isUserPublic: false,
+  onOfferOpen: () => {},
+  onCommunityNoteOpen: () => {},
+  onVisibleOffersChange: () => {},
+  onOfferClose: () => {},
+};
 
-const mockOffer = {
+const mockOffer: SearchResultOffer & Offer & { _id: string } = {
   _id: '665100000000000000000001',
   type: 'host',
   status: 'yes',
@@ -146,7 +221,7 @@ const mockOffer = {
 
 jest.mock('@/modules/search/client/components/SearchMap.component', () => ({
   __esModule: true,
-  default: props => {
+  default: (props: SearchMapHarnessProps) => {
     searchMapProps = props;
 
     return (
@@ -202,12 +277,15 @@ jest.mock('@/modules/search/client/components/SearchMap.component', () => ({
 }));
 
 function renderSearchPage(
-  user = { _id: 'user-1', public: true, username: 'alice' },
+  user: React.ComponentProps<typeof SearchPage>['user'] = {
+    _id: 'user-1',
+    public: true,
+  },
 ) {
   return render(<SearchPage user={user} />);
 }
 
-function openResultsWithVisibleOfferIds(offerIds) {
+function openResultsWithVisibleOfferIds(offerIds: string[]) {
   fireEvent.click(screen.getByRole('tab', { name: /^results$/i }));
   act(() => searchMapProps.onVisibleOffersChange(offerIds));
 }
@@ -215,12 +293,19 @@ function openResultsWithVisibleOfferIds(offerIds) {
 describe('<SearchPage />', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    searchMapProps = undefined;
+    searchMapProps = {
+      filters: '{}',
+      isUserPublic: false,
+      onOfferOpen: () => {},
+      onCommunityNoteOpen: () => {},
+      onVisibleOffersChange: () => {},
+      onOfferClose: () => {},
+    };
     window.localStorage.clear();
     mockGetRouteParams.mockReturnValue({});
     locationApi.fetchLocationSuggestions.mockResolvedValue([]);
     locationApi.locatePlace.mockReturnValue(null);
-    tribesApi.get.mockResolvedValue({});
+    tribesApi.get.mockResolvedValue(sampleTribe('circle-1', 'sample-circle'));
     offersApi.getOffer.mockResolvedValue(mockOffer);
 
     Object.defineProperty(window, 'innerWidth', {
@@ -310,7 +395,7 @@ describe('<SearchPage />', () => {
   });
 
   it('continues to share requests for offers across overlapping viewports', async () => {
-    const pending = new Map();
+    const pending = new Map<string, (offer: Offer) => void>();
     offersApi.getOffer.mockImplementation(
       id =>
         new Promise(resolve => {
@@ -341,7 +426,7 @@ describe('<SearchPage />', () => {
   });
 
   it('stops requesting later batches after the results pane unmounts', async () => {
-    const pending = [];
+    const pending: Array<(offer: Offer) => void> = [];
     offersApi.getOffer.mockImplementation(
       () =>
         new Promise(resolve => {
@@ -356,14 +441,14 @@ describe('<SearchPage />', () => {
 
     unmount();
     await act(async () => {
-      pending.forEach(resolve => resolve(null));
+      pending.forEach(resolve => resolve(null as never));
       await Promise.resolve();
     });
     expect(offersApi.getOffer).toHaveBeenCalledTimes(8);
   });
 
   it('does not commit loaded offers after the search page unmounts', async () => {
-    let resolveOffer;
+    let resolveOffer!: (offer: Offer) => void;
     offersApi.getOffer.mockImplementation(
       () =>
         new Promise(resolve => {
@@ -383,7 +468,8 @@ describe('<SearchPage />', () => {
   });
 
   it('skips visible offers when the offer endpoint returns no result', async () => {
-    offersApi.getOffer.mockResolvedValue(null);
+    // The endpoint can return no offer for a stale visible result.
+    offersApi.getOffer.mockResolvedValue(null as never);
     renderSearchPage();
     openResultsWithVisibleOfferIds(['missing-offer']);
 
@@ -393,7 +479,7 @@ describe('<SearchPage />', () => {
   });
 
   it('shows the activation message for non-public members', () => {
-    renderSearchPage({ _id: 'user-1', public: false, username: 'alice' });
+    renderSearchPage({ _id: 'user-1', public: false });
 
     expect(
       screen.getByText(/activate your profile before you can browse others/i),
@@ -463,7 +549,7 @@ describe('<SearchPage />', () => {
 
   it('initialises tribe filters from the route params', async () => {
     mockGetRouteParams.mockReturnValue({ tribe: 'cyclists' });
-    tribesApi.get.mockResolvedValue({ _id: 'tribe-cyclists' });
+    tribesApi.get.mockResolvedValue(sampleTribe('tribe-cyclists', 'cyclists'));
 
     renderSearchPage();
 
@@ -637,9 +723,13 @@ describe('<SearchPage />', () => {
 
   it('does not reload a pin preview when its offer ID is written to the URL', async () => {
     window.history.replaceState({}, '', '/search');
-    mockGetRouteParams.mockImplementation(() =>
-      Object.fromEntries(new URLSearchParams(window.location.search)),
-    );
+    mockGetRouteParams.mockImplementation(() => {
+      const params: RouteParams = {};
+      new URLSearchParams(window.location.search).forEach((value, key) => {
+        params[key] = value;
+      });
+      return params;
+    });
     offersApi.getOffer.mockClear();
 
     renderSearchPage();
@@ -671,7 +761,7 @@ describe('<SearchPage />', () => {
   });
 
   it('ignores URL data that resolves after the page unmounts', async () => {
-    let resolveTribe;
+    let resolveTribe!: (tribe: TribeSummary) => void;
     mockGetRouteParams.mockReturnValue({ tribe: 'cyclists' });
     tribesApi.get.mockReturnValue(
       new Promise(resolve => {
@@ -681,13 +771,13 @@ describe('<SearchPage />', () => {
 
     const { unmount } = renderSearchPage();
     unmount();
-    resolveTribe({ _id: 'tribe-cyclists' });
+    resolveTribe(sampleTribe('tribe-cyclists', 'cyclists'));
 
     await new Promise(resolve => setTimeout(resolve, 0));
   });
 
   it('ignores location suggestions that resolve after the page unmounts', async () => {
-    let resolveSuggestions;
+    let resolveSuggestions!: (suggestions: LocationSuggestions) => void;
     mockGetRouteParams.mockReturnValue({ location: 'Helsinki_Finland' });
     locationApi.fetchLocationSuggestions.mockReturnValue(
       new Promise(resolve => {
@@ -718,7 +808,7 @@ describe('<SearchPage />', () => {
   });
 
   it('ignores offer results and failures that arrive after unmount', async () => {
-    let resolveOffer;
+    let resolveOffer!: (offer: Offer) => void;
     const offerId = '665100000000000000000001';
     mockGetRouteParams.mockReturnValue({ offer: offerId });
     offersApi.getOffer.mockReturnValue(
@@ -732,7 +822,7 @@ describe('<SearchPage />', () => {
     resolveOffer(mockOffer);
     await new Promise(resolve => setTimeout(resolve, 0));
 
-    let rejectOffer;
+    let rejectOffer!: (reason: Error) => void;
     offersApi.getOffer.mockReturnValue(
       new Promise((resolve, reject) => {
         rejectOffer = reject;
@@ -755,7 +845,7 @@ describe('<SearchPage />', () => {
   });
 
   it('passes public visibility through to the map', () => {
-    renderSearchPage({ _id: 'user-1', public: true, username: 'alice' });
+    renderSearchPage({ _id: 'user-1', public: true });
 
     expect(searchMapProps.isUserPublic).toBe(true);
   });
@@ -792,6 +882,9 @@ describe('<SearchPage />', () => {
     renderSearchPage();
 
     const sidebar = document.querySelector('.search-sidebar-container');
+    if (!(sidebar instanceof HTMLElement)) {
+      throw new Error('Expected the search sidebar to be rendered');
+    }
     const backButtons = within(sidebar).getAllByRole('button', {
       name: /back to map/i,
     });

@@ -5,20 +5,30 @@ import '@testing-library/jest-dom';
 import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 import ProfileEditAbout from '@/modules/users/client/components/ProfileEditAbout.component';
 import * as usersApi from '@/modules/users/client/api/users.api';
+import type TrEditor from '@/modules/core/client/components/TrEditor';
+import type BirthdateSelect from '@/modules/core/client/components/BirthdateSelect.component';
+import type ProfileEditLanguages from '@/modules/users/client/components/ProfileEditLanguages.component';
+import type { UserProfile } from '@/modules/users/client/types';
 
 jest.mock('@/modules/users/client/api/users.api');
+const updateUser = jest.mocked(usersApi.update);
 jest.mock(
   '@/modules/users/client/components/ProfileEditPage.component',
   () => ({
     __esModule: true,
-    default: ({ children }) => <section>{children}</section>,
+    default: ({ children }: { children: React.ReactNode }) => (
+      <section>{children}</section>
+    ),
   }),
 );
 jest.mock('@/modules/core/client/components/TrEditor', () => {
-  const React = require('react');
-  const PropTypes = require('prop-types');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockTrEditor({ id, onChange, text }) {
+  function MockTrEditor({
+    id,
+    onChange,
+    text,
+  }: Pick<React.ComponentProps<typeof TrEditor>, 'id' | 'onChange' | 'text'>) {
     return (
       <textarea
         id={id}
@@ -28,21 +38,16 @@ jest.mock('@/modules/core/client/components/TrEditor', () => {
     );
   }
 
-  MockTrEditor.propTypes = {
-    id: PropTypes.string,
-    onChange: PropTypes.func,
-    text: PropTypes.string,
-  };
-
   return MockTrEditor;
 });
 jest.mock(
   '@/modules/users/client/components/ProfileEditLanguages.component',
   () => {
-    const React = require('react');
-    const PropTypes = require('prop-types');
+    const React = jest.requireActual<typeof import('react')>('react');
 
-    function MockProfileEditLanguages({ onChangeLanguages }) {
+    function MockProfileEditLanguages({
+      onChangeLanguages,
+    }: React.ComponentProps<typeof ProfileEditLanguages>) {
       return (
         <button type="button" onClick={() => onChangeLanguages(['en'])}>
           Edit languages
@@ -50,18 +55,16 @@ jest.mock(
       );
     }
 
-    MockProfileEditLanguages.propTypes = {
-      onChangeLanguages: PropTypes.func,
-    };
-
     return MockProfileEditLanguages;
   },
 );
 jest.mock('@/modules/core/client/components/BirthdateSelect.component', () => {
-  const React = require('react');
-  const PropTypes = require('prop-types');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockBirthdateSelect({ onChange, value }) {
+  function MockBirthdateSelect({
+    onChange,
+    value,
+  }: React.ComponentProps<typeof BirthdateSelect>) {
     return (
       <input
         aria-label="Birthdate"
@@ -71,25 +74,30 @@ jest.mock('@/modules/core/client/components/BirthdateSelect.component', () => {
     );
   }
 
-  MockBirthdateSelect.propTypes = {
-    onChange: PropTypes.func,
-    value: PropTypes.string,
-  };
-
   return MockBirthdateSelect;
 });
 
-const user = {
+const user: UserProfile = {
   _id: 'user-1',
   username: 'ada',
+  displayName: 'Ada Example',
   firstName: 'Ada',
   lastName: 'Lovelace',
   description: '',
   languages: [],
 };
 
-function renderPage(overrides = {}, settings = { profileMinimumLength: 140 }) {
-  const profile = { ...user, ...overrides };
+function renderPage(
+  overrides: Partial<UserProfile> = {},
+  settings: NonNullable<Window['settings']> = { profileMinimumLength: 140 },
+) {
+  const profile: UserProfile = {
+    ...user,
+    ...overrides,
+    _id: user._id,
+    username: user.username,
+    displayName: user.displayName,
+  };
 
   return render(
     <AppProviders
@@ -120,7 +128,7 @@ describe('ProfileEditAbout', () => {
   });
 
   it('saves profile changes and shows confirmation', async () => {
-    usersApi.update.mockResolvedValue({
+    updateUser.mockResolvedValue({
       ...user,
       tagline: 'Traveller and mathematician',
     });
@@ -150,7 +158,7 @@ describe('ProfileEditAbout', () => {
   });
 
   it('updates languages through the languages editor', async () => {
-    usersApi.update.mockResolvedValue({ ...user, languages: ['en'] });
+    updateUser.mockResolvedValue({ ...user, languages: ['en'] });
     renderPage();
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit languages' }));
@@ -164,7 +172,7 @@ describe('ProfileEditAbout', () => {
   });
 
   it('reports save failures', async () => {
-    usersApi.update.mockRejectedValue({
+    updateUser.mockRejectedValue({
       response: { data: { message: 'Unable to save profile.' } },
     });
     renderPage();
@@ -196,7 +204,7 @@ describe('ProfileEditAbout', () => {
   });
 
   it('uses a fallback message when profile saving has no response body', async () => {
-    usersApi.update.mockRejectedValue(new Error('network'));
+    updateUser.mockRejectedValue(new Error('network'));
     renderPage();
 
     fireEvent.change(screen.getByLabelText('Short tagline'), {

@@ -1,8 +1,9 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-
 import AdminHeader from '@/modules/admin/client/components/AdminHeader.component';
+
+type AdminUserFixture = NonNullable<Window['user']>;
 
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   getCurrentUser: () => global.window.user,
@@ -20,7 +21,11 @@ afterEach(() => {
 });
 
 describe('<AdminHeader />', () => {
-  it.each([{ roles: ['welcome-team'] }, {}, null])(
+  it.each([
+    { roles: ['welcome-team'] },
+    {},
+    null,
+  ] as Array<AdminUserFixture | null>)(
     'shows only acquisition navigation for non-admin %j',
     user => {
       window.user = user;

@@ -5,20 +5,27 @@ import '@testing-library/jest-dom';
 import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 import ProfileEditAccount from '@/modules/users/client/components/ProfileEditAccount.component';
 import * as usersApi from '@/modules/users/client/api/users.api';
+import type { UserProfile } from '@/modules/users/client/types';
 
 jest.mock('@/modules/users/client/api/users.api');
+const updateUser = jest.mocked(usersApi.update);
+const changePassword = jest.mocked(usersApi.changePassword);
+const resendConfirmation = jest.mocked(usersApi.resendEmailConfirmation);
+const removeProfile = jest.mocked(usersApi.removeProfile);
 jest.mock(
   '@/modules/users/client/components/ProfileEditPage.component',
   () => ({
     __esModule: true,
-    default: ({ children }) => <section>{children}</section>,
+    default: ({ children }: { children: React.ReactNode }) => (
+      <section>{children}</section>
+    ),
   }),
 );
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key, values) => {
+    t: (key: string, values?: Record<string, unknown>) => {
       if (values?.email) {
-        return key.replace('{{email}}', values.email);
+        return key.replace('{{email}}', String(values.email));
       }
 
       return key;
@@ -26,16 +33,15 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-const user = {
+const user: UserProfile = {
   _id: 'user-1',
   username: 'ada',
+  displayName: 'Ada Example',
   email: 'ada@example.test',
   newsletter: false,
 };
 
-function renderPage(overrides = {}) {
-  const profile = { ...user, ...overrides };
-
+function renderUser(profile: UserProfile) {
   return render(
     <AppProviders
       bootstrapData={{
@@ -49,6 +55,17 @@ function renderPage(overrides = {}) {
       <ProfileEditAccount user={profile} />
     </AppProviders>,
   );
+}
+
+function renderPage(overrides: Partial<UserProfile> = {}) {
+  const profile: UserProfile = {
+    ...user,
+    ...overrides,
+    _id: user._id,
+    username: user.username,
+    displayName: user.displayName,
+  };
+  return renderUser(profile);
 }
 
 describe('ProfileEditAccount', () => {
@@ -74,7 +91,7 @@ describe('ProfileEditAccount', () => {
   });
 
   it('saves an email change and shows confirmation', async () => {
-    usersApi.update.mockResolvedValue({
+    updateUser.mockResolvedValue({
       ...user,
       emailTemporary: 'new@example.test',
     });
@@ -96,7 +113,7 @@ describe('ProfileEditAccount', () => {
   });
 
   it('updates the username and shows success', async () => {
-    usersApi.update.mockResolvedValue({ ...user, username: 'grace' });
+    updateUser.mockResolvedValue({ ...user, username: 'grace' });
     renderPage();
 
     fireEvent.change(screen.getByLabelText('Username'), {
@@ -108,7 +125,7 @@ describe('ProfileEditAccount', () => {
   });
 
   it('changes the password when the form is submitted', async () => {
-    usersApi.changePassword.mockResolvedValue({ user });
+    changePassword.mockResolvedValue({ user });
     renderPage();
 
     fireEvent.change(screen.getByLabelText('Current password'), {
@@ -135,7 +152,7 @@ describe('ProfileEditAccount', () => {
   });
 
   it('toggles the newsletter subscription immediately', async () => {
-    usersApi.update.mockResolvedValue({ ...user, newsletter: true });
+    updateUser.mockResolvedValue({ ...user, newsletter: true });
     renderPage();
 
     fireEvent.click(screen.getByLabelText('Community newsletter'));
@@ -148,7 +165,7 @@ describe('ProfileEditAccount', () => {
   });
 
   it('resends confirmation when a temporary email is pending', async () => {
-    usersApi.resendEmailConfirmation.mockResolvedValue({});
+    resendConfirmation.mockResolvedValue(undefined);
     renderPage({ emailTemporary: 'pending@example.test' });
 
     fireEvent.click(
@@ -159,7 +176,7 @@ describe('ProfileEditAccount', () => {
   });
 
   it('initialises profile removal after confirmation', async () => {
-    usersApi.removeProfile.mockResolvedValue({ message: 'Removal started.' });
+    removeProfile.mockResolvedValue({ message: 'Removal started.' });
     renderPage();
 
     fireEvent.click(screen.getByLabelText('Yes, I want to remove my profile'));
@@ -169,7 +186,7 @@ describe('ProfileEditAccount', () => {
   });
 
   it('reports email change failures', async () => {
-    usersApi.update.mockRejectedValue({
+    updateUser.mockRejectedValue({
       response: { data: { message: 'Email already taken.' } },
     });
     renderPage();
@@ -183,7 +200,7 @@ describe('ProfileEditAccount', () => {
   });
 
   it('reports username change failures', async () => {
-    usersApi.update.mockRejectedValue({
+    updateUser.mockRejectedValue({
       response: { data: { message: 'Username unavailable.' } },
     });
     renderPage();
@@ -197,7 +214,7 @@ describe('ProfileEditAccount', () => {
   });
 
   it('reports password change failures', async () => {
-    usersApi.changePassword.mockRejectedValue({
+    changePassword.mockRejectedValue({
       response: { data: { message: 'Current password incorrect.' } },
     });
     renderPage();
@@ -219,7 +236,7 @@ describe('ProfileEditAccount', () => {
   });
 
   it('reports newsletter update failures', async () => {
-    usersApi.update.mockRejectedValue({
+    updateUser.mockRejectedValue({
       response: { data: { message: 'Subscription update failed.' } },
     });
     renderPage();
@@ -232,7 +249,7 @@ describe('ProfileEditAccount', () => {
   });
 
   it('reports resend confirmation failures', async () => {
-    usersApi.resendEmailConfirmation.mockRejectedValue({
+    resendConfirmation.mockRejectedValue({
       response: { data: { message: 'Unable to resend email.' } },
     });
     renderPage({ emailTemporary: 'pending@example.test' });
@@ -245,7 +262,7 @@ describe('ProfileEditAccount', () => {
   });
 
   it('reports profile removal failures', async () => {
-    usersApi.removeProfile.mockRejectedValue({
+    removeProfile.mockRejectedValue({
       response: { data: { message: 'Removal failed.' } },
     });
     renderPage();
@@ -257,9 +274,9 @@ describe('ProfileEditAccount', () => {
   });
 
   it('uses fallback messages when account requests have no response body', async () => {
-    usersApi.update.mockRejectedValue(new Error('network'));
-    usersApi.changePassword.mockRejectedValue(new Error('network'));
-    usersApi.resendEmailConfirmation.mockRejectedValue(new Error('network'));
+    updateUser.mockRejectedValue(new Error('network'));
+    changePassword.mockRejectedValue(new Error('network'));
+    resendConfirmation.mockRejectedValue(new Error('network'));
     renderPage({ emailTemporary: 'pending@example.test' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Change email' }));
@@ -287,8 +304,14 @@ describe('ProfileEditAccount', () => {
   });
 
   it('uses blank inputs and a default removal success message', async () => {
-    usersApi.removeProfile.mockResolvedValue({});
-    renderPage({ email: undefined, username: undefined });
+    removeProfile.mockResolvedValue({});
+    // This legacy API fixture deliberately omits required UserProfile fields.
+    const incompleteProfile = {
+      ...user,
+      email: undefined,
+      username: undefined,
+    } as unknown as UserProfile;
+    renderUser(incompleteProfile);
 
     expect(screen.getByLabelText('Email Address')).toHaveValue('');
     expect(screen.getByLabelText('Username')).toHaveValue('');
@@ -300,7 +323,7 @@ describe('ProfileEditAccount', () => {
   });
 
   it('uses a fallback message when profile removal cannot start', async () => {
-    usersApi.removeProfile.mockRejectedValue(new Error('network'));
+    removeProfile.mockRejectedValue(new Error('network'));
     renderPage();
 
     fireEvent.click(screen.getByLabelText('Yes, I want to remove my profile'));

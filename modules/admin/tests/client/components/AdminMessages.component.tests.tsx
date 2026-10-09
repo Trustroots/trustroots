@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { randomFillSync } from 'node:crypto';
 
 import AdminMessages from '@/modules/admin/client/components/AdminMessages.component';
 import * as messagesApi from '@/modules/admin/client/api/messages.api';
@@ -8,16 +9,17 @@ import * as usersApi from '@/modules/admin/client/api/users.api';
 
 jest.mock('@/modules/admin/client/api/messages.api');
 jest.mock('@/modules/admin/client/api/users.api');
-jest.mock('@/modules/core/client/components/TimeAgo', () => {
-  const React = require('react');
 
-  function MockTimeAgo({ date }) {
+const mockedMessagesApi = jest.mocked(messagesApi);
+const mockedUsersApi = jest.mocked(usersApi);
+
+type MemberFixture = { _id: string; displayName: string; username: string };
+jest.mock('@/modules/core/client/components/TimeAgo', () => {
+  const React = jest.requireActual<typeof import('react')>('react');
+
+  function MockTimeAgo({ date }: { date: Date }) {
     return <time>{date.toISOString()}</time>;
   }
-
-  MockTimeAgo.propTypes = {
-    date: () => null,
-  };
 
   return MockTimeAgo;
 });
@@ -27,14 +29,14 @@ beforeAll(() => {
   Object.defineProperty(window, 'crypto', {
     configurable: true,
     value: {
-      getRandomValues: bytes => require('crypto').randomFillSync(bytes),
+      getRandomValues: (bytes: Uint8Array) => randomFillSync(bytes),
     },
   });
 });
 afterAll(() => {
   if (cryptoDescriptor)
     Object.defineProperty(window, 'crypto', cryptoDescriptor);
-  else delete window.crypto;
+  else Reflect.deleteProperty(window, 'crypto');
 });
 
 afterEach(() => {
@@ -45,13 +47,13 @@ afterEach(() => {
 const user1 = '111111111111111111111111';
 const user2 = '222222222222222222222222';
 
-const alice = {
+const alice: MemberFixture = {
   _id: user1,
   displayName: 'Alice Example',
   username: 'alice',
 };
 
-const bob = {
+const bob: MemberFixture = {
   _id: user2,
   displayName: 'Bob Example',
   username: 'bob',
@@ -59,7 +61,7 @@ const bob = {
 
 describe('<AdminMessages />', () => {
   it('reuses the warning request ID after a failed send', async () => {
-    messagesApi.getScammerRecipients.mockResolvedValue({
+    mockedMessagesApi.getScammerRecipients.mockResolvedValue({
       scammer: { username: 'samplemember' },
       recipients: [
         {
@@ -69,7 +71,7 @@ describe('<AdminMessages />', () => {
         },
       ],
     });
-    messagesApi.sendScammerWarning
+    mockedMessagesApi.sendScammerWarning
       .mockRejectedValueOnce(new Error('Connection lost'))
       .mockResolvedValueOnce({ sent: 1 });
     render(<AdminMessages />);
@@ -81,21 +83,23 @@ describe('<AdminMessages />', () => {
       await screen.findByRole('button', { name: 'Send warning to all' }),
     );
     await screen.findByText('Could not send the warning.');
-    const firstCall = messagesApi.sendScammerWarning.mock.calls[0];
+    const firstCall = mockedMessagesApi.sendScammerWarning.mock.calls[0];
     expect(firstCall[2]).toMatch(/^[0-9a-f]{32}$/);
     fireEvent.click(
       screen.getByRole('button', { name: 'Send warning to all' }),
     );
     await screen.findByText('Sent 1 warning message(s).');
-    expect(messagesApi.sendScammerWarning.mock.calls[1]).toEqual(firstCall);
+    expect(mockedMessagesApi.sendScammerWarning.mock.calls[1]).toEqual(
+      firstCall,
+    );
   });
 
   it('previews scammer recipients and sends the warning', async () => {
-    messagesApi.getScammerRecipients.mockResolvedValueOnce({
+    mockedMessagesApi.getScammerRecipients.mockResolvedValueOnce({
       scammer: { username: 'reported-member' },
       recipients: [alice, bob],
     });
-    messagesApi.sendScammerWarning.mockResolvedValueOnce({ sent: 2 });
+    mockedMessagesApi.sendScammerWarning.mockResolvedValueOnce({ sent: 2 });
 
     render(<AdminMessages />);
 
@@ -118,7 +122,7 @@ describe('<AdminMessages />', () => {
     );
 
     await waitFor(() =>
-      expect(messagesApi.sendScammerWarning).toHaveBeenCalledWith(
+      expect(mockedMessagesApi.sendScammerWarning).toHaveBeenCalledWith(
         'reported-member',
         'Please ignore the earlier message.',
         expect.any(String),
@@ -128,7 +132,7 @@ describe('<AdminMessages />', () => {
       expect(
         screen.getByText(
           (_, element) =>
-            element.tagName === 'P' &&
+            element?.tagName === 'P' &&
             element.textContent === 'Sent 2 warning message(s).',
         ),
       ).toBeInTheDocument(),
@@ -136,7 +140,7 @@ describe('<AdminMessages />', () => {
   });
 
   it('shows an empty recipient preview without a send form', async () => {
-    messagesApi.getScammerRecipients.mockResolvedValueOnce({
+    mockedMessagesApi.getScammerRecipients.mockResolvedValueOnce({
       scammer: { username: 'quiet-member' },
       recipients: [],
     });
@@ -148,14 +152,14 @@ describe('<AdminMessages />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Show recipients' }));
 
     await waitFor(() =>
-      expect(messagesApi.getScammerRecipients).toHaveBeenCalledWith(
+      expect(mockedMessagesApi.getScammerRecipients).toHaveBeenCalledWith(
         'quiet-member',
       ),
     );
     expect(
       await screen.findByText(
         (_, element) =>
-          element.tagName === 'P' &&
+          element?.tagName === 'P' &&
           element.textContent === '0 recipient(s) found for @quiet-member.',
       ),
     ).toBeInTheDocument();
@@ -163,7 +167,7 @@ describe('<AdminMessages />', () => {
   });
 
   it('requires a fresh preview after the username changes', async () => {
-    messagesApi.getScammerRecipients.mockResolvedValueOnce({
+    mockedMessagesApi.getScammerRecipients.mockResolvedValueOnce({
       scammer: { username: 'reported-member' },
       recipients: [alice],
     });
@@ -183,7 +187,7 @@ describe('<AdminMessages />', () => {
   });
 
   it('shows recipient lookup errors from the API', async () => {
-    messagesApi.getScammerRecipients.mockRejectedValueOnce({
+    mockedMessagesApi.getScammerRecipients.mockRejectedValueOnce({
       response: { data: { message: 'Member does not exist.' } },
     });
 
@@ -199,7 +203,9 @@ describe('<AdminMessages />', () => {
   });
 
   it('shows the fallback error when recipient lookup fails unexpectedly', async () => {
-    messagesApi.getScammerRecipients.mockRejectedValueOnce(new Error('failed'));
+    mockedMessagesApi.getScammerRecipients.mockRejectedValueOnce(
+      new Error('failed'),
+    );
 
     render(<AdminMessages />);
     fireEvent.change(screen.getByLabelText('Scammer username'), {
@@ -213,7 +219,7 @@ describe('<AdminMessages />', () => {
   });
 
   it('shows the fallback when an API error has no message', async () => {
-    messagesApi.getScammerRecipients.mockRejectedValueOnce({
+    mockedMessagesApi.getScammerRecipients.mockRejectedValueOnce({
       response: { data: {} },
     });
 
@@ -229,11 +235,13 @@ describe('<AdminMessages />', () => {
   });
 
   it('shows the fallback error when warning delivery fails', async () => {
-    messagesApi.getScammerRecipients.mockResolvedValueOnce({
+    mockedMessagesApi.getScammerRecipients.mockResolvedValueOnce({
       scammer: { username: 'reported-member' },
       recipients: [alice],
     });
-    messagesApi.sendScammerWarning.mockRejectedValueOnce(new Error('failed'));
+    mockedMessagesApi.sendScammerWarning.mockRejectedValueOnce(
+      new Error('failed'),
+    );
 
     render(<AdminMessages />);
     fireEvent.change(screen.getByLabelText('Scammer username'), {
@@ -262,7 +270,7 @@ describe('<AdminMessages />', () => {
     });
 
     expect(readButton).toBeDisabled();
-    expect(messagesApi.getMessages).not.toHaveBeenCalled();
+    expect(mockedMessagesApi.getMessages).not.toHaveBeenCalled();
   });
 
   it('does not query when an invalid form submit bypasses the disabled read button', () => {
@@ -272,14 +280,14 @@ describe('<AdminMessages />', () => {
       target: { value: user1 },
     });
     fireEvent.submit(
-      screen.getByRole('button', { name: 'Read' }).closest('form'),
+      screen.getByRole('button', { name: 'Read' }).closest('form')!,
     );
 
-    expect(messagesApi.getMessages).not.toHaveBeenCalled();
+    expect(mockedMessagesApi.getMessages).not.toHaveBeenCalled();
   });
 
   it('fetches and renders messages between two valid members', async () => {
-    messagesApi.getMessages.mockResolvedValueOnce({
+    mockedMessagesApi.getMessages.mockResolvedValueOnce({
       messages: [
         {
           _id: 'message-1',
@@ -317,7 +325,7 @@ describe('<AdminMessages />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Read' }));
 
     await waitFor(() =>
-      expect(messagesApi.getMessages).toHaveBeenCalledWith(user1, user2),
+      expect(mockedMessagesApi.getMessages).toHaveBeenCalledWith(user1, user2),
     );
     expect(
       screen.getByText('Messaging between', { exact: false }),
@@ -345,10 +353,10 @@ describe('<AdminMessages />', () => {
   });
 
   it('resolves usernames before fetching messages', async () => {
-    usersApi.searchUsers
+    mockedUsersApi.searchUsers
       .mockResolvedValueOnce([alice])
       .mockResolvedValueOnce([bob]);
-    messagesApi.getMessages.mockResolvedValueOnce([
+    mockedMessagesApi.getMessages.mockResolvedValueOnce([
       {
         _id: 'message-1',
         content: '<p>Hello by username</p>',
@@ -370,17 +378,17 @@ describe('<AdminMessages />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Read' }));
 
     await waitFor(() =>
-      expect(usersApi.searchUsers).toHaveBeenCalledWith('alice'),
+      expect(mockedUsersApi.searchUsers).toHaveBeenCalledWith('alice'),
     );
-    expect(usersApi.searchUsers).toHaveBeenCalledWith('bob');
+    expect(mockedUsersApi.searchUsers).toHaveBeenCalledWith('bob');
     await waitFor(() =>
-      expect(messagesApi.getMessages).toHaveBeenCalledWith(user1, user2),
+      expect(mockedMessagesApi.getMessages).toHaveBeenCalledWith(user1, user2),
     );
     expect(await screen.findByText('Hello by username')).toBeInTheDocument();
   });
 
   it('shows an empty state when a username cannot be resolved', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce([]);
+    mockedUsersApi.searchUsers.mockResolvedValueOnce([]);
 
     render(<AdminMessages />);
 
@@ -393,11 +401,11 @@ describe('<AdminMessages />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Read' }));
 
     expect(await screen.findByText('Nothing found…')).toBeInTheDocument();
-    expect(messagesApi.getMessages).not.toHaveBeenCalled();
+    expect(mockedMessagesApi.getMessages).not.toHaveBeenCalled();
   });
 
   it('renders read messages as seen', async () => {
-    messagesApi.getMessages.mockResolvedValueOnce([
+    mockedMessagesApi.getMessages.mockResolvedValueOnce([
       {
         _id: 'message-1',
         content: '<p>Hello Alice</p>',
@@ -430,18 +438,18 @@ describe('<AdminMessages />', () => {
       '',
       `/admin/messages?userId1=${user1}&userId2=${user2}`,
     );
-    messagesApi.getMessages.mockResolvedValueOnce([]);
+    mockedMessagesApi.getMessages.mockResolvedValueOnce([]);
 
     render(<AdminMessages />);
 
     await waitFor(() =>
-      expect(messagesApi.getMessages).toHaveBeenCalledWith(user1, user2),
+      expect(mockedMessagesApi.getMessages).toHaveBeenCalledWith(user1, user2),
     );
     expect(await screen.findByText('Nothing found…')).toBeInTheDocument();
   });
 
   it('treats object responses without messages as empty results', async () => {
-    messagesApi.getMessages.mockResolvedValueOnce({});
+    mockedMessagesApi.getMessages.mockResolvedValueOnce({});
 
     render(<AdminMessages />);
 

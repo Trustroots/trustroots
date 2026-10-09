@@ -4,10 +4,13 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import SearchUsers from '@/modules/search/client/components/SearchUsers.component';
-import { searchUsers } from '@/modules/users/client/api/search-users.api.js';
+import type { UserProfile } from '@/modules/users/client/types';
+
+type MockSearchResponse = { data: UserProfile[] | null };
+const mockSearchUsers = jest.fn<Promise<MockSearchResponse>, [query: string]>();
 
 jest.mock('@/modules/users/client/api/search-users.api.js', () => ({
-  searchUsers: jest.fn(),
+  searchUsers: (query: string) => mockSearchUsers(query),
 }));
 
 afterEach(() => {
@@ -47,7 +50,7 @@ describe('<SearchUsers />', () => {
   });
 
   it('submits a member search and renders user results', async () => {
-    searchUsers.mockResolvedValueOnce({
+    mockSearchUsers.mockResolvedValueOnce({
       data: [
         {
           _id: 'user-1',
@@ -66,7 +69,7 @@ describe('<SearchUsers />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
 
     expect(screen.getByRole('alertdialog')).toHaveTextContent('Wait a moment');
-    await waitFor(() => expect(searchUsers).toHaveBeenCalledWith('alice'));
+    await waitFor(() => expect(mockSearchUsers).toHaveBeenCalledWith('alice'));
 
     expect(await screen.findByText('1 members found')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Alice Example/ })).toHaveAttribute(
@@ -77,19 +80,21 @@ describe('<SearchUsers />', () => {
 
   it('runs an initial search from the URL search parameter', async () => {
     window.history.pushState({}, 'Search', '/search?search=traveler');
-    searchUsers.mockResolvedValueOnce({ data: [] });
+    mockSearchUsers.mockResolvedValueOnce({ data: [] });
 
     render(<SearchUsers />);
 
     expect(screen.getByRole('textbox', { name: 'Search members' })).toHaveValue(
       'traveler',
     );
-    await waitFor(() => expect(searchUsers).toHaveBeenCalledWith('traveler'));
+    await waitFor(() =>
+      expect(mockSearchUsers).toHaveBeenCalledWith('traveler'),
+    );
     expect(await screen.findByText('No members found.')).toBeInTheDocument();
   });
 
   it('shows empty results when the search response has no users array', async () => {
-    searchUsers.mockResolvedValueOnce({ data: null });
+    mockSearchUsers.mockResolvedValueOnce({ data: null });
 
     render(<SearchUsers />);
 
@@ -98,7 +103,7 @@ describe('<SearchUsers />', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
 
-    await waitFor(() => expect(searchUsers).toHaveBeenCalledWith('alice'));
+    await waitFor(() => expect(mockSearchUsers).toHaveBeenCalledWith('alice'));
     expect(await screen.findByText('No members found.')).toBeInTheDocument();
   });
 
@@ -107,12 +112,12 @@ describe('<SearchUsers />', () => {
 
     render(<SearchUsers />);
 
-    expect(searchUsers).not.toHaveBeenCalled();
+    expect(mockSearchUsers).not.toHaveBeenCalled();
     expect(screen.getByText('No members found.')).toBeInTheDocument();
   });
 
   it('clears the current query and rendered results', async () => {
-    searchUsers.mockResolvedValueOnce({
+    mockSearchUsers.mockResolvedValueOnce({
       data: [
         {
           _id: 'user-1',
@@ -143,7 +148,7 @@ describe('<SearchUsers />', () => {
   });
 
   it('hides loading state and explains a failed search', async () => {
-    searchUsers.mockRejectedValueOnce(new Error('Search failed'));
+    mockSearchUsers.mockRejectedValueOnce(new Error('Search failed'));
 
     render(<SearchUsers />);
 
@@ -152,7 +157,7 @@ describe('<SearchUsers />', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
 
-    await waitFor(() => expect(searchUsers).toHaveBeenCalledWith('alice'));
+    await waitFor(() => expect(mockSearchUsers).toHaveBeenCalledWith('alice'));
     await waitFor(() =>
       expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument(),
     );

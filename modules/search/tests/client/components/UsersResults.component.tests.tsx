@@ -3,7 +3,9 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import UsersResults from '@/modules/search/client/components/UsersResults';
-const member = {
+import type { UserProfile } from '@/modules/users/client/types';
+
+const member: UserProfile = {
   _id: 'member-1',
   username: 'alex',
   displayName: 'Alex Example',
@@ -17,6 +19,7 @@ it('shows public context and matching fields', () => {
   expect(
     screen.getByText(
       (_, element) =>
+        element !== null &&
         element.tagName === 'P' &&
         element.textContent === 'Lives in: Exampleville',
     ),
@@ -24,7 +27,9 @@ it('shows public context and matching fields', () => {
   expect(
     screen.getByText(
       (_, element) =>
-        element.tagName === 'P' && element.textContent === 'From: Sampleton',
+        element !== null &&
+        element.tagName === 'P' &&
+        element.textContent === 'From: Sampleton',
     ),
   ).toBeInTheDocument();
   expect(screen.getByText('Learning pottery')).toBeInTheDocument();
@@ -46,11 +51,11 @@ it('merges overlapping query matches and preserves unmatched punctuation', () =>
     />,
   );
   expect(
-    screen.getAllByText((_, element) => element.tagName === 'STRONG'),
+    screen.getAllByText((_, element) => element?.tagName === 'STRONG'),
   ).toHaveLength(4);
   expect(
     screen
-      .getAllByText((_, element) => element.tagName === 'STRONG')
+      .getAllByText((_, element) => element?.tagName === 'STRONG')
       .map(element => element.textContent),
   ).toEqual(['Alex', 'Ex', 'alex', 'Ex']);
 
@@ -75,7 +80,8 @@ it('handles missing fields and an empty query', () => {
   expect(screen.queryByText(/Matches:/)).not.toBeInTheDocument();
   expect(screen.queryByText(/Lives in:/)).not.toBeInTheDocument();
 });
-it.each([[], null])('shows empty results', users => {
+const emptyResults: Array<UserProfile[] | null> = [[], null];
+it.each(emptyResults)('shows empty results', users => {
   render(<UsersResults users={users} />);
   expect(screen.getByText('No members found.')).toBeInTheDocument();
 });

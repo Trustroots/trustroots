@@ -11,16 +11,34 @@ import '@testing-library/jest-dom';
 import AdminNewsletter from '@/modules/admin/client/components/AdminNewsletter.component';
 import * as newsletterApi from '@/modules/admin/client/api/newsletter.api';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
+import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
 
 jest.mock('@/modules/admin/client/api/newsletter.api');
 jest.mock('@/modules/tribes/client/api/tribes.api');
+
+const mockedNewsletterApi = jest.mocked(newsletterApi);
+const mockedTribesApi = jest.mocked(tribesApi);
+const clickedAnchors: HTMLAnchorElement[] = [];
+
+type AudiencePreview = { count: number };
+
+function circleSummary(_id: string, label: string): TribeSummary {
+  return { _id, count: 0, label, slug: label.toLowerCase() };
+}
 
 describe('<AdminNewsletter />', () => {
   beforeEach(() => {
     URL.createObjectURL = jest.fn(() => 'blob:newsletter');
     URL.revokeObjectURL = jest.fn();
-    HTMLAnchorElement.prototype.click = jest.fn();
-    tribesApi.read.mockReturnValue(new Promise(() => {}));
+    clickedAnchors.length = 0;
+    jest
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(function captureClickedAnchor(
+        this: HTMLAnchorElement,
+      ) {
+        clickedAnchors.push(this);
+      });
+    mockedTribesApi.read.mockReturnValue(new Promise<TribeSummary[]>(() => {}));
   });
 
   afterEach(() => {
@@ -49,11 +67,13 @@ describe('<AdminNewsletter />', () => {
   });
 
   it('loads circles and previews a combined location and circle audience', async () => {
-    tribesApi.read.mockResolvedValueOnce([
-      { _id: '5fbab4f7fed63c7ed73276d3', label: 'Cyclists' },
-      { _id: '5fbab4f7fed63c7ed73276d4', label: 'Hitchhikers' },
+    mockedTribesApi.read.mockResolvedValueOnce([
+      circleSummary('5fbab4f7fed63c7ed73276d3', 'Cyclists'),
+      circleSummary('5fbab4f7fed63c7ed73276d4', 'Hitchhikers'),
     ]);
-    newsletterApi.previewNewsletterAudience.mockResolvedValueOnce({ count: 2 });
+    mockedNewsletterApi.previewNewsletterAudience.mockResolvedValueOnce({
+      count: 2,
+    });
     render(<AdminNewsletter />);
 
     fireEvent.change(screen.getByLabelText('Location name'), {
@@ -69,15 +89,18 @@ describe('<AdminNewsletter />', () => {
       target: { value: '25' },
     });
     const circles = await screen.findByLabelText('Circles (optional)');
-    const cyclistOption = await screen.findByRole('option', {
+    // The option role ensures this queried element exposes `selected`.
+    const cyclistOption = (await screen.findByRole('option', {
       name: 'Cyclists',
-    });
+    })) as HTMLOptionElement;
     cyclistOption.selected = true;
     fireEvent.change(circles);
     fireEvent.click(screen.getByRole('button', { name: 'Count recipients' }));
 
     await waitFor(() =>
-      expect(newsletterApi.previewNewsletterAudience).toHaveBeenCalledWith({
+      expect(
+        mockedNewsletterApi.previewNewsletterAudience,
+      ).toHaveBeenCalledWith({
         circleIds: ['5fbab4f7fed63c7ed73276d3'],
         latitude: '52.52',
         locationText: 'Berlin',
@@ -92,7 +115,9 @@ describe('<AdminNewsletter />', () => {
   });
 
   it('uses the displayed location defaults and blocks counting after clearing them', async () => {
-    newsletterApi.previewNewsletterAudience.mockResolvedValueOnce({ count: 2 });
+    mockedNewsletterApi.previewNewsletterAudience.mockResolvedValueOnce({
+      count: 2,
+    });
     render(<AdminNewsletter />);
 
     const location = screen.getByLabelText('Location name');
@@ -107,7 +132,9 @@ describe('<AdminNewsletter />', () => {
     expect(longitude).not.toHaveAttribute('placeholder');
 
     await waitFor(() =>
-      expect(newsletterApi.previewNewsletterAudience).toHaveBeenCalledWith({
+      expect(
+        mockedNewsletterApi.previewNewsletterAudience,
+      ).toHaveBeenCalledWith({
         circleIds: [],
         latitude: '52.5200',
         locationText: 'Berlin',
@@ -116,7 +143,7 @@ describe('<AdminNewsletter />', () => {
         sources: ['from', 'hosting', 'living'],
       }),
     );
-    newsletterApi.previewNewsletterAudience.mockClear();
+    mockedNewsletterApi.previewNewsletterAudience.mockClear();
 
     for (const field of [location, latitude, longitude]) {
       fireEvent.change(field, { target: { value: '' } });
@@ -125,11 +152,15 @@ describe('<AdminNewsletter />', () => {
     }
 
     fireEvent.click(screen.getByRole('button', { name: 'Count recipients' }));
-    expect(newsletterApi.previewNewsletterAudience).not.toHaveBeenCalled();
+    expect(
+      mockedNewsletterApi.previewNewsletterAudience,
+    ).not.toHaveBeenCalled();
   });
 
   it('automatically refreshes the count after valid filters change', async () => {
-    newsletterApi.previewNewsletterAudience.mockResolvedValueOnce({ count: 3 });
+    mockedNewsletterApi.previewNewsletterAudience.mockResolvedValueOnce({
+      count: 3,
+    });
     render(<AdminNewsletter />);
 
     fireEvent.click(screen.getByLabelText('Hosting location'));
@@ -140,7 +171,9 @@ describe('<AdminNewsletter />', () => {
     expect(screen.getByText('Counting recipients…')).toBeVisible();
     await waitFor(
       () =>
-        expect(newsletterApi.previewNewsletterAudience).toHaveBeenCalledWith(
+        expect(
+          mockedNewsletterApi.previewNewsletterAudience,
+        ).toHaveBeenCalledWith(
           expect.objectContaining({
             locationText: 'Berlin',
             sources: ['from', 'living'],
@@ -154,25 +187,30 @@ describe('<AdminNewsletter />', () => {
   });
 
   it('automatically counts a circle-only audience', async () => {
-    tribesApi.read.mockResolvedValueOnce([
-      { _id: '5fbab4f7fed63c7ed73276d3', label: 'Cyclists' },
+    mockedTribesApi.read.mockResolvedValueOnce([
+      circleSummary('5fbab4f7fed63c7ed73276d3', 'Cyclists'),
     ]);
-    newsletterApi.previewNewsletterAudience.mockResolvedValueOnce({ count: 4 });
+    mockedNewsletterApi.previewNewsletterAudience.mockResolvedValueOnce({
+      count: 4,
+    });
     render(<AdminNewsletter />);
 
     fireEvent.click(screen.getByLabelText('Living location'));
     fireEvent.click(screen.getByLabelText('Origin location'));
     fireEvent.click(screen.getByLabelText('Hosting location'));
     const circles = await screen.findByLabelText('Circles (optional)');
-    const cyclistOption = await screen.findByRole('option', {
+    // The option role ensures this queried element exposes `selected`.
+    const cyclistOption = (await screen.findByRole('option', {
       name: 'Cyclists',
-    });
+    })) as HTMLOptionElement;
     cyclistOption.selected = true;
     fireEvent.change(circles);
 
     await waitFor(
       () =>
-        expect(newsletterApi.previewNewsletterAudience).toHaveBeenCalledWith(
+        expect(
+          mockedNewsletterApi.previewNewsletterAudience,
+        ).toHaveBeenCalledWith(
           expect.objectContaining({
             circleIds: ['5fbab4f7fed63c7ed73276d3'],
             sources: [],
@@ -186,10 +224,10 @@ describe('<AdminNewsletter />', () => {
   });
 
   it('ignores completed requests for older filter configurations', async () => {
-    let resolveFirst;
-    let rejectSecond;
-    let resolveThird;
-    newsletterApi.previewNewsletterAudience
+    let resolveFirst!: (preview: AudiencePreview) => void;
+    let rejectSecond!: (reason?: unknown) => void;
+    let resolveThird!: (preview: AudiencePreview) => void;
+    mockedNewsletterApi.previewNewsletterAudience
       .mockImplementationOnce(
         () =>
           new Promise(resolve => {
@@ -216,9 +254,9 @@ describe('<AdminNewsletter />', () => {
     });
     await waitFor(
       () =>
-        expect(newsletterApi.previewNewsletterAudience).toHaveBeenCalledTimes(
-          1,
-        ),
+        expect(
+          mockedNewsletterApi.previewNewsletterAudience,
+        ).toHaveBeenCalledTimes(1),
       { timeout: 1500 },
     );
     fireEvent.change(screen.getByLabelText('Location name'), {
@@ -226,9 +264,9 @@ describe('<AdminNewsletter />', () => {
     });
     await waitFor(
       () =>
-        expect(newsletterApi.previewNewsletterAudience).toHaveBeenCalledTimes(
-          2,
-        ),
+        expect(
+          mockedNewsletterApi.previewNewsletterAudience,
+        ).toHaveBeenCalledTimes(2),
       { timeout: 1500 },
     );
     fireEvent.change(screen.getByLabelText('Location name'), {
@@ -236,9 +274,9 @@ describe('<AdminNewsletter />', () => {
     });
     await waitFor(
       () =>
-        expect(newsletterApi.previewNewsletterAudience).toHaveBeenCalledTimes(
-          3,
-        ),
+        expect(
+          mockedNewsletterApi.previewNewsletterAudience,
+        ).toHaveBeenCalledTimes(3),
       { timeout: 1500 },
     );
 
@@ -260,11 +298,14 @@ describe('<AdminNewsletter />', () => {
   });
 
   it('handles an empty circle response and can reselect a location source', async () => {
-    tribesApi.read.mockResolvedValueOnce(null);
+    // Preserve the malformed null payload regression case from the API.
+    mockedTribesApi.read.mockResolvedValueOnce(
+      null as unknown as Awaited<ReturnType<typeof tribesApi.read>>,
+    );
     render(<AdminNewsletter />);
 
     await waitFor(() =>
-      expect(tribesApi.read).toHaveBeenCalledWith({ limit: 500 }),
+      expect(mockedTribesApi.read).toHaveBeenCalledWith({ limit: 500 }),
     );
     fireEvent.click(screen.getByLabelText('Hosting location'));
     expect(screen.getByLabelText('Hosting location')).not.toBeChecked();
@@ -275,8 +316,10 @@ describe('<AdminNewsletter />', () => {
   });
 
   it('previews one recipient and exports the audience CSV', async () => {
-    newsletterApi.previewNewsletterAudience.mockResolvedValueOnce({ count: 1 });
-    newsletterApi.getNewsletterAudienceCsv.mockResolvedValueOnce(
+    mockedNewsletterApi.previewNewsletterAudience.mockResolvedValueOnce({
+      count: 1,
+    });
+    mockedNewsletterApi.getNewsletterAudienceCsv.mockResolvedValueOnce(
       'Email Address,First Name,Last Name\nmember@example.com,Example,Member',
     );
     render(<AdminNewsletter />);
@@ -295,7 +338,7 @@ describe('<AdminNewsletter />', () => {
     );
 
     await waitFor(() =>
-      expect(newsletterApi.getNewsletterAudienceCsv).toHaveBeenCalledWith(
+      expect(mockedNewsletterApi.getNewsletterAudienceCsv).toHaveBeenCalledWith(
         expect.objectContaining({
           locationText: 'Berlin',
           sources: ['from', 'living'],
@@ -303,13 +346,15 @@ describe('<AdminNewsletter />', () => {
       ),
     );
     expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
-    expect(
-      HTMLAnchorElement.prototype.click.mock.instances[0].download,
-    ).toMatch(/^newsletter-audience-Berlin-living-origin-\d{8}-\d{4}\.csv$/);
+    expect(clickedAnchors[0].download).toMatch(
+      /^newsletter-audience-Berlin-living-origin-\d{8}-\d{4}\.csv$/,
+    );
   });
 
   it('clears an audience preview after criteria change', async () => {
-    newsletterApi.previewNewsletterAudience.mockResolvedValueOnce({ count: 0 });
+    mockedNewsletterApi.previewNewsletterAudience.mockResolvedValueOnce({
+      count: 0,
+    });
     render(<AdminNewsletter />);
 
     fireEvent.click(screen.getByLabelText('Hosting location'));
@@ -330,7 +375,7 @@ describe('<AdminNewsletter />', () => {
   });
 
   it('shows API and fallback errors for audience actions', async () => {
-    newsletterApi.previewNewsletterAudience
+    mockedNewsletterApi.previewNewsletterAudience
       .mockRejectedValueOnce({
         response: { data: { message: 'Choose valid criteria.' } },
       })
@@ -357,9 +402,11 @@ describe('<AdminNewsletter />', () => {
   });
 
   it('shows circle loading and audience export errors', async () => {
-    tribesApi.read.mockRejectedValueOnce(new Error('Network issue'));
-    newsletterApi.previewNewsletterAudience.mockResolvedValueOnce({ count: 1 });
-    newsletterApi.getNewsletterAudienceCsv.mockRejectedValueOnce(
+    mockedTribesApi.read.mockRejectedValueOnce(new Error('Network issue'));
+    mockedNewsletterApi.previewNewsletterAudience.mockResolvedValueOnce({
+      count: 1,
+    });
+    mockedNewsletterApi.getNewsletterAudienceCsv.mockRejectedValueOnce(
       new Error('Network issue'),
     );
     render(<AdminNewsletter />);
@@ -391,11 +438,13 @@ describe('<AdminNewsletter />', () => {
     expect(
       await screen.findByText('Choose a CSV, JSONL, or NDJSON file first.'),
     ).toBeVisible();
-    expect(newsletterApi.splitNewsletterSubscribers).not.toHaveBeenCalled();
+    expect(
+      mockedNewsletterApi.splitNewsletterSubscribers,
+    ).not.toHaveBeenCalled();
   });
 
   it('exports all subscribers CSV', async () => {
-    newsletterApi.getNewsletterSubscribersCsv.mockResolvedValueOnce(
+    mockedNewsletterApi.getNewsletterSubscribersCsv.mockResolvedValueOnce(
       'Email Address,First Name,Last Name\nalice@example.com,Alice,Example',
     );
     render(<AdminNewsletter />);
@@ -405,9 +454,9 @@ describe('<AdminNewsletter />', () => {
     );
 
     await waitFor(() =>
-      expect(newsletterApi.getNewsletterSubscribersCsv).toHaveBeenCalledTimes(
-        1,
-      ),
+      expect(
+        mockedNewsletterApi.getNewsletterSubscribersCsv,
+      ).toHaveBeenCalledTimes(1),
     );
     expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
     expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
@@ -422,12 +471,12 @@ describe('<AdminNewsletter />', () => {
 
     expect(await screen.findByText('Enter a circle ID first.')).toBeVisible();
     expect(
-      newsletterApi.getNewsletterCircleSubscribersCsv,
+      mockedNewsletterApi.getNewsletterCircleSubscribersCsv,
     ).not.toHaveBeenCalled();
   });
 
   it('exports circle subscribers CSV', async () => {
-    newsletterApi.getNewsletterCircleSubscribersCsv.mockResolvedValueOnce(
+    mockedNewsletterApi.getNewsletterCircleSubscribersCsv.mockResolvedValueOnce(
       'Email Address,First Name,Last Name\nalice@example.com,Alice,Example',
     );
     render(<AdminNewsletter />);
@@ -441,14 +490,14 @@ describe('<AdminNewsletter />', () => {
 
     await waitFor(() =>
       expect(
-        newsletterApi.getNewsletterCircleSubscribersCsv,
+        mockedNewsletterApi.getNewsletterCircleSubscribersCsv,
       ).toHaveBeenCalledWith('5fbab4f7fed63c7ed73276d3'),
     );
     expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
   });
 
   it('uploads and shows download actions for both CSV outputs', async () => {
-    newsletterApi.splitNewsletterSubscribers.mockResolvedValueOnce({
+    mockedNewsletterApi.splitNewsletterSubscribers.mockResolvedValueOnce({
       outputFormat: 'csv',
       subscribedCount: 1,
       subscribedContent:
@@ -477,9 +526,9 @@ describe('<AdminNewsletter />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Check recipients' }));
 
     await waitFor(() =>
-      expect(newsletterApi.splitNewsletterSubscribers).toHaveBeenCalledWith(
-        file,
-      ),
+      expect(
+        mockedNewsletterApi.splitNewsletterSubscribers,
+      ).toHaveBeenCalledWith(file),
     );
     expect(
       await screen.findByText('Processed 2 emails: 1 eligible and 1 excluded.'),
@@ -497,7 +546,7 @@ describe('<AdminNewsletter />', () => {
   });
 
   it('downloads JSONL split results as JSONL', async () => {
-    newsletterApi.splitNewsletterSubscribers.mockResolvedValueOnce({
+    mockedNewsletterApi.splitNewsletterSubscribers.mockResolvedValueOnce({
       outputFormat: 'jsonl',
       subscribedCount: 1,
       subscribedContent: '{"email":"eligible@example.com"}',
@@ -534,7 +583,7 @@ describe('<AdminNewsletter />', () => {
   });
 
   it('shows API error text when splitting fails', async () => {
-    newsletterApi.splitNewsletterSubscribers.mockRejectedValueOnce({
+    mockedNewsletterApi.splitNewsletterSubscribers.mockRejectedValueOnce({
       response: {
         data: {
           message: 'Unsupported file type.',
@@ -559,7 +608,7 @@ describe('<AdminNewsletter />', () => {
   });
 
   it('shows fallback error text when splitting fails without API message', async () => {
-    newsletterApi.splitNewsletterSubscribers.mockRejectedValueOnce(
+    mockedNewsletterApi.splitNewsletterSubscribers.mockRejectedValueOnce(
       new Error('Network issue'),
     );
     const file = new File(
@@ -614,11 +663,13 @@ describe('<AdminNewsletter />', () => {
     expect(
       await screen.findByText('Choose a CSV, JSONL, or NDJSON file first.'),
     ).toBeVisible();
-    expect(newsletterApi.splitNewsletterSubscribers).not.toHaveBeenCalled();
+    expect(
+      mockedNewsletterApi.splitNewsletterSubscribers,
+    ).not.toHaveBeenCalled();
   });
 
   it('shows API error text when export fails', async () => {
-    newsletterApi.getNewsletterSubscribersCsv.mockRejectedValueOnce({
+    mockedNewsletterApi.getNewsletterSubscribersCsv.mockRejectedValueOnce({
       response: {
         data: {
           message: 'Export failed.',
@@ -635,7 +686,7 @@ describe('<AdminNewsletter />', () => {
   });
 
   it('shows fallback error text when export all fails without API message', async () => {
-    newsletterApi.getNewsletterSubscribersCsv.mockRejectedValueOnce(
+    mockedNewsletterApi.getNewsletterSubscribersCsv.mockRejectedValueOnce(
       new Error('Network issue'),
     );
     render(<AdminNewsletter />);
@@ -650,7 +701,7 @@ describe('<AdminNewsletter />', () => {
   });
 
   it('shows fallback error text when circle export fails without API message', async () => {
-    newsletterApi.getNewsletterCircleSubscribersCsv.mockRejectedValueOnce(
+    mockedNewsletterApi.getNewsletterCircleSubscribersCsv.mockRejectedValueOnce(
       new Error('Network issue'),
     );
     render(<AdminNewsletter />);

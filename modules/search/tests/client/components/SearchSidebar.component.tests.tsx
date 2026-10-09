@@ -6,19 +6,21 @@ import '@/config/client/i18n';
 import SearchSidebar from '@/modules/search/client/components/SearchSidebar.component';
 
 jest.mock('use-debounce', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
   return {
-    useDebouncedCallback: callback => {
+    useDebouncedCallback: <Callback extends (...args: never[]) => unknown>(
+      callback: Callback,
+    ): Callback => {
       const callbackRef = React.useRef(callback);
       callbackRef.current = callback;
 
       const stable = React.useCallback(
-        (...args) => callbackRef.current(...args),
+        (...args: Parameters<Callback>) => callbackRef.current(...args),
         [],
       );
 
-      return stable;
+      return stable as Callback;
     },
   };
 });
@@ -77,7 +79,7 @@ jest.mock(
   }),
 );
 
-const defaultProps = {
+const defaultProps: React.ComponentProps<typeof SearchSidebar> = {
   activeTab: 'filters',
   communityNote: null,
   communityNotesEnabled: true,
@@ -86,6 +88,7 @@ const defaultProps = {
     types: ['host', 'meet'],
     languages: [],
     seen: { months: 6 },
+    communityNotes: true,
   },
   isLoadingOffer: false,
   offer: null,
