@@ -4,10 +4,10 @@ require('should');
 const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 describe('Admin access route tests', () => {
+  let app;
   before(async function () {
     app = await express.init(mongoose.connection);
   });
-  let app;
   const _usersRaw = utils.generateUsers(3);
   _usersRaw[0].roles = ['user'];
   _usersRaw[1].roles = ['user'];
