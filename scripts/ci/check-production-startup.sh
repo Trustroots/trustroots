@@ -55,6 +55,23 @@ for attempt in {1..60}; do
 done
 [ "$ready" = true ]
 
+# Confirm development tooling was removed while application dependencies remain
+# available in the runtime image.
+docker run --rm --entrypoint node "$image" -e '
+  const assert = require("assert");
+  for (const dependency of ["jest", "webpack", "nodemon", "sharp"]) {
+    assert.throws(
+      () => require.resolve(dependency),
+      error => error.code === "MODULE_NOT_FOUND",
+      `${dependency} should be omitted from the production image`,
+    );
+  }
+  for (const dependency of ["express", "file-type", "gm", "semver"]) {
+    require.resolve(dependency);
+  }
+  console.log("Production dependencies present; representative build tools omitted.");
+'
+
 # Check the executable of the actual application/worker process, not PATH's node.
 for container in "$web" "$worker"; do
   # /proc executable links require the target process UID in unprivileged Docker.
@@ -82,31 +99,26 @@ for container in "$web" "$worker"; do
     }
   '
 done
-# Exercise the native upload detector in the running production image as app.
-# A successful install alone does not prove the binding or magic database loads.
+# Exercise the upload detector in the running production image as app.
 docker exec --user app "$web" node -e '
   const assert = require("assert");
   const fs = require("fs");
   const os = require("os");
   const path = require("path");
-  const mmmagic = require("mmmagic");
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "trustroots-magic-"));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "trustroots-file-type-"));
   const fixture = path.join(directory, "pixel.png");
-  try {
+  (async () => {
+    const {fileTypeFromFile} = await import("file-type");
     fs.writeFileSync(fixture, Buffer.from(
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aB1sAAAAASUVORK5CYII=",
       "base64",
     ));
-    const magic = new mmmagic.Magic(mmmagic.MAGIC_MIME_TYPE);
-    magic.detectFile(fixture, (error, mimeType) => {
-      fs.rmSync(directory, {recursive: true, force: true});
-      assert.ifError(error);
-      assert.strictEqual(mimeType, "image/png");
-      console.log("Production mmmagic file detection passed.");
-    });
-  } catch (error) {
-    fs.rmSync(directory, {recursive: true, force: true});
-    throw error;
-  }
+    const result = await fileTypeFromFile(fixture);
+    assert.strictEqual(result.mime, "image/png");
+    console.log("Production file-type detection passed.");
+  })().catch(error => {
+    console.error(error);
+    process.exitCode = 1;
+  }).finally(() => fs.rmSync(directory, {recursive: true, force: true}));
 '
-printf 'Passenger application, worker startup and native file detection passed.\n'
+printf 'Passenger application, worker startup and file-type detection passed.\n'
