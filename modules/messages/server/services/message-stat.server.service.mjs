@@ -212,8 +212,8 @@ service.updateMessageStat = function (message, callback) {
  * @param {Error} err
  * @param {Object} stats
  * @param {?number} stats.replyRate - the reply rate of the user.
- *    Equals null when no messageStats found, otherwise number from interval
- *    [0, 1] (replied/all)
+ *    Equals null when fewer than three eligible messageStats are available,
+ *    otherwise number from interval [0, 1] (replied/all)
  * @param {?number} stats.replyTime - the average number of milliseconds
  *    between the first message was sent and the first reply was sent.
  *    Equals null when stats.replyRate is null or 0. Otherwise number.
@@ -247,7 +247,7 @@ service.readMessageStatsOfUser = function (userId, timeNow, callback) {
           .sort({
             firstMessageCreated: -1,
           })
-          .populate('firstMessageUserFrom', '_id')
+          .populate('firstMessageUserFrom', '_id roles')
           .exec(function (err, resp) {
             return done(err, resp);
           });
@@ -256,9 +256,14 @@ service.readMessageStatsOfUser = function (userId, timeNow, callback) {
        * Count the statistics
        */
       function (messageStats, done) {
-        // Deleted senders cannot receive replies. Exclude their statistics before
-        // choosing the time window, including records left by earlier deletions.
-        messageStats = messageStats.filter(stat => stat.firstMessageUserFrom);
+        // Deleted senders cannot receive replies, and greeter conversations are
+        // not representative of ordinary member response behaviour. Exclude
+        // both before choosing the time window, including historical records.
+        messageStats = messageStats.filter(
+          stat =>
+            stat.firstMessageUserFrom &&
+            !stat.firstMessageUserFrom.roles.includes('welcome-team'),
+        );
 
         /**
          * Choose the MessageStats to use (as described above)
@@ -290,7 +295,7 @@ service.readMessageStatsOfUser = function (userId, timeNow, callback) {
         })(messageStats);
 
         /* count the numbers for statistics
-         * if we have no messageStats
+         * if we have fewer than three eligible messageStats
          *    both replyRate and replyTime are null
          * if we have no replies
          *    replyRate is 0 and replyTime is null
@@ -316,8 +321,8 @@ service.readMessageStatsOfUser = function (userId, timeNow, callback) {
           let replyRate;
           let replyTime;
 
-          // no message stats
-          if (allCount === 0) {
+          // A small sample is not representative enough to show statistics.
+          if (allCount < 3) {
             replyRate = null;
             replyTime = null;
             // no replied stats
