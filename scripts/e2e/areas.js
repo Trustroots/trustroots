@@ -15,6 +15,7 @@ const AREA_BY_SPEC = {
   'account-lifecycle.spec.js': 'Authentication',
   'account-email-tokens.spec.js': 'Authentication',
   'account-request-timeouts.spec.js': 'Authentication',
+  'account-input-validation.spec.js': 'Authentication',
   'account-settings.spec.js': 'Authentication',
   'authenticated.spec.js': 'Member flows',
   'profile-react.spec.js': 'Member flows',
