@@ -1,39 +1,52 @@
 import React from 'react';
-import { act, render } from '@testing-library/react';
+import { act, fireEvent, render } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import InfiniteMessages from '@/modules/messages/client/components/InfiniteMessages';
 
+type ScrollCapture = {
+  current: React.UIEventHandler<HTMLDivElement> | null | undefined;
+};
+type ScrollProps = React.HTMLAttributes<HTMLDivElement> & {
+  onScroll?: React.UIEventHandler<HTMLDivElement>;
+};
+type ScrollableComponentType = React.ComponentProps<
+  typeof InfiniteMessages
+>['component'];
+
 describe('<InfiniteMessages>', function () {
-  function makeScrollableComponent(onScrollCapture) {
-    const PropTypes = require('prop-types');
+  function makeScrollableComponent(onScrollCapture?: ScrollCapture) {
+    const ScrollableComponent = React.forwardRef<HTMLDivElement, ScrollProps>(
+      function ScrollableComponent({ children, onScroll, ...props }, ref) {
+        if (onScrollCapture) {
+          onScrollCapture.current = onScroll;
+        }
 
-    const ScrollableComponent = React.forwardRef(function ScrollableComponent(
-      { children, onScroll, ...props },
-      ref,
-    ) {
-      if (onScrollCapture) {
-        onScrollCapture.current = onScroll;
-      }
+        return (
+          <div
+            data-testid="scrollable"
+            onScroll={onScroll}
+            ref={ref}
+            {...props}
+          >
+            {children}
+          </div>
+        );
+      },
+    );
 
-      return (
-        <div data-testid="scrollable" ref={ref} {...props}>
-          {children}
-        </div>
-      );
-    });
-
-    ScrollableComponent.propTypes = {
-      children: PropTypes.node,
-      onScroll: PropTypes.func,
-    };
-
-    return ScrollableComponent;
+    // The source component intentionally accepts React.Ref, while forwardRef's
+    // legacy ref type is broader. This narrows only the test component contract.
+    return ScrollableComponent as unknown as ScrollableComponentType;
   }
 
   function setScrollMetrics(
-    element,
-    { scrollHeight, offsetHeight, scrollTop },
+    element: HTMLElement,
+    {
+      scrollHeight,
+      offsetHeight,
+      scrollTop,
+    }: { scrollHeight: number; offsetHeight: number; scrollTop: number },
   ) {
     Object.defineProperty(element, 'scrollHeight', {
       configurable: true,
@@ -50,6 +63,34 @@ describe('<InfiniteMessages>', function () {
       writable: true,
       value: scrollTop,
     });
+  }
+
+  function flush(handler: unknown) {
+    if (
+      handler === null ||
+      (typeof handler !== 'function' && typeof handler !== 'object')
+    ) {
+      return;
+    }
+    const flushHandler = Reflect.get(handler, 'flush');
+    if (typeof flushHandler === 'function') {
+      flushHandler.call(handler);
+    }
+  }
+
+  function invokeResizeListener(
+    listener: EventListenerOrEventListenerObject | undefined,
+  ) {
+    if (!listener) {
+      throw new Error('Expected the resize listener to be registered');
+    }
+    const event = new Event('resize');
+    if (typeof listener === 'function') {
+      listener(event);
+    } else {
+      listener.handleEvent(event);
+    }
+    flush(listener);
   }
 
   beforeEach(() => {
@@ -91,7 +132,7 @@ describe('<InfiniteMessages>', function () {
   });
 
   it('calls fetch more callback when user scrolls to top', () => {
-    const onScrollCapture = { current: null };
+    const onScrollCapture: ScrollCapture = { current: null };
     const Component = makeScrollableComponent(onScrollCapture);
     const onFetchMore = jest.fn();
 
@@ -123,10 +164,8 @@ describe('<InfiniteMessages>', function () {
 
     expect(onScrollCapture.current).toEqual(expect.any(Function));
     act(() => {
-      onScrollCapture.current();
-      if (typeof onScrollCapture.current.flush === 'function') {
-        onScrollCapture.current.flush();
-      }
+      fireEvent.scroll(scroller);
+      flush(onScrollCapture.current);
       jest.advanceTimersByTime(25);
     });
 
@@ -135,7 +174,7 @@ describe('<InfiniteMessages>', function () {
   });
 
   it('does not fetch more messages when scrolled away from the top', () => {
-    const onScrollCapture = { current: null };
+    const onScrollCapture: ScrollCapture = { current: null };
     const Component = makeScrollableComponent(onScrollCapture);
     const onFetchMore = jest.fn();
 
@@ -159,10 +198,8 @@ describe('<InfiniteMessages>', function () {
     );
     jest.advanceTimersByTime(25);
 
-    onScrollCapture.current();
-    if (typeof onScrollCapture.current.flush === 'function') {
-      onScrollCapture.current.flush();
-    }
+    fireEvent.scroll(scroller);
+    flush(onScrollCapture.current);
     jest.advanceTimersByTime(25);
 
     expect(onFetchMore).not.toHaveBeenCalled();
@@ -291,28 +328,27 @@ describe('<InfiniteMessages>', function () {
     unmount();
 
     expect(() => {
-      resizeListener();
-      if (typeof resizeListener.flush === 'function') {
-        resizeListener.flush();
-      }
+      invokeResizeListener(resizeListener);
     }).not.toThrow();
   });
 
   it('ignores scroll work when the component does not expose a ref', () => {
-    const onScrollCapture = { current: null };
+    const onScrollCapture: ScrollCapture = { current: null };
     const onFetchMore = jest.fn();
 
-    function ComponentWithoutRef({ children, onScroll }) {
+    const ComponentWithoutRef: React.FC<{
+      children?: React.ReactNode;
+      onScroll: React.UIEventHandler<HTMLDivElement>;
+    }> = ({ children, onScroll }) => {
       onScrollCapture.current = onScroll;
-      return <div data-testid="scrollable-without-ref">{children}</div>;
-    }
-
-    ComponentWithoutRef.propTypes = {
-      children: () => null,
-      onScroll: () => null,
+      return (
+        <div data-testid="scrollable-without-ref" onScroll={onScroll}>
+          {children}
+        </div>
+      );
     };
 
-    render(
+    const { getByTestId } = render(
       <InfiniteMessages
         component={ComponentWithoutRef}
         onFetchMore={onFetchMore}
@@ -322,17 +358,15 @@ describe('<InfiniteMessages>', function () {
     );
 
     expect(() => {
-      onScrollCapture.current();
-      if (typeof onScrollCapture.current.flush === 'function') {
-        onScrollCapture.current.flush();
-      }
+      fireEvent.scroll(getByTestId('scrollable-without-ref'));
+      flush(onScrollCapture.current);
       jest.advanceTimersByTime(25);
     }).not.toThrow();
     expect(onFetchMore).not.toHaveBeenCalled();
   });
 
   it('preserves distance from the bottom when resizing while mounted', () => {
-    const onScrollCapture = { current: null };
+    const onScrollCapture: ScrollCapture = { current: null };
     const Component = makeScrollableComponent(onScrollCapture);
     const addEventListener = jest.spyOn(window, 'addEventListener');
 
@@ -363,16 +397,14 @@ describe('<InfiniteMessages>', function () {
     });
 
     act(() => {
-      onScrollCapture.current();
-      if (typeof onScrollCapture.current.flush === 'function') {
-        onScrollCapture.current.flush();
-      }
+      fireEvent.scroll(scroller);
+      flush(onScrollCapture.current);
       jest.advanceTimersByTime(25);
     });
 
     const resizeListener = addEventListener.mock.calls
       .filter(([eventName]) => eventName === 'resize')
-      .pop()[1];
+      .pop()?.[1];
 
     setScrollMetrics(scroller, {
       offsetHeight: 100,
@@ -381,10 +413,7 @@ describe('<InfiniteMessages>', function () {
     });
 
     act(() => {
-      resizeListener();
-      if (typeof resizeListener.flush === 'function') {
-        resizeListener.flush();
-      }
+      invokeResizeListener(resizeListener);
       jest.advanceTimersByTime(25);
     });
 

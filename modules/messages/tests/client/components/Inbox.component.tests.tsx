@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Inbox from '@/modules/messages/client/components/Inbox.component';
-import * as api from '@/modules/messages/client/api/messages.api';
+import * as messagesApi from '@/modules/messages/client/api/messages.api';
 import {
   generateClientUser,
   generateThreads,
@@ -13,15 +13,21 @@ import { trackEvent } from '@/modules/core/client/services/client-runtime';
 
 jest.mock('@/modules/messages/client/api/messages.api');
 jest.mock('@/modules/core/client/services/client-runtime');
+const api = { fetchThreads: jest.mocked(messagesApi.fetchThreads) };
 
 afterEach(() => {
   jest.clearAllMocks();
   window.history.replaceState(null, '', '/messages');
 });
 
-const me = generateClientUser({ public: true });
-const threads = generateThreads(10);
-const moreThreads = generateThreads(7);
+const me: React.ComponentProps<typeof Inbox>['user'] = generateClientUser({
+  public: true,
+});
+const otherMember: messagesApi.MessageUser = generateClientUser({
+  public: true,
+});
+const threads: messagesApi.MessageThreadSummary[] = generateThreads(10);
+const moreThreads: messagesApi.MessageThreadSummary[] = generateThreads(7);
 
 describe('<Inbox>', () => {
   it('asks private users to activate their profile before loading threads', () => {
@@ -62,9 +68,9 @@ describe('<Inbox>', () => {
 
   it('keeps the unread filter when loading older conversations', async () => {
     window.history.replaceState(null, '', '/messages?filter=unread');
-    api.fetchThreads.mockImplementation(({ page }) =>
+    api.fetchThreads.mockImplementation((params = {}) =>
       Promise.resolve(
-        page === 2
+        params.page === 2
           ? { threads: moreThreads }
           : { threads, nextParams: { page: 2 } },
       ),
@@ -92,7 +98,7 @@ describe('<Inbox>', () => {
   });
 
   it('shows that I have replied if the last message is from me', async () => {
-    const threads = generateThreads(1, { userFrom: me });
+    const threads = generateThreads(1, { userFrom: me, userTo: otherMember });
     api.fetchThreads.mockResolvedValue({ threads });
     const { container, findByRole } = render(<Inbox user={me} />);
     await findByRole('listitem');
@@ -102,7 +108,7 @@ describe('<Inbox>', () => {
   });
 
   it('does not show that I have replied if the last message is from them', async () => {
-    const threads = generateThreads(1, { userTo: me });
+    const threads = generateThreads(1, { userFrom: otherMember, userTo: me });
     api.fetchThreads.mockResolvedValue({ threads });
     const { container, findByRole } = render(<Inbox user={me} />);
     await findByRole('listitem');
@@ -117,9 +123,9 @@ describe('<Inbox>', () => {
   });
 
   it('will load the next page on clicking the button', async () => {
-    api.fetchThreads.mockImplementation(({ page }) =>
+    api.fetchThreads.mockImplementation((params = {}) =>
       Promise.resolve(
-        page === 2
+        params.page === 2
           ? { threads: moreThreads }
           : { threads, nextParams: { page: 2 } },
       ),
@@ -159,9 +165,9 @@ describe('<Inbox>', () => {
     olderPage[0].userFrom.displayName = 'Second member';
     olderPage[0].userTo.displayName = 'Viewer';
     olderPage[0].message.excerpt = 'Hidden in an older page';
-    api.fetchThreads.mockImplementation(({ page }) =>
+    api.fetchThreads.mockImplementation((params = {}) =>
       Promise.resolve(
-        page === 2
+        params.page === 2
           ? { threads: olderPage }
           : { threads: firstPage, nextParams: { page: 2 } },
       ),
@@ -201,7 +207,10 @@ describe('<Inbox>', () => {
   });
 
   it('searches the other member in a conversation I sent', async () => {
-    const sentThreads = generateThreads(1, { userFrom: me });
+    const sentThreads = generateThreads(1, {
+      userFrom: me,
+      userTo: otherMember,
+    });
     sentThreads[0].userTo.displayName = 'Matching Recipient';
     api.fetchThreads.mockResolvedValue({ threads: sentThreads });
     const { findByText, getByRole } = render(<Inbox user={me} />);
@@ -219,9 +228,9 @@ describe('<Inbox>', () => {
     const firstPage = generateThreads(1);
     const olderPage = generateThreads(1);
     olderPage[0].message.excerpt = 'Older matching preview';
-    api.fetchThreads.mockImplementation(({ page }) =>
+    api.fetchThreads.mockImplementation((params = {}) =>
       Promise.resolve(
-        page === 2
+        params.page === 2
           ? { threads: olderPage }
           : { threads: firstPage, nextParams: { page: 2 } },
       ),
@@ -241,10 +250,14 @@ describe('<Inbox>', () => {
   });
 
   it('announces when older conversations are being searched', async () => {
-    const finishOlderPage = jest.fn();
-    api.fetchThreads.mockImplementation(({ page }) =>
-      page === 2
-        ? new Promise(resolve => finishOlderPage.mockImplementation(resolve))
+    let resolveOlderPage!: (
+      result: Awaited<ReturnType<typeof messagesApi.fetchThreads>>,
+    ) => void;
+    api.fetchThreads.mockImplementation((params = {}) =>
+      params.page === 2
+        ? new Promise(resolve => {
+            resolveOlderPage = resolve;
+          })
         : Promise.resolve({ threads, nextParams: { page: 2 } }),
     );
     const { findAllByRole, findByRole, getByRole } = render(
@@ -260,13 +273,13 @@ describe('<Inbox>', () => {
       'Searching older conversations…',
     );
     await act(async () => {
-      finishOlderPage({ threads: [] });
+      resolveOlderPage({ threads: [] });
     });
   });
 
   it('reports a failure while loading older conversations for search', async () => {
-    api.fetchThreads.mockImplementation(({ page }) =>
-      page === 2
+    api.fetchThreads.mockImplementation((params = {}) =>
+      params.page === 2
         ? Promise.reject(new Error('Page unavailable'))
         : Promise.resolve({ threads, nextParams: { page: 2 } }),
     );

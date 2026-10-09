@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-
 import {
   AuthProvider,
   useAuth,
   userHasRole,
+  type AuthUser,
 } from '@/modules/core/client/react-app/auth';
 
 function AuthConsumer() {
@@ -45,8 +45,10 @@ describe('React AuthProvider', () => {
   });
 
   it('initializes from the bootstrap user and updates via setUser', () => {
+    const bootstrapUser: AuthUser = { roles: ['user'], username: 'bob' };
+
     render(
-      <AuthProvider initialUser={{ roles: ['user'], username: 'bob' }}>
+      <AuthProvider initialUser={bootstrapUser}>
         <AuthConsumer />
       </AuthProvider>,
     );
@@ -65,7 +67,10 @@ describe('React AuthProvider', () => {
     expect(userHasRole({ roles: ['user', 'admin'] }, 'admin')).toBe(true);
     expect(userHasRole({ roles: ['user'] }, 'admin')).toBe(false);
     expect(userHasRole(null, 'admin')).toBe(false);
-    expect(userHasRole({ roles: ['admin'] })).toBe(false);
+    // Preserve the regression case for a missing role argument at this API boundary.
+    expect(
+      userHasRole({ roles: ['admin'] }, undefined as unknown as string),
+    ).toBe(false);
   });
 
   it('throws when useAuth is used outside AuthProvider', () => {

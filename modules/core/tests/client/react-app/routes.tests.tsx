@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import type { AuthUser } from '@/modules/core/client/react-app/auth';
 
 import {
   createAppRouter,
@@ -19,6 +20,14 @@ import {
   REACT_ROUTE_POLICIES,
   normalizePath,
 } from '@/modules/core/shared/react-route-ownership';
+
+type UserRouteProps = { user?: AuthUser | null };
+type MembershipRouteProps = UserRouteProps & {
+  onMembershipUpdated: (data: { user?: Partial<AuthUser> } | null) => void;
+};
+type StatisticsRouteProps = { isAuthenticated: boolean };
+type OfferShellRouteProps = UserRouteProps & { children?: React.ReactNode };
+type RouteToRender = Pick<typeof routes[number], 'path' | 'render'>;
 
 /* eslint-disable react/display-name -- lightweight route renderer mocks for coverage */
 jest.mock('@/modules/admin/client/components/Admin.component', () => () => (
@@ -57,10 +66,9 @@ jest.mock(
   () => () => <main>Admin threads</main>,
 );
 jest.mock('@/modules/admin/client/components/AdminUser.component', () => {
-  function MockAdminUser({ username }) {
+  function MockAdminUser({ username }: { username?: string }) {
     return <main data-username={username}>Admin user</main>;
   }
-  MockAdminUser.propTypes = { username: require('prop-types').string };
   return MockAdminUser;
 });
 jest.mock(
@@ -69,11 +77,15 @@ jest.mock(
 );
 jest.mock('@/modules/pages/client/components/Home.component', () => ({
   __esModule: true,
-  default: ({ user }) => <main>Home {user?.username || 'guest'}</main>,
+  default: ({ user }: UserRouteProps) => (
+    <main>Home {user?.username || 'guest'}</main>
+  ),
 }));
 jest.mock('@/modules/pages/client/components/Navigation.component', () => ({
   __esModule: true,
-  default: ({ user }) => <main>Navigation {user?.username}</main>,
+  default: ({ user }: UserRouteProps) => (
+    <main>Navigation {user?.username}</main>
+  ),
 }));
 jest.mock(
   '@/modules/pages/client/components/Contribute.component',
@@ -100,7 +112,9 @@ jest.mock('@/modules/pages/client/components/FaqTribes.component', () => () => (
 ));
 jest.mock('@/modules/pages/client/components/Foundation.component', () => ({
   __esModule: true,
-  default: ({ user }) => <main>Foundation {user?.username}</main>,
+  default: ({ user }: UserRouteProps) => (
+    <main>Foundation {user?.username}</main>
+  ),
 }));
 jest.mock('@/modules/pages/client/components/Guide.component', () => () => (
   <main>Guide</main>
@@ -121,18 +135,18 @@ jest.mock(
   '@/modules/statistics/client/components/Statistics.component',
   () => ({
     __esModule: true,
-    default: ({ isAuthenticated }) => (
+    default: ({ isAuthenticated }: StatisticsRouteProps) => (
       <main>Statistics {isAuthenticated ? 'auth' : 'guest'}</main>
     ),
   }),
 );
 jest.mock('@/modules/support/client/components/SupportPage.component', () => ({
   __esModule: true,
-  default: ({ user }) => <main>Support {user?.username}</main>,
+  default: ({ user }: UserRouteProps) => <main>Support {user?.username}</main>,
 }));
 jest.mock('@/modules/pages/client/components/Team.component', () => ({
   __esModule: true,
-  default: ({ user }) => <main>Team {user?.username}</main>,
+  default: ({ user }: UserRouteProps) => <main>Team {user?.username}</main>,
 }));
 jest.mock(
   '@/modules/pages/client/components/Volunteering.component',
@@ -143,11 +157,11 @@ jest.mock('@/modules/users/client/components/Welcome.component', () => () => (
 ));
 jest.mock('@/modules/messages/client/components/Inbox.component', () => ({
   __esModule: true,
-  default: ({ user }) => <main>Inbox {user?.username}</main>,
+  default: ({ user }: UserRouteProps) => <main>Inbox {user?.username}</main>,
 }));
 jest.mock('@/modules/messages/client/components/Thread.component', () => ({
   __esModule: true,
-  default: ({ user }) => <main>Thread {user?.username}</main>,
+  default: ({ user }: UserRouteProps) => <main>Thread {user?.username}</main>,
 }));
 jest.mock(
   '@/modules/search/client/components/SearchUsers.component',
@@ -155,11 +169,11 @@ jest.mock(
 );
 jest.mock('@/modules/search/client/components/SearchPage.component', () => ({
   __esModule: true,
-  default: ({ user }) => <main>Search {user?.username}</main>,
+  default: ({ user }: UserRouteProps) => <main>Search {user?.username}</main>,
 }));
 jest.mock('@/modules/offers/client/components/OfferShell.component', () => ({
   __esModule: true,
-  default: ({ children, user }) => (
+  default: ({ children, user }: OfferShellRouteProps) => (
     <main>
       Offer shell {user?.username}
       {children}
@@ -172,20 +186,26 @@ jest.mock(
 );
 jest.mock('@/modules/offers/client/components/OfferHostPage.component', () => ({
   __esModule: true,
-  default: ({ user }) => <main>Offer host {user?.username}</main>,
+  default: ({ user }: UserRouteProps) => (
+    <main>Offer host {user?.username}</main>
+  ),
 }));
 jest.mock(
   '@/modules/offers/client/components/OfferMeetListPage.component',
   () => ({
     __esModule: true,
-    default: ({ user }) => <main>Offer meet list {user?.username}</main>,
+    default: ({ user }: UserRouteProps) => (
+      <main>Offer meet list {user?.username}</main>
+    ),
   }),
 );
 jest.mock(
   '@/modules/offers/client/components/OfferMeetEditPage.component',
   () => ({
     __esModule: true,
-    default: ({ user }) => <main>Offer meet edit {user?.username}</main>,
+    default: ({ user }: UserRouteProps) => (
+      <main>Offer meet edit {user?.username}</main>
+    ),
   }),
 );
 jest.mock(
@@ -230,60 +250,74 @@ jest.mock(
 );
 jest.mock('@/modules/users/client/components/ProfilePage.component', () => ({
   __esModule: true,
-  default: ({ user }) => <main>Profile {user?.username}</main>,
+  default: ({ user }: UserRouteProps) => <main>Profile {user?.username}</main>,
 }));
 jest.mock(
   '@/modules/users/client/components/ProfileEditAbout.component',
   () => ({
     __esModule: true,
-    default: ({ user }) => <main>Profile edit about {user?.username}</main>,
+    default: ({ user }: UserRouteProps) => (
+      <main>Profile edit about {user?.username}</main>
+    ),
   }),
 );
 jest.mock(
   '@/modules/users/client/components/ProfileEditLocations.component',
   () => ({
     __esModule: true,
-    default: ({ user }) => <main>Profile edit locations {user?.username}</main>,
+    default: ({ user }: UserRouteProps) => (
+      <main>Profile edit locations {user?.username}</main>
+    ),
   }),
 );
 jest.mock(
   '@/modules/users/client/components/ProfileEditPhoto.component',
   () => ({
     __esModule: true,
-    default: ({ user }) => <main>Profile edit photo {user?.username}</main>,
+    default: ({ user }: UserRouteProps) => (
+      <main>Profile edit photo {user?.username}</main>
+    ),
   }),
 );
 jest.mock(
   '@/modules/users/client/components/ProfileEditNetworks.component',
   () => ({
     __esModule: true,
-    default: ({ user }) => <main>Profile edit networks {user?.username}</main>,
+    default: ({ user }: UserRouteProps) => (
+      <main>Profile edit networks {user?.username}</main>
+    ),
   }),
 );
 jest.mock(
   '@/modules/users/client/components/ProfileEditAccount.component',
   () => ({
     __esModule: true,
-    default: ({ user }) => <main>Profile edit account {user?.username}</main>,
+    default: ({ user }: UserRouteProps) => (
+      <main>Profile edit account {user?.username}</main>
+    ),
   }),
 );
 jest.mock(
   '@/modules/contacts/client/components/ContactAddPage.component',
   () => ({
     __esModule: true,
-    default: ({ user }) => <main>Contact add {user?.username}</main>,
+    default: ({ user }: UserRouteProps) => (
+      <main>Contact add {user?.username}</main>
+    ),
   }),
 );
 jest.mock(
   '@/modules/contacts/client/components/ContactConfirmPage.component',
   () => ({
     __esModule: true,
-    default: ({ user }) => <main>Contact confirm {user?.username}</main>,
+    default: ({ user }: UserRouteProps) => (
+      <main>Contact confirm {user?.username}</main>
+    ),
   }),
 );
 jest.mock('@/modules/tribes/client/components/TribesPage.component', () => ({
   __esModule: true,
-  default: ({ onMembershipUpdated, user }) => (
+  default: ({ onMembershipUpdated, user }: MembershipRouteProps) => (
     <main>
       Circles {user?.username || 'guest'}
       <button
@@ -299,7 +333,7 @@ jest.mock(
   '@/modules/tribes/client/components/TribeDetailPage.component',
   () => ({
     __esModule: true,
-    default: ({ onMembershipUpdated, user }) => (
+    default: ({ onMembershipUpdated, user }: MembershipRouteProps) => (
       <main>
         Circle detail {user?.username || 'guest'}
         <button
@@ -314,8 +348,14 @@ jest.mock(
 );
 /* eslint-enable react/display-name */
 
-function renderRoute(route, user = { username: 'alice', public: true }) {
-  const params =
+function renderRoute(
+  route: RouteToRender | undefined,
+  user: AuthUser | null = { username: 'alice', public: true },
+) {
+  if (!route) {
+    throw new Error('Expected a matching route');
+  }
+  const params: Record<string, string> =
     route.path === '/admin/user/:username'
       ? { username: 'river' }
       : route.path === '/messages/:username'
@@ -348,7 +388,14 @@ function renderRoute(route, user = { username: 'alice', public: true }) {
         user,
       }}
     >
-      {route.render({ params, user })}
+      {route.render({
+        params,
+        user,
+        currentPath: route.path.replace(
+          /:([^/]+)/g,
+          (_, key: string) => params[key] || '',
+        ),
+      })}
     </AppProviders>,
   );
 }
@@ -379,7 +426,7 @@ describe('React route ownership', () => {
   it('normalizes paths before ownership checks', () => {
     expect(normalizePath('/support/?report=alice')).toBe('/support');
     expect(isReactRoute('/support/?report=alice')).toBe(true);
-    expect(findRoute('/support/?report=alice').title).toBe('Support');
+    expect(findRoute('/support/?report=alice')?.title).toBe('Support');
   });
 
   it('preserves legacy plain-string query parameters', () => {
@@ -433,7 +480,9 @@ describe('React route ownership', () => {
       'tribes',
     ]) {
       const matches = router.matchRoutes(`/profile/alice/${suffix}`);
-      expect(matches.at(-2).routeId).toBe(profileMatches.at(-1).routeId);
+      expect(matches[matches.length - 2].routeId).toBe(
+        profileMatches[profileMatches.length - 1].routeId,
+      );
     }
   });
 
@@ -451,7 +500,7 @@ describe('React route ownership', () => {
   });
 
   it('defines admin route metadata and renderers', () => {
-    const adminRoute = findRoute('/admin/audit-log');
+    const adminRoute = findRoute('/admin/audit-log')!;
 
     expect(adminRoute).toMatchObject({
       footerVariant: 'admin',
@@ -586,7 +635,7 @@ it.each([
   '/circles/sample_circle',
   '/circles/:circle',
 ])('keeps invalid circle path %s on a React not-found page', path => {
-  expect(findRoute(path).path).toBe('/not-found');
+  expect(findRoute(path)?.path).toBe('/not-found');
 });
 
 it('does not partially match extra circle path segments', () => {

@@ -5,11 +5,21 @@ import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import QuickReply from '@/modules/messages/client/components/QuickReply';
 
+type QuickReplyProps = React.ComponentProps<typeof QuickReply>;
+
+function createSendHandler(): jest.MockedFunction<QuickReplyProps['onSend']> {
+  return jest.fn();
+}
+
+function createFocusHandler(): jest.MockedFunction<QuickReplyProps['onFocus']> {
+  return jest.fn();
+}
+
 describe('<QuickReply />', () => {
   it('sends a positive hosting quick reply with hosting metadata', () => {
-    const onSend = jest.fn();
+    const onSend = createSendHandler();
 
-    render(<QuickReply onFocus={jest.fn()} onSend={onSend} />);
+    render(<QuickReply onFocus={createFocusHandler()} onSend={onSend} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Yes, I can host!' }));
 
@@ -19,9 +29,9 @@ describe('<QuickReply />', () => {
   });
 
   it('sends a negative hosting quick reply with hosting metadata', () => {
-    const onSend = jest.fn();
+    const onSend = createSendHandler();
 
-    render(<QuickReply onFocus={jest.fn()} onSend={onSend} />);
+    render(<QuickReply onFocus={createFocusHandler()} onSend={onSend} />);
 
     fireEvent.click(screen.getByRole('button', { name: "Sorry I can't host" }));
 
@@ -31,8 +41,8 @@ describe('<QuickReply />', () => {
   });
 
   it('focuses the normal reply editor instead of sending content', () => {
-    const onFocus = jest.fn();
-    const onSend = jest.fn();
+    const onFocus = createFocusHandler();
+    const onSend = createSendHandler();
 
     render(<QuickReply onFocus={onFocus} onSend={onSend} />);
 

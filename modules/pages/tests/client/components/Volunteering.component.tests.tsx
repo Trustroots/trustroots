@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type PropsWithChildren } from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
@@ -7,15 +7,10 @@ import Volunteering from '@/modules/pages/client/components/Volunteering.compone
 import { VOLUNTEERING_DISCLAIMER } from '@/modules/support/shared/volunteering-copy';
 
 jest.mock('@/modules/core/client/components/Board.js', () => {
-  const React = require('react');
-
-  function MockBoard({ children }) {
-    return <div>{children}</div>;
+  const actualReact = jest.requireActual<typeof import('react')>('react');
+  function MockBoard({ children }: PropsWithChildren) {
+    return actualReact.createElement('div', null, children);
   }
-
-  MockBoard.propTypes = {
-    children: () => null,
-  };
 
   return MockBoard;
 });
