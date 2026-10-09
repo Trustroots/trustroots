@@ -2,7 +2,7 @@ import { getGender } from '@/modules/core/client/utils/user_info';
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: key => `users:${key}`,
+    t: (key: string) => `users:${key}`,
   }),
 }));
 
@@ -20,6 +20,7 @@ describe('user info utilities', function () {
 
   it('returns undefined for empty input', function () {
     expect(getGender('')).toBeUndefined();
-    expect(getGender(undefined)).toBeUndefined();
+    // Preserve the empty runtime input case beyond the public string contract.
+    expect(getGender(undefined as unknown as string)).toBeUndefined();
   });
 });
