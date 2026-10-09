@@ -55,6 +55,19 @@ describe('Reusable user fixture passwords', () => {
     assert.equal(await users[1].authenticate('IncorrectPassword!'), false);
   });
 
+  it('generates unique fixture identities with repeatable plaintext passwords', () => {
+    const users = utils.generateUsersWithSharedPassword(3, { public: true });
+    assert.equal(users.length, 3);
+    assert.equal(new Set(users.map(user => user.username)).size, 3);
+    assert.equal(new Set(users.map(user => user.email)).size, 3);
+    assert.equal(new Set(users.map(user => user.password)).size, 1);
+    assert.ok(users.every(user => user.public === true));
+    assert.equal(
+      users[0].password,
+      utils.generateUsersWithSharedPassword(1)[0].password,
+    );
+  });
+
   it('keeps different passwords separate', async () => {
     const users = await utils.saveUsersWithCachedPasswords([
       fixture('fixture-third', 'SeparateFixturePasswordOne!'),

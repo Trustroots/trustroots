@@ -12,7 +12,7 @@ describe('Direct contact moderation visibility', () => {
   let users;
   let credentials;
   beforeEach(async () => {
-    credentials = utils.generateUsers(2, {
+    credentials = utils.generateUsersWithSharedPassword(2, {
       public: true,
     });
     users = await utils.saveUsersWithCachedPasswords(credentials);

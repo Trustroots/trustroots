@@ -14,10 +14,10 @@ describe('Read my experience to userTo Id', () => {
   let app;
   let agent;
   let users;
-  const _usersPublic = utils.generateUsers(6, {
+  const _usersPublic = utils.generateUsersWithSharedPassword(6, {
     public: true,
   });
-  const _usersPrivate = utils.generateUsers(1, {
+  const _usersPrivate = utils.generateUsersWithSharedPassword(1, {
     public: false,
     username: 'nonpublic',
     email: 'nonpublic@example.com',
@@ -25,7 +25,8 @@ describe('Read my experience to userTo Id', () => {
   const _users = [..._usersPublic, ..._usersPrivate];
   beforeEach(() => {
     sinon.useFakeTimers({
-      now: new Date('2018-01-12'),
+      // MongoDB uses real time to expire authentication sessions.
+      now: Date.now(),
       toFake: ['Date'],
     });
   });

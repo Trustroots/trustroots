@@ -13,10 +13,10 @@ describe('Read count of experiences received by user', () => {
   let app;
   let agent;
   let users;
-  const _usersPublic = utils.generateUsers(6, {
+  const _usersPublic = utils.generateUsersWithSharedPassword(6, {
     public: true,
   });
-  const _usersPrivate = utils.generateUsers(3, {
+  const _usersPrivate = utils.generateUsersWithSharedPassword(3, {
     public: false,
     username: 'nonpublic',
     email: 'nonpublic@example.com',

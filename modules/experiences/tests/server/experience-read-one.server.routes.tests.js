@@ -17,10 +17,10 @@ describe('Read a single experience by experience id', () => {
   // logged in public user can not read other private experiences
   let app;
   let agent;
-  const _usersPublic = utils.generateUsers(4, {
+  const _usersPublic = utils.generateUsersWithSharedPassword(4, {
     public: true,
   });
-  const _usersPrivate = utils.generateUsers(1, {
+  const _usersPrivate = utils.generateUsersWithSharedPassword(1, {
     public: false,
     username: 'private',
     email: 'non@example.com',
@@ -30,7 +30,8 @@ describe('Read a single experience by experience id', () => {
   let experiences;
   beforeEach(() => {
     sinon.useFakeTimers({
-      now: new Date('2019-01-13 13:21:55.1'),
+      // MongoDB uses real time to expire authentication sessions.
+      now: Date.now(),
       toFake: ['Date'],
     });
   });

@@ -46,7 +46,7 @@ describe('Experiences controller unit tests', () => {
   describe('create validation', () => {
     it('rejects missing interactions without unexpected interaction fields', async () => {
       const [viewer, target] = await utils.saveUsersWithCachedPasswords(
-        utils.generateUsers(2, { public: true }),
+        utils.generateUsersWithSharedPassword(2, { public: true }),
       );
       const res = deferredResponse();
 
@@ -71,7 +71,7 @@ describe('Experiences controller unit tests', () => {
   describe('getCount', () => {
     it('returns the experience count for another user', async () => {
       const [viewer, target] = await utils.saveUsersWithCachedPasswords(
-        utils.generateUsers(2, { public: true }),
+        utils.generateUsersWithSharedPassword(2, { public: true }),
       );
       await new Experience({
         userFrom: viewer._id,
@@ -96,7 +96,7 @@ describe('Experiences controller unit tests', () => {
 
     it('includes pending experiences for the authenticated user', async () => {
       const [user, author] = await utils.saveUsersWithCachedPasswords(
-        utils.generateUsers(2, { public: true }),
+        utils.generateUsersWithSharedPassword(2, { public: true }),
       );
       await new Experience({
         userFrom: author._id,
@@ -120,7 +120,7 @@ describe('Experiences controller unit tests', () => {
 
     it('passes unexpected errors to next', async () => {
       const [user] = await utils.saveUsersWithCachedPasswords(
-        utils.generateUsers(1, { public: true }),
+        utils.generateUsersWithSharedPassword(1, { public: true }),
       );
       sinon.stub(Experience, 'aggregate').returns({
         exec: () => {
@@ -166,7 +166,7 @@ describe('Experiences controller unit tests', () => {
 
     it('passes database errors to next', async () => {
       const [user] = await utils.saveUsersWithCachedPasswords(
-        utils.generateUsers(1, { public: true }),
+        utils.generateUsersWithSharedPassword(1, { public: true }),
       );
       const error = new Error('suggestion failed');
       sinon.stub(Experience, 'distinct').returns({

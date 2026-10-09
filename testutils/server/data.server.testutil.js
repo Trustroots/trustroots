@@ -78,6 +78,21 @@ function saveUsers(_docs, done = () => {}) {
 }
 
 /**
+ * Generate unrelated user fixtures with repeatable plaintext credentials, so
+ * saveUsersWithCachedPasswords can reuse a hash even across regenerated users.
+ * Authentication and password tests must keep using generateUsers.
+ * @param {number} count - number of users
+ * @param {object} [options] - ordinary generateUsers options
+ * @returns {object[]} user fixtures with unique identities
+ */
+function generateUsersWithSharedPassword(count, options = {}) {
+  return generateUsers(count, options).map(user => ({
+    ...user,
+    password: 'SharedFixturePassword123!',
+  }));
+}
+
+/**
  * Save unrelated test fixtures with real, reusable password hashes. Authentication
  * and password tests must use saveUsers or User.save to exercise fresh hashing.
  * Input objects and their plaintext credentials remain available for signIn.
@@ -189,6 +204,7 @@ async function signOut(agent) {
 
 module.exports = {
   generateUsers,
+  generateUsersWithSharedPassword,
   saveUsers,
   saveUsersWithCachedPasswords,
   createTestUser,

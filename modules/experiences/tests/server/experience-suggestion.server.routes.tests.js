@@ -14,7 +14,7 @@ describe('Experience suggestion', () => {
   });
   let app;
   let agent;
-  const userData = utils.generateUsers(8, {
+  const userData = utils.generateUsersWithSharedPassword(8, {
     public: true,
   });
   let users;

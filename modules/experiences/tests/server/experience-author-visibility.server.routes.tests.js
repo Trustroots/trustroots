@@ -15,7 +15,7 @@ describe('Experience author moderation visibility', () => {
   let credentials;
   let experiences;
   beforeEach(async () => {
-    credentials = utils.generateUsers(5, {
+    credentials = utils.generateUsersWithSharedPassword(5, {
       public: true,
     });
     users = await utils.saveUsersWithCachedPasswords(credentials);
