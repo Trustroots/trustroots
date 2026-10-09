@@ -7,26 +7,43 @@ import {
   waitFor,
 } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import CommunityNotesSidebar from '@/modules/search/client/components/CommunityNotesSidebar.component';
+import { nostrService } from '@/modules/search/client/services/nostr.client.service';
 
-jest.mock('@/modules/search/client/services/nostr.client.service', () => ({
-  __esModule: true,
-  default: class NostrService {},
-  nostrService: {
-    resolveNpubToUsername: jest.fn(pubkey => {
-      if (pubkey.startsWith('pubkey1111')) {
-        return Promise.resolve('alice');
-      }
-      return Promise.resolve(null);
-    }),
-  },
-}));
+type CommunityNoteEvent = React.ComponentProps<
+  typeof CommunityNotesSidebar
+>['notes'][number];
+type NostrNoteFixture = Pick<
+  CommunityNoteEvent,
+  'id' | 'content' | 'pubkey' | 'created_at' | 'tags'
+> &
+  Partial<CommunityNoteEvent>;
+type SidebarProps = React.ComponentProps<typeof CommunityNotesSidebar>;
+
+jest.mock('@/modules/search/client/services/nostr.client.service', () => {
+  return {
+    __esModule: true,
+    default: class NostrService {},
+    nostrService: {
+      resolveNpubToUsername: jest.fn((pubkey: string) => {
+        if (pubkey.startsWith('pubkey1111')) {
+          return Promise.resolve('alice');
+        }
+        return Promise.resolve(null);
+      }),
+    },
+  };
+});
 
 jest.mock(
   '@/modules/core/client/components/NostrootsActionModal.component',
   () => {
-    const PropTypes = require('prop-types');
-
-    function MockNostrootsActionModal({ isOpen, onClose }) {
+    function MockNostrootsActionModal({
+      isOpen,
+      onClose,
+    }: React.ComponentProps<
+      typeof import('@/modules/core/client/components/NostrootsActionModal.component').default
+    >) {
       if (!isOpen) return null;
       return (
         <div data-testid="nostroots-modal">
@@ -37,22 +54,13 @@ jest.mock(
       );
     }
 
-    MockNostrootsActionModal.propTypes = {
-      isOpen: PropTypes.bool,
-      onClose: PropTypes.func,
-    };
-
     return { __esModule: true, default: MockNostrootsActionModal };
   },
 );
 
-const CommunityNotesSidebar =
-  require('@/modules/search/client/components/CommunityNotesSidebar.component').default;
-const {
-  nostrService,
-} = require('@/modules/search/client/services/nostr.client.service');
+const resolveNpubToUsername = jest.mocked(nostrService.resolveNpubToUsername);
 
-const NOTES = [
+const NOTES: NostrNoteFixture[] = [
   {
     id: 'note-older',
     content: 'Older note at this spot',
@@ -71,10 +79,22 @@ const NOTES = [
   },
 ];
 
+function renderNotes(notes?: NostrNoteFixture[]) {
+  // Note fixtures intentionally omit unused Nostr event fields. Passing
+  // undefined also preserves the component's missing-notes regression case.
+  const props = {
+    ...(notes === undefined
+      ? {}
+      : { notes: notes as unknown as SidebarProps['notes'] }),
+    plusCode: '9F2X+3Q',
+  } as unknown as SidebarProps;
+  return render(<CommunityNotesSidebar {...props} />);
+}
+
 describe('CommunityNotesSidebar', () => {
   beforeEach(() => {
-    nostrService.resolveNpubToUsername.mockClear();
-    nostrService.resolveNpubToUsername.mockImplementation(pubkey => {
+    resolveNpubToUsername.mockClear();
+    resolveNpubToUsername.mockImplementation(pubkey => {
       if (pubkey.startsWith('pubkey1111')) {
         return Promise.resolve('alice');
       }
@@ -83,7 +103,7 @@ describe('CommunityNotesSidebar', () => {
   });
 
   it('renders thread header with note count and plus code', () => {
-    render(<CommunityNotesSidebar notes={NOTES} plusCode="9F2X+3Q" />);
+    renderNotes(NOTES);
 
     expect(screen.getByText('Community Notes')).toBeInTheDocument();
     expect(screen.getByText('2')).toBeInTheDocument();
@@ -91,7 +111,7 @@ describe('CommunityNotesSidebar', () => {
   });
 
   it('renders notes with the newest message lowest', () => {
-    render(<CommunityNotesSidebar notes={NOTES} plusCode="9F2X+3Q" />);
+    renderNotes(NOTES);
 
     const contents = screen.getAllByText(/note at this spot/);
     expect(contents[0]).toHaveTextContent('Older note at this spot');
@@ -99,10 +119,10 @@ describe('CommunityNotesSidebar', () => {
   });
 
   it('resolves author usernames and links to profiles', async () => {
-    render(<CommunityNotesSidebar notes={NOTES} plusCode="9F2X+3Q" />);
+    renderNotes(NOTES);
 
     await waitFor(() => {
-      expect(nostrService.resolveNpubToUsername).toHaveBeenCalledWith(
+      expect(resolveNpubToUsername).toHaveBeenCalledWith(
         'pubkey1111111111111111111111111111111111111111111111111111111111',
       );
       expect(screen.getByRole('link', { name: 'alice' })).toHaveAttribute(
@@ -113,7 +133,7 @@ describe('CommunityNotesSidebar', () => {
   });
 
   it('opens the Nostroots action modal when Reply is clicked', () => {
-    render(<CommunityNotesSidebar notes={NOTES} plusCode="9F2X+3Q" />);
+    renderNotes(NOTES);
 
     fireEvent.click(screen.getByRole('button', { name: 'Reply' }));
 
@@ -121,7 +141,7 @@ describe('CommunityNotesSidebar', () => {
   });
 
   it('closes the Nostroots action modal', () => {
-    render(<CommunityNotesSidebar notes={NOTES} plusCode="9F2X+3Q" />);
+    renderNotes(NOTES);
 
     fireEvent.click(screen.getByRole('button', { name: 'Reply' }));
     fireEvent.click(screen.getByRole('button', { name: 'Close modal' }));
@@ -130,61 +150,48 @@ describe('CommunityNotesSidebar', () => {
   });
 
   it('renders nothing when notes are empty', () => {
-    const { container } = render(
-      <CommunityNotesSidebar notes={[]} plusCode="9F2X+3Q" />,
-    );
+    const { container } = renderNotes([]);
     expect(container).toBeEmptyDOMElement();
   });
 
   it('renders nothing when notes are missing', () => {
-    const { container } = render(<CommunityNotesSidebar plusCode="9F2X+3Q" />);
+    const { container } = renderNotes();
     expect(container).toBeEmptyDOMElement();
   });
 
   it('does not resolve usernames when notes have no author pubkey', () => {
-    render(
-      <CommunityNotesSidebar
-        notes={[
-          {
-            id: 'note-without-author',
-            content: 'Anonymous-looking note',
-            pubkey: '',
-            created_at: Math.floor(Date.now() / 1000),
-            tags: [],
-          },
-        ]}
-        plusCode="9F2X+3Q"
-      />,
-    );
+    renderNotes([
+      {
+        id: 'note-without-author',
+        content: 'Anonymous-looking note',
+        pubkey: '',
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [],
+      },
+    ]);
 
-    expect(nostrService.resolveNpubToUsername).not.toHaveBeenCalled();
+    expect(resolveNpubToUsername).not.toHaveBeenCalled();
   });
 
   it('keeps the pubkey fallback when username lookup fails', async () => {
-    nostrService.resolveNpubToUsername.mockRejectedValueOnce(
-      new Error('relay unavailable'),
-    );
+    resolveNpubToUsername.mockRejectedValueOnce(new Error('relay unavailable'));
 
-    render(<CommunityNotesSidebar notes={NOTES} plusCode="9F2X+3Q" />);
+    renderNotes(NOTES);
 
-    await waitFor(() =>
-      expect(nostrService.resolveNpubToUsername).toHaveBeenCalled(),
-    );
+    await waitFor(() => expect(resolveNpubToUsername).toHaveBeenCalled());
     expect(screen.getByText('pubkey222222...')).toBeInTheDocument();
   });
 
   it('ignores username lookups that settle after unmount', async () => {
-    let resolveLookup;
-    nostrService.resolveNpubToUsername.mockImplementation(
+    let resolveLookup!: (name: string | null) => void;
+    resolveNpubToUsername.mockImplementation(
       () =>
         new Promise(resolve => {
           resolveLookup = resolve;
         }),
     );
 
-    const { unmount } = render(
-      <CommunityNotesSidebar notes={NOTES} plusCode="9F2X+3Q" />,
-    );
+    const { unmount } = renderNotes(NOTES);
 
     unmount();
 
@@ -193,6 +200,6 @@ describe('CommunityNotesSidebar', () => {
       await Promise.resolve();
     });
 
-    expect(nostrService.resolveNpubToUsername).toHaveBeenCalled();
+    expect(resolveNpubToUsername).toHaveBeenCalled();
   });
 });

@@ -3,6 +3,13 @@ import {
   plainTextLength,
 } from '@/modules/core/client/utils/filters';
 
+// These DOM doubles expose only the text fields used by the filter helper.
+function textElement(
+  fields: Pick<HTMLElement, 'innerHTML' | 'textContent' | 'innerText'>,
+): HTMLElement {
+  return fields as HTMLElement;
+}
+
 describe('client filter utilities', () => {
   it('turns html into plain text', () => {
     expect(plainText('<p>Hello <strong>there</strong></p>')).toBe(
@@ -17,21 +24,25 @@ describe('client filter utilities', () => {
   });
 
   it('falls back to innerText when textContent is empty', () => {
-    jest.spyOn(document, 'createElement').mockReturnValue({
-      innerHTML: '',
-      textContent: '',
-      innerText: 'Fallback text',
-    });
+    jest.spyOn(document, 'createElement').mockReturnValue(
+      textElement({
+        innerHTML: '',
+        textContent: '',
+        innerText: 'Fallback text',
+      }),
+    );
 
     expect(plainText('<p>Fallback text</p>')).toBe('Fallback text');
   });
 
   it('returns empty text when generated element has no text fields', () => {
-    jest.spyOn(document, 'createElement').mockReturnValue({
-      innerHTML: '',
-      textContent: '',
-      innerText: '',
-    });
+    jest.spyOn(document, 'createElement').mockReturnValue(
+      textElement({
+        innerHTML: '',
+        textContent: '',
+        innerText: '',
+      }),
+    );
 
     expect(plainText('<br>')).toBe('');
   });
@@ -57,7 +68,7 @@ describe('client filter utilities', () => {
           originalCreateElementDescriptor,
         );
       } else {
-        delete document.createElement;
+        Reflect.deleteProperty(document, 'createElement');
       }
     }
   });

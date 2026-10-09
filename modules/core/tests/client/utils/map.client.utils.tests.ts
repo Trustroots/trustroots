@@ -3,8 +3,18 @@ import {
   isWebGLSupported,
 } from '@/modules/core/client/utils/map';
 
+// Preserve the minimal WebGL doubles; only getContext is used by this helper.
+function canvasElement(
+  getContext: (type: string) => object | null,
+): HTMLCanvasElement {
+  return { getContext } as unknown as HTMLCanvasElement;
+}
+
 describe('map utilities', () => {
-  let createElement;
+  let createElement: jest.SpyInstance<
+    HTMLElement,
+    Parameters<Document['createElement']>
+  >;
 
   beforeEach(() => {
     createElement = jest.spyOn(document, 'createElement');
@@ -15,8 +25,10 @@ describe('map utilities', () => {
   });
 
   it('detects an available WebGL context', () => {
-    const getContext = jest.fn(type => (type === 'webgl' ? {} : null));
-    createElement.mockReturnValue({ getContext });
+    const getContext = jest.fn((type: string) =>
+      type === 'webgl' ? {} : null,
+    );
+    createElement.mockReturnValue(canvasElement(getContext));
 
     expect(isWebGLSupported()).toBe(true);
     expect(createElement).toHaveBeenCalledWith('canvas');
@@ -27,7 +39,7 @@ describe('map utilities', () => {
     const getContext = jest.fn(type =>
       type === 'experimental-webgl' ? {} : null,
     );
-    createElement.mockReturnValue({ getContext });
+    createElement.mockReturnValue(canvasElement(getContext));
 
     expect(isWebGLSupported()).toBe(true);
     expect(getContext).toHaveBeenNthCalledWith(1, 'webgl');
@@ -35,7 +47,7 @@ describe('map utilities', () => {
   });
 
   it('returns false when the browser blocks WebGL', () => {
-    createElement.mockReturnValue({ getContext: () => null });
+    createElement.mockReturnValue(canvasElement(() => null));
 
     expect(isWebGLSupported()).toBe(false);
   });
@@ -51,7 +63,12 @@ describe('map utilities', () => {
   });
 
   it('falls back to OpenStreetMap raster tiles without a Mapbox token', () => {
-    expect(getRasterMapTiles(null)).toEqual({
+    expect(
+      // Preserve the original null token beyond the public optional-token type.
+      getRasterMapTiles(
+        null as unknown as Parameters<typeof getRasterMapTiles>[0],
+      ),
+    ).toEqual({
       options: expect.objectContaining({ maxZoom: 19 }),
       url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     });

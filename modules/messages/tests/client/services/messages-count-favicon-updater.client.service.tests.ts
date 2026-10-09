@@ -14,17 +14,20 @@ jest.mock(
   }),
 );
 
-describe('messages count favicon updater', () => {
-  let unreadCountWatcher;
+const readyMock = jest.mocked(ready);
+const watchMock = jest.mocked(watch);
+let unreadCountWatcher!: (count: number) => void;
 
+describe('messages count favicon updater', () => {
   beforeEach(() => {
     document.head.innerHTML = `
       <link id="favicon" href="/img/favicon.png">
       <link id="favicon2x" href="/img/favicon@2x.png">
     `;
-    ready.mockImplementation(callback => callback());
-    watch.mockImplementation(callback => {
+    readyMock.mockImplementation(callback => callback?.());
+    watchMock.mockImplementation(callback => {
       unreadCountWatcher = callback;
+      return () => {};
     });
   });
 
@@ -36,8 +39,8 @@ describe('messages count favicon updater', () => {
   it('starts watching unread counts when the DOM is ready', () => {
     enable();
 
-    expect(ready).toHaveBeenCalledWith(expect.any(Function));
-    expect(watch).toHaveBeenCalledWith(expect.any(Function));
+    expect(readyMock).toHaveBeenCalledWith(expect.any(Function));
+    expect(watchMock).toHaveBeenCalledWith(expect.any(Function));
   });
 
   it('switches favicons when unread messages appear and disappear', () => {
