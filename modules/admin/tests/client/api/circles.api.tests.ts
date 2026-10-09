@@ -48,11 +48,11 @@ it.each([undefined, 'circle-1'])(
 );
 
 it('sends multipart data when uploading an image', async () => {
-  const circle: CircleFixture & { description?: string | null } = {
+  const circle: CircleFixture & { description?: string } = {
     _id: 'circle-1',
     label: 'Walkers',
     public: false,
-    description: null,
+    description: undefined,
   };
   const image = new File(['image'], 'circle.png', { type: 'image/png' });
   axiosMock.put.mockResolvedValueOnce(response(circle));
