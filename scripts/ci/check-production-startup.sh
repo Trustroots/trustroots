@@ -66,7 +66,7 @@ docker run --rm --entrypoint node "$image" -e '
       `${dependency} should be omitted from the production image`,
     );
   }
-  for (const dependency of ["express", "file-type", "gm"]) {
+  for (const dependency of ["express", "file-type", "gm", "semver"]) {
     require.resolve(dependency);
   }
   console.log("Production dependencies present; representative build tools omitted.");
