@@ -148,7 +148,7 @@ describe('ProfileEditAccount', () => {
     '123456',
     'hosting',
   ])('allows retaining an existing username %s', async username => {
-    usersApi.update.mockResolvedValue({ ...user, username });
+    updateUser.mockResolvedValue({ ...user, username });
     renderPage({ username });
     expect(screen.getByText(/Your current username can stay/)).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Change username' }));
