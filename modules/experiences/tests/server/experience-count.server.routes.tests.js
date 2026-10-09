@@ -99,7 +99,7 @@ describe('Read count of experiences received by user', () => {
     password: _usersPrivate[0].password,
   };
   beforeEach(async () => {
-    users = await utils.saveUsers(
+    users = await utils.saveUsersWithCachedPasswords(
       _users.map(user => ({
         ...user,
         username: user.username,

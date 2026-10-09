@@ -38,7 +38,7 @@ describe('Read experiences by userTo Id', () => {
     sinon.restore();
   });
   beforeEach(async () => {
-    users = await utils.saveUsers(_users);
+    users = await utils.saveUsersWithCachedPasswords(_users);
   });
 
   /**

@@ -18,7 +18,7 @@ describe('Experience author moderation visibility', () => {
     credentials = utils.generateUsers(5, {
       public: true,
     });
-    users = await utils.saveUsers(credentials);
+    users = await utils.saveUsersWithCachedPasswords(credentials);
     experiences = await utils.saveExperiences(
       utils.generateExperiences(users, [
         [2, 1],

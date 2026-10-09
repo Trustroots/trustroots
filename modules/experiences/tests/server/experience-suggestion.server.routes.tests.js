@@ -19,7 +19,7 @@ describe('Experience suggestion', () => {
   });
   let users;
   beforeEach(async () => {
-    users = await utils.saveUsers(userData);
+    users = await utils.saveUsersWithCachedPasswords(userData);
     users[4].public = false;
     users[5].roles = ['user', 'shadowban'];
     users[7].roles = ['user', 'suspended'];

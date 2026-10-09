@@ -5,6 +5,9 @@
 const faker = require('faker');
 const mongoose = require('mongoose');
 
+// Only the opt-in fixture helper uses this process-local cache.
+const fixturePasswordHashes = new Map();
+
 const {
   generateUsers,
   generateExperiences,
@@ -16,13 +19,36 @@ const {
  * @param {object[]} _documents - array of document data
  * @returns {Promise<Document[]>}
  */
-async function saveDocumentsToCollection(collection, _docs) {
+async function saveDocumentsToCollection(
+  collection,
+  _docs,
+  reusePasswords = false,
+) {
   const docs = _docs.map(_doc => {
     const Model = mongoose.model(collection);
     return new Model(_doc);
   });
 
   for (const doc of docs) {
+    if (
+      reusePasswords &&
+      typeof doc.password === 'string' &&
+      doc.password.length >= 8
+    ) {
+      // Validate plaintext before substituting a hash. Keep all other save hooks,
+      // including display-name and email-hash generation, running normally.
+      await doc.validate();
+      const password = doc.password;
+      if (!fixturePasswordHashes.has(password)) {
+        fixturePasswordHashes.set(
+          password,
+          await doc.constructor.hashPassword(password),
+        );
+      }
+      doc.password = fixturePasswordHashes.get(password);
+      doc.salt = undefined;
+      doc.unmarkModified('password');
+    }
     await doc.save();
   }
 
@@ -36,15 +62,31 @@ async function saveDocumentsToCollection(collection, _docs) {
  * @returns {Promise<User[]>}
  * the callback support can be removed when the whole codebase is migrated to ES6
  */
-async function saveUsers(_docs, done = () => {}) {
+async function saveUserFixtures(_docs, done, reusePasswords) {
   try {
-    const docs = await saveDocumentsToCollection('User', _docs);
+    const docs = await saveDocumentsToCollection('User', _docs, reusePasswords);
     done(null, docs);
     return docs;
   } catch (e) {
     done(e);
     throw e;
   }
+}
+
+function saveUsers(_docs, done = () => {}) {
+  return saveUserFixtures(_docs, done, false);
+}
+
+/**
+ * Save unrelated test fixtures with real, reusable password hashes. Authentication
+ * and password tests must use saveUsers or User.save to exercise fresh hashing.
+ * Input objects and their plaintext credentials remain available for signIn.
+ * @param {object[]} docs - user fixture data
+ * @param {Function} [done] - optional callback
+ * @returns {Promise<object[]>} saved user documents
+ */
+function saveUsersWithCachedPasswords(docs, done = () => {}) {
+  return saveUserFixtures(docs, done, true);
 }
 
 /**
@@ -148,6 +190,7 @@ async function signOut(agent) {
 module.exports = {
   generateUsers,
   saveUsers,
+  saveUsersWithCachedPasswords,
   createTestUser,
   generateExperiences,
   saveExperiences,

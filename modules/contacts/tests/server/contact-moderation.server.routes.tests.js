@@ -15,7 +15,7 @@ describe('Direct contact moderation visibility', () => {
     credentials = utils.generateUsers(2, {
       public: true,
     });
-    users = await utils.saveUsers(credentials);
+    users = await utils.saveUsersWithCachedPasswords(credentials);
     await utils.signIn(credentials[0], agent);
   });
   afterEach(async () => {
