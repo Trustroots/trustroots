@@ -128,10 +128,10 @@ describe('OfferMeetEditPage', () => {
     expect(
       screen.getByRole('button', { name: 'Finish editing and save' }),
     ).toBeDisabled();
-    fireEvent.submit(document.querySelector('form'));
-    expect(offersApi.createOffer).not.toHaveBeenCalled();
+    fireEvent.submit(document.querySelector('form')!);
+    expect(offersApiMock.createOffer).not.toHaveBeenCalled();
     fireEvent.click(
-      document.querySelector('[data-testid="location-editor"] button'),
+      document.querySelector('[data-testid="location-editor"] button')!,
     );
     fireEvent.click(
       screen.getByRole('button', { name: 'Finish editing and save' }),
