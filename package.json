@@ -190,6 +190,7 @@
     "@babel/preset-typescript": "7.29.7",
     "@playwright/test": "1.32.3",
     "@pmmmwh/react-refresh-webpack-plugin": "0.5.17",
+    "@sinonjs/fake-timers": "8.1.0",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "13.4.0",
     "@types/jest": "30.0.0",
