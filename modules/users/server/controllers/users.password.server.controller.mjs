@@ -319,6 +319,10 @@ service.changePassword = function (req, res) {
 
       // Login again and return new user
       function (user, done) {
+        if (user.mfaEnabled === true) {
+          user.$locals = user.$locals || {};
+          user.$locals.mfaVerified = req.user.$locals?.mfaVerified === true;
+        }
         req.login(user, function (err) {
           if (err) return done(err);
           done(null, user);
