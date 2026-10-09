@@ -8,7 +8,7 @@ export function sessionId(id) {
     .update('member-session:' + id)
     .digest('hex');
 }
-export function sessionLifetimes(_user) {
+export function sessionLifetimes() {
   // Every signed-in member keeps the same idle and absolute lifetimes.
   // Privileged admin tooling uses a separate password step-up instead of a
   // shorter session.
