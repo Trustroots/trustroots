@@ -44,6 +44,11 @@ COPY testutils testutils
 # Build the app
 RUN npm run build
 
+# The builder needs the full toolchain, but the published image only needs
+# runtime dependencies. Prune after the build so Webpack and other build tools
+# remain available while assets are generated.
+RUN npm prune --omit=dev --ignore-scripts --quiet
+
 # ------------------------------------------------------------------------------
 # Create the production container
 # ------------------------------------------------------------------------------
