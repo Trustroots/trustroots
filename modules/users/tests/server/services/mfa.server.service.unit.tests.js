@@ -57,6 +57,10 @@ describe('Service: authenticator MFA', function () {
     );
   });
 
+  it('normalises an empty recovery-code input', function () {
+    mfaService.hashRecoveryCode(null).should.have.length(64);
+  });
+
   it('encodes staged secrets with non-byte-aligned base32 values', async function () {
     sinon.stub(User, 'updateOne').returns({ exec: async () => ({}) });
     sinon

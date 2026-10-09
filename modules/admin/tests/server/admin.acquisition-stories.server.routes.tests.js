@@ -43,15 +43,19 @@ describe('Admin acquisition stories CRUD tests', () => {
   ];
   let credentialsAdmin;
   let credentialsRegular;
-  beforeEach(async () => {
+  beforeEach(async function () {
+    this.timeout(30000);
     const users = utils
-      .generateUsers(acquisitionStories.length)
+      .generateUsersWithSharedPassword(acquisitionStories.length)
       .map((user, index) => {
         user.acquisitionStory = acquisitionStories[index];
         return user;
       });
+    users.forEach(user => {
+      user.password = 'AcquisitionStoriesTestPassword123!';
+    });
     users[0].roles = ['user', 'admin'];
-    const savedUsers = await utils.saveUsers(users);
+    const savedUsers = await utils.saveUsersWithCachedPasswords(users);
     credentialsAdmin = {
       username: savedUsers[0].username,
       password: users[0].password,

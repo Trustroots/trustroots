@@ -98,6 +98,7 @@ describe('Authenticator MFA controller', () => {
       await controller.beginEnrollment(req, res);
       assert.equal(res.statusCode, 400);
       assert.equal(res.body.message, 'Password confirmation failed.');
+      assert.equal(user.authenticate.called, false);
     });
 
     it('rejects a missing stored account', async () => {
