@@ -1,8 +1,10 @@
 const should = require('should');
 const sinon = require('sinon');
+const crypto = require('node:crypto');
 const config = require('../../../../../config/config.mjs');
 require('./../../../server/models/user.server.model.mjs');
 const mfaService = require('./../../../server/services/mfa.server.service.mjs');
+const User = require('mongoose').model('User');
 
 describe('Service: authenticator MFA', function () {
   afterEach(function () {
@@ -46,6 +48,30 @@ describe('Service: authenticator MFA', function () {
     (() => mfaService.decryptSecret(modified)).should.throw();
   });
 
+  it('rejects missing encrypted values and malformed base32 secrets', function () {
+    (() => mfaService.decryptSecret(null)).should.throw(
+      'Invalid encrypted authenticator secret.',
+    );
+    (() => mfaService.matchingCounter('!', '123456', 59000)).should.throw(
+      'Invalid authenticator secret.',
+    );
+  });
+
+  it('normalises an empty recovery-code input', function () {
+    mfaService.hashRecoveryCode(null).should.have.length(64);
+  });
+
+  it('encodes staged secrets with non-byte-aligned base32 values', async function () {
+    sinon.stub(User, 'updateOne').returns({ exec: async () => ({}) });
+    sinon
+      .stub(crypto, 'randomBytes')
+      .callsFake(size => Buffer.alloc(size === 20 ? 1 : size, 1));
+
+    const setup = await mfaService.stageEnrollment('fictional-user', 'member');
+
+    setup.provisioningUri.should.containEql('secret=AE&');
+  });
+
   it('matches a six-digit TOTP within the allowed time window', function () {
     // RFC 6238 test secret with the six-digit truncation at timestamp 59.
     mfaService
@@ -68,6 +94,44 @@ describe('Service: authenticator MFA', function () {
         59000,
       ),
     ).equal(null);
+    should(
+      mfaService.matchingCounter(
+        'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
+        'bad-code',
+      ),
+    ).equal(null);
+  });
+
+  it('verifies TOTP and recovery attempts without an expected auth version', async function () {
+    const secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+    const storedUser = {
+      _id: 'fictional-user',
+      mfaEnabled: true,
+      mfaSecretEncrypted: mfaService.encryptSecret(secret),
+      mfaRecoveryCodeHashes: [],
+      authVersion: 0,
+    };
+    const findQuery = {
+      select: sinon.stub().returnsThis(),
+      exec: sinon.stub().resolves(storedUser),
+    };
+    sinon.stub(User, 'findById').returns(findQuery);
+    const updateQuery = { exec: sinon.stub().resolves(null) };
+    sinon.stub(User, 'findOneAndUpdate').returns(updateQuery);
+
+    should(
+      await mfaService.verifyAndConsume('fictional-user', '287082', 59000),
+    ).equal(null);
+    should(
+      await mfaService.verifyAndConsume('fictional-user', 'ABCDEF0123456789'),
+    ).equal(null);
+    User.findOneAndUpdate.calledTwice.should.be.true();
+    User.findOneAndUpdate.firstCall.args[0].should.not.have.property(
+      'authVersion',
+    );
+    User.findOneAndUpdate.secondCall.args[0].should.not.have.property(
+      'authVersion',
+    );
   });
 
   it('identifies and expires pre-authentication challenges', function () {

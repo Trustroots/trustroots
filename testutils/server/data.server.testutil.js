@@ -106,6 +106,25 @@ function saveUsersWithCachedPasswords(docs, done = () => {}) {
 }
 
 /**
+ * Insert a batch of fresh test users with one shared password hash. Use for
+ * fixtures that need many accounts but do not need independent credentials.
+ * @param {object[]} users - fresh user data with a shared plaintext password
+ * @returns {Promise<object[]>}
+ */
+async function saveUsersWithSharedPassword(users) {
+  const User = mongoose.model('User');
+  const password = users.find(user => user.password)?.password;
+  const hashedPassword = await User.hashPassword(password);
+  const documents = users.map(user => {
+    const document = new User({ ...user, password: hashedPassword });
+    document.displayName = `${document.firstName} ${document.lastName}`;
+    return document.toObject();
+  });
+  await User.collection.insertMany(documents);
+  return documents;
+}
+
+/**
  * Create an unsaved User document with the defaults most tests rely on.
  *
  * Username and email default to generated unique values, the same mechanism
@@ -264,6 +283,7 @@ module.exports = {
   generateUsersWithSharedPassword,
   saveUsers,
   saveUsersWithCachedPasswords,
+  saveUsersWithSharedPassword,
   createTestUser,
   generateExperiences,
   saveExperiences,

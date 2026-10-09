@@ -222,7 +222,10 @@ describe('Admin acquisition stories controller unit tests', () => {
         user.roles = ['user', 'shadowban'];
         user.acquisitionStory = `Restricted member story ${index}.`;
       });
-      await utils.saveUsers(users);
+      users.forEach(user => {
+        user.password = 'AcquisitionStoriesTestPassword123!';
+      });
+      await utils.saveUsersWithSharedPassword(users);
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
       const expected = await User.find({ roles: 'shadowban' }).sort({
@@ -460,7 +463,8 @@ describe('Admin acquisition stories controller unit tests', () => {
       'www.example.org',
     ];
 
-    beforeEach(async () => {
+    beforeEach(async function () {
+      this.timeout(30000);
       const users = utils
         .generateUsers(acquisitionStories.length)
         .map((user, index) => {
@@ -468,7 +472,10 @@ describe('Admin acquisition stories controller unit tests', () => {
           return user;
         });
 
-      await utils.saveUsers(users);
+      users.forEach(user => {
+        user.password = 'AcquisitionStoriesTestPassword123!';
+      });
+      await utils.saveUsersWithSharedPassword(users);
     });
 
     it('returns frequency analysis with expected shape', async () => {
