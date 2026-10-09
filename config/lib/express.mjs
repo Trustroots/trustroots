@@ -18,8 +18,8 @@ import flash from 'connect-flash';
 import nunjucks from 'nunjucks';
 import buildMetadata from './build-metadata.mjs';
 import path from 'path';
-import paginate from 'express-paginate';
-import * as uuid from 'uuid';
+import paginate from './../../modules/core/server/services/pagination.server.service.mjs';
+import { randomUUID } from 'node:crypto';
 import qs from 'qs';
 import jsonForScript from './../../modules/core/server/services/json-for-script.server.service.mjs';
 const service = {};
@@ -252,7 +252,7 @@ service.initHelmetHeaders = function (app) {
    * @link https://content-security-policy.com/
    */
   app.use((req, res, next) => {
-    res.locals.nonce = uuid.v4();
+    res.locals.nonce = randomUUID();
     const cspMiddleware = helmet.contentSecurityPolicy({
       directives: {
         defaultSrc: ["'self'"],
