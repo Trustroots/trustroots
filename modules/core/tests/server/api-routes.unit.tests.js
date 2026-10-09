@@ -72,7 +72,15 @@ function assertHandlers(actual, expected, label) {
 }
 
 function assertPolicy(route, policy) {
-  assertHandlers(route.all, [policy.isAllowed], `${route.path} policy`);
+  const expected = [policy.isAllowed];
+  if (
+    route.path.startsWith('/api/admin/') &&
+    route.path !== '/api/admin/elevate' &&
+    policy.requireAdminElevation
+  ) {
+    expected.push(policy.requireAdminElevation);
+  }
+  assertHandlers(route.all, expected, `${route.path} policy`);
 }
 
 function register(modulePath, stubs) {
@@ -590,7 +598,12 @@ describe('API route registrations', () => {
   });
 
   it('registers admin routes with audit log middleware where required', () => {
-    const policy = { isAllowed: handler('adminPolicy.isAllowed') };
+    const policy = {
+      isAllowed: handler('adminPolicy.isAllowed'),
+      requireAdminElevation: handler('adminPolicy.requireAdminElevation'),
+      confirmAdminPassword: handler('adminPolicy.confirmAdminPassword'),
+      elevateAdminSession: handler('adminPolicy.elevateAdminSession'),
+    };
     const acquisitionStories = controller(
       ['getAnalysis', 'list'],
       'adminAcquisitionStories',
@@ -638,6 +651,11 @@ describe('API route registrations', () => {
         '../policies/admin.server.policy': policy,
       },
     );
+
+    assertHandlers(routeByPath(routes, '/api/admin/elevate').post, [
+      policy.confirmAdminPassword,
+      policy.elevateAdminSession,
+    ]);
 
     assertHandlers(routeByPath(routes, '/api/admin/acquisition-stories').post, [
       auditLog.record,
