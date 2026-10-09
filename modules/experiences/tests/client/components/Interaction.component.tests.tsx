@@ -5,6 +5,15 @@ import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import Interaction from '@/modules/experiences/client/components/create-experience/Interaction';
 
+type InteractionKind = Parameters<
+  React.ComponentProps<typeof Interaction>['onChange']
+>[0];
+const interactionCases: Array<[string, InteractionKind]> = [
+  ['Met in person', 'met'],
+  ['I hosted them', 'host'],
+  ['They hosted me', 'guest'],
+];
+
 describe('<Interaction />', () => {
   it('renders checked state for each interaction option', () => {
     render(
@@ -19,12 +28,8 @@ describe('<Interaction />', () => {
     expect(screen.getByLabelText('They hosted me')).toBeChecked();
   });
 
-  it.each([
-    ['Met in person', 'met'],
-    ['I hosted them', 'host'],
-    ['They hosted me', 'guest'],
-  ])('calls onChange with %s option', (label, value) => {
-    const onChange = jest.fn();
+  it.each(interactionCases)('calls onChange with %s option', (label, value) => {
+    const onChange = jest.fn((interaction: InteractionKind) => interaction);
     render(
       <Interaction
         interactions={{ met: false, host: false, guest: false }}

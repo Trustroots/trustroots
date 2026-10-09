@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  cleanup,
   render as renderComponent,
   fireEvent,
   waitFor,
@@ -13,12 +14,54 @@ import * as experiencesApi from '@/modules/experiences/client/api/experiences.ap
 import * as supportApi from '@/modules/support/client/api/support.api';
 
 import CreateExperience from '@/modules/experiences/client/components/CreateExperience.component';
+import type {
+  ExperienceMine,
+  ExperienceUser,
+} from '@/modules/experiences/client/experiences.prop-types';
+
+const mockedExperiencesApi = jest.mocked(experiencesApi);
+const mockedSupportApi = jest.mocked(supportApi);
+type ExperienceMineFixture = Omit<Partial<ExperienceMine>, 'response'> & {
+  response?:
+    | ExperienceMine['response']
+    | string
+    | Partial<NonNullable<ExperienceMine['response']>>;
+};
 
 jest.mock('@/modules/experiences/client/api/experiences.api');
 jest.mock('@/modules/support/client/api/support.api');
 
-const render = component =>
+const render = (component: React.ReactNode) =>
   renderComponent(<AppProviders>{component}</AppProviders>);
+
+function mockReadMineOnce(result: ExperienceMineFixture | [] | null) {
+  // Some retry/error cases deliberately keep incomplete legacy API payloads.
+  mockedExperiencesApi.readMine.mockResolvedValueOnce(
+    result as unknown as ExperienceMine | null,
+  );
+}
+
+function makeSavedExperience(isPublic: boolean): ExperienceMine {
+  return {
+    _id: 'saved-experience',
+    created: '2026-01-01T00:00:00.000Z',
+    feedbackPublic: '',
+    interactions: { guest: false, host: false, met: true },
+    public: isPublic,
+    recommend: 'yes',
+    response: null,
+    userFrom: '111111',
+    userTo: '222222',
+  };
+}
+
+function mockCreateOnce(isPublic: boolean | null) {
+  const result = isPublic === null ? null : makeSavedExperience(isPublic);
+  // The empty response case intentionally models a malformed API response.
+  mockedExperiencesApi.create.mockResolvedValueOnce(
+    result as unknown as ExperienceMine,
+  );
+}
 
 afterEach(() => {
   jest.restoreAllMocks();
@@ -27,13 +70,13 @@ afterEach(() => {
   delete window.settings;
 });
 
-async function waitForLoader() {
+async function waitForLoader(): Promise<void> {
   await waitForElementToBeRemoved(() => screen.getByText('Wait a moment…'));
 }
 
 describe('<CreateExperience />', () => {
-  let userFrom;
-  let userTo;
+  let userFrom: ExperienceUser;
+  let userTo: ExperienceUser & { displayName: string };
 
   beforeEach(() => {
     userFrom = {
@@ -45,8 +88,12 @@ describe('<CreateExperience />', () => {
   });
 
   it('should not be possible to leave an experience to self', async () => {
-    const me = { _id: '123456', username: 'username' };
-    experiencesApi.readMine.mockResolvedValueOnce([]);
+    const me = {
+      _id: '123456',
+      displayName: 'Example member',
+      username: 'username',
+    };
+    mockReadMineOnce([]);
     const { queryByRole } = render(
       <CreateExperience userFrom={me} userTo={me} />,
     );
@@ -54,24 +101,24 @@ describe('<CreateExperience />', () => {
       "Sorry, you can't share experience only with yourself.",
     );
     await waitFor(() =>
-      expect(experiencesApi.readMine).toHaveBeenCalledWith({
+      expect(mockedExperiencesApi.readMine).toHaveBeenCalledWith({
         userWith: me._id,
       }),
     );
   });
 
   it('check whether the experience exists at the beginning', async () => {
-    experiencesApi.readMine.mockResolvedValueOnce([]);
+    mockReadMineOnce([]);
     render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
     await waitFor(() =>
-      expect(experiencesApi.readMine).toHaveBeenCalledWith({
+      expect(mockedExperiencesApi.readMine).toHaveBeenCalledWith({
         userWith: userTo._id,
       }),
     );
   });
 
   it('can not leave a second experience - without response', async () => {
-    experiencesApi.readMine.mockResolvedValueOnce({
+    mockReadMineOnce({
       userFrom: userFrom._id,
       public: false,
       response: null,
@@ -83,13 +130,13 @@ describe('<CreateExperience />', () => {
     expect(queryByRole('heading')).toHaveTextContent(
       `You already shared your experience with them`,
     );
-    expect(experiencesApi.readMine).toHaveBeenCalledWith({
+    expect(mockedExperiencesApi.readMine).toHaveBeenCalledWith({
       userWith: userTo._id,
     });
   });
 
   it('can not leave a second experience - with response', async () => {
-    experiencesApi.readMine.mockResolvedValueOnce({
+    mockReadMineOnce({
       userFrom: userTo._id,
       public: true,
       response: 'mocked response',
@@ -101,13 +148,13 @@ describe('<CreateExperience />', () => {
     expect(queryByRole('heading')).toHaveTextContent(
       `You already shared your experience with them`,
     );
-    expect(experiencesApi.readMine).toHaveBeenCalledWith({
+    expect(mockedExperiencesApi.readMine).toHaveBeenCalledWith({
       userWith: userTo._id,
     });
   });
 
   it('can leave an experience (experience form is available)', async () => {
-    experiencesApi.readMine.mockResolvedValueOnce(null);
+    mockReadMineOnce(null);
     const { queryByLabelText } = render(
       <CreateExperience userFrom={userFrom} userTo={userTo} />,
     );
@@ -118,8 +165,8 @@ describe('<CreateExperience />', () => {
   });
 
   it('submit an experience', async () => {
-    experiencesApi.readMine.mockResolvedValueOnce(null);
-    experiencesApi.create.mockResolvedValueOnce({ public: false });
+    mockReadMineOnce(null);
+    mockCreateOnce(false);
 
     const { getByText, getAllByText, getByLabelText, queryByLabelText } =
       render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
@@ -151,7 +198,7 @@ describe('<CreateExperience />', () => {
 
     fireEvent.click(getAllByText('Save experience')[0]);
 
-    expect(experiencesApi.create).toHaveBeenCalledWith({
+    expect(mockedExperiencesApi.create).toHaveBeenCalledWith({
       interactions: {
         met: false,
         guest: true,
@@ -162,8 +209,8 @@ describe('<CreateExperience />', () => {
       userTo: userTo._id,
     });
 
-    const successMessage = await waitFor(() =>
-      getByText('Thank you for sharing your experience!').closest('div'),
+    const successMessage = await waitFor(
+      () => getByText('Thank you for sharing your experience!').closest('div')!,
     );
     expect(successMessage).toHaveTextContent(
       `Your experience will become public when ${userTo.displayName} shares their experience, or at most in 14 days.`,
@@ -174,8 +221,8 @@ describe('<CreateExperience />', () => {
   });
 
   it('keeps the form open when the save response is empty', async () => {
-    experiencesApi.readMine.mockResolvedValueOnce(null);
-    experiencesApi.create.mockResolvedValueOnce(null);
+    mockReadMineOnce(null);
+    mockCreateOnce(null);
 
     const { getByText, getAllByText, getByLabelText } = render(
       <CreateExperience userFrom={userFrom} userTo={userTo} />,
@@ -198,8 +245,8 @@ describe('<CreateExperience />', () => {
   });
 
   it('submit a report when recommend is no and user wants to send a report', async () => {
-    experiencesApi.readMine.mockResolvedValueOnce(null);
-    experiencesApi.create.mockResolvedValueOnce({ public: false });
+    mockReadMineOnce(null);
+    mockCreateOnce(false);
 
     const { getByText, getAllByText, getByLabelText, queryByLabelText } =
       render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
@@ -229,7 +276,7 @@ describe('<CreateExperience />', () => {
 
     fireEvent.click(getAllByText('Save experience')[0]);
 
-    expect(experiencesApi.create).toHaveBeenCalledWith({
+    expect(mockedExperiencesApi.create).toHaveBeenCalledWith({
       interactions: {
         met: false,
         guest: true,
@@ -241,7 +288,7 @@ describe('<CreateExperience />', () => {
     });
 
     await waitFor(() =>
-      expect(supportApi.reportMember).toHaveBeenCalledWith(
+      expect(mockedSupportApi.reportMember).toHaveBeenCalledWith(
         userTo,
         'they were mean to me',
       ),
@@ -257,7 +304,7 @@ describe('<CreateExperience />', () => {
   });
 
   it('can navigate back after choosing that members met in person', async () => {
-    experiencesApi.readMine.mockResolvedValueOnce(null);
+    mockReadMineOnce(null);
 
     const { getAllByText, getByLabelText, queryByLabelText } = render(
       <CreateExperience userFrom={userFrom} userTo={userTo} />,
@@ -280,7 +327,7 @@ describe('<CreateExperience />', () => {
   });
 
   it('uses hosting as the primary recommendation prompt', async () => {
-    experiencesApi.readMine.mockResolvedValueOnce(null);
+    mockReadMineOnce(null);
 
     const { getAllByText, getByLabelText, queryByLabelText } = render(
       <CreateExperience userFrom={userFrom} userTo={userTo} />,
@@ -299,12 +346,12 @@ describe('<CreateExperience />', () => {
   });
 
   it('skips recommendation when the other member already shared publicly', async () => {
-    experiencesApi.readMine.mockResolvedValueOnce({
+    mockReadMineOnce({
       userFrom: userTo._id,
       public: true,
       response: null,
     });
-    experiencesApi.create.mockResolvedValueOnce({ public: true });
+    mockCreateOnce(true);
 
     const { getAllByText, getByLabelText, queryByLabelText, findByText } =
       render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
@@ -327,7 +374,7 @@ describe('<CreateExperience />', () => {
 
     fireEvent.click(getAllByText('Save experience')[0]);
 
-    expect(experiencesApi.create).toHaveBeenCalledWith({
+    expect(mockedExperiencesApi.create).toHaveBeenCalledWith({
       interactions: { met: true, host: false, guest: false },
       recommend: 'yes',
       feedbackPublic: '',
@@ -339,7 +386,7 @@ describe('<CreateExperience />', () => {
   });
 
   it('lets members retry when the initial experience lookup fails', async () => {
-    experiencesApi.readMine
+    mockedExperiencesApi.readMine
       .mockRejectedValueOnce(new Error('Connection failed'))
       .mockResolvedValueOnce(null);
     render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
@@ -350,11 +397,13 @@ describe('<CreateExperience />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
 
     expect(await screen.findByLabelText('Met in person')).toBeInTheDocument();
-    expect(experiencesApi.readMine).toHaveBeenCalledTimes(2);
+    expect(mockedExperiencesApi.readMine).toHaveBeenCalledTimes(2);
   });
 
-  async function fillExperience({ report = false } = {}) {
-    experiencesApi.readMine.mockResolvedValueOnce(null);
+  async function fillExperience({
+    report = false,
+  }: { report?: boolean } = {}): Promise<void> {
+    mockReadMineOnce(null);
     render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
     await waitForLoader();
     fireEvent.click(screen.getByLabelText('Met in person'));
@@ -374,7 +423,20 @@ describe('<CreateExperience />', () => {
     });
   }
 
-  it.each([
+  const saveFailures: Array<
+    [
+      (
+        | Error
+        | {
+            response: {
+              status: number;
+              data: { details: { feedbackPublic: string } };
+            };
+          }
+      ),
+      string,
+    ]
+  > = [
     [
       new Error('Network failure'),
       'We could not save your experience. Your text is still here. Please try again.',
@@ -388,12 +450,13 @@ describe('<CreateExperience />', () => {
       },
       'Your feedback is too long. Please shorten it and try again.',
     ],
-  ])(
+  ];
+
+  it.each(saveFailures)(
     'preserves the draft and enables retry after a failed save (%j)',
-    async (error, message) => {
-      experiencesApi.create
-        .mockRejectedValueOnce(error)
-        .mockResolvedValueOnce({ public: false });
+    async (error: typeof saveFailures[number][0], message: string) => {
+      mockedExperiencesApi.create.mockRejectedValueOnce(error);
+      mockCreateOnce(false);
       await fillExperience();
 
       fireEvent.click(screen.getAllByText('Save experience')[0]);
@@ -410,9 +473,9 @@ describe('<CreateExperience />', () => {
       expect(
         await screen.findByText('Thank you for sharing your experience!'),
       ).toBeInTheDocument();
-      expect(experiencesApi.create).toHaveBeenCalledTimes(2);
-      expect(experiencesApi.create.mock.calls[1]).toEqual(
-        experiencesApi.create.mock.calls[0],
+      expect(mockedExperiencesApi.create).toHaveBeenCalledTimes(2);
+      expect(mockedExperiencesApi.create.mock.calls[1]).toEqual(
+        mockedExperiencesApi.create.mock.calls[0],
       );
       expect(screen.queryByText(message)).not.toBeInTheDocument();
     },
@@ -420,8 +483,10 @@ describe('<CreateExperience />', () => {
 
   it('recognises a saved experience after a lost response causes a retry conflict', async () => {
     await fillExperience();
-    experiencesApi.create.mockRejectedValueOnce({ response: { status: 409 } });
-    experiencesApi.readMine.mockResolvedValueOnce({
+    mockedExperiencesApi.create.mockRejectedValueOnce({
+      response: { status: 409 },
+    });
+    mockReadMineOnce({
       userFrom: userFrom._id,
       public: true,
     });
@@ -436,14 +501,19 @@ describe('<CreateExperience />', () => {
     ).toBeInTheDocument();
   });
 
-  it.each([null, { userFrom: 'another-member', public: true }])(
+  const unconfirmedConflicts: Array<ExperienceMineFixture | null> = [
+    null,
+    { userFrom: 'another-member', public: true },
+  ];
+
+  it.each(unconfirmedConflicts)(
     'does not claim success for an unconfirmed conflict (%j)',
-    async existing => {
+    async (existing: ExperienceMineFixture | null) => {
       await fillExperience();
-      experiencesApi.create.mockRejectedValueOnce({
+      mockedExperiencesApi.create.mockRejectedValueOnce({
         response: { status: 409 },
       });
-      experiencesApi.readMine.mockResolvedValueOnce(existing);
+      mockReadMineOnce(existing);
       fireEvent.click(screen.getAllByText('Save experience')[0]);
       expect(await screen.findByRole('alert')).toHaveTextContent(
         'We could not save your experience.',
@@ -454,8 +524,10 @@ describe('<CreateExperience />', () => {
 
   it('keeps the draft available when checking a retry conflict also fails', async () => {
     await fillExperience();
-    experiencesApi.create.mockRejectedValueOnce({ response: { status: 409 } });
-    experiencesApi.readMine.mockRejectedValueOnce(
+    mockedExperiencesApi.create.mockRejectedValueOnce({
+      response: { status: 409 },
+    });
+    mockedExperiencesApi.readMine.mockRejectedValueOnce(
       new Error('Connection failed'),
     );
     fireEvent.click(screen.getAllByText('Save experience')[0]);
@@ -466,19 +538,21 @@ describe('<CreateExperience />', () => {
   });
 
   it('does not send a private report when saving the experience fails', async () => {
-    experiencesApi.create.mockRejectedValueOnce(new Error('Connection failed'));
+    mockedExperiencesApi.create.mockRejectedValueOnce(
+      new Error('Connection failed'),
+    );
     await fillExperience({ report: true });
     fireEvent.click(screen.getAllByText('Save experience')[0]);
     await screen.findByRole('alert');
-    expect(supportApi.reportMember).not.toHaveBeenCalled();
+    expect(mockedSupportApi.reportMember).not.toHaveBeenCalled();
   });
 
   it('can retry a failed private report without saving the experience again', async () => {
-    experiencesApi.create.mockResolvedValueOnce({ public: false });
-    supportApi.reportMember
+    mockCreateOnce(false);
+    mockedSupportApi.reportMember
       .mockRejectedValueOnce(new Error('Connection failed'))
       .mockRejectedValueOnce(new Error('Connection failed again'))
-      .mockResolvedValueOnce();
+      .mockResolvedValueOnce(undefined);
     await fillExperience({ report: true });
     fireEvent.click(screen.getAllByText('Save experience')[0]);
 
@@ -495,7 +569,7 @@ describe('<CreateExperience />', () => {
       screen.getByRole('button', { name: 'Retry private report' }),
     );
     await waitFor(() =>
-      expect(supportApi.reportMember).toHaveBeenCalledTimes(2),
+      expect(mockedSupportApi.reportMember).toHaveBeenCalledTimes(2),
     );
     await waitFor(() =>
       expect(
@@ -512,9 +586,9 @@ describe('<CreateExperience />', () => {
     expect(
       screen.queryByText(/Your experience was saved, but/),
     ).not.toBeInTheDocument();
-    expect(experiencesApi.create).toHaveBeenCalledTimes(1);
-    expect(supportApi.reportMember).toHaveBeenCalledTimes(3);
-    expect(supportApi.reportMember).toHaveBeenLastCalledWith(
+    expect(mockedExperiencesApi.create).toHaveBeenCalledTimes(1);
+    expect(mockedSupportApi.reportMember).toHaveBeenCalledTimes(3);
+    expect(mockedSupportApi.reportMember).toHaveBeenLastCalledWith(
       userTo,
       'A fictional private report.',
     );
@@ -522,7 +596,7 @@ describe('<CreateExperience />', () => {
   it('recovers public draft choices after reopening, without storing a private report', async () => {
     await fillExperience({ report: true });
     const stored = JSON.parse(
-      localStorage.getItem('trustroots:experience-draft:v1:111111:222222'),
+      localStorage.getItem('trustroots:experience-draft:v1:111111:222222')!,
     );
     expect(stored).toMatchObject({
       met: true,
@@ -530,9 +604,8 @@ describe('<CreateExperience />', () => {
       feedbackPublic: 'A fictional public experience.',
     });
     expect(JSON.stringify(stored)).not.toContain('A fictional private report.');
-    const { cleanup } = require('@testing-library/react/pure');
     cleanup();
-    experiencesApi.readMine.mockResolvedValueOnce(null);
+    mockReadMineOnce(null);
     render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
     fireEvent.click(await screen.findByText('Restore draft'));
     expect(screen.getByLabelText('Met in person')).toBeChecked();
@@ -542,13 +615,13 @@ describe('<CreateExperience />', () => {
     expect(
       screen.getByLabelText(/Leave your public feedback here/),
     ).toHaveValue('A fictional public experience.');
-    experiencesApi.create.mockResolvedValueOnce({ public: false });
+    mockCreateOnce(false);
     fireEvent.click(screen.getAllByText('Save experience')[0]);
     await screen.findByText('Your experience has been saved.');
     expect(
       localStorage.getItem('trustroots:experience-draft:v1:111111:222222'),
     ).toBeNull();
-    expect(supportApi.reportMember).not.toHaveBeenCalled();
+    expect(mockedSupportApi.reportMember).not.toHaveBeenCalled();
   });
 
   function storeDraft() {
@@ -567,7 +640,7 @@ describe('<CreateExperience />', () => {
 
   it('discards a saved draft and starts with empty choices', async () => {
     storeDraft();
-    experiencesApi.readMine.mockResolvedValueOnce(null);
+    mockReadMineOnce(null);
     render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
     fireEvent.click(await screen.findByText('Discard draft'));
     expect(screen.getByLabelText('Met in person')).not.toBeChecked();
@@ -578,17 +651,17 @@ describe('<CreateExperience />', () => {
 
   it('keeps the required recommendation when restoring after the other member published', async () => {
     storeDraft();
-    experiencesApi.readMine.mockResolvedValueOnce({
+    mockReadMineOnce({
       userFrom: userTo._id,
       public: true,
     });
-    experiencesApi.create.mockResolvedValueOnce({ public: true });
+    mockCreateOnce(true);
     render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
     fireEvent.click(await screen.findByText('Restore draft'));
     fireEvent.click(screen.getAllByText('Next')[0]);
     fireEvent.click(screen.getAllByText('Save experience')[0]);
     await screen.findByText('Your experience has been saved.');
-    expect(experiencesApi.create).toHaveBeenCalledWith(
+    expect(mockedExperiencesApi.create).toHaveBeenCalledWith(
       expect.objectContaining({ recommend: 'yes' }),
     );
   });
@@ -605,10 +678,10 @@ describe('<CreateExperience />', () => {
   });
 
   it('shows saving and prevents repeated clicks or editing while awaiting confirmation', async () => {
-    let resolveSave;
-    experiencesApi.create.mockImplementationOnce(
+    let resolveSave!: (value: ExperienceMine) => void;
+    mockedExperiencesApi.create.mockImplementationOnce(
       () =>
-        new Promise(resolve => {
+        new Promise<ExperienceMine>(resolve => {
           resolveSave = resolve;
         }),
     );
@@ -619,35 +692,40 @@ describe('<CreateExperience />', () => {
       screen.getByLabelText(/Leave your public feedback here/),
     ).toBeDisabled();
     fireEvent.click(screen.getAllByText('Saving…')[0]);
-    expect(experiencesApi.create).toHaveBeenCalledTimes(1);
-    resolveSave({ public: false });
+    expect(mockedExperiencesApi.create).toHaveBeenCalledTimes(1);
+    resolveSave(makeSavedExperience(false));
     await screen.findByText('Your experience has been saved.');
   });
 
-  it.each([new Error('Response lost'), { response: { status: 503 } }])(
+  const uncertainSaveErrors: Array<Error | { response: { status: number } }> = [
+    new Error('Response lost'),
+    { response: { status: 503 } },
+  ];
+
+  it.each(uncertainSaveErrors)(
     'confirms an uncertain save without another POST (%j)',
-    async error => {
+    async (error: typeof uncertainSaveErrors[number]) => {
       await fillExperience();
-      experiencesApi.create.mockRejectedValueOnce(error);
-      experiencesApi.readMine.mockResolvedValueOnce({
+      mockedExperiencesApi.create.mockRejectedValueOnce(error);
+      mockReadMineOnce({
         userFrom: userFrom._id,
         public: false,
       });
       fireEvent.click(screen.getAllByText('Save experience')[0]);
       await screen.findByText('Your experience has been saved.');
-      expect(experiencesApi.create).toHaveBeenCalledTimes(1);
+      expect(mockedExperiencesApi.create).toHaveBeenCalledTimes(1);
     },
   );
 
   it('shows confirmation while the private report is still sending', async () => {
-    let resolveReport;
-    supportApi.reportMember.mockImplementationOnce(
+    let resolveReport!: () => void;
+    mockedSupportApi.reportMember.mockImplementationOnce(
       () =>
-        new Promise(resolve => {
+        new Promise<void>(resolve => {
           resolveReport = resolve;
         }),
     );
-    experiencesApi.create.mockResolvedValueOnce({ public: false });
+    mockCreateOnce(false);
     await fillExperience({ report: true });
     fireEvent.click(screen.getAllByText('Save experience')[0]);
     await screen.findByText('Your experience has been saved.');
@@ -675,7 +753,7 @@ describe('<CreateExperience />', () => {
   it('lets a restored oversized draft reach the feedback step so it can be shortened', async () => {
     storeDraft();
     window.settings = { limits: { maximumExperienceFeedbackPublicLength: 5 } };
-    experiencesApi.readMine.mockResolvedValueOnce(null);
+    mockReadMineOnce(null);
     render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
     fireEvent.click(await screen.findByText('Restore draft'));
     fireEvent.click(screen.getAllByText('Next')[0]);

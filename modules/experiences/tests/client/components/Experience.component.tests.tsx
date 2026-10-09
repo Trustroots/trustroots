@@ -4,8 +4,12 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Experience from '@/modules/experiences/client/components/read-experiences/Experience';
+import type {
+  Experience as ExperienceModel,
+  ExperienceUser,
+} from '@/modules/experiences/client/experiences.prop-types';
 
-const userFrom = {
+const userFrom: ExperienceUser = {
   _id: 'user-from',
   username: 'alice',
   displayName: 'Alice Example',
@@ -13,7 +17,7 @@ const userFrom = {
   created: '2019-01-01T00:00:00.000Z',
 };
 
-const userTo = {
+const userTo: ExperienceUser = {
   _id: 'user-to',
   username: 'bob',
   displayName: 'Bob Example',
@@ -89,11 +93,12 @@ describe('<Experience />', () => {
           interactions: { guest: true, host: false, met: false },
           public: false,
           recommend: 'no',
+          // This intentionally incomplete API member omits username; keep its cast at the fixture boundary.
           userFrom: {
             _id: 'anonymous-from',
             displayName: 'Anonymous From',
             avatarSource: 'none',
-          },
+          } as unknown as ExperienceModel['userFrom'],
           userTo,
           response: {
             _id: 'response-2b',

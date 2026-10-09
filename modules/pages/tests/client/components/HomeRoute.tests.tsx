@@ -7,7 +7,10 @@ import { broadcastClientEvent } from '@/modules/core/client/services/client-runt
 
 jest.mock('@/modules/pages/client/components/Home.component', () => ({
   __esModule: true,
-  default: props => <output>{JSON.stringify(props)}</output>,
+  default: (props: Record<string, unknown>) => {
+    const React = jest.requireActual<typeof import('react')>('react');
+    return React.createElement('output', null, JSON.stringify(props));
+  },
 }));
 
 it('passes landing queries and bootstrap data and tracks all displayed photos', () => {
@@ -15,6 +18,7 @@ it('passes landing queries and bootstrap data and tracks all displayed photos', 
   const { unmount } = render(
     <AppProviders
       bootstrapData={{
+        title: 'Trustroots',
         user: null,
         settings: { build: { shortCommit: 'abc123' } },
         isNativeMobileApp: true,

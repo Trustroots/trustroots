@@ -18,11 +18,23 @@ import {
   generateMessage,
 } from '@/testutils/client/data.client.testutil';
 import * as clientRuntime from '@/modules/core/client/services/client-runtime';
+import type { UserProfile } from '@/modules/users/client/types';
+import type {
+  Message,
+  MessageUser,
+  PageParams,
+} from '@/modules/messages/client/api/messages.api';
 
 const api = {
-  users: usersAPI,
-  messages: messagesAPI,
+  users: { fetch: jest.mocked(usersAPI.fetch) },
+  messages: {
+    fetchMessages: jest.mocked(messagesAPI.fetchMessages),
+    sendMessage: jest.mocked(messagesAPI.sendMessage),
+    markRead: jest.mocked(messagesAPI.markRead),
+  },
 };
+const updateUnreadCount = jest.mocked(updateUnreadMessageCount);
+const getRouteParams = jest.mocked(clientRuntime.getCurrentRouteParams);
 
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/messages/client/api/messages.api');
@@ -38,9 +50,15 @@ jest.mock('react-responsive', () => ({
   useMediaQuery: () => mockIsExtraSmall,
 }));
 jest.mock('@/modules/messages/client/components/InfiniteMessages', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockInfiniteMessages({ children, onFetchMore }) {
+  function MockInfiniteMessages({
+    children,
+    onFetchMore,
+  }: {
+    children?: React.ReactNode;
+    onFetchMore?: () => void;
+  }) {
     return (
       <div data-testid="infinite-messages">
         <button type="button" onClick={onFetchMore}>
@@ -50,11 +68,6 @@ jest.mock('@/modules/messages/client/components/InfiniteMessages', () => {
       </div>
     );
   }
-  MockInfiniteMessages.propTypes = {
-    children: () => null,
-    onFetchMore: () => null,
-  };
-
   return MockInfiniteMessages;
 });
 jest.mock('@/modules/users/client/components/Monkeybox', () => {
@@ -63,37 +76,36 @@ jest.mock('@/modules/users/client/components/Monkeybox', () => {
   };
 });
 jest.mock('@/modules/support/client/components/ReportMember.component', () => {
-  function MockReportMember({ username }) {
+  function MockReportMember({ username }: { username?: string }) {
     return <button type="button">Report {username}</button>;
   }
-  MockReportMember.propTypes = {
-    username: () => null,
-  };
   return MockReportMember;
 });
 jest.mock('@/modules/users/client/components/BlockMember.component', () => {
-  function MockBlockMember({ username }) {
+  function MockBlockMember({ username }: { username?: string }) {
     return <button type="button">Block {username}</button>;
   }
-  MockBlockMember.propTypes = {
-    username: () => null,
-  };
   return MockBlockMember;
 });
 jest.mock(
   '@/modules/references-thread/client/components/ReferenceThread',
   () => {
-    function MockReferenceThread({ userToId }) {
+    function MockReferenceThread({ userToId }: { userToId: string }) {
       return <div>References for {userToId}</div>;
     }
-    MockReferenceThread.propTypes = {
-      userToId: () => null,
-    };
     return MockReferenceThread;
   },
 );
 jest.mock('@/modules/core/client/components/TrEditor', () => {
-  function MockTrEditor({ id, onChange, text }) {
+  function MockTrEditor({
+    id,
+    onChange,
+    text,
+  }: {
+    id?: string;
+    onChange: (value: string) => void;
+    text: string;
+  }) {
     return (
       <textarea
         id={id}
@@ -102,23 +114,30 @@ jest.mock('@/modules/core/client/components/TrEditor', () => {
       />
     );
   }
-  MockTrEditor.propTypes = {
-    id: () => null,
-    onChange: () => null,
-    text: () => null,
-  };
-
   return MockTrEditor;
 });
 
-const me = {
+const me: React.ComponentProps<typeof Thread>['user'] = {
   ...generateClientUser({ public: true }),
-  memberIds: [],
+  username: 'test-member',
 };
-const otherUser = {
+const otherUser: UserProfile = {
   ...generateClientUser({ public: true }),
   member: [],
 };
+
+function createMessage(
+  userFrom: MessageUser,
+  overrides: Partial<Message> = {},
+): Message {
+  return {
+    ...generateMessage(userFrom),
+    read: false,
+    userFrom,
+    userTo: me,
+    ...overrides,
+  };
+}
 
 beforeEach(() => {
   api.users.fetch.mockReset();
@@ -136,14 +155,14 @@ afterEach(() => {
   window.localStorage.clear();
 });
 
-let routeParams = {
+let routeParams: { username: string; userId?: string } = {
   username: otherUser.username,
 };
 
-clientRuntime.getCurrentRouteParams.mockReturnValue(routeParams);
+getRouteParams.mockReturnValue(routeParams);
 
 describe('<Thread>', () => {
-  let originalVisualViewport;
+  let originalVisualViewport: PropertyDescriptor | undefined;
 
   beforeEach(() => {
     api.users.fetch.mockResolvedValue(otherUser);
@@ -151,14 +170,14 @@ describe('<Thread>', () => {
     routeParams = {
       username: otherUser.username,
     };
-    clientRuntime.getCurrentRouteParams.mockReturnValue(routeParams);
+    getRouteParams.mockReturnValue(routeParams);
   });
 
   afterEach(() => {
     if (originalVisualViewport) {
       Object.defineProperty(window, 'visualViewport', originalVisualViewport);
     } else {
-      delete window.visualViewport;
+      Reflect.deleteProperty(window, 'visualViewport');
     }
     originalVisualViewport = undefined;
   });
@@ -169,17 +188,17 @@ describe('<Thread>', () => {
       document.documentElement.style.getPropertyValue(
         '--trustroots-keyboard-inset',
       );
-    const expectedKeyboardInset = (height, offsetTop) =>
+    const expectedKeyboardInset = (height: number, offsetTop: number) =>
       `${Math.round(windowHeight - height - offsetTop)}px`;
     originalVisualViewport = Object.getOwnPropertyDescriptor(
       window,
       'visualViewport',
     );
-    const viewportListeners = {};
+    const viewportListeners: Record<string, () => void> = {};
     const visualViewport = {
       height: 500.4,
       offsetTop: 20.2,
-      addEventListener: jest.fn((event, listener) => {
+      addEventListener: jest.fn((event: string, listener: () => void) => {
         viewportListeners[event] = listener;
       }),
       removeEventListener: jest.fn(),
@@ -189,7 +208,7 @@ describe('<Thread>', () => {
       value: visualViewport,
     });
     api.messages.fetchMessages.mockResolvedValueOnce({
-      messages: [generateMessage(otherUser)],
+      messages: [createMessage(otherUser)],
     });
     const { unmount } = render(<Thread user={me} profileMinimumLength={0} />);
     const editor = await screen.findByRole('textbox');
@@ -278,14 +297,15 @@ describe('<Thread>', () => {
     });
 
     it('sends a typed reply and appends the API response to the thread', async () => {
+      // The component consumes only AxiosResponse.data in this mock.
       api.messages.sendMessage.mockResolvedValueOnce({
         data: {
-          ...generateMessage(me),
+          ...createMessage(me),
           _id: 'sent-message',
           content: '<p>Hello, can I stay next Tuesday?</p>',
           created: '2026-06-05T12:00:00.000Z',
         },
-      });
+      } as unknown as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
 
       render(<Thread user={me} profileMinimumLength={0} />);
 
@@ -296,7 +316,7 @@ describe('<Thread>', () => {
       });
       const replyForm = editor.closest('form');
       expect(replyForm).toBeTruthy();
-      fireEvent.submit(replyForm);
+      fireEvent.submit(replyForm!);
 
       await waitFor(() =>
         expect(api.messages.sendMessage).toHaveBeenCalledWith(
@@ -312,9 +332,9 @@ describe('<Thread>', () => {
 
   it('redirects to inbox when opening own profile thread', async () => {
     routeParams = {
-      username: me.username,
+      username: 'test-member',
     };
-    clientRuntime.getCurrentRouteParams.mockReturnValue(routeParams);
+    getRouteParams.mockReturnValue(routeParams);
     api.messages.fetchMessages.mockResolvedValueOnce({ messages: [] });
 
     render(<Thread user={me} profileMinimumLength={0} />);
@@ -329,7 +349,7 @@ describe('<Thread>', () => {
 
   it('shows a safety warning above messages', async () => {
     api.messages.fetchMessages.mockResolvedValueOnce({
-      messages: [generateMessage(otherUser)],
+      messages: [createMessage(otherUser)],
     });
 
     render(<Thread user={me} profileMinimumLength={0} />);
@@ -353,7 +373,7 @@ describe('<Thread>', () => {
       username: otherUser.username,
       userId: otherUser._id,
     };
-    clientRuntime.getCurrentRouteParams.mockReturnValue(routeParams);
+    getRouteParams.mockReturnValue(routeParams);
 
     api.users.fetch.mockRejectedValueOnce({
       response: {
@@ -408,7 +428,7 @@ describe('<Thread>', () => {
       username: otherUser.username,
       userId: otherUser._id,
     };
-    clientRuntime.getCurrentRouteParams.mockReturnValue(routeParams);
+    getRouteParams.mockReturnValue(routeParams);
 
     api.users.fetch.mockRejectedValueOnce({
       response: {
@@ -418,11 +438,12 @@ describe('<Thread>', () => {
     api.messages.fetchMessages.mockResolvedValueOnce({
       messages: [
         {
-          ...generateMessage(otherUser),
+          ...createMessage(otherUser),
           _id: 'removed-user-message',
           content: 'I used to be here',
-          userFrom: null,
-          userTo: null,
+          // Deleted-member endpoints may be missing in historical message data.
+          userFrom: null as unknown as MessageUser,
+          userTo: null as unknown as MessageUser,
         },
       ],
     });
@@ -445,7 +466,7 @@ describe('<Thread>', () => {
       username: otherUser.username,
       userId: otherUser._id,
     };
-    clientRuntime.getCurrentRouteParams.mockReturnValue(routeParams);
+    getRouteParams.mockReturnValue(routeParams);
 
     api.users.fetch.mockRejectedValueOnce({
       response: {
@@ -455,7 +476,7 @@ describe('<Thread>', () => {
     api.messages.fetchMessages.mockResolvedValueOnce({
       messages: [
         {
-          ...generateMessage(otherUser),
+          ...createMessage(otherUser),
           _id: 'removed-user-complete-message',
           content: 'My endpoints were complete',
           userFrom: { _id: otherUser._id },
@@ -483,7 +504,7 @@ describe('<Thread>', () => {
     api.messages.fetchMessages.mockResolvedValueOnce({
       messages: [
         {
-          ...generateMessage(otherUser),
+          ...createMessage(otherUser),
           _id: 'blocked-msg',
         },
       ],
@@ -502,14 +523,14 @@ describe('<Thread>', () => {
 
   it('loads older messages using next pagination params', async () => {
     const newestMessage = {
-      ...generateMessage(otherUser),
+      ...createMessage(otherUser),
       _id: 'newest-message',
       content: 'Newest message',
       created: '2026-06-05T12:00:00.000Z',
       read: true,
     };
     const oldestMessage = {
-      ...generateMessage(otherUser),
+      ...createMessage(otherUser),
       _id: 'oldest-message',
       content: 'Oldest message',
       created: '2026-06-04T12:00:00.000Z',
@@ -522,7 +543,8 @@ describe('<Thread>', () => {
       })
       .mockResolvedValueOnce({
         messages: [oldestMessage],
-        nextParams: null,
+        // The API uses null to represent the end of pagination.
+        nextParams: null as unknown as PageParams,
       });
 
     render(<Thread user={me} profileMinimumLength={0} />);
@@ -543,21 +565,21 @@ describe('<Thread>', () => {
 
   it('prepends older paginated messages in chronological order', async () => {
     const newestMessage = {
-      ...generateMessage(otherUser),
+      ...createMessage(otherUser),
       _id: 'newest-message',
       content: 'Newest message',
       created: '2026-06-05T12:00:00.000Z',
       read: true,
     };
     const oldestMessage = {
-      ...generateMessage(otherUser),
+      ...createMessage(otherUser),
       _id: 'oldest-message',
       content: 'Oldest message',
       created: '2026-06-03T12:00:00.000Z',
       read: true,
     };
     const middleMessage = {
-      ...generateMessage(otherUser),
+      ...createMessage(otherUser),
       _id: 'middle-message',
       content: 'Middle message',
       created: '2026-06-04T12:00:00.000Z',
@@ -570,7 +592,8 @@ describe('<Thread>', () => {
       })
       .mockResolvedValueOnce({
         messages: [middleMessage, oldestMessage],
-        nextParams: null,
+        // The API uses null to represent the end of pagination.
+        nextParams: null as unknown as PageParams,
       });
 
     render(<Thread user={me} profileMinimumLength={0} />);
@@ -593,13 +616,14 @@ describe('<Thread>', () => {
     api.messages.fetchMessages.mockResolvedValueOnce({
       messages: [
         {
-          ...generateMessage(otherUser),
+          ...createMessage(otherUser),
           _id: 'only-message',
           content: 'Only message',
           created: '2026-06-05T12:00:00.000Z',
         },
       ],
-      nextParams: null,
+      // The API uses null to represent the end of pagination.
+      nextParams: null as unknown as PageParams,
     });
 
     render(<Thread user={me} profileMinimumLength={0} />);
@@ -632,7 +656,7 @@ describe('<Thread>', () => {
     });
     const replyForm = editor.closest('form');
     expect(replyForm).toBeTruthy();
-    fireEvent.submit(replyForm);
+    fireEvent.submit(replyForm!);
 
     await waitFor(() =>
       expect(alertSpy).toHaveBeenCalledWith(
@@ -658,7 +682,7 @@ describe('<Thread>', () => {
     });
     const replyForm = editor.closest('form');
     expect(replyForm).toBeTruthy();
-    fireEvent.submit(replyForm);
+    fireEvent.submit(replyForm!);
 
     await waitFor(() =>
       expect(alertSpy).toHaveBeenCalledWith(
@@ -672,7 +696,7 @@ describe('<Thread>', () => {
     api.messages.fetchMessages.mockResolvedValueOnce({
       messages: [
         {
-          ...generateMessage(otherUser),
+          ...createMessage(otherUser),
           _id: 'sidebar-message',
           content: 'Message with sidebar',
           read: true,
@@ -697,7 +721,7 @@ describe('<Thread>', () => {
   describe('only messages from other user', () => {
     beforeEach(() => {
       api.messages.fetchMessages.mockResolvedValueOnce({
-        messages: [generateMessage(otherUser)],
+        messages: [createMessage(otherUser)],
       });
     });
 
@@ -714,14 +738,15 @@ describe('<Thread>', () => {
     });
 
     it('sends a hosting quick reply through the thread API', async () => {
+      // The component consumes only AxiosResponse.data in this mock.
       api.messages.sendMessage.mockResolvedValueOnce({
         data: {
-          ...generateMessage(me),
+          ...createMessage(me),
           _id: 'quick-reply-message',
           content: '<p data-hosting="yes"><b><i>Yes, I can host!</i></b></p>',
           created: '2026-06-05T12:00:00.000Z',
         },
-      });
+      } as unknown as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
 
       render(<Thread user={me} profileMinimumLength={0} />);
       await screen.findByRole('button', { name: 'Yes, I can host!' });
@@ -743,7 +768,7 @@ describe('<Thread>', () => {
 
   describe('unread messages from other user', () => {
     it('marks them read and refreshes the unread message count', async () => {
-      const unreadMessage = generateMessage(otherUser);
+      const unreadMessage = createMessage(otherUser);
       unreadMessage._id = 'unread-message';
       api.messages.fetchMessages.mockResolvedValueOnce({
         messages: [unreadMessage],
@@ -755,15 +780,15 @@ describe('<Thread>', () => {
       await waitFor(() =>
         expect(api.messages.markRead).toHaveBeenCalledWith(['unread-message']),
       );
-      expect(updateUnreadMessageCount).toHaveBeenCalledTimes(1);
+      expect(updateUnreadCount).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('messages from both users', () => {
     beforeEach(() => {
-      const messageFromOther = generateMessage(otherUser);
+      const messageFromOther = createMessage(otherUser);
       messageFromOther.content = 'Hi there from other user';
-      const messageFromMe = generateMessage(me);
+      const messageFromMe = createMessage(me);
       messageFromMe._id = 'my-message';
       messageFromMe.content = 'Hi there from me';
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type PropsWithChildren } from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
@@ -7,36 +7,47 @@ import Home, {
   getSignupUrl,
 } from '@/modules/pages/client/components/Home.component';
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
+import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
 
 jest.mock('@/modules/tribes/client/api/tribes.api');
 
-const mockGetRouteParams = jest.fn();
+const mockGetRouteParams = jest.fn<Record<string, string>, []>();
+const mockReadCircles = jest.mocked(circlesAPI.read);
+// The null response intentionally exercises the unresolved-route-circle case.
+const mockGetCircle = jest.mocked(circlesAPI.get) as jest.MockedFunction<
+  (slug: string) => Promise<TribeSummary | null>
+>;
+const circle = (id: string, slug: string, label: string): TribeSummary => ({
+  _id: id,
+  slug,
+  label,
+  count: 3,
+});
 
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   getCurrentRouteParams: () => mockGetRouteParams(),
 }));
 
 jest.mock('@/modules/core/client/components/Board.js', () => {
-  const React = require('react');
-  function MockBoard({ children }) {
-    return <div>{children}</div>;
+  const actualReact = jest.requireActual<typeof import('react')>('react');
+  function MockBoard({ children }: PropsWithChildren) {
+    return actualReact.createElement('div', null, children);
   }
-  MockBoard.propTypes = { children: () => null };
   return MockBoard;
 });
 
 jest.mock('@/modules/core/client/components/Screenshot.js', () => {
-  const React = require('react');
+  const actualReact = jest.requireActual<typeof import('react')>('react');
   function MockScreenshot() {
-    return <div>screenshot</div>;
+    return actualReact.createElement('div', null, 'screenshot');
   }
   return MockScreenshot;
 });
 
 jest.mock('@/modules/core/client/components/BoardCredits.js', () => {
-  const React = require('react');
+  const actualReact = jest.requireActual<typeof import('react')>('react');
   function MockBoardCredits() {
-    return <div>board-credits</div>;
+    return actualReact.createElement('div', null, 'board-credits');
   }
   return MockBoardCredits;
 });
@@ -57,7 +68,7 @@ describe('getSignupUrl', () => {
 
 describe('<Home />', () => {
   it('renders the intro and join button for logged-out visitors', async () => {
-    circlesAPI.read.mockResolvedValueOnce([]);
+    mockReadCircles.mockResolvedValueOnce([]);
     mockGetRouteParams.mockReturnValue({});
 
     render(<Home user={null} />);
@@ -83,7 +94,7 @@ describe('<Home />', () => {
   it('uses compact board height on small screens', async () => {
     const originalInnerWidth = window.innerWidth;
     const originalInnerHeight = window.innerHeight;
-    circlesAPI.read.mockResolvedValueOnce([]);
+    mockReadCircles.mockResolvedValueOnce([]);
     mockGetRouteParams.mockReturnValue({});
     Object.defineProperty(window, 'innerWidth', {
       configurable: true,
@@ -109,8 +120,8 @@ describe('<Home />', () => {
   });
 
   it('renders fetched circles', async () => {
-    circlesAPI.read.mockResolvedValueOnce([
-      { _id: 'c1', slug: 'hitchhikers', label: 'Hitchhikers' },
+    mockReadCircles.mockResolvedValueOnce([
+      circle('circle-1', 'hitchhikers', 'Hitchhikers'),
     ]);
     mockGetRouteParams.mockReturnValue({});
 
@@ -125,18 +136,16 @@ describe('<Home />', () => {
     );
 
     expect(await screen.findByText('Hitchhikers')).toBeInTheDocument();
-    expect(circlesAPI.read).toHaveBeenCalledWith({ limit: 3 });
+    expect(mockReadCircles).toHaveBeenCalledWith({ limit: 3 });
   });
 
   it('prepends a circle from route params when missing from first response', async () => {
-    circlesAPI.read.mockResolvedValueOnce([
-      { _id: 'c1', slug: 'mountainbiking', label: 'Mountain Bikers' },
+    mockReadCircles.mockResolvedValueOnce([
+      circle('circle-1', 'mountainbiking', 'Mountain Bikers'),
     ]);
-    circlesAPI.get.mockResolvedValueOnce({
-      _id: 'c2',
-      slug: 'hitchhikers',
-      label: 'Hitchhikers',
-    });
+    mockGetCircle.mockResolvedValueOnce(
+      circle('circle-2', 'hitchhikers', 'Hitchhikers'),
+    );
     mockGetRouteParams.mockReturnValue({ circle: 'hitchhikers' });
 
     render(<Home user={null} photoCredits={{}} />);
@@ -144,15 +153,15 @@ describe('<Home />', () => {
     expect(
       await screen.findByRole('link', { name: 'Hitchhikers' }),
     ).toBeInTheDocument();
-    expect(circlesAPI.get).toHaveBeenCalledWith('hitchhikers');
+    expect(mockGetCircle).toHaveBeenCalledWith('hitchhikers');
     expect(
       await screen.findByRole('link', { name: 'Join Trustroots now' }),
     ).toHaveAttribute('href', '/signup?tribe=hitchhikers');
   });
 
   it('uses legacy tribe route params for circle-specific signup links', async () => {
-    circlesAPI.read.mockResolvedValueOnce([
-      { _id: 'c1', slug: 'cyclists', label: 'Cyclists' },
+    mockReadCircles.mockResolvedValueOnce([
+      circle('circle-1', 'cyclists', 'Cyclists'),
     ]);
     mockGetRouteParams.mockReturnValue({ tribe: 'cyclists' });
 
@@ -165,21 +174,21 @@ describe('<Home />', () => {
   });
 
   it('does not prepend unresolved route circles', async () => {
-    circlesAPI.read.mockResolvedValueOnce([
-      { _id: 'c1', slug: 'mountainbiking', label: 'Mountain Bikers' },
+    mockReadCircles.mockResolvedValueOnce([
+      circle('circle-1', 'mountainbiking', 'Mountain Bikers'),
     ]);
-    circlesAPI.get.mockResolvedValueOnce(null);
+    mockGetCircle.mockResolvedValueOnce(null);
     mockGetRouteParams.mockReturnValue({ circle: 'hitchhikers' });
 
     render(<Home user={null} photoCredits={{}} />);
 
     expect(await screen.findByText('Mountain Bikers')).toBeInTheDocument();
     expect(screen.queryByText('Hitchhikers')).not.toBeInTheDocument();
-    expect(circlesAPI.get).toHaveBeenCalledWith('hitchhikers');
+    expect(mockGetCircle).toHaveBeenCalledWith('hitchhikers');
   });
 
   it('does not show the top join link for logged-in users', async () => {
-    circlesAPI.read.mockResolvedValueOnce([]);
+    mockReadCircles.mockResolvedValueOnce([]);
     mockGetRouteParams.mockReturnValue({});
 
     render(

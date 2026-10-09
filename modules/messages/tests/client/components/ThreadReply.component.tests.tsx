@@ -5,8 +5,16 @@ import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import ThreadReply from '@/modules/messages/client/components/ThreadReply';
 
+type EditorMockProps = {
+  id?: string;
+  onChange: (value: string) => void;
+  onCtrlEnter: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  text: string;
+};
+type OnSend = React.ComponentProps<typeof ThreadReply>['onSend'];
+
 jest.mock('@/modules/core/client/components/TrEditor', () => {
-  function MockTrEditor({ id, onChange, onCtrlEnter, text }) {
+  function MockTrEditor({ id, onChange, onCtrlEnter, text }: EditorMockProps) {
     return (
       <textarea
         id={id}
@@ -20,13 +28,6 @@ jest.mock('@/modules/core/client/components/TrEditor', () => {
       />
     );
   }
-  MockTrEditor.propTypes = {
-    id: () => null,
-    onChange: () => null,
-    onCtrlEnter: () => null,
-    text: () => null,
-  };
-
   return MockTrEditor;
 });
 
@@ -34,6 +35,14 @@ afterEach(() => {
   jest.clearAllMocks();
   window.localStorage.clear();
 });
+
+function getForm(container: HTMLElement): HTMLFormElement {
+  const form = container.querySelector('form');
+  if (!form) {
+    throw new Error('Expected the reply form to be rendered');
+  }
+  return form;
+}
 
 describe('<ThreadReply>', () => {
   it('focuses the editor when desktop autofocus is enabled', () => {
@@ -67,7 +76,7 @@ describe('<ThreadReply>', () => {
 
   it('sends content and clears a saved draft after a successful send', async () => {
     window.localStorage.setItem('messages-draft-user', 'Saved draft');
-    const onSend = jest.fn().mockResolvedValue(true);
+    const onSend: OnSend = jest.fn().mockResolvedValue(true);
     const { container, getByRole } = render(
       <ThreadReply cacheKey="messages-draft-user" onSend={onSend} />,
     );
@@ -75,7 +84,7 @@ describe('<ThreadReply>', () => {
     fireEvent.change(getByRole('textbox'), {
       target: { value: '<p>Can I stay?</p>' },
     });
-    fireEvent.submit(container.querySelector('form'));
+    fireEvent.submit(getForm(container));
 
     await waitFor(() =>
       expect(onSend).toHaveBeenCalledWith('<p>Can I stay?</p>'),
@@ -86,36 +95,36 @@ describe('<ThreadReply>', () => {
   });
 
   it('keeps content when sending does not complete', async () => {
-    const onSend = jest.fn().mockResolvedValue(false);
+    const onSend: OnSend = jest.fn().mockResolvedValue(false);
     const { container, getByRole } = render(<ThreadReply onSend={onSend} />);
 
     fireEvent.change(getByRole('textbox'), {
       target: { value: '<p>Still deciding</p>' },
     });
-    fireEvent.submit(container.querySelector('form'));
+    fireEvent.submit(getForm(container));
 
     await waitFor(() => expect(onSend).toHaveBeenCalled());
     expect(getByRole('textbox')).toHaveValue('<p>Still deciding</p>');
   });
 
   it('does not send empty content or disable the send button', () => {
-    const onSend = jest.fn();
+    const onSend: OnSend = jest.fn();
     const { container, getByRole } = render(<ThreadReply onSend={onSend} />);
 
     fireEvent.change(getByRole('textbox'), {
       target: { value: '<p>   </p>' },
     });
-    fireEvent.submit(container.querySelector('form'));
+    fireEvent.submit(getForm(container));
 
     expect(onSend).not.toHaveBeenCalled();
     expect(getByRole('button', { name: /Send/ })).toBeEnabled();
   });
 
   it('ignores duplicate submits while a message is still sending', async () => {
-    let resolveSend;
-    const onSend = jest.fn(
+    let resolveSend!: (sent: boolean) => void;
+    const onSend: OnSend = jest.fn(
       () =>
-        new Promise(resolve => {
+        new Promise<boolean>(resolve => {
           resolveSend = resolve;
         }),
     );
@@ -124,12 +133,12 @@ describe('<ThreadReply>', () => {
     fireEvent.change(getByRole('textbox'), {
       target: { value: '<p>One message only</p>' },
     });
-    fireEvent.submit(container.querySelector('form'));
+    fireEvent.submit(getForm(container));
 
     await waitFor(() =>
       expect(getByRole('button', { name: /Send/ })).toBeDisabled(),
     );
-    fireEvent.submit(container.querySelector('form'));
+    fireEvent.submit(getForm(container));
 
     expect(onSend).toHaveBeenCalledTimes(1);
     resolveSend(true);
@@ -139,7 +148,7 @@ describe('<ThreadReply>', () => {
   });
 
   it('sends content from the editor ctrl-enter shortcut', async () => {
-    const onSend = jest.fn().mockResolvedValue(true);
+    const onSend: OnSend = jest.fn().mockResolvedValue(true);
     const { getByRole } = render(<ThreadReply onSend={onSend} />);
 
     fireEvent.change(getByRole('textbox'), {

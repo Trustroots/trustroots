@@ -4,9 +4,10 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ThreadMessage from '@/modules/messages/client/components/ThreadMessage';
+import type { MessageUser } from '@/modules/messages/client/api/messages.api';
 
 describe('<ThreadMessage />', function () {
-  const me = {
+  const me: MessageUser = {
     _id: 'user-me',
     displayName: 'Me',
     username: 'me',
@@ -19,7 +20,9 @@ describe('<ThreadMessage />', function () {
         message={{
           _id: 'msg-1',
           created: '2026-06-05T12:00:00.000Z',
+          read: false,
           content: '<p>Hello</p>',
+          userTo: me,
           userFrom: me,
         }}
       />,
@@ -31,7 +34,7 @@ describe('<ThreadMessage />', function () {
   });
 
   it('links other users by username', () => {
-    const other = {
+    const other: MessageUser = {
       _id: 'user-other',
       username: 'travel',
       displayName: 'Traveler',
@@ -43,7 +46,9 @@ describe('<ThreadMessage />', function () {
         message={{
           _id: 'msg-2',
           created: '2026-06-05T12:00:00.000Z',
+          read: false,
           content: '<p>Welcome</p>',
+          userTo: me,
           userFrom: other,
         }}
       />,
@@ -64,6 +69,7 @@ describe('<ThreadMessage />', function () {
         message={{
           _id: 'msg-links',
           created: '2026-06-05T12:00:00.000Z',
+          read: false,
           content:
             '<p>Here is my scam link <a href="https://scammetyscammetyscam.example.com/">scammetyscammetyscam.example.com</a> ' +
             '<a href="//scammetyscammetyscam.example.com/">another one</a> ' +
@@ -72,12 +78,16 @@ describe('<ThreadMessage />', function () {
             '<a href="http://[">invalid address</a> ' +
             '<a>missing address</a> ' +
             '<a href="/safety">safety guidance</a></p>',
+          userTo: me,
           userFrom: me,
         }}
       />,
     );
 
     const body = container.querySelector('.panel-body');
+    if (!body) {
+      throw new Error('Expected the message body to render');
+    }
     expect(body).toHaveTextContent('scammetyscammetyscam.example.com');
     expect(body).toHaveTextContent('another one');
     expect(body).toHaveTextContent('email');
@@ -97,7 +107,9 @@ describe('<ThreadMessage />', function () {
         message={{
           _id: 'msg-3',
           created: '2026-06-05T12:00:00.000Z',
+          read: false,
           content: '<p>Deleted</p>',
+          userTo: me,
           userFrom: {
             _id: 'deleted-id',
             displayName: 'Deleted',
@@ -116,7 +128,9 @@ describe('<ThreadMessage />', function () {
         message={{
           _id: 'msg-hosting',
           created: '2026-06-05T12:00:00.000Z',
+          read: false,
           content: '<p data-hosting="yes">Happy to host</p>',
+          userTo: me,
           userFrom: me,
         }}
       />,
@@ -135,7 +149,9 @@ describe('<ThreadMessage />', function () {
         message={{
           _id: 'msg-4',
           created: '2026-06-05T12:00:00.000Z',
+          read: false,
           content: '<p data-hosting="no">Not hosting this time</p>',
+          userTo: me,
           userFrom: me,
         }}
       />,
