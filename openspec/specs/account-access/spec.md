@@ -520,11 +520,11 @@ SHALL expose no browser fingerprint or precise location. Individual revocation
 and account-wide sign-out SHALL require the member's current password. The
 system SHALL enforce a seven-day idle and 28-day absolute lifetime for regular
 members, and a 30-minute idle and 12-hour absolute lifetime for administrators,
-moderators, and welcome-team members. Revoked records SHALL remain as tombstones until absolute expiry
-so concurrent requests cannot recreate revoked sessions. Session-control
-responses SHALL not be cached, and mutations SHALL use a dedicated shared
-request limit. Deployments SHALL create the MemberSession TTL index because
-production disables automatic index creation.
+moderators, and welcome-team members. Revoked records SHALL remain as tombstones
+until absolute expiry so concurrent requests cannot recreate revoked sessions.
+Session-control responses SHALL not be cached, and mutations SHALL use a
+dedicated shared request limit. Deployments SHALL create the MemberSession TTL
+index because production disables automatic index creation.
 
 #### Scenario: Member reviews active sessions
 
@@ -547,8 +547,7 @@ production disables automatic index creation.
 
 #### Scenario: Session reaches an idle or absolute lifetime
 
-- **WHEN** a regular or privileged session reaches its applicable idle or
-  absolute lifetime
+- **WHEN** a member session reaches its idle or absolute lifetime
 - **THEN** the server destroys the session and requires sign-in again
 
 ### Requirement: Account access deployed version
