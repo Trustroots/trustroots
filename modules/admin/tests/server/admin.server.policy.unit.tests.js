@@ -40,10 +40,6 @@ describe('Admin policy unit tests', () => {
     welcome.roles.should.deepEqual(['welcome-team']);
     welcome.allows.should.deepEqual([
       { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
-      {
-        resources: '/api/admin/acquisition-stories/analysis',
-        permissions: ['post'],
-      },
       { resources: '/api/admin/staff-blockers', permissions: ['get'] },
     ]);
     policies[0].roles.should.deepEqual(['admin']);

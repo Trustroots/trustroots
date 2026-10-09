@@ -544,10 +544,7 @@ describe('API route registrations', () => {
 
   it('registers admin routes with audit log middleware where required', () => {
     const policy = { isAllowed: handler('adminPolicy.isAllowed') };
-    const acquisitionStories = controller(
-      ['getAnalysis', 'list'],
-      'adminAcquisitionStories',
-    );
+    const acquisitionStories = controller(['list'], 'adminAcquisitionStories');
     const auditLog = controller(['list', 'record', 'actors'], 'adminAuditLog');
     const messages = controller(['getMessages'], 'adminMessages');
     const newsletter = controller(
@@ -601,9 +598,11 @@ describe('API route registrations', () => {
       auditLog.record,
       acquisitionStories.list,
     ]);
-    assertHandlers(
-      routeByPath(routes, '/api/admin/acquisition-stories/analysis').post,
-      [auditLog.record, acquisitionStories.getAnalysis],
+    assert.strictEqual(
+      routes.some(
+        route => route.path === '/api/admin/acquisition-stories/analysis',
+      ),
+      false,
     );
     assertHandlers(routeByPath(routes, '/api/admin/audit-log').get, [
       auditLog.list,

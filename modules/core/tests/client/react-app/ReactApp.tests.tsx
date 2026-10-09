@@ -60,19 +60,6 @@ jest.mock(
   },
 );
 
-jest.mock(
-  '@/modules/admin/client/components/AdminAcquisitionStoriesAnalysis.component',
-  () => {
-    const React = jest.requireActual<typeof import('react')>('react');
-
-    function MockAdminAcquisitionStoriesAnalysis() {
-      return <main>Admin acquisition stories analysis route</main>;
-    }
-
-    return MockAdminAcquisitionStoriesAnalysis;
-  },
-);
-
 jest.mock('@/modules/admin/client/components/AdminCircles.component', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 
@@ -82,7 +69,6 @@ jest.mock('@/modules/admin/client/components/AdminCircles.component', () => {
 
   return MockAdminCircles;
 });
-
 jest.mock('@/modules/admin/client/components/AdminMessages.component', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 

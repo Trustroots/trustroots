@@ -1,9 +1,6 @@
 import axios, { type AxiosResponse } from 'axios';
 
-import {
-  getAcquisitionStories,
-  getAcquisitionStoriesAnalysis,
-} from '@/modules/admin/client/api/acquisition-stories.api';
+import { getAcquisitionStories } from '@/modules/admin/client/api/acquisition-stories.api';
 
 const axiosMock = jest.mocked(axios);
 const AxiosHeaders =
@@ -15,7 +12,6 @@ function response<T>(data: T): AxiosResponse<T> {
 }
 
 type AcquisitionStory = { _id: string };
-type AcquisitionStoriesAnalysis = { total: number };
 
 jest.mock('axios', () =>
   jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
@@ -33,16 +29,6 @@ describe('admin acquisition-stories api', () => {
     await expect(getAcquisitionStories()).resolves.toBe(data);
     expect(axiosMock.post).toHaveBeenCalledWith(
       '/api/admin/acquisition-stories',
-    );
-  });
-
-  it('fetches acquisition stories analysis', async () => {
-    const data: AcquisitionStoriesAnalysis = { total: 5 };
-    axiosMock.post.mockResolvedValueOnce(response(data));
-
-    await expect(getAcquisitionStoriesAnalysis()).resolves.toBe(data);
-    expect(axiosMock.post).toHaveBeenCalledWith(
-      '/api/admin/acquisition-stories/analysis',
     );
   });
 });

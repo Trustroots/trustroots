@@ -5,7 +5,6 @@ import React, { useMemo, useState, useEffect } from 'react';
 
 // Internal dependencies
 import { getAcquisitionStories } from '../api/acquisition-stories.api';
-import AdminAcquisitionStoriesMenu from './AdminAcquisitionStoriesMenu';
 import AdminHeader from './AdminHeader.component';
 import UserLink from './UserLink.component';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
@@ -246,8 +245,6 @@ export default function AdminAcquisitionStories() {
       <div className="container admin-acquisition-stories-page">
         <h2>Acquisition stories</h2>
         <p>Based on latest 500 stories</p>
-
-        <AdminAcquisitionStoriesMenu active="stories" />
 
         <div className="form-check mb-3">
           <input

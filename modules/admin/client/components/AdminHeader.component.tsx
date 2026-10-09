@@ -42,10 +42,6 @@ export default function AdminHeader() {
       label: 'Staff blockers',
     },
     {
-      path: 'acquisition-stories/analysis',
-      label: 'Analysis',
-    },
-    {
       path: 'newsletter',
       label: 'Newsletter',
     },
@@ -83,8 +79,7 @@ export default function AdminHeader() {
               page =>
                 isAdmin ||
                 (page.path === 'staff-blockers' && isWelcomeTeam) ||
-                page.path === 'acquisition-stories' ||
-                page.path === 'acquisition-stories/analysis',
+                page.path === 'acquisition-stories',
             )
             .map(page => renderTab(page))}
         </ul>

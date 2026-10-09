@@ -104,7 +104,7 @@ test.describe('admin acquisition feature coverage', () => {
     await expect(members).toHaveText(['forest-member']);
   });
 
-  test('admin acquisition story tools return deterministic rows and analysis', async ({
+  test('admin acquisition stories remain available without analysis', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.acquisition-stories', [
@@ -116,10 +116,7 @@ test.describe('admin acquisition feature coverage', () => {
       'Story rows show whether profiles are visible.',
       'Story rows show matching restricted accounts.',
       'Story columns can be sorted.',
-    ]);
-    annotateFeature(testInfo, 'admin.acquisition-analysis', [
-      'Acquisition story analysis page loads.',
-      'Analysis API returns deterministic analysis.',
+      'Acquisition stories remain available without Analysis navigation or API.',
     ]);
 
     await page.goto('/admin/acquisition-stories');
@@ -172,15 +169,15 @@ test.describe('admin acquisition feature coverage', () => {
       }),
     ]);
 
-    await page.goto('/admin/acquisition-stories/analysis');
-    await expect(page).toHaveURL(/\/admin\/acquisition-stories\/analysis/);
+    await expect(
+      page.getByRole('link', { name: 'Analysis', exact: true }),
+    ).toHaveCount(0);
 
     const analysis = await page.request.post(
       '/api/admin/acquisition-stories/analysis',
       { headers: { 'X-Trustroots-Request': '1' } },
     );
-    expect(analysis.ok()).toBeTruthy();
-    expect(Object.keys(await analysis.json()).length).toBeGreaterThan(0);
+    expect(analysis.status()).toBe(404);
   });
 
   test('welcome team list prioritises shared languages and marks a welcomed member', async ({

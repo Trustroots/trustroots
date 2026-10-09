@@ -18,7 +18,6 @@ import {
 import Admin from '@/modules/admin/client/components/Admin.component';
 import AdminStaffBlockers from '@/modules/admin/client/components/AdminStaffBlockers.component';
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
-import AdminAcquisitionStoriesAnalysis from '@/modules/admin/client/components/AdminAcquisitionStoriesAnalysis.component';
 import AdminAuditLog from '@/modules/admin/client/components/AdminAuditLog.component';
 import AdminCircles from '@/modules/admin/client/components/AdminCircles.component';
 import AdminMessages from '@/modules/admin/client/components/AdminMessages.component';
@@ -243,9 +242,6 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/admin': () => <Admin />,
     '/admin/staff-blockers': () => <AdminStaffBlockers />,
     '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
-    '/admin/acquisition-stories/analysis': () => (
-      <AdminAcquisitionStoriesAnalysis />
-    ),
     '/admin/audit-log': () => <AdminAuditLog />,
     '/admin/circles': () => <AdminCircles />,
     '/admin/messages': () => <AdminMessages />,
