@@ -152,6 +152,67 @@ test.describe('authenticated member flows', () => {
     expect(new Date(data.exportedAt).toISOString()).toBe(data.exportedAt);
   });
 
+  test('member profile API publishes place labels without precise coordinates', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.view-about', [
+      'Profile API returns public profile data.',
+    ]);
+
+    const context = await createIsolatedContext(browser, baseURL);
+    const page = await context.newPage();
+    try {
+      await signInViaApi(page, context.request, SEEDED_MEMBERS[0]);
+      await page.goto(`/profile/${SEEDED_RELATIONSHIP_MEMBERS.alice.username}`);
+      const response = await page.evaluate(async username => {
+        const result = await fetch(`/api/users/${username}`);
+        return {
+          status: result.status,
+          cacheControl: result.headers.get('cache-control') || '',
+          profile: await result.json(),
+        };
+      }, SEEDED_RELATIONSHIP_MEMBERS.alice.username);
+      expect(response.status).toBe(200);
+      expect(response.cacheControl).not.toMatch(/public/i);
+
+      const profile = response.profile;
+      expect(profile.locationLiving).toBe('Fictional home');
+      expect(profile.locationFrom).toBe('Fictional origin');
+      for (const privateField of [
+        'email',
+        'blocked',
+        'roles',
+        'locationCoordinates',
+        'coordinates',
+        'latitude',
+        'longitude',
+        'exactAddress',
+      ]) {
+        expect(profile).not.toHaveProperty(privateField);
+      }
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('anonymous visitors cannot download a member data export', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.data-export', [
+      'Unauthenticated visitors are refused access to the member data export.',
+    ]);
+
+    const context = await browser.newContext({ baseURL });
+    try {
+      const response = await context.request.get('/api/users/export');
+      expect(response.status()).toBe(403);
+    } finally {
+      await context.close();
+    }
+  });
+
   test('inbox prompts an unconfirmed member to activate their profile', async ({
     browser,
     baseURL,
