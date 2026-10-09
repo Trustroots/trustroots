@@ -80,7 +80,15 @@ function assertPolicy(route, policy) {
   ) {
     expected.push(policy.requireAdminElevation);
   }
-  assertHandlers(route.all, expected, `${route.path} policy`);
+  const handlerNames = handlers =>
+    handlers.map(handler =>
+      (handler.routeTestName || handler.name).split('.').pop(),
+    );
+  assert.deepStrictEqual(
+    handlerNames(route.all),
+    handlerNames(expected),
+    `${route.path} policy`,
+  );
 }
 
 function register(modulePath, stubs) {
