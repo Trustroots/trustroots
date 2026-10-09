@@ -40,14 +40,6 @@ service.signup = function (req, res) {
       // Check if we have the required data before hitting more strict validations at Mongo
       function (done) {
         if (
-          Object.prototype.hasOwnProperty.call(req.body, 'username') &&
-          typeof req.body.username !== 'string'
-        ) {
-          const err = new Error(authenticationService.usernameFormatMessage);
-          err.userFacing = true;
-          return done(err);
-        }
-        if (
           !['firstName', 'lastName', 'username', 'password', 'email'].every(
             field => typeof req.body?.[field] === 'string' && req.body[field],
           )

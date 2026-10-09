@@ -123,7 +123,7 @@ describe('User signup and authentication CRUD tests', function () {
     const payload = {
       firstName: 'Sample',
       lastName: 'Member',
-      username: 'payload-member',
+      username: 'payloadmember',
       password: 'ExamplePassword123!',
       email: 'payload-member@example.test',
       newsletter: true,
@@ -159,7 +159,7 @@ describe('User signup and authentication CRUD tests', function () {
     const payload = {
       firstName: 'Sample',
       lastName: 'Member',
-      username: 'typed-member',
+      username: 'typedmember',
       password: 'ExamplePassword123!',
       email: 'typed-member@example.test',
     };
