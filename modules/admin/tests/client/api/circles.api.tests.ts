@@ -48,10 +48,11 @@ it.each([undefined, 'circle-1'])(
 );
 
 it('sends multipart data when uploading an image', async () => {
-  const circle: CircleFixture = {
+  const circle: CircleFixture & { description?: string | null } = {
     _id: 'circle-1',
     label: 'Walkers',
     public: false,
+    description: null,
   };
   const image = new File(['image'], 'circle.png', { type: 'image/png' });
   axiosMock.put.mockResolvedValueOnce(response(circle));
@@ -61,5 +62,6 @@ it('sends multipart data when uploading an image', async () => {
   expect(data).toBeInstanceOf(FormData);
   expect(data.get('label')).toBe('Walkers');
   expect(data.get('public')).toBe('false');
+  expect(data.get('description')).toBe('');
   expect(data.get('image')).toEqual(image);
 });
