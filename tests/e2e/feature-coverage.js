@@ -2754,37 +2754,7 @@ const features = [
       'Acquisition stories query returns deterministic rows.',
       'Story rows show available member and hosting locations.',
       'Story rows show matching restricted accounts.',
-    ],
-    relatedSpecs: [],
-  },
-  {
-    id: 'admin.acquisition-analysis',
-    area: AREA.adminModeration,
-    status: STATUS.active,
-    description:
-      'Admins and Welcome team members can view acquisition story analysis.',
-    roles: ['admin', 'welcome-team'],
-    references: {
-      clientRoutes: [
-        clientRoute(
-          'admin-acquisition-stories-analysis',
-          '/admin/acquisition-stories/analysis',
-          source.adminClient,
-          { requiresAuth: true, requiresRole: ['admin', 'welcome-team'] },
-        ),
-      ],
-      apiRoutes: [
-        apiRoute(
-          'POST',
-          '/api/admin/acquisition-stories/analysis',
-          source.adminServer,
-        ),
-      ],
-    },
-    requiredScenarios: [
-      'Greeters can view analysis.',
-      'Acquisition story analysis page loads.',
-      'Analysis API returns deterministic analysis.',
+      'Acquisition stories remain available without Analysis navigation or API.',
     ],
     relatedSpecs: [],
   },

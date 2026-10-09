@@ -294,7 +294,7 @@ describe('<AdminUser />', () => {
     expect(
       screen.getByRole('button', { name: 'Make greeter' }),
     ).toHaveAccessibleDescription(
-      'Greeters can view acquisition stories and analysis, and see members who blocked their account.',
+      'Greeters can view acquisition stories and see members who blocked their account.',
     );
     expect(
       screen.queryByText('Standard Trustroots member access.'),

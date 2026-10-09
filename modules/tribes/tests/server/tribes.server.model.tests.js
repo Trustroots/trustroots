@@ -37,6 +37,27 @@ describe('Tribe Model Unit Tests:', function () {
 
   afterEach(utils.clearDatabase);
 
+  it('accepts whole member counts and rejects fractional or negative counts', async () => {
+    for (const count of [0, 1, 100]) {
+      await new Tribe({ label: 'Fictional circle', count }).validate();
+    }
+    for (const count of [1.5, -1]) {
+      await new Tribe({ label: 'Fictional circle', count }).validate().then(
+        () => {
+          throw new Error('Expected count validation to fail');
+        },
+        error => {
+          should.exist(error.errors.count);
+          if (count === 1.5) {
+            error.errors.count.message.should.equal(
+              'Error, expected `count` to be an integer. Value: `1.5`',
+            );
+          }
+        },
+      );
+    }
+  });
+
   it('should give new circles varied dark colours readable with white text', function () {
     const random = sinon.stub(Math, 'random');
     const colours = new Set();
