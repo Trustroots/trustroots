@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import ProfileEditPage from './ProfileEditPage.component';
+import MemberSessions from './MemberSessions.component';
 import {
   changePassword,
   removeProfile,
@@ -343,6 +344,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
           {removalMessage && <p className="help-block">{removalMessage}</p>}
         </div>
       </div>
+      <MemberSessions />
     </ProfileEditPage>
   );
 }

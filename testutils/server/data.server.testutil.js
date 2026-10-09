@@ -185,9 +185,31 @@ async function clearDatabase() {
  * @param {object} agent - supertest's agent
  * @returns {Promise<void>}
  */
+async function elevateAdminAccess(agent, password) {
+  await agent
+    .post('/api/admin/elevate')
+    .set('X-Trustroots-Request', '1')
+    .send({ password })
+    .expect(200);
+}
+
 async function signIn(user, agent) {
   const { username, password } = user;
   await agent.post('/api/auth/signin').send({ username, password }).expect(200);
+  // Privileged accounts need a password step-up before admin APIs. Avoid
+  // probing the endpoint for regular members, since that request itself is
+  // authenticated activity and can affect unrelated middleware behaviour.
+  const authenticatedUser = await mongoose
+    .model('User')
+    .findOne({ username }, 'roles')
+    .lean();
+  if (
+    authenticatedUser?.roles?.some(role =>
+      ['admin', 'welcome-team'].includes(role),
+    )
+  ) {
+    await elevateAdminAccess(agent, password);
+  }
 }
 
 /**
@@ -211,6 +233,7 @@ module.exports = {
   generateExperiences,
   saveExperiences,
   clearDatabase,
+  elevateAdminAccess,
   signIn,
   signOut,
 };

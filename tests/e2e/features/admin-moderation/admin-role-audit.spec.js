@@ -210,6 +210,7 @@ test.describe('admin role and audit feature coverage', () => {
           exact: true,
         }),
       ).toBeVisible();
+      member.roles = ['user', 'welcome-team'];
       await signInViaApi(memberPage, memberContext.request, member);
       await memberPage.goto('/admin/acquisition-stories');
       await expect(
@@ -255,6 +256,7 @@ test.describe('admin role and audit feature coverage', () => {
         .getByRole('dialog')
         .getByRole('button', { name: 'Remove greeter', exact: true })
         .click();
+      member.roles = ['user'];
       await expect(
         page.getByRole('button', { name: 'Make greeter', exact: true }),
       ).toBeVisible();

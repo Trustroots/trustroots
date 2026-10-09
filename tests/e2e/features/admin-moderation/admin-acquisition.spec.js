@@ -199,6 +199,7 @@ test.describe('admin acquisition feature coverage', () => {
     const welcomer = createUser({
       firstName: 'Fictional',
       lastName: 'Welcomer',
+      roles: ['user', 'welcome-team'],
     });
     const setupContext = await createIsolatedContext(browser, baseURL);
     const welcomerContext = await createIsolatedContext(browser, baseURL);
