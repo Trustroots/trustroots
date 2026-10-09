@@ -30,7 +30,7 @@ describe('<AdminHeader />', () => {
         '/admin/acquisition-stories',
       );
       expect(screen.getAllByRole('link')).toHaveLength(
-        user?.roles?.includes('welcome-team') ? 4 : 3,
+        user?.roles?.includes('welcome-team') ? 5 : 3,
       );
       expect(
         screen.queryByRole('link', { name: 'Audit log' }),
