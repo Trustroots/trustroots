@@ -54,6 +54,31 @@ describe('Local passport strategy unit tests', () => {
     sinon.restore();
   });
 
+  it('rejects structured credentials before looking up an account', async () => {
+    for (const [username, password, expectedDummyPassword] of [
+      [{ $ne: null }, 'example-password', 'example-password'],
+      [['sample-member'], 'example-password', 'example-password'],
+      [null, 'example-password', 'example-password'],
+      ['sample-member', { $ne: null }, ''],
+      ['sample-member', ['example-password'], ''],
+      ['a'.repeat(321), 'example-password', 'example-password'],
+    ]) {
+      passwordHashing.verifyPassword.resetHistory();
+      const done = sinon.spy();
+      verify(username, password, done);
+      await new Promise(resolve => setImmediate(resolve));
+      done
+        .calledOnceWithExactly(null, false, {
+          message: 'Unknown user or invalid password',
+        })
+        .should.be.true();
+      passwordHashing.verifyPassword
+        .calledOnceWithExactly(expectedDummyPassword, null, null)
+        .should.be.true();
+    }
+    User.findOne.called.should.be.false();
+  });
+
   it('configures username and password fields', () => {
     strategyOptions.usernameField.should.equal('username');
     strategyOptions.passwordField.should.equal('password');
