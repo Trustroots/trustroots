@@ -1,86 +1,65 @@
 // External dependencies
-import { BaseControl, SVGOverlay } from 'react-map-gl';
-import React from 'react';
-import type { MapControlProps } from 'react-map-gl/src/components/use-map-control';
+import { Marker, useMap } from 'react-map-gl/mapbox-legacy';
+import React, { useEffect, useState } from 'react';
 
 // Internal dependencies
 import { getOfferHexColor, zoomToPixelMeters } from '../utils/markers.js';
 
-// ReactMapGL custom overlay
-// https://uber.github.io/react-map-gl/docs/advanced/custom-overlays
-interface OfferLocationOverlayProps extends MapControlProps {
+interface OfferLocationOverlayProps {
   location: [number, number];
   offerStatus?: string;
   offerType?: string;
 }
 
-interface ViewportContext {
-  viewport: { zoom: number };
-}
+export default function OfferLocationOverlay({
+  location,
+  offerType,
+  offerStatus,
+}: OfferLocationOverlayProps) {
+  const maps = useMap();
+  const [zoom, setZoom] = useState(0);
 
-interface SVGOverlayProps {
-  ref: React.RefObject<HTMLElement | SVGAElement | null>;
-  redraw: (context: {
-    project: (coordinates: [number, number]) => [number, number];
-  }) => React.ReactElement;
-}
+  useEffect(() => {
+    const map = maps.current?.getMap();
+    if (!map) return undefined;
 
-const TypedSVGOverlay =
-  SVGOverlay as unknown as React.ComponentType<SVGOverlayProps>;
+    const updateZoom = () => setZoom(map.getZoom());
+    updateZoom();
+    map.on('zoom', updateZoom);
+    return () => {
+      map.off('zoom', updateZoom);
+    };
+  }, [maps]);
 
-class OfferLocationOverlay extends BaseControl<
-  OfferLocationOverlayProps,
-  SVGSVGElement
-> {
-  // Instead of implementing render(), implement _render()
-  _render() {
-    const { viewport } = this._context as ViewportContext;
-    const { location, offerType, offerStatus } = this.props;
+  const [latitude, longitude] = location;
+  const circleRadius =
+    zoom >= 11 ? zoomToPixelMeters({ latitude, meters: 1000, zoom }) : 12;
+  const circleStyle =
+    zoom >= 11
+      ? {
+          backgroundColor: 'rgba(177, 177, 177, 0.5)',
+          border: '2px solid #989898',
+        }
+      : { backgroundColor: getOfferHexColor({ offerType, offerStatus }) };
 
-    // _containerRef registers event listeners for map interactions
-    // @TODO: performance? Re-render using requestAnimationFrame? https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame
-    return (
-      <TypedSVGOverlay
-        ref={this._containerRef}
-        redraw={({ project }) => {
-          const [latitude, longitude] = location;
-
-          // Note different order of longitude and latitude in the array compared to `location`
-          const [cx, cy] = project([longitude, latitude]);
-
-          // Zoom threshold when marker changes between "high level dot" vs "detailed area bubble"
-          const zoomThreshold = 11;
-
-          // Calculate circle size based on zoom level
-          const circleRadius =
-            viewport.zoom >= zoomThreshold
-              ? zoomToPixelMeters({
-                  latitude,
-                  meters: 1000,
-                  zoom: viewport.zoom,
-                })
-              : 12;
-
-          // When zoomed closer, show area bubble. Otherwise standard offer dot.
-          const circleStyle =
-            viewport.zoom >= zoomThreshold
-              ? {
-                  fill: '#b1b1b1',
-                  fillOpacity: '0.5',
-                  stroke: '#989898',
-                  strokeWidth: '2px',
-                }
-              : {
-                  fill: getOfferHexColor({ offerType, offerStatus }),
-                };
-
-          return (
-            <circle cx={cx} cy={cy} r={circleRadius} style={circleStyle} />
-          );
+  return (
+    <Marker
+      latitude={latitude}
+      longitude={longitude}
+      anchor="center"
+      style={{ pointerEvents: 'none' }}
+    >
+      <span
+        aria-hidden="true"
+        style={{
+          ...circleStyle,
+          borderRadius: '50%',
+          display: 'block',
+          height: circleRadius * 2,
+          pointerEvents: 'none',
+          width: circleRadius * 2,
         }}
       />
-    );
-  }
+    </Marker>
+  );
 }
-
-export default OfferLocationOverlay;

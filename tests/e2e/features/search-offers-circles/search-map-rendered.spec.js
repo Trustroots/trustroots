@@ -44,17 +44,19 @@ async function expectCentreHostPinPreservesZoom(
 ) {
   await waitForSearchMap(page);
   const previousZoom = await readMapZoom(page);
-  if (beforeClick) {
-    await beforeClick();
-  } else {
-    await page.waitForTimeout(300);
-  }
+  if (beforeClick) await beforeClick();
+
+  await expect
+    .poll(() =>
+      page.locator('.search-map').getAttribute('data-map-offer-count'),
+    )
+    .toBe('2');
 
   const canvas = page.locator('.mapboxgl-canvas');
   const originalCanvas = assertCanvasSurvives
     ? await canvas.elementHandle()
     : null;
-  const surface = page.locator('.search-map-container .overlays');
+  const surface = page.locator('.mapboxgl-canvas');
   const box = await surface.boundingBox();
 
   // The fixture host is at the seeded map centre.
@@ -77,31 +79,9 @@ async function expectCentreHostPinPreservesZoom(
 async function wheelOverMap(page, selector, delta, deltaMode) {
   const canvas = page.locator(selector);
   await expect(canvas).toBeVisible();
-  // React Map GL receives input through its overlay above the canvas. Hover
-  // waits for that surface to settle after navigation and viewport changes.
-  const surface = page.locator(
-    selector === '.mapboxgl-canvas'
-      ? '.search-map-container .overlays'
-      : selector,
-  );
-  if (selector === '.mapboxgl-canvas') {
-    // A visible overlay can resize before the WebGL canvas and controller do.
-    // Sending input in that interval can put it outside the rendered map.
-    await expect
-      .poll(async () => {
-        const [rendered, input] = await Promise.all([
-          canvas.boundingBox(),
-          surface.boundingBox(),
-        ]);
-        return (
-          !!rendered &&
-          !!input &&
-          Math.abs(rendered.width - input.width) < 1 &&
-          Math.abs(rendered.height - input.height) < 1
-        );
-      })
-      .toBe(true);
-  }
+  // react-map-gl v8 leaves the Mapbox canvas as the map input surface; its
+  // React children container sits below the canvas and cannot receive input.
+  const surface = canvas;
   const box = await surface.boundingBox();
   expect(box, 'map input surface should have a layout box').toBeTruthy();
   // Avoid the current-location marker at the centre of the map.

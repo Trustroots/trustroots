@@ -19,50 +19,8 @@ const mockMapIcon = jest.fn<void, [props: MapIconProps]>();
 const mockedGetMapBoxToken = jest.mocked(getMapBoxToken);
 
 jest.mock('react-i18next', () => ({
-  withTranslation:
-    () =>
-    <Props extends object>(Component: React.ComponentType<Props>) => {
-      function TranslatedComponent(props: Omit<Props, 't'>) {
-        const translatedProps = {
-          ...props,
-          t: (key: string) => `i18n:${key}`,
-        } as Props;
-        return <Component {...translatedProps} />;
-      }
-      TranslatedComponent.displayName = `withTranslation(${
-        Component.displayName || Component.name || 'Component'
-      })`;
-      return TranslatedComponent;
-    },
+  useTranslation: () => ({ t: (key: string) => `i18n:${key}` }),
 }));
-
-jest.mock('react-map-gl', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
-
-  return {
-    __esModule: true,
-    BaseControl: class MockBaseControl extends React.Component<
-      React.ComponentProps<typeof MapStyleControl>,
-      { isOpen: boolean }
-    > {
-      _context = { isDragging: false };
-      _containerRef: { current: HTMLDivElement | null } = { current: null };
-
-      constructor(props: React.ComponentProps<typeof MapStyleControl>) {
-        super(props);
-        this.state = { isOpen: false };
-      }
-
-      _render(): React.ReactNode {
-        return null;
-      }
-
-      render() {
-        return this._render();
-      }
-    },
-  };
-});
 
 jest.mock('@/modules/core/client/components/Map/MapStyleButton', () => {
   const React = jest.requireActual<typeof import('react')>('react');

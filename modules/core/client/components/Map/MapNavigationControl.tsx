@@ -1,21 +1,14 @@
 // External dependencies
-import { NavigationControl } from 'react-map-gl';
-import { useTranslation } from 'react-i18next';
+import { NavigationControl } from 'react-map-gl/mapbox-legacy';
 import React from 'react';
 
 // Internal dependencies
 import './map-navigation-control.less';
 
 export default function MapNavigationControl() {
-  const { t } = useTranslation('core');
-
   return (
     <div className="map-navigation-control-container">
-      <NavigationControl
-        showCompass={false}
-        zoomInLabel={t<string>('Zoom in')}
-        zoomOutLabel={t<string>('Zoom out')}
-      />
+      <NavigationControl showCompass={false} />
     </div>
   );
 }

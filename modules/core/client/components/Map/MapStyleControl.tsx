@@ -1,10 +1,8 @@
 // External dependencies
-import { BaseControl } from 'react-map-gl';
-import type { MapControlProps } from 'react-map-gl/dist/es6/components/use-map-control';
 import type { TFunction } from 'i18next';
-import { withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useState } from 'react';
 
 // Internal dependencies
 import {
@@ -19,125 +17,95 @@ import MapStyleButton from './MapStyleButton';
 import './map-style-control.less';
 
 type MapStyle = string | { name: string; [key: string]: unknown };
-type MapStyleControlProps = MapControlProps & {
+type MapStyleControlProps = {
   mapStyle: MapStyle;
   setMapstyle: (style: string | typeof MAP_STYLE_OSM) => void;
-  t: TFunction;
 };
-type MapStyleControlState = { isOpen: boolean };
 
-class MapStyleControl extends BaseControl<
-  MapStyleControlProps,
-  HTMLDivElement
-> {
-  constructor(props: MapStyleControlProps) {
-    super(props);
-    this.open = this.open.bind(this);
-    this.close = this.close.bind(this);
-    this.state = {
-      isOpen: false,
-    };
-  }
+export default function MapStyleControl({
+  mapStyle,
+  setMapstyle,
+}: MapStyleControlProps) {
+  const { t } = useTranslation(['core']) as { t: TFunction };
+  const [isOpen, setIsOpen] = useState(false);
+  const MAPBOX_TOKEN = getMapBoxToken();
 
-  open() {
-    this.setState({ isOpen: true });
-  }
+  const mapboxStyleNames: Record<string, string> = {
+    [MAP_STYLE_MAPBOX_STREETS]: t('Streets'),
+    [MAP_STYLE_MAPBOX_SATELLITE]: t('Satellite'),
+    [MAP_STYLE_MAPBOX_OUTDOORS]: t('Outdoors'),
+  };
+  const selectedStyle = typeof mapStyle === 'string' ? mapStyle : mapStyle.name;
 
-  close() {
-    this.setState({ isOpen: false });
-  }
-
-  _render() {
-    const { t, mapStyle, setMapstyle } = this.props;
-    const { isOpen } = this.state as MapStyleControlState;
-    const MAPBOX_TOKEN = getMapBoxToken();
-
-    const mapboxStyleNames: Record<string, string> = {};
-    mapboxStyleNames[MAP_STYLE_MAPBOX_STREETS] = t('Streets');
-    mapboxStyleNames[MAP_STYLE_MAPBOX_SATELLITE] = t('Satellite');
-    mapboxStyleNames[MAP_STYLE_MAPBOX_OUTDOORS] = t('Outdoors');
-
-    // If it's an object, it'll have a name. Otherwise it's Mapbox URL in string presentation.
-    const selectedStyle =
-      typeof mapStyle === 'string' ? mapStyle : mapStyle.name;
-
-    return (
-      // _containerRef registers event listeners for map interactions
-      <div
-        ref={element => {
-          if (element) this._containerRef.current = element;
-        }}
-        className="map-style-control-container"
-      >
-        {!isOpen && (
-          <button
-            aria-expanded={isOpen}
-            aria-haspopup="true"
-            className="btn"
-            onClick={this.open}
-            onMouseEnter={() => !this._context.isDragging && this.open()}
-            aria-label={t('Change map style')}
-          >
-            <MapIcon
-              mapboxStyle={
-                selectedStyle !== MAP_STYLE_OSM.name ? selectedStyle : ''
-              }
+  return (
+    <div
+      className="map-style-control-container"
+      onMouseEnter={() => setIsOpen(true)}
+    >
+      {!isOpen && (
+        <button
+          aria-expanded={isOpen}
+          aria-haspopup="true"
+          className="btn"
+          onClick={() => setIsOpen(true)}
+          aria-label={t('Change map style')}
+          type="button"
+        >
+          <MapIcon
+            mapboxStyle={
+              selectedStyle !== MAP_STYLE_OSM.name ? selectedStyle : ''
+            }
+          />
+          {typeof mapStyle === 'string'
+            ? mapboxStyleNames[mapStyle]
+            : mapStyle.name}
+        </button>
+      )}
+      {isOpen && (
+        <div
+          className="btn-group-vertical"
+          onMouseLeave={() => setIsOpen(false)}
+          role="group"
+        >
+          {[
+            MAP_STYLE_MAPBOX_STREETS,
+            MAP_STYLE_MAPBOX_OUTDOORS,
+            MAP_STYLE_MAPBOX_SATELLITE,
+          ].map(mapboxStyle => (
+            <MapStyleButton
+              disabled={!MAPBOX_TOKEN}
+              key={mapboxStyle}
+              label={mapboxStyleNames[mapboxStyle]}
+              onClick={() => {
+                setIsOpen(false);
+                setMapstyle(mapboxStyle);
+              }}
+              selectedStyle={selectedStyle}
+              style={mapboxStyle}
+              styleName={mapboxStyle}
+              iconStyle={mapboxStyle}
             />
-            {typeof mapStyle === 'string'
-              ? mapboxStyleNames[mapStyle]
-              : mapStyle.name}
-          </button>
-        )}
-        {isOpen && (
-          <div
-            className="btn-group-vertical"
-            onMouseLeave={this.close}
-            role="group"
-          >
-            {[
-              MAP_STYLE_MAPBOX_STREETS,
-              MAP_STYLE_MAPBOX_OUTDOORS,
-              MAP_STYLE_MAPBOX_SATELLITE,
-            ].map(mapboxStyle => (
-              <MapStyleButton
-                disabled={!MAPBOX_TOKEN}
-                key={mapboxStyle}
-                label={mapboxStyleNames[mapboxStyle]}
-                onClick={() => {
-                  this.close();
-                  setMapstyle(mapboxStyle);
-                }}
-                selectedStyle={selectedStyle}
-                style={mapboxStyle}
-                styleName={mapboxStyle}
-                iconStyle={mapboxStyle}
-              />
-            ))}
-            {process.env.NODE_ENV !== 'production' && (
-              <MapStyleButton
-                label={MAP_STYLE_OSM.name}
-                key={MAP_STYLE_OSM.name}
-                onClick={() => {
-                  this.close();
-                  setMapstyle(MAP_STYLE_OSM);
-                }}
-                selectedStyle={selectedStyle}
-                styleName={MAP_STYLE_OSM.name}
-              />
-            )}
-          </div>
-        )}
-      </div>
-    );
-  }
+          ))}
+          {process.env.NODE_ENV !== 'production' && (
+            <MapStyleButton
+              label={MAP_STYLE_OSM.name}
+              key={MAP_STYLE_OSM.name}
+              onClick={() => {
+                setIsOpen(false);
+                setMapstyle(MAP_STYLE_OSM);
+              }}
+              selectedStyle={selectedStyle}
+              styleName={MAP_STYLE_OSM.name}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
-Object.assign(MapStyleControl, {
-  propTypes: {
-    mapStyle: PropTypes.oneOfType([PropTypes.object, PropTypes.string])
-      .isRequired,
-    setMapstyle: PropTypes.func.isRequired,
-  },
-});
-
-export default withTranslation(['core'])(MapStyleControl);
+MapStyleControl.propTypes = {
+  mapStyle: PropTypes.oneOfType([PropTypes.object, PropTypes.string])
+    .isRequired,
+  setMapstyle: PropTypes.func.isRequired,
+};

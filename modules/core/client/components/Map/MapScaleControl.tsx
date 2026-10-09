@@ -1,5 +1,5 @@
 // External dependencies
-import { ScaleControl } from 'react-map-gl';
+import { ScaleControl } from 'react-map-gl/mapbox-legacy';
 import React from 'react';
 
 // Internal dependencies

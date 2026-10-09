@@ -16,19 +16,10 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('react-map-gl', () => {
-  function MockNavigationControl({
-    showCompass,
-    zoomInLabel,
-    zoomOutLabel,
-  }: MockNavigationProps) {
+jest.mock('react-map-gl/mapbox-legacy', () => {
+  function MockNavigationControl({ showCompass }: MockNavigationProps) {
     return (
-      <div
-        data-testid="navigation-control"
-        data-show-compass={showCompass}
-        data-zoom-in-label={zoomInLabel}
-        data-zoom-out-label={zoomOutLabel}
-      />
+      <div data-testid="navigation-control" data-show-compass={showCompass} />
     );
   }
 
@@ -39,12 +30,10 @@ jest.mock('react-map-gl', () => {
 });
 
 describe('<MapNavigationControl />', () => {
-  it('passes translated labels to react-map-gl navigation control', () => {
+  it('disables the compass on the map navigation control', () => {
     render(<MapNavigationControl />);
     const control = screen.getByTestId('navigation-control');
 
     expect(control).toHaveAttribute('data-show-compass', 'false');
-    expect(control).toHaveAttribute('data-zoom-in-label', 'i18n:Zoom in');
-    expect(control).toHaveAttribute('data-zoom-out-label', 'i18n:Zoom out');
   });
 });

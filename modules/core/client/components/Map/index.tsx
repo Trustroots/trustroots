@@ -1,7 +1,7 @@
 // External dependencies
 import PropTypes from 'prop-types';
-import React, { useEffect, useState } from 'react';
-import ReactMapGL from 'react-map-gl';
+import React, { useEffect, useRef, useState } from 'react';
+import { Map as ReactMapGL } from 'react-map-gl/mapbox-legacy';
 
 // Internal dependencies
 import './map.less';
@@ -10,14 +10,16 @@ import MapNavigationControl from './MapNavigationControl';
 import MapScaleControl from './MapScaleControl';
 import MapStyleControl from './MapStyleControl';
 import LeafletMap from './LeafletMap';
-import WheelMapController from './WheelMapController';
 import { getMapBoxToken, isWebGLSupported } from '../../utils/map';
 
 type MapProps = React.ComponentProps<typeof ReactMapGL> & {
   'aria-hidden'?: boolean;
+  className?: string;
   fallbackMarker?: { color: string; location: [number, number] };
+  height?: number | string;
   location?: [number, number];
   onLocationChange?: (location: [number, number]) => void;
+  width?: number | string;
   showMapStyles?: boolean;
 };
 export default function Map(props: MapProps) {
@@ -25,37 +27,86 @@ export default function Map(props: MapProps) {
     children,
     fallbackMarker,
     onLocationChange,
+    onLoad,
     location = [48.6908333333, 9.14055555556], // Default location to Europe when not set
     zoom = 6,
+    width = '100%',
+    height = 320,
     ...overrideProps // anything else will be passed down to <ReactMapGL> as props
   } = props;
 
   const [mapStyle, setMapstyle] = useState<string | typeof MAP_STYLE_OSM>(
     MAP_STYLE_DEFAULT,
   );
-  const [mapController] = useState(() => new WheelMapController());
-  const [viewport, setViewport] = useState({
+  const [viewState, setViewState] = useState({
     latitude: location[0],
     longitude: location[1],
     zoom,
   });
+  const pageWheelCleanup = useRef<(() => void) | null>(null);
   useEffect(() => {
-    setViewport(current => ({
+    setViewState(current => ({
       ...current,
       latitude: location[0],
       longitude: location[1],
     }));
   }, [location[0], location[1]]);
+  useEffect(
+    () => () => {
+      pageWheelCleanup.current?.();
+    },
+    [],
+  );
 
-  function handleViewportChange(nextViewport: {
-    latitude: number;
-    longitude: number;
-    zoom: number;
-  }) {
-    setViewport(nextViewport);
+  function handleMove(event: { viewState: typeof viewState }) {
+    setViewState(event.viewState);
     if (onLocationChange) {
-      onLocationChange([nextViewport.latitude, nextViewport.longitude]);
+      onLocationChange([event.viewState.latitude, event.viewState.longitude]);
     }
+  }
+  function handleLoad(event: Parameters<NonNullable<MapProps['onLoad']>>[0]) {
+    event.target.touchZoomRotate.disableRotation();
+    event.target.scrollZoom.setWheelZoomRate(1 / 100);
+    pageWheelCleanup.current?.();
+
+    const map = event.target;
+    const container = map.getContainer();
+    const handleWheelUnit = (wheel: WheelEvent) => {
+      const usesPageUnits = wheel.deltaMode === WheelEvent.DOM_DELTA_PAGE;
+      const usesLineUnits = wheel.deltaMode === WheelEvent.DOM_DELTA_LINE;
+      if (!usesPageUnits && !usesLineUnits) return;
+
+      const unitScale = usesPageUnits
+        ? map.getContainer().getBoundingClientRect().height
+        : 40;
+      if (unitScale <= 0) return;
+
+      wheel.preventDefault();
+      wheel.stopPropagation();
+      (wheel.target as EventTarget).dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          cancelable: true,
+          clientX: wheel.clientX,
+          clientY: wheel.clientY,
+          ctrlKey: wheel.ctrlKey,
+          deltaMode: WheelEvent.DOM_DELTA_PIXEL,
+          deltaX: wheel.deltaX * unitScale,
+          deltaY: wheel.deltaY * unitScale,
+          altKey: wheel.altKey,
+          metaKey: wheel.metaKey,
+          shiftKey: wheel.shiftKey,
+        }),
+      );
+    };
+    container.addEventListener('wheel', handleWheelUnit, {
+      capture: true,
+      passive: false,
+    });
+    pageWheelCleanup.current = () =>
+      container.removeEventListener('wheel', handleWheelUnit, true);
+
+    onLoad?.(event);
   }
   const MAPBOX_TOKEN = getMapBoxToken();
   const showMapStyles =
@@ -67,12 +118,12 @@ export default function Map(props: MapProps) {
       <LeafletMap
         ariaHidden={props['aria-hidden']}
         className={props.className}
-        height={props.height || 320}
+        height={height || 320}
         location={location}
         marker={fallbackMarker}
         onLocationChange={onLocationChange}
         scrollZoom={props.scrollZoom as boolean | undefined}
-        width={props.width || '100%'}
+        width={width || '100%'}
         zoom={zoom}
       />
     );
@@ -81,17 +132,13 @@ export default function Map(props: MapProps) {
   return (
     <ReactMapGL
       reuseMaps
-      controller={mapController}
       dragRotate={false}
-      height={320}
-      mapboxApiAccessToken={MAPBOX_TOKEN as string}
-      mapStyle={mapStyle}
-      onViewportChange={handleViewportChange}
-      touchRotate={false}
-      {...viewport}
-      width={
-        '100%' /* this must come after viewport, or width gets set to fixed size via onViewportChange */
-      }
+      style={{ height, width }}
+      mapboxAccessToken={MAPBOX_TOKEN as string}
+      mapStyle={mapStyle as React.ComponentProps<typeof ReactMapGL>['mapStyle']}
+      onLoad={handleLoad}
+      onMove={handleMove}
+      {...viewState}
       {...overrideProps}
     >
       <MapNavigationControl />
