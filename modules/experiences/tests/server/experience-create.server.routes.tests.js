@@ -9,6 +9,8 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 const express = require('./../../../../config/lib/express.mjs');
 const config = require('./../../../../config/config.mjs');
 describe('Create an experience', () => {
+  let app;
+  let agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
@@ -27,23 +29,24 @@ describe('Create an experience', () => {
 
   // we'll catch email notifications (push delivery is retired)
   const jobs = testutils.catchJobs();
+  let realNow;
   let user1;
   let user2;
   let user3Nonpublic;
-  let app;
-  let agent;
-  const _usersPublic = utils.generateUsers(2, {
+  const _usersPublic = utils.generateUsersWithSharedPassword(2, {
     public: true,
   });
-  const _usersNonpublic = utils.generateUsers(1, {
+  const _usersNonpublic = utils.generateUsersWithSharedPassword(1, {
     public: false,
     username: 'nonpublic',
     email: 'nonpublic@example.com',
   });
   const _users = [..._usersPublic, ..._usersNonpublic];
   beforeEach(() => {
+    realNow = Date.now();
     sinon.useFakeTimers({
-      now: 1500000000000,
+      // MongoDB uses real time to expire authentication sessions.
+      now: realNow,
       toFake: ['Date'],
     });
   });
@@ -51,7 +54,9 @@ describe('Create an experience', () => {
     sinon.restore();
   });
   beforeEach(async () => {
-    [user1, user2, user3Nonpublic] = await utils.saveUsers(_users);
+    [user1, user2, user3Nonpublic] = await utils.saveUsersWithCachedPasswords(
+      _users,
+    );
   });
   afterEach(utils.clearDatabase);
   context('logged in', () => {
@@ -502,6 +507,19 @@ describe('Create an experience', () => {
             recommend: "one of 'yes', 'no', 'unknown' expected",
           },
         });
+      });
+      it('keeps authentication when MongoDB removes sessions expired by real time', async () => {
+        await mongoose.connection.db
+          .collection(config.sessionCollection)
+          .deleteMany({ expires: { $lte: new Date(realNow) } });
+        await agent
+          .post('/api/experiences')
+          .send({
+            userTo: 'invalid',
+            interactions: { guest: true },
+            recommend: 'yes',
+          })
+          .expect(400);
       });
       it('[invalid userTo] 400', async () => {
         const { body } = await agent

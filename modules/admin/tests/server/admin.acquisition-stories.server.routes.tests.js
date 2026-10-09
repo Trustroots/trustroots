@@ -4,13 +4,13 @@ const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 describe('Admin acquisition stories CRUD tests', () => {
+  let app;
+  let agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
   // Get application
-  let app;
-  let agent;
 
   // Variation on stories to catch
   const acquisitionStories = [
@@ -45,13 +45,13 @@ describe('Admin acquisition stories CRUD tests', () => {
   let credentialsRegular;
   beforeEach(async () => {
     const users = utils
-      .generateUsers(acquisitionStories.length)
+      .generateUsersWithSharedPassword(acquisitionStories.length)
       .map((user, index) => {
         user.acquisitionStory = acquisitionStories[index];
         return user;
       });
     users[0].roles = ['user', 'admin'];
-    const savedUsers = await utils.saveUsers(users);
+    const savedUsers = await utils.saveUsersWithCachedPasswords(users);
     credentialsAdmin = {
       username: savedUsers[0].username,
       password: users[0].password,

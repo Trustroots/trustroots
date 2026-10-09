@@ -8,18 +8,18 @@ require('./../../server/models/experiences.server.model.mjs');
 const Contact = mongoose.model('Contact');
 const Experience = mongoose.model('Experience');
 describe('Experience suggestion', () => {
+  let app;
+  let agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
-  let app;
-  let agent;
-  const userData = utils.generateUsers(8, {
+  const userData = utils.generateUsersWithSharedPassword(8, {
     public: true,
   });
   let users;
   beforeEach(async () => {
-    users = await utils.saveUsers(userData);
+    users = await utils.saveUsersWithCachedPasswords(userData);
     users[4].public = false;
     users[5].roles = ['user', 'shadowban'];
     users[7].roles = ['user', 'suspended'];
