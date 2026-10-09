@@ -521,6 +521,33 @@ describe('Profile controller unit tests', () => {
       res.body.message.should.equal('Removing your profile failed.');
     });
 
+    it('reports upload deletion failures without leaving the request pending', async () => {
+      const removeLocalPath = sinon.stub().rejects(new Error('uploads failed'));
+      const controller = stubControllerDependencies(controllerPath, {
+        '../../../core/server/services/file-removal.server.service.mjs': {
+          removeLocalPath,
+        },
+      });
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.removeProfileToken = 'fictional-remove-token';
+      userDoc.removeProfileExpires = Date.now() + 3600000;
+      await userDoc.save();
+
+      const { res } = await runHandler(res =>
+        controller.removeProfile(
+          {
+            user: { _id: saved._id },
+            params: { token: 'fictional-remove-token' },
+          },
+          res,
+        ),
+      );
+      sinon.assert.calledOnce(removeLocalPath);
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Removing your profile failed.');
+    });
+
     it('still removes the profile when ancillary cleanup steps fail', async () => {
       const offerHandlerPath =
         './../../../offers/server/controllers/offers.server.controller.mjs';

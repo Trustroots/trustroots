@@ -11,7 +11,7 @@ import authenticationService from '../services/authentication.server.service.mjs
 import emailService from './../../../core/server/services/email.server.service.mjs';
 import statService from './../../../stats/server/services/stats.server.service.mjs';
 import log from './../../../../config/lib/logger.mjs';
-import del from 'del';
+import fileRemovalService from '../../../core/server/services/file-removal.server.service.mjs';
 import messageStatService from './../../../messages/server/services/message-stat.server.service.mjs';
 import config from './../../../../config/config.mjs';
 import async from 'async';
@@ -558,9 +558,9 @@ service.removeProfile = function (req, res) {
       // Remove uploaded images
       function (user, done) {
         // All user's uploads are under their own folder
-        del(path.resolve(config.uploadDir) + '/' + user._id).then(function () {
-          done(null, user);
-        });
+        fileRemovalService
+          .removeLocalPath(path.resolve(config.uploadDir) + '/' + user._id)
+          .then(() => done(null, user), done);
       },
       // Send email
       function (user, done) {

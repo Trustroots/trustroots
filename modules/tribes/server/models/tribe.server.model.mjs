@@ -4,7 +4,6 @@ import mongoose from 'mongoose';
 import moment from 'moment';
 import mongoosePaginate from 'mongoose-paginate';
 import uniqueValidation from './../../../../config/lib/mongoose-unique-validation.mjs';
-import integerValidator from 'mongoose-integer';
 import urlslugs from 'mongoose-url-slugs';
 import speakingurl from 'speakingurl';
 import validator from 'validator';
@@ -106,7 +105,10 @@ const TribeSchema = new Schema({
   },
   count: {
     type: Number,
-    integer: true,
+    validate: {
+      validator: Number.isInteger,
+      message: 'Error, expected `{PATH}` to be an integer. Value: `{VALUE}`',
+    },
     min: 0,
     default: 0,
     required: true,
@@ -204,12 +206,6 @@ TribeSchema.plugin(
 TribeSchema.plugin(uniqueValidation);
 
 /**
- * Validate Integers
- * @link https://www.npmjs.com/package/mongoose-integer
- */
-TribeSchema.plugin(integerValidator);
-
-/**
  * Indexing
  */
 TribeSchema.index({
@@ -218,7 +214,7 @@ TribeSchema.index({
 });
 
 /**
- * Pagination (together with `paginate-express`)
+ * Database pagination (paired with the application's pagination middleware)
  */
 TribeSchema.plugin(mongoosePaginate);
 mongoose.model('Tribe', TribeSchema);
