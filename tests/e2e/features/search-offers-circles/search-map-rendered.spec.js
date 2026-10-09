@@ -975,6 +975,8 @@ test.describe('rendered search map feature coverage', () => {
     ]);
 
     await useMapRouteFixtures(context, { offers: 'empty-offers.json' });
+    await stubNostrAuthorVisibility(page, []);
+    await installNostrRelayStub(page, []);
     await page.goto('/search');
     await waitForSearchMap(page);
 

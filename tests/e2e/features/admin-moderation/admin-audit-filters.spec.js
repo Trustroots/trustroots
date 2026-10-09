@@ -47,11 +47,11 @@ test('audit history has compact summaries and staff/team filters', async ({
     await expect(rows.locator('details')).not.toHaveAttribute('open', '');
     await rows.getByText('Show details', { exact: true }).click();
     await expect(rows.getByText(/"page": 1/)).toBeVisible();
-    await page.getByLabel('Team').selectOption('admin');
+    await page.getByLabel('Team', { exact: true }).selectOption('admin');
     await expect(
       page.getByText('Nothing found...', { exact: true }),
     ).toBeVisible();
-    await page.getByLabel('Team').selectOption('welcome-team');
+    await page.getByLabel('Team', { exact: true }).selectOption('welcome-team');
     await expect(rows).toHaveCount(1);
     await expect(
       rows.getByRole('link', { name: `${username} (Fictional Welcomer)` }),
@@ -64,7 +64,7 @@ test('audit history has compact summaries and staff/team filters', async ({
       String(entryId),
     ]);
     await page.getByLabel('Performed by').selectOption('');
-    await page.getByLabel('Team').selectOption('admin');
+    await page.getByLabel('Team', { exact: true }).selectOption('admin');
     await expect(
       page
         .getByRole('link', { name: SEEDED_ADMIN.username, exact: false })

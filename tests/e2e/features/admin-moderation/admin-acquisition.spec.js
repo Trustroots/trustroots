@@ -24,6 +24,7 @@ test.describe('admin acquisition feature coverage', () => {
     const assigned = {
       _id: '111111111111111111111111',
       username: 'forest-member',
+      public: true,
       created: '2026-01-01T00:00:00.000Z',
       welcomer: {
         _id: '222222222222222222222222',
@@ -36,12 +37,14 @@ test.describe('admin acquisition feature coverage', () => {
       {
         _id: '333333333333333333333333',
         username: 'brook-member',
+        public: false,
         created: '2026-01-03T00:00:00.000Z',
         welcomer: null,
       },
       {
         _id: '444444444444444444444444',
         username: 'river-member',
+        public: true,
         created: '2026-01-04T00:00:00.000Z',
       },
     ];
@@ -53,11 +56,26 @@ test.describe('admin acquisition feature coverage', () => {
 
     await page.goto('/admin/acquisition-stories');
     const checkbox = page.getByRole('checkbox', { name: 'Unassigned only' });
+    const visibility = page.getByRole('combobox', {
+      name: 'Profile visibility',
+    });
     const members = page.locator('tbody tr td:nth-child(2)');
     await expect(checkbox).not.toBeChecked();
+    await expect(visibility).toHaveValue('all');
+    await expect(
+      page.getByText(
+        'Hidden profiles have not activated their signup through email confirmation.',
+      ),
+    ).toBeVisible();
     await expect(members).toHaveCount(3);
     await page.getByRole('button', { name: 'Member', exact: true }).click();
     await checkbox.check();
+    await expect(members).toHaveText(['brook-member', 'river-member']);
+    await visibility.selectOption('visible');
+    await expect(members).toHaveText(['river-member']);
+    await visibility.selectOption('hidden');
+    await expect(members).toHaveText(['brook-member']);
+    await visibility.selectOption('all');
     await expect(members).toHaveText(['brook-member', 'river-member']);
     await expect(page.locator('tbody tr')).toContainText([
       'Unassigned',
@@ -81,6 +99,7 @@ test.describe('admin acquisition feature coverage', () => {
       page.getByText('No unassigned acquisition stories found.'),
     ).toBeVisible();
     await expect(checkbox).toBeVisible();
+    await expect(visibility).toBeVisible();
     await checkbox.uncheck();
     await expect(members).toHaveText(['forest-member']);
   });

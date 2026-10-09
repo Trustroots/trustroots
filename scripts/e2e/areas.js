@@ -31,6 +31,8 @@ const AREA_BY_SPEC = {
   'nostr.spec.js': 'Nostr',
   'seeded-content.spec.js': 'Seeded content',
   'messages-api.spec.js': 'Messages',
+  'reply-statistics.spec.js': 'Messages',
+  'greeter-recognition.spec.js': 'Messages',
   'messages.spec.js': 'Messages',
   'message-actions.spec.js': 'Messages',
   'messages-layout.spec.js': 'Messages',
