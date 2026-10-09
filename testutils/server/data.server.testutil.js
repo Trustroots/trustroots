@@ -128,9 +128,28 @@ async function clearDatabase() {
  * @param {object} agent - supertest's agent
  * @returns {Promise<void>}
  */
+async function elevateAdminAccess(agent, password) {
+  await agent
+    .post('/api/admin/elevate')
+    .set('X-Trustroots-Request', '1')
+    .send({ password })
+    .expect(200);
+}
+
 async function signIn(user, agent) {
   const { username, password } = user;
   await agent.post('/api/auth/signin').send({ username, password }).expect(200);
+  // Privileged accounts need a password step-up before admin APIs. Regular
+  // members receive 403 here and continue without elevation.
+  const elevation = await agent
+    .post('/api/admin/elevate')
+    .set('X-Trustroots-Request', '1')
+    .send({ password });
+  if (![200, 403].includes(elevation.status)) {
+    throw new Error(
+      `Unexpected admin elevation status ${elevation.status}: ${elevation.text}`,
+    );
+  }
 }
 
 /**
@@ -152,6 +171,7 @@ module.exports = {
   generateExperiences,
   saveExperiences,
   clearDatabase,
+  elevateAdminAccess,
   signIn,
   signOut,
 };
