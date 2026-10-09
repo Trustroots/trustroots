@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { getCircles, saveCircle } from '../api/circles.api';
+import { getCircles, saveCircle, type AdminCircle } from '../api/circles.api';
 import AdminHeader from './AdminHeader.component';
 
-const emptyCircle = {
+const emptyCircle: AdminCircle = {
   label: '',
   color: '345d5c',
   public: true,
@@ -11,16 +11,18 @@ const emptyCircle = {
   description: '',
 };
 
-function imageUrl(circle) {
-  return circle.image ? `/uploads-circle/${circle.slug}/120x120.jpg` : null;
+function imageUrl(circle: AdminCircle) {
+  return circle.image
+    ? `/uploads-circle/${circle.slug}/120x120.jpg`
+    : undefined;
 }
 
 export default function AdminCircles() {
-  const [circles, setCircles] = useState([]);
-  const [circle, setCircle] = useState(emptyCircle);
-  const [image, setImage] = useState(null);
-  const [message, setMessage] = useState(null);
-  const [error, setError] = useState(null);
+  const [circles, setCircles] = useState<AdminCircle[]>([]);
+  const [circle, setCircle] = useState<AdminCircle>(emptyCircle);
+  const [image, setImage] = useState<File | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function loadCircles() {
     setCircles(await getCircles());
@@ -30,14 +32,14 @@ export default function AdminCircles() {
     loadCircles().catch(() => setError('Could not load circles.'));
   }, []);
 
-  function editCircle(selected) {
+  function editCircle(selected: AdminCircle) {
     setCircle({ ...selected });
     setImage(null);
     setMessage(null);
     setError(null);
   }
 
-  async function submit(event) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage(null);
     setError(null);
@@ -48,17 +50,24 @@ export default function AdminCircles() {
       await loadCircles();
       setMessage('Circle saved.');
     } catch (requestError) {
-      setError(
-        requestError.response?.data?.message || 'Could not save circle.',
-      );
+      const apiMessage = (
+        requestError as { response?: { data?: { message?: string } } }
+      ).response?.data?.message;
+      setError(apiMessage || 'Could not save circle.');
     }
   }
 
-  const update = event => {
-    const { name, value, type, checked } = event.target;
+  const update = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const target = event.currentTarget;
+    const { name, value } = target;
+    const isCheckbox =
+      target instanceof HTMLInputElement && target.type === 'checkbox';
+    const nextValue = isCheckbox ? (target as HTMLInputElement).checked : value;
     setCircle(current => ({
       ...current,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: nextValue,
     }));
   };
 
@@ -124,7 +133,7 @@ export default function AdminCircles() {
                   id="circle-description"
                   name="description"
                   onChange={update}
-                  rows="4"
+                  rows={4}
                   value={circle.description || ''}
                 />
               </div>
@@ -134,8 +143,8 @@ export default function AdminCircles() {
                   <input
                     className="form-control"
                     id="circle-color"
-                    maxLength="6"
-                    minLength="6"
+                    maxLength={6}
+                    minLength={6}
                     name="color"
                     onChange={update}
                     pattern="[0-9a-fA-F]{6}"
@@ -149,7 +158,9 @@ export default function AdminCircles() {
                     accept="image/jpeg,image/png,image/gif"
                     className="form-control"
                     id="circle-image"
-                    onChange={event => setImage(event.target.files[0])}
+                    onChange={event =>
+                      setImage(event.currentTarget.files?.[0] || null)
+                    }
                     type="file"
                   />
                 </div>
@@ -203,5 +214,3 @@ export default function AdminCircles() {
     </>
   );
 }
-
-AdminCircles.propTypes = {};
