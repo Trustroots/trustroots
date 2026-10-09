@@ -4,9 +4,28 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import TopNavigationSmall from '@/modules/users/client/components/TopNavigationSmall.component';
+import type RemoveContact from '@/modules/contacts/client/components/RemoveContactContainer';
+import type { ContactRecord } from '@/modules/contacts/client/types';
+import type { UserSummary } from '@/modules/users/client/types';
+
+type TopNavigationProps = React.ComponentProps<typeof TopNavigationSmall>;
+type RemoveContactProps = React.ComponentProps<typeof RemoveContact>;
+type ContactFixture = Omit<ContactRecord, 'userFrom' | 'userTo'> & {
+  userFrom: string | Pick<UserSummary, '_id'>;
+  userTo: string | Pick<UserSummary, '_id'>;
+};
+
+function asContactRecord(contact: ContactFixture): ContactRecord {
+  // This regression preserves contact payloads with only user IDs present.
+  return contact as unknown as ContactRecord;
+}
 
 jest.mock('@/modules/contacts/client/components/RemoveContactContainer', () => {
-  function MockRemoveContact({ show, onCancel, onSuccess }) {
+  function MockRemoveContact({
+    show,
+    onCancel,
+    onSuccess,
+  }: RemoveContactProps) {
     return show ? (
       <div role="dialog" aria-label="Remove contact">
         <button type="button" onClick={onSuccess}>
@@ -19,21 +38,15 @@ jest.mock('@/modules/contacts/client/components/RemoveContactContainer', () => {
     ) : null;
   }
 
-  MockRemoveContact.propTypes = {
-    onCancel: () => null,
-    onSuccess: () => null,
-    show: () => null,
-  };
-
   return MockRemoveContact;
 });
 
-function renderNavigation(props = {}) {
+function renderNavigation(props: Partial<TopNavigationProps> = {}) {
   return render(
     <TopNavigationSmall
       contact={{}}
       isResolved
-      onContactRemoved={jest.fn()}
+      onContactRemoved={jest.fn<void, [contact: ContactRecord]>()}
       referencesEnabled
       selfId="me"
       userId="alice-id"
@@ -128,13 +141,13 @@ describe('<TopNavigationSmall />', () => {
   });
 
   it('confirms contact removal and reports the normalized contact', () => {
-    const onContactRemoved = jest.fn();
-    const contact = {
+    const onContactRemoved = jest.fn<void, [contact: ContactRecord]>();
+    const contact = asContactRecord({
       _id: 'contact-1',
       confirmed: true,
       userFrom: { _id: 'me' },
       userTo: { _id: 'alice-id' },
-    };
+    });
 
     renderNavigation({ contact, onContactRemoved });
 
@@ -174,7 +187,7 @@ describe('<TopNavigationSmall />', () => {
   });
 
   it('can cancel contact removal without reporting success', () => {
-    const onContactRemoved = jest.fn();
+    const onContactRemoved = jest.fn<void, [contact: ContactRecord]>();
 
     renderNavigation({
       contact: {

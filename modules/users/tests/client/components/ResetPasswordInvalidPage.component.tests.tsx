@@ -4,10 +4,15 @@ import '@testing-library/jest-dom';
 
 import ResetPasswordInvalidPage from '@/modules/users/client/components/ResetPasswordInvalidPage.component';
 
-jest.mock('@/modules/core/client/components/Board', () => ({
-  __esModule: true,
-  default: ({ children }) => <section>{children}</section>,
-}));
+type BoardProps = { children?: React.ReactNode };
+
+jest.mock('@/modules/core/client/components/Board', () => {
+  const React = jest.requireActual<typeof import('react')>('react');
+  return {
+    __esModule: true,
+    default: ({ children }: BoardProps) => <section>{children}</section>,
+  };
+});
 
 describe('ResetPasswordInvalidPage', () => {
   it('renders the invalid reset message and recovery link', () => {

@@ -15,6 +15,9 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
   navigate: jest.fn(),
 }));
 
+const mockedBroadcastClientEvent = jest.mocked(broadcastClientEvent);
+const mockedNavigate = jest.mocked(navigate);
+
 describe('auth utils', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -127,19 +130,19 @@ describe('auth utils', () => {
   });
 
   it('updates React and window user state after authentication', () => {
-    const setUser = jest.fn();
     const user = { _id: 'user-1', username: 'ada' };
+    const setUser = jest.fn<void, [authenticatedUser: typeof user]>();
 
     applyAuthenticatedUser(user, setUser);
 
     expect(setUser).toHaveBeenCalledWith(user);
     expect(window.user).toBe(user);
-    expect(broadcastClientEvent).toHaveBeenCalledWith('userUpdated');
+    expect(mockedBroadcastClientEvent).toHaveBeenCalledWith('userUpdated');
   });
 
   it('redirects to the requested local destination after continuing signin', () => {
     redirectAfterSignin(true, '/messages/alice?tab=unread#latest');
-    expect(navigate).toHaveBeenCalledWith(
+    expect(mockedNavigate).toHaveBeenCalledWith(
       '/messages/alice?tab=unread#latest',
       undefined,
       { reload: true },
@@ -153,21 +156,21 @@ describe('auth utils', () => {
     expect(getSafeReturnTo('messages/alice')).toBeNull();
 
     redirectAfterSignin(true, '//example.com');
-    expect(navigate).toHaveBeenCalledWith('search.map', undefined, {
+    expect(mockedNavigate).toHaveBeenCalledWith('search.map', undefined, {
       reload: true,
     });
   });
 
   it('redirects to search when there is no continuation destination', () => {
     redirectAfterSignin(true);
-    expect(navigate).toHaveBeenCalledWith('search.map', undefined, {
+    expect(mockedNavigate).toHaveBeenCalledWith('search.map', undefined, {
       reload: true,
     });
   });
 
   it('redirects to search when sign-in should not continue', () => {
     redirectAfterSignin(false, '/messages/alice');
-    expect(navigate).toHaveBeenCalledWith('search.map', undefined, {
+    expect(mockedNavigate).toHaveBeenCalledWith('search.map', undefined, {
       reload: true,
     });
   });

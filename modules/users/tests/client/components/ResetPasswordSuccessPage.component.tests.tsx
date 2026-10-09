@@ -3,10 +3,13 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import ResetPasswordSuccessPage from '@/modules/users/client/components/ResetPasswordSuccessPage.component';
+import type Board from '@/modules/core/client/components/Board';
 
 jest.mock('@/modules/core/client/components/Board', () => ({
   __esModule: true,
-  default: ({ children }) => <section>{children}</section>,
+  default: ({ children }: React.ComponentProps<typeof Board>) => (
+    <section>{children}</section>
+  ),
 }));
 
 describe('ResetPasswordSuccessPage', () => {

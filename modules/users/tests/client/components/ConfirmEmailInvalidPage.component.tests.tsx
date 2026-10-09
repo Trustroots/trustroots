@@ -4,8 +4,9 @@ import '@testing-library/jest-dom';
 
 import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 import ConfirmEmailInvalidPage from '@/modules/users/client/components/ConfirmEmailInvalidPage.component';
+import type { AuthUser } from '@/modules/core/client/react-app/auth';
 
-function renderPage(user) {
+function renderPage(user: AuthUser | null) {
   return render(
     <AppProviders
       bootstrapData={{

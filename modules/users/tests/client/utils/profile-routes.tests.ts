@@ -5,7 +5,13 @@ import {
   getProfileViewTab,
   getProfileViewTabStateName,
   isMobileProfileViewport,
+  type ProfileEditTab,
 } from '@/modules/users/client/utils/profile-routes';
+
+function getPathForUnknownTab(tab: string): string {
+  // This test intentionally exercises a value outside the typed tab contract.
+  return getProfileEditTabPath(tab as ProfileEditTab);
+}
 
 describe('profile-routes', () => {
   describe('getProfileViewTab', () => {
@@ -86,7 +92,7 @@ describe('profile-routes', () => {
     });
 
     it('falls back to the about path for unknown tabs', () => {
-      expect(getProfileEditTabPath('unknown')).toBe('/profile/edit');
+      expect(getPathForUnknownTab('unknown')).toBe('/profile/edit');
     });
   });
 

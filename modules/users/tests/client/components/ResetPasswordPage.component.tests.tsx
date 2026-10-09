@@ -6,21 +6,30 @@ import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 import ResetPasswordPage from '@/modules/users/client/components/ResetPasswordPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { applyAuthenticatedUser } from '@/modules/users/client/utils/auth';
-import { navigate } from '@/modules/core/client/services/client-runtime';
+import * as clientRuntime from '@/modules/core/client/services/client-runtime';
+
+type BoardProps = { children?: React.ReactNode };
 
 jest.mock('@/modules/users/client/api/auth.api');
 jest.mock('@/modules/users/client/utils/auth', () => ({
   ...jest.requireActual('@/modules/users/client/utils/auth'),
   applyAuthenticatedUser: jest.fn(),
 }));
-jest.mock('@/modules/core/client/components/Board', () => ({
-  __esModule: true,
-  default: ({ children }) => <section>{children}</section>,
-}));
+jest.mock('@/modules/core/client/components/Board', () => {
+  const React = jest.requireActual<typeof import('react')>('react');
+  return {
+    __esModule: true,
+    default: ({ children }: BoardProps) => <section>{children}</section>,
+  };
+});
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   getCurrentRouteParams: jest.fn(() => ({ token: 'reset-token' })),
   navigate: jest.fn(),
 }));
+
+const resetPassword = jest.mocked(authApi.resetPassword);
+const navigate = jest.mocked(clientRuntime.navigate);
+const applyUser = jest.mocked(applyAuthenticatedUser);
 
 describe('ResetPasswordPage', () => {
   beforeEach(() => {
@@ -43,25 +52,35 @@ describe('ResetPasswordPage', () => {
     );
   }
 
-  async function fillPasswords(newPassword, verifyPassword) {
+  function getVerifyPasswordInput(): HTMLInputElement {
+    const input = document.getElementById('verifyPassword');
+    if (!(input instanceof HTMLInputElement)) {
+      throw new Error('Expected the password verification field');
+    }
+    return input;
+  }
+
+  async function fillPasswords(newPassword: string, verifyPassword: string) {
     fireEvent.change(screen.getByLabelText('New Password'), {
       target: { value: newPassword },
     });
-    fireEvent.change(document.getElementById('verifyPassword'), {
+    fireEvent.change(getVerifyPasswordInput(), {
       target: { value: verifyPassword },
     });
 
     await waitFor(() => {
-      expect(document.getElementById('verifyPassword')).toHaveValue(
-        verifyPassword,
-      );
+      expect(getVerifyPasswordInput()).toHaveValue(verifyPassword);
     });
   }
 
   async function submitForm() {
-    fireEvent.submit(
-      screen.getByRole('button', { name: 'Update Password' }).closest('form'),
-    );
+    const form = screen
+      .getByRole('button', { name: 'Update Password' })
+      .closest('form');
+    if (!form) {
+      throw new Error('Expected the password reset form');
+    }
+    fireEvent.submit(form);
   }
 
   it('shows a validation error when passwords do not match', async () => {
@@ -73,12 +92,12 @@ describe('ResetPasswordPage', () => {
     expect(
       await screen.findByText('Passwords do not match.'),
     ).toBeInTheDocument();
-    expect(authApi.resetPassword).not.toHaveBeenCalled();
+    expect(resetPassword).not.toHaveBeenCalled();
   });
 
   it('resets the password and redirects on success', async () => {
-    const user = { _id: 'user-1', username: 'ada' };
-    authApi.resetPassword.mockResolvedValue(user);
+    const user = { _id: 'user-1', username: 'member-one' };
+    resetPassword.mockResolvedValue(user);
 
     renderPage();
 
@@ -86,18 +105,18 @@ describe('ResetPasswordPage', () => {
     await submitForm();
 
     await waitFor(() => {
-      expect(authApi.resetPassword).toHaveBeenCalledWith('reset-token', {
+      expect(resetPassword).toHaveBeenCalledWith('reset-token', {
         newPassword: 'new-password',
         verifyPassword: 'new-password',
       });
     });
 
-    expect(applyAuthenticatedUser).toHaveBeenCalled();
+    expect(applyUser).toHaveBeenCalled();
     expect(navigate).toHaveBeenCalledWith('reset-success');
   });
 
   it('shows an error when the reset request fails', async () => {
-    authApi.resetPassword.mockRejectedValue({
+    resetPassword.mockRejectedValue({
       response: { data: { message: 'Reset token expired.' } },
     });
 
@@ -110,7 +129,8 @@ describe('ResetPasswordPage', () => {
   });
 
   it('keeps the form usable when the rejected value has no API message', async () => {
-    authApi.resetPassword.mockRejectedValue('request failed');
+    // Malformed rejection payload exercises the API error fallback.
+    resetPassword.mockRejectedValue('request failed');
 
     renderPage();
     await fillPasswords('new-password', 'new-password');
@@ -122,10 +142,11 @@ describe('ResetPasswordPage', () => {
       ).toBeEnabled(),
     );
   });
+
   it.each(['ECONNABORTED', 'ETIMEDOUT', 'ERR_NETWORK'])(
     'shows reset guidance for %s without claiming success or retrying',
     async code => {
-      authApi.resetPassword.mockRejectedValue({ code });
+      resetPassword.mockRejectedValue({ code });
       renderPage();
 
       await fillPasswords('new-password', 'new-password');
@@ -137,8 +158,8 @@ describe('ResetPasswordPage', () => {
       expect(
         screen.getByRole('button', { name: 'Update Password' }),
       ).toBeEnabled();
-      expect(authApi.resetPassword).toHaveBeenCalledTimes(1);
-      expect(applyAuthenticatedUser).not.toHaveBeenCalled();
+      expect(resetPassword).toHaveBeenCalledTimes(1);
+      expect(applyUser).not.toHaveBeenCalled();
       expect(navigate).not.toHaveBeenCalled();
     },
   );

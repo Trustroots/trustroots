@@ -4,11 +4,14 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Monkeybox from '@/modules/users/client/components/Monkeybox';
+import type LanguageList from '@/modules/users/client/components/LanguageList';
 
 jest.mock('@/modules/users/client/components/LanguageList', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockLanguageList({ languages }) {
+  function MockLanguageList({
+    languages = [],
+  }: React.ComponentProps<typeof LanguageList>) {
     return (
       <ul>
         {languages.map(language => (
@@ -18,34 +21,36 @@ jest.mock('@/modules/users/client/components/LanguageList', () => {
     );
   }
 
-  MockLanguageList.propTypes = {
-    className: () => null,
-    languages: () => null,
-  };
-
   return MockLanguageList;
 });
 
-const tribe = {
+type MonkeyboxUser = React.ComponentProps<typeof Monkeybox>['user'];
+
+type MonkeyboxTribe = MonkeyboxUser['member'][number]['tribe'];
+const tribeWithoutCount: Omit<MonkeyboxTribe, 'count'> = {
   _id: 'tribe-1',
   slug: 'hitchhikers',
   label: 'Hitchhikers',
 };
+// Preserve the original sparse API fixture: this component only reads these
+// fields, and the missing count is part of the runtime shape under test.
+const tribe = tribeWithoutCount as MonkeyboxTribe;
 
-function makeUser(overrides = {}) {
+function makeUser(overrides: Partial<MonkeyboxUser> = {}): MonkeyboxUser {
   return {
     _id: 'alice',
     username: 'alice',
     displayName: 'Alice Example',
     languages: ['en'],
     member: [{ tribe }],
+    memberIds: [],
     ...overrides,
   };
 }
 
 describe('<Monkeybox />', () => {
   it('renders the user, languages, and tribes in common', () => {
-    const otherUser = {
+    const otherUser: MonkeyboxUser = {
       _id: 'bob',
       username: 'bob',
       displayName: 'Bob Example',
@@ -70,7 +75,7 @@ describe('<Monkeybox />', () => {
   });
 
   it('hides tribes in common and languages when there are none', () => {
-    const otherUser = {
+    const otherUser: MonkeyboxUser = {
       _id: 'charlie',
       username: 'charlie',
       displayName: 'Charlie Example',
