@@ -276,6 +276,17 @@ export async function signUp(page: Page, user: NewUser): Promise<void> {
 /**
  * Authenticate a request context without opening a browser page.
  */
+export async function elevateAdminViaApi(request: APIRequestContext, password: string): Promise<APIResponse> {
+  const response = await request.post('/api/admin/elevate', {
+    data: { password },
+  });
+  expect(
+    response.ok(),
+    `Admin elevation responded with ${response.status()}: ${await response.text()}`,
+  ).toBeTruthy();
+  return response;
+}
+
 export async function authenticateViaApi(
   request: APIRequestContext,
   user: Pick<SeededMember, 'username' | 'password'>,
@@ -287,6 +298,16 @@ export async function authenticateViaApi(
     response.ok(),
     `Signin API responded with ${response.status()}: ${await response.text()}`,
   ).toBeTruthy();
+
+  // Privileged browser sessions stay signed in as members; unlock admin APIs
+  // with the same password so specs can exercise moderation tools.
+  const roles = user.roles || [];
+  if (roles.includes('admin') || roles.includes('welcome-team')) {
+    await elevateAdminViaApi(request, user.password);
+  } else if (user.username === SEEDED_ADMIN.username) {
+    await elevateAdminViaApi(request, user.password);
+  }
+
   return response;
 }
 

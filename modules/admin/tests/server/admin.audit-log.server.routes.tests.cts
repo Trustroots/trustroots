@@ -34,7 +34,15 @@ describe('Admin Audit Log CRUD tests', () => {
         .post('/api/auth/signin')
         .send(_users[0])
         .expect(200)
-        .end(() => {
+        .end(async signinErr => {
+          if (signinErr) {
+            return done(signinErr);
+          }
+          try {
+            await utils.elevateAdminAccess(agent, _users[0].password);
+          } catch (elevationErr) {
+            return done(elevationErr);
+          }
           agent.get('/api/admin/audit-log').expect(200).end(done);
         });
     });

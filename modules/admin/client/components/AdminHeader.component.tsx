@@ -2,6 +2,8 @@
 import classnames from 'classnames';
 import React, { useEffect } from 'react';
 import { getCurrentUser } from '../../../core/client/services/client-runtime';
+import { registerAdminElevationInterceptor } from '../api/admin-elevation';
+import AdminElevationPrompt from './AdminElevationPrompt.component';
 
 export default function AdminHeader() {
   const roles = getCurrentUser()?.roles || [];
@@ -11,6 +13,7 @@ export default function AdminHeader() {
   const currentPath = window.location.pathname.replace('/admin/', '');
 
   useEffect(() => {
+    registerAdminElevationInterceptor();
     const input = document.querySelector<HTMLInputElement>(
       '.container input:not([type="hidden"]):not([disabled])',
     );
@@ -69,6 +72,8 @@ export default function AdminHeader() {
   );
 
   return (
+    <>
+      <AdminElevationPrompt />
     <nav className="navbar navbar-white navbar-admin">
       <div className="container">
         <div className="navbar-header">
@@ -104,6 +109,7 @@ export default function AdminHeader() {
         </ul>
       </div>
     </nav>
+    </>
   );
 }
 

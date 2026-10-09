@@ -169,6 +169,7 @@ describe('Admin Message CRUD tests', () => {
     });
     it('admin users should be allowed to read messages', async () => {
       await utils.signIn(credentialsAdmin, agent);
+      await utils.elevateAdminAccess(agent, credentialsAdmin.password);
       await new Message({
         content: 'unrelated conversation',
         created: new Date('2026-06-01T09:00:00.000Z'),
