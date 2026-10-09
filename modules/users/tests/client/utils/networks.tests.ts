@@ -5,6 +5,9 @@ import {
   socialAccountLink,
 } from '@/modules/users/client/utils/networks';
 
+type SocialProfile = Parameters<typeof hasConnectedAdditionalSocialAccounts>[0];
+type SocialProviderData = Parameters<typeof socialAccountLink>[1];
+
 describe('user network utilities', () => {
   it('identifies Warmshowers numeric ids', () => {
     expect(isWarmshowersId('12345')).toBe(true);
@@ -13,11 +16,10 @@ describe('user network utilities', () => {
   });
 
   it('detects connected additional social accounts', () => {
-    expect(
-      hasConnectedAdditionalSocialAccounts({
-        additionalProvidersData: { github: { login: 'trustroots' } },
-      }),
-    ).toBe(true);
+    const connectedProfile: SocialProfile = {
+      additionalProvidersData: { github: { login: 'trustroots' } },
+    };
+    expect(hasConnectedAdditionalSocialAccounts(connectedProfile)).toBe(true);
     expect(
       hasConnectedAdditionalSocialAccounts({
         additionalProvidersData: {},
@@ -27,19 +29,25 @@ describe('user network utilities', () => {
   });
 
   it('builds social account links for known providers', () => {
-    expect(socialAccountLink('facebook', { id: 'abc123' })).toBe(
+    const facebookData: SocialProviderData = { id: 'abc123' };
+    const twitterData: SocialProviderData = { screen_name: 'trustroots' };
+    const githubData: SocialProviderData = { login: 'trustroots' };
+    const unknownProviderData: SocialProviderData & { username: string } = {
+      username: 'trustroots',
+    };
+    expect(socialAccountLink('facebook', facebookData)).toBe(
       'https://www.facebook.com/app_scoped_user_id/abc123',
     );
-    expect(socialAccountLink('twitter', { screen_name: 'trustroots' })).toBe(
+    expect(socialAccountLink('twitter', twitterData)).toBe(
       'https://twitter.com/trustroots',
     );
-    expect(socialAccountLink('github', { login: 'trustroots' })).toBe(
+    expect(socialAccountLink('github', githubData)).toBe(
       'https://github.com/trustroots',
     );
     expect(socialAccountLink('facebook', {})).toBe('#');
     expect(socialAccountLink('twitter', {})).toBe('#');
     expect(socialAccountLink('github', {})).toBe('#');
-    expect(socialAccountLink('mastodon', { username: 'trustroots' })).toBe('#');
+    expect(socialAccountLink('mastodon', unknownProviderData)).toBe('#');
   });
 
   it('returns display names for known network slugs', () => {
