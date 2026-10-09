@@ -2,14 +2,13 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
+let app;
+let agent;
 describe('Admin Audit Log CRUD tests', () => {
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
-  // Get application
-  let app;
-  let agent;
   const _users = utils.generateUsers(2);
   _users[0].roles = ['user', 'admin'];
   beforeEach(async () => {
