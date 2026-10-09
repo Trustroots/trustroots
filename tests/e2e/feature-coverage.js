@@ -50,7 +50,7 @@ const source = {
   offersClient: 'modules/offers/client/config/offers.client.routes.js',
   offersServer: 'modules/offers/server/routes/offers.server.routes.js',
   pagesClient: 'modules/pages/client/config/pages.client.routes.js',
-  pagesServer: 'modules/pages/server/routes/admin.server.routes.js',
+  pagesServer: 'modules/pages/server/routes/pages.server.routes.js',
   referencesThreadServer:
     'modules/references-thread/server/routes/reference-thread.server.routes.js',
   searchClient: 'modules/search/client/config/search.client.routes.js',

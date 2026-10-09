@@ -684,7 +684,7 @@ describe('API route registrations', () => {
     );
 
     const pagesRoutes = register(
-      './../../../pages/server/routes/admin.server.routes.mjs',
+      './../../../pages/server/routes/pages.server.routes.mjs',
       {
         '../controllers/pages.volunteers.server.controller': volunteers,
         '../controllers/pages.greeters.server.controller': greeters,

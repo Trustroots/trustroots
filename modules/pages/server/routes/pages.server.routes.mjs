@@ -2,7 +2,7 @@ import volunteers from './../controllers/pages.volunteers.server.controller.mjs'
 import greeters from './../controllers/pages.greeters.server.controller.mjs';
 
 /**
- * Module dependencies.
+ * Public pages APIs (team volunteers, greeters roster). Not admin-only routes.
  */
 
 const registerRoutes = app => {
