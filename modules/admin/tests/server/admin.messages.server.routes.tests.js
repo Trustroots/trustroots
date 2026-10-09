@@ -5,7 +5,7 @@ const Message = mongoose.model('Message');
 const ReferenceThread = mongoose.model('ReferenceThread');
 const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
-const express = require('../../../../config/lib/express');
+const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const should = require('should');
 
@@ -21,16 +21,15 @@ let userRegular1;
 let userRegular2;
 let userRegular1Id;
 let userRegular2Id;
-
 describe('Admin Message CRUD tests', () => {
   before(done => {
-    // Get application
-    app = express.init(mongoose.connection);
-    agent = request.agent(app);
-
-    done();
+    (async () => {
+      // Get application
+      app = await express.init(mongoose.connection);
+      agent = request.agent(app);
+      done();
+    })().catch(done);
   });
-
   beforeEach(async () => {
     try {
       // Create admin credentials
@@ -57,7 +56,6 @@ describe('Admin Message CRUD tests', () => {
         roles: ['user', 'admin'],
         ...credentialsAdmin,
       });
-
       await userAdmin.save();
 
       // Create a new regular user
@@ -86,12 +84,10 @@ describe('Admin Message CRUD tests', () => {
         username: 'user-regular2',
         password: 'Password123!',
       });
-
       const { _id: _userRegular1Id } = await userRegular1.save();
       const { _id: _userRegular2Id } = await userRegular2.save();
       userRegular1Id = _userRegular1Id;
       userRegular2Id = _userRegular2Id;
-
       const message1 = new Message({
         content: 'test',
         created: new Date('2026-06-01T10:00:00.000Z'),
@@ -99,7 +95,6 @@ describe('Admin Message CRUD tests', () => {
         userFrom: userRegular1Id,
         userTo: userRegular2Id,
       });
-
       const message2 = new Message({
         content: 'test',
         created: new Date('2026-06-01T10:01:00.000Z'),
@@ -107,10 +102,8 @@ describe('Admin Message CRUD tests', () => {
         userFrom: userRegular2Id,
         userTo: userRegular1Id,
       });
-
       await message1.save();
       await message2.save();
-
       await new ReferenceThread({
         reference: 'yes',
         thread: new mongoose.Types.ObjectId(),
@@ -122,21 +115,21 @@ describe('Admin Message CRUD tests', () => {
       console.error(err);
     }
   });
-
   afterEach(utils.clearDatabase);
-
   describe('Read messages between two users', () => {
     it('non-authenticated users should not be allowed to read messages', done => {
       agent
         .post('/api/admin/messages')
-        .send({ user1: userRegular1Id, user2: userRegular2Id })
+        .send({
+          user1: userRegular1Id,
+          user2: userRegular2Id,
+        })
         .expect(403)
         .end((err, res) => {
           res.body.message.should.equal('Forbidden.');
           return done(err);
         });
     });
-
     it('non-admin users should not be allowed to read messages', done => {
       agent
         .post('/api/auth/signin')
@@ -146,10 +139,12 @@ describe('Admin Message CRUD tests', () => {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .post('/api/admin/messages')
-            .send({ user1: userRegular1Id, user2: userRegular2Id })
+            .send({
+              user1: userRegular1Id,
+              user2: userRegular2Id,
+            })
             .expect(403)
             .end((err, res) => {
               res.body.message.should.equal('Forbidden.');
@@ -157,7 +152,6 @@ describe('Admin Message CRUD tests', () => {
             });
         });
     });
-
     it('admin users should be allowed to read messages', done => {
       agent
         .post('/api/auth/signin')
@@ -167,10 +161,12 @@ describe('Admin Message CRUD tests', () => {
           if (signinErr) {
             return done(signinErr);
           }
-
           agent
             .post('/api/admin/messages')
-            .send({ user1: userRegular1Id, user2: userRegular2Id })
+            .send({
+              user1: userRegular1Id,
+              user2: userRegular2Id,
+            })
             .expect(200)
             .end((err, res) => {
               res.body.messages.length.should.equal(2);
@@ -193,7 +189,6 @@ describe('Admin Message CRUD tests', () => {
         });
     });
   });
-
   describe('Warn scammer recipients', () => {
     it('lists distinct existing recipients contacted by a username', async () => {
       await utils.signIn(credentialsAdmin, agent);
@@ -207,20 +202,18 @@ describe('Admin Message CRUD tests', () => {
         userFrom: userRegular1Id,
         userTo: userAdmin._id,
       }).save();
-
       const { body } = await agent
         .post('/api/admin/messages/scammer-recipients')
-        .send({ username: userRegular1.username })
+        .send({
+          username: userRegular1.username,
+        })
         .expect(200);
-
       body.scammer.username.should.equal(userRegular1.username);
       body.recipients.length.should.equal(1);
       body.recipients[0].username.should.equal(userRegular2.username);
     });
-
     it('sends a sanitised warning and updates the recipient thread', async () => {
       await utils.signIn(credentialsAdmin, agent);
-
       const { body } = await agent
         .post('/api/admin/messages/scammer-warning')
         .send({
@@ -229,19 +222,19 @@ describe('Admin Message CRUD tests', () => {
           content: '<p>Ignore this scam.</p><script>unsafe()</script>',
         })
         .expect(200);
-
       body.sent.should.equal(1);
       const warning = await Message.findOne({
         userFrom: userAdmin._id,
         userTo: userRegular2Id,
       }).exec();
       warning.content.should.equal('<p>Ignore this scam.</p>');
-      const thread = await Thread.findOne({ message: warning._id }).exec();
+      const thread = await Thread.findOne({
+        message: warning._id,
+      }).exec();
       thread.userFrom.toString().should.equal(userAdmin._id.toString());
       thread.userTo.toString().should.equal(userRegular2Id.toString());
       thread.read.should.equal(false);
     });
-
     it('repairs a partial delivery without duplicating messages or resetting read state', async () => {
       await utils.signIn(credentialsAdmin, agent);
       const payload = {
@@ -260,7 +253,10 @@ describe('Admin Message CRUD tests', () => {
       } finally {
         bulkWrite.restore();
       }
-      const filter = { userFrom: userAdmin._id, userTo: userRegular2Id };
+      const filter = {
+        userFrom: userAdmin._id,
+        userTo: userRegular2Id,
+      };
       (await Message.countDocuments(filter)).should.equal(1);
       await agent
         .post('/api/admin/messages/scammer-warning')
@@ -268,10 +264,30 @@ describe('Admin Message CRUD tests', () => {
         .expect(200);
       const message = await Message.findOne(filter);
       (await Message.countDocuments(filter)).should.equal(1);
-      const thread = await Thread.findOne({ message: message._id });
+      const thread = await Thread.findOne({
+        message: message._id,
+      });
       should.exist(thread);
-      await Message.updateOne({ _id: message._id }, { $set: { read: true } });
-      await Thread.updateOne({ _id: thread._id }, { $set: { read: true } });
+      await Message.updateOne(
+        {
+          _id: message._id,
+        },
+        {
+          $set: {
+            read: true,
+          },
+        },
+      );
+      await Thread.updateOne(
+        {
+          _id: thread._id,
+        },
+        {
+          $set: {
+            read: true,
+          },
+        },
+      );
       await agent
         .post('/api/admin/messages/scammer-warning')
         .send(payload)
@@ -281,11 +297,13 @@ describe('Admin Message CRUD tests', () => {
       (await Message.countDocuments(filter)).should.equal(1);
       await agent
         .post('/api/admin/messages/scammer-warning')
-        .send({ ...payload, requestId: '33333333333343338333333333333333' })
+        .send({
+          ...payload,
+          requestId: '33333333333343338333333333333333',
+        })
         .expect(200);
       (await Message.countDocuments(filter)).should.equal(2);
     });
-
     it('requires a valid request ID before saving warning messages', async () => {
       await utils.signIn(credentialsAdmin, agent);
       for (const requestId of [undefined, 'invalid']) {
@@ -298,11 +316,12 @@ describe('Admin Message CRUD tests', () => {
           })
           .expect(400);
       }
-      (await Message.countDocuments({ userFrom: userAdmin._id })).should.equal(
-        0,
-      );
+      (
+        await Message.countDocuments({
+          userFrom: userAdmin._id,
+        })
+      ).should.equal(0);
     });
-
     it('keeps one inbox thread when warning retries overlap', async () => {
       await utils.signIn(credentialsAdmin, agent);
       const payload = {
@@ -333,25 +352,33 @@ describe('Admin Message CRUD tests', () => {
           return originalBulkWrite.apply(this, args);
         });
       try {
-        await Promise.all(Array.from({ length: retries }, send));
+        await Promise.all(
+          Array.from(
+            {
+              length: retries,
+            },
+            send,
+          ),
+        );
       } finally {
         bulkWrite.restore();
       }
-      (await Message.countDocuments({ userFrom: userAdmin._id })).should.equal(
-        1,
-      );
+      (
+        await Message.countDocuments({
+          userFrom: userAdmin._id,
+        })
+      ).should.equal(1);
       (await Thread.countDocuments({})).should.equal(1);
     });
-
     it('repairs a thread after another warning request wins the insert race', async () => {
       await utils.signIn(credentialsAdmin, agent);
       const originalBulkWrite = Thread.bulkWrite;
       const bulkWrite = sinon.stub(Thread, 'bulkWrite');
-      bulkWrite
-        .onFirstCall()
-        .rejects(
-          Object.assign(new Error('Concurrent insert'), { code: 11000 }),
-        );
+      bulkWrite.onFirstCall().rejects(
+        Object.assign(new Error('Concurrent insert'), {
+          code: 11000,
+        }),
+      );
       bulkWrite.onSecondCall().callsFake(function (...args) {
         return originalBulkWrite.apply(this, args);
       });
@@ -370,7 +397,6 @@ describe('Admin Message CRUD tests', () => {
         bulkWrite.restore();
       }
     });
-
     it('updates an existing reverse-direction thread and preserves a newer reply on retry', async () => {
       await utils.signIn(credentialsAdmin, agent);
       const oldThread = await Thread.create({
@@ -390,7 +416,9 @@ describe('Admin Message CRUD tests', () => {
           .send(payload)
           .expect(200);
       await send();
-      const warning = await Message.findOne({ userFrom: userAdmin._id });
+      const warning = await Message.findOne({
+        userFrom: userAdmin._id,
+      });
       const updatedThread = await Thread.findById(oldThread._id);
       updatedThread.message.toString().should.equal(warning._id.toString());
       updatedThread.read.should.equal(false);
@@ -401,7 +429,9 @@ describe('Admin Message CRUD tests', () => {
         created: new Date(warning.created.getTime() + 1000),
       });
       await Thread.updateOne(
-        { _id: oldThread._id },
+        {
+          _id: oldThread._id,
+        },
         {
           $set: {
             message: reply._id,
@@ -418,14 +448,14 @@ describe('Admin Message CRUD tests', () => {
       finalThread.userFrom.toString().should.equal(userRegular2Id.toString());
       finalThread.read.should.equal(true);
       (await Thread.countDocuments({})).should.equal(1);
-      (await Message.countDocuments({ userFrom: userAdmin._id })).should.equal(
-        1,
-      );
+      (
+        await Message.countDocuments({
+          userFrom: userAdmin._id,
+        })
+      ).should.equal(1);
     });
-
     it('reports zero deliveries when the member contacted nobody', async () => {
       await utils.signIn(credentialsAdmin, agent);
-
       const { body } = await agent
         .post('/api/admin/messages/scammer-warning')
         .send({
@@ -434,25 +464,22 @@ describe('Admin Message CRUD tests', () => {
           requestId: '11111111111141118111111111111111',
         })
         .expect(200);
-
       body.sent.should.equal(0);
     });
-
     it('validates the username and warning content', async () => {
       await utils.signIn(credentialsAdmin, agent);
-
       let response = await agent
         .post('/api/admin/messages/scammer-recipients')
         .send({})
         .expect(400);
       response.body.message.should.equal('Missing `username` field.');
-
       response = await agent
         .post('/api/admin/messages/scammer-recipients')
-        .send({ username: 'missing-member' })
+        .send({
+          username: 'missing-member',
+        })
         .expect(404);
       response.body.message.should.equal('Member does not exist.');
-
       response = await agent
         .post('/api/admin/messages/scammer-warning')
         .send({
@@ -462,10 +489,11 @@ describe('Admin Message CRUD tests', () => {
         })
         .expect(400);
       response.body.message.should.equal('Please write a message.');
-
       response = await agent
         .post('/api/admin/messages/scammer-recipients')
-        .send({ username: '   ' })
+        .send({
+          username: '   ',
+        })
         .expect(400);
       response.body.message.should.equal('Missing `username` field.');
     });

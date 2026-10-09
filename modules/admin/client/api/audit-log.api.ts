@@ -11,7 +11,28 @@ export interface AdminAuditLogEntry {
   query?: Record<string, unknown>;
 }
 
-export async function getAuditLog(): Promise<AdminAuditLogEntry[]> {
-  const { data } = await axios.get('/api/admin/audit-log');
+export interface AuditActor {
+  _id: string;
+  username: string;
+  displayName?: string;
+  roles: string[];
+}
+
+export interface AuditLogFilters {
+  username: string;
+  team: '' | 'admin' | 'welcome-team';
+}
+
+export async function getAuditLog(
+  filters?: AuditLogFilters,
+): Promise<AdminAuditLogEntry[]> {
+  const { data } = filters
+    ? await axios.get('/api/admin/audit-log', { params: filters })
+    : await axios.get('/api/admin/audit-log');
   return data as AdminAuditLogEntry[];
+}
+
+export async function getAuditLogActors(): Promise<AuditActor[]> {
+  const { data } = await axios.get('/api/admin/audit-log/actors');
+  return data;
 }

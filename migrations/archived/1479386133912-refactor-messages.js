@@ -10,12 +10,11 @@
  */
 
 const async = require('async');
-const mongooseService = require('../../config/lib/mongoose');
+const mongooseService = require('./../../config/lib/mongoose.mjs');
 const mongoose = require('mongoose');
-const chalk = require('chalk');
-const config = require('../../config/config');
+const config = require('./../../config/config.mjs');
 // eslint-disable-next-line no-unused-vars
-const messageModels = require('../../modules/messages/server/models/message.server.model');
+const messageModels = require('./../../modules/messages/server/models/message.server.model.mjs');
 const Message = mongoose.model('Message');
 
 // define Promises for mongoose
@@ -32,7 +31,7 @@ exports.up = function (next) {
     // Bootstrap db connection
     function (done) {
       mongooseService.connect(function () {
-        console.log(chalk.green('Connected to MongoDB.'));
+        console.log('Connected to MongoDB.');
         done();
       });
     },

@@ -1,0 +1,13 @@
+Trustroots is a community for travellers who want to meet, share and host each other.
+
+This native Android preview lets Trustroots members:
+
+* Sign in to their account
+* Explore circles and manage circle membership
+* Search for hosts on a map and by username
+* View and edit profiles, including pictures and hosting details
+* Read and send messages
+
+The app uses OpenStreetMap tiles for its host map. Recent map results, messages and profiles have a limited offline cache.
+
+This is a preview under active development. Some features available on the Trustroots website are not yet available in the Android app. An internet connection is needed to sign in and refresh information.

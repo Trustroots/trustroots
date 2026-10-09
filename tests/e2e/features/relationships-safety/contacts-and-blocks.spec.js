@@ -1,4 +1,4 @@
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 
 const {
   SEEDED_MEMBERS,
@@ -313,7 +313,9 @@ test.describe.serial('contacts and safety feature coverage', () => {
     const contact = await findContactByUsers(bob.id, alice.id);
     expect(contact).toBeTruthy();
 
-    const unauthorized = await page.request.put(`/api/contact/${contact._id}`);
+    const unauthorized = await page.request.put(`/api/contact/${contact._id}`, {
+      headers: { 'X-Trustroots-Request': '1' },
+    });
     expect(unauthorized.status()).toBe(404);
 
     const context = await createIsolatedContext(browser, baseURL);
@@ -327,6 +329,7 @@ test.describe.serial('contacts and safety feature coverage', () => {
 
       const confirm = await alicePage.request.put(
         `/api/contact/${contact._id}`,
+        { headers: { 'X-Trustroots-Request': '1' } },
       );
       expect(confirm.ok()).toBeTruthy();
       expect((await confirm.json()).confirmed).toBe(true);
@@ -366,7 +369,9 @@ test.describe.serial('contacts and safety feature coverage', () => {
       expect(Array.isArray(await common.json())).toBeTruthy();
 
       const contact = await findContactByUsers(bob.id, alice.id);
-      const remove = await page.request.delete(`/api/contact/${contact._id}`);
+      const remove = await page.request.delete(`/api/contact/${contact._id}`, {
+        headers: { 'X-Trustroots-Request': '1' },
+      });
       expect(remove.ok()).toBeTruthy();
 
       const removed = await page.request.get(`/api/contact/${contact._id}`);
@@ -402,11 +407,13 @@ test.describe.serial('contacts and safety feature coverage', () => {
 
       const unblock = await page.request.delete(
         `/api/blocked-users/${bob.username}`,
+        { headers: { 'X-Trustroots-Request': '1' } },
       );
       expect(unblock.ok()).toBeTruthy();
 
       const block = await page.request.put(
         `/api/blocked-users/${bob.username}`,
+        { headers: { 'X-Trustroots-Request': '1' } },
       );
       expect(block.ok()).toBeTruthy();
     } finally {
@@ -472,6 +479,7 @@ test.describe.serial('contacts and safety feature coverage', () => {
       await signInViaApi(page, context.request, blocker);
       const block = await page.request.put(
         `/api/blocked-users/${blocked.username}`,
+        { headers: { 'X-Trustroots-Request': '1' } },
       );
       expect(block.ok()).toBeTruthy();
 

@@ -46,6 +46,27 @@ jest.mock(
 );
 
 describe('<ProfileViewBasics />', () => {
+  it('shows the greeter badge alongside volunteer recognition and removes it when revoked', () => {
+    const profile = {
+      _id: 'fictional-member',
+      username: 'fictional-member',
+      displayName: 'Fictional Member',
+      isGreeter: true,
+      isVolunteer: true,
+    };
+    const { rerender } = render(<ProfileViewBasics profile={profile} />);
+    expect(
+      screen.getByRole('link', { name: 'Trustroots greeter' }),
+    ).toHaveAttribute('href', '/team/greeters');
+    expect(
+      screen.getByRole('link', { name: 'Trustroots volunteer' }),
+    ).toHaveAttribute('href', '/team');
+    rerender(<ProfileViewBasics profile={{ ...profile, isGreeter: false }} />);
+    expect(
+      screen.queryByRole('link', { name: 'Trustroots greeter' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('renders member profile basics, locations, languages, and networks', () => {
     render(
       <ProfileViewBasics
@@ -227,7 +248,8 @@ describe('<ProfileViewBasics />', () => {
     render(
       <ProfileViewBasics
         profile={{
-          created: '2020-01-01T00:00:00.000Z',
+          created: undefined,
+          additionalProvidersData: { github: null },
           languages: [],
           seen: null,
         }}
@@ -239,7 +261,8 @@ describe('<ProfileViewBasics />', () => {
     expect(screen.queryByText(/^Reply rate/)).not.toBeInTheDocument();
     expect(screen.queryByText(/^Replies within/)).not.toBeInTheDocument();
     expect(screen.queryByText('Languages')).not.toBeInTheDocument();
-    expect(screen.queryByText('Elsewhere')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'GitHub' })).toBeInTheDocument();
+    expect(screen.getByText('Elsewhere')).toBeInTheDocument();
     expect(
       screen.queryByRole('link', { name: 'Nostroots' }),
     ).not.toBeInTheDocument();

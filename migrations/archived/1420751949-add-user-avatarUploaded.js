@@ -3,23 +3,22 @@
  * Determines if avatars exist at users upload folder
  */
 
-const mongooseService = require('../../config/lib/mongoose');
-const chalk = require('chalk');
+const mongooseService = require('./../../config/lib/mongoose.mjs');
 const mongoose = require('mongoose');
 // eslint-disable-next-line no-unused-vars
-const userModels = require('../../modules/users/server/models/user.server.model');
+const userModels = require('./../../modules/users/server/models/user.server.model.mjs');
 const User = mongoose.model('User');
 
 exports.up = function (next) {
   mongooseService.connect(function () {
-    console.log(chalk.green('Connected to MongoDB.'));
+    console.log('Connected to MongoDB.');
     User.update(
       { avatarUploaded: { $exists: false } },
       { '$set': { avatarUploaded: false } },
       { multi: true },
     ).exec(function (err, numberAffected) {
       if (err) {
-        console.log(chalk.red(err));
+        console.log(err);
       } else {
         console.log('Affected rows:');
         console.log(numberAffected);
@@ -34,14 +33,14 @@ exports.up = function (next) {
 
 exports.down = function (next) {
   mongooseService.connect(function () {
-    console.log(chalk.green('Connected to MongoDB.'));
+    console.log('Connected to MongoDB.');
     User.update(
       { avatarUploaded: { $exists: true } },
       { '$unset': { avatarUploaded: '' } },
       { multi: true },
     ).exec(function (err, numberAffected) {
       if (err) {
-        console.log(chalk.red(err));
+        console.log(err);
       } else {
         console.log('Affected rows:');
         console.log(numberAffected);

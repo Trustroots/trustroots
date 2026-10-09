@@ -61,6 +61,32 @@ activity.
 - **WHEN** an authorised administrator selects a recent thread vote
 - **THEN** the system opens the associated message-inspection view
 
+### Requirement: Dashboard previews negative-experience feedback
+
+The admin dashboard SHALL expose the public feedback text for each recent
+negative experience in a responsive preview attached to its date. The complete
+text SHALL be available on hover and keyboard focus, and togglable by touch.
+The preview SHALL preserve line breaks, render text without interpreting HTML,
+close on Escape, and show a clear fallback when feedback is unavailable.
+
+#### Scenario: Administrator previews public feedback
+
+- **WHEN** an administrator hovers over, focuses, or taps a negative experience
+  date
+- **THEN** the dashboard shows that experience's complete public feedback
+- **AND** line breaks in the feedback remain visible
+- **AND** the feedback is rendered as plain text without an extra request
+
+#### Scenario: Administrator dismisses a preview
+
+- **WHEN** an administrator presses Escape while a preview is open
+- **THEN** the preview closes and focus remains on its date control
+
+#### Scenario: Public feedback is unavailable
+
+- **WHEN** a negative experience has no public feedback text
+- **THEN** the preview explains that the text is unavailable
+
 ### Requirement: Member search and role filtering
 
 The system SHALL let authorised administrators search for members and list
@@ -93,6 +119,18 @@ moves between pages.
 
 - **WHEN** an authorised administrator selects a moderation role
 - **THEN** the first page of members with that role is displayed
+
+#### Scenario: Administrator opens a role list URL
+
+- **WHEN** an authorised administrator opens `/admin/search-users?role=<role>` for a valid role
+- **THEN** the first page of members with that role is displayed
+- **AND** the selected role is visible in the role filter
+- **AND** the URL retains the role while the administrator changes pages or sorting
+
+#### Scenario: Administrator follows a member role link
+
+- **WHEN** an administrator selects the Greeter or volunteer role on a member record
+- **THEN** the application opens the corresponding role-filtered member list at its unique URL
 
 #### Scenario: Administrator sorts member search results
 
@@ -131,10 +169,67 @@ allow them to record moderation notes about that member.
 - **WHEN** an authorised administrator requests a report with a missing or malformed member identifier
 - **THEN** the system returns a usable error response
 
+### Requirement: Admin member reports include the public profile
+
+The administrator member report SHALL include the viewed member's public
+profile below the moderation information. It SHALL reuse the public profile
+view, use the authenticated administrator as the viewer, and keep the target
+member distinct from the viewer. The embedded profile SHALL not add duplicate
+global navigation.
+
+#### Scenario: Administrator opens a member report
+
+- **WHEN** an administrator opens `/admin/user/<username>`
+- **THEN** the moderation report is followed by that member's public profile
+- **AND** profile actions use the signed-in administrator as the viewer
+- **AND** the profile identifies the reported member as its target
+
+### Requirement: Role changes use accessible confirmation dialogs
+
+Role changes from an administrator member report SHALL use an accessible
+application dialog with clear action-specific text. The dialog SHALL support
+keyboard dismissal before submission, provide progress feedback while saving,
+prevent duplicate submissions, and report mutation or refresh errors accurately.
+
+#### Scenario: Administrator confirms or cancels a role change
+
+- **WHEN** an administrator selects a moderation action on a member report
+- **THEN** a labelled confirmation dialog explains the action
+- **AND** cancelling or dismissing the dialog leaves the member unchanged
+- **AND** confirming applies the action once and refreshes the report
+
+#### Scenario: Role change or report refresh fails
+
+- **WHEN** saving a role change fails
+- **THEN** the dialog reports the failure and allows a retry
+- **WHEN** saving succeeds but refreshing the report fails
+- **THEN** the dialog reports that the role changed and does not offer to repeat it
+
 ### Requirement: Role changes and audit history
 
 The system SHALL let authorised administrators apply permitted moderation-role
-changes and review the administration audit history.
+changes, including removing a member's `shadowban` role, and review the
+administration audit history. Removing the role SHALL leave messages already
+hidden during the shadowban hidden.
+Role descriptions SHALL be available on hover and keyboard focus, and exposed
+to assistive technology without requiring visible explanatory paragraphs.
+
+#### Scenario: Administrator focuses role help
+
+- **WHEN** an administrator focuses a role label or the greeter control
+- **THEN** its explanation appears and is available to screen readers
+
+#### Scenario: Administrator unshadowbans a member
+
+- **WHEN** an authorised administrator confirms Unshadowban on a shadowbanned member report
+- **THEN** the `shadowban` role is removed and the member report reflects the change
+- **AND** the removal is recorded in moderation notes and the audit history
+- **AND** previously hidden messages remain hidden
+
+#### Scenario: Member attempts to remove a shadowban
+
+- **WHEN** a member without the `admin` role requests removal of a shadowban
+- **THEN** the system denies access
 
 #### Scenario: Administrator changes a member's moderation role
 
@@ -413,7 +508,7 @@ team membership controls.
 
 ### Requirement: Welcome team acquisition access
 
-The system SHALL allow members with the `welcome-team` role to view acquisition stories and analysis, including all existing acquisition data, and the blockers of their own account. Administrator permissions beyond these tools SHALL remain restricted to administrators. The interface SHALL display the role as Welcome team and show only accessible navigation and member links.
+The system SHALL allow members with the `welcome-team` role to view acquisition stories and analysis, including all existing acquisition data, and the blockers of their own account. Administrator permissions beyond these tools SHALL remain restricted to administrators. The interface SHALL display the role as Greeter and show only accessible navigation and member links.
 
 #### Scenario: Welcome team views acquisition pages
 
@@ -447,3 +542,161 @@ explain its compact column headings, and allow profile visibility to be sorted.
 - **THEN** each story shows whether the member's profile is visible
 - **AND** compact column headings provide accessible explanations
 - **AND** the administrator can sort the rows by profile visibility
+
+### Requirement: Acquisition welcome context
+
+The acquisition-stories list SHALL show a sortable Welcomer column derived from
+the first non-self, non-hidden incoming message from a current welcome-team
+member, including the sender's linked identity and date. Unread messages SHALL
+count. Members without a qualifying message SHALL show Unassigned. Contacted
+rows SHALL be subtly faded while preserving readable text and usable controls.
+The API SHALL batch contact metadata without returning message content.
+
+#### Scenario: First welcome message establishes the welcomer
+
+- **WHEN** a welcome-team member sends a visible message to a listed member
+- **THEN** reloading the list shows that sender and date and subtly fades the row
+- **AND** subsequent messages do not replace the first welcomer
+
+#### Scenario: Non-qualifying messages
+
+- **WHEN** only self-messages, hidden messages or messages from non-team senders exist
+- **THEN** the member remains Unassigned
+
+### Requirement: Acquisition language context
+
+The list SHALL display declared language names with languages shared with the
+signed-in viewer first, preserving profile order within both groups. Shared
+languages SHALL be bold except English, which SHALL retain normal weight.
+Empty language lists SHALL show Not specified. A viewer without languages SHALL
+see the original recipient language order without emphasis.
+
+#### Scenario: Shared languages
+
+- **WHEN** a member and viewer share English and another language
+- **THEN** those languages appear before unshared languages
+- **AND** only the shared non-English language is bold
+
+#### Scenario: Missing languages
+
+- **WHEN** a member has no declared languages
+- **THEN** the Languages column shows Not specified
+
+### Requirement: Profile admin navigation
+
+Public profile action links SHALL be consistently aligned. Administrators SHALL
+see an Admin action linking to `/admin/user/<viewed-member-username>`, on desktop
+and mobile. Other members, including the welcome team, SHALL not see it.
+
+#### Scenario: Administrator views a member
+
+- **WHEN** an administrator opens a member's profile
+- **THEN** the Admin action opens that member's existing admin record
+
+#### Scenario: Non-administrator views a member
+
+- **WHEN** a non-administrator opens a profile
+- **THEN** no Admin action is displayed
+
+### Requirement: Admin member username URLs
+
+The application SHALL support `/admin/user/:username` with the same admin-only
+access as `/admin/user`. It SHALL look up the exact username independently of
+fuzzy search results and their pagination, while preserving ID, IP and query
+URL support. Member links SHALL prefer the encoded username path whenever the
+username is available; ID-only records SHALL retain the legacy ID fallback.
+
+#### Scenario: Exact username deep link despite a matching prefix
+
+- **GIVEN** members named `fictional-member` and `fictional-member-extra`
+- **WHEN** an administrator opens `/admin/user/fictional-member`
+- **THEN** the admin page shows the record for the exact `fictional-member` username
+
+### Requirement: Compact audit history
+
+The admin audit log SHALL display compact rows containing time, acting member,
+request route and a concise summary. Empty request fields and pagination fields
+SHALL be omitted from summaries. Raw body, params, query, IP address and log ID
+SHALL remain available through expandable details without changing stored logs.
+
+#### Scenario: Request summary
+
+- **WHEN** an entry contains an empty userId, a username and pagination criteria
+- **THEN** its summary shows the username without empty or pagination fields
+- **AND** its full request data remains available in expandable details
+
+### Requirement: Audit actor filters
+
+Administrators SHALL filter audit history by the staff username that performed
+the action and by current admin or welcome-team membership. Combined filters
+SHALL intersect. Filters SHALL apply before the latest 100 entries are selected.
+Username options SHALL include existing actors from all recorded history.
+The existing response array and admin-only access SHALL remain compatible.
+
+#### Scenario: Older matching staff activity
+
+- **WHEN** an administrator filters by an actor whose records precede the latest
+  100 unfiltered entries
+- **THEN** the actor's latest matching entries are returned
+
+#### Scenario: Team and username filters
+
+- **WHEN** an administrator selects a username and a team
+- **THEN** only that actor's entries are returned if they currently belong to that team
+- **AND** members holding both roles match either team
+
+#### Scenario: Invalid or missing results
+
+- **WHEN** an invalid team or non-string filter is supplied
+- **THEN** the API rejects the filter
+- **WHEN** no actors match valid filters
+- **THEN** the list returns an empty array
+
+### Requirement: Descriptive newsletter audience export filenames
+
+Targeted newsletter CSV download filenames SHALL include the applicable location, hosting radius, selected location sources when narrowed, selected circle names, and the local export datetime in `yyyymmdd-hhmm` format. Filter text SHALL be sanitised for use in filenames. Hosting-only audiences SHALL describe their coordinates instead of an unused text location.
+
+#### Scenario: Administrator exports the default audience
+
+- **WHEN** an authorised administrator exports the initial Berlin audience with a 50 kilometre hosting radius and all location sources
+- **THEN** the CSV filename uses `newsletter-audience-Berlin-50km-yyyymmdd-hhmm.csv` with the actual local export datetime
+
+#### Scenario: Administrator exports a customised audience
+
+- **WHEN** an authorised administrator exports an audience after changing location sources, location criteria or circles
+- **THEN** the CSV filename describes the selected filters and includes the local export datetime
+- **AND** filename-unsafe characters from filter text are replaced
+
+### Requirement: Filter unassigned acquisition stories
+
+The acquisition-stories view SHALL provide an accessible “Unassigned only” checkbox, unchecked by default, to administrators and greeters. When checked, the view SHALL show only members without an assigned greeter within the existing latest 500 stories. Filtering SHALL preserve the selected sort order. Clearing the checkbox SHALL restore all loaded stories without refetching them. If no rows match, the view SHALL explain that no unassigned acquisition stories were found and keep the checkbox available.
+
+#### Scenario: Show only unassigned members
+
+- **WHEN** an authorised viewer checks Unassigned only
+- **THEN** rows with an assigned greeter are hidden
+- **AND** rows marked Unassigned remain in the selected sort order
+
+#### Scenario: Restore all stories
+
+- **WHEN** the viewer clears Unassigned only
+- **THEN** all loaded rows return in the selected sort order
+
+#### Scenario: No unassigned stories
+
+- **WHEN** Unassigned only is checked and no loaded members are unassigned
+- **THEN** the view shows a filtered empty state and the checkbox remains available
+
+### Requirement: Acquisition profile visibility filtering
+
+The acquisition stories view SHALL offer an accessible All / Visible / Hidden profile visibility selector, defaulting to All. It SHALL combine with Unassigned only over the loaded latest 500 stories, preserve sorting, and avoid refetching. Controls SHALL remain available with an explanatory empty state. Hidden profiles SHALL be explained as signups not yet activated through email confirmation, rather than deactivated accounts or necessarily missing descriptions.
+
+#### Scenario: Greeter combines filters
+
+- **WHEN** a greeter selects Hidden and Unassigned only
+- **THEN** only hidden, unassigned rows are shown in the selected order without another request
+
+#### Scenario: Filter matches no stories
+
+- **WHEN** no loaded stories match the filters
+- **THEN** an empty-result explanation and both filter controls remain visible

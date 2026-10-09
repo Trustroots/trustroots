@@ -1,18 +1,19 @@
 import mongoose from 'mongoose';
-import textService from '../../../core/server/services/text.server.service.js';
+import textService from './../../../core/server/services/text.server.service.mjs';
 
 // External dependencies
 
 // Internal dependencies
 
 const { Schema } = mongoose;
-
 const AdminNoteSchema = new Schema({
   admin: {
     type: Schema.ObjectId,
     ref: 'User',
   },
-  note: { type: String },
+  note: {
+    type: String,
+  },
   date: {
     type: Date,
     default: Date.now,
@@ -30,7 +31,7 @@ AdminNoteSchema.post('find', results =>
     return result;
   }),
 );
-
 mongoose.model('AdminNote', AdminNoteSchema);
-
-export default {};
+const defaultInterop = {};
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

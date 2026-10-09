@@ -61,8 +61,8 @@ unknown browser route.
 ### Requirement: Public support requests
 
 The system SHALL let a visitor or signed-in member submit a valid support
-request, select Account help, Report a member, Volunteering, or Other, and
-explain when the request cannot be accepted or sent. The category SHALL be
+request, select Account help, Report a member, Report a bug, Volunteering, or
+Other, and explain when the request cannot be accepted or sent. The category SHALL be
 retained with the request and included in the support email body and subject.
 
 #### Scenario: Visitor submits a valid support request
@@ -104,6 +104,18 @@ retained with the request and included in the support email body and subject.
 
 - **WHEN** an API client submits an unsupported category
 - **THEN** the request is rejected before storage or email delivery
+
+#### Scenario: Bug report contact route
+
+- **WHEN** a member selects Report a bug from the menu
+- **THEN** the support form opens with Report a bug selected
+- **AND** submitting retains reportBug in storage and its readable label in email
+
+#### Scenario: Bug reporting FAQ
+
+- **WHEN** a visitor reads the bugs-and-features FAQ
+- **THEN** the FAQ links to the bug-report contact form as the primary route
+- **AND** GitHub is optional without issue-search or account-registration instructions
 
 ### Requirement: Public service information
 
@@ -147,3 +159,24 @@ responses SHALL NOT replace a successful cached response.
 - **WHEN** visitors request public statistics more than once within one hour
 - **THEN** the system reuses the successful aggregate response
 - **AND** advertises the same lifetime to shared HTTP caches
+
+### Requirement: FAQ category filtering
+
+The system SHALL let a visitor filter the questions on the open FAQ category
+page using a case-insensitive phrase found in a question or its answer.
+
+#### Scenario: Visitor filters FAQ questions
+
+- **WHEN** a visitor enters a phrase in the FAQ filter
+- **THEN** only matching questions in the open category are shown
+- **AND** other FAQ categories remain available through the sidebar
+
+#### Scenario: No FAQ question matches
+
+- **WHEN** the entered phrase matches no question or answer in the open category
+- **THEN** the page explains that there are no matching questions
+
+#### Scenario: Visitor clears the FAQ filter
+
+- **WHEN** a visitor clears the filter
+- **THEN** all questions in the open category are shown again

@@ -1,7 +1,15 @@
+# Remote log delivery must not hold up container lifecycle operations.
+x-local-logging: &local-logging
+  driver: local
+  options:
+    max-size: '10m'
+    max-file: '3'
+
 services:
   mongodb:
+    logging: *local-logging
     image: mongo:4.4
-    command: ["mongod", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.5"]
+    command: ['mongod', '--bind_ip_all', '--wiredTigerCacheSizeGB', '0.5']
     volumes:
       - mongodb_data:/data/db
     restart: unless-stopped
@@ -11,8 +19,8 @@ services:
   mongodb-localhost:
     image: alpine/socat
     command:
-      - "tcp-listen:27017,fork,reuseaddr,bind=0.0.0.0"
-      - "tcp-connect:mongodb:27017"
+      - 'tcp-listen:27017,fork,reuseaddr,bind=0.0.0.0'
+      - 'tcp-connect:mongodb:27017'
     depends_on:
       - mongodb
     ports:
@@ -53,6 +61,7 @@ services:
   # Gated behind the `prod` profile so plain `docker compose up` skips it:
   #   docker compose --profile prod up --build
   webapp:
+    logging: *local-logging
     image: trustrootsops/trustroots:latest
     restart: unless-stopped
     profiles:
@@ -69,6 +78,7 @@ services:
       - '8080:80'
 
   worker:
+    logging: *local-logging
     image: trustrootsops/trustroots:latest
     restart: unless-stopped
     profiles:
@@ -87,7 +97,7 @@ services:
       - NODE_ENV=production
     # Override the container's start command (which will start passenger) to
     # start the worker
-    command: ["node", "worker.js"]
+    command: ['node', 'worker.js']
 
   influxdb:
     image: influxdb:1.8.10

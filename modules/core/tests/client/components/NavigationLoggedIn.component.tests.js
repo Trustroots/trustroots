@@ -1,76 +1,9 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import NavigationLoggedIn from '@/modules/core/client/components/NavigationLoggedIn';
-
-jest.mock('react-bootstrap', () => {
-  const React = require('react');
-  const PropTypes = require('prop-types');
-
-  function NavbarHeader({ children }) {
-    return <div>{children}</div>;
-  }
-  NavbarHeader.propTypes = { children: PropTypes.node };
-
-  function NavbarBrand({ children }) {
-    return <div>{children}</div>;
-  }
-  NavbarBrand.propTypes = { children: PropTypes.node };
-
-  const Navbar = {
-    Header: NavbarHeader,
-    Brand: NavbarBrand,
-  };
-
-  function Nav({ children, className }) {
-    return <div className={className}>{children}</div>;
-  }
-  Nav.propTypes = {
-    children: PropTypes.node,
-    className: PropTypes.string,
-  };
-
-  function NavDropdown({ children, title, className, id }) {
-    return (
-      <div className={className} id={id}>
-        {title}
-        {children}
-      </div>
-    );
-  }
-  NavDropdown.propTypes = {
-    children: PropTypes.node,
-    title: PropTypes.node,
-    className: PropTypes.string,
-    id: PropTypes.string,
-  };
-
-  function MenuItem({ children, href, target, onClick, divider }) {
-    return divider ? (
-      <hr role="separator" />
-    ) : (
-      <a href={href || '#'} target={target} onClick={onClick}>
-        {children}
-      </a>
-    );
-  }
-  MenuItem.propTypes = {
-    children: PropTypes.node,
-    href: PropTypes.string,
-    target: PropTypes.string,
-    onClick: PropTypes.func,
-    divider: PropTypes.bool,
-  };
-
-  return {
-    Navbar,
-    Nav,
-    NavDropdown,
-    MenuItem,
-  };
-});
 
 jest.mock('@/modules/users/client/components/Avatar.component.js', () => {
   const React = require('react');
@@ -106,6 +39,18 @@ describe('<NavigationLoggedIn />', () => {
       'href',
       '/search',
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Support' }));
+    const supportMenu = screen
+      .getByRole('button', { name: 'Support' })
+      .closest('li')
+      .querySelector('.dropdown-menu');
+    expect(
+      within(supportMenu).getByRole('link', { name: 'Safety' }),
+    ).toHaveAttribute('href', '/safety');
+    expect(
+      within(supportMenu).getByRole('link', { name: 'Report a bug' }),
+    ).toHaveAttribute('href', '/support?category=reportBug');
+    fireEvent.click(screen.getByRole('button', { name: /avatar/i }));
     expect(screen.getAllByText('Alice Example').length).toBe(2);
     expect(screen.getByRole('link', { name: 'About' })).toHaveAttribute(
       'href',
@@ -115,9 +60,6 @@ describe('<NavigationLoggedIn />', () => {
       'href',
       '/statistics',
     );
-    screen.getAllByRole('link', { name: 'Safety' }).forEach(link => {
-      expect(link).toHaveAttribute('href', '/safety');
-    });
     const wikiLink = screen.getByRole('link', { name: 'Wiki' });
     expect(wikiLink).toHaveAttribute('href', 'https://wiki.trustroots.org/');
     expect(wikiLink).toHaveAttribute('target', '_blank');
@@ -135,6 +77,61 @@ describe('<NavigationLoggedIn />', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('places the administrator shortcut immediately before Circles', () => {
+    render(
+      <NavigationLoggedIn
+        currentPath="/admin"
+        onSignout={jest.fn()}
+        user={{ ...user, roles: ['user', 'admin'] }}
+      />,
+    );
+    const admin = screen.getByRole('link', { name: 'Admin', exact: true });
+    expect(admin).toHaveAttribute('href', '/admin');
+    expect(admin.closest('li')).toHaveClass('active', 'hidden-xs');
+    expect(admin.closest('li').nextElementSibling).toBe(
+      screen.getByRole('link', { name: 'Circles' }).closest('li'),
+    );
+  });
+
+  it.each([undefined, [], ['user']])(
+    'omits the administrator shortcut for non-admin roles %j',
+    roles => {
+      render(
+        <NavigationLoggedIn
+          currentPath="/circles"
+          onSignout={jest.fn()}
+          user={{ ...user, roles }}
+        />,
+      );
+      expect(
+        screen.queryByRole('link', { name: 'Admin', exact: true }),
+      ).not.toBeInTheDocument();
+    },
+  );
+
+  it('links Greeters to acquisition stories and administrators to admin tools', () => {
+    const { rerender } = render(
+      <NavigationLoggedIn
+        currentPath="/admin/acquisition-stories"
+        onSignout={jest.fn()}
+        user={{ ...user, roles: ['user', 'welcome-team'] }}
+      />,
+    );
+    expect(
+      screen.getByRole('link', { name: 'Admin', exact: true }),
+    ).toHaveAttribute('href', '/admin/acquisition-stories');
+    rerender(
+      <NavigationLoggedIn
+        currentPath="/admin"
+        onSignout={jest.fn()}
+        user={{ ...user, roles: ['user', 'admin'] }}
+      />,
+    );
+    expect(
+      screen.getByRole('link', { name: 'Admin', exact: true }),
+    ).toHaveAttribute('href', '/admin');
+  });
+
   it('forwards signout click to callback', () => {
     const onSignout = jest.fn();
 
@@ -146,6 +143,7 @@ describe('<NavigationLoggedIn />', () => {
       />,
     );
 
+    fireEvent.click(screen.getByRole('button', { name: /avatar/i }));
     fireEvent.click(screen.getByRole('link', { name: 'Sign out' }));
 
     expect(onSignout).toHaveBeenCalledTimes(1);

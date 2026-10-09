@@ -56,7 +56,9 @@ jobs:
           app="$RUNNER_TEMP/TrustrootsDerivedData/Build/Products/Debug-iphonesimulator/Trustroots.app"
           test -d "$app"
           xcrun simctl install "$DEVICE_ID" "$app"
-          xcrun simctl launch "$DEVICE_ID" org.trustroots.ios
+          bundle_id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Info.plist")
+          test -n "$bundle_id"
+          xcrun simctl launch "$DEVICE_ID" "$bundle_id"
       - name: Capture iOS screenshot
         env:
           DEVICE_ID: ${{ steps.simulator.outputs.id }}
@@ -79,16 +81,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: 17
-      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
           cache-disabled: true
       - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
       - name: Install Android build SDK
         run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
       - name: Build, launch and capture Android app
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
@@ -101,12 +108,7 @@ jobs:
             bash apps/android/gradlew -p apps/android assembleDebug
             adb install -r apps/android/app/build/outputs/apk/debug/app-debug.apk
             adb shell am force-stop org.trustroots.android.debug
-            launcher="$(adb shell cmd package resolve-activity --brief \
-              -a android.intent.action.MAIN \
-              -c android.intent.category.LAUNCHER \
-              org.trustroots.android.debug | tr -d '\r')"
-            test -n "$launcher"
-            adb shell am start -W -n "$launcher"
+            adb shell am start -W -n org.trustroots.android.debug/org.trustroots.android.MainActivity
             # Compose can render a blank first frame while Android restores the
             # activity. Capture only after the launched activity has settled.
             sleep 8
@@ -165,7 +167,7 @@ jobs:
           git commit -m "PR #${{ github.event.pull_request.number }} mobile screenshots (${{ github.run_id }})"
           git push origin HEAD:pr-screenshots
       - name: Upsert PR comment with mobile screenshots
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const marker = '<!-- mobile-screenshots -->';

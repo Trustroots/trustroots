@@ -2,7 +2,7 @@ name: Tests
 
 on:
   pull_request:
-    branches: [main, 'codex/**']
+    branches: [main, 'codex/**', 'chore/**']
     types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
@@ -32,7 +32,8 @@ jobs:
     needs: changes
     if: >
       always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
-      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -43,9 +44,52 @@ jobs:
         with:
           context: .
           file: production.Dockerfile
+          platforms: linux/amd64
           cache-from: type=gha,scope=production
-          cache-to: type=gha,mode=max,scope=production
+          # Cache availability must not fail a successful build or image push.
+          cache-to: type=gha,ignore-error=true,mode=max,scope=production
           push: false
+
+  publish-production-image:
+    needs: changes
+    if: >
+      always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
+      github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - name: Set image tags
+        id: image
+        run: |
+          echo "short-sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ vars.GHCR_PRODUCTION_USERNAME }}
+          password: ${{ secrets.GHCR_PRODUCTION_TOKEN }}
+      - name: Build and push production image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: production.Dockerfile
+          platforms: linux/amd64
+          build-args: |
+            TRUSTROOTS_BUILD_COMMIT=${{ github.sha }}
+            TRUSTROOTS_BUILD_COMMITTED_AT=${{ github.event.head_commit.timestamp }}
+            TRUSTROOTS_BUILD_BRANCH=${{ github.ref_name }}
+          tags: |
+            ghcr.io/trustrootsops/trustroots:latest
+            ghcr.io/trustrootsops/trustroots:git-${{ steps.image.outputs.short-sha }}
+          cache-from: type=gha,scope=production
+          # Cache availability must not fail a successful build or image push.
+          cache-to: type=gha,ignore-error=true,mode=max,scope=production
+          push: true
 
   build-dev-image:
     needs: changes
@@ -80,7 +124,8 @@ jobs:
           file: deploy/docker/dev.Dockerfile
           tags: ${{ steps.image.outputs.image-ref }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Cache availability must not fail a successful build or image push.
+          cache-to: type=gha,ignore-error=true,mode=max
           push: true
 
   client:
@@ -118,7 +163,8 @@ jobs:
           file: deploy/docker/dev.Dockerfile
           tags: trustroots-dev:ci
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Cache availability must not fail a successful build or image push.
+          cache-to: type=gha,ignore-error=true,mode=max
           load: true
       - name: Prepare compose local config
         run: node ./scripts/ci/ensure-compose-local.js
@@ -194,6 +240,8 @@ jobs:
       packages: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Test production deployment safeguards
+        run: python3 deploy/docker/test-production-deploy.py
       - name: Set up Docker Buildx
         if: needs.build-dev-image.result == 'skipped'
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
@@ -217,7 +265,8 @@ jobs:
           file: deploy/docker/dev.Dockerfile
           tags: trustroots-dev:ci
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Cache availability must not fail a successful build or image push.
+          cache-to: type=gha,ignore-error=true,mode=max
           load: true
       - name: Prepare compose local config
         run: node ./scripts/ci/ensure-compose-local.js
@@ -279,7 +328,7 @@ jobs:
           path: coverage/server
           if-no-files-found: ignore
 
-  e2e:
+  e2e-groups:
     needs: [changes, build-dev-image]
     if: >
       always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
@@ -289,6 +338,10 @@ jobs:
         github.event_name == 'pull_request'
       ) &&
       (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [account-public, community, admin-search]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -318,14 +371,15 @@ jobs:
           file: deploy/docker/dev.Dockerfile
           tags: trustroots-dev:ci
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # Cache availability must not fail a successful build or image push.
+          cache-to: type=gha,ignore-error=true,mode=max
           load: true
       - name: Prepare compose local config
         run: node ./scripts/ci/ensure-compose-local.js
       - name: Start MongoDB
         working-directory: deploy/docker
         run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d mongodb
-      - name: Test end-to-end smoke suite
+      - name: Test end-to-end group
         working-directory: deploy/docker
         run: |
           export TRUSTROOTS_BUILD_COMMIT="$(git rev-parse HEAD)"
@@ -340,6 +394,8 @@ jobs:
             -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
             -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
             -e TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test \
+            -e TRUSTROOTS_E2E_GROUP=${{ matrix.group }} \
+            -e TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE=true \
             -e TRUSTROOTS_E2E_WORKERS=2 \
             -e TRUSTROOTS_E2E_SERIAL_PROJECTS=true \
             -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
@@ -351,26 +407,63 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.group }}
           path: playwright-report
           if-no-files-found: ignore
       - name: Upload e2e coverage status
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: coverage-e2e
+          name: coverage-e2e-${{ matrix.group }}
           path: coverage/e2e
           if-no-files-found: ignore
       - name: Upload Playwright test results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: playwright-test-results
+          name: playwright-test-results-${{ matrix.group }}
           path: test-results
           if-no-files-found: ignore
 
+  e2e:
+    needs: [changes, e2e-groups]
+    if: always() && !cancelled() && needs.e2e-groups.result != 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Download group results
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: coverage-e2e-*
+          path: coverage/e2e/groups
+      - name: Download group HTML reports
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          pattern: playwright-report-*
+          path: playwright-report
+      - name: Enforce complete combined e2e coverage
+        env:
+          TRUSTROOTS_E2E_GROUP_JOB_RESULT: ${{ needs.e2e-groups.result }}
+        run: node scripts/e2e/aggregate-results.js
+      - name: Upload combined e2e status
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: coverage-e2e
+          path: coverage/e2e
+          if-no-files-found: error
+      - name: Upload combined report index
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: playwright-report
+          path: playwright-report
+          if-no-files-found: error
+
   coverage-summary:
-    if: always() && !cancelled() && needs.changes.outputs.run-code != 'false' && github.event_name == 'pull_request'
+    if: always() && !cancelled() && github.event_name == 'pull_request'
     needs: [changes, client, server, e2e]
     runs-on: ubuntu-latest
     permissions:
@@ -380,39 +473,52 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
       - name: Download client coverage
+        if: needs.changes.outputs.run-code != 'false'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         continue-on-error: true
         with:
           name: coverage-client
           path: coverage/client
       - name: Download server coverage
+        if: needs.changes.outputs.run-code != 'false'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         continue-on-error: true
         with:
           name: coverage-server
           path: coverage/server
       - name: Download end-to-end status
+        if: needs.changes.outputs.run-code != 'false'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         continue-on-error: true
         with:
           name: coverage-e2e
           path: coverage/e2e
       - name: Download Playwright report
+        if: needs.changes.outputs.run-code != 'false'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         continue-on-error: true
         with:
           name: playwright-report
           path: playwright-report
       - name: Record skipped end-to-end status
-        if: needs.e2e.result == 'skipped'
+        if: needs.changes.outputs.run-code != 'false' && needs.e2e.result == 'skipped'
         run: |
           mkdir -p coverage/e2e
           node -e "const fs = require('fs'); const status = { status: 'skipped', exitCode: 0, message: 'End-to-end tests were not requested for this pull request run.', generatedAt: new Date().toISOString(), command: 'npm run test:e2e', reportPath: 'playwright-report/index.html', metrics: null }; fs.writeFileSync('coverage/e2e/status.json', JSON.stringify(status, null, 2) + '\n');"
       - name: Generate coverage overview
+        if: needs.changes.outputs.run-code != 'false'
         run: npm run coverage:report
       - name: Generate pull request summary
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          TRUSTROOTS_PR_INCLUDE_COVERAGE: ${{ needs.changes.outputs.run-code != 'false' }}
         run: |
+          mkdir -p coverage-report
           npm run coverage:pr-summary > coverage-report/pr-summary.md
           cat coverage-report/pr-summary.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload coverage overview
@@ -422,7 +528,7 @@ jobs:
           path: coverage-report
       - name: Update pull request coverage comment
         if: github.event.pull_request.head.repo.full_name == github.repository
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const fs = require('fs');
@@ -430,6 +536,11 @@ jobs:
             const body = fs.readFileSync('coverage-report/pr-summary.md', 'utf8');
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
+            const { data: latest } = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+            if (latest.head.sha !== context.payload.pull_request.head.sha) {
+              core.info('Skipping a summary for an outdated PR head.');
+              return;
+            }
             const comments = await github.paginate(github.rest.issues.listComments, {
               owner,
               repo,
@@ -456,6 +567,7 @@ jobs:
               });
             }
       - name: Require full client and server coverage
+        if: needs.changes.outputs.run-code != 'false'
         run: npm run coverage:check -- --require-full
 
   pages:

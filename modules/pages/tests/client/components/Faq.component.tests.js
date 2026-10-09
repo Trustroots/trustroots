@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
@@ -78,5 +78,45 @@ describe('<Faq />', () => {
 
     expect(screen.getByText('about the foundation')).toBeInTheDocument();
     expect(screen.getByText('foundation content')).toBeInTheDocument();
+  });
+
+  it('filters questions by answer text, reports no matches, and restores them', async () => {
+    render(
+      <Faq category="general">
+        <div className="faq-question" id="first-question">
+          <h3>First question</h3>
+          An unusual answer about bicycles.
+        </div>
+        <div className="faq-question" id="second-question">
+          <h3>Second question</h3>
+          Another answer about trains.
+        </div>
+      </Faq>,
+    );
+
+    const filter = screen.getByRole('searchbox', {
+      name: 'Search this category',
+    });
+    const firstQuestion = document.getElementById('first-question');
+    const secondQuestion = document.getElementById('second-question');
+
+    fireEvent.change(filter, { target: { value: 'BICYCLES' } });
+    await waitFor(() => expect(secondQuestion).toHaveAttribute('hidden'));
+    expect(firstQuestion).not.toHaveAttribute('hidden');
+
+    fireEvent.change(filter, { target: { value: 'no such answer' } });
+    expect(
+      await screen.findByText(
+        'No questions match your search in this category.',
+      ),
+    ).toBeVisible();
+    expect(firstQuestion).toHaveAttribute('hidden');
+
+    fireEvent.change(filter, { target: { value: '' } });
+    await waitFor(() => expect(firstQuestion).not.toHaveAttribute('hidden'));
+    expect(secondQuestion).not.toHaveAttribute('hidden');
+    expect(
+      screen.queryByText('No questions match your search in this category.'),
+    ).not.toBeInTheDocument();
   });
 });

@@ -23,6 +23,63 @@ For an API running on the development Mac, use the Android emulator host alias:
 
 Release builds are fixed to `https://www.trustroots.org`.
 
+## APK update alerts
+
+The signed GitHub preview APK lets members opt in to update alerts from Account
+→ APK updates. It checks GitHub Releases daily and links to the release page
+when a newer signed Android preview is available. Android 13 and later asks for
+notification permission when alerts are enabled. A member can also check
+immediately from Account. The app does not download or install updates.
+
+The preview release workflow enables this feature with
+`-PtrustrootsPreviewUpdateAlerts=true`. Local and F-Droid builds leave it off:
+F-Droid's build may have a different signing key, so linking its members to a
+GitHub APK could suggest an update they cannot install. Members using
+[Obtainium](https://obtainium.imranr.dev/) can leave the in-app option off and
+use Obtainium's GitHub prerelease alerts instead. Keep the signing key stable
+and increase Android version codes for every preview update.
+
+## Message alerts without Google services
+
+Signed-in members can opt in under Account → Message alerts. The phone needs an
+installed [UnifiedPush distributor](https://unifiedpush.org/users/distributors/),
+such as ntfy, and Android notification permission. The app asks the member to
+choose a distributor, then registers a Web Push endpoint with Trustroots.
+Email reminders continue whether or not message alerts are enabled. An alert
+appears after the first unread-message reminder, around ten minutes after the
+message was sent, and shows only generic text on the lock screen. It opens the
+conversation when tapped. The APK does not use Firebase or Google Play
+services for message delivery.
+
+The server requires `TRUSTROOTS_WEB_PUSH_VAPID_PUBLIC_KEY`,
+`TRUSTROOTS_WEB_PUSH_VAPID_PRIVATE_KEY`, and
+`TRUSTROOTS_WEB_PUSH_VAPID_SUBJECT` (a `mailto:` or HTTPS contact URL).
+Generate one VAPID pair with `npx web-push generate-vapid-keys` and keep its
+private key in the server's secret configuration. Set
+`TRUSTROOTS_WEB_PUSH_ALLOWED_HOSTS` to a comma-separated list of trusted HTTPS
+push endpoint hosts. It defaults to `ntfy.sh`; include self-hosted distributor
+hosts explicitly. The server rejects other hosts so registered endpoints
+cannot be used to contact arbitrary addresses. Without VAPID configuration,
+the Account control reports that message alerts are unavailable.
+
+## Android preview distribution
+
+The [Android distribution guide](../../distribution/android/README.md) covers
+channel status, signing credentials and the release checklist. The signed
+GitHub preview APKs are also available through the
+[Obtainium import link](../../README.md#android-preview).
+
+See the [Zapstore publishing guide](../../distribution/android/zapstore.md) for
+first publication, certificate linking and automated updates, and the
+[F-Droid submission instructions](../../distribution/fdroid/README.md) for the
+validated source-build recipe, submitted merge request and remaining maintainer
+CI and review steps.
+
+### Google Play requirements
+
+See [Google Play release preparation](../../distribution/android/google-play.md)
+for account setup, signing, AAB builds, listing requirements and testing.
+
 ## Build and verify locally
 
 The app deliberately uses the light Trustroots colour scheme regardless of the

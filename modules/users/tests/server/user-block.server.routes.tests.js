@@ -2,8 +2,8 @@ const should = require('should');
 const request = require('supertest');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
-const express = require('../../../../config/lib/express');
-const log = require('../../../../config/lib/logger');
+const express = require('./../../../../config/lib/express.mjs');
+const log = require('./../../../../config/lib/logger.mjs');
 
 /**
  * Globals
@@ -14,7 +14,6 @@ let agent;
 /* users of the test */
 let alice;
 let bob;
-
 function checkError(message, done) {
   return err => {
     log('error', `Error while >> ${message}`);
@@ -22,7 +21,6 @@ function checkError(message, done) {
     done(err);
   };
 }
-
 const login = credentials =>
   new Promise((resolve, reject) => {
     agent = request.agent(app);
@@ -48,6 +46,7 @@ const block = username =>
   new Promise((resolve, reject) =>
     agent
       .put(`/api/blocked-users/${username}`)
+      .set('X-Trustroots-Request', '1')
       .expect(200)
       .end((err, resp) => {
         if (err) {
@@ -63,6 +62,7 @@ const unblock = username =>
   new Promise((resolve, reject) =>
     agent
       .delete(`/api/blocked-users/${username}`)
+      .set('X-Trustroots-Request', '1')
       .expect(200)
       .end((err, resp) => {
         if (err) {
@@ -89,7 +89,6 @@ const getUser = username =>
         resolve(resp);
       }),
   );
-
 const searchUser = (searchStr, expectedStatus = 200) =>
   new Promise((resolve, reject) =>
     agent
@@ -111,20 +110,19 @@ const searchUser = (searchStr, expectedStatus = 200) =>
  */
 describe('User block - user', function () {
   before(function (done) {
-    // Get application
-    app = express.init(mongoose.connection);
-    agent = request.agent(app);
-
-    done();
+    (async () => {
+      // Get application
+      app = await express.init(mongoose.connection);
+      agent = request.agent(app);
+      done();
+    })().catch(done);
   });
-
   beforeEach(function (done) {
     // Alice user
     const aliceCredentials = {
       username: 'alice_the_blocker',
       password: 'TR-I$Aw3$0m4',
     };
-
     const aliceProfile = {
       public: true,
       firstName: 'Alice',
@@ -160,18 +158,20 @@ describe('User block - user', function () {
       provider: 'local',
     };
     const bobUser = new User(bobProfile);
-    bob = { credentials: bobCredentials, user: bobUser, profile: bobProfile };
+    bob = {
+      credentials: bobCredentials,
+      user: bobUser,
+      profile: bobProfile,
+    };
 
     // Save alice and bob to test db
     Promise.all([aliceUser.save(), bobUser.save()])
       .then(() => done())
       .catch(done);
   });
-
   afterEach(function (done) {
     User.deleteMany().exec(done);
   });
-
   it('should be able to see a user if not blocked by her', function (done) {
     /* bob login */
     login(bob.credentials)
@@ -186,7 +186,6 @@ describe('User block - user', function () {
         return done();
       });
   });
-
   it('should get the list of the usernames of her blocked peers', function (done) {
     /* alice login */
     login(alice.credentials)
@@ -204,14 +203,15 @@ describe('User block - user', function () {
               return done(err);
             }
             const blocked = resp.body;
-            const bobUsername = { username: bob.credentials.username };
+            const bobUsername = {
+              username: bob.credentials.username,
+            };
             log('info', `alice blocked: ${JSON.stringify(bobUsername)}`);
             should(blocked).matchAny(bobUsername);
             return done();
           });
       });
   });
-
   it('should not see a user if blocked by her', function (done) {
     login(alice.credentials)
       .catch(checkError('alice login', done))
@@ -237,9 +237,10 @@ describe('User block - user', function () {
       })
       .catch(checkError('uncatched error - improve the test', done));
   });
-
   it('should not appear in search if has been blocked the searcher', function (done) {
-    const aliceUsername = { username: alice.credentials.username };
+    const aliceUsername = {
+      username: alice.credentials.username,
+    };
     login(bob.credentials)
       .catch(checkError('bob login', done))
       .then(() => searchUser('Alice'))
@@ -262,9 +263,10 @@ describe('User block - user', function () {
       })
       .catch(checkError('uncatched error', done));
   });
-
   it('should not see a user if blocked her', function (done) {
-    const bobUsername = { username: bob.credentials.username };
+    const bobUsername = {
+      username: bob.credentials.username,
+    };
     login(alice.credentials)
       .catch(checkError('alice login', done))
       .then(() => searchUser('Bob'))
@@ -282,7 +284,6 @@ describe('User block - user', function () {
       })
       .catch(checkError('uncatched error - improve the test', done));
   });
-
   it('should see a user if unblocked by her', function (done) {
     login(alice.credentials)
       .catch(checkError('alice login', done))

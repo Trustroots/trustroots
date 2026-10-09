@@ -4,7 +4,6 @@
  */
 export function createMemoryPolicy() {
   const grants = new Map();
-
   function allow(rules) {
     rules.forEach(function ({ roles, allows }) {
       roles.forEach(function (role) {
@@ -12,7 +11,6 @@ export function createMemoryPolicy() {
           grants.set(role, new Map());
         }
         const roleGrants = grants.get(role);
-
         allows.forEach(function ({ resources, permissions }) {
           if (!roleGrants.has(resources)) {
             roleGrants.set(resources, new Set());
@@ -26,18 +24,21 @@ export function createMemoryPolicy() {
       });
     });
   }
-
   function areAnyRolesAllowed(roles, resource, permission, callback) {
     const isAllowed = roles.some(function (role) {
       const methods = grants.get(role)?.get(resource);
       return methods?.has(permission) || methods?.has('*') || false;
     });
-
     if (callback) {
       return callback(null, isAllowed);
     }
     return Promise.resolve(isAllowed);
   }
-
-  return { allow, areAnyRolesAllowed };
+  return {
+    allow,
+    areAnyRolesAllowed,
+  };
 }
+const defaultInterop = createMemoryPolicy;
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

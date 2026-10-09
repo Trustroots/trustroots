@@ -14,12 +14,10 @@
 var path = require('path'),
     fs = require('fs'),
     del = require('del'),
-    mkdirRecursive = require('mkdir-recursive'),
     async = require('async'),
-    chalk = require('chalk'),
     nodemailer = require('nodemailer'),
-    config = require('../config/config'),
-    emailService = require('../modules/core/server/services/email.server.service');
+    config = require('./../config/config.mjs'),
+    emailService = require('./../modules/core/server/services/email.server.service.mjs');
 
 // Default temp folder
 var tempFolder = (process.argv[2] == null) ? path.resolve('./tmp/renderedEmails') : process.argv[2];
@@ -68,7 +66,7 @@ function writeEml(templateName, params, callback) {
 
 function writeEmails() {
   console.log('---');
-  console.log(chalk.green('Generating eml files out of emails.'));
+  console.log('Generating eml files out of emails.');
   console.log('Storing them to "' + tempFolder + '"');
 
   // Send emails
@@ -92,9 +90,8 @@ function writeEmails() {
       return;
     }
     console.log();
-    console.log(chalk.green('Done!'));
+    console.log('Done!');
     console.log('See files from ' + tempFolder);
-    console.log(chalk.white('')); // Reset to white
     process.exit(0);
   });
 }
@@ -118,7 +115,7 @@ function generateParams(params) {
 // Ensure temp directory exists
 function ensureTempDir(done) {
   console.log('Ensuring temp directory exists.');
-  mkdirRecursive.mkdir(tempFolder, function(err) {
+  fs.mkdir(tempFolder, { recursive: true }, function(err) {
     if (err && err.code !== 'EEXIST') {
       console.error(err);
     }

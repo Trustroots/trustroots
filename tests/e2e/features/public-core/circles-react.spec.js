@@ -1,5 +1,5 @@
-/* global window */
-const { annotateFeature, expect, test } = require('../../support/test');
+/* global getComputedStyle, window */
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
 
 test('invalid circle addresses show a stable not-found page', async ({
@@ -29,6 +29,9 @@ test('circle pages use React and preserve guest navigation', async ({
   ]);
   await page.goto('/circles');
   await expect(page.locator('#tr-react-root')).toBeVisible();
+  await expect(
+    page.locator('#tr-header').getByRole('link', { name: 'Read more' }),
+  ).toHaveCSS('color', 'rgb(255, 255, 255)');
   await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(0);
   await page.getByRole('link', { name: /^Hitchhikers/ }).click();
   await expect(page).toHaveURL(/\/circles\/hitchhikers$/);
@@ -51,6 +54,7 @@ test('circle membership retains account roles and legacy member links', async ({
     'Member search loads the existing map workflow.',
   ]);
   await signInViaApi(page, undefined, SEEDED_ADMIN);
+  await page.goto('/circles');
   const circleResponse = await page.request.get('/api/tribes/hitchhikers');
   expect(circleResponse.ok()).toBeTruthy();
   const circle = await circleResponse.json();
@@ -58,18 +62,71 @@ test('circle membership retains account roles and legacy member links', async ({
     id => window.user.memberIds.includes(id),
     circle._id,
   );
-  await page.request.delete(`/api/users/memberships/${circle._id}`);
+  await page.request.delete(`/api/users/memberships/${circle._id}`, {
+    headers: { 'X-Trustroots-Request': '1' },
+  });
   try {
     await page.goto('/circles/hitchhikers');
     const roles = await page.evaluate(() => window.user.roles);
     expect(roles).toContain('admin');
+    await page.route('**/api/tribes/hitchhikers/members', route =>
+      route.fulfill({
+        status: 503,
+        json: { message: 'Temporarily unavailable' },
+      }),
+    );
     await page
       .getByRole('button', { name: 'Join (Hitchhikers)', exact: true })
       .click();
+    await expect(page.getByRole('alert')).toContainText(
+      'Could not load circle members. Please try again.',
+    );
+    await expect(page.getByText('No members to show yet')).toHaveCount(0);
+    await page.unroute('**/api/tribes/hitchhikers/members');
+    const retryResponse = page.waitForResponse(response =>
+      response.url().endsWith('/api/tribes/hitchhikers/members'),
+    );
+    await page.getByRole('button', { name: 'Try again', exact: true }).click();
+    expect((await retryResponse).ok()).toBeTruthy();
+    await expect(page.locator('.circle-member-error')).toHaveCount(0);
     await expect(
       page.getByRole('button', { name: 'Leave circle', exact: true }),
     ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Find members', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Circle Wiki', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Volunteering', exact: true }),
+    ).toBeVisible();
+    const activeMembers = await page.request.get(
+      `/api/tribes/${circle.slug}/members`,
+    );
+    expect(activeMembers.ok()).toBeTruthy();
+    expect(await activeMembers.json()).toEqual({
+      contacts: expect.any(Array),
+      recommenders: expect.any(Array),
+      active: expect.any(Array),
+    });
     expect(await page.evaluate(() => window.user.roles)).toEqual(roles);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(
+      page.getByRole('link', { name: 'Circle Wiki', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Volunteering', exact: true }),
+    ).toBeVisible();
+    const circleActions = await page
+      .locator('.tribe-actions-group')
+      .boundingBox();
+    expect(circleActions.x).toBeGreaterThanOrEqual(0);
+    expect(circleActions.x + circleActions.width).toBeLessThanOrEqual(391);
+    expect(
+      await page.evaluate(() => window.document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(390);
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page
       .getByRole('button', { name: 'Leave circle', exact: true })
       .click();
@@ -87,7 +144,91 @@ test('circle membership retains account roles and legacy member links', async ({
     await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(0);
   } finally {
     if (wasMember)
-      await page.request.post(`/api/users/memberships/${circle._id}`);
-    else await page.request.delete(`/api/users/memberships/${circle._id}`);
+      await page.request.post(`/api/users/memberships/${circle._id}`, {
+        headers: { 'X-Trustroots-Request': '1' },
+      });
+    else
+      await page.request.delete(`/api/users/memberships/${circle._id}`, {
+        headers: { 'X-Trustroots-Request': '1' },
+      });
   }
+});
+
+test('member navigation menus and narrow layout remain usable', async ({
+  page,
+}) => {
+  await signInViaApi(page, undefined, SEEDED_ADMIN);
+  await page.goto('/circles');
+
+  const header = page.locator('#tr-header');
+  await expect(header).toHaveCSS('background-color', 'rgb(18, 181, 145)');
+  const circlesLink = header.locator('a[href="/circles"]');
+  const searchLink = header.locator('a[href="/search"]');
+  await expect(circlesLink.locator('..')).toHaveClass(/active/);
+  const selectedBackground = await circlesLink.evaluate(
+    link => getComputedStyle(link).backgroundColor,
+  );
+  const unselectedBackground = await searchLink.evaluate(
+    link => getComputedStyle(link).backgroundColor,
+  );
+  expect(selectedBackground).not.toBe(unselectedBackground);
+  expect(selectedBackground).not.toBe('rgba(0, 0, 0, 0)');
+  await expect(page.getByRole('button', { name: 'Support' })).toHaveCSS(
+    'color',
+    'rgb(255, 255, 255)',
+  );
+  await expect(header.locator('a[href="/search"]')).toHaveCSS(
+    'color',
+    'rgb(255, 255, 255)',
+  );
+  const circlesBounds = await header
+    .locator('a[href="/circles"]')
+    .boundingBox();
+  const searchBounds = await header.locator('a[href="/search"]').boundingBox();
+  expect(searchBounds.x).toBeGreaterThanOrEqual(
+    circlesBounds.x + circlesBounds.width,
+  );
+  const supportButton = page.getByRole('button', { name: 'Support' });
+  await supportButton.hover();
+  const safetyLink = header.getByRole('link', { name: 'Safety' });
+  await expect(safetyLink).toBeVisible();
+  await safetyLink.hover();
+  await expect(safetyLink).toBeVisible();
+
+  await supportButton.click();
+  await expect(
+    page.locator('#tr-header').getByRole('link', { name: 'Safety' }),
+  ).toBeVisible();
+  await page.keyboard.press('Escape');
+  await supportButton.focus();
+  await page.keyboard.press('Enter');
+  await expect(safetyLink).toBeVisible();
+
+  await page.locator('.dropdown-user .dropdown-toggle').click();
+  await expect(page.getByRole('link', { name: 'My profile' })).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(circlesLink).toHaveCSS('background-color', selectedBackground);
+  await expect(header.locator('a[href="/messages"]')).toBeVisible();
+  for (const href of ['/circles', '/search', '/messages', '/navigation']) {
+    await expect(header.locator(`a[href="${href}"] .icon`)).toHaveCSS(
+      'color',
+      'rgb(255, 255, 255)',
+    );
+  }
+  const mobileLinks = await Promise.all(
+    ['/circles', '/search', '/messages', '/navigation'].map(href =>
+      header.locator(`a[href="${href}"]`).boundingBox(),
+    ),
+  );
+  mobileLinks.forEach((bounds, index) => {
+    expect(bounds.width).toBeGreaterThan(0);
+    if (index > 0) {
+      const previous = mobileLinks[index - 1];
+      expect(bounds.x).toBeGreaterThanOrEqual(previous.x + previous.width);
+    }
+  });
+  const headerBounds = await header.boundingBox();
+  expect(headerBounds.x).toBeGreaterThanOrEqual(0);
+  expect(headerBounds.x + headerBounds.width).toBeLessThanOrEqual(391);
 });

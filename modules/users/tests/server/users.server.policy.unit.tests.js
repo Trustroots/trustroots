@@ -1,3 +1,9 @@
+let policyModule;
+before(async function () {
+  policyModule = await import(
+    './../../server/policies/users.server.policy.mjs'
+  );
+});
 const sinon = require('sinon');
 require('should');
 
@@ -6,8 +12,8 @@ function loadPolicy() {
     allow: sinon.stub(),
     areAnyRolesAllowed: sinon.stub(),
   };
-  const policy = require('../../server/policies/users.server.policy');
-  const { _acl } = require('../../server/policies/users.server.policy.mjs');
+  const policy = require('./../../server/policies/users.server.policy.mjs');
+  const { _acl } = policyModule;
   sinon.stub(_acl, 'allow').callsFake(mockAcl.allow);
   sinon.stub(_acl, 'areAnyRolesAllowed').callsFake(mockAcl.areAnyRolesAllowed);
   return { policy, mockAcl };
@@ -38,6 +44,9 @@ describe('Users policy unit tests', () => {
     const policies = mockAcl.allow.firstCall.args[0];
     policies[0].roles.should.deepEqual(['admin']);
     policies[1].roles.should.deepEqual(['user']);
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.not.containEql('/api/users/export');
     policies[1].allows
       .map(allow => allow.resources)
       .should.containEql('/api/users/push/registrations/:token');

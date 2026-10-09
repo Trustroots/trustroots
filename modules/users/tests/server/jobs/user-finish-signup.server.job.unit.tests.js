@@ -5,8 +5,8 @@ const sinon = require('sinon');
 const mongoose = require('mongoose');
 const moment = require('moment');
 
-const emailService = require('../../../../core/server/services/email.server.service');
-const userFinishSignupJobHandler = require('../../../server/jobs/user-finish-signup.server.job');
+const emailService = require('./../../../../core/server/services/email.server.service.mjs');
+const userFinishSignupJobHandler = require('./../../../server/jobs/user-finish-signup.server.job.mjs');
 const testutils = require('../../../../../testutils/server/server.testutil');
 require('should');
 

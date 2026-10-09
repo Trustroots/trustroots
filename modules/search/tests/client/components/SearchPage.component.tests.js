@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -39,7 +40,7 @@ jest.mock('use-debounce', () => {
         [],
       );
 
-      return [stable];
+      return stable;
     },
   };
 });
@@ -160,6 +161,14 @@ jest.mock('@/modules/search/client/components/SearchMap.component', () => ({
           Preview offer without recenter
         </button>
         <button
+          onClick={() =>
+            props.onOfferOpen({ ...mockOffer, _id: undefined }, false)
+          }
+          type="button"
+        >
+          Preview offer without an ID
+        </button>
+        <button
           onClick={() => props.onOfferOpen({ _id: 'invalid-offer' })}
           type="button"
         >
@@ -176,6 +185,14 @@ jest.mock('@/modules/search/client/components/SearchMap.component', () => ({
         >
           Preview community note
         </button>
+        <button
+          onClick={() =>
+            props.onVisibleOffersChange?.(['665100000000000000000001'])
+          }
+          type="button"
+        >
+          Report visible offer
+        </button>
         <button onClick={() => props.onOfferClose()} type="button">
           Close offer
         </button>
@@ -188,6 +205,11 @@ function renderSearchPage(
   user = { _id: 'user-1', public: true, username: 'alice' },
 ) {
   return render(<SearchPage user={user} />);
+}
+
+function openResultsWithVisibleOfferIds(offerIds) {
+  fireEvent.click(screen.getByRole('tab', { name: /^results$/i }));
+  act(() => searchMapProps.onVisibleOffersChange(offerIds));
 }
 
 describe('<SearchPage />', () => {
@@ -216,6 +238,158 @@ describe('<SearchPage />', () => {
       screen.getByRole('button', { name: /hide search filters/i }),
     ).toBeInTheDocument();
     expect(document.querySelector('.search.is-sidebar-open')).toBeTruthy();
+  });
+
+  it('loads visible offer cards when Results opens and returns from details', async () => {
+    renderSearchPage();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Report visible offer' }),
+    );
+    openResultsWithVisibleOfferIds([mockOffer._id]);
+
+    const resultButton = await screen.findByRole('button', {
+      name: /open hosting offer from host person/i,
+    });
+    expect(offersApi.getOffer).toHaveBeenCalledWith(mockOffer._id);
+
+    fireEvent.click(resultButton);
+    expect(
+      await screen.findByRole('link', { name: /host person/i }),
+    ).toHaveAttribute('href', '/profile/hoster');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to results' }));
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', {
+          name: /open hosting offer from host person/i,
+        }),
+      ).toHaveFocus(),
+    );
+    expect(offersApi.getOffer).toHaveBeenCalledTimes(1);
+  });
+
+  it('evicts the oldest offer from its cache after 250 entries', async () => {
+    const offerIds = Array.from({ length: 251 }, (_, index) =>
+      String(index + 1).padStart(24, '0'),
+    );
+    offersApi.getOffer.mockImplementation(async id => ({
+      ...mockOffer,
+      _id: id,
+      user: { ...mockOffer.user, displayName: `Host ${id}` },
+    }));
+
+    renderSearchPage();
+    openResultsWithVisibleOfferIds(offerIds);
+
+    await waitFor(() =>
+      expect(offersApi.getOffer).toHaveBeenCalledTimes(offerIds.length),
+    );
+    expect(
+      screen.getAllByRole('button', { name: /open hosting offer/i }),
+    ).toHaveLength(offerIds.length);
+
+    act(() => searchMapProps.onVisibleOffersChange([offerIds[0]]));
+    await waitFor(() =>
+      expect(offersApi.getOffer).toHaveBeenCalledTimes(offerIds.length + 1),
+    );
+  });
+
+  it('shows an empty state when a visible offer detail cannot be loaded', async () => {
+    offersApi.getOffer.mockRejectedValueOnce(new Error('Not found'));
+    renderSearchPage();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Report visible offer' }),
+    );
+    fireEvent.click(screen.getByRole('tab', { name: /^results$/i }));
+
+    expect(
+      await screen.findByText(/no results are visible in this map area/i),
+    ).toBeInTheDocument();
+  });
+
+  it('continues to share requests for offers across overlapping viewports', async () => {
+    const pending = new Map();
+    offersApi.getOffer.mockImplementation(
+      id =>
+        new Promise(resolve => {
+          pending.set(id, resolve);
+        }),
+    );
+
+    renderSearchPage();
+    openResultsWithVisibleOfferIds(['offer-a', 'offer-b']);
+    await waitFor(() => expect(offersApi.getOffer).toHaveBeenCalledTimes(2));
+
+    act(() => searchMapProps.onVisibleOffersChange(['offer-b', 'offer-c']));
+    await waitFor(() => expect(offersApi.getOffer).toHaveBeenCalledTimes(3));
+    expect(offersApi.getOffer).toHaveBeenCalledWith('offer-b');
+    expect(
+      offersApi.getOffer.mock.calls.filter(([id]) => id === 'offer-b'),
+    ).toHaveLength(1);
+
+    for (const [id, resolve] of pending) {
+      resolve({ ...mockOffer, _id: id });
+    }
+
+    expect(
+      await screen.findAllByRole('button', {
+        name: /open hosting offer from host person/i,
+      }),
+    ).toHaveLength(2);
+  });
+
+  it('stops requesting later batches after the results pane unmounts', async () => {
+    const pending = [];
+    offersApi.getOffer.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          pending.push(resolve);
+        }),
+    );
+    const offerIds = Array.from({ length: 17 }, (_, index) => `offer-${index}`);
+    const { unmount } = renderSearchPage();
+
+    openResultsWithVisibleOfferIds(offerIds);
+    await waitFor(() => expect(offersApi.getOffer).toHaveBeenCalledTimes(8));
+
+    unmount();
+    await act(async () => {
+      pending.forEach(resolve => resolve(null));
+      await Promise.resolve();
+    });
+    expect(offersApi.getOffer).toHaveBeenCalledTimes(8);
+  });
+
+  it('does not commit loaded offers after the search page unmounts', async () => {
+    let resolveOffer;
+    offersApi.getOffer.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveOffer = resolve;
+        }),
+    );
+    const { unmount } = renderSearchPage();
+    openResultsWithVisibleOfferIds(['offer-after-unmount']);
+    await waitFor(() => expect(offersApi.getOffer).toHaveBeenCalledTimes(1));
+
+    unmount();
+    await act(async () => {
+      resolveOffer({ ...mockOffer, _id: 'offer-after-unmount' });
+      await Promise.resolve();
+    });
+    expect(offersApi.getOffer).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips visible offers when the offer endpoint returns no result', async () => {
+    offersApi.getOffer.mockResolvedValue(null);
+    renderSearchPage();
+    openResultsWithVisibleOfferIds(['missing-offer']);
+
+    expect(
+      await screen.findByText(/no results are visible in this map area/i),
+    ).toBeInTheDocument();
   });
 
   it('shows the activation message for non-public members', () => {
@@ -447,6 +621,43 @@ describe('<SearchPage />', () => {
     expect(searchMapProps.location).toEqual({});
   });
 
+  it('previews a located offer when it has no ID', async () => {
+    renderSearchPage();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Preview offer without an ID' }),
+    );
+
+    expect(
+      await screen.findByRole('link', { name: /host person/i }),
+    ).toBeInTheDocument();
+    expect(new URL(window.location.href).searchParams.has('offer')).toBe(false);
+    expect(searchMapProps.location).toEqual({});
+  });
+
+  it('does not reload a pin preview when its offer ID is written to the URL', async () => {
+    window.history.replaceState({}, '', '/search');
+    mockGetRouteParams.mockImplementation(() =>
+      Object.fromEntries(new URLSearchParams(window.location.search)),
+    );
+    offersApi.getOffer.mockClear();
+
+    renderSearchPage();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Preview offer without recenter' }),
+    );
+
+    expect(
+      await screen.findByRole('link', { name: /host person/i }),
+    ).toBeInTheDocument();
+    expect(new URL(window.location.href).searchParams.get('offer')).toBe(
+      mockOffer._id,
+    );
+    expect(offersApi.getOffer).not.toHaveBeenCalled();
+    expect(searchMapProps.location).toEqual({});
+  });
+
   it('uses the six-month filter value after toggling it twice', () => {
     renderSearchPage();
 
@@ -533,6 +744,16 @@ describe('<SearchPage />', () => {
     await new Promise(resolve => setTimeout(resolve, 0));
   });
 
+  it('ignores malformed offer identifiers in the route', () => {
+    mockGetRouteParams.mockReturnValue({ offer: 'invalid' });
+    renderSearchPage();
+    expect(offersApi.getOffer).not.toHaveBeenCalled();
+    expect(screen.getByRole('link', { name: 'Members' })).toHaveAttribute(
+      'href',
+      '/search/members',
+    );
+  });
+
   it('passes public visibility through to the map', () => {
     renderSearchPage({ _id: 'user-1', public: true, username: 'alice' });
 
@@ -558,14 +779,13 @@ describe('<SearchPage />', () => {
   it('switches between the filters and results tabs directly', () => {
     renderSearchPage();
 
-    const [filtersTab, resultsTab] = document.querySelectorAll(
-      '.search-sidebar-tabs a',
-    );
+    const filtersTab = screen.getByRole('tab', { name: /filters/i });
+    const resultsTab = screen.getByRole('tab', { name: /^results$/i });
 
     fireEvent.click(filtersTab);
-    expect(filtersTab.parentElement).toHaveClass('active');
+    expect(filtersTab).toHaveAttribute('aria-selected', 'true');
     fireEvent.click(resultsTab);
-    expect(resultsTab.parentElement).toHaveClass('active');
+    expect(resultsTab).toHaveAttribute('aria-selected', 'true');
   });
 
   it('closes the sidebar from the filters back button on small screens', () => {

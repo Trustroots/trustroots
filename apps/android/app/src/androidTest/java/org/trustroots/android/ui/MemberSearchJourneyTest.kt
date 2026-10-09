@@ -20,6 +20,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
@@ -33,7 +34,7 @@ class MemberSearchJourneyTest {
 
     @Test fun searchesAndOpensMemberProfile() {
         val responder = thread(isDaemon = true) {
-            repeat(12) {
+            repeat(16) {
                 val connection = runCatching { server.accept() }.getOrNull() ?: return@thread
                 connection.use { socket ->
                     val input = socket.getInputStream().bufferedReader()
@@ -42,6 +43,7 @@ class MemberSearchJourneyTest {
                     val payload = when {
                         request.contains("/api/users?") -> """[{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}]"""
                         request.contains("/api/offers-by/") -> """[{"status":"yes","description":"<p>Spare <strong>room</strong></p>","maxGuests":2}]"""
+                        request.contains("/api/contact-by/") -> null
                         request.contains("/api/contacts/") -> """[{"_id":"contact-one","user":{"_id":"member-two","username":"calm-lynx","displayName":"Calm Lynx"}}]"""
                         request.contains("/api/experiences?") -> """[{"_id":"reference-one","userFrom":{"_id":"member-two","username":"calm-lynx","displayName":"Calm Lynx"},"feedbackPublic":"A thoughtful guest","recommend":"yes"}]"""
                         else -> """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox","tagline":"Travelling slowly","description":"<p>Hosting <strong>travellers</strong></p>","languages":["eng","por"]}"""
@@ -51,9 +53,14 @@ class MemberSearchJourneyTest {
                             Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
                                 .compress(Bitmap.CompressFormat.PNG, 100, output)
                         }.toByteArray()
-                    } else payload.toByteArray()
+                    } else payload?.toByteArray() ?: ByteArray(0)
+                    val status = if (payload == null && !request.contains("/avatar?")) {
+                        "HTTP/1.1 404 Not Found"
+                    } else {
+                        "HTTP/1.1 200 OK"
+                    }
                     socket.getOutputStream().write(
-                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n".toByteArray(),
+                        "$status\r\nContent-Type: application/json\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n".toByteArray(),
                     )
                     socket.getOutputStream().write(bytes)
                     socket.getOutputStream().flush()
@@ -79,8 +86,8 @@ class MemberSearchJourneyTest {
             compose.onAllNodesWithText("Travelling slowly").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Travelling slowly").assertIsDisplayed()
-        compose.onNodeWithText("Members").assertDoesNotExist()
-        compose.onNodeWithText("Hosts map").assertDoesNotExist()
+        assertTrue(compose.onAllNodesWithText("Members").fetchSemanticsNodes().isEmpty())
+        assertTrue(compose.onAllNodesWithText("Hosts map").fetchSemanticsNodes().isEmpty())
         val profileHero = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot
         val screen = compose.onRoot().fetchSemanticsNode().boundsInRoot
         assertEquals(screen.left, profileHero.left, 1f)
@@ -89,12 +96,23 @@ class MemberSearchJourneyTest {
             compose.onAllNodesWithContentDescription("Quiet Fox image").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithContentDescription("Quiet Fox image").assertIsDisplayed()
-        compose.onNodeWithText("Hosting", useUnmergedTree = true).assertIsDisplayed()
-        compose.onNodeWithText("Spare room").assertIsDisplayed()
-        compose.onNodeWithText("Languages: English, Portuguese").assertIsDisplayed()
-        compose.onNodeWithText("Contacts").assertIsDisplayed()
+        compose.onNodeWithText("Send a message").assertIsDisplayed()
+        compose.onNodeWithText("Share your experience").assertIsDisplayed()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Add contact").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Add contact").assertIsDisplayed()
         compose.onNodeWithText("References").assertIsDisplayed()
         compose.onNodeWithText("A thoughtful guest").assertIsDisplayed()
+        compose.onNodeWithText("About").performClick()
+        compose.onNodeWithText("Languages: English, Portuguese").assertIsDisplayed()
+        compose.onNodeWithText("Hosting").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Spare room").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Spare room").assertIsDisplayed()
+        compose.onNodeWithText("Contacts").performClick()
+        compose.onNodeWithText("Calm Lynx").assertIsDisplayed()
         compose.onNodeWithText("‹ Back").performClick()
         compose.onNodeWithText("Members").assertIsDisplayed()
         responder.join(1_000)

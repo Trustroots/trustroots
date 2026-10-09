@@ -6,10 +6,10 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const messagesController = require('../../server/controllers/messages.server.controller');
-const config = require('../../../../config/config');
-const spamService = require('../../../core/server/services/spam.server.service');
-const messageStatService = require('../../server/services/message-stat.server.service');
+const messagesController = require('./../../server/controllers/messages.server.controller.mjs');
+const config = require('./../../../../config/config.mjs');
+const spamService = require('./../../../core/server/services/spam.server.service.mjs');
+const messageStatService = require('./../../server/services/message-stat.server.service.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
@@ -391,6 +391,50 @@ describe('Messages controller unit tests', () => {
         },
       );
     });
+
+    it('marks every message to the user without changing other recipients', async () => {
+      const [sender, recipient, otherRecipient] = await utils.saveUsers(
+        utils.generateUsers(3, { public: true }),
+      );
+      await Message.create([
+        {
+          userFrom: sender._id,
+          userTo: recipient._id,
+          content: 'First message',
+        },
+        {
+          userFrom: sender._id,
+          userTo: recipient._id,
+          content: 'Second message',
+        },
+        {
+          userFrom: sender._id,
+          userTo: otherRecipient._id,
+          content: 'Other message',
+        },
+      ]);
+
+      await new Promise((resolve, reject) => {
+        messagesController.markAllMessagesToUserNotified(recipient._id, err =>
+          err ? reject(err) : resolve(),
+        );
+      });
+
+      const messages = await Message.find().sort('content');
+      const recipientMessages = messages.filter(message =>
+        message.userTo.equals(recipient._id),
+      );
+      const otherMessages = messages.filter(message =>
+        message.userTo.equals(otherRecipient._id),
+      );
+      recipientMessages.length.should.equal(2);
+      recipientMessages
+        .every(message => message.notificationCount === 2)
+        .should.be.true();
+      otherMessages
+        .every(message => message.notificationCount === 0)
+        .should.be.true();
+    });
   });
 
   describe('sanitizeMessages', () => {
@@ -526,6 +570,64 @@ describe('Messages controller unit tests', () => {
       messagesController.inbox({ user: { _id: sender._id }, query: {} }, res);
       await res.waitForResponse();
       res.body[0].read.should.be.true();
+    });
+
+    it('shows exactly the threads counted as unread', async () => {
+      const [viewer, sender, other] = await utils.saveUsers(
+        utils.generateUsers(3, { public: true }),
+      );
+      const messages = await Message.create([
+        {
+          content: 'Unread conversation',
+          userFrom: sender._id,
+          userTo: viewer._id,
+        },
+        {
+          content: 'Read conversation',
+          userFrom: other._id,
+          userTo: viewer._id,
+        },
+        {
+          content: 'Sent conversation',
+          userFrom: viewer._id,
+          userTo: other._id,
+        },
+      ]);
+      await Thread.create([
+        {
+          userFrom: sender._id,
+          userTo: viewer._id,
+          message: messages[0]._id,
+          read: false,
+        },
+        {
+          userFrom: other._id,
+          userTo: viewer._id,
+          message: messages[1]._id,
+          read: true,
+        },
+        {
+          userFrom: viewer._id,
+          userTo: other._id,
+          message: messages[2]._id,
+          read: false,
+        },
+      ]);
+
+      const count = deferredResponse();
+      messagesController.messagesCount({ user: viewer }, count);
+      await count.waitForResponse();
+
+      const inbox = deferredResponse();
+      messagesController.inbox(
+        { user: viewer, query: { filter: 'unread' } },
+        inbox,
+      );
+      await inbox.waitForResponse();
+
+      count.body.unread.should.equal(1);
+      inbox.body.should.be.an.Array().with.lengthOf(1);
+      inbox.body[0].message.excerpt.should.equal('Unread conversation');
     });
   });
 

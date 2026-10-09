@@ -7,6 +7,7 @@ import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 import ProfilePage from '@/modules/users/client/components/ProfilePage.component';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
+import * as profileRoutes from '@/modules/users/client/utils/profile-routes';
 
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/contacts/client/api/contacts.api');
@@ -167,12 +168,14 @@ const profile = {
   tagline: 'Traveller',
   member: [{ tribe: { _id: 'tribe-1', label: 'Cyclists' } }],
 };
+const originalInnerWidth = window.innerWidth;
 
 function renderPage(
   user = authUser,
   path = '/profile/bob',
   settings = { profileMinimumLength: 140, referencesEnabled: false },
   routedPath,
+  options = {},
 ) {
   window.history.pushState({}, '', path);
 
@@ -186,7 +189,12 @@ function renderPage(
         user,
       }}
     >
-      <ProfilePage currentPath={routedPath} user={user} />
+      <ProfilePage
+        currentPath={routedPath}
+        embedded={options.embedded}
+        profileUsername={options.profileUsername}
+        user={user}
+      />
     </AppProviders>,
   );
 }
@@ -201,6 +209,11 @@ describe('ProfilePage', () => {
 
   afterEach(() => {
     window.history.pushState({}, '', '/');
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: originalInnerWidth,
+    });
+    jest.restoreAllMocks();
   });
 
   it('loads another member profile and renders about content', async () => {
@@ -210,6 +223,59 @@ describe('ProfilePage', () => {
     expect(screen.getByText('Offers panel')).toBeVisible();
     expect(screen.getByTestId('profile-tabs')).toBeInTheDocument();
     expect(usersApi.fetch).toHaveBeenCalledWith('bob');
+  });
+
+  it('renders an embedded profile for its explicit subject without page navigation', async () => {
+    usersApi.fetch.mockResolvedValue({ ...profile, username: 'alice' });
+    const mobileRedirect = jest.spyOn(
+      profileRoutes,
+      'getMobileProfileRedirect',
+    );
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 390,
+    });
+    renderPage(
+      authUser,
+      '/admin/user/alice',
+      { profileMinimumLength: 140, referencesEnabled: false },
+      '/profile/alice',
+      { embedded: true, profileUsername: 'alice' },
+    );
+
+    expect(await screen.findByText('About Bob Example')).toBeVisible();
+    expect(usersApi.fetch).toHaveBeenCalledWith('alice');
+    expect(mobileRedirect).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('top-nav')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('bottom-nav')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['admin', true],
+    ['welcome-team', false],
+    ['user', false],
+  ])(
+    'shows the desktop Admin action only for an admin viewer (%s)',
+    async (role, visible) => {
+      renderPage({ ...authUser, roles: [role] });
+      await screen.findByText('About Bob Example');
+      const link = screen.queryByRole('link', { name: 'Admin', exact: true });
+      if (visible) {
+        expect(link).toHaveAttribute('href', '/admin/user/bob');
+      } else {
+        expect(link).not.toBeInTheDocument();
+      }
+    },
+  );
+
+  it('shows an Admin action on an administrator’s own profile without member actions', async () => {
+    renderPage({ ...authUser, _id: profile._id, roles: ['admin'] });
+    expect(
+      await screen.findByRole('link', { name: 'Admin', exact: true }),
+    ).toHaveAttribute('href', '/admin/user/bob');
+    expect(
+      screen.queryByRole('link', { name: 'Send a message' }),
+    ).not.toBeInTheDocument();
   });
 
   it('changes tabs without reloading the profile', async () => {
@@ -288,6 +354,39 @@ describe('ProfilePage', () => {
     expect(
       screen.getByRole('link', { name: 'Confirm Request' }),
     ).toHaveAttribute('href', '/contact-confirm/contact-1');
+  });
+
+  it('renders contact tooltips when the creation timestamp is absent', async () => {
+    contactsApi.getByUserId.mockResolvedValue({
+      _id: 'contact-1',
+      confirmed: true,
+      userFrom: authUser._id,
+      userTo: profile._id,
+    });
+    renderPage();
+
+    const confirmedContact = await screen.findByRole('button', {
+      name: 'Remove contact',
+    });
+    fireEvent.mouseOver(confirmedContact);
+    expect(await screen.findByText(/Contacts since/)).toBeVisible();
+  });
+
+  it('renders incoming contact tooltips when the creation timestamp is absent', async () => {
+    contactsApi.getByUserId.mockResolvedValue({
+      _id: 'contact-1',
+      confirmed: false,
+      userFrom: profile._id,
+      userTo: authUser._id,
+    });
+    renderPage();
+
+    expect(await screen.findByText(/sent you a contact request/)).toBeVisible();
+    const deleteRequest = await screen.findByRole('button', {
+      name: 'Delete contact request',
+    });
+    fireEvent.mouseOver(deleteRequest);
+    expect(await screen.findByText(/Request sent/)).toBeVisible();
   });
 
   it('opens the remove contact modal and clears contact state on success', async () => {

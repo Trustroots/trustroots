@@ -62,5 +62,11 @@ RUN --mount=type=cache,target=/root/.npm \
 
 RUN mkdir -p "$PLAYWRIGHT_BROWSERS_PATH" \
   && chmod 777 "$PLAYWRIGHT_BROWSERS_PATH" \
-  && npx playwright install chromium firefox \
+  && for attempt in 1 2 3; do \
+    if npx playwright install chromium firefox; then \
+      break; \
+    fi; \
+    if [ "$attempt" -eq 3 ]; then exit 1; fi; \
+    sleep 5; \
+  done \
   && chmod -R 777 "$PLAYWRIGHT_BROWSERS_PATH"

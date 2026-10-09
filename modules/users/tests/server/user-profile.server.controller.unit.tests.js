@@ -7,13 +7,14 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-require('../../server/models/user.server.model');
-const profileController = require('../../server/controllers/users.profile.server.controller');
+require('./../../server/models/user.server.model.mjs');
+const profileController = require('./../../server/controllers/users.profile.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const should = require('should');
 
 const User = mongoose.model('User');
 const Tribe = mongoose.model('Tribe');
+const UnifiedPushRegistration = mongoose.model('UnifiedPushRegistration');
 
 const validNpub =
   'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
@@ -51,8 +52,9 @@ function runHandler(invoke) {
 }
 
 const controllerPath =
-  '../../server/controllers/users.profile.server.controller';
-const emailServicePath = '../../../core/server/services/email.server.service';
+  './../../server/controllers/users.profile.server.controller.mjs';
+const emailServicePath =
+  './../../../core/server/services/email.server.service.mjs';
 
 function stubControllerDependencies(controllerPath, dependencyStubs) {
   for (const [dependencyPath, methods] of Object.entries(dependencyStubs)) {
@@ -461,6 +463,13 @@ describe('Profile controller unit tests', () => {
       userDoc.removeProfileToken = 'valid-remove-token';
       userDoc.removeProfileExpires = Date.now() + 3600000;
       await userDoc.save();
+      await UnifiedPushRegistration.create({
+        user: saved._id,
+        endpoint: 'https://ntfy.sh/anonymous-deleted-account',
+        publicKey:
+          'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
+        auth: 'abcdefghijklmnopqrstuv',
+      });
 
       const { res } = await runHandler(res =>
         profileController.removeProfile(
@@ -477,11 +486,14 @@ describe('Profile controller unit tests', () => {
 
       const gone = await User.findById(saved._id);
       should.not.exist(gone);
+      (
+        await UnifiedPushRegistration.countDocuments({ user: saved._id })
+      ).should.equal(0);
     });
 
     it('returns 400 when profile removal fails in the waterfall', async () => {
       const messageHandlerPath =
-        '../../../messages/server/controllers/messages.server.controller';
+        './../../../messages/server/controllers/messages.server.controller.mjs';
       const controller = stubControllerDependencies(controllerPath, {
         [messageHandlerPath]: {
           markAllMessagesToUserNotified: (userId, cb) =>
@@ -511,9 +523,9 @@ describe('Profile controller unit tests', () => {
 
     it('still removes the profile when ancillary cleanup steps fail', async () => {
       const offerHandlerPath =
-        '../../../offers/server/controllers/offers.server.controller';
+        './../../../offers/server/controllers/offers.server.controller.mjs';
       const contactHandlerPath =
-        '../../../contacts/server/controllers/contacts.server.controller';
+        './../../../contacts/server/controllers/contacts.server.controller.mjs';
       const controller = stubControllerDependencies(controllerPath, {
         [emailServicePath]: {
           sendRemoveProfileConfirmed: (user, cb) =>
@@ -533,6 +545,11 @@ describe('Profile controller unit tests', () => {
       userDoc.removeProfileExpires = Date.now() + 3600000;
       await userDoc.save();
 
+      const pushCleanup = sinon
+        .stub(UnifiedPushRegistration, 'deleteMany')
+        .callsFake((query, callback) =>
+          callback(new Error('push cleanup failed')),
+        );
       const { res } = await runHandler(res =>
         controller.removeProfile(
           {
@@ -542,6 +559,7 @@ describe('Profile controller unit tests', () => {
           res,
         ),
       );
+      pushCleanup.restore();
 
       res.statusCode.should.equal(200);
       const gone = await User.findById(saved._id);
@@ -633,6 +651,12 @@ describe('Profile controller unit tests', () => {
   });
 
   describe('userMiniByID', () => {
+    it('includes avatarVersion in mini-profile query fields', () => {
+      profileController.userMiniProfileFields
+        .split(/\s+/)
+        .should.containEql('avatarVersion');
+    });
+
     it('responds with 400 for an invalid id', async () => {
       const { res } = await runHandler((res, next) =>
         profileController.userMiniByID({ user: {} }, res, next, 'bad-id'),
@@ -838,7 +862,7 @@ describe('Profile controller unit tests', () => {
 
     it('continues when reply statistics lookup fails', async () => {
       const controller = stubControllerDependencies(controllerPath, {
-        '../../../messages/server/services/message-stat.server.service': {
+        './../../../messages/server/services/message-stat.server.service.mjs': {
           readFormattedMessageStatsOfUser(userId, now, cb) {
             cb(new Error('stats unavailable'));
           },
@@ -1218,6 +1242,53 @@ describe('Profile controller unit tests', () => {
       (profileController.sanitizeProfile(null) === undefined).should.be.true();
     });
 
+    it('omits private and unrecognised document fields after sanitisation', () => {
+      const profile = {
+        toObject: () => ({
+          _id: new mongoose.Types.ObjectId(),
+          created: new Date('2020-01-01T00:00:00.000Z'),
+          displayName: 'Fictional Member',
+          email: 'member@example.test',
+          locale: 'en',
+          blocked: [],
+          description: '',
+          member: [],
+          roles: ['user'],
+          lastIpAddress: '192.0.2.1',
+          pushRegistration: [{ token: 'fictional-push-token' }],
+          providerData: [{ accessToken: 'fictional-provider-token' }],
+          futurePrivateField: 'must stay private',
+        }),
+      };
+
+      const sanitized = profileController.sanitizeOwnProfile(profile);
+
+      sanitized.displayName.should.equal('Fictional Member');
+      sanitized.email.should.equal('member@example.test');
+      sanitized.locale.should.equal('en');
+      for (const field of [
+        'lastIpAddress',
+        'pushRegistration',
+        'providerData',
+        'futurePrivateField',
+      ]) {
+        (sanitized[field] === undefined).should.be.true();
+      }
+    });
+
+    it('derives public greeter recognition from current roles without exposing roles', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.roles = ['user', 'volunteer', 'welcome-team'];
+      const first = profileController.sanitizeProfile(userDoc, userDoc);
+      first.isGreeter.should.be.true();
+      first.isVolunteer.should.be.true();
+      (first.roles === undefined).should.be.true();
+      userDoc.roles = ['user'];
+      const second = profileController.sanitizeProfile(userDoc, userDoc);
+      second.isGreeter.should.be.false();
+    });
+
     it('marks active volunteers on the sanitized profile', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
@@ -1475,7 +1546,10 @@ describe('Profile controller unit tests', () => {
             sort: () => ({
               limit: () => ({
                 skip: () => ({
-                  exec: cb => cb(null, [visibleDoc]),
+                  maxTimeMS: budget => {
+                    budget.should.equal(2000);
+                    return { exec: cb => cb(null, [visibleDoc]) };
+                  },
                 }),
               }),
             }),
@@ -1510,7 +1584,10 @@ describe('Profile controller unit tests', () => {
             sort: () => ({
               limit: () => ({
                 skip: () => ({
-                  exec: cb => cb(null, [visibleDoc]),
+                  maxTimeMS: budget => {
+                    budget.should.equal(2000);
+                    return { exec: cb => cb(null, [visibleDoc]) };
+                  },
                 }),
               }),
             }),
@@ -1543,7 +1620,10 @@ describe('Profile controller unit tests', () => {
             sort: () => ({
               limit: () => ({
                 skip: () => ({
-                  exec: cb => cb(null, [visibleDoc]),
+                  maxTimeMS: budget => {
+                    budget.should.equal(2000);
+                    return { exec: cb => cb(null, [visibleDoc]) };
+                  },
                 }),
               }),
             }),
@@ -1573,7 +1653,10 @@ describe('Profile controller unit tests', () => {
           sort: () => ({
             limit: () => ({
               skip: () => ({
-                exec: cb => cb(new Error('search failed')),
+                maxTimeMS: budget => {
+                  budget.should.equal(2000);
+                  return { exec: cb => cb(new Error('search failed')) };
+                },
               }),
             }),
           }),

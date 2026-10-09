@@ -3,7 +3,7 @@ const {
   test,
   expect,
   useElementScreenshot,
-} = require('../../support/test');
+} = require('../../support/fixtures');
 const { SEEDED_MEMBERS, signInViaApi } = require('../../support/helpers');
 const { withE2eDb } = require('../../support/db');
 const {
@@ -29,6 +29,14 @@ for (const [category, label] of Object.entries(SUPPORT_CATEGORIES)) {
     await expect(page.getByRole('button', { name: /^send$/i })).toBeDisabled();
     if (category === 'volunteering') {
       await expect(
+        page.getByRole('option', { name: 'Help run Trustroots' }),
+      ).toHaveAttribute('value', 'volunteering');
+      await expect(
+        page.getByText(
+          'Volunteer with the team that runs Trustroots, helping with development, design, translation, community support or organisation. This form is not for finding farm work, jobs, or work in exchange for food and accommodation.',
+        ),
+      ).toBeVisible();
+      await expect(
         page.getByRole('link', { name: 'Team Guide', exact: true }),
       ).toHaveAttribute('href', 'https://team.trustroots.org/');
       await expect(
@@ -47,6 +55,9 @@ for (const [category, label] of Object.entries(SUPPORT_CATEGORIES)) {
       ).toBeVisible();
     }
     if (category !== 'volunteering') {
+      await expect(
+        page.getByText(/Volunteer with the team that runs Trustroots/),
+      ).toHaveCount(0);
       await expect(
         page.getByRole('link', { name: 'Team Guide', exact: true }),
       ).toHaveCount(0);
@@ -89,7 +100,7 @@ async function submitEnquiry(page, message, category) {
   return stored;
 }
 
-for (const category of ['account', 'other']) {
+for (const category of ['account', 'reportBug', 'other']) {
   test(`visitor can send a support request in the ${category} category`, async ({
     page,
   }, testInfo) => {
@@ -97,6 +108,8 @@ for (const category of ['account', 'other']) {
       'Support request submission succeeds with valid data.',
       category === 'account'
         ? 'Account help requests retain their category in storage and email.'
+        : category === 'reportBug'
+        ? 'Bug reports retain their category in storage and email.'
         : 'Other requests retain their category in storage and email.',
     ]);
     await page.goto('/support');
@@ -116,6 +129,50 @@ for (const category of ['account', 'other']) {
     expect(stored.reportMember).toBeUndefined();
   });
 }
+
+test('signed-in support menu opens the bug report form and the FAQ keeps GitHub optional', async ({
+  page,
+}, testInfo) => {
+  annotateFeature(testInfo, 'public.faq-bugs-and-features', [
+    'Bug reporting guidance loads.',
+    'The FAQ links primarily to the support form and retains GitHub as an optional route.',
+    'Obsolete GitHub search and signup instructions are absent.',
+  ]);
+  annotateFeature(testInfo, 'public.support-page', [
+    'Support contact form is visible.',
+    'Signed-in members can open the preselected bug report category from the support menu.',
+  ]);
+  await signInViaApi(page, null, SEEDED_MEMBERS[0]);
+  await page.goto('/faq/bugs-and-features');
+
+  const faqQuestion = page.locator('#how-do-i-report-a-bug');
+  await expect(
+    faqQuestion.locator('a[href="/support?category=reportBug"]'),
+  ).toBeVisible();
+  await expect(
+    faqQuestion.getByRole('link', { name: 'GitHub', exact: true }),
+  ).toHaveAttribute('href', 'https://github.com/Trustroots/trustroots/issues');
+  await expect(faqQuestion).not.toContainText(/search bar|sign up at github/i);
+
+  const supportToggle = page.getByRole('button', {
+    name: 'Support',
+    exact: true,
+  });
+  await supportToggle.click();
+  const reportBug = supportToggle.locator('..').getByRole('link', {
+    name: 'Report a bug',
+    exact: true,
+  });
+  await expect(reportBug).toHaveAttribute(
+    'href',
+    '/support?category=reportBug',
+  );
+  await reportBug.click();
+  await expect(page).toHaveURL(/\/support\?category=reportBug$/);
+  await expect(page.getByLabel('What can we help with?')).toHaveValue(
+    'reportBug',
+  );
+});
 
 for (const [path, name, selector] of [
   ['/', 'Volunteering', '.home-footer-pages'],
@@ -166,7 +223,26 @@ for (const signedIn of [false, true]) {
     await expect(
       page.getByRole('link', { name: 'Team Guide' }),
     ).toHaveAttribute('href', 'https://team.trustroots.org/');
-    await page.getByRole('link', { name: 'I’d like to volunteer' }).click();
+    await expect(
+      page.getByText(
+        'Volunteer with the team that runs Trustroots, helping with development, design, translation, community support or organisation. This form is not for finding farm work, jobs, or work in exchange for food and accommodation.',
+      ),
+    ).toBeVisible();
+    await page
+      .getByRole('link', { name: 'I’d like to help run Trustroots' })
+      .click();
+    await page.getByLabel('What can we help with?').selectOption('other');
+    await expect(
+      page.getByText(/Volunteer with the team that runs Trustroots/),
+    ).toHaveCount(0);
+    await page
+      .getByLabel('What can we help with?')
+      .selectOption('volunteering');
+    await expect(
+      page.getByText(
+        'Volunteer with the team that runs Trustroots, helping with development, design, translation, community support or organisation. This form is not for finding farm work, jobs, or work in exchange for food and accommodation.',
+      ),
+    ).toBeVisible();
     await expect(page).toHaveURL(/\/support\?category=volunteering$/);
     await expect(page.getByLabel('What can we help with?')).toHaveValue(
       'volunteering',

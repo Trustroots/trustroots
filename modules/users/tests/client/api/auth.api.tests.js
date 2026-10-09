@@ -9,6 +9,7 @@ jest.mock('axios', () =>
 describe('auth.api', () => {
   beforeEach(() => {
     axios.post.mockReset();
+    axios.get.mockReset();
     axios.delete.mockReset();
   });
 
@@ -32,6 +33,17 @@ describe('auth.api', () => {
       authApi.signup({ email: 'ada@example.com', username: 'ada' }),
     ).resolves.toEqual({ _id: 'user-2' });
   });
+
+  it.each([null, 'user-1'])(
+    'checks the current session identity (%s)',
+    async userId => {
+      axios.get.mockResolvedValue({ data: { userId } });
+      await expect(authApi.getSession()).resolves.toEqual({ userId });
+      expect(axios.get).toHaveBeenCalledWith('/api/auth/session', {
+        timeout: 10000,
+      });
+    },
+  );
 
   it('validates signup fields', async () => {
     axios.post.mockResolvedValue({ data: { valid: true } });

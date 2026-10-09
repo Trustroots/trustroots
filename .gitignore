@@ -28,7 +28,7 @@ Icon
 # Env/development
 .eslintcache
 .nodemonignore
-node_modules/
+node_modules
 /.tmp/
 /.worktrees/
 .vagrant
@@ -85,6 +85,7 @@ docs/Gemfile.lock
 trustroots.tar.gz*
 
 # Test coverage output
+/.jest-cache/
 /coverage/
 /coverage-report/
 /.nyc_output/

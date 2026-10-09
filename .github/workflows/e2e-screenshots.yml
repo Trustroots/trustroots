@@ -55,7 +55,7 @@ jobs:
 
       - name: Comment when no e2e spec changes
         if: steps.changed.outputs.has_specs != 'true'
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
             const marker = '<!-- e2e-screenshots -->';
@@ -104,6 +104,7 @@ jobs:
           context: .
           file: deploy/docker/dev.Dockerfile
           tags: trustroots-dev:ci
+          cache-from: type=gha
           load: true
 
       - name: Prepare compose local config
@@ -138,6 +139,7 @@ jobs:
             -e TRUSTROOTS_E2E_SCREENSHOTS=true \
             -e TRUSTROOTS_E2E_REQUIRE_FULL_FEATURE_COVERAGE=false \
             -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
+            -e TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE=true \
             dev npm run test:e2e -- "${specs[@]}"
           test_status="$?"
           set -e
@@ -182,7 +184,7 @@ jobs:
 
       - name: Upsert PR comment with screenshots
         if: steps.changed.outputs.has_specs == 'true'
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           SCREENSHOT_COUNT: ${{ steps.collect.outputs.count }}
           TEST_STATUS: ${{ steps.run.outputs.test_status }}

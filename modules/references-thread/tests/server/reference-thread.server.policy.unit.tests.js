@@ -1,21 +1,18 @@
-const proxyquire = require('proxyquire').noCallThru();
+let policyModule;
+before(async function () {
+  policyModule = await import(
+    '../../server/policies/reference-thread.server.policy.mjs'
+  );
+});
 const sinon = require('sinon');
 require('should');
 
 function loadPolicy() {
-  const mockAcl = {
-    allow: sinon.stub(),
-    areAnyRolesAllowed: sinon.stub(),
-  };
-  const createMemoryPolicy = () => mockAcl;
-  const policy = proxyquire(
-    '../../server/policies/reference-thread.server.policy',
-    {
-      '../../../core/server/services/memory-policy.server.service':
-        createMemoryPolicy,
-    },
-  );
-  return { policy, mockAcl };
+  const implementation = policyModule;
+  const mockAcl = implementation._acl;
+  sinon.stub(mockAcl, 'allow');
+  sinon.stub(mockAcl, 'areAnyRolesAllowed');
+  return { policy: implementation.default, mockAcl };
 }
 
 function mockResponse() {
@@ -36,6 +33,8 @@ function mockResponse() {
 }
 
 describe('Reference thread policy unit tests', () => {
+  afterEach(() => sinon.restore());
+
   it('registers admin and user reference policies', () => {
     const { policy, mockAcl } = loadPolicy();
 

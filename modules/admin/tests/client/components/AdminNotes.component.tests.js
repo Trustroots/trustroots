@@ -76,7 +76,7 @@ describe('<AdminNotes />', () => {
 
     expect(
       await screen.findByRole('link', { name: 'admin-alice (Admin Alice)' }),
-    ).toHaveAttribute('href', '/admin/user?id=222222222222222222222222');
+    ).toHaveAttribute('href', '/admin/user/admin-alice');
     expect(screen.getByText('Needs review')).toBeInTheDocument();
     expect(notesApi.listNotes).toHaveBeenCalledWith(userId);
   });

@@ -1,4 +1,12 @@
-const { annotateFeature, test, expect } = require('../../support/test');
+const { MongoClient } = require('mongodb');
+const config = require('../../support/app-config');
+const crypto = require('crypto');
+const {
+  annotateFeature,
+  test,
+  expect,
+  useElementScreenshot,
+} = require('../../support/fixtures');
 
 const {
   SEEDED_MEMBERS,
@@ -14,13 +22,32 @@ async function signInExisting(page, usernameOrEmail) {
   await page.goto('/signin');
   await page.locator('#username').fill(usernameOrEmail);
   await page.locator('#password').fill(user.password);
+  const signinResponse = page.waitForResponse(response =>
+    response.url().endsWith('/api/auth/signin'),
+  );
   await page.getByRole('button', { name: /login/i }).click();
+  const cookie = (await (await signinResponse).allHeaders())['set-cookie'];
+  expect(cookie).toMatch(/HttpOnly/);
+  expect(cookie).toMatch(/SameSite=Lax/i);
   await expect(page).toHaveURL(/\/search/);
 }
 
 test.describe.serial('authentication smoke', () => {
   test.beforeAll(async ({ request }) => {
     await registerViaApi(request, user);
+  });
+
+  test('anonymous visits do not create a session cookie', async ({
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signin', [
+      'Uninitialised anonymous requests do not create a stored browser session.',
+    ]);
+
+    const response = await request.get('/');
+
+    expect(response.status()).toBe(200);
+    expect((await response.headers())['set-cookie']).toBeUndefined();
   });
 
   test('homepage loads and exposes authentication entry points', async ({
@@ -83,6 +110,23 @@ test.describe.serial('authentication smoke', () => {
     });
 
     await signUp(page, signupUser);
+  });
+
+  test('signup uses the Trustroots primary colour', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signup', [
+      'Signup form validates required fields.',
+    ]);
+    useElementScreenshot(testInfo, '.signup-form-steps');
+
+    await page.goto('/signup');
+    await expect(
+      page.getByRole('button', { name: 'Please fill in the form' }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole('button', { name: 'Please fill in the form' }),
+    ).toHaveCSS('background-color', 'rgb(18, 181, 145)');
   });
 
   test('UI signup creates an account that can sign in with username and email', async ({
@@ -193,24 +237,14 @@ test.describe.serial('authentication smoke', () => {
   test('signed out user can sign in with username', async ({
     page,
   }, testInfo) => {
-    annotateFeature(testInfo, 'auth.signin', [
-      'Sign in page links to signup.',
-      'Username sign in succeeds.',
-      'Email sign in succeeds.',
-      'Continue query redirects to the original protected destination.',
-    ]);
+    annotateFeature(testInfo, 'auth.signin', ['Username sign in succeeds.']);
 
     await signOut(page);
     await signInExisting(page, user.username);
   });
 
   test('signed out user can sign in with email', async ({ page }, testInfo) => {
-    annotateFeature(testInfo, 'auth.signin', [
-      'Sign in page links to signup.',
-      'Username sign in succeeds.',
-      'Email sign in succeeds.',
-      'Continue query redirects to the original protected destination.',
-    ]);
+    annotateFeature(testInfo, 'auth.signin', ['Email sign in succeeds.']);
 
     await signOut(page);
     await signInExisting(page, user.email);
@@ -219,6 +253,9 @@ test.describe.serial('authentication smoke', () => {
   test('sign-in continues to the protected destination', async ({
     page,
   }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signin', [
+      'Continue query redirects to the original protected destination.',
+    ]);
     annotateFeature(testInfo, 'auth.protected-route-redirect', [
       'Protected routes preserve their path and query when redirecting to sign in.',
     ]);
@@ -236,4 +273,54 @@ test.describe.serial('authentication smoke', () => {
 
     await expect(page).toHaveURL(/\/messages\?filter=unread/);
   });
+});
+
+test('sign-in returns 429 with Retry-After after repeated attempts', async ({
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'auth.signin', [
+    'Repeated sign-in attempts are limited for a client and account pair.',
+    'Limited requests include a Retry-After header.',
+  ]);
+
+  const attemptedAccount = createUser();
+  const policy = config.targetedRequestLimits.signin;
+  const now = Date.now();
+  const windowStart = Math.floor(now / policy.windowMs) * policy.windowMs;
+  const clientIp = '203.0.113.64';
+  const dimension = 'ip-and-identity';
+  const identity = JSON.stringify([
+    clientIp,
+    attemptedAccount.username.toLowerCase(),
+  ]);
+  const key = crypto
+    .createHmac('sha256', config.sessionSecret)
+    .update(JSON.stringify(['signin', dimension, identity, windowStart]))
+    .digest('hex');
+  const mongo = await MongoClient.connect(config.db.uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+  try {
+    await mongo
+      .db()
+      .collection('requestlimits')
+      .insertOne({
+        key,
+        count: policy.identityLimit,
+        expiresAt: new Date(windowStart + policy.windowMs),
+      });
+  } finally {
+    await mongo.close();
+  }
+
+  const limited = await request.post('/api/auth/signin', {
+    headers: { '!~Passenger-Client-Address': clientIp },
+    data: {
+      username: attemptedAccount.username,
+      password: attemptedAccount.password,
+    },
+  });
+  expect(limited.status()).toBe(429);
+  expect(limited.headers()['retry-after']).toMatch(/^\d+$/);
 });

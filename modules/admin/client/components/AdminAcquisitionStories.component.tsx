@@ -9,6 +9,7 @@ import AdminAcquisitionStoriesMenu from './AdminAcquisitionStoriesMenu';
 import AdminHeader from './AdminHeader.component';
 import UserLink from './UserLink.component';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import LanguageList from '@/modules/users/client/components/LanguageList';
 import HoverTooltip from '@/modules/core/client/components/Tooltip';
 
 type StorySortColumn =
@@ -16,8 +17,10 @@ type StorySortColumn =
   | 'circleCount'
   | 'created'
   | 'member'
-  | 'public';
+  | 'public'
+  | 'welcomer';
 type SortDirection = 'ascending' | 'descending';
+type ProfileVisibility = 'all' | 'visible' | 'hidden';
 
 interface RestrictedMatch {
   _id: string;
@@ -38,6 +41,13 @@ interface AcquisitionStory {
   acquisitionStory?: string;
   public?: boolean;
   restrictedMatches?: RestrictedMatch[];
+  languages?: string[];
+  welcomer?: {
+    _id: string;
+    username: string;
+    displayName?: string;
+    created: string;
+  } | null;
 }
 
 interface StorySort {
@@ -104,6 +114,7 @@ const storySortValues: Record<
   },
   member: story => String(story.username).toLowerCase(),
   public: story => (story.public === true ? 1 : 0),
+  welcomer: story => (story.welcomer ? 1 : 0),
 };
 
 function SortableHeader({
@@ -175,8 +186,12 @@ StaticHeader.propTypes = {
 };
 
 export default function AdminAcquisitionStories() {
+  const viewerLanguages = getCurrentUser()?.languages || [];
   const [stories, setStories] = useState<AcquisitionStory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [unassignedOnly, setUnassignedOnly] = useState(false);
+  const [profileVisibility, setProfileVisibility] =
+    useState<ProfileVisibility>('all');
   const [sort, setSort] = useState<StorySort>({
     column: 'created',
     direction: 'descending',
@@ -196,16 +211,24 @@ export default function AdminAcquisitionStories() {
     const direction = sort.direction === 'ascending' ? 1 : -1;
     const valueFor = storySortValues[sort.column];
 
-    return stories.slice().sort((left, right) => {
-      const leftValue = valueFor(left);
-      const rightValue = valueFor(right);
-      const comparison =
-        typeof leftValue === 'number' && typeof rightValue === 'number'
-          ? leftValue - rightValue
-          : String(leftValue).localeCompare(String(rightValue));
-      return comparison * direction;
-    });
-  }, [sort, stories]);
+    return stories
+      .filter(story => !unassignedOnly || !story.welcomer)
+      .filter(
+        story =>
+          profileVisibility === 'all' ||
+          (profileVisibility === 'visible' && story.public === true) ||
+          (profileVisibility === 'hidden' && story.public !== true),
+      )
+      .sort((left, right) => {
+        const leftValue = valueFor(left);
+        const rightValue = valueFor(right);
+        const comparison =
+          typeof leftValue === 'number' && typeof rightValue === 'number'
+            ? leftValue - rightValue
+            : String(leftValue).localeCompare(String(rightValue));
+        return comparison * direction;
+      });
+  }, [profileVisibility, sort, stories, unassignedOnly]);
 
   function sortBy(column: StorySortColumn) {
     setSort(currentSort => ({
@@ -226,9 +249,50 @@ export default function AdminAcquisitionStories() {
 
         <AdminAcquisitionStoriesMenu active="stories" />
 
+        <div className="form-check mb-3">
+          <input
+            checked={unassignedOnly}
+            className="form-check-input"
+            id="acquisition-stories-unassigned-only"
+            onChange={event => setUnassignedOnly(event.target.checked)}
+            type="checkbox"
+          />
+          <label
+            className="form-check-label"
+            htmlFor="acquisition-stories-unassigned-only"
+          >
+            Unassigned only
+          </label>
+        </div>
+
+        <div className="mb-3">
+          <label
+            className="form-label"
+            htmlFor="acquisition-stories-profile-visibility"
+          >
+            Profile visibility
+          </label>
+          <select
+            className="form-select"
+            id="acquisition-stories-profile-visibility"
+            onChange={event =>
+              setProfileVisibility(event.target.value as ProfileVisibility)
+            }
+            value={profileVisibility}
+          >
+            <option value="all">All</option>
+            <option value="visible">Visible</option>
+            <option value="hidden">Hidden</option>
+          </select>
+          <small className="form-text text-muted">
+            Hidden profiles have not activated their signup through email
+            confirmation.
+          </small>
+        </div>
+
         {isLoading && <LoadingIndicator />}
 
-        {!isLoading && stories.length > 0 && (
+        {!isLoading && sortedStories.length > 0 && (
           <table className="table table-condensed table-striped admin-acquisition-stories-table">
             <thead>
               <tr>
@@ -275,11 +339,30 @@ export default function AdminAcquisitionStories() {
                   label="Restricted matches"
                   tooltip="Suspended or shadowbanned accounts with a matching username or email identifier"
                 />
+                <SortableHeader
+                  column="welcomer"
+                  label="Greeter"
+                  onSort={sortBy}
+                  sort={sort}
+                  tooltip="First current greeter to send a message; sending a message assigns the greeter"
+                />
+                <StaticHeader
+                  label="Languages"
+                  tooltip="Shared languages appear first and in bold, except English"
+                />
               </tr>
             </thead>
             <tbody>
               {sortedStories.map((story, index) => (
-                <tr key={story._id} id={`acquisition-story-${index + 1}`}>
+                <tr
+                  key={story._id}
+                  id={`acquisition-story-${index + 1}`}
+                  className={
+                    story.welcomer
+                      ? 'admin-acquisition-stories-contacted'
+                      : undefined
+                  }
+                >
                   <td>
                     <a href={`#acquisition-story-${index + 1}`}>
                       <time className="text-muted">
@@ -347,14 +430,58 @@ export default function AdminAcquisitionStories() {
                       </div>
                     ))}
                   </td>
+                  <td>
+                    {story.welcomer ? (
+                      <>
+                        <UserLink
+                          user={story.welcomer}
+                          publicProfile={
+                            !(getCurrentUser()?.roles || []).includes('admin')
+                          }
+                        />
+                        <div>
+                          <time dateTime={story.welcomer.created}>
+                            {formatDate(story.welcomer.created)}
+                          </time>
+                        </div>
+                      </>
+                    ) : (
+                      'Unassigned'
+                    )}
+                  </td>
+                  <td>
+                    {story.languages?.length ? (
+                      <LanguageList
+                        className="list-unstyled"
+                        languages={[
+                          ...story.languages.filter(code =>
+                            viewerLanguages.includes(code),
+                          ),
+                          ...story.languages.filter(
+                            code => !viewerLanguages.includes(code),
+                          ),
+                        ]}
+                        emphasisedLanguages={story.languages.filter(
+                          code =>
+                            code !== 'eng' && viewerLanguages.includes(code),
+                        )}
+                      />
+                    ) : (
+                      'Not specified'
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
 
-        {!isLoading && stories.length === 0 && (
-          <p>No acquisition stories found.</p>
+        {!isLoading && sortedStories.length === 0 && (
+          <p>
+            {unassignedOnly
+              ? 'No unassigned acquisition stories found.'
+              : 'No acquisition stories found.'}
+          </p>
         )}
       </div>
     </>

@@ -54,17 +54,11 @@ describe('users api', () => {
     expect(axios.post).toHaveBeenCalledWith(
       '/api/users-avatar',
       expect.any(FormData),
-      {
-        timeout: 120000,
-        headers: {
-          'Content-Type': 'image/png',
-          'X-Trustroots-Request': '1',
-        },
-      },
+      { timeout: 120000 },
     );
   });
 
-  it('uses an octet-stream avatar content type when a file has none', async () => {
+  it('does not set content type when the uploaded file has no type', async () => {
     const file = new File(['avatar'], 'avatar');
     axios.post.mockResolvedValueOnce({});
 
@@ -73,13 +67,7 @@ describe('users api', () => {
     expect(axios.post).toHaveBeenCalledWith(
       '/api/users-avatar',
       expect.any(FormData),
-      {
-        timeout: 120000,
-        headers: {
-          'Content-Type': 'application/octet-stream',
-          'X-Trustroots-Request': '1',
-        },
-      },
+      { timeout: 120000 },
     );
   });
 

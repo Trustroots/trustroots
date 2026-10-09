@@ -1,7 +1,7 @@
 const moment = require('moment');
 require('should');
 
-const normaliseOfferExpiry = require('../../server/services/offer-expiry.server.service');
+const normaliseOfferExpiry = require('./../../server/services/offer-expiry.server.service.mjs');
 
 describe('Offer expiry service', () => {
   const now = new Date('2026-04-10T12:00:00.000Z');

@@ -3,7 +3,7 @@
  */
 const should = require('should');
 const testutils = require('../../../../../testutils/server/server.testutil');
-const config = require('../../../../../config/config');
+const config = require('./../../../../../config/config.mjs');
 const moment = require('moment');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
@@ -22,7 +22,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
   const jobs = testutils.catchJobs();
 
   before(function () {
-    reactivateHostsJobHandler = require('../../../server/jobs/reactivate-hosts.server.job');
+    reactivateHostsJobHandler = require('./../../../server/jobs/reactivate-hosts.server.job.mjs');
   });
 
   // Create user

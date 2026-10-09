@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import {
@@ -56,9 +56,13 @@ jest.mock(
   '@/modules/admin/client/components/AdminThreads.component',
   () => () => <main>Admin threads</main>,
 );
-jest.mock('@/modules/admin/client/components/AdminUser.component', () => () => (
-  <main>Admin user</main>
-));
+jest.mock('@/modules/admin/client/components/AdminUser.component', () => {
+  function MockAdminUser({ username }) {
+    return <main data-username={username}>Admin user</main>;
+  }
+  MockAdminUser.propTypes = { username: require('prop-types').string };
+  return MockAdminUser;
+});
 jest.mock(
   '@/modules/core/client/components/NotFoundPage.component',
   () => () => <main>Not found</main>,
@@ -312,7 +316,9 @@ jest.mock(
 
 function renderRoute(route, user = { username: 'alice', public: true }) {
   const params =
-    route.path === '/messages/:username'
+    route.path === '/admin/user/:username'
+      ? { username: 'river' }
+      : route.path === '/messages/:username'
       ? { username: 'bob' }
       : route.path === '/circles/:circle'
       ? { circle: 'hitchhikers' }
@@ -348,6 +354,16 @@ function renderRoute(route, user = { username: 'alice', public: true }) {
 }
 
 describe('React route ownership', () => {
+  it('passes username deep links to the administrator member lookup', () => {
+    renderRoute(
+      routes.find(route => route.path === '/admin/user/:username'),
+      { roles: ['admin'] },
+    );
+    expect(screen.getByText('Admin user')).toHaveAttribute(
+      'data-username',
+      'river',
+    );
+  });
   it('keeps the React route table aligned with the shared ownership list', () => {
     expect(routes.map(route => route.path).sort()).toEqual(
       [...REACT_OWNED_PATHS].sort(),
@@ -528,6 +544,11 @@ describe('React route ownership', () => {
       expect(container.firstChild).toBeTruthy();
       unmount();
     });
+  });
+
+  it('renders no message thread when the route has no authenticated user', () => {
+    const { container } = renderRoute(findRoute('/messages/bob'), null);
+    expect(container).toBeEmptyDOMElement();
   });
 
   it('renders circle list and detail routes for guests and members', () => {

@@ -1,7 +1,7 @@
 const sinon = require('sinon');
 require('should');
 
-const suspendedController = require('../../server/controllers/users.suspended.server.controller');
+const suspendedController = require('./../../server/controllers/users.suspended.server.controller.mjs');
 
 describe('Suspended user controller', () => {
   afterEach(() => {

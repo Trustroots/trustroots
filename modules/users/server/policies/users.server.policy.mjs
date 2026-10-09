@@ -1,7 +1,6 @@
-import createMemoryPolicy from '../../../core/server/services/memory-policy.server.service.js';
-import errorService from '../../../core/server/services/error.server.service.js';
+import createMemoryPolicy from './../../../core/server/services/memory-policy.server.service.mjs';
+import errorService from './../../../core/server/services/error.server.service.mjs';
 import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mjs';
-
 const service = {};
 
 /**
@@ -36,6 +35,10 @@ service.invokeRolesPolicies = function () {
         },
         {
           resources: '/api/users/password',
+          permissions: [],
+        },
+        {
+          resources: '/api/users/accounts/:provider',
           permissions: [],
         },
         {
@@ -84,6 +87,10 @@ service.invokeRolesPolicies = function () {
           permissions: ['post'],
         },
         {
+          resources: '/api/users/accounts/:provider',
+          permissions: ['delete'],
+        },
+        {
           resources: '/api/users/memberships',
           permissions: ['get'],
         },
@@ -98,6 +105,10 @@ service.invokeRolesPolicies = function () {
         {
           resources: '/api/users/push/registrations/:token',
           permissions: ['delete'],
+        },
+        {
+          resources: '/api/users/unified-push',
+          permissions: ['get', 'post', 'delete'],
         },
         {
           resources: '/api/blocked-users',
@@ -139,12 +150,11 @@ service.isAllowed = function (req, res, next) {
       message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
-
   return authoriseRoute(req, res, next);
 };
-
 const defaultExport = service;
 export default defaultExport;
 export const invokeRolesPolicies = defaultExport.invokeRolesPolicies;
 export const isAllowed = defaultExport.isAllowed;
 export { acl as _acl };
+export { defaultExport as 'module.exports' };

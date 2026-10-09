@@ -1,4 +1,4 @@
-const { annotateFeature, test, expect } = require('../../support/test');
+const { annotateFeature, test, expect } = require('../../support/fixtures');
 
 const {
   SEEDED_ADMIN,
@@ -8,6 +8,7 @@ const {
   SEEDED_SHADOW,
   SEEDED_SHADOW_MESSAGE,
   signInViaApi,
+  authenticateViaApi,
 } = require('../../support/helpers');
 const { findUserByUsername, withE2eDb } = require('../../support/db');
 
@@ -16,13 +17,13 @@ test.describe('admin moderation inspection flows', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
   });
 
-  test('staff blockers are grouped for admins and limited for Welcome team members', async ({
+  test('staff blockers are grouped for admins and limited for Greeters', async ({
     page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.staff-blockers', [
-      'Admins can inspect blockers of any administrator or Welcome team member.',
-      'Welcome team members can inspect only blockers of their own account.',
+      'Admins can inspect blockers of any administrator or Greeter.',
+      'Greeters can inspect only blockers of their own account.',
       'Regular members cannot access staff blocker information.',
     ]);
     const administrator = createUser();
@@ -233,25 +234,28 @@ test.describe('admin moderation inspection flows', () => {
 
     await expect(
       page.getByRole('heading', {
-        name: `${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName} report card`,
+        name: `${SEEDED_SHADOW.username}: ${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName}`,
       }),
     ).toBeVisible();
     await expect(page.getByText('shadowban').first()).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Role management' }),
-    ).toHaveAttribute('href', '#roles');
+    ).toHaveCount(0);
     const rolePanel = page.locator('.admin-user-roles');
+    const shadowRole = rolePanel.getByText('shadowban', { exact: true });
+    await expect(shadowRole).toBeVisible();
+    await expect(shadowRole).toHaveAttribute(
+      'aria-describedby',
+      'member-role-shadowban-description',
+    );
+    await shadowRole.focus();
+    await expect(page.getByRole('tooltip')).toHaveText(
+      'Member can use the site, but their profile and outreach are hidden from others.',
+    );
+    await shadowRole.blur();
     await expect(
-      rolePanel.locator('dt').filter({ hasText: /^shadowban$/ }),
-    ).toBeVisible();
-    await expect(
-      rolePanel.getByText(
-        'Member can use the site, but their profile and outreach are hidden from others.',
-      ),
-    ).toBeVisible();
-    await expect(
-      rolePanel.getByRole('button', {
-        name: 'Add to Welcome team',
+      page.locator('.admin-user-actions').getByRole('button', {
+        name: 'Make greeter',
         exact: true,
       }),
     ).toBeEnabled();
@@ -262,33 +266,80 @@ test.describe('admin moderation inspection flows', () => {
     await expect(page.getByText('Acquisition story').first()).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Alice Contact' }),
-    ).toHaveAttribute('href', '/admin/user?id=665000000000000000000006');
+    ).toHaveAttribute('href', '/admin/user/e2e-seeded-alice');
     await expect(
       page.getByText('Acquisition story', { exact: true }).last(),
     ).toBeVisible();
   });
+});
+
+test.describe('admin inspection APIs', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+  test.beforeEach(async ({ request }) => {
+    await authenticateViaApi(request, SEEDED_ADMIN);
+  });
+
+  test('admin report includes the reported member public profile below moderation details', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.user-report', [
+      'Admin report shows the member public profile below moderation information.',
+    ]);
+    await signInViaApi(page, undefined, SEEDED_ADMIN);
+    const member = SEEDED_MEMBERS[1];
+    const profileResponsePromise = page.waitForResponse(response =>
+      response.url().endsWith(`/api/users/${member.username}`),
+    );
+
+    await page.goto(`/admin/user/${member.username}`);
+    await expect(
+      page.getByRole('heading', {
+        name: `${member.username}: ${member.firstName} ${member.lastName}`,
+      }),
+    ).toBeVisible();
+    const profileResponse = await profileResponsePromise;
+    expect(profileResponse.status()).toBe(200);
+    const publicProfile = await profileResponse.json();
+    expect(publicProfile.username).toBe(member.username);
+    expect(publicProfile.email).toBeUndefined();
+    expect(publicProfile.roles).toBeUndefined();
+
+    const embeddedProfile = page.locator('.admin-user-embedded-profile');
+    await expect(
+      embeddedProfile.getByRole('heading', { name: 'Public profile' }),
+    ).toBeVisible();
+    await expect(embeddedProfile.locator('.profile-overview')).toBeVisible();
+    await expect(page.locator('.admin-user-actions')).toBeVisible();
+  });
+});
+
+test.describe('admin inspection APIs', () => {
+  test.use({ storageState: { cookies: [], origins: [] } });
+  test.beforeEach(async ({ request }) => {
+    await authenticateViaApi(request, SEEDED_ADMIN);
+  });
 
   test('admin user report API rejects malformed ids', async ({
-    page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.user-report', [
       'Missing user id shows a usable error state.',
     ]);
 
-    const malformed = await page.request.post('/api/admin/user', {
+    const malformed = await request.post('/api/admin/user', {
       data: { id: 'not-a-mongo-id' },
     });
     expect(malformed.status()).toBe(400);
   });
 
   test('admin messages API rejects malformed member ids', async ({
-    page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.messages', [
       'Admin can query messages between two users.',
     ]);
 
-    const response = await page.request.post('/api/admin/messages', {
+    const response = await request.post('/api/admin/messages', {
       data: {
         user1: 'not-a-mongo-id',
         user2: SEEDED_SHADOW.id,
@@ -301,13 +352,13 @@ test.describe('admin moderation inspection flows', () => {
   });
 
   test('admin threads API accepts explicit member ids', async ({
-    page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.threads', [
       'Admin can query threads by username/user id.',
     ]);
 
-    const response = await page.request.post('/api/admin/threads', {
+    const response = await request.post('/api/admin/threads', {
       data: { userId: SEEDED_MEMBERS[0].id },
     });
     expect(response.ok()).toBeTruthy();

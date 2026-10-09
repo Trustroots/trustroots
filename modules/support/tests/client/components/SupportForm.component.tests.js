@@ -5,6 +5,7 @@ import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import SupportForm from '@/modules/support/client/components/SupportForm';
 import { send } from '@/modules/support/client/api/support.api';
+import { VOLUNTEERING_DISCLAIMER } from '@/modules/support/shared/volunteering-copy';
 
 jest.mock('@/modules/support/client/api/support.api');
 
@@ -23,6 +24,29 @@ afterEach(() => {
 });
 
 describe('<SupportForm />', () => {
+  it('opens and submits the bug-report category without a reported member', async () => {
+    send.mockResolvedValueOnce({});
+    window.history.pushState({}, '', '/support?category=reportBug');
+    render(<SupportForm user={{}} />);
+    expect(screen.getByRole('option', { name: 'Report a bug' })).toHaveValue(
+      'reportBug',
+    );
+    expect(screen.getByLabelText('What can we help with?')).toHaveValue(
+      'reportBug',
+    );
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: { value: 'A fictional button does not respond.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() =>
+      expect(send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'reportBug',
+          reportMember: '',
+        }),
+      ),
+    );
+  });
   it('renders message field and shows the logged-in user details', () => {
     render(
       <SupportForm
@@ -202,6 +226,14 @@ describe('<SupportForm />', () => {
       'volunteering',
     );
     expect(
+      screen.getByRole('option', { name: 'Help run Trustroots' }),
+    ).toHaveValue('volunteering');
+    expect(screen.getByText(VOLUNTEERING_DISCLAIMER)).toBeInTheDocument();
+    expect(screen.getByLabelText('Message')).toHaveAttribute(
+      'aria-describedby',
+      'volunteering-help message-help',
+    );
+    expect(
       screen.getByText(
         /Briefly tell us about your interests, skills, and availability\./,
       ),
@@ -240,7 +272,18 @@ describe('<SupportForm />', () => {
     window.history.pushState({}, '', '/support?report=example-member');
     render(<SupportForm user={{}} />);
     const category = screen.getByLabelText('What can we help with?');
+    fireEvent.change(category, { target: { value: 'volunteering' } });
+    expect(
+      screen.getByText(/Volunteer with the team that runs Trustroots/),
+    ).toBeInTheDocument();
     fireEvent.change(category, { target: { value: 'account' } });
+    expect(
+      screen.queryByText(/Volunteer with the team that runs Trustroots/),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Message')).toHaveAttribute(
+      'aria-describedby',
+      'message-help',
+    );
     expect(
       screen.queryByRole('link', { name: 'Team Guide' }),
     ).not.toBeInTheDocument();

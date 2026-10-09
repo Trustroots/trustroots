@@ -1,8 +1,73 @@
-const { annotateFeature, test, expect } = require('../../support/test');
+const { annotateFeature, test, expect } = require('../../support/fixtures');
 
 const { createUser, waitForTribesList } = require('../../support/helpers');
 
 test.describe('public pages and unauthenticated flows', () => {
+  test('team page links to a public greeter roster and recruitment form', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'public.greeters', [
+      'Visitors can open the greeter roster from the team page.',
+      'Visitors can follow the volunteering link to contact the team.',
+    ]);
+
+    await page.goto('/team');
+    await page.getByRole('link', { name: 'Meet our greeters' }).click();
+
+    await expect(page).toHaveURL(/\/team\/greeters$/);
+    await expect(
+      page.getByRole('heading', { name: 'Trustroots greeters' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Want to join?' }),
+    ).toHaveAttribute('href', '/support?category=volunteering');
+    await expect(
+      page.getByText('No greeters to show right now.'),
+    ).toBeVisible();
+  });
+
+  test('photo boards start at the bottom of the fixed header', async ({
+    page,
+  }) => {
+    for (const path of [
+      '/',
+      '/faq',
+      '/support',
+      '/circles',
+      '/password/forgot',
+      '/password/reset/invalid',
+    ]) {
+      await page.goto(path);
+      await expect
+        .poll(async () => {
+          const [header, board] = await Promise.all([
+            page.locator('#tr-header').boundingBox(),
+            page.locator('#tr-main > .board').first().boundingBox(),
+          ]);
+          return Math.abs(board.y - (header.y + header.height));
+        })
+        .toBeLessThanOrEqual(1);
+
+      if (path === '/') {
+        const board = await page.locator('.home-intro').boundingBox();
+        const rightGap = Math.abs(
+          page.viewportSize().width - (board.x + board.width),
+        );
+        expect(rightGap).toBeLessThanOrEqual(1);
+      }
+
+      if (path === '/circles') {
+        const [board, content] = await Promise.all([
+          page.locator('.tribes-header').boundingBox(),
+          page.locator('.tribes-header + section').boundingBox(),
+        ]);
+        expect(
+          Math.abs(content.y - (board.y + board.height)),
+        ).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
   test('RTL pages load the generated stylesheet from a nested route', async ({
     page,
     context,
@@ -33,12 +98,7 @@ test.describe('public pages and unauthenticated flows', () => {
   test('sign in and sign up pages link to each other', async ({
     page,
   }, testInfo) => {
-    annotateFeature(testInfo, 'auth.signin', [
-      'Sign in page links to signup.',
-      'Username sign in succeeds.',
-      'Email sign in succeeds.',
-      'Continue query redirects to the original protected destination.',
-    ]);
+    annotateFeature(testInfo, 'auth.signin', ['Sign in page links to signup.']);
 
     await page.goto('/signin');
 
@@ -281,6 +341,18 @@ test.describe('public pages and unauthenticated flows', () => {
       await expect(page).toHaveURL(new RegExp(pagePath.replace(/\//g, '\\/')));
       await expect(page).toHaveTitle(title);
 
+      if (pagePath === '/foundation') {
+        await expect(
+          page.getByRole('heading', { name: 'Board', exact: true }),
+        ).toHaveCount(0);
+        await expect(
+          page.getByRole('heading', {
+            name: 'Past board members',
+            exact: true,
+          }),
+        ).toHaveCount(0);
+      }
+
       if (pagePath === '/team') {
         const volunteers = await request.get('/api/volunteers');
         expect(volunteers.ok()).toBeTruthy();
@@ -332,6 +404,15 @@ test.describe('public pages and unauthenticated flows', () => {
     await page.goto('/password/reset/invalid');
 
     await expect(page).toHaveURL(/\/password\/reset\/invalid/);
+    const board = page.locator('.board.container-fullscreen');
+    await expect
+      .poll(() =>
+        board.evaluate(element => {
+          const bounds = element.getBoundingClientRect();
+          return [Math.round(bounds.left), Math.round(bounds.width)];
+        }),
+      )
+      .toEqual([0, page.viewportSize().width]);
     await expect(
       page.getByRole('heading', { name: /password reset is invalid/i }),
     ).toBeVisible();

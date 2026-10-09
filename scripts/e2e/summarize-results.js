@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const { areaForSpec, computeAreaCoverage } = require('./areas');
 const { summarizeFeatureCoverage } = require('./feature-coverage-summary');
-const { mergeRawCoverage } = require('./merge-js-coverage');
 
 const root = path.resolve(__dirname, '../..');
 const resultsPath = process.env.TRUSTROOTS_E2E_RESULTS_PATH
@@ -231,6 +230,7 @@ async function run() {
   let exitCode = Number(process.env.EXIT_CODE || 0);
   const message = process.env.MESSAGE || 'No status message was recorded.';
 
+  const { mergeRawCoverage } = require('./merge-js-coverage');
   await mergeRawCoverage();
 
   if (!fs.existsSync(resultsPath)) {
@@ -247,6 +247,7 @@ async function run() {
   // Screenshot runs intentionally select only changed specs. Keep their actual
   // coverage metrics, but require complete feature coverage for normal CI runs.
   const incompleteFeatureCoverage =
+    process.env.TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE !== 'true' &&
     process.env.TRUSTROOTS_E2E_REQUIRE_FULL_FEATURE_COVERAGE !== 'false' &&
     featureCoverageIncomplete(metrics);
   if (incompleteFeatureCoverage && status === 'passed') {

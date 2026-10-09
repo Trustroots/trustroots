@@ -1,10 +1,12 @@
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 
 const {
   DEFAULT_PASSWORD,
   SEEDED_MEMBERS,
+  createIsolatedContext,
   createUser,
   registerViaApi,
+  authenticateViaApi,
   signInViaApi,
 } = require('../../support/helpers');
 const {
@@ -84,6 +86,7 @@ test.describe.serial('auth email and token feature coverage', () => {
 
     const confirm = await request.post(
       `/api/auth/confirm-email/${storedUser.emailToken}`,
+      { headers: { 'X-Trustroots-Request': '1' } },
     );
     expect(confirm.ok()).toBeTruthy();
     expect(await confirm.json()).toMatchObject({ profileMadePublic: true });
@@ -109,12 +112,12 @@ test.describe.serial('auth email and token feature coverage', () => {
 
     const invalidPost = await request.post(
       '/api/auth/confirm-email/not-a-valid-token',
+      { headers: { 'X-Trustroots-Request': '1' } },
     );
     expect(invalidPost.status()).toBe(400);
   });
 
   test('members can request confirmation email resends', async ({
-    page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'auth.email-resend', [
@@ -124,34 +127,117 @@ test.describe.serial('auth email and token feature coverage', () => {
 
     const unconfirmed = createUser();
     await registerViaApi(request, unconfirmed);
-    await signInViaApi(page, request, unconfirmed);
+    await authenticateViaApi(request, unconfirmed);
 
-    const resend = await page.request.post('/api/auth/resend-confirmation');
+    const resend = await request.post('/api/auth/resend-confirmation', {
+      headers: { 'X-Trustroots-Request': '1' },
+    });
     expect(resend.ok()).toBeTruthy();
     expect(await resend.json()).toMatchObject({
       message: 'Sent confirmation email.',
     });
 
-    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
-    const alreadyConfirmed = await page.request.post(
+    await authenticateViaApi(request, SEEDED_MEMBERS[0]);
+    const alreadyConfirmed = await request.post(
       '/api/auth/resend-confirmation',
+      { headers: { 'X-Trustroots-Request': '1' } },
     );
     expect(alreadyConfirmed.status()).toBe(400);
   });
 
-  test('password reset token updates credentials', async ({
+  test('password reset rotates the current session and invalidates other sessions', async ({
+    browser,
+    baseURL,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'auth.password-reset', [
       'Valid reset token opens reset form.',
       'Password reset succeeds with matching valid passwords.',
-      'Success page is shown after reset.',
+      'The browser completing the reset receives a fresh session.',
+      'Other sessions and reused tokens are rejected.',
       'Member can sign in with the new password.',
     ]);
 
     const user = createUser();
     await registerViaApi(request, user);
-    const token = `reset-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+    const firstContext = await createIsolatedContext(browser, baseURL);
+    const secondContext = await createIsolatedContext(browser, baseURL);
+    const firstPage = await firstContext.newPage();
+    const secondPage = await secondContext.newPage();
+    try {
+      await signInViaApi(firstPage, firstContext.request, user);
+      await signInViaApi(secondPage, secondContext.request, user);
+
+      const token = `reset-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+      await updateUserByUsername(user.username, {
+        $set: {
+          resetPasswordToken: token,
+          resetPasswordExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      });
+
+      const validation = await firstContext.request.get(
+        `/api/auth/reset/${token}`,
+        {
+          maxRedirects: 0,
+        },
+      );
+      expect(validation.status()).toBe(302);
+      expect(validation.headers().location).toBe(`/password/reset/${token}`);
+
+      const newPassword = `${DEFAULT_PASSWORD}Reset`;
+      const reset = await firstContext.request.post(
+        `/api/auth/reset/${token}`,
+        {
+          data: {
+            newPassword,
+            verifyPassword: newPassword,
+          },
+        },
+      );
+      expect(reset.ok()).toBeTruthy();
+      expect(
+        (await firstContext.request.get('/api/users/export')).ok(),
+      ).toBeTruthy();
+      expect(
+        (await secondContext.request.get('/api/users/export')).status(),
+      ).toBe(403);
+
+      const reused = await secondContext.request.post(
+        `/api/auth/reset/${token}`,
+        {
+          data: { newPassword, verifyPassword: newPassword },
+        },
+      );
+      expect(reused.status()).toBe(400);
+
+      await signInViaApi(secondPage, secondContext.request, {
+        ...user,
+        password: newPassword,
+      });
+      expect(
+        (await secondContext.request.get('/api/users/export')).ok(),
+      ).toBeTruthy();
+    } finally {
+      await Promise.all([firstContext.close(), secondContext.close()]);
+    }
+  });
+
+  test('a reset token succeeds for only one concurrent request', async ({
+    browser,
+    baseURL,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.password-reset', [
+      'A reset token is consumed by one atomic credential update.',
+      'Concurrent reuse of the same token cannot reset the password twice.',
+    ]);
+
+    const user = createUser();
+    await registerViaApi(request, user);
+    const token = `parallel-reset-${Date.now()}-${Math.floor(
+      Math.random() * 1e6,
+    )}`;
     await updateUserByUsername(user.username, {
       $set: {
         resetPasswordToken: token,
@@ -159,36 +245,33 @@ test.describe.serial('auth email and token feature coverage', () => {
       },
     });
 
-    const validation = await request.get(`/api/auth/reset/${token}`, {
-      maxRedirects: 0,
-    });
-    expect(validation.status()).toBe(302);
-    expect(validation.headers().location).toBe(`/password/reset/${token}`);
-
-    const newPassword = `${DEFAULT_PASSWORD}Reset`;
-    const reset = await request.post(`/api/auth/reset/${token}`, {
-      data: {
-        newPassword,
-        verifyPassword: newPassword,
-      },
-    });
-    expect(reset.ok()).toBeTruthy();
-
-    const signin = await request.post('/api/auth/signin', {
-      data: {
-        username: user.username,
-        password: newPassword,
-      },
-    });
-    expect(signin.ok()).toBeTruthy();
+    const contexts = await Promise.all([
+      createIsolatedContext(browser, baseURL),
+      createIsolatedContext(browser, baseURL),
+    ]);
+    try {
+      const newPassword = `${DEFAULT_PASSWORD}Concurrent`;
+      const responses = await Promise.all(
+        contexts.map(context =>
+          context.request.post(`/api/auth/reset/${token}`, {
+            data: { newPassword, verifyPassword: newPassword },
+          }),
+        ),
+      );
+      expect(responses.map(response => response.status()).sort()).toEqual([
+        200, 400,
+      ]);
+    } finally {
+      await Promise.all(contexts.map(context => context.close()));
+    }
   });
 
-  test('forgot password stores a reset token and rejects unknown accounts', async ({
+  test('forgot password stores a reset token without revealing account existence', async ({
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'auth.password-forgot', [
       'Forgot password form accepts username or email.',
-      'Unknown accounts show a recovery error.',
+      'Existing and unknown account identifiers receive the same acknowledgement.',
     ]);
 
     const user = createUser();
@@ -197,16 +280,27 @@ test.describe.serial('auth email and token feature coverage', () => {
     const unknown = await request.post('/api/auth/forgot', {
       data: { username: `missing-${user.username}` },
     });
-    expect(unknown.status()).toBe(404);
+    expect(unknown.status()).toBe(200);
+    const unknownResponse = await unknown.json();
 
     const forgot = await request.post('/api/auth/forgot', {
       data: { username: user.email },
     });
     expect(forgot.ok()).toBeTruthy();
-    expect(await forgot.json()).toMatchObject({
-      message: 'We sent you an email with further instructions.',
+    expect(await forgot.json()).toEqual(unknownResponse);
+    expect(unknownResponse).toEqual({
+      message:
+        'If an account matches that username or email, we will send recovery instructions.',
     });
 
+    await expect
+      .poll(
+        async () =>
+          (
+            await findUserByUsername(user.username)
+          ).resetPasswordToken,
+      )
+      .toBeTruthy();
     const storedUser = await findUserByUsername(user.username);
     expect(storedUser.resetPasswordToken).toBeTruthy();
     expect(storedUser.resetPasswordExpires).toBeTruthy();

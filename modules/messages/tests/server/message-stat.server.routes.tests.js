@@ -2,55 +2,47 @@ const should = require('should');
 const async = require('async');
 const request = require('supertest');
 const mongoose = require('mongoose');
-const express = require('../../../../config/lib/express');
+const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
 const MessageStat = mongoose.model('MessageStat');
-
 describe('Display Message Statistics in User Route', function () {
   let agent;
-
   const NOW = Date.now(); // a current timestamp
   const DAY = 24 * 3600 * 1000; // a length of a day in milliseconds
   const messageStats = [];
   const users = [];
-
   const password = 'password123';
-
   before(function (done) {
-    // Get application
-    const app = express.init(mongoose.connection);
-    agent = request.agent(app);
-
-    done();
+    (async () => {
+      // Get application
+      const app = await express.init(mongoose.connection);
+      agent = request.agent(app);
+      done();
+    })().catch(done);
   });
 
   // create testing users
-  before(function (done) {
+  before(async function () {
+    const fixturePassword = await User.hashPassword(password);
     for (let i = 0; i < 23; ++i) {
       users.push(
-        new User({
+        utils.createTestUser({
           firstName: 'firstName',
           lastName: 'lastName',
           displayName: 'displayName',
           email: 'user' + i + '@example.com',
           username: 'username' + i,
-          password,
-          provider: 'local',
-          public: true,
+          password: fixturePassword,
         }),
       );
     }
 
-    // Save the users to database
-    async.each(
-      users,
-      function (user, callback) {
-        user.save(callback);
-      },
-      done,
-    );
+    // The route test logs in as one fixture user; seed the shared valid hash
+    // directly so creating these statistics-only records does not consume
+    // the bounded password KDF queue.
+    await User.collection.insertMany(users.map(user => user.toObject()));
   });
 
   // create testing messageStats
@@ -112,12 +104,14 @@ describe('Display Message Statistics in User Route', function () {
       done,
     );
   });
-
   after(utils.clearDatabase);
 
   // Sign in
   beforeEach(async () => {
-    const credentials = { username: users[4].username, password };
+    const credentials = {
+      username: users[4].username,
+      password,
+    };
     await utils.signIn(credentials, agent);
   });
 
@@ -125,7 +119,6 @@ describe('Display Message Statistics in User Route', function () {
   afterEach(async () => {
     await utils.signOut(agent);
   });
-
   it("should show replyRate and replyTime in user's profile", function (done) {
     // request a random user
     agent
@@ -135,17 +128,14 @@ describe('Display Message Statistics in User Route', function () {
         if (err) return done(err);
         try {
           const response = resp.body;
-
           should(response).have.property('replyRate');
           should(response).have.property('replyTime');
-
           return done();
         } catch (e) {
           if (e) return done(e);
         }
       });
   });
-
   it("[no messages] replyRate and replyTime should be ''", function (done) {
     // user username2 has no MessageStats
     agent
@@ -155,17 +145,14 @@ describe('Display Message Statistics in User Route', function () {
         if (err) return done(err);
         try {
           const response = resp.body;
-
           should(response).have.property('replyRate', '');
           should(response).have.property('replyTime', '');
-
           return done();
         } catch (e) {
           if (e) return done(e);
         }
       });
   });
-
   it("[no replied messages] replyRate should be '0%' and replyTime ''", function (done) {
     // user username1 has only unreplied MessageStats
     agent
@@ -175,17 +162,14 @@ describe('Display Message Statistics in User Route', function () {
         if (err) return done(err);
         try {
           const response = resp.body;
-
           should(response).have.property('replyRate', '0%');
           should(response).have.property('replyTime', '');
-
           return done();
         } catch (e) {
           if (e) return done(e);
         }
       });
   });
-
   it('[some replied messages] replyRate and replyTime should be strings with specific values', function (done) {
     // user username0 has both replied and unreplied MessageStats
     agent
@@ -195,13 +179,11 @@ describe('Display Message Statistics in User Route', function () {
         if (err) return done(err);
         try {
           const response = resp.body;
-
           should(response).have.property(
             'replyRate',
             Math.round((5 / 12) * 100) + '%',
           );
           should(response).have.property('replyTime', '3 hours');
-
           return done();
         } catch (e) {
           if (e) return done(e);

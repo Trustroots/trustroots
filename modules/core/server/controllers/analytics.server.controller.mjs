@@ -1,6 +1,5 @@
 import url from 'url';
-import log from '../../../../config/lib/logger.js';
-
+import log from './../../../../config/lib/logger.mjs';
 const service = {};
 
 /**
@@ -60,10 +59,10 @@ service.appendUTMParams = function (trackUrl, utmParams) {
     !utmParams.campaign
   ) {
     log('error', 'utmTrackify() missing one of the required variables.', {
-      trackUrl,
-      utmParamsSource: utmParams && utmParams.source,
-      utmParamsMedium: utmParams && utmParams.medium,
-      utmParamsCampaign: utmParams && utmParams.campaign,
+      hasTrackUrl: Boolean(trackUrl),
+      hasSource: Boolean(utmParams && utmParams.source),
+      hasMedium: Boolean(utmParams && utmParams.medium),
+      hasCampaign: Boolean(utmParams && utmParams.campaign),
     });
     return trackUrl || '';
   }
@@ -84,10 +83,9 @@ service.appendUTMParams = function (trackUrl, utmParams) {
 
   // This makes format compose the search string out of the query object
   delete obj.search;
-
   return url.format(obj);
 };
-
 const defaultExport = service;
 export default defaultExport;
 export const appendUTMParams = defaultExport.appendUTMParams;
+export { defaultExport as 'module.exports' };

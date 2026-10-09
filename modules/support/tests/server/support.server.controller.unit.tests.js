@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
-const emailService = require('../../../core/server/services/email.server.service');
-const statsService = require('../../../stats/server/services/stats.server.service');
-const config = require('../../../../config/config');
+const emailService = require('./../../../core/server/services/email.server.service.mjs');
+const statsService = require('./../../../stats/server/services/stats.server.service.mjs');
+const config = require('./../../../../config/config.mjs');
 const winston = require('winston');
-require('../../server/models/support.server.model');
+require('./../../server/models/support.server.model.mjs');
 const sinon = require('sinon');
 
 require('should');
@@ -270,7 +270,13 @@ describe('Support controller unit tests', () => {
       .should.be.true();
   });
 
-  for (const category of ['account', 'reportMember', 'volunteering', 'other']) {
+  for (const category of [
+    'account',
+    'reportMember',
+    'reportBug',
+    'volunteering',
+    'other',
+  ]) {
     it(`stores and emails the ${category} category`, async () => {
       const harness = await loadController();
       const res = mockResponse();

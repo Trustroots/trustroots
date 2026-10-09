@@ -1,29 +1,34 @@
 const express = require('express');
-const proxyquire = require('proxyquire').noCallThru();
+const sinon = require('sinon');
+const config = require('./../../../../config/config.mjs');
+const policy = require('./../../server/policies/experiences.server.policy.mjs');
+const controller = require('./../../server/controllers/experiences.server.controller.mjs');
+const registerRoutes = require('./../../server/routes/experiences.server.routes.mjs');
 const request = require('supertest');
 require('should');
 
 describe('Experiences routes unit tests', () => {
+  afterEach(() => sinon.restore());
   function buildApp(referenceEnabled) {
     const app = express();
-    proxyquire('../../server/routes/experiences.server.routes', {
-      '../../../../config/config': {
-        featureFlags: { reference: referenceEnabled },
-      },
-      '../policies/experiences.server.policy': {
-        isAllowed: (req, res, next) => next(),
-      },
-      '../controllers/experiences.server.controller': {
-        create: (req, res) => res.status(200).send({ action: 'create' }),
-        readMany: (req, res) => res.status(200).send({ action: 'readMany' }),
-        getCount: (req, res) => res.status(200).send({ action: 'getCount' }),
-        getSuggestion: (req, res) =>
-          res.status(200).send({ action: 'getSuggestion' }),
-        readMine: (req, res) => res.status(200).send({ action: 'readMine' }),
-        readOne: (req, res) => res.status(200).send({ action: 'readOne' }),
-        experienceById: (req, res, next) => next(),
-      },
-    })(app);
+    sinon.stub(config.featureFlags, 'reference').value(referenceEnabled);
+    sinon.stub(policy, 'isAllowed').callsFake((req, res, next) => next());
+    for (const name of [
+      'create',
+      'readMany',
+      'getCount',
+      'getSuggestion',
+      'readMine',
+      'readOne',
+    ]) {
+      sinon
+        .stub(controller, name)
+        .callsFake((req, res) => res.status(200).send({ action: name }));
+    }
+    sinon
+      .stub(controller, 'experienceById')
+      .callsFake((req, res, next) => next());
+    registerRoutes(app);
     return app;
   }
 

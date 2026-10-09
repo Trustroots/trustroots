@@ -36,3 +36,6 @@ security and lifecycle patterns.
 - Adds no administrator or moderation interface.
 - Adds no Android-specific server routes and does not change browser or iOS
   behaviour.
+
+Phone-web UX alignment and remaining member parity after this foundation are
+tracked in `align-android-app-with-phone-web`.

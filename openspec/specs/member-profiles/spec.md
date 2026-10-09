@@ -46,15 +46,50 @@ description, account details, locations, networks, and profile photo.
 The system SHALL accept supported profile-photo uploads and explain when an
 upload cannot be used.
 
+The system SHALL keep avatar decoding bounded to a 10 MiB input, one frame,
+dimensions no larger than 10,000 by 10,000 pixels, 40 megapixels, bounded
+processor resources and time. It SHALL generate and validate all seven
+thumbnails in private staging before publishing them in a server-generated
+version directory. The server-owned version pointer SHALL change only after
+publication succeeds, and a failed upload SHALL preserve the previous pointer
+and files. Requests for staging paths SHALL be denied before public static file
+serving. Members without a version pointer SHALL continue to use their existing
+flat avatar paths.
+
 #### Scenario: Member uploads a supported photo
 
 - **WHEN** a signed-in member uploads a supported profile photo
 - **THEN** the system updates their profile photo
+- **AND** the profile points to the complete new thumbnail set
+
+#### Scenario: Avatar processing fails during replacement
+
+- **WHEN** processing or saving a new avatar fails
+- **THEN** the previous avatar pointer and files remain available
+- **AND** temporary input and unpublished output are cleaned up
 
 #### Scenario: Member uploads an unsupported photo
 
 - **WHEN** a signed-in member uploads an unsupported file as a profile photo
 - **THEN** the system explains that the file type is not supported
+
+#### Scenario: Image exceeds a processing bound
+
+- **WHEN** a member uploads an image exceeding a configured dimension, frame or
+  resource bound
+- **THEN** the system rejects the upload and removes private temporary output
+- **AND** the previous avatar remains available
+
+#### Scenario: Avatar processing succeeds
+
+- **WHEN** every required thumbnail is generated within the processing bounds
+- **THEN** the system publishes the complete processed set with metadata removed
+
+#### Scenario: Processing fails or times out
+
+- **WHEN** thumbnail generation fails or reaches its time budget
+- **THEN** the system stops processing and cleans private staging without
+  publishing incomplete output
 
 ### Requirement: React profile viewing
 
@@ -107,3 +142,26 @@ The system SHALL identify deprecated catalogue entries and prevent members from 
 
 - **WHEN** the language catalogue is shown in English
 - **THEN** the `lim` language is labelled Limburgish
+
+### Requirement: Targeted avatar-upload limits
+
+The system SHALL enforce a configurable, shared request limit for authenticated avatar uploads using the account identity and a bounded window.
+
+#### Scenario: Member exceeds the avatar-upload policy
+
+- **WHEN** a member exceeds the configured avatar-upload limit within its window
+- **THEN** the request is rejected with HTTP 429 and a `Retry-After` header
+
+### Requirement: Public greeter recognition
+
+The system SHALL derive an allowlisted `isGreeter` profile boolean from the current `welcome-team` role and show a Trustroots greeter badge linking to `/team/greeters`. This badge SHALL be independent of volunteer and alumni badges. It SHALL NOT expose the underlying private role collection.
+
+#### Scenario: Greeter has another volunteer role
+
+- **WHEN** a public greeter profile also qualifies for a volunteer badge
+- **THEN** both badges appear with their respective links
+
+#### Scenario: Greeter role is revoked
+
+- **WHEN** the profile is retrieved after removal of `welcome-team`
+- **THEN** it no longer displays the greeter badge

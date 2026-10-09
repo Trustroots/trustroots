@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'apps/android/**'
+      - 'fastlane/metadata/android/**'
       - '.github/workflows/android-preview-release.yml'
   workflow_dispatch:
 
@@ -23,7 +24,7 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: 17
@@ -51,7 +52,7 @@ jobs:
           test -n "$ANDROID_KEYSTORE_PASSWORD"
           test -n "$ANDROID_KEY_ALIAS"
           test -n "$ANDROID_KEY_PASSWORD"
-          ./gradlew testDebugUnitTest lintDebug assembleRelease
+          ./gradlew testDebugUnitTest lintDebug assembleRelease -PtrustrootsPreviewUpdateAlerts=true
       - name: Verify and prepare APK
         run: |
           apk="apps/android/app/build/outputs/apk/release/app-release.apk"
@@ -63,8 +64,22 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "android-preview-${GITHUB_RUN_NUMBER}" release/* \
+          gh release create "android-preview-${ANDROID_VERSION_CODE}-v${ANDROID_VERSION_NAME}" release/* \
             --target "$GITHUB_SHA" \
             --title "Android preview ${ANDROID_VERSION_NAME}" \
             --notes "Signed Android preview from commit ${GITHUB_SHA}. Build ${ANDROID_VERSION_CODE}." \
             --prerelease
+      - name: Publish Android preview to Zapstore
+        if: vars.ZAPSTORE_PUBLISH_ENABLED == 'true'
+        env:
+          SIGN_WITH: ${{ secrets.ZAPSTORE_SIGN_WITH }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          test -n "$SIGN_WITH"
+          curl -fsSL \
+            'https://github.com/zapstore/zsp/releases/download/v0.4.17/zsp-0.4.17-linux-amd64' \
+            -o "$RUNNER_TEMP/zsp"
+          echo "3f241da6a5dc7a85fe851d3b42b77790b651bd36c7029382a701262bda832d20  $RUNNER_TEMP/zsp" \
+            | sha256sum --check
+          chmod +x "$RUNNER_TEMP/zsp"
+          "$RUNNER_TEMP/zsp" publish zapstore.yaml --pre-release --channel beta --quiet

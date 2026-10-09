@@ -5,14 +5,13 @@
  */
 
 const async = require('async');
-const chalk = require('chalk');
-const mongooseService = require('../../config/lib/mongoose');
+const mongooseService = require('./../../config/lib/mongoose.mjs');
 const mongoose = require('mongoose');
 // eslint-disable-next-line no-unused-vars
-const tribeModels = require('../../modules/tribes/server/models/tribe.server.model');
+const tribeModels = require('./../../modules/tribes/server/models/tribe.server.model.mjs');
 const Tribe = mongoose.model('Tribe');
 // eslint-disable-next-line no-unused-vars
-const userModels = require('../../modules/users/server/models/user.server.model');
+const userModels = require('./../../modules/users/server/models/user.server.model.mjs');
 const User = mongoose.model('User');
 
 exports.up = function (next) {
@@ -100,7 +99,7 @@ exports.down = function (next) {
 
 function connect(done) {
   mongooseService.connect(function (db) {
-    console.log(chalk.green('Connected to MongoDB.'));
+    console.log('Connected to MongoDB.');
     done(null, db);
   });
 }
@@ -126,7 +125,7 @@ function renameCollection(db, from, to, done) {
       done();
     })
     .catch(function (err) {
-      console.log(chalk.red('Collection could not be renamed: ' + from + ' → ' + to));
+      console.log('Collection could not be renamed: ' + from + ' → ' + to);
       console.log(err);
       done();
     });

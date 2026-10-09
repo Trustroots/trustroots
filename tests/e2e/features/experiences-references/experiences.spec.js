@@ -1,12 +1,15 @@
-const { annotateFeature, test, expect } = require('../../support/test');
+const { annotateFeature, test, expect } = require('../../support/fixtures');
+const { ObjectId } = require('mongodb');
 
 const {
   SEEDED_EXPERIENCE,
   SEEDED_MEMBERS,
+  createUser,
   fetchUserIdByUsername,
+  registerViaApi,
   signInViaApi,
 } = require('../../support/helpers');
-const { updateUserByUsername } = require('../../support/db');
+const { updateUserByUsername, withE2eDb } = require('../../support/db');
 
 test.describe('seeded experience flows', () => {
   test.beforeEach(async ({ page, request }) => {
@@ -73,45 +76,73 @@ test.describe('seeded experience flows', () => {
       annotateFeature(testInfo, 'experiences.profile-list', [
         'Experiences from moderated authors are hidden on active profiles.',
       ]);
-      // View as a different active member while moderating the seeded author.
-      await signInViaApi(page, request, SEEDED_MEMBERS[2]);
-      const profileId = await fetchUserIdByUsername(
-        request,
-        SEEDED_EXPERIENCE.profileUsername,
-      );
-      const visible = await request.get('/api/experiences', {
-        params: { userTo: profileId },
+      // Give this moderation case its own members so parallel specs can use
+      // seeded accounts without encountering a temporary suspension.
+      const author = createUser();
+      const recipient = createUser();
+      await registerViaApi(request, author);
+      await registerViaApi(request, recipient);
+      for (const member of [author, recipient]) {
+        await updateUserByUsername(member.username, {
+          $set: {
+            public: true,
+            description: 'E2E public profile for experience moderation.',
+          },
+          $unset: { emailTemporary: 1, emailToken: 1 },
+        });
+      }
+      const [authorId, recipientId] = await withE2eDb(async db => {
+        const users = db.collection('users');
+        const [authorRecord, recipientRecord] = await Promise.all([
+          users.findOne({ username: author.username }),
+          users.findOne({ username: recipient.username }),
+        ]);
+        return [authorRecord._id, recipientRecord._id];
       });
-      const [experience] = await visible.json();
-      expect(experience.feedbackPublic).toBe(SEEDED_EXPERIENCE.feedbackPublic);
-
+      const experience = {
+        _id: new ObjectId(),
+        userFrom: authorId,
+        userTo: recipientId,
+        public: true,
+        recommend: 'yes',
+        interactions: { met: true, guest: false, host: false },
+        feedbackPublic: 'E2E moderated author experience.',
+        created: new Date(),
+      };
+      await withE2eDb(db => db.collection('experiences').insertOne(experience));
       try {
-        await updateUserByUsername(SEEDED_MEMBERS[0].username, {
+        await signInViaApi(page, request, SEEDED_MEMBERS[1]);
+        const visible = await request.get('/api/experiences', {
+          params: { userTo: recipientId.toString() },
+        });
+        expect((await visible.json())[0].feedbackPublic).toBe(
+          experience.feedbackPublic,
+        );
+        await updateUserByUsername(author.username, {
           $addToSet: { roles: role },
         });
         const list = await request.get('/api/experiences', {
-          params: { userTo: profileId },
+          params: { userTo: recipientId.toString() },
         });
         expect(list.ok()).toBeTruthy();
         expect(await list.json()).toEqual([]);
         const count = await request.get('/api/experiences/count', {
-          params: { userTo: profileId },
+          params: { userTo: recipientId.toString() },
         });
         expect(await count.json()).toEqual({ count: 0 });
         const detail = await request.get(`/api/experiences/${experience._id}`);
         expect(detail.status()).toBe(404);
 
-        await page.goto(
-          `/profile/${SEEDED_EXPERIENCE.profileUsername}/experiences`,
-        );
+        await page.goto(`/profile/${recipient.username}/experiences`);
         await expect(page.getByText('No experiences yet.')).toBeVisible();
-        await expect(
-          page.getByText(SEEDED_EXPERIENCE.feedbackPublic),
-        ).toHaveCount(0);
+        await expect(page.getByText(experience.feedbackPublic)).toHaveCount(0);
       } finally {
-        await updateUserByUsername(SEEDED_MEMBERS[0].username, {
+        await updateUserByUsername(author.username, {
           $pull: { roles: role },
         });
+        await withE2eDb(db =>
+          db.collection('experiences').deleteOne({ _id: experience._id }),
+        );
       }
     });
   }

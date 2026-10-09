@@ -1,0 +1,6 @@
+- [x] Add stable role query URLs to admin role listing and restore the filter from the URL.
+- [x] Link Greeter and volunteer role labels from the admin member page.
+- [x] Show a direct acquisition-stories Admin link to welcome-team members in the main navigation.
+- [x] Add client and end-to-end regression coverage for role links, direct URL loading, contact ordering and avatars.
+- [x] Refresh member cards, contact ordering and initials avatars.
+- [x] Validate the OpenSpec change.

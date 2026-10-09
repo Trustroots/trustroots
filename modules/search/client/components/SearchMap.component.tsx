@@ -1,6 +1,5 @@
 // External dependencies
 import { useDebouncedCallback } from 'use-debounce';
-import PropTypes from 'prop-types';
 import React, { createRef, useEffect, useRef, useState } from 'react';
 import ReactMapGL, {
   FlyToInterpolator,
@@ -74,6 +73,10 @@ interface SearchMapProps {
   locationBounds?: Partial<MapBounds> | null;
   onOfferClose: () => void;
   onOfferOpen: (offer: SearchResultOffer) => void;
+  onVisibleOffersChange?: (offerIds: string[]) => void;
+  onVisibleCommunityNoteThreadsChange?: (
+    threads: { notes: NostrEvent[]; plusCode: string | null }[],
+  ) => void;
   onCommunityNoteOpen: (note: {
     notes: NostrEvent[];
     plusCode: string | null;
@@ -151,7 +154,44 @@ const COMMUNITY_NOTES_RECONNECT_DELAY_MS = 1000;
 const MISSING_MAP_LAYER_ERROR =
   /^The layer '.*' does not exist in the map's style and cannot be queried for features\.$/;
 
+type MapCorner = { lat: number; lng: number };
+
+function isLongitudeVisible(longitude: number, west: number, east: number) {
+  let span = east - west;
+  if (span < 0) span += 360;
+  if (span >= 360) return true;
+
+  const relativeLongitude = (((longitude - west) % 360) + 360) % 360;
+  return relativeLongitude <= span;
+}
+
+function normalizeBoundsCorners(mapBounds: {
+  getNorthEast?: () => MapCorner;
+  getSouthWest?: () => MapCorner;
+  northEast?: MapCorner;
+  southWest?: MapCorner;
+}): { northEast?: MapCorner; southWest?: MapCorner } {
+  return {
+    northEast: mapBounds.getNorthEast?.() ?? mapBounds.northEast,
+    southWest: mapBounds.getSouthWest?.() ?? mapBounds.southWest,
+  };
+}
+
+function isCoordinateInViewport(
+  longitude: number,
+  latitude: number,
+  southWest: MapCorner,
+  northEast: MapCorner,
+) {
+  return (
+    latitude >= southWest.lat &&
+    latitude <= northEast.lat &&
+    isLongitudeVisible(longitude, southWest.lng, northEast.lng)
+  );
+}
+
 const olc = new OpenLocationCode();
+const ignoreVisibleCallback = () => {};
 const TypedLayer = Layer as unknown as React.ComponentType<SearchMapLayerProps>;
 const TypedSource = Source as unknown as React.ComponentType<
   React.ComponentProps<typeof Source> & {
@@ -271,6 +311,8 @@ export default function SearchMap({
   locationBounds: bounds,
   onOfferClose,
   onOfferOpen,
+  onVisibleOffersChange = ignoreVisibleCallback,
+  onVisibleCommunityNoteThreadsChange = ignoreVisibleCallback,
   onCommunityNoteOpen,
 }: SearchMapProps) {
   /**
@@ -286,7 +328,7 @@ export default function SearchMap({
   /**
    * Debounce setting persistent map state to avoid performance issues
    */
-  const [debouncedSetPersistentMapLocation] = useDebouncedCallback(
+  const debouncedSetPersistentMapLocation = useDebouncedCallback(
     setPersistentMapLocation,
     // delay in ms
     1000,
@@ -308,6 +350,7 @@ export default function SearchMap({
     features: [],
     type: 'FeatureCollection',
   });
+  const offersRequestRef = useRef(0);
   const [communityNotes, setCommunityNotes] = useState<FeatureCollection>({
     type: 'FeatureCollection',
     features: [],
@@ -333,7 +376,9 @@ export default function SearchMap({
     typeof mapStyle === 'string' && mapStyle.startsWith('mapbox://');
   const effectiveMapStyle =
     !MAPBOX_TOKEN && isMapboxStyle ? MAP_STYLE_OSM : mapStyle;
-  const isOsmStyle = effectiveMapStyle?.name === MAP_STYLE_OSM.name;
+  const isOsmStyle =
+    typeof effectiveMapStyle !== 'string' &&
+    effectiveMapStyle?.name === MAP_STYLE_OSM.name;
   // If no mapbox token, and we're in production, don't show the style switcher
   const showMapStyles =
     webGLSupported && (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
@@ -394,12 +439,10 @@ export default function SearchMap({
     }
 
     // https://docs.mapbox.com/mapbox-gl-js/api/geography/#lnglatbounds
-    const northEast = mapBounds.getNorthEast
-      ? mapBounds.getNorthEast()
-      : mapBounds.northEast;
-    const southWest = mapBounds.getSouthWest
-      ? mapBounds.getSouthWest()
-      : mapBounds.southWest;
+    const { northEast, southWest } = normalizeBoundsCorners(mapBounds);
+    if (!northEast || !southWest) {
+      return;
+    }
 
     // Expand bounding box depending on the zoom level slightly to load more offers over the edge of the viewport
     const boundsBuffer = 10 / zoom;
@@ -468,7 +511,7 @@ export default function SearchMap({
   /**
    * Debounce getting fresh offers for new map state to avoid performance issues
    */
-  const [debouncedUpdateOffers] = useDebouncedCallback(
+  const debouncedUpdateOffers = useDebouncedCallback(
     updateOffers,
     // delay in ms
     500,
@@ -725,31 +768,41 @@ export default function SearchMap({
       return;
     }
 
-    const layerId = features[0]?.layer?.id;
+    // A point from any source should win over an overlapping cluster. The
+    // returned features follow rendered layer order, so this keeps the
+    // topmost individual offer or note while avoiding an unexpected cluster
+    // expansion when another source's cluster covers the same location.
+    const clickedFeature =
+      features.find(
+        feature =>
+          feature.layer?.id === unclusteredPointLayer.id ||
+          feature.layer?.id === communityNotesLayer.id,
+      ) || features[0];
+    const layerId = clickedFeature?.layer?.id;
 
     // Community notes click — open thread in sidebar
     if (layerId === communityNotesLayer.id) {
-      openCommunityNote(features[0]);
+      openCommunityNote(clickedFeature);
       return;
     }
 
     // Community notes cluster click — zoom in
     if (layerId === communityNotesClusterLayer.id) {
-      openCommunityNotesCluster(features[0]);
+      openCommunityNotesCluster(clickedFeature);
       return;
     }
 
     switch (layerId) {
       // Hosting or meeting offer
       case unclusteredPointLayer.id:
-        if (features[0]?.id) {
-          setSelectedState(features[0]);
-          openOfferById(features[0].id);
+        if (clickedFeature?.id) {
+          setSelectedState(clickedFeature);
+          openOfferById(clickedFeature.id);
         }
         break;
       // Clusters
       case clusterLayer.id:
-        zoomToCluster(features[0]);
+        zoomToCluster(clickedFeature);
         break;
     }
   };
@@ -776,13 +829,16 @@ export default function SearchMap({
       return;
     }
 
+    const requestId = ++offersRequestRef.current;
     try {
       // @TODO: cancellation when need to re-fetch
       const data = await queryOffers({
         filters,
         ...boundingBox,
       });
-      setOffers(data as unknown as FeatureCollection);
+      if (requestId === offersRequestRef.current) {
+        setOffers(data as unknown as FeatureCollection);
+      }
     } catch {
       // @TODO Error handling
       if (process.env.NODE_ENV === 'development') {
@@ -791,6 +847,77 @@ export default function SearchMap({
       }
     }
   }
+
+  // The search request has a small buffer so offers near the edge remain
+  // available while panning. The Results pane lists only pins and
+  // author-visible community notes inside the actual map viewport.
+  useEffect(() => {
+    const mapBounds = webGLSupported
+      ? getMapRef()?.getBounds()
+      : leafletMapState?.bounds;
+    const corners = mapBounds ? normalizeBoundsCorners(mapBounds) : undefined;
+    const northEast = corners?.northEast;
+    const southWest = corners?.southWest;
+    const zoom = leafletMapState?.zoom ?? viewport.zoom;
+    const hasViewport = Boolean(northEast && southWest) && zoom > MIN_ZOOM;
+
+    if (!hasViewport) {
+      onVisibleOffersChange([]);
+      onVisibleCommunityNoteThreadsChange([]);
+      return;
+    }
+
+    onVisibleOffersChange(
+      offers.features
+        .filter(feature => {
+          const [longitude, latitude] = feature.geometry.coordinates;
+          return isCoordinateInViewport(
+            longitude,
+            latitude,
+            southWest!,
+            northEast!,
+          );
+        })
+        .map(feature => feature.properties.id),
+    );
+
+    if (!communityNotesEnabled) {
+      onVisibleCommunityNoteThreadsChange([]);
+      return;
+    }
+
+    const threads = new Map<
+      string,
+      { notes: NostrEvent[]; plusCode: string }
+    >();
+
+    communityNotes.features.forEach(feature => {
+      const [longitude, latitude] = feature.geometry.coordinates;
+      if (
+        !isCoordinateInViewport(longitude, latitude, southWest!, northEast!)
+      ) {
+        return;
+      }
+
+      const properties = feature.properties as OfferFeatureProperties;
+      const plusCode = getPlusCodeFromEvent(properties)!;
+      const thread = threads.get(plusCode) || { notes: [], plusCode };
+      thread.notes.push(reconstructEvent(properties));
+      threads.set(plusCode, thread);
+    });
+
+    onVisibleCommunityNoteThreadsChange([...threads.values()]);
+  }, [
+    communityNotes,
+    communityNotesEnabled,
+    leafletMapState,
+    map,
+    offers,
+    onVisibleCommunityNoteThreadsChange,
+    onVisibleOffersChange,
+    viewport,
+    webGLSupported,
+  ]);
 
   // Load and store Mapbox object for quick reference on render
   useEffect(() => {
@@ -821,6 +948,7 @@ export default function SearchMap({
     clearPreviouslyHoveredState();
 
     // Update map offers
+    setOffers({ features: [], type: 'FeatureCollection' });
     updateOffers(webGLSupported ? undefined : leafletMapState);
   }, [filters]);
 
@@ -943,13 +1071,12 @@ export default function SearchMap({
   }
 
   return (
-    <div ref={gestureSurfaceRef}>
+    <div data-map-zoom={viewport.zoom} ref={gestureSurfaceRef}>
       <TypedReactMapGL
         reuseMaps
         controller={mapController}
         className="search-map"
         dragRotate={false}
-        height="100%"
         /*
          * Pointer event callbacks will only query the features under the pointer
          * of `interactiveLayerIds` layers. The getCursor callback will receive
@@ -968,7 +1095,7 @@ export default function SearchMap({
           persistentMapLocation?.latitude ?? DEFAULT_LOCATION.lat,
           persistentMapLocation?.longitude ?? DEFAULT_LOCATION.lng,
         ]}
-        mapboxApiAccessToken={MAPBOX_TOKEN}
+        mapboxApiAccessToken={MAPBOX_TOKEN || undefined}
         mapStyle={effectiveMapStyle}
         onClick={onClickMap}
         onError={event => handleMapError(event)}
@@ -979,9 +1106,9 @@ export default function SearchMap({
         ref={mapRef}
         touchRotate={false}
         {...viewport}
-        width={
-          '100%' /* this must come after viewport, or width gets set to fixed size via onViewportChange */
-        }
+        /* Keep viewport pixel dimensions from overriding responsive sizing. */
+        height="100%"
+        width="100%"
       >
         {viewport.zoom <= MIN_ZOOM && <SearchMapNoContent />}
         <MapScaleControl />
@@ -1036,13 +1163,3 @@ export default function SearchMap({
     </div>
   );
 }
-
-SearchMap.propTypes = {
-  filters: PropTypes.string,
-  isUserPublic: PropTypes.bool,
-  location: PropTypes.object,
-  locationBounds: PropTypes.object,
-  onOfferClose: PropTypes.func,
-  onOfferOpen: PropTypes.func,
-  onCommunityNoteOpen: PropTypes.func,
-};

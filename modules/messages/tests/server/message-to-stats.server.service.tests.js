@@ -5,9 +5,9 @@ const mongoose = require('mongoose');
 const _ = require('lodash');
 const async = require('async');
 const sinon = require('sinon');
-const proxyquire = require('proxyquire').noCallThru();
-const config = require('../../../../config/config');
-const messageToStatsService = require('../../server/services/message-to-stats.server.service');
+const winston = require('winston');
+const config = require('./../../../../config/config.mjs');
+const messageToStatsService = require('./../../server/services/message-to-stats.server.service.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
@@ -73,13 +73,8 @@ describe('Message to stats server service Unit Tests:', function () {
     it('does not log expected disabled influx errors', function (done) {
       const originalEnabled = config.influxdb.enabled;
       const originalNodeEnv = process.env.NODE_ENV;
-      const log = sinon.spy();
-      const service = proxyquire(
-        '../../server/services/message-to-stats.server.service',
-        {
-          '../../../../config/lib/logger': log,
-        },
-      );
+      const log = sinon.stub(winston.Logger.prototype, 'log');
+      const service = messageToStatsService;
 
       config.influxdb.enabled = false;
       process.env.NODE_ENV = 'development';

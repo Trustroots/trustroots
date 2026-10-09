@@ -4,8 +4,8 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const adminUsers = require('../../server/controllers/admin.users.server.controller');
-const errorService = require('../../../core/server/services/error.server.service');
+const adminUsers = require('./../../server/controllers/admin.users.server.controller.mjs');
+const errorService = require('./../../../core/server/services/error.server.service.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const should = require('should');
 
@@ -13,6 +13,9 @@ const User = mongoose.model('User');
 const Contact = mongoose.model('Contact');
 const Offer = mongoose.model('Offer');
 const ReferenceThread = mongoose.model('ReferenceThread');
+const AdminNote = mongoose.model('AdminNote');
+const Message = mongoose.model('Message');
+const Thread = mongoose.model('Thread');
 
 function mockResponse() {
   let resolveResponse;
@@ -591,7 +594,12 @@ describe('Admin users controller unit tests', () => {
       const [admin, target] = await utils.saveUsers(utils.generateUsers(2));
       target.roles = ['user', 'volunteer'];
       await target.save();
-      for (const action of ['add', 'add', 'remove', 'remove']) {
+      for (const [index, action] of [
+        'add',
+        'add',
+        'remove',
+        'remove',
+      ].entries()) {
         const res = mockResponse();
         await adminUsers.changeRole(
           {
@@ -607,6 +615,7 @@ describe('Admin users controller unit tests', () => {
             ? ['user', 'volunteer', 'welcome-team']
             : ['user', 'volunteer'],
         );
+        updated.authVersion.should.equal([1, 1, 2, 2][index]);
       }
       const notes = await mongoose
         .model('AdminNote')
@@ -675,6 +684,53 @@ describe('Admin users controller unit tests', () => {
       const updated = await User.findById(target._id).exec();
       updated.roles.should.containEql('volunteer-alumni');
       updated.roles.should.not.containEql('volunteer');
+    });
+
+    it('increments a missing legacy authVersion for concurrent role changes', async () => {
+      const [admin, target] = await utils.saveUsers(utils.generateUsers(2));
+      await User.collection.updateOne(
+        { _id: target._id },
+        { $unset: { authVersion: '' } },
+      );
+
+      const responses = await Promise.all(
+        ['volunteer', 'welcome-team'].map(role => {
+          const res = mockResponse();
+          return adminUsers
+            .changeRole(
+              { body: { id: String(target._id), role }, user: admin },
+              res,
+            )
+            .then(() => res);
+        }),
+      );
+
+      responses.forEach(res => res.body.message.should.equal('Role changed.'));
+      const updated = await User.findById(target._id).exec();
+      updated.authVersion.should.equal(2);
+      updated.roles.should.containEql('volunteer');
+      updated.roles.should.containEql('welcome-team');
+    });
+
+    it('updates a legacy account whose roles field is absent', async () => {
+      const [admin, target] = await utils.saveUsers(utils.generateUsers(2));
+      await User.collection.updateOne(
+        { _id: target._id },
+        { $unset: { roles: '' } },
+      );
+
+      const res = mockResponse();
+      await adminUsers.changeRole(
+        {
+          body: { id: String(target._id), role: 'welcome-team' },
+          user: admin,
+        },
+        res,
+      );
+
+      res.body.message.should.equal('Role changed.');
+      const updated = await User.findById(target._id).exec();
+      updated.roles.should.deepEqual(['welcome-team']);
     });
 
     it('returns 404 when the target user does not exist', async () => {
@@ -768,6 +824,72 @@ describe('Admin users controller unit tests', () => {
       updated.roles.should.not.containEql('suspended');
     });
 
+    it('removes a shadowban without changing other roles or profile settings', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(2));
+      const target = users[1];
+      target.roles = ['user', 'shadowban', 'suspended', 'volunteer'];
+      target.public = true;
+      target.newsletter = true;
+      await target.save();
+      const hiddenMessage = await new Message({
+        content: 'Earlier hidden message.',
+        userFrom: target._id,
+        userTo: users[0]._id,
+        read: true,
+        shadowHidden: true,
+      }).save();
+
+      const res = mockResponse();
+      await adminUsers.changeRole(
+        {
+          body: {
+            id: target._id.toString(),
+            role: 'shadowban',
+            action: 'remove',
+          },
+          user: users[0],
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(200);
+      const updated = await User.findById(target._id).exec();
+      updated.roles.should.deepEqual(['user', 'suspended', 'volunteer']);
+      updated.public.should.be.true();
+      updated.newsletter.should.be.true();
+      const oldMessage = await Message.findById(hiddenMessage._id).exec();
+      oldMessage.shadowHidden.should.be.true();
+      const recipientThread = await Thread.findOne({
+        userFrom: target._id,
+        userTo: users[0]._id,
+      }).exec();
+      should.not.exist(recipientThread);
+      const note = await AdminNote.findOne({ user: target._id }).exec();
+      note.note.should.equal(
+        '<p><b>Performed action:</b></p><p><i>User unshadowbanned.</i></p>',
+      );
+    });
+
+    it('rejects removal of unsupported moderation roles', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(1));
+      const res = mockResponse();
+
+      await adminUsers.changeRole(
+        {
+          body: {
+            id: users[0]._id.toString(),
+            role: 'suspended',
+            action: 'remove',
+          },
+          user: users[0],
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Invalid role.');
+    });
+
     it('suspends a user and removes shadowban role', async () => {
       const users = await utils.saveUsers(utils.generateUsers(2));
       const target = users[1];
@@ -807,6 +929,23 @@ describe('Admin users controller unit tests', () => {
   });
 
   describe('usernameToUserId', () => {
+    it('rejects structured and oversized usernames before looking up an account', async () => {
+      const find = sinon.spy(User, 'findOne');
+      for (const username of [
+        { $ne: null },
+        ['sample-member'],
+        null,
+        12,
+        'a'.repeat(321),
+      ]) {
+        const res = mockResponse();
+        const next = sinon.spy();
+        await adminUsers.usernameToUserId({ body: { username } }, res, next);
+        res.statusCode.should.equal(400);
+        next.called.should.be.false();
+      }
+      find.called.should.be.false();
+    });
     it('attaches a user id when the username exists', async () => {
       const users = await utils.saveUsers(utils.generateUsers(1));
       const req = { body: { username: users[0].username } };

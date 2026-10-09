@@ -1,0 +1,92 @@
+name: PR line-change summaries
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+  workflow_run:
+    workflows: [Tests]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      before_pr:
+        description: Update open PRs with numbers below this value
+        required: true
+        default: '3000'
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  current-pr:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pr-line-changes-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      # Execute only trusted main-branch tooling. PR commits are fetched as data.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Update this PR comment
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { backfill } = require('./scripts/coverage/backfill-pr-line-changes');
+            await backfill({
+              github,
+              ...context.repo,
+              before: context.issue.number + 1,
+              only: context.issue.number,
+              cwd: process.cwd(),
+            });
+  backfill:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Update open PR comments
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          BEFORE_PR: ${{ inputs.before_pr }}
+        with:
+          script: |
+            const { backfill } = require('./scripts/coverage/backfill-pr-line-changes');
+            const updated = await backfill({
+              github,
+              ...context.repo,
+              before: Number(process.env.BEFORE_PR),
+              cwd: process.cwd(),
+            });
+            core.summary.addRaw(`Updated ${updated.length} open PR summaries: ${updated.map(number => `#${number}`).join(', ') || 'none'}.`);
+            await core.summary.write();
+  completed-tests:
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Retain line counts after an older PR updates its coverage comment
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { backfill } = require('./scripts/coverage/backfill-pr-line-changes');
+            for (const pull of context.payload.workflow_run.pull_requests) {
+              await backfill({
+                github,
+                ...context.repo,
+                before: pull.number + 1,
+                only: pull.number,
+                cwd: process.cwd(),
+              });
+            }

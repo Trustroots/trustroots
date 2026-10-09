@@ -51,6 +51,7 @@ describe('Support request Model Unit Tests:', function () {
     for (const category of [
       'account',
       'reportMember',
+      'reportBug',
       'volunteering',
       'other',
     ]) {

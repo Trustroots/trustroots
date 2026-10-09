@@ -2,12 +2,8 @@
 
 .tribe-header {
   padding: 0;
-  position: fixed;
-  height: 100vh;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  position: relative;
+  min-height: 100vh;
   .tribe-header-back {
     padding-top: (@navbar-height + 50px);
     margin-left: -30px;
@@ -28,8 +24,8 @@
 }
 .tribe-header-info {
   width: 100%;
-  min-height: 0;
-  height: 100%;
+  min-height: 100vh;
+  height: auto;
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -57,6 +53,16 @@
   }
   .tribe-join {
     white-space: normal;
+  }
+  .tribe-actions-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+    .btn {
+      margin: 0;
+    }
   }
 }
 // For non-authenticated members we show more text, so make header darker
@@ -97,6 +103,47 @@
       margin-left: 0;
       padding-left: 0;
     }
+  }
+}
+
+.circle-member-discovery {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  padding-top: 28px;
+  padding-bottom: 36px;
+  @media (min-width: @screen-sm-min) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.circle-member-section {
+  border-radius: 8px;
+  padding: 20px;
+  background: #f5f5f5;
+  h3 {
+    margin-top: 0;
+  }
+  li + li {
+    margin-top: 8px;
+  }
+}
+
+.circle-member-empty {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin: 0;
+  text-align: center;
+}
+
+.circle-member-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  .avatar {
+    flex: 0 0 auto;
+    border-radius: 50%;
   }
 }
 

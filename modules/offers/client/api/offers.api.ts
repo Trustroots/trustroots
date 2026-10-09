@@ -28,7 +28,7 @@ type OfferRequestOptions = AxiosRequestConfig & {
  */
 export async function getOffers(
   userId: string,
-  types: string,
+  types: string | string[],
   requestOptions: OfferRequestOptions = {},
 ): Promise<Offer[]> {
   try {

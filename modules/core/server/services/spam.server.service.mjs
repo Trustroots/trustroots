@@ -1,20 +1,16 @@
 import akismetApi from 'akismet-api';
-import config from '../../../../config/config.js';
-import log from '../../../../config/lib/logger.js';
-
+import config from './../../../../config/config.mjs';
+import log from './../../../../config/lib/logger.mjs';
 const { AkismetClient } = akismetApi;
-
 export const check = async message => {
   if (!config.akismet.enabled) {
     log('info', 'Akismet is not configured, spam check skipped.');
     return 'unknown';
   }
-
   if (!message.ip) {
     log('info', 'Akismet requires IP. Spam check skipped.');
     return 'unknown';
   }
-
   if (!message.useragent) {
     log('info', 'Akismet requires useragent. Spam check skipped.');
     return 'unknown';
@@ -26,19 +22,19 @@ export const check = async message => {
     charset: 'UTF-8',
     key: config.akismet.key,
   });
-
   try {
     const isSpam = await client.checkSpam(message);
-
     if (isSpam) {
       return 'spam';
     }
-
     return 'not-spam';
   } catch (err) {
     log('error', 'Akismet spam check errored.', err);
     return 'unknown';
   }
 };
-
-export default { check };
+const defaultInterop = {
+  check,
+};
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

@@ -1,18 +1,16 @@
-const proxyquire = require('proxyquire').noCallThru();
+let policyModule;
+before(async function () {
+  policyModule = await import('../../server/policies/tribes.server.policy.mjs');
+});
 const sinon = require('sinon');
 require('should');
 
 function loadPolicy() {
-  const mockAcl = {
-    allow: sinon.stub(),
-    areAnyRolesAllowed: sinon.stub(),
-  };
-  const createMemoryPolicy = () => mockAcl;
-  const policy = proxyquire('../../server/policies/tribes.server.policy', {
-    '../../../core/server/services/memory-policy.server.service':
-      createMemoryPolicy,
-  });
-  return { policy, mockAcl };
+  const implementation = policyModule;
+  const mockAcl = implementation._acl;
+  sinon.stub(mockAcl, 'allow');
+  sinon.stub(mockAcl, 'areAnyRolesAllowed');
+  return { policy: implementation.default, mockAcl };
 }
 
 function mockResponse() {
@@ -33,6 +31,8 @@ function mockResponse() {
 }
 
 describe('Tribes policy unit tests', () => {
+  afterEach(() => sinon.restore());
+
   it('registers admin, user, and guest tribe policies', () => {
     const { policy, mockAcl } = loadPolicy();
 
@@ -127,5 +127,21 @@ describe('Tribes policy unit tests', () => {
       .calledWith(['admin'], '/api/tribes/:tribe', 'get')
       .should.be.true();
     next.calledOnce.should.be.true();
+  });
+
+  it('keeps active circle-member listings private to signed-in roles', () => {
+    const { policy, mockAcl } = loadPolicy();
+    policy.invokeRolesPolicies();
+
+    const policies = mockAcl.allow.firstCall.args[0];
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/tribes/:tribe/members');
+    policies[1].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/tribes/:tribe/members');
+    policies[2].allows
+      .map(allow => allow.resources)
+      .should.not.containEql('/api/tribes/:tribe/members');
   });
 });

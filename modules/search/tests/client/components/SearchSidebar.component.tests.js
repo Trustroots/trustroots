@@ -18,7 +18,7 @@ jest.mock('use-debounce', () => {
         [],
       );
 
-      return [stable];
+      return stable;
     },
   };
 });
@@ -89,6 +89,11 @@ const defaultProps = {
   },
   isLoadingOffer: false,
   offer: null,
+  offers: [],
+  communityNoteThreads: [],
+  onOfferSelect: jest.fn(),
+  onCommunityNoteSelect: jest.fn(),
+  onBackToOffers: jest.fn(),
   onCloseSidebar: jest.fn(),
   onCommunityNotesToggle: jest.fn(),
   onFiltersChange: jest.fn(),

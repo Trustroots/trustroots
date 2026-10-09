@@ -6,12 +6,12 @@ const os = require('os');
 const path = require('path');
 const sinon = require('sinon');
 const multer = require('multer');
-const config = require('../../../../../config/config');
-const uploadService = require('../../../server/services/file-upload.service');
+const config = require('./../../../../../config/config.mjs');
+const uploadService = require('./../../../server/services/file-upload.service.mjs');
 const multerPrototype = Object.getPrototypeOf(multer());
 let singleStub;
 
-const errorService = require('../../../server/services/error.server.service');
+const errorService = require('./../../../server/services/error.server.service.mjs');
 require('should');
 
 function writeTempFile(buffer) {

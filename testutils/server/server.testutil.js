@@ -1,8 +1,8 @@
 /**
  * Utility helpers for testing backend code
  */
-const config = require('../../config/config');
-const agenda = require('../../config/lib/agenda');
+const config = require('./../../config/config.mjs');
+const agenda = require('./../../config/lib/agenda.mjs');
 
 /**
  * Helper for testing Agenda jobs

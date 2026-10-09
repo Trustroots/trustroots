@@ -4,7 +4,7 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const adminAuditLog = require('../../server/controllers/admin.audit-log.server.controller');
+const adminAuditLog = require('./../../server/controllers/admin.audit-log.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
@@ -164,7 +164,7 @@ describe('Admin audit log controller unit tests', () => {
         sort: () => ({
           limit: () => ({
             populate: () => ({
-              exec: cb => cb(null, null),
+              exec: async () => null,
             }),
           }),
         }),
@@ -182,7 +182,9 @@ describe('Admin audit log controller unit tests', () => {
         sort: () => ({
           limit: () => ({
             populate: () => ({
-              exec: cb => cb(new Error('lookup failed')),
+              exec: async () => {
+                throw new Error('lookup failed');
+              },
             }),
           }),
         }),

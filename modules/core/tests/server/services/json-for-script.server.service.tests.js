@@ -1,6 +1,6 @@
 const should = require('should');
 const nunjucks = require('nunjucks');
-const jsonForScript = require('../../../server/services/json-for-script.server.service');
+const jsonForScript = require('./../../../server/services/json-for-script.server.service.mjs');
 
 describe('Bootstrap JSON formatting', () => {
   it('exposes the same function through the ESM entry point', async () => {

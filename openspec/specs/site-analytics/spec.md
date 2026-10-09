@@ -10,7 +10,9 @@ environment.
 ### Requirement: Environment-specific analytics configuration
 
 The system SHALL load the Umami analytics script using the script address and
-website identifier configured for the active application environment.
+website identifier configured for the active application environment when analytics is enabled.
+Analytics SHALL load asynchronously without holding up document readiness.
+Operators SHALL be able to disable script loading with `umami.enabled: false`.
 
 #### Scenario: Application renders a page with analytics configured
 
@@ -26,3 +28,8 @@ security policy so that analytics requests can complete.
 
 - **WHEN** a browser loads a page with Umami analytics configured
 - **THEN** the content security policy permits the configured analytics script and its requests
+
+#### Scenario: Analytics is disabled or unavailable
+
+- **WHEN** an operator disables analytics or the analytics host is unavailable
+- **THEN** the application renders and authentication remains independent of analytics delivery

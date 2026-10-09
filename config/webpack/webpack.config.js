@@ -18,7 +18,7 @@ const { join } = require('path');
 const shims = require('./webpack.shims');
 const basedir = join(__dirname, '../..');
 
-const config = require('../config');
+const config = require('./../config.mjs');
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
@@ -112,6 +112,12 @@ module.exports = webpackMerge.merge(shims, {
   module: {
     rules: [
       {
+        // Babel converts these ESM-only packages to CommonJS for supported
+        // browsers. Let Webpack provide the CommonJS exports object too.
+        test: /node_modules[\\/](?:@noble|@scure)[\\/].*\.js$/,
+        type: 'javascript/auto',
+      },
+      {
         test: /\.[jt]sx?$/,
         // Transpile our own code, plus the modern-syntax dependencies that
         // must match the application's supported browser targets.
@@ -129,8 +135,12 @@ module.exports = webpackMerge.merge(shims, {
       },
       {
         test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
+        // Prevent Webpack 5 asset modules from emitting url-loader's JS result
+        // as a second, unusable font file referenced by extracted CSS.
+        type: 'javascript/auto',
         loader: 'url-loader',
         options: {
+          esModule: false,
           limit: 10000,
           name: '[name].[hash:7].[ext]',
           outputPath: 'fonts/',
@@ -138,10 +148,12 @@ module.exports = webpackMerge.merge(shims, {
       },
       {
         test: /\.(png|jpe?g|gif|svg|webp)$/,
+        type: 'javascript/auto',
         use: [
           {
             loader: 'url-loader',
             options: {
+              esModule: false,
               limit: 10000,
               name: '[name]-[hash:7].[ext]',
               outputPath: 'images/',

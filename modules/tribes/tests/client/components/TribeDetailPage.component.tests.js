@@ -3,7 +3,9 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
-import TribeDetailPage from '@/modules/tribes/client/components/TribeDetailPage.component';
+import TribeDetailPage, {
+  getTribeHeaderBackgroundStyle,
+} from '@/modules/tribes/client/components/TribeDetailPage.component';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 
 jest.mock('@/modules/tribes/client/api/tribes.api');
@@ -35,7 +37,32 @@ jest.mock('@/modules/tribes/client/components/JoinButton', () => ({
       <button onClick={() => onUpdated({})} type="button">
         Ignore circle update
       </button>
+      <button
+        onClick={() =>
+          onUpdated({
+            tribe: {
+              _id: 'tribe-1',
+              slug: 'hitchhikers',
+              label: 'Hitchhikers',
+              count: 42,
+            },
+            user: { memberIds: ['tribe-1'] },
+          })
+        }
+        type="button"
+      >
+        Join as circle member
+      </button>
     </>
+  ),
+}));
+
+jest.mock('@/modules/tribes/client/components/CircleMemberDiscovery', () => ({
+  __esModule: true,
+  default: ({ circle, user }) => (
+    <div data-testid="circle-member-discovery">
+      {circle.slug}:{user._id}
+    </div>
   ),
 }));
 
@@ -119,6 +146,39 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     );
   });
 
+  it('renders the header when the circle has no background image or colour', async () => {
+    tribesApi.get.mockResolvedValue({
+      _id: 'tribe-1',
+      slug: 'hitchhikers',
+      label: 'Hitchhikers',
+      count: 12,
+    });
+
+    render(
+      <TribeDetailPage
+        circle="hitchhikers"
+        onMembershipUpdated={jest.fn()}
+        user={{ _id: 'user-1', username: 'alice' }}
+      />,
+    );
+
+    expect(
+      await screen.findByRole('heading', { name: 'Hitchhikers' }),
+    ).toBeInTheDocument();
+    expect(
+      JSON.stringify(getTribeHeaderBackgroundStyle({ slug: 'hitchhikers' })),
+    ).not.toMatch(/background-image|background-color/);
+    const styledBackground = JSON.stringify(
+      getTribeHeaderBackgroundStyle({
+        slug: 'hitchhikers',
+        image: 'circle-photo',
+        color: '123456',
+      }),
+    );
+    expect(styledBackground).toContain('background-image');
+    expect(styledBackground).toContain('background-color');
+  });
+
   it('prompts guests to sign up for the circle', async () => {
     render(
       <TribeDetailPage
@@ -155,6 +215,34 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
       tribe: expect.objectContaining({ _id: 'tribe-1', count: 42 }),
     });
     expect(await screen.findByText('42 members')).toBeInTheDocument();
+  });
+
+  it('shows member discovery for current and newly joined members', async () => {
+    const { rerender } = render(
+      <TribeDetailPage
+        circle="hitchhikers"
+        onMembershipUpdated={jest.fn()}
+        user={{ _id: 'member-1', memberIds: ['tribe-1'] }}
+      />,
+    );
+    expect(
+      await screen.findByTestId('circle-member-discovery'),
+    ).toHaveTextContent('hitchhikers:member-1');
+
+    rerender(
+      <TribeDetailPage
+        circle="hitchhikers"
+        onMembershipUpdated={jest.fn()}
+        user={{ _id: 'member-2' }}
+      />,
+    );
+    await screen.findByRole('heading', { name: 'Hitchhikers' });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Join as circle member' }),
+    );
+    expect(
+      await screen.findByTestId('circle-member-discovery'),
+    ).toHaveTextContent('hitchhikers:member-2');
   });
 
   it('shows the empty-member copy when a circle has no members', async () => {

@@ -1,16 +1,26 @@
-import { createRequire } from 'node:module';
-import errorService from '../services/error.server.service.js';
-import userProfile from '../../../users/server/controllers/users.profile.server.controller.js';
-import textService from '../services/text.server.service.js';
-import log from '../../../../config/lib/logger.js';
-import deprecatedLanguages from '../../../../config/languages/deprecated.js';
+import { readFileSync } from 'node:fs';
+import errorService from './../services/error.server.service.mjs';
+import userProfile from './../../../users/server/controllers/users.profile.server.controller.mjs';
+import textService from './../services/text.server.service.mjs';
+import log from './../../../../config/lib/logger.mjs';
+import deprecatedLanguages from './../../../../config/languages/deprecated.mjs';
 import reactRouteOwnership from '../../shared/react-route-ownership.js';
-
-const require = createRequire(import.meta.url);
-const languagesObject = require('../../../../config/languages/languages.json');
-const languagesArray = require('../../../../config/languages/languages-array.json');
+const languagesObject = JSON.parse(
+  readFileSync(
+    new URL('../../../../config/languages/languages.json', import.meta.url),
+    'utf8',
+  ),
+);
+const languagesArray = JSON.parse(
+  readFileSync(
+    new URL(
+      '../../../../config/languages/languages-array.json',
+      import.meta.url,
+    ),
+    'utf8',
+  ),
+);
 const service = {};
-
 const { getReactRouteAccessRedirect, getReactRoutePolicy } =
   reactRouteOwnership;
 
@@ -46,7 +56,6 @@ service.renderIndex = function (req, res) {
   if (req.path === '/signup') {
     renderVars.invite = true;
   }
-
   const reactRoutePolicy = getReactRoutePolicy(req.path);
   const accessRedirect = getReactRouteAccessRedirect(
     reactRoutePolicy,
@@ -54,7 +63,6 @@ service.renderIndex = function (req, res) {
     req.originalUrl,
   );
   const redirect = reactRoutePolicy?.redirectTo || accessRedirect;
-
   if (redirect) {
     return res.redirect(redirect);
   }
@@ -73,7 +81,9 @@ service.renderNotFound = function (req, res) {
       res.render('404.server.view.html');
     },
     'application/json'() {
-      res.json({ message: errorService.getErrorMessageByKey('not-found') });
+      res.json({
+        message: errorService.getErrorMessageByKey('not-found'),
+      });
     },
     default() {
       res.send(errorService.getErrorMessageByKey('not-found'));
@@ -130,7 +140,6 @@ service.getLanguages = (req, res) => {
   // Return language list in object format
   res.json(languagesObject);
 };
-
 const defaultExport = service;
 export default defaultExport;
 export const getLanguages = defaultExport.getLanguages;
@@ -140,3 +149,4 @@ export const receiveExpectCTViolationReport =
   defaultExport.receiveExpectCTViolationReport;
 export const renderIndex = defaultExport.renderIndex;
 export const renderNotFound = defaultExport.renderNotFound;
+export { defaultExport as 'module.exports' };

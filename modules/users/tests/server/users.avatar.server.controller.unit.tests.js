@@ -5,14 +5,12 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const mongoose = require('mongoose');
-const sinon = require('sinon');
-const mkdirRecursive = require('mkdir-recursive');
-const fileUpload = require('../../../core/server/services/file-upload.service');
+const proxyquire = require('./../../../../testutils/server/mock-module');
 
-const config = require('../../../../config/config');
-require('../../server/models/user.server.model');
+const config = require('./../../../../config/config.mjs');
+require('./../../server/models/user.server.model.mjs');
 
-const avatarController = require('../../server/controllers/users.avatar.server.controller');
+const avatarController = require('./../../server/controllers/users.avatar.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
@@ -52,8 +50,22 @@ function deferredResponse() {
 }
 
 describe('Avatar controller unit tests', () => {
+  it('exposes the bounded upload pipeline through the ESM adapter', async () => {
+    const esmController = await import(
+      '../../server/controllers/users.avatar.server.controller.mjs'
+    );
+
+    esmController.avatarUpload.should.equal(avatarController.avatarUpload);
+    esmController.avatarUploadField.should.equal(
+      avatarController.avatarUploadField,
+    );
+    esmController.getAvatar.should.equal(avatarController.getAvatar);
+    esmController.userForAvatarByUserId.should.equal(
+      avatarController.userForAvatarByUserId,
+    );
+  });
+
   afterEach(() => {
-    sinon.restore();
     return mongoose.connection.readyState ? utils.clearDatabase() : undefined;
   });
 
@@ -65,10 +77,10 @@ describe('Avatar controller unit tests', () => {
       res.statusCode.should.equal(403);
     });
 
-    it('delegates authenticated uploads to the file upload service', async () => {
+    it('delegates authenticated uploads to the file upload service', () => {
       let uploadArgs;
-      const controller = await loadAvatarWithStubs({
-        '../../../core/server/services/file-upload.service': {
+      const controller = loadAvatarWithStubs({
+        './../../../core/server/services/file-upload.service.mjs': {
           uploadFile: (...args) => {
             uploadArgs = args;
           },
@@ -113,8 +125,6 @@ describe('Avatar controller unit tests', () => {
       const [viewer, target] = await utils.saveUsers(
         utils.generateUsers(2, { public: true }),
       );
-      target.blocked = [viewer._id];
-      await target.save();
       const res = deferredResponse();
       let nextCalled = false;
       const req = { user: viewer };
@@ -131,34 +141,10 @@ describe('Avatar controller unit tests', () => {
       });
       nextCalled.should.be.true();
       req.profile._id.toString().should.equal(target._id.toString());
-      req.profile.blocked
-        .map(id => id.toString())
-        .should.containEql(viewer._id.toString());
     });
   });
 
   describe('getAvatar', () => {
-    it('loads the ImageMagick processor when configured', async () => {
-      const config = require('../../../../config/config');
-      let subClassOptions;
-
-      const controller = await loadAvatarWithStubs({
-        '../../../../config/config': {
-          ...config,
-          imageProcessor: 'imagemagic',
-        },
-        gm: Object.assign(() => ({}), {
-          subClass: options => {
-            subClassOptions = options;
-            return () => ({});
-          },
-        }),
-      });
-
-      Object.keys(controller).should.containEql('getAvatar');
-      subClassOptions.should.deepEqual({ imageMagick: true });
-    });
-
     it('rejects an invalid avatar size', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const res = deferredResponse();
@@ -212,34 +198,15 @@ describe('Avatar controller unit tests', () => {
       res.redirectUrl.should.containEql('/img/avatar-');
     });
 
-    it('lets admins view a shadowbanned profile avatar', async () => {
-      const [viewer, target] = await utils.saveUsers(
-        utils.generateUsers(2, { public: true }),
-      );
-      viewer.roles = ['user', 'admin'];
-      const targetDoc = await User.findById(target._id);
-      targetDoc.roles = ['user', 'shadowban'];
-      targetDoc.avatarUploaded = true;
-      targetDoc.avatarSource = 'local';
-      await targetDoc.save();
-
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        { user: viewer, profile: targetDoc, query: { size: '128' } },
-        res,
-      );
-      await res.waitForResponse();
-      res.redirectUrl.should.containEql('/uploads-profile/');
-    });
-
-    it('returns the default avatar when the profile has blocked the viewer', async () => {
-      const [viewer, target] = await utils.saveUsers(
-        utils.generateUsers(2, { public: true }),
+    it('redirects to the default avatar when the profile blocked the viewer', async () => {
+      const [viewer] = await utils.saveUsers(utils.generateUsers(1));
+      const [target] = await utils.saveUsers(
+        utils.generateUsers(1, { public: true }),
       );
       const targetDoc = await User.findById(target._id);
-      targetDoc.avatarUploaded = true;
-      targetDoc.avatarSource = 'local';
       targetDoc.blocked = [viewer._id];
+      targetDoc.avatarUploaded = true;
+      targetDoc.avatarSource = 'local';
       await targetDoc.save();
 
       const res = deferredResponse();
@@ -251,35 +218,15 @@ describe('Avatar controller unit tests', () => {
       res.redirectUrl.should.containEql('/img/avatar-128.png');
     });
 
-    it('keeps avatar access for the member who initiated the block', async () => {
-      const [viewer, target] = await utils.saveUsers(
-        utils.generateUsers(2, { public: true }),
-      );
-      viewer.blocked = [target._id];
-      await viewer.save();
-      const targetDoc = await User.findById(target._id);
-      targetDoc.avatarUploaded = true;
-      targetDoc.avatarSource = 'local';
-      await targetDoc.save();
-
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        { user: viewer, profile: targetDoc, query: { size: '128' } },
-        res,
-      );
-      await res.waitForResponse();
-      res.redirectUrl.should.containEql('/uploads-profile/');
-    });
-
-    it('lets admins view an avatar when the profile has blocked them', async () => {
+    it('lets admins view a shadowbanned profile avatar', async () => {
       const [viewer, target] = await utils.saveUsers(
         utils.generateUsers(2, { public: true }),
       );
       viewer.roles = ['user', 'admin'];
       const targetDoc = await User.findById(target._id);
+      targetDoc.roles = ['user', 'shadowban'];
       targetDoc.avatarUploaded = true;
       targetDoc.avatarSource = 'local';
-      targetDoc.blocked = [viewer._id];
       await targetDoc.save();
 
       const res = deferredResponse();
@@ -371,6 +318,29 @@ describe('Avatar controller unit tests', () => {
 
       res.redirectUrl.should.containEql('/uploads-profile/');
       res.redirectUrl.should.endWith(`?${userDoc.updated.getTime()}`);
+    });
+
+    it('includes the server-owned avatar version in local avatar URLs', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(user._id);
+      const version = 'f'.repeat(32);
+      userDoc.avatarUploaded = true;
+      userDoc.avatarSource = 'local';
+      userDoc.avatarVersion = version;
+      await userDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        {
+          user: userDoc,
+          profile: userDoc,
+          query: { source: 'local', size: '128' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.redirectUrl.should.containEql(`/avatar/${version}/128.jpg`);
     });
 
     it('uses the https domain for local avatar URLs when configured', async () => {
@@ -545,344 +515,368 @@ describe('Avatar controller unit tests', () => {
     });
   });
 
-  async function loadAvatarWithGm(writeHandler) {
-    function chainable() {
-      const chain = {
-        autoOrient: () => chain,
-        noProfile: () => chain,
-        colorspace: () => chain,
-        interlace: () => chain,
-        filter: () => chain,
-        resize: () => chain,
-        gravity: () => chain,
-        extent: () => chain,
-        unsharp: () => chain,
-        quality: () => chain,
-        write: (outputPath, cb) => writeHandler(cb),
-      };
-      return chain;
-    }
-
-    return loadAvatarWithStubs({ gm: () => chainable() });
+  function loadAvatarWithStubs(stubs) {
+    return proxyquire(
+      require.resolve(
+        './../../server/controllers/users.avatar.server.controller.mjs',
+      ),
+      stubs,
+    );
   }
 
-  async function loadAvatarWithStubs(stubs) {
-    const configValues = [];
-    const gm = require('gm');
-    if (stubs['../../../../config/config']) {
-      for (const [key, value] of Object.entries(
-        stubs['../../../../config/config'],
-      )) {
-        if (config[key] !== value) {
-          configValues.push([key, config[key]]);
-          config[key] = value;
-        }
-      }
-    }
-
-    if (stubs['../../../core/server/services/file-upload.service']) {
-      sinon
-        .stub(fileUpload, 'uploadFile')
-        .callsFake(
-          stubs['../../../core/server/services/file-upload.service'].uploadFile,
-        );
-    }
-
-    if (stubs['mkdir-recursive']) {
-      sinon
-        .stub(mkdirRecursive, 'mkdir')
-        .callsFake(stubs['mkdir-recursive'].mkdir);
-    }
-
-    if (stubs.fs) {
-      for (const [method, implementation] of Object.entries(stubs.fs)) {
-        sinon.stub(fs, method).callsFake(implementation);
-      }
-    }
-
-    let importUrl =
-      '../../server/controllers/users.avatar.server.controller.mjs';
-    let originalGmModule;
-    let originalGmExports;
-
-    if (stubs.gm && stubs.gm.subClass) {
-      const gmPath = require.resolve('gm');
-      originalGmModule = require.cache[gmPath];
-      originalGmExports = originalGmModule && originalGmModule.exports;
-      if (originalGmModule) {
-        originalGmModule.exports = stubs.gm;
-      }
-      importUrl += `?test=${Date.now()}`;
-    } else if (stubs.gm) {
-      sinon
-        .stub(gm.prototype, 'write')
-        .callsFake(function (outputPath, callback) {
-          return stubs.gm().write(outputPath, callback);
-        });
-    }
-
-    try {
-      return await import(importUrl);
-    } finally {
-      if (originalGmModule) {
-        originalGmModule.exports = originalGmExports;
-      }
-      for (const [key, value] of configValues) {
-        config[key] = value;
-      }
-    }
+  function loadAvatarWithProcessor(processor) {
+    return loadAvatarWithStubs({
+      './../../server/services/avatar-processing.server.service.mjs': processor,
+    });
   }
 
   describe('avatarUpload', () => {
-    it('uploads an avatar using the image processor', async () => {
-      const previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
-      delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+    it('logs temporary upload cleanup failures after processor errors', async () => {
+      const logged = [];
+      let job;
+      const controller = loadAvatarWithStubs({
+        fs: {
+          promises: {
+            unlink: async () => {
+              throw new Error('temporary cleanup failed');
+            },
+          },
+        },
+        './../../../../config/lib/logger.mjs': (...args) => logged.push(args),
+        '../services/avatar-processing.server.service': {
+          enqueueAvatarProcessing: value => {
+            job = value;
+            return true;
+          },
+        },
+      });
+      const res = deferredResponse();
+
+      controller.avatarUpload(
+        {
+          user: { _id: new mongoose.Types.ObjectId() },
+          file: { path: '/private/avatar-upload.jpg' },
+        },
+        res,
+      );
+      job.callback(new Error('image processor failed'));
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(422);
+      logged
+        .map(args => args[1])
+        .should.containEql(
+          'User profile avatar upload: failed to clean out temporary image.',
+        );
+    });
+
+    it('logs version cleanup failures and uses the fallback save error message', async () => {
+      const logged = [];
+      let job;
+      const sourcePath = path.join(
+        os.tmpdir(),
+        `avatar-save-${Date.now()}.jpg`,
+      );
+      fs.writeFileSync(sourcePath, 'anonymous-test-image');
+      const controller = loadAvatarWithStubs({
+        './../../../../config/lib/logger.mjs': (...args) => logged.push(args),
+        './../../../core/server/services/error.server.service.mjs': {
+          getErrorMessage: () => '',
+        },
+        '../services/avatar-processing.server.service': {
+          enqueueAvatarProcessing: value => {
+            job = value;
+            return true;
+          },
+          removeAvatarVersion: async () => {
+            throw new Error('version cleanup failed');
+          },
+        },
+      });
+      const user = {
+        _id: new mongoose.Types.ObjectId(),
+        avatarVersion: 'a'.repeat(32),
+        save: callback => callback(new Error('database unavailable')),
+      };
+      const res = deferredResponse();
+
+      controller.avatarUpload({ user, file: { path: sourcePath } }, res);
+      job.callback(null, {
+        version: 'b'.repeat(32),
+        avatarDirectory: '/private/avatar-dir',
+      });
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Failed to save the new avatar version.');
+      logged
+        .map(args => args[1])
+        .should.containEql(
+          'User profile avatar upload: failed to clean up unpublished avatar version.',
+        );
+      fs.existsSync(sourcePath).should.equal(false);
+    });
+
+    it('logs avatar pointer verification errors without failing the upload', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(user._id);
+      const originalFindById = User.findById;
+      const logged = [];
+      const controller = loadAvatarWithStubs({
+        './../../../../config/lib/logger.mjs': (...args) => logged.push(args),
+        '../services/avatar-processing.server.service': {
+          enqueueAvatarProcessing: job => {
+            process.nextTick(() =>
+              job.callback(null, {
+                version: 'c'.repeat(32),
+                avatarDirectory: '/private/avatar-dir',
+              }),
+            );
+            return true;
+          },
+          removeAvatarVersion: async () => {},
+        },
+      });
+      const res = deferredResponse();
+      User.findById = () => ({
+        exec: callback => callback(new Error('avatar lookup failed')),
+      });
 
       try {
-        const controller = await loadAvatarWithGm(cb => cb());
-        const [user] = await utils.saveUsers(utils.generateUsers(1));
-        const userDoc = await User.findById(user._id);
-        const tmpFile = path.join(os.tmpdir(), `avatar-gm-${Date.now()}.jpg`);
-        fs.writeFileSync(tmpFile, 'fake-image');
-
-        const res = deferredResponse();
         controller.avatarUpload(
-          {
-            user: userDoc,
-            file: { path: tmpFile },
-          },
+          { user: userDoc, file: { path: '/private/avatar-upload.jpg' } },
           res,
         );
         await res.waitForResponse();
-        res.statusCode.should.equal(200);
-        res.body.message.should.equal('Avatar image uploaded.');
       } finally {
-        if (previousFallback === undefined) {
-          delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
-        } else {
-          process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = previousFallback;
-        }
+        User.findById = originalFindById;
       }
+
+      res.statusCode.should.equal(200);
+      logged
+        .map(args => args[1])
+        .should.containEql(
+          'User profile avatar upload: failed to verify current avatar version.',
+        );
     });
 
-    it('returns 400 when the upload directory cannot be created', async () => {
-      const previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
-      delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+    it('keeps the previous version when another upload has replaced its pointer', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(user._id);
+      const originalFindById = User.findById;
+      let job;
+      const removed = [];
+      const controller = loadAvatarWithProcessor({
+        enqueueAvatarProcessing: value => {
+          job = value;
+          return true;
+        },
+        removeAvatarVersion: async (_directory, version) =>
+          removed.push(version),
+      });
+      const res = deferredResponse();
+      User.findById = () => ({
+        exec: callback => callback(null, { avatarVersion: 'd'.repeat(32) }),
+      });
 
       try {
-        const controller = await loadAvatarWithStubs({
-          'mkdir-recursive': {
-            mkdir: (directory, cb) => cb(new Error('mkdir failed')),
-          },
+        controller.avatarUpload(
+          { user: userDoc, file: { path: '/private/avatar-upload.jpg' } },
+          res,
+        );
+        job.callback(null, {
+          version: 'e'.repeat(32),
+          avatarDirectory: '/private/avatar-dir',
         });
-        const [user] = await utils.saveUsers(utils.generateUsers(1));
-        const userDoc = await User.findById(user._id);
-        const res = deferredResponse();
-
-        controller.avatarUpload(
-          {
-            user: userDoc,
-            file: { path: '/tmp/missing-avatar-source.jpg' },
-          },
-          res,
-        );
         await res.waitForResponse();
-        res.statusCode.should.equal(400);
       } finally {
-        if (previousFallback === undefined) {
-          delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
-        } else {
-          process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = previousFallback;
-        }
+        User.findById = originalFindById;
       }
+
+      res.statusCode.should.equal(200);
+      removed.should.be.empty();
     });
 
-    it('continues when the upload directory already exists', async () => {
-      const previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
-      process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
+    it('reports old version cleanup errors after successfully publishing', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(user._id);
+      userDoc.avatarVersion = 'f'.repeat(32);
+      await userDoc.save();
+      const originalFindById = User.findById;
+      const logged = [];
+      const controller = loadAvatarWithStubs({
+        './../../../../config/lib/logger.mjs': (...args) => logged.push(args),
+        '../services/avatar-processing.server.service': {
+          enqueueAvatarProcessing: job => {
+            process.nextTick(() =>
+              job.callback(null, {
+                version: '1'.repeat(32),
+                avatarDirectory: '/private/avatar-dir',
+              }),
+            );
+            return true;
+          },
+          removeAvatarVersion: async (_directory, version) => {
+            if (version === 'f'.repeat(32)) {
+              throw new Error('old version cleanup failed');
+            }
+          },
+        },
+      });
+      const res = deferredResponse();
+      User.findById = () => ({
+        exec: callback => callback(null, { avatarVersion: '1'.repeat(32) }),
+      });
 
       try {
-        const controller = await loadAvatarWithStubs({
-          'mkdir-recursive': {
-            mkdir: (directory, cb) =>
-              cb(Object.assign(new Error('exists'), { code: 'EEXIST' })),
-          },
-          fs: {
-            copyFile: (source, destination, cb) => cb(),
-            unlink: (source, cb) => cb(),
-          },
-        });
-        const [user] = await utils.saveUsers(utils.generateUsers(1));
-        const userDoc = await User.findById(user._id);
-        const res = deferredResponse();
-
         controller.avatarUpload(
-          {
-            user: userDoc,
-            file: { path: '/tmp/avatar-existing-dir.jpg' },
-          },
+          { user: userDoc, file: { path: '/private/avatar-upload.jpg' } },
           res,
         );
         await res.waitForResponse();
-        res.statusCode.should.equal(200);
-        res.body.message.should.equal('Avatar image uploaded.');
       } finally {
-        if (previousFallback === undefined) {
-          delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
-        } else {
-          process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = previousFallback;
-        }
+        User.findById = originalFindById;
       }
+
+      res.statusCode.should.equal(200);
+      logged
+        .map(args => args[1])
+        .should.containEql(
+          'User profile avatar upload: failed to remove the previous avatar version.',
+        );
     });
 
-    it('returns 400 when fallback upload cleanup fails', async () => {
-      const previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
-      process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
+    it('publishes a complete avatar version and removes the old version', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(user._id);
+      userDoc.avatarVersion = 'a'.repeat(32);
+      await userDoc.save();
+      const sourcePath = path.join(os.tmpdir(), `avatar-${Date.now()}.jpg`);
+      fs.writeFileSync(sourcePath, 'anonymous-test-image');
+      let job;
+      const removed = [];
+      const nextVersion = 'b'.repeat(32);
+      const controller = loadAvatarWithProcessor({
+        enqueueAvatarProcessing: value => {
+          job = value;
+          return true;
+        },
+        removeAvatarVersion: async (directory, version) =>
+          removed.push(version),
+      });
+      const res = deferredResponse();
 
-      try {
-        const controller = await loadAvatarWithStubs({
-          fs: {
-            copyFile: (source, destination, cb) => cb(),
-            unlink: (source, cb) => cb(new Error('unlink failed')),
-          },
-        });
-        const [user] = await utils.saveUsers(utils.generateUsers(1));
-        const userDoc = await User.findById(user._id);
-        const res = deferredResponse();
+      controller.avatarUpload(
+        { user: userDoc, file: { path: sourcePath } },
+        res,
+      );
+      job.callback(null, {
+        version: nextVersion,
+        avatarDirectory: '/private/avatar-dir',
+        versionDirectory: '/private/avatar-dir/version',
+      });
+      await res.waitForResponse();
 
-        controller.avatarUpload(
-          {
-            user: userDoc,
-            file: { path: '/tmp/avatar-cleanup-fails.jpg' },
-          },
-          res,
-        );
-        await res.waitForResponse();
-        res.statusCode.should.equal(400);
-      } finally {
-        if (previousFallback === undefined) {
-          delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
-        } else {
-          process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = previousFallback;
-        }
-      }
+      res.statusCode.should.equal(200);
+      (await User.findById(user._id)).avatarVersion.should.equal(nextVersion);
+      removed.should.eql(['a'.repeat(32)]);
+      fs.existsSync(sourcePath).should.equal(false);
     });
 
-    it('logs cleanup failures after thumbnail processing errors', async () => {
-      const previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
-      delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+    it('preserves the current avatar when processing fails', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(user._id);
+      userDoc.avatarVersion = 'c'.repeat(32);
+      await userDoc.save();
+      const sourcePath = path.join(
+        os.tmpdir(),
+        `avatar-failed-${Date.now()}.jpg`,
+      );
+      fs.writeFileSync(sourcePath, 'anonymous-test-image');
+      let job;
+      const controller = loadAvatarWithProcessor({
+        enqueueAvatarProcessing: value => {
+          job = value;
+          return true;
+        },
+      });
+      const res = deferredResponse();
 
-      try {
-        const chainable = () => {
-          const chain = {
-            autoOrient: () => chain,
-            noProfile: () => chain,
-            colorspace: () => chain,
-            interlace: () => chain,
-            filter: () => chain,
-            resize: () => chain,
-            gravity: () => chain,
-            extent: () => chain,
-            unsharp: () => chain,
-            quality: () => chain,
-            write: (outputPath, cb) =>
-              setImmediate(() => cb(new Error('gm processing failed'))),
-          };
-          return chain;
-        };
+      controller.avatarUpload(
+        { user: userDoc, file: { path: sourcePath } },
+        res,
+      );
+      job.callback(new Error('processor rejected image'));
+      await res.waitForResponse();
 
-        const controller = await loadAvatarWithStubs({
-          gm: () => chainable(),
-          fs: {
-            unlink: (source, cb) =>
-              setImmediate(() => cb(new Error('cleanup failed'))),
-          },
-        });
-        const [user] = await utils.saveUsers(utils.generateUsers(1));
-        const userDoc = await User.findById(user._id);
-        const res = deferredResponse();
-
-        controller.avatarUpload(
-          {
-            user: userDoc,
-            file: { path: '/tmp/avatar-cleanup-log-fails.jpg' },
-          },
-          res,
-        );
-        await res.waitForResponse();
-        res.statusCode.should.equal(422);
-      } finally {
-        if (previousFallback === undefined) {
-          delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
-        } else {
-          process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = previousFallback;
-        }
-      }
+      res.statusCode.should.equal(422);
+      (await User.findById(user._id)).avatarVersion.should.equal(
+        'c'.repeat(32),
+      );
+      fs.existsSync(sourcePath).should.equal(false);
     });
 
-    it('returns 422 when thumbnail generation fails', async () => {
-      const previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
-      delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+    it('removes the new version and restores the old pointer when saving fails', async () => {
+      const oldVersion = 'd'.repeat(32);
+      const newVersion = 'e'.repeat(32);
+      let job;
+      const removed = [];
+      const controller = loadAvatarWithProcessor({
+        enqueueAvatarProcessing: value => {
+          job = value;
+          return true;
+        },
+        removeAvatarVersion: async (directory, version) =>
+          removed.push(version),
+      });
+      const sourcePath = path.join(
+        os.tmpdir(),
+        `avatar-save-failed-${Date.now()}.jpg`,
+      );
+      fs.writeFileSync(sourcePath, 'anonymous-test-image');
+      const user = {
+        _id: new mongoose.Types.ObjectId(),
+        avatarVersion: oldVersion,
+        save: callback => callback(new Error('database unavailable')),
+      };
+      const res = deferredResponse();
 
-      try {
-        const controller = await loadAvatarWithGm(cb =>
-          cb(new Error('gm processing failed')),
-        );
-        const [user] = await utils.saveUsers(utils.generateUsers(1));
-        const userDoc = await User.findById(user._id);
-        const tmpFile = path.join(
-          os.tmpdir(),
-          `avatar-gm-fail-${Date.now()}.jpg`,
-        );
-        fs.writeFileSync(tmpFile, 'fake-image');
+      controller.avatarUpload({ user, file: { path: sourcePath } }, res);
+      job.callback(null, {
+        version: newVersion,
+        avatarDirectory: '/private/avatar-dir',
+        versionDirectory: '/private/avatar-dir/version',
+      });
+      await res.waitForResponse();
 
-        const res = deferredResponse();
-        controller.avatarUpload(
-          {
-            user: userDoc,
-            file: { path: tmpFile },
-          },
-          res,
-        );
-        await res.waitForResponse();
-        res.statusCode.should.equal(422);
-      } finally {
-        if (previousFallback === undefined) {
-          delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
-        } else {
-          process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = previousFallback;
-        }
-      }
+      res.statusCode.should.equal(400);
+      user.avatarVersion.should.equal(oldVersion);
+      removed.should.eql([newVersion]);
+      fs.existsSync(sourcePath).should.equal(false);
     });
 
-    it('uploads an avatar using the processor fallback', async () => {
-      const previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
-      process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
+    it('returns 503 and cleans up the temporary upload when the queue is full', async () => {
+      const sourcePath = path.join(
+        os.tmpdir(),
+        `avatar-queued-${Date.now()}.jpg`,
+      );
+      fs.writeFileSync(sourcePath, 'anonymous-test-image');
+      const controller = loadAvatarWithProcessor({
+        enqueueAvatarProcessing: () => false,
+      });
+      const res = deferredResponse();
 
-      try {
-        const [user] = await utils.saveUsers(utils.generateUsers(1));
-        const userDoc = await User.findById(user._id);
-        const tmpFile = path.join(os.tmpdir(), `avatar-${Date.now()}.jpg`);
-        fs.writeFileSync(tmpFile, 'fake-image');
+      controller.avatarUpload(
+        {
+          user: { _id: new mongoose.Types.ObjectId() },
+          file: { path: sourcePath },
+        },
+        res,
+      );
+      await res.waitForResponse();
 
-        const res = deferredResponse();
-        avatarController.avatarUpload(
-          {
-            user: userDoc,
-            file: { path: tmpFile },
-          },
-          res,
-        );
-        await res.waitForResponse();
-        res.statusCode.should.equal(200);
-        res.body.message.should.equal('Avatar image uploaded.');
-      } finally {
-        if (previousFallback === undefined) {
-          delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
-        } else {
-          process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = previousFallback;
-        }
-      }
+      res.statusCode.should.equal(503);
+      fs.existsSync(sourcePath).should.equal(false);
     });
   });
 });

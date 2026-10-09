@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const adminDashboard = require('../../server/controllers/admin.dashboard.server.controller');
+const adminDashboard = require('./../../server/controllers/admin.dashboard.server.controller.mjs');
 require('should');
 
 const Experience = mongoose.model('Experience');
