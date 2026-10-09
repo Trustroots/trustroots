@@ -3,6 +3,29 @@ const { annotateFeature, test, expect } = require('../../support/fixtures');
 const { createUser, waitForTribesList } = require('../../support/helpers');
 
 test.describe('public pages and unauthenticated flows', () => {
+  test('team page links to a public greeter roster and recruitment form', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'public.greeters', [
+      'Visitors can open the greeter roster from the team page.',
+      'Visitors can follow the volunteering link to contact the team.',
+    ]);
+
+    await page.goto('/team');
+    await page.getByRole('link', { name: 'Meet our greeters' }).click();
+
+    await expect(page).toHaveURL(/\/team\/greeters$/);
+    await expect(
+      page.getByRole('heading', { name: 'Trustroots greeters' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Want to join?' }),
+    ).toHaveAttribute('href', '/support?category=volunteering');
+    await expect(
+      page.getByText('No greeters to show right now.'),
+    ).toBeVisible();
+  });
+
   test('photo boards start at the bottom of the fixed header', async ({
     page,
   }) => {

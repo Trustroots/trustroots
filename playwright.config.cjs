@@ -168,7 +168,8 @@ const config = defineConfig({
     },
     {
       name: 'messages',
-      testMatch: /features\/messages\/messages(?:-api)?\.spec\.js/,
+      testMatch:
+        /features\/messages\/(?:messages(?:-api)?|reply-statistics|greeter-recognition)\.spec\.js/,
       dependencies: serializedDependencies(
         ['setup-authenticated'],
         ['authenticated'],
