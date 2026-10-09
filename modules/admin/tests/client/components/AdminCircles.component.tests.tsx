@@ -106,6 +106,10 @@ describe('circle form feedback and fields', () => {
     fireEvent.change(screen.getByLabelText('Description'), {
       target: { value: 'Updated circle' },
     });
+    // Clearing the file input exercises the empty-files branch.
+    fireEvent.change(screen.getByLabelText('Image'), {
+      target: { files: [] },
+    });
     const image = new File(['image'], 'circle.png', { type: 'image/png' });
     fireEvent.change(screen.getByLabelText('Image'), {
       target: { files: [image] },
