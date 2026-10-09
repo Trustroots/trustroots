@@ -5,8 +5,10 @@ import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import Feedback from '@/modules/experiences/client/components/create-experience/Feedback';
 
+type FeedbackProps = React.ComponentProps<typeof Feedback>;
+
 describe('<Feedback />', () => {
-  function renderFeedback(props = {}) {
+  function renderFeedback(props: Partial<FeedbackProps> = {}) {
     return render(
       <Feedback
         feedback="Helpful host"
@@ -51,7 +53,8 @@ describe('<Feedback />', () => {
   });
 
   it('renders no recommendation prompt for unexpected codes', () => {
-    renderFeedback({ recommend: 'later' });
+    // The component intentionally renders safely for values outside its union.
+    renderFeedback({ recommend: 'later' as never });
 
     expect(
       screen.queryByText(/Did you .* their cooking\? singing\?/),

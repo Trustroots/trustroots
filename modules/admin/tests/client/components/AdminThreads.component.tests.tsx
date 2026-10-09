@@ -4,18 +4,16 @@ import '@testing-library/jest-dom';
 
 import AdminThreads from '@/modules/admin/client/components/AdminThreads.component';
 import * as threadsApi from '@/modules/admin/client/api/threads.api';
+import type { AdminThread } from '@/modules/admin/client/api/threads.api';
 
 jest.mock('@/modules/admin/client/api/threads.api');
+const mockedThreadsApi = jest.mocked(threadsApi);
 jest.mock('@/modules/core/client/components/TimeAgo', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockTimeAgo({ date }) {
+  function MockTimeAgo({ date }: { date: Date }) {
     return <time>{date.toISOString()}</time>;
   }
-
-  MockTimeAgo.propTypes = {
-    date: () => null,
-  };
 
   return MockTimeAgo;
 });
@@ -27,7 +25,9 @@ afterEach(() => {
 
 const userId = '111111111111111111111111';
 
-const makeUser = overrides => ({
+type UserFixture = { _id: string; displayName: string; username: string };
+
+const makeUser = (overrides: Partial<UserFixture> = {}): UserFixture => ({
   _id: '222222222222222222222222',
   displayName: 'Bob Example',
   username: 'bob',
@@ -37,13 +37,13 @@ const makeUser = overrides => ({
 describe('<AdminThreads />', () => {
   it('queries automatically using a valid member id from the URL', async () => {
     window.history.pushState({}, '', `/admin/threads?userId=${userId}`);
-    threadsApi.getThreads.mockResolvedValueOnce([]);
+    mockedThreadsApi.getThreads.mockResolvedValueOnce([]);
 
     render(<AdminThreads />);
 
     expect(screen.getByLabelText('Member username or ID')).toHaveValue(userId);
     await waitFor(() =>
-      expect(threadsApi.getThreads).toHaveBeenCalledWith({
+      expect(mockedThreadsApi.getThreads).toHaveBeenCalledWith({
         userId,
         username: '',
       }),
@@ -52,13 +52,13 @@ describe('<AdminThreads />', () => {
 
   it('queries automatically using a username from the URL', async () => {
     window.history.pushState({}, '', '/admin/threads?username=alice');
-    threadsApi.getThreads.mockResolvedValueOnce([]);
+    mockedThreadsApi.getThreads.mockResolvedValueOnce([]);
 
     render(<AdminThreads />);
 
     expect(screen.getByLabelText('Member username or ID')).toHaveValue('alice');
     await waitFor(() =>
-      expect(threadsApi.getThreads).toHaveBeenCalledWith({
+      expect(mockedThreadsApi.getThreads).toHaveBeenCalledWith({
         userId: '',
         username: 'alice',
       }),
@@ -66,7 +66,7 @@ describe('<AdminThreads />', () => {
   });
 
   it('queries by username and renders thread state and links', async () => {
-    threadsApi.getThreads.mockResolvedValueOnce([
+    mockedThreadsApi.getThreads.mockResolvedValueOnce([
       {
         _id: 'thread-1',
         read: false,
@@ -89,7 +89,7 @@ describe('<AdminThreads />', () => {
     expect(
       await screen.findByText('Messages from/to them'),
     ).toBeInTheDocument();
-    expect(threadsApi.getThreads).toHaveBeenCalledWith({
+    expect(mockedThreadsApi.getThreads).toHaveBeenCalledWith({
       userId: '',
       username: 'alice',
     });
@@ -101,7 +101,7 @@ describe('<AdminThreads />', () => {
   });
 
   it('queries by member id from the single input', async () => {
-    threadsApi.getThreads.mockResolvedValueOnce([]);
+    mockedThreadsApi.getThreads.mockResolvedValueOnce([]);
 
     render(<AdminThreads />);
 
@@ -110,7 +110,7 @@ describe('<AdminThreads />', () => {
     });
 
     await waitFor(() =>
-      expect(threadsApi.getThreads).toHaveBeenCalledWith({
+      expect(mockedThreadsApi.getThreads).toHaveBeenCalledWith({
         userId,
         username: '',
       }),
@@ -118,7 +118,7 @@ describe('<AdminThreads />', () => {
   });
 
   it('renders read threads with success state', async () => {
-    threadsApi.getThreads.mockResolvedValueOnce([
+    mockedThreadsApi.getThreads.mockResolvedValueOnce([
       {
         _id: 'thread-1',
         read: true,
@@ -138,7 +138,7 @@ describe('<AdminThreads />', () => {
   });
 
   it('shows an empty state after a query with no threads', async () => {
-    threadsApi.getThreads.mockResolvedValueOnce([]);
+    mockedThreadsApi.getThreads.mockResolvedValueOnce([]);
 
     render(<AdminThreads />);
 
@@ -150,7 +150,10 @@ describe('<AdminThreads />', () => {
   });
 
   it('shows an empty state when the thread query returns no payload', async () => {
-    threadsApi.getThreads.mockResolvedValueOnce(null);
+    // Preserve the malformed empty-payload regression case from this API.
+    mockedThreadsApi.getThreads.mockResolvedValueOnce(
+      null as unknown as AdminThread[],
+    );
 
     render(<AdminThreads />);
 
@@ -162,7 +165,7 @@ describe('<AdminThreads />', () => {
   });
 
   it('clears the results when the query is cleared', async () => {
-    threadsApi.getThreads.mockResolvedValueOnce([
+    mockedThreadsApi.getThreads.mockResolvedValueOnce([
       {
         _id: 'thread-1',
         read: true,

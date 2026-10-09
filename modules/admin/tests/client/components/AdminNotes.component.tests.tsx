@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { type ChangeEvent, type KeyboardEvent } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
@@ -6,28 +6,37 @@ import AdminNotes from '@/modules/admin/client/components/AdminNotes';
 import * as notesApi from '@/modules/admin/client/api/admin-notes.api';
 
 jest.mock('@/modules/admin/client/api/admin-notes.api');
+const mockedNotesApi = jest.mocked(notesApi);
 jest.mock('@/modules/core/client/components/TimeAgo', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockTimeAgo({ date }) {
+  function MockTimeAgo({ date }: { date: Date }) {
     return <time>{date.toISOString()}</time>;
   }
-
-  MockTimeAgo.propTypes = {
-    date: () => null,
-  };
 
   return MockTimeAgo;
 });
 jest.mock('@/modules/core/client/components/TrEditor', () => {
-  const React = require('react');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockTrEditor({ onChange, onCtrlEnter, placeholder, text }) {
+  function MockTrEditor({
+    onChange,
+    onCtrlEnter,
+    placeholder,
+    text,
+  }: {
+    onChange: (value: string) => void;
+    onCtrlEnter: () => void | Promise<void>;
+    placeholder: string;
+    text: string;
+  }) {
     return (
       <textarea
         aria-label={placeholder}
-        onChange={event => onChange(event.target.value)}
-        onKeyDown={event => {
+        onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
+          onChange(event.target.value)
+        }
+        onKeyDown={(event: KeyboardEvent<HTMLTextAreaElement>) => {
           if (event.ctrlKey && event.key === 'Enter') {
             onCtrlEnter();
           }
@@ -36,13 +45,6 @@ jest.mock('@/modules/core/client/components/TrEditor', () => {
       />
     );
   }
-
-  MockTrEditor.propTypes = {
-    onChange: () => null,
-    onCtrlEnter: () => null,
-    placeholder: () => null,
-    text: () => null,
-  };
 
   return MockTrEditor;
 });
@@ -56,7 +58,14 @@ afterEach(() => {
 
 const userId = '111111111111111111111111';
 
-const makeNote = overrides => ({
+type NoteFixture = {
+  _id: string;
+  admin: { _id: string; displayName: string; username: string };
+  date: string;
+  note: string;
+};
+
+const makeNote = (overrides: Partial<NoteFixture> = {}): NoteFixture => ({
   _id: 'note-1',
   admin: {
     _id: '222222222222222222222222',
@@ -70,7 +79,7 @@ const makeNote = overrides => ({
 
 describe('<AdminNotes />', () => {
   it('loads and renders existing notes', async () => {
-    notesApi.listNotes.mockResolvedValueOnce([makeNote()]);
+    mockedNotesApi.listNotes.mockResolvedValueOnce([makeNote()]);
 
     render(<AdminNotes id={userId} />);
 
@@ -78,18 +87,20 @@ describe('<AdminNotes />', () => {
       await screen.findByRole('link', { name: 'admin-alice (Admin Alice)' }),
     ).toHaveAttribute('href', '/admin/user/admin-alice');
     expect(screen.getByText('Needs review')).toBeInTheDocument();
-    expect(notesApi.listNotes).toHaveBeenCalledWith(userId);
+    expect(mockedNotesApi.listNotes).toHaveBeenCalledWith(userId);
   });
 
   it('adds a note and refreshes the list', async () => {
-    notesApi.listNotes
+    mockedNotesApi.listNotes
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([makeNote({ note: '<p>Fresh note</p>' })]);
-    notesApi.addNote.mockResolvedValueOnce({});
+    mockedNotesApi.addNote.mockResolvedValueOnce({});
 
     render(<AdminNotes id={userId} />);
 
-    await waitFor(() => expect(notesApi.listNotes).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(mockedNotesApi.listNotes).toHaveBeenCalledTimes(1),
+    );
 
     fireEvent.change(screen.getByLabelText('Write a note'), {
       target: { value: '<p>Fresh note</p>' },
@@ -97,24 +108,26 @@ describe('<AdminNotes />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save note' }));
 
     await waitFor(() =>
-      expect(notesApi.addNote).toHaveBeenCalledWith({
+      expect(mockedNotesApi.addNote).toHaveBeenCalledWith({
         note: '<p>Fresh note</p>',
         userId,
       }),
     );
     expect(await screen.findByText('Fresh note')).toBeInTheDocument();
-    expect(notesApi.listNotes).toHaveBeenCalledTimes(2);
+    expect(mockedNotesApi.listNotes).toHaveBeenCalledTimes(2);
     expect(screen.getByLabelText('Write a note')).toHaveValue('');
   });
 
   it('reports write failures and still refreshes notes', async () => {
     window.alert = jest.fn();
-    notesApi.listNotes.mockResolvedValue([]);
-    notesApi.addNote.mockRejectedValueOnce(new Error('write failed'));
+    mockedNotesApi.listNotes.mockResolvedValue([]);
+    mockedNotesApi.addNote.mockRejectedValueOnce(new Error('write failed'));
 
     render(<AdminNotes id={userId} />);
 
-    await waitFor(() => expect(notesApi.listNotes).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(mockedNotesApi.listNotes).toHaveBeenCalledTimes(1),
+    );
     fireEvent.change(screen.getByLabelText('Write a note'), {
       target: { value: '<p>Broken note</p>' },
     });
@@ -125,12 +138,12 @@ describe('<AdminNotes />', () => {
         `Could not write admin notes for user ${userId}`,
       ),
     );
-    expect(notesApi.listNotes).toHaveBeenCalledTimes(2);
+    expect(mockedNotesApi.listNotes).toHaveBeenCalledTimes(2);
   });
 
   it('logs failed note loads and leaves the editor usable', async () => {
     const log = jest.spyOn(console, 'log').mockImplementation(() => {});
-    notesApi.listNotes.mockRejectedValueOnce(new Error('load failed'));
+    mockedNotesApi.listNotes.mockRejectedValueOnce(new Error('load failed'));
 
     render(<AdminNotes id={userId} />);
 

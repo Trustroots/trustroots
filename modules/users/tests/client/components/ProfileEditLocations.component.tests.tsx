@@ -5,20 +5,29 @@ import '@testing-library/jest-dom';
 import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 import ProfileEditLocations from '@/modules/users/client/components/ProfileEditLocations.component';
 import * as usersApi from '@/modules/users/client/api/users.api';
+import type { UserProfile } from '@/modules/users/client/types';
+import type LocationInput from '@/modules/core/client/components/LocationInput.component';
 
 jest.mock('@/modules/users/client/api/users.api');
+const updateUser = jest.mocked(usersApi.update);
 jest.mock(
   '@/modules/users/client/components/ProfileEditPage.component',
   () => ({
     __esModule: true,
-    default: ({ children }) => <section>{children}</section>,
+    default: ({ children }: { children?: React.ReactNode }) => (
+      <section>{children}</section>
+    ),
   }),
 );
 jest.mock('@/modules/core/client/components/LocationInput.component', () => {
-  const React = require('react');
-  const PropTypes = require('prop-types');
+  const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockLocationInput({ id, onChange, placeholder, value }) {
+  function MockLocationInput({
+    id,
+    onChange,
+    placeholder,
+    value,
+  }: React.ComponentProps<typeof LocationInput>) {
     return (
       <input
         aria-label={placeholder}
@@ -28,13 +37,6 @@ jest.mock('@/modules/core/client/components/LocationInput.component', () => {
       />
     );
   }
-
-  MockLocationInput.propTypes = {
-    id: PropTypes.string,
-    onChange: PropTypes.func,
-    placeholder: PropTypes.string,
-    value: PropTypes.string,
-  };
 
   return MockLocationInput;
 });
@@ -46,15 +48,16 @@ jest.mock(
   }),
 );
 
-const user = {
+const user: UserProfile = {
   _id: 'user-1',
-  username: 'ada',
+  username: 'member-one',
+  displayName: 'Member One',
   locationLiving: '',
   locationFrom: '',
 };
 
-function renderPage(overrides = {}) {
-  const profile = { ...user, ...overrides };
+function renderPage(overrides: Partial<UserProfile> = {}) {
+  const profile: UserProfile = { ...user, ...overrides };
 
   return render(
     <AppProviders
@@ -85,7 +88,7 @@ describe('ProfileEditLocations', () => {
   });
 
   it('saves location changes', async () => {
-    usersApi.update.mockResolvedValue({
+    updateUser.mockResolvedValue({
       ...user,
       locationLiving: 'London, United Kingdom',
     });
@@ -97,7 +100,7 @@ describe('ProfileEditLocations', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => {
-      expect(usersApi.update).toHaveBeenCalledWith(
+      expect(updateUser).toHaveBeenCalledWith(
         expect.objectContaining({
           locationLiving: 'London, United Kingdom',
         }),
@@ -107,7 +110,7 @@ describe('ProfileEditLocations', () => {
   });
 
   it('updates the origin location and shows a fallback error', async () => {
-    usersApi.update.mockRejectedValue(new Error('network'));
+    updateUser.mockRejectedValue(new Error('network'));
     renderPage();
 
     fireEvent.change(screen.getAllByLabelText('City, Country')[1], {

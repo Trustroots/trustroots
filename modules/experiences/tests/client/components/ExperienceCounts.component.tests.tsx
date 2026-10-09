@@ -4,28 +4,56 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ExperienceCounts from '@/modules/experiences/client/components/read-experiences/ExperienceCounts';
+import type {
+  Experience,
+  ExperienceInteractions,
+  ExperienceUser,
+} from '@/modules/experiences/shared/experience';
 
-function experience(overrides = {}) {
+type ExperienceFixtureOverrides = Partial<
+  Omit<Experience, 'userFrom' | 'userTo' | 'interactions'>
+> & {
+  userFrom?: Partial<ExperienceUser>;
+  userTo?: Partial<ExperienceUser>;
+  interactions?: Partial<ExperienceInteractions> | undefined;
+};
+
+let nextExperienceId = 0;
+
+function experience(overrides: ExperienceFixtureOverrides = {}): Experience {
+  const { interactions, userFrom, userTo, ...otherOverrides } = overrides;
+  const fixtureInteractions = Object.prototype.hasOwnProperty.call(
+    overrides,
+    'interactions',
+  )
+    ? interactions && {
+        met: false,
+        guest: false,
+        host: false,
+        ...interactions,
+      }
+    : { met: false, guest: false, host: false };
+
   return {
-    _id: overrides._id || Math.random().toString(),
+    _id: otherOverrides._id || `experience-${++nextExperienceId}`,
     public: true,
     userFrom: {
+      _id: 'user-from',
+      username: 'member',
       gender: 'other',
-      ...(overrides.userFrom || {}),
+      ...userFrom,
     },
     userTo: {
       _id: 'user-to',
+      username: 'recipient',
+      ...userTo,
     },
     created: '2026-06-05T12:00:00.000Z',
-    interactions: {
-      met: false,
-      guest: false,
-      host: false,
-      ...(overrides.interactions || {}),
-    },
+    interactions: fixtureInteractions,
     recommend: 'unknown',
     feedbackPublic: '',
-    ...overrides,
+    response: null,
+    ...otherOverrides,
   };
 }
 

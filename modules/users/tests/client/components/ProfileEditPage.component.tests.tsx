@@ -4,8 +4,13 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ProfileEditPage from '@/modules/users/client/components/ProfileEditPage.component';
+import type { UserProfile } from '@/modules/users/client/types';
 
-const user = { _id: 'user-1', username: 'ada' };
+const user: Pick<UserProfile, '_id' | 'username' | 'displayName'> = {
+  _id: 'user-1',
+  username: 'member-one',
+  displayName: 'Member One',
+};
 
 describe('ProfileEditPage', () => {
   afterEach(() => {
@@ -30,7 +35,7 @@ describe('ProfileEditPage', () => {
     ).toHaveAttribute('href', '/profile/edit/locations');
     expect(screen.getByRole('link', { name: 'View profile' })).toHaveAttribute(
       'href',
-      '/profile/ada',
+      '/profile/member-one',
     );
   });
 
