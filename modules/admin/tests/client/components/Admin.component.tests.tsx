@@ -5,19 +5,50 @@ import '@testing-library/jest-dom';
 import Admin from '@/modules/admin/client/components/Admin.component';
 import * as dashboardApi from '@/modules/admin/client/api/admin-dashboard.api';
 import * as usersApi from '@/modules/admin/client/api/users.api';
+import type { AdminDashboard } from '@/modules/admin/client/api/admin-dashboard.api';
 
 jest.mock('@/modules/admin/client/api/admin-dashboard.api');
 jest.mock('@/modules/admin/client/api/users.api');
+const mockedDashboardApi = jest.mocked(dashboardApi);
+const mockedUsersApi = jest.mocked(usersApi);
 
-function deferred() {
-  let resolve;
-  let reject;
-  const promise = new Promise((promiseResolve, promiseReject) => {
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((promiseResolve, promiseReject) => {
     resolve = promiseResolve;
     reject = promiseReject;
   });
 
   return { promise, resolve, reject };
+}
+
+type MalformedDashboardFixture = {
+  negativeExperiences?: Array<{
+    _id: string;
+    created?: string;
+    feedbackPublic?: string | null;
+    userFrom?: { _id?: string; displayName?: string; username?: string } | null;
+    userTo?: { _id?: string; displayName?: string; username?: string } | null;
+  }>;
+  threadVotes?: Array<{
+    _id?: string;
+    created?: string;
+    thread?: string;
+    userFrom?: { _id?: string; displayName?: string; username?: string } | null;
+    userTo?: { _id?: string; displayName?: string; username?: string } | null;
+  }>;
+  topMessengers?: Array<{
+    messageCount: number;
+    user?: { _id?: string; displayName?: string; username?: string } | null;
+  }>;
+};
+
+function malformedDashboardResponse(
+  response: MalformedDashboardFixture,
+): AdminDashboard {
+  // These fixtures deliberately model absent/invalid fields from the API boundary.
+  return response as unknown as AdminDashboard;
 }
 
 afterEach(() => {
@@ -27,7 +58,7 @@ afterEach(() => {
 
 describe('<Admin />', () => {
   beforeEach(() => {
-    dashboardApi.getAdminDashboard.mockResolvedValue({
+    mockedDashboardApi.getAdminDashboard.mockResolvedValue({
       negativeExperiences: [
         {
           _id: 'experience-1',
@@ -49,6 +80,7 @@ describe('<Admin />', () => {
         {
           _id: 'review-1',
           created: '2026-06-20T12:00:00.000Z',
+          thread: 'thread-1',
           userFrom: {
             _id: 'user-from-1',
             displayName: 'Sender',
@@ -109,7 +141,7 @@ describe('<Admin />', () => {
     expect(
       screen.queryByText('Remember to logout on public computers!'),
     ).not.toBeInTheDocument();
-    expect(usersApi.searchUsers).not.toHaveBeenCalled();
+    expect(mockedUsersApi.searchUsers).not.toHaveBeenCalled();
     expect(
       await screen.findByRole('heading', {
         name: 'Top 10 Messengers Last Week',
@@ -143,7 +175,9 @@ describe('<Admin />', () => {
   });
 
   it('shows an error when dashboard activity cannot be loaded', async () => {
-    dashboardApi.getAdminDashboard.mockRejectedValueOnce(new Error('failed'));
+    mockedDashboardApi.getAdminDashboard.mockRejectedValueOnce(
+      new Error('failed'),
+    );
 
     render(<Admin />);
 
@@ -160,53 +194,55 @@ describe('<Admin />', () => {
   });
 
   it('renders dashboard rows with missing optional data', async () => {
-    dashboardApi.getAdminDashboard.mockResolvedValueOnce({
-      negativeExperiences: [
-        {
-          _id: 'experience-without-date',
-          created: 'not-a-date',
-          userFrom: null,
-          userTo: null,
-        },
-      ],
-      threadVotes: [
-        {
-          _id: 'review-with-thread',
-          thread: 'thread-without-users',
-        },
-        {
-          _id: 'review-with-invalid-date',
-          created: 'not-a-date',
-          thread: 'thread-with-invalid-date',
-          userFrom: {
-            displayName: 'Missing ID sender',
+    mockedDashboardApi.getAdminDashboard.mockResolvedValueOnce(
+      malformedDashboardResponse({
+        negativeExperiences: [
+          {
+            _id: 'experience-without-date',
+            created: 'not-a-date',
+            userFrom: null,
+            userTo: null,
           },
-          userTo: {
-            _id: 'user-to-2',
-            username: 'receiver-two',
+        ],
+        threadVotes: [
+          {
+            _id: 'review-with-thread',
+            thread: 'thread-without-users',
           },
-        },
-        {
-          _id: 'review-link-with-thread',
-          created: 'not-a-date',
-          thread: 'linked-thread-with-invalid-date',
-          userFrom: {
-            _id: 'user-from-2',
-            username: 'sender-two',
+          {
+            _id: 'review-with-invalid-date',
+            created: 'not-a-date',
+            thread: 'thread-with-invalid-date',
+            userFrom: {
+              displayName: 'Missing ID sender',
+            },
+            userTo: {
+              _id: 'user-to-2',
+              username: 'receiver-two',
+            },
           },
-          userTo: {
-            _id: 'user-to-3',
-            username: 'receiver-three',
+          {
+            _id: 'review-link-with-thread',
+            created: 'not-a-date',
+            thread: 'linked-thread-with-invalid-date',
+            userFrom: {
+              _id: 'user-from-2',
+              username: 'sender-two',
+            },
+            userTo: {
+              _id: 'user-to-3',
+              username: 'receiver-three',
+            },
           },
-        },
-      ],
-      topMessengers: [
-        {
-          messageCount: 1,
-          user: null,
-        },
-      ],
-    });
+        ],
+        topMessengers: [
+          {
+            messageCount: 1,
+            user: null,
+          },
+        ],
+      }),
+    );
 
     render(<Admin />);
 
@@ -234,7 +270,9 @@ describe('<Admin />', () => {
   });
 
   it('uses empty dashboard lists when the API omits them', async () => {
-    dashboardApi.getAdminDashboard.mockResolvedValueOnce({});
+    mockedDashboardApi.getAdminDashboard.mockResolvedValueOnce(
+      malformedDashboardResponse({}),
+    );
 
     render(<Admin />);
 
@@ -250,21 +288,25 @@ describe('<Admin />', () => {
   });
 
   it('does not update dashboard state after an unmount', async () => {
-    const pending = deferred();
-    dashboardApi.getAdminDashboard.mockReturnValueOnce(pending.promise);
+    const pending = deferred<AdminDashboard>();
+    mockedDashboardApi.getAdminDashboard.mockReturnValueOnce(pending.promise);
 
     const { unmount } = render(<Admin />);
 
     unmount();
-    pending.resolve({ threadVotes: [], topMessengers: [] });
+    pending.resolve({
+      negativeExperiences: [],
+      threadVotes: [],
+      topMessengers: [],
+    });
     await pending.promise;
 
-    expect(dashboardApi.getAdminDashboard).toHaveBeenCalledTimes(1);
+    expect(mockedDashboardApi.getAdminDashboard).toHaveBeenCalledTimes(1);
   });
 
   it('does not update dashboard error after an unmount', async () => {
-    const pending = deferred();
-    dashboardApi.getAdminDashboard.mockReturnValueOnce(pending.promise);
+    const pending = deferred<AdminDashboard>();
+    mockedDashboardApi.getAdminDashboard.mockReturnValueOnce(pending.promise);
 
     const { unmount } = render(<Admin />);
 
@@ -272,6 +314,6 @@ describe('<Admin />', () => {
     pending.reject(new Error('failed'));
     await expect(pending.promise).rejects.toThrow('failed');
 
-    expect(dashboardApi.getAdminDashboard).toHaveBeenCalledTimes(1);
+    expect(mockedDashboardApi.getAdminDashboard).toHaveBeenCalledTimes(1);
   });
 });

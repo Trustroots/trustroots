@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 import NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
 
 describe('NostrootsActionModal', () => {
-  const onClose = jest.fn();
+  const onClose = jest.fn<void, []>();
 
   afterEach(() => jest.clearAllMocks());
 

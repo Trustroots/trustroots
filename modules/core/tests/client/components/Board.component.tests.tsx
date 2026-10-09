@@ -9,6 +9,8 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
   broadcastClientEvent: jest.fn(),
 }));
 
+const mockedBroadcastClientEvent = jest.mocked(broadcastClientEvent);
+
 describe('<Board />', () => {
   afterEach(() => {
     jest.clearAllMocks();
@@ -36,7 +38,7 @@ describe('<Board />', () => {
         backgroundImage: 'url("/img/board/flickr-bokeh.jpg")',
       }),
     );
-    expect(broadcastClientEvent).toHaveBeenCalledWith(
+    expect(mockedBroadcastClientEvent).toHaveBeenCalledWith(
       'photoCreditsUpdated',
       expect.objectContaining({
         bokeh: expect.objectContaining({
@@ -47,7 +49,7 @@ describe('<Board />', () => {
   });
 
   it('uses a provided style object and removes credits on unmount', async () => {
-    const style = { minHeight: 120 };
+    const style: React.CSSProperties = { minHeight: 120 };
 
     const { unmount } = render(
       <Board data-testid="board" names="bokeh" style={style}>
@@ -64,7 +66,7 @@ describe('<Board />', () => {
 
     unmount();
 
-    expect(broadcastClientEvent).toHaveBeenCalledWith(
+    expect(mockedBroadcastClientEvent).toHaveBeenCalledWith(
       'photoCreditsRemoved',
       expect.objectContaining({
         bokeh: expect.objectContaining({
@@ -86,7 +88,7 @@ describe('<Board />', () => {
         backgroundImage: 'url("/img/board/flickr-bokeh.jpg")',
       }),
     );
-    expect(broadcastClientEvent).toHaveBeenCalledWith(
+    expect(mockedBroadcastClientEvent).toHaveBeenCalledWith(
       'photoCreditsUpdated',
       expect.objectContaining({
         bokeh: expect.objectContaining({

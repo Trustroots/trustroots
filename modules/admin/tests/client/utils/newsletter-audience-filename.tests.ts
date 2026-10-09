@@ -1,7 +1,8 @@
 import { newsletterAudienceFilename } from '@/modules/admin/client/utils/newsletter-audience-filename';
+import type { NewsletterAudienceCriteria } from '@/modules/admin/client/api/newsletter.api';
 
 describe('newsletter audience filenames', () => {
-  const criteria = {
+  const criteria: NewsletterAudienceCriteria = {
     circleIds: [],
     latitude: '12.34',
     locationText: 'Exampleville',
@@ -10,7 +11,10 @@ describe('newsletter audience filenames', () => {
     sources: ['from', 'hosting', 'living'],
   };
   const exportedAt = new Date(2026, 0, 2, 3, 4);
-  const filename = (update, circles = []) =>
+  const filename = (
+    update: Partial<NewsletterAudienceCriteria>,
+    circles: Array<{ _id: string; label: string }> = [],
+  ) =>
     newsletterAudienceFilename({ ...criteria, ...update }, circles, exportedAt);
 
   it('includes the location, hosting radius and padded local datetime', () => {

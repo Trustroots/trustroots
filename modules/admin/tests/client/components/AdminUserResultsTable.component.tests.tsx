@@ -4,32 +4,42 @@ import '@testing-library/jest-dom';
 
 import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserResultsTable.component';
 
-const users = [
+type UserResult = React.ComponentProps<
+  typeof AdminUserResultsTable
+>['userResults'][number];
+type SortChange = React.ComponentProps<
+  typeof AdminUserResultsTable
+>['onSortChange'];
+
+const users: UserResult[] = [
   {
     _id: '111111111111111111111111',
     created: '2026-01-01T00:00:00.000Z',
-    displayName: 'Zed Example',
-    email: 'z@example.test',
+    email: 'member-z@example.test',
     lastIpAddress: '203.0.113.10',
-    username: 'alpha',
+    username: 'member-alpha',
   },
   {
     _id: '222222222222222222222222',
     created: '2025-01-01T00:00:00.000Z',
-    displayName: 'Amy Example',
-    email: 'a@example.test',
+    email: 'member-a@example.test',
     lastIpAddress: '203.0.113.20',
-    username: 'zeta',
+    username: 'member-zeta',
   },
-  {
-    _id: '333333333333333333333333',
-    created: 'not-a-date',
-  },
+  // Regression record deliberately has an invalid date and omits optional fields.
+  { _id: '333333333333333333333333', created: 'not-a-date' },
 ];
 
 describe('<AdminUserResultsTable />', () => {
   it('keeps sort controls safe when sorting is not supplied', () => {
-    render(<AdminUserResultsTable onSortChange={null} userResults={users} />);
+    // The null callback exercises runtime fallback behaviour despite the typed prop.
+    render(
+      <AdminUserResultsTable
+        onSortChange={null as unknown as SortChange}
+        sort={{ column: 'username', direction: 'ascending' }}
+        userResults={users}
+      />,
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Name' }));
   });

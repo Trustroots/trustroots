@@ -6,15 +6,36 @@ import AdminSearchUsers, {
   AdminSearchUsersContent,
 } from '@/modules/admin/client/components/AdminSearchUsers.component';
 import * as usersApi from '@/modules/admin/client/api/users.api';
+import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserResultsTable.component';
 
 jest.mock('@/modules/admin/client/api/users.api');
+const mockedUsersApi = jest.mocked(usersApi);
+
+type SearchUserFixture = React.ComponentProps<
+  typeof AdminUserResultsTable
+>['userResults'][number] & {
+  displayName?: string;
+  public?: boolean;
+  roles?: string[];
+  emailTemporary?: string;
+};
+
+type MemberListFixture = {
+  pagination: NonNullable<
+    React.ComponentProps<typeof AdminUserResultsTable>['pagination']
+  >;
+  sort: React.ComponentProps<typeof AdminUserResultsTable>['sort'];
+  users: SearchUserFixture[];
+};
 
 afterEach(() => {
   jest.clearAllMocks();
   window.history.pushState({}, '', '/');
 });
 
-const makeUser = overrides => ({
+const makeUser = (
+  overrides: Partial<SearchUserFixture> = {},
+): SearchUserFixture => ({
   _id: '123456789012345678901234',
   created: '2024-01-15T12:00:00.000Z',
   displayName: 'Alice Example',
@@ -26,7 +47,10 @@ const makeUser = overrides => ({
   ...overrides,
 });
 
-const makeMemberList = (users, overrides = {}) => ({
+const makeMemberList = (
+  users: SearchUserFixture[],
+  overrides: Partial<MemberListFixture> = {},
+): MemberListFixture => ({
   pagination: {
     page: 1,
     pageSize: 150,
@@ -41,21 +65,31 @@ const makeMemberList = (users, overrides = {}) => ({
   ...overrides,
 });
 
+function mockImmediateSetState(component: AdminSearchUsersContent) {
+  jest.spyOn(component, 'setState').mockImplementation((update, callback) => {
+    const nextState =
+      typeof update === 'function'
+        ? update(component.state, component.props)
+        : update;
+    if (nextState) {
+      component.state = { ...component.state, ...nextState };
+    }
+    callback?.();
+  });
+}
+
 describe('<AdminSearchUsers />', () => {
   it('lists users by role when called without a form event', async () => {
     const userResults = [makeUser({ displayName: 'Direct Admin' })];
-    usersApi.listUsersByRole.mockResolvedValueOnce(makeMemberList(userResults));
+    mockedUsersApi.listUsersByRole.mockResolvedValueOnce(
+      makeMemberList(userResults),
+    );
     const component = new AdminSearchUsersContent({});
-    component.setState = jest.fn(update => {
-      component.state = {
-        ...component.state,
-        ...update,
-      };
-    });
+    mockImmediateSetState(component);
 
     await component.doListUsersByRole();
 
-    expect(usersApi.listUsersByRole).toHaveBeenCalledWith('admin', {
+    expect(mockedUsersApi.listUsersByRole).toHaveBeenCalledWith('admin', {
       page: 1,
       sort: { column: 'username', direction: 'ascending' },
     });
@@ -73,20 +107,15 @@ describe('<AdminSearchUsers />', () => {
   });
 
   it('normalises a direct search before querying', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce(makeMemberList([]));
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(makeMemberList([]));
     const component = new AdminSearchUsersContent({});
-    component.state.search = '  alice  ';
-    component.setState = jest.fn(update => {
-      component.state = {
-        ...component.state,
-        ...update,
-      };
-    });
+    component.state = { ...component.state, search: '  alice  ' };
+    mockImmediateSetState(component);
 
     await component.doSearch();
 
     expect(component.setState).toHaveBeenCalledWith({ search: 'alice' });
-    expect(usersApi.searchUsers).toHaveBeenCalledWith('alice', {
+    expect(mockedUsersApi.searchUsers).toHaveBeenCalledWith('alice', {
       page: 1,
       sort: { column: 'username', direction: 'ascending' },
     });
@@ -95,19 +124,14 @@ describe('<AdminSearchUsers />', () => {
   it('removes an empty normalised search from the URL', async () => {
     window.history.pushState({}, '', '/admin/search-users?search=old');
     const component = new AdminSearchUsersContent({});
-    component.state.search = '   ';
-    component.setState = jest.fn(update => {
-      component.state = {
-        ...component.state,
-        ...update,
-      };
-    });
+    component.state = { ...component.state, search: '   ' };
+    mockImmediateSetState(component);
 
     await component.doSearch();
 
     expect(component.setState).toHaveBeenCalledWith({ search: '' });
     expect(window.location.search).toBe('');
-    expect(usersApi.searchUsers).not.toHaveBeenCalled();
+    expect(mockedUsersApi.searchUsers).not.toHaveBeenCalled();
   });
 
   it('does not show legacy moderator as a listable role', () => {
@@ -118,7 +142,7 @@ describe('<AdminSearchUsers />', () => {
 
   it('runs an initial search from the URL and renders result details', async () => {
     window.history.pushState({}, '', '/admin/search-users?search=alice');
-    usersApi.searchUsers.mockResolvedValueOnce(
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(
       makeMemberList(
         Array.from({ length: 150 }, (_, index) =>
           makeUser({
@@ -144,7 +168,7 @@ describe('<AdminSearchUsers />', () => {
       'href',
       '/admin/user/alice0',
     );
-    expect(usersApi.searchUsers).toHaveBeenCalledWith('alice', {
+    expect(mockedUsersApi.searchUsers).toHaveBeenCalledWith('alice', {
       page: 1,
       sort: { column: 'username', direction: 'ascending' },
     });
@@ -156,7 +180,7 @@ describe('<AdminSearchUsers />', () => {
 
   it('loads the selected role from a direct URL', async () => {
     window.history.pushState({}, '', '/admin/search-users?role=welcome-team');
-    usersApi.listUsersByRole.mockResolvedValueOnce(
+    mockedUsersApi.listUsersByRole.mockResolvedValueOnce(
       makeMemberList([makeUser({ username: 'greeter-one' })]),
     );
 
@@ -166,18 +190,21 @@ describe('<AdminSearchUsers />', () => {
       await screen.findByText('greeter-one (Alice Example)'),
     ).toBeInTheDocument();
     expect(screen.getByRole('combobox')).toHaveValue('welcome-team');
-    expect(usersApi.listUsersByRole).toHaveBeenCalledWith('welcome-team', {
-      page: 1,
-      sort: { column: 'username', direction: 'ascending' },
-    });
+    expect(mockedUsersApi.listUsersByRole).toHaveBeenCalledWith(
+      'welcome-team',
+      {
+        page: 1,
+        sort: { column: 'username', direction: 'ascending' },
+      },
+    );
   });
 
   it('updates the role URL on list submit and clears the role for text search', async () => {
     window.history.pushState({}, '', '/admin/search-users?role=admin');
-    usersApi.listUsersByRole.mockResolvedValue(
+    mockedUsersApi.listUsersByRole.mockResolvedValue(
       makeMemberList([makeUser({ username: 'selected-volunteer' })]),
     );
-    usersApi.searchUsers.mockResolvedValueOnce(
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(
       makeMemberList([makeUser({ username: 'searched-member' })]),
     );
     render(<AdminSearchUsers />);
@@ -190,7 +217,7 @@ describe('<AdminSearchUsers />', () => {
       await screen.findByText('selected-volunteer (Alice Example)'),
     ).toBeInTheDocument();
     expect(window.location.search).toBe('?role=volunteer');
-    expect(usersApi.listUsersByRole).toHaveBeenCalledWith('volunteer', {
+    expect(mockedUsersApi.listUsersByRole).toHaveBeenCalledWith('volunteer', {
       page: 1,
       sort: { column: 'username', direction: 'ascending' },
     });
@@ -203,7 +230,7 @@ describe('<AdminSearchUsers />', () => {
       await screen.findByText('searched-member (Alice Example)'),
     ).toBeInTheDocument();
     expect(window.location.search).toBe('?search=alice');
-    expect(usersApi.searchUsers).toHaveBeenCalledWith('alice', {
+    expect(mockedUsersApi.searchUsers).toHaveBeenCalledWith('alice', {
       page: 1,
       sort: { column: 'username', direction: 'ascending' },
     });
@@ -220,14 +247,14 @@ describe('<AdminSearchUsers />', () => {
 
     fireEvent.change(input, { target: { value: 'al' } });
     expect(window.location.search).toBe('');
-    fireEvent.submit(form);
+    fireEvent.submit(form!);
 
     expect(window.location.search).toBe('?search=al');
-    expect(usersApi.searchUsers).not.toHaveBeenCalled();
+    expect(mockedUsersApi.searchUsers).not.toHaveBeenCalled();
   });
 
   it('keeps spaces while typing and trims surrounding whitespace on submit', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce(
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(
       makeMemberList([makeUser({ username: 'trimmed-search' })]),
     );
     render(<AdminSearchUsers />);
@@ -250,14 +277,14 @@ describe('<AdminSearchUsers />', () => {
     expect(
       await screen.findByText('trimmed-search (Alice Example)'),
     ).toBeInTheDocument();
-    expect(usersApi.searchUsers).toHaveBeenCalledWith('trustroots team', {
+    expect(mockedUsersApi.searchUsers).toHaveBeenCalledWith('trustroots team', {
       page: 1,
       sort: { column: 'username', direction: 'ascending' },
     });
   });
 
   it('searches from the submitted form once the search text is long enough', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce(
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(
       makeMemberList([
         makeUser({
           _id: 'searchsearchsearchsearch0001',
@@ -277,14 +304,14 @@ describe('<AdminSearchUsers />', () => {
     expect(
       await screen.findByText('boundary (Boundary Search)'),
     ).toHaveAttribute('href', '/admin/user/boundary');
-    expect(usersApi.searchUsers).toHaveBeenCalledWith('ali', {
+    expect(mockedUsersApi.searchUsers).toHaveBeenCalledWith('ali', {
       page: 1,
       sort: { column: 'username', direction: 'ascending' },
     });
   });
 
   it('hides obvious spam users from text search results', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce(
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(
       makeMemberList([
         makeUser({
           _id: 'spamspamspamspamspam0001',
@@ -332,7 +359,7 @@ describe('<AdminSearchUsers />', () => {
   });
 
   it('reveals obvious spam users from text search results when toggled off', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce(
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(
       makeMemberList([
         makeUser({
           _id: 'spamspamspamspamspam0001',
@@ -373,11 +400,11 @@ describe('<AdminSearchUsers />', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('2 user(s). Page 1 of 1.')).toBeInTheDocument();
     expect(screen.queryByText('1 likely spam hidden.')).not.toBeInTheDocument();
-    expect(usersApi.searchUsers).toHaveBeenCalledTimes(1);
+    expect(mockedUsersApi.searchUsers).toHaveBeenCalledTimes(1);
   });
 
   it('lists users by role and renders temporary email state', async () => {
-    usersApi.listUsersByRole.mockResolvedValueOnce(
+    mockedUsersApi.listUsersByRole.mockResolvedValueOnce(
       makeMemberList([
         makeUser({
           _id: 'abcdefabcdefabcdefabcdef',
@@ -400,7 +427,7 @@ describe('<AdminSearchUsers />', () => {
     expect(
       await screen.findByText('volunteer (Volunteer Example)'),
     ).toHaveAttribute('href', '/admin/user/volunteer');
-    expect(usersApi.listUsersByRole).toHaveBeenCalledWith('volunteer', {
+    expect(mockedUsersApi.listUsersByRole).toHaveBeenCalledWith('volunteer', {
       page: 1,
       sort: { column: 'username', direction: 'ascending' },
     });
@@ -417,7 +444,7 @@ describe('<AdminSearchUsers />', () => {
       _id: '222222222222222222222222',
       username: 'second-page',
     });
-    usersApi.listUsersByRole
+    mockedUsersApi.listUsersByRole
       .mockResolvedValueOnce(
         makeMemberList([firstPageUser], {
           pagination: {
@@ -468,7 +495,7 @@ describe('<AdminSearchUsers />', () => {
         name: 'second-page (Alice Example)',
       }),
     ).toBeInTheDocument();
-    expect(usersApi.listUsersByRole).toHaveBeenNthCalledWith(2, 'admin', {
+    expect(mockedUsersApi.listUsersByRole).toHaveBeenNthCalledWith(2, 'admin', {
       page: 2,
       sort: { column: 'username', direction: 'ascending' },
     });
@@ -480,7 +507,7 @@ describe('<AdminSearchUsers />', () => {
         name: 'sorted-role (Alice Example)',
       }),
     ).toBeInTheDocument();
-    expect(usersApi.listUsersByRole).toHaveBeenNthCalledWith(3, 'admin', {
+    expect(mockedUsersApi.listUsersByRole).toHaveBeenNthCalledWith(3, 'admin', {
       page: 1,
       sort: { column: 'displayName', direction: 'ascending' },
     });
@@ -489,7 +516,7 @@ describe('<AdminSearchUsers />', () => {
 
   it('retains server sorting while paginating search results', async () => {
     const result = makeUser({ username: 'search-result' });
-    usersApi.searchUsers
+    mockedUsersApi.searchUsers
       .mockResolvedValueOnce(
         makeMemberList([result], {
           pagination: {
@@ -540,10 +567,14 @@ describe('<AdminSearchUsers />', () => {
         name: 'sorted-search (Alice Example)',
       }),
     ).toBeInTheDocument();
-    expect(usersApi.searchUsers).toHaveBeenNthCalledWith(2, 'search results', {
-      page: 1,
-      sort: { column: 'email', direction: 'ascending' },
-    });
+    expect(mockedUsersApi.searchUsers).toHaveBeenNthCalledWith(
+      2,
+      'search results',
+      {
+        page: 1,
+        sort: { column: 'email', direction: 'ascending' },
+      },
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(
@@ -551,14 +582,18 @@ describe('<AdminSearchUsers />', () => {
         name: 'page-two-search (Alice Example)',
       }),
     ).toBeInTheDocument();
-    expect(usersApi.searchUsers).toHaveBeenNthCalledWith(3, 'search results', {
-      page: 2,
-      sort: { column: 'email', direction: 'ascending' },
-    });
+    expect(mockedUsersApi.searchUsers).toHaveBeenNthCalledWith(
+      3,
+      'search results',
+      {
+        page: 2,
+        sort: { column: 'email', direction: 'ascending' },
+      },
+    );
   });
 
   it('does not hide obvious spam users from role lists', async () => {
-    usersApi.listUsersByRole.mockResolvedValueOnce(
+    mockedUsersApi.listUsersByRole.mockResolvedValueOnce(
       makeMemberList([
         makeUser({
           _id: 'spamspamspamspamspam0001',
@@ -587,7 +622,7 @@ describe('<AdminSearchUsers />', () => {
   });
 
   it('hides public profile links for suspended members in search results', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce(
+    mockedUsersApi.searchUsers.mockResolvedValueOnce(
       makeMemberList([
         makeUser({
           _id: '123456789012345678901235',
