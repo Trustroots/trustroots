@@ -67,12 +67,16 @@ const FlexGrow = styled.div`
   flex-grow: 1;
 `;
 
-function YouHaveNotBeenTalkingYet() {
+function YouHaveNotBeenTalkingYet({ name }: { name?: string | null }) {
   const { t } = useTranslation('messages');
   return (
     <div className="content-empty">
       <i className="icon-3x icon-messages-alt" />
-      <h4>{t<string>("You haven't been talking yet.")}</h4>
+      <h4>
+        {name
+          ? t<string>("You haven't been talking with {{name}} yet.", { name })
+          : t<string>("You haven't been talking yet.")}
+      </h4>
       <Flashcard />
     </div>
   );
@@ -394,7 +398,9 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
                   {hasEmptyProfile ? (
                     <YourProfileSeemsQuiteEmpty />
                   ) : (
-                    <YouHaveNotBeenTalkingYet />
+                    <YouHaveNotBeenTalkingYet
+                      name={otherUser?.displayName || otherUser?.username}
+                    />
                   )}
                   <FlexGrow />
                 </>

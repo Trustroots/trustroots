@@ -36,7 +36,14 @@ const profileQueryFields = [
 
 const publicFields = profileQueryFields
   .filter(field => !['updated', 'passwordUpdated'].includes(field))
-  .concat(['_id', 'public', 'memberIds', 'isVolunteer', 'isVolunteerAlumni']);
+  .concat([
+    '_id',
+    'public',
+    'memberIds',
+    'isVolunteer',
+    'isVolunteerAlumni',
+    'isGreeter',
+  ]);
 
 const ownFields = publicFields.concat([
   'firstName',
