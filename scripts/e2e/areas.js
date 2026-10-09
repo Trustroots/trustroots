@@ -1,6 +1,7 @@
 const path = require('path');
 
 const AREA_BY_SPEC = {
+  'csp.spec.js': 'Public pages',
   'react-recovery-pages.spec.js': 'Public pages',
   'react-member-connections.spec.js': 'Public pages',
   'react-contact-confirmation.spec.js': 'Public pages',
