@@ -2,9 +2,7 @@ import async from 'async';
 import mongoose from 'mongoose';
 import _ from 'lodash';
 import moment from 'moment';
-
 const service = {};
-
 const Message = mongoose.model('Message');
 const MessageStat = mongoose.model('MessageStat');
 
@@ -18,7 +16,6 @@ function createMessageStat(message, done) {
     firstMessageCreated: message.created,
     firstMessageLength: message.content.length,
   });
-
   messageStat.save(function (err) {
     if (err) return done(err);
     return done(null, messageStat);
@@ -85,7 +82,6 @@ service.updateMessageStat = function (message, callback) {
           done(err, messageStat);
         });
       },
-
       // After searching for the MessageStat, next we take one of three actions:
       // - No MessageStat found, create a new one with the first message
       // - MessageStat found, no reply information saved, update the reply
@@ -136,12 +132,13 @@ service.updateMessageStat = function (message, callback) {
           })
             // Sort by the `created` field to find the first message
             // sent or received between these two users
-            .sort({ created: 1 })
+            .sort({
+              created: 1,
+            })
             .exec(function (err, firstMessage) {
               return done(err, firstMessage);
             });
         },
-
         // Create the MessageStat filling only the first message part
         function (firstMessage, done) {
           if (firstMessage) {
@@ -150,7 +147,6 @@ service.updateMessageStat = function (message, callback) {
             return done(new Error('The Thread is Empty'));
           }
         },
-
         // Then do the same search for the firstReply from above
         // We do this because we can't be sure that this process has been run on
         // the first message between two users, so we check here if there is
@@ -158,7 +154,6 @@ service.updateMessageStat = function (message, callback) {
         function (messageStat, done) {
           findMessagesUpdateMessageStat(messageStat, done);
         },
-
         function (response, done) {
           if (response === 'other') {
             response = 'first';
@@ -186,12 +181,13 @@ service.updateMessageStat = function (message, callback) {
             userTo: messageStat.firstMessageUserFrom,
           })
             // Sort by `created` to get the *first* reply
-            .sort({ created: 1 })
+            .sort({
+              created: 1,
+            })
             .exec(function (err, firstReply) {
               return done(err, firstReply);
             });
         },
-
         function (firstReply, done) {
           // If we do:
           if (firstReply) {
@@ -216,8 +212,8 @@ service.updateMessageStat = function (message, callback) {
  * @param {Error} err
  * @param {Object} stats
  * @param {?number} stats.replyRate - the reply rate of the user.
- *    Equals null when no messageStats found, otherwise number from interval
- *    [0, 1] (replied/all)
+ *    Equals null when fewer than three eligible messageStats are available,
+ *    otherwise number from interval [0, 1] (replied/all)
  * @param {?number} stats.replyTime - the average number of milliseconds
  *    between the first message was sent and the first reply was sent.
  *    Equals null when stats.replyRate is null or 0. Otherwise number.
@@ -234,7 +230,6 @@ service.updateMessageStat = function (message, callback) {
  */
 service.readMessageStatsOfUser = function (userId, timeNow, callback) {
   const DAY = 24 * 3600 * 1000;
-
   async.waterfall(
     [
       /**
@@ -249,20 +244,26 @@ service.readMessageStatsOfUser = function (userId, timeNow, callback) {
             $gt: new Date(timeNow - 90 * DAY),
           },
         })
-          .sort({ firstMessageCreated: -1 })
-          .populate('firstMessageUserFrom', '_id')
+          .sort({
+            firstMessageCreated: -1,
+          })
+          .populate('firstMessageUserFrom', '_id roles')
           .exec(function (err, resp) {
             return done(err, resp);
           });
       },
-
       /**
        * Count the statistics
        */
       function (messageStats, done) {
-        // Deleted senders cannot receive replies. Exclude their statistics before
-        // choosing the time window, including records left by earlier deletions.
-        messageStats = messageStats.filter(stat => stat.firstMessageUserFrom);
+        // Deleted senders cannot receive replies, and greeter conversations are
+        // not representative of ordinary member response behaviour. Exclude
+        // both before choosing the time window, including historical records.
+        messageStats = messageStats.filter(
+          stat =>
+            stat.firstMessageUserFrom &&
+            !stat.firstMessageUserFrom.roles.includes('welcome-team'),
+        );
 
         /**
          * Choose the MessageStats to use (as described above)
@@ -294,7 +295,7 @@ service.readMessageStatsOfUser = function (userId, timeNow, callback) {
         })(messageStats);
 
         /* count the numbers for statistics
-         * if we have no messageStats
+         * if we have fewer than three eligible messageStats
          *    both replyRate and replyTime are null
          * if we have no replies
          *    replyRate is 0 and replyTime is null
@@ -320,8 +321,8 @@ service.readMessageStatsOfUser = function (userId, timeNow, callback) {
           let replyRate;
           let replyTime;
 
-          // no message stats
-          if (allCount === 0) {
+          // A small sample is not representative enough to show statistics.
+          if (allCount < 3) {
             replyRate = null;
             replyTime = null;
             // no replied stats
@@ -333,10 +334,11 @@ service.readMessageStatsOfUser = function (userId, timeNow, callback) {
             replyRate = repliedCount / allCount;
             replyTime = replyTimeCumulated / repliedCount;
           }
-
-          return { replyRate, replyTime };
+          return {
+            replyRate,
+            replyTime,
+          };
         })(chosenStats);
-
         return done(null, stats);
       },
     ],
@@ -377,8 +379,10 @@ service.formatStats = function (stats) {
   const replyTime = _.isFinite(stats.replyTime)
     ? moment.duration(stats.replyTime).humanize()
     : '';
-
-  return { replyRate, replyTime };
+  return {
+    replyRate,
+    replyTime,
+  };
 };
 
 /**
@@ -402,7 +406,6 @@ service.readFormattedMessageStatsOfUser = function (userId, timeNow, callback) {
       function (done) {
         service.readMessageStatsOfUser(userId, timeNow, done);
       },
-
       // format message stats (this one is synchronous)
       function (stats, done) {
         const formatted = service.formatStats(stats);
@@ -412,15 +415,15 @@ service.readFormattedMessageStatsOfUser = function (userId, timeNow, callback) {
     callback,
   );
 };
-
 const formatStats = service.formatStats;
 const readFormattedMessageStatsOfUser = service.readFormattedMessageStatsOfUser;
 const readMessageStatsOfUser = service.readMessageStatsOfUser;
 const updateMessageStat = service.updateMessageStat;
 export {
-  formatStats as formatStats,
-  readFormattedMessageStatsOfUser as readFormattedMessageStatsOfUser,
-  readMessageStatsOfUser as readMessageStatsOfUser,
-  updateMessageStat as updateMessageStat,
+  formatStats,
+  readFormattedMessageStatsOfUser,
+  readMessageStatsOfUser,
+  updateMessageStat,
 };
 export default service;
+export { service as 'module.exports' };

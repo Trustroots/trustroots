@@ -165,6 +165,12 @@ describe('<Thread>', () => {
 
   it('resizes the mobile thread above the on-screen keyboard', async () => {
     const windowHeight = window.innerHeight;
+    const readKeyboardInset = () =>
+      document.documentElement.style.getPropertyValue(
+        '--trustroots-keyboard-inset',
+      );
+    const expectedKeyboardInset = (height, offsetTop) =>
+      `${Math.round(windowHeight - height - offsetTop)}px`;
     originalVisualViewport = Object.getOwnPropertyDescriptor(
       window,
       'visualViewport',
@@ -182,50 +188,43 @@ describe('<Thread>', () => {
       configurable: true,
       value: visualViewport,
     });
+    api.messages.fetchMessages.mockResolvedValueOnce({
+      messages: [generateMessage(otherUser)],
+    });
     const { unmount } = render(<Thread user={me} profileMinimumLength={0} />);
     const editor = await screen.findByRole('textbox');
 
-    expect(
-      document.documentElement.style.getPropertyValue(
-        '--trustroots-keyboard-inset',
-      ),
-    ).toBe('0px');
+    expect(readKeyboardInset()).toBe('0px');
 
     editor.focus();
     fireEvent.focusIn(editor);
-    expect(
-      document.documentElement.style.getPropertyValue(
-        '--trustroots-keyboard-inset',
-      ),
-    ).toBe(`${Math.round(windowHeight - 500.4 - 20.2)}px`);
+    expect(readKeyboardInset()).toBe(expectedKeyboardInset(500.4, 20.2));
+
+    // Opening a native text menu must not move the composer while the
+    // keyboard still occupies the same part of the visual viewport.
+    editor.blur();
+    fireEvent.contextMenu(editor);
+    expect(readKeyboardInset()).toBe(expectedKeyboardInset(500.4, 20.2));
+
+    visualViewport.height = 550.4;
+    viewportListeners.scroll();
+    expect(readKeyboardInset()).toBe(expectedKeyboardInset(550.4, 20.2));
 
     visualViewport.height = windowHeight + 30;
     viewportListeners.resize();
-    expect(
-      document.documentElement.style.getPropertyValue(
-        '--trustroots-keyboard-inset',
-      ),
-    ).toBe('0px');
+    expect(readKeyboardInset()).toBe('0px');
 
     const button = screen.getByRole('button', { name: 'Yes, I can host!' });
     button.focus();
     fireEvent.focusOut(editor);
-    expect(
-      document.documentElement.style.getPropertyValue(
-        '--trustroots-keyboard-inset',
-      ),
-    ).toBe('0px');
+    expect(readKeyboardInset()).toBe('0px');
 
     unmount();
     expect(visualViewport.removeEventListener).toHaveBeenCalledWith(
       'resize',
       expect.any(Function),
     );
-    expect(
-      document.documentElement.style.getPropertyValue(
-        '--trustroots-keyboard-inset',
-      ),
-    ).toBe('');
+    expect(readKeyboardInset()).toBe('');
   });
 
   it('shows the activation prompt and skips loading for private users', () => {
@@ -239,6 +238,33 @@ describe('<Thread>', () => {
   });
 
   describe('no messages', () => {
+    it.each([
+      [
+        'Fictional <Member>',
+        'fictional-member',
+        "You haven't been talking with Fictional <Member> yet.",
+      ],
+      [
+        '',
+        'fictional-member',
+        "You haven't been talking with fictional-member yet.",
+      ],
+      [null, null, "You haven't been talking yet."],
+    ])(
+      'names an empty conversation with safe fallbacks: %s / %s',
+      async (displayName, username, heading) => {
+        api.users.fetch.mockResolvedValueOnce({
+          ...otherUser,
+          displayName,
+          username,
+        });
+        render(<Thread user={me} profileMinimumLength={0} />);
+        expect(
+          await screen.findByRole('heading', { name: heading }),
+        ).toBeInTheDocument();
+      },
+    );
+
     beforeEach(() => {
       api.messages.fetchMessages.mockResolvedValueOnce({ messages: [] });
     });
@@ -258,8 +284,15 @@ describe('<Thread>', () => {
         <Thread user={me} profileMinimumLength={0} />,
       );
       const form = await findByRole('form');
-      expect(queryByText(/You haven't been talking yet/)).toBeInTheDocument();
+      expect(
+        queryByText(
+          `You haven't been talking with ${
+            otherUser.displayName || otherUser.username
+          } yet.`,
+        ),
+      ).toBeInTheDocument();
       expect(within(form).queryByRole('textbox')).toBeInTheDocument();
+      expect(screen.queryByTestId('quick-reply')).not.toBeInTheDocument();
       expect(screen.getByRole('link', { name: 'safety tips' })).toHaveAttribute(
         'href',
         '/safety',
@@ -307,6 +340,9 @@ describe('<Thread>', () => {
       expect(
         await screen.findByText('Hello, can I stay next Tuesday?'),
       ).toBeInTheDocument();
+      expect(
+        screen.queryByText(/You haven't been talking with/),
+      ).not.toBeInTheDocument();
     });
   });
 

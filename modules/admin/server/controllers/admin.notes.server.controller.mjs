@@ -2,8 +2,8 @@
  * Module dependencies.
  */
 import _ from 'lodash';
-import errorService from '../../../core/server/services/error.server.service.js';
-import textService from '../../../core/server/services/text.server.service.js';
+import errorService from './../../../core/server/services/error.server.service.mjs';
+import textService from './../../../core/server/services/text.server.service.mjs';
 import sanitizeHtml from 'sanitize-html';
 import mongoose from 'mongoose';
 const AdminNote = mongoose.model('AdminNote');
@@ -14,7 +14,6 @@ const AdminNote = mongoose.model('AdminNote');
 export const addNote = async (req, res) => {
   const userId = _.get(req, ['body', 'userId']);
   const note = _.get(req, ['body', 'note']);
-
   if (typeof note !== 'string' || note.trim() === '') {
     return res.status(400).send({
       message: 'Empty note.',
@@ -22,11 +21,8 @@ export const addNote = async (req, res) => {
   }
 
   // Check that the user id is provided
-  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
-  }
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId))
+    return errorService.sendInvalidId(res);
 
   try {
     const adminNoteItem = new AdminNote({
@@ -34,15 +30,14 @@ export const addNote = async (req, res) => {
       note: sanitizeHtml(note, textService.sanitizeOptions),
       user: userId,
     });
-
     await adminNoteItem.save();
-    res.send({ message: 'Note saved.' });
+    res.send({
+      message: 'Note saved.',
+    });
   } catch (err) {
     /* istanbul ignore else */
     if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err),
-      });
+      return errorService.sendBadRequest(res, err);
     }
   }
 };
@@ -54,11 +49,8 @@ export const getNotes = async (req, res) => {
   const userId = _.get(req, ['query', 'userId']);
 
   // Check that the user id is provided
-  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
-  }
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId))
+    return errorService.sendInvalidId(res);
 
   AdminNote.find({ user: userId })
     .sort('-date')
@@ -69,12 +61,14 @@ export const getNotes = async (req, res) => {
     })
     .exec((err, items) => {
       if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       }
       res.send(items || []);
     });
 };
-
-export default { addNote, getNotes };
+const defaultInterop = {
+  addNote,
+  getNotes,
+};
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

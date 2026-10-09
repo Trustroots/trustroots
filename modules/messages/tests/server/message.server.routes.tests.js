@@ -4,10 +4,9 @@ const async = require('async');
 const request = require('supertest');
 const moment = require('moment');
 const mongoose = require('mongoose');
-const config = require('../../../../config/config');
-const express = require('../../../../config/lib/express');
+const config = require('./../../../../config/config.mjs');
+const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
-
 const User = mongoose.model('User');
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');
@@ -29,13 +28,13 @@ let message;
  */
 describe('Message CRUD tests', function () {
   before(function (done) {
-    // Get application
-    app = express.init(mongoose.connection);
-    agent = request.agent(app);
-
-    done();
+    (async () => {
+      // Get application
+      app = await express.init(mongoose.connection);
+      agent = request.agent(app);
+      done();
+    })().catch(done);
   });
-
   beforeEach(function (done) {
     // Create userFrom credentials
     credentials = {
@@ -56,7 +55,6 @@ describe('Message CRUD tests', function () {
       description: _.repeat('.', config.profileMinimumLength),
       public: true,
     });
-
     userTo = new User({
       firstName: 'Full',
       lastName: 'Name',
@@ -86,9 +84,7 @@ describe('Message CRUD tests', function () {
       });
     });
   });
-
   afterEach(utils.clearDatabase);
-
   it('should not be able to read inbox if not logged in', function (done) {
     agent
       .get('/api/messages')
@@ -100,7 +96,6 @@ describe('Message CRUD tests', function () {
         return done(messageSaveErr);
       });
   });
-
   it('should not be able to send message if not logged in', function (done) {
     agent
       .post('/api/messages')
@@ -113,7 +108,6 @@ describe('Message CRUD tests', function () {
         return done(messageSaveErr);
       });
   });
-
   it('should be able to send and read messages if logged in', function (done) {
     agent
       .post('/api/auth/signin')
@@ -145,7 +139,6 @@ describe('Message CRUD tests', function () {
 
                 // Get messages list
                 const thread = messagesGetRes.body;
-
                 if (!thread[0] || !thread[0].content) {
                   return done(
                     new Error('Missing messages from the message thread.'),
@@ -165,36 +158,31 @@ describe('Message CRUD tests', function () {
           });
       });
   });
-
   it('should hide all messages from a blocked member', async function () {
     await agent.post('/api/auth/signin').send(credentials).expect(200);
     await agent.post('/api/messages').send(message).expect(200);
-
     userTo.blocked = [userFromId];
     await userTo.save();
-
     await agent
       .post('/api/auth/signin')
-      .send({ username: 'username2', password: 'password123' })
+      .send({
+        username: 'username2',
+        password: 'password123',
+      })
       .expect(200);
-
     const [threadResponse, inboxResponse, unreadResponse] = await Promise.all([
       agent.get('/api/messages/' + userFromId).expect(200),
       agent.get('/api/messages').expect(200),
       agent.get('/api/messages-count').expect(200),
     ]);
-
     threadResponse.body.should.be.empty();
     inboxResponse.body.should.be.empty();
     unreadResponse.body.unread.should.equal(0);
   });
-
   it('should be able to send and read own messages when with role "shadowban"', function (done) {
     userFrom.roles = ['user', 'shadowban'];
-
     userFrom.save(function (saveErr) {
       should.not.exist(saveErr);
-
       agent
         .post('/api/auth/signin')
         .send(credentials)
@@ -216,27 +204,22 @@ describe('Message CRUD tests', function () {
                 .expect(200)
                 .end(function (messagesGetErr, messagesGetRes) {
                   should.not.exist(messagesGetErr);
-
                   if (
                     !messagesGetRes.body[0] ||
                     !messagesGetRes.body[0].content
                   ) {
                     return done(new Error('Message list empty.'));
                   }
-
                   done();
                 });
             });
         });
     });
   });
-
   it('should be able to read messages from user with role "shadowban"', function (done) {
     userTo.roles = ['user', 'shadowban'];
-
     userTo.save(function (saveErr) {
       should.not.exist(saveErr);
-
       agent
         .post('/api/auth/signin')
         .send(credentials)
@@ -252,13 +235,10 @@ describe('Message CRUD tests', function () {
         });
     });
   });
-
   it('should not be able to send messages to user with role "shadowban"', function (done) {
     userTo.roles = ['user', 'shadowban'];
-
     userTo.save(function (saveErr) {
       should.not.exist(saveErr);
-
       agent
         .post('/api/auth/signin')
         .send(credentials)
@@ -271,17 +251,13 @@ describe('Message CRUD tests', function () {
         });
     });
   });
-
   it('should be able to send messages to user with role "shadowban" when with role "admin"', function (done) {
     userTo.roles = ['user', 'shadowban'];
     userFrom.roles = ['user', 'admin'];
-
     userFrom.save(function (saveErr) {
       should.not.exist(saveErr);
-
       userTo.save(function (saveErr) {
         should.not.exist(saveErr);
-
         agent
           .post('/api/auth/signin')
           .send(credentials)
@@ -295,7 +271,6 @@ describe('Message CRUD tests', function () {
       });
     });
   });
-
   it('should be able to send basic correctly formatted html in an message', function (done) {
     agent
       .post('/api/auth/signin')
@@ -335,7 +310,6 @@ describe('Message CRUD tests', function () {
 
                 // Get messages list
                 const thread = messagesGetRes.body;
-
                 if (!thread[0] || !thread[0].content) {
                   return done(
                     new Error('Missing messages from the message thread.'),
@@ -351,7 +325,6 @@ describe('Message CRUD tests', function () {
           });
       });
   });
-
   it('should be able to send wrongly formatted html in an message and get back clean html', function (done) {
     agent
       .post('/api/auth/signin')
@@ -388,7 +361,6 @@ describe('Message CRUD tests', function () {
 
                 // Get messages list
                 const thread = messagesGetRes.body;
-
                 if (!thread[0] || !thread[0].content) {
                   return done(
                     new Error('Missing messages from the message thread.'),
@@ -402,7 +374,6 @@ describe('Message CRUD tests', function () {
                     '<a href="https://www.trustroots.org/">link</a>' +
                     '<a href="http://www.trustroots.org">www.trustroots.org</a>' +
                     ' </p>';
-
                   thread[0].content.should.equal(output);
 
                   // Call the assertion callback
@@ -446,7 +417,6 @@ describe('Message CRUD tests', function () {
 
                 // Get messages list
                 const thread = messagesGetRes.body;
-
                 if (!thread[0] || !thread[0].content) {
                   return done(
                     new Error('Missing messages from the message thread.'),
@@ -464,7 +434,6 @@ describe('Message CRUD tests', function () {
           });
       });
   });
-
   it('should be able to send 25 messages and reading them should return messages in paginated order', function (done) {
     agent
       .post('/api/auth/signin')
@@ -486,7 +455,6 @@ describe('Message CRUD tests', function () {
             count++;
             const newMessage = message;
             newMessage.content = 'Message content ' + count;
-
             agent
               .post('/api/messages')
               .send(newMessage)
@@ -524,7 +492,6 @@ describe('Message CRUD tests', function () {
 
                 // Get messages list
                 const thread = messagesGetRes.body;
-
                 if (!thread[0] || !thread[0].content) {
                   return done(
                     new Error('Missing messages from the message thread.'),
@@ -550,7 +517,6 @@ describe('Message CRUD tests', function () {
 
                       // Get messages list
                       const thread = messagesGetRes.body;
-
                       if (!thread[0] || !thread[0].content) {
                         return done(
                           new Error(
@@ -575,7 +541,6 @@ describe('Message CRUD tests', function () {
         );
       });
   });
-
   it('should not be able to send a message to myself', function (done) {
     agent
       .post('/api/auth/signin')
@@ -587,7 +552,6 @@ describe('Message CRUD tests', function () {
 
         // Get user id
         const userFromId = signinRes.body._id;
-
         const messageToMyself = message;
         messageToMyself.userTo = userFromId;
 
@@ -606,7 +570,6 @@ describe('Message CRUD tests', function () {
           });
       });
   });
-
   it('should not be able to send a message without `userTo` field', function (done) {
     agent
       .post('/api/auth/signin')
@@ -615,9 +578,7 @@ describe('Message CRUD tests', function () {
       .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
-
         delete message.userTo;
-
         agent
           .post('/api/messages')
           .send(message)
@@ -630,7 +591,6 @@ describe('Message CRUD tests', function () {
           });
       });
   });
-
   it('should get error if trying to send with invalid `userTo` id', function (done) {
     agent
       .post('/api/auth/signin')
@@ -639,9 +599,7 @@ describe('Message CRUD tests', function () {
       .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
-
         message.userTo = '123';
-
         agent
           .post('/api/messages')
           .send(message)
@@ -654,7 +612,6 @@ describe('Message CRUD tests', function () {
           });
       });
   });
-
   it('should not be able to send a message to non-existing user', function (done) {
     agent
       .post('/api/auth/signin')
@@ -663,9 +620,7 @@ describe('Message CRUD tests', function () {
       .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
-
         message.userTo = '507f1f77bcf86cd799439011';
-
         agent
           .post('/api/messages')
           .send(message)
@@ -680,14 +635,16 @@ describe('Message CRUD tests', function () {
           });
       });
   });
-
   it('should not be able to send a message to non-public user', function (done) {
     User.findByIdAndUpdate(
       userToId,
-      { $set: { public: false } },
+      {
+        $set: {
+          public: false,
+        },
+      },
       function (err) {
         if (err) return done(err);
-
         agent
           .post('/api/auth/signin')
           .send(credentials)
@@ -695,7 +652,6 @@ describe('Message CRUD tests', function () {
           .end(function (signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
-
             agent
               .post('/api/messages')
               .send(message)
@@ -712,7 +668,6 @@ describe('Message CRUD tests', function () {
       },
     );
   });
-
   it('should not be able to send a message when I have too short description', function (done) {
     agent
       .post('/api/auth/signin')
@@ -747,7 +702,6 @@ describe('Message CRUD tests', function () {
         });
       });
   });
-
   it('should be able to send a message when I have too short description but another user wrote me first', function (done) {
     // Save message to this user from other user
     const newMessage = new Message({
@@ -758,11 +712,9 @@ describe('Message CRUD tests', function () {
       read: true,
       notified: true,
     });
-
     newMessage.save(function (newMessageErr, newMessageRes) {
       // Handle save error
       if (newMessageErr) return done(newMessageErr);
-
       const newThread = new Thread({
         userFrom: userToId,
         userTo: userFromId,
@@ -770,7 +722,6 @@ describe('Message CRUD tests', function () {
         message: newMessageRes._id,
         read: true,
       });
-
       newThread.save(function (newThreadErr) {
         // Handle save error
         if (newThreadErr) return done(newThreadErr);
@@ -814,7 +765,6 @@ describe('Message CRUD tests', function () {
       }); // newThread
     }); // newMessage
   });
-
   it('should not be able to check for unread message count if not logged in', function (done) {
     agent
       .get('/api/messages-count')
@@ -826,7 +776,6 @@ describe('Message CRUD tests', function () {
         return done(countReadErr);
       });
   });
-
   it('should be able to check for unread message count if logged in', function (done) {
     // Sign in
     agent
@@ -836,7 +785,6 @@ describe('Message CRUD tests', function () {
       .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
-
         agent
           .get('/api/messages-count')
           .expect(200)
@@ -848,7 +796,6 @@ describe('Message CRUD tests', function () {
           });
       });
   });
-
   it('should be able to check for unread message count if logged in', function (done) {
     // Save message to this user from other user
     const newMessage1 = new Message({
@@ -867,15 +814,12 @@ describe('Message CRUD tests', function () {
       read: false,
       notified: true,
     });
-
     newMessage1.save(function (newMessage1Err) {
       // Handle save error
       if (newMessage1Err) return done(newMessage1Err);
-
       newMessage2.save(function (newMessage2Err, newMessage2Res) {
         // Handle save error
         if (newMessage2Err) return done(newMessage2Err);
-
         const newThread = new Thread({
           userFrom: userToId,
           userTo: userFromId,
@@ -883,7 +827,6 @@ describe('Message CRUD tests', function () {
           message: newMessage2Res._id,
           read: false,
         });
-
         newThread.save(function (newThreadErr) {
           // Handle save error
           if (newThreadErr) return done(newThreadErr);
@@ -896,7 +839,6 @@ describe('Message CRUD tests', function () {
             .end(function (signinErr) {
               // Handle signin error
               if (signinErr) return done(signinErr);
-
               agent
                 .get('/api/messages-count')
                 .expect(200)
@@ -914,7 +856,6 @@ describe('Message CRUD tests', function () {
       });
     });
   });
-
   it('should not be able to read sync endpoint if not logged in', function (done) {
     agent
       .get('/api/messages-sync')
@@ -926,7 +867,6 @@ describe('Message CRUD tests', function () {
         return done(messageSaveErr);
       });
   });
-
   it('should be able to read sync endpoint and show messages sent from currently authenticated user', function (done) {
     // Save message to this user from other user
     const newMessage1 = new Message({
@@ -945,15 +885,12 @@ describe('Message CRUD tests', function () {
       read: false,
       notified: true,
     });
-
     newMessage1.save(function (newMessage1Err) {
       // Handle save error
       if (newMessage1Err) return done(newMessage1Err);
-
       newMessage2.save(function (newMessage2Err, newMessage2Res) {
         // Handle save error
         if (newMessage2Err) return done(newMessage2Err);
-
         const newThread = new Thread({
           userFrom: userFromId,
           userTo: userToId,
@@ -963,7 +900,6 @@ describe('Message CRUD tests', function () {
           message: newMessage2Res._id,
           read: false,
         });
-
         newThread.save(function (newThreadErr) {
           // Handle save error
           if (newThreadErr) return done(newThreadErr);
@@ -976,7 +912,6 @@ describe('Message CRUD tests', function () {
             .end(function (signinErr) {
               // Handle signin error
               if (signinErr) return done(signinErr);
-
               agent
                 .get('/api/messages-sync')
                 .expect(200)
@@ -984,44 +919,35 @@ describe('Message CRUD tests', function () {
                   should.not.exist(
                     syncReadRes.body.messages[userFromId.toString()],
                   );
-
                   const messages =
                     syncReadRes.body.messages[userToId.toString()];
-
                   messages.length.should.equal(2);
-
                   should.exist(messages[0]._id);
                   should.exist(messages[0].created);
                   messages[0].read.should.equal(false);
                   messages[0].userTo.should.equal(userToId.toString());
                   messages[0].userFrom.should.equal(userFromId.toString());
                   messages[0].content.should.equal('Two');
-
                   should.exist(messages[1]._id);
                   should.exist(messages[1].created);
                   messages[1].read.should.equal(false);
                   messages[1].userTo.should.equal(userToId.toString());
                   messages[1].userFrom.should.equal(userFromId.toString());
                   messages[1].content.should.equal('One');
-
                   const users = syncReadRes.body.users;
-
                   users.length.should.equal(2);
-
                   const syncedUserFrom = users.find(
                     user => user._id === userFromId.toString(),
                   );
                   const syncedUserTo = users.find(
                     user => user._id === userToId.toString(),
                   );
-
                   should.exist(syncedUserFrom);
                   syncedUserFrom.username.should.equal(userFrom.username);
                   should.exist(syncedUserFrom.emailHash);
                   should.exist(syncedUserFrom.displayName);
                   should.exist(syncedUserFrom.avatarUploaded);
                   should.exist(syncedUserFrom.avatarSource);
-
                   should.exist(syncedUserTo);
                   syncedUserTo.username.should.equal(userTo.username);
                   should.exist(syncedUserTo.emailHash);
@@ -1037,7 +963,6 @@ describe('Message CRUD tests', function () {
       });
     });
   });
-
   it('should be able to read sync endpoint and show messages sent to currently authenticated user', function (done) {
     // Save message to this user from other user
     const newMessage1 = new Message({
@@ -1056,15 +981,12 @@ describe('Message CRUD tests', function () {
       read: false,
       notified: true,
     });
-
     newMessage1.save(function (newMessage1Err) {
       // Handle save error
       if (newMessage1Err) return done(newMessage1Err);
-
       newMessage2.save(function (newMessage2Err, newMessage2Res) {
         // Handle save error
         if (newMessage2Err) return done(newMessage2Err);
-
         const newThread = new Thread({
           userFrom: userToId,
           userTo: userFromId,
@@ -1072,7 +994,6 @@ describe('Message CRUD tests', function () {
           message: newMessage2Res._id,
           read: false,
         });
-
         newThread.save(function (newThreadErr) {
           // Handle save error
           if (newThreadErr) return done(newThreadErr);
@@ -1085,7 +1006,6 @@ describe('Message CRUD tests', function () {
             .end(function (signinErr) {
               // Handle signin error
               if (signinErr) return done(signinErr);
-
               agent
                 .get('/api/messages-sync')
                 .expect(200)
@@ -1093,37 +1013,29 @@ describe('Message CRUD tests', function () {
                   should.not.exist(
                     syncReadRes.body.messages[userToId.toString()],
                   );
-
                   const messages =
                     syncReadRes.body.messages[userFromId.toString()];
-
                   messages.length.should.equal(2);
-
                   should.exist(messages[0]._id);
                   should.exist(messages[0].created);
                   messages[0].read.should.equal(false);
                   messages[0].userFrom.should.equal(userToId.toString());
                   messages[0].userTo.should.equal(userFromId.toString());
                   messages[0].content.should.equal('Two');
-
                   should.exist(messages[1]._id);
                   should.exist(messages[1].created);
                   messages[1].read.should.equal(false);
                   messages[1].userFrom.should.equal(userToId.toString());
                   messages[1].userTo.should.equal(userFromId.toString());
                   messages[1].content.should.equal('One');
-
                   const users = syncReadRes.body.users;
-
                   users.length.should.equal(2);
-
                   users[0]._id.should.equal(userFromId.toString());
                   users[0].username.should.equal(userFrom.username);
                   should.exist(users[0].emailHash);
                   should.exist(users[0].displayName);
                   should.exist(users[0].avatarUploaded);
                   should.exist(users[0].avatarSource);
-
                   users[1]._id.should.equal(userToId.toString());
                   users[1].username.should.equal(userTo.username);
                   should.exist(users[1].emailHash);
@@ -1139,27 +1051,22 @@ describe('Message CRUD tests', function () {
       });
     });
   });
-
   it('should be able to read sync endpoint when with role "shadowban"', function (done) {
     userFrom.roles = ['user', 'shadowban'];
-
     userFrom.save(function (saveErr) {
       should.not.exist(saveErr);
-
       agent
         .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
         .end(function (signinErr) {
           should.not.exist(signinErr);
-
           agent
             .post('/api/messages')
             .send(message)
             .expect(200)
             .end(function (messageSaveErr) {
               should.not.exist(messageSaveErr);
-
               agent
                 .get('/api/messages-sync')
                 .expect(200)
@@ -1177,27 +1084,22 @@ describe('Message CRUD tests', function () {
         });
     });
   });
-
   it('should not deliver shadowbanned sender messages to recipient thread', function (done) {
     userFrom.roles = ['user', 'shadowban'];
-
     userFrom.save(function (saveErr) {
       should.not.exist(saveErr);
-
       agent
         .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
         .end(function (signinErr) {
           should.not.exist(signinErr);
-
           agent
             .post('/api/messages')
             .send(message)
             .expect(200)
             .end(function (messageSaveErr) {
               should.not.exist(messageSaveErr);
-
               const recipientAgent = request.agent(app);
               recipientAgent
                 .post('/api/auth/signin')
@@ -1208,7 +1110,6 @@ describe('Message CRUD tests', function () {
                 .expect(200)
                 .end(function (recipientSigninErr) {
                   should.not.exist(recipientSigninErr);
-
                   recipientAgent
                     .get('/api/messages/' + userFromId)
                     .expect(200)
@@ -1222,27 +1123,22 @@ describe('Message CRUD tests', function () {
         });
     });
   });
-
   it('should not deliver shadowbanned sender messages to recipient sync', function (done) {
     userFrom.roles = ['user', 'shadowban'];
-
     userFrom.save(function (saveErr) {
       should.not.exist(saveErr);
-
       agent
         .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
         .end(function (signinErr) {
           should.not.exist(signinErr);
-
           agent
             .post('/api/messages')
             .send(message)
             .expect(200)
             .end(function (messageSaveErr) {
               should.not.exist(messageSaveErr);
-
               const recipientAgent = request.agent(app);
               recipientAgent
                 .post('/api/auth/signin')
@@ -1253,7 +1149,6 @@ describe('Message CRUD tests', function () {
                 .expect(200)
                 .end(function (recipientSigninErr) {
                   should.not.exist(recipientSigninErr);
-
                   recipientAgent
                     .get('/api/messages-sync')
                     .expect(200)

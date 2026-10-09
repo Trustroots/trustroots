@@ -1,4 +1,4 @@
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 
 const {
   SEEDED_ADMIN,
@@ -12,6 +12,96 @@ const { withE2eDb } = require('../../support/db');
 test.describe('admin acquisition feature coverage', () => {
   test.beforeEach(async ({ page, request }) => {
     await signInViaApi(page, request, SEEDED_ADMIN);
+  });
+
+  test('admin can filter acquisition stories to unassigned members', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.acquisition-stories', [
+      'Unassigned only hides assigned members and restores them when cleared.',
+      'Filtering preserves the selected sort order and handles empty results.',
+    ]);
+    const assigned = {
+      _id: '111111111111111111111111',
+      username: 'forest-member',
+      public: true,
+      created: '2026-01-01T00:00:00.000Z',
+      welcomer: {
+        _id: '222222222222222222222222',
+        username: 'fictional-greeter',
+        created: '2026-01-02T00:00:00.000Z',
+      },
+    };
+    let stories = [
+      assigned,
+      {
+        _id: '333333333333333333333333',
+        username: 'brook-member',
+        public: false,
+        created: '2026-01-03T00:00:00.000Z',
+        welcomer: null,
+      },
+      {
+        _id: '444444444444444444444444',
+        username: 'river-member',
+        public: true,
+        created: '2026-01-04T00:00:00.000Z',
+      },
+    ];
+    let requests = 0;
+    await page.route('**/api/admin/acquisition-stories', async route => {
+      requests += 1;
+      await route.fulfill({ contentType: 'application/json', json: stories });
+    });
+
+    await page.goto('/admin/acquisition-stories');
+    const checkbox = page.getByRole('checkbox', { name: 'Unassigned only' });
+    const visibility = page.getByRole('combobox', {
+      name: 'Profile visibility',
+    });
+    const members = page.locator('tbody tr td:nth-child(2)');
+    await expect(checkbox).not.toBeChecked();
+    await expect(visibility).toHaveValue('all');
+    await expect(
+      page.getByText(
+        'Hidden profiles have not activated their signup through email confirmation.',
+      ),
+    ).toBeVisible();
+    await expect(members).toHaveCount(3);
+    await page.getByRole('button', { name: 'Member', exact: true }).click();
+    await checkbox.check();
+    await expect(members).toHaveText(['brook-member', 'river-member']);
+    await visibility.selectOption('visible');
+    await expect(members).toHaveText(['river-member']);
+    await visibility.selectOption('hidden');
+    await expect(members).toHaveText(['brook-member']);
+    await visibility.selectOption('all');
+    await expect(members).toHaveText(['brook-member', 'river-member']);
+    await expect(page.locator('tbody tr')).toContainText([
+      'Unassigned',
+      'Unassigned',
+    ]);
+    await page.getByRole('button', { name: 'Member ▲', exact: true }).click();
+    await expect(members).toHaveText(['river-member', 'brook-member']);
+    await checkbox.uncheck();
+    await expect(members).toHaveText([
+      'river-member',
+      'forest-member',
+      'brook-member',
+    ]);
+    expect(requests).toBe(1);
+
+    stories = [assigned];
+    await page.reload();
+    await expect(members).toHaveCount(1);
+    await checkbox.check();
+    await expect(
+      page.getByText('No unassigned acquisition stories found.'),
+    ).toBeVisible();
+    await expect(checkbox).toBeVisible();
+    await expect(visibility).toBeVisible();
+    await checkbox.uncheck();
+    await expect(members).toHaveText(['forest-member']);
   });
 
   test('admin acquisition story tools return deterministic rows and analysis', async ({
@@ -51,7 +141,7 @@ test.describe('admin acquisition feature coverage', () => {
       aliceRow.getByRole('link', {
         name: 'e2e-seeded-shadow (Shadow Spammer)',
       }),
-    ).toHaveAttribute('href', '/admin/user?id=665000000000000000000004');
+    ).toHaveAttribute('href', '/admin/user/e2e-seeded-shadow');
     await expect(
       aliceRow.getByText(/Temporary email identifier/),
     ).toBeVisible();

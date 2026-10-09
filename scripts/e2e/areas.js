@@ -1,17 +1,21 @@
 const path = require('path');
 
 const AREA_BY_SPEC = {
+  'csp.spec.js': 'Public pages',
   'react-recovery-pages.spec.js': 'Public pages',
   'react-member-connections.spec.js': 'Public pages',
   'react-contact-confirmation.spec.js': 'Public pages',
   'react-home-safety.spec.js': 'Public pages',
   'circles-react.spec.js': 'Member flows',
+  'webp-images.spec.js': 'Public pages',
   'member-entry-react.spec.js': 'Member flows',
   'auth-smoke.spec.js': 'Authentication',
+  'signin-session.spec.js': 'Authentication',
   'route-permissions.spec.js': 'Authentication',
   'account-lifecycle.spec.js': 'Authentication',
   'account-email-tokens.spec.js': 'Authentication',
   'account-request-timeouts.spec.js': 'Authentication',
+  'account-input-validation.spec.js': 'Authentication',
   'account-settings.spec.js': 'Authentication',
   'authenticated.spec.js': 'Member flows',
   'profile-react.spec.js': 'Member flows',
@@ -29,6 +33,8 @@ const AREA_BY_SPEC = {
   'nostr.spec.js': 'Nostr',
   'seeded-content.spec.js': 'Seeded content',
   'messages-api.spec.js': 'Messages',
+  'reply-statistics.spec.js': 'Messages',
+  'greeter-recognition.spec.js': 'Messages',
   'messages.spec.js': 'Messages',
   'message-actions.spec.js': 'Messages',
   'messages-layout.spec.js': 'Messages',
@@ -47,6 +53,7 @@ const AREA_BY_SPEC = {
   'admin-reference-errors.spec.js': 'Admin',
   'admin-role-audit.spec.js': 'Admin',
   'admin-search.spec.js': 'Admin',
+  'admin-role-links.spec.js': 'Admin',
   'auth.setup.js': 'Setup',
 };
 

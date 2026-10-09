@@ -1,1 +1,1 @@
-require('./server.mjs');
+import './server.mjs';

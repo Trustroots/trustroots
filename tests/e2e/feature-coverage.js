@@ -50,7 +50,7 @@ const source = {
   offersClient: 'modules/offers/client/config/offers.client.routes.js',
   offersServer: 'modules/offers/server/routes/offers.server.routes.js',
   pagesClient: 'modules/pages/client/config/pages.client.routes.js',
-  pagesServer: 'modules/pages/server/routes/admin.server.routes.js',
+  pagesServer: 'modules/pages/server/routes/pages.server.routes.js',
   referencesThreadServer:
     'modules/references-thread/server/routes/reference-thread.server.routes.js',
   searchClient: 'modules/search/client/config/search.client.routes.js',
@@ -117,6 +117,7 @@ const specPaths = {
   'message-actions.spec.js': 'features/messages/message-actions.spec.js',
   'messages-api.spec.js': 'features/messages/messages-api.spec.js',
   'messages.spec.js': 'features/messages/messages.spec.js',
+  'reply-statistics.spec.js': 'features/messages/reply-statistics.spec.js',
   'nostr.spec.js': 'features/public-core/nostr.spec.js',
   'offers-and-circles.spec.js':
     'features/search-offers-circles/offers-and-circles.spec.js',
@@ -1699,6 +1700,8 @@ const features = [
     },
     requiredScenarios: [
       'Search members page loads.',
+      'Map search links to an autofocused member search.',
+      'Search matches public home locations and shows their context.',
       'Search returns seeded hosts.',
       'Search handles empty or no-result states.',
     ],
@@ -2342,6 +2345,26 @@ const features = [
     ],
   },
   {
+    id: 'messages.reply-statistics',
+    area: AREA.messages,
+    status: STATUS.active,
+    description:
+      'Profile reply statistics use eligible member conversations and a minimum sample.',
+    roles: ['confirmed-member'],
+    references: {
+      apiRoutes: [apiRoute('GET', '/api/users/:username', source.usersServer)],
+    },
+    requiredScenarios: [
+      'Profile reply statistics exclude current greeters and require three eligible conversations.',
+    ],
+    relatedSpecs: [
+      spec(
+        'reply-statistics.spec.js',
+        'reply statistics exclude current greeter conversations before the minimum sample',
+      ),
+    ],
+  },
+  {
     id: 'messages.reply-focus',
     area: AREA.messages,
     status: STATUS.active,
@@ -2655,11 +2678,16 @@ const features = [
       'Authenticated non-admin direct loads of React-owned admin pages redirect away.',
       'Dashboard shows ten most recent negative thread votes.',
       'Dashboard shows ten most recent negative experiences.',
+      'Dashboard previews negative-experience feedback.',
     ],
     relatedSpecs: [
       spec(
         'admin-pages.spec.js',
         'admin dashboard welcomes the signed in admin',
+      ),
+      spec(
+        'admin-pages.spec.js',
+        'admin dashboard previews negative experience feedback',
       ),
       spec(
         'authenticated.spec.js',
@@ -2721,7 +2749,7 @@ const features = [
       ],
     },
     requiredScenarios: [
-      'Welcome team can view stories without other administrator access.',
+      'Greeters can view stories without other administrator access.',
       'Acquisition stories page loads.',
       'Acquisition stories query returns deterministic rows.',
       'Story rows show available member and hosting locations.',
@@ -2754,7 +2782,7 @@ const features = [
       ],
     },
     requiredScenarios: [
-      'Welcome team can view analysis.',
+      'Greeters can view analysis.',
       'Acquisition story analysis page loads.',
       'Analysis API returns deterministic analysis.',
     ],
@@ -2784,14 +2812,14 @@ const features = [
       ],
     },
     requiredScenarios: [
-      'Admins can inspect blockers of any administrator or Welcome team member.',
-      'Welcome team members can inspect only blockers of their own account.',
+      'Admins can inspect blockers of any administrator or Greeter.',
+      'Greeters can inspect only blockers of their own account.',
       'Regular members cannot access staff blocker information.',
     ],
     relatedSpecs: [
       spec(
         'admin-inspection.spec.js',
-        'staff blockers are grouped for admins and limited for Welcome team members',
+        'staff blockers are grouped for admins and limited for Greeters',
       ),
     ],
   },
@@ -2957,6 +2985,7 @@ const features = [
       'Admin user report card loads for a member id.',
       'Report card includes role and message counts.',
       'Report card shows the current role inventory.',
+      'Admin report shows the member public profile below moderation information.',
       'Restricted member report shows potential related accounts.',
       'Missing user id shows a usable error state.',
     ],
@@ -3009,7 +3038,7 @@ const features = [
       ],
     },
     requiredScenarios: [
-      'Administrator grants and revokes Welcome team membership.',
+      'Administrator grants and revokes greeter status.',
       'Admin can apply a moderation role change.',
       'Admin can remove a shadowban from a member report.',
       'Role change is recorded in audit log.',

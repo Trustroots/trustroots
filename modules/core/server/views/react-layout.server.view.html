@@ -214,14 +214,15 @@
       );
       ga('create', '{{ googleAnalytics.code }}', 'auto');
     </script>
-    {% endif %}
+    {% endif %} {% if umami.enabled != false %}
     <script
-      defer
+      async
       src="{{ umami.scriptSrc }}"
       data-website-id="{{ umami.websiteId }}"
       data-do-not-track="true"
       nonce="{{ nonce }}"
     ></script>
+    {% endif %}
   </head>
   <body>
     {% block content %}{% endblock content %}

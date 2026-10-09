@@ -1,6 +1,5 @@
 import mongoose from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate';
-
 const service = {};
 
 /**
@@ -55,12 +54,16 @@ const MessageSchema = new Schema({
     required: true,
   },
 });
-
-MessageSchema.index({ read: 1, created: 1, notificationSent: 1 });
-MessageSchema.index({ created: -1, userFrom: 1 });
-
+MessageSchema.index({
+  read: 1,
+  created: 1,
+  notificationSent: 1,
+});
+MessageSchema.index({
+  created: -1,
+  userFrom: 1,
+});
 MessageSchema.plugin(mongoosePaginate);
-
 mongoose.model('Message', MessageSchema);
-
 export default service;
+export { service as 'module.exports' };

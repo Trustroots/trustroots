@@ -1,8 +1,8 @@
 const should = require('should');
 const mongoose = require('mongoose');
-const config = require('../../../../config/config');
+const config = require('./../../../../config/config.mjs');
 const winston = require('winston');
-const statService = require('../../../stats/server/services/stats.server.service');
+const statService = require('./../../../stats/server/services/stats.server.service.mjs');
 const sinon = require('sinon');
 
 function queryResult(value, err) {
@@ -31,7 +31,7 @@ describe('Message server services unit tests', function () {
       sinon.stub(config, 'limits').value(serviceConfig.limits);
       sinon.stub(statService, 'stat');
       const log = sinon.stub(winston.Logger.prototype, 'log');
-      const service = require('../../server/services/message-to-stats.server.service');
+      const service = require('./../../server/services/message-to-stats.server.service.mjs');
 
       return { Message, log, service, statService };
     }
@@ -264,7 +264,7 @@ describe('Message server services unit tests', function () {
       sinon.stub(MessageStat, 'findOne');
       sinon.stub(MessageStat, 'findOneAndUpdate');
       sinon.stub(MessageStat, 'find');
-      const service = require('../../server/services/message-stat.server.service');
+      const service = require('./../../server/services/message-stat.server.service.mjs');
 
       if (options.messageStatFindOne) {
         MessageStat.findOne.returns(options.messageStatFindOne);

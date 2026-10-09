@@ -16,6 +16,32 @@ const build = {
 };
 
 describe('<SiteFooter />', () => {
+  it('shows only deployed build metadata in the account footer', () => {
+    render(
+      <SiteFooter
+        variant="account"
+        build={build}
+        photoCredits={{
+          road: {
+            name: 'Example Photographer',
+            url: 'https://example.com/photo',
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('contentinfo')).toHaveClass('site-footer-account');
+    expect(
+      screen.getByRole('link', {
+        name: 'Currently deployed code: 2026-06-21 18:06 UTC (7a1d639)',
+      }),
+    ).toHaveAttribute('href', build.commitUrl);
+    expect(
+      screen.queryByRole('link', { name: 'Volunteering' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Photo by')).not.toBeInTheDocument();
+  });
+
   it('renders the standard footer with links and build metadata', () => {
     const { container } = render(<SiteFooter build={build} />);
 
@@ -112,6 +138,22 @@ describe('<SiteFooter />', () => {
     expect(container.querySelector('.site-footer-meta')).toBeInTheDocument();
     expect(footer).not.toHaveClass('tr-footer-admin');
     expect(footer).not.toHaveClass('hidden-xs');
+  });
+
+  it('renders account footer build metadata without the standard navigation', () => {
+    render(<SiteFooter variant="account" build={build} />);
+
+    expect(screen.getByRole('contentinfo')).toHaveClass(
+      'site-footer-account',
+      'hidden-print',
+    );
+    expect(
+      screen.getByRole('link', {
+        name: 'Currently deployed code: 2026-06-21 18:06 UTC (7a1d639)',
+      }),
+    ).toHaveAttribute('href', build.commitUrl);
+    expect(screen.queryByRole('link', { name: 'FAQ' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Photo by')).not.toBeInTheDocument();
   });
 
   it('renders the home footer with photo credits and build metadata', () => {

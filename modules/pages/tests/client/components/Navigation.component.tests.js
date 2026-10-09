@@ -27,6 +27,7 @@ jest.mock('@/modules/users/client/components/Avatar.component.js', () => {
 
 describe('<Navigation />', () => {
   const user = {
+    _id: '507f1f77bcf86cd799439011',
     username: 'alice',
     displayName: 'Alice Example',
   };
@@ -60,6 +61,54 @@ describe('<Navigation />', () => {
       'href',
       '/safety',
     );
+  });
+
+  it('renders the Info and support links from the shared registry in order', () => {
+    const { container } = render(
+      <Navigation user={user} onSignout={jest.fn()} />,
+    );
+
+    expect(screen.getByText('Info & support')).toBeInTheDocument();
+
+    const groups = container.querySelectorAll('.list-group');
+    expect(groups).toHaveLength(2);
+    const links = Array.from(groups[1].querySelectorAll('a'));
+    expect(links.map(link => link.textContent)).toEqual([
+      'About',
+      'Blog',
+      'Contact & Support',
+      'FAQ',
+      'Foundation',
+      'Media',
+      'Wiki',
+      'Privacy',
+      'Rules',
+      'Safety',
+      'Statistics',
+    ]);
+    expect(links.map(link => link.getAttribute('href'))).toEqual([
+      '/about',
+      'https://ideas.trustroots.org/',
+      '/support',
+      '/faq',
+      '/foundation',
+      '/media',
+      'https://wiki.trustroots.org/',
+      '/privacy',
+      '/rules',
+      '/safety',
+      '/statistics',
+    ]);
+    // Only Wiki opens in a new tab; the registry drives this via opensInNewTab.
+    links.forEach(link => {
+      if (link.getAttribute('href') === 'https://wiki.trustroots.org/') {
+        expect(link).toHaveAttribute('target', '_blank');
+        expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+      } else {
+        expect(link).not.toHaveAttribute('target');
+        expect(link).not.toHaveAttribute('rel');
+      }
+    });
   });
 
   it('invokes onSignout when sign out link is clicked', () => {

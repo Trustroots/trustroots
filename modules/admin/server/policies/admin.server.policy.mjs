@@ -1,10 +1,9 @@
 /**
  * Module dependencies.
  */
-import createMemoryPolicy from '../../../core/server/services/memory-policy.server.service.js';
+import createMemoryPolicy from './../../../core/server/services/memory-policy.server.service.mjs';
 import _ from 'lodash';
-import errorService from '../../../core/server/services/error.server.service.js';
-
+import errorService from './../../../core/server/services/error.server.service.mjs';
 const aclInstance = createMemoryPolicy();
 
 /**
@@ -15,12 +14,18 @@ export const invokeRolesPolicies = () => {
     {
       roles: ['welcome-team'],
       allows: [
-        { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
+        {
+          resources: '/api/admin/acquisition-stories',
+          permissions: ['post'],
+        },
         {
           resources: '/api/admin/acquisition-stories/analysis',
           permissions: ['post'],
         },
-        { resources: '/api/admin/staff-blockers', permissions: ['get'] },
+        {
+          resources: '/api/admin/staff-blockers',
+          permissions: ['get'],
+        },
       ],
     },
     {
@@ -31,7 +36,10 @@ export const invokeRolesPolicies = () => {
           resources: '/api/admin/circles/:circle',
           permissions: ['get', 'put'],
         },
-        { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
+        {
+          resources: '/api/admin/acquisition-stories',
+          permissions: ['post'],
+        },
         {
           resources: '/api/admin/acquisition-stories/analysis',
           permissions: ['post'],
@@ -49,17 +57,38 @@ export const invokeRolesPolicies = () => {
           resources: '/api/admin/messages/scammer-warning',
           permissions: ['post'],
         },
-        { resources: '/api/admin/threads', permissions: ['post'] },
-        { resources: '/api/admin/notes', permissions: ['get', 'post'] },
-        { resources: '/api/admin/user', permissions: ['post'] },
-        { resources: '/api/admin/user/change-role', permissions: ['post'] },
-        { resources: '/api/admin/users', permissions: ['post'] },
-        { resources: '/api/admin/users/by-role', permissions: ['post'] },
+        {
+          resources: '/api/admin/threads',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/admin/notes',
+          permissions: ['get', 'post'],
+        },
+        {
+          resources: '/api/admin/user',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/admin/user/change-role',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/admin/users',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/admin/users/by-role',
+          permissions: ['post'],
+        },
         {
           resources: '/api/admin/users/by-last-ip-address',
           permissions: ['post'],
         },
-        { resources: '/api/admin/reference-threads', permissions: ['get'] },
+        {
+          resources: '/api/admin/reference-threads',
+          permissions: ['get'],
+        },
         {
           resources: '/api/admin/newsletter-subscribers',
           permissions: ['get'],
@@ -110,8 +139,10 @@ export const isAllowed = (req, res, next) => {
     },
   );
 };
-
-export default { invokeRolesPolicies, isAllowed };
-
-// Expose the ACL instance only to native ESM tests; the CommonJS API stays unchanged.
+const defaultInterop = {
+  invokeRolesPolicies,
+  isAllowed,
+};
+export default defaultInterop; // Expose the ACL instance only to native ESM tests; the CommonJS API stays unchanged.
 export { aclInstance as _acl };
+export { defaultInterop as 'module.exports' };

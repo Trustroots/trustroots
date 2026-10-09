@@ -57,35 +57,86 @@ const MessageContainerBase = styled.div.attrs<{ message: Message }>(
   }),
 )`
   display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 16px;
 
   .message-main {
-    flex-grow: 1;
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: min(72%, 640px);
+  }
+
+  .message-author {
+    flex: 0 0 32px;
+    order: -1;
+    margin: 0 0 2px;
 
     .avatar {
-      display: none;
+      margin: 0;
     }
   }
 
   .panel {
-    display: flex;
+    margin-bottom: 0;
+    border-radius: 16px;
+    box-shadow: none;
+
+    &::before,
+    &::after {
+      display: none;
+    }
   }
 
-  .message-author {
-    margin: 0 15px;
+  .panel-body {
+    padding: 12px 16px;
+    overflow-wrap: anywhere;
+  }
+
+  .message-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+    margin: 0 4px 4px;
+    text-align: left;
+  }
+
+  &.message-sender-me {
+    justify-content: flex-end;
+
+    .message-meta {
+      justify-content: flex-end;
+    }
+
+    .panel {
+      background: #e1f5ed;
+      border-bottom-right-radius: 4px;
+    }
+
+    &:not([data-hosting]) .panel {
+      border-color: #c5e7da;
+    }
+
+    .message-author {
+      display: none;
+    }
+  }
+
+  &.message-sender-other .panel {
+    border-bottom-left-radius: 4px;
   }
 
   @media (max-width: 767px) {
-    .panel-body {
-      padding: 8px 15px 8px 4px;
-    }
+    gap: 6px;
+    margin-bottom: 12px;
+
     .message-main {
-      .avatar {
-        display: block;
-        margin: 8px;
-      }
+      max-width: 85%;
     }
-    .message-author {
-      display: none;
+
+    .panel-body {
+      padding: 10px 12px;
     }
   }
 `;
@@ -98,17 +149,18 @@ type ThreadMessageProps = { message: Message; user: MessageUser };
 export default function ThreadMessage({ message, user }: ThreadMessageProps) {
   const { t } = useTranslation('messages');
 
-  function isMe(otherUser: MessageUser) {
-    return otherUser._id === user._id;
-  }
+  const sentByMe = message.userFrom._id === user._id;
 
   const deletedUser = !message.userFrom.username;
 
   return (
-    <MessageContainer message={message}>
+    <MessageContainer
+      message={message}
+      className={sentByMe ? 'message-sender-me' : 'message-sender-other'}
+    >
       <div className="message-main">
         <div className="message-meta">
-          {isMe(message.userFrom) ? (
+          {sentByMe ? (
             <span>{t<string>('You')}</span>
           ) : !deletedUser ? (
             <a href={`/profile/${message.userFrom.username}`}>
@@ -117,11 +169,10 @@ export default function ThreadMessage({ message, user }: ThreadMessageProps) {
           ) : (
             <span>{t<string>('Unknown member')}</span>
           )}
-          —
+          <span aria-hidden="true">·</span>
           <TimeAgo date={new Date(message.created)} />
         </div>
         <div className="panel panel-default">
-          <Avatar user={message.userFrom} size={24} link={!deletedUser} />
           <div
             className="panel-body"
             dangerouslySetInnerHTML={{

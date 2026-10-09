@@ -7,13 +7,27 @@ export function ready(fn?: () => void): void {
   document.addEventListener('DOMContentLoaded', fn, false);
 }
 
-/** Does the browser support the WebP image format? */
+let webPSupported: boolean | undefined;
+
+/** Check WebP decoding without reading canvas pixels or prompting for permission. */
 export function canUseWebP(): boolean {
-  if (typeof window !== 'undefined') {
-    const elem = document.createElement('canvas');
-    if (elem.getContext?.('2d')) {
-      return elem.toDataURL('image/webp').indexOf('data:image/webp') === 0;
-    }
+  if (typeof window === 'undefined') {
+    return false;
   }
-  return false;
+
+  if (webPSupported === undefined) {
+    // Keep JPEG as the fallback while the one-off image probe is pending.
+    webPSupported = false;
+    const image = new window.Image();
+    image.onload = () => {
+      webPSupported = image.naturalWidth === 1 && image.naturalHeight === 1;
+    };
+    image.onerror = () => {
+      webPSupported = false;
+    };
+    image.src =
+      'data:image/webp;base64,UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA';
+  }
+
+  return webPSupported;
 }

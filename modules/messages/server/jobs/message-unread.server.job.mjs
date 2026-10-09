@@ -1,12 +1,12 @@
 import _ from 'lodash';
-import emailService from '../../../core/server/services/email.server.service.js';
-import log from '../../../../config/lib/logger.js';
-import config from '../../../../config/config.js';
+import emailService from './../../../core/server/services/email.server.service.mjs';
+import log from './../../../../config/lib/logger.mjs';
+import config from './../../../../config/config.mjs';
 import async from 'async';
 import moment from 'moment';
-import userRolesService from '../../../users/server/services/user-roles.server.service.js';
+import userRolesService from './../../../users/server/services/user-roles.server.service.mjs';
 import mongoose from 'mongoose';
-import unifiedPush from '../../../users/server/services/unified-push.server.service.js';
+import unifiedPush from './../../../users/server/services/unified-push.server.service.mjs';
 
 /**
  * Task that checks for unread messages from the DB and sends
@@ -39,7 +39,6 @@ import unifiedPush from '../../../users/server/services/unified-push.server.serv
  */
 const Message = mongoose.model('Message');
 const User = mongoose.model('User');
-
 function run(job, agendaDone) {
   // read timing of notifications from config
   // we expect an array of momentjs objects
@@ -67,7 +66,8 @@ function run(job, agendaDone) {
     _.map(sortedConfig, function (value, index) {
       // remapped config for nth notifications, more comfortable for further use
       return {
-        order: index, // nth notification
+        order: index,
+        // nth notification
         timing: value, // when to send the notification
       };
     }),
@@ -89,7 +89,6 @@ function run(job, agendaDone) {
 function sendUnreadMessageReminders(reminder, callback) {
   const timePassed = reminder.timing;
   const reminderOrder = reminder.order;
-
   async.waterfall(
     [
       // Aggregate unread messages
@@ -109,8 +108,12 @@ function sendUnreadMessageReminders(reminder, callback) {
                 // first reminder is sent when notificationCount is 0
                 // second reminder is sent when notificationCount is 0 or 1
                 // etc...
-                notificationCount: { $lte: reminderOrder },
-                created: { $lt: createdTimeAgo },
+                notificationCount: {
+                  $lte: reminderOrder,
+                },
+                created: {
+                  $lt: createdTimeAgo,
+                },
               },
             },
             {
@@ -120,10 +123,10 @@ function sendUnreadMessageReminders(reminder, callback) {
                   userTo: '$userTo',
                   userFrom: '$userFrom',
                 },
-
                 // Collect unread messages count
-                total: { $sum: 1 },
-
+                total: {
+                  $sum: 1,
+                },
                 // Collect message contents
                 messages: {
                   $push: {
@@ -132,11 +135,12 @@ function sendUnreadMessageReminders(reminder, callback) {
                     created: '$created',
                   },
                 },
-
                 // did we already send some notifications for the last unseen message?
                 // the last unseen message has the minimum notification count
                 // we'll use the value to determine whether the notification is the first one, or not; to change wording of the reminder
-                notificationCount: { $min: '$notificationCount' },
+                notificationCount: {
+                  $min: '$notificationCount',
+                },
               },
             },
           ],
@@ -145,7 +149,6 @@ function sendUnreadMessageReminders(reminder, callback) {
           },
         );
       },
-
       /*
        * If we're about to send non-first notification
        * we want to see, whether it belongs to an unreplied thread.
@@ -192,11 +195,9 @@ function sendUnreadMessageReminders(reminder, callback) {
                     .toDate();
                   return lastMessage.created < tooOld;
                 })();
-
                 if (isThreadReplied || isTooLate) {
                   notification.dontSend = true;
                 }
-
                 checkDone(err);
               },
             );
@@ -206,7 +207,6 @@ function sendUnreadMessageReminders(reminder, callback) {
           },
         );
       },
-
       // Fetch details for `userTo` and `userFrom`
       function (notifications, done) {
         let userIds = [];
@@ -224,7 +224,11 @@ function sendUnreadMessageReminders(reminder, callback) {
         // Remember to add these values also userNotFound object (see below)
         if (userIds.length > 0) {
           User.find(
-            { _id: { $in: userIds } },
+            {
+              _id: {
+                $in: userIds,
+              },
+            },
             [
               // Fields to get for each user:
               'email',
@@ -245,14 +249,12 @@ function sendUnreadMessageReminders(reminder, callback) {
                 _.set(collectedUsers, user._id.toString(), user);
               });
             }
-
             done(err, collectedUsers, notifications);
           });
         } else {
           done(null, [], notifications);
         }
       },
-
       // Send Notifications
       function (users, notifications, done) {
         // No notifications
@@ -304,7 +306,6 @@ function sendUnreadMessageReminders(reminder, callback) {
           if (notification.dontSend === true) {
             return notificationCallback();
           }
-
           if (reminderOrder === 0 && notification.notificationCount === 0) {
             // Push is best effort. Keep the existing email callback independent.
             unifiedPush.notifyUnread(userTo._id, userFrom._id).catch(error => {
@@ -343,7 +344,6 @@ function sendUnreadMessageReminders(reminder, callback) {
           done(null, notifications);
         };
       },
-
       // Update notificationCount of messages
       function (notifications, done) {
         // No notifications
@@ -380,9 +380,19 @@ function sendUnreadMessageReminders(reminder, callback) {
         // The second reminder has position 1, so we want to set to 2
         // TODO the messageCount is not strictly messageCount because this update allows setting 0 to 2 and sending just 1 notification.
         Message.update(
-          { _id: { $in: messageIds } },
-          { $set: { notificationCount: reminderOrder + 1 } },
-          { multi: true },
+          {
+            _id: {
+              $in: messageIds,
+            },
+          },
+          {
+            $set: {
+              notificationCount: reminderOrder + 1,
+            },
+          },
+          {
+            multi: true,
+          },
           function (err) {
             if (err) {
               // Log the failure to send the notification
@@ -407,6 +417,6 @@ function sendUnreadMessageReminders(reminder, callback) {
     },
   );
 }
-
 export { run };
 export default run;
+export { run as 'module.exports' };

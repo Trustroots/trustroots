@@ -1,0 +1,540 @@
+import { pathToFileURL } from 'node:url';
+import _ from 'lodash';
+import config from './../config.mjs';
+import errorService from './../../modules/core/server/services/error.server.service.mjs';
+import express from 'express';
+import morgan from 'morgan';
+import bodyParser from 'body-parser';
+import session from 'express-session';
+import csrfProtection from './csrf-protection.mjs';
+import mongoStore from 'connect-mongo';
+import favicon from 'serve-favicon';
+import compress from 'compression';
+import methodOverride from 'method-override';
+import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import expectCt from 'expect-ct';
+import flash from 'connect-flash';
+import nunjucks from 'nunjucks';
+import buildMetadata from './build-metadata.mjs';
+import path from 'path';
+import paginate from 'express-paginate';
+import * as uuid from 'uuid';
+import qs from 'qs';
+import jsonForScript from './../../modules/core/server/services/json-for-script.server.service.mjs';
+const service = {};
+/**
+ * Module dependencies.
+ */
+
+/**
+ * Initialize local variables
+ */
+service.initLocalVariables = function (app) {
+  // Setting application local variables
+  app.locals.title = config.app.title;
+  app.locals.description = config.app.description;
+  app.locals.twitterUsername = config.twitter.username;
+  app.locals.facebookPage = config.facebook.page;
+  app.locals.googlePage = config.google.page;
+  app.locals.googleAnalytics = config.googleAnalytics;
+  app.locals.umami = config.umami;
+  app.locals.env =
+    ['development', 'test', 'production'].indexOf(process.env.NODE_ENV) > -1
+      ? process.env.NODE_ENV
+      : 'development';
+  app.locals.appSettings = config.app;
+  app.locals.appSettings.mapbox = config.mapbox;
+  app.locals.appSettings.time = new Date().toISOString();
+  app.locals.appSettings.https = config.https;
+  app.locals.appSettings.maxUploadSize = config.maxUploadSize;
+  app.locals.appSettings.profileMinimumLength = config.profileMinimumLength;
+  app.locals.appSettings.referencesEnabled = config.featureFlags.reference;
+  app.locals.appSettings.limits = {
+    maximumExperienceFeedbackPublicLength:
+      config.limits.maximumExperienceFeedbackPublicLength,
+    maxOfferValidFromNow: config.limits.maxOfferValidFromNow,
+  };
+  app.locals.siteAnnouncement = config.siteAnnouncement || {
+    enabled: false,
+  };
+
+  // Assets
+  if (
+    process.env.NODE_ENV === 'production' ||
+    process.env.TRUSTROOTS_E2E_USE_EXTRACTED_CSS === 'true'
+  ) {
+    app.locals.reactJsFiles = ['assets/react-main.js'];
+    app.locals.reactCssFiles = ['assets/react-main.css'];
+  } else {
+    app.locals.reactJsFiles = ['assets/react-main.js'];
+    app.locals.reactCssFiles = []; // style is bundled with javascript
+  }
+
+  // Get latest git commit metadata for asset cache busting and support/debug UI.
+  buildMetadata.getBuildMetadata(function (metadata) {
+    if (!metadata) {
+      return;
+    }
+    app.locals.appSettings.commit = metadata.shortCommit;
+    app.locals.appSettings.build = metadata;
+  });
+
+  // Passing the request url to environment locals
+  app.use(function (req, res, next) {
+    // Determine if to use https. When proxying (e.g. with Nginx) to localhost
+    // from https front, req.protocol would end up being http when it should be https.
+    // @todo: sniff if behind proxy and otherwise rely req.protocol.
+    const protocol =
+      config.https === true || req.protocol === 'https' ? 'https' : 'http';
+    res.locals.hostPort = protocol + '://' + req.get('host');
+    res.locals.host = protocol + '://' + req.hostname;
+    res.locals.url = protocol + '://' + req.headers.host + req.originalUrl;
+
+    // https://expressjs.com/en/api.html#req.path
+    res.locals.canonicalUrl = res.locals.hostPort + req.path;
+
+    // Native mobile app wrapper loads the site with `?app` URL query argument.
+    res.locals.isNativeMobileApp = _.has(req, ['query', 'app']);
+    next();
+  });
+};
+
+/**
+ * Initialize application middleware
+ */
+service.initMiddleware = function (app) {
+  // Should be placed before express.static
+  app.use(
+    compress({
+      filter(req, res) {
+        return /json|text|javascript|css|font|svg/.test(
+          res.getHeader('Content-Type'),
+        );
+      },
+      level: 9,
+    }),
+  );
+
+  // Initialize pagination middleware
+  // Set Pagination default values (limit, max limit)
+  app.use(paginate.middleware(config.limits.paginationLimit, 50));
+
+  // Initialize favicon middleware
+  app.use(favicon('public/favicon.ico'));
+
+  // Environment dependent middleware
+  if (process.env.NODE_ENV === 'development') {
+    // Enable logger (morgan)
+    app.use(morgan('dev'));
+
+    // Disable views cache
+    app.set('view cache', false);
+  } else if (process.env.NODE_ENV === 'production') {
+    app.locals.cache = 'memory';
+  }
+
+  // Request body parsing middleware should be above methodOverride
+  app.use(
+    bodyParser.urlencoded({
+      extended: true,
+    }),
+  );
+  app.use(
+    bodyParser.json({
+      type: [
+        'json',
+        // CSP violation reports API endpoint:
+        // - Chrome sends application/csp-report
+        // - Firefox sends application/json
+        // - it seems chrome is doing it well: https://w3c.github.io/webappsec/specs/content-security-policy/
+        'application/csp-report',
+      ],
+    }),
+  );
+  app.use(methodOverride());
+
+  // Add the cookie parser and flash middleware
+  app.use(cookieParser());
+  app.use(flash());
+};
+
+/**
+ * Configure view engine
+ */
+service.initViewEngine = function (app) {
+  // Set Nunjucks as the template engine
+  // https://mozilla.github.io/nunjucks/
+  const templates = nunjucks.configure('./modules/core/server/views', {
+    express: app,
+    watch: false,
+    noCache: true,
+  });
+  templates.addFilter('jsonForScript', jsonForScript);
+
+  // app.engine('nunjucks', nunjucks);
+  app.set('view engine', 'html');
+  app.set('views', './modules/core/server/views');
+};
+
+/**
+ * Configure Express session
+ */
+service.initSession = function (app, connection) {
+  // Express MongoDB session storage
+  // https://www.npmjs.com/package/express-session
+  app.use(
+    session({
+      saveUninitialized: false,
+      resave: false,
+      secret: config.sessionSecret,
+      // Trust forwarded protocol only when explicitly enabled for a trusted
+      // HTTPS frontend. Direct TLS (for example Passenger) needs no proxy.
+      proxy: config.sessionProxy === true,
+      cookie: {
+        secure: config.https === true,
+        httpOnly: true,
+        sameSite: 'lax',
+        // Specifies the number (in milliseconds) to use when calculating the
+        // Expires Set-Cookie attribute. This is done by taking the current
+        // server time and adding maxAge milliseconds to the value to calculate
+        // an Expires datetime.
+        // By default cookie.maxAge is null, meaning no "expires" parameter is
+        // set so the cookie becomes a browser-session cookie. When the user
+        // closes the browser the cookie (and session) will be removed.
+        maxAge: 2419200000, // (in milliseconds) 28 days
+      },
+      store: mongoStore.create({
+        client: connection.client,
+        collection: config.sessionCollection,
+      }),
+    }),
+  );
+};
+
+/**
+ * Wire in user last seen middleware
+ */
+service.initLastSeen = async function (app) {
+  const { default: lastSeenController } = await import(
+    '../../modules/users/server/controllers/users.lastseen.server.controller.mjs'
+  );
+  app.use(lastSeenController);
+};
+
+/**
+ * Invoke modules server configuration
+ */
+service.initModulesConfiguration = async function (app, db) {
+  for (const configPath of config.files.server.configs) {
+    const { default: configure } = await import(
+      pathToFileURL(path.resolve(configPath)).href
+    );
+    await configure(app, db);
+  }
+};
+
+/**
+ * Configure Helmet headers configuration
+ * https://helmetjs.github.io/docs/
+ */
+service.initHelmetHeaders = function (app) {
+  /*
+   * Content Security Policy (CSP)
+   *
+   * By default, directives are wide open. If you don't set a specific policy
+   * for a directive, let's say `font-src`, then that directive behaves by
+   * default as though you'd specified `*` as the valid source
+   * (for example, you could load fonts from anywhere, without restriction).
+   *
+   * @link https://helmetjs.github.io/docs/csp/
+   * @link https://developers.google.com/web/fundamentals/security/csp/
+   * @link https://content-security-policy.com/
+   */
+  app.use((req, res, next) => {
+    res.locals.nonce = uuid.v4();
+    const cspMiddleware = helmet.contentSecurityPolicy({
+      directives: {
+        defaultSrc: ["'self'"],
+        // Defines the origins from which scripts can be loaded.
+        scriptSrc: [
+          // Only the development bundle uses eval-based source maps.
+          ...(process.env.NODE_ENV === 'production' ? [] : ["'unsafe-eval'"]),
+          "'self'",
+          'https://www.google-analytics.com',
+          'https://1p.trustroots.org',
+          // Umami analytics
+          // Use `nonce` for `<script>` tags
+          // Nonce is generated above at `initLocalVariables()` middleware
+          // @link https://github.com/helmetjs/helmet/wiki/Conditionally-using-middleware
+          `'nonce-${res.locals.nonce}'`,
+        ],
+        // Specifies the origins that can serve web fonts.
+        fontSrc: [
+          "'self'",
+          'data:', // Inline fonts (`src: url('data:...')`)
+        ],
+        // Defines the origins from which stylesheets can be loaded.
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        // Defines the origins from which images can be loaded.
+        imgSrc: [
+          "'self'",
+          'https://hosted.weblate.org',
+          // Translation tool, used on /statistics page
+          'grafana.trustroots.org',
+          // Stats tool, used on /statistics page
+          'https://*.tiles.mapbox.com',
+          // Map tiles
+          'https://api.mapbox.com',
+          // Map tiles/Geocoding
+          'https://events.mapbox.com',
+          '*.tile.openstreetmap.org',
+          // Map tiles
+          '*.earthdata.nasa.gov',
+          // Map tiles
+          '*.facebook.com',
+          '*.fbcdn.net',
+          // Facebook releated
+          '*.fbsbx.com',
+          // Facebook related
+          '*.twitter.com',
+          '*.google-analytics.com',
+          '*.gstatic.com',
+          // Google analytics related
+          '*.googleusercontent.com',
+          // Google CDN. Android app related.
+          '*.g.doubleclick.net',
+          // Google Analytics related
+          'gravatar.com',
+          // Gravatar (WordPress.com)
+          'i0.wp.com',
+          // Gravatar (WordPress.com)
+          'i1.wp.com',
+          // Gravatar (WordPress.com)
+          'i2.wp.com',
+          // Gravatar (WordPress.com)
+          'data:',
+          // Inline images (`<img src="data:...">`) + mapbox-gl
+          'blob:', // mapbox-gl https://docs.mapbox.com/mapbox-gl-js/overview/#csp-directives
+        ],
+        // Limits the origins that you can connect to
+        // (via XHR, WebSockets, and EventSource).
+        // If not allowed the browser emulates a 400 HTTP status code.
+        connectSrc: [
+          "'self'",
+          'https://api.mapbox.com',
+          'https://events.mapbox.com',
+          'https://fonts.openmaptiles.org',
+          'https://tile.openstreetmap.org',
+          'wss://relay.trustroots.org',
+          'https://www.google-analytics.com',
+          'https://stats.g.doubleclick.net',
+          'https://1p.trustroots.org', // Umami analytics
+        ],
+        // Allows control over Flash and other plugins.
+        objectSrc: ["'none'"],
+        // Allows control of media elements, e.g. HTML5 `<audio>`, `<video>`.
+        mediaSrc: ["'self'"],
+        // Lists valid endpoints for submission from `<form>` tags.
+        formAction: ["'self'"],
+        // specifies the sources that can embed the current page.
+        // This directive applies to these tags:
+        // `<frame>`, `<iframe>`, `<embed>`, `<applet>`
+        frameAncestors: ["'none'"],
+        // Defines valid sources for web workers and nested browsing contexts
+        // loaded using elements such as `<frame>` and `<iframe>`
+        childSrc: ["'self'", 'blob:'],
+        workerSrc: ["'self'", 'blob:'],
+        // Restricts the URLs that can appear in a page's `<base>` element.
+        baseUri: ["'self'"],
+        // Browsers report CSP violations to this path using `POST` method
+        // See `modules/core/server/routes/core.server.routes.js`
+        // Note: If you’re using a CSRF module like csurf, you might have problems
+        // handling these violations without a valid CSRF token. The fix is to put
+        // your CSP report route above csurf middleware.
+        reportUri: '/api/report-csp-violation',
+      },
+      // Switch the header to `Content-Security-Policy-Report-Only`
+      // by settings this `true`.
+      //
+      // This instructs browsers to report violations to the `reportUri`
+      // (if specified) but it will not block any resources from loading.
+      //
+      // You could also use function here:
+      // `function (req, res) { return true; }`
+      reportOnly: process.env.NODE_ENV === 'development',
+    });
+
+    cspMiddleware(req, res, next);
+  });
+
+  // X-Frame protection
+  // @link https://helmetjs.github.io/docs/frameguard/
+  // @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
+  app.use(helmet.frameguard());
+
+  // Sets Expect-CT header
+  // @link https://helmetjs.github.io/docs/expect-ct/
+  // @link https://scotthelme.co.uk/a-new-security-header-expect-ct/
+  app.use(
+    expectCt({
+      enforce: false,
+      maxAge: 30,
+      reportUri:
+        (config.https === true ? 'https' : 'http') +
+        '://' +
+        config.domain +
+        '/api/report-expect-ct-violation',
+    }),
+  );
+
+  // Adds some small XSS protections
+  // @link https://helmetjs.github.io/docs/xss-filter/
+  app.use(helmet.xssFilter());
+
+  // Keep clients from sniffing the MIME type
+  // @link https://helmetjs.github.io/docs/dont-sniff-mimetype/
+  app.use(helmet.noSniff());
+
+  // Sets X-Download-Options for IE8+
+  // @link https://helmetjs.github.io/docs/ienoopen/
+  app.use(helmet.ieNoOpen());
+
+  // Remove the X-Powered-By header
+  app.disable('x-powered-by');
+  // Also possible from Helmet:
+  // @link https://helmetjs.github.io/docs/hide-powered-by/
+  // app.use(helmet.hidePoweredBy());
+
+  // HTTP Strict Transport Security
+  // This only works if your site actually has HTTPS.
+  // It won't tell users on HTTP to switch to HTTPS,
+  // it will just tell HTTPS users to stick around
+  // @link https://helmetjs.github.io/docs/hsts/
+  app.use(
+    helmet.hsts({
+      maxAge: 15778476,
+      // 6 months in seconds. Must be at least 18 weeks to be approved by Google
+      includeSubDomains: false,
+      // Must be enabled to be approved by Google
+      force: true,
+    }),
+  );
+};
+
+/**
+ * Configure the modules static routes
+ */
+service.initModulesClientRoutes = function (app) {
+  // Setting the app router and static folder
+  app.use(denyAvatarStagingRequests);
+  app.use('/', express.static(path.resolve('./public')));
+  app.use('/', express.static(path.resolve('./public/assets')));
+};
+function denyAvatarStagingRequests(req, res, next) {
+  let decodedPath;
+  try {
+    decodedPath = decodeURIComponent(req.path);
+  } catch (error) {
+    return res.sendStatus(404);
+  }
+  if (decodedPath.split('/').some(segment => segment.startsWith('.staging-'))) {
+    return res.sendStatus(404);
+  }
+  return next();
+}
+service.denyAvatarStagingRequests = denyAvatarStagingRequests;
+
+/**
+ * Configure the modules ACL policies
+ */
+service.initModulesServerPolicies = async function () {
+  // Globbing policy files
+  for (const policyPath of config.files.server.policies) {
+    const { default: policy } = await import(
+      pathToFileURL(path.resolve(policyPath)).href
+    );
+    policy.invokeRolesPolicies();
+  }
+};
+
+/**
+ * Configure the modules server routes
+ */
+service.initModulesServerRoutes = async function (app) {
+  // Globbing routing files
+  for (const routePath of config.files.server.routes) {
+    const { default: routes } = await import(
+      pathToFileURL(path.resolve(routePath)).href
+    );
+    routes(app);
+  }
+};
+
+/**
+ * Configure error handling
+ */
+service.initErrorRoutes = function (app) {
+  app.use(errorService.errorResponse);
+};
+
+/**
+ * Initialize the Express application
+ */
+service.init = async function (connection) {
+  // Initialize express app
+  const app = express();
+  app.set('query parser', query => qs.parse(query));
+
+  // Express 5 returns a fresh query object on every access. Keep one mutable
+  // object per request for middleware and local variables that normalise or
+  // read query values.
+  app.use((req, res, next) => {
+    Object.defineProperty(req, 'query', {
+      configurable: true,
+      enumerable: true,
+      value: req.query,
+    });
+    next();
+  });
+
+  // Initialize local variables
+  this.initLocalVariables(app);
+
+  // Initialize Express middleware
+  this.initMiddleware(app);
+
+  // Reject cross-origin state changes after method override and body parsing,
+  // but before session and route middleware.
+  app.use(csrfProtection(config));
+
+  // Initialize Express view engine
+  this.initViewEngine(app);
+
+  // Initialize Helmet security headers
+  this.initHelmetHeaders(app);
+
+  // Initialize modules static client routes
+  this.initModulesClientRoutes(app);
+
+  // Initialize Express session
+  this.initSession(app, connection);
+
+  // Initialize Modules configuration
+  await this.initModulesConfiguration(app);
+
+  // Initialize modules server authorization policies
+  await this.initModulesServerPolicies(app);
+
+  // Initialize last seen middleware
+  await this.initLastSeen(app);
+
+  // Initialize modules server routes
+  await this.initModulesServerRoutes(app);
+
+  // Initialize error routes
+  this.initErrorRoutes(app);
+  return app;
+};
+export default service;
+export { service as 'module.exports' };

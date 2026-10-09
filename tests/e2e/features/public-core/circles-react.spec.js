@@ -1,5 +1,5 @@
 /* global getComputedStyle, window */
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
 
 test('invalid circle addresses show a stable not-found page', async ({
@@ -54,6 +54,7 @@ test('circle membership retains account roles and legacy member links', async ({
     'Member search loads the existing map workflow.',
   ]);
   await signInViaApi(page, undefined, SEEDED_ADMIN);
+  await page.goto('/circles');
   const circleResponse = await page.request.get('/api/tribes/hitchhikers');
   expect(circleResponse.ok()).toBeTruthy();
   const circle = await circleResponse.json();
@@ -68,13 +69,64 @@ test('circle membership retains account roles and legacy member links', async ({
     await page.goto('/circles/hitchhikers');
     const roles = await page.evaluate(() => window.user.roles);
     expect(roles).toContain('admin');
+    await page.route('**/api/tribes/hitchhikers/members', route =>
+      route.fulfill({
+        status: 503,
+        json: { message: 'Temporarily unavailable' },
+      }),
+    );
     await page
       .getByRole('button', { name: 'Join (Hitchhikers)', exact: true })
       .click();
+    await expect(page.getByRole('alert')).toContainText(
+      'Could not load circle members. Please try again.',
+    );
+    await expect(page.getByText('No members to show yet')).toHaveCount(0);
+    await page.unroute('**/api/tribes/hitchhikers/members');
+    const retryResponse = page.waitForResponse(response =>
+      response.url().endsWith('/api/tribes/hitchhikers/members'),
+    );
+    await page.getByRole('button', { name: 'Try again', exact: true }).click();
+    expect((await retryResponse).ok()).toBeTruthy();
+    await expect(page.locator('.circle-member-error')).toHaveCount(0);
     await expect(
       page.getByRole('button', { name: 'Leave circle', exact: true }),
     ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Find members', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Circle Wiki', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Volunteering', exact: true }),
+    ).toBeVisible();
+    const activeMembers = await page.request.get(
+      `/api/tribes/${circle.slug}/members`,
+    );
+    expect(activeMembers.ok()).toBeTruthy();
+    expect(await activeMembers.json()).toEqual({
+      contacts: expect.any(Array),
+      recommenders: expect.any(Array),
+      active: expect.any(Array),
+    });
     expect(await page.evaluate(() => window.user.roles)).toEqual(roles);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(
+      page.getByRole('link', { name: 'Circle Wiki', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Volunteering', exact: true }),
+    ).toBeVisible();
+    const circleActions = await page
+      .locator('.tribe-actions-group')
+      .boundingBox();
+    expect(circleActions.x).toBeGreaterThanOrEqual(0);
+    expect(circleActions.x + circleActions.width).toBeLessThanOrEqual(391);
+    expect(
+      await page.evaluate(() => window.document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(390);
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page
       .getByRole('button', { name: 'Leave circle', exact: true })
       .click();

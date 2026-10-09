@@ -49,6 +49,53 @@ their memberships in circle and profile views.
 - **WHEN** a signed-in member leaves a joined circle
 - **THEN** the system removes the membership from the member's profile and circle list
 
+### Requirement: Circle member discovery
+
+The system SHALL let signed-in members discover visible people in circles they
+have joined. Groups SHALL list contacts first, then recommenders, then other
+members active in the preceding month. Results SHALL be unique and bounded per
+group. The endpoint SHALL return public profile summaries without activity
+timestamps.
+
+#### Scenario: Joined member views a circle
+
+- **WHEN** a signed-in member opens a circle they have joined
+- **THEN** the page shows their visible contacts in that circle
+- **AND** shows visible members who publicly recommend them
+- **AND** shows other visible members of that circle active in the past month
+- **AND** removes duplicate members across the groups
+
+#### Scenario: Member requests discovery for a circle they have not joined
+
+- **WHEN** a signed-in member requests its member discovery endpoint
+- **THEN** the system denies the request
+
+#### Scenario: Circle discovery excludes private or restricted accounts
+
+- **WHEN** circle member groups are generated
+- **THEN** hidden profiles, blocked members, suspended accounts, and shadow-hidden accounts are omitted
+- **AND** each group limit is applied only after these exclusions
+
+#### Scenario: Circle member discovery request fails
+
+- **WHEN** the request to load circle members fails
+- **THEN** the page explains that members could not be loaded and offers a retry
+- **AND** does not present the failure as an empty member list
+- **WHEN** the member retries and the request succeeds
+- **THEN** the page displays the returned groups or the genuine empty state
+
+### Requirement: Circle page actions and footer
+
+The system SHALL keep membership, member search, and circle wiki actions usable
+at desktop and mobile widths. Circle detail pages SHALL display the shared site
+footer with its standard links and current build metadata.
+
+#### Scenario: Member uses circle page actions on a narrow viewport
+
+- **WHEN** a member views a circle on a mobile viewport
+- **THEN** the membership, member search, and circle wiki actions remain visible and usable
+- **AND** the shared footer links and build metadata wrap without horizontal overflow
+
 ### Requirement: Circle-aware registration and legacy routes
 
 The system SHALL support circle suggestions during registration and redirect

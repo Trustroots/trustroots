@@ -1,5 +1,11 @@
 import PropTypes from 'prop-types';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import {
   getCurrentRouteParams,
@@ -80,6 +86,17 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
   const [bounds, setBounds] = useState<Partial<SearchMapBounds>>({});
   const [location, setLocation] = useState<Partial<SearchMapLocation>>({});
   const [offer, setOffer] = useState<SearchResultOffer | null>(null);
+  const locallyPreviewedOfferIdRef = React.useRef<string | null>(null);
+  const [communityNoteThreads, setCommunityNoteThreads] = useState<
+    SearchCommunityNote[]
+  >([]);
+  const [visibleOfferIds, setVisibleOfferIds] = useState<string[]>([]);
+  const [visibleOffers, setVisibleOffers] = useState<SearchResultOffer[]>([]);
+  const [isLoadingVisibleOffers, setIsLoadingVisibleOffers] = useState(false);
+  const offerCache = useRef(new Map<string, SearchResultOffer>());
+  const offerRequests = useRef(
+    new Map<string, Promise<SearchResultOffer | null>>(),
+  );
   const [communityNote, setCommunityNote] =
     useState<SearchCommunityNote | null>(null);
   const [isLoadingOffer, setIsLoadingOffer] = useState(false);
@@ -100,6 +117,19 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
     initialFilters.seen?.months === 6,
   );
 
+  const clearSelection = useCallback(
+    ({ clearOfferParam = true }: { clearOfferParam?: boolean } = {}) => {
+      locallyPreviewedOfferIdRef.current = null;
+      setOffer(null);
+      setCommunityNote(null);
+      setIsLoadingOffer(false);
+      if (clearOfferParam) {
+        setOfferQueryParam('');
+      }
+    },
+    [],
+  );
+
   const updateFilters = useCallback(
     (partialFilters: Partial<ReturnType<typeof getSearchFilters>>) => {
       const nextFilters = setSearchFilters(user?._id, partialFilters);
@@ -107,11 +137,9 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
       setFiltersJson(JSON.stringify(nextFilters));
       setCommunityNotesEnabled(nextFilters.communityNotes);
       setOnlineInPast6Months(nextFilters.seen?.months === 6);
-      setOffer(null);
-      setCommunityNote(null);
-      setOfferQueryParam('');
+      clearSelection();
     },
-    [user?._id],
+    [clearSelection, user?._id],
   );
 
   const openSidebar = useCallback((tab?: 'filters' | 'results') => {
@@ -122,13 +150,19 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
     }
   }, []);
 
+  const updateVisibleOfferIds = useCallback((offerIds: string[]) => {
+    setVisibleOfferIds(previous =>
+      previous.length === offerIds.length &&
+      previous.every((id, index) => id === offerIds[index])
+        ? previous
+        : offerIds,
+    );
+  }, []);
+
   const closeSidebar = useCallback(() => {
     setIsSidebarOpen(false);
-    setOffer(null);
-    setCommunityNote(null);
-    setIsLoadingOffer(false);
-    setOfferQueryParam('');
-  }, []);
+    clearSelection();
+  }, [clearSelection]);
 
   const toggleSidebar = useCallback(
     (tab?: 'filters' | 'results') => {
@@ -147,6 +181,9 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
         return;
       }
 
+      locallyPreviewedOfferIdRef.current = reCenterMap
+        ? null
+        : nextOffer._id || null;
       setOffer(nextOffer);
       setCommunityNote(null);
       setIsLoadingOffer(false);
@@ -172,20 +209,89 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
 
   const previewCommunityNote = useCallback(
     (data: SearchCommunityNote) => {
-      setOffer(null);
+      clearSelection({ clearOfferParam: false });
       setCommunityNote(data);
-      setIsLoadingOffer(false);
       openSidebar('results');
     },
-    [openSidebar],
+    [clearSelection, openSidebar],
   );
 
   const closeOffer = useCallback(() => {
-    setOffer(null);
-    setCommunityNote(null);
-    setIsLoadingOffer(false);
-    setOfferQueryParam('');
-  }, []);
+    clearSelection();
+  }, [clearSelection]);
+
+  useEffect(() => {
+    if (!isSidebarOpen || sidebarTab !== 'results' || offer || communityNote) {
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    async function loadVisibleOffers() {
+      const cachedOffers = visibleOfferIds
+        .map(id => offerCache.current.get(id))
+        .filter((item): item is SearchResultOffer => Boolean(item));
+      setVisibleOffers(cachedOffers);
+
+      const missingIds = visibleOfferIds.filter(
+        id => !offerCache.current.has(id),
+      );
+      setIsLoadingVisibleOffers(missingIds.length > 0);
+      const loadedOffers: (SearchResultOffer | null)[] = [];
+      for (let index = 0; index < missingIds.length; index += 8) {
+        if (!isMounted) return;
+        const batch = missingIds.slice(index, index + 8);
+        loadedOffers.push(
+          ...(await Promise.all(
+            batch.map(id => {
+              let request = offerRequests.current.get(id);
+              if (!request) {
+                request = getOffer(id)
+                  .then(loaded => {
+                    if (!loaded) return null;
+                    const result = loaded as unknown as SearchResultOffer;
+                    const offer = { ...result, _id: id };
+                    offerCache.current.delete(id);
+                    offerCache.current.set(id, offer);
+                    while (offerCache.current.size > 250) {
+                      const oldestId = offerCache.current.keys().next()
+                        .value as string;
+                      offerCache.current.delete(oldestId);
+                    }
+                    return offer;
+                  })
+                  .catch(() => null)
+                  .finally(() => offerRequests.current.delete(id));
+                offerRequests.current.set(id, request);
+              }
+              return request;
+            }),
+          )),
+        );
+      }
+
+      if (!isMounted) return;
+
+      const completedOffers = loadedOffers.filter(
+        (item): item is SearchResultOffer => Boolean(item),
+      );
+      const loadedById = new Map<string, SearchResultOffer>(
+        [...cachedOffers, ...completedOffers].map(item => [item._id!, item]),
+      );
+      setVisibleOffers(
+        visibleOfferIds
+          .map(id => loadedById.get(id))
+          .filter((item): item is SearchResultOffer => Boolean(item)),
+      );
+      setIsLoadingVisibleOffers(false);
+    }
+
+    loadVisibleOffers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [communityNote, isSidebarOpen, offer, sidebarTab, visibleOfferIds]);
 
   const onPlaceSearch = useCallback(
     (data: SearchMapLocation | SearchMapBounds, type: 'center' | 'bounds') => {
@@ -242,13 +348,15 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
 
   useEffect(() => {
     // A pin click already supplies the offer and must preserve the viewport.
-    if (routeParams.offer === offer?._id) {
+    if (
+      routeParams.offer &&
+      (routeParams.offer === offer?._id ||
+        routeParams.offer === locallyPreviewedOfferIdRef.current)
+    ) {
       return;
     }
-
     let isMounted = true;
-    setOffer(null);
-    setIsLoadingOffer(false);
+    clearSelection({ clearOfferParam: false });
 
     async function loadOfferFromUrl() {
       if (routeParams.offer && routeParams.offer.length === 24) {
@@ -264,8 +372,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
           }
         } catch {
           if (isMounted) {
-            setIsLoadingOffer(false);
-            setOffer(null);
+            clearSelection({ clearOfferParam: false });
             trackEvent('offer-not-found', {
               category: 'search.map',
               label: 'Offer not found',
@@ -316,6 +423,11 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
               Filters
             </button>
           </div>
+          <div className="btn-group btn-group-lg" role="group">
+            <a className="btn btn-default" href="/search/members">
+              Members
+            </a>
+          </div>
         </div>
       </div>
 
@@ -365,10 +477,16 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
           <SearchSidebar
             activeTab={sidebarTab}
             communityNote={communityNote}
+            communityNoteThreads={communityNoteThreads}
             communityNotesEnabled={communityNotesEnabled}
             filters={filters}
             isLoadingOffer={isLoadingOffer}
             offer={offer}
+            offers={visibleOffers}
+            onOfferSelect={previewOffer}
+            onCommunityNoteSelect={previewCommunityNote}
+            onBackToOffers={closeOffer}
+            isLoadingOffers={isLoadingVisibleOffers}
             onCloseSidebar={() => toggleSidebar()}
             onCommunityNotesToggle={() => {
               const nextValue = !communityNotesEnabled;
@@ -422,6 +540,8 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
           onCommunityNoteOpen={previewCommunityNote}
           onOfferClose={closeOffer}
           onOfferOpen={previewOffer}
+          onVisibleCommunityNoteThreadsChange={setCommunityNoteThreads}
+          onVisibleOffersChange={updateVisibleOfferIds}
         />
       </div>
     </section>

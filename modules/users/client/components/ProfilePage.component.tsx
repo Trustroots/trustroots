@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
+import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
 import { useTranslation } from 'react-i18next';
 
 import AboutMe from './AboutMe.component';
@@ -22,6 +23,7 @@ import {
   getProfileViewTabStateName,
 } from '../utils/profile-routes';
 import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
+import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import { useSettings } from '@/modules/core/client/react-app/AppProviders';
 import { useCurrentPath } from '@/modules/core/client/react-app/useCurrentPath';
@@ -173,7 +175,7 @@ function ProfileDesktopActions({
             <li>
               <a
                 className="btn btn-link"
-                href={`/profile/${profile.username}/experiences/new`}
+                href={getProfileExperiencesPath(profile.username)}
               >
                 <i className="icon-plus-squared-alt" />
                 {t('Share your experience') as string}
@@ -217,7 +219,7 @@ function ProfileDesktopActions({
       )}
       {isAdmin && (
         <li>
-          <a className="btn btn-link" href={`/admin/user?id=${profile._id}`}>
+          <a className="btn btn-link" href={getAdminUserHref(profile)}>
             <i className="icon-cog" aria-hidden="true" />
             Admin
           </a>
@@ -239,9 +241,13 @@ ProfileDesktopActions.propTypes = {
 
 export default function ProfilePage({
   currentPath: routedPath,
+  embedded = false,
+  profileUsername,
   user: authUser,
 }: {
   currentPath?: string;
+  embedded?: boolean;
+  profileUsername?: string;
   user: UserProfile;
 }) {
   const { t } = useTranslation('users') as {
@@ -250,7 +256,7 @@ export default function ProfilePage({
   const { setUser } = useAuth() as { setUser: (user: UserProfile) => void };
   const browserPath = useCurrentPath();
   const currentPath = routedPath || browserPath;
-  const { username } = getCurrentRouteParams();
+  const username = profileUsername || getCurrentRouteParams().username;
   const { profileMinimumLength = 140, referencesEnabled = false } =
     useSettings();
 
@@ -293,12 +299,16 @@ export default function ProfilePage({
   }, []);
 
   useEffect(() => {
+    if (embedded) {
+      return;
+    }
+
     const redirectPath = getMobileProfileRedirect(currentPath, username);
 
     if (redirectPath && redirectPath !== currentPath) {
       window.location.assign(redirectPath);
     }
-  }, [currentPath, username]);
+  }, [currentPath, embedded, username]);
 
   useEffect(() => {
     let isMounted = true;
@@ -464,23 +474,33 @@ export default function ProfilePage({
 
   return (
     <>
-      <TopNavigationSmall
-        isAdmin={authUser.roles?.includes('admin') || false}
-        contact={contact}
-        isResolved={contact.$resolved}
-        onContactRemoved={removeContact}
-        referencesEnabled={referencesEnabled}
-        selfId={authUser._id}
-        userId={profile?._id || ''}
-        username={profile?.username || username}
-      />
-      <BottomNavigationSmall
-        contactCount={contacts.length || 0}
-        isSelf={isSelf}
-        username={profile?.username || username}
-      />
+      {!embedded && (
+        <TopNavigationSmall
+          isAdmin={authUser.roles?.includes('admin') || false}
+          contact={contact}
+          isResolved={contact.$resolved}
+          onContactRemoved={removeContact}
+          referencesEnabled={referencesEnabled}
+          selfId={authUser._id}
+          userId={profile?._id || ''}
+          username={profile?.username || username}
+        />
+      )}
+      {!embedded && (
+        <BottomNavigationSmall
+          contactCount={contacts.length || 0}
+          isSelf={isSelf}
+          username={profile?.username || username}
+        />
+      )}
 
-      <section className="container container-spacer profile-view">
+      <section
+        className={
+          embedded
+            ? 'container-spacer profile-view profile-view-embedded'
+            : 'container container-spacer profile-view'
+        }
+      >
         {profile && (authUser.blocked || []).includes(profile._id) && (
           <BlockedMemberBanner username={profile.username} />
         )}
@@ -647,5 +667,7 @@ export default function ProfilePage({
 
 ProfilePage.propTypes = {
   currentPath: PropTypes.string,
+  embedded: PropTypes.bool,
+  profileUsername: PropTypes.string,
   user: PropTypes.object.isRequired,
 };

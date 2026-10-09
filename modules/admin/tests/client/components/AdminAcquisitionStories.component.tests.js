@@ -35,6 +35,157 @@ afterEach(() => {
 });
 
 describe('<AdminAcquisitionStories />', () => {
+  it.each(['admin', 'welcome-team'])(
+    'filters unassigned members and preserves sorting for %s',
+    async role => {
+      window.user = { roles: [role] };
+      acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+        { _id: 'river-id', username: 'river', welcomer: null },
+        {
+          _id: 'forest-id',
+          username: 'forest',
+          welcomer: {
+            _id: 'greeter-id',
+            username: 'greeter',
+            created: '2026-01-01T00:00:00.000Z',
+          },
+        },
+        { _id: 'brook-id', username: 'brook' },
+      ]);
+
+      render(<AdminAcquisitionStories />);
+      await screen.findByRole('table');
+      const checkbox = screen.getByRole('checkbox', {
+        name: 'Unassigned only',
+      });
+      const memberOrder = () =>
+        Array.from(document.querySelectorAll('tbody tr')).map(
+          row => row.querySelector('td:nth-child(2)').textContent,
+        );
+
+      expect(checkbox).not.toBeChecked();
+      fireEvent.click(screen.getByRole('button', { name: 'Member' }));
+      expect(memberOrder()).toEqual(['brook', 'forest', 'river']);
+      fireEvent.click(checkbox);
+      expect(checkbox).toBeChecked();
+      expect(memberOrder()).toEqual(['brook', 'river']);
+      expect(screen.getAllByText('Unassigned', { exact: true })).toHaveLength(
+        2,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Member ▲' }));
+      expect(memberOrder()).toEqual(['river', 'brook']);
+      fireEvent.click(checkbox);
+      expect(memberOrder()).toEqual(['river', 'forest', 'brook']);
+      expect(acquisitionStoriesApi.getAcquisitionStories).toHaveBeenCalledTimes(
+        1,
+      );
+    },
+  );
+
+  it('keeps the filter available when all members are assigned', async () => {
+    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      {
+        _id: 'forest-id',
+        username: 'forest',
+        welcomer: {
+          _id: 'greeter-id',
+          username: 'greeter',
+          created: '2026-01-01T00:00:00.000Z',
+        },
+      },
+    ]);
+
+    render(<AdminAcquisitionStories />);
+    await screen.findByRole('table');
+    const checkbox = screen.getByRole('checkbox', { name: 'Unassigned only' });
+    fireEvent.click(checkbox);
+    expect(
+      screen.getByText('No unassigned acquisition stories found.'),
+    ).toBeVisible();
+    expect(screen.queryByRole('table')).not.toBeInTheDocument();
+    expect(checkbox).toBeVisible();
+    fireEvent.click(checkbox);
+    expect(
+      screen.getByRole('link', { name: 'forest', exact: true }),
+    ).toBeVisible();
+  });
+
+  it('filters by profile visibility together with assignment without refetching', async () => {
+    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      { _id: 'visible-id', username: 'visible-member', public: true },
+      {
+        _id: 'hidden-assigned-id',
+        username: 'hidden-assigned',
+        public: false,
+        welcomer: {
+          _id: 'greeter-id',
+          username: 'fictional-greeter',
+          created: '2026-01-01T00:00:00.000Z',
+        },
+      },
+      { _id: 'hidden-id', username: 'hidden-member', public: false },
+    ]);
+
+    render(<AdminAcquisitionStories />);
+    await screen.findByRole('table');
+
+    const visibility = screen.getByRole('combobox', {
+      name: 'Profile visibility',
+    });
+    const memberOrder = () =>
+      Array.from(document.querySelectorAll('tbody tr')).map(
+        row => row.querySelector('td:nth-child(2)').textContent,
+      );
+
+    expect(visibility).toHaveValue('all');
+    expect(memberOrder()).toEqual([
+      'visible-member',
+      'hidden-assigned',
+      'hidden-member',
+    ]);
+    expect(
+      screen.getByText(
+        'Hidden profiles have not activated their signup through email confirmation.',
+      ),
+    ).toBeVisible();
+
+    fireEvent.change(visibility, { target: { value: 'visible' } });
+    expect(memberOrder()).toEqual(['visible-member']);
+    fireEvent.change(visibility, { target: { value: 'hidden' } });
+    expect(memberOrder()).toEqual(['hidden-assigned', 'hidden-member']);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Unassigned only' }));
+    expect(memberOrder()).toEqual(['hidden-member']);
+    expect(acquisitionStoriesApi.getAcquisitionStories).toHaveBeenCalledTimes(
+      1,
+    );
+  });
+
+  it('keeps visibility controls available when a visibility filter has no matches', async () => {
+    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      { _id: 'visible-id', username: 'visible-member', public: true },
+    ]);
+
+    render(<AdminAcquisitionStories />);
+    await screen.findByRole('table');
+    fireEvent.change(
+      screen.getByRole('combobox', { name: 'Profile visibility' }),
+      {
+        target: { value: 'hidden' },
+      },
+    );
+
+    expect(
+      screen.getByText('No acquisition stories found.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: 'Profile visibility' }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('checkbox', { name: 'Unassigned only' }),
+    ).toBeVisible();
+  });
+
   it.each([{ roles: ['welcome-team'] }, {}, null])(
     'uses public member links for a non-administrator %j',
     async user => {
@@ -96,7 +247,7 @@ describe('<AdminAcquisitionStories />', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'alice (Alice Example)' }),
-    ).toHaveAttribute('href', '/admin/user?id=111111111111111111111111');
+    ).toHaveAttribute('href', '/admin/user/alice');
     expect(
       screen.getByRole('link', {
         name: 'Open public profile for Alice Example',
@@ -116,12 +267,14 @@ describe('<AdminAcquisitionStories />', () => {
     expect(screen.getByText('Living: Fictional home')).toBeInTheDocument();
     expect(screen.getByText('From: Fictional origin')).toBeInTheDocument();
     expect(screen.getByText('Hosting: 52.370, 4.900')).toBeInTheDocument();
-    expect(screen.getByText('Visible')).toBeInTheDocument();
+    expect(screen.getByRole('table').querySelector('tbody')).toHaveTextContent(
+      'Visible',
+    );
     expect(
       screen.getByRole('link', {
         name: 'restricted (Restricted Example)',
       }),
-    ).toHaveAttribute('href', '/admin/user?id=222222222222222222222222');
+    ).toHaveAttribute('href', '/admin/user/restricted');
     expect(screen.getByText(/— Username identifier/)).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Stories' }).closest('li'),
@@ -280,10 +433,7 @@ describe('<AdminAcquisitionStories />', () => {
     render(<AdminAcquisitionStories />);
 
     const welcomerLink = await screen.findByRole('link', { name: 'welcomer' });
-    expect(welcomerLink).toHaveAttribute(
-      'href',
-      '/admin/user?id=444444444444444444444444',
-    );
+    expect(welcomerLink).toHaveAttribute('href', '/admin/user/welcomer');
     const contactedRow = welcomerLink.closest('tr');
     expect(contactedRow).toHaveClass('admin-acquisition-stories-contacted');
     expect(screen.getByText('Unassigned').closest('tr')).not.toHaveClass(
@@ -291,7 +441,7 @@ describe('<AdminAcquisitionStories />', () => {
     );
     expect(screen.getByRole('link', { name: 'contacted' })).toHaveAttribute(
       'href',
-      '/admin/user?id=333333333333333333333333',
+      '/admin/user/contacted',
     );
   });
 
@@ -390,9 +540,9 @@ describe('<AdminAcquisitionStories />', () => {
         row.textContent.includes('contacted') ? 'contacted' : 'unassigned',
       );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Welcomer' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Greeter' }));
     expect(memberOrder()).toEqual(['unassigned', 'contacted']);
-    fireEvent.click(screen.getByRole('button', { name: 'Welcomer ▲' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Greeter ▲' }));
     expect(memberOrder()).toEqual(['contacted', 'unassigned']);
   });
 
@@ -422,6 +572,8 @@ describe('<AdminAcquisitionStories />', () => {
         'Suspended or shadowbanned accounts with a matching username or email identifier',
       ),
     ).toBeVisible();
-    expect(screen.getByText('Hidden')).toBeInTheDocument();
+    expect(screen.getByRole('table').querySelector('tbody')).toHaveTextContent(
+      'Hidden',
+    );
   });
 });

@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-
 const service = {};
 
 /**
@@ -56,10 +55,14 @@ const messageStatSchema = new Schema({
 
 // ensure uniqueness of a MessageStat document per Thread (only in 1 direction)
 messageStatSchema.index(
-  { firstMessageUserFrom: 1, firstMessageUserTo: -1 },
-  { unique: true },
+  {
+    firstMessageUserFrom: 1,
+    firstMessageUserTo: -1,
+  },
+  {
+    unique: true,
+  },
 );
-
 mongoose.model('MessageStat', messageStatSchema);
-
 export default service;
+export { service as 'module.exports' };

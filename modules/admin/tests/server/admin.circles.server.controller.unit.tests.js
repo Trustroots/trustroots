@@ -1,6 +1,12 @@
 const assert = require('assert');
+const path = require('path');
 const sinon = require('sinon');
-const proxyquire = require('proxyquire').noCallThru();
+const proxyquire = require('./../../../../testutils/server/mock-module');
+
+const controllerPath = path.resolve(
+  __dirname,
+  '../../server/controllers/admin.circles.server.controller.mjs',
+);
 
 function response() {
   const res = { statusCode: 200 };
@@ -58,19 +64,16 @@ describe('Admin circles controller', () => {
     };
     sharp = sinon.stub().returns(image);
     uploadFile = sinon.stub();
-    controller = proxyquire(
-      '../../server/controllers/admin.circles.server.controller',
-      {
-        mongoose: { model: () => Tribe },
-        fs: { promises: fs },
-        sharp,
-        '../../../../config/config': { circleImagesDir: '/circle-images' },
-        '../../../core/server/services/error.server.service': {
-          getErrorMessage: err => err.message,
-        },
-        '../../../core/server/services/file-upload.service': { uploadFile },
+    controller = proxyquire(controllerPath, {
+      mongoose: { model: () => Tribe },
+      fs: { promises: fs },
+      sharp,
+      './../../../../config/config.mjs': { circleImagesDir: '/circle-images' },
+      './../../../core/server/services/error.server.service.mjs': {
+        getErrorMessage: err => err.message,
       },
-    );
+      './../../../core/server/services/file-upload.service.mjs': { uploadFile },
+    });
     res = response();
   });
 

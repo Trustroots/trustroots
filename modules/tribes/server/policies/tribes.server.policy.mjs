@@ -1,6 +1,5 @@
-import memoryPolicy from '../../../core/server/services/memory-policy.server.service.js';
+import memoryPolicy from './../../../core/server/services/memory-policy.server.service.mjs';
 import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mjs';
-
 const service = {};
 
 /**
@@ -24,6 +23,10 @@ service.invokeRolesPolicies = function () {
           resources: '/api/tribes/:tribe',
           permissions: ['get'],
         },
+        {
+          resources: '/api/tribes/:tribe/members',
+          permissions: ['get'],
+        },
       ],
     },
     {
@@ -35,6 +38,10 @@ service.invokeRolesPolicies = function () {
         },
         {
           resources: '/api/tribes/:tribe',
+          permissions: ['get'],
+        },
+        {
+          resources: '/api/tribes/:tribe/members',
           permissions: ['get'],
         },
       ],
@@ -61,11 +68,11 @@ service.invokeRolesPolicies = function () {
 service.isAllowed = function (req, res, next) {
   return authoriseRoute(req, res, next);
 };
-
 const invokeRolesPolicies = service.invokeRolesPolicies;
 const isAllowed = service.isAllowed;
-export { invokeRolesPolicies as invokeRolesPolicies, isAllowed as isAllowed };
+export { invokeRolesPolicies, isAllowed };
 export default service;
 
 // Expose the ACL dependency for native ESM boundary stubs.
 export { acl as _acl };
+export { service as 'module.exports' };

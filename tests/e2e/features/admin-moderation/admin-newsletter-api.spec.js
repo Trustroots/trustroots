@@ -1,4 +1,4 @@
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 
 const {
   SEEDED_ADMIN,
@@ -7,6 +7,7 @@ const {
   fetchUserIdByUsername,
   registerViaApi,
   signInViaApi,
+  authenticateViaApi,
 } = require('../../support/helpers');
 const {
   findUserByUsername,
@@ -14,12 +15,8 @@ const {
 } = require('../../support/db');
 
 test.describe('admin newsletter API feature coverage', () => {
-  test.beforeEach(async ({ page, request }) => {
-    await signInViaApi(page, request, SEEDED_ADMIN);
-  });
-
-  async function setNewsletterPreference(page, request, member, newsletter) {
-    await signInViaApi(page, request, member);
+  async function setNewsletterPreference(request, member, newsletter) {
+    await authenticateViaApi(request, member);
     const response = await request.put('/api/users', {
       data: { newsletter },
     });
@@ -38,8 +35,8 @@ test.describe('admin newsletter API feature coverage', () => {
       'Newsletter page includes the recipient upload splitting tool.',
     ]);
 
-    await setNewsletterPreference(page, request, SEEDED_MEMBERS[0], true);
-    await setNewsletterPreference(page, request, SEEDED_MEMBERS[1], false);
+    await setNewsletterPreference(request, SEEDED_MEMBERS[0], true);
+    await setNewsletterPreference(request, SEEDED_MEMBERS[1], false);
     await signInViaApi(page, request, SEEDED_ADMIN);
 
     await page.goto('/admin/newsletter');
@@ -112,8 +109,8 @@ test.describe('admin newsletter API feature coverage', () => {
       'Newsletter page includes full and circle subscriber export tools.',
     ]);
 
-    await setNewsletterPreference(page, request, SEEDED_MEMBERS[0], true);
-    await setNewsletterPreference(page, request, SEEDED_MEMBERS[1], false);
+    await setNewsletterPreference(request, SEEDED_MEMBERS[0], true);
+    await setNewsletterPreference(request, SEEDED_MEMBERS[1], false);
     const restrictedMember = createUser();
     await registerViaApi(request, restrictedMember);
     const circleMember = await findUserByUsername(SEEDED_MEMBERS[0].username);
@@ -214,6 +211,8 @@ test.describe('admin newsletter API feature coverage', () => {
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export audience CSV' }).click();
     const download = await downloadPromise;
-    expect(download.suggestedFilename()).toBe('newsletter-audience.csv');
+    expect(download.suggestedFilename()).toMatch(
+      /^newsletter-audience-Northbridge-living-origin-circles-Hitchhikers-\d{8}-\d{4}\.csv$/,
+    );
   });
 });

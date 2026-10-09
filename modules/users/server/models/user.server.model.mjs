@@ -1,21 +1,21 @@
-import { createRequire } from 'node:module';
 import _ from 'lodash';
-import textService from '../../../core/server/services/text.server.service.js';
-import authenticationService from '../services/authentication.server.service.js';
+import textService from '../../../core/server/services/text.server.service.mjs';
+import { readFileSync } from 'node:fs';
+import authenticationService from '../services/authentication.server.service.mjs';
+import passwordHashing from '../services/password-hashing.server.service.mjs';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
-import uniqueValidation from '../../../../config/lib/mongoose-unique-validation.js';
+import uniqueValidation from '../../../../config/lib/mongoose-unique-validation.mjs';
 import validator from 'validator';
-
-const require = createRequire(import.meta.url);
-// JSON import attributes are not supported by the pinned formatter.
-// eslint-disable-next-line import/no-commonjs
-const languages = require('../../../../config/languages/languages.json');
-
 /**
  * Module dependencies.
  */
-
+const languages = JSON.parse(
+  readFileSync(
+    new URL('../../../../config/languages/languages.json', import.meta.url),
+    'utf8',
+  ),
+);
 const Schema = mongoose.Schema;
 
 const passwordMinLength = 8;
@@ -324,6 +324,12 @@ const UserSchema = new Schema({
   passwordUpdated: {
     type: Date,
   },
+  // Incremented when credentials or account privileges change so sessions
+  // established before the change can be invalidated.
+  authVersion: {
+    type: Number,
+    default: 0,
+  },
   /* For email confirmations */
   emailToken: {
     type: String,
@@ -390,49 +396,115 @@ const UserSchema = new Schema({
  * Hook a pre save method to hash the password
  */
 UserSchema.pre('save', function (next) {
-  if (
-    this.password &&
-    this.isModified('password') &&
-    this.password.length >= passwordMinLength
-  ) {
-    this.salt = crypto.randomBytes(16).toString('base64');
-    this.password = this.hashPassword(this.password);
+  const user = this;
+  async function prepare() {
+    if (
+      user.password &&
+      user.isModified('password') &&
+      user.password.length >= passwordMinLength
+    ) {
+      // Always treat modified input as plaintext, including strings that look
+      // like a tagged password hash supplied by a client.
+      user.password = await passwordHashing.hashPassword(user.password);
+      user.salt = undefined;
+    }
+
+    // Pre-cached email hash to use with Gravatar
+    if (user.email && user.isModified('email') && user.email !== '') {
+      user.emailHash = crypto
+        .createHash('md5')
+        .update(user.email.trim().toLowerCase())
+        .digest('hex');
+    }
+
+    // Generate `displayName`
+    if (user.isModified('firstName') || user.isModified('lastName')) {
+      user.displayName = user.firstName + ' ' + user.lastName;
+    }
   }
 
-  // Pre-cached email hash to use with Gravatar
-  if (this.email && this.isModified('email') && this.email !== '') {
-    this.emailHash = crypto
-      .createHash('md5')
-      .update(this.email.trim().toLowerCase())
-      .digest('hex');
-  }
-
-  // Generate `displayName`
-  if (this.isModified('firstName') || this.isModified('lastName')) {
-    this.displayName = this.firstName + ' ' + this.lastName;
-  }
-
-  next();
+  prepare().then(() => next(), next);
 });
 
 /**
- * Create instance method for hashing a password
+ * Create static helper for hashing a plaintext password
  */
+UserSchema.statics.hashPassword = passwordHashing.hashPassword;
+
+UserSchema.statics.isValidPassword = validatePassword;
+
 UserSchema.methods.hashPassword = function (password) {
-  if (this.salt && password) {
-    return crypto
-      .pbkdf2Sync(password, Buffer.from(this.salt, 'base64'), 10000, 64, 'SHA1')
-      .toString('base64');
-  } else {
-    return password;
-  }
+  return this.constructor.hashPassword(password);
 };
 
 /**
  * Create instance method for authenticating user
  */
-UserSchema.methods.authenticate = function (password) {
-  return this.password === this.hashPassword(password);
+UserSchema.methods.authenticate = async function (password) {
+  const oldPassword = this.password;
+  const oldSalt = this.salt;
+  const verification = await passwordHashing.verifyPassword(
+    password,
+    oldPassword,
+    oldSalt,
+  );
+  if (!verification.valid) return false;
+  if (!verification.needsRehash) return true;
+
+  const newPassword = await passwordHashing.hashPassword(password);
+  const filter = {
+    _id: this._id,
+    password: oldPassword,
+  };
+  // Existing records may have no stored version while Mongoose supplies the
+  // schema default of zero. Match either representation for the CAS.
+  if (this.authVersion === undefined || this.authVersion === 0) {
+    filter.$or = [
+      { authVersion: { $exists: false } },
+      { authVersion: this.authVersion ?? 0 },
+    ];
+  } else {
+    filter.authVersion = this.authVersion;
+  }
+  if (oldSalt === undefined) {
+    filter.salt = { $exists: false };
+  } else {
+    filter.salt = oldSalt;
+  }
+
+  const result = await this.constructor
+    .updateOne(filter, {
+      $set: { password: newPassword },
+      $unset: { salt: 1 },
+    })
+    .exec();
+  const matchedCount = result.matchedCount ?? result.n;
+  if (matchedCount === 1) {
+    this.password = newPassword;
+    this.salt = undefined;
+    return true;
+  }
+
+  // Another request may already have upgraded the same password, or a
+  // concurrent reset/change may have replaced it. Re-check stored
+  // credentials so concurrent upgrades succeed and true password changes fail.
+  const fresh = await this.constructor
+    .findById(this._id)
+    .select('password salt')
+    .lean()
+    .exec();
+  if (!fresh) return false;
+
+  const retry = await passwordHashing.verifyPassword(
+    password,
+    fresh.password,
+    fresh.salt,
+  );
+  if (!retry.valid) return false;
+
+  this.password = fresh.password;
+  this.salt = fresh.salt;
+  return true;
 };
 
 /**
@@ -447,9 +519,36 @@ UserSchema.index(
     partialFilterExpression: { nostrNpub: { $type: 'string', $gt: '' } },
   },
 );
-UserSchema.index({ username: 'text', firstName: 'text', lastName: 'text' });
-
+UserSchema.index(
+  {
+    username: 'text',
+    firstName: 'text',
+    lastName: 'text',
+    locationLiving: 'text',
+    locationFrom: 'text',
+    tagline: 'text',
+  },
+  {
+    weights: {
+      username: 10,
+      firstName: 8,
+      lastName: 8,
+      locationLiving: 4,
+      locationFrom: 2,
+      tagline: 1,
+    },
+  },
+);
+UserSchema.index(
+  {
+    'member.tribe': 1,
+    seen: -1,
+    _id: 1,
+  },
+  { name: 'circle_discovery_member_seen' },
+);
 mongoose.model('User', UserSchema);
 
 const defaultExport = {};
 export default defaultExport;
+export { defaultExport as 'module.exports' };

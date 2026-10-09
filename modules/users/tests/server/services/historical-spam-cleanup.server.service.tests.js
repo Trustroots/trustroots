@@ -1,8 +1,9 @@
 const mongoose = require('mongoose');
 const should = require('should');
 const sinon = require('sinon');
+const utils = require('../../../../../testutils/server/data.server.testutil');
 
-const cleanup = require('../../../server/services/historical-spam-cleanup.server.service');
+const cleanup = require('./../../../server/services/historical-spam-cleanup.server.service.mjs');
 
 const AdminNote = mongoose.model('AdminNote');
 const Contact = mongoose.model('Contact');
@@ -19,20 +20,21 @@ let sequence;
 
 async function createCandidate(overrides = {}) {
   sequence += 1;
-  const user = new User({
-    created: campaignDate,
-    email: `historical-spam-${sequence}@example.test`,
-    emailTemporary: `historical-spam-${sequence}@example.test`,
-    firstName: 'Historical',
-    lastName: `Spam ${sequence}`,
-    password: 'correct horse battery staple',
-    provider: 'local',
-    public: false,
-    roles: ['user', 'suspended'],
-    username: `historical_spam_${sequence}`,
-    ...overrides,
-  });
-  await user.save();
+  const [user] = await utils.saveUsersWithCachedPasswords([
+    {
+      created: campaignDate,
+      email: `historical-spam-${sequence}@example.test`,
+      emailTemporary: `historical-spam-${sequence}@example.test`,
+      firstName: 'Historical',
+      lastName: `Spam ${sequence}`,
+      password: 'correct horse battery staple',
+      provider: 'local',
+      public: false,
+      roles: ['user', 'suspended'],
+      username: `historical_spam_${sequence}`,
+      ...overrides,
+    },
+  ]);
   createdUserIds.push(user._id);
   return user;
 }

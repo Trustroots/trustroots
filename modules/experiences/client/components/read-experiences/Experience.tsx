@@ -7,6 +7,7 @@ import styled from 'styled-components';
 
 // Internal dependencies
 import { DAYS_TO_REPLY } from '../../utils/constants';
+import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
 import { getGender } from '@/modules/core/client/utils/user_info';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import Meta from './Meta';
@@ -154,7 +155,7 @@ export default function Experience({
               <p>
                 <a
                   className="btn btn-primary"
-                  href={`/profile/${userFrom.username}/experiences/new`}
+                  href={getProfileExperiencesPath(userFrom.username)}
                 >
                   {t('Write about your experience with them') as string}
                 </a>
@@ -196,7 +197,7 @@ export default function Experience({
       {!response && isPublicExperience && onReceiverProfile && (
         <div className="panel-footer text-right">
           <a
-            href={`/profile/${userFrom.username}/experiences/new`}
+            href={getProfileExperiencesPath(userFrom.username)}
             className="btn btn-default"
           >
             {t('Write about your experience') as string}

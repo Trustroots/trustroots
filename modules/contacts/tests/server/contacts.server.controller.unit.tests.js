@@ -6,13 +6,13 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const contactsController = require('../../server/controllers/contacts.server.controller');
+const contactsController = require('./../../server/controllers/contacts.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 const Contact = mongoose.model('Contact');
 
-const emailService = require('../../../core/server/services/email.server.service');
+const emailService = require('./../../../core/server/services/email.server.service.mjs');
 
 function runHandler(invoke) {
   return new Promise(resolve => {
@@ -47,8 +47,8 @@ describe('Contacts controller unit tests', () => {
   let user2;
 
   beforeEach(async () => {
-    [user1, user2] = await utils.saveUsers(
-      utils.generateUsers(2, { public: true }),
+    [user1, user2] = await utils.saveUsersWithCachedPasswords(
+      utils.generateUsersWithSharedPassword(2, { public: true }),
     );
   });
 
@@ -354,8 +354,8 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('calls next without a public user', async () => {
-      const [privateUser] = await utils.saveUsers(
-        utils.generateUsers(1, { public: false }),
+      const [privateUser] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1, { public: false }),
       );
       const { nextCalled } = await runHandler((res, next) =>
         contactsController.contactByUserId(
@@ -429,8 +429,8 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('calls next without a public user', async () => {
-      const [privateUser] = await utils.saveUsers(
-        utils.generateUsers(1, { public: false }),
+      const [privateUser] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1, { public: false }),
       );
       const { nextCalled } = await runHandler((res, next) =>
         contactsController.contactById(
@@ -458,8 +458,8 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('responds with 404 for a contact the user does not belong to', async () => {
-      const [stranger] = await utils.saveUsers(
-        utils.generateUsers(1, { public: true }),
+      const [stranger] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1, { public: true }),
       );
       const contact = await new Contact({
         userFrom: user1._id,
@@ -550,8 +550,8 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('keeps only contacts shared with the authenticated user', async () => {
-      const [user3] = await utils.saveUsers(
-        utils.generateUsers(1, { public: true }),
+      const [user3] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1, { public: true }),
       );
       await new Contact({
         userFrom: user1._id,
@@ -632,8 +632,8 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('omits existing contacts with restricted members', async () => {
-      const [restrictedUser] = await utils.saveUsers(
-        utils.generateUsers(1, { public: true }),
+      const [restrictedUser] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1, { public: true }),
       );
       restrictedUser.roles = ['user', 'shadowban'];
       await restrictedUser.save();

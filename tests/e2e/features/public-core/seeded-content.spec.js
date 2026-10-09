@@ -3,9 +3,46 @@ const {
   expect,
   test,
   useElementScreenshot,
-} = require('../../support/test');
+} = require('../../support/fixtures');
 
 const { SEEDED_MEMBERS, waitForTribesList } = require('../../support/helpers');
+
+/* global window */
+
+async function swipeUpFrom(page, element) {
+  const box = await element.boundingBox();
+  expect(box).toBeTruthy();
+
+  const x = Math.round(box.x + box.width / 2);
+  const startY = Math.round(Math.min(box.y + box.height / 2, 450));
+  const endY = Math.max(80, startY - 250);
+  const session = await page.context().newCDPSession(page);
+
+  try {
+    await session.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x, y: startY }],
+    });
+    for (let step = 1; step <= 5; step += 1) {
+      await session.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [
+          {
+            x,
+            y: Math.round(startY + ((endY - startY) * step) / 5),
+          },
+        ],
+      });
+      await page.waitForTimeout(16);
+    }
+    await session.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: [],
+    });
+  } finally {
+    await session.detach();
+  }
+}
 
 test.describe('seeded content and public API flows', () => {
   test('languages API returns a non-empty list', async ({
@@ -30,7 +67,6 @@ test.describe('seeded content and public API flows', () => {
   }, testInfo) => {
     annotateFeature(testInfo, 'public.statistics', [
       'Statistics page loads for visitors.',
-      'Statistics page loads for signed-in members.',
       'Public statistics API returns deterministic connection and message-interaction data.',
       'Visitors do not see an experience-writing encouragement.',
     ]);
@@ -191,39 +227,53 @@ test.describe('seeded content and public API flows', () => {
   });
 
   test('circle detail remains touch-scrollable on a phone-sized viewport', async ({
-    page,
+    browser,
   }, testInfo) => {
     annotateFeature(testInfo, 'circles.detail', [
       'Circle detail content remains vertically scrollable on touch devices.',
     ]);
 
-    await page.setViewportSize({ width: 375, height: 480 });
-    await page.goto('/circles/hitchhikers');
-
-    const content = page.locator('.tribe-header-info');
-    await expect(content).toBeVisible();
-    await content.locator('.container').evaluate(element => {
-      const filler = element.ownerDocument.createElement('div');
-      filler.style.height = '960px';
-      element.append(filler);
+    const context = await browser.newContext({
+      hasTouch: true,
+      isMobile: true,
+      viewport: { width: 375, height: 480 },
     });
-    const state = await content.evaluate(element => {
-      const styles =
-        element.ownerDocument.defaultView.getComputedStyle(element);
-      element.scrollTop = element.scrollHeight;
-      return {
-        overflowY: styles.overflowY,
-        touchAction: styles.touchAction,
-        clientHeight: element.clientHeight,
-        scrollHeight: element.scrollHeight,
-        scrollTop: element.scrollTop,
-      };
-    });
+    const page = await context.newPage();
 
-    expect(state.overflowY).toBe('auto');
-    expect(state.touchAction).toBe('pan-y');
-    expect(state.scrollHeight).toBeGreaterThan(state.clientHeight);
-    expect(state.scrollTop).toBeGreaterThan(0);
+    try {
+      await page.goto('/circles/hitchhikers');
+
+      const content = page.locator('.tribe-header-info');
+      await expect(content).toBeVisible();
+      await content.locator('.container').evaluate(element => {
+        const filler = element.ownerDocument.createElement('div');
+        filler.style.height = '960px';
+        element.append(filler);
+      });
+      const state = await content.evaluate(element => {
+        const document = element.ownerDocument;
+        const styles = document.defaultView.getComputedStyle(element);
+        const scrollContainer = document.scrollingElement;
+        return {
+          overflowY: styles.overflowY,
+          touchAction: styles.touchAction,
+          clientHeight: scrollContainer.clientHeight,
+          scrollHeight: scrollContainer.scrollHeight,
+        };
+      });
+
+      expect(state.overflowY).toBe('auto');
+      expect(state.touchAction).toBe('pan-y');
+      expect(state.scrollHeight).toBeGreaterThan(state.clientHeight);
+
+      const scrollBeforeSwipe = await page.evaluate(() => window.scrollY);
+      await swipeUpFrom(page, content);
+      await expect
+        .poll(() => page.evaluate(() => window.scrollY))
+        .toBeGreaterThan(scrollBeforeSwipe);
+    } finally {
+      await context.close();
+    }
   });
 
   test('tribes API returns seeded circles', async ({ request }, testInfo) => {

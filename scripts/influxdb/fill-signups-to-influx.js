@@ -19,10 +19,10 @@
 var async = require('async'),
     mongoose = require('mongoose'),
     argv = require('yargs').argv,
-    mongooseHelper = require('../../config/lib/mongoose'),
-    statService = require('../../modules/stats/server/services/stats.server.service');
+    mongooseHelper = require('./../../config/lib/mongoose.mjs'),
+    statService = require('./../../modules/stats/server/services/stats.server.service.mjs');
 
-require('../../modules/users/server/models/user.server.model');
+require('./../../modules/users/server/models/user.server.model.mjs');
 
 var User = mongoose.model('User');
 

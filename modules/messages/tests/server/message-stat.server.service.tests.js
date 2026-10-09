@@ -2,7 +2,7 @@ const should = require('should');
 const async = require('async');
 const mongoose = require('mongoose');
 const sinon = require('sinon');
-const messageStatService = require('../../server/services/message-stat.server.service');
+const messageStatService = require('./../../server/services/message-stat.server.service.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
@@ -80,41 +80,24 @@ describe('Count Message Statistics of User', function () {
     );
   }
 
-  beforeEach(function (done) {
+  beforeEach(async function () {
     users.length = 0;
 
-    utils
-      .clearDatabase()
-      .then(() => {
-        for (let i = 0; i < 29; ++i) {
-          users.push(
-            new User({
-              firstName: 'firstName',
-              lastName: 'lastName',
-              displayName: 'displayName',
-              email: 'user' + i + '@example.com',
-              username: 'username' + i,
-              password: 'password123',
-              provider: 'local',
-              public: true,
-            }),
-          );
-        }
+    await utils.clearDatabase();
 
-        async.each(
-          users,
-          (user, callback) => {
-            user.save(callback);
-          },
-          err => {
-            if (err) {
-              return done(err);
-            }
-            seedMessageStats(done);
-          },
-        );
-      })
-      .catch(done);
+    // This statistics test never authenticates its users. Use one valid
+    // adaptive hash for all fixtures and insert the schema-shaped documents
+    // directly, keeping password-hook/KDF tests in the user model suite.
+    const fixturePassword = await User.hashPassword('fixture-password');
+    const fixtureUsers = Array.from({ length: 29 }, () =>
+      utils.createTestUser({ password: fixturePassword }),
+    );
+    users.push(...fixtureUsers);
+    await User.collection.insertMany(fixtureUsers.map(user => user.toObject()));
+
+    await new Promise((resolve, reject) => {
+      seedMessageStats(err => (err ? reject(err) : resolve()));
+    });
   });
 
   afterEach(utils.clearDatabase);
@@ -164,6 +147,90 @@ describe('Count Message Statistics of User', function () {
       should(stats).have.property('replyRate', expectedRate);
       should(stats).have.property('replyTime', expectedTime);
     });
+  });
+
+  it('excludes current greeters before the minimum sample and window selection', async function () {
+    const receiver = users[28];
+    const senders = [users[1], users[2], users[3]];
+    await User.updateOne(
+      { _id: senders[2]._id },
+      { $set: { roles: ['user', 'welcome-team'] } },
+    );
+    await MessageStat.insertMany(
+      senders.map((sender, index) => ({
+        firstMessageUserFrom: sender._id,
+        firstMessageUserTo: receiver._id,
+        firstMessageCreated: new Date(NOW - (index + 1) * DAY),
+        firstMessageLength: 40,
+        firstReplyCreated: null,
+        firstReplyLength: null,
+        timeToFirstReply: null,
+      })),
+    );
+
+    const readStats = () =>
+      new Promise((resolve, reject) => {
+        messageStatService.readMessageStatsOfUser(
+          receiver._id,
+          NOW,
+          (err, stats) => {
+            if (err) return reject(err);
+            resolve(stats);
+          },
+        );
+      });
+
+    // Two ordinary conversations are below the three-conversation threshold.
+    (await readStats()).should.deepEqual({ replyRate: null, replyTime: null });
+
+    // Statistics use current roles: removing the role makes all three eligible.
+    await User.updateOne(
+      { _id: senders[2]._id },
+      { $set: { roles: ['user'] } },
+    );
+    (await readStats()).should.deepEqual({ replyRate: 0, replyTime: null });
+  });
+
+  it('excludes greeters before choosing between the 30-day and 90-day windows', async function () {
+    const receiver = users[28];
+    const recentGreeters = users.slice(1, 9);
+    const olderMembers = users.slice(9, 12);
+    await User.updateMany(
+      { _id: { $in: recentGreeters.map(user => user._id) } },
+      { $set: { roles: ['user', 'welcome-team'] } },
+    );
+
+    await MessageStat.insertMany([
+      ...recentGreeters.map((sender, index) => ({
+        firstMessageUserFrom: sender._id,
+        firstMessageUserTo: receiver._id,
+        firstMessageCreated: new Date(NOW - (index + 1) * DAY),
+        firstMessageLength: 40,
+        timeToFirstReply: null,
+      })),
+      ...olderMembers.map((sender, index) => ({
+        firstMessageUserFrom: sender._id,
+        firstMessageUserTo: receiver._id,
+        firstMessageCreated: new Date(NOW - (32 + index) * DAY),
+        firstMessageLength: 40,
+        timeToFirstReply: null,
+      })),
+    ]);
+
+    const stats = await new Promise((resolve, reject) => {
+      messageStatService.readMessageStatsOfUser(
+        receiver._id,
+        NOW,
+        (err, result) => {
+          if (err) return reject(err);
+          resolve(result);
+        },
+      );
+    });
+
+    // Removing eight recent greeter conversations first leaves three ordinary
+    // conversations, so the 90-day sample reaches the display threshold.
+    stats.should.deepEqual({ replyRate: 0, replyTime: null });
   });
 
   it('[< 10 messages in last 90 days] should use 90 days', function (done) {
@@ -286,27 +353,17 @@ describe('MessageStat Creation & Updating Test', function () {
   beforeEach(function () {
     // create means create without saving to database, unless explicit
     // create the initiator (User)
-    initiator = new User({
-      firstName: 'Full',
-      lastName: 'Name',
-      displayName: 'Full Name',
+    initiator = utils.createTestUser({
       email: 'user1@test.com',
       username: 'username1',
       password: 'password123',
-      provider: 'local',
-      public: true,
     });
 
     // create the receiver (User)
-    receiver = new User({
-      firstName: 'Full',
-      lastName: 'Name',
-      displayName: 'Full Name',
+    receiver = utils.createTestUser({
       email: 'user2@test.com',
       username: 'username2',
       password: 'password123',
-      provider: 'local',
-      public: true,
     });
 
     // create a first message
