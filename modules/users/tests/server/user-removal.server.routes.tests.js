@@ -45,7 +45,7 @@ describe('User removal CRUD tests', function () {
   beforeEach(function () {
     const testClockStart = Date.now();
     sinon.useFakeTimers({
-      // Mongo's TTL monitor uses real time, so keep test sessions in the future.
+      // Use the current clock because Mongo's TTL monitor uses real time.
       now: testClockStart,
       toFake: ['Date'],
     });
