@@ -5,13 +5,13 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 const AdminNote = mongoose.model('AdminNote');
 describe('Admin Notes Log CRUD tests', () => {
+  // Get application
+  let app;
+  let agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
-  // Get application
-  let app;
-  let agent;
   let adminUserId;
   let notesUserId;
   const noteInputHtml =

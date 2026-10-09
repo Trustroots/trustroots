@@ -5,13 +5,13 @@ const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const ReferenceThread = mongoose.model('ReferenceThread');
 describe('Admin Reference thread CRUD tests', () => {
+  // Get application
+  let app;
+  let agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
-  // Get application
-  let app;
-  let agent;
   let users;
   let userRegular1Id;
   let userRegular2Id;

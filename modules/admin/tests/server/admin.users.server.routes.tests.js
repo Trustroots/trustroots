@@ -15,13 +15,13 @@ let userAdminId;
 let userRegular;
 let userRegularId;
 describe('Admin User CRUD tests', () => {
+  // Get application
+  let app;
+  let agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
-  // Get application
-  let app;
-  let agent;
   beforeEach(async () => {
     try {
       // Create admin credentials

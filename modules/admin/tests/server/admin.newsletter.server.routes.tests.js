@@ -5,13 +5,13 @@ const errorService = require('./../../../core/server/services/error.server.servi
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 describe('Admin Newsletter subscribers API tests', () => {
+  // Get application
+  let app;
+  let agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
-  // Get application
-  let app;
-  let agent;
   const circleId = new mongoose.Types.ObjectId('5fbab4f7fed63c7ed73276d3');
   const circleMembership = [
     {
