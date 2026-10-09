@@ -43,8 +43,10 @@ describe('User removal CRUD tests', function () {
 
   // initialize sinon
   beforeEach(function () {
+    const testClockStart = Date.now();
     sinon.useFakeTimers({
-      now: 1500 * 1000 * 1000 * 1000,
+      // Use the current clock because Mongo's TTL monitor uses real time.
+      now: testClockStart,
       toFake: ['Date'],
     });
   });
