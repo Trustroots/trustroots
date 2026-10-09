@@ -19,10 +19,10 @@ describe('Read experiences by userTo Id', () => {
   // ...                   can read all public and private experiences to self
   // ...                   can not read private experiences to self
   // when userFrom or userTo doesn't exist, we simply return empty list
-  const _usersPublic = utils.generateUsers(6, {
+  const _usersPublic = utils.generateUsersWithSharedPassword(6, {
     public: true,
   });
-  const _usersPrivate = utils.generateUsers(3, {
+  const _usersPrivate = utils.generateUsersWithSharedPassword(3, {
     public: false,
     username: 'nonpublic',
     email: 'nonpublic@example.com',
@@ -30,7 +30,8 @@ describe('Read experiences by userTo Id', () => {
   const _users = [..._usersPublic, ..._usersPrivate];
   beforeEach(() => {
     sinon.useFakeTimers({
-      now: new Date('2018-01-12'),
+      // MongoDB uses real time to expire authentication sessions.
+      now: Date.now(),
       toFake: ['Date'],
     });
   });
@@ -38,7 +39,7 @@ describe('Read experiences by userTo Id', () => {
     sinon.restore();
   });
   beforeEach(async () => {
-    users = await utils.saveUsers(_users);
+    users = await utils.saveUsersWithCachedPasswords(_users);
   });
 
   /**

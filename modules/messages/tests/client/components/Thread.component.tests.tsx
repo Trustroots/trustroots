@@ -257,6 +257,34 @@ describe('<Thread>', () => {
   });
 
   describe('no messages', () => {
+    it.each([
+      [
+        'Fictional <Member>',
+        'fictional-member',
+        "You haven't been talking with Fictional <Member> yet.",
+      ],
+      [
+        '',
+        'fictional-member',
+        "You haven't been talking with fictional-member yet.",
+      ],
+      [null, null, "You haven't been talking yet."],
+    ])(
+      'names an empty conversation with safe fallbacks: %s / %s',
+      async (displayName, username, heading) => {
+        api.users.fetch.mockResolvedValueOnce({
+          ...otherUser,
+          // Keep the API regression payload whose name fields are explicitly null.
+          displayName: displayName as UserProfile['displayName'],
+          username: username as UserProfile['username'],
+        });
+        render(<Thread user={me} profileMinimumLength={0} />);
+        expect(
+          await screen.findByRole('heading', { name: heading }),
+        ).toBeInTheDocument();
+      },
+    );
+
     beforeEach(() => {
       api.messages.fetchMessages.mockResolvedValueOnce({ messages: [] });
     });
@@ -276,7 +304,13 @@ describe('<Thread>', () => {
         <Thread user={me} profileMinimumLength={0} />,
       );
       const form = await findByRole('form');
-      expect(queryByText(/You haven't been talking yet/)).toBeInTheDocument();
+      expect(
+        queryByText(
+          `You haven't been talking with ${
+            otherUser.displayName || otherUser.username
+          } yet.`,
+        ),
+      ).toBeInTheDocument();
       expect(within(form).queryByRole('textbox')).toBeInTheDocument();
       expect(screen.queryByTestId('quick-reply')).not.toBeInTheDocument();
       expect(screen.getByRole('link', { name: 'safety tips' })).toHaveAttribute(
@@ -327,6 +361,9 @@ describe('<Thread>', () => {
       expect(
         await screen.findByText('Hello, can I stay next Tuesday?'),
       ).toBeInTheDocument();
+      expect(
+        screen.queryByText(/You haven't been talking with/),
+      ).not.toBeInTheDocument();
     });
   });
 

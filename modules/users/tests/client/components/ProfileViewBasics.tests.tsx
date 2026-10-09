@@ -52,6 +52,27 @@ const makeProfile = (overrides: Partial<UserProfile> = {}): UserProfile => ({
 });
 
 describe('<ProfileViewBasics />', () => {
+  it('shows the greeter badge alongside volunteer recognition and removes it when revoked', () => {
+    const profile = {
+      _id: 'fictional-member',
+      username: 'fictional-member',
+      displayName: 'Fictional Member',
+      isGreeter: true,
+      isVolunteer: true,
+    };
+    const { rerender } = render(<ProfileViewBasics profile={profile} />);
+    expect(
+      screen.getByRole('link', { name: 'Trustroots greeter' }),
+    ).toHaveAttribute('href', '/team/greeters');
+    expect(
+      screen.getByRole('link', { name: 'Trustroots volunteer' }),
+    ).toHaveAttribute('href', '/team');
+    rerender(<ProfileViewBasics profile={{ ...profile, isGreeter: false }} />);
+    expect(
+      screen.queryByRole('link', { name: 'Trustroots greeter' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('renders member profile basics, locations, languages, and networks', () => {
     render(
       <ProfileViewBasics

@@ -158,6 +158,82 @@ describe('<AdminAcquisitionStories />', () => {
     ).toBeVisible();
   });
 
+  it('filters by profile visibility together with assignment without refetching', async () => {
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      { _id: 'visible-id', username: 'visible-member', public: true },
+      {
+        _id: 'hidden-assigned-id',
+        username: 'hidden-assigned',
+        public: false,
+        welcomer: {
+          _id: 'greeter-id',
+          username: 'fictional-greeter',
+          created: '2026-01-01T00:00:00.000Z',
+        },
+      },
+      { _id: 'hidden-id', username: 'hidden-member', public: false },
+    ]);
+
+    render(<AdminAcquisitionStories />);
+    await screen.findByRole('table');
+
+    const visibility = screen.getByRole('combobox', {
+      name: 'Profile visibility',
+    });
+    const memberOrder = () =>
+      Array.from(document.querySelectorAll('tbody tr')).map(
+        row => row.querySelector('td:nth-child(2)')?.textContent || '',
+      );
+
+    expect(visibility).toHaveValue('all');
+    expect(memberOrder()).toEqual([
+      'visible-member',
+      'hidden-assigned',
+      'hidden-member',
+    ]);
+    expect(
+      screen.getByText(
+        'Hidden profiles have not activated their signup through email confirmation.',
+      ),
+    ).toBeVisible();
+
+    fireEvent.change(visibility, { target: { value: 'visible' } });
+    expect(memberOrder()).toEqual(['visible-member']);
+    fireEvent.change(visibility, { target: { value: 'hidden' } });
+    expect(memberOrder()).toEqual(['hidden-assigned', 'hidden-member']);
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Unassigned only' }));
+    expect(memberOrder()).toEqual(['hidden-member']);
+    expect(
+      mockedAcquisitionStoriesApi.getAcquisitionStories,
+    ).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps visibility controls available when a visibility filter has no matches', async () => {
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      { _id: 'visible-id', username: 'visible-member', public: true },
+    ]);
+
+    render(<AdminAcquisitionStories />);
+    await screen.findByRole('table');
+    fireEvent.change(
+      screen.getByRole('combobox', { name: 'Profile visibility' }),
+      {
+        target: { value: 'hidden' },
+      },
+    );
+
+    expect(
+      screen.getByText('No acquisition stories found.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('combobox', { name: 'Profile visibility' }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('checkbox', { name: 'Unassigned only' }),
+    ).toBeVisible();
+  });
+
   it.each([
     { roles: ['welcome-team'] },
     {},
@@ -243,7 +319,9 @@ describe('<AdminAcquisitionStories />', () => {
     expect(screen.getByText('Living: Fictional home')).toBeInTheDocument();
     expect(screen.getByText('From: Fictional origin')).toBeInTheDocument();
     expect(screen.getByText('Hosting: 52.370, 4.900')).toBeInTheDocument();
-    expect(screen.getByText('Visible')).toBeInTheDocument();
+    expect(screen.getByRole('table').querySelector('tbody')).toHaveTextContent(
+      'Visible',
+    );
     expect(
       screen.getByRole('link', {
         name: 'restricted (Restricted Example)',
@@ -552,6 +630,8 @@ describe('<AdminAcquisitionStories />', () => {
         'Suspended or shadowbanned accounts with a matching username or email identifier',
       ),
     ).toBeVisible();
-    expect(screen.getByText('Hidden')).toBeInTheDocument();
+    expect(screen.getByRole('table').querySelector('tbody')).toHaveTextContent(
+      'Hidden',
+    );
   });
 });
