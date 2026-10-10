@@ -102,6 +102,7 @@ module.exports = webpackMerge.merge(shims, {
       'nostr-tools$': require.resolve('nostr-tools'),
       'nostr-tools/relay$': require.resolve('nostr-tools/relay'),
       'nostr-tools/nip19$': require.resolve('nostr-tools/nip19'),
+      'nostr-tools/pure$': require.resolve('nostr-tools/pure'),
 
       // TanStack Router's CommonJS build requires tiny-warning directly.
       // Pin it to its CommonJS entry so Webpack does not select the package's
