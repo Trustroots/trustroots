@@ -4,6 +4,7 @@ import {
   fetchMessages,
   fetchThreads,
   markRead,
+  previewMessage,
   sendMessage,
   unreadCount,
   type Message,
@@ -21,6 +22,15 @@ afterEach(() => {
 });
 
 describe('messages api', () => {
+  it('formats a draft without sending it', async () => {
+    mockedAxios.post.mockResolvedValueOnce({
+      data: { content: '<p>Draft</p>' },
+    });
+    await expect(previewMessage('<p>Draft</p>')).resolves.toBe('<p>Draft</p>');
+    expect(mockedAxios.post).toHaveBeenCalledWith('/api/messages-preview', {
+      content: '<p>Draft</p>',
+    });
+  });
   it('fetches threads and extracts next pagination params', async () => {
     const threads = [{ _id: 'thread-1' }] as MessageThreadSummary[];
     mockedAxios.get.mockResolvedValueOnce({

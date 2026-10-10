@@ -141,6 +141,43 @@
 
   .message-reply-actions {
     flex: 0 0 auto;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    > small {
+      flex: 1;
+    }
+  }
+
+  .message-draft-preview {
+    overflow: auto;
+    max-height: ~'min(250px, calc(50vh - 55px))';
+
+    .message {
+      margin: 4px 0;
+    }
+
+    .panel .panel-body {
+      padding: 12px 16px;
+      background: #e1f5ed;
+    }
+
+    @media (max-width: @screen-xs-max) {
+      max-height: ~'min(100px, calc(25vh - 55px))';
+
+      .panel {
+        margin: 0;
+        border-radius: 16px 16px 4px 16px;
+      }
+    }
+  }
+
+  .message-preview-toggle {
+    @media (max-width: @screen-xs-max) {
+      margin-left: -15px;
+    }
   }
 
   // No color glow on hover with this Medium editor instance

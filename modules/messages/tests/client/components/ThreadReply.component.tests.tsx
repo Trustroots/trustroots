@@ -5,6 +5,13 @@ import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import ThreadReply from '@/modules/messages/client/components/ThreadReply';
 
+import { previewMessage } from '@/modules/messages/client/api/messages.api';
+
+jest.mock('@/modules/messages/client/api/messages.api', () => ({
+  previewMessage: jest.fn(),
+}));
+const mockPreviewMessage = jest.mocked(previewMessage);
+
 type EditorMockProps = {
   id?: string;
   onChange: (value: string) => void;
@@ -45,6 +52,149 @@ function getForm(container: HTMLElement): HTMLFormElement {
 }
 
 describe('<ThreadReply>', () => {
+  it('disables preview for empty drafts and shows formatted content without changing the cached draft', async () => {
+    const draft = '<p><strong>Fictional draft</strong></p>';
+    mockPreviewMessage.mockResolvedValue('<p><b>Fictional draft</b></p>');
+    const onSend = jest.fn();
+    const { getByRole, queryByRole } = render(
+      <ThreadReply cacheKey="preview-draft" onSend={onSend} />,
+    );
+    expect(getByRole('button', { name: 'Preview' })).toBeDisabled();
+    fireEvent.change(getByRole('textbox'), { target: { value: '<p> </p>' } });
+    expect(getByRole('button', { name: 'Preview' })).toBeDisabled();
+    fireEvent.change(getByRole('textbox'), { target: { value: draft } });
+    fireEvent.click(getByRole('button', { name: 'Preview' }));
+    expect(getByRole('status')).toHaveTextContent('Loading preview');
+    expect(getByRole('button', { name: 'Edit' })).toHaveFocus();
+    await waitFor(() => expect(queryByRole('status')).not.toBeInTheDocument());
+    expect(
+      getByRole('region', { name: 'Message preview' }).querySelector('b'),
+    ).toHaveTextContent('Fictional draft');
+    expect(previewMessage).toHaveBeenCalledWith(draft);
+    expect(onSend).not.toHaveBeenCalled();
+    expect(window.localStorage.getItem('preview-draft')).toBe(draft);
+    fireEvent.click(getByRole('button', { name: 'Edit' }));
+    expect(getByRole('textbox')).toHaveValue(draft);
+    expect(getByRole('textbox')).toHaveFocus();
+  });
+
+  it('offers retry after preview failure and uses message link rules', async () => {
+    mockPreviewMessage
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce(
+        '<p><a href="https://outside.example/">External</a> <a href="/profile/fictional">Internal</a></p>',
+      );
+    const { getByRole } = render(<ThreadReply onSend={jest.fn()} />);
+    fireEvent.change(getByRole('textbox'), {
+      target: { value: '<p>Draft</p>' },
+    });
+    fireEvent.click(getByRole('button', { name: 'Preview' }));
+    await waitFor(() =>
+      expect(getByRole('alert')).toHaveTextContent('Failed to load preview'),
+    );
+    fireEvent.click(getByRole('button', { name: 'Retry' }));
+    await waitFor(() =>
+      expect(getByRole('link', { name: 'Internal' })).toHaveAttribute(
+        'href',
+        '/profile/fictional',
+      ),
+    );
+    expect(getByRole('region', { name: 'Message preview' })).toHaveTextContent(
+      'External',
+    );
+    expect(previewMessage).toHaveBeenCalledTimes(2);
+  });
+
+  it('ignores stale success and error responses when editing a newer draft', async () => {
+    let resolveFirst!: (content: string) => void;
+    let rejectSecond!: (error: Error) => void;
+    mockPreviewMessage
+      .mockImplementationOnce(
+        () =>
+          new Promise<string>(resolve => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise<string>((_resolve, reject) => {
+            rejectSecond = reject;
+          }),
+      )
+      .mockResolvedValueOnce('<p>Newest preview</p>');
+    const { getByRole, queryByRole } = render(
+      <ThreadReply onSend={jest.fn()} />,
+    );
+    fireEvent.change(getByRole('textbox'), {
+      target: { value: '<p>First</p>' },
+    });
+    fireEvent.click(getByRole('button', { name: 'Preview' }));
+    fireEvent.click(getByRole('button', { name: 'Edit' }));
+    fireEvent.change(getByRole('textbox'), {
+      target: { value: '<p>Second</p>' },
+    });
+    fireEvent.click(getByRole('button', { name: 'Preview' }));
+    fireEvent.click(getByRole('button', { name: 'Edit' }));
+    fireEvent.change(getByRole('textbox'), {
+      target: { value: '<p>Newest</p>' },
+    });
+    fireEvent.click(getByRole('button', { name: 'Preview' }));
+    await waitFor(() =>
+      expect(
+        getByRole('region', { name: 'Message preview' }),
+      ).toHaveTextContent('Newest preview'),
+    );
+    resolveFirst('<p>Old preview</p>');
+    rejectSecond(new Error('old error'));
+    await waitFor(() => expect(previewMessage).toHaveBeenCalledTimes(3));
+    expect(getByRole('region', { name: 'Message preview' })).toHaveTextContent(
+      'Newest preview',
+    );
+    expect(queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('ignores preview responses after unmounting', async () => {
+    let resolvePreview!: (content: string) => void;
+    mockPreviewMessage.mockImplementationOnce(
+      () =>
+        new Promise<string>(resolve => {
+          resolvePreview = resolve;
+        }),
+    );
+    const { getByRole, unmount } = render(<ThreadReply onSend={jest.fn()} />);
+    fireEvent.change(getByRole('textbox'), { target: { value: 'Draft' } });
+    fireEvent.click(getByRole('button', { name: 'Preview' }));
+    unmount();
+    resolvePreview('Old conversation');
+    await Promise.resolve();
+  });
+
+  it('sends the original draft from preview, preserves it on failure and clears it on success', async () => {
+    const draft = '<p><strong>Original draft</strong></p>';
+    mockPreviewMessage.mockResolvedValue('<p><b>Original draft</b></p>');
+    const onSend = jest
+      .fn()
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(true);
+    const { getByRole, queryByRole } = render(
+      <ThreadReply cacheKey="preview-draft" onSend={onSend} />,
+    );
+    fireEvent.change(getByRole('textbox'), { target: { value: draft } });
+    fireEvent.click(getByRole('button', { name: 'Preview' }));
+    await waitFor(() => expect(queryByRole('status')).not.toBeInTheDocument());
+    fireEvent.click(getByRole('button', { name: /Send/ }));
+    await waitFor(() =>
+      expect(getByRole('button', { name: /Send/ })).toBeEnabled(),
+    );
+    expect(onSend).toHaveBeenCalledWith(draft);
+    expect(getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('preview-draft')).toBe(draft);
+    fireEvent.click(getByRole('button', { name: /Send/ }));
+    await waitFor(() => expect(getByRole('textbox')).toHaveValue(''));
+    expect(getByRole('textbox')).toHaveFocus();
+    expect(window.localStorage.getItem('preview-draft')).toBeNull();
+  });
+
   it('focuses the editor when desktop autofocus is enabled', () => {
     const { getByRole } = render(<ThreadReply autoFocus onSend={jest.fn()} />);
 
