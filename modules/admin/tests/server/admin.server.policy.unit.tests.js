@@ -38,10 +38,17 @@ describe('Admin policy unit tests', () => {
     policies.length.should.equal(2);
     const welcome = policies.shift();
     welcome.roles.should.deepEqual(['welcome-team']);
-    welcome.allows.should.deepEqual([
-      { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
-      { resources: '/api/admin/staff-blockers', permissions: ['get'] },
-    ]);
+    welcome.allows
+      .sort((a, b) => a.resources.localeCompare(b.resources))
+      .should.deepEqual([
+        { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
+        { resources: '/api/admin/location-corrections', permissions: ['get'] },
+        {
+          resources: '/api/admin/location-corrections/send',
+          permissions: ['post'],
+        },
+        { resources: '/api/admin/staff-blockers', permissions: ['get'] },
+      ]);
     policies[0].roles.should.deepEqual(['admin']);
     policies[0].allows
       .map(allow => allow.resources)

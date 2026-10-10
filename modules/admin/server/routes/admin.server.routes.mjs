@@ -8,6 +8,7 @@ import adminUsers from './../controllers/admin.users.server.controller.mjs';
 import adminDashboard from './../controllers/admin.dashboard.server.controller.mjs';
 import adminNotes from './../controllers/admin.notes.server.controller.mjs';
 import adminReferenceThreads from './../controllers/admin.reference-threads.server.controller.mjs';
+import adminLocationCorrections from '../controllers/admin.location-corrections.server.controller.mjs';
 
 /**
  * Module dependencies.
@@ -18,6 +19,16 @@ const registerRoutes = app => {
     .route('/api/admin/acquisition-stories')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminAcquisitionStories.list);
+  app
+    .route('/api/admin/location-corrections')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminLocationCorrections.list);
+
+  app
+    .route('/api/admin/location-corrections/send')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminLocationCorrections.send);
+
   app
     .route('/api/admin/audit-log')
     .all(adminPolicy.isAllowed)

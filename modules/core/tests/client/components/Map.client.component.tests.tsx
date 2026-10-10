@@ -117,21 +117,30 @@ function latestReactMapProps(): MapProps {
   return call[0];
 }
 
-function changeMapViewport(): void {
+type Viewport = {
+  latitude: number;
+  longitude: number;
+  zoom: number;
+};
+type InteractionState = { isPanning?: boolean; isZooming?: boolean };
+type ViewportChangeHandler = (
+  viewport: Viewport,
+  interactionState?: InteractionState,
+) => void;
+
+function changeMapViewport(
+  viewport: Viewport = { latitude: 51, longitude: 11, zoom: 15 },
+  interactionState?: InteractionState,
+): void {
   const onViewportChange = latestReactMapProps().onViewportChange as
-    | ((viewport: {
-        latitude: number;
-        longitude: number;
-        zoom: number;
-      }) => void)
+    | ViewportChangeHandler
     | undefined;
   if (!onViewportChange) {
     throw new Error('Expected the map viewport callback to be provided');
   }
   // ReactMapGL supplies a richer view state; these tests exercise the fields
   // consumed by Map and preserve the original three-field callback payload.
-  const viewport = { latitude: 51, longitude: 11, zoom: 15 };
-  act(() => onViewportChange(viewport));
+  act(() => onViewportChange(viewport, interactionState));
 }
 
 it('synchronises panning and external place searches while retaining zoom', () => {
@@ -140,11 +149,22 @@ it('synchronises panning and external place searches while retaining zoom', () =
   const { rerender } = render(
     <Map location={[50, 10]} onLocationChange={onLocationChange} />,
   );
-  changeMapViewport();
+  changeMapViewport(
+    { latitude: 51, longitude: 11, zoom: 15 },
+    { isPanning: true, isZooming: false },
+  );
   expect(onLocationChange).toHaveBeenCalledWith([51, 11]);
+  onLocationChange.mockClear();
+  changeMapViewport(
+    { latitude: 51, longitude: 11, zoom: 16 },
+    { isPanning: true, isZooming: true },
+  );
+  expect(onLocationChange).not.toHaveBeenCalled();
+  changeMapViewport({ latitude: 51, longitude: 11, zoom: 16 });
+  expect(onLocationChange).not.toHaveBeenCalled();
   rerender(<Map location={[52, 12]} onLocationChange={onLocationChange} />);
   expect(latestReactMapProps()).toEqual(
-    expect.objectContaining({ latitude: 52, longitude: 12, zoom: 15 }),
+    expect.objectContaining({ latitude: 52, longitude: 12, zoom: 16 }),
   );
 });
 it('allows maps to pan without a location callback', () => {

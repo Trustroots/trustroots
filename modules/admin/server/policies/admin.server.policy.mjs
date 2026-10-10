@@ -18,10 +18,12 @@ export const invokeRolesPolicies = () => {
           resources: '/api/admin/acquisition-stories',
           permissions: ['post'],
         },
+        { resources: '/api/admin/location-corrections', permissions: ['get'] },
         {
-          resources: '/api/admin/staff-blockers',
-          permissions: ['get'],
+          resources: '/api/admin/location-corrections/send',
+          permissions: ['post'],
         },
+        { resources: '/api/admin/staff-blockers', permissions: ['get'] },
       ],
     },
     {
@@ -29,6 +31,11 @@ export const invokeRolesPolicies = () => {
       allows: [
         {
           resources: '/api/admin/acquisition-stories',
+          permissions: ['post'],
+        },
+        { resources: '/api/admin/location-corrections', permissions: ['get'] },
+        {
+          resources: '/api/admin/location-corrections/send',
           permissions: ['post'],
         },
         { resources: '/api/admin/staff-blockers', permissions: ['get'] },
