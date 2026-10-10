@@ -186,7 +186,7 @@
     "@pmmmwh/react-refresh-webpack-plugin": "0.5.17",
     "@sinonjs/fake-timers": "8.1.0",
     "@testing-library/jest-dom": "7.0.1",
-    "@testing-library/react": "13.4.0",
+    "@testing-library/react": "16.3.3",
     "@types/jest": "30.0.0",
     "@types/leaflet": "1.9.22",
     "@types/lodash": "4.17.25",
