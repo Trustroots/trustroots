@@ -123,16 +123,9 @@ function verifyAttestation(signature, report) {
     return;
   }
 
-  // A downloaded file is hostile input: `verifyEvent` throws on a malformed
-  // event rather than returning false, and a verifier that crashes on a bad
-  // file is a verifier nobody runs.
-  let verified = false;
-
-  try {
-    verified = verifyEvent(event);
-  } catch (error) {
-    verified = false;
-  }
+  // A downloaded file is hostile input; nostr-tools 2.25 answers false for a
+  // malformed event rather than throwing, which the hostile-file tests pin.
+  const verified = verifyEvent(event);
 
   if (!verified) {
     report.event.status = 'invalid';
