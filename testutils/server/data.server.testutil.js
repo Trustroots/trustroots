@@ -11,6 +11,7 @@ const fixturePasswordHashes = new Map();
 const {
   generateUsers,
   generateExperiences,
+  generateValidUsername,
 } = require('../common/data.common.testutil');
 
 /**
@@ -126,7 +127,7 @@ function createTestUser(overrides = {}) {
     firstName: 'Full',
     lastName: 'Name',
     displayName: 'Full Name',
-    username: faker.internet.userName(),
+    username: generateValidUsername(),
     email: faker.internet.email(),
     password: 'Password123!',
     provider: 'local',

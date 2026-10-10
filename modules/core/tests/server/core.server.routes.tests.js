@@ -236,7 +236,7 @@ describe('Core CRUD tests', function () {
           email: 'frontend-root-user@example.com',
           firstName: 'Frontend',
           lastName: 'User',
-          username: 'frontend-root-user',
+          username: 'frontendrootuser',
           ...overrides,
         })
         .save();
@@ -276,7 +276,7 @@ describe('Core CRUD tests', function () {
     });
     it('renders React assets for a signed-in member on entry pages', async function () {
       const credentials = {
-        username: 'sample-entry-member',
+        username: 'sampleentrymember',
         password: 'Password123!',
       };
       await createUser({
@@ -302,7 +302,7 @@ describe('Core CRUD tests', function () {
     it('redirects non-admin users away from admin React-owned pages', function (done) {
       const memberCredentials = {
         password: 'Password123!',
-        username: 'frontend-root-member',
+        username: 'frontendrootmember',
       };
       createUser({
         email: 'frontend-root-member@example.com',
@@ -332,7 +332,7 @@ describe('Core CRUD tests', function () {
     it('renders React assets and root for admin users on admin pages', function (done) {
       const adminCredentials = {
         password: 'Password123!',
-        username: 'frontend-root-admin',
+        username: 'frontendrootadmin',
       };
       createUser({
         email: 'frontend-root-admin@example.com',
@@ -366,7 +366,7 @@ describe('Core CRUD tests', function () {
     it('renders React assets and root for authenticated profile pages', function (done) {
       const profileCredentials = {
         password: 'Password123!',
-        username: 'frontend-root-profile',
+        username: 'frontendrootprofile',
       };
       createUser({
         email: 'frontend-root-profile@example.com',

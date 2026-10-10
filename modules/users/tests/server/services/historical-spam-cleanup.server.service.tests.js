@@ -31,7 +31,7 @@ async function createCandidate(overrides = {}) {
       provider: 'local',
       public: false,
       roles: ['user', 'suspended'],
-      username: `historical_spam_${sequence}`,
+      username: `historicalspam${sequence}`,
       ...overrides,
     },
   ]);

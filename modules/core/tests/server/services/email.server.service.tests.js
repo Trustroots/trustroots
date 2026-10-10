@@ -337,14 +337,14 @@ describe('Service: email', function () {
   it('sends administrator message notifications from Trustroots Support', function (done) {
     const userFrom = {
       _id: 'admin-user-id',
-      username: 'admin-user',
+      username: 'adminuser',
       displayName: 'Admin User',
       email: 'admin@example.com',
       roles: ['user', 'admin'],
     };
     const userTo = {
       _id: 'recipient-user-id',
-      username: 'recipient-user',
+      username: 'recipientuser',
       displayName: 'Recipient User',
       email: 'recipient@example.com',
       roles: ['user'],

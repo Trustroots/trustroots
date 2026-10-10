@@ -7,6 +7,7 @@ import path from 'path';
 import errorService from './../../../core/server/services/error.server.service.mjs';
 import textService from './../../../core/server/services/text.server.service.mjs';
 import tribesHandler from './../../../tribes/server/controllers/tribes.server.controller.mjs';
+import authenticationService from '../services/authentication.server.service.mjs';
 import emailService from './../../../core/server/services/email.server.service.mjs';
 import statService from './../../../stats/server/services/stats.server.service.mjs';
 import log from './../../../../config/lib/logger.mjs';
@@ -109,6 +110,26 @@ service.update = function (req, res) {
     return res.status(400).send({
       message: 'Please enter a valid email address.',
     });
+  }
+
+  if (Object.prototype.hasOwnProperty.call(req.body, 'username')) {
+    if (typeof req.body.username !== 'string') {
+      return res
+        .status(400)
+        .send({ message: authenticationService.usernameFormatMessage });
+    }
+    const selectedUsername = req.body.username.trim();
+    req.body.username = selectedUsername.toLowerCase();
+    if (
+      req.body.username !== req.user.username &&
+      !authenticationService.validateUsername(selectedUsername)
+    ) {
+      return res.status(400).send({
+        message: authenticationService.isUsernameFormatValid(selectedUsername)
+          ? 'Username is not available.'
+          : authenticationService.usernameFormatMessage,
+      });
+    }
   }
 
   // validate locale

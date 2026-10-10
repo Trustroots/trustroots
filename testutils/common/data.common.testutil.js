@@ -15,9 +15,24 @@ const selectRandom = (list, fraction = 0.5) => {
   return _.sampleSize(list, count);
 };
 
+/**
+ * Build a selection-policy username for new fixtures (letters and numbers only,
+ * at least one letter, 3–34 characters).
+ */
+function generateValidUsername() {
+  const suffix = faker.datatype.number({ min: 100, max: 9999 });
+  const stem = faker.internet
+    .userName()
+    .replace(/[^a-z0-9]/gi, '')
+    .toLowerCase()
+    .replace(/^[0-9]+/, '');
+  const username = `${stem || 'member'}${suffix}`.slice(0, 34);
+  return username.length >= 3 ? username : `member${suffix}`.slice(0, 34);
+}
+
 function generateBaseUser() {
   return {
-    username: faker.internet.userName(),
+    username: generateValidUsername(),
     firstName: faker.name.firstName(),
     lastName: faker.name.lastName(),
     email: faker.internet.email(),
@@ -134,6 +149,7 @@ const generateTribes = count => _.range(count).map(i => generateTribe(i));
 
 module.exports = {
   generateId,
+  generateValidUsername,
   generateClientUser,
   generateUsers,
   generateExperiences,

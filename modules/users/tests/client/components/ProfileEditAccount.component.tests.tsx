@@ -79,7 +79,7 @@ describe('ProfileEditAccount', () => {
     expect(screen.getByLabelText('Email Address')).toBeInTheDocument();
     expect(screen.getByLabelText('Username')).toBeInTheDocument();
     expect(screen.getByText(/three months after joining/)).toBeVisible();
-    expect(screen.getByText(/at least one letter or number/)).toBeVisible();
+    expect(screen.getByText(/including at least one letter/)).toBeVisible();
     expect(screen.getByLabelText('Current password')).toBeInTheDocument();
     expect(screen.getByText('Community newsletter')).toBeInTheDocument();
     expect(
@@ -121,6 +121,37 @@ describe('ProfileEditAccount', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Change username' }));
 
+    expect(await screen.findByText('Username updated.')).toBeVisible();
+  });
+
+  it.each(['sample_member', 'sample-member', 'sample.member', '123456', ''])(
+    'rejects an invalid new username %s before submitting',
+    async username => {
+      renderPage();
+      fireEvent.change(screen.getByLabelText('Username'), {
+        target: { value: username },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Change username' }));
+      expect(
+        screen.getByText(
+          'Use 3–34 letters and numbers, including at least one letter.',
+        ),
+      ).toBeVisible();
+      expect(usersApi.update).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    'sample_member',
+    'sample-member',
+    'sample.member',
+    '123456',
+    'hosting',
+  ])('allows retaining an existing username %s', async username => {
+    updateUser.mockResolvedValue({ ...user, username });
+    renderPage({ username });
+    expect(screen.getByText(/Your current username can stay/)).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Change username' }));
     expect(await screen.findByText('Username updated.')).toBeVisible();
   });
 
@@ -206,7 +237,7 @@ describe('ProfileEditAccount', () => {
     renderPage();
 
     fireEvent.change(screen.getByLabelText('Username'), {
-      target: { value: 'taken-name' },
+      target: { value: 'takenname' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Change username' }));
 

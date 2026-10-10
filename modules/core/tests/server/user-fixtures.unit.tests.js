@@ -38,8 +38,8 @@ describe('Reusable user fixture passwords', () => {
   it('derives one real hash for repeated credentials and retains other save hooks', async () => {
     const derive = sinon.spy(crypto, 'scrypt');
     const input = [
-      fixture('fixture-first', 'RepeatedFixturePassword!'),
-      fixture('fixture-second', 'RepeatedFixturePassword!'),
+      fixture('fixturefirst', 'RepeatedFixturePassword!'),
+      fixture('fixturesecond', 'RepeatedFixturePassword!'),
     ];
     const users = await utils.saveUsersWithCachedPasswords(input);
     assert.equal(derive.callCount, 1);
@@ -70,8 +70,8 @@ describe('Reusable user fixture passwords', () => {
 
   it('keeps different passwords separate', async () => {
     const users = await utils.saveUsersWithCachedPasswords([
-      fixture('fixture-third', 'SeparateFixturePasswordOne!'),
-      fixture('fixture-fourth', 'SeparateFixturePasswordTwo!'),
+      fixture('fixturethird', 'SeparateFixturePasswordOne!'),
+      fixture('fixturefourth', 'SeparateFixturePasswordTwo!'),
     ]);
     assert.notEqual(users[0].password, users[1].password);
     assert.equal(
@@ -86,7 +86,7 @@ describe('Reusable user fixture passwords', () => {
 
   it('still hashes a later password change normally', async () => {
     const [user] = await utils.saveUsersWithCachedPasswords([
-      fixture('fixture-change', 'OriginalFixturePassword!'),
+      fixture('fixturechange', 'OriginalFixturePassword!'),
     ]);
     user.password = 'ChangedFixturePassword!';
     await user.save();
@@ -96,8 +96,8 @@ describe('Reusable user fixture passwords', () => {
 
   it('leaves ordinary saveUsers hashing fresh for each user', async () => {
     const users = await utils.saveUsers([
-      fixture('fixture-real-first', 'UncachedFixturePassword!'),
-      fixture('fixture-real-second', 'UncachedFixturePassword!'),
+      fixture('fixturerealfirst', 'UncachedFixturePassword!'),
+      fixture('fixturerealsecond', 'UncachedFixturePassword!'),
     ]);
     assert.notEqual(users[0].password, users[1].password);
   });
@@ -105,7 +105,7 @@ describe('Reusable user fixture passwords', () => {
   it('preserves callback results', async () => {
     const callback = sinon.spy();
     const users = await utils.saveUsersWithCachedPasswords(
-      [fixture('fixture-callback', 'CallbackFixturePassword!')],
+      [fixture('fixturecallback', 'CallbackFixturePassword!')],
       callback,
     );
     sinon.assert.calledOnceWithExactly(callback, null, users);
@@ -116,7 +116,7 @@ describe('Reusable user fixture passwords', () => {
     const derive = sinon.spy(crypto, 'scrypt');
     await assert.rejects(
       utils.saveUsersWithCachedPasswords(
-        [fixture('fixture-invalid', 'short')],
+        [fixture('fixtureinvalid', 'short')],
         callback,
       ),
       error => {

@@ -41,7 +41,7 @@ describe('User profile CRUD tests', function () {
   beforeEach(function (done) {
     // Create user credentials
     credentials = {
-      username: 'TR_username',
+      username: 'TRusername',
       password: 'TR-I$Aw3$0m3',
     };
 
@@ -71,7 +71,7 @@ describe('User profile CRUD tests', function () {
       lastName: 'Name2',
       displayName: 'Full2 Name2',
       email: 'test2@example.org',
-      username: 'tr_username2',
+      username: 'trusername2',
       password: 'TR-I$Aw3$0m3',
       provider: 'local',
       roles: ['user'],
@@ -83,7 +83,7 @@ describe('User profile CRUD tests', function () {
   // Create an unconfirmed user
   beforeEach(function (done) {
     unConfirmedCredentials = {
-      username: 'TR_username_unconfirmed',
+      username: 'TRusernameunconfirmed',
       password: 'TR-I$Aw3$0m4',
     };
     _unConfirmedUser = {
@@ -755,7 +755,7 @@ describe('User profile CRUD tests', function () {
   });
   it('should not be able to update profile details with existing email', function (done) {
     const _user2 = _user;
-    _user2.username = 'user2_username';
+    _user2.username = 'user2username';
     _user2.email = 'user2_email@example.org';
     _user2.emailTemporary = 'user2_email@example.org';
     const credentials2 = {

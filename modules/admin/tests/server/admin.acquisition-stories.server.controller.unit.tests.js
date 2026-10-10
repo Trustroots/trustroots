@@ -277,19 +277,19 @@ describe('Admin acquisition stories controller unit tests', () => {
 
     it('returns identifier matches but ignores exact and similar stories', async () => {
       const users = utils.generateUsers(6);
-      users[0].username = 'identifier-clue-copy';
+      users[0].username = 'identifiercluecopy';
       users[0].email = 'email-clue-copy@example.test';
       users[0].emailTemporary = 'temporary-clue-copy@example.test';
       users[0].acquisitionStory =
         'I heard about Trustroots through a travelling friend.';
 
-      users[1].username = 'exact-story-user';
+      users[1].username = 'exactstoryuser';
       users[1].email = 'exact@example.test';
       users[1].roles = ['user', 'shadowban'];
       users[1].acquisitionStory =
         '  I HEARD about Trustroots through a travelling friend.  ';
 
-      users[2].username = 'fuzzy-story-user';
+      users[2].username = 'fuzzystoryuser';
       users[2].email = 'fuzzy@example.test';
       users[2].roles = ['user', 'suspended'];
       users[2].acquisitionStory =
@@ -300,12 +300,12 @@ describe('Admin acquisition stories controller unit tests', () => {
       users[3].roles = ['user', 'shadowban'];
       users[3].acquisitionStory = 'A completely different source.';
 
-      users[4].username = 'email-match-user';
+      users[4].username = 'emailmatchuser';
       users[4].email = 'email-clue@example.test';
       users[4].roles = ['user', 'suspended'];
       users[4].acquisitionStory = 'Another unrelated source.';
 
-      users[5].username = 'temporary-match-user';
+      users[5].username = 'temporarymatchuser';
       users[5].email = 'other@example.test';
       users[5].emailTemporary = 'temporary-clue@example.test';
       users[5].roles = ['user', 'shadowban', 'suspended', 'volunteer'];
@@ -317,7 +317,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       await adminAcquisitionStories.list({}, res);
 
       const story = res.body.find(
-        user => user.username === 'identifier-clue-copy',
+        user => user.username === 'identifiercluecopy',
       );
       story.restrictedMatches.should.have.length(3);
       story.restrictionStatuses.should.deepEqual([]);
@@ -335,22 +335,22 @@ describe('Admin acquisition stories controller unit tests', () => {
         .restrictionStatuses.should.deepEqual(['suspended', 'shadowban']);
       should(
         story.restrictedMatches.find(
-          user => user.username === 'exact-story-user',
+          user => user.username === 'exactstoryuser',
         ),
       ).be.undefined();
       should(
         story.restrictedMatches.find(
-          user => user.username === 'fuzzy-story-user',
+          user => user.username === 'fuzzystoryuser',
         ),
       ).be.undefined();
       story.restrictedMatches
         .find(user => user.username === 'identifierclue')
         .matchReasons.should.deepEqual(['Username identifier']);
       story.restrictedMatches
-        .find(user => user.username === 'email-match-user')
+        .find(user => user.username === 'emailmatchuser')
         .matchReasons.should.deepEqual(['Email identifier']);
       story.restrictedMatches
-        .find(user => user.username === 'temporary-match-user')
+        .find(user => user.username === 'temporarymatchuser')
         .matchReasons.should.deepEqual(['Temporary email identifier']);
       story.restrictedMatches.forEach(match => {
         should(match.email).be.undefined();

@@ -120,7 +120,7 @@ describe('User block - user', function () {
   beforeEach(function (done) {
     // Alice user
     const aliceCredentials = {
-      username: 'alice_the_blocker',
+      username: 'alicetheblocker',
       password: 'TR-I$Aw3$0m4',
     };
     const aliceProfile = {
@@ -143,7 +143,7 @@ describe('User block - user', function () {
 
     // Bob user
     const bobCredentials = {
-      username: 'bob_the_blocked',
+      username: 'bobtheblocked',
       password: 'TR-I$Aw3$0m4',
     };
     const bobProfile = {

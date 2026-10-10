@@ -12,6 +12,10 @@ import {
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import type { UserProfile } from '../types';
 import { readApiError } from '../utils/api-error';
+import {
+  SIGNUP_USERNAME_REGEX,
+  SIGNUP_USERNAME_FORMAT_MESSAGE,
+} from '../config/username.client.constants';
 
 interface ProfileEditAccountProps {
   user: UserProfile;
@@ -59,6 +63,15 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
   async function handleUsernameSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setUsernameMessage('');
+    const selectedUsername = (draftUser.username || '').trim();
+    const username = selectedUsername.toLowerCase();
+    if (
+      username !== user.username &&
+      !SIGNUP_USERNAME_REGEX.test(selectedUsername)
+    ) {
+      setUsernameMessage(t(SIGNUP_USERNAME_FORMAT_MESSAGE));
+      return;
+    }
 
     try {
       const savedUser = await update({
@@ -224,8 +237,9 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                     {t(
                       'You can change your username three months after joining, and again three months after each change.',
                     )}{' '}
+                    {t(SIGNUP_USERNAME_FORMAT_MESSAGE)}{' '}
                     {t(
-                      'Your new username needs to be 3–34 characters long and include at least one letter or number. It must also be available.',
+                      'Your current username can stay. A new username must also be available.',
                     )}
                   </p>
                   {usernameMessage && (
