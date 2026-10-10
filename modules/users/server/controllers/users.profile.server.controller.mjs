@@ -1,3 +1,8 @@
+import {
+  hashToken,
+  matchToken,
+  setToken,
+} from '../services/action-token.server.service.mjs';
 import { readFileSync } from 'node:fs';
 import getContactHandlerModule from './../../../contacts/server/controllers/contacts.server.controller.mjs';
 import getMessageHandlerModule from './../../../messages/server/controllers/messages.server.controller.mjs';
@@ -291,7 +296,7 @@ service.update = function (req, res) {
 
         // This is set only if user edited email
         if (token && email) {
-          user.emailToken = token;
+          setToken(user, 'emailToken', token);
           user.emailTemporary = email;
         }
         user.save(function (err) {
@@ -359,7 +364,7 @@ service.initializeRemoveProfile = function (req, res) {
           },
           {
             $set: {
-              removeProfileToken: token,
+              removeProfileToken: hashToken(token),
               removeProfileExpires: tokenExpires,
             },
           },
@@ -368,6 +373,9 @@ service.initializeRemoveProfile = function (req, res) {
             new: true,
           },
           function (err, user) {
+            if (user) {
+              user.$locals.actionTokens = { removeProfileToken: token };
+            }
             done(err, user);
           },
         );
@@ -428,7 +436,7 @@ service.removeProfile = function (req, res) {
         User.findOne(
           {
             _id: req.user._id,
-            removeProfileToken: req.params.token,
+            removeProfileToken: matchToken(req.params.token),
             removeProfileExpires: {
               $gt: Date.now(),
             },

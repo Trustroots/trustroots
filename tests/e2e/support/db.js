@@ -77,7 +77,33 @@ async function removeExperiencesBetweenUsernames(usernameFrom, usernameTo) {
   });
 }
 
+async function findActionToken(username, field) {
+  const paths = {
+    emailToken: 'confirm-email',
+    resetPasswordToken: 'api/auth/reset',
+    removeProfileToken: 'remove',
+  };
+  return withE2eDb(async db => {
+    const user = await db.collection('users').findOne({ username });
+    const jobs = await db
+      .collection('agendaJobs')
+      .find({
+        name: 'send email',
+        'data.to.address': user.emailTemporary || user.email,
+      })
+      .sort({ _id: -1 })
+      .toArray();
+    const pattern = new RegExp('/' + paths[field] + '/([a-f0-9]+)');
+    for (const job of jobs) {
+      const match = job.data.text?.match(pattern);
+      if (match) return match[1];
+    }
+    throw new Error('No account action email found for test member.');
+  });
+}
+
 module.exports = {
+  findActionToken,
   findContactByUsers,
   findOffersByUser,
   findUserByUsername,

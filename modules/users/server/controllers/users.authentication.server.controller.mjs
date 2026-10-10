@@ -1,3 +1,7 @@
+import {
+  matchToken,
+  setToken,
+} from '../services/action-token.server.service.mjs';
 import _ from 'lodash';
 import errorService from '../../../core/server/services/error.server.service.mjs';
 import emailService from '../../../core/server/services/email.server.service.mjs';
@@ -131,7 +135,11 @@ service.signup = function (req, res) {
         // (from where it's then again moved to email field)
         user.emailTemporary = user.email;
 
-        user.emailToken = authenticationService.generateEmailToken(user, salt);
+        setToken(
+          user,
+          'emailToken',
+          authenticationService.generateEmailToken(user, salt),
+        );
 
         // Then save the user
         user.save(function (err) {
@@ -470,7 +478,7 @@ service.removeOAuthProvider = function (req, res) {
 service.validateEmailToken = function (req, res) {
   User.findOne(
     {
-      emailToken: req.params.token,
+      emailToken: matchToken(req.params.token),
     },
     function (err, user) {
       if (!user) {
@@ -491,7 +499,7 @@ service.confirmEmail = function (req, res) {
         // Check if user exists with this token
         User.findOne(
           {
-            emailToken: req.params.token,
+            emailToken: matchToken(req.params.token),
           },
           function (err, user) {
             if (!err && user) {
@@ -614,7 +622,11 @@ service.resendConfirmation = function (req, res) {
       function (salt, done) {
         const user = req.user;
         user.updated = Date.now();
-        user.emailToken = authenticationService.generateEmailToken(user, salt);
+        setToken(
+          user,
+          'emailToken',
+          authenticationService.generateEmailToken(user, salt),
+        );
         user.save(function (err) {
           if (err) return done(err);
           done(null, user);

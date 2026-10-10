@@ -1,3 +1,5 @@
+import crypto from 'node:crypto';
+import { setToken } from '../services/action-token.server.service.mjs';
 import _ from 'lodash';
 import emailService from './../../../core/server/services/email.server.service.mjs';
 import config from './../../../../config/config.mjs';
@@ -93,29 +95,50 @@ const defaultExport = function (job, agendaDone) {
         async.eachSeries(
           users,
           function (user, callback) {
-            emailService.sendSignupEmailReminder(user, function (err) {
-              if (err) {
-                return callback(err);
-              } else {
-                // Mark reminder sent and update the reminder count
-                User.findByIdAndUpdate(
-                  user._id,
-                  {
-                    $set: {
-                      publicReminderSent: new Date(),
-                    },
-                    // If the field does not exist, $inc creates the field
-                    // and sets the field to the specified value.
-                    $inc: {
-                      publicReminderCount: 1,
-                    },
-                  },
-                  function (err) {
-                    callback(err);
-                  },
-                );
-              }
-            });
+            const previousToken = user.emailToken;
+            setToken(
+              user,
+              'emailToken',
+              crypto.randomBytes(32).toString('hex'),
+            );
+            User.updateOne(
+              {
+                _id: user._id,
+                public: false,
+                emailToken:
+                  previousToken === undefined
+                    ? { $exists: false }
+                    : previousToken,
+              },
+              { $set: { emailToken: user.emailToken } },
+              function (saveErr, result) {
+                if (saveErr) return callback(saveErr);
+                if (result.matchedCount !== 1) return callback();
+                emailService.sendSignupEmailReminder(user, function (err) {
+                  if (err) {
+                    return callback(err);
+                  } else {
+                    // Mark reminder sent and update the reminder count
+                    User.findByIdAndUpdate(
+                      user._id,
+                      {
+                        $set: {
+                          publicReminderSent: new Date(),
+                        },
+                        // If the field does not exist, $inc creates the field
+                        // and sets the field to the specified value.
+                        $inc: {
+                          publicReminderCount: 1,
+                        },
+                      },
+                      function (err) {
+                        callback(err);
+                      },
+                    );
+                  }
+                });
+              },
+            );
           },
           function (err) {
             done(err);

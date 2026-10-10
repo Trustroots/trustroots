@@ -12,6 +12,7 @@ const {
 } = require('../../support/helpers');
 const {
   findUserByUsername,
+  findActionToken,
   updateUserByUsername,
 } = require('../../support/db');
 
@@ -350,7 +351,11 @@ test.describe.serial('account settings feature coverage', () => {
     expect(requestRemoval.ok()).toBeTruthy();
 
     const storedUser = await findUserByUsername(user.username);
-    const removeProfileToken = storedUser.removeProfileToken;
+    expect(storedUser.removeProfileToken).toMatch(/^sha256:[a-f0-9]{64}$/);
+    const removeProfileToken = await findActionToken(
+      user.username,
+      'removeProfileToken',
+    );
     expect(removeProfileToken).toBeTruthy();
 
     await page.goto(`/remove/${removeProfileToken}`);
