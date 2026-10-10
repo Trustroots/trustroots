@@ -23,6 +23,27 @@ For an API running on the development Mac, use the Android emulator host alias:
 
 Release builds are fixed to `https://www.trustroots.org`.
 
+## Usage analytics
+
+Usage analytics is off by default in every build, including F-Droid. Enable or
+disable it on the sign-in screen or under Account. The choice is stored on the
+device and is independent of the signed-in account.
+
+When enabled, the app sends foreground app-open counts and fixed native
+top-level screen views to `https://1p.trustroots.org/api/send`, using the existing
+production Umami website identifier. Filter by `android.trustroots.org` or
+`/android/` paths to separate Android usage from website traffic. Opens are
+custom `app-open` events; screen views are pageviews. Profile names, conversation
+details, search inputs, map coordinates and browser URLs are never sent. These
+counts cover participating installations only.
+
+Requests carry no account credentials, cookies or persistent device identifiers.
+The service receives the connecting IP address. Delivery runs independently of
+the member API, times out after three seconds, and does not retry, follow
+redirects or save events for later delivery. Disabling analytics cancels pending
+requests and discards subsequent events. Embedded website pages retain their
+own website analytics behaviour; this setting controls native analytics only.
+
 ## APK update alerts
 
 The signed GitHub preview APK lets members opt in to update alerts from Account

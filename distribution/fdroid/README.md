@@ -5,11 +5,21 @@ F-Droid's [fdroiddata repository](https://gitlab.com/fdroid/fdroiddata). It was
 submitted on 2026-10-08 in [merge request !51684](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/51684)
 and is awaiting review and acceptance.
 
-The first build targets the published `android-preview-100014-v0.1-20261005-2310`
-release: version name `0.1-20261005-2310`, version code `100014`, source commit
-`b533eed0080412cc1cd42015b426faa41a4fe0ed`. Unlike the old preview-8 entry, this
-release includes the Fastlane listing assets in `fastlane/metadata/android/en-US`.
-The remote tag and listing files were checked on 2026-10-08.
+The recipe targets the published `android-preview-100015-v0.1-20261008-0919`
+release: version name `0.1-20261008-0919`, version code `100015`, source commit
+`52839d4d3aa5a0e8c972f4101dd17371e6b31c0e`. The release and tag were verified
+on 2026-10-10. Only this latest build is retained, with category `Social Network`.
+
+The app is AGPL-3.0-only. Using the hosted Trustroots service is subject to its
+service terms and community rules; these are separate from the software licence.
+The server source is in this same repository and can be self-hosted. The
+published Android app connects to `www.trustroots.org`; a custom build can target
+another server. Broader forkability is tracked in
+[issue #2669](https://github.com/Trustroots/trustroots/issues/2669).
+
+Native opt-in Umami analytics added after this release is not in the pinned
+100015 build. A future submission update must disclose it and rerun the network
+review both before consent and after enabling and disabling analytics.
 
 Future release tags contain both version fields in the form
 `android-preview-<code>-v<name>`, which `UpdateCheckData` extracts for automatic
