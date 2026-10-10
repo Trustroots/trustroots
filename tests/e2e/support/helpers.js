@@ -231,13 +231,22 @@ async function signUp(page, user) {
  * Authenticate a request context without opening a browser page.
  */
 async function authenticateViaApi(request, user) {
-  const response = await request.post('/api/auth/signin', {
+  const { provisionFixtureMfa } = require('./mfa');
+  const code = await provisionFixtureMfa(user);
+  let response = await request.post('/api/auth/signin', {
     data: { username: user.username, password: user.password },
   });
+  if (code) {
+    expect(response.status()).toBe(202);
+    response = await request.post('/api/auth/mfa/verify', {
+      headers: { 'X-Trustroots-Request': '1' },
+      data: { code },
+    });
+  }
   expect(
-    response.ok(),
+    response.status(),
     `Signin API responded with ${response.status()}: ${await response.text()}`,
-  ).toBeTruthy();
+  ).toBe(200);
   return response;
 }
 

@@ -200,51 +200,21 @@ describe('User profile CRUD tests', function () {
         });
     });
   });
-  it('should not be able to get other users details successfully that have "shadowban" role when with legacy role "moderator"', function (done) {
+  it('should not grant profile access to a moderator even after MFA', async () => {
     user.roles = ['user', 'moderator'];
     user2.roles = ['user', 'shadowban'];
-    user.save(function (err) {
-      should.not.exist(err);
-      user2.save(function (err) {
-        should.not.exist(err);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            should.not.exist(signinErr);
-
-            // Get their user details
-            agent
-              .get('/api/users/' + user2.username)
-              .expect(404)
-              .end(done);
-          });
-      });
-    });
+    await user.save();
+    await user2.save();
+    await utils.signInPrivileged(credentials, agent);
+    await agent.get(`/api/users/${user2.username}`).expect(404);
   });
-  it('should be able to get other users details successfully that have "shadowban" role when with role "admin"', function (done) {
+  it('should be able to get other users details successfully that have "shadowban" role when with role "admin"', async () => {
     user.roles = ['user', 'admin'];
     user2.roles = ['user', 'shadowban'];
-    user.save(function (err) {
-      should.not.exist(err);
-      user2.save(function (err) {
-        should.not.exist(err);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            should.not.exist(signinErr);
-
-            // Get their user details
-            agent
-              .get('/api/users/' + user2.username)
-              .expect(200)
-              .end(done);
-          });
-      });
-    });
+    await user.save();
+    await user2.save();
+    await utils.signInPrivileged(credentials, agent);
+    await agent.get(`/api/users/${user2.username}`).expect(200);
   });
   it('should be able to see that someone is volunteer when they have "volunteer" role', function (done) {
     user2.roles = ['user', 'volunteer'];

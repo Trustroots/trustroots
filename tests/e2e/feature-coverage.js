@@ -1089,6 +1089,47 @@ const features = [
     relatedSpecs: [],
   },
   {
+    id: 'account.mfa',
+    area: AREA.authAccount,
+    status: STATUS.active,
+    description:
+      'Members can enrol authenticator MFA, protect sign-in, and recover with single-use codes.',
+    roles: ['member', 'visitor'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'profile-edit.account',
+          '/profile/edit/account',
+          source.usersClient,
+          {
+            requiresAuth: true,
+          },
+        ),
+        clientRoute('signin', '/signin', source.usersClient),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/users/mfa', source.usersServer),
+        apiRoute('POST', '/api/users/mfa/enrol', source.usersServer),
+        apiRoute('POST', '/api/users/mfa/enrol/verify', source.usersServer),
+        apiRoute('POST', '/api/users/mfa/recovery-codes', source.usersServer),
+        apiRoute('POST', '/api/users/mfa/disable', source.usersServer),
+        apiRoute('POST', '/api/auth/mfa/verify', source.usersAuthServer),
+      ],
+    },
+    requiredScenarios: [
+      'Member confirms their password before enrolling an authenticator.',
+      'Authenticator enrolment returns recovery codes only once.',
+      'MFA-enabled sign-in requires a second factor before establishing a session.',
+      'Profile API responses do not expose MFA secrets or recovery hashes.',
+    ],
+    relatedSpecs: [
+      spec(
+        'account-settings.spec.js',
+        'members can enrol an authenticator and use it at sign-in',
+      ),
+    ],
+  },
+  {
     id: 'account.details-update',
     area: AREA.authAccount,
     status: STATUS.active,

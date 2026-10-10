@@ -12,6 +12,9 @@ function getRequestIdentity(req, source) {
     const token = req.params && req.params.token;
     return typeof token === 'string' ? token : undefined;
   }
+  if (source === 'mfaChallenge') {
+    return req.session?.mfaChallenge?.userId;
+  }
   return undefined;
 }
 
@@ -60,7 +63,11 @@ function createLimiter(
         limit: policy.identityLimit,
       });
     }
-    if (identitySource === 'member' && identity && hasIdentityLimit) {
+    if (
+      ['member', 'mfaChallenge'].includes(identitySource) &&
+      identity &&
+      hasIdentityLimit
+    ) {
       dimensions.push({
         name: 'member',
         value: identity,
@@ -98,6 +105,8 @@ function createTargetedRequestLimits(deps) {
     signin: createLimiter('signin', 'account', deps),
     forgotPassword: createLimiter('forgotPassword', 'account', deps),
     resetPassword: createLimiter('resetPassword', 'token', deps),
+    mfaVerify: createLimiter('mfaVerify', 'mfaChallenge', deps),
+    mfaManage: createLimiter('mfaManage', 'member', deps),
     resendConfirmation: createLimiter('resendConfirmation', 'member', deps),
     avatarUpload: createLimiter('avatarUpload', 'member', deps),
     getRequestIdentity,

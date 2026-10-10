@@ -5,13 +5,13 @@ const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 describe('Admin Thread CRUD tests', () => {
+  // Get application
+  let app;
+  let agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
-  // Get application
-  let app;
-  let agent;
   let _users;
   let userRegular1Id;
   let userRegular2Id;
@@ -75,7 +75,7 @@ describe('Admin Thread CRUD tests', () => {
         body.message.should.equal('Forbidden.');
       });
       it('admin users should be allowed to read threads by user ID', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/threads')
           .send({
@@ -89,7 +89,7 @@ describe('Admin Thread CRUD tests', () => {
         ]);
       });
       it('admin users should get an error for an invalid user ID', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/threads')
           .send({
@@ -99,7 +99,7 @@ describe('Admin Thread CRUD tests', () => {
         body.message.should.equal('Cannot interpret id.');
       });
       it('admin users should get an error when no user is provided', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/threads')
           .send({})
@@ -107,7 +107,7 @@ describe('Admin Thread CRUD tests', () => {
         body.message.should.equal('Cannot interpret id.');
       });
       it('admin users should be allowed to read threads by username', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/threads')
           .send({

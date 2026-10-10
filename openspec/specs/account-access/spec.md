@@ -4,7 +4,9 @@
 
 Allow people to create, secure, recover, and end access to their Trustroots
 account.
+
 ## Requirements
+
 ### Requirement: Explicit profile response fields
 
 Profile responses SHALL include only explicitly approved fields. Account-owner
@@ -504,18 +506,84 @@ an anonymous session. Session cookie security settings SHALL remain unchanged.
 - **AND** it does not claim cookies are blocked or redirect
 
 ### Requirement: Account access deployed version
+
 The system SHALL display the deployed build date and commit link on signin, signup, password recovery/reset and not-found pages when build metadata is available.
 
 #### Scenario: Visitor diagnoses account access
+
 - **WHEN** a visitor opens an account access page with build metadata available
 - **THEN** a compact footer exposes the deployed date and commit
 
 ### Requirement: Login route alias
+
 The system SHALL redirect /login to /signin while preserving query parameters.
 
 #### Scenario: Visitor uses the login alias
+
 - **WHEN** a visitor requests /login with a returnTo query parameter
 - **THEN** the visitor is redirected to /signin with the same parameter
+
+### Requirement: Authenticator-based multi-factor access
+
+Members MAY enable authenticator-app MFA. The system SHALL encrypt pending and
+active TOTP secrets with AES-256-GCM using a dedicated deployment key, and
+SHALL store recovery codes only as one-way hashes. Enrolment and management
+operations SHALL require password confirmation. Each TOTP time step and
+recovery code SHALL be accepted at most once through an atomic database update.
+
+#### Scenario: Member enrols an authenticator
+
+- **WHEN** a signed-in member confirms their password and begins enrolment
+- **THEN** the system returns an authenticator provisioning URI and a short-lived
+  pending secret
+- **AND** MFA remains inactive until a current code is confirmed
+- **AND** successful enrolment displays recovery codes once
+
+#### Scenario: MFA member signs in
+
+- **WHEN** a member with MFA enabled submits a valid password
+- **THEN** the system creates only a short-lived pre-authentication challenge
+- **AND** it establishes a member session only after a valid unused TOTP or
+  recovery code
+- **AND** concurrent attempts cannot consume the same factor more than once
+
+#### Scenario: MFA member manages factors
+
+- **WHEN** a member views, replaces recovery codes, or disables MFA
+- **THEN** the system does not expose TOTP secrets or recovery-code hashes
+- **AND** management requires password confirmation and a valid unused factor
+- **AND** replacing codes invalidates previous codes
+
+#### Scenario: Recovery and confirmation do not bypass MFA
+
+- **WHEN** an MFA member resets a password, confirms an email address, or
+  completes another direct login path
+- **THEN** the operation does not create an MFA-verified session without a
+  successful second factor
+- **AND** MFA-enabled members cannot use member routes until their session has
+  verified the second factor
+
+#### Scenario: MFA verification is rate limited
+
+- **WHEN** a person submits repeated TOTP or recovery-code attempts
+- **THEN** the system applies shared per-IP and per-account limits across
+  application instances
+
+#### Scenario: Privileged member requires verified MFA
+
+- **WHEN** an administrator, moderator, or welcome-team member has no verified
+  MFA session
+- **THEN** account APIs remain blocked until enrolment and verification finish
+- **AND** an unenrolled member can reach the account screen to enrol
+- **AND** sign-in, sign-out, session status, and MFA endpoints remain reachable
+  so the member can establish a verified session
+
+#### Scenario: Native client does not implement MFA challenge
+
+- **WHEN** a member with MFA enabled signs in through a native client that does
+  not support the challenge response
+- **THEN** the client cannot complete sign-in until its MFA challenge flow is
+  implemented
 
 ### Requirement: Production script policy
 
@@ -536,3 +604,45 @@ The system SHALL forbid JavaScript eval and unnonced inline scripts in productio
 
 - **WHEN** the development application serves a document
 - **THEN** eval source maps remain supported under a report-only policy
+
+### Requirement: Authenticator MFA
+
+Members MAY enable authenticator-app MFA using TOTP. Enrolment SHALL remain pending until the member confirms a valid code. The system SHALL encrypt pending and active TOTP secrets with AES-256-GCM using a dedicated deployment key, separate from the session and password keys. The deployment SHALL document key generation, configuration, rotation, and backup requirements.
+
+#### Scenario: A member enrols an authenticator
+
+- **WHEN** a member confirms their current password and requests enrolment
+- **THEN** the system returns a one-time authenticator provisioning URI and a pending secret
+- **AND** it does not mark MFA active until a valid, unused TOTP is verified
+- **AND** the pending secret expires after a short period
+
+#### Scenario: An active member verifies MFA
+
+- **WHEN** a member signs in with a valid password and has MFA enabled
+- **THEN** the password check creates only a short-lived pre-authentication challenge
+- **AND** the system establishes an authenticated session only after a valid TOTP or recovery code
+- **AND** concurrent requests cannot consume the same TOTP time step or recovery code more than once
+
+#### Scenario: A member manages MFA
+
+- **WHEN** a member views or changes MFA settings
+- **THEN** the system never returns the active secret or recovery-code hashes
+- **AND** enrolment, replacement recovery codes, and disablement require a recent password confirmation
+- **AND** replacement recovery codes are shown only once and previous codes stop working atomically
+
+#### Scenario: A privileged account lacks verified MFA
+
+- **WHEN** an administrator, moderator, or other configured privileged role has no verified MFA session
+- **THEN** privileged routes treat that account as an ordinary member
+- **AND** promotion of a privileged account requires MFA to be enrolled and verified before privileged access is granted
+
+#### Scenario: Account recovery does not bypass MFA
+
+- **WHEN** a member resets or changes their password, confirms an email address, or uses another direct login path
+- **THEN** the operation cannot establish an MFA-verified session without a successful second factor
+- **AND** credential changes invalidate older sessions
+
+#### Scenario: MFA verification is rate limited
+
+- **WHEN** a client submits too many sign-in challenges, TOTP codes, recovery codes, or password confirmations
+- **THEN** the system applies bounded IP and account or challenge limits and returns a retry response

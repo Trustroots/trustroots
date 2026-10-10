@@ -30,6 +30,7 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
 }));
 
 const signin = jest.mocked(authApi.signin);
+const verifyMfa = jest.mocked(authApi.verifyMfa);
 const getSession = jest.mocked(authApi.getSession);
 const routeParams = jest.mocked(clientRuntime.getCurrentRouteParams);
 
@@ -86,6 +87,34 @@ describe('SigninPage', () => {
     });
 
     await waitFor(() => {
+      expect(redirectAfterSignin).toHaveBeenCalledWith(false, undefined);
+    });
+  });
+
+  it('requires and verifies a second factor before checking the session', async () => {
+    signin.mockResolvedValue({ mfaRequired: true });
+    verifyMfa.mockResolvedValue({ _id: 'user-1', username: 'ada' });
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText('Email or username'), {
+      target: { value: 'ada' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'secret-pass' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    expect(
+      await screen.findByLabelText('Authenticator or recovery code'),
+    ).toBeInTheDocument();
+    expect(getSession).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Authenticator or recovery code'), {
+      target: { value: '123456' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Verify and sign in' }));
+
+    await waitFor(() => {
+      expect(verifyMfa).toHaveBeenCalledWith('123456');
       expect(redirectAfterSignin).toHaveBeenCalledWith(false, undefined);
     });
   });

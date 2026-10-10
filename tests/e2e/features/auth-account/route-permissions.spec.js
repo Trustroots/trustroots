@@ -2,6 +2,7 @@ const { expect, test } = require('../../support/fixtures');
 const {
   createIsolatedContext,
   createUser,
+  authenticateViaApi,
   registerViaApi,
 } = require('../../support/helpers');
 const {
@@ -53,10 +54,7 @@ test.describe('route permission regression coverage', () => {
       const storedMember = await findUserByUsername(member.username);
       memberId = storedMember._id;
 
-      const signIn = await context.request.post('/api/auth/signin', {
-        data: { username: member.username, password: member.password },
-      });
-      expect(signIn.ok()).toBeTruthy();
+      await authenticateViaApi(context.request, member);
 
       expect((await context.request.get('/api/messages')).status()).toBe(403);
 

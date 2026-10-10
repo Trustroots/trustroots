@@ -361,12 +361,26 @@ describe('API route registrations', () => {
       ['removeOAuthProvider'],
       'userAuthentication',
     );
-    const targetedRequestLimit = controller(['avatarUpload'], 'requestLimit');
+    const mfa = controller(
+      [
+        'beginEnrollment',
+        'disable',
+        'regenerateRecoveryCodes',
+        'settings',
+        'verifyEnrollment',
+      ],
+      'userMfa',
+    );
+    const targetedRequestLimit = controller(
+      ['avatarUpload', 'mfaManage'],
+      'requestLimit',
+    );
 
     const { params, routes } = register(
       './../../../users/server/routes/users.server.routes.mjs',
       {
         '../controllers/users.authentication.server.controller': authentication,
+        '../controllers/users.mfa.server.controller': mfa,
         '../controllers/users.avatar.server.controller': avatar,
         '../controllers/users.password.server.controller': password,
         '../controllers/users.profile.server.controller': profile,
@@ -420,10 +434,30 @@ describe('API route registrations', () => {
     assertHandlers(routeByPath(routes, '/api/users/password').post, [
       password.changePassword,
     ]);
+    assertHandlers(routeByPath(routes, '/api/users/mfa').get, [mfa.settings]);
+    const limitedMfaRoutes = [
+      ['/api/users/mfa/enrol', mfa.beginEnrollment],
+      ['/api/users/mfa/enrol/verify', mfa.verifyEnrollment],
+      ['/api/users/mfa/recovery-codes', mfa.regenerateRecoveryCodes],
+      ['/api/users/mfa/disable', mfa.disable],
+    ];
+    for (const [path, action] of limitedMfaRoutes) {
+      const route = routeByPath(routes, path);
+      assertHandlers(route.post, [action]);
+      assertHandlers(route.all, [
+        policy.isAllowed,
+        targetedRequestLimit.mfaManage,
+      ]);
+    }
     assertHandlers(routeByPath(routes, '/api/users/:username').get, [
       profile.getUser,
     ]);
-    routes.forEach(route => assertPolicy(route, policy));
+    routes.forEach(route => {
+      if (limitedMfaRoutes.some(([path]) => path === route.path)) {
+        return;
+      }
+      assertPolicy(route, policy);
+    });
     assert.deepStrictEqual(
       params.map(param => [param.name, param.middleware.routeTestName]),
       [

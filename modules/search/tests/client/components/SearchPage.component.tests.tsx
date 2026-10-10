@@ -367,12 +367,11 @@ describe('<SearchPage />', () => {
     renderSearchPage();
     openResultsWithVisibleOfferIds(offerIds);
 
-    await waitFor(() =>
-      expect(offersApi.getOffer).toHaveBeenCalledTimes(offerIds.length),
-    );
-    expect(
-      screen.getAllByRole('button', { name: /open hosting offer/i }),
-    ).toHaveLength(offerIds.length);
+    // Wait for the final fetched offer to render before changing the viewport.
+    // Scanning accessible names for all 251 cards can itself exceed the test
+    // timeout under coverage; the final card proves the batch has completed.
+    await screen.findByText(`Host ${offerIds[offerIds.length - 1]}`);
+    expect(offersApi.getOffer).toHaveBeenCalledTimes(offerIds.length);
 
     act(() => searchMapProps.onVisibleOffersChange([offerIds[0]]));
     await waitFor(() =>

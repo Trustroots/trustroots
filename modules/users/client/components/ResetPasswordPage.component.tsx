@@ -36,6 +36,10 @@ export default function ResetPasswordPage() {
     try {
       const user = await authApi.resetPassword(token, passwordDetails);
 
+      if ('mfaRequired' in user) {
+        navigate('reset-success');
+        return;
+      }
       applyAuthenticatedUser(user, setUser);
       navigate('reset-success');
     } catch (requestError: unknown) {

@@ -703,6 +703,204 @@ describe('Authentication controller OAuth unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(400);
     });
+
+    it('returns unavailable when a new MFA challenge cannot regenerate the session', async () => {
+      const controller = loadSigninController(() => [
+        null,
+        { _id: 'fictional-user', roles: ['user'], mfaEnabled: true },
+        null,
+      ]);
+      const res = deferredResponse();
+
+      controller.signin(
+        {
+          session: {
+            regenerate: callback => callback(new Error('session failed')),
+          },
+        },
+        res,
+        () => {},
+      );
+
+      await res.waitForResponse();
+      res.statusCode.should.equal(503);
+      res.body.message.should.equal('Could not start MFA verification.');
+    });
+
+    it('returns unavailable when a new MFA challenge cannot be saved', async () => {
+      const controller = loadSigninController(() => [
+        null,
+        { _id: 'fictional-user', roles: ['user'], mfaEnabled: true },
+        null,
+      ]);
+      const res = deferredResponse();
+      const req = {
+        session: {
+          save: saveCallback => saveCallback(new Error('save failed')),
+          regenerate: callback => callback(null),
+        },
+      };
+
+      controller.signin(req, res, () => {});
+
+      await res.waitForResponse();
+      res.statusCode.should.equal(503);
+    });
+
+    it('starts a short-lived challenge instead of creating an MFA session', async () => {
+      const controller = loadSigninController(() => [
+        null,
+        {
+          _id: 'fictional-user',
+          authVersion: 2,
+          roles: ['user'],
+          mfaEnabled: true,
+        },
+        null,
+      ]);
+      const res = deferredResponse();
+      const session = {
+        regenerate: callback => callback(null),
+        save: callback => callback(null),
+      };
+
+      controller.signin({ session }, res, () => {});
+
+      await res.waitForResponse();
+      res.statusCode.should.equal(202);
+      res.body.mfaRequired.should.be.true();
+      session.mfaChallenge.userId.should.equal('fictional-user');
+      session.mfaChallenge.authVersion.should.equal(2);
+    });
+  });
+
+  describe('MFA challenge verification', () => {
+    const mfaService = require('./../../server/services/mfa.server.service.mjs');
+
+    function challenge() {
+      return mfaService.createChallenge({
+        _id: 'fictional-user',
+        authVersion: 2,
+      });
+    }
+
+    async function createMfaChallenge() {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            authVersion: 2,
+            mfaEnabled: true,
+            mfaSecretEncrypted: mfaService.encryptSecret(secret),
+            mfaLastTotpCounter: -1,
+          },
+        },
+      );
+      const user = await User.findById(saved._id);
+      sinon.stub(Date, 'now').returns(59000);
+      return {
+        challenge: mfaService.createChallenge(user),
+        user,
+        code: '287082',
+      };
+    }
+
+    it('rejects a missing or expired challenge', async () => {
+      const res = deferredResponse();
+      await authController.verifyMfa({ session: {} }, res);
+      res.statusCode.should.equal(401);
+    });
+
+    it('clears a challenge for a missing or suspended account', async () => {
+      sinon.stub(User, 'findOne').returns({ exec: async () => null });
+      const session = { mfaChallenge: challenge() };
+      const res = deferredResponse();
+
+      await authController.verifyMfa({ session, body: {} }, res);
+
+      res.statusCode.should.equal(401);
+      should.not.exist(session.mfaChallenge);
+
+      User.findOne.restore();
+      sinon.stub(User, 'findOne').returns({
+        exec: async () => ({
+          _id: 'fictional-user',
+          roles: ['user', 'suspended'],
+          mfaEnabled: true,
+        }),
+      });
+      const suspendedSession = { mfaChallenge: challenge() };
+      const suspendedResponse = deferredResponse();
+      await authController.verifyMfa(
+        { session: suspendedSession, body: {} },
+        suspendedResponse,
+      );
+      suspendedResponse.statusCode.should.equal(401);
+      should.not.exist(suspendedSession.mfaChallenge);
+    });
+
+    it('rejects an invalid authenticator code', async () => {
+      const { challenge } = await createMfaChallenge();
+      const res = deferredResponse();
+
+      await authController.verifyMfa(
+        { session: { mfaChallenge: challenge }, body: { code: '000000' } },
+        res,
+      );
+
+      res.statusCode.should.equal(400);
+    });
+
+    it('reports a session update failure after consuming a valid code', async () => {
+      const { challenge, code } = await createMfaChallenge();
+      const res = deferredResponse();
+
+      await authController.verifyMfa(
+        {
+          session: { mfaChallenge: challenge },
+          body: { code },
+          login: (user, callback) => callback(new Error('session failed')),
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(503);
+    });
+
+    it('completes sign-in after a valid second factor', async () => {
+      const { challenge, code, user } = await createMfaChallenge();
+      const res = deferredResponse();
+
+      await authController.verifyMfa(
+        {
+          session: { mfaChallenge: challenge },
+          body: { code },
+          login: (authenticatedUser, callback) => callback(null),
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(200);
+      res.body._id.toString().should.equal(user._id.toString());
+    });
+
+    it('returns unavailable when the account lookup fails', async () => {
+      sinon.stub(User, 'findOne').returns({
+        exec: async () => {
+          throw new Error('database unavailable');
+        },
+      });
+      const res = deferredResponse();
+
+      await authController.verifyMfa(
+        { session: { mfaChallenge: challenge() }, body: {} },
+        res,
+      );
+
+      res.statusCode.should.equal(503);
+    });
   });
 
   describe('confirmEmail', () => {
@@ -753,6 +951,67 @@ describe('Authentication controller OAuth unit tests', () => {
       const reloaded = await User.findById(saved._id);
       reloaded.public.should.be.true();
       should.not.exist(reloaded.emailToken);
+    });
+
+    it('does not create a session when confirming email for an MFA account', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            mfaEnabled: true,
+            mfaSecretEncrypted: 'encrypted-secret',
+            emailTemporary: 'new@example.test',
+            emailToken: 'mfa-confirm-token',
+          },
+        },
+      );
+      const login = sinon.spy((user, cb) => cb());
+      const res = deferredResponse();
+
+      authController.confirmEmail(
+        {
+          params: { token: 'mfa-confirm-token' },
+          login,
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      res.body.mfaRequired.should.be.true();
+      login.called.should.be.false();
+    });
+
+    it('preserves an already MFA-verified session for a changed email', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            mfaEnabled: true,
+            mfaSecretEncrypted: 'encrypted-secret',
+            emailTemporary: 'new@example.test',
+            emailToken: 'verified-confirm-token',
+          },
+        },
+      );
+      const login = sinon.spy((user, cb) => cb());
+      const res = deferredResponse();
+
+      authController.confirmEmail(
+        {
+          params: { token: 'verified-confirm-token' },
+          user: { _id: saved._id, $locals: { mfaVerified: true } },
+          login,
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      res.body.mfaRequired.should.be.false();
+      login.calledOnce.should.be.true();
     });
 
     it('returns 400 when the token is invalid', async () => {

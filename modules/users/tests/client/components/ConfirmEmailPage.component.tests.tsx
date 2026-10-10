@@ -75,6 +75,35 @@ describe('ConfirmEmailPage', () => {
     expect(mockedAuthApi.confirmEmail).toHaveBeenCalledWith('confirm-token');
   });
 
+  it('requires sign-in again when confirming email for an MFA account', async () => {
+    mockedAuthApi.confirmEmail.mockResolvedValue({
+      mfaRequired: true,
+      profileMadePublic: true,
+      user: confirmedUser({ email: 'ada@example.org' }),
+    });
+
+    renderPage({
+      _id: 'user-1',
+      username: 'sample-member',
+      email: 'ada@example.org',
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+
+    expect(
+      await screen.findByText(
+        /Sign in with your password and authenticator code/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute(
+      'href',
+      '/signin',
+    );
+    expect(
+      screen.queryByRole('link', { name: 'Edit your profile' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('redirects to welcome when the profile becomes public', async () => {
     const navigate = mockedClientRuntime.navigate;
     mockedAuthApi.confirmEmail.mockResolvedValue({
