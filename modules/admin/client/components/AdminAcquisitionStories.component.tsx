@@ -20,12 +20,30 @@ type StorySortColumn =
   | 'welcomer';
 type SortDirection = 'ascending' | 'descending';
 type ProfileVisibility = 'all' | 'visible' | 'hidden';
+type RestrictionStatus = 'suspended' | 'shadowban';
+
+function RestrictionBadges({
+  statuses = [],
+}: {
+  statuses?: RestrictionStatus[];
+}) {
+  return (
+    <>
+      {statuses.map(status => (
+        <span className="label label-danger admin-label" key={status}>
+          {status === 'suspended' ? 'Suspended' : 'Shadowbanned'}
+        </span>
+      ))}
+    </>
+  );
+}
 
 interface RestrictedMatch {
   _id: string;
   username: string;
   displayName?: string;
   matchReasons: string[];
+  restrictionStatuses?: RestrictionStatus[];
 }
 
 interface AcquisitionStory {
@@ -39,6 +57,7 @@ interface AcquisitionStory {
   hostingLocation?: number[];
   acquisitionStory?: string;
   public?: boolean;
+  restrictionStatuses?: RestrictionStatus[];
   restrictedMatches?: RestrictedMatch[];
   languages?: string[];
   welcomer?: {
@@ -393,6 +412,7 @@ export default function AdminAcquisitionStories() {
                           username: story.username,
                         }}
                       />
+                      <RestrictionBadges statuses={story.restrictionStatuses} />
                     </div>
                   </td>
                   <td>{story.circleCount || 0}</td>
@@ -419,6 +439,9 @@ export default function AdminAcquisitionStories() {
                           publicProfile={
                             !(getCurrentUser()?.roles || []).includes('admin')
                           }
+                        />
+                        <RestrictionBadges
+                          statuses={match.restrictionStatuses}
                         />
                         <small className="text-muted">
                           {' '}

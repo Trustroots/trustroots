@@ -45,10 +45,14 @@ jobs:
           context: .
           file: production.Dockerfile
           platforms: linux/amd64
+          tags: trustroots:pr
+          load: true
           cache-from: type=gha,scope=production
           # Cache availability must not fail a successful build or image push.
           cache-to: type=gha,ignore-error=true,mode=max,scope=production
           push: false
+      - name: Check production startup
+        run: bash scripts/ci/check-production-startup.sh trustroots:pr
 
   publish-production-image:
     needs: changes

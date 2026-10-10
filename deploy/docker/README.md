@@ -84,6 +84,8 @@ docker compose --profile prod up --build
 
 - Webapp at http://localhost:8080, plus the background `worker`.
 - Assets are baked into the image at build time, so rebuild after changing code.
+- The production image installs the full dependency tree to build assets, then
+  removes development dependencies before packaging the runtime image.
 - This is only for local verification; it is not how production is deployed.
 
 ## Importing MongoDB data
