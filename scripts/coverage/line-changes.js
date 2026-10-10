@@ -1,4 +1,8 @@
 const { execFileSync } = require('child_process');
+const {
+  collectDependencyChanges,
+  renderDependencyChanges,
+} = require('./dependency-changes');
 const startMarker = '<!-- trustroots-line-changes:start -->';
 const endMarker = '<!-- trustroots-line-changes:end -->';
 
@@ -87,7 +91,10 @@ function collectLineChanges(baseSha, headSha, cwd) {
     ],
     { cwd, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 },
   );
-  return summariseNumstat(output);
+  return {
+    ...summariseNumstat(output),
+    dependencies: collectDependencyChanges(baseSha, headSha, cwd),
+  };
 }
 
 function signed(value) {
@@ -123,6 +130,9 @@ function renderLineChanges(summary) {
           '',
           `Binary files changed: ${summary.binaryFiles} (excluded from line totals).`,
         ]
+      : []),
+    ...(summary.dependencies
+      ? ['', renderDependencyChanges(summary.dependencies)]
       : []),
     endMarker,
   ].join('\n');

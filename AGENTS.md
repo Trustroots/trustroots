@@ -18,6 +18,11 @@ into a test, preserve only what is needed to reproduce the behaviour and
 replace names, usernames, email addresses, locations, IDs, message content,
 and other identifying data with fictional values.
 
+Never publish security vulnerability details, Dependabot alert information, or
+the security motivation for a change in public PRs, issues, comments, commit
+messages, release notes, or other public-facing text. Keep that context private
+and describe dependency updates neutrally in public.
+
 Prefer git worktrees for parallel, exploratory, or potentially disruptive work.
 Create them under `.worktrees/` inside this repository so they remain within
 the workspace boundary.

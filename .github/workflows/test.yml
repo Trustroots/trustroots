@@ -51,6 +51,17 @@ jobs:
           # Cache availability must not fail a successful build or image push.
           cache-to: type=gha,ignore-error=true,mode=max,scope=production
           push: false
+      - name: Inventory installed production dependencies
+        run: |
+          mkdir -p coverage/production
+          docker run --rm -i --network none --entrypoint node trustroots:pr \
+            < scripts/ci/production-dependencies.js > coverage/production/dependencies.json
+      - name: Upload production dependency inventory
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: production-dependencies
+          path: coverage/production/dependencies.json
+          if-no-files-found: error
       - name: Check production startup
         run: bash scripts/ci/check-production-startup.sh trustroots:pr
 
@@ -468,7 +479,7 @@ jobs:
 
   coverage-summary:
     if: always() && !cancelled() && github.event_name == 'pull_request'
-    needs: [changes, client, server, e2e]
+    needs: [changes, client, server, e2e, build-production-image]
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -480,6 +491,13 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+      - name: Download production dependency inventory
+        if: needs.build-production-image.result != 'skipped'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        continue-on-error: true
+        with:
+          name: production-dependencies
+          path: coverage/production
       - name: Download client coverage
         if: needs.changes.outputs.run-code != 'false'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
