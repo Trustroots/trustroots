@@ -24,7 +24,7 @@ trap cleanup EXIT
 # Empty, disposable database; no production configuration or external services.
 docker network create --internal "$network" >/dev/null
 docker run -d --name "$mongo" --network "$network" --network-alias mongodb \
-  mongo:4.4 --bind_ip_all --wiredTigerCacheSizeGB 0.25 >/dev/null
+  public.ecr.aws/docker/library/mongo:4.4 --bind_ip_all --wiredTigerCacheSizeGB 0.25 >/dev/null
 ready=false
 for attempt in {1..60}; do
   if docker exec "$mongo" mongo --quiet --eval 'quit(db.adminCommand({ping: 1}).ok ? 0 : 1)' >/dev/null 2>&1; then

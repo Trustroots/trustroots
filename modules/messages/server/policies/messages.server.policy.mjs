@@ -25,6 +25,10 @@ service.invokeRolesPolicies = function () {
           permissions: [],
         },
         {
+          resources: '/api/messages-preview',
+          permissions: ['post'],
+        },
+        {
           resources: '/api/messages-read',
           permissions: [],
         },
@@ -48,6 +52,10 @@ service.invokeRolesPolicies = function () {
         {
           resources: '/api/messages/:messageUserId',
           permissions: ['get'],
+        },
+        {
+          resources: '/api/messages-preview',
+          permissions: ['post'],
         },
         {
           resources: '/api/messages-read',

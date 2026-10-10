@@ -27,6 +27,11 @@ function register(app) {
     .all(messagesPolicy.isAllowed)
     .get(messages.sync);
 
+  app
+    .route('/api/messages-preview')
+    .all(messagesPolicy.isAllowed)
+    .post(messages.preview);
+
   // Finish by binding the message middleware
   app.param('messageUserId', messages.threadByUser);
 }
