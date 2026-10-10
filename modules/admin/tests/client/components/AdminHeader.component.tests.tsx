@@ -21,6 +21,22 @@ afterEach(() => {
 });
 
 describe('<AdminHeader />', () => {
+  it('shows support navigation without administrator tools', () => {
+    window.user = { roles: ['support-team'] };
+    render(<AdminHeader />);
+    expect(
+      screen.getByRole('link', { name: 'Support', exact: true }),
+    ).toHaveAttribute('href', '/admin/support');
+    expect(
+      screen.getByRole('link', { name: 'Support inbox' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Staff blockers' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Messages' }),
+    ).not.toBeInTheDocument();
+  });
   it.each([
     { roles: ['welcome-team'] },
     {},

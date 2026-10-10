@@ -35,6 +35,7 @@ const DEFAULT_ADMIN_MEMBER_SORT = {
 };
 const ADMIN_LISTABLE_ROLES = [
   'welcome-team',
+  'support-team',
   'admin',
   'shadowban',
   'suspended',
@@ -43,6 +44,7 @@ const ADMIN_LISTABLE_ROLES = [
 ];
 const ADMIN_CHANGEABLE_ROLES = [
   'welcome-team',
+  'support-team',
   'shadowban',
   'suspended',
   'volunteer-alumni',
@@ -502,7 +504,9 @@ export const getUser = async (req, res) => {
 export const listStaffBlockers = async (req, res) => {
   try {
     const staffMembers = req.user.roles.includes('admin')
-      ? await User.find({ roles: { $in: ['admin', 'welcome-team'] } })
+      ? await User.find({
+          roles: { $in: ['admin', 'welcome-team', 'support-team'] },
+        })
           .select('username displayName')
           .sort({ username: 1 })
           .lean()
@@ -537,7 +541,8 @@ export const changeRole = async (req, res) => {
   if (
     !ADMIN_CHANGEABLE_ROLES.includes(role) ||
     !['add', 'remove'].includes(action) ||
-    (action === 'remove' && !['welcome-team', 'shadowban'].includes(role))
+    (action === 'remove' &&
+      !['welcome-team', 'support-team', 'shadowban'].includes(role))
   ) {
     return res.status(400).send({
       message: 'Invalid role.',

@@ -120,9 +120,13 @@ describe('Support CRUD tests', () => {
     });
     it('should be able to report user in support message', async () => {
       const job = await assertSendingSupportMessage({
-        reportMember: 'reported-username',
+        reportMember: users[1].username,
       });
-      should(job.data.text).containEql('reported-username');
+      should(job.data.text).containEql(users[1].username);
+      const stored = await mongoose
+        .model('SupportRequest')
+        .findOne({ user: users[0]._id });
+      stored.reportedUser.toString().should.equal(users[1]._id.toString());
     });
   });
   context('logged in as non-public user', () => {

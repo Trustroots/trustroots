@@ -1271,6 +1271,31 @@ describe('<AdminUser />', () => {
       expect(mockedUsersApi.getUser).toHaveBeenCalledTimes(2),
     );
   });
+  it.each(['add', 'remove'])('can %s support team status', async action => {
+    const roles = action === 'remove' ? ['user', 'support-team'] : ['user'];
+    mockedUsersApi.getUser.mockResolvedValue(
+      makeReportCard({ profile: { _id: userId, username: 'river', roles } }),
+    );
+    mockedUsersApi.setUserRole.mockResolvedValue({});
+    render(<AdminUser />);
+    submitMemberSearch(userId);
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name:
+          action === 'remove'
+            ? 'Remove from support team'
+            : 'Add to support team',
+      }),
+    );
+    confirmRoleChange('Confirm support role change');
+    await waitFor(() =>
+      expect(mockedUsersApi.setUserRole).toHaveBeenCalledWith(
+        userId,
+        'support-team',
+        action,
+      ),
+    );
+  });
 
   it.each([
     ['user', 'shadowban'],

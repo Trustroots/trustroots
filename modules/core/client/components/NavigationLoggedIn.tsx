@@ -71,11 +71,15 @@ export default function NavigationLoggedIn({
 
       <Nav as="ul" className="nav-header-primary">
         {(user.roles?.includes('admin') ||
+          user.roles?.includes('support-team') ||
           user.roles?.includes('welcome-team')) && (
           <MenuItem
             currentPath={currentPath}
             path={
-              user.roles?.includes('welcome-team')
+              user.roles?.includes('support-team') &&
+              !user.roles?.includes('admin')
+                ? '/admin/support'
+                : user.roles?.includes('welcome-team')
                 ? '/admin/acquisition-stories'
                 : '/admin'
             }

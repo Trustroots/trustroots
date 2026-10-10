@@ -43,6 +43,11 @@ export default function Report({
       </Switch>
       {report && (
         <>
+          <p>
+            {t(
+              'Reporting this member lets our support team read your entire conversation and all experiences between you, including unpublished feedback. This access continues after the report is resolved.',
+            )}
+          </p>
           <br />
           <br />
           <label htmlFor="report-message" className="control-label">

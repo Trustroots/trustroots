@@ -23,6 +23,24 @@ jest.mock('@/modules/users/client/components/Avatar.component.js', () => {
 });
 
 describe('<NavigationLoggedIn />', () => {
+  it.each([{ roles: ['support-team'] }, { roles: ['support-team', 'admin'] }])(
+    'opens the permitted staff landing page for %j',
+    ({ roles }) => {
+      render(
+        <NavigationLoggedIn
+          currentPath="/admin/support"
+          onSignout={jest.fn()}
+          user={{ _id: 'fictional-support', username: 'support', roles }}
+        />,
+      );
+      expect(
+        screen.getByRole('link', { name: 'Admin', exact: true }),
+      ).toHaveAttribute(
+        'href',
+        roles.includes('admin') ? '/admin' : '/admin/support',
+      );
+    },
+  );
   const user: AuthUser = {
     _id: 'user-1',
     username: 'alice',

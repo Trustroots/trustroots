@@ -6,6 +6,7 @@ import adminPolicy from './../policies/admin.server.policy.mjs';
 import adminThreads from './../controllers/admin.threads.server.controller.mjs';
 import adminUsers from './../controllers/admin.users.server.controller.mjs';
 import adminDashboard from './../controllers/admin.dashboard.server.controller.mjs';
+import support from '../controllers/admin.support.server.controller.mjs';
 import adminNotes from './../controllers/admin.notes.server.controller.mjs';
 import adminReferenceThreads from './../controllers/admin.reference-threads.server.controller.mjs';
 
@@ -14,6 +15,24 @@ import adminReferenceThreads from './../controllers/admin.reference-threads.serv
  */
 
 const registerRoutes = app => {
+  app.route('/api/admin/support').all(adminPolicy.isAllowed).get(support.list);
+  app
+    .route('/api/admin/support/:requestId')
+    .all(adminPolicy.isAllowed)
+    .get(support.detail)
+    .patch(support.setStatus);
+  app
+    .route('/api/admin/support/:requestId/:kind')
+    .all(adminPolicy.isAllowed)
+    .get(support.investigation);
+  app
+    .route('/api/admin/support-members')
+    .all(adminPolicy.isAllowed)
+    .get(support.searchMembers);
+  app
+    .route('/api/admin/support-members/:memberId')
+    .all(adminPolicy.isAllowed)
+    .get(support.member);
   app
     .route('/api/admin/acquisition-stories')
     .all(adminPolicy.isAllowed)

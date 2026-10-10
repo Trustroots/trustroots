@@ -34,10 +34,11 @@ function createAppRecorder() {
           get: [],
           post: [],
           put: [],
+          patch: [],
         };
         routes.push(route);
 
-        return ['all', 'delete', 'get', 'post', 'put'].reduce(
+        return ['all', 'delete', 'get', 'post', 'put', 'patch'].reduce(
           (chain, method) => {
             chain[method] = (...handlers) => {
               route[method].push(...handlers);
@@ -544,6 +545,17 @@ describe('API route registrations', () => {
 
   it('registers admin routes with audit log middleware where required', () => {
     const policy = { isAllowed: handler('adminPolicy.isAllowed') };
+    const support = controller(
+      [
+        'list',
+        'detail',
+        'setStatus',
+        'investigation',
+        'searchMembers',
+        'member',
+      ],
+      'support',
+    );
     const acquisitionStories = controller(['list'], 'adminAcquisitionStories');
     const auditLog = controller(['list', 'record', 'actors'], 'adminAuditLog');
     const messages = controller(['getMessages'], 'adminMessages');
@@ -575,6 +587,7 @@ describe('API route registrations', () => {
     const { routes } = register(
       './../../../admin/server/routes/admin.server.routes.mjs',
       {
+        '../controllers/admin.support.server.controller': support,
         '../controllers/admin.acquisition-stories.server.controller':
           acquisitionStories,
         '../controllers/admin.audit-log.server.controller': auditLog,
@@ -589,6 +602,16 @@ describe('API route registrations', () => {
       },
     );
 
+    assertHandlers(routeByPath(routes, '/api/admin/support').get, [
+      support.list,
+    ]);
+    assertHandlers(routeByPath(routes, '/api/admin/support/:requestId').patch, [
+      support.setStatus,
+    ]);
+    assertHandlers(
+      routeByPath(routes, '/api/admin/support/:requestId/:kind').get,
+      [support.investigation],
+    );
     assertHandlers(routeByPath(routes, '/api/admin/acquisition-stories').post, [
       auditLog.record,
       acquisitionStories.list,

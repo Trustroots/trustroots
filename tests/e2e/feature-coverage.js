@@ -26,6 +26,8 @@ const ROLE_DEFINITIONS = {
   'shadowbanned-member':
     'Authenticated user with the shadowban role, used to verify hidden member-facing behavior.',
   admin: 'Authenticated user with the admin role.',
+  'support-team':
+    'Authenticated support volunteer with report-scoped investigation access.',
   'welcome-team':
     'Authenticated user with acquisition and own-account blocker viewing access.',
   browser:
@@ -2754,6 +2756,27 @@ const features = [
         'audit history has compact summaries and staff/team filters',
       ),
     ],
+  },
+  {
+    id: 'admin.support-team',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description:
+      'Support volunteers triage requests and investigate verified report pairs.',
+    roles: ['admin', 'support-team'],
+    references: {
+      clientRoutes: [
+        clientRoute('admin-support', '/admin/support', source.adminClient, {
+          requiresAuth: true,
+          requiresRole: ['admin', 'support-team'],
+        }),
+      ],
+      apiRoutes: [apiRoute('GET', '/api/admin/support', source.adminServer)],
+    },
+    requiredScenarios: [
+      'Support can triage requests and inspect linked conversations and experiences without moderation authority.',
+    ],
+    relatedSpecs: [],
   },
   {
     id: 'admin.acquisition-stories',

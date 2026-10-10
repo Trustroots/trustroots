@@ -33,6 +33,9 @@ function mockResponse() {
 }
 
 async function loadController(options = {}) {
+  sinon
+    .stub(mongoose.model('User'), 'findOne')
+    .returns({ select: async () => ({ _id: new mongoose.Types.ObjectId() }) });
   const savedSupportRequests = [];
   const SupportRequest = mongoose.model('SupportRequest');
   sinon.stub(SupportRequest.prototype, 'save').callsFake(function (callback) {
