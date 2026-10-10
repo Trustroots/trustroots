@@ -1,0 +1,5 @@
+- [x] Add administrator-only circle list/create/update APIs.
+- [x] Process uploaded images into the existing circle sizes and formats.
+- [x] Add the admin circle list and editor UI.
+- [x] Add server, client, and end-to-end coverage for the new functionality.
+- [x] Update the circles and administration living specifications.

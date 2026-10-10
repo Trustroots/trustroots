@@ -19,6 +19,7 @@ import Admin from '@/modules/admin/client/components/Admin.component';
 import AdminStaffBlockers from '@/modules/admin/client/components/AdminStaffBlockers.component';
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
 import AdminAuditLog from '@/modules/admin/client/components/AdminAuditLog.component';
+import AdminCircles from '@/modules/admin/client/components/AdminCircles.component';
 import AdminMessages from '@/modules/admin/client/components/AdminMessages.component';
 import AdminNewsletter from '@/modules/admin/client/components/AdminNewsletter.component';
 import AdminReferenceThreads from '@/modules/admin/client/components/AdminReferenceThreads.component';
@@ -242,6 +243,7 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/admin/staff-blockers': () => <AdminStaffBlockers />,
     '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
     '/admin/audit-log': () => <AdminAuditLog />,
+    '/admin/circles': () => <AdminCircles />,
     '/admin/messages': () => <AdminMessages />,
     '/admin/newsletter': () => <AdminNewsletter />,
     '/admin/reference-threads': () => <AdminReferenceThreads />,

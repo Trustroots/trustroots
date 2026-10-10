@@ -45,6 +45,10 @@ export default function AdminHeader() {
       path: 'newsletter',
       label: 'Newsletter',
     },
+    {
+      path: 'circles',
+      label: 'Circles',
+    },
   ];
 
   const renderTab = ({ path, label }: { path: string; label: string }) => (

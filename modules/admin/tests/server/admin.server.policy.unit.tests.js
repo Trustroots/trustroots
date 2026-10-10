@@ -45,6 +45,12 @@ describe('Admin policy unit tests', () => {
     policies[0].roles.should.deepEqual(['admin']);
     policies[0].allows
       .map(allow => allow.resources)
+      .should.containEql('/api/admin/circles');
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/admin/circles/:circle');
+    policies[0].allows
+      .map(allow => allow.resources)
       .should.containEql('/api/admin/acquisition-stories');
     policies[0].allows
       .map(allow => allow.resources)

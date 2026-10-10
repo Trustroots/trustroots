@@ -27,6 +27,11 @@ export const invokeRolesPolicies = () => {
     {
       roles: ['admin'],
       allows: [
+        { resources: '/api/admin/circles', permissions: ['get', 'post'] },
+        {
+          resources: '/api/admin/circles/:circle',
+          permissions: ['get', 'put'],
+        },
         {
           resources: '/api/admin/acquisition-stories',
           permissions: ['post'],

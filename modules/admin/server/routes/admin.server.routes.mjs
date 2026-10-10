@@ -8,12 +8,33 @@ import adminUsers from './../controllers/admin.users.server.controller.mjs';
 import adminDashboard from './../controllers/admin.dashboard.server.controller.mjs';
 import adminNotes from './../controllers/admin.notes.server.controller.mjs';
 import adminReferenceThreads from './../controllers/admin.reference-threads.server.controller.mjs';
+import adminCircles from './../controllers/admin.circles.server.controller.mjs';
 
 /**
  * Module dependencies.
  */
 
 const registerRoutes = app => {
+  app
+    .route('/api/admin/circles')
+    .all(adminPolicy.isAllowed)
+    .get(adminCircles.list)
+    .post(
+      adminAuditLog.record,
+      adminCircles.processImageUpload,
+      adminCircles.create,
+    );
+
+  app
+    .route('/api/admin/circles/:circle')
+    .all(adminPolicy.isAllowed)
+    .get(adminCircles.get)
+    .put(
+      adminAuditLog.record,
+      adminCircles.processImageUpload,
+      adminCircles.update,
+    );
+
   app
     .route('/api/admin/acquisition-stories')
     .all(adminPolicy.isAllowed)

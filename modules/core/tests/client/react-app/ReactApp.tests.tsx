@@ -60,6 +60,15 @@ jest.mock(
   },
 );
 
+jest.mock('@/modules/admin/client/components/AdminCircles.component', () => {
+  const React = jest.requireActual<typeof import('react')>('react');
+
+  function MockAdminCircles() {
+    return <main>Admin circles route</main>;
+  }
+
+  return MockAdminCircles;
+});
 jest.mock('@/modules/admin/client/components/AdminMessages.component', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 
