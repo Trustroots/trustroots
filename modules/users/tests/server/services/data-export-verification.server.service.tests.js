@@ -187,6 +187,15 @@ describe('Member data export verification', () => {
       .event.status.should.equal('invalid');
   });
 
+  it('survives a hostile file whose event signature is not a string', () => {
+    const file = buildFile();
+    file.signature.event.sig = 12345;
+
+    verification
+      .verifyExport(file, { keyHistory })
+      .event.status.should.equal('invalid');
+  });
+
   it('fails when the event carries no tags at all', () => {
     const file = buildFile();
     delete file.signature.event.tags;
