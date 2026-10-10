@@ -5,5 +5,5 @@
 - [x] Add support inbox, status controls, safe member details and notes.
 - [x] Add audited report-scoped conversation and experience access.
 - [x] Provide conservative historical report linking.
-- [ ] Add server/client regression and end-to-end coverage; run validation.
-- [ ] Update living specifications and archive the proposal when complete.
+- [x] Add server/client regression and end-to-end coverage; run validation.
+- [x] Update living specifications and archive the proposal when complete.

@@ -5,6 +5,7 @@ require('should');
 const express = require('../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const controller = require('../../server/controllers/admin.support.server.controller.mjs');
+const supportController = require('../../../support/server/controllers/support.server.controller.mjs');
 const {
   linkHistoricalReport,
 } = require('../../../support/server/services/report-link.server.service.mjs');
@@ -333,23 +334,27 @@ describe('Support team access and investigation', () => {
         })
         .expect(400);
     }
-    sinon
-      .stub(User, 'findOne')
-      .callThrough()
-      .withArgs({ username: raw[1].username })
-      .returns({
-        select: async () => {
-          throw new Error('Lookup unavailable');
+    sinon.stub(User, 'findOne').returns({
+      select: async () => {
+        throw new Error('Lookup unavailable');
+      },
+    });
+    const response = { status: sinon.stub().returnsThis(), send: sinon.spy() };
+    await supportController.supportRequest(
+      {
+        body: {
+          category: 'reportMember',
+          reportMember: raw[1].username,
+          message: 'Fictional report',
         },
-      });
-    await agent
-      .post('/api/support')
-      .set('X-Trustroots-Request', '1')
-      .send({
-        category: 'reportMember',
-        reportMember: raw[1].username,
-        message: 'Fictional report',
-      })
-      .expect(500);
+        user: users[0],
+        headers: {},
+      },
+      response,
+    );
+    sinon.assert.calledWith(response.status, 500);
+    sinon.assert.calledWith(response.send, {
+      message: 'Unable to verify the reported member.',
+    });
   });
 });
