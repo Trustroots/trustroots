@@ -5,6 +5,7 @@ import { getCurrentUser } from '../../../core/client/services/client-runtime';
 
 export default function AdminHeader() {
   const isAdmin = (getCurrentUser()?.roles || []).includes('admin');
+  const isSupport = (getCurrentUser()?.roles || []).includes('support-team');
   const isWelcomeTeam = (getCurrentUser()?.roles || []).includes(
     'welcome-team',
   );
@@ -21,6 +22,7 @@ export default function AdminHeader() {
   }, []);
 
   const pages = [
+    { path: 'support', label: 'Support inbox' },
     {
       path: 'messages',
       label: 'Messages',
@@ -64,9 +66,15 @@ export default function AdminHeader() {
         <div className="navbar-header">
           <a
             className="navbar-brand"
-            href={isAdmin ? '/admin' : '/admin/acquisition-stories'}
+            href={
+              isAdmin
+                ? '/admin'
+                : isSupport
+                ? '/admin/support'
+                : '/admin/acquisition-stories'
+            }
           >
-            {isAdmin ? 'Admin' : 'Greeters'}
+            {isAdmin ? 'Admin' : isSupport ? 'Support' : 'Greeters'}
           </a>
         </div>
         <ul className="nav navbar-nav">
@@ -74,7 +82,9 @@ export default function AdminHeader() {
             .filter(
               page =>
                 isAdmin ||
-                (page.path === 'staff-blockers' && isWelcomeTeam) ||
+                (page.path === 'support' && isSupport) ||
+                (page.path === 'staff-blockers' &&
+                  (isWelcomeTeam || isSupport)) ||
                 page.path === 'acquisition-stories',
             )
             .map(page => renderTab(page))}

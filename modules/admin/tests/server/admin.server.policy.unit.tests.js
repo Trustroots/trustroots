@@ -28,16 +28,21 @@ function mockResponse() {
 
 describe('Admin policy unit tests', () => {
   afterEach(() => sinon.restore());
-  it('registers admin-only role policies', async () => {
+  it('registers separate support, greeter and administrator policies', async () => {
     const { policy, mockAcl } = await loadPolicy();
 
     policy.invokeRolesPolicies();
 
     mockAcl.allow.calledOnce.should.be.true();
     const policies = mockAcl.allow.firstCall.args[0];
-    policies.length.should.equal(2);
+    policies.length.should.equal(3);
+    const support = policies.shift();
+    support.roles.should.deepEqual(['admin', 'support-team']);
+    support.allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/admin/support/:requestId/:kind');
     const welcome = policies.shift();
-    welcome.roles.should.deepEqual(['welcome-team']);
+    welcome.roles.should.deepEqual(['welcome-team', 'support-team']);
     welcome.allows.should.deepEqual([
       { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
       { resources: '/api/admin/staff-blockers', permissions: ['get'] },

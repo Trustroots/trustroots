@@ -89,6 +89,8 @@ const ROLE_DESCRIPTIONS: Record<string, string> = {
   'welcome-team':
     'Greeters can view acquisition stories and see members who blocked their account.',
   admin: 'Full access to administration and moderation tools.',
+  'support-team':
+    'Support volunteers can triage requests, investigate reported member pairs, view account details and use greeter tools.',
   moderator: 'Legacy moderation role retained for historical accounts.',
   shadowban:
     'Member can use the site, but their profile and outreach are hidden from others.',
@@ -220,6 +222,15 @@ function getRoleChangeConfirmation(
       title: `Shadow ban ${username}?`,
       message: 'Their profile and outreach will be hidden from others.',
       confirmLabel: 'Shadow ban',
+    };
+  }
+  if (role === 'support-team') {
+    return {
+      title: `${action === 'remove' ? 'Remove' : 'Add'} ${username} ${
+        action === 'remove' ? 'from' : 'to'
+      } the support team?`,
+      message: ROLE_DESCRIPTIONS['support-team'],
+      confirmLabel: 'Confirm support role change',
     };
   }
   if (role === 'welcome-team') {
@@ -865,6 +876,22 @@ export default class AdminUser extends Component<
                   <span id="welcome-team-role-description" className="sr-only">
                     {ROLE_DESCRIPTIONS['welcome-team']}
                   </span>
+                  <button
+                    type="button"
+                    className="btn btn-default"
+                    disabled={isSettingUserRole}
+                    title={ROLE_DESCRIPTIONS['support-team']}
+                    onClick={() =>
+                      this.handleUserRoleChange(
+                        'support-team',
+                        this.hasRole('support-team') ? 'remove' : 'add',
+                      )
+                    }
+                  >
+                    {this.hasRole('support-team')
+                      ? 'Remove from support team'
+                      : 'Add to support team'}
+                  </button>
                 </div>
               </div>
 

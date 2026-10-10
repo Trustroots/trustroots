@@ -10,11 +10,12 @@ import mongoose from 'mongoose';
 import validator from 'validator';
 import { SUPPORT_CATEGORIES } from '../../shared/categories.js';
 const SupportRequest = mongoose.model('SupportRequest');
+const User = mongoose.model('User');
 
 /**
  * Send support request to our support systems
  */
-export const supportRequest = function (req, res) {
+export const supportRequest = async function (req, res) {
   const category =
     req.body.category === undefined
       ? req.body.reportMember
@@ -86,6 +87,30 @@ export const supportRequest = function (req, res) {
   };
   if (req.user) {
     storedSupportRequestData.user = req.user._id;
+  }
+  if (category === 'reportMember' && req.user) {
+    if (
+      typeof req.body.reportMember !== 'string' ||
+      !req.body.reportMember.trim()
+    ) {
+      return res.status(400).send({ message: 'Select a member to report.' });
+    }
+    let target;
+    try {
+      target = await User.findOne({
+        username: req.body.reportMember.trim().toLowerCase(),
+      }).select('_id');
+    } catch {
+      return res
+        .status(500)
+        .send({ message: 'Unable to verify the reported member.' });
+    }
+    if (!target || target._id.equals(req.user._id)) {
+      return res
+        .status(400)
+        .send({ message: 'Select another existing member to report.' });
+    }
+    storedSupportRequestData.reportedUser = target._id;
   }
   if (supportRequestData.reportMember) {
     storedSupportRequestData.reportMember = supportRequestData.reportMember;

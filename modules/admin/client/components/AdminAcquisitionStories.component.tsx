@@ -186,6 +186,9 @@ StaticHeader.propTypes = {
 
 export default function AdminAcquisitionStories() {
   const viewerLanguages = getCurrentUser()?.languages || [];
+  const viewerRoles = getCurrentUser()?.roles || [];
+  const publicProfile =
+    !viewerRoles.includes('admin') && !viewerRoles.includes('support-team');
   const [stories, setStories] = useState<AcquisitionStory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [unassignedOnly, setUnassignedOnly] = useState(false);
@@ -384,9 +387,7 @@ export default function AdminAcquisitionStories() {
                         />
                       </a>
                       <UserLink
-                        publicProfile={
-                          !(getCurrentUser()?.roles || []).includes('admin')
-                        }
+                        publicProfile={publicProfile}
                         user={{
                           _id: story._id,
                           displayName: story.displayName,
@@ -414,12 +415,7 @@ export default function AdminAcquisitionStories() {
                   <td>
                     {(story.restrictedMatches || []).map(match => (
                       <div key={match._id}>
-                        <UserLink
-                          user={match}
-                          publicProfile={
-                            !(getCurrentUser()?.roles || []).includes('admin')
-                          }
-                        />
+                        <UserLink user={match} publicProfile={publicProfile} />
                         <small className="text-muted">
                           {' '}
                           — {match.matchReasons.join(', ')}
@@ -432,9 +428,7 @@ export default function AdminAcquisitionStories() {
                       <>
                         <UserLink
                           user={story.welcomer}
-                          publicProfile={
-                            !(getCurrentUser()?.roles || []).includes('admin')
-                          }
+                          publicProfile={publicProfile}
                         />
                         <div>
                           <time dateTime={story.welcomer.created}>

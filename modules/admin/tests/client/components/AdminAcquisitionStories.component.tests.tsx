@@ -83,7 +83,7 @@ afterEach(() => {
 });
 
 describe('<AdminAcquisitionStories />', () => {
-  it.each(['admin', 'welcome-team'] as const)(
+  it.each(['admin', 'welcome-team', 'support-team'] as const)(
     'filters unassigned members and preserves sorting for %s',
     async role => {
       window.user = { roles: [role] };
