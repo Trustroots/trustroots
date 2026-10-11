@@ -71,6 +71,8 @@ function collectDependencyChanges(baseSha, headSha, cwd) {
 function renderDependencyChanges(groups) {
   const signed = value =>
     value > 0 ? `+${value}` : value < 0 ? `−${Math.abs(value)}` : '0';
+  const count = (value, colour) => `${value ? colour : '⚪'} ${signed(value)}`;
+  const net = value => count(value, value > 0 ? '🔵' : '🟢');
   const escape = value =>
     String(value).replace(
       /[&<>|`\r\n]/g,
@@ -91,10 +93,15 @@ function renderDependencyChanges(groups) {
     '| --- | ---: | ---: | ---: | ---: |',
     ...groups.map(
       group =>
-        `| ${group.label} | ${signed(group.added)} | ${signed(
+        `| ${group.label} | ${count(group.added, '🔵')} | ${count(
           -group.removed,
-        )} | ${group.changed} | **${signed(group.net)}** |`,
+          '🟢',
+        )} | ${count(group.changed, '🟡').replace('+', '')} | **${net(
+          group.net,
+        )}** |`,
     ),
+    '',
+    '🔵 Added · 🟢 Removed · 🟡 Updated · ⚪ No change. Colours indicate change types, not dependency quality.',
     '',
     'Compared with the PR merge base. Direct rows count declared packages; resolved entries count installed lockfile paths, including duplicate copies. These rows overlap and must not be added together. Updates compare declared ranges or resolved versions. Counts do not measure production Docker pruning or determine CI success.',
     ...(details.length

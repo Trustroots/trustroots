@@ -4,17 +4,14 @@ import config from './../config.mjs';
 import errorService from './../../modules/core/server/services/error.server.service.mjs';
 import express from 'express';
 import morgan from 'morgan';
-import bodyParser from 'body-parser';
 import session from 'express-session';
 import csrfProtection from './csrf-protection.mjs';
 import mongoStore from 'connect-mongo';
 import favicon from 'serve-favicon';
 import compress from 'compression';
-import methodOverride from 'method-override';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import expectCt from 'expect-ct';
-import flash from 'connect-flash';
 import nunjucks from 'nunjucks';
 import buildMetadata from './build-metadata.mjs';
 import path from 'path';
@@ -134,14 +131,14 @@ service.initMiddleware = function (app) {
     app.locals.cache = 'memory';
   }
 
-  // Request body parsing middleware should be above methodOverride
+  // Parse supported request bodies before route handlers.
   app.use(
-    bodyParser.urlencoded({
+    express.urlencoded({
       extended: true,
     }),
   );
   app.use(
-    bodyParser.json({
+    express.json({
       type: [
         'json',
         // CSP violation reports API endpoint:
@@ -152,11 +149,8 @@ service.initMiddleware = function (app) {
       ],
     }),
   );
-  app.use(methodOverride());
-
-  // Add the cookie parser and flash middleware
+  // Add the cookie parser middleware.
   app.use(cookieParser());
-  app.use(flash());
 };
 
 /**
