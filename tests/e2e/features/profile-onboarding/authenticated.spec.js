@@ -540,7 +540,11 @@ test.describe('authenticated member flows', () => {
 
   test('photo upload explains its limit before selection and rejects oversized files', async ({
     page,
-  }) => {
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-photo', [
+      'Photo upload guidance shows the configured limit before selection.',
+      'Oversized photo selections are rejected before upload.',
+    ]);
     await page.goto('/profile/edit/photo');
     const limit = await page.locator('input[type="file"]').evaluate(
       input => input.ownerDocument.defaultView.settings.maxUploadSize,

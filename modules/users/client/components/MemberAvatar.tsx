@@ -13,7 +13,6 @@ type MemberAvatarUser = Pick<UserProfile, '_id' | 'username' | 'displayName'> &
     | 'avatarVersion'
     | 'updated'
     | 'emailHash'
-    | 'additionalProvidersData'
   >;
 
 const Fallback = styled.span<{ $size: number; $hue: number }>`
@@ -37,8 +36,6 @@ function hasProfileImage(user: MemberAvatarUser): boolean {
   switch (user.avatarSource) {
     case 'local':
       return Boolean(user.avatarUploaded && user._id);
-    case 'facebook':
-      return Boolean(user.additionalProvidersData?.facebook?.id);
     case 'gravatar':
       return Boolean(user.emailHash);
     default:

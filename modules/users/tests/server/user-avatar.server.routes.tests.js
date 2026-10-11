@@ -29,9 +29,9 @@ describe('User Avatar CRUD tests', () => {
   _users[2].avatarSource = 'local';
   _users[2].avatarUploaded = true;
 
-  // Facebook avatar user
+  // Member with a legacy Facebook avatar selection stored before retirement
   _users[3].public = true;
-  _users[3].avatarSource = 'facebook';
+  _users[3].avatarSource = 'none';
   _users[3].additionalProvidersData = {
     facebook: {
       id: '12345678912345678',
@@ -63,6 +63,12 @@ describe('User Avatar CRUD tests', () => {
     noneUser = users[1]._id;
     localUser = users[2]._id;
     facebookUser = users[3]._id;
+    await mongoose
+      .model('User')
+      .collection.updateOne(
+        { _id: facebookUser },
+        { $set: { avatarSource: 'facebook' } },
+      );
     nonPublicUser = users[4]._id;
     shadowbannedUser = users[5]._id;
   });
@@ -135,13 +141,17 @@ describe('User Avatar CRUD tests', () => {
           `Found. Redirecting to http://${config.domain}/uploads-profile/${localUser}/avatar/1024.jpg?`,
         );
       });
-      it('Get Facebook image', async () => {
+      it('uses the default image for a legacy Facebook avatar', async () => {
         const { res } = await agent
           .get(`/api/users/${facebookUser}/avatar`)
           .expect(302);
-        res.text.should.equal(
-          `Found. Redirecting to https://graph.facebook.com/12345678912345678/picture/?width=1024&height=1024`,
-        );
+        res.text.should.equal(defaultRedirect);
+      });
+
+      it('rejects Facebook as an explicit avatar source', async () => {
+        await agent
+          .get(`/api/users/${gravatarUser}/avatar?source=facebook`)
+          .expect(400);
       });
     });
   });

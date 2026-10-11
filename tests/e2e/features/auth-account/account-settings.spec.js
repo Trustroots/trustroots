@@ -55,6 +55,60 @@ test.describe.serial('account settings feature coverage', () => {
     ).toBeInViewport();
   });
 
+  test('legacy Facebook avatars use placeholders and cannot be selected', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.oauth-providers', [
+      'Legacy Facebook avatar selections use placeholders without Graph API requests.',
+      'Facebook is rejected as a new profile image source.',
+    ]);
+    const user = createUser();
+    await registerViaApi(request, user);
+    await updateUserByUsername(user.username, {
+      $set: {
+        avatarSource: 'facebook',
+        additionalProvidersData: {
+          facebook: { id: 'fictional-facebook-id' },
+        },
+      },
+    });
+    const facebookRequests = [];
+    page.on('request', outgoing => {
+      if (new URL(outgoing.url()).hostname === 'graph.facebook.com') {
+        facebookRequests.push(outgoing.url());
+      }
+    });
+    await signInViaApi(page, request, user);
+    await page.goto('/profile/edit/photo');
+    await expect(
+      page.getByRole('radio', { name: 'None', exact: true }),
+    ).toBeChecked();
+    await expect(page.locator('.profile-avatar-choises img.avatar-none')).toHaveAttribute(
+      'src',
+      '/img/avatar.png?none',
+    );
+    await expect(page.getByRole('radio', { name: 'Facebook' })).toHaveCount(0);
+
+    const member = await findUserByUsername(user.username);
+    const avatarResponse = await page.request.get(
+      `/api/users/${member._id}/avatar`,
+      { maxRedirects: 0 },
+    );
+    expect(avatarResponse.status()).toBe(302);
+    expect(avatarResponse.headers().location).toContain('/img/avatar-1024.png');
+    const rejected = await page.request.put('/api/users', {
+      data: { avatarSource: 'facebook' },
+    });
+    expect(rejected.status()).toBe(400);
+    const updated = await page.request.put('/api/users', {
+      data: { tagline: 'A fictional member updates their profile' },
+    });
+    expect(updated.ok()).toBeTruthy();
+    expect((await updated.json()).avatarSource).toBe('none');
+    expect(facebookRequests).toEqual([]);
+  });
+
   test('members can download their data from account settings', async ({
     page,
     request,

@@ -302,7 +302,7 @@ const UserSchema = new Schema({
   },
   avatarSource: {
     type: String,
-    enum: ['none', 'gravatar', 'facebook', 'local'],
+    enum: ['none', 'gravatar', 'local'],
     default: 'gravatar',
   },
   avatarUploaded: {
@@ -390,6 +390,12 @@ const UserSchema = new Schema({
     default: '',
     set: setPlainTextFieldAndLimit(500),
   },
+});
+
+// Interpret retired selections without requiring a database migration. This
+// also keeps legacy accounts valid when saving unrelated profile changes.
+UserSchema.pre('init', function (data) {
+  if (data.avatarSource === 'facebook') data.avatarSource = 'none';
 });
 
 /**

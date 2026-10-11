@@ -22,7 +22,6 @@ describe('Service: user mini', function () {
           'avatarUploaded',
           'avatarVersion',
           'emailHash',
-          'additionalProvidersData.facebook.id',
         ].join(' '),
       );
     });
@@ -39,11 +38,6 @@ describe('Service: user mini', function () {
         avatarUploaded: 1,
         avatarVersion: 1,
         emailHash: 1,
-        additionalProvidersData: {
-          facebook: {
-            id: 1,
-          },
-        },
       });
     });
 
@@ -66,11 +60,6 @@ describe('Service: user mini', function () {
         avatarUploaded: '$user.avatarUploaded',
         avatarVersion: '$user.avatarVersion',
         emailHash: '$user.emailHash',
-        additionalProvidersData: {
-          facebook: {
-            id: '$user.additionalProvidersData.facebook.id',
-          },
-        },
       });
     });
 
@@ -80,11 +69,7 @@ describe('Service: user mini', function () {
       });
       projection.should.have.property('_id', '$user._id');
       projection.should.have.property('locationFrom', '$user.locationFrom');
-      projection.additionalProvidersData.should.eql({
-        facebook: {
-          id: '$user.additionalProvidersData.facebook.id',
-        },
-      });
+      projection.should.not.have.property('additionalProvidersData');
     });
   });
 

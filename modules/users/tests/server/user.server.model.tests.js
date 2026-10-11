@@ -55,6 +55,30 @@ describe('User Model Unit Tests:', function () {
 
   afterEach(utils.clearDatabase);
 
+  describe('Retired Facebook avatars', function () {
+    it('normalises stored selections and allows unrelated profile saves', async function () {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      await User.collection.updateOne(
+        { _id: saved._id },
+        { $set: { avatarSource: 'facebook' } },
+      );
+      const legacy = await User.findById(saved._id);
+      legacy.avatarSource.should.equal('none');
+      legacy.tagline = 'A fictional member updates their profile';
+      await legacy.save();
+      const reloaded = await User.findById(saved._id);
+      reloaded.tagline.should.equal(legacy.tagline);
+      reloaded.avatarSource.should.equal('none');
+    });
+
+    it('rejects new Facebook avatar selections', async function () {
+      const member = new User(utils.generateUsers(1)[0]);
+      member.avatarSource = 'facebook';
+      const error = member.validateSync();
+      error.errors.avatarSource.kind.should.equal('enum');
+    });
+  });
+
   describe('Method Save', function () {
     it('should begin with no users', function (done) {
       User.find({}, function (err, users) {

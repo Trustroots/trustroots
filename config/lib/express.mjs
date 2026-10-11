@@ -296,11 +296,6 @@ service.initHelmetHeaders = function (app) {
           // Map tiles
           '*.earthdata.nasa.gov',
           // Map tiles
-          '*.facebook.com',
-          '*.fbcdn.net',
-          // Facebook releated
-          '*.fbsbx.com',
-          // Facebook related
           '*.twitter.com',
           '*.gstatic.com',
           '*.googleusercontent.com',

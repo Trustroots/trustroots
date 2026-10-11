@@ -453,7 +453,7 @@ describe('Avatar controller unit tests', () => {
       res.redirectUrl.should.containEql('/img/avatar-128.png');
     });
 
-    it('redirects to a facebook avatar url when requested by the owner', async () => {
+    it('rejects a Facebook avatar source requested by the owner', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(user._id);
       userDoc.additionalProvidersData = { facebook: { id: 'fb-123' } };
@@ -470,23 +470,22 @@ describe('Avatar controller unit tests', () => {
         res,
       );
       await res.waitForResponse();
-      res.redirectUrl.should.containEql('graph.facebook.com');
+      res.statusCode.should.equal(400);
+      res.body.message.should.containEql('Invalid source');
     });
 
-    it('falls back to default avatar when facebook source has no id', async () => {
+    it('falls back to the default avatar for an unnormalised legacy source', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(user._id);
       userDoc.avatarSource = 'facebook';
       userDoc.additionalProvidersData = { facebook: {} };
       userDoc.markModified('additionalProvidersData');
-      await userDoc.save();
-
       const res = deferredResponse();
       avatarController.getAvatar(
         {
           user: userDoc,
           profile: userDoc,
-          query: { source: 'facebook', size: '128' },
+          query: { size: '128' },
         },
         res,
       );

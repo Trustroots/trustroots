@@ -4,9 +4,7 @@
 
 Allow members to present themselves to the Trustroots community and manage the
 information shown on their profile.
-
 ## Requirements
-
 ### Requirement: Profile viewing
 
 The system SHALL let signed-in members view their own profile and available
@@ -46,7 +44,7 @@ description, account details, locations, networks, and profile photo.
 The system SHALL accept supported profile-photo uploads and explain when an
 upload cannot be used.
 
-The system SHALL keep avatar decoding bounded to a 10 MiB input, one frame,
+The system SHALL keep avatar decoding bounded to the configured input limit (20 MiB by default), one frame,
 dimensions no larger than 10,000 by 10,000 pixels, 40 megapixels, bounded
 processor resources and time. It SHALL generate and validate all seven
 thumbnails in private staging before publishing them in a server-generated
@@ -165,3 +163,32 @@ The system SHALL derive an allowlisted `isGreeter` profile boolean from the curr
 
 - **WHEN** the profile is retrieved after removal of `welcome-team`
 - **THEN** it no longer displays the greeter badge
+
+### Requirement: Visible profile photo upload limit
+
+The system SHALL show the configured maximum photo file size and supported
+formats beside the upload control before selection. It SHALL explain that photos
+are resized automatically. The client and server SHALL use the same configured
+avatar limit, defaulting to 20 MiB independently of other uploads. Bundled
+reverse proxies SHALL allow multipart overhead above that default limit.
+
+#### Scenario: Member prepares to upload a photo
+
+- **WHEN** a member opens photo editing
+- **THEN** the upload control describes the supported formats, configured maximum
+  file size and automatic resizing
+
+#### Scenario: Member uploads a larger camera photo
+
+- **WHEN** a supported photo exceeds 10 MiB but is within the default 20 MiB limit
+  and existing processing bounds
+- **THEN** the system accepts it and generates the existing resized JPEG thumbnails
+- **AND** the original upload is removed
+
+#### Scenario: Member selects an oversized photo
+
+- **WHEN** a member selects a photo exceeding the configured avatar limit
+- **THEN** the client prevents the upload and explains the same limit shown
+  beside the control
+- **AND** direct uploads exceeding that limit are rejected by the server
+

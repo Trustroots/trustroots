@@ -17,7 +17,6 @@ const userMiniProfileFields = [
   'avatarUploaded',
   'avatarVersion',
   'emailHash',
-  'additionalProvidersData.facebook.id', // For FB avatars
 ].join(' ');
 
 const miniProjectionMap = {
@@ -29,11 +28,6 @@ const miniProjectionMap = {
   avatarUploaded: 1,
   avatarVersion: 1,
   emailHash: 1,
-  additionalProvidersData: {
-    facebook: {
-      id: 1,
-    },
-  },
 };
 
 /**
@@ -66,11 +60,6 @@ function userMiniProjection(prefix = '$user', extraFields = {}) {
     avatarUploaded: `${prefix}.avatarUploaded`,
     avatarVersion: `${prefix}.avatarVersion`,
     emailHash: `${prefix}.emailHash`,
-    additionalProvidersData: {
-      facebook: {
-        id: `${prefix}.additionalProvidersData.facebook.id`,
-      },
-    },
     ...extraFields,
   };
 }
