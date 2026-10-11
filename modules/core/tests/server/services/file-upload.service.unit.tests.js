@@ -139,6 +139,55 @@ describe('file-upload.service unit tests', () => {
     uploadFile(validMimeTypes, uploadField, {}, res, () => {});
   });
 
+  it('uses the supplied avatar limit in size errors', () => {
+    const uploadFile = loadUploadFileWithStubbedMulter(null, {
+      code: 'LIMIT_FILE_SIZE',
+    });
+    const res = mockResponse();
+    uploadFile(
+      validMimeTypes,
+      uploadField,
+      {},
+      res,
+      () => {},
+      20 * 1024 * 1024,
+    );
+    res.statusCode.should.equal(413);
+    res.body.message.should.containEql('20.00');
+  });
+
+  it('accepts a file above the general limit using the larger avatar limit', async () => {
+    singleStub.restore();
+    const express = require('express');
+    const request = require('supertest');
+    const app = express();
+    const photo = Buffer.alloc(11 * 1024 * 1024);
+    Buffer.from([0xff, 0xd8, 0xff]).copy(photo);
+    config.maxUploadSize = 10 * 1024 * 1024;
+    app.post('/photo', (req, res) => {
+      uploadService.uploadFile(
+        validMimeTypes,
+        'avatar',
+        req,
+        res,
+        () => {
+          const size = req.file.size;
+          fs.unlinkSync(req.file.path);
+          res.send({ size });
+        },
+        20 * 1024 * 1024,
+      );
+    });
+    const response = await request(app)
+      .post('/photo')
+      .attach('avatar', photo, {
+        filename: 'camera-photo.jpg',
+        contentType: 'image/jpeg',
+      })
+      .expect(200);
+    response.body.size.should.equal(photo.length);
+  });
+
   it('maps generic multer errors to the default message', done => {
     const uploadFile = loadUploadFileWithStubbedMulter(null, {
       code: 'UNKNOWN_ERROR',

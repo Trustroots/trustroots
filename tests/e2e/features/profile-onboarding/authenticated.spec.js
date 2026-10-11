@@ -538,6 +538,38 @@ test.describe('authenticated member flows', () => {
     await expect(page.getByText(/profile photo/i).first()).toBeVisible();
   });
 
+  test('photo upload explains its limit before selection and rejects oversized files', async ({
+    page,
+  }) => {
+    await page.goto('/profile/edit/photo');
+    const limit = await page.locator('input[type="file"]').evaluate(
+      input => input.ownerDocument.defaultView.settings.maxUploadSize,
+    );
+    const help = page.locator('#profile-photo-upload-help');
+    await expect(help).toContainText('JPG, PNG or GIF. Maximum file size:');
+    await expect(help).toContainText('Photos are automatically resized.');
+    await expect(
+      page.getByRole('button', { name: 'Upload photo' }),
+    ).toHaveAttribute('aria-describedby', 'profile-photo-upload-help');
+    const uploadRequests = [];
+    page.on('request', request => {
+      if (request.url().includes('/api/users-avatar'))
+        uploadRequests.push(request);
+    });
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'oversized-photo.png',
+      mimeType: 'image/png',
+      buffer: Buffer.alloc(limit + 1),
+    });
+    const displayedSize = (await help.textContent()).match(
+      /Maximum file size: (.+?)\./,
+    )[1];
+    await expect(page.getByRole('status')).toHaveText(
+      `Whoops, your file is too big. Please keep it up to ${displayedSize}.`,
+    );
+    expect(uploadRequests).toHaveLength(0);
+  });
+
   test('member can upload a valid profile photo', async ({
     browser,
     baseURL,

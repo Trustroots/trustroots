@@ -96,6 +96,7 @@ describe('Avatar controller unit tests', () => {
       uploadArgs[2].should.equal(req);
       uploadArgs[3].should.equal(res);
       uploadArgs[4].should.equal(next);
+      uploadArgs[5].should.equal(config.maxAvatarUploadSize);
     });
   });
 

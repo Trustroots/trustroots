@@ -25,7 +25,14 @@ const avatarUploadField = (req, res, next) => {
     'image/jpg',
     'image/png',
   ];
-  fileUpload.uploadFile(validImageMimeTypes, 'avatar', req, res, next);
+  fileUpload.uploadFile(
+    validImageMimeTypes,
+    'avatar',
+    req,
+    res,
+    next,
+    config.maxAvatarUploadSize,
+  );
 };
 
 /**

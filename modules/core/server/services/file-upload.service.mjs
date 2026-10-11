@@ -57,8 +57,16 @@ function detectMimeType(filePath, callback) {
  * @param {Object} req - Express.js middleware request
  * @param {Object} res - Express.js middleware response
  * @param {Function} next — Next middleware function
+ * @param {Number} maxUploadSize - Maximum file size in bytes
  */
-export const uploadFile = (validMimeTypes, uploadField, req, res, next) => {
+export const uploadFile = (
+  validMimeTypes,
+  uploadField,
+  req,
+  res,
+  next,
+  maxUploadSize = config.maxUploadSize,
+) => {
   // Create Multer instance
   // - Destination folder will default to `os.tmpdir()` if no configuration path available
   // - Destination filename will default to 16 bytes of
@@ -67,7 +75,7 @@ export const uploadFile = (validMimeTypes, uploadField, req, res, next) => {
   const upload = multer({
     dest: config.uploadTmpDir || os.tmpdir(),
     limits: {
-      fileSize: config.maxUploadSize,
+      fileSize: maxUploadSize,
       // max file size in bytes
       files: 1,
       fields: 10,
@@ -109,9 +117,7 @@ export const uploadFile = (validMimeTypes, uploadField, req, res, next) => {
         errorStatus = 415;
       } else if (err.code && err.code === 'LIMIT_FILE_SIZE') {
         // Too big file
-        const maxUploadSizeMb = (config.maxUploadSize / (1024 * 1024)).toFixed(
-          2,
-        );
+        const maxUploadSizeMb = (maxUploadSize / (1024 * 1024)).toFixed(2);
         errorMessage = `Image too big. Please maximum ${maxUploadSizeMb} Mb files.`;
         errorStatus = 413; // 413: "Request Entity Too Large"
       } else if (err.code && err.code === 'LIMIT_UNEXPECTED_FILE') {
