@@ -100,7 +100,9 @@ docker compose --profile prod up --build
 
 ## Importing MongoDB data
 
-With the stack running, import dumps into the `trustroots` database:
+With the stack running, import dumps into the `trustroots` database. Fetching
+requires SSH access to the source server and `pv` locally; importing requires
+Docker Compose and `gunzip`. The import prompts before dropping the local database:
 
 ```bash
 ./fetchMongoDumps.sh      # fetch dumps (see script)
