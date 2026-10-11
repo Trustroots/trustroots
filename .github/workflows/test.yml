@@ -51,6 +51,18 @@ jobs:
           # Cache availability must not fail a successful build or image push.
           cache-to: type=gha,ignore-error=true,mode=max,scope=production
           push: false
+      - name: Inventory installed production dependencies
+        run: |
+          mkdir -p coverage/production
+          docker run --rm -i --network none --entrypoint node trustroots:pr \
+            - --inventory-stdin < scripts/ci/production-dependencies.js > coverage/production/dependencies.json
+          test -s coverage/production/dependencies.json
+      - name: Upload production dependency inventory
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: production-dependencies
+          path: coverage/production/dependencies.json
+          if-no-files-found: error
       - name: Check production startup
         run: bash scripts/ci/check-production-startup.sh trustroots:pr
 
@@ -276,7 +288,13 @@ jobs:
         run: node ./scripts/ci/ensure-compose-local.js
       - name: Start MongoDB
         working-directory: deploy/docker
-        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d mongodb
+        run: |
+          # Either public registry can rate-limit shared CI runner addresses.
+          if ! docker compose -f docker-compose.yml -f docker-compose.ci.yml pull mongodb; then
+            docker pull mongo:4.4
+            docker tag mongo:4.4 public.ecr.aws/docker/library/mongo:4.4
+          fi
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --pull never mongodb
       - name: Test server with coverage
         working-directory: deploy/docker
         run: |
@@ -382,7 +400,13 @@ jobs:
         run: node ./scripts/ci/ensure-compose-local.js
       - name: Start MongoDB
         working-directory: deploy/docker
-        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d mongodb
+        run: |
+          # Either public registry can rate-limit shared CI runner addresses.
+          if ! docker compose -f docker-compose.yml -f docker-compose.ci.yml pull mongodb; then
+            docker pull mongo:4.4
+            docker tag mongo:4.4 public.ecr.aws/docker/library/mongo:4.4
+          fi
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --pull never mongodb
       - name: Test end-to-end group
         working-directory: deploy/docker
         run: |
@@ -466,9 +490,40 @@ jobs:
           path: playwright-report
           if-no-files-found: error
 
+  dependency-summary:
+    needs: changes
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pr-line-changes-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Refresh dependency changes before the test suites finish
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { backfill } = require('./scripts/coverage/backfill-pr-line-changes');
+            await backfill({
+              github,
+              ...context.repo,
+              before: context.issue.number + 1,
+              only: context.issue.number,
+              cwd: process.cwd(),
+            });
+
   coverage-summary:
     if: always() && !cancelled() && github.event_name == 'pull_request'
-    needs: [changes, client, server, e2e]
+    needs: [changes, client, server, e2e, build-production-image]
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -480,6 +535,13 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+      - name: Download production dependency inventory
+        if: needs.build-production-image.result != 'skipped'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        continue-on-error: true
+        with:
+          name: production-dependencies
+          path: coverage/production
       - name: Download client coverage
         if: needs.changes.outputs.run-code != 'false'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
