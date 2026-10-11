@@ -223,7 +223,7 @@ describe('PR line-change summaries', () => {
       );
       assert.match(output, /Pull request overview/);
       assert.match(output, /Tests and fixtures/);
-      assert.match(output, /Direct development dependencies \| 0 \| −1/);
+      assert.match(output, /Direct development dependencies \| ⚪ 0 \| 🟢 −1/);
       assert.doesNotMatch(output, /Coverage overview|Status:/);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });

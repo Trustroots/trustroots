@@ -89,8 +89,13 @@ describe('PR dependency summaries', () => {
     const text = renderDependencyChanges(groups);
     assert.match(
       text,
-      /Direct development dependencies \| 0 \| −1 \| 0 \| \*\*−1\*\*/,
+      /Direct development dependencies \| ⚪ 0 \| 🟢 −1 \| ⚪ 0 \| \*\*🟢 −1\*\*/,
     );
+    assert.match(
+      text,
+      /Direct runtime dependencies \| 🔵 \+1 \| 🟢 −1 \| 🟡 1 \| \*\*⚪ 0\*\*/,
+    );
+    assert.match(text, /Colours indicate change types, not dependency quality/);
     assert.match(text, /fictional \| \^1 \| \^2/);
     assert.match(text, /node_modules\/fictional \| 1 \| 2/);
     assert.match(text, /must not be added together/);
@@ -109,6 +114,7 @@ describe('PR dependency summaries', () => {
       }),
     );
     assert.match(text, /\+1/);
+    assert.match(text, /\*\*🔵 \+1\*\*/);
     assert.doesNotMatch(text, /<script>/);
     assert.match(text, /&#124;/);
     assert.throws(
