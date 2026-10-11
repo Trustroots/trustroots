@@ -1,5 +1,5 @@
 import axios from '../../../core/client/api/http-client.js';
-import parseLinkheader from 'parse-link-header';
+import { nextPageParams } from './pagination';
 import type {
   MarkMessagesReadRequest,
   MarkMessagesReadResponse,
@@ -18,25 +18,16 @@ export type { MessageThreadSummary };
 
 export type RequestParams = Record<
   string,
-  string | number | boolean | undefined
+  string | string[] | number | boolean | undefined
 >;
-export type PageParams = Record<string, string | number | undefined>;
+export type PageParams = Record<string, string | string[] | number | undefined>;
 
 async function fetchWithNextParams<Data = unknown>(
   url: string,
   params: RequestParams,
 ): Promise<{ data: Data; nextParams?: PageParams }> {
   const { data, headers } = await axios.get<Data>(url, { params });
-  let nextParams: PageParams | undefined;
-  if (headers.link) {
-    const links = parseLinkheader(headers.link);
-    if (links?.next) {
-      const params: Partial<typeof links.next> = { ...links.next };
-      delete params.url;
-      delete params.rel;
-      nextParams = params as PageParams;
-    }
-  }
+  const nextParams = nextPageParams(headers.link);
   return { data, nextParams };
 }
 

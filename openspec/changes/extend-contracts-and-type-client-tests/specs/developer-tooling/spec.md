@@ -15,6 +15,12 @@ The project SHALL share strict request and response contracts between browser-fa
 - **THEN** their types represent the actual response variants and omitted private fields
 - **AND** runtime sanitisation and location privacy remain unchanged
 
+#### Scenario: Message pagination uses native URL parsing
+
+- **WHEN** a message response supplies a Link header
+- **THEN** the client extracts the next relation's query parameters without a third-party Link-header parser
+- **AND** relative and absolute links, repeated query values, absent next links and the existing 2,000-character limit retain their behaviour
+
 ### Requirement: All client tests use strict TypeScript
 
 All module client tests and client-specific test utilities SHALL use TypeScript and be included in strict checking, linting and existing test discovery, without reducing assertions or coverage.

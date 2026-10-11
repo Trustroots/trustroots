@@ -8,6 +8,7 @@ Messages, offers and profiles currently declare client types separately from ser
 - Correct offer-search typing to describe its existing GeoJSON response and distinguish profile visibility and deleted message participants.
 - Convert all remaining module client tests and client-specific helpers to strict TypeScript with typed mocks and fixtures.
 - Preserve runtime validation, privacy rules, HTTP responses, test assertions and coverage requirements.
+- Remove redundant direct dependencies and replace the message client's Link-header dependency with a typed pagination helper using native URL parsing, retaining relative links, relation selection, repeated query values and the existing header length limit.
 
 ## Impact
 

@@ -25,7 +25,9 @@ The enforced boundaries are:
   reciprocal response is not a complete experience with member identities.
 - Messages: send, mark-read and preview requests, messages, inbox excerpts,
   unread counts and preview responses share types. Deleted participants can
-  have only an identifier or be absent. Pagination headers remain separate.
+  have only an identifier or be absent. Pagination headers remain separate;
+  a native URL helper extracts the next relation, retaining repeated query
+  values and the existing 2,000-character header limit.
 - Offers: editable create/update fields, sanitised read responses, mutation
   confirmations and GeoJSON search results use separate contracts. Search
   builders distinguish database latitude/longitude tuples from GeoJSON
