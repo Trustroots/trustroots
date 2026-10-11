@@ -156,6 +156,8 @@ test.describe.serial('contacts and safety feature coverage', () => {
     ]);
 
     const target = createUser();
+    // Keep telephone digits in unrelated profile text to catch broad locators.
+    target.username = `member555${target.username}`;
     const targetContext = await browser.newContext({ baseURL });
     let targetId;
     let offerId;
@@ -232,7 +234,9 @@ test.describe.serial('contacts and safety feature coverage', () => {
         shadowPage.getByRole('heading', { name: 'Elsewhere' }),
       ).toHaveCount(0);
       await expect(
-        shadowPage.getByText(/member@example\.org|example\.org|555/),
+        shadowPage.getByText(
+          /member@example\.org|example\.org|\(555\) 666-7777/,
+        ),
       ).toHaveCount(0);
     } finally {
       await shadowContext.close();
