@@ -92,3 +92,13 @@ export async function unreadCount(): Promise<number> {
   } = await axios.get<{ unread: number }>('/api/messages-count');
   return unread;
 }
+
+export async function previewMessage(content: string): Promise<string> {
+  const { data } = await axios.post<{ content: string }>(
+    '/api/messages-preview',
+    {
+      content,
+    },
+  );
+  return data.content;
+}

@@ -953,6 +953,20 @@ service.markAllMessagesToUserNotified = function (userId, callback) {
     },
   );
 };
+/** Format a draft without saving it or touching conversation state. */
+service.preview = function (req, res) {
+  if (!req.user) {
+    return res.status(403).json({
+      message: errorService.getErrorMessageByKey('forbidden'),
+    });
+  }
+  const content = req.body?.content;
+  if (typeof content !== 'string' || textService.isEmpty(content)) {
+    return res.status(400).json({ message: 'Please write a message.' });
+  }
+  return res.json({ content: textService.html(content) });
+};
+const preview = service.preview;
 const inbox = service.inbox;
 const markAllMessagesToUserNotified = service.markAllMessagesToUserNotified;
 const markRead = service.markRead;
@@ -963,6 +977,7 @@ const sync = service.sync;
 const thread = service.thread;
 const threadByUser = service.threadByUser;
 export {
+  preview,
   inbox,
   markAllMessagesToUserNotified,
   markRead,

@@ -85,6 +85,26 @@ describe('Message CRUD tests', function () {
     });
   });
   afterEach(utils.clearDatabase);
+  it('denies a preview to visitors', async () => {
+    await request(app)
+      .post('/api/messages-preview')
+      .send({ content: 'Draft' })
+      .expect(403);
+  });
+
+  it('formats authenticated previews without creating a message or thread', async () => {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const response = await agent
+      .post('/api/messages-preview')
+      .send({ content: '<p><strong>Anonymous draft</strong></p>' })
+      .expect(200);
+    response.body.should.deepEqual({
+      content: '<p><b>Anonymous draft</b></p>',
+    });
+    (await Message.countDocuments()).should.equal(0);
+    (await Thread.countDocuments()).should.equal(0);
+    await agent.post('/api/messages-preview').send({ content: 42 }).expect(400);
+  });
   it('should not be able to read inbox if not logged in', function (done) {
     agent
       .get('/api/messages')
