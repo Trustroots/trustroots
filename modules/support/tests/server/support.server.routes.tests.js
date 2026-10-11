@@ -10,12 +10,13 @@ const utils = require('../../../../testutils/server/data.server.testutil');
  * Support routes tests
  */
 describe('Support CRUD tests', () => {
+  let app;
+  let agent;
+
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
-  let app;
-  let agent;
 
   // We'll catch emails
   const jobs = testutils.catchJobs();
