@@ -1,0 +1,210 @@
+import React from 'react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
+
+import '@/config/client/i18n';
+import TopNavigationSmall from '@/modules/users/client/components/TopNavigationSmall.component';
+import type RemoveContact from '@/modules/contacts/client/components/RemoveContactContainer';
+import type { ContactRecord } from '@/modules/contacts/client/types';
+import type { UserSummary } from '@/modules/users/client/types';
+
+type TopNavigationProps = React.ComponentProps<typeof TopNavigationSmall>;
+type RemoveContactProps = React.ComponentProps<typeof RemoveContact>;
+type ContactFixture = Omit<ContactRecord, 'userFrom' | 'userTo'> & {
+  userFrom: string | Pick<UserSummary, '_id'>;
+  userTo: string | Pick<UserSummary, '_id'>;
+};
+
+function asContactRecord(contact: ContactFixture): ContactRecord {
+  // This regression preserves contact payloads with only user IDs present.
+  return contact as unknown as ContactRecord;
+}
+
+jest.mock('@/modules/contacts/client/components/RemoveContactContainer', () => {
+  function MockRemoveContact({
+    show,
+    onCancel,
+    onSuccess,
+  }: RemoveContactProps) {
+    return show ? (
+      <div role="dialog" aria-label="Remove contact">
+        <button type="button" onClick={onSuccess}>
+          Confirm remove
+        </button>
+        <button type="button" onClick={onCancel}>
+          Cancel remove
+        </button>
+      </div>
+    ) : null;
+  }
+
+  return MockRemoveContact;
+});
+
+function renderNavigation(props: Partial<TopNavigationProps> = {}) {
+  return render(
+    <TopNavigationSmall
+      contact={{}}
+      isResolved
+      onContactRemoved={jest.fn<void, [contact: ContactRecord]>()}
+      referencesEnabled
+      selfId="me"
+      userId="alice-id"
+      username="alice"
+      {...props}
+    />,
+  );
+}
+
+describe('<TopNavigationSmall />', () => {
+  it('adds an Admin link for administrators on another member and their own profile', () => {
+    const { rerender } = renderNavigation({ isAdmin: true });
+    expect(
+      screen.getByRole('link', { name: 'Admin', exact: true }),
+    ).toHaveAttribute('href', '/admin/user/alice');
+    rerender(
+      <TopNavigationSmall
+        isAdmin
+        userId="me"
+        selfId="me"
+        username="river"
+        referencesEnabled={false}
+        isResolved={false}
+        onContactRemoved={jest.fn()}
+      />,
+    );
+    expect(
+      screen.getByRole('link', { name: 'Admin', exact: true }),
+    ).toHaveAttribute('href', '/admin/user/river');
+  });
+
+  it('omits Admin navigation before the member ID is loaded', () => {
+    renderNavigation({ isAdmin: true, userId: '' });
+    expect(
+      screen.queryByRole('link', { name: 'Admin', exact: true }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('omits Admin navigation for ordinary viewers', () => {
+    renderNavigation();
+    expect(
+      screen.queryByRole('link', { name: 'Admin', exact: true }),
+    ).not.toBeInTheDocument();
+  });
+  it('links own profile visitors to profile editing', () => {
+    renderNavigation({
+      contact: null,
+      referencesEnabled: false,
+      selfId: 'me',
+      userId: 'me',
+    });
+
+    expect(
+      screen.getByRole('link', { name: 'Edit your profile' }),
+    ).toHaveAttribute('href', '/profile/edit');
+    expect(
+      screen.queryByRole('link', { name: 'Send a message' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders messaging, experience, and add-contact links for another member', () => {
+    renderNavigation();
+
+    expect(
+      screen.getByRole('link', { name: 'Send a message' }),
+    ).toHaveAttribute('href', '/messages/alice');
+    expect(
+      screen.getByRole('link', { name: 'Share your experience' }),
+    ).toHaveAttribute('href', '/profile/alice/experiences/new');
+    expect(screen.getByRole('link', { name: 'Add contact' })).toHaveAttribute(
+      'href',
+      '/contact-add/alice-id',
+    );
+  });
+
+  it('omits experience and contact actions when they are unavailable', () => {
+    renderNavigation({
+      contact: null,
+      isResolved: false,
+      referencesEnabled: false,
+    });
+
+    expect(
+      screen.getByRole('link', { name: 'Send a message' }),
+    ).toHaveAttribute('href', '/messages/alice');
+    expect(
+      screen.queryByRole('link', { name: 'Share your experience' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Add contact' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('confirms contact removal and reports the normalized contact', () => {
+    const onContactRemoved = jest.fn<void, [contact: ContactRecord]>();
+    const contact = asContactRecord({
+      _id: 'contact-1',
+      confirmed: true,
+      userFrom: { _id: 'me' },
+      userTo: { _id: 'alice-id' },
+    });
+
+    renderNavigation({ contact, onContactRemoved });
+
+    fireEvent.click(screen.getByText('Remove contact'));
+    expect(
+      screen.getByRole('dialog', { name: 'Remove contact' }),
+    ).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm remove' }));
+
+    expect(onContactRemoved).toHaveBeenCalledWith({
+      _id: 'contact-1',
+      confirmed: true,
+      userFrom: 'me',
+      userTo: 'alice-id',
+    });
+    expect(
+      screen.queryByRole('dialog', { name: 'Remove contact' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('uses delete-contact-request wording for pending contacts', () => {
+    renderNavigation({
+      contact: {
+        _id: 'contact-1',
+        confirmed: false,
+        userFrom: 'me',
+        userTo: 'alice-id',
+      },
+    });
+
+    fireEvent.click(screen.getByText('Delete contact request'));
+
+    expect(
+      screen.getByRole('dialog', { name: 'Remove contact' }),
+    ).toBeVisible();
+  });
+
+  it('can cancel contact removal without reporting success', () => {
+    const onContactRemoved = jest.fn<void, [contact: ContactRecord]>();
+
+    renderNavigation({
+      contact: {
+        _id: 'contact-1',
+        confirmed: true,
+        userFrom: 'me',
+        userTo: 'alice-id',
+      },
+      onContactRemoved,
+    });
+
+    fireEvent.click(screen.getByText('Remove contact'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel remove' }));
+
+    expect(onContactRemoved).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole('dialog', { name: 'Remove contact' }),
+    ).not.toBeInTheDocument();
+  });
+});

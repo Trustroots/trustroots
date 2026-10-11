@@ -1,7 +1,6 @@
 const should = require('should');
 const sinon = require('sinon');
 const influx = require('influx');
-const Promise = require('promise');
 const winston = require('winston');
 // influx = require('influx'),
 const influxService = require('./../../../server/services/influx.server.service.mjs');
@@ -81,7 +80,7 @@ describe('Service: influx', function () {
       // and it returns a Promise
       influx.InfluxDB.prototype.writeMeasurement.returns(
         new Promise(function (resolve) {
-          process.nextTick(resolve());
+          process.nextTick(resolve);
         }),
       );
     });

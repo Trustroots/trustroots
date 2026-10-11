@@ -22,6 +22,9 @@ describe('Service: profile-response', function () {
     _id: 'fictional-user-id',
     username: 'fictional-member',
     displayName: 'Fictional Member',
+    locationLiving: 'Fictional Harbour',
+    locationCoordinates: { type: 'Point', coordinates: [-3.1, 52.4] },
+    exactAddress: '42 Example Lane',
     firstName: 'Fictional',
     lastName: 'Member',
     email: 'member@example.test',
@@ -57,6 +60,7 @@ describe('Service: profile-response', function () {
     const response = esmService.selectProfileResponse(profile, false);
 
     response.username.should.equal('fictional-member');
+    response.locationLiving.should.equal('Fictional Harbour');
     response.avatarVersion.should.equal('0123456789abcdef0123456789abcdef');
     response.additionalProvidersData.facebook.id.should.equal(
       'fictional-facebook-id',
@@ -76,6 +80,8 @@ describe('Service: profile-response', function () {
       'pushRegistration',
       'providerData',
       'futurePrivateField',
+      'locationCoordinates',
+      'exactAddress',
     ]) {
       (response[field] === undefined).should.be.true();
     }

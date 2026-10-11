@@ -1,4 +1,8 @@
 const { execFileSync } = require('child_process');
+const {
+  collectDependencyChanges,
+  renderDependencyChanges,
+} = require('./dependency-changes');
 const startMarker = '<!-- trustroots-line-changes:start -->';
 const endMarker = '<!-- trustroots-line-changes:end -->';
 
@@ -87,7 +91,10 @@ function collectLineChanges(baseSha, headSha, cwd) {
     ],
     { cwd, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 },
   );
-  return summariseNumstat(output);
+  return {
+    ...summariseNumstat(output),
+    dependencies: collectDependencyChanges(baseSha, headSha, cwd),
+  };
 }
 
 function signed(value) {
@@ -125,10 +132,26 @@ function renderLineChanges(summary) {
         ]
       : []),
     endMarker,
+    ...(summary.dependencies
+      ? [
+          '',
+          '<!-- trustroots-dependency-changes:start -->',
+          renderDependencyChanges(summary.dependencies),
+          '<!-- trustroots-dependency-changes:end -->',
+        ]
+      : []),
   ].join('\n');
 }
 
 function updateLineChangesComment(body, summary) {
+  // Keep this section outside the line markers so older main-branch refreshers
+  // cannot erase it while this reporting change is still under review.
+  if (summary.dependencies) {
+    body = body.replace(
+      /\n*<!-- trustroots-dependency-changes:start -->[\s\S]*?<!-- trustroots-dependency-changes:end -->/g,
+      '',
+    );
+  }
   const table = renderLineChanges(summary);
   const start = body.indexOf(startMarker);
   const end = body.indexOf(endMarker, start);

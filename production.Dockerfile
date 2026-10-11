@@ -33,7 +33,7 @@ COPY package*.json ./
 RUN npm ci --quiet
 
 # Copy code into the container
-COPY .prettierrc.json .eslint* babel.config.* server.js server.mjs worker.js worker.mjs ./
+COPY .prettierrc.json .prettierignore eslint.config.cjs babel.config.* server.js server.mjs worker.js worker.mjs ./
 COPY bin bin
 COPY config config
 COPY migrations migrations
@@ -43,6 +43,11 @@ COPY testutils testutils
 
 # Build the app
 RUN npm run build
+
+# The builder needs the full toolchain, but the published image only needs
+# runtime dependencies. Prune after the build so Webpack and other build tools
+# remain available while assets are generated.
+RUN npm prune --omit=dev --ignore-scripts --quiet
 
 # ------------------------------------------------------------------------------
 # Create the production container

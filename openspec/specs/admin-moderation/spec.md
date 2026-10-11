@@ -11,7 +11,7 @@ member activity, and access operational information.
 
 The system SHALL restrict administration tools and administration APIs to
 authorised administrators, except that members with the `welcome-team` role
-SHALL also have access to acquisition stories and analysis and their APIs, as
+SHALL also have access to acquisition stories and their API, as
 well as a staff support view where administrators can see who blocked any
 administrator or Welcome team member and Welcome team members can see who
 blocked their own account.
@@ -314,8 +314,7 @@ between related members and activity.
 ### Requirement: Administration operational views
 
 The system SHALL provide authorised administrators with administration views
-for audit history, newsletter subscribers, acquisition stories, and acquisition
-analysis. The acquisition-stories view SHALL identify members with profile
+for audit history, newsletter subscribers, and acquisition stories. The acquisition-stories view SHALL identify members with profile
 pictures and public-profile links, show their circle participation and available
 location context, and allow the available columns to be sorted. Newsletter
 operations SHALL require newsletter consent and a public profile and SHALL
@@ -508,11 +507,11 @@ team membership controls.
 
 ### Requirement: Welcome team acquisition access
 
-The system SHALL allow members with the `welcome-team` role to view acquisition stories and analysis, including all existing acquisition data, and the blockers of their own account. Administrator permissions beyond these tools SHALL remain restricted to administrators. The interface SHALL display the role as Greeter and show only accessible navigation and member links.
+The system SHALL allow members with the `welcome-team` role to view acquisition stories, including existing story data, and the blockers of their own account. Administrator permissions beyond these tools SHALL remain restricted to administrators. The interface SHALL display the role as Greeter and show only accessible navigation and member links.
 
 #### Scenario: Welcome team views acquisition pages
 
-- **WHEN** a welcome-team member opens either acquisition page or calls its API
+- **WHEN** a welcome-team member opens the acquisition-stories page or calls its API
 - **THEN** access is granted and existing data is returned
 - **AND** unrelated administrator pages and APIs remain forbidden
 
@@ -700,3 +699,33 @@ The acquisition stories view SHALL offer an accessible All / Visible / Hidden pr
 
 - **WHEN** no loaded stories match the filters
 - **THEN** an empty-result explanation and both filter controls remain visible
+
+### Requirement: Acquisition analysis is retired
+
+The system SHALL NOT expose an acquisition analysis page, navigation link or API. The acquisition stories list SHALL remain available to administrators and Greeters without term counts or statistical metrics.
+
+#### Scenario: Administrator or Greeter views acquisition stories
+
+- **WHEN** an authorised staff member opens acquisition stories
+- **THEN** the stories list is available without an Analysis link
+- **AND** POST requests to `/api/admin/acquisition-stories/analysis` return HTTP 404
+
+### Requirement: Greeter-visible account restrictions
+
+The acquisition-stories API SHALL return an allowlisted `restrictionStatuses` array containing only `suspended` and `shadowban` on each story and restricted match, without exposing full role collections. Unrestricted accounts SHALL return an empty array. The acquisition-stories view SHALL show Suspended and Shadowbanned danger badges beside the corresponding names to authorised administrators and greeters, independently of profile visibility. Existing profile access and moderation permissions SHALL remain unchanged.
+
+#### Scenario: Greeter reviews restricted accounts
+
+- **WHEN** a greeter opens acquisition stories containing suspended or shadowbanned members or restricted matches
+- **THEN** each name displays its applicable restriction badges, including both if both apply
+- **AND** the greeter gains no additional profile access or moderation actions
+
+#### Scenario: Unrestricted member or older response
+
+- **WHEN** a row has no restrictions or omits restriction statuses
+- **THEN** the view displays no restriction badges
+
+#### Scenario: Ordinary member requests staff statuses
+
+- **WHEN** an ordinary member requests acquisition stories
+- **THEN** access is denied

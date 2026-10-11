@@ -16,11 +16,18 @@ addresses, push credentials, provider credentials, and unrecognised document
 fields. Existing sanitisation and viewer-dependent privacy rules SHALL still
 apply.
 
+The member-entered home and origin place labels are public profile fields.
+Precise coordinates and street addresses are not part of the profile response.
+Viewer-dependent profile responses SHALL NOT be marked for public shared
+caching.
+
 #### Scenario: Public profile response excludes private fields
 
 - **WHEN** a member requests another member's profile
 - **THEN** the response includes only approved public profile fields
 - **AND** account, credential, and unrecognised fields are omitted
+- **AND** public place labels may be included without precise coordinates or
+  street addresses
 
 #### Scenario: Account holder receives profile editing fields
 
@@ -29,6 +36,11 @@ apply.
   account settings
 - **AND** IP addresses, push credentials, provider credentials, and
   unrecognised fields are omitted
+
+#### Scenario: Viewer-specific profile response is not publicly cached
+
+- **WHEN** a profile response depends on the authenticated viewer
+- **THEN** the response is not marked cacheable by a public shared cache
 
 ### Requirement: Session cookie security and persistence
 

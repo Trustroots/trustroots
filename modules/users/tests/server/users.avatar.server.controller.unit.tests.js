@@ -198,6 +198,26 @@ describe('Avatar controller unit tests', () => {
       res.redirectUrl.should.containEql('/img/avatar-');
     });
 
+    it('redirects to the default avatar for a suspended profile', async () => {
+      const [viewer] = await utils.saveUsers(utils.generateUsers(1));
+      const [target] = await utils.saveUsers(
+        utils.generateUsers(1, { public: true }),
+      );
+      const targetDoc = await User.findById(target._id);
+      targetDoc.roles = ['user', 'suspended'];
+      targetDoc.avatarUploaded = true;
+      targetDoc.avatarSource = 'local';
+      await targetDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        { user: viewer, profile: targetDoc, query: { size: '128' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('/img/avatar-128.png');
+    });
+
     it('redirects to the default avatar when the profile blocked the viewer', async () => {
       const [viewer] = await utils.saveUsers(utils.generateUsers(1));
       const [target] = await utils.saveUsers(

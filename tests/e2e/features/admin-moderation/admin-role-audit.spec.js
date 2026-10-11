@@ -72,7 +72,7 @@ async function assertMemberProfileCleanup(page, member) {
   );
   await welcomeButton.focus();
   await expect(page.getByRole('tooltip')).toHaveText(
-    'Greeters can view acquisition stories and analysis, and see members who blocked their account.',
+    'Greeters can view acquisition stories and see members who blocked their account.',
   );
   await welcomeButton.blur();
 
@@ -172,9 +172,6 @@ test.describe('admin role and audit feature coverage', () => {
     annotateFeature(testInfo, 'admin.acquisition-stories', [
       'Greeters can view stories without other administrator access.',
     ]);
-    annotateFeature(testInfo, 'admin.acquisition-analysis', [
-      'Greeters can view analysis.',
-    ]);
     const member = createUser();
     const memberContext = await browser.newContext({ baseURL });
     try {
@@ -228,13 +225,9 @@ test.describe('admin role and audit feature coverage', () => {
           })
         ).status(),
       ).toBe(200);
-      await memberPage
-        .locator('.navbar-admin')
-        .getByRole('link', { name: 'Analysis', exact: true })
-        .click();
-      await expect(memberPage).toHaveURL(
-        /\/admin\/acquisition-stories\/analysis/,
-      );
+      await expect(
+        memberPage.getByRole('link', { name: 'Analysis', exact: true }),
+      ).toHaveCount(0);
       expect(
         (
           await memberContext.request.post(
@@ -242,7 +235,7 @@ test.describe('admin role and audit feature coverage', () => {
             { headers: { 'X-Trustroots-Request': '1' } },
           )
         ).status(),
-      ).toBe(200);
+      ).toBe(404);
       expect(
         (await memberContext.request.get('/api/admin/dashboard')).status(),
       ).toBe(403);
@@ -272,7 +265,7 @@ test.describe('admin role and audit feature coverage', () => {
             { headers: { 'X-Trustroots-Request': '1' } },
           )
         ).status(),
-      ).toBe(403);
+      ).toBe(404);
       await signInViaApi(memberPage, memberContext.request, member);
       expect(
         (

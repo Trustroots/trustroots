@@ -135,31 +135,27 @@ module.exports = webpackMerge.merge(shims, {
       },
       {
         test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
-        // Prevent Webpack 5 asset modules from emitting url-loader's JS result
-        // as a second, unusable font file referenced by extracted CSS.
-        type: 'javascript/auto',
-        loader: 'url-loader',
-        options: {
-          esModule: false,
-          limit: 10000,
-          name: '[name].[hash:7].[ext]',
-          outputPath: 'fonts/',
+        // Asset modules export the URL for both ES module imports and
+        // CommonJS requires, while keeping url-loader's inline size limit.
+        type: 'asset',
+        parser: {
+          dataUrlCondition: { maxSize: 10000 },
+        },
+        generator: {
+          dataUrl: { encoding: 'base64' },
+          filename: 'fonts/[name].[hash:7][ext]',
         },
       },
       {
         test: /\.(png|jpe?g|gif|svg|webp)$/,
-        type: 'javascript/auto',
-        use: [
-          {
-            loader: 'url-loader',
-            options: {
-              esModule: false,
-              limit: 10000,
-              name: '[name]-[hash:7].[ext]',
-              outputPath: 'images/',
-            },
-          },
-        ],
+        type: 'asset',
+        parser: {
+          dataUrlCondition: { maxSize: 10000 },
+        },
+        generator: {
+          dataUrl: { encoding: 'base64' },
+          filename: 'images/[name]-[hash:7][ext]',
+        },
       },
       {
         test: /\.css$/,

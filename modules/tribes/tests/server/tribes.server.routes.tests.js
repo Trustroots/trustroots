@@ -199,7 +199,7 @@ describe('Tribe CRUD tests', function () {
 
     const candidates = Array.from({ length: 21 }, (_, index) => {
       const username = `unrelated-${index.toString().padStart(2, '0')}`;
-      return new User({
+      return {
         ..._user,
         username,
         email: `${username}@example.com`,
@@ -207,9 +207,9 @@ describe('Tribe CRUD tests', function () {
         password: 'M3@n.jsI$Aw3$0m3',
         public: true,
         member: [],
-      });
+      };
     });
-    const eligibleContact = new User({
+    const eligibleFixture = {
       ..._user,
       username: 'eligible-contact',
       email: 'eligible-contact@example.com',
@@ -217,12 +217,14 @@ describe('Tribe CRUD tests', function () {
       password: 'M3@n.jsI$Aw3$0m3',
       public: true,
       member: [{ tribe: tribe._id }],
-    });
-    await Promise.all(
-      [...candidates, eligibleContact].map(candidate => candidate.save()),
-    );
+    };
+    const [eligibleContact, ...savedCandidates] =
+      await utils.saveUsersWithCachedPasswords([
+        eligibleFixture,
+        ...candidates,
+      ]);
     await Contact.create([
-      ...candidates.map(candidate => ({
+      ...savedCandidates.map(candidate => ({
         userFrom: user._id,
         userTo: candidate._id,
         confirmed: true,

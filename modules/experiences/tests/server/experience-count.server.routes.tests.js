@@ -4,19 +4,19 @@ const request = require('supertest');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const express = require('./../../../../config/lib/express.mjs');
 describe('Read count of experiences received by user', () => {
+  let app;
+  let agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
   // GET /experiences/count?userTo=:UserId
 
-  let app;
-  let agent;
   let users;
-  const _usersPublic = utils.generateUsers(6, {
+  const _usersPublic = utils.generateUsersWithSharedPassword(6, {
     public: true,
   });
-  const _usersPrivate = utils.generateUsers(3, {
+  const _usersPrivate = utils.generateUsersWithSharedPassword(3, {
     public: false,
     username: 'nonpublic',
     email: 'nonpublic@example.com',
@@ -99,7 +99,7 @@ describe('Read count of experiences received by user', () => {
     password: _usersPrivate[0].password,
   };
   beforeEach(async () => {
-    users = await utils.saveUsers(
+    users = await utils.saveUsersWithCachedPasswords(
       _users.map(user => ({
         ...user,
         username: user.username,
