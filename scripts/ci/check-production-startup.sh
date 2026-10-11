@@ -22,6 +22,11 @@ cleanup() {
 trap cleanup EXIT
 
 # Empty, disposable database; no production configuration or external services.
+if ! docker image inspect public.ecr.aws/docker/library/mongo:4.4 >/dev/null 2>&1 \
+  && ! docker pull public.ecr.aws/docker/library/mongo:4.4; then
+  docker pull mongo:4.4
+  docker tag mongo:4.4 public.ecr.aws/docker/library/mongo:4.4
+fi
 docker network create --internal "$network" >/dev/null
 docker run -d --name "$mongo" --network "$network" --network-alias mongodb \
   public.ecr.aws/docker/library/mongo:4.4 --bind_ip_all --wiredTigerCacheSizeGB 0.25 >/dev/null
