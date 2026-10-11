@@ -5,7 +5,9 @@ import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 
-type AvatarUser = React.ComponentProps<typeof Avatar>['user'];
+type AvatarUser = React.ComponentProps<typeof Avatar>['user'] & {
+  additionalProvidersData?: { facebook: { id?: string } };
+};
 
 const user: AvatarUser = {
   _id: 'user-1',
@@ -21,6 +23,14 @@ const user: AvatarUser = {
 };
 
 describe('<Avatar />', () => {
+  it('uses the default avatar when no source has been selected', () => {
+    render(<Avatar user={{ username: 'fictional-member' }} link={false} />);
+    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+      'src',
+      '/img/avatar.png?none',
+    );
+  });
+
   it('links to the user profile by default', () => {
     render(<Avatar user={user} />);
 
@@ -129,12 +139,23 @@ describe('<Avatar />', () => {
     );
   });
 
-  it('uses facebook when the provider id is available', () => {
+  it('uses the default avatar for retired Facebook sources even with an id', () => {
     render(<Avatar user={user} source="facebook" size={64} link={false} />);
 
     expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
       'src',
-      'https://graph.facebook.com/fb-123/picture/?width=64&height=64',
+      '/img/avatar.png?none',
+    );
+    expect(screen.getByRole('img', { hidden: true })).toHaveClass(
+      'avatar-none',
+    );
+  });
+
+  it('uses the default avatar for a stored Facebook selection', () => {
+    render(<Avatar user={{ ...user, avatarSource: 'facebook' }} />);
+    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+      'src',
+      '/img/avatar.png?none',
     );
   });
 

@@ -3,7 +3,9 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import MemberAvatar from '@/modules/users/client/components/MemberAvatar';
 
-type MemberAvatarUser = React.ComponentProps<typeof MemberAvatar>['user'];
+type MemberAvatarUser = React.ComponentProps<typeof MemberAvatar>['user'] & {
+  additionalProvidersData?: { facebook: { id: string } };
+};
 
 const member: MemberAvatarUser = {
   _id: 'member-1',
@@ -28,16 +30,16 @@ function getImage(container: HTMLElement): HTMLImageElement {
 const providersWithoutImages: Partial<MemberAvatarUser>[] = [
   { avatarSource: 'local', avatarUploaded: false },
   { avatarSource: 'facebook' },
+  {
+    avatarSource: 'facebook',
+    additionalProvidersData: { facebook: { id: 'fictional-provider-id' } },
+  },
   { avatarSource: 'gravatar' },
   { avatarSource: 'none' },
 ];
 
 const providersWithImages: Partial<MemberAvatarUser>[] = [
   { avatarSource: 'local', avatarUploaded: true },
-  {
-    avatarSource: 'facebook',
-    additionalProvidersData: { facebook: { id: 'fictional-provider-id' } },
-  },
   { avatarSource: 'gravatar', emailHash: 'fictional-hash' },
 ];
 
