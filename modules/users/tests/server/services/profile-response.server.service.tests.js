@@ -49,6 +49,8 @@ describe('Service: profile-response', function () {
     futurePrivateField: 'must stay private',
     additionalProvidersData: {
       facebook: { id: 'fictional-facebook-id', accessToken: 'private' },
+      twitter: { screen_name: 'fictional-twitter', accessToken: 'private' },
+      github: { login: 'fictional-github', accessToken: 'private' },
     },
   };
 
@@ -75,6 +77,57 @@ describe('Service: profile-response', function () {
     );
   });
 
+  it('omits every editable field absent from the update request', function () {
+    selectProfileUpdateFields({}).should.deepEqual({});
+  });
+
+  it('selects each accepted editable field', function () {
+    const request = {
+      firstName: 'Fictional',
+      lastName: 'Member',
+      tagline: 'A fictional profile',
+      description: 'A fictional description',
+      birthdate: '1990-01-01',
+      gender: 'nonbinary',
+      languages: ['en'],
+      locationLiving: 'Fictional city',
+      locationFrom: 'Fictional region',
+      username: 'fictional-member',
+      extSitesCouchers: 'fictional-couchers',
+      extSitesBW: 'fictional-bw',
+      extSitesCS: 'fictional-cs',
+      extSitesWS: 'fictional-ws',
+      nostrNpub: 'fictional-npub',
+      avatarSource: 'gravatar',
+      avatarUploaded: false,
+      newsletter: false,
+      locale: 'en',
+      email: 'member@example.test',
+    };
+
+    selectProfileUpdateFields(request).should.deepEqual({
+      firstName: 'Fictional',
+      lastName: 'Member',
+      tagline: 'A fictional profile',
+      description: 'A fictional description',
+      birthdate: '1990-01-01',
+      gender: 'nonbinary',
+      languages: ['en'],
+      locationLiving: 'Fictional city',
+      locationFrom: 'Fictional region',
+      username: 'fictional-member',
+      extSitesCouchers: 'fictional-couchers',
+      extSitesBW: 'fictional-bw',
+      extSitesCS: 'fictional-cs',
+      extSitesWS: 'fictional-ws',
+      nostrNpub: 'fictional-npub',
+      avatarSource: 'gravatar',
+      avatarUploaded: false,
+      newsletter: false,
+      locale: 'en',
+    });
+  });
+
   it('returns only public fields for another member', function () {
     const response = esmService.selectProfileResponse(profile, false);
 
@@ -82,6 +135,12 @@ describe('Service: profile-response', function () {
     response.avatarVersion.should.equal('0123456789abcdef0123456789abcdef');
     response.additionalProvidersData.facebook.id.should.equal(
       'fictional-facebook-id',
+    );
+    response.additionalProvidersData.twitter.screen_name.should.equal(
+      'fictional-twitter',
+    );
+    response.additionalProvidersData.github.login.should.equal(
+      'fictional-github',
     );
     for (const field of [
       'email',
@@ -158,5 +217,35 @@ describe('Service: profile-response', function () {
       (mini[field] === undefined).should.be.true();
     }
     mini.blocked.should.deepEqual(['fictional-blocked-id']);
+  });
+
+  it('omits provider identities when they are absent from a profile', function () {
+    const profileWithoutProviders = {
+      ...profile,
+      additionalProvidersData: {},
+    };
+    const publicProfile = selectProfileResponse(profileWithoutProviders, false);
+    const miniProfile = selectMiniProfileResponse(profileWithoutProviders);
+
+    publicProfile.additionalProvidersData.should.deepEqual({});
+    miniProfile.additionalProvidersData.should.deepEqual({});
+
+    const profileWithoutProviderField = {
+      ...profile,
+      additionalProvidersData: undefined,
+    };
+    const publicProfileWithoutProviders = selectProfileResponse(
+      profileWithoutProviderField,
+      false,
+    );
+    const miniProfileWithoutProviders = selectMiniProfileResponse(
+      profileWithoutProviderField,
+    );
+    (
+      publicProfileWithoutProviders.additionalProvidersData === undefined
+    ).should.be.true();
+    (
+      miniProfileWithoutProviders.additionalProvidersData === undefined
+    ).should.be.true();
   });
 });

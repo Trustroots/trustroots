@@ -43,6 +43,14 @@ describe('Offer API payload construction', () => {
   });
 
   it('preserves omitted optional offer fields', () => {
+    const minimalOffer = {
+      _id: 'minimal-offer',
+      type: 'meet',
+      user: 'fictional-member',
+      location: [5, 7],
+    };
+    assert.deepEqual(prepareOfferPayload(minimalOffer), minimalOffer);
+
     const offer = {
       _id: 'offer-2',
       type: 'meet',
@@ -63,8 +71,11 @@ describe('Offer API payload construction', () => {
       type: 'meet',
       status: 'maybe',
       description: 'A fictional offer.',
+      noOfferDescription: 'A fictional availability note.',
+      maxGuests: 2,
       location: [12, 34],
       validUntil: '2026-02-01T12:00:00.000Z',
+      showOnlyInMyCircles: true,
       user: 'ignored-member-id',
       locationFuzzy: [12.1, 34.1],
     };
@@ -72,14 +83,20 @@ describe('Offer API payload construction', () => {
       type: 'meet',
       status: 'maybe',
       description: 'A fictional offer.',
+      noOfferDescription: 'A fictional availability note.',
+      maxGuests: 2,
       location: [12, 34],
       validUntil: '2026-02-01T12:00:00.000Z',
+      showOnlyInMyCircles: true,
     });
     assert.deepEqual(prepareOfferUpdate(request), {
       status: 'maybe',
       description: 'A fictional offer.',
+      noOfferDescription: 'A fictional availability note.',
+      maxGuests: 2,
       location: [12, 34],
       validUntil: '2026-02-01T12:00:00.000Z',
+      showOnlyInMyCircles: true,
     });
     assert.deepEqual(prepareOfferUpdate({ location: [12, 34] }), {
       location: [12, 34],
