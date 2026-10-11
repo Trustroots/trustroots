@@ -193,7 +193,7 @@ jest.mock('@/modules/contacts/client/api/contacts.api', () => ({
   list: jest.fn(async () => []),
 }));
 
-/* eslint-disable react/display-name, react/prop-types -- unrelated presentation is stubbed; page state and routing are real. */
+/* eslint-disable react/display-name -- unrelated presentation is stubbed; page state and routing are real. */
 jest.mock(
   '@/modules/messages/client/components/ThreadReply',
   () =>
@@ -277,7 +277,7 @@ jest.mock('@/modules/search/client/components/SearchMap.component', () => {
     );
   };
 });
-/* eslint-enable react/display-name, react/prop-types */
+/* eslint-enable react/display-name */
 
 function UpdateUser() {
   const { user, setUser } = useAuth();
