@@ -77,8 +77,8 @@ const legacyConfig = {
   },
   parserOptions: {
     ecmaVersion: 2022,
+    ecmaFeatures: { jsx: true },
   },
-  parser: '@babel/eslint-parser',
   overrides: [
     /**
      * Overrides for server side app files
@@ -136,12 +136,11 @@ const legacyConfig = {
           version: reactVersion,
         },
       },
-      parser: '@babel/eslint-parser',
       parserOptions: {
         ecmaFeatures: {
           jsx: true,
         },
-        ecmaVersion: 2018,
+        ecmaVersion: 2022,
 
         sourceType: 'module',
       },
