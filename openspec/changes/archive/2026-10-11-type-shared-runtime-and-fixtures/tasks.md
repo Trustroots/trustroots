@@ -10,5 +10,5 @@
 
 - [x] Pass type checking, lint and the production bundle.
 - [x] Pass complete client and server coverage suites at 100%.
-- [ ] Pass the existing E2E suite without removing scenarios.
-- [ ] Update the living developer-tooling specification and archive the proposal.
+- [x] Pass the existing E2E suite without removing scenarios.
+- [x] Update the living developer-tooling specification and archive the proposal.
