@@ -225,6 +225,7 @@ describe('PR dependency summaries', () => {
       inventoryStep.run,
       /< scripts\/ci\/production-dependencies.js > coverage\/production\/dependencies.json/,
     );
+    assert.match(inventoryStep.run, /- --inventory-stdin </);
     assert.ok(
       image.steps.find(
         step => step.with && step.with.name === 'production-dependencies',
@@ -278,6 +279,16 @@ describe('PR dependency summaries', () => {
         JSON.parse(
           execFileSync(process.execPath, [script], {
             cwd: root,
+            encoding: 'utf8',
+          }),
+        ),
+        inventory,
+      );
+      assert.deepStrictEqual(
+        JSON.parse(
+          execFileSync(process.execPath, ['-', '--inventory-stdin'], {
+            cwd: root,
+            input: fs.readFileSync(script, 'utf8'),
             encoding: 'utf8',
           }),
         ),

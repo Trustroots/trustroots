@@ -27,7 +27,8 @@ function collectInstalledPackages(root) {
   return packages.sort((a, b) => a.path.localeCompare(b.path));
 }
 
-if (require.main === module) {
+// Node does not set require.main when this script is supplied over Docker stdin.
+if (require.main === module || process.argv.includes('--inventory-stdin')) {
   process.stdout.write(
     `${JSON.stringify(
       { packages: collectInstalledPackages(process.cwd()) },
