@@ -386,7 +386,6 @@ internal fun AccountSettingsScreen(
     ) {
         TextButton(onClick = onBack) { Text("‹ Back") }
         Text("Account", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        UsageAnalyticsSettings()
         Text(
             "Signed in as ${session.member.displayName} (@${session.member.username}).",
             color = MaterialTheme.colorScheme.onSurfaceVariant,

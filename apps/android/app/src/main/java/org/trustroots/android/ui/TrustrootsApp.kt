@@ -58,7 +58,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -87,12 +86,6 @@ import java.util.Date
 import java.util.Locale
 import org.trustroots.android.BuildConfig
 import org.trustroots.android.R
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import org.trustroots.android.analytics.AndroidUsageAnalytics
-import org.trustroots.android.analytics.UsageAnalytics
-import org.trustroots.android.analytics.UsageScreen
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.MemberSession
@@ -110,15 +103,6 @@ import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 @Composable
 fun TrustrootsApp() {
     val context = LocalContext.current
-    val analytics = remember { AndroidUsageAnalytics.get(context) }
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner, analytics) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_START) analytics.appOpened()
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
     val sessionStore = remember { SecureMobileSessionStore(context.applicationContext) }
     val responseCache = remember { SecureResponseCache(context.applicationContext) }
     var session by remember { mutableStateOf<MemberSession?>(null) }
@@ -137,7 +121,6 @@ fun TrustrootsApp() {
     }
     if (session == null) {
         SignInScreen(
-            analytics = analytics,
             initialMessage = signedOutMessage,
             onSignedIn = {
                 sessionStore.save(it)
@@ -147,7 +130,6 @@ fun TrustrootsApp() {
         )
     } else {
         MemberShell(
-            analytics = analytics,
             session = requireNotNull(session),
             responseCache = responseCache,
             onMemberUpdated = { member ->
@@ -213,7 +195,6 @@ private fun rememberBuildDate(): String {
 
 @Composable
 private fun SignInScreen(
-    analytics: UsageAnalytics,
     initialMessage: String?,
     onSignedIn: (MemberSession) -> Unit,
 ) {
@@ -237,7 +218,6 @@ private fun SignInScreen(
         Unit
     }
 
-    UsageScreenTracking(analytics, if (browserRoute == null) UsageScreen.SignIn else null)
     browserRoute?.let { route ->
         TrustrootsBrowser(route = route, onClose = { browserRoute = null })
         return
@@ -339,8 +319,6 @@ private fun SignInScreen(
                     },
                 ) { Text("Forgot password?") }
             }
-            Spacer(Modifier.height(20.dp))
-            UsageAnalyticsSettings(analytics)
         }
         Text(
             "Build: $buildDate",
@@ -371,7 +349,6 @@ private enum class MenuPage {
 
 @Composable
 private fun MemberShell(
-    analytics: UsageAnalytics,
     session: MemberSession,
     responseCache: SecureResponseCache,
     onMemberUpdated: (MobileMember) -> Unit,
@@ -383,21 +360,6 @@ private fun MemberShell(
     var destinationHistory by remember { mutableStateOf(emptyList<Destination>()) }
     var menuPage by remember { mutableStateOf(MenuPage.Menu) }
     var browserRoute by remember { mutableStateOf<BrowserRoute?>(null) }
-    val analyticsScreen = when {
-        browserRoute != null -> null
-        destination == Destination.Menu -> when (menuPage) {
-            MenuPage.Menu -> UsageScreen.Menu
-            MenuPage.Profile -> UsageScreen.Profile
-            MenuPage.EditProfile -> UsageScreen.EditProfile
-            MenuPage.Contacts -> UsageScreen.Contacts
-            MenuPage.Host -> UsageScreen.Host
-            MenuPage.Account -> UsageScreen.Account
-        }
-        destination == Destination.Circles -> UsageScreen.Circles
-        destination == Destination.Search -> UsageScreen.Search
-        else -> UsageScreen.Messages
-    }
-    UsageScreenTracking(analytics, analyticsScreen)
     var hasUnreadMessages by remember { mutableStateOf(false) }
     var unreadMessageCount by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var messagesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }

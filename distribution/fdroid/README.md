@@ -17,10 +17,6 @@ published Android app connects to `www.trustroots.org`; a custom build can targe
 another server. Broader forkability is tracked in
 [issue #2669](https://github.com/Trustroots/trustroots/issues/2669).
 
-Native opt-in Umami analytics added after this release is not in the pinned
-100015 build. A future submission update must disclose it and rerun the network
-review both before consent and after enabling and disabling analytics.
-
 Future release tags contain both version fields in the form
 `android-preview-<code>-v<name>`, which `UpdateCheckData` extracts for automatic
 build entries. The build passes both fields to the existing Gradle environment
