@@ -1,3 +1,9 @@
+const { FlatCompat } = require('@eslint/eslintrc');
+const { fixupConfigRules } = require('@eslint/compat');
+const js = require('@eslint/js');
+const fs = require('fs');
+const path = require('path');
+const { defineConfig } = require('eslint/config');
 const semver = require('semver');
 
 // Converts semver range `~16.6.0` to strict version `16.6.0`
@@ -39,13 +45,20 @@ const rules = {
   'quote-props': 0,
   'no-var': 2,
   'prefer-const': 2,
+  // Preserve ESLint 8's treatment of unused catch bindings.
+  'no-unused-vars': [2, { caughtErrors: 'none' }],
   'arrow-spacing': [2, { before: true, after: true }],
   'require-atomic-updates': 0,
   'import/first': 2,
   'prettier/prettier': 2,
 };
 
-module.exports = {
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+  recommendedConfig: js.configs.recommended,
+});
+
+const legacyConfig = {
   // Keep linting scoped to this worktree (parent repo .eslintrc must not load).
   root: true,
   extends: ['eslint:recommended', 'plugin:import/errors', 'prettier'],
@@ -220,3 +233,24 @@ module.exports = {
     },
   ],
 };
+
+// Share the existing ignore list with Prettier; flat config owns lint ignores.
+const ignores = fs
+  .readFileSync(path.join(__dirname, '.prettierignore'), 'utf8')
+  .split(/\r?\n/)
+  .map(line => line.trim())
+  .filter(line => line && !line.startsWith('#'))
+  .map(pattern => (pattern.endsWith('/') ? `${pattern}**` : pattern));
+
+module.exports = defineConfig([
+  // ESLint 8 ignored dotfiles and hidden directories by default.
+  { ignores: [...ignores, '**/.*'] },
+  {
+    files: ['**/*.{js,mjs,cjs,ts,tsx}'],
+    extends: fixupConfigRules(compat.config(legacyConfig)),
+  },
+  {
+    files: ['**/*.cjs'],
+    languageOptions: { sourceType: 'commonjs' },
+  },
+]);
