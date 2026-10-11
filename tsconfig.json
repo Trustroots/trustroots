@@ -9,10 +9,9 @@
     "target": "ES2020",
     "lib": ["DOM", "ES2020"],
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "jsx": "react",
     "esModuleInterop": true,
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
       "modules/*": ["./modules/*"]
