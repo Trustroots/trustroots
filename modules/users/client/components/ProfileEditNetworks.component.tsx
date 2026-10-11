@@ -1,15 +1,32 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
+import { nip19 } from 'nostr-tools';
 
 import ProfileEditPage from './ProfileEditPage.component';
-import { nostrChallenge, removeSocialAccount, update } from '../api/users.api';
+import {
+  nostrChallenge,
+  removeSocialAccount,
+  update,
+  type UserUpdate,
+} from '../api/users.api';
 import {
   hasBrowserNostrSigner,
   NostrSigningError,
   signNostrProof,
   signWithConnectedNostr,
 } from '../services/nostr-proof.client';
+import {
+  buildNip55Uri,
+  buildNostrConnectUri,
+  connectBunkerSigner,
+  connectNostrConnectSigner,
+  DEFAULT_NOSTR_RELAY,
+  isSignedNostrEvent,
+  NOSTR_SIGNER_TIMEOUT_MS,
+  parseNip55Result,
+  type NostrSigner,
+} from '../services/nostr-signers.client';
 import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import type { UserProfile } from '../types';
@@ -28,6 +45,15 @@ declare global {
 
 const LEGACY_SOCIAL_PROVIDERS = ['facebook', 'github', 'twitter'] as const;
 const NPUB_PATTERN = /^(|npub1[ac-hj-np-z02-9]+)$/i;
+const ANDROID_REQUEST = 'trustroots.nostr.pending';
+
+type AndroidRequest = {
+  operationId: string;
+  userId: string;
+  expiresAt: number;
+  draft: UserUpdate;
+  purpose: 'import' | 'sign';
+};
 
 function normalizeNpub(npub?: string) {
   return (npub || '').trim().toLowerCase();
@@ -57,15 +83,25 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
   );
   const [pairing, setPairing] = useState<{ uri: string; qr: string }>();
   const [signingMethod, setSigningMethod] = useState<
-    'browser' | 'bunker' | 'external'
+    'browser' | 'bunker' | 'external' | 'nip55' | 'connected'
   >('browser');
   const [bunkerUri, setBunkerUri] = useState('');
   const [challengeJson, setChallengeJson] = useState('');
   const [signedJson, setSignedJson] = useState('');
   const [authUrl, setAuthUrl] = useState('');
   const [busy, setBusy] = useState(false);
+  const [suggestedNpub, setSuggestedNpub] = useState('');
+  const [androidUri, setAndroidUri] = useState('');
+  const [remotePairing, setRemotePairing] = useState(false);
+  const remoteSigner = useRef<NostrSigner | undefined>(undefined);
   const operation = useRef<AbortController | null>(null);
-  useEffect(() => () => operation.current?.abort(), []);
+  useEffect(
+    () => () => {
+      operation.current?.abort();
+      void remoteSigner.current?.close();
+    },
+    [],
+  );
 
   useEffect(() => {
     const detectSigner = () =>
@@ -84,6 +120,195 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
     setHasChanges(true);
   }
 
+  function networkFields() {
+    return {
+      extSitesCouchers: draftUser.extSitesCouchers,
+      extSitesBW: draftUser.extSitesBW,
+      extSitesCS: draftUser.extSitesCS,
+      extSitesWS: draftUser.extSitesWS,
+      extSitesServas: draftUser.extSitesServas,
+    };
+  }
+
+  async function connectRemote(pair: boolean) {
+    setBusy(true);
+    setStatusMessage('');
+    const controller = new AbortController();
+    operation.current = controller;
+    const timeout = window.setTimeout(
+      () => controller.abort(),
+      NOSTR_SIGNER_TIMEOUT_MS,
+    );
+    let signer: NostrSigner | undefined;
+    try {
+      await remoteSigner.current?.close();
+      remoteSigner.current = undefined;
+      const authorise = (url: string) => {
+        if (new URL(url).protocol === 'https:') setAuthUrl(url);
+      };
+      if (pair) {
+        const { uri, secretKey } = buildNostrConnectUri([DEFAULT_NOSTR_RELAY]);
+        const qr = await (
+          await import('qrcode')
+        ).default.toDataURL(uri, { width: 240 });
+        controller.signal.throwIfAborted();
+        setRemotePairing(true);
+        setPairing({ uri, qr });
+        signer = await connectNostrConnectSigner(
+          uri,
+          secretKey,
+          authorise,
+          controller.signal,
+        );
+      } else {
+        signer = await connectBunkerSigner(
+          bunkerUri,
+          [],
+          authorise,
+          controller.signal,
+        );
+      }
+      const pubkey = await signer.getPublicKey();
+      controller.signal.throwIfAborted();
+      setSuggestedNpub(nip19.npubEncode(pubkey));
+      remoteSigner.current = signer;
+      setSigningMethod('connected');
+    } catch (error) {
+      await signer?.close();
+      setStatusMessage(
+        t(
+          error instanceof Error
+            ? error.message
+            : 'Could not connect to the NIP-46 signer.',
+        ),
+      );
+    } finally {
+      window.clearTimeout(timeout);
+      operation.current = null;
+      setBusy(false);
+      setPairing(undefined);
+      setRemotePairing(false);
+      setAuthUrl('');
+    }
+  }
+
+  async function startAndroidRequest(
+    purpose: AndroidRequest['purpose'],
+    npub = normalizeNpub(draftUser.nostrNpub),
+  ) {
+    setStatusMessage('');
+    try {
+      const operationId = crypto.randomUUID();
+      const pending: AndroidRequest = {
+        operationId,
+        userId: user._id,
+        expiresAt: Date.now() + NOSTR_SIGNER_TIMEOUT_MS,
+        draft: { ...networkFields(), nostrNpub: npub },
+        purpose,
+      };
+      let uri: string;
+      if (purpose === 'sign') {
+        setBusy(true);
+        const decoded = nip19.decode(npub);
+        if (decoded.type !== 'npub')
+          throw new NostrSigningError('Please provide a valid npub.');
+        uri = buildNip55Uri(
+          'sign_event',
+          operationId,
+          await nostrChallenge(npub),
+          decoded.data,
+        );
+      } else {
+        uri = buildNip55Uri('get_public_key', operationId);
+      }
+      sessionStorage.setItem(ANDROID_REQUEST, JSON.stringify(pending));
+      setAndroidUri(uri);
+    } catch (error) {
+      setStatusMessage(
+        readApiError(error).message ||
+          t('Could not import the Android signer result.'),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function cancelAndroidRequest() {
+    sessionStorage.removeItem(ANDROID_REQUEST);
+    setAndroidUri('');
+  }
+
+  async function receiveAndroidResult(value: string, operationId?: string) {
+    try {
+      const pending = JSON.parse(
+        sessionStorage.getItem(ANDROID_REQUEST) || 'null',
+      ) as AndroidRequest | null;
+      if (
+        !pending ||
+        (operationId && pending.operationId !== operationId) ||
+        pending.userId !== user._id ||
+        pending.expiresAt <= Date.now()
+      ) {
+        throw new NostrSigningError(
+          'The Android signer response expired or belongs to another request.',
+        );
+      }
+      cancelAndroidRequest();
+      setDraftUser(current => ({ ...current, ...pending.draft }));
+      setHasChanges(true);
+      const result = parseNip55Result(value);
+      if (pending.purpose === 'sign') {
+        if (!isSignedNostrEvent(result))
+          throw new NostrSigningError(
+            'The Android signer did not return a signed event.',
+          );
+        await saveNetworks(
+          async () => ({ npub: pending.draft.nostrNpub!, proof: result }),
+          pending.draft,
+        );
+        return;
+      }
+      const key =
+        result && typeof result === 'object' && 'pubkey' in result
+          ? result.pubkey
+          : result;
+      if (typeof key !== 'string')
+        throw new NostrSigningError(
+          'The Android signer returned an invalid public key.',
+        );
+      const npub = /^[a-f0-9]{64}$/i.test(key)
+        ? nip19.npubEncode(key.toLowerCase())
+        : key;
+      if (nip19.decode(npub).type !== 'npub')
+        throw new NostrSigningError(
+          'The Android signer returned an invalid public key.',
+        );
+      setSuggestedNpub(npub);
+      setSigningMethod('nip55');
+    } catch (error) {
+      setStatusMessage(
+        t(
+          error instanceof NostrSigningError
+            ? error.message
+            : 'Could not import the Android signer result.',
+        ),
+      );
+    }
+  }
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const result = url.searchParams.get('nostrResult');
+    const operationId = url.searchParams.get('nostrOperation');
+    if (result === null && operationId === null) return;
+    url.searchParams.delete('nostrResult');
+    url.searchParams.delete('nostrOperation');
+    window.history.replaceState(window.history.state, '', url);
+    if (result !== null && operationId)
+      void receiveAndroidResult(result, operationId);
+    // The callback is consumed once when the editor mounts for this member.
+  }, [user._id]);
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -97,6 +322,10 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
       return;
     }
 
+    if (npub && npub !== savedNpub && signingMethod === 'nip55') {
+      await startAndroidRequest('sign', npub);
+      return;
+    }
     await saveNetworks(async signal => {
       let proof: unknown;
       if (npub && npub !== savedNpub) {
@@ -108,13 +337,29 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
               'Paste the signed event JSON from your signing tool.',
             );
           }
+        } else if (signingMethod === 'connected') {
+          const signer = remoteSigner.current;
+          const decoded = nip19.decode(npub);
+          if (
+            !signer ||
+            decoded.type !== 'npub' ||
+            (await signer.getPublicKey()) !== decoded.data
+          ) {
+            throw new NostrSigningError(
+              'The signer public key does not match this npub.',
+            );
+          }
+          const challenge = await nostrChallenge(npub);
+          signal.throwIfAborted();
+          proof = await signer.signEvent(challenge);
         } else {
           const event = await nostrChallenge(npub);
           signal.throwIfAborted();
           proof = await signNostrProof(
             event,
             npub,
-            signingMethod,
+            // Android signing returns above when the key has changed.
+            signingMethod as 'browser' | 'bunker',
             bunkerUri,
             setAuthUrl,
             signal,
@@ -129,6 +374,7 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
     getProof: (
       signal: AbortSignal,
     ) => Promise<{ npub: string; proof: unknown }>,
+    networks: UserUpdate = networkFields(),
   ) {
     setStatusMessage('');
     setAuthUrl('');
@@ -140,19 +386,20 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
       const { npub, proof } = await getProof(controller.signal);
       controller.signal.throwIfAborted();
       const savedUser = await update({
+        ...networks,
         nostrNpub: npub,
         ...(proof === undefined ? {} : { nostrProof: proof }),
-        extSitesCouchers: draftUser.extSitesCouchers,
-        extSitesBW: draftUser.extSitesBW,
-        extSitesCS: draftUser.extSitesCS,
-        extSitesWS: draftUser.extSitesWS,
-        extSitesServas: draftUser.extSitesServas,
       });
       setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
       setSavedNpub(normalizeNpub(savedUser.nostrNpub));
       setHasChanges(false);
       setStatusMessage(t('Hospitality networks updated.'));
+      if (remoteSigner.current) {
+        void remoteSigner.current.close();
+        remoteSigner.current = undefined;
+        setSigningMethod('browser');
+      }
       track('profile_section_saved', { section: 'networks' });
     } catch (error: unknown) {
       track('profile_save_failed', {
@@ -252,6 +499,13 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
               <p>
                 <a href={pairing.uri}>{t('Open signer app')}</a>
               </p>
+              {remotePairing && (
+                <input
+                  aria-label={t('Nostr Connect URI')}
+                  value={pairing.uri}
+                  readOnly
+                />
+              )}
               <Button type="button" onClick={() => operation.current?.abort()}>
                 {t('Cancel pairing')}
               </Button>
@@ -279,6 +533,74 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                       : t('Connect a Nostr signer')}
                   </Button>
                 </p>
+                <div className="form-group">
+                  <label htmlFor="nostrRemoteBunker">
+                    {t('NIP-46 bunker URI')}
+                  </label>
+                  <input
+                    id="nostrRemoteBunker"
+                    className="form-control"
+                    type="password"
+                    value={bunkerUri}
+                    onChange={event => setBunkerUri(event.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    onClick={() => void connectRemote(false)}
+                  >
+                    {t('Connect with NIP-46')}
+                  </Button>{' '}
+                  <Button
+                    type="button"
+                    onClick={() => void connectRemote(true)}
+                  >
+                    {t('Show Nostr Connect QR')}
+                  </Button>{' '}
+                  <Button
+                    type="button"
+                    onClick={() => void startAndroidRequest('import')}
+                  >
+                    {t('Use Android signer')}
+                  </Button>
+                </div>
+                {androidUri && (
+                  <div className="form-group">
+                    <a href={androidUri}>{t('Open in Android signer')}</a>{' '}
+                    <Button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await receiveAndroidResult(
+                            await navigator.clipboard.readText(),
+                          );
+                        } catch {
+                          setStatusMessage(
+                            t('Could not import the Android signer result.'),
+                          );
+                        }
+                      }}
+                    >
+                      {t('Import NIP-55 result from clipboard')}
+                    </Button>{' '}
+                    <Button type="button" onClick={cancelAndroidRequest}>
+                      {t('Cancel Android signer request')}
+                    </Button>
+                  </div>
+                )}
+                {suggestedNpub && (
+                  <p className="nostr-signer-suggestion">
+                    {t('Signer suggests')} <code>{suggestedNpub}</code>{' '}
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        updateDraft({ nostrNpub: suggestedNpub });
+                        setSuggestedNpub('');
+                      }}
+                    >
+                      {t('Use this npub')}
+                    </Button>
+                  </p>
+                )}
                 <div className="form-group">
                   <div className="input-group">
                     <label className="input-group-addon" htmlFor="nostrNpub">
@@ -326,6 +648,14 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                           <option value="external">
                             {t('Sign with another tool')}
                           </option>
+                          <option value="nip55">
+                            {t('Android signer (NIP-55)')}
+                          </option>
+                          {remoteSigner.current && (
+                            <option value="connected">
+                              {t('Connected NIP-46 signer')}
+                            </option>
+                          )}
                         </select>
                         {signingMethod === 'bunker' && (
                           <>

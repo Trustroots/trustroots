@@ -9,6 +9,7 @@ import {
   waitFor,
 } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { nip19 } from 'nostr-tools';
 
 import '@/config/client/i18n';
 import ReactApp from '@/layers/shell/client/ReactApp';
@@ -699,6 +700,33 @@ describe('<ReactApp />', () => {
     );
     await waitFor(() => expect(window.location.search).toBe(''));
     expect(mockMapMount).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the networks editor mounted while clearing an Android signer callback', async () => {
+    const npub = nip19.npubEncode('ab'.repeat(32));
+    const user = {
+      _id: 'member-id',
+      username: 'fictional-member',
+      public: true,
+    };
+    sessionStorage.setItem(
+      'trustroots.nostr.pending',
+      JSON.stringify({
+        operationId: 'fictional-operation',
+        userId: user._id,
+        expiresAt: Date.now() + 60_000,
+        draft: {},
+        purpose: 'import',
+      }),
+    );
+    renderApp(
+      `/profile/edit/networks?nostrOperation=fictional-operation&nostrResult=${npub}`,
+      { user },
+    );
+
+    expect(await screen.findByText(npub)).toBeInTheDocument();
+    expect(window.location.search).toBe('');
+    expect(screen.getByRole('button', { name: 'Use this npub' })).toBeVisible();
   });
 
   it('loads an offer from client navigation without recreating the map', async () => {
