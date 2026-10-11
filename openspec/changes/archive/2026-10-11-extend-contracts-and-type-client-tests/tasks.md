@@ -12,7 +12,7 @@
 
 - [x] Pass client, test and contract type checks and lint.
 - [x] Pass the production bundle and complete client coverage suite at 100%.
-- [ ] Pass the complete server coverage suite at 100%.
+- [x] Pass the complete server coverage suite at 100%.
 - [x] Pass the existing end-to-end suite without removing scenarios.
 - [x] Verify migration inventory and preserved assertions.
-- [ ] Update living specifications and archive this proposal after completion.
+- [x] Update living specifications and archive this proposal after completion.
