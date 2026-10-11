@@ -29,7 +29,7 @@ module.exports = {
   coverageReporters: ['text-summary', 'html', 'json-summary', 'lcov'],
   setupFilesAfterEnv: ['<rootDir>/jest/jest.setup.js'],
   transform: {
-    '^.+\\.[jt]sx?$': 'babel-jest',
+    '^.+\\.m?[jt]sx?$': 'babel-jest',
   },
   // Include nostr-tools so nested ESM-only @noble and @scure packages are transformed.
   transformIgnorePatterns: [

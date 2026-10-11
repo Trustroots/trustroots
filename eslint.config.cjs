@@ -90,10 +90,11 @@ const legacyConfig = {
         '*.cjs',
         'config/**',
         'migrations/**',
-        'modules/*/shared/**/*.js',
+        'modules/*/shared/**/*.{js,ts,mts}',
         'modules/*/server/*.{js,mjs}',
         'modules/*/server/**/*.{js,mjs}',
         'testutils/server/**',
+        'testutils/common/**',
       ],
       env: {
         node: true,
@@ -187,9 +188,12 @@ const legacyConfig = {
     {
       files: [
         'modules/*/client/**/*.{ts,tsx}',
-        'modules/*/shared/**/*.{ts,tsx}',
-        'modules/*/tests/client/**/*.{ts,tsx}',
+        'modules/*/shared/**/*.{ts,tsx,mts}',
+        'modules/*/tests/client/**/*.{ts,tsx,mts}',
         'testutils/client/**/*.{ts,tsx}',
+        'testutils/common/**/*.{mts,ts}',
+        'testutils/server/**/*.mts',
+        'modules/*/tests/fixtures/**/*.mts',
       ],
       parser: '@typescript-eslint/parser',
       extends: ['plugin:@typescript-eslint/recommended', 'prettier'],
@@ -246,7 +250,7 @@ module.exports = defineConfig([
   // ESLint 8 ignored dotfiles and hidden directories by default.
   { ignores: [...ignores, '**/.*'] },
   {
-    files: ['**/*.{js,mjs,cjs,ts,tsx}'],
+    files: ['**/*.{js,mjs,cjs,ts,tsx,mts}'],
     extends: fixupConfigRules(compat.config(legacyConfig)),
   },
   {

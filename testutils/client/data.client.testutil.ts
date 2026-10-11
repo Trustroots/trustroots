@@ -1,6 +1,9 @@
 import range from 'lodash/range';
 
-import { generateClientUser, generateId } from '../common/data.common.testutil';
+import {
+  generateClientUser,
+  generateId,
+} from '../common/data.common.testutil.mts';
 import type {
   MessageMember,
   MessagePayload,

@@ -4,6 +4,8 @@
     "checkJs": true,
     "strict": true,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
     "skipLibCheck": true,
     "target": "ES2022",
     "module": "NodeNext",
@@ -13,6 +15,7 @@
   },
   "include": [
     "modules/*/shared/**/*.ts",
+    "modules/*/shared/**/*.mts",
     "modules/users/tests/fixtures/profile-api-contracts.mjs",
     "modules/users/tests/fixtures/profile-client-api-contracts.mts",
     "modules/users/server/services/profile-response.server.service.mjs",

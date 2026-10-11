@@ -60,5 +60,9 @@ included in `tsconfig.tests.json`. Fixtures and mocks should use the actual API
 or component types. Deliberately malformed runtime inputs belong at an explicit
 test boundary, using the helpers in `testutils/client/malformed-fixtures.ts`,
 rather than weakening production types. Shared JavaScript server/common test
-utilities remain unchanged. Jest searches the module tree to avoid discovering
+utilities are checked separately in `tsconfig.fixtures.json`. Their data helpers
+use TypeScript with thin CommonJS entry points for legacy server tests. Node 24
+loads the implementations using its built-in type stripping; no runtime compiler
+package or production compilation step is required. Fixture sources must use
+erasable TypeScript syntax. Jest searches the module tree to avoid discovering
 duplicate packages in local worktrees.

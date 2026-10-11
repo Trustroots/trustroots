@@ -4,7 +4,7 @@ import userProfile from './../../../users/server/controllers/users.profile.serve
 import textService from './../services/text.server.service.mjs';
 import log from './../../../../config/lib/logger.mjs';
 import deprecatedLanguages from './../../../../config/languages/deprecated.mjs';
-import reactRouteOwnership from '../../shared/react-route-ownership.js';
+import reactRouteOwnership from '../../shared/react-route-ownership.mts';
 const languagesObject = JSON.parse(
   readFileSync(
     new URL('../../../../config/languages/languages.json', import.meta.url),

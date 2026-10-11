@@ -5,7 +5,7 @@ import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import SupportForm from '@/modules/support/client/components/SupportForm';
 import { send } from '@/modules/support/client/api/support.api';
-import { VOLUNTEERING_DISCLAIMER } from '@/modules/support/shared/volunteering-copy';
+import { VOLUNTEERING_DISCLAIMER } from '@/modules/support/shared/volunteering-copy.ts';
 
 const sendMock = jest.mocked(send);
 const supportUser: NonNullable<

@@ -90,8 +90,9 @@ export default function OfferHostPage({ user }: HostPageProps) {
           : defaultHostOffer();
 
         if (
-          routeParams.status &&
-          ['yes', 'maybe', 'no'].includes(routeParams.status)
+          routeParams.status === 'yes' ||
+          routeParams.status === 'maybe' ||
+          routeParams.status === 'no'
         ) {
           nextOffer.status = routeParams.status;
         }

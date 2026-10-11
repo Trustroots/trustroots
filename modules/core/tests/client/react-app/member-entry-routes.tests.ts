@@ -1,5 +1,5 @@
 import { findRoute } from '@/modules/core/client/react-app/routes';
-import { getReactRouteAccessRedirect } from '@/modules/core/shared/react-route-ownership';
+import { getReactRouteAccessRedirect } from '@/modules/core/shared/react-route-ownership.mts';
 
 describe('Member entry routes', () => {
   it.each(['/welcome', '/navigation', '/search/members'])(

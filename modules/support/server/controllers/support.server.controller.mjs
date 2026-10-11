@@ -8,7 +8,7 @@ import log from './../../../../config/lib/logger.mjs';
 import config from './../../../../config/config.mjs';
 import mongoose from 'mongoose';
 import validator from 'validator';
-import { SUPPORT_CATEGORIES } from '../../shared/categories.js';
+import { SUPPORT_CATEGORIES } from '../../shared/categories.ts';
 const SupportRequest = mongoose.model('SupportRequest');
 
 /**
