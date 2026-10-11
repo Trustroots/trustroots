@@ -157,9 +157,14 @@ describe('Admin Message CRUD tests', () => {
         .post('/api/auth/signin')
         .send(credentialsAdmin)
         .expect(200)
-        .end(signinErr => {
+        .end(async signinErr => {
           if (signinErr) {
             return done(signinErr);
+          }
+          try {
+            await utils.elevateAdminAccess(agent, credentialsAdmin.password);
+          } catch (elevationErr) {
+            return done(elevationErr);
           }
           agent
             .post('/api/admin/messages')

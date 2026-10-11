@@ -230,6 +230,17 @@ async function signUp(page, user) {
 /**
  * Authenticate a request context without opening a browser page.
  */
+async function elevateAdminViaApi(request, password) {
+  const response = await request.post('/api/admin/elevate', {
+    data: { password },
+  });
+  expect(
+    response.ok(),
+    `Admin elevation responded with ${response.status()}: ${await response.text()}`,
+  ).toBeTruthy();
+  return response;
+}
+
 async function authenticateViaApi(request, user) {
   const response = await request.post('/api/auth/signin', {
     data: { username: user.username, password: user.password },
@@ -238,6 +249,16 @@ async function authenticateViaApi(request, user) {
     response.ok(),
     `Signin API responded with ${response.status()}: ${await response.text()}`,
   ).toBeTruthy();
+
+  // Privileged browser sessions stay signed in as members; unlock admin APIs
+  // with the same password so specs can exercise moderation tools.
+  const roles = user.roles || [];
+  if (roles.includes('admin') || roles.includes('welcome-team')) {
+    await elevateAdminViaApi(request, user.password);
+  } else if (user.username === SEEDED_ADMIN.username) {
+    await elevateAdminViaApi(request, user.password);
+  }
+
   return response;
 }
 
@@ -356,6 +377,7 @@ module.exports = {
   SEEDED_SHADOW,
   SEEDED_CONVERSATIONS,
   SEEDED_SHADOW_MESSAGE,
+  elevateAdminViaApi,
   SEEDED_EXPERIENCE,
   SEEDED_PRIVATE_EXPERIENCE,
   SEEDED_PROFILE_DESCRIPTION,

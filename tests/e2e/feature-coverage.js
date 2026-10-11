@@ -66,6 +66,7 @@ const source = {
   usersClient: 'modules/users/client/config/users.client.routes.js',
   usersServer: 'modules/users/server/routes/users.server.routes.js',
   usersAuthServer: 'modules/users/server/routes/auth.server.routes.js',
+  usersSessionsServer: 'modules/users/server/routes/sessions.server.routes.mjs',
   usersBlockServer: 'modules/users/server/routes/users-block.server.routes.js',
 };
 
@@ -1150,6 +1151,44 @@ const features = [
       spec(
         'authenticated.spec.js',
         'member can download their combined data export',
+      ),
+    ],
+  },
+  {
+    id: 'account.session-controls',
+    area: AREA.authAccount,
+    status: STATUS.active,
+    description:
+      'Members can inspect active sessions and revoke one session or all sessions after confirming their password.',
+    roles: ['member'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'profile-edit.account',
+          '/profile/edit/account',
+          source.usersClient,
+          { requiresAuth: true },
+        ),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/auth/sessions', source.usersSessionsServer),
+        apiRoute('DELETE', '/api/auth/sessions', source.usersSessionsServer),
+        apiRoute(
+          'DELETE',
+          '/api/auth/sessions/:id',
+          source.usersSessionsServer,
+        ),
+      ],
+    },
+    requiredScenarios: [
+      'Members can identify the current session and see another active session.',
+      'A member can revoke another session after confirming their password.',
+      'A revoked session can no longer access authenticated APIs.',
+    ],
+    relatedSpecs: [
+      spec(
+        'account-settings.spec.js',
+        'members can revoke another active session from account settings',
       ),
     ],
   },

@@ -39,10 +39,14 @@ describe('Admin policy unit tests', () => {
     const welcome = policies.shift();
     welcome.roles.should.deepEqual(['welcome-team']);
     welcome.allows.should.deepEqual([
+      { resources: '/api/admin/elevate', permissions: ['post'] },
       { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
       { resources: '/api/admin/staff-blockers', permissions: ['get'] },
     ]);
     policies[0].roles.should.deepEqual(['admin']);
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/admin/elevate');
     policies[0].allows
       .map(allow => allow.resources)
       .should.containEql('/api/admin/acquisition-stories');

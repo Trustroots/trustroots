@@ -14,6 +14,7 @@ function loadMiddleware(
       forgotPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       resetPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       resendConfirmation: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
+      manageSessions: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       avatarUpload: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
     },
   };
@@ -81,6 +82,32 @@ describe('Targeted request limit middleware', function () {
       .should.deepEqual([
         '198.51.100.20',
         JSON.stringify(['198.51.100.20', 'sample.member']),
+      ]);
+  });
+
+  it('uses a dedicated member-scoped operation for session management', async function () {
+    let options;
+    const middleware = loadMiddleware(async value => {
+      options = value;
+      return { allowed: true, retryAfterSeconds: 3 };
+    });
+    let proceeded = false;
+    await middleware.manageSessions(
+      { user: { id: 'member-id' }, get: () => undefined, ip: '192.0.2.1' },
+      response(),
+      () => {
+        proceeded = true;
+      },
+    );
+
+    proceeded.should.be.true();
+    options.operation.should.equal('manageSessions');
+    options.dimensions
+      .map(value => value.value)
+      .should.deepEqual([
+        '198.51.100.20',
+        JSON.stringify(['198.51.100.20', 'member-id']),
+        'member-id',
       ]);
   });
 
