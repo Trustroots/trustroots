@@ -4,6 +4,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
@@ -56,8 +58,9 @@ class AccountSettingsScreenTest {
         }
         compose.onNodeWithText("Account").assertIsDisplayed()
         compose.onNodeWithText("Community newsletter").assertIsDisplayed()
-        compose.onNodeWithText("Change password").assertIsDisplayed()
-        compose.onNodeWithText("Sign out").assertIsDisplayed()
+        compose.onNode(hasText("Change password") and hasClickAction()).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Sign out").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Turn on message alerts").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Turn on usage analytics").performScrollTo().assertIsDisplayed()
     }
 }
