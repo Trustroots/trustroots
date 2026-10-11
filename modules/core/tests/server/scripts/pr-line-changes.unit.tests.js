@@ -145,6 +145,16 @@ describe('PR line-change summaries', () => {
       ]);
     try {
       git(['init', '-b', 'main']);
+      fs.writeFileSync(
+        path.join(dir, 'package.json'),
+        JSON.stringify({ devDependencies: { fictional: '1' } }),
+      );
+      fs.writeFileSync(
+        path.join(dir, 'package-lock.json'),
+        JSON.stringify({
+          packages: { 'node_modules/fictional': { version: '1' } },
+        }),
+      );
       fs.mkdirSync(path.join(dir, 'src'));
       fs.writeFileSync(
         path.join(dir, 'src/app.js'),
@@ -153,6 +163,11 @@ describe('PR line-change summaries', () => {
       git(['add', '.']);
       commit('Initial fixture');
       git(['checkout', '-b', 'feature']);
+      fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({}));
+      fs.writeFileSync(
+        path.join(dir, 'package-lock.json'),
+        JSON.stringify({ packages: {} }),
+      );
       fs.writeFileSync(path.join(dir, 'src/app.js'), 'one\n');
       fs.mkdirSync(path.join(dir, 'tests'));
       fs.writeFileSync(
@@ -164,6 +179,10 @@ describe('PR line-change summaries', () => {
       const headSha = git(['rev-parse', 'HEAD']);
       git(['checkout', 'main']);
       fs.writeFileSync(path.join(dir, 'README.md'), 'Unrelated base work\n');
+      fs.writeFileSync(
+        path.join(dir, 'package.json'),
+        JSON.stringify({ dependencies: { unrelated: '2' } }),
+      );
       git(['add', '.']);
       commit('Advance main');
       const summary = collectLineChanges(
@@ -173,10 +192,16 @@ describe('PR line-change summaries', () => {
       );
       assert.equal(summary.groups[0].net, -4);
       assert.equal(summary.groups[1].net, 2);
-      assert.equal(summary.groups[2].added, 0);
+      assert.equal(summary.dependencies[1].removed, 1);
+      assert.equal(summary.dependencies[0].added, 0);
+      assert.equal(summary.dependencies[2].removed, 1);
       const root = path.resolve(__dirname, '../../../../..');
       fs.mkdirSync(path.join(dir, 'scripts/coverage'), { recursive: true });
-      for (const name of ['generate-pr-summary.js', 'line-changes.js']) {
+      for (const name of [
+        'generate-pr-summary.js',
+        'line-changes.js',
+        'dependency-changes.js',
+      ]) {
         fs.copyFileSync(
           path.join(root, 'scripts/coverage', name),
           path.join(dir, 'scripts/coverage', name),
@@ -198,6 +223,7 @@ describe('PR line-change summaries', () => {
       );
       assert.match(output, /Pull request overview/);
       assert.match(output, /Tests and fixtures/);
+      assert.match(output, /Direct development dependencies \| 0 \| −1/);
       assert.doesNotMatch(output, /Coverage overview|Status:/);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
