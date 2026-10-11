@@ -84,10 +84,9 @@ test.describe.serial('account settings feature coverage', () => {
     await expect(
       page.getByRole('radio', { name: 'None', exact: true }),
     ).toBeChecked();
-    await expect(page.locator('.profile-avatar-choises img.avatar-none')).toHaveAttribute(
-      'src',
-      '/img/avatar.png?none',
-    );
+    await expect(
+      page.locator('.profile-avatar-choises img.avatar-none'),
+    ).toHaveAttribute('src', '/img/avatar.png?none');
     await expect(page.getByRole('radio', { name: 'Facebook' })).toHaveCount(0);
 
     const member = await findUserByUsername(user.username);
