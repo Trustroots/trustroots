@@ -138,6 +138,16 @@ describe('PR dependency summaries', () => {
     assert.strictEqual(second.split('### Dependency changes').length, 2);
     assert.match(second, /Coverage: 100%/);
     assert.match(renderLineChanges(summary), /Dependency details/);
+    // The trusted workflow still uses main's older line-only renderer until
+    // this PR merges. Its refresh must leave the new dependency section intact.
+    const legacyRefresh = second.replace(
+      /<!-- trustroots-line-changes:start -->[\s\S]*?<!-- trustroots-line-changes:end -->/,
+      renderLineChanges(summariseNumstat('')),
+    );
+    assert.match(legacyRefresh, /Dependency details/);
+    const refreshed = updateLineChangesComment(legacyRefresh, summary);
+    assert.strictEqual(refreshed.split('### Dependency changes').length, 2);
+    assert.match(refreshed, /Coverage: 100%/);
     for (const includeCoverage of [true, false]) {
       const output = buildMarkdown([], {
         lineChanges: summary,

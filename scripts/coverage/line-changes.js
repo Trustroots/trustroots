@@ -131,14 +131,27 @@ function renderLineChanges(summary) {
           `Binary files changed: ${summary.binaryFiles} (excluded from line totals).`,
         ]
       : []),
-    ...(summary.dependencies
-      ? ['', renderDependencyChanges(summary.dependencies)]
-      : []),
     endMarker,
+    ...(summary.dependencies
+      ? [
+          '',
+          '<!-- trustroots-dependency-changes:start -->',
+          renderDependencyChanges(summary.dependencies),
+          '<!-- trustroots-dependency-changes:end -->',
+        ]
+      : []),
   ].join('\n');
 }
 
 function updateLineChangesComment(body, summary) {
+  // Keep this section outside the line markers so older main-branch refreshers
+  // cannot erase it while this reporting change is still under review.
+  if (summary.dependencies) {
+    body = body.replace(
+      /\n*<!-- trustroots-dependency-changes:start -->[\s\S]*?<!-- trustroots-dependency-changes:end -->/g,
+      '',
+    );
+  }
   const table = renderLineChanges(summary);
   const start = body.indexOf(startMarker);
   const end = body.indexOf(endMarker, start);
