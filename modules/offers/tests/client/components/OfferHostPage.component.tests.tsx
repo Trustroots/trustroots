@@ -7,7 +7,7 @@ import type { TabsProps } from 'react-bootstrap';
 import type OfferLocationEditor from '@/modules/offers/client/components/OfferLocationEditor.component';
 import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
-import type { Offer } from '@/modules/offers/client/api/offers.api';
+import type { OfferPayload } from '@/modules/offers/shared/offer';
 
 const offersApiMock = jest.mocked(offersApi);
 
@@ -56,9 +56,10 @@ const user: React.ComponentProps<typeof OfferHostPage>['user'] = {
   username: 'ada',
 };
 
-const hostOffer: Offer = {
+const hostOffer: OfferPayload = {
   _id: 'offer-1',
   type: 'host',
+  user: 'user-1',
   status: 'yes',
   description: 'A cosy spare room.',
   noOfferDescription: '',
@@ -96,7 +97,7 @@ describe('OfferHostPage', () => {
 
   it('creates a new host offer when saving', async () => {
     offersApiMock.getOffers.mockResolvedValue([]);
-    offersApiMock.createOffer.mockResolvedValue({});
+    offersApiMock.createOffer.mockResolvedValue({ message: 'Offer saved.' });
     render(<OfferHostPage user={user} />);
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
@@ -121,7 +122,7 @@ describe('OfferHostPage', () => {
   });
 
   it('updates an existing host offer when saving', async () => {
-    offersApiMock.updateOffer.mockResolvedValue({});
+    offersApiMock.updateOffer.mockResolvedValue({ message: 'Offer updated.' });
     render(<OfferHostPage user={user} />);
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
@@ -232,9 +233,9 @@ describe('OfferHostPage', () => {
   });
 
   it('ignores offer results after unmounting during load', async () => {
-    let resolveOffers!: (offers: Offer[]) => void;
+    let resolveOffers!: (offers: OfferPayload[]) => void;
     offersApiMock.getOffers.mockReturnValue(
-      new Promise(resolve => {
+      new Promise<OfferPayload[]>(resolve => {
         resolveOffers = resolve;
       }),
     );

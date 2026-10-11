@@ -7,6 +7,7 @@ import ProfileViewBasics from '@/modules/users/client/components/ProfileViewBasi
 import type { UserProfile } from '@/modules/users/client/types';
 import type LanguageList from '@/modules/users/client/components/LanguageList';
 import type ProfileNostrBadge from '@/modules/users/client/components/ProfileNostrBadge.component';
+import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 
 jest.mock('@/modules/users/client/components/LanguageList', () => {
   const React = jest.requireActual<typeof import('react')>('react');
@@ -76,28 +77,28 @@ describe('<ProfileViewBasics />', () => {
   it('renders member profile basics, locations, languages, and networks', () => {
     render(
       <ProfileViewBasics
-        profile={makeProfile({
-          additionalProvidersData: {
-            facebook: { id: 'hidden-facebook-id' },
-            github: { login: 'sample-project' },
-          },
-          birthdate: '1990-06-01T00:00:00.000Z',
-          created: '2020-01-01T00:00:00.000Z',
-          extSitesBW: 'member-bw',
-          extSitesCS: 'member-cs',
-          extSitesCouchers: 'member-couchers',
-          extSitesWS: '12345',
-          gender: 'female',
-          isVolunteer: true,
-          languages: ['en', 'pt'],
-          locationFrom: 'Northport',
-          locationLiving: 'Seaview',
-          nostrNpub: 'npub1trustroots',
-          // Preserve the formatted API values used by this rendering regression.
-          replyRate: '80%' as unknown as number,
-          replyTime: '3 hours' as unknown as number,
-          seen: '2020-01-03T00:00:00.000Z',
-        })}
+        profile={malformedFixture(
+          makeProfile({
+            additionalProvidersData: {
+              facebook: { id: 'hidden-facebook-id' },
+              github: { login: 'sample-project' },
+            },
+            birthdate: '1990-06-01T00:00:00.000Z',
+            created: '2020-01-01T00:00:00.000Z',
+            extSitesBW: 'member-bw',
+            extSitesCS: 'member-cs',
+            extSitesCouchers: 'member-couchers',
+            extSitesWS: '12345',
+            gender: 'female',
+            isVolunteer: true,
+            languages: ['en', 'pt'],
+            locationFrom: 'Northport',
+            locationLiving: 'Seaview',
+            nostrNpub: 'npub1trustroots',
+            seen: '2020-01-03T00:00:00.000Z',
+          }),
+          { replyRate: '80%', replyTime: '3 hours' },
+        )}
       />,
     );
 
@@ -236,14 +237,14 @@ describe('<ProfileViewBasics />', () => {
   it('renders zero reply rate without reply time', () => {
     render(
       <ProfileViewBasics
-        profile={makeProfile({
-          created: '2020-01-01T00:00:00.000Z',
-          languages: [],
-          // The component displays preformatted rates and treats an empty time as absent.
-          replyRate: '0%' as unknown as number,
-          replyTime: '' as unknown as number,
-          seen: undefined,
-        })}
+        profile={malformedFixture(
+          makeProfile({
+            created: '2020-01-01T00:00:00.000Z',
+            languages: [],
+            seen: undefined,
+          }),
+          { replyRate: '0%', replyTime: '' },
+        )}
       />,
     );
 
@@ -254,15 +255,16 @@ describe('<ProfileViewBasics />', () => {
   it('renders sparse profile fallback details without optional sections', () => {
     render(
       <ProfileViewBasics
-        profile={makeProfile({
-          created: undefined,
-          // Regression fixture: the API can return null for a provider entry.
-          additionalProvidersData: { github: null } as unknown as NonNullable<
-            UserProfile['additionalProvidersData']
-          >,
-          languages: [],
-          seen: undefined,
-        })}
+        profile={malformedFixture(
+          makeProfile({
+            created: undefined,
+            // Regression fixture: the API can return null for a provider entry.
+            additionalProvidersData: {},
+            languages: [],
+            seen: undefined,
+          }),
+          { additionalProvidersData: { github: null } },
+        )}
       />,
     );
 

@@ -3,14 +3,15 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import { Offers } from '@/modules/offers/client/components/Offers.component';
-import { getOffers, type Offer } from '@/modules/offers/client/api/offers.api';
+import { getOffers } from '@/modules/offers/client/api/offers.api';
+import type { OfferPayload } from '@/modules/offers/shared/offer';
 
 const getOffersMock = jest.mocked(getOffers);
 
 type MockOffersPresentationalProps = {
   isOwnOffer: boolean;
   isUserPublic?: boolean;
-  offer: Offer;
+  offer: OfferPayload;
   username?: string;
 };
 
@@ -38,6 +39,14 @@ jest.mock('@/modules/offers/client/components/OffersPresentational', () => {
 });
 
 describe('<Offers />', () => {
+  const makeOffer = (status: OfferPayload['status']): OfferPayload => ({
+    _id: 'offer-1',
+    type: 'host',
+    user: 'user-1',
+    location: [0, 0],
+    status,
+  });
+
   beforeEach(() => {
     getOffersMock.mockReset();
     window.isNativeMobileApp = false;
@@ -49,7 +58,7 @@ describe('<Offers />', () => {
   });
 
   it('loads host offers and marks the authenticated owner', async () => {
-    getOffersMock.mockResolvedValue([{ status: 'yes' }]);
+    getOffersMock.mockResolvedValue([makeOffer('yes')]);
 
     render(
       <Offers
@@ -67,9 +76,9 @@ describe('<Offers />', () => {
   });
 
   it('does not present a not-hosting status while an offer is loading', async () => {
-    let resolveOffers!: (offers: Offer[]) => void;
+    let resolveOffers!: (offers: OfferPayload[]) => void;
     getOffersMock.mockReturnValue(
-      new Promise<Offer[]>(resolve => {
+      new Promise<OfferPayload[]>(resolve => {
         resolveOffers = resolve;
       }),
     );
@@ -80,7 +89,7 @@ describe('<Offers />', () => {
       />,
     );
     expect(screen.queryByText(/status:/)).not.toBeInTheDocument();
-    await act(async () => resolveOffers([{ status: 'yes' }]));
+    await act(async () => resolveOffers([makeOffer('yes')]));
     expect(await screen.findByText('status:yes')).toBeInTheDocument();
   });
 
@@ -123,7 +132,7 @@ describe('<Offers />', () => {
   });
 
   it('treats missing authenticated user data as a public false visitor', async () => {
-    getOffersMock.mockResolvedValue([{ status: 'maybe' }]);
+    getOffersMock.mockResolvedValue([makeOffer('maybe')]);
 
     render(<Offers profile={{ _id: 'user-1', username: 'alice' }} />);
 

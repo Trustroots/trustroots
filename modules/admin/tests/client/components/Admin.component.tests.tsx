@@ -48,7 +48,7 @@ function malformedDashboardResponse(
   response: MalformedDashboardFixture,
 ): AdminDashboard {
   // These fixtures deliberately model absent/invalid fields from the API boundary.
-  return response as unknown as AdminDashboard;
+  return response as AdminDashboard;
 }
 
 afterEach(() => {

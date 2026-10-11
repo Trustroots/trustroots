@@ -56,6 +56,16 @@ function thread(overrides: ThreadOverrides = {}): MessageThreadSummary {
 }
 
 describe('<InboxThread />', () => {
+  it('renders a placeholder when the other participant is absent', () => {
+    render(<InboxThread user={me} thread={{ ...thread(), userFrom: null }} />);
+
+    expect(screen.getByText('Unknown member')).toBeInTheDocument();
+    expect(screen.getByRole('link')).toHaveAttribute(
+      'href',
+      '/messages/undefined?userId=',
+    );
+  });
+
   it('renders unread state, other member link, avatar, time, and excerpt', () => {
     const { container } = render(<InboxThread user={me} thread={thread()} />);
 

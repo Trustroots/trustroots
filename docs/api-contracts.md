@@ -9,13 +9,12 @@ server payload builders in `tsconfig.contracts.json`. The latter uses strict
 `checkJs` with JSDoc imports of the same contracts used by the client. It does
 not enable checking across the legacy server tree.
 
-The checked builders retain thin `.js` adapters because NYC currently instruments
-their native ESM implementations when they are loaded through CommonJS. Server
-controllers and tests use these adapters; the implementations themselves remain
-native ESM. Remove the adapters only when coverage instrumentation supports the
-direct native ESM import path.
+The checked builders retain thin CommonJS adapters (`.cjs`, or `.js` in a
+CommonJS package scope) for existing CommonJS tests. Server controllers import
+the native ESM implementations directly. The server coverage loader instruments
+those implementations through either entry point.
 
-The initial enforced boundaries are:
+The enforced boundaries are:
 
 - Staff blockers: `StaffBlocker` is constructed by the checked server helper and
   consumed by the administration client API.
@@ -24,6 +23,18 @@ The initial enforced boundaries are:
   retain their native types until Express serialises them; client contracts use
   string identifiers and timestamps. Private feedback can be absent, and a
   reciprocal response is not a complete experience with member identities.
+- Messages: send, mark-read and preview requests, messages, inbox excerpts,
+  unread counts and preview responses share types. Deleted participants can
+  have only an identifier or be absent. Pagination headers remain separate.
+- Offers: editable create/update fields, sanitised read responses, mutation
+  confirmations and GeoJSON search results use separate contracts. Search
+  builders distinguish database latitude/longitude tuples from GeoJSON
+  longitude/latitude tuples. Existing location and contact filtering stays in
+  the controller.
+- Profiles: editable update fields, public, own and mini-profile responses have
+  separate types. Email updates retain their separate confirmation flow. Public
+  profiles omit account-only fields and the access-control flag. Mini profiles
+  describe the existing projection, including its `blocked` field.
 
 The server controller passes database results to these builders. Checking the
 builders catches errors in their payload construction, but does not type-check
@@ -41,3 +52,11 @@ the server payload implementation, include that implementation in the contract
 configuration, and cover its runtime behaviour and deliberate type errors.
 Broader endpoint and database typing can proceed incrementally without reopening
 the completed client migration or changing the server runtime.
+
+All module client tests and client-specific helpers use TypeScript and are
+included in `tsconfig.tests.json`. Fixtures and mocks should use the actual API
+or component types. Deliberately malformed runtime inputs belong at an explicit
+test boundary, using the helpers in `testutils/client/malformed-fixtures.ts`,
+rather than weakening production types. Shared JavaScript server/common test
+utilities remain unchanged. Jest searches the module tree to avoid discovering
+duplicate packages in local worktrees.

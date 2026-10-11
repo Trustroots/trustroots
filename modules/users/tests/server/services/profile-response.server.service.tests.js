@@ -1,8 +1,10 @@
 require('should');
 const {
   profileQueryFields,
+  selectProfileUpdateFields,
   selectProfileResponse,
-} = require('./../../../server/services/profile-response.server.service.mjs');
+  selectMiniProfileResponse,
+} = require('./../../../server/services/profile-response.server.service.cjs');
 
 describe('Service: profile-response', function () {
   let esmService;
@@ -15,16 +17,19 @@ describe('Service: profile-response', function () {
 
   it('exposes the same service functions through ESM and CommonJS', function () {
     esmService.profileQueryFields.should.equal(profileQueryFields);
+    esmService.selectProfileUpdateFields.should.equal(
+      selectProfileUpdateFields,
+    );
     esmService.selectProfileResponse.should.equal(selectProfileResponse);
+    esmService.selectMiniProfileResponse.should.equal(
+      selectMiniProfileResponse,
+    );
   });
 
   const profile = {
     _id: 'fictional-user-id',
     username: 'fictional-member',
     displayName: 'Fictional Member',
-    locationLiving: 'Fictional Harbour',
-    locationCoordinates: { type: 'Point', coordinates: [-3.1, 52.4] },
-    exactAddress: '42 Example Lane',
     firstName: 'Fictional',
     lastName: 'Member',
     email: 'member@example.test',
@@ -56,11 +61,24 @@ describe('Service: profile-response', function () {
     esmService.profileQueryFields.should.not.containEql('pushRegistration');
   });
 
+  it('selects only persisted profile update fields and leaves email to its flow', function () {
+    selectProfileUpdateFields({
+      firstName: 'Fictional',
+      newsletter: false,
+      email: 'member@example.test',
+      emailTemporary: 'pending@example.test',
+      providerData: { accessToken: 'private' },
+    }).should.deepEqual({ firstName: 'Fictional', newsletter: false });
+
+    selectProfileUpdateFields({ description: undefined }).should.have.property(
+      'description',
+    );
+  });
+
   it('returns only public fields for another member', function () {
     const response = esmService.selectProfileResponse(profile, false);
 
     response.username.should.equal('fictional-member');
-    response.locationLiving.should.equal('Fictional Harbour');
     response.avatarVersion.should.equal('0123456789abcdef0123456789abcdef');
     response.additionalProvidersData.facebook.id.should.equal(
       'fictional-facebook-id',
@@ -80,8 +98,6 @@ describe('Service: profile-response', function () {
       'pushRegistration',
       'providerData',
       'futurePrivateField',
-      'locationCoordinates',
-      'exactAddress',
     ]) {
       (response[field] === undefined).should.be.true();
     }
@@ -109,5 +125,38 @@ describe('Service: profile-response', function () {
     (response.lastIpAddress === undefined).should.be.true();
     (response.pushRegistration === undefined).should.be.true();
     (response.providerData === undefined).should.be.true();
+  });
+
+  it('returns only the approved mini-profile identity fields', function () {
+    const mini = selectMiniProfileResponse({
+      _id: 'fictional-user-id',
+      id: 'fictional-user-id',
+      username: 'fictional-member',
+      displayName: 'Fictional Member',
+      avatarSource: 'gravatar',
+      avatarUploaded: false,
+      avatarVersion: '0123456789abcdef0123456789abcdef',
+      emailHash: 'fictional-hash',
+      additionalProvidersData: {
+        facebook: { id: 'fictional-facebook-id', accessToken: 'private' },
+      },
+      public: true,
+      roles: ['admin'],
+      blocked: ['fictional-blocked-id'],
+      email: 'member@example.test',
+      futureField: 'must stay private',
+    });
+
+    mini.username.should.equal('fictional-member');
+    mini.additionalProvidersData.facebook.id.should.equal(
+      'fictional-facebook-id',
+    );
+    (
+      mini.additionalProvidersData.facebook.accessToken === undefined
+    ).should.be.true();
+    for (const field of ['public', 'roles', 'email', 'futureField']) {
+      (mini[field] === undefined).should.be.true();
+    }
+    mini.blocked.should.deepEqual(['fictional-blocked-id']);
   });
 });

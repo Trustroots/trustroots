@@ -19,7 +19,7 @@ import type { SearchResultOffer } from '@/modules/search/client/components/Searc
 import type { Event as NostrEvent } from 'nostr-tools';
 import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
 import type { MapPoint } from '@/modules/search/client/utils/location';
-import type { Offer } from '@/modules/offers/client/api/offers.api';
+import type { OfferReadPayload } from '@/modules/offers/shared/offer';
 
 type SearchMapProps = React.ComponentProps<typeof SearchMap>;
 type SearchMapHarnessProps = Pick<
@@ -204,13 +204,18 @@ let searchMapProps: SearchMapHarnessProps = {
   onOfferClose: () => {},
 };
 
-const mockOffer: SearchResultOffer & Offer & { _id: string } = {
+const mockOffer: SearchResultOffer & {
+  _id: string;
+  location: [number, number];
+  user: SearchResultOffer['user'] & { _id: string };
+} = {
   _id: '665100000000000000000001',
   type: 'host',
   status: 'yes',
   description: 'Welcome',
   location: [60.17, 24.94],
   user: {
+    _id: 'member-1',
     username: 'hoster',
     displayName: 'Host Person',
     birthdate: '1990-05-15T00:00:00.000Z',
@@ -395,7 +400,7 @@ describe('<SearchPage />', () => {
   });
 
   it('continues to share requests for offers across overlapping viewports', async () => {
-    const pending = new Map<string, (offer: Offer) => void>();
+    const pending = new Map<string, (offer: OfferReadPayload) => void>();
     offersApi.getOffer.mockImplementation(
       id =>
         new Promise(resolve => {
@@ -426,7 +431,7 @@ describe('<SearchPage />', () => {
   });
 
   it('stops requesting later batches after the results pane unmounts', async () => {
-    const pending: Array<(offer: Offer) => void> = [];
+    const pending: Array<(offer: OfferReadPayload) => void> = [];
     offersApi.getOffer.mockImplementation(
       () =>
         new Promise(resolve => {
@@ -441,14 +446,14 @@ describe('<SearchPage />', () => {
 
     unmount();
     await act(async () => {
-      pending.forEach(resolve => resolve(null as never));
+      pending.forEach(resolve => Reflect.apply(resolve, undefined, [null]));
       await Promise.resolve();
     });
     expect(offersApi.getOffer).toHaveBeenCalledTimes(8);
   });
 
   it('does not commit loaded offers after the search page unmounts', async () => {
-    let resolveOffer!: (offer: Offer) => void;
+    let resolveOffer!: (offer: OfferReadPayload) => void;
     offersApi.getOffer.mockImplementation(
       () =>
         new Promise(resolve => {
@@ -469,7 +474,9 @@ describe('<SearchPage />', () => {
 
   it('skips visible offers when the offer endpoint returns no result', async () => {
     // The endpoint can return no offer for a stale visible result.
-    offersApi.getOffer.mockResolvedValue(null as never);
+    Reflect.apply(offersApi.getOffer.mockResolvedValue, offersApi.getOffer, [
+      null,
+    ]);
     renderSearchPage();
     openResultsWithVisibleOfferIds(['missing-offer']);
 
@@ -808,7 +815,7 @@ describe('<SearchPage />', () => {
   });
 
   it('ignores offer results and failures that arrive after unmount', async () => {
-    let resolveOffer!: (offer: Offer) => void;
+    let resolveOffer!: (offer: OfferReadPayload) => void;
     const offerId = '665100000000000000000001';
     mockGetRouteParams.mockReturnValue({ offer: offerId });
     offersApi.getOffer.mockReturnValue(

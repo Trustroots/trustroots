@@ -6,11 +6,12 @@ import '@/config/client/i18n';
 import ThreadReply from '@/modules/messages/client/components/ThreadReply';
 
 import { previewMessage } from '@/modules/messages/client/api/messages.api';
-
 jest.mock('@/modules/messages/client/api/messages.api', () => ({
   previewMessage: jest.fn(),
 }));
-const mockPreviewMessage = jest.mocked(previewMessage);
+const previewMessageMock = previewMessage as jest.MockedFunction<
+  typeof previewMessage
+>;
 
 type EditorMockProps = {
   id?: string;
@@ -54,7 +55,7 @@ function getForm(container: HTMLElement): HTMLFormElement {
 describe('<ThreadReply>', () => {
   it('disables preview for empty drafts and shows formatted content without changing the cached draft', async () => {
     const draft = '<p><strong>Fictional draft</strong></p>';
-    mockPreviewMessage.mockResolvedValue('<p><b>Fictional draft</b></p>');
+    previewMessageMock.mockResolvedValue('<p><b>Fictional draft</b></p>');
     const onSend = jest.fn();
     const { getByRole, queryByRole } = render(
       <ThreadReply cacheKey="preview-draft" onSend={onSend} />,
@@ -70,7 +71,7 @@ describe('<ThreadReply>', () => {
     expect(
       getByRole('region', { name: 'Message preview' }).querySelector('b'),
     ).toHaveTextContent('Fictional draft');
-    expect(previewMessage).toHaveBeenCalledWith(draft);
+    expect(previewMessageMock).toHaveBeenCalledWith(draft);
     expect(onSend).not.toHaveBeenCalled();
     expect(window.localStorage.getItem('preview-draft')).toBe(draft);
     fireEvent.click(getByRole('button', { name: 'Edit' }));
@@ -79,7 +80,7 @@ describe('<ThreadReply>', () => {
   });
 
   it('offers retry after preview failure and uses message link rules', async () => {
-    mockPreviewMessage
+    previewMessageMock
       .mockRejectedValueOnce(new Error('offline'))
       .mockResolvedValueOnce(
         '<p><a href="https://outside.example/">External</a> <a href="/profile/fictional">Internal</a></p>',
@@ -102,22 +103,22 @@ describe('<ThreadReply>', () => {
     expect(getByRole('region', { name: 'Message preview' })).toHaveTextContent(
       'External',
     );
-    expect(previewMessage).toHaveBeenCalledTimes(2);
+    expect(previewMessageMock).toHaveBeenCalledTimes(2);
   });
 
   it('ignores stale success and error responses when editing a newer draft', async () => {
-    let resolveFirst!: (content: string) => void;
-    let rejectSecond!: (error: Error) => void;
-    mockPreviewMessage
+    let resolveFirst!: (value: string) => void;
+    let rejectSecond!: (reason: Error) => void;
+    previewMessageMock
       .mockImplementationOnce(
         () =>
-          new Promise<string>(resolve => {
+          new Promise(resolve => {
             resolveFirst = resolve;
           }),
       )
       .mockImplementationOnce(
         () =>
-          new Promise<string>((_resolve, reject) => {
+          new Promise((_resolve, reject) => {
             rejectSecond = reject;
           }),
       )
@@ -146,7 +147,7 @@ describe('<ThreadReply>', () => {
     );
     resolveFirst('<p>Old preview</p>');
     rejectSecond(new Error('old error'));
-    await waitFor(() => expect(previewMessage).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(previewMessageMock).toHaveBeenCalledTimes(3));
     expect(getByRole('region', { name: 'Message preview' })).toHaveTextContent(
       'Newest preview',
     );
@@ -154,10 +155,10 @@ describe('<ThreadReply>', () => {
   });
 
   it('ignores preview responses after unmounting', async () => {
-    let resolvePreview!: (content: string) => void;
-    mockPreviewMessage.mockImplementationOnce(
+    let resolvePreview!: (value: string) => void;
+    previewMessageMock.mockImplementationOnce(
       () =>
-        new Promise<string>(resolve => {
+        new Promise(resolve => {
           resolvePreview = resolve;
         }),
     );
@@ -171,7 +172,7 @@ describe('<ThreadReply>', () => {
 
   it('sends the original draft from preview, preserves it on failure and clears it on success', async () => {
     const draft = '<p><strong>Original draft</strong></p>';
-    mockPreviewMessage.mockResolvedValue('<p><b>Original draft</b></p>');
+    previewMessageMock.mockResolvedValue('<p><b>Original draft</b></p>');
     const onSend = jest
       .fn()
       .mockResolvedValueOnce(false)

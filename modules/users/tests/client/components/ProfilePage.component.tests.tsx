@@ -10,6 +10,7 @@ import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import * as profileRoutes from '@/modules/users/client/utils/profile-routes';
 import type { ContactRecord } from '@/modules/contacts/client/types';
 import type { UserProfile, UserSummary } from '@/modules/users/client/types';
+import { resolveMalformed } from '@/testutils/client/malformed-fixtures';
 
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/contacts/client/api/contacts.api');
@@ -734,9 +735,7 @@ describe('ProfilePage', () => {
 
   it('handles optional member metadata and an absent contact list', async () => {
     // This endpoint regression covers a legacy response with no list value.
-    listContacts.mockResolvedValue(
-      undefined as unknown as Awaited<ReturnType<typeof contactsApi.list>>,
-    );
+    resolveMalformed(listContacts, undefined);
     renderPage(
       { _id: 'user-1', public: true, username: 'ada' } as UserProfile,
       '/profile/bob',

@@ -157,7 +157,7 @@ const legacyConfig = {
       files: [
         'modules/*/tests/client/*.{js,ts,tsx}',
         'modules/*/tests/client/**/*.{js,ts,tsx}',
-        'testutils/client/*.js',
+        'testutils/client/*.{js,ts,tsx}',
       ],
       extends: [
         'plugin:react/recommended',
@@ -189,6 +189,7 @@ const legacyConfig = {
         'modules/*/client/**/*.{ts,tsx}',
         'modules/*/shared/**/*.{ts,tsx}',
         'modules/*/tests/client/**/*.{ts,tsx}',
+        'testutils/client/**/*.{ts,tsx}',
       ],
       parser: '@typescript-eslint/parser',
       extends: ['plugin:@typescript-eslint/recommended', 'prettier'],

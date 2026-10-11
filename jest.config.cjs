@@ -1,4 +1,5 @@
 module.exports = {
+  roots: ['<rootDir>/modules'],
   watchman: false,
   moduleNameMapper: {
     '^@/(.*)\\.js$': '<rootDir>/$1',

@@ -17,7 +17,7 @@ import type {
 import type { UserProfile } from '@/modules/users/client/types';
 
 jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
 );
 
 const axiosMock = jest.mocked(axios);

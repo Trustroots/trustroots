@@ -1,3 +1,4 @@
+import { invokeMalformed } from '@/testutils/client/malformed-fixtures';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -68,9 +69,9 @@ describe('React AuthProvider', () => {
     expect(userHasRole({ roles: ['user'] }, 'admin')).toBe(false);
     expect(userHasRole(null, 'admin')).toBe(false);
     // Preserve the regression case for a missing role argument at this API boundary.
-    expect(
-      userHasRole({ roles: ['admin'] }, undefined as unknown as string),
-    ).toBe(false);
+    expect(invokeMalformed(userHasRole, { roles: ['admin'] }, undefined)).toBe(
+      false,
+    );
   });
 
   it('throws when useAuth is used outside AuthProvider', () => {
