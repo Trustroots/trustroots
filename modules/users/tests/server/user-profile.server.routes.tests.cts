@@ -15,6 +15,12 @@ type ProfileUserDocument = UserDocument & { usernameUpdateAllowed?: boolean };
 type Credentials =
   import('../../../../testutils/server/model-contracts.mts').Credentials;
 const User = mongoose.model<UserRecord, UserModel>('User');
+const {
+  generateSecretKey,
+  getPublicKey,
+  finalizeEvent,
+} = require('nostr-tools/pure');
+const nip19 = require('nostr-tools/nip19');
 const validNpub =
   'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
 const nsec = 'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqwkhnav';
@@ -489,6 +495,77 @@ describe('User profile CRUD tests', function () {
         });
     });
   });
+
+  it('verifies the saved Nostr key and keeps verification private to its owner', async function () {
+    const secretKey = generateSecretKey();
+    const pubkey = getPublicKey(secretKey);
+    const npub = nip19.npubEncode(pubkey);
+    user.nostrNpub = npub;
+    await user.save();
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+
+    const challengeResponse = await agent
+      .post('/api/users/nostr/challenge')
+      .send({})
+      .expect(200);
+    challengeResponse.body.event.kind.should.equal(27235);
+    challengeResponse.body.expiresAt.should.be.a.String();
+    const signedEvent = finalizeEvent(
+      { ...challengeResponse.body.event, pubkey },
+      secretKey,
+    );
+    const verifyResponse = await agent
+      .post('/api/users/nostr/verify')
+      .send({ event: signedEvent })
+      .expect(200);
+    verifyResponse.body.nostrVerifiedAt.should.be.a.String();
+
+    const ownProfile = await agent
+      .get('/api/users/' + encodeURIComponent(user.username))
+      .expect(200);
+    ownProfile.body.nostrVerifiedAt.should.equal(
+      verifyResponse.body.nostrVerifiedAt,
+    );
+
+    const otherSecretKey = generateSecretKey();
+    const otherNpub = nip19.npubEncode(getPublicKey(otherSecretKey));
+    await User.updateOne(
+      { _id: user2._id },
+      {
+        $set: {
+          nostrNpub: otherNpub,
+          nostrVerifiedNpub: otherNpub,
+          nostrVerifiedAt: new Date(),
+        },
+      },
+    );
+    const publicProfile = await agent
+      .get('/api/users/' + encodeURIComponent(user2.username))
+      .expect(200);
+    should.not.exist(publicProfile.body.nostrVerifiedAt);
+    should.not.exist(publicProfile.body.nostrVerifiedNpub);
+  });
+
+  it('rejects a challenge after the saved key is removed', async function () {
+    const secretKey = generateSecretKey();
+    user.nostrNpub = nip19.npubEncode(getPublicKey(secretKey));
+    await user.save();
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const challenge = await agent
+      .post('/api/users/nostr/challenge')
+      .send({})
+      .expect(200);
+    const signedEvent = finalizeEvent(
+      { ...challenge.body.event, pubkey: getPublicKey(secretKey) },
+      secretKey,
+    );
+    await agent.put('/api/users').send({ nostrNpub: '' }).expect(200);
+    await agent
+      .post('/api/users/nostr/verify')
+      .send({ event: signedEvent })
+      .expect(400);
+  });
+
   it('should trim and canonicalize nostr npub when updating own profile', function (done) {
     user.roles = ['user'];
     user.save(function (err: Error | null) {

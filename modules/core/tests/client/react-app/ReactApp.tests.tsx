@@ -35,6 +35,22 @@ jest.mock('@tanstack/react-router', () => ({
     '@tanstack/react-router',
   ),
 }));
+jest.mock(
+  '@/modules/users/client/components/ProfileEditNetworks.component',
+  () => {
+    const React = jest.requireActual<typeof import('react')>('react');
+    return function MockNetworks() {
+      const [draft, setDraft] = React.useState('');
+      return (
+        <input
+          aria-label="Network draft"
+          value={draft}
+          onChange={event => setDraft(event.target.value)}
+        />
+      );
+    };
+  },
+);
 
 jest.mock('@/modules/admin/client/components/Admin.component', () => {
   const React = jest.requireActual<typeof import('react')>('react');
@@ -544,6 +560,27 @@ describe('<ReactApp />', () => {
     } finally {
       link.remove();
     }
+  });
+
+  it('preserves network drafts when signer callback parameters are scrubbed', async () => {
+    renderApp(
+      '/profile/edit/networks?nostrOperation=fictional-operation&nostrResult=fictional-result',
+      {
+        user: {
+          _id: 'fictional-member',
+          username: 'fictional-member',
+          public: true,
+        },
+      },
+    );
+    const draft = await screen.findByLabelText('Network draft');
+    fireEvent.change(draft, { target: { value: 'accepted signer key' } });
+    await act(async () => {
+      window.history.replaceState({}, '', '/profile/edit/networks');
+    });
+    await waitFor(() => expect(window.location.search).toBe(''));
+    expect(screen.getByLabelText('Network draft')).toBe(draft);
+    expect(draft).toHaveValue('accepted signer key');
   });
 
   it('leaves links outside React route ownership to the browser', async () => {

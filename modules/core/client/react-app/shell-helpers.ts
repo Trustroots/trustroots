@@ -1,4 +1,9 @@
 export function signout(event?: { preventDefault: () => void }) {
+  try {
+    sessionStorage.removeItem('trustroots.nostr.pending');
+  } catch {
+    // Storage access must not prevent signing out.
+  }
   if (event) {
     event.preventDefault();
   }

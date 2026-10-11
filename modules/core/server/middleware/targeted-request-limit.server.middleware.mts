@@ -163,6 +163,8 @@ function createTargetedRequestLimits(deps?: LimitDependencies) {
     resetPassword: createLimiter('resetPassword', 'token', deps),
     resendConfirmation: createLimiter('resendConfirmation', 'member', deps),
     avatarUpload: createLimiter('avatarUpload', 'member', deps),
+    nostrChallenge: createLimiter('nostrChallenge', 'member', deps),
+    nostrVerify: createLimiter('nostrVerify', 'member', deps),
     getRequestIdentity,
   };
 }

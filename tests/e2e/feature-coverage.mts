@@ -1478,12 +1478,24 @@ const features = [
           { requiresAuth: true },
         ),
       ],
-      apiRoutes: [apiRoute('PUT', '/api/users', source.usersServer)],
+      apiRoutes: [
+        apiRoute('PUT', '/api/users', source.usersServer),
+        apiRoute('POST', '/api/users/nostr/challenge', source.usersServer),
+        apiRoute('POST', '/api/users/nostr/verify', source.usersServer),
+      ],
     },
     requiredScenarios: [
       'Networks edit form is reachable.',
       'Invalid Nostr secret key is rejected.',
       'Valid npub is saved and shown on profile view.',
+      'Members can import a public key from a NIP-46 bunker.',
+      'Members can pair with a signer through a generated Nostr Connect URI.',
+      'Members can import a public key through a correlated NIP-55 callback.',
+      'Members can verify ownership of a saved key through NIP-07.',
+      'Verification persists in the owning member editor and remains private on public profiles.',
+      'Changing the saved key clears its previous verification.',
+      'A signer with a different public key cannot verify the saved profile key.',
+      'Members can verify ownership through a NIP-55 sign-event callback.',
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'profile edit networks page is reachable'),
@@ -1499,6 +1511,30 @@ const features = [
       spec(
         'nostr.spec.js',
         'links the saved npub to nos.trustroots.org on the profile view',
+      ),
+      spec(
+        'nostr.spec.js',
+        'imports and saves the public key returned by a NIP-46 bunker',
+      ),
+      spec(
+        'nostr.spec.js',
+        'completes generated Nostr Connect pairing through the local encrypted relay',
+      ),
+      spec(
+        'nostr.spec.js',
+        'imports a NIP-55 public key from its correlated callback',
+      ),
+      spec(
+        'nostr.spec.js',
+        'verifies a saved key with NIP-07, keeps the status private, and clears it when the key changes',
+      ),
+      spec(
+        'nostr.spec.js',
+        'rejects a NIP-07 signer whose key differs from the saved profile key',
+      ),
+      spec(
+        'nostr.spec.js',
+        'verifies a saved key through the NIP-55 sign-event callback',
       ),
     ],
   },

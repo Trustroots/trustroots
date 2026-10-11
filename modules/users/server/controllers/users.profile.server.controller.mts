@@ -350,11 +350,31 @@ service.update = function (req, res) {
           user: UserServerDocument,
         ) => void,
       ) {
+        const previousNpub = authenticatedUser.nostrNpub || '';
         const user = Object.assign(
           authenticatedUser,
           selectProfileUpdateFields(req.body),
         );
         user.set('updated', Date.now());
+        if (
+          Object.prototype.hasOwnProperty.call(req.body, 'nostrNpub') &&
+          user.nostrNpub !== previousNpub
+        ) {
+          // Invalidate proof and outstanding challenges in the same Mongo
+          // update as the canonical key change.
+          user.nostrVerifiedNpub = undefined;
+          user.nostrVerifiedAt = undefined;
+          user.nostrChallenge = undefined;
+          user.nostrChallengeExpiresAt = undefined;
+          for (const field of [
+            'nostrVerifiedAt',
+            'nostrVerifiedNpub',
+            'nostrChallenge',
+            'nostrChallengeExpiresAt',
+          ]) {
+            user.markModified(field);
+          }
+        }
 
         // This is set only if user edited email
         if (token && email) {

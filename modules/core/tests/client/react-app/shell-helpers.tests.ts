@@ -260,6 +260,40 @@ describe('React shell helpers', () => {
     expect(preventDefault).toHaveBeenCalled();
   });
 
+  it('clears pending Nostr requests on sign out', () => {
+    sessionStorage.setItem('trustroots.nostr.pending', 'pending');
+    sessionStorage.setItem('unrelated', 'preserved');
+    const submit = jest
+      .spyOn(HTMLFormElement.prototype, 'submit')
+      .mockImplementation(() => {});
+    try {
+      signout();
+      expect(sessionStorage.getItem('trustroots.nostr.pending')).toBeNull();
+      expect(sessionStorage.getItem('unrelated')).toBe('preserved');
+    } finally {
+      sessionStorage.clear();
+      submit.mockRestore();
+    }
+  });
+
+  it('signs out when session storage is unavailable', () => {
+    const remove = jest
+      .spyOn(Storage.prototype, 'removeItem')
+      .mockImplementation(() => {
+        throw new Error('Unavailable');
+      });
+    const submit = jest
+      .spyOn(HTMLFormElement.prototype, 'submit')
+      .mockImplementation(() => {});
+    try {
+      expect(() => signout()).not.toThrow();
+      expect(submit).toHaveBeenCalled();
+    } finally {
+      remove.mockRestore();
+      submit.mockRestore();
+    }
+  });
+
   it('posts native mobile sign out messages', () => {
     const postMessage: typeof window.postMessage = jest.fn();
     const originalPostMessage = window.postMessage;

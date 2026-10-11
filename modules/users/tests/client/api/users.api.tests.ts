@@ -2,6 +2,7 @@ import axios, { type AxiosResponse } from 'axios';
 
 import {
   changePassword,
+  createNostrVerificationChallenge,
   fetch,
   fetchMini,
   removeProfile,
@@ -9,6 +10,7 @@ import {
   resendEmailConfirmation,
   update,
   uploadAvatar,
+  verifyNostrKey,
 } from '@/modules/users/client/api/users.api';
 
 jest.mock('axios', () =>
@@ -36,6 +38,58 @@ describe('users api', () => {
     expect(axiosMock.put).toHaveBeenCalledWith('/api/users', {
       description: 'Hi there',
     });
+  });
+
+  it('requests a challenge for the saved key without updating the profile', async () => {
+    const challenge = {
+      event: {
+        kind: 27235,
+        created_at: 1_700_000_000,
+        content: '',
+        tags: [
+          ['u', 'https://example.com/api/users/nostr/verify'],
+          ['method', 'POST'],
+          ['challenge', 'fictional-nonce'],
+        ],
+      },
+      expiresAt: '2023-11-14T22:14:20.000Z',
+    };
+    axiosMock.post.mockResolvedValueOnce(response(challenge));
+
+    await expect(createNostrVerificationChallenge()).resolves.toBe(challenge);
+    expect(axiosMock.post).toHaveBeenCalledWith('/api/users/nostr/challenge');
+    expect(axiosMock.put).not.toHaveBeenCalled();
+  });
+
+  it('submits signed proof and returns the server-owned verification status', async () => {
+    const event = {
+      kind: 27235,
+      created_at: 1_700_000_000,
+      content: '',
+      tags: [['challenge', 'fictional-nonce']],
+      pubkey: 'a'.repeat(64),
+      id: 'b'.repeat(64),
+      sig: 'c'.repeat(128),
+    };
+    const user = {
+      _id: 'member-1',
+      username: 'fictional-member',
+      displayName: 'Fictional Member',
+      nostrVerifiedAt: '2023-11-14T22:13:20.000Z',
+    };
+    axiosMock.post.mockResolvedValueOnce(response(user));
+
+    await expect(verifyNostrKey(event)).resolves.toBe(user);
+    expect(axiosMock.post).toHaveBeenCalledWith('/api/users/nostr/verify', {
+      event,
+    });
+  });
+
+  it('propagates challenge failures so the editor can offer retry', async () => {
+    const error = new Error('Service unavailable');
+    axiosMock.post.mockRejectedValueOnce(error);
+
+    await expect(createNostrVerificationChallenge()).rejects.toBe(error);
   });
 
   it('fetches a user by username', async () => {

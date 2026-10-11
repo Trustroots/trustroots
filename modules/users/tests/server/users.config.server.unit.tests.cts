@@ -122,4 +122,25 @@ describe('Users Passport session configuration', () => {
       },
     );
   });
+
+  it('loads private Nostr verification fields for authenticated profile sessions', async () => {
+    const currentUser = { id: 'member-id', authVersion: 4 };
+    const findOne = sinon.stub().callsFake((query, fields, callback) => {
+      fields.should.equal(
+        '-salt -password +nostrVerifiedNpub +nostrVerifiedAt',
+      );
+      callback(null, currentUser);
+    });
+    sinon.stub(User, 'findOne').callsFake(findOne);
+    const handlers = await installSessionHandlers();
+
+    handlers.deserialize(
+      { id: 'member-id', authVersion: 4 },
+      (err, restoredUser) => {
+        should.not.exist(err);
+        restoredUser.should.equal(currentUser);
+        findOne.calledOnce.should.be.true();
+      },
+    );
+  });
 });

@@ -15,7 +15,8 @@
     "esModuleInterop": true,
     "paths": {
       "@/*": ["./*"],
-      "modules/*": ["./modules/*"]
+      "modules/*": ["./modules/*"],
+      "nostr-tools/nip46": ["./node_modules/nostr-tools/lib/types/nip46.d.ts"]
     },
     "types": ["vite/client"],
     "resolveJsonModule": true

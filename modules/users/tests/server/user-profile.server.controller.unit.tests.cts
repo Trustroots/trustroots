@@ -260,6 +260,38 @@ describe('Profile controller unit tests', () => {
       responseString(res, 'nostrNpub').should.equal(validNpub);
     });
 
+    it('clears saved proof and challenge state when the canonical key changes', async () => {
+      userDoc.nostrNpub = validNpub;
+      await userDoc.save();
+      await User.updateOne(
+        { _id: userDoc._id },
+        {
+          $set: {
+            nostrVerifiedNpub: validNpub,
+            nostrVerifiedAt: new Date(),
+            nostrChallenge: 'fictional-challenge',
+            nostrChallengeExpiresAt: new Date(Date.now() + 60_000),
+          },
+        },
+      );
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          { user: userDoc, body: { nostrNpub: '' } },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      const saved = await User.findById(userDoc._id).select(
+        '+nostrVerifiedNpub +nostrVerifiedAt +nostrChallenge +nostrChallengeExpiresAt',
+      );
+      should.not.exist(saved.nostrVerifiedNpub);
+      should.not.exist(saved.nostrVerifiedAt);
+      should.not.exist(saved.nostrChallenge);
+      should.not.exist(saved.nostrChallengeExpiresAt);
+    });
+
     it('returns 400 when checking nostr npub availability fails', async () => {
       const failedNpubLookup = (
         _query: unknown,
