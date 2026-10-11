@@ -35,9 +35,7 @@ describe('user network utilities', () => {
     const unknownProviderData: SocialProviderData & { username: string } = {
       username: 'trustroots',
     };
-    expect(socialAccountLink('facebook', facebookData)).toBe(
-      'https://www.facebook.com/app_scoped_user_id/abc123',
-    );
+    expect(socialAccountLink('facebook', facebookData)).toBe('#');
     expect(socialAccountLink('twitter', twitterData)).toBe(
       'https://twitter.com/trustroots',
     );

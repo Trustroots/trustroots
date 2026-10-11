@@ -273,9 +273,6 @@ service = {
     user: '',
     publicKey: '',
   },
-  facebook: {
-    page: '',
-  },
   twitter: {
     username: '',
   },

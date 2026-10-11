@@ -55,6 +55,15 @@ describe('User Model Unit Tests:', function () {
 
   afterEach(utils.clearDatabase);
 
+  describe('Default profile image source', function () {
+    it('defaults new accounts to no photo and allows explicit Gravatar selection', function () {
+      const member = new User();
+      member.avatarSource.should.equal('none');
+      member.avatarSource = 'gravatar';
+      member.avatarSource.should.equal('gravatar');
+    });
+  });
+
   describe('Retired Facebook avatars', function () {
     it('normalises stored selections and allows unrelated profile saves', async function () {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));

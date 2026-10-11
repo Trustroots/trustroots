@@ -36,9 +36,7 @@ export function socialAccountLink(
   providerName: string,
   providerData: PublicProviderIdentity = {},
 ): string {
-  if (providerName === 'facebook' && 'id' in providerData && providerData.id) {
-    return `https://www.facebook.com/app_scoped_user_id/${providerData.id}`;
-  } else if (
+  if (
     providerName === 'twitter' &&
     'screen_name' in providerData &&
     providerData.screen_name

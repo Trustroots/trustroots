@@ -303,7 +303,7 @@ const UserSchema = new Schema({
   avatarSource: {
     type: String,
     enum: ['none', 'gravatar', 'local'],
-    default: 'gravatar',
+    default: 'none',
   },
   avatarUploaded: {
     type: Boolean,

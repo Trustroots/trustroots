@@ -160,11 +160,6 @@ export default function ProfileViewBasics({
             )}
           </li>
         )}
-        {/*
-          Facebook profile link is hidden here until issue with their API gets resolved
-          See https://github.com/Trustroots/trustroots/issues/237
-        */}
-        {/* facebook, github, twitter*/}
         {profile.additionalProvidersData &&
           PUBLIC_PROVIDER_NAMES.filter(network =>
             Object.prototype.hasOwnProperty.call(
