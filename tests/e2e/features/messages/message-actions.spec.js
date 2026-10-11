@@ -23,6 +23,76 @@ test.describe.serial('message action feature coverage', () => {
     await signInViaApi(page, request, berlin);
   });
 
+  for (const [layout, viewport] of [
+    ['desktop', { width: 1280, height: 800 }],
+    ['mobile', { width: 390, height: 844 }],
+  ]) {
+    test(`${layout} members can preview, edit and send a formatted draft`, async ({
+      page,
+      request,
+    }, testInfo) => {
+      annotateFeature(testInfo, 'messages.draft-preview', [
+        'Members can preview and edit a formatted draft without sending it.',
+        'Sending from preview sends the original draft and returns to editing.',
+        'Preview follows message link rules on desktop and mobile.',
+      ]);
+      await page.setViewportSize(viewport);
+      const recipientId = await fetchUserIdByUsername(
+        request,
+        portland.username,
+      );
+      await page.goto(`/messages/${portland.username}?userId=${recipientId}`);
+      const editor = page.locator('#message-reply-content');
+      const draft = `<p><strong>Fictional preview ${Date.now()}</strong></p><p><a href="https://outside.example/">External label</a> <a href="/profile/fictional">Internal label</a></p>`;
+      await editor.evaluate((element, content) => {
+        element.innerHTML = content;
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+      }, draft);
+      const sends = [];
+      page.on('request', outgoing => {
+        if (
+          new URL(outgoing.url()).pathname === '/api/messages' &&
+          outgoing.method() === 'POST'
+        )
+          sends.push(outgoing);
+      });
+      await page.getByRole('button', { name: 'Preview', exact: true }).click();
+      const preview = page.getByRole('region', { name: 'Message preview' });
+      await expect(preview.locator('b')).toContainText('Fictional preview');
+      await expect(
+        preview.getByRole('link', { name: 'External label' }),
+      ).toHaveCount(0);
+      await expect(
+        preview.getByRole('link', { name: 'Internal label' }),
+      ).toHaveAttribute('href', '/profile/fictional');
+      expect(sends).toHaveLength(0);
+      await expect(
+        page.getByRole('button', { name: 'Edit', exact: true }),
+      ).toBeInViewport();
+      await page.getByRole('button', { name: 'Edit', exact: true }).click();
+      await expect(editor).toBeFocused();
+      expect(await editor.innerHTML()).toBe(draft);
+      await page.getByRole('button', { name: 'Preview', exact: true }).click();
+      await expect(preview.locator('b')).toContainText('Fictional preview');
+      const sent = page.waitForResponse(
+        response =>
+          new URL(response.url()).pathname === '/api/messages' &&
+          response.request().method() === 'POST' &&
+          response.ok(),
+      );
+      await page.locator('#messageReplySubmit').click();
+      await sent;
+      expect(sends).toHaveLength(1);
+      expect(sends[0].postDataJSON().content).toBe(draft);
+      await expect(preview).toHaveCount(0);
+      await expect(editor).toBeFocused();
+      await expect(editor).toBeEmpty();
+      await expect(page.locator('.message .panel-body b').last()).toContainText(
+        'Fictional preview',
+      );
+    });
+  }
+
   test('members can send replies and validation blocks empty messages', async ({
     page,
     request,

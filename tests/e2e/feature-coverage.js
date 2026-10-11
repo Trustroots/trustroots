@@ -2345,6 +2345,33 @@ const features = [
     ],
   },
   {
+    id: 'messages.draft-preview',
+    area: AREA.messages,
+    status: STATUS.active,
+    description: 'Members can preview formatted drafts before sending.',
+    roles: ['confirmed-member'],
+    references: {
+      apiRoutes: [
+        apiRoute('POST', '/api/messages-preview', source.messagesServer),
+      ],
+    },
+    requiredScenarios: [
+      'Members can preview and edit a formatted draft without sending it.',
+      'Sending from preview sends the original draft and returns to editing.',
+      'Preview follows message link rules on desktop and mobile.',
+    ],
+    relatedSpecs: [
+      spec(
+        'message-actions.spec.js',
+        'desktop members can preview, edit and send a formatted draft',
+      ),
+      spec(
+        'message-actions.spec.js',
+        'mobile members can preview, edit and send a formatted draft',
+      ),
+    ],
+  },
+  {
     id: 'messages.reply-statistics',
     area: AREA.messages,
     status: STATUS.active,
