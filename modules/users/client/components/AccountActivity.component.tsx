@@ -59,11 +59,10 @@ export default function AccountActivity() {
     };
   }, [refreshKey]);
 
-  async function loadMore() {
-    if (!nextCursor || loadingMore) return;
+  async function loadMore(cursor: string) {
     setLoadingMore(true);
     try {
-      const page = await getAccountActivity(nextCursor);
+      const page = await getAccountActivity(cursor);
       setEvents(current => [...current, ...page.events]);
       setNextCursor(page.nextCursor);
     } catch {
@@ -108,7 +107,7 @@ export default function AccountActivity() {
           type="button"
           className="btn btn-default"
           disabled={loadingMore}
-          onClick={() => void loadMore()}
+          onClick={() => void loadMore(nextCursor)}
         >
           {loadingMore ? t('Loading activity…') : t('Load more activity')}
         </button>
