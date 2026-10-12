@@ -124,8 +124,15 @@
   h3 {
     margin-top: 0;
   }
-  li + li {
-    margin-top: 8px;
+  ul {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin: 16px 0 0;
+  }
+  li { min-width: 0; }
+  @media (min-width: @screen-md-min) {
+    ul { grid-template-columns: 1fr 1fr; }
   }
 }
 
@@ -136,15 +143,11 @@
   text-align: center;
 }
 
-.circle-member-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 10px;
-  .avatar {
-    flex: 0 0 auto;
-    border-radius: 50%;
-  }
+.circle-member-row { margin: 0; }
+.hackerspace-hero-map { margin-top: 24px; margin-bottom: 32px; }
+@media (min-width: @screen-md-min) {
+  .hackerspace-hero-map { margin-top: 0; }
+  .tribe-header.is-hackers-circle .tribe-header-info { min-height: 100vh; height: auto; }
 }
 
 .tribe-attribution {

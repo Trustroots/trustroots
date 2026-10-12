@@ -41,6 +41,10 @@ export const invokeRolesPolicies = () => {
           permissions: ['post'],
         },
         {
+          resources: '/api/admin/hackerspaces/preview',
+          permissions: ['get'],
+        },
+        {
           resources: '/api/admin/acquisition-stories',
           permissions: ['post'],
         },
