@@ -11,11 +11,15 @@ const AccountActivity = mongoose.model('AccountActivity');
 describe('Member account activity', function () {
   let app;
   let recordActivity;
+  let listActivity;
 
   before(async function () {
     app = await express.init(mongoose.connection);
     ({ recordActivity } = await import(
       '../../server/services/account-activity.server.service.mjs'
+    ));
+    ({ list: listActivity } = await import(
+      '../../server/controllers/users.activity.server.controller.mjs'
     ));
   });
 
@@ -45,6 +49,44 @@ describe('Member account activity', function () {
     await agent.get('/api/auth/sessions').expect(200);
     return agent;
   }
+
+  function responseStub() {
+    const res = {};
+    res.set = sinon.stub().returns(res);
+    res.vary = sinon.stub().returns(res);
+    res.sendStatus = sinon.stub().returns(res);
+    res.status = sinon.stub().returns(res);
+    res.json = sinon.stub().returns(res);
+    return res;
+  }
+
+  it('rejects anonymous and oversized direct controller requests', async function () {
+    const anonymousResponse = responseStub();
+    await listActivity({ query: {} }, anonymousResponse, sinon.spy());
+    sinon.assert.calledWith(anonymousResponse.sendStatus, 403);
+
+    const oversizedResponse = responseStub();
+    await listActivity(
+      {
+        user: { _id: new mongoose.Types.ObjectId() },
+        query: { limit: '51' },
+      },
+      oversizedResponse,
+      sinon.spy(),
+    );
+    sinon.assert.calledWith(oversizedResponse.status, 400);
+
+    const arrayCursorResponse = responseStub();
+    await listActivity(
+      {
+        user: { _id: new mongoose.Types.ObjectId() },
+        query: { cursor: ['not-a-cursor'] },
+      },
+      arrayCursorResponse,
+      sinon.spy(),
+    );
+    sinon.assert.calledWith(arrayCursorResponse.status, 400);
+  });
 
   it('returns only the signed-in member’s redacted activity with no-store headers', async function () {
     const memberA = await createMember('activity-member-a');
@@ -167,6 +209,15 @@ describe('Member account activity', function () {
       .get('/api/users/activity')
       .query({ cursor: oversizedIdentifier })
       .expect(400);
+    for (const id of ['', 42]) {
+      const invalidIdentifierType = Buffer.from(
+        JSON.stringify({ createdAt: new Date().toISOString(), id }),
+      ).toString('base64url');
+      await agent
+        .get('/api/users/activity')
+        .query({ cursor: invalidIdentifierType })
+        .expect(400);
+    }
     await agent
       .get(`/api/users/activity?cursor=${'x'.repeat(513)}`)
       .expect(400);
