@@ -27,12 +27,10 @@ var removedCounter = 0,
 
 // Bootstrap db connection
 mongoose.set('strictQuery', false);
-mongoose.connect(config.db.uri, function(err) {
-  if (err) {
-    console.error('Could not connect to MongoDB!');
-    console.log(err);
-    process.exit(0);
-  }
+mongoose.connect(config.db.uri).catch(function(err) {
+  console.error('Could not connect to MongoDB!');
+  console.log(err);
+  process.exit(0);
 });
 
 console.log('Gathering data...');
@@ -41,16 +39,13 @@ console.log('Gathering data...');
 // @link https://github.com/caolan/async#queueworker-concurrency
 var q = async.queue(function (contactId, callback) {
   console.log('Removing ' + contactId);
-  Contact.findByIdAndRemove(contactId, function(err) {
-    if(err) {
-      console.error('Failed to remove contact record ' + contactId);
-      callback();
-    }
-    else {
-      removedCounter++;
-      callback();
-    }
-  })
+  Contact.findByIdAndDelete(contactId).then(function() {
+    removedCounter++;
+    callback();
+  }, function() {
+    console.error('Failed to remove contact record ' + contactId);
+    callback();
+  });
 }, 2); // How many jobs to process simultaneously?
 
 // Assign a final callback to removal queue
@@ -59,21 +54,19 @@ q.drain = function() {
   console.log('Removing duplicate records done.');
 
   // All done
-  Contact.find().count().exec(function(err, contactsCount) {
+  Contact.countDocuments().exec().then(function(contactsCount) {
     console.log('- Found ' + totalRecordsWithIssues + ' problematic contact records.');
     console.log('- Removed ' + removedCounter + ' contact records.');
     console.log('- ' + contactsCount + ' contact records of ' + totalInitialContacts + ' left after this script.')
+    process.exit(0);
+  }, function() {
     process.exit(0);
   });
 };
 
 // Check for initial count
-Contact.find().count().exec(function(err, contactsCount) {
-  if (err) {
-    console.error('Error:');
-    console.log(err);
-    process.exit(1);
-  } else if (contactsCount === 0) {
+Contact.countDocuments().exec().then(function(contactsCount) {
+  if (contactsCount === 0) {
     console.log('Could not find any contact records to test.');
     process.exit(0);
   } else {
@@ -96,12 +89,8 @@ Contact.find().count().exec(function(err, contactsCount) {
 
       // Choose only with multiple matches
       { $match: { count: { $gt: 1 } }}
-    ], function(err, issueContacts) {
-        if (err) {
-          console.error('Error:');
-          console.log(err);
-          process.exit(1);
-        } else if (issueContacts.length <= 0) {
+    ]).then(function(issueContacts) {
+        if (issueContacts.length <= 0) {
           console.log('Could not find any records with issues.');
           process.exit(0);
         } else {
@@ -121,6 +110,14 @@ Contact.find().count().exec(function(err, contactsCount) {
             }
           }
         }
+    }, function(err) {
+        console.error('Error:');
+        console.log(err);
+        process.exit(1);
     });
   }
+}, function(err) {
+  console.error('Error:');
+  console.log(err);
+  process.exit(1);
 });

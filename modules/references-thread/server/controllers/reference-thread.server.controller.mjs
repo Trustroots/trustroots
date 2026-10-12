@@ -44,8 +44,10 @@ service.createReferenceThread = function (req, res) {
             ],
           },
           'userTo userFrom',
-          function (err, thread) {
-            if (err || !thread) {
+        )
+          .catch(() => null)
+          .then(thread => {
+            if (!thread) {
               return res.status(400).send({
                 message: 'Thread does not exist.',
               });
@@ -63,8 +65,7 @@ service.createReferenceThread = function (req, res) {
               // Currently authenticated user is not participating in this thread!
               return errorService.sendForbidden(res);
             }
-          },
-        );
+          });
       },
       // Make sure targeted user has actually sent messages to user who is leaving the reference
       function (threadId, referenceUserToId, done) {
@@ -74,7 +75,12 @@ service.createReferenceThread = function (req, res) {
             userTo: req.user._id,
           },
           'userFrom userTo',
-          function (err, message) {
+        )
+          .then(
+            message => ({ message, err: null }),
+            err => ({ message: null, err }),
+          )
+          .then(({ message, err }) => {
             // Handle errors or non-existing thread
             if (err || !message) {
               // Log
@@ -92,17 +98,13 @@ service.createReferenceThread = function (req, res) {
 
             // All good, continue
             done(null, threadId, referenceUserToId);
-          },
-        );
+          });
       },
       // Get user
       function (threadId, referenceUserToId, done) {
-        User.findById(
-          referenceUserToId,
-          '_id gender',
-          (err, referenceUserTo) => {
-            done(err, threadId, referenceUserTo);
-          },
+        User.findById(referenceUserToId, '_id gender').then(
+          referenceUserTo => done(null, threadId, referenceUserTo),
+          err => done(err, threadId, undefined),
         );
       },
       // Save referenceThread
@@ -113,36 +115,34 @@ service.createReferenceThread = function (req, res) {
         referenceThread.userTo = referenceUserTo._id;
         referenceThread.created = new Date(); // Ensure user doesn't try to set this
 
-        referenceThread.save(function (err, savedReferenceThread) {
-          // Handle errors
-          if (err) {
-            return errorService.sendBadRequest(res, err);
-          }
+        referenceThread.save().then(
+          savedReferenceThread => {
+            // Send result to the API
+            res.json(savedReferenceThread);
 
-          // Send result to the API
-          res.json(savedReferenceThread);
-
-          // Send event to stats
-          // Doesn't care about already existing references for this thread
-          statService.stat(
-            {
-              namespace: 'threadReference',
-              counts: {
-                count: 1,
+            // Send event to stats
+            // Doesn't care about already existing references for this thread
+            statService.stat(
+              {
+                namespace: 'threadReference',
+                counts: {
+                  count: 1,
+                },
+                tags: {
+                  // References are `yes` or `no`
+                  // (defined at the `ReferenceThread` model)
+                  reference: referenceThread.reference,
+                  reporterGender: req.user.gender || 'unknown',
+                  reporteeGender: referenceUserTo.gender || 'unknown',
+                },
               },
-              tags: {
-                // References are `yes` or `no`
-                // (defined at the `ReferenceThread` model)
-                reference: referenceThread.reference,
-                reporterGender: req.user.gender || 'unknown',
-                reporteeGender: referenceUserTo.gender || 'unknown',
+              function () {
+                done();
               },
-            },
-            function () {
-              done();
-            },
-          );
-        });
+            );
+          },
+          err => errorService.sendBadRequest(res, err),
+        );
       },
     ],
     function (err) {
@@ -180,36 +180,34 @@ service.readReferenceThreadById = function (req, res, next, userToId) {
           userFrom: req.user._id, // Ensure we get only references we are allowed to read
         })
           .sort('-created') // Latest first
-          .exec(function (err, referenceThread) {
-            if (err) return done(err);
-
-            // Found, move on to the next middleware
-            if (referenceThread) {
-              req.referenceThread = referenceThread;
-              return next();
-            } else {
-              // No existing reference thread found, move on to do more checks
-              done(null);
-            }
-          });
+          .then(
+            referenceThread => {
+              // Found, move on to the next middleware
+              if (referenceThread) {
+                req.referenceThread = referenceThread;
+                return next();
+              } else {
+                // No existing reference thread found, move on to do more checks
+                done(null);
+              }
+            },
+            err => done(err),
+          );
       },
       // Since no pre-existing reference thread found,
       // check if authenticated user would be allowed to send reference to this user at all
       function (done) {
-        Message.findOne(
-          {
-            userFrom: userToId,
-            userTo: req.user._id,
-          },
-          function (err, message) {
-            if (err) return done(err);
-
+        Message.findOne({
+          userFrom: userToId,
+          userTo: req.user._id,
+        }).then(
+          message =>
             // Return 404, but also let client know if we would allow creating a referenceThread
-            return res.status(404).send({
+            res.status(404).send({
               message: errorService.getErrorMessageByKey('not-found'),
               allowCreatingReference: Boolean(message),
-            });
-          },
+            }),
+          err => done(err),
         );
       },
     ],

@@ -52,19 +52,20 @@ export const getNotes = async (req, res) => {
   if (!userId || !mongoose.Types.ObjectId.isValid(userId))
     return errorService.sendInvalidId(res);
 
-  AdminNote.find({ user: userId })
-    .sort('-date')
-    .populate({
-      path: 'admin',
-      select: 'username displayname',
-      model: 'User',
-    })
-    .exec((err, items) => {
-      if (err) {
-        return errorService.sendBadRequest(res, err);
-      }
-      res.send(items || []);
-    });
+  let items;
+  try {
+    items = await AdminNote.find({ user: userId })
+      .sort('-date')
+      .populate({
+        path: 'admin',
+        select: 'username displayname',
+        model: 'User',
+      })
+      .exec();
+  } catch (err) {
+    return errorService.sendBadRequest(res, err);
+  }
+  res.send(items || []);
 };
 const defaultInterop = {
   addNote,

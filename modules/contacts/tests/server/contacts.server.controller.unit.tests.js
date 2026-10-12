@@ -162,7 +162,7 @@ describe('Contacts controller unit tests', () => {
 
     it('responds with 400 when the contact lookup fails before creation', async () => {
       sinon.stub(Contact, 'findOne').returns({
-        exec: cb => cb(new Error('lookup failed')),
+        then: (resolve, reject) => reject(new Error('lookup failed')),
       });
 
       const { res } = await runHandler(res =>
@@ -244,9 +244,7 @@ describe('Contacts controller unit tests', () => {
         'userTo userFrom',
       );
 
-      sinon.stub(Contact.prototype, 'save').callsFake(function (cb) {
-        cb(new Error('save failed'));
-      });
+      sinon.stub(Contact.prototype, 'save').rejects(new Error('save failed'));
 
       const { res } = await runHandler(res =>
         contactsController.confirm({ user: user2, contact: populated }, res),
@@ -280,9 +278,9 @@ describe('Contacts controller unit tests', () => {
         confirmed: true,
       }).save();
 
-      sinon.stub(Contact.prototype, 'remove').callsFake(function (cb) {
-        cb(new Error('remove failed'));
-      });
+      sinon
+        .stub(Contact.prototype, 'deleteOne')
+        .rejects(new Error('remove failed'));
 
       const { res } = await runHandler(res =>
         contactsController.remove({ contact }, res),
@@ -314,7 +312,7 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('allows callers to omit the callback', () => {
-      sinon.stub(Contact, 'deleteMany').callsFake((query, cb) => cb());
+      sinon.stub(Contact, 'deleteMany').resolves();
 
       contactsController.removeAllByUserId(user1._id);
 
@@ -403,7 +401,7 @@ describe('Contacts controller unit tests', () => {
     it('passes contact lookup errors to next', async () => {
       sinon.stub(Contact, 'findOne').returns({
         populate: () => ({
-          exec: cb => cb(new Error('contact lookup failed')),
+          then: (resolve, reject) => reject(new Error('contact lookup failed')),
         }),
       });
 
@@ -501,7 +499,8 @@ describe('Contacts controller unit tests', () => {
     it('passes contact id lookup errors to next', async () => {
       sinon.stub(Contact, 'findById').returns({
         populate: () => ({
-          exec: cb => cb(new Error('contact id lookup failed')),
+          then: (resolve, reject) =>
+            reject(new Error('contact id lookup failed')),
         }),
       });
 
@@ -556,7 +555,7 @@ describe('Contacts controller unit tests', () => {
 
     it('calls next with a database error', async () => {
       sinon.stub(Contact, 'find').returns({
-        exec: cb => cb(new Error('find failed')),
+        then: (resolve, reject) => reject(new Error('find failed')),
       });
 
       const req = {
@@ -687,7 +686,7 @@ describe('Contacts controller unit tests', () => {
 
     it('passes aggregate errors to next', async () => {
       sinon.stub(Contact, 'aggregate').returns({
-        exec: cb => cb(new Error('aggregate failed')),
+        then: (resolve, reject) => reject(new Error('aggregate failed')),
       });
 
       const { nextArg } = await runHandler((res, next) =>
@@ -704,7 +703,7 @@ describe('Contacts controller unit tests', () => {
 
     it('passes missing aggregate results to next', async () => {
       sinon.stub(Contact, 'aggregate').returns({
-        exec: cb => cb(null, null),
+        then: resolve => resolve(null),
       });
 
       const { nextArg } = await runHandler((res, next) =>

@@ -79,27 +79,35 @@ function moveDoc(doc, callback) {
   }
 }
 function insertDocument(doc, callback) {
-  targetCollection.insertOne(doc, callback);
+  targetCollection.insertOne(doc).then(
+    () => callback(null),
+    err => callback(err),
+  );
 }
 function removeDocument(doc, callback) {
-  sourceCollection.deleteOne(doc, callback);
+  sourceCollection.deleteOne(doc).then(
+    () => callback(null),
+    err => callback(err),
+  );
 }
 async.waterfall(
   [
     // Connect
     function (done) {
       // Use connect method to connect to the server
-      MongoClient.connect(config.db.uri, function (err, client) {
-        if (err) {
+      MongoClient.connect(config.db.uri).then(
+        function (client) {
+          dbClient = client;
+          console.log('Connected to MongoDB:', config.db.uri);
+          sourceCollection = client.db().collection(sourceCollectionName);
+          targetCollection = client.db().collection(targetCollectionName);
+          done();
+        },
+        function (err) {
           console.log('Could not connect to MongoDB!');
-          return done(err);
-        }
-        dbClient = client;
-        console.log('Connected to MongoDB:', config.db.uri);
-        sourceCollection = client.db().collection(sourceCollectionName);
-        targetCollection = client.db().collection(targetCollectionName);
-        done();
-      });
+          done(err);
+        },
+      );
     },
     // Count total
     function (done) {
@@ -180,20 +188,22 @@ async.waterfall(
       // the iteratee (function to run in each step) of async.doWhilst
       function processNext(callback) {
         // getting the next message from mongodb
-        cursor.next(function (err, msg) {
-          // We've passed the end of the cursor
-          if (!msg) {
-            console.log('\nDone with the queue');
-            keepGoing = false;
-            return callback();
-          }
-          if (err) {
+        cursor.next().then(
+          function (msg) {
+            // We've passed the end of the cursor
+            if (!msg) {
+              console.log('\nDone with the queue');
+              keepGoing = false;
+              return callback();
+            }
+            saveMessageAndRunCounter(msg, callback);
+          },
+          function (err) {
             console.log('\nCursor.next error:');
             console.error(err);
-            return callback(err);
-          }
-          saveMessageAndRunCounter(msg, callback);
-        });
+            callback(err);
+          },
+        );
       }
 
       // callback for the end of the script

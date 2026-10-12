@@ -159,7 +159,7 @@ describe('Tribes controller unit tests', () => {
           sort: () => ({
             limit: () => ({
               skip: () => ({
-                exec: cb => cb(new Error('find failed')),
+                then: (resolve, reject) => reject(new Error('find failed')),
               }),
             }),
           }),
@@ -181,15 +181,13 @@ describe('Tribes controller unit tests', () => {
           sort: () => ({
             limit: () => ({
               skip: () => ({
-                exec: cb => cb(null, []),
+                then: resolve => resolve([]),
               }),
             }),
           }),
         }),
       });
-      sinon.stub(Tribe, 'countDocuments').callsFake((query, cb) => {
-        cb(new Error('count failed'));
-      });
+      sinon.stub(Tribe, 'countDocuments').rejects(new Error('count failed'));
 
       const res = deferredResponse();
       tribesController.listTribes(
@@ -286,7 +284,7 @@ describe('Tribes controller unit tests', () => {
 
     it('returns 400 when tribe lookup fails', async () => {
       sinon.stub(Tribe, 'findOne').returns({
-        exec: cb => cb(new Error('find failed')),
+        then: (resolve, reject) => reject(new Error('find failed')),
       });
       const res = deferredResponse();
 

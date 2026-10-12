@@ -58,12 +58,8 @@ service.forgot = function (req, res) {
       User.findOne(
         { $or: [{ username: userHandle }, { email: userHandle }] },
         '-salt -password',
-        (findErr, user) => {
-          if (findErr) {
-            log('error', 'Password recovery account lookup failed.');
-            return reportStat('failed:lookup');
-          }
-
+      ).then(
+        user => {
           if (!user) {
             return reportStat('failed:noUser');
           }
@@ -71,22 +67,27 @@ service.forgot = function (req, res) {
           user.resetPasswordToken = buffer.toString('hex');
           user.resetPasswordExpires = Date.now() + 24 * 3600000; // 24 hours
 
-          user.save(saveErr => {
-            if (saveErr) {
+          user.save().then(
+            () => {
+              emailService.sendResetPassword(user, emailErr => {
+                if (emailErr) {
+                  // Never include recipient addresses or provider error details.
+                  log('error', 'Password recovery email delivery failed.');
+                  return reportStat('failed:emailDelivery');
+                }
+
+                return reportStat('emailSent');
+              });
+            },
+            () => {
               log('error', 'Password recovery token save failed.');
               return reportStat('failed:tokenSave');
-            }
-
-            emailService.sendResetPassword(user, emailErr => {
-              if (emailErr) {
-                // Never include recipient addresses or provider error details.
-                log('error', 'Password recovery email delivery failed.');
-                return reportStat('failed:emailDelivery');
-              }
-
-              return reportStat('emailSent');
-            });
-          });
+            },
+          );
+        },
+        () => {
+          log('error', 'Password recovery account lookup failed.');
+          return reportStat('failed:lookup');
         },
       );
     });
@@ -97,14 +98,14 @@ service.forgot = function (req, res) {
  * Reset password GET from email token
  */
 service.validateResetToken = function (req, res) {
-  User.findOne(
-    {
-      resetPasswordToken: req.params.token,
-      resetPasswordExpires: {
-        $gt: Date.now(),
-      },
+  User.findOne({
+    resetPasswordToken: req.params.token,
+    resetPasswordExpires: {
+      $gt: Date.now(),
     },
-    function (err, user) {
+  })
+    .catch(() => null)
+    .then(user => {
       if (!user) {
         return res.redirect('/password/reset/invalid');
       }
@@ -126,8 +127,7 @@ service.validateResetToken = function (req, res) {
       }
 
       res.redirect(passwordResetUrl);
-    },
-  );
+    });
 };
 
 /**
@@ -154,54 +154,55 @@ service.reset = async function (req, res) {
     });
   }
   const now = new Date();
-  User.findOneAndUpdate(
-    {
-      resetPasswordToken: req.params.token,
-      resetPasswordExpires: { $gt: now },
-    },
-    {
-      $set: {
-        password,
-        passwordUpdated: now,
+  let user;
+  try {
+    user = await User.findOneAndUpdate(
+      {
+        resetPasswordToken: req.params.token,
+        resetPasswordExpires: { $gt: now },
       },
-      $unset: {
-        salt: 1,
-        resetPasswordToken: 1,
-        resetPasswordExpires: 1,
+      {
+        $set: {
+          password,
+          passwordUpdated: now,
+        },
+        $unset: {
+          salt: 1,
+          resetPasswordToken: 1,
+          resetPasswordExpires: 1,
+        },
+        $inc: { authVersion: 1 },
       },
-      $inc: { authVersion: 1 },
-    },
-    { new: true, runValidators: true },
-    (err, user) => {
-      if (err || !user) {
-        return res.status((err && err.status) || 400).send({
-          message: err
-            ? 'Password reset failed.'
-            : 'Password reset token is invalid or has expired.',
-        });
-      }
+      { new: true, runValidators: true },
+    );
+  } catch (err) {
+    return res.status(err.status || 400).send({
+      message: 'Password reset failed.',
+    });
+  }
 
-      req.login(user, loginErr => {
-        if (loginErr) {
-          log('error', 'Authenticating user after password reset failed.');
-          return res.status(400).send({ message: 'Password reset failed.' });
+  if (!user) {
+    return res.status(400).send({
+      message: 'Password reset token is invalid or has expired.',
+    });
+  }
+
+  req.login(user, loginErr => {
+    if (loginErr) {
+      log('error', 'Authenticating user after password reset failed.');
+      return res.status(400).send({ message: 'Password reset failed.' });
+    }
+
+    emailService.sendResetPasswordConfirm(
+      { displayName: user.displayName, email: user.email },
+      emailErr => {
+        if (emailErr) {
+          log('error', 'Password reset confirmation email delivery failed.');
         }
-
-        emailService.sendResetPasswordConfirm(
-          { displayName: user.displayName, email: user.email },
-          emailErr => {
-            if (emailErr) {
-              log(
-                'error',
-                'Password reset confirmation email delivery failed.',
-              );
-            }
-            return res.json(profileHandler.sanitizeOwnProfile(user));
-          },
-        );
-      });
-    },
-  );
+        return res.json(profileHandler.sanitizeOwnProfile(user));
+      },
+    );
+  });
 };
 
 /**
@@ -239,9 +240,7 @@ service.changePassword = function (req, res) {
 
       // Find currently logged in user
       function (done) {
-        User.findById(req.user.id, function (err, user) {
-          done(err, user);
-        });
+        User.findById(req.user.id).then(user => done(null, user), done);
       },
 
       // Authenticate with old password to check if it was correct

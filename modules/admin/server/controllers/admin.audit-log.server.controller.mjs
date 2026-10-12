@@ -10,7 +10,7 @@ const User = mongoose.model('User');
 /**
  * This middleware stores queries to audit log
  */
-export const record = (req, res, next) => {
+export const record = async (req, res, next) => {
   // Client address when using Phusion Passenger
   // https://www.phusionpassenger.com/library/indepth/nodejs/secure_http_headers.html#passenger-client-address
   const passengerClientAddress = req.get('!~Passenger-Client-Address');
@@ -25,14 +25,14 @@ export const record = (req, res, next) => {
   });
 
   // Save support request to db
-  auditLogItem.save(error => {
-    if (error) {
-      log('error', 'Failed storing audit log item to the DB. #fi2fb2', {
-        error,
-      });
-    }
-    next();
-  });
+  try {
+    await auditLogItem.save();
+  } catch (error) {
+    log('error', 'Failed storing audit log item to the DB. #fi2fb2', {
+      error,
+    });
+  }
+  next();
 };
 
 /** Return the latest matching entries, filtered by acting staff. */

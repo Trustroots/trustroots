@@ -32,7 +32,7 @@ describe('Admin threads controller unit tests', () => {
 
   it('returns 400 when thread aggregation fails', async () => {
     sinon.stub(Thread, 'aggregate').returns({
-      exec: cb => cb(new Error('aggregate failed')),
+      exec: () => Promise.reject(new Error('aggregate failed')),
     });
 
     const res = mockResponse();

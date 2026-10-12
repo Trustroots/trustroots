@@ -27,7 +27,7 @@ describe('User tribe memberships CRUD tests', function () {
       done();
     })().catch(done);
   });
-  beforeEach(function (done) {
+  beforeEach(async function () {
     // Create user credentials
     credentials = {
       username: 'TR_username',
@@ -49,7 +49,7 @@ describe('User tribe memberships CRUD tests', function () {
     user = new User(_user);
 
     // Save a user to the test db
-    user.save(done);
+    await user.save();
   });
   afterEach(utils.clearDatabase);
   it('should be able to join a tribe', function (done) {
@@ -69,43 +69,47 @@ describe('User tribe memberships CRUD tests', function () {
         });
 
         // Add tribe to test DB
-        tribe.save(function (err, tribe) {
-          should.not.exist(err);
-          agent
-            .post('/api/users/memberships/' + tribe._id)
-            .set('X-Trustroots-Request', '1')
-            .send()
-            .expect(200)
-            .end(function (userTribeErr, userTribeRes) {
-              // Handle joining tag error
-              if (userTribeErr) {
-                return done(userTribeErr);
-              }
+        tribe
+          .save()
+          .then(tribe => {
+            agent
+              .post('/api/users/memberships/' + tribe._id)
+              .set('X-Trustroots-Request', '1')
+              .send()
+              .expect(200)
+              .end(function (userTribeErr, userTribeRes) {
+                // Handle joining tag error
+                if (userTribeErr) {
+                  return done(userTribeErr);
+                }
 
-              // Confirmation message
-              userTribeRes.body.message.should.be.equal('Joined tribe.');
+                // Confirmation message
+                userTribeRes.body.message.should.be.equal('Joined tribe.');
 
-              // It should return correct tribe with new count
-              userTribeRes.body.tribe._id.should.be.equal(tribe._id.toString());
-              userTribeRes.body.tribe.count.should.be.equal(1);
-              userTribeRes.body.tribe.label.should.be.equal('Awesome Tribe');
-              userTribeRes.body.tribe.slug.should.be.equal('awesome-tribe');
-              should.exist(userTribeRes.body.tribe.color);
+                // It should return correct tribe with new count
+                userTribeRes.body.tribe._id.should.be.equal(
+                  tribe._id.toString(),
+                );
+                userTribeRes.body.tribe.count.should.be.equal(1);
+                userTribeRes.body.tribe.label.should.be.equal('Awesome Tribe');
+                userTribeRes.body.tribe.slug.should.be.equal('awesome-tribe');
+                should.exist(userTribeRes.body.tribe.color);
 
-              // It should return updated user
-              userTribeRes.body.user.username.should.be.equal(
-                credentials.username.toLowerCase(),
-              );
-              userTribeRes.body.user.memberIds[0].should.be.equal(
-                tribe._id.toString(),
-              );
-              userTribeRes.body.user.member[0].tribe.should.be.equal(
-                tribe._id.toString(),
-              );
-              should.exist(userTribeRes.body.user.member[0].since);
-              return done();
-            });
-        });
+                // It should return updated user
+                userTribeRes.body.user.username.should.be.equal(
+                  credentials.username.toLowerCase(),
+                );
+                userTribeRes.body.user.memberIds[0].should.be.equal(
+                  tribe._id.toString(),
+                );
+                userTribeRes.body.user.member[0].tribe.should.be.equal(
+                  tribe._id.toString(),
+                );
+                should.exist(userTribeRes.body.user.member[0].since);
+                return done();
+              });
+          })
+          .catch(done);
       });
   });
   it('should be able to leave tribes', function (done) {
@@ -125,50 +129,53 @@ describe('User tribe memberships CRUD tests', function () {
         });
 
         // Add tribe to test DB
-        tribe.save(function (err, tribe) {
-          should.not.exist(err);
+        tribe
+          .save()
+          .then(tribe => {
+            // Join tribe
+            agent
+              .post('/api/users/memberships/' + tribe._id)
+              .set('X-Trustroots-Request', '1')
+              .send()
+              .expect(200)
+              .end(function (userTribeJoinErr, userTribeJoinRes) {
+                // Handle joining tag error
+                if (userTribeJoinErr) {
+                  return done(userTribeJoinErr);
+                }
 
-          // Join tribe
-          agent
-            .post('/api/users/memberships/' + tribe._id)
-            .set('X-Trustroots-Request', '1')
-            .send()
-            .expect(200)
-            .end(function (userTribeJoinErr, userTribeJoinRes) {
-              // Handle joining tag error
-              if (userTribeJoinErr) {
-                return done(userTribeJoinErr);
-              }
+                // Count +1
+                userTribeJoinRes.body.tribe.count.should.be.equal(1);
 
-              // Count +1
-              userTribeJoinRes.body.tribe.count.should.be.equal(1);
+                // User is now member of tribe
+                userTribeJoinRes.body.user.memberIds.length.should.be.equal(1);
+                userTribeJoinRes.body.user.member.length.should.be.equal(1);
 
-              // User is now member of tribe
-              userTribeJoinRes.body.user.memberIds.length.should.be.equal(1);
-              userTribeJoinRes.body.user.member.length.should.be.equal(1);
+                // Leave tribe
+                agent
+                  .delete('/api/users/memberships/' + tribe._id)
+                  .set('X-Trustroots-Request', '1')
+                  .send()
+                  .expect(200)
+                  .end(function (userTagLeaveErr, userTagLeaveRes) {
+                    // Handle leaving tag error
+                    if (userTagLeaveErr) {
+                      return done(userTagLeaveErr);
+                    }
 
-              // Leave tribe
-              agent
-                .delete('/api/users/memberships/' + tribe._id)
-                .set('X-Trustroots-Request', '1')
-                .send()
-                .expect(200)
-                .end(function (userTagLeaveErr, userTagLeaveRes) {
-                  // Handle leaving tag error
-                  if (userTagLeaveErr) {
-                    return done(userTagLeaveErr);
-                  }
+                    // Count -1
+                    userTagLeaveRes.body.tribe.count.should.be.equal(0);
 
-                  // Count -1
-                  userTagLeaveRes.body.tribe.count.should.be.equal(0);
-
-                  // No more tribes left on user's array
-                  userTagLeaveRes.body.user.memberIds.length.should.be.equal(0);
-                  userTagLeaveRes.body.user.member.length.should.be.equal(0);
-                  return done();
-                });
-            });
-        });
+                    // No more tribes left on user's array
+                    userTagLeaveRes.body.user.memberIds.length.should.be.equal(
+                      0,
+                    );
+                    userTagLeaveRes.body.user.member.length.should.be.equal(0);
+                    return done();
+                  });
+              });
+          })
+          .catch(done);
       });
   });
   it('should be able to show error if trying to join same tribe twice', function (done) {
@@ -188,46 +195,47 @@ describe('User tribe memberships CRUD tests', function () {
         });
 
         // Add tribe to test DB
-        tribe.save(function (err, tribe) {
-          should.not.exist(err);
+        tribe
+          .save()
+          .then(tribe => {
+            // Join tribe
+            agent
+              .post('/api/users/memberships/' + tribe._id)
+              .set('X-Trustroots-Request', '1')
+              .send()
+              .expect(200)
+              .end(function (userTribeJoinErr, userTribeJoinRes) {
+                // Handle joining tag error
+                if (userTribeJoinErr) {
+                  return done(userTribeJoinErr);
+                }
 
-          // Join tribe
-          agent
-            .post('/api/users/memberships/' + tribe._id)
-            .set('X-Trustroots-Request', '1')
-            .send()
-            .expect(200)
-            .end(function (userTribeJoinErr, userTribeJoinRes) {
-              // Handle joining tag error
-              if (userTribeJoinErr) {
-                return done(userTribeJoinErr);
-              }
+                // Count +1
+                userTribeJoinRes.body.tribe.count.should.be.equal(1);
 
-              // Count +1
-              userTribeJoinRes.body.tribe.count.should.be.equal(1);
+                // User is now member of tribe
+                userTribeJoinRes.body.user.memberIds.length.should.be.equal(1);
+                userTribeJoinRes.body.user.member.length.should.be.equal(1);
 
-              // User is now member of tribe
-              userTribeJoinRes.body.user.memberIds.length.should.be.equal(1);
-              userTribeJoinRes.body.user.member.length.should.be.equal(1);
-
-              // Join tribe again
-              agent
-                .post('/api/users/memberships/' + tribe._id)
-                .set('X-Trustroots-Request', '1')
-                .send()
-                .expect(409)
-                .end(function (userTagJoin2Err, userTagJoin2Res) {
-                  // Handle leaving tag error
-                  if (userTagJoin2Err) {
-                    return done(userTagJoin2Err);
-                  }
-                  userTagJoin2Res.body.message.should.be.equal(
-                    'You are already a member of this tribe.',
-                  );
-                  return done();
-                });
-            });
-        });
+                // Join tribe again
+                agent
+                  .post('/api/users/memberships/' + tribe._id)
+                  .set('X-Trustroots-Request', '1')
+                  .send()
+                  .expect(409)
+                  .end(function (userTagJoin2Err, userTagJoin2Res) {
+                    // Handle leaving tag error
+                    if (userTagJoin2Err) {
+                      return done(userTagJoin2Err);
+                    }
+                    userTagJoin2Res.body.message.should.be.equal(
+                      'You are already a member of this tribe.',
+                    );
+                    return done();
+                  });
+              });
+          })
+          .catch(done);
       });
   });
   it('should be able to show error if trying to leave tribe user is not member', function (done) {
@@ -247,26 +255,27 @@ describe('User tribe memberships CRUD tests', function () {
         });
 
         // Add tribe to test DB
-        tribe.save(function (err, tribe) {
-          should.not.exist(err);
-
-          // Leave tribe
-          agent
-            .delete('/api/users/memberships/' + tribe._id)
-            .set('X-Trustroots-Request', '1')
-            .send()
-            .expect(409)
-            .end(function (userTribeJoinErr, userTribeJoinRes) {
-              // Handle joining tag error
-              if (userTribeJoinErr) {
-                return done(userTribeJoinErr);
-              }
-              userTribeJoinRes.body.message.should.be.equal(
-                'You are not a member of this tribe.',
-              );
-              return done();
-            });
-        });
+        tribe
+          .save()
+          .then(tribe => {
+            // Leave tribe
+            agent
+              .delete('/api/users/memberships/' + tribe._id)
+              .set('X-Trustroots-Request', '1')
+              .send()
+              .expect(409)
+              .end(function (userTribeJoinErr, userTribeJoinRes) {
+                // Handle joining tag error
+                if (userTribeJoinErr) {
+                  return done(userTribeJoinErr);
+                }
+                userTribeJoinRes.body.message.should.be.equal(
+                  'You are not a member of this tribe.',
+                );
+                return done();
+              });
+          })
+          .catch(done);
       });
   });
   it('should be able to show error if trying to join non-existing tribe', function (done) {

@@ -55,7 +55,7 @@ const defaultExport = function (app) {
     .route('/api/report-expect-ct-violation')
     .post(core.receiveExpectCTViolationReport);
   app.route('/api/languages').get(core.getLanguages);
-  app.route('/api/nostr/author-visibility').get(function (req, res) {
+  app.route('/api/nostr/author-visibility').get(async function (req, res) {
     const User = mongoose.model('User');
     const rawPubkeys = req.query.pubkey;
     const pubkeys = Array.isArray(rawPubkeys) ? rawPubkeys : [rawPubkeys];
@@ -73,41 +73,37 @@ const defaultExport = function (app) {
       ...new Set(pubkeys.map(pubkey => pubkey.toLowerCase())),
     ];
     const npubs = normalizedPubkeys.map(pubkey => nip19.npubEncode(pubkey));
-    User.find(
-      {
+    let users;
+    try {
+      users = await User.find({
         nostrNpub: {
           $in: npubs,
         },
-      },
-      function (err, users) {
-        if (err) {
-          return res.status(500).send({
-            error: 'Internal server error',
-          });
-        }
-        const linkedNpubs = new Set(users.map(user => user.nostrNpub));
-        const visibleNpubs = new Set(
-          users
-            .filter(
-              user =>
-                user.public &&
-                user.email &&
-                !user.roles.some(role =>
-                  ['suspended', 'shadowban'].includes(role),
-                ),
-            )
-            .map(user => user.nostrNpub),
-        );
-        return res.json({
-          linkedPubkeys: normalizedPubkeys.filter(pubkey =>
-            linkedNpubs.has(nip19.npubEncode(pubkey)),
-          ),
-          pubkeys: normalizedPubkeys.filter(pubkey =>
-            visibleNpubs.has(nip19.npubEncode(pubkey)),
-          ),
-        });
-      },
+      });
+    } catch (err) {
+      return res.status(500).send({
+        error: 'Internal server error',
+      });
+    }
+    const linkedNpubs = new Set(users.map(user => user.nostrNpub));
+    const visibleNpubs = new Set(
+      users
+        .filter(
+          user =>
+            user.public &&
+            user.email &&
+            !user.roles.some(role => ['suspended', 'shadowban'].includes(role)),
+        )
+        .map(user => user.nostrNpub),
     );
+    return res.json({
+      linkedPubkeys: normalizedPubkeys.filter(pubkey =>
+        linkedNpubs.has(nip19.npubEncode(pubkey)),
+      ),
+      pubkeys: normalizedPubkeys.filter(pubkey =>
+        visibleNpubs.has(nip19.npubEncode(pubkey)),
+      ),
+    });
   });
 
   // Return a 404 for all undefined api, module or lib routes
@@ -125,7 +121,7 @@ const defaultExport = function (app) {
   // Define a tribes route to ensure we'll pass tribe object to index
   // Object is passed to layout at `core.renderIndex()`
   app.route('/circles/:tribe').get(core.renderIndex);
-  app.route('/.well-known/nostr.json').get(function (req, res) {
+  app.route('/.well-known/nostr.json').get(async function (req, res) {
     // NIP05 work in progress, https://github.com/Trustroots/trustroots/issues/2692
     const User = mongoose.model('User');
     res.set('Access-Control-Allow-Origin', '*');
@@ -139,8 +135,9 @@ const defaultExport = function (app) {
       });
     }
     const name = rawName.toLowerCase();
-    User.findOne(
-      {
+    let user;
+    try {
+      user = await User.findOne({
         username: name,
         public: true,
         email: {
@@ -150,36 +147,33 @@ const defaultExport = function (app) {
         roles: {
           $nin: ['suspended', 'shadowban'],
         },
-      },
-      function (err, user) {
-        if (err) {
-          res.status(500).send({
-            error: 'Internal server error',
-          });
-          return;
+      });
+    } catch (err) {
+      res.status(500).send({
+        error: 'Internal server error',
+      });
+      return;
+    }
+    const obj = {
+      names: {},
+    };
+    if (!user) {
+      res.json(obj);
+      return;
+    }
+    const nostrNpub = user.nostrNpub;
+    try {
+      if (nostrNpub) {
+        const result = nip19.decode(nostrNpub);
+        if (result.type === 'npub' && /^[0-9a-f]{64}$/i.test(result.data)) {
+          obj.names[name] = result.data.toLowerCase();
         }
-        const obj = {
-          names: {},
-        };
-        if (!user) {
-          res.json(obj);
-          return;
-        }
-        const nostrNpub = user.nostrNpub;
-        try {
-          if (nostrNpub) {
-            const result = nip19.decode(nostrNpub);
-            if (result.type === 'npub' && /^[0-9a-f]{64}$/i.test(result.data)) {
-              obj.names[name] = result.data.toLowerCase();
-            }
-          }
-        } catch (err) {
-          // Malformed stored Nostr keys should fail closed.
-          _.noop(err);
-        }
-        res.json(obj);
-      },
-    );
+      }
+    } catch (err) {
+      // Malformed stored Nostr keys should fail closed.
+      _.noop(err);
+    }
+    res.json(obj);
   });
 
   // Define application route

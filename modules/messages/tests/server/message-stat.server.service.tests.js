@@ -43,7 +43,7 @@ describe('Count Message Statistics of User', function () {
   const DAY = 24 * 3600 * 1000; // a length of a day in milliseconds
   const users = [];
 
-  function seedMessageStats(done) {
+  function seedMessageStats() {
     const messageStats = [];
     let userno = 1;
 
@@ -71,13 +71,7 @@ describe('Count Message Statistics of User', function () {
     generateMessageStats(4, 3, 3 * DAY, NOW - 60 * DAY);
     generateMessageStats(4, 0, 1 * DAY, NOW - 90 * DAY);
 
-    async.each(
-      messageStats,
-      (messageStat, callback) => {
-        messageStat.save(callback);
-      },
-      done,
-    );
+    return Promise.all(messageStats.map(messageStat => messageStat.save()));
   }
 
   beforeEach(async function () {
@@ -95,9 +89,7 @@ describe('Count Message Statistics of User', function () {
     users.push(...fixtureUsers);
     await User.collection.insertMany(fixtureUsers.map(user => user.toObject()));
 
-    await new Promise((resolve, reject) => {
-      seedMessageStats(err => (err ? reject(err) : resolve()));
-    });
+    await seedMessageStats();
   });
 
   afterEach(utils.clearDatabase);
@@ -406,10 +398,7 @@ describe('MessageStat Creation & Updating Test', function () {
           [
             // save the first message to database
             function (cb) {
-              firstMessage.save(function (err) {
-                if (err) return cb(err);
-                cb();
-              });
+              firstMessage.save().then(() => cb(), cb);
             },
 
             // generate stats for the first message
@@ -422,21 +411,18 @@ describe('MessageStat Creation & Updating Test', function () {
               try {
                 resp.should.equal('first');
 
-                MessageStat.findOne(
-                  {
-                    $or: [
-                      {
-                        firstMessageUserFrom: initiator._id,
-                        firstMessageUserTo: receiver._id,
-                      },
-                      {
-                        firstMessageUserFrom: receiver._id,
-                        firstMessageUserTo: initiator._id,
-                      },
-                    ],
-                  },
-                  cb,
-                );
+                MessageStat.findOne({
+                  $or: [
+                    {
+                      firstMessageUserFrom: initiator._id,
+                      firstMessageUserTo: receiver._id,
+                    },
+                    {
+                      firstMessageUserFrom: receiver._id,
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
+                }).then(messageStat => cb(null, messageStat), cb);
               } catch (e) {
                 cb(e);
               }
@@ -467,10 +453,7 @@ describe('MessageStat Creation & Updating Test', function () {
           [
             // save the first message to database
             function (cb) {
-              firstMessage.save(function (err) {
-                if (err) return cb(err);
-                cb();
-              });
+              firstMessage.save().then(() => cb(), cb);
             },
 
             // stats for the first message (preparation)
@@ -480,10 +463,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // save the first reply to database
             function (resp, cb) {
-              firstReply.save(function (err) {
-                if (err) return cb(err);
-                cb();
-              });
+              firstReply.save().then(() => cb(), cb);
             },
 
             // stats for the first reply
@@ -495,21 +475,18 @@ describe('MessageStat Creation & Updating Test', function () {
               try {
                 resp.should.equal('firstReply');
 
-                MessageStat.findOne(
-                  {
-                    $or: [
-                      {
-                        firstMessageUserFrom: initiator._id,
-                        firstMessageUserTo: receiver._id,
-                      },
-                      {
-                        firstMessageUserFrom: receiver._id,
-                        firstMessageUserTo: initiator._id,
-                      },
-                    ],
-                  },
-                  cb,
-                );
+                MessageStat.findOne({
+                  $or: [
+                    {
+                      firstMessageUserFrom: initiator._id,
+                      firstMessageUserTo: receiver._id,
+                    },
+                    {
+                      firstMessageUserFrom: receiver._id,
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
+                }).then(messageStat => cb(null, messageStat), cb);
               } catch (e) {
                 cb(e);
               }
@@ -550,10 +527,7 @@ describe('MessageStat Creation & Updating Test', function () {
           [
             // save the first message to database
             function (cb) {
-              firstMessage.save(function (err) {
-                if (err) return cb(err);
-                cb();
-              });
+              firstMessage.save().then(() => cb(), cb);
             },
 
             // stats for the first message (preparation)
@@ -563,10 +537,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // save the first message to database
             function (resp, cb) {
-              initiatorMessage.save(function (err) {
-                if (err) return cb(err);
-                cb();
-              });
+              initiatorMessage.save().then(() => cb(), cb);
             },
 
             // stats for the second message
@@ -578,21 +549,18 @@ describe('MessageStat Creation & Updating Test', function () {
               try {
                 resp.should.equal('other');
 
-                MessageStat.findOne(
-                  {
-                    $or: [
-                      {
-                        firstMessageUserFrom: initiator._id,
-                        firstMessageUserTo: receiver._id,
-                      },
-                      {
-                        firstMessageUserFrom: receiver._id,
-                        firstMessageUserTo: initiator._id,
-                      },
-                    ],
-                  },
-                  cb,
-                );
+                MessageStat.findOne({
+                  $or: [
+                    {
+                      firstMessageUserFrom: initiator._id,
+                      firstMessageUserTo: receiver._id,
+                    },
+                    {
+                      firstMessageUserFrom: receiver._id,
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
+                }).then(messageStat => cb(null, messageStat), cb);
               } catch (e) {
                 cb(e);
               }
@@ -624,10 +592,7 @@ describe('MessageStat Creation & Updating Test', function () {
           [
             // save the first message to database (preparation)
             function (cb) {
-              firstMessage.save(function (err) {
-                if (err) return cb(err);
-                cb();
-              });
+              firstMessage.save().then(() => cb(), cb);
             },
 
             // create stats for the first message (preparation)
@@ -637,10 +602,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // save the first reply
             function (resp, cb) {
-              firstReply.save(function (err) {
-                if (err) return cb(err);
-                cb();
-              });
+              firstReply.save().then(() => cb(), cb);
             },
 
             // update stats for the first reply
@@ -650,10 +612,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // save another initiator message
             function (resp, cb) {
-              firstReply.save(function (err) {
-                if (err) return cb(err);
-                cb();
-              });
+              firstReply.save().then(() => cb(), cb);
             },
 
             // update stats with another initiator's message
@@ -667,21 +626,18 @@ describe('MessageStat Creation & Updating Test', function () {
                 resp.should.equal('other');
 
                 // find the MessageStat to run tests on it
-                MessageStat.findOne(
-                  {
-                    $or: [
-                      {
-                        firstMessageUserFrom: initiator._id,
-                        firstMessageUserTo: receiver._id,
-                      },
-                      {
-                        firstMessageUserFrom: receiver._id,
-                        firstMessageUserTo: initiator._id,
-                      },
-                    ],
-                  },
-                  cb,
-                );
+                MessageStat.findOne({
+                  $or: [
+                    {
+                      firstMessageUserFrom: initiator._id,
+                      firstMessageUserTo: receiver._id,
+                    },
+                    {
+                      firstMessageUserFrom: receiver._id,
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
+                }).then(messageStat => cb(null, messageStat), cb);
               } catch (e) {
                 cb(e);
               }
@@ -715,10 +671,7 @@ describe('MessageStat Creation & Updating Test', function () {
           [
             // save the first message to database (preparation)
             function (cb) {
-              firstMessage.save(function (err) {
-                if (err) return cb(err);
-                cb();
-              });
+              firstMessage.save().then(() => cb(), cb);
             },
 
             // stats for the first message (preparation)
@@ -728,10 +681,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // save the first reply
             function (resp, cb) {
-              firstReply.save(function (err) {
-                if (err) return cb(err);
-                cb();
-              });
+              firstReply.save().then(() => cb(), cb);
             },
 
             // stats for the first reply
@@ -741,10 +691,7 @@ describe('MessageStat Creation & Updating Test', function () {
 
             // save the further receiver's message
             function (resp, cb) {
-              receiverMessage.save(function (err) {
-                if (err) return cb(err);
-                cb();
-              });
+              receiverMessage.save().then(() => cb(), cb);
             },
 
             // stats for the further receiver's message
@@ -756,21 +703,18 @@ describe('MessageStat Creation & Updating Test', function () {
               try {
                 resp.should.equal('other');
 
-                MessageStat.findOne(
-                  {
-                    $or: [
-                      {
-                        firstMessageUserFrom: initiator._id,
-                        firstMessageUserTo: receiver._id,
-                      },
-                      {
-                        firstMessageUserFrom: receiver._id,
-                        firstMessageUserTo: initiator._id,
-                      },
-                    ],
-                  },
-                  cb,
-                );
+                MessageStat.findOne({
+                  $or: [
+                    {
+                      firstMessageUserFrom: initiator._id,
+                      firstMessageUserTo: receiver._id,
+                    },
+                    {
+                      firstMessageUserFrom: receiver._id,
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
+                }).then(messageStat => cb(null, messageStat), cb);
               } catch (e) {
                 cb(e);
               }
@@ -808,7 +752,7 @@ describe('MessageStat Creation & Updating Test', function () {
       it('returns an error when no first message exists in the thread', function (done) {
         sinon.stub(Message, 'findOne').returns({
           sort: () => ({
-            exec: cb => cb(null, null),
+            exec: () => Promise.resolve(null),
           }),
         });
 
@@ -826,18 +770,12 @@ describe('MessageStat Creation & Updating Test', function () {
           [
             // save the first message to database
             function (cb) {
-              firstMessage.save(function (err) {
-                if (err) return cb(err);
-                cb();
-              });
+              firstMessage.save().then(() => cb(), cb);
             },
 
             // save the first reply to database
             function (cb) {
-              firstReply.save(function (err) {
-                if (err) return cb(err);
-                cb();
-              });
+              firstReply.save().then(() => cb(), cb);
             },
 
             // stats for the further receiver's message
@@ -849,21 +787,18 @@ describe('MessageStat Creation & Updating Test', function () {
               try {
                 resp.should.equal('firstReply');
 
-                MessageStat.findOne(
-                  {
-                    $or: [
-                      {
-                        firstMessageUserFrom: initiator._id,
-                        firstMessageUserTo: receiver._id,
-                      },
-                      {
-                        firstMessageUserFrom: receiver._id,
-                        firstMessageUserTo: initiator._id,
-                      },
-                    ],
-                  },
-                  cb,
-                );
+                MessageStat.findOne({
+                  $or: [
+                    {
+                      firstMessageUserFrom: initiator._id,
+                      firstMessageUserTo: receiver._id,
+                    },
+                    {
+                      firstMessageUserFrom: receiver._id,
+                      firstMessageUserTo: initiator._id,
+                    },
+                  ],
+                }).then(messageStat => cb(null, messageStat), cb);
               } catch (e) {
                 cb(e);
               }

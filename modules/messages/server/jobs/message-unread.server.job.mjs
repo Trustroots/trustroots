@@ -100,53 +100,51 @@ function sendUnreadMessageReminders(reminder, callback) {
           .toDate();
 
         // Find all the unread messages which fit the reminder config requirements
-        Message.aggregate(
-          [
-            {
-              $match: {
-                read: false,
-                // first reminder is sent when notificationCount is 0
-                // second reminder is sent when notificationCount is 0 or 1
-                // etc...
-                notificationCount: {
-                  $lte: reminderOrder,
-                },
-                created: {
-                  $lt: createdTimeAgo,
-                },
+        Message.aggregate([
+          {
+            $match: {
+              read: false,
+              // first reminder is sent when notificationCount is 0
+              // second reminder is sent when notificationCount is 0 or 1
+              // etc...
+              notificationCount: {
+                $lte: reminderOrder,
+              },
+              created: {
+                $lt: createdTimeAgo,
               },
             },
-            {
-              $group: {
-                // Group separate emails
-                _id: {
-                  userTo: '$userTo',
-                  userFrom: '$userFrom',
-                },
-                // Collect unread messages count
-                total: {
-                  $sum: 1,
-                },
-                // Collect message contents
-                messages: {
-                  $push: {
-                    id: '$_id',
-                    content: '$content',
-                    created: '$created',
-                  },
-                },
-                // did we already send some notifications for the last unseen message?
-                // the last unseen message has the minimum notification count
-                // we'll use the value to determine whether the notification is the first one, or not; to change wording of the reminder
-                notificationCount: {
-                  $min: '$notificationCount',
-                },
-              },
-            },
-          ],
-          function (err, notifications) {
-            done(err, notifications);
           },
+          {
+            $group: {
+              // Group separate emails
+              _id: {
+                userTo: '$userTo',
+                userFrom: '$userFrom',
+              },
+              // Collect unread messages count
+              total: {
+                $sum: 1,
+              },
+              // Collect message contents
+              messages: {
+                $push: {
+                  id: '$_id',
+                  content: '$content',
+                  created: '$created',
+                },
+              },
+              // did we already send some notifications for the last unseen message?
+              // the last unseen message has the minimum notification count
+              // we'll use the value to determine whether the notification is the first one, or not; to change wording of the reminder
+              notificationCount: {
+                $min: '$notificationCount',
+              },
+            },
+          },
+        ]).then(
+          notifications => done(null, notifications),
+          err => done(err),
         );
       },
       /*
@@ -172,35 +170,36 @@ function sendUnreadMessageReminders(reminder, callback) {
           furtherNotifications,
           function (notification, checkDone) {
             // count messages in the other direction
-            Message.countDocuments(
-              {
-                userFrom: notification._id.userTo,
-                userTo: notification._id.userFrom,
-              },
-              function (err, count) {
-                const isThreadReplied = count > 0;
-
-                // find out whether it is too late to send the further notification
-                // we just wrap it to function for clearer organisation
-                const isTooLate = (function () {
-                  const lastMessage = _.maxBy(
-                    notification.messages,
-                    function (msg) {
-                      return msg.created;
-                    },
-                  );
-                  const tooLate = config.limits.unreadMessageRemindersTooLate;
-                  const tooOld = moment()
-                    .subtract(moment.duration(tooLate))
-                    .toDate();
-                  return lastMessage.created < tooOld;
-                })();
-                if (isThreadReplied || isTooLate) {
-                  notification.dontSend = true;
-                }
-                checkDone(err);
-              },
+            Message.countDocuments({
+              userFrom: notification._id.userTo,
+              userTo: notification._id.userFrom,
+            }).then(
+              count => handleCount(null, count),
+              err => handleCount(err),
             );
+            function handleCount(err, count) {
+              const isThreadReplied = count > 0;
+
+              // find out whether it is too late to send the further notification
+              // we just wrap it to function for clearer organisation
+              const isTooLate = (function () {
+                const lastMessage = _.maxBy(
+                  notification.messages,
+                  function (msg) {
+                    return msg.created;
+                  },
+                );
+                const tooLate = config.limits.unreadMessageRemindersTooLate;
+                const tooOld = moment()
+                  .subtract(moment.duration(tooLate))
+                  .toDate();
+                return lastMessage.created < tooOld;
+              })();
+              if (isThreadReplied || isTooLate) {
+                notification.dontSend = true;
+              }
+              checkDone(err);
+            }
           },
           function (err) {
             return done(err, notifications);
@@ -236,7 +235,13 @@ function sendUnreadMessageReminders(reminder, callback) {
               'username',
               'roles',
             ].join(' '),
-          ).exec(function (err, users) {
+          )
+            .exec()
+            .then(
+              users => handleUsers(null, users),
+              err => handleUsers(err),
+            );
+          function handleUsers(err, users) {
             // Re-organise users into more handy array (`collectedUsers`)
             const collectedUsers = {};
             // `users` is `undefined` when the query errors, so guard before
@@ -250,7 +255,7 @@ function sendUnreadMessageReminders(reminder, callback) {
               });
             }
             done(err, collectedUsers, notifications);
-          });
+          }
         } else {
           done(null, [], notifications);
         }
@@ -379,7 +384,7 @@ function sendUnreadMessageReminders(reminder, callback) {
         // The first reminder has position 0, so we want to set to 1
         // The second reminder has position 1, so we want to set to 2
         // TODO the messageCount is not strictly messageCount because this update allows setting 0 to 2 and sending just 1 notification.
-        Message.update(
+        Message.updateMany(
           {
             _id: {
               $in: messageIds,
@@ -390,20 +395,13 @@ function sendUnreadMessageReminders(reminder, callback) {
               notificationCount: reminderOrder + 1,
             },
           },
-          {
-            multi: true,
-          },
-          function (err) {
-            if (err) {
-              // Log the failure to send the notification
-              log(
-                'error',
-                'Error while marking messages as notified. #9ehvbn',
-                {
-                  error: err,
-                },
-              );
-            }
+        ).then(
+          () => done(null),
+          err => {
+            // Log the failure to send the notification
+            log('error', 'Error while marking messages as notified. #9ehvbn', {
+              error: err,
+            });
             // Now fail the job if error happens
             done(err);
           },

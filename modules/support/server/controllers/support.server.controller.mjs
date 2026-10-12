@@ -91,13 +91,15 @@ export const supportRequest = function (req, res) {
   const supportRequest = new SupportRequest(storedSupportRequestData);
 
   // Save support request to db
-  supportRequest.save(function (dbErr) {
-    if (dbErr) {
+  const saved = supportRequest.save().then(
+    () => {},
+    dbErr => {
       log('error', 'Failed storing support request to the DB. #39ghsa', {
         error: dbErr,
       });
-    }
-
+    },
+  );
+  saved.then(() => {
     // Send email
     emailService.sendSupportRequest(
       replyTo,

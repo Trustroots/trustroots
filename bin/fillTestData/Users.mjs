@@ -142,9 +142,9 @@ function addOffer(userID, maxUsers, initialUserCount, limit, callback) {
   offer.user = userID;
   offer.location = location;
   offer.locationFuzzy = location;
-  offer.save(err => {
-    if (err != null) console.log(err);
-    else {
+  offer
+    .save()
+    .then(() => {
       savedOffers++;
       // Exit if we have completed saving all users and offers
       if (
@@ -156,8 +156,10 @@ function addOffer(userID, maxUsers, initialUserCount, limit, callback) {
         printSummary(initialUserCount, savedUsers);
         callback(null);
       }
-    }
-  });
+    })
+    .catch(err => {
+      console.log(err);
+    });
 }
 
 /**
@@ -304,7 +306,7 @@ function addUsers() {
               }
 
               // Save the user
-              user.save(function (err) {
+              const onUserSaved = function (err) {
                 savedUsers++;
                 process.stdout.write('.');
                 if (!err && admin !== undefined) {
@@ -318,7 +320,11 @@ function addUsers() {
                   console.log(err);
                 }
                 addOffer(user._id, max, userCount, limit, resolve);
-              });
+              };
+              user.save().then(
+                () => onUserSaved(),
+                err => onUserSaved(err),
+              );
 
               // No more admin users
               if (numAdminUsers === 1) {
@@ -349,7 +355,7 @@ function addUsers() {
           } else {
             // Update tribes
             for (let j = 0; j < tribes.length; j++) {
-              Tribe.findByIdAndUpdate(tribes[j]._id, tribes[j], err => {
+              const onTribeUpdated = err => {
                 if (err) {
                   console.error(err);
                 }
@@ -357,7 +363,11 @@ function addUsers() {
                 if (tribes.length === numTribesUpdated) {
                   resolve();
                 }
-              });
+              };
+              Tribe.findByIdAndUpdate(tribes[j]._id, tribes[j]).then(
+                () => onTribeUpdated(),
+                err => onTribeUpdated(err),
+              );
             }
           }
         });

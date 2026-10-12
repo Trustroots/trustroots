@@ -25,51 +25,39 @@ const findUser = async function (userId) {
     console.log(err);
   }
 };
-var showMessage = function (id) {
-  Message.find(
-    {
-      _id: id,
-    },
-    function (err, docs) {
-      _.map(docs, async function (m) {
-        var stuff = [
-          await findUser(m.userFrom),
-          await findUser(m.userTo),
-          trshell.htmlFormat(m.content),
-        ];
-        var promise = await Promise.all(stuff);
-        console.log(
-          'from ' + promise[0].username + '\n',
-          'to ' + promise[1].username + '\n',
-          promise[2] + '\n\n',
-        );
-      });
-    },
-  );
+var showMessage = async function (id) {
+  const docs = await Message.find({
+    _id: id,
+  }).catch(() => undefined);
+  _.map(docs, async function (m) {
+    var stuff = [
+      await findUser(m.userFrom),
+      await findUser(m.userTo),
+      trshell.htmlFormat(m.content),
+    ];
+    var promise = await Promise.all(stuff);
+    console.log(
+      'from ' + promise[0].username + '\n',
+      'to ' + promise[1].username + '\n',
+      promise[2] + '\n\n',
+    );
+  });
 };
 var showThread = async function (id) {
-  Thread.find(
-    {
-      _id: id,
-    },
-    async function (err, docs) {
-      await _.map(docs, function (t) {
-        showMessage(t.message);
-      });
-      trshell.weAreDone();
-    },
-  );
+  const docs = await Thread.find({
+    _id: id,
+  }).catch(() => undefined);
+  _.map(docs, function (t) {
+    showMessage(t.message);
+  });
+  trshell.weAreDone();
 };
-const showBadRefs = function () {
-  ReferenceThread.find(
-    {
-      reference: 'no',
-    },
-    function (err, docs) {
-      _.map(docs, async function (rt) {
-        showThread(rt.thread);
-      });
-    },
-  );
+const showBadRefs = async function () {
+  const docs = await ReferenceThread.find({
+    reference: 'no',
+  }).catch(() => undefined);
+  _.map(docs, async function (rt) {
+    showThread(rt.thread);
+  });
 };
 showBadRefs();

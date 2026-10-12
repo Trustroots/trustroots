@@ -142,21 +142,25 @@ service.dropDatabase = function (connection, callback) {
     log('error', 'You cannot drop database in production mode!');
     return process.exit(1);
   }
-  connection.dropDatabase(function (err) {
-    if (err) {
-      log('error', 'Failed to drop database', {
-        error: err,
-      });
-    } else {
+  connection.dropDatabase().then(
+    function () {
       log(
         'info',
         'Successfully dropped database: ' + connection.db.databaseName,
       );
-    }
-    if (callback) {
-      callback(err);
-    }
-  });
+      if (callback) {
+        callback();
+      }
+    },
+    function (err) {
+      log('error', 'Failed to drop database', {
+        error: err,
+      });
+      if (callback) {
+        callback(err);
+      }
+    },
+  );
 };
 service.ensureIndexes = function (modelNames) {
   return new Promise(function (resolve, reject) {
@@ -164,18 +168,22 @@ service.ensureIndexes = function (modelNames) {
     async.each(
       modelNames,
       function (modelName, callback) {
-        mongoose.connection.model(modelName).ensureIndexes(function (error) {
-          if (error) {
-            log('error', 'Indexing Mongoose Schema failed', {
-              model: modelName,
-              error,
-            });
-            callback(error);
-          } else {
-            log('info', 'Indexed Mongoose Schema ' + modelName);
-            callback();
-          }
-        });
+        mongoose.connection
+          .model(modelName)
+          .ensureIndexes()
+          .then(
+            function () {
+              log('info', 'Indexed Mongoose Schema ' + modelName);
+              callback();
+            },
+            function (error) {
+              log('error', 'Indexing Mongoose Schema failed', {
+                model: modelName,
+                error,
+              });
+              callback(error);
+            },
+          );
       },
       function (error) {
         // if any of the file processing produced an error

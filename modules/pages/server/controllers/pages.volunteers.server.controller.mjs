@@ -27,21 +27,21 @@ export const list = (req, res) => {
     .select('username firstName roles')
     .sort('firstName username')
     .limit(500)
-    .exec((err, users) => {
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
+    .then(
+      users => {
+        // Put to two groups based on role
+        const volunteers = filterAndCleanVolunteers(users, 'volunteer');
+        const alumni = filterAndCleanVolunteers(users, 'volunteer-alumni');
+        res.send({
+          volunteers: _.shuffle(volunteers),
+          alumni: _.shuffle(alumni),
         });
-      }
-
-      // Put to two groups based on role
-      const volunteers = filterAndCleanVolunteers(users, 'volunteer');
-      const alumni = filterAndCleanVolunteers(users, 'volunteer-alumni');
-      res.send({
-        volunteers: _.shuffle(volunteers),
-        alumni: _.shuffle(alumni),
-      });
-    });
+      },
+      err =>
+        res.status(400).send({
+          message: errorService.getErrorMessage(err),
+        }),
+    );
 };
 const defaultInterop = {
   list,

@@ -35,7 +35,7 @@ describe('Integration of the MessageStat service', function () {
   let user1;
   let user2;
 
-  beforeEach(function (done) {
+  beforeEach(async function () {
     user1 = utils.createTestUser({
       email: 'user1@test.com',
       username: 'username1',
@@ -50,13 +50,8 @@ describe('Integration of the MessageStat service', function () {
     });
 
     // save those users to mongoDB
-    user1.save(function (err) {
-      if (err) return done(err);
-      user2.save(function (err) {
-        if (err) return done(err);
-        done();
-      });
-    });
+    await user1.save();
+    await user2.save();
   });
 
   afterEach(utils.clearDatabase);
@@ -100,16 +95,14 @@ describe('Integration of the MessageStat service', function () {
 
       // check that the message is already saved to database
       // at the time of updating stats
-      Message.findById(args[0]._id).exec(function (err, msg) {
-        if (err) return done(err);
-        try {
+      Message.findById(args[0]._id)
+        .exec()
+        .then(msg => {
           should(msg).not.equal(null);
           should(msg).have.property('userFrom', user1._id);
-          return done();
-        } catch (e) {
-          if (e) return done(e);
-        }
-      });
+          done();
+        })
+        .catch(done);
     });
   });
 });

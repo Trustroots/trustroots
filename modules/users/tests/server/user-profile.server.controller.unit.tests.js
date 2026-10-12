@@ -134,9 +134,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('returns 400 when checking nostr npub availability fails', async () => {
-      sinon.stub(User, 'findOne').callsFake((query, fields, cb) => {
-        cb(new Error('lookup failed'));
-      });
+      sinon.stub(User, 'findOne').rejects(new Error('lookup failed'));
 
       const { res } = await runHandler(res =>
         profileController.update(
@@ -277,7 +275,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('returns 400 when saving profile updates fails', async () => {
-      sinon.stub(userDoc, 'save').callsFake(cb => cb(new Error('save failed')));
+      sinon.stub(userDoc, 'save').rejects(new Error('save failed'));
 
       const { res } = await runHandler(res =>
         profileController.update(
@@ -574,9 +572,7 @@ describe('Profile controller unit tests', () => {
 
       const pushCleanup = sinon
         .stub(UnifiedPushRegistration, 'deleteMany')
-        .callsFake((query, callback) =>
-          callback(new Error('push cleanup failed')),
-        );
+        .rejects(new Error('push cleanup failed'));
       const { res } = await runHandler(res =>
         controller.removeProfile(
           {
@@ -973,7 +969,8 @@ describe('Profile controller unit tests', () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       sinon.stub(User, 'findById').returns({
         populate: () => ({
-          exec: cb => cb(null, { member: null }),
+          then: (resolve, reject) =>
+            Promise.resolve({ member: null }).then(resolve, reject),
         }),
       });
 
@@ -989,7 +986,11 @@ describe('Profile controller unit tests', () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       sinon.stub(User, 'findById').returns({
         populate: () => ({
-          exec: cb => cb(new Error('membership lookup failed')),
+          then: (resolve, reject) =>
+            Promise.reject(new Error('membership lookup failed')).then(
+              resolve,
+              reject,
+            ),
         }),
       });
 
@@ -1115,7 +1116,7 @@ describe('Profile controller unit tests', () => {
       const userDoc = await User.findById(saved._id);
       userDoc.member = [{ tribe: tribe._id, since: new Date() }];
       await userDoc.save();
-      await Tribe.findByIdAndRemove(tribe._id);
+      await Tribe.findByIdAndDelete(tribe._id);
 
       const { res } = await runHandler(res =>
         profileController.leaveTribe(
@@ -1223,7 +1224,8 @@ describe('Profile controller unit tests', () => {
       await userDoc.save();
 
       sinon.stub(User, 'findByIdAndUpdate').returns({
-        exec: cb => cb(new Error('save failed')),
+        then: (resolve, reject) =>
+          Promise.reject(new Error('save failed')).then(resolve, reject),
       });
 
       const { res } = await runHandler(res =>
@@ -1247,7 +1249,8 @@ describe('Profile controller unit tests', () => {
       await userDoc.save();
 
       sinon.stub(User, 'findByIdAndUpdate').returns({
-        exec: cb => cb(new Error('save failed')),
+        then: (resolve, reject) =>
+          Promise.reject(new Error('save failed')).then(resolve, reject),
       });
 
       const { res } = await runHandler(res =>
@@ -1575,7 +1578,10 @@ describe('Profile controller unit tests', () => {
                 skip: () => ({
                   maxTimeMS: budget => {
                     budget.should.equal(2000);
-                    return { exec: cb => cb(null, [visibleDoc]) };
+                    return {
+                      then: (resolve, reject) =>
+                        Promise.resolve([visibleDoc]).then(resolve, reject),
+                    };
                   },
                 }),
               }),
@@ -1613,7 +1619,10 @@ describe('Profile controller unit tests', () => {
                 skip: () => ({
                   maxTimeMS: budget => {
                     budget.should.equal(2000);
-                    return { exec: cb => cb(null, [visibleDoc]) };
+                    return {
+                      then: (resolve, reject) =>
+                        Promise.resolve([visibleDoc]).then(resolve, reject),
+                    };
                   },
                 }),
               }),
@@ -1649,7 +1658,10 @@ describe('Profile controller unit tests', () => {
                 skip: () => ({
                   maxTimeMS: budget => {
                     budget.should.equal(2000);
-                    return { exec: cb => cb(null, [visibleDoc]) };
+                    return {
+                      then: (resolve, reject) =>
+                        Promise.resolve([visibleDoc]).then(resolve, reject),
+                    };
                   },
                 }),
               }),
@@ -1682,7 +1694,13 @@ describe('Profile controller unit tests', () => {
               skip: () => ({
                 maxTimeMS: budget => {
                   budget.should.equal(2000);
-                  return { exec: cb => cb(new Error('search failed')) };
+                  return {
+                    then: (resolve, reject) =>
+                      Promise.reject(new Error('search failed')).then(
+                        resolve,
+                        reject,
+                      ),
+                  };
                 },
               }),
             }),

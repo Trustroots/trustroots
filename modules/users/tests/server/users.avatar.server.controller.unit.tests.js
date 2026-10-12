@@ -616,7 +616,7 @@ describe('Avatar controller unit tests', () => {
       const user = {
         _id: new mongoose.Types.ObjectId(),
         avatarVersion: 'a'.repeat(32),
-        save: callback => callback(new Error('database unavailable')),
+        save: () => Promise.reject(new Error('database unavailable')),
       };
       const res = deferredResponse();
 
@@ -658,9 +658,7 @@ describe('Avatar controller unit tests', () => {
         },
       });
       const res = deferredResponse();
-      User.findById = () => ({
-        exec: callback => callback(new Error('avatar lookup failed')),
-      });
+      User.findById = () => Promise.reject(new Error('avatar lookup failed'));
 
       try {
         controller.avatarUpload(
@@ -695,9 +693,7 @@ describe('Avatar controller unit tests', () => {
           removed.push(version),
       });
       const res = deferredResponse();
-      User.findById = () => ({
-        exec: callback => callback(null, { avatarVersion: 'd'.repeat(32) }),
-      });
+      User.findById = () => Promise.resolve({ avatarVersion: 'd'.repeat(32) });
 
       try {
         controller.avatarUpload(
@@ -744,9 +740,7 @@ describe('Avatar controller unit tests', () => {
         },
       });
       const res = deferredResponse();
-      User.findById = () => ({
-        exec: callback => callback(null, { avatarVersion: '1'.repeat(32) }),
-      });
+      User.findById = () => Promise.resolve({ avatarVersion: '1'.repeat(32) });
 
       try {
         controller.avatarUpload(
@@ -857,7 +851,7 @@ describe('Avatar controller unit tests', () => {
       const user = {
         _id: new mongoose.Types.ObjectId(),
         avatarVersion: oldVersion,
-        save: callback => callback(new Error('database unavailable')),
+        save: () => Promise.reject(new Error('database unavailable')),
       };
       const res = deferredResponse();
 

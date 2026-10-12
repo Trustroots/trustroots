@@ -2,7 +2,7 @@ import dependency0 from './../../../core/server/services/text.server.service.mjs
 import config from './../../../../config/config.mjs';
 import mongoose from 'mongoose';
 import moment from 'moment';
-import mongoosePaginate from 'mongoose-paginate';
+import mongoosePaginate from '../../../../config/lib/mongoose-paginate.mjs';
 import uniqueValidation from './../../../../config/lib/mongoose-unique-validation.mjs';
 import urlslugs from 'mongoose-url-slugs';
 import speakingurl from 'speakingurl';
@@ -199,6 +199,29 @@ TribeSchema.plugin(
     },
   }),
 );
+
+// `mongoose-url-slugs` queries with callbacks, which Mongoose 8 removed.
+TribeSchema.methods.ensureUniqueSlug = function (slug, callback) {
+  const escapedSlug = new RegExp('^' + slug);
+  this.constructor
+    .find({ _id: { $ne: this._id }, slug: escapedSlug }, { slug: 1 })
+    .then(
+      docs => {
+        const max = docs.reduce((highest, doc) => {
+          const docSlug = doc.get('slug', String);
+          let count = 1;
+          if (docSlug !== slug) {
+            const match = docSlug.match(new RegExp(slug + '-([0-9]+)$'));
+            count = match ? parseInt(match[1], 10) + 1 : 0;
+          }
+          return count > highest ? count : highest;
+        }, 0);
+        const suffix = max === 0 ? '' : '-' + Math.max(max, 2);
+        callback(null, docs.length ? slug + suffix : slug);
+      },
+      error => callback(error),
+    );
+};
 
 /**
  * Convert duplicate unique values into field validation errors.

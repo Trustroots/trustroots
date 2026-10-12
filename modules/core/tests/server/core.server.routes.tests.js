@@ -429,16 +429,16 @@ describe('Core CRUD tests', function () {
         description: 'A test circle',
         public: true,
       });
-      tribe.save(function (saveErr, savedTribe) {
-        if (saveErr) {
-          return done(saveErr);
-        }
-        agent
-          .get('/tribes/' + savedTribe.slug)
-          .expect(301)
-          .expect('Location', '/circles/' + savedTribe.slug)
-          .end(done);
-      });
+      tribe
+        .save()
+        .then(savedTribe => {
+          agent
+            .get('/tribes/' + savedTribe.slug)
+            .expect(301)
+            .expect('Location', '/circles/' + savedTribe.slug)
+            .end(done);
+        })
+        .catch(done);
     });
     it('redirects unknown tribe slugs to /circles', function (done) {
       agent
@@ -468,7 +468,7 @@ describe('Core CRUD tests', function () {
         ...overrides,
       });
 
-      user.save(done);
+      user.save().then(saved => done(null, saved), done);
     }
     function expectEmptyNames(username, done) {
       agent
@@ -486,7 +486,7 @@ describe('Core CRUD tests', function () {
     }
     it('should return 500 when the user lookup fails', function (done) {
       const sinon = require('sinon');
-      sinon.stub(User, 'findOne').yields(new Error('db down'));
+      sinon.stub(User, 'findOne').rejects(new Error('db down'));
       agent
         .get('/.well-known/nostr.json?name=nostruser')
         .expect(500)
@@ -646,13 +646,11 @@ describe('Core CRUD tests', function () {
               email: '',
             },
           },
-          function (updateErr) {
-            if (updateErr) {
-              return done(updateErr);
-            }
+        )
+          .then(() => {
             expectEmptyNames('nostruser', done);
-          },
-        );
+          })
+          .catch(done);
       });
     });
     it('should return empty names for users without a nostr npub', function (done) {
@@ -712,7 +710,7 @@ describe('Core CRUD tests', function () {
         ...overrides,
       });
 
-      user.save(done);
+      user.save().then(saved => done(null, saved), done);
     }
     it('returns only eligible public author keys from a batch', function (done) {
       createNostrUser({}, function (saveErr) {
@@ -789,8 +787,8 @@ describe('Core CRUD tests', function () {
               email: '',
             },
           },
-          function (updateErr) {
-            if (updateErr) return done(updateErr);
+        )
+          .then(() => {
             agent
               .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
               .expect(200)
@@ -802,8 +800,8 @@ describe('Core CRUD tests', function () {
                 });
                 return done();
               });
-          },
-        );
+          })
+          .catch(done);
       });
     });
     it('rejects invalid author key batches', function (done) {
@@ -837,7 +835,7 @@ describe('Core CRUD tests', function () {
     });
     it('returns an error when the author lookup fails', function (done) {
       const sinon = require('sinon');
-      sinon.stub(User, 'find').yields(new Error('db unavailable'));
+      sinon.stub(User, 'find').rejects(new Error('db unavailable'));
       agent
         .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
         .expect(500)

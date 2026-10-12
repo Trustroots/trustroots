@@ -169,8 +169,8 @@ describe('User block - user', function () {
       .then(() => done())
       .catch(done);
   });
-  afterEach(function (done) {
-    User.deleteMany().exec(done);
+  afterEach(async function () {
+    await User.deleteMany();
   });
   it('should be able to see a user if not blocked by her', function (done) {
     /* bob login */

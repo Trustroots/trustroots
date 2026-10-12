@@ -6,11 +6,10 @@ const statService = require('./../../../stats/server/services/stats.server.servi
 const sinon = require('sinon');
 
 function queryResult(value, err) {
+  const exec = () => (err ? Promise.reject(err) : Promise.resolve(value));
   return {
-    sort: () => ({
-      exec: callback => callback(err || null, value),
-    }),
-    exec: callback => callback(err || null, value),
+    sort: () => ({ exec }),
+    exec,
   };
 }
 
@@ -288,7 +287,7 @@ describe('Message server services unit tests', function () {
         messageFindOne: queryResult(firstMessage),
       });
       const error = new Error('save failed');
-      MessageStat.prototype.save.callsArgWith(0, error);
+      MessageStat.prototype.save.rejects(error);
 
       service.updateMessageStat(firstMessage, function (err) {
         try {
@@ -320,7 +319,7 @@ describe('Message server services unit tests', function () {
       });
       const error = new Error('update failed');
       MessageStat.findOneAndUpdate.returns({
-        exec: callback => callback(error),
+        exec: () => Promise.reject(error),
       });
 
       service.updateMessageStat(firstReply, function (err) {
@@ -348,7 +347,7 @@ describe('Message server services unit tests', function () {
       MessageStat.find.returns({
         sort: () => ({
           populate: () => ({
-            exec: callback => callback(error),
+            exec: () => Promise.reject(error),
           }),
         }),
       });

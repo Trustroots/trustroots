@@ -989,7 +989,7 @@ describe('Messages controller unit tests', () => {
     it('returns 404 when recipient lookup errors', async () => {
       const { sender, receiver } = await prepareSender();
       sinon.stub(User, 'findOne').returns({
-        exec: cb => cb(new Error('recipient lookup failed')),
+        exec: () => Promise.reject(new Error('recipient lookup failed')),
       });
 
       const res = deferredResponse();
@@ -1010,9 +1010,9 @@ describe('Messages controller unit tests', () => {
 
     it('returns 400 when thread upsert fails', async () => {
       const { sender, receiver } = await prepareSender();
-      sinon.stub(Thread, 'updateOne').callsFake((query, data, options, cb) => {
-        cb(new Error('thread upsert failed'));
-      });
+      sinon
+        .stub(Thread, 'updateOne')
+        .rejects(new Error('thread upsert failed'));
 
       const res = deferredResponse();
       messagesController.send(
@@ -1158,9 +1158,7 @@ describe('Messages controller unit tests', () => {
     });
 
     it('returns 400 when markRead update fails', async () => {
-      sinon.stub(Message, 'update').callsFake((query, update, options, cb) => {
-        cb(new Error('update failed'));
-      });
+      sinon.stub(Message, 'updateMany').rejects(new Error('update failed'));
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const res = deferredResponse();
       messagesController.markRead(
@@ -1175,9 +1173,7 @@ describe('Messages controller unit tests', () => {
     });
 
     it('returns 400 when messagesCount lookup fails', async () => {
-      sinon.stub(Thread, 'countDocuments').callsFake((query, cb) => {
-        cb(new Error('count failed'));
-      });
+      sinon.stub(Thread, 'countDocuments').rejects(new Error('count failed'));
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const res = deferredResponse();
       messagesController.messagesCount({ user: { _id: user._id } }, res);
@@ -1189,7 +1185,7 @@ describe('Messages controller unit tests', () => {
       sinon.stub(Message, 'find').returns({
         sort: () => ({
           select: () => ({
-            exec: cb => cb(new Error('find failed')),
+            exec: () => Promise.reject(new Error('find failed')),
           }),
         }),
       });
@@ -1370,9 +1366,7 @@ describe('Messages controller unit tests', () => {
           pages: 1,
         });
       });
-      sinon.stub(Thread, 'findById').callsFake((id, field, cb) => {
-        cb(new Error('backfill failed'));
-      });
+      sinon.stub(Thread, 'findById').rejects(new Error('backfill failed'));
 
       const res = deferredResponse();
       messagesController.inbox({ user: { _id: viewerId }, query: {} }, res);
@@ -1410,9 +1404,7 @@ describe('Messages controller unit tests', () => {
           pages: 1,
         });
       });
-      sinon.stub(Thread, 'findById').callsFake((id, field, cb) => {
-        cb(null, null);
-      });
+      sinon.stub(Thread, 'findById').resolves(null);
 
       const res = deferredResponse();
       messagesController.inbox({ user: { _id: viewerId }, query: {} }, res);
@@ -1625,7 +1617,7 @@ describe('Messages controller unit tests', () => {
     it('returns 400 when first-message profile lookup fails', async () => {
       const { sender, receiver } = await prepareSender();
       sinon.stub(User, 'findById').returns({
-        exec: cb => cb(new Error('profile lookup failed')),
+        exec: () => Promise.reject(new Error('profile lookup failed')),
       });
 
       const res = deferredResponse();
@@ -1645,13 +1637,8 @@ describe('Messages controller unit tests', () => {
     });
 
     it('returns 400 when send populate fails', async () => {
-      sinon.stub(Message.prototype, 'save').callsFake(function (cb) {
-        const fakeMessage = {
-          populate: sinon.stub().callsFake((opts, populateCb) => {
-            populateCb(new Error('populate failed'));
-          }),
-        };
-        cb(null, fakeMessage);
+      sinon.stub(Message.prototype, 'save').resolves({
+        populate: sinon.stub().rejects(new Error('populate failed')),
       });
       const { sender, receiver } = await prepareSender();
 
@@ -1672,9 +1659,7 @@ describe('Messages controller unit tests', () => {
     });
 
     it('returns 400 when message save fails', async () => {
-      sinon.stub(Message.prototype, 'save').callsFake(cb => {
-        cb(new Error('save failed'));
-      });
+      sinon.stub(Message.prototype, 'save').rejects(new Error('save failed'));
       const { sender, receiver } = await prepareSender();
 
       const res = deferredResponse();
@@ -1726,7 +1711,7 @@ describe('Messages controller unit tests', () => {
       sinon.stub(Message, 'find').returns({
         sort: () => ({
           select: () => ({
-            exec: cb => cb(null, [incoming]),
+            exec: () => Promise.resolve([incoming]),
           }),
         }),
       });
@@ -1757,7 +1742,7 @@ describe('Messages controller unit tests', () => {
       sinon.stub(Message, 'find').returns({
         sort: () => ({
           select: () => ({
-            exec: cb => cb(null, [outgoing]),
+            exec: () => Promise.resolve([outgoing]),
           }),
         }),
       });
@@ -1782,8 +1767,8 @@ describe('Messages controller unit tests', () => {
       sinon.stub(Message, 'find').returns({
         sort: () => ({
           select: () => ({
-            exec: cb =>
-              cb(null, [
+            exec: () =>
+              Promise.resolve([
                 {
                   content: 'Sync test message',
                   userFrom: sender._id,
@@ -1796,7 +1781,7 @@ describe('Messages controller unit tests', () => {
       });
       sinon.stub(User, 'find').returns({
         select: () => ({
-          exec: cb => cb(new Error('user lookup failed')),
+          exec: () => Promise.reject(new Error('user lookup failed')),
         }),
       });
 
@@ -1811,13 +1796,13 @@ describe('Messages controller unit tests', () => {
       sinon.stub(Message, 'find').returns({
         sort: () => ({
           select: () => ({
-            exec: cb => cb(null, []),
+            exec: () => Promise.resolve([]),
           }),
         }),
       });
       sinon.stub(User, 'find').returns({
         select: () => ({
-          exec: cb => cb(new Error('user lookup failed')),
+          exec: () => Promise.reject(new Error('user lookup failed')),
         }),
       });
       const [user] = await utils.saveUsers(utils.generateUsers(1));

@@ -186,9 +186,7 @@ describe('Offers controller unit tests', () => {
     });
 
     it('returns 400 when saving a new offer fails', async () => {
-      sinon.stub(Offer.prototype, 'save').callsFake(function (cb) {
-        cb(new Error('save failed'));
-      });
+      sinon.stub(Offer.prototype, 'save').rejects(new Error('save failed'));
 
       const { res } = await runHandler(res =>
         offersController.create(
@@ -298,9 +296,7 @@ describe('Offers controller unit tests', () => {
     });
 
     it('returns 400 when saving an updated offer fails', async () => {
-      sinon.stub(Offer.prototype, 'save').callsFake(function (cb) {
-        cb(new Error('save failed'));
-      });
+      sinon.stub(Offer.prototype, 'save').rejects(new Error('save failed'));
 
       const { res } = await runHandler(res =>
         offersController.update(
@@ -390,9 +386,7 @@ describe('Offers controller unit tests', () => {
     it('returns 400 when removing an offer fails', async () => {
       const offer = await createOffer(owner._id);
       const offerReq = await Offer.findById(offer._id).populate('user', '_id');
-      sinon.stub(Offer, 'findOneAndRemove').callsFake((query, cb) => {
-        cb(new Error('remove failed'));
-      });
+      sinon.stub(Offer, 'findOneAndDelete').rejects(new Error('remove failed'));
 
       const { res } = await runHandler(res =>
         offersController.delete({ user: owner, offer: offerReq }, res),
@@ -761,9 +755,7 @@ describe('Offers controller unit tests', () => {
       );
       offerReq.user.member = [{ tribe: new mongoose.Types.ObjectId() }];
 
-      sinon
-        .stub(User, 'populate')
-        .callsFake((doc, options, cb) => cb(new Error('populate failed')));
+      sinon.stub(User, 'populate').rejects(new Error('populate failed'));
 
       const { res } = await runHandler(res =>
         offersController.getOffer({ user: owner, offer: offerReq }, res),
@@ -896,9 +888,7 @@ describe('Offers controller unit tests', () => {
     });
 
     it('passes lookup errors to next', async () => {
-      sinon.stub(Offer, 'find').callsFake((query, cb) => {
-        cb(new Error('lookup failed'));
-      });
+      sinon.stub(Offer, 'find').rejects(new Error('lookup failed'));
 
       const { nextArg } = await runHandler((res, next) =>
         offersController.offersByUserId(
@@ -946,9 +936,7 @@ describe('Offers controller unit tests', () => {
 
     it('responds with 404 when loading an offer errors', async () => {
       sinon.stub(Offer, 'findById').returns({
-        populate: () => ({
-          exec: cb => cb(new Error('lookup failed')),
-        }),
+        populate: () => Promise.reject(new Error('lookup failed')),
       });
 
       const { res } = await runHandler((res, next) =>
@@ -1005,7 +993,7 @@ describe('Offers controller unit tests', () => {
     });
 
     it('does not require a callback', done => {
-      sinon.stub(Offer, 'deleteMany').callsFake((query, cb) => cb());
+      sinon.stub(Offer, 'deleteMany').resolves();
       offersController.removeAllByUserId(new mongoose.Types.ObjectId());
       Offer.deleteMany.calledOnce.should.be.true();
       done();

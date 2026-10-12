@@ -1,7 +1,7 @@
 /**
  * Module dependencies.
  */
-const should = require('should');
+require('should');
 const mongoose = require('mongoose');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
@@ -21,7 +21,7 @@ let contact;
  * Unit tests
  */
 describe('Contact Model Unit Tests:', function () {
-  beforeEach(function (done) {
+  beforeEach(async function () {
     user1 = new User({
       firstName: 'Full',
       lastName: 'Name',
@@ -42,52 +42,38 @@ describe('Contact Model Unit Tests:', function () {
       provider: 'local',
     });
 
-    // Create users
-    user1.save(function () {
-      user1Id = user1._id;
+    await user1.save();
+    user1Id = user1._id;
 
-      user2.save(function () {
-        user2Id = user2._id;
+    await user2.save();
+    user2Id = user2._id;
 
-        // Create connection between users
-        contact = new Contact({
-          userFrom: user1Id,
-          userTo: user2Id,
-          created: new Date(),
-          confirmed: true,
-        });
-
-        done();
-      });
+    // Create connection between users
+    contact = new Contact({
+      userFrom: user1Id,
+      userTo: user2Id,
+      created: new Date(),
+      confirmed: true,
     });
   });
 
   afterEach(utils.clearDatabase);
 
   describe('Method Save', function () {
-    it('should be able to save without problems', function (done) {
-      contact.save(function (err) {
-        should.not.exist(err);
-        return done();
-      });
+    it('should be able to save without problems', async function () {
+      await contact.save();
     });
 
-    it('should be able to show an error when try to save without `userFrom`', function (done) {
+    it('should be able to show an error when try to save without `userFrom`', async function () {
       contact.userFrom = '';
 
-      contact.save(function (err) {
-        should.exist(err);
-        return done();
-      });
+      await contact.save().should.be.rejected();
     });
 
-    it('should be able to show an error when try to save without `userTo`', function (done) {
+    it('should be able to show an error when try to save without `userTo`', async function () {
       contact.userTo = '';
 
-      contact.save(function (err) {
-        should.exist(err);
-        return done();
-      });
+      await contact.save().should.be.rejected();
     });
   });
 });

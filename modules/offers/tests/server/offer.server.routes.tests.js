@@ -1,6 +1,5 @@
 const should = require('should');
 const request = require('supertest');
-const async = require('async');
 const moment = require('moment');
 const mongoose = require('mongoose');
 const express = require('./../../../../config/lib/express.mjs');
@@ -78,7 +77,7 @@ describe('Offer CRUD tests', function () {
       done();
     })().catch(done);
   });
-  beforeEach(function (doneBeforeEach) {
+  beforeEach(async function () {
     // Create user credentials
     credentials = {
       username: 'loremipsum',
@@ -183,76 +182,34 @@ describe('Offer CRUD tests', function () {
     });
 
     // Save data to the test db
-    async.waterfall(
-      [
-        // Save tribe 1
-        function (done) {
-          tribe1.save(function (err, tribe1) {
-            tribe1Id = tribe1._id;
-            done(err);
-          });
-        },
-        // Save tribe 2
-        function (done) {
-          tribe2.save(function (err, tribe2) {
-            tribe2Id = tribe2._id;
-            done(err);
-          });
-        },
-        // Save user 1 (without tribe membership)
-        function (done) {
-          user1.save(function (err, user1res) {
-            user1Id = user1res._id;
-            done(err);
-          });
-        },
-        // Save user 2 (with tribe membership)
-        function (done) {
-          user2.member = [
-            {
-              tribe: tribe2Id,
-              since: new Date(),
-            },
-          ];
-          user2.save(function (err, user2res) {
-            user2Id = user2res._id;
-            done(err);
-          });
-        },
-        // Save user 3 (with tribe membership)
-        function (done) {
-          user3.member = [
-            {
-              tribe: tribe1Id,
-              since: new Date(),
-            },
-          ];
-          user3.save(function (err, user3res) {
-            user3Id = user3res._id;
-            return done(err);
-          });
-        },
-        // Save hosting offer 2
-        function (done) {
-          offer2.user = user2Id;
-          offer2.save(function (err, offer2) {
-            offer2Id = offer2._id;
-            done(err);
-          });
-        },
-        // Save hosting offer 3
-        function (done) {
-          offer3.user = user3Id;
-          offer3.save(function (err) {
-            done(err);
-          });
-        },
-      ],
-      function (err) {
-        should.not.exist(err);
-        doneBeforeEach(err);
+    // Save tribe 1
+    tribe1Id = (await tribe1.save())._id;
+    // Save tribe 2
+    tribe2Id = (await tribe2.save())._id;
+    // Save user 1 (without tribe membership)
+    user1Id = (await user1.save())._id;
+    // Save user 2 (with tribe membership)
+    user2.member = [
+      {
+        tribe: tribe2Id,
+        since: new Date(),
       },
-    );
+    ];
+    user2Id = (await user2.save())._id;
+    // Save user 3 (with tribe membership)
+    user3.member = [
+      {
+        tribe: tribe1Id,
+        since: new Date(),
+      },
+    ];
+    user3Id = (await user3.save())._id;
+    // Save hosting offer 2
+    offer2.user = user2Id;
+    offer2Id = (await offer2.save())._id;
+    // Save hosting offer 3
+    offer3.user = user3Id;
+    await offer3.save();
   });
   afterEach(utils.clearDatabase);
   describe('Read offer by offer id:', function () {
@@ -447,16 +404,14 @@ describe('Offer CRUD tests', function () {
             .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
-              Offer.findOne(
-                {
-                  _id: offer2Id,
-                },
-                function (err, offer) {
-                  should.not.exist(err);
+              Offer.findOne({
+                _id: offer2Id,
+              })
+                .then(offer => {
                   should.exist(offer);
                   return done();
-                },
-              );
+                })
+                .catch(done);
             });
         });
     });
@@ -477,16 +432,14 @@ describe('Offer CRUD tests', function () {
             .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
-              Offer.findOne(
-                {
-                  _id: offer2Id,
-                },
-                function (err, offer) {
-                  should.not.exist(err);
+              Offer.findOne({
+                _id: offer2Id,
+              })
+                .then(offer => {
                   should.not.exist(offer);
                   return done();
-                },
-              );
+                })
+                .catch(done);
             });
         });
     });
@@ -830,14 +783,10 @@ describe('Offer CRUD tests', function () {
               if (offerSaveErr) return done(offerSaveErr);
 
               // Get id for offer we just saved
-              Offer.findOne(
-                {
-                  user: user1Id,
-                },
-                function (offerFindErr, offer) {
-                  // Handle error
-                  if (offerFindErr) return done(offerFindErr);
-
+              Offer.findOne({
+                user: user1Id,
+              })
+                .then(offer => {
                   // Modify offer
                   offer.description = 'MODIFIED';
                   offer.noOfferDescription = 'MODIFIED';
@@ -855,21 +804,20 @@ describe('Offer CRUD tests', function () {
                       // Handle offer put error
                       if (offerPutErr) return done(offerPutErr);
                       offerPutRes.body.message.should.equal('Offer updated.');
-                      Offer.findOne(
-                        {
-                          _id: offer._id,
-                        },
-                        function (err, offerNew) {
+                      Offer.findOne({
+                        _id: offer._id,
+                      })
+                        .then(offerNew => {
                           offerNew.description.should.equal('MODIFIED');
                           offerNew.noOfferDescription.should.equal('MODIFIED');
                           offerNew.updated.should.not.equal(previousUpdated);
                           offerNew.showOnlyInMyCircles.should.equal(true);
-                          return done(err);
-                        },
-                      );
+                          return done();
+                        })
+                        .catch(done);
                     });
-                },
-              );
+                })
+                .catch(done);
             });
         });
     });
@@ -891,16 +839,14 @@ describe('Offer CRUD tests', function () {
             .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
-              Offer.findOne(
-                {
-                  _id: offer2Id,
-                },
-                function (err, offer) {
-                  should.not.exist(err);
+              Offer.findOne({
+                _id: offer2Id,
+              })
+                .then(offer => {
                   offer.description.should.not.equal(offer2.description);
                   return done();
-                },
-              );
+                })
+                .catch(done);
             });
         });
     });
@@ -923,14 +869,10 @@ describe('Offer CRUD tests', function () {
               if (offerSaveErr) return done(offerSaveErr);
 
               // Get id for offer we just saved
-              Offer.findOne(
-                {
-                  user: user1Id,
-                },
-                function (offerFindErr, offer) {
-                  // Handle error
-                  if (offerFindErr) return done(offerFindErr);
-
+              Offer.findOne({
+                user: user1Id,
+              })
+                .then(offer => {
                   // Modify offer
                   const modifiedOffer = offer1;
                   modifiedOffer.type = 'meet';
@@ -946,19 +888,18 @@ describe('Offer CRUD tests', function () {
                       offerSaveRes.body.message.should.equal(
                         'You cannot update offer type.',
                       );
-                      Offer.find(
-                        {
-                          user: user1Id,
-                        },
-                        function (err, offers) {
+                      Offer.find({
+                        user: user1Id,
+                      })
+                        .then(offers => {
                           offers.length.should.equal(1);
                           offers[0].type.should.equal('host');
-                          return done(err);
-                        },
-                      );
+                          return done();
+                        })
+                        .catch(done);
                     });
-                },
-              );
+                })
+                .catch(done);
             });
         });
     });
@@ -968,80 +909,80 @@ describe('Offer CRUD tests', function () {
       const fromNow2 = moment().add(31, 'days');
       offerMeet.user = user1Id;
       offerMeet.validUntil = fromNow1.toDate();
-      offerMeet.save(function (offerMeetErr, offerMeetSaved) {
-        // Handle save error
-        if (offerMeetErr) return done(offerMeetErr);
-        moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            // Handle signin error
-            if (signinErr) return done(signinErr);
-            offerMeet.validUntil = fromNow2.toDate();
+      offerMeet
+        .save()
+        .then(offerMeetSaved => {
+          moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
+          agent
+            .post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function (signinErr) {
+              // Handle signin error
+              if (signinErr) return done(signinErr);
+              offerMeet.validUntil = fromNow2.toDate();
 
-            // Update offer
-            agent
-              .put('/api/offers/' + offerMeetSaved._id)
-              .send(offerMeet)
-              .expect(200)
-              .end(function (offerPutErr) {
-                // Handle offer put error
-                if (offerPutErr) return done(offerPutErr);
-                Offer.findOne(
-                  {
+              // Update offer
+              agent
+                .put('/api/offers/' + offerMeetSaved._id)
+                .send(offerMeet)
+                .expect(200)
+                .end(function (offerPutErr) {
+                  // Handle offer put error
+                  if (offerPutErr) return done(offerPutErr);
+                  Offer.findOne({
                     _id: offerMeetSaved._id,
-                  },
-                  function (err, offerNew) {
-                    moment(offerNew.validUntil)
-                      .diff(now, 'days')
-                      .should.equal(30);
-                    return done(err);
-                  },
-                );
-              });
-          });
-      });
+                  })
+                    .then(offerNew => {
+                      moment(offerNew.validUntil)
+                        .diff(now, 'days')
+                        .should.equal(30);
+                      return done();
+                    })
+                    .catch(done);
+                });
+            });
+        })
+        .catch(done);
     });
     it.skip('should be keep `validUntil` value to previously saved when updating offer', function (done) {
       const now = moment();
       offerMeet.user = user1Id;
       offerMeet.validUntil = moment().add(2, 'days');
-      offerMeet.save(function (offerMeetErr, offerMeetSaved) {
-        // Handle save error
-        if (offerMeetErr) return done(offerMeetErr);
-        moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            // Handle signin error
-            if (signinErr) return done(signinErr);
+      offerMeet
+        .save()
+        .then(offerMeetSaved => {
+          moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
+          agent
+            .post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function (signinErr) {
+              // Handle signin error
+              if (signinErr) return done(signinErr);
 
-            // Update offer
-            agent
-              .put('/api/offers/' + offerMeetSaved._id)
-              .send(offerMeet)
-              .expect(200)
-              .end(function (offerPutErr) {
-                // Handle offer put error
-                if (offerPutErr) return done(offerPutErr);
-                Offer.findOne(
-                  {
+              // Update offer
+              agent
+                .put('/api/offers/' + offerMeetSaved._id)
+                .send(offerMeet)
+                .expect(200)
+                .end(function (offerPutErr) {
+                  // Handle offer put error
+                  if (offerPutErr) return done(offerPutErr);
+                  Offer.findOne({
                     _id: offerMeetSaved._id,
-                  },
-                  function (err, offerNew) {
-                    moment(offerNew.validUntil)
-                      .diff(now, 'days')
-                      .should.equal(2);
-                    return done(err);
-                  },
-                );
-              });
-          });
-      });
+                  })
+                    .then(offerNew => {
+                      moment(offerNew.validUntil)
+                        .diff(now, 'days')
+                        .should.equal(2);
+                      return done();
+                    })
+                    .catch(done);
+                });
+            });
+        })
+        .catch(done);
     });
     it.skip('should default to 30 days from now when attempting to set `validUntil` value to over 30 days from now', function (done) {
       const now = moment();
@@ -1049,42 +990,42 @@ describe('Offer CRUD tests', function () {
       const fromNow2 = moment().add(32, 'days');
       offerMeet.user = user1Id;
       offerMeet.validUntil = fromNow1.toDate();
-      offerMeet.save(function (offerMeetErr, offerMeetSaved) {
-        // Handle save error
-        if (offerMeetErr) return done(offerMeetErr);
-        moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            // Handle signin error
-            if (signinErr) return done(signinErr);
-            offerMeet.validUntil = fromNow2.toDate();
+      offerMeet
+        .save()
+        .then(offerMeetSaved => {
+          moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
+          agent
+            .post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function (signinErr) {
+              // Handle signin error
+              if (signinErr) return done(signinErr);
+              offerMeet.validUntil = fromNow2.toDate();
 
-            // Update offer
-            agent
-              .put('/api/offers/' + offerMeetSaved._id)
-              .send(offerMeet)
-              .expect(200)
-              .end(function (offerPutErr) {
-                // Handle offer put error
-                if (offerPutErr) return done(offerPutErr);
-                Offer.findOne(
-                  {
+              // Update offer
+              agent
+                .put('/api/offers/' + offerMeetSaved._id)
+                .send(offerMeet)
+                .expect(200)
+                .end(function (offerPutErr) {
+                  // Handle offer put error
+                  if (offerPutErr) return done(offerPutErr);
+                  Offer.findOne({
                     _id: offerMeetSaved._id,
-                  },
-                  function (err, offerNew) {
-                    // We set it to 32, but it should default to 30 days
-                    moment(offerNew.validUntil)
-                      .diff(now, 'days')
-                      .should.equal(30);
-                    return done(err);
-                  },
-                );
-              });
-          });
-      });
+                  })
+                    .then(offerNew => {
+                      // We set it to 32, but it should default to 30 days
+                      moment(offerNew.validUntil)
+                        .diff(now, 'days')
+                        .should.equal(30);
+                      return done();
+                    })
+                    .catch(done);
+                });
+            });
+        })
+        .catch(done);
     });
     it.skip('should default to 30 days from now when attempting to set `validUntil` value to past', function (done) {
       const now = moment();
@@ -1092,42 +1033,42 @@ describe('Offer CRUD tests', function () {
       const fromNow2 = moment().subtract(1, 'days');
       offerMeet.user = user1Id;
       offerMeet.validUntil = fromNow1.toDate();
-      offerMeet.save(function (offerMeetErr, offerMeetSaved) {
-        // Handle save error
-        if (offerMeetErr) return done(offerMeetErr);
-        moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            // Handle signin error
-            if (signinErr) return done(signinErr);
-            offerMeet.validUntil = fromNow2.toDate();
+      offerMeet
+        .save()
+        .then(offerMeetSaved => {
+          moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
+          agent
+            .post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function (signinErr) {
+              // Handle signin error
+              if (signinErr) return done(signinErr);
+              offerMeet.validUntil = fromNow2.toDate();
 
-            // Update offer
-            agent
-              .put('/api/offers/' + offerMeetSaved._id)
-              .send(offerMeet)
-              .expect(200)
-              .end(function (offerPutErr) {
-                // Handle offer put error
-                if (offerPutErr) return done(offerPutErr);
-                Offer.findOne(
-                  {
+              // Update offer
+              agent
+                .put('/api/offers/' + offerMeetSaved._id)
+                .send(offerMeet)
+                .expect(200)
+                .end(function (offerPutErr) {
+                  // Handle offer put error
+                  if (offerPutErr) return done(offerPutErr);
+                  Offer.findOne({
                     _id: offerMeetSaved._id,
-                  },
-                  function (err, offerNew) {
-                    // We set it to -2 days, but it should default to 30 days
-                    moment(offerNew.validUntil)
-                      .diff(now, 'days')
-                      .should.equal(30);
-                    return done(err);
-                  },
-                );
-              });
-          });
-      });
+                  })
+                    .then(offerNew => {
+                      // We set it to -2 days, but it should default to 30 days
+                      moment(offerNew.validUntil)
+                        .diff(now, 'days')
+                        .should.equal(30);
+                      return done();
+                    })
+                    .catch(done);
+                });
+            });
+        })
+        .catch(done);
     });
     it.skip('should remove reactivation flag field when updating offer', function (done) {
       agent
@@ -1140,29 +1081,28 @@ describe('Offer CRUD tests', function () {
 
           // Add field to offer
           offer2.reactivateReminderSent = new Date();
-          offer2.save(function (offerSaveErr, offerSavedRes) {
-            // Handle offer save error
-            if (offerSaveErr) return done(offerSaveErr);
-
-            // Save a new offer
-            agent
-              .put('/api/offers/' + offerSavedRes._id)
-              .send(offer2)
-              .expect(200)
-              .end(function (offerSaveErr) {
-                // Handle offer save error
-                if (offerSaveErr) return done(offerSaveErr);
-                Offer.findOne(
-                  {
+          offer2
+            .save()
+            .then(offerSavedRes => {
+              // Save a new offer
+              agent
+                .put('/api/offers/' + offerSavedRes._id)
+                .send(offer2)
+                .expect(200)
+                .end(function (offerSaveErr) {
+                  // Handle offer save error
+                  if (offerSaveErr) return done(offerSaveErr);
+                  Offer.findOne({
                     user: user2Id,
-                  },
-                  function (err, offer) {
-                    should.not.exist(offer.reactivateReminderSent);
-                    return done(err);
-                  },
-                );
-              });
-          });
+                  })
+                    .then(offer => {
+                      should.not.exist(offer.reactivateReminderSent);
+                      return done();
+                    })
+                    .catch(done);
+                });
+            })
+            .catch(done);
         });
     });
   });

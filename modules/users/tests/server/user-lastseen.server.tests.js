@@ -37,7 +37,7 @@ describe('User last seen CRUD tests', function () {
 
   // Create a confirmed user
 
-  beforeEach(function (done) {
+  beforeEach(async function () {
     _confirmedUser = {
       public: true,
       firstName: 'Full',
@@ -51,7 +51,7 @@ describe('User last seen CRUD tests', function () {
     confirmedUser = new User(_confirmedUser);
 
     // Save a user to the test db
-    confirmedUser.save(done);
+    await confirmedUser.save();
   });
   afterEach(utils.clearDatabase);
   context('logged in', function () {
@@ -69,31 +69,13 @@ describe('User last seen CRUD tests', function () {
       await utils.signOut(agent);
     });
     afterEach(utils.clearDatabase);
-    it('should update the last seen date of logged user when accessing api', function (done) {
-      // Read statistics
+    it('should update the last seen date of logged user when accessing api', async function () {
       sinon.clock.tick(20);
-      agent
-        .get('/api/messages')
-        .expect(200)
-        .end(function (err) {
-          if (err) return done(err);
+      await agent.get('/api/messages').expect(200);
 
-          // read user from database
-          User.findOne(
-            {
-              username: _confirmedUser.username,
-            },
-            function (err, user) {
-              try {
-                should(user.seen).eql(new Date());
-                user.lastIpAddress.should.be.String();
-                return done();
-              } catch (err) {
-                return done(err);
-              }
-            },
-          );
-        });
+      const user = await User.findOne({ username: _confirmedUser.username });
+      should(user.seen).eql(new Date());
+      user.lastIpAddress.should.be.String();
     });
     it('prefers the trusted Passenger client address', () => {
       const req = {
@@ -120,7 +102,7 @@ describe('User last seen CRUD tests', function () {
     it('updates a changed IP address without advancing the last-seen timestamp', async () => {
       const findByIdAndUpdate = sinon
         .stub(User, 'findByIdAndUpdate')
-        .callsFake((id, update, callback) => callback());
+        .resolves();
       const req = {
         get: () => '203.0.113.24',
         ip: '198.51.100.24',
@@ -139,78 +121,32 @@ describe('User last seen CRUD tests', function () {
         lastIpAddress: '203.0.113.24',
       });
     });
-    it('should update the last seen date only if a specific time passed since the last update', function (done) {
-      // the user's username, shortcut
+    it('should update the last seen date only if a specific time passed since the last update', async function () {
       const username = _confirmedUser.username;
 
-      // how long should we wait between updates on minimum
       const minutesToUpdate = {
         minutes: 1,
-      }; // 1 minute
+      };
 
       sinon
         .stub(config.limits, 'timeToUpdateLastSeenUser')
         .value(minutesToUpdate);
       const timeToUpdate = moment.duration(minutesToUpdate).asMilliseconds();
       const originalTime = new Date();
-      // update for the first time, OK
-      agent
-        .get('/api/messages')
-        .expect(200)
-        .end(function () {
-          // read user from database
-          User.findOne(
-            {
-              username,
-            },
-            function (err, user) {
-              try {
-                should(user.seen).eql(originalTime);
 
-                // now wait almost for the time to update
-                sinon.clock.tick(timeToUpdate - 1);
-                agent
-                  .get('/api/messages')
-                  .expect(200)
-                  .end(function () {
-                    // and the User.seen should not be updated (too early)
-                    User.findOne(
-                      {
-                        username,
-                      },
-                      function (err, user) {
-                        try {
-                          should(user.seen).eql(originalTime);
+      await agent.get('/api/messages').expect(200);
+      let user = await User.findOne({ username });
+      should(user.seen).eql(originalTime);
 
-                          // now wait for another 2 milliseconds
-                          sinon.clock.tick(2);
-                          agent
-                            .get('/api/messages')
-                            .expect(200)
-                            .end(function () {
-                              // and the User.seen should be updated now
-                              User.findOne(
-                                {
-                                  username,
-                                },
-                                function (err, user) {
-                                  should(user.seen).eql(new Date());
-                                  return done();
-                                },
-                              );
-                            });
-                        } catch (err) {
-                          return done(err);
-                        }
-                      },
-                    );
-                  });
-              } catch (err) {
-                return done(err);
-              }
-            },
-          );
-        });
+      sinon.clock.tick(timeToUpdate - 1);
+      await agent.get('/api/messages').expect(200);
+      user = await User.findOne({ username });
+      should(user.seen).eql(originalTime);
+
+      sinon.clock.tick(2);
+      await agent.get('/api/messages').expect(200);
+      user = await User.findOne({ username });
+      should(user.seen).eql(new Date());
     });
   });
 });

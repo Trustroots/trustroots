@@ -19,6 +19,7 @@ describe('Job: user finish signup direct unit tests', function () {
     };
     query.and.returns(query);
     query.limit.returns(query);
+    query.then = (resolve, reject) => query.exec().then(resolve, reject);
 
     const User = mongoose.model('User');
     sinon.stub(User, 'find').returns(query);
@@ -32,7 +33,7 @@ describe('Job: user finish signup direct unit tests', function () {
 
   it('uses fallback reminder limits and finishes cleanly when no users match', function (done) {
     const { emailService, job, query, User } = loadJob({ limits: {} });
-    query.exec.callsArgWith(0, null, []);
+    query.exec.resolves([]);
 
     job({ attrs: { _id: { toString: () => 'job-id' } } }, function (err) {
       try {
@@ -61,9 +62,9 @@ describe('Job: user finish signup direct unit tests', function () {
         maxSignupReminders: 1,
       },
     });
-    query.exec.callsArgWith(0, null, [user]);
+    query.exec.resolves([user]);
     emailService.sendSignupEmailReminder.callsArgWith(1, null);
-    User.findByIdAndUpdate.callsArgWith(2, null);
+    User.findByIdAndUpdate.resolves();
 
     job({ attrs: { _id: { toString: () => 'job-id' } } }, function (err) {
       try {

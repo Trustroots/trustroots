@@ -12,21 +12,21 @@ export const list = (req, res) => {
     .select('username displayName')
     .sort('displayName username')
     .limit(500)
-    .exec((err, users) => {
-      if (err) {
-        return res.status(500).send({
-          message: errorService.getErrorMessage(err),
+    .then(
+      users => {
+        res.send({
+          greeters: users.map(({ _id, username, displayName }) => ({
+            _id,
+            username,
+            displayName,
+          })),
         });
-      }
-
-      res.send({
-        greeters: users.map(({ _id, username, displayName }) => ({
-          _id,
-          username,
-          displayName,
-        })),
-      });
-    });
+      },
+      err =>
+        res.status(500).send({
+          message: errorService.getErrorMessage(err),
+        }),
+    );
 };
 
 const defaultInterop = { list };

@@ -125,14 +125,19 @@ function fillDeletedProfiles(threads, callback) {
 
       // Check which field is `null` — only one of them can
       const field = !thread.userTo ? 'userTo' : 'userFrom';
-      Thread.findById(thread._id, field, function (err, newThread) {
-        if (!err && newThread) {
-          thread[field] = {
-            _id: newThread[field],
-          };
-        }
-        done(null, thread);
-      });
+      Thread.findById(thread._id, field).then(
+        function (newThread) {
+          if (newThread) {
+            thread[field] = {
+              _id: newThread[field],
+            };
+          }
+          done(null, thread);
+        },
+        function () {
+          done(null, thread);
+        },
+      );
     },
     callback,
   );
@@ -346,35 +351,36 @@ service.send = async function (req, res) {
         User.findOne({
           _id: req.body.userTo,
           ...publicityLimit,
-        }).exec(function (err, receiver) {
-          // If we were unable to find the receiver, return the error and stop here
-          if (err || !receiver) {
-            return res.status(404).send({
-              message: 'Member you are writing to does not exist.',
-            });
-          }
-          done();
-        });
+        })
+          .exec()
+          .catch(() => null)
+          .then(receiver => {
+            // If we were unable to find the receiver, return the error and stop here
+            if (!receiver) {
+              return res.status(404).send({
+                message: 'Member you are writing to does not exist.',
+              });
+            }
+            done();
+          });
       },
       // Check if this is first message to this thread (=does the thread object exist?)
       function (done) {
-        Thread.findOne(
-          {
-            // User id's can be either way around in thread handle, so we gotta test for both situations
-            $or: [
-              {
-                userTo: req.user._id,
-                userFrom: req.body.userTo,
-              },
-              {
-                userTo: req.body.userTo,
-                userFrom: req.user._id,
-              },
-            ],
-          },
-          function (err, thread) {
-            done(err, thread);
-          },
+        Thread.findOne({
+          // User id's can be either way around in thread handle, so we gotta test for both situations
+          $or: [
+            {
+              userTo: req.user._id,
+              userFrom: req.body.userTo,
+            },
+            {
+              userTo: req.body.userTo,
+              userFrom: req.user._id,
+            },
+          ],
+        }).then(
+          thread => done(null, thread),
+          err => done(err),
         );
       },
       // Check sender's profile isn't empty If it was first message
@@ -382,33 +388,28 @@ service.send = async function (req, res) {
       function (thread, done) {
         // If this was first message to the thread
         if (!thread) {
-          User.findById(req.user._id, 'description').exec(function (
-            err,
-            sender,
-          ) {
-            // Handle errors
-            if (err) {
-              return done(err);
-            }
-            const descriptionLength = sender.description
-              ? textService.plainText(sender.description).length
-              : 0;
+          User.findById(req.user._id, 'description')
+            .exec()
+            .then(function (sender) {
+              const descriptionLength = sender.description
+                ? textService.plainText(sender.description).length
+                : 0;
 
-            // If the sender has too empty description, return an error
-            if (descriptionLength < config.profileMinimumLength) {
-              return res.status(400).send({
-                error: 'empty-profile',
-                limit: config.profileMinimumLength,
-                message:
-                  descriptionLength === 0
-                    ? 'Please fill out your profile description before you send messages.'
-                    : 'Please write longer profile description before you send messages.',
-              });
-            }
+              // If the sender has too empty description, return an error
+              if (descriptionLength < config.profileMinimumLength) {
+                return res.status(400).send({
+                  error: 'empty-profile',
+                  limit: config.profileMinimumLength,
+                  message:
+                    descriptionLength === 0
+                      ? 'Please fill out your profile description before you send messages.'
+                      : 'Please write longer profile description before you send messages.',
+                });
+              }
 
-            // Continue
-            done(err);
-          });
+              // Continue
+              done();
+            }, done);
         } else {
           // It wasn't first message to this thread
           done();
@@ -472,7 +473,7 @@ service.send = async function (req, res) {
         } else if (spamStatus === 'not-spam') {
           message.spam = false;
         }
-        message.save(done);
+        message.save().then(saved => done(null, saved), done);
       },
       // Create/upgrade Thread handle between these two users
       function (message, done) {
@@ -516,9 +517,9 @@ service.send = async function (req, res) {
           {
             upsert: true,
           },
-          err => {
-            done(err, message);
-          },
+        ).then(
+          () => done(null, message),
+          err => done(err),
         );
       },
       // Here we send some metrics to Stats API to measure how many messages
@@ -543,20 +544,15 @@ service.send = async function (req, res) {
       },
       // We'll need some info about related users, populate some fields
       function (message, done) {
-        message.populate(
-          [userMiniService.miniUserPopulate('userFrom userTo')],
-          function (err, message) {
-            if (err) {
-              return done(err);
-            }
-
+        message
+          .populate([userMiniService.miniUserPopulate('userFrom userTo')])
+          .then(function (message) {
             // Turn to object to be able to delete fields
             message = message.toObject();
 
             // Finally return the approved message fields.
             return res.json(prepareMessageForClient(message));
-          },
-        );
+          }, done);
       },
     ],
     function (err) {
@@ -690,7 +686,7 @@ service.threadByUser = function (req, res, next, userId) {
  * Mark set of messages as read
  * Works only for currently logged in user's messages
  */
-service.markRead = function (req, res) {
+service.markRead = async function (req, res) {
   if (!req.user) {
     return errorService.sendForbidden(res);
   }
@@ -705,62 +701,51 @@ service.markRead = function (req, res) {
     return res.status(200).send(prepareMarkReadResponse());
   }
   // Mark messages read
-  Message.update(
-    prepareMarkReadSelector(messageIds, req.user.id),
-    {
-      read: true,
-    },
-    {
-      multi: true,
-    },
-    function (err) {
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
-      }
-      Thread.updateMany(
-        { userTo: req.user._id, message: { $in: messageIds } },
-        { $set: { read: true } },
-        function (threadError) {
-          if (threadError) {
-            return res.status(400).send({
-              message: errorService.getErrorMessage(threadError),
-            });
-          }
-          res.status(200).send(prepareMarkReadResponse());
-        },
-      );
-    },
-  );
+  try {
+    await Message.updateMany(
+      prepareMarkReadSelector(messageIds, req.user.id),
+      {
+        read: true,
+      },
+    );
+    await Thread.updateMany(
+      { userTo: req.user._id, message: { $in: messageIds } },
+      { $set: { read: true } },
+    );
+  } catch (err) {
+    return res.status(400).send({
+      message: errorService.getErrorMessage(err),
+    });
+  }
+  res.status(200).send(prepareMarkReadResponse());
 };
 
 /**
  * Get unread message count for currently logged in user
  */
-service.messagesCount = function (req, res) {
+service.messagesCount = async function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
-  Thread.countDocuments(
-    excludeBlockedUsers(
-      {
-        read: false,
-        userTo: req.user._id,
-      },
-      req.user,
-    ),
-    function (err, unreadCount) {
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
-      }
-      return res.json(prepareUnreadMessageCount(unreadCount));
-    },
-  );
+  let unreadCount;
+  try {
+    unreadCount = await Thread.countDocuments(
+      excludeBlockedUsers(
+        {
+          read: false,
+          userTo: req.user._id,
+        },
+        req.user,
+      ),
+    );
+  } catch (err) {
+    return res.status(400).send({
+      message: errorService.getErrorMessage(err),
+    });
+  }
+  return res.json(prepareUnreadMessageCount(unreadCount));
 };
 
 /**
@@ -857,11 +842,8 @@ service.sync = function (req, res) {
             created: -1,
           })
           .select(messageFields)
-          .exec(function (err, messages) {
-            if (err) {
-              return done(err);
-            }
-
+          .exec()
+          .then(function (messages) {
             // Sanitize messages
             messages = sanitizeMessages(messages);
 
@@ -883,8 +865,8 @@ service.sync = function (req, res) {
 
             // Ensure we have only one of each user ids
             userIds = _.uniq(userIds);
-            done(err, userIds);
-          });
+            done(null, userIds);
+          }, done);
       },
       // Collect users
       function (userIds, done) {
@@ -895,10 +877,16 @@ service.sync = function (req, res) {
           },
         })
           .select(userMiniService.userMiniProfileFields)
-          .exec(function (err, users) {
-            data.users = users;
-            done(err);
-          });
+          .exec()
+          .then(
+            function (users) {
+              data.users = users;
+              done();
+            },
+            function (err) {
+              done(err);
+            },
+          );
       },
       // Return the package
       function () {
@@ -925,9 +913,9 @@ service.markAllMessagesToUserNotified = function (userId, callback) {
   Message.updateMany(
     { userTo: userId },
     { $set: { notificationCount: 2 } },
-    function (err) {
-      callback(err);
-    },
+  ).then(
+    () => callback(),
+    err => callback(err),
   );
 };
 /** Format a draft without saving it or touching conversation state. */

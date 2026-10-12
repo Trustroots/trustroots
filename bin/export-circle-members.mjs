@@ -56,52 +56,57 @@ import dependency5 from './../modules/tribes/server/models/tribe.server.model.mj
       const circleObjectId = new mongoose.Types.ObjectId(circleId);
       const circle = await Tribe.findById(circleObjectId);
       console.log(`\nGathering members from circle ${circle.label}...`);
-      User.find(
-        {
-          'member.tribe': circleObjectId,
-          public: true,
-        },
-        {
-          email: 1,
-          firstName: 1,
-          lastName: 1,
-        },
-      ).exec((err, users) => {
-        mongooseService.disconnect(() => {
-          console.log(`Found ${users.length} members.`);
+      let err;
+      let users;
+      try {
+        users = await User.find(
+          {
+            'member.tribe': circleObjectId,
+            public: true,
+          },
+          {
+            email: 1,
+            firstName: 1,
+            lastName: 1,
+          },
+        ).exec();
+      } catch (error) {
+        err = error;
+      }
+      mongooseService.disconnect(() => {
+        if (err) {
+          console.error('Error:', err);
+          process.exit(1);
+          return;
+        }
+        console.log(`Found ${users.length} members.`);
+        if (users.length <= 0) {
+          console.error('Could not find any users!');
+          process.exit(1);
+          return;
+        }
+
+        // Loop users
+        users.forEach(user => {
+          data += '\n';
+          data += [user.email, user.firstName, user.lastName]
+            .map(value =>
+              // Sanitize data for CSV compatibility
+              value.trim().replace("'", '').replace('"', '').replace(',', ''),
+            )
+            .join(',');
+        });
+
+        // Write contents
+        console.log(`\nWriting content to ${csvFile}`);
+        fs.writeFile(csvFile, data, err => {
           if (err) {
-            console.error('Error:', err);
+            console.error('Error while saving the file!', err);
             process.exit(1);
             return;
           }
-          if (users.length <= 0) {
-            console.error('Could not find any users!');
-            process.exit(1);
-            return;
-          }
-
-          // Loop users
-          users.forEach(user => {
-            data += '\n';
-            data += [user.email, user.firstName, user.lastName]
-              .map(value =>
-                // Sanitize data for CSV compatibility
-                value.trim().replace("'", '').replace('"', '').replace(',', ''),
-              )
-              .join(',');
-          });
-
-          // Write contents
-          console.log(`\nWriting content to ${csvFile}`);
-          fs.writeFile(csvFile, data, err => {
-            if (err) {
-              console.error('Error while saving the file!', err);
-              process.exit(1);
-              return;
-            }
-            console.log('Done!');
-            process.exit(0);
-          });
+          console.log('Done!');
+          process.exit(0);
         });
       });
     });

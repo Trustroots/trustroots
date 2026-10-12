@@ -82,21 +82,22 @@ service.listTribes = function (req, res) {
     .sort(sort)
     .limit(limit)
     .skip((page - 1) * limit)
-    .exec(function (err, docs) {
-      if (err) {
-        return errorService.sendBadRequest(res, err);
-      }
-      Tribe.countDocuments(query, function (countErr, total) {
-        if (countErr) {
-          return errorService.sendBadRequest(res, countErr);
-        }
-        const pages = Math.ceil(total / limit);
-        if (pages > page) {
-          paginationService.setLinkHeader(req, res, pages, { relative: true });
-        }
-        res.json(docs);
-      });
-    });
+    .then(
+      docs =>
+        Tribe.countDocuments(query).then(
+          total => {
+            const pages = Math.ceil(total / limit);
+            if (pages > page) {
+              paginationService.setLinkHeader(req, res, pages, {
+                relative: true,
+              });
+            }
+            res.json(docs);
+          },
+          countErr => errorService.sendBadRequest(res, countErr),
+        ),
+      err => errorService.sendBadRequest(res, err),
+    );
 };
 
 /**
@@ -232,14 +233,13 @@ service.tribeBySlug = function (req, res, next, slug) {
       slug,
     },
     service.tribeFields,
-  ).exec(function (err, tribe) {
-    if (err) {
-      return errorService.sendBadRequest(res, err);
-    } else {
+  ).then(
+    tribe => {
       req.tribe = tribe;
       return next();
-    }
-  });
+    },
+    err => errorService.sendBadRequest(res, err),
+  );
 };
 
 /**
@@ -263,7 +263,9 @@ service.updateCount = function (id, difference, returnUpdated, callback) {
       // @link http://stackoverflow.com/a/4975054/1984644
       new: Boolean(returnUpdated), // get the updated document in return?
     },
-    callback,
+  ).then(
+    doc => callback(null, doc),
+    err => callback(err),
   );
 };
 const getTribe = service.getTribe;

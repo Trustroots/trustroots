@@ -24,7 +24,7 @@ describe('Admin Reference thread CRUD tests', () => {
     const referenceBase = {
       created: new Date(),
       // eslint-disable-next-line new-cap
-      thread: mongoose.Types.ObjectId().toString(),
+      thread: new mongoose.Types.ObjectId().toString(),
     };
     const reference1 = new ReferenceThread({
       ...referenceBase,

@@ -50,10 +50,13 @@ describe('Job: message unread', function () {
     userFrom = new User(_userFrom);
 
     // Save a user to the test db
-    userFrom.save(function (err, user) {
-      userFromId = user._id;
-      done();
-    });
+    userFrom
+      .save()
+      .then(user => {
+        userFromId = user._id;
+        done();
+      })
+      .catch(done);
   });
 
   // Create another user
@@ -72,14 +75,17 @@ describe('Job: message unread', function () {
     userTo = new User(_userTo);
 
     // Save a user to the test db
-    userTo.save(function (err, user) {
-      userToId = user._id;
-      done();
-    });
+    userTo
+      .save()
+      .then(user => {
+        userToId = user._id;
+        done();
+      })
+      .catch(done);
   });
 
   // Create a message
-  beforeEach(function (done) {
+  beforeEach(async function () {
     _message = {
       userFrom: userFromId,
       userTo: userToId,
@@ -91,7 +97,7 @@ describe('Job: message unread', function () {
     message = new Message(_message);
 
     // Save a message to the test db
-    message.save(done);
+    await message.save();
   });
 
   it('Do not remind user about unread messages which are sent less than 10 minutes ago', function (done) {
@@ -109,25 +115,27 @@ describe('Job: message unread', function () {
     message.created = moment().subtract(
       moment.duration({ minutes: 10, seconds: 1 }),
     );
-    message.save(function (err) {
-      if (err) return done(err);
-
-      messageUnreadJobHandler({}, function (err) {
-        if (err) return done(err);
-
-        jobs.length.should.equal(1);
-        jobs[0].type.should.equal('send email');
-        jobs[0].data.subject.should.equal(
-          _userFrom.displayName + ' wrote you from Trustroots',
-        );
-        jobs[0].data.to.address.should.equal(_userTo.email);
-        Message.find({}, function (err, messages) {
+    message
+      .save()
+      .then(() => {
+        messageUnreadJobHandler({}, function (err) {
           if (err) return done(err);
-          messages[0].notificationCount.should.equal(1);
-          done();
+
+          jobs.length.should.equal(1);
+          jobs[0].type.should.equal('send email');
+          jobs[0].data.subject.should.equal(
+            _userFrom.displayName + ' wrote you from Trustroots',
+          );
+          jobs[0].data.to.address.should.equal(_userTo.email);
+          Message.find({})
+            .then(messages => {
+              messages[0].notificationCount.should.equal(1);
+              done();
+            })
+            .catch(done);
         });
-      });
-    });
+      })
+      .catch(done);
   });
 
   it('sends one generic UnifiedPush alert with the first eligible reminder', async function () {
@@ -196,32 +204,35 @@ describe('Job: message unread', function () {
   it('Remind user about multiple unread messages from same user in one notification email', function (done) {
     const message2 = new Message(_message);
     message2.created = moment().subtract(moment.duration({ minutes: 11 }));
-    message2.save(function (err) {
-      if (err) return done(err);
+    message2
+      .save()
+      .then(() => {
+        message.created = moment().subtract(
+          moment.duration({ minutes: 10, seconds: 1 }),
+        );
+        message
+          .save()
+          .then(() => {
+            messageUnreadJobHandler({}, function (err) {
+              if (err) return done(err);
 
-      message.created = moment().subtract(
-        moment.duration({ minutes: 10, seconds: 1 }),
-      );
-      message.save(function (err) {
-        if (err) return done(err);
-
-        messageUnreadJobHandler({}, function (err) {
-          if (err) return done(err);
-
-          jobs.length.should.equal(1);
-          jobs[0].type.should.equal('send email');
-          jobs[0].data.subject.should.equal(
-            _userFrom.displayName + ' wrote you from Trustroots',
-          );
-          jobs[0].data.to.address.should.equal(_userTo.email);
-          Message.find({}, function (err, messages) {
-            if (err) return done(err);
-            messages[0].notificationCount.should.equal(1);
-            done();
-          });
-        });
-      });
-    });
+              jobs.length.should.equal(1);
+              jobs[0].type.should.equal('send email');
+              jobs[0].data.subject.should.equal(
+                _userFrom.displayName + ' wrote you from Trustroots',
+              );
+              jobs[0].data.to.address.should.equal(_userTo.email);
+              Message.find({})
+                .then(messages => {
+                  messages[0].notificationCount.should.equal(1);
+                  done();
+                })
+                .catch(done);
+            });
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
 
   it('Remind user about multiple unread messages from multiple users in separate notification emails', function (done) {
@@ -236,102 +247,116 @@ describe('Job: message unread', function () {
       provider: 'local',
     };
     const user3 = new User(_user3);
-    user3.save(function (err, user) {
-      if (err) return done(err);
-      const message2 = new Message(_message);
-      message2.created = moment().subtract(moment.duration({ minutes: 11 }));
-      message2.userFrom = user._id;
-      message2.save(function (err) {
-        if (err) return done(err);
-
-        message.created = moment().subtract(
-          moment.duration({ minutes: 10, seconds: 1 }),
-        );
-        message.save(function (err) {
-          if (err) return done(err);
-
-          messageUnreadJobHandler({}, function (err) {
-            if (err) return done(err);
-
-            // Agenda sets jobs in random order, figure out order here
-            let user3Order = 1;
-            let userFromOrder = 0;
-            if (
-              jobs[0].data.subject ===
-              _user3.displayName + ' wrote you from Trustroots'
-            ) {
-              user3Order = 0;
-              userFromOrder = 1;
-            }
-
-            jobs.length.should.equal(2);
-            jobs[user3Order].data.subject.should.equal(
-              _user3.displayName + ' wrote you from Trustroots',
+    user3
+      .save()
+      .then(user => {
+        const message2 = new Message(_message);
+        message2.created = moment().subtract(moment.duration({ minutes: 11 }));
+        message2.userFrom = user._id;
+        message2
+          .save()
+          .then(() => {
+            message.created = moment().subtract(
+              moment.duration({ minutes: 10, seconds: 1 }),
             );
-            jobs[userFromOrder].data.subject.should.equal(
-              _userFrom.displayName + ' wrote you from Trustroots',
-            );
-            jobs[user3Order].data.to.address.should.equal(_userTo.email);
-            jobs[userFromOrder].data.to.address.should.equal(_userTo.email);
-            Message.find({}, function (err, messages) {
-              if (err) return done(err);
-              messages.length.should.equal(2);
-              messages[0].notificationCount.should.equal(1);
-              messages[1].notificationCount.should.equal(1);
-              done();
-            });
-          });
-        });
-      });
-    });
+            message
+              .save()
+              .then(() => {
+                messageUnreadJobHandler({}, function (err) {
+                  if (err) return done(err);
+
+                  // Agenda sets jobs in random order, figure out order here
+                  let user3Order = 1;
+                  let userFromOrder = 0;
+                  if (
+                    jobs[0].data.subject ===
+                    _user3.displayName + ' wrote you from Trustroots'
+                  ) {
+                    user3Order = 0;
+                    userFromOrder = 1;
+                  }
+
+                  jobs.length.should.equal(2);
+                  jobs[user3Order].data.subject.should.equal(
+                    _user3.displayName + ' wrote you from Trustroots',
+                  );
+                  jobs[userFromOrder].data.subject.should.equal(
+                    _userFrom.displayName + ' wrote you from Trustroots',
+                  );
+                  jobs[user3Order].data.to.address.should.equal(_userTo.email);
+                  jobs[userFromOrder].data.to.address.should.equal(
+                    _userTo.email,
+                  );
+                  Message.find({})
+                    .then(messages => {
+                      messages.length.should.equal(2);
+                      messages[0].notificationCount.should.equal(1);
+                      messages[1].notificationCount.should.equal(1);
+                      done();
+                    })
+                    .catch(done);
+                });
+              })
+              .catch(done);
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
 
   it('Ignore notification messages from removed users', function (done) {
     message.created = moment().subtract(
       moment.duration({ minutes: 10, seconds: 1 }),
     );
-    message.save(function (err) {
-      if (err) return done(err);
-      userFrom.remove(function (err) {
-        if (err) return done(err);
+    message
+      .save()
+      .then(() => {
+        userFrom
+          .deleteOne()
+          .then(() => {
+            messageUnreadJobHandler({}, function (err) {
+              if (err) return done(err);
 
-        messageUnreadJobHandler({}, function (err) {
-          if (err) return done(err);
-
-          jobs.length.should.equal(0);
-          Message.find({}, function (err, messages) {
-            if (err) return done(err);
-            messages[0].notificationCount.should.equal(1);
-            done();
-          });
-        });
-      });
-    });
+              jobs.length.should.equal(0);
+              Message.find({})
+                .then(messages => {
+                  messages[0].notificationCount.should.equal(1);
+                  done();
+                })
+                .catch(done);
+            });
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
 
   it('Suppress reminder emails when sender is shadowbanned', function (done) {
     message.created = moment().subtract(
       moment.duration({ minutes: 10, seconds: 1 }),
     );
-    message.save(function (err) {
-      if (err) return done(err);
+    message
+      .save()
+      .then(() => {
+        userFrom.roles = ['user', 'shadowban'];
+        userFrom
+          .save()
+          .then(() => {
+            messageUnreadJobHandler({}, function (err) {
+              if (err) return done(err);
 
-      userFrom.roles = ['user', 'shadowban'];
-      userFrom.save(function (err) {
-        if (err) return done(err);
-
-        messageUnreadJobHandler({}, function (err) {
-          if (err) return done(err);
-
-          jobs.length.should.equal(0);
-          Message.find({}, function (err, messages) {
-            if (err) return done(err);
-            messages[0].notificationCount.should.equal(1);
-            done();
-          });
-        });
-      });
-    });
+              jobs.length.should.equal(0);
+              Message.find({})
+                .then(messages => {
+                  messages[0].notificationCount.should.equal(1);
+                  done();
+                })
+                .catch(done);
+            });
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
 
   it('does not push when a sender is shadowbanned', async function () {
@@ -364,25 +389,28 @@ describe('Job: message unread', function () {
     message.created = moment().subtract(
       moment.duration({ minutes: 10, seconds: 1 }),
     );
-    message.save(function (err) {
-      if (err) return done(err);
+    message
+      .save()
+      .then(() => {
+        userTo.roles = ['user', 'suspended'];
+        userTo
+          .save()
+          .then(() => {
+            messageUnreadJobHandler({}, function (err) {
+              if (err) return done(err);
 
-      userTo.roles = ['user', 'suspended'];
-      userTo.save(function (err) {
-        if (err) return done(err);
-
-        messageUnreadJobHandler({}, function (err) {
-          if (err) return done(err);
-
-          jobs.length.should.equal(0);
-          Message.find({}, function (err, messages) {
-            if (err) return done(err);
-            messages[0].notificationCount.should.equal(1);
-            done();
-          });
-        });
-      });
-    });
+              jobs.length.should.equal(0);
+              Message.find({})
+                .then(messages => {
+                  messages[0].notificationCount.should.equal(1);
+                  done();
+                })
+                .catch(done);
+            });
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
 
   it('Ignore notification messages from removed users but do not stop processing other notifications', function (done) {
@@ -391,33 +419,36 @@ describe('Job: message unread', function () {
 
     // Attach non-existing user to this message
     // eslint-disable-next-line new-cap
-    message2.userFrom = mongoose.Types.ObjectId();
-    message2.save(function (err) {
-      if (err) return done(err);
+    message2.userFrom = new mongoose.Types.ObjectId();
+    message2
+      .save()
+      .then(() => {
+        message.created = moment().subtract(
+          moment.duration({ minutes: 10, seconds: 1 }),
+        );
+        message
+          .save()
+          .then(() => {
+            messageUnreadJobHandler({}, function (err) {
+              if (err) return done(err);
 
-      message.created = moment().subtract(
-        moment.duration({ minutes: 10, seconds: 1 }),
-      );
-      message.save(function (err) {
-        if (err) return done(err);
-
-        messageUnreadJobHandler({}, function (err) {
-          if (err) return done(err);
-
-          jobs.length.should.equal(1);
-          jobs[0].data.subject.should.equal(
-            _userFrom.displayName + ' wrote you from Trustroots',
-          );
-          jobs[0].data.to.address.should.equal(_userTo.email);
-          Message.find({}, function (err, messages) {
-            if (err) return done(err);
-            messages[0].notificationCount.should.equal(1);
-            messages[1].notificationCount.should.equal(1);
-            done();
-          });
-        });
-      });
-    });
+              jobs.length.should.equal(1);
+              jobs[0].data.subject.should.equal(
+                _userFrom.displayName + ' wrote you from Trustroots',
+              );
+              jobs[0].data.to.address.should.equal(_userTo.email);
+              Message.find({})
+                .then(messages => {
+                  messages[0].notificationCount.should.equal(1);
+                  messages[1].notificationCount.should.equal(1);
+                  done();
+                })
+                .catch(done);
+            });
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
 
   context('further notifications configured', function () {
@@ -440,31 +471,32 @@ describe('Job: message unread', function () {
     it('Remind user again after a specified time.', function (done) {
       // update: message is created at the current time
       message.created = new Date();
-      message.save(function (err) {
-        if (err) return done(err);
-
-        // wait for 10 minutes
-        sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
-
-        messageUnreadJobHandler({}, function (err) {
-          if (err) return done(err);
-
-          // check that the first reminder is sent
-          jobs.length.should.equal(1);
-
-          // wait for 24 hours
-          sinon.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
+      message
+        .save()
+        .then(() => {
+          // wait for 10 minutes
+          sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
 
           messageUnreadJobHandler({}, function (err) {
             if (err) return done(err);
 
-            // check that the second reminder is sent
-            jobs.length.should.equal(2);
+            // check that the first reminder is sent
+            jobs.length.should.equal(1);
 
-            return done();
+            // wait for 24 hours
+            sinon.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
+
+            messageUnreadJobHandler({}, function (err) {
+              if (err) return done(err);
+
+              // check that the second reminder is sent
+              jobs.length.should.equal(2);
+
+              return done();
+            });
           });
-        });
-      });
+        })
+        .catch(done);
     });
 
     it('Send only one notification for replied threads.', function (done) {
@@ -477,40 +509,42 @@ describe('Job: message unread', function () {
         notificationCount: 0,
       });
 
-      messageBefore.save(function (err) {
-        if (err) return done(err);
+      messageBefore
+        .save()
+        .then(() => {
+          // wait a minute
+          sinon.clock.tick(milliseconds({ minutes: 1 }));
 
-        // wait a minute
-        sinon.clock.tick(milliseconds({ minutes: 1 }));
+          // update: message is created at the current time
+          message.created = new Date();
+          message
+            .save()
+            .then(() => {
+              // wait for 10 minutes
+              sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
 
-        // update: message is created at the current time
-        message.created = new Date();
-        message.save(function (err) {
-          if (err) return done(err);
+              messageUnreadJobHandler({}, function (err) {
+                if (err) return done(err);
 
-          // wait for 10 minutes
-          sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+                // check that the first reminder is sent
+                jobs.length.should.equal(1);
 
-          messageUnreadJobHandler({}, function (err) {
-            if (err) return done(err);
+                // wait for 24 hours
+                sinon.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
 
-            // check that the first reminder is sent
-            jobs.length.should.equal(1);
+                messageUnreadJobHandler({}, function (err) {
+                  if (err) return done(err);
 
-            // wait for 24 hours
-            sinon.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
+                  // check that the second reminder _is not_ sent
+                  jobs.length.should.equal(1);
 
-            messageUnreadJobHandler({}, function (err) {
-              if (err) return done(err);
-
-              // check that the second reminder _is not_ sent
-              jobs.length.should.equal(1);
-
-              return done();
-            });
-          });
-        });
-      });
+                  return done();
+                });
+              });
+            })
+            .catch(done);
+        })
+        .catch(done);
     });
 
     it('Send a further notification for unreplied threads.', function (done) {
@@ -523,17 +557,116 @@ describe('Job: message unread', function () {
         notificationCount: 0,
       });
 
-      messageBefore.save(function (err) {
-        if (err) return done(err);
+      messageBefore
+        .save()
+        .then(() => {
+          // wait a minute
+          sinon.clock.tick(milliseconds({ minutes: 1 }));
 
-        // wait a minute
-        sinon.clock.tick(milliseconds({ minutes: 1 }));
+          // update: message is created at the current time
+          message.created = new Date();
+          message
+            .save()
+            .then(() => {
+              // wait for 10 minutes
+              sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
 
-        // update: message is created at the current time
-        message.created = new Date();
-        message.save(function (err) {
-          if (err) return done(err);
+              messageUnreadJobHandler({}, function (err) {
+                if (err) return done(err);
 
+                // check that the first reminder is sent
+                jobs.length.should.equal(1);
+
+                // wait for 24 hours
+                sinon.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
+
+                messageUnreadJobHandler({}, function (err) {
+                  if (err) return done(err);
+
+                  // check that the second reminder _is_ sent
+                  jobs.length.should.equal(2);
+
+                  return done();
+                });
+              });
+            })
+            .catch(done);
+        })
+        .catch(done);
+    });
+
+    it('Let the further notification text be different from the first one.', function (done) {
+      // update: message is created at the current time
+      message.created = new Date();
+      message
+        .save()
+        .then(() => {
+          // wait for 10 minutes
+          sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
+
+          messageUnreadJobHandler({}, function (err) {
+            if (err) return done(err);
+
+            // check that the first reminder is sent
+            jobs.length.should.equal(1);
+            // check the correctness of the content of the first reminder
+            jobs[0].data.subject.should.equal(
+              _userFrom.displayName + ' wrote you from Trustroots',
+            );
+            jobs[0].data.to.address.should.equal(_userTo.email);
+
+            // wait for 24 hours
+            sinon.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
+
+            messageUnreadJobHandler({}, function (err) {
+              if (err) return done(err);
+
+              // check that the second reminder is sent
+              jobs.length.should.equal(2);
+              // check the correctness of the content of the second reminder
+              jobs[1].data.subject.should.equal(
+                _userFrom.displayName +
+                  ' is still waiting for a reply on Trustroots',
+              );
+              jobs[1].data.to.address.should.equal(_userTo.email);
+
+              return done();
+            });
+          });
+        })
+        .catch(done);
+    });
+
+    it("When we didn't send the first notification on time for some erroneous reason, send just one; not two of them at the same time.", function (done) {
+      // update: message is created at the current time
+      message.created = new Date();
+      message
+        .save()
+        .then(() => {
+          // wait for 24 hours
+          sinon.clock.tick(milliseconds({ hours: 24, milliseconds: 1 }));
+
+          messageUnreadJobHandler({}, function (err) {
+            if (err) return done(err);
+
+            // check that the first reminder is sent
+            jobs.length.should.equal(1);
+            jobs[0].data.subject.should.equal(
+              _userFrom.displayName + ' wrote you from Trustroots',
+            );
+
+            return done();
+          });
+        })
+        .catch(done);
+    });
+
+    it("Don't send further notification about very old messages.", function (done) {
+      // update: message is created at the current time
+      message.created = new Date();
+      message
+        .save()
+        .then(() => {
           // wait for 10 minutes
           sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
 
@@ -543,114 +676,20 @@ describe('Job: message unread', function () {
             // check that the first reminder is sent
             jobs.length.should.equal(1);
 
-            // wait for 24 hours
-            sinon.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
+            // wait for 14 days
+            sinon.clock.tick(milliseconds({ days: 14 }));
 
             messageUnreadJobHandler({}, function (err) {
               if (err) return done(err);
 
-              // check that the second reminder _is_ sent
-              jobs.length.should.equal(2);
+              // check that the second reminder is not sent
+              jobs.length.should.equal(1);
 
               return done();
             });
           });
-        });
-      });
-    });
-
-    it('Let the further notification text be different from the first one.', function (done) {
-      // update: message is created at the current time
-      message.created = new Date();
-      message.save(function (err) {
-        if (err) return done(err);
-
-        // wait for 10 minutes
-        sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
-
-        messageUnreadJobHandler({}, function (err) {
-          if (err) return done(err);
-
-          // check that the first reminder is sent
-          jobs.length.should.equal(1);
-          // check the correctness of the content of the first reminder
-          jobs[0].data.subject.should.equal(
-            _userFrom.displayName + ' wrote you from Trustroots',
-          );
-          jobs[0].data.to.address.should.equal(_userTo.email);
-
-          // wait for 24 hours
-          sinon.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
-
-          messageUnreadJobHandler({}, function (err) {
-            if (err) return done(err);
-
-            // check that the second reminder is sent
-            jobs.length.should.equal(2);
-            // check the correctness of the content of the second reminder
-            jobs[1].data.subject.should.equal(
-              _userFrom.displayName +
-                ' is still waiting for a reply on Trustroots',
-            );
-            jobs[1].data.to.address.should.equal(_userTo.email);
-
-            return done();
-          });
-        });
-      });
-    });
-
-    it("When we didn't send the first notification on time for some erroneous reason, send just one; not two of them at the same time.", function (done) {
-      // update: message is created at the current time
-      message.created = new Date();
-      message.save(function (err) {
-        if (err) return done(err);
-
-        // wait for 24 hours
-        sinon.clock.tick(milliseconds({ hours: 24, milliseconds: 1 }));
-
-        messageUnreadJobHandler({}, function (err) {
-          if (err) return done(err);
-
-          // check that the first reminder is sent
-          jobs.length.should.equal(1);
-          jobs[0].data.subject.should.equal(
-            _userFrom.displayName + ' wrote you from Trustroots',
-          );
-
-          return done();
-        });
-      });
-    });
-
-    it("Don't send further notification about very old messages.", function (done) {
-      // update: message is created at the current time
-      message.created = new Date();
-      message.save(function (err) {
-        if (err) return done(err);
-
-        // wait for 10 minutes
-        sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
-
-        messageUnreadJobHandler({}, function (err) {
-          if (err) return done(err);
-
-          // check that the first reminder is sent
-          jobs.length.should.equal(1);
-
-          // wait for 14 days
-          sinon.clock.tick(milliseconds({ days: 14 }));
-
-          messageUnreadJobHandler({}, function (err) {
-            if (err) return done(err);
-
-            // check that the second reminder is not sent
-            jobs.length.should.equal(1);
-
-            return done();
-          });
-        });
-      });
+        })
+        .catch(done);
     });
   });
 
@@ -674,7 +713,7 @@ describe('Job: message unread', function () {
         return queue;
       });
 
-      sinon.stub(Message, 'aggregate').yields(null, [
+      sinon.stub(Message, 'aggregate').resolves([
         {
           _id: { userTo: userToId, userFrom: userFromId },
           messages: [
@@ -684,8 +723,8 @@ describe('Job: message unread', function () {
         },
       ]);
       sinon.stub(User, 'find').returns({
-        exec: cb =>
-          cb(null, [
+        exec: () =>
+          Promise.resolve([
             {
               _id: userFromId,
               email: _userFrom.email,
@@ -700,7 +739,7 @@ describe('Job: message unread', function () {
             },
           ]),
       });
-      sinon.stub(Message, 'update').yields(null);
+      sinon.stub(Message, 'updateMany').resolves();
 
       jobWithQueueError({}, function (err) {
         if (err) return done(err);
@@ -712,7 +751,7 @@ describe('Job: message unread', function () {
       const jobWithEmptyMessages = require('./../../../server/jobs/message-unread.server.job.mjs');
       sinon.stub(emailService, 'sendMessagesUnread').callsArg(3);
 
-      sinon.stub(Message, 'aggregate').yields(null, [
+      sinon.stub(Message, 'aggregate').resolves([
         {
           _id: { userTo: userToId, userFrom: userFromId },
           messages: [],
@@ -720,8 +759,8 @@ describe('Job: message unread', function () {
         },
       ]);
       sinon.stub(User, 'find').returns({
-        exec: cb =>
-          cb(null, [
+        exec: () =>
+          Promise.resolve([
             {
               _id: userFromId,
               email: _userFrom.email,
@@ -736,7 +775,7 @@ describe('Job: message unread', function () {
             },
           ]),
       });
-      sinon.stub(Message, 'update').yields(null);
+      sinon.stub(Message, 'updateMany').resolves();
 
       jobWithEmptyMessages({}, function (err) {
         if (err) return done(err);
@@ -748,25 +787,24 @@ describe('Job: message unread', function () {
       message.created = moment().subtract(
         moment.duration({ minutes: 10, seconds: 1 }),
       );
-      message.save(function (err) {
-        if (err) return done(err);
+      message
+        .save()
+        .then(() => {
+          sinon.stub(Message, 'updateMany').rejects(new Error('update failed'));
 
-        sinon.stub(Message, 'update').yields(new Error('update failed'));
-
-        messageUnreadJobHandler({}, function (err) {
-          err.should.be.an.Error();
-          err.message.should.equal('update failed');
-          done();
-        });
-      });
+          messageUnreadJobHandler({}, function (err) {
+            err.should.be.an.Error();
+            err.message.should.equal('update failed');
+            done();
+          });
+        })
+        .catch(done);
     });
   });
 
-  afterEach(function (done) {
-    User.deleteMany().exec(function () {
-      Message.deleteMany().exec(function () {
-        Registration.deleteMany().exec(done);
-      });
-    });
+  afterEach(async function () {
+    await User.deleteMany();
+    await Message.deleteMany();
+    await Registration.deleteMany();
   });
 });

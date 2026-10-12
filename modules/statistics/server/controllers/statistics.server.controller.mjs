@@ -27,16 +27,11 @@ export const clearPublicStatisticsCache = function () {
  * Get count of all public users
  */
 export const getUsersCount = function (callback) {
-  User.countDocuments(
-    {
-      public: true,
-    },
-    function (err, count) {
-      if (err) {
-        return callback(err);
-      }
-      callback(null, parseInt(count, 10) || 0);
-    },
+  User.countDocuments({
+    public: true,
+  }).then(
+    count => callback(null, parseInt(count, 10) || 0),
+    err => callback(err),
   );
 };
 
@@ -111,40 +106,33 @@ export const getExternalSiteCount = function (site, callback) {
       };
       break;
   }
-  User.countDocuments(query, function (err, count) {
-    if (err) {
-      return callback(err);
-    }
-    callback(null, parseInt(count, 10) || 0);
-  });
+  User.countDocuments(query).then(
+    count => callback(null, parseInt(count, 10) || 0),
+    err => callback(err),
+  );
 };
 
 /**
  * Get count of all public users
  */
 export const getMeetOffersCount = function (callback) {
-  Offer.countDocuments(
-    {
-      type: 'meet',
-      $or: [
-        {
-          validUntil: {
-            $gte: new Date(),
-          },
+  Offer.countDocuments({
+    type: 'meet',
+    $or: [
+      {
+        validUntil: {
+          $gte: new Date(),
         },
-        {
-          validUntil: {
-            $exists: false,
-          },
+      },
+      {
+        validUntil: {
+          $exists: false,
         },
-      ],
-    },
-    function (err, count) {
-      if (err) {
-        return callback(err);
-      }
-      callback(null, parseInt(count, 10) || 0);
-    },
+      },
+    ],
+  }).then(
+    count => callback(null, parseInt(count, 10) || 0),
+    err => callback(err),
   );
 };
 
@@ -153,27 +141,22 @@ export const getMeetOffersCount = function (callback) {
  * Callback will be called with Object `{ yes: Int, maybe: Int, no: Int }`
  */
 export const getHostOffersCount = function (callback) {
-  Offer.aggregate(
-    [
-      {
-        $match: {
-          type: 'host',
+  Offer.aggregate([
+    {
+      $match: {
+        type: 'host',
+      },
+    },
+    {
+      $group: {
+        _id: '$status',
+        count: {
+          $sum: 1,
         },
       },
-      {
-        $group: {
-          _id: '$status',
-          count: {
-            $sum: 1,
-          },
-        },
-      },
-    ],
-    function (err, counters) {
-      if (err) {
-        return callback(err);
-      }
-
+    },
+  ]).then(
+    counters => {
       // the returned counters is expected to be an array of a form
       //
       // [
@@ -204,6 +187,7 @@ export const getHostOffersCount = function (callback) {
       }
       callback(null, values);
     },
+    err => callback(err),
   );
 };
 
@@ -211,17 +195,12 @@ export const getHostOffersCount = function (callback) {
  * Get count of newsletter subscriptions
  */
 export const getNewsletterSubscriptionsCount = function (callback) {
-  User.countDocuments(
-    {
-      newsletter: true,
-      public: true,
-    },
-    function (err, count) {
-      if (err) {
-        return callback(err);
-      }
-      callback(null, parseInt(count, 10) || 0);
-    },
+  User.countDocuments({
+    newsletter: true,
+    public: true,
+  }).then(
+    count => callback(null, parseInt(count, 10) || 0),
+    err => callback(err),
   );
 };
 
@@ -237,12 +216,10 @@ export const getLastSeenStatistic = function (since, callback) {
       $gte: moment().subtract(since).toDate(),
     },
   };
-  User.countDocuments(query, function (err, count) {
-    if (err) {
-      return callback(err);
-    }
-    callback(null, parseInt(count, 10) || 0);
-  });
+  User.countDocuments(query).then(
+    count => callback(null, parseInt(count, 10) || 0),
+    err => callback(err),
+  );
 };
 
 /**
@@ -252,29 +229,29 @@ export const getLastSeenStatistic = function (since, callback) {
  * @param callback {function}
  */
 export const getUserLanguagesCount = function (limit, callback) {
-  User.aggregate(
-    [
-      {
-        $unwind: '$languages',
-      },
-      {
-        $group: {
-          _id: '$languages',
-          count: {
-            $sum: 1,
-          },
+  User.aggregate([
+    {
+      $unwind: '$languages',
+    },
+    {
+      $group: {
+        _id: '$languages',
+        count: {
+          $sum: 1,
         },
       },
-      {
-        $sort: {
-          count: -1,
-        },
+    },
+    {
+      $sort: {
+        count: -1,
       },
-      {
-        $limit: limit,
-      },
-    ],
-    callback,
+    },
+    {
+      $limit: limit,
+    },
+  ]).then(
+    result => callback(null, result),
+    err => callback(err),
   );
 };
 
@@ -288,153 +265,153 @@ export const getExperienceStatistics = function (since, callback) {
   async.parallel(
     {
       experiences: done => {
-        Experience.aggregate(
-          [
-            {
-              $group: {
-                _id: null,
-                total: {
-                  $sum: 1,
+        Experience.aggregate([
+          {
+            $group: {
+              _id: null,
+              total: {
+                $sum: 1,
+              },
+              recommended: {
+                $sum: {
+                  $cond: [
+                    {
+                      $eq: ['$recommend', 'yes'],
+                    },
+                    1,
+                    0,
+                  ],
                 },
-                recommended: {
-                  $sum: {
-                    $cond: [
-                      {
-                        $eq: ['$recommend', 'yes'],
-                      },
-                      1,
-                      0,
-                    ],
-                  },
+              },
+              notRecommended: {
+                $sum: {
+                  $cond: [
+                    {
+                      $eq: ['$recommend', 'no'],
+                    },
+                    1,
+                    0,
+                  ],
                 },
-                notRecommended: {
-                  $sum: {
-                    $cond: [
-                      {
-                        $eq: ['$recommend', 'no'],
-                      },
-                      1,
-                      0,
-                    ],
-                  },
+              },
+              recentTotal: {
+                $sum: {
+                  $cond: [
+                    {
+                      $gte: ['$created', since],
+                    },
+                    1,
+                    0,
+                  ],
                 },
-                recentTotal: {
-                  $sum: {
-                    $cond: [
-                      {
-                        $gte: ['$created', since],
-                      },
-                      1,
-                      0,
-                    ],
-                  },
+              },
+              recentRecommended: {
+                $sum: {
+                  $cond: [
+                    {
+                      $and: [
+                        {
+                          $gte: ['$created', since],
+                        },
+                        {
+                          $eq: ['$recommend', 'yes'],
+                        },
+                      ],
+                    },
+                    1,
+                    0,
+                  ],
                 },
-                recentRecommended: {
-                  $sum: {
-                    $cond: [
-                      {
-                        $and: [
-                          {
-                            $gte: ['$created', since],
-                          },
-                          {
-                            $eq: ['$recommend', 'yes'],
-                          },
-                        ],
-                      },
-                      1,
-                      0,
-                    ],
-                  },
-                },
-                recentNotRecommended: {
-                  $sum: {
-                    $cond: [
-                      {
-                        $and: [
-                          {
-                            $gte: ['$created', since],
-                          },
-                          {
-                            $eq: ['$recommend', 'no'],
-                          },
-                        ],
-                      },
-                      1,
-                      0,
-                    ],
-                  },
+              },
+              recentNotRecommended: {
+                $sum: {
+                  $cond: [
+                    {
+                      $and: [
+                        {
+                          $gte: ['$created', since],
+                        },
+                        {
+                          $eq: ['$recommend', 'no'],
+                        },
+                      ],
+                    },
+                    1,
+                    0,
+                  ],
                 },
               },
             },
-          ],
-          done,
+          },
+        ]).then(
+          result => done(null, result),
+          err => done(err),
         );
       },
       realLifeConnections: done => {
-        Experience.aggregate(
-          [
-            {
-              $match: {
-                recommend: 'yes',
-                'interactions.met': true,
-              },
+        Experience.aggregate([
+          {
+            $match: {
+              recommend: 'yes',
+              'interactions.met': true,
             },
-            {
-              $project: {
-                created: 1,
-                memberOne: {
-                  $cond: [
-                    {
-                      $lt: ['$userFrom', '$userTo'],
-                    },
-                    '$userFrom',
-                    '$userTo',
-                  ],
-                },
-                memberTwo: {
-                  $cond: [
-                    {
-                      $lt: ['$userFrom', '$userTo'],
-                    },
-                    '$userTo',
-                    '$userFrom',
-                  ],
-                },
-              },
-            },
-            {
-              $group: {
-                _id: {
-                  memberOne: '$memberOne',
-                  memberTwo: '$memberTwo',
-                },
-                latestCreated: {
-                  $max: '$created',
-                },
-              },
-            },
-            {
-              $group: {
-                _id: null,
-                total: {
-                  $sum: 1,
-                },
-                recent: {
-                  $sum: {
-                    $cond: [
-                      {
-                        $gte: ['$latestCreated', since],
-                      },
-                      1,
-                      0,
-                    ],
+          },
+          {
+            $project: {
+              created: 1,
+              memberOne: {
+                $cond: [
+                  {
+                    $lt: ['$userFrom', '$userTo'],
                   },
+                  '$userFrom',
+                  '$userTo',
+                ],
+              },
+              memberTwo: {
+                $cond: [
+                  {
+                    $lt: ['$userFrom', '$userTo'],
+                  },
+                  '$userTo',
+                  '$userFrom',
+                ],
+              },
+            },
+          },
+          {
+            $group: {
+              _id: {
+                memberOne: '$memberOne',
+                memberTwo: '$memberTwo',
+              },
+              latestCreated: {
+                $max: '$created',
+              },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              total: {
+                $sum: 1,
+              },
+              recent: {
+                $sum: {
+                  $cond: [
+                    {
+                      $gte: ['$latestCreated', since],
+                    },
+                    1,
+                    0,
+                  ],
                 },
               },
             },
-          ],
-          done,
+          },
+        ]).then(
+          result => done(null, result),
+          err => done(err),
         );
       },
     },
@@ -473,196 +450,196 @@ export const getMessageInteractionStatistics = function (since, callback) {
   async.parallel(
     {
       repliedThreads: done => {
-        MessageStat.aggregate(
-          [
-            {
-              $match: {
-                firstReplyCreated: {
-                  $exists: true,
-                  $ne: null,
+        MessageStat.aggregate([
+          {
+            $match: {
+              firstReplyCreated: {
+                $exists: true,
+                $ne: null,
+              },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              total: {
+                $sum: 1,
+              },
+              recentTotal: {
+                $sum: {
+                  $cond: [
+                    {
+                      $gte: ['$firstReplyCreated', since],
+                    },
+                    1,
+                    0,
+                  ],
                 },
               },
             },
-            {
-              $group: {
-                _id: null,
-                total: {
-                  $sum: 1,
-                },
-                recentTotal: {
-                  $sum: {
-                    $cond: [
-                      {
-                        $gte: ['$firstReplyCreated', since],
-                      },
-                      1,
-                      0,
-                    ],
-                  },
-                },
-              },
-            },
-          ],
-          done,
+          },
+        ]).then(
+          result => done(null, result),
+          err => done(err),
         );
       },
       feedback: done => {
-        ReferenceThread.aggregate(
-          [
-            {
-              $sort: {
-                created: -1,
-                _id: -1,
+        ReferenceThread.aggregate([
+          {
+            $sort: {
+              created: -1,
+              _id: -1,
+            },
+          },
+          {
+            $group: {
+              _id: {
+                userFrom: '$userFrom',
+                userTo: '$userTo',
+              },
+              reference: {
+                $first: '$reference',
+              },
+              created: {
+                $first: '$created',
               },
             },
-            {
-              $group: {
-                _id: {
-                  userFrom: '$userFrom',
-                  userTo: '$userTo',
-                },
-                reference: {
-                  $first: '$reference',
-                },
-                created: {
-                  $first: '$created',
-                },
+          },
+          {
+            $lookup: {
+              from: MessageStat.collection.name,
+              let: {
+                feedbackUserFrom: '$_id.userFrom',
+                feedbackUserTo: '$_id.userTo',
               },
-            },
-            {
-              $lookup: {
-                from: MessageStat.collection.name,
-                let: {
-                  feedbackUserFrom: '$_id.userFrom',
-                  feedbackUserTo: '$_id.userTo',
-                },
-                pipeline: [
-                  {
-                    $match: {
-                      $expr: {
-                        $and: [
-                          {
-                            $ne: ['$firstReplyCreated', null],
-                          },
-                          {
-                            $or: [
-                              {
-                                $and: [
-                                  {
-                                    $eq: [
-                                      '$firstMessageUserFrom',
-                                      '$$feedbackUserFrom',
-                                    ],
-                                  },
-                                  {
-                                    $eq: [
-                                      '$firstMessageUserTo',
-                                      '$$feedbackUserTo',
-                                    ],
-                                  },
-                                ],
-                              },
-                              {
-                                $and: [
-                                  {
-                                    $eq: [
-                                      '$firstMessageUserFrom',
-                                      '$$feedbackUserTo',
-                                    ],
-                                  },
-                                  {
-                                    $eq: [
-                                      '$firstMessageUserTo',
-                                      '$$feedbackUserFrom',
-                                    ],
-                                  },
-                                ],
-                              },
-                            ],
-                          },
-                        ],
-                      },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        {
+                          $ne: ['$firstReplyCreated', null],
+                        },
+                        {
+                          $or: [
+                            {
+                              $and: [
+                                {
+                                  $eq: [
+                                    '$firstMessageUserFrom',
+                                    '$$feedbackUserFrom',
+                                  ],
+                                },
+                                {
+                                  $eq: [
+                                    '$firstMessageUserTo',
+                                    '$$feedbackUserTo',
+                                  ],
+                                },
+                              ],
+                            },
+                            {
+                              $and: [
+                                {
+                                  $eq: [
+                                    '$firstMessageUserFrom',
+                                    '$$feedbackUserTo',
+                                  ],
+                                },
+                                {
+                                  $eq: [
+                                    '$firstMessageUserTo',
+                                    '$$feedbackUserFrom',
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                        },
+                      ],
                     },
                   },
-                  {
-                    $limit: 1,
-                  },
-                ],
-                as: 'repliedThreads',
+                },
+                {
+                  $limit: 1,
+                },
+              ],
+              as: 'repliedThreads',
+            },
+          },
+          {
+            $match: {
+              'repliedThreads.0': {
+                $exists: true,
               },
             },
-            {
-              $match: {
-                'repliedThreads.0': {
-                  $exists: true,
+          },
+          {
+            $group: {
+              _id: null,
+              positive: {
+                $sum: {
+                  $cond: [
+                    {
+                      $eq: ['$reference', 'yes'],
+                    },
+                    1,
+                    0,
+                  ],
+                },
+              },
+              negative: {
+                $sum: {
+                  $cond: [
+                    {
+                      $eq: ['$reference', 'no'],
+                    },
+                    1,
+                    0,
+                  ],
+                },
+              },
+              recentPositive: {
+                $sum: {
+                  $cond: [
+                    {
+                      $and: [
+                        {
+                          $gte: ['$created', since],
+                        },
+                        {
+                          $eq: ['$reference', 'yes'],
+                        },
+                      ],
+                    },
+                    1,
+                    0,
+                  ],
+                },
+              },
+              recentNegative: {
+                $sum: {
+                  $cond: [
+                    {
+                      $and: [
+                        {
+                          $gte: ['$created', since],
+                        },
+                        {
+                          $eq: ['$reference', 'no'],
+                        },
+                      ],
+                    },
+                    1,
+                    0,
+                  ],
                 },
               },
             },
-            {
-              $group: {
-                _id: null,
-                positive: {
-                  $sum: {
-                    $cond: [
-                      {
-                        $eq: ['$reference', 'yes'],
-                      },
-                      1,
-                      0,
-                    ],
-                  },
-                },
-                negative: {
-                  $sum: {
-                    $cond: [
-                      {
-                        $eq: ['$reference', 'no'],
-                      },
-                      1,
-                      0,
-                    ],
-                  },
-                },
-                recentPositive: {
-                  $sum: {
-                    $cond: [
-                      {
-                        $and: [
-                          {
-                            $gte: ['$created', since],
-                          },
-                          {
-                            $eq: ['$reference', 'yes'],
-                          },
-                        ],
-                      },
-                      1,
-                      0,
-                    ],
-                  },
-                },
-                recentNegative: {
-                  $sum: {
-                    $cond: [
-                      {
-                        $and: [
-                          {
-                            $gte: ['$created', since],
-                          },
-                          {
-                            $eq: ['$reference', 'no'],
-                          },
-                        ],
-                      },
-                      1,
-                      0,
-                    ],
-                  },
-                },
-              },
-            },
-          ],
-          done,
+          },
+        ]).then(
+          result => done(null, result),
+          err => done(err),
         );
       },
     },

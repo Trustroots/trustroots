@@ -83,8 +83,8 @@ describe('Profile controller push/membership unit tests', () => {
         populate() {
           return this;
         },
-        exec(cb) {
-          cb(new Error('db error'));
+        then(resolve, reject) {
+          return Promise.reject(new Error('db error')).then(resolve, reject);
         },
       });
 
@@ -107,7 +107,8 @@ describe('Profile controller push/membership unit tests', () => {
     it('returns 400 when removing a registration fails', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       sinon.stub(User, 'findByIdAndUpdate').returns({
-        exec: cb => cb(new Error('remove failed')),
+        then: (resolve, reject) =>
+          Promise.reject(new Error('remove failed')).then(resolve, reject),
       });
 
       const res = deferredResponse();
@@ -123,7 +124,7 @@ describe('Profile controller push/membership unit tests', () => {
       const controller = loadControllerWithEmptyErrorMessage();
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       sinon.stub(User, 'findByIdAndUpdate').returns({
-        exec: cb => cb({}),
+        then: (resolve, reject) => Promise.reject({}).then(resolve, reject),
       });
 
       const res = deferredResponse();

@@ -47,20 +47,19 @@ var async = require('async'),
 
 // Bootstrap db connection
 mongoose.set('strictQuery', false);
-var db = mongoose.connect(config.db.uri, function(err) {
-  if (err) {
-    console.log('Could not connect to MongoDB!');
-    console.error(err);
-  }
+var db = mongoose.connect(config.db.uri).catch(function(err) {
+  console.log('Could not connect to MongoDB!');
+  console.error(err);
 });
 
 async.waterfall([
 
   // count all messages to be able to show progress
   function countAllMessages(done) {
-    Message.count(searchMessagesParam).exec(function (err, messageNo) {
-      done(err, messageNo);
-    })
+    Message.countDocuments(searchMessagesParam).exec().then(
+      function (messageNo) { done(null, messageNo); },
+      function (err) { done(err); }
+    );
   },
 
   function findAndProcessMessages(messageNo, done) {
@@ -109,13 +108,7 @@ async.waterfall([
     function processNext(callback) {
 
       // getting the next message from mongodb
-      cursor.next(function (err, msg) {
-        // error
-        if(err) {
-          console.error(err);
-          return callback(err);
-        }
-
+      cursor.next().then(function (msg) {
         // when we got to the end of stream
         // msg should be null at the end, but weaker check is safe
         if(!msg) {
@@ -125,6 +118,9 @@ async.waterfall([
 
         // when there is a message to process, process it
         saveMessageAndRunCounter(msg, callback);
+      }, function (err) {
+        console.error(err);
+        callback(err);
       });
     }
 

@@ -37,7 +37,7 @@ describe('Message to Stats API server service Integration Test', function () {
   let user2;
 
   // here we create the users before each test
-  beforeEach(function (done) {
+  beforeEach(async function () {
     user1 = utils.createTestUser({
       email: 'user1@test.com',
       username: 'username1',
@@ -52,13 +52,8 @@ describe('Message to Stats API server service Integration Test', function () {
     });
 
     // save those users to mongoDB
-    user1.save(function (err) {
-      if (err) return done(err);
-      user2.save(function (err) {
-        if (err) return done(err);
-        done();
-      });
-    });
+    await user1.save();
+    await user2.save();
   });
 
   afterEach(utils.clearDatabase);

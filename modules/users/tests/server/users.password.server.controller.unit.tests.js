@@ -122,11 +122,9 @@ describe('Password controller unit tests', () => {
         },
       });
       const fakeUser = {
-        save: callback => callback(),
+        save: () => Promise.resolve(),
       };
-      sinon.stub(User, 'findOne').callsFake((query, fields, callback) => {
-        callback(null, fakeUser);
-      });
+      sinon.stub(User, 'findOne').resolves(fakeUser);
       const res = deferredResponse();
 
       controller.forgot({ body: { username: 'known-member' } }, res);
@@ -161,14 +159,10 @@ describe('Password controller unit tests', () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
 
-      sinon.stub(User, 'findOne').callsFake(function (query, fields, cb) {
-        cb(null, {
-          email: userDoc.email,
-          username: userDoc.username,
-          save(saveCb) {
-            saveCb(new Error('save failed'));
-          },
-        });
+      sinon.stub(User, 'findOne').resolves({
+        email: userDoc.email,
+        username: userDoc.username,
+        save: () => Promise.reject(new Error('save failed')),
       });
 
       const res = deferredResponse();
@@ -305,11 +299,7 @@ describe('Password controller unit tests', () => {
       userDoc.resetPasswordExpires = Date.now() + 3600000;
       await userDoc.save();
 
-      sinon
-        .stub(User, 'findOneAndUpdate')
-        .callsFake((query, update, options, callback) =>
-          callback(new Error('save failed')),
-        );
+      sinon.stub(User, 'findOneAndUpdate').rejects(new Error('save failed'));
 
       const res = deferredResponse();
       controller.reset(
@@ -453,7 +443,7 @@ describe('Password controller unit tests', () => {
       const controller = loadPasswordController();
       const lookupError = new Error('');
       lookupError.status = 418;
-      sinon.stub(User, 'findById').callsFake((id, cb) => cb(lookupError));
+      sinon.stub(User, 'findById').rejects(lookupError);
 
       const res = deferredResponse();
       controller.changePassword(

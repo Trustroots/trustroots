@@ -69,20 +69,24 @@ describe('Message CRUD tests', function () {
     });
 
     // Save users to the test db and create new message
-    userFrom.save(function (userFromErr, userFromRes) {
-      should.not.exist(userFromErr);
-      userFromId = userFromRes._id;
-      userTo.save(function (userToErr, userToRes) {
-        should.not.exist(userToErr);
-        userToId = userToRes._id;
-        // Create message
-        message = {
-          content: 'Message content',
-          userTo: userToId,
-        };
-        return done();
-      });
-    });
+    userFrom
+      .save()
+      .then(userFromRes => {
+        userFromId = userFromRes._id;
+        userTo
+          .save()
+          .then(userToRes => {
+            userToId = userToRes._id;
+            // Create message
+            message = {
+              content: 'Message content',
+              userTo: userToId,
+            };
+            return done();
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
   afterEach(utils.clearDatabase);
   it('denies a preview to visitors', async () => {
@@ -201,83 +205,9 @@ describe('Message CRUD tests', function () {
   });
   it('should be able to send and read own messages when with role "shadowban"', function (done) {
     userFrom.roles = ['user', 'shadowban'];
-    userFrom.save(function (saveErr) {
-      should.not.exist(saveErr);
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          should.not.exist(signinErr);
-
-          // Save a new message
-          agent
-            .post('/api/messages')
-            .send(message)
-            .expect(200)
-            .end(function (messageSaveErr) {
-              should.not.exist(messageSaveErr);
-
-              // Get a list of messages
-              agent
-                .get('/api/messages/' + userToId)
-                .expect(200)
-                .end(function (messagesGetErr, messagesGetRes) {
-                  should.not.exist(messagesGetErr);
-                  if (
-                    !messagesGetRes.body[0] ||
-                    !messagesGetRes.body[0].content
-                  ) {
-                    return done(new Error('Message list empty.'));
-                  }
-                  done();
-                });
-            });
-        });
-    });
-  });
-  it('should be able to read messages from user with role "shadowban"', function (done) {
-    userTo.roles = ['user', 'shadowban'];
-    userTo.save(function (saveErr) {
-      should.not.exist(saveErr);
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          should.not.exist(signinErr);
-
-          // Get a list of messages
-          agent
-            .get('/api/messages/' + userToId)
-            .expect(200)
-            .end(done);
-        });
-    });
-  });
-  it('should not be able to send messages to user with role "shadowban"', function (done) {
-    userTo.roles = ['user', 'shadowban'];
-    userTo.save(function (saveErr) {
-      should.not.exist(saveErr);
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          should.not.exist(signinErr);
-
-          // Save a new message
-          agent.post('/api/messages').send(message).expect(404).end(done);
-        });
-    });
-  });
-  it('should be able to send messages to user with role "shadowban" when with role "admin"', function (done) {
-    userTo.roles = ['user', 'shadowban'];
-    userFrom.roles = ['user', 'admin'];
-    userFrom.save(function (saveErr) {
-      should.not.exist(saveErr);
-      userTo.save(function (saveErr) {
-        should.not.exist(saveErr);
+    userFrom
+      .save()
+      .then(() => {
         agent
           .post('/api/auth/signin')
           .send(credentials)
@@ -286,10 +216,94 @@ describe('Message CRUD tests', function () {
             should.not.exist(signinErr);
 
             // Save a new message
-            agent.post('/api/messages').send(message).expect(200).end(done);
+            agent
+              .post('/api/messages')
+              .send(message)
+              .expect(200)
+              .end(function (messageSaveErr) {
+                should.not.exist(messageSaveErr);
+
+                // Get a list of messages
+                agent
+                  .get('/api/messages/' + userToId)
+                  .expect(200)
+                  .end(function (messagesGetErr, messagesGetRes) {
+                    should.not.exist(messagesGetErr);
+                    if (
+                      !messagesGetRes.body[0] ||
+                      !messagesGetRes.body[0].content
+                    ) {
+                      return done(new Error('Message list empty.'));
+                    }
+                    done();
+                  });
+              });
           });
-      });
-    });
+      })
+      .catch(done);
+  });
+  it('should be able to read messages from user with role "shadowban"', function (done) {
+    userTo.roles = ['user', 'shadowban'];
+    userTo
+      .save()
+      .then(() => {
+        agent
+          .post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            should.not.exist(signinErr);
+
+            // Get a list of messages
+            agent
+              .get('/api/messages/' + userToId)
+              .expect(200)
+              .end(done);
+          });
+      })
+      .catch(done);
+  });
+  it('should not be able to send messages to user with role "shadowban"', function (done) {
+    userTo.roles = ['user', 'shadowban'];
+    userTo
+      .save()
+      .then(() => {
+        agent
+          .post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            should.not.exist(signinErr);
+
+            // Save a new message
+            agent.post('/api/messages').send(message).expect(404).end(done);
+          });
+      })
+      .catch(done);
+  });
+  it('should be able to send messages to user with role "shadowban" when with role "admin"', function (done) {
+    userTo.roles = ['user', 'shadowban'];
+    userFrom.roles = ['user', 'admin'];
+    userFrom
+      .save()
+      .then(() => {
+        userTo
+          .save()
+          .then(() => {
+            agent
+              .post('/api/auth/signin')
+              .send(credentials)
+              .expect(200)
+              .end(function (signinErr) {
+                should.not.exist(signinErr);
+
+                // Save a new message
+                agent.post('/api/messages').send(message).expect(200).end(done);
+              });
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
   it('should be able to send basic correctly formatted html in an message', function (done) {
     agent
@@ -656,15 +670,12 @@ describe('Message CRUD tests', function () {
       });
   });
   it('should not be able to send a message to non-public user', function (done) {
-    User.findByIdAndUpdate(
-      userToId,
-      {
-        $set: {
-          public: false,
-        },
+    User.findByIdAndUpdate(userToId, {
+      $set: {
+        public: false,
       },
-      function (err) {
-        if (err) return done(err);
+    })
+      .then(() => {
         agent
           .post('/api/auth/signin')
           .send(credentials)
@@ -685,8 +696,8 @@ describe('Message CRUD tests', function () {
                 return done(messageSaveErr);
               });
           });
-      },
-    );
+      })
+      .catch(done);
   });
   it('should not be able to send a message when I have too short description', function (done) {
     agent
@@ -699,27 +710,30 @@ describe('Message CRUD tests', function () {
 
         // Update my description to be very short
         userFrom.description = 'short';
-        userFrom.save(function (err, userFromSaveRes) {
-          userFromSaveRes.description.should.equal('short');
+        userFrom
+          .save()
+          .then(userFromSaveRes => {
+            userFromSaveRes.description.should.equal('short');
 
-          // Save a new message
-          agent
-            .post('/api/messages')
-            .send(message)
-            .expect(400)
-            .end(function (messageSaveErr, messageSaveRes) {
-              messageSaveRes.body.error.should.equal('empty-profile');
-              messageSaveRes.body.limit.should.equal(
-                config.profileMinimumLength,
-              );
-              messageSaveRes.body.message.should.equal(
-                'Please write longer profile description before you send messages.',
-              );
+            // Save a new message
+            agent
+              .post('/api/messages')
+              .send(message)
+              .expect(400)
+              .end(function (messageSaveErr, messageSaveRes) {
+                messageSaveRes.body.error.should.equal('empty-profile');
+                messageSaveRes.body.limit.should.equal(
+                  config.profileMinimumLength,
+                );
+                messageSaveRes.body.message.should.equal(
+                  'Please write longer profile description before you send messages.',
+                );
 
-              // Call the assertion callback
-              return done(messageSaveErr);
-            });
-        });
+                // Call the assertion callback
+                return done(messageSaveErr);
+              });
+          })
+          .catch(done);
       });
   });
   it('should be able to send a message when I have too short description but another user wrote me first', function (done) {
@@ -732,58 +746,64 @@ describe('Message CRUD tests', function () {
       read: true,
       notified: true,
     });
-    newMessage.save(function (newMessageErr, newMessageRes) {
-      // Handle save error
-      if (newMessageErr) return done(newMessageErr);
-      const newThread = new Thread({
-        userFrom: userToId,
-        userTo: userFromId,
-        updated: new Date(),
-        message: newMessageRes._id,
-        read: true,
-      });
-      newThread.save(function (newThreadErr) {
-        // Handle save error
-        if (newThreadErr) return done(newThreadErr);
+    newMessage
+      .save()
+      .then(newMessageRes => {
+        const newThread = new Thread({
+          userFrom: userToId,
+          userTo: userFromId,
+          updated: new Date(),
+          message: newMessageRes._id,
+          read: true,
+        });
+        newThread
+          .save()
+          .then(() => {
+            // Sign in
+            agent
+              .post('/api/auth/signin')
+              .send(credentials)
+              .expect(200)
+              .end(function (signinErr) {
+                // Handle signin error
+                if (signinErr) return done(signinErr);
 
-        // Sign in
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            // Handle signin error
-            if (signinErr) return done(signinErr);
+                // Update my description to be very short
+                userFrom.description = 'short';
+                userFrom
+                  .save()
+                  .then(userFromSaveRes => {
+                    userFromSaveRes.description.should.equal('short');
 
-            // Update my description to be very short
-            userFrom.description = 'short';
-            userFrom.save(function (err, userFromSaveRes) {
-              userFromSaveRes.description.should.equal('short');
+                    // Save a new message
+                    agent
+                      .post('/api/messages')
+                      .send(message)
+                      .expect(200)
+                      .end(function (messageSaveErr, messageSaveRes) {
+                        // Set assertions
+                        messageSaveRes.body.userFrom._id.should.equal(
+                          userFromId.toString(),
+                        );
+                        messageSaveRes.body.userTo._id.should.equal(
+                          userToId.toString(),
+                        );
+                        messageSaveRes.body.content.should.equal(
+                          'Message content',
+                        );
+                        messageSaveRes.body.read.should.equal(false);
+                        should.not.exist(messageSaveRes.body.notified);
 
-              // Save a new message
-              agent
-                .post('/api/messages')
-                .send(message)
-                .expect(200)
-                .end(function (messageSaveErr, messageSaveRes) {
-                  // Set assertions
-                  messageSaveRes.body.userFrom._id.should.equal(
-                    userFromId.toString(),
-                  );
-                  messageSaveRes.body.userTo._id.should.equal(
-                    userToId.toString(),
-                  );
-                  messageSaveRes.body.content.should.equal('Message content');
-                  messageSaveRes.body.read.should.equal(false);
-                  should.not.exist(messageSaveRes.body.notified);
-
-                  // Call the assertion callback
-                  return done(messageSaveErr);
-                });
-            });
-          });
-      }); // newThread
-    }); // newMessage
+                        // Call the assertion callback
+                        return done(messageSaveErr);
+                      });
+                  })
+                  .catch(done);
+              });
+          })
+          .catch(done); // newThread
+      })
+      .catch(done); // newMessage
   });
   it('should not be able to check for unread message count if not logged in', function (done) {
     agent
@@ -834,47 +854,49 @@ describe('Message CRUD tests', function () {
       read: false,
       notified: true,
     });
-    newMessage1.save(function (newMessage1Err) {
-      // Handle save error
-      if (newMessage1Err) return done(newMessage1Err);
-      newMessage2.save(function (newMessage2Err, newMessage2Res) {
-        // Handle save error
-        if (newMessage2Err) return done(newMessage2Err);
-        const newThread = new Thread({
-          userFrom: userToId,
-          userTo: userFromId,
-          updated: new Date(),
-          message: newMessage2Res._id,
-          read: false,
-        });
-        newThread.save(function (newThreadErr) {
-          // Handle save error
-          if (newThreadErr) return done(newThreadErr);
-
-          // Sign in
-          agent
-            .post('/api/auth/signin')
-            .send(credentials)
-            .expect(200)
-            .end(function (signinErr) {
-              // Handle signin error
-              if (signinErr) return done(signinErr);
-              agent
-                .get('/api/messages-count')
-                .expect(200)
-                .end(function (countReadErr, countReadRes) {
-                  // Although we saved two messages,
-                  // but because we saved them to same thread,
-                  // we should get `1` as a count.
-                  countReadRes.body.unread.should.equal(1);
-
-                  // Call the assertion callback
-                  return done(countReadErr);
-                });
+    newMessage1
+      .save()
+      .then(() => {
+        newMessage2
+          .save()
+          .then(newMessage2Res => {
+            const newThread = new Thread({
+              userFrom: userToId,
+              userTo: userFromId,
+              updated: new Date(),
+              message: newMessage2Res._id,
+              read: false,
             });
-        });
-      });
-    });
+            newThread
+              .save()
+              .then(() => {
+                // Sign in
+                agent
+                  .post('/api/auth/signin')
+                  .send(credentials)
+                  .expect(200)
+                  .end(function (signinErr) {
+                    // Handle signin error
+                    if (signinErr) return done(signinErr);
+                    agent
+                      .get('/api/messages-count')
+                      .expect(200)
+                      .end(function (countReadErr, countReadRes) {
+                        // Although we saved two messages,
+                        // but because we saved them to same thread,
+                        // we should get `1` as a count.
+                        countReadRes.body.unread.should.equal(1);
+
+                        // Call the assertion callback
+                        return done(countReadErr);
+                      });
+                  });
+              })
+              .catch(done);
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
   it('should not be able to read sync endpoint if not logged in', function (done) {
     agent
@@ -905,83 +927,89 @@ describe('Message CRUD tests', function () {
       read: false,
       notified: true,
     });
-    newMessage1.save(function (newMessage1Err) {
-      // Handle save error
-      if (newMessage1Err) return done(newMessage1Err);
-      newMessage2.save(function (newMessage2Err, newMessage2Res) {
-        // Handle save error
-        if (newMessage2Err) return done(newMessage2Err);
-        const newThread = new Thread({
-          userFrom: userFromId,
-          userTo: userToId,
-          updated: moment('2016-06-06 19:00:00.174Z')
-            .add(30, 'minutes')
-            .toDate(),
-          message: newMessage2Res._id,
-          read: false,
-        });
-        newThread.save(function (newThreadErr) {
-          // Handle save error
-          if (newThreadErr) return done(newThreadErr);
-
-          // Sign in
-          agent
-            .post('/api/auth/signin')
-            .send(credentials)
-            .expect(200)
-            .end(function (signinErr) {
-              // Handle signin error
-              if (signinErr) return done(signinErr);
-              agent
-                .get('/api/messages-sync')
-                .expect(200)
-                .end(function (syncReadErr, syncReadRes) {
-                  should.not.exist(
-                    syncReadRes.body.messages[userFromId.toString()],
-                  );
-                  const messages =
-                    syncReadRes.body.messages[userToId.toString()];
-                  messages.length.should.equal(2);
-                  should.exist(messages[0]._id);
-                  should.exist(messages[0].created);
-                  messages[0].read.should.equal(false);
-                  messages[0].userTo.should.equal(userToId.toString());
-                  messages[0].userFrom.should.equal(userFromId.toString());
-                  messages[0].content.should.equal('Two');
-                  should.exist(messages[1]._id);
-                  should.exist(messages[1].created);
-                  messages[1].read.should.equal(false);
-                  messages[1].userTo.should.equal(userToId.toString());
-                  messages[1].userFrom.should.equal(userFromId.toString());
-                  messages[1].content.should.equal('One');
-                  const users = syncReadRes.body.users;
-                  users.length.should.equal(2);
-                  const syncedUserFrom = users.find(
-                    user => user._id === userFromId.toString(),
-                  );
-                  const syncedUserTo = users.find(
-                    user => user._id === userToId.toString(),
-                  );
-                  should.exist(syncedUserFrom);
-                  syncedUserFrom.username.should.equal(userFrom.username);
-                  should.exist(syncedUserFrom.emailHash);
-                  should.exist(syncedUserFrom.displayName);
-                  should.exist(syncedUserFrom.avatarUploaded);
-                  should.exist(syncedUserFrom.avatarSource);
-                  should.exist(syncedUserTo);
-                  syncedUserTo.username.should.equal(userTo.username);
-                  should.exist(syncedUserTo.emailHash);
-                  should.exist(syncedUserTo.displayName);
-                  should.exist(syncedUserTo.avatarUploaded);
-                  should.exist(syncedUserTo.avatarSource);
-
-                  // Call the assertion callback
-                  return done(syncReadErr);
-                });
+    newMessage1
+      .save()
+      .then(() => {
+        newMessage2
+          .save()
+          .then(newMessage2Res => {
+            const newThread = new Thread({
+              userFrom: userFromId,
+              userTo: userToId,
+              updated: moment('2016-06-06 19:00:00.174Z')
+                .add(30, 'minutes')
+                .toDate(),
+              message: newMessage2Res._id,
+              read: false,
             });
-        });
-      });
-    });
+            newThread
+              .save()
+              .then(() => {
+                // Sign in
+                agent
+                  .post('/api/auth/signin')
+                  .send(credentials)
+                  .expect(200)
+                  .end(function (signinErr) {
+                    // Handle signin error
+                    if (signinErr) return done(signinErr);
+                    agent
+                      .get('/api/messages-sync')
+                      .expect(200)
+                      .end(function (syncReadErr, syncReadRes) {
+                        should.not.exist(
+                          syncReadRes.body.messages[userFromId.toString()],
+                        );
+                        const messages =
+                          syncReadRes.body.messages[userToId.toString()];
+                        messages.length.should.equal(2);
+                        should.exist(messages[0]._id);
+                        should.exist(messages[0].created);
+                        messages[0].read.should.equal(false);
+                        messages[0].userTo.should.equal(userToId.toString());
+                        messages[0].userFrom.should.equal(
+                          userFromId.toString(),
+                        );
+                        messages[0].content.should.equal('Two');
+                        should.exist(messages[1]._id);
+                        should.exist(messages[1].created);
+                        messages[1].read.should.equal(false);
+                        messages[1].userTo.should.equal(userToId.toString());
+                        messages[1].userFrom.should.equal(
+                          userFromId.toString(),
+                        );
+                        messages[1].content.should.equal('One');
+                        const users = syncReadRes.body.users;
+                        users.length.should.equal(2);
+                        const syncedUserFrom = users.find(
+                          user => user._id === userFromId.toString(),
+                        );
+                        const syncedUserTo = users.find(
+                          user => user._id === userToId.toString(),
+                        );
+                        should.exist(syncedUserFrom);
+                        syncedUserFrom.username.should.equal(userFrom.username);
+                        should.exist(syncedUserFrom.emailHash);
+                        should.exist(syncedUserFrom.displayName);
+                        should.exist(syncedUserFrom.avatarUploaded);
+                        should.exist(syncedUserFrom.avatarSource);
+                        should.exist(syncedUserTo);
+                        syncedUserTo.username.should.equal(userTo.username);
+                        should.exist(syncedUserTo.emailHash);
+                        should.exist(syncedUserTo.displayName);
+                        should.exist(syncedUserTo.avatarUploaded);
+                        should.exist(syncedUserTo.avatarSource);
+
+                        // Call the assertion callback
+                        return done(syncReadErr);
+                      });
+                  });
+              })
+              .catch(done);
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
   it('should be able to read sync endpoint and show messages sent to currently authenticated user', function (done) {
     // Save message to this user from other user
@@ -1001,187 +1029,197 @@ describe('Message CRUD tests', function () {
       read: false,
       notified: true,
     });
-    newMessage1.save(function (newMessage1Err) {
-      // Handle save error
-      if (newMessage1Err) return done(newMessage1Err);
-      newMessage2.save(function (newMessage2Err, newMessage2Res) {
-        // Handle save error
-        if (newMessage2Err) return done(newMessage2Err);
-        const newThread = new Thread({
-          userFrom: userToId,
-          userTo: userFromId,
-          updated: new Date(),
-          message: newMessage2Res._id,
-          read: false,
-        });
-        newThread.save(function (newThreadErr) {
-          // Handle save error
-          if (newThreadErr) return done(newThreadErr);
-
-          // Sign in
-          agent
-            .post('/api/auth/signin')
-            .send(credentials)
-            .expect(200)
-            .end(function (signinErr) {
-              // Handle signin error
-              if (signinErr) return done(signinErr);
-              agent
-                .get('/api/messages-sync')
-                .expect(200)
-                .end(function (syncReadErr, syncReadRes) {
-                  should.not.exist(
-                    syncReadRes.body.messages[userToId.toString()],
-                  );
-                  const messages =
-                    syncReadRes.body.messages[userFromId.toString()];
-                  messages.length.should.equal(2);
-                  should.exist(messages[0]._id);
-                  should.exist(messages[0].created);
-                  messages[0].read.should.equal(false);
-                  messages[0].userFrom.should.equal(userToId.toString());
-                  messages[0].userTo.should.equal(userFromId.toString());
-                  messages[0].content.should.equal('Two');
-                  should.exist(messages[1]._id);
-                  should.exist(messages[1].created);
-                  messages[1].read.should.equal(false);
-                  messages[1].userFrom.should.equal(userToId.toString());
-                  messages[1].userTo.should.equal(userFromId.toString());
-                  messages[1].content.should.equal('One');
-                  const users = syncReadRes.body.users;
-                  users.length.should.equal(2);
-                  users[0]._id.should.equal(userFromId.toString());
-                  users[0].username.should.equal(userFrom.username);
-                  should.exist(users[0].emailHash);
-                  should.exist(users[0].displayName);
-                  should.exist(users[0].avatarUploaded);
-                  should.exist(users[0].avatarSource);
-                  users[1]._id.should.equal(userToId.toString());
-                  users[1].username.should.equal(userTo.username);
-                  should.exist(users[1].emailHash);
-                  should.exist(users[1].displayName);
-                  should.exist(users[1].avatarUploaded);
-                  should.exist(users[1].avatarSource);
-
-                  // Call the assertion callback
-                  return done(syncReadErr);
-                });
+    newMessage1
+      .save()
+      .then(() => {
+        newMessage2
+          .save()
+          .then(newMessage2Res => {
+            const newThread = new Thread({
+              userFrom: userToId,
+              userTo: userFromId,
+              updated: new Date(),
+              message: newMessage2Res._id,
+              read: false,
             });
-        });
-      });
-    });
+            newThread
+              .save()
+              .then(() => {
+                // Sign in
+                agent
+                  .post('/api/auth/signin')
+                  .send(credentials)
+                  .expect(200)
+                  .end(function (signinErr) {
+                    // Handle signin error
+                    if (signinErr) return done(signinErr);
+                    agent
+                      .get('/api/messages-sync')
+                      .expect(200)
+                      .end(function (syncReadErr, syncReadRes) {
+                        should.not.exist(
+                          syncReadRes.body.messages[userToId.toString()],
+                        );
+                        const messages =
+                          syncReadRes.body.messages[userFromId.toString()];
+                        messages.length.should.equal(2);
+                        should.exist(messages[0]._id);
+                        should.exist(messages[0].created);
+                        messages[0].read.should.equal(false);
+                        messages[0].userFrom.should.equal(userToId.toString());
+                        messages[0].userTo.should.equal(userFromId.toString());
+                        messages[0].content.should.equal('Two');
+                        should.exist(messages[1]._id);
+                        should.exist(messages[1].created);
+                        messages[1].read.should.equal(false);
+                        messages[1].userFrom.should.equal(userToId.toString());
+                        messages[1].userTo.should.equal(userFromId.toString());
+                        messages[1].content.should.equal('One');
+                        const users = syncReadRes.body.users;
+                        users.length.should.equal(2);
+                        users[0]._id.should.equal(userFromId.toString());
+                        users[0].username.should.equal(userFrom.username);
+                        should.exist(users[0].emailHash);
+                        should.exist(users[0].displayName);
+                        should.exist(users[0].avatarUploaded);
+                        should.exist(users[0].avatarSource);
+                        users[1]._id.should.equal(userToId.toString());
+                        users[1].username.should.equal(userTo.username);
+                        should.exist(users[1].emailHash);
+                        should.exist(users[1].displayName);
+                        should.exist(users[1].avatarUploaded);
+                        should.exist(users[1].avatarSource);
+
+                        // Call the assertion callback
+                        return done(syncReadErr);
+                      });
+                  });
+              })
+              .catch(done);
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
   it('should be able to read sync endpoint when with role "shadowban"', function (done) {
     userFrom.roles = ['user', 'shadowban'];
-    userFrom.save(function (saveErr) {
-      should.not.exist(saveErr);
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          should.not.exist(signinErr);
-          agent
-            .post('/api/messages')
-            .send(message)
-            .expect(200)
-            .end(function (messageSaveErr) {
-              should.not.exist(messageSaveErr);
-              agent
-                .get('/api/messages-sync')
-                .expect(200)
-                .end(function (syncReadErr, syncReadRes) {
-                  if (syncReadErr) return done(syncReadErr);
-                  should.exist(syncReadRes.body.messages);
-                  should.exist(syncReadRes.body.users);
-                  should.exist(syncReadRes.body.messages[userToId.toString()]);
-                  syncReadRes.body.messages[
-                    userToId.toString()
-                  ].length.should.equal(1);
-                  done();
-                });
-            });
-        });
-    });
+    userFrom
+      .save()
+      .then(() => {
+        agent
+          .post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            should.not.exist(signinErr);
+            agent
+              .post('/api/messages')
+              .send(message)
+              .expect(200)
+              .end(function (messageSaveErr) {
+                should.not.exist(messageSaveErr);
+                agent
+                  .get('/api/messages-sync')
+                  .expect(200)
+                  .end(function (syncReadErr, syncReadRes) {
+                    if (syncReadErr) return done(syncReadErr);
+                    should.exist(syncReadRes.body.messages);
+                    should.exist(syncReadRes.body.users);
+                    should.exist(
+                      syncReadRes.body.messages[userToId.toString()],
+                    );
+                    syncReadRes.body.messages[
+                      userToId.toString()
+                    ].length.should.equal(1);
+                    done();
+                  });
+              });
+          });
+      })
+      .catch(done);
   });
   it('should not deliver shadowbanned sender messages to recipient thread', function (done) {
     userFrom.roles = ['user', 'shadowban'];
-    userFrom.save(function (saveErr) {
-      should.not.exist(saveErr);
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          should.not.exist(signinErr);
-          agent
-            .post('/api/messages')
-            .send(message)
-            .expect(200)
-            .end(function (messageSaveErr) {
-              should.not.exist(messageSaveErr);
-              const recipientAgent = request.agent(app);
-              recipientAgent
-                .post('/api/auth/signin')
-                .send({
-                  username: userTo.username,
-                  password: 'password123',
-                })
-                .expect(200)
-                .end(function (recipientSigninErr) {
-                  should.not.exist(recipientSigninErr);
-                  recipientAgent
-                    .get('/api/messages/' + userFromId)
-                    .expect(200)
-                    .end(function (messagesGetErr, messagesGetRes) {
-                      should.not.exist(messagesGetErr);
-                      messagesGetRes.body.length.should.equal(0);
-                      done();
-                    });
-                });
-            });
-        });
-    });
+    userFrom
+      .save()
+      .then(() => {
+        agent
+          .post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            should.not.exist(signinErr);
+            agent
+              .post('/api/messages')
+              .send(message)
+              .expect(200)
+              .end(function (messageSaveErr) {
+                should.not.exist(messageSaveErr);
+                const recipientAgent = request.agent(app);
+                recipientAgent
+                  .post('/api/auth/signin')
+                  .send({
+                    username: userTo.username,
+                    password: 'password123',
+                  })
+                  .expect(200)
+                  .end(function (recipientSigninErr) {
+                    should.not.exist(recipientSigninErr);
+                    recipientAgent
+                      .get('/api/messages/' + userFromId)
+                      .expect(200)
+                      .end(function (messagesGetErr, messagesGetRes) {
+                        should.not.exist(messagesGetErr);
+                        messagesGetRes.body.length.should.equal(0);
+                        done();
+                      });
+                  });
+              });
+          });
+      })
+      .catch(done);
   });
   it('should not deliver shadowbanned sender messages to recipient sync', function (done) {
     userFrom.roles = ['user', 'shadowban'];
-    userFrom.save(function (saveErr) {
-      should.not.exist(saveErr);
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          should.not.exist(signinErr);
-          agent
-            .post('/api/messages')
-            .send(message)
-            .expect(200)
-            .end(function (messageSaveErr) {
-              should.not.exist(messageSaveErr);
-              const recipientAgent = request.agent(app);
-              recipientAgent
-                .post('/api/auth/signin')
-                .send({
-                  username: userTo.username,
-                  password: 'password123',
-                })
-                .expect(200)
-                .end(function (recipientSigninErr) {
-                  should.not.exist(recipientSigninErr);
-                  recipientAgent
-                    .get('/api/messages-sync')
-                    .expect(200)
-                    .end(function (syncReadErr, syncReadRes) {
-                      if (syncReadErr) return done(syncReadErr);
-                      should.not.exist(
-                        syncReadRes.body.messages[userFromId.toString()],
-                      );
-                      done();
-                    });
-                });
-            });
-        });
-    });
+    userFrom
+      .save()
+      .then(() => {
+        agent
+          .post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            should.not.exist(signinErr);
+            agent
+              .post('/api/messages')
+              .send(message)
+              .expect(200)
+              .end(function (messageSaveErr) {
+                should.not.exist(messageSaveErr);
+                const recipientAgent = request.agent(app);
+                recipientAgent
+                  .post('/api/auth/signin')
+                  .send({
+                    username: userTo.username,
+                    password: 'password123',
+                  })
+                  .expect(200)
+                  .end(function (recipientSigninErr) {
+                    should.not.exist(recipientSigninErr);
+                    recipientAgent
+                      .get('/api/messages-sync')
+                      .expect(200)
+                      .end(function (syncReadErr, syncReadRes) {
+                        if (syncReadErr) return done(syncReadErr);
+                        should.not.exist(
+                          syncReadRes.body.messages[userFromId.toString()],
+                        );
+                        done();
+                      });
+                  });
+              });
+          });
+      })
+      .catch(done);
   });
 });

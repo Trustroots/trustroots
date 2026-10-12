@@ -56,163 +56,120 @@ describe('User Model Unit Tests:', function () {
   afterEach(utils.clearDatabase);
 
   describe('Method Save', function () {
-    it('should begin with no users', function (done) {
-      User.find({}, function (err, users) {
-        users.should.have.length(0);
-        done();
-      });
+    it('should begin with no users', async function () {
+      const users = await User.find({});
+      users.should.have.length(0);
     });
 
-    it('should be able to save without problems', function (done) {
+    it('should be able to save without problems', async function () {
       const _user = new User(user);
 
-      _user.save(function (err) {
-        should.not.exist(err);
-        done();
-      });
+      await _user.save();
     });
 
-    it('should fail to save an existing user again', function (done) {
+    it('should fail to save an existing user again', async function () {
       const _user = new User(user);
       const _user2 = new User(user2);
 
-      _user.save(function () {
-        _user2.save(function (err) {
-          should.exist(err);
-          done();
-        });
-      });
+      await _user.save().catch(() => {});
+      await _user2.save().should.be.rejected();
     });
 
-    it('should be able to generate displayName when saving user', function (done) {
+    it('should be able to generate displayName when saving user', async function () {
       const _user = new User(user);
 
       _user.firstName = 'Test';
-      _user.save(function (err, savedUser) {
-        if (err) return done(err);
+      const savedUser = await _user.save();
 
-        savedUser.firstName.should.equal('Test');
-        savedUser.lastName.should.equal('Name');
-        savedUser.displayName.should.equal('Test Name');
-
-        done();
-      });
+      savedUser.firstName.should.equal('Test');
+      savedUser.lastName.should.equal('Name');
+      savedUser.displayName.should.equal('Test Name');
     });
 
-    it('should be able to generate displayName when updating user', function (done) {
+    it('should be able to generate displayName when updating user', async function () {
       const _user = new User(user);
 
       // Create user
-      _user.save(function (err) {
-        if (err) return done(err);
+      await _user.save();
 
-        // Re-save the user we just created, but with new first name
-        _user.firstName = 'Test';
-        _user.save(function (err, savedUser2) {
-          if (err) return done(err);
+      // Re-save the user we just created, but with new first name
+      _user.firstName = 'Test';
+      const savedUser2 = await _user.save();
 
-          savedUser2.firstName.should.equal('Test');
-          savedUser2.lastName.should.equal('Name');
-          savedUser2.displayName.should.equal('Test Name');
-
-          done();
-        });
-      });
+      savedUser2.firstName.should.equal('Test');
+      savedUser2.lastName.should.equal('Name');
+      savedUser2.displayName.should.equal('Test Name');
     });
 
-    it('should be able to show an error when try to save without first name', function (done) {
+    it('should be able to show an error when try to save without first name', async function () {
       const _user = new User(user);
 
       _user.firstName = '';
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      await _user.save().should.be.rejected();
     });
 
-    it('should be able to show an error when try to save with too short password', function (done) {
+    it('should be able to show an error when try to save with too short password', async function () {
       const _user = new User(user);
 
       _user.password = 's1';
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      await _user.save().should.be.rejected();
     });
 
-    it('should confirm that saving user model doesnt change the password', function (done) {
+    it('should confirm that saving user model doesnt change the password', async function () {
       const _user = new User(user);
 
-      _user.save(function (err) {
-        should.not.exist(err);
-        const passwordBefore = _user.password;
-        _user.firstName = 'test';
-        _user.save(function (err) {
-          should.not.exist(err);
-          const passwordAfter = _user.password;
-          passwordBefore.should.equal(passwordAfter);
-          done();
-        });
-      });
+      await _user.save();
+      const passwordBefore = _user.password;
+      _user.firstName = 'test';
+      await _user.save();
+      const passwordAfter = _user.password;
+      passwordBefore.should.equal(passwordAfter);
     });
 
-    it('should be able to save 2 different users', function (done) {
+    it('should be able to save 2 different users', async function () {
       const _user = new User(user);
       const _user3 = new User(user3);
 
-      _user.save(function (err) {
-        should.not.exist(err);
-        _user3.save(function (err) {
-          should.not.exist(err);
-          done();
-        });
-      });
+      await _user.save();
+      await _user3.save();
     });
 
-    it('should not be able to save different user with the same email address', function (done) {
+    it('should not be able to save different user with the same email address', async function () {
       const _user = new User(user);
       const _user3 = new User(user3);
 
-      _user.remove(function (err) {
-        should.not.exist(err);
-        _user.save(function (err) {
-          should.not.exist(err);
-          const user3_email = _user3.email;
-          _user3.email = _user.email;
-          _user3.save(function (err) {
-            should.exist(err);
-            err.errors.email.message.should.equal(
-              'Account with this email exists already.',
-            );
-            // Restoring the original email for test3 so it can be used in later tests
-            _user3.email = user3_email;
-            done();
-          });
-        });
-      });
+      await _user.deleteOne();
+      await _user.save();
+      const user3_email = _user3.email;
+      _user3.email = _user.email;
+      const err = await _user3.save().then(
+        () => null,
+        e => e,
+      );
+      should.exist(err);
+      err.errors.email.message.should.equal(
+        'Account with this email exists already.',
+      );
+      // Restoring the original email for test3 so it can be used in later tests
+      _user3.email = user3_email;
     });
 
-    it('should not be able to save different user with the same username', function (done) {
+    it('should not be able to save different user with the same username', async function () {
       const _user = new User(user);
       const _user3 = new User(user3);
 
-      _user.remove(function (err) {
-        should.not.exist(err);
-        _user.save(function (err) {
-          should.not.exist(err);
-          const user3_username = _user3.username;
-          _user3.username = _user.username;
-          _user3.save(function (err) {
-            should.exist(err);
-            err.errors.username.message.should.equal(
-              'Username exists already.',
-            );
-            // Restoring the original username for test3 so it can be used in later tests
-            _user3.username = user3_username;
-            done();
-          });
-        });
-      });
+      await _user.deleteOne();
+      await _user.save();
+      const user3_username = _user3.username;
+      _user3.username = _user.username;
+      const err = await _user3.save().then(
+        () => null,
+        e => e,
+      );
+      should.exist(err);
+      err.errors.username.message.should.equal('Username exists already.');
+      // Restoring the original username for test3 so it can be used in later tests
+      _user3.username = user3_username;
     });
   });
 
@@ -273,201 +230,144 @@ describe('User Model Unit Tests:', function () {
   });
 
   describe('Username Validation', function () {
-    it('should show error to save username beginning with .', function (done) {
+    it('should show error to save username beginning with .', async function () {
       const _user = new User(user);
 
       _user.username = '.login';
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      await _user.save().should.be.rejected();
     });
 
-    it('should be able to show an error when try to save with not allowed username', function (done) {
+    it('should be able to show an error when try to save with not allowed username', async function () {
       const _user = new User(user);
 
       _user.username =
         config.illegalStrings[
           Math.floor(Math.random() * config.illegalStrings.length)
         ];
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      await _user.save().should.be.rejected();
     });
 
-    it('should show error to save username end with .', function (done) {
+    it('should show error to save username end with .', async function () {
       const _user = new User(user);
 
       _user.username = 'login.';
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      await _user.save().should.be.rejected();
     });
 
-    it('should show error to save username with ..', function (done) {
+    it('should show error to save username with ..', async function () {
       const _user = new User(user);
 
       _user.username = 'log..in';
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      await _user.save().should.be.rejected();
     });
 
-    it('should show error to save username shorter than 3 character', function (done) {
+    it('should show error to save username shorter than 3 character', async function () {
       const _user = new User(user);
 
       _user.username = 'lo';
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      await _user.save().should.be.rejected();
     });
 
-    it('should show error saving a username without at least one alphanumeric character', function (done) {
+    it('should show error saving a username without at least one alphanumeric character', async function () {
       const _user = new User(user);
 
       _user.username = '-_-';
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      await _user.save().should.be.rejected();
     });
 
-    it('should show error saving a username longer than 34 characters', function (done) {
+    it('should show error saving a username longer than 34 characters', async function () {
       const _user = new User(user);
 
       _user.username = 'l'.repeat(35);
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      await _user.save().should.be.rejected();
     });
 
-    it('should save username with dot', function (done) {
+    it('should save username with dot', async function () {
       const _user = new User(user);
 
       _user.username = 'log.in';
-      _user.save(function (err) {
-        should.not.exist(err);
-        done();
-      });
+      await _user.save();
     });
   });
 
   describe('Roles Validation', function () {
-    it('should show error when trying to save with non-existing role', function (done) {
+    it('should show error when trying to save with non-existing role', async function () {
       const _user = new User(user);
 
       _user.roles = ['nope'];
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      await _user.save().should.be.rejected();
     });
 
-    it('should save without any roles', function (done) {
+    it('should save without any roles', async function () {
       const _user = new User(user);
 
       _user.roles = [];
-      _user.save(function (err) {
-        should.not.exist(err);
-        done();
-      });
+      await _user.save();
     });
 
-    it('should save with "user" role', function (done) {
+    it('should save with "user" role', async function () {
       const _user = new User(user);
 
       _user.roles = ['user'];
-      _user.save(function (err) {
-        should.not.exist(err);
-        done();
-      });
+      await _user.save();
     });
 
-    it('should save with "admin" role', function (done) {
+    it('should save with "admin" role', async function () {
       const _user = new User(user);
 
       _user.roles = ['admin'];
-      _user.save(function (err) {
-        should.not.exist(err);
-        done();
-      });
+      await _user.save();
     });
 
-    it('should tolerate legacy "moderator" role', function (done) {
+    it('should tolerate legacy "moderator" role', async function () {
       const _user = new User(user);
 
       _user.roles = ['moderator'];
-      _user.save(function (err) {
-        should.not.exist(err);
-        done();
-      });
+      await _user.save();
     });
 
-    it('should save with "shadowban" role', function (done) {
+    it('should save with "shadowban" role', async function () {
       const _user = new User(user);
 
       _user.roles = ['shadowban'];
-      _user.save(function (err) {
-        should.not.exist(err);
-        done();
-      });
+      await _user.save();
     });
 
-    it('should save with "suspended" role', function (done) {
+    it('should save with "suspended" role', async function () {
       const _user = new User(user);
 
       _user.roles = ['suspended'];
-      _user.save(function (err) {
-        should.not.exist(err);
-        done();
-      });
+      await _user.save();
     });
 
-    it('should save with multiple roles', function (done) {
+    it('should save with multiple roles', async function () {
       const _user = new User(user);
 
       _user.roles = ['user', 'admin'];
-      _user.save(function (err) {
-        should.not.exist(err);
-        done();
-      });
+      await _user.save();
     });
   });
 
   describe('Language Validation', function () {
-    it('should show error when trying to save with non-existing language code', function (done) {
+    it('should show error when trying to save with non-existing language code', async function () {
       const _user = new User(user);
 
       _user.languages = ['nope'];
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      await _user.save().should.be.rejected();
     });
 
-    it('should save without any languages', function (done) {
+    it('should save without any languages', async function () {
       const _user = new User(user);
 
       _user.languages = [];
-      _user.save(function (err) {
-        should.not.exist(err);
-        done();
-      });
+      await _user.save();
     });
 
-    it('should save with valid language codes', function (done) {
+    it('should save with valid language codes', async function () {
       const _user = new User(user);
 
       _user.languages = ['fin', 'iso_639_3-vsi'];
-      _user.save(function (err) {
-        should.not.exist(err);
-        done();
-      });
+      await _user.save();
     });
   });
 

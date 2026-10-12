@@ -112,9 +112,7 @@ describe('Admin audit log controller unit tests', () => {
 
     it('still calls next when saving the audit log fails', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
-      sinon.stub(AuditLog.prototype, 'save').callsFake(cb => {
-        cb(new Error('save failed'));
-      });
+      sinon.stub(AuditLog.prototype, 'save').rejects(new Error('save failed'));
       let nextCalled = false;
 
       await new Promise(resolve => {

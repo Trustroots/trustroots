@@ -36,34 +36,28 @@ const defaultExport = function () {
           return rejectCredentials(password, done);
         }
 
-        User.findOne(
-          {
-            $or: [
-              { username: username.toLowerCase() },
-              { email: username.toLowerCase() },
-            ],
-          },
-          function (err, user) {
-            if (err) {
-              return done(err);
-            }
-            if (!user) {
-              return rejectCredentials(password, done);
-            }
+        User.findOne({
+          $or: [
+            { username: username.toLowerCase() },
+            { email: username.toLowerCase() },
+          ],
+        }).then(user => {
+          if (!user) {
+            return rejectCredentials(password, done);
+          }
 
-            return user
-              .authenticate(password)
-              .then(valid => {
-                if (!valid) {
-                  return done(null, false, {
-                    message: 'Unknown user or invalid password',
-                  });
-                }
-                return done(null, user);
-              })
-              .catch(done);
-          },
-        );
+          return user
+            .authenticate(password)
+            .then(valid => {
+              if (!valid) {
+                return done(null, false, {
+                  message: 'Unknown user or invalid password',
+                });
+              }
+              return done(null, user);
+            })
+            .catch(done);
+        }, done);
       },
     ),
   );

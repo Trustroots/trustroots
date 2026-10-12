@@ -154,7 +154,8 @@ service.update = function (req, res) {
             ],
           },
           'emailTemporary email',
-          function (err, emailUser) {
+        ).then(
+          emailUser => {
             // Not available
             if (emailUser) {
               // If the user we found with this email is currently authenticated user,
@@ -173,6 +174,7 @@ service.update = function (req, res) {
               done();
             }
           },
+          () => done(),
         );
       },
       // Check if nostr npub is already claimed by another user
@@ -188,19 +190,15 @@ service.update = function (req, res) {
             nostrNpub: req.body.nostrNpub,
           },
           '_id',
-          function (err, existingNostrUser) {
-            if (err) {
-              return done(err);
-            }
-            if (existingNostrUser) {
-              return res.status(403).send({
-                message:
-                  'This nostr npub is already in use. Please use another one.',
-              });
-            }
-            done();
-          },
-        );
+        ).then(existingNostrUser => {
+          if (existingNostrUser) {
+            return res.status(403).send({
+              message:
+                'This nostr npub is already in use. Please use another one.',
+            });
+          }
+          done();
+        }, done);
       },
       // Check if we should generate new email token
       function (done) {
@@ -240,9 +238,10 @@ service.update = function (req, res) {
           user.emailToken = token;
           user.emailTemporary = email;
         }
-        user.save(function (err) {
-          done(err, token, user);
-        });
+        user.save().then(
+          () => done(null, token, user),
+          err => done(err, token, user),
+        );
       },
       // Send email
       function (token, user, done) {
@@ -313,10 +312,7 @@ service.initializeRemoveProfile = function (req, res) {
             // Return updated user document
             new: true,
           },
-          function (err, user) {
-            done(err, user);
-          },
-        );
+        ).then(user => done(null, user), done);
       },
       // Send email
       function (user) {
@@ -371,17 +367,17 @@ service.removeProfile = function (req, res) {
     [
       // Validate token
       function (done) {
-        User.findOne(
-          {
-            _id: req.user._id,
-            removeProfileToken: req.params.token,
-            removeProfileExpires: {
-              $gt: Date.now(),
-            },
+        User.findOne({
+          _id: req.user._id,
+          removeProfileToken: req.params.token,
+          removeProfileExpires: {
+            $gt: Date.now(),
           },
-          function (err, user) {
+        })
+          .catch(() => null)
+          .then(user => {
             // Can't find user (=invalid or expired token) or other error
-            if (err || !user) {
+            if (!user) {
               // Report failure to stats
               return statService.stat(
                 {
@@ -402,35 +398,33 @@ service.removeProfile = function (req, res) {
               );
             }
             done(null, user);
-          },
-        );
+          });
       },
       // Remove profile
       function (user, done) {
-        User.findOneAndRemove(
-          {
-            _id: user._id,
-          },
-          function (err) {
-            done(err, user);
-          },
+        User.findOneAndDelete({
+          _id: user._id,
+        }).then(
+          () => done(null, user),
+          err => done(err, user),
         );
       },
       // Remove native message alert registrations
       function (user, done) {
-        mongoose.model('UnifiedPushRegistration').deleteMany(
-          {
+        mongoose
+          .model('UnifiedPushRegistration')
+          .deleteMany({
             user: user._id,
-          },
-          function (err) {
-            if (err) {
+          })
+          .then(
+            () => done(null, user),
+            err => {
               log('error', 'Error removing message alert registrations.', {
                 error: err,
               });
-            }
-            done(null, user);
-          },
-        );
+              done(null, user);
+            },
+          );
       },
       // Remove offers
       function (user, done) {
@@ -633,27 +627,29 @@ service.userMiniByID = function (req, res, next, userId) {
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return errorService.sendInvalidId(res);
   }
-  User.findById(
-    userId,
-    service.userMiniProfileFields + ' public roles blocked',
-  ).exec(function (err, profile) {
-    // Something went wrong or no profile
-    if (err || !profile) {
-      return errorService.sendNotFound(res);
-    }
-    const { isAdmin, isOwnProfile, isBannedProfile, isBlocked, hasBlocked } =
-      classifyPermission(req.user, profile);
-    // Not own profile, and not public, or suspended, or shadowbanned user
-    if (
-      !isAdmin &&
-      !isOwnProfile &&
-      (!profile.public || isBannedProfile || isBlocked || hasBlocked)
-    ) {
-      return errorService.sendNotFound(res);
-    }
-    req.profile = profile;
-    next();
-  });
+  User.findById(userId, service.userMiniProfileFields + ' public roles blocked')
+    .then(
+      profile => profile,
+      () => null,
+    )
+    .then(profile => {
+      // Something went wrong or no profile
+      if (!profile) {
+        return errorService.sendNotFound(res);
+      }
+      const { isAdmin, isOwnProfile, isBannedProfile, isBlocked, hasBlocked } =
+        classifyPermission(req.user, profile);
+      // Not own profile, and not public, or suspended, or shadowbanned user
+      if (
+        !isAdmin &&
+        !isOwnProfile &&
+        (!profile.public || isBannedProfile || isBlocked || hasBlocked)
+      ) {
+        return errorService.sendNotFound(res);
+      }
+      req.profile = profile;
+      next();
+    });
 };
 
 /**
@@ -694,8 +690,12 @@ service.userByUsername = function (req, res, next, username) {
             // https://github.com/Automattic/mongoose/issues/2202
             // options: { sort: { count: -1 } }
           })
-          .exec(function (err, profile) {
-            if (err || !profile) {
+          .then(
+            profile => profile,
+            () => null,
+          )
+          .then(profile => {
+            if (!profile) {
               // No such user
               return res.status(404).send({
                 message: errorService.getErrorMessageByKey('not-found'),
@@ -714,7 +714,7 @@ service.userByUsername = function (req, res, next, username) {
                 message: errorService.getErrorMessageByKey('not-found'),
               });
             }
-            done(err, profile);
+            done(null, profile);
           });
       },
       // Sanitize profile
@@ -974,9 +974,10 @@ service.joinTribe = function (req, res) {
             // @link http://stackoverflow.com/a/4975054/1984644
             new: true, // get the updated document in return
           },
-        ).exec(function (err, user) {
-          done(err, tribe, user);
-        });
+        ).then(
+          user => done(null, tribe, user),
+          err => done(err, tribe, undefined),
+        );
       },
       // Done, output new tribe + user objects
       function (tribe, user, done) {
@@ -1076,9 +1077,10 @@ service.leaveTribe = function (req, res) {
             // @link http://stackoverflow.com/a/4975054/1984644
             new: true, // get the updated document in return
           },
-        ).exec(function (err, user) {
-          done(err, tribe, user);
-        });
+        ).then(
+          user => done(null, tribe, user),
+          err => done(err, tribe, undefined),
+        );
       },
       // Done, output new tribe + user objects
       function (tribe, user, done) {
@@ -1142,15 +1144,13 @@ service.getUserMemberships = function (req, res) {
       // https://github.com/Automattic/mongoose/issues/2202
       // options: { sort: { count: -1 } }
     })
-    .exec(function (err, profile) {
-      // Something went wrong
-      if (err) {
-        return res.status(400).send({
+    .then(
+      profile => res.send(profile.member || []),
+      () =>
+        res.status(400).send({
           message: 'Failed to get list of tribes.',
-        });
-      }
-      return res.send(profile.member || []);
-    });
+        }),
+    );
 };
 
 /**
@@ -1173,20 +1173,19 @@ service.removePushRegistration = function (req, res) {
     safe: true,
     // @link http://stackoverflow.com/a/4975054/1984644
     new: true, // get the updated document in return
-  }).exec(function (err, user) {
-    if (err) {
-      return res.status(400).send({
+  }).then(
+    user =>
+      res.send({
+        message: 'Removed registration.',
+        user: service.sanitizeOwnProfile(user),
+      }),
+    err =>
+      res.status(400).send({
         message:
           errorService.getErrorMessage(err) ||
           'Failed to remove registration, please try again.',
-      });
-    } else {
-      return res.send({
-        message: 'Removed registration.',
-        user: service.sanitizeOwnProfile(user),
-      });
-    }
-  });
+      }),
+  );
 };
 
 /**
@@ -1299,12 +1298,14 @@ service.search = function (req, res, next) {
     // skip to the page, automatically handles invalid page number
     .skip(req.skip)
     .maxTimeMS(2000)
-    .exec(function (err, users) {
-      if (err) return next(err);
-      /** filter ones that have blocked me */
-      const filterFnc = createBlockingUserFilter(req.user);
-      return res.send(filterFnc(users));
-    });
+    .then(
+      users => {
+        /** filter ones that have blocked me */
+        const filterFnc = createBlockingUserFilter(req.user);
+        return res.send(filterFnc(users));
+      },
+      err => next(err),
+    );
 };
 const defaultExport = service;
 export default defaultExport;

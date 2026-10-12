@@ -100,7 +100,7 @@ describe('Authentication controller OAuth unit tests', () => {
       userDoc.additionalProvidersData = { github: { id: 'gh-1' } };
       userDoc.markModified('additionalProvidersData');
       await userDoc.save();
-      sinon.stub(userDoc, 'save').callsFake(cb => cb(new Error('save failed')));
+      sinon.stub(userDoc, 'save').rejects(new Error('save failed'));
 
       const req = {
         user: userDoc,
@@ -309,7 +309,7 @@ describe('Authentication controller OAuth unit tests', () => {
       userDoc.public = false;
       userDoc.emailTemporary = userDoc.email;
       await userDoc.save();
-      sinon.stub(userDoc, 'save').callsFake(cb => cb(new Error('save failed')));
+      sinon.stub(userDoc, 'save').rejects(new Error('save failed'));
 
       const res = deferredResponse();
       authController.resendConfirmation({ user: userDoc }, res);
@@ -770,7 +770,7 @@ describe('Authentication controller OAuth unit tests', () => {
       userDoc.emailToken = 'confirm-token';
       await userDoc.save();
 
-      sinon.stub(User, 'findOneAndUpdate').yields(new Error('update failed'));
+      sinon.stub(User, 'findOneAndUpdate').rejects(new Error('update failed'));
 
       const res = deferredResponse();
       authController.confirmEmail(

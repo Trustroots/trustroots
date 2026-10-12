@@ -14,21 +14,18 @@ let credentials;
 let user;
 let _user;
 
-function findUserWithResetToken(query, callback) {
+async function findUserWithResetToken(query) {
   const timeout = Date.now() + 3000;
-  const check = () => {
-    User.findOne(query, (err, foundUser) => {
-      if (err || (foundUser && foundUser.resetPasswordToken)) {
-        return callback(err, foundUser);
-      }
-      if (Date.now() >= timeout) {
-        return callback(new Error('Password recovery token was not saved.'));
-      }
-      return setTimeout(check, 10);
-    });
-  };
-
-  check();
+  for (;;) {
+    const foundUser = await User.findOne(query);
+    if (foundUser && foundUser.resetPasswordToken) {
+      return foundUser;
+    }
+    if (Date.now() >= timeout) {
+      throw new Error('Password recovery token was not saved.');
+    }
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
 }
 
 /**
@@ -46,7 +43,7 @@ describe('User password CRUD tests', function () {
 
   // Create an user
 
-  beforeEach(function (done) {
+  beforeEach(async function () {
     // Create user credentials
     credentials = {
       username: 'TR_username',
@@ -68,7 +65,7 @@ describe('User password CRUD tests', function () {
     user = new User(_user);
 
     // Save a user to the test db
-    user.save(done);
+    await user.save();
   });
   afterEach(utils.clearDatabase);
 
@@ -85,433 +82,233 @@ describe('User password CRUD tests', function () {
     should.not.exist(stored.resetPasswordToken);
   });
 
-  it('forgot password acknowledges non-existent usernames consistently', function (done) {
+  it('forgot password acknowledges non-existent usernames consistently', async function () {
     user.roles = ['user'];
-    user.save(function (err) {
-      should.not.exist(err);
-      agent
-        .post('/api/auth/forgot')
-        .send({
-          username: 'some_username_that_doesnt_exist',
-        })
-        .expect(200)
-        .end(function (err, res) {
-          // Handle error
-          if (err) {
-            return done(err);
-          }
-          res.body.message.should.equal(
-            'If an account matches that username or email, we will send recovery instructions.',
-          );
-          return done();
-        });
-    });
+    await user.save();
+    const res = await agent
+      .post('/api/auth/forgot')
+      .send({ username: 'some_username_that_doesnt_exist' })
+      .expect(200);
+    res.body.message.should.equal(
+      'If an account matches that username or email, we will send recovery instructions.',
+    );
   });
-  it('forgot password should return 400 for no username provided', function (done) {
-    const provider = 'facebook';
-    user.provider = provider;
+  it('forgot password should return 400 for no username provided', async function () {
+    user.provider = 'facebook';
     user.roles = ['user'];
-    user.save(function (err) {
-      should.not.exist(err);
-      agent
-        .post('/api/auth/forgot')
-        .send({
-          username: '',
-        })
-        .expect(400)
-        .end(function (err, res) {
-          // Handle error
-          if (err) {
-            return done(err);
-          }
-          res.body.message.should.equal(
-            'Please, we really need your username or email first...',
-          );
-          return done();
-        });
-    });
+    await user.save();
+    const res = await agent
+      .post('/api/auth/forgot')
+      .send({ username: '' })
+      .expect(400);
+    res.body.message.should.equal(
+      'Please, we really need your username or email first...',
+    );
   });
-  it('forgot password should be able to reset password for user password reset request using username', function (done) {
+  it('forgot password should be able to reset password for user password reset request using username', async function () {
     user.roles = ['user'];
-    user.save(function (err) {
-      should.not.exist(err);
-      agent
-        .post('/api/auth/forgot')
-        .send({
-          username: user.username,
-        })
-        .expect(200)
-        .end(function (err, res) {
-          // Handle error
-          if (err) {
-            return done(err);
-          }
-          res.body.message.should.be.equal(
-            'If an account matches that username or email, we will send recovery instructions.',
-          );
+    await user.save();
+    const res = await agent
+      .post('/api/auth/forgot')
+      .send({ username: user.username })
+      .expect(200);
+    res.body.message.should.be.equal(
+      'If an account matches that username or email, we will send recovery instructions.',
+    );
 
-          findUserWithResetToken(
-            { username: user.username.toLowerCase() },
-            function (err, userRes) {
-              userRes.resetPasswordToken.should.not.be.empty();
-              should.exist(userRes.resetPasswordExpires);
-              return done();
-            },
-          );
-        });
+    const userRes = await findUserWithResetToken({
+      username: user.username.toLowerCase(),
     });
+    userRes.resetPasswordToken.should.not.be.empty();
+    should.exist(userRes.resetPasswordExpires);
   });
-  it('forgot password should be able to reset password for user password reset request using uppercase username', function (done) {
+  it('forgot password should be able to reset password for user password reset request using uppercase username', async function () {
     user.roles = ['user'];
-    user.save(function (err) {
-      should.not.exist(err);
-      agent
-        .post('/api/auth/forgot')
-        .send({
-          username: user.username.toUpperCase(),
-        })
-        .expect(200)
-        .end(function (err, res) {
-          // Handle error
-          if (err) {
-            return done(err);
-          }
-          res.body.message.should.be.equal(
-            'If an account matches that username or email, we will send recovery instructions.',
-          );
+    await user.save();
+    const res = await agent
+      .post('/api/auth/forgot')
+      .send({ username: user.username.toUpperCase() })
+      .expect(200);
+    res.body.message.should.be.equal(
+      'If an account matches that username or email, we will send recovery instructions.',
+    );
 
-          findUserWithResetToken(
-            { username: user.username.toLowerCase() },
-            function (err, userRes) {
-              userRes.resetPasswordToken.should.not.be.empty();
-              should.exist(userRes.resetPasswordExpires);
-              return done();
-            },
-          );
-        });
+    const userRes = await findUserWithResetToken({
+      username: user.username.toLowerCase(),
     });
+    userRes.resetPasswordToken.should.not.be.empty();
+    should.exist(userRes.resetPasswordExpires);
   });
-  it('forgot password should be able to reset password for user password reset request using email', function (done) {
+  it('forgot password should be able to reset password for user password reset request using email', async function () {
     user.roles = ['user'];
-    user.save(function (err) {
-      should.not.exist(err);
-      agent
-        .post('/api/auth/forgot')
-        .send({
-          username: user.email,
-        })
-        .expect(200)
-        .end(function (err, res) {
-          // Handle error
-          if (err) {
-            return done(err);
-          }
-          res.body.message.should.be.equal(
-            'If an account matches that username or email, we will send recovery instructions.',
-          );
+    await user.save();
+    const res = await agent
+      .post('/api/auth/forgot')
+      .send({ username: user.email })
+      .expect(200);
+    res.body.message.should.be.equal(
+      'If an account matches that username or email, we will send recovery instructions.',
+    );
 
-          findUserWithResetToken(
-            { email: user.email.toLowerCase() },
-            function (err, userRes) {
-              userRes.resetPasswordToken.should.not.be.empty();
-              should.exist(userRes.resetPasswordExpires);
-              return done();
-            },
-          );
-        });
+    const userRes = await findUserWithResetToken({
+      email: user.email.toLowerCase(),
     });
+    userRes.resetPasswordToken.should.not.be.empty();
+    should.exist(userRes.resetPasswordExpires);
   });
-  it('forgot password should be able to reset password for user password reset request using uppercase email', function (done) {
+  it('forgot password should be able to reset password for user password reset request using uppercase email', async function () {
     user.roles = ['user'];
-    user.save(function (err) {
-      should.not.exist(err);
-      agent
-        .post('/api/auth/forgot')
-        .send({
-          username: user.email.toUpperCase(),
-        })
-        .expect(200)
-        .end(function (err, res) {
-          // Handle error
-          if (err) {
-            return done(err);
-          }
-          res.body.message.should.be.equal(
-            'If an account matches that username or email, we will send recovery instructions.',
-          );
+    await user.save();
+    const res = await agent
+      .post('/api/auth/forgot')
+      .send({ username: user.email.toUpperCase() })
+      .expect(200);
+    res.body.message.should.be.equal(
+      'If an account matches that username or email, we will send recovery instructions.',
+    );
 
-          findUserWithResetToken(
-            { email: user.email.toLowerCase() },
-            function (err, userRes) {
-              userRes.resetPasswordToken.should.not.be.empty();
-              should.exist(userRes.resetPasswordExpires);
-              return done();
-            },
-          );
-        });
+    const userRes = await findUserWithResetToken({
+      email: user.email.toLowerCase(),
     });
+    userRes.resetPasswordToken.should.not.be.empty();
+    should.exist(userRes.resetPasswordExpires);
   });
-  it('forgot password should be able to reset the password using reset token', function (done) {
+  it('forgot password should be able to reset the password using reset token', async function () {
     user.roles = ['user'];
-    user.save(function (err) {
-      should.not.exist(err);
-      agent
-        .post('/api/auth/forgot')
-        .send({
-          username: user.username,
-        })
-        .expect(200)
-        .end(function (err) {
-          // Handle error
-          if (err) {
-            return done(err);
-          }
+    await user.save();
+    await agent
+      .post('/api/auth/forgot')
+      .send({ username: user.username })
+      .expect(200);
 
-          findUserWithResetToken(
-            { username: user.username.toLowerCase() },
-            function (err, userRes) {
-              userRes.resetPasswordToken.should.not.be.empty();
-              should.exist(userRes.resetPasswordExpires);
-              agent
-                .get('/api/auth/reset/' + userRes.resetPasswordToken)
-                .expect(302)
-                .end(function (err, res) {
-                  // Handle error
-                  if (err) {
-                    return done(err);
-                  }
-                  res.headers.location.should.be.equal(
-                    '/password/reset/' + userRes.resetPasswordToken,
-                  );
-                  return done();
-                });
-            },
-          );
-        });
+    const userRes = await findUserWithResetToken({
+      username: user.username.toLowerCase(),
     });
+    userRes.resetPasswordToken.should.not.be.empty();
+    should.exist(userRes.resetPasswordExpires);
+    const res = await agent
+      .get('/api/auth/reset/' + userRes.resetPasswordToken)
+      .expect(302);
+    res.headers.location.should.be.equal(
+      '/password/reset/' + userRes.resetPasswordToken,
+    );
   });
-  it('forgot password should return error when using invalid reset token', function (done) {
+  it('forgot password should return error when using invalid reset token', async function () {
     user.roles = ['user'];
-    user.save(function (err) {
-      should.not.exist(err);
-      agent
-        .post('/api/auth/forgot')
-        .send({
-          username: user.username,
-        })
-        .expect(200)
-        .end(function (err) {
-          // Handle error
-          if (err) {
-            return done(err);
-          }
-          const invalidToken = 'someTOKEN1234567890';
-          agent
-            .get('/api/auth/reset/' + invalidToken)
-            .expect(302)
-            .end(function (err, res) {
-              // Handle error
-              if (err) {
-                return done(err);
-              }
-              res.headers.location.should.be.equal('/password/reset/invalid');
-              return done();
-            });
-        });
-    });
+    await user.save();
+    await agent
+      .post('/api/auth/forgot')
+      .send({ username: user.username })
+      .expect(200);
+    const invalidToken = 'someTOKEN1234567890';
+    const res = await agent.get('/api/auth/reset/' + invalidToken).expect(302);
+    res.headers.location.should.be.equal('/password/reset/invalid');
   });
-  it('forgot password should re-apply UTM parameters to the reset redirect', function (done) {
+  it('forgot password should re-apply UTM parameters to the reset redirect', async function () {
     user.roles = ['user'];
-    user.save(function (saveErr) {
-      should.not.exist(saveErr);
-      agent
-        .post('/api/auth/forgot')
-        .send({
-          username: user.username,
-        })
-        .expect(200)
-        .end(function (forgotErr) {
-          if (forgotErr) {
-            return done(forgotErr);
-          }
+    await user.save();
+    await agent
+      .post('/api/auth/forgot')
+      .send({ username: user.username })
+      .expect(200);
 
-          findUserWithResetToken(
-            { username: user.username.toLowerCase() },
-            function (findErr, userRes) {
-              should.not.exist(findErr);
-              agent
-                .get(
-                  '/api/auth/reset/' +
-                    userRes.resetPasswordToken +
-                    '?utm_source=transactional_email&utm_medium=email&utm_campaign=reset',
-                )
-                .expect(302)
-                .end(function (err, res) {
-                  if (err) {
-                    return done(err);
-                  }
-                  res.headers.location.should.containEql(
-                    '/password/reset/' + userRes.resetPasswordToken,
-                  );
-                  res.headers.location.should.containEql(
-                    'utm_source=transactional_email',
-                  );
-                  return done();
-                });
-            },
-          );
-        });
+    const userRes = await findUserWithResetToken({
+      username: user.username.toLowerCase(),
     });
+    const res = await agent
+      .get(
+        '/api/auth/reset/' +
+          userRes.resetPasswordToken +
+          '?utm_source=transactional_email&utm_medium=email&utm_campaign=reset',
+      )
+      .expect(302);
+    res.headers.location.should.containEql(
+      '/password/reset/' + userRes.resetPasswordToken,
+    );
+    res.headers.location.should.containEql('utm_source=transactional_email');
   });
-  it('should be able to reset the password with a valid token and matching passwords', function (done) {
+  it('should be able to reset the password with a valid token and matching passwords', async function () {
     user.roles = ['user'];
-    user.save(function (saveErr) {
-      should.not.exist(saveErr);
-      agent
-        .post('/api/auth/forgot')
-        .send({
-          username: user.username,
-        })
-        .expect(200)
-        .end(function (forgotErr) {
-          if (forgotErr) {
-            return done(forgotErr);
-          }
+    await user.save();
+    await agent
+      .post('/api/auth/forgot')
+      .send({ username: user.username })
+      .expect(200);
 
-          findUserWithResetToken(
-            { username: user.username.toLowerCase() },
-            function (findErr, userRes) {
-              should.not.exist(findErr);
-              agent
-                .post('/api/auth/reset/' + userRes.resetPasswordToken)
-                .send({
-                  newPassword: '1234567890Aa$',
-                  verifyPassword: '1234567890Aa$',
-                })
-                .expect(200)
-                .end(function (err, res) {
-                  if (err) {
-                    return done(err);
-                  }
-                  res.body.username.should.equal(user.username.toLowerCase());
-
-                  // The reset token should be cleared after a successful reset
-                  User.findOne(
-                    {
-                      username: user.username.toLowerCase(),
-                    },
-                    function (err2, updated) {
-                      should.not.exist(err2);
-                      should.not.exist(updated.resetPasswordToken);
-                      should.not.exist(updated.resetPasswordExpires);
-                      return done();
-                    },
-                  );
-                });
-            },
-          );
-        });
+    const userRes = await findUserWithResetToken({
+      username: user.username.toLowerCase(),
     });
+    const res = await agent
+      .post('/api/auth/reset/' + userRes.resetPasswordToken)
+      .send({
+        newPassword: '1234567890Aa$',
+        verifyPassword: '1234567890Aa$',
+      })
+      .expect(200);
+    res.body.username.should.equal(user.username.toLowerCase());
+
+    const updated = await User.findOne({
+      username: user.username.toLowerCase(),
+    });
+    should.not.exist(updated.resetPasswordToken);
+    should.not.exist(updated.resetPasswordExpires);
   });
-  it('should not be able to reset the password if passwords do not match', function (done) {
+  it('should not be able to reset the password if passwords do not match', async function () {
     user.roles = ['user'];
-    user.save(function (saveErr) {
-      should.not.exist(saveErr);
-      agent
-        .post('/api/auth/forgot')
-        .send({
-          username: user.username,
-        })
-        .expect(200)
-        .end(function (forgotErr) {
-          if (forgotErr) {
-            return done(forgotErr);
-          }
-          User.findOne(
-            {
-              username: user.username.toLowerCase(),
-            },
-            function (findErr, userRes) {
-              should.not.exist(findErr);
-              agent
-                .post('/api/auth/reset/' + userRes.resetPasswordToken)
-                .send({
-                  newPassword: '1234567890Aa$',
-                  verifyPassword: 'something-else-Aa$1',
-                })
-                .expect(400)
-                .end(function (err, res) {
-                  if (err) {
-                    return done(err);
-                  }
-                  res.body.message.should.equal('Passwords do not match.');
-                  return done();
-                });
-            },
-          );
-        });
+    await user.save();
+    await agent
+      .post('/api/auth/forgot')
+      .send({ username: user.username })
+      .expect(200);
+    const userRes = await User.findOne({
+      username: user.username.toLowerCase(),
     });
+    const res = await agent
+      .post('/api/auth/reset/' + userRes.resetPasswordToken)
+      .send({
+        newPassword: '1234567890Aa$',
+        verifyPassword: 'something-else-Aa$1',
+      })
+      .expect(400);
+    res.body.message.should.equal('Passwords do not match.');
   });
-  it('should not be able to reset the password with an invalid token', function (done) {
-    agent
+  it('should not be able to reset the password with an invalid token', async function () {
+    const res = await agent
       .post('/api/auth/reset/someInvalidToken1234567890')
       .send({
         newPassword: '1234567890Aa$',
         verifyPassword: '1234567890Aa$',
       })
-      .expect(400)
-      .end(function (err, res) {
-        if (err) {
-          return done(err);
-        }
-        res.body.message.should.equal(
-          'Password reset token is invalid or has expired.',
-        );
-        return done();
-      });
+      .expect(400);
+    res.body.message.should.equal(
+      'Password reset token is invalid or has expired.',
+    );
   });
-  it('should be able to change password successfully', function (done) {
-    agent
-      .post('/api/auth/signin')
-      .send(credentials)
-      .expect(200)
-      .end(function (signinErr) {
-        // Handle signin error
-        if (signinErr) {
-          return done(signinErr);
-        }
-
-        // Change password
-        agent
-          .post('/api/users/password')
-          .send({
-            newPassword: '1234567890Aa$',
-            verifyPassword: '1234567890Aa$',
-            currentPassword: credentials.password,
-          })
-          .expect(200)
-          .end(function (err, res) {
-            if (err) {
-              return done(err);
-            }
-            res.body.message.should.equal('Password changed successfully!');
-            res.body.user.username.should.equal(user.username);
-            res.body.user.email.should.equal(user.email);
-            for (const field of [
-              'password',
-              'salt',
-              'emailToken',
-              'resetPasswordToken',
-              'removeProfileToken',
-              'providerData',
-              'pushRegistration',
-              'lastIpAddress',
-            ]) {
-              should.not.exist(res.body.user[field]);
-            }
-            return done();
-          });
-      });
+  it('should be able to change password successfully', async function () {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const res = await agent
+      .post('/api/users/password')
+      .send({
+        newPassword: '1234567890Aa$',
+        verifyPassword: '1234567890Aa$',
+        currentPassword: credentials.password,
+      })
+      .expect(200);
+    res.body.message.should.equal('Password changed successfully!');
+    res.body.user.username.should.equal(user.username);
+    res.body.user.email.should.equal(user.email);
+    for (const field of [
+      'password',
+      'salt',
+      'emailToken',
+      'resetPasswordToken',
+      'removeProfileToken',
+      'providerData',
+      'pushRegistration',
+      'lastIpAddress',
+    ]) {
+      should.not.exist(res.body.user[field]);
+    }
   });
 
   it('requires the current password when changing credentials', async function () {
@@ -524,109 +321,51 @@ describe('User password CRUD tests', function () {
     await agent.post('/api/auth/signin').send(credentials).expect(200);
   });
 
-  it('should not be able to change password if wrong verifyPassword is given', function (done) {
-    agent
-      .post('/api/auth/signin')
-      .send(credentials)
-      .expect(200)
-      .end(function (signinErr) {
-        // Handle signin error
-        if (signinErr) {
-          return done(signinErr);
-        }
-
-        // Change password
-        agent
-          .post('/api/users/password')
-          .send({
-            newPassword: '1234567890Aa$',
-            verifyPassword: '1234567890-ABC-123-Aa$',
-            currentPassword: credentials.password,
-          })
-          .expect(400)
-          .end(function (err, res) {
-            if (err) {
-              return done(err);
-            }
-            res.body.message.should.equal('Passwords do not match.');
-            return done();
-          });
-      });
+  it('should not be able to change password if wrong verifyPassword is given', async function () {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const res = await agent
+      .post('/api/users/password')
+      .send({
+        newPassword: '1234567890Aa$',
+        verifyPassword: '1234567890-ABC-123-Aa$',
+        currentPassword: credentials.password,
+      })
+      .expect(400);
+    res.body.message.should.equal('Passwords do not match.');
   });
-  it('should not be able to change password if wrong currentPassword is given', function (done) {
-    agent
-      .post('/api/auth/signin')
-      .send(credentials)
-      .expect(200)
-      .end(function (signinErr) {
-        // Handle signin error
-        if (signinErr) {
-          return done(signinErr);
-        }
-
-        // Change password
-        agent
-          .post('/api/users/password')
-          .send({
-            newPassword: '1234567890Aa$',
-            verifyPassword: '1234567890Aa$',
-            currentPassword: 'some_wrong_passwordAa$',
-          })
-          .expect(400)
-          .end(function (err, res) {
-            if (err) {
-              return done(err);
-            }
-            res.body.message.should.equal('Current password is incorrect.');
-            return done();
-          });
-      });
+  it('should not be able to change password if wrong currentPassword is given', async function () {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const res = await agent
+      .post('/api/users/password')
+      .send({
+        newPassword: '1234567890Aa$',
+        verifyPassword: '1234567890Aa$',
+        currentPassword: 'some_wrong_passwordAa$',
+      })
+      .expect(400);
+    res.body.message.should.equal('Current password is incorrect.');
   });
-  it('should not be able to change password if no new password is at all given', function (done) {
-    agent
-      .post('/api/auth/signin')
-      .send(credentials)
-      .expect(200)
-      .end(function (signinErr) {
-        // Handle signin error
-        if (signinErr) {
-          return done(signinErr);
-        }
-
-        // Change password
-        agent
-          .post('/api/users/password')
-          .send({
-            newPassword: '',
-            verifyPassword: '',
-            currentPassword: credentials.password,
-          })
-          .expect(400)
-          .end(function (err, res) {
-            if (err) {
-              return done(err);
-            }
-            res.body.message.should.equal('Please provide a new password.');
-            return done();
-          });
-      });
+  it('should not be able to change password if no new password is at all given', async function () {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const res = await agent
+      .post('/api/users/password')
+      .send({
+        newPassword: '',
+        verifyPassword: '',
+        currentPassword: credentials.password,
+      })
+      .expect(400);
+    res.body.message.should.equal('Please provide a new password.');
   });
-  it('should not be able to change password if no new password is at all given', function (done) {
-    // Change password
-    agent
+  it('should not be able to change password if no new password is at all given', async function () {
+    const res = await agent
       .post('/api/users/password')
       .send({
         newPassword: '1234567890Aa$',
         verifyPassword: '1234567890Aa$',
         currentPassword: credentials.password,
       })
-      .expect(403)
-      .end(function (err, res) {
-        if (err) {
-          return done(err);
-        }
-        res.body.message.should.equal('Forbidden.');
-        return done();
-      });
+      .expect(403);
+    res.body.message.should.equal('Forbidden.');
   });
 });

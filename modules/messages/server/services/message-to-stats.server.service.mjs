@@ -148,7 +148,8 @@ service.process = function (message, callback) {
           .sort({
             created: 1,
           })
-          .exec(done);
+          .exec()
+          .then(firstMessage => done(null, firstMessage), done);
       },
       function readFirstReply(firstMessage, done) {
         // if no message was found, throw error (there is always the first message
@@ -177,9 +178,11 @@ service.process = function (message, callback) {
             .sort({
               created: 1,
             })
-            .exec(function (err, firstReply) {
-              return done(err, firstMessage, firstReply);
-            });
+            .exec()
+            .then(
+              firstReply => done(null, firstMessage, firstReply),
+              err => done(err),
+            );
         } else {
           return done(null, firstMessage, null);
         }

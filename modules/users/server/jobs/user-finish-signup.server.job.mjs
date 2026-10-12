@@ -80,9 +80,7 @@ const defaultExport = function (job, agendaDone) {
             },
           ])
           .limit(config.limits.maxProcessSignupReminders || 50)
-          .exec(function (err, users) {
-            done(err, users);
-          });
+          .then(users => done(null, users), done);
       },
       // Send emails
       function (users, done) {
@@ -98,21 +96,18 @@ const defaultExport = function (job, agendaDone) {
                 return callback(err);
               } else {
                 // Mark reminder sent and update the reminder count
-                User.findByIdAndUpdate(
-                  user._id,
-                  {
-                    $set: {
-                      publicReminderSent: new Date(),
-                    },
-                    // If the field does not exist, $inc creates the field
-                    // and sets the field to the specified value.
-                    $inc: {
-                      publicReminderCount: 1,
-                    },
+                User.findByIdAndUpdate(user._id, {
+                  $set: {
+                    publicReminderSent: new Date(),
                   },
-                  function (err) {
-                    callback(err);
+                  // If the field does not exist, $inc creates the field
+                  // and sets the field to the specified value.
+                  $inc: {
+                    publicReminderCount: 1,
                   },
+                }).then(
+                  () => callback(),
+                  err => callback(err),
                 );
               }
             });

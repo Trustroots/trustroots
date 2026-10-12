@@ -16,10 +16,10 @@ function createMessageStat(message, done) {
     firstMessageCreated: message.created,
     firstMessageLength: message.content.length,
   });
-  messageStat.save(function (err) {
-    if (err) return done(err);
-    return done(null, messageStat);
-  });
+  messageStat.save().then(
+    () => done(null, messageStat),
+    err => done(err),
+  );
 }
 
 /**
@@ -41,7 +41,9 @@ function addFirstReplyInfo(messageStat, message, done) {
           message.created.getTime() - messageStat.firstMessageCreated.getTime(),
       },
     },
-  ).exec(done);
+  )
+    .exec()
+    .then(result => done(null, result), done);
 }
 
 /**
@@ -78,9 +80,12 @@ service.updateMessageStat = function (message, callback) {
               firstMessageUserTo: message.userFrom,
             },
           ],
-        }).exec(function (err, messageStat) {
-          done(err, messageStat);
-        });
+        })
+          .exec()
+          .then(
+            messageStat => done(null, messageStat),
+            err => done(err),
+          );
       },
       // After searching for the MessageStat, next we take one of three actions:
       // - No MessageStat found, create a new one with the first message
@@ -135,9 +140,11 @@ service.updateMessageStat = function (message, callback) {
             .sort({
               created: 1,
             })
-            .exec(function (err, firstMessage) {
-              return done(err, firstMessage);
-            });
+            .exec()
+            .then(
+              firstMessage => done(null, firstMessage),
+              err => done(err),
+            );
         },
         // Create the MessageStat filling only the first message part
         function (firstMessage, done) {
@@ -184,9 +191,11 @@ service.updateMessageStat = function (message, callback) {
             .sort({
               created: 1,
             })
-            .exec(function (err, firstReply) {
-              return done(err, firstReply);
-            });
+            .exec()
+            .then(
+              firstReply => done(null, firstReply),
+              err => done(err),
+            );
         },
         function (firstReply, done) {
           // If we do:
@@ -248,9 +257,11 @@ service.readMessageStatsOfUser = function (userId, timeNow, callback) {
             firstMessageCreated: -1,
           })
           .populate('firstMessageUserFrom', '_id roles')
-          .exec(function (err, resp) {
-            return done(err, resp);
-          });
+          .exec()
+          .then(
+            resp => done(null, resp),
+            err => done(err),
+          );
       },
       /**
        * Count the statistics

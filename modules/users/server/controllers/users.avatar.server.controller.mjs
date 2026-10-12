@@ -80,53 +80,53 @@ const avatarUpload = (req, res) => {
       }
       const previousVersion = req.user.avatarVersion;
       req.user.avatarVersion = result.version;
-      req.user.save(async error => {
-        if (error) {
-          req.user.avatarVersion = previousVersion;
-          await Promise.all([
-            removeTemporaryUpload(req.file.path),
-            removeVersionAfterSaveFailure(result),
-          ]);
-          return res.status(400).send({
-            message:
-              errorService.getErrorMessage(error) ||
-              'Failed to save the new avatar version.',
-          });
-        }
-        await removeTemporaryUpload(req.file.path);
-        User.findById(req.user._id, 'avatarVersion').exec(
-          async (findError, currentUser) => {
-            if (findError) {
-              log(
-                'error',
-                'User profile avatar upload: failed to verify current avatar version.',
-                findError,
-              );
-            } else if (currentUser?.avatarVersion === result.version) {
-              if (
-                previousVersion &&
-                avatarVersionPattern.test(previousVersion) &&
-                previousVersion !== result.version
-              ) {
-                try {
-                  await avatarProcessing.removeAvatarVersion(
-                    result.avatarDirectory,
-                    previousVersion,
-                  );
-                } catch (cleanupError) {
-                  log(
-                    'error',
-                    'User profile avatar upload: failed to remove the previous avatar version.',
-                    cleanupError,
-                  );
-                }
-              }
-            }
-            return res.send({
-              message: 'Avatar image uploaded.',
-            });
-          },
+      try {
+        await req.user.save();
+      } catch (error) {
+        req.user.avatarVersion = previousVersion;
+        await Promise.all([
+          removeTemporaryUpload(req.file.path),
+          removeVersionAfterSaveFailure(result),
+        ]);
+        return res.status(400).send({
+          message:
+            errorService.getErrorMessage(error) ||
+            'Failed to save the new avatar version.',
+        });
+      }
+      await removeTemporaryUpload(req.file.path);
+      let currentUser;
+      try {
+        currentUser = await User.findById(req.user._id, 'avatarVersion');
+      } catch (findError) {
+        log(
+          'error',
+          'User profile avatar upload: failed to verify current avatar version.',
+          findError,
         );
+      }
+      if (currentUser?.avatarVersion === result.version) {
+        if (
+          previousVersion &&
+          avatarVersionPattern.test(previousVersion) &&
+          previousVersion !== result.version
+        ) {
+          try {
+            await avatarProcessing.removeAvatarVersion(
+              result.avatarDirectory,
+              previousVersion,
+            );
+          } catch (cleanupError) {
+            log(
+              'error',
+              'User profile avatar upload: failed to remove the previous avatar version.',
+              cleanupError,
+            );
+          }
+        }
+      }
+      return res.send({
+        message: 'Avatar image uploaded.',
       });
     },
   };

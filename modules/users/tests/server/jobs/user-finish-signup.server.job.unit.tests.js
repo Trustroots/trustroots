@@ -16,7 +16,7 @@ describe('Job: user finish signup unit tests', () => {
   const jobs = testutils.catchJobs();
   let unConfirmedUser;
 
-  beforeEach(function (done) {
+  beforeEach(async function () {
     unConfirmedUser = new User({
       public: false,
       firstName: 'Full',
@@ -31,19 +31,19 @@ describe('Job: user finish signup unit tests', () => {
       created: moment().subtract(moment.duration({ hours: 4 })),
     });
 
-    unConfirmedUser.save(done);
+    await unConfirmedUser.save();
   });
 
-  afterEach(function (done) {
+  afterEach(async function () {
     sinon.restore();
-    User.deleteMany().exec(done);
+    await User.deleteMany();
   });
 
   it('passes lookup errors to agenda', function (done) {
     sinon.stub(User, 'find').returns({
       and: () => ({
         limit: () => ({
-          exec: cb => cb(new Error('lookup failed')),
+          then: (resolve, reject) => reject(new Error('lookup failed')),
         }),
       }),
     });

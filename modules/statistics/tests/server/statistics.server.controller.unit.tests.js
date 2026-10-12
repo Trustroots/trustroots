@@ -64,7 +64,7 @@ describe('Statistics controller unit tests', () => {
     const dbError = new Error('db unavailable');
 
     it('getUsersCount propagates database errors', done => {
-      sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
+      sinon.stub(User, 'countDocuments').rejects(dbError);
       statistics.getUsersCount(err => {
         err.should.be.Error();
         done();
@@ -72,7 +72,7 @@ describe('Statistics controller unit tests', () => {
     });
 
     it('getNewsletterSubscriptionsCount propagates database errors', done => {
-      sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
+      sinon.stub(User, 'countDocuments').rejects(dbError);
       statistics.getNewsletterSubscriptionsCount(err => {
         err.should.be.Error();
         done();
@@ -80,7 +80,7 @@ describe('Statistics controller unit tests', () => {
     });
 
     it('getLastSeenStatistic propagates database errors', done => {
-      sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
+      sinon.stub(User, 'countDocuments').rejects(dbError);
       statistics.getLastSeenStatistic({ days: 7 }, err => {
         err.should.be.Error();
         done();
@@ -88,7 +88,7 @@ describe('Statistics controller unit tests', () => {
     });
 
     it('getExternalSiteCount propagates database errors', done => {
-      sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
+      sinon.stub(User, 'countDocuments').rejects(dbError);
       statistics.getExternalSiteCount('github', err => {
         err.should.be.Error();
         done();
@@ -96,7 +96,7 @@ describe('Statistics controller unit tests', () => {
     });
 
     it('getMeetOffersCount propagates database errors', done => {
-      sinon.stub(Offer, 'countDocuments').callsFake((query, cb) => cb(dbError));
+      sinon.stub(Offer, 'countDocuments').rejects(dbError);
       statistics.getMeetOffersCount(err => {
         err.should.be.Error();
         done();
@@ -104,7 +104,7 @@ describe('Statistics controller unit tests', () => {
     });
 
     it('getHostOffersCount propagates database errors', done => {
-      sinon.stub(Offer, 'aggregate').callsFake((pipeline, cb) => cb(dbError));
+      sinon.stub(Offer, 'aggregate').rejects(dbError);
       statistics.getHostOffersCount(err => {
         err.should.be.Error();
         done();
@@ -112,7 +112,7 @@ describe('Statistics controller unit tests', () => {
     });
 
     it('getUserLanguagesCount propagates database errors', done => {
-      sinon.stub(User, 'aggregate').callsFake((pipeline, cb) => cb(dbError));
+      sinon.stub(User, 'aggregate').rejects(dbError);
       statistics.getUserLanguagesCount(5, err => {
         err.should.be.Error();
         done();
@@ -120,9 +120,7 @@ describe('Statistics controller unit tests', () => {
     });
 
     it('getExperienceStatistics propagates database errors', done => {
-      sinon
-        .stub(Experience, 'aggregate')
-        .callsFake((pipeline, cb) => cb(dbError));
+      sinon.stub(Experience, 'aggregate').rejects(dbError);
       statistics.getExperienceStatistics(new Date(), err => {
         err.should.be.Error();
         done();
@@ -130,9 +128,7 @@ describe('Statistics controller unit tests', () => {
     });
 
     it('getMessageInteractionStatistics propagates database errors', done => {
-      sinon
-        .stub(MessageStat, 'aggregate')
-        .callsFake((pipeline, cb) => cb(dbError));
+      sinon.stub(MessageStat, 'aggregate').rejects(dbError);
       statistics.getMessageInteractionStatistics(new Date(), err => {
         err.should.be.Error();
         done();
@@ -483,13 +479,11 @@ describe('Statistics controller unit tests', () => {
     });
 
     it('ignores unknown statuses and defaults invalid counts to zero', done => {
-      sinon.stub(Offer, 'aggregate').callsFake((pipeline, cb) => {
-        cb(null, [
-          { _id: 'yes', count: '2' },
-          { _id: 'maybe', count: 'not-a-number' },
-          { _id: 'other', count: '9' },
-        ]);
-      });
+      sinon.stub(Offer, 'aggregate').resolves([
+        { _id: 'yes', count: '2' },
+        { _id: 'maybe', count: 'not-a-number' },
+        { _id: 'other', count: '9' },
+      ]);
 
       statistics.getHostOffersCount((err, counters) => {
         if (err) return done(err);

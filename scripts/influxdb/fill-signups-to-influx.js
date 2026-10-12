@@ -52,8 +52,10 @@ async.waterfall([
 
   // count all docs to be able to show progress
   function countAll(done) {
-    User.count(query).exec(function (err, count) {
-      done(err, count);
+    User.countDocuments(query).exec().then(function (count) {
+      done(null, count);
+    }, function (err) {
+      done(err);
     });
   },
 
@@ -110,8 +112,10 @@ async.waterfall([
     }, 5); // How many docs to process at once?
 
     // Get docs and start processing them
-    User.find(query).exec(function (err, docs) {
+    User.find(query).exec().then(function (docs) {
       q.push(docs);
+    }, function (err) {
+      done(err);
     });
 
     // Done with all docs

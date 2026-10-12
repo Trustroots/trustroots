@@ -24,7 +24,7 @@ describe('Message to stats server service Unit Tests:', function () {
   let user2;
 
   // here we create the users
-  beforeEach(function (done) {
+  beforeEach(async function () {
     user1 = new User({
       firstName: 'Full',
       lastName: 'Name',
@@ -46,10 +46,8 @@ describe('Message to stats server service Unit Tests:', function () {
     });
 
     // save those users to mongoDB
-    user1.save(function (err) {
-      if (err) return done(err);
-      user2.save(done);
-    });
+    await user1.save();
+    await user2.save();
   });
 
   afterEach(function () {
@@ -99,7 +97,7 @@ describe('Message to stats server service Unit Tests:', function () {
     it('returns an error when the first message cannot be found', function (done) {
       sinon.stub(Message, 'findOne').returns({
         sort: () => ({
-          exec: cb => cb(null, null),
+          exec: () => Promise.resolve(null),
         }),
       });
 
@@ -186,7 +184,7 @@ describe('Message to stats server service Unit Tests:', function () {
             async.eachSeries(
               [message1to2, message2to1, shortMessage, longMessage],
               function (msg, callback) {
-                msg.save(callback);
+                msg.save().then(() => callback(), callback);
               },
               done,
             );
@@ -320,7 +318,7 @@ describe('Message to stats server service Unit Tests:', function () {
   });
 
   describe('spam status tags', function () {
-    it('tags confirmed spam messages as yes', function (done) {
+    it('tags confirmed spam messages as yes', async function () {
       const message = new Message({
         content: 'hello',
         userFrom: user1._id,
@@ -328,18 +326,17 @@ describe('Message to stats server service Unit Tests:', function () {
         spam: true,
       });
 
-      message.save(function (err) {
-        if (err) return done(err);
+      await message.save();
 
-        messageToStatsService.process(message, function (processErr, stat) {
-          if (processErr) return done(processErr);
-          stat.tags.spam.should.equal('yes');
-          done();
-        });
+      const stat = await new Promise((resolve, reject) => {
+        messageToStatsService.process(message, (processErr, result) =>
+          processErr ? reject(processErr) : resolve(result),
+        );
       });
+      stat.tags.spam.should.equal('yes');
     });
 
-    it('tags confirmed clean messages as no', function (done) {
+    it('tags confirmed clean messages as no', async function () {
       const message = new Message({
         content: 'hello again',
         userFrom: user1._id,
@@ -347,15 +344,14 @@ describe('Message to stats server service Unit Tests:', function () {
         spam: false,
       });
 
-      message.save(function (err) {
-        if (err) return done(err);
+      await message.save();
 
-        messageToStatsService.process(message, function (processErr, stat) {
-          if (processErr) return done(processErr);
-          stat.tags.spam.should.equal('no');
-          done();
-        });
+      const stat = await new Promise((resolve, reject) => {
+        messageToStatsService.process(message, (processErr, result) =>
+          processErr ? reject(processErr) : resolve(result),
+        );
       });
+      stat.tags.spam.should.equal('no');
     });
   });
 });

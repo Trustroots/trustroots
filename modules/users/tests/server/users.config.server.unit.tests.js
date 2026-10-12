@@ -47,11 +47,11 @@ describe('Users Passport session configuration', () => {
 
   it('rejects stale versions and deleted accounts while accepting the current version', async () => {
     const currentUser = { id: 'member-id', authVersion: 4 };
-    const findOne = sinon.stub().callsFake((query, fields, callback) => {
+    const findOne = sinon.stub().callsFake(query => {
       if (query._id === 'deleted-id') {
-        return callback(null, null);
+        return Promise.resolve(null);
       }
-      return callback(null, currentUser);
+      return Promise.resolve(currentUser);
     });
     sinon.stub(User, 'findOne').callsFake(findOne);
     const handlers = await installSessionHandlers();

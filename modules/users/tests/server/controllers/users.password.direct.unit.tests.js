@@ -40,14 +40,15 @@ function loadController({
     hashPassword: hashPassword || (async password => `$scrypt$${password}`),
     isValidPassword: password =>
       validPassword && typeof password === 'string' && password.length >= 8,
-    findOne(query, projectionOrCallback, callback) {
-      const cb = callback || projectionOrCallback;
-      cb(findOneError || null, user || null);
+    findOne() {
+      return findOneError
+        ? Promise.reject(findOneError)
+        : Promise.resolve(user || null);
     },
-    findById(id, cb) {
-      cb(null, user || null);
+    findById() {
+      return Promise.resolve(user || null);
     },
-    findOneAndUpdate(query, update, options, cb) {
+    findOneAndUpdate(query, update, options) {
       const error = findOneAndUpdateError || null;
       if (!error && user && findOneAndUpdateUser === user) {
         user.lastPasswordUpdate = { query, update, options };
@@ -58,10 +59,6 @@ function loadController({
         if (update.$inc && update.$inc.authVersion) {
           user.authVersion = (user.authVersion || 0) + update.$inc.authVersion;
         }
-      }
-      if (cb) {
-        cb(error, findOneAndUpdateUser);
-        return undefined;
       }
       return error
         ? Promise.reject(error)
@@ -107,8 +104,8 @@ function fakeUser(overrides = {}) {
     password: 'oldpassword1',
     resetPasswordToken: 'reset-token',
     resetPasswordExpires: Date.now() + 3600000,
-    save(cb) {
-      cb();
+    save() {
+      return Promise.resolve();
     },
     authenticate(password) {
       return Promise.resolve(password === 'oldpassword1');
@@ -159,7 +156,9 @@ describe('Password controller direct unit tests', () => {
       );
       (await lookupResponse.waitForResponse()).statusCode.should.equal(200);
 
-      const saveFailure = fakeUser({ save: cb => cb(new Error('save')) });
+      const saveFailure = fakeUser({
+        save: () => Promise.reject(new Error('save')),
+      });
       const saveController = makeController({ user: saveFailure });
       const saveResponse = deferredResponse();
       saveController.forgot(

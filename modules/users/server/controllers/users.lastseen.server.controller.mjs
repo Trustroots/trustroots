@@ -42,9 +42,10 @@ const defaultExport = function (req, res, next) {
       if (hasChangedIpAddress) {
         update.lastIpAddress = clientIpAddress;
       }
-      User.findByIdAndUpdate(req.user.id, update, function (err) {
-        return next(err);
-      });
+      User.findByIdAndUpdate(req.user.id, update).then(
+        () => next(),
+        err => next(err),
+      );
     } else {
       return next();
     }

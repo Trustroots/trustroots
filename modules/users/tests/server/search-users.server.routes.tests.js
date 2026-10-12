@@ -25,8 +25,8 @@ describe('Search users: GET /users?search=string', function () {
   });
 
   // rebuild indexes before tests
-  before(function (done) {
-    User.ensureIndexes(done);
+  before(async function () {
+    await User.ensureIndexes();
   });
   afterEach(utils.clearDatabase);
   after(function () {
@@ -61,7 +61,7 @@ describe('Search users: GET /users?search=string', function () {
           roles: user.roles || ['user'],
         });
         createdUsers.push(createdUser);
-        createdUser.save(cb);
+        createdUser.save().then(() => cb(), cb);
       },
       function (err) {
         callback(err, createdUsers);
@@ -113,10 +113,10 @@ describe('Search users: GET /users?search=string', function () {
         .end(done);
     });
     context('valid request', function () {
-      it('caps result count even when a larger limit is requested', function (done) {
+      it('caps result count even when a larger limit is requested', async function () {
         // These profiles are only searched, so reuse the signed-in fixture's
         // hash and insert them without running password hashing for every row.
-        User.insertMany(
+        await User.insertMany(
           Array.from({ length: 55 }, (_, index) => ({
             username: 'boundedmember' + index,
             firstName: 'Capped',
@@ -128,18 +128,11 @@ describe('Search users: GET /users?search=string', function () {
             public: true,
             roles: ['user'],
           })),
-          function (err) {
-            if (err) return done(err);
-            agent
-              .get('/api/users?search=Capped&limit=100')
-              .expect(200)
-              .end(function (error, response) {
-                if (error) return done(error);
-                response.body.should.have.length(50);
-                done();
-              });
-          },
         );
+        const response = await agent
+          .get('/api/users?search=Capped&limit=100')
+          .expect(200);
+        response.body.should.have.length(50);
       });
       it('excludes members blocked in either direction from location results', function (done) {
         createUsers(

@@ -152,7 +152,7 @@ describe('Admin notes controller unit tests', () => {
       sinon.stub(AdminNote, 'find').returns({
         sort: () => ({
           populate: () => ({
-            exec: cb => cb(null, null),
+            exec: () => Promise.resolve(null),
           }),
         }),
       });
@@ -171,7 +171,7 @@ describe('Admin notes controller unit tests', () => {
       sinon.stub(AdminNote, 'find').returns({
         sort: () => ({
           populate: () => ({
-            exec: cb => cb(new Error('lookup failed')),
+            exec: () => Promise.reject(new Error('lookup failed')),
           }),
         }),
       });

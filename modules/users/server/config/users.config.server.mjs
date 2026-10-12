@@ -34,15 +34,17 @@ const defaultExport = async function (app) {
         _id: session.id,
       },
       '-salt -password',
-      function (err, user) {
-        if (err || !user) {
-          return done(err, user);
+    ).then(
+      user => {
+        if (!user) {
+          return done(null, user);
         }
         if ((user.authVersion || 0) !== session.authVersion) {
           return done(null, false);
         }
         return done(null, user);
       },
+      err => done(err),
     );
   });
 

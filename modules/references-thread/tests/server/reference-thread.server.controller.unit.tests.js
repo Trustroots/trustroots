@@ -165,13 +165,11 @@ describe('Reference thread controller unit tests', () => {
         utils.generateUsersWithSharedPassword(2, { public: true }),
       );
       sinon.stub(ReferenceThread, 'findOne').returns({
-        sort: () => ({
-          exec: cb => cb(null, null),
-        }),
+        sort: () => Promise.resolve(null),
       });
-      sinon.stub(Message, 'findOne').callsFake((query, cb) => {
-        cb(new Error('message lookup failed'));
-      });
+      sinon
+        .stub(Message, 'findOne')
+        .rejects(new Error('message lookup failed'));
 
       let nextArg;
       await new Promise(resolve => {
@@ -195,9 +193,7 @@ describe('Reference thread controller unit tests', () => {
         utils.generateUsersWithSharedPassword(1, { public: true }),
       );
       sinon.stub(ReferenceThread, 'findOne').returns({
-        sort: () => ({
-          exec: cb => cb(new Error('lookup failed')),
-        }),
+        sort: () => Promise.reject(new Error('lookup failed')),
       });
 
       let nextArg;
@@ -326,7 +322,7 @@ describe('Reference thread controller unit tests', () => {
       await createThreadWithMessage(author, other, false);
       sinon
         .stub(ReferenceThread.prototype, 'save')
-        .callsFake(cb => cb(new Error('save failed')));
+        .rejects(new Error('save failed'));
 
       const res = deferredResponse();
       referenceController.createReferenceThread(
@@ -349,10 +345,7 @@ describe('Reference thread controller unit tests', () => {
         utils.generateUsersWithSharedPassword(2, { public: true }),
       );
       await createThreadWithMessage(author, other, false);
-      sinon.stub(User, 'findById').callsFake((id, fields, cb) => {
-        const callback = typeof fields === 'function' ? fields : cb;
-        callback(new Error('user lookup failed'));
-      });
+      sinon.stub(User, 'findById').rejects(new Error('user lookup failed'));
 
       const res = deferredResponse();
       referenceController.createReferenceThread(
@@ -374,14 +367,13 @@ describe('Reference thread controller unit tests', () => {
         await utils.saveUsersWithCachedPasswords(
           utils.generateUsersWithSharedPassword(3, { public: true }),
         );
-      sinon.stub(Thread, 'findOne').callsFake((query, fields, cb) => {
-        const callback = typeof fields === 'function' ? fields : cb;
-        callback(null, {
+      sinon.stub(Thread, 'findOne').returns(
+        Promise.resolve({
           _id: new mongoose.Types.ObjectId(),
           userFrom: author._id,
           userTo: other._id,
-        });
-      });
+        }),
+      );
 
       const res = deferredResponse();
       referenceController.createReferenceThread(

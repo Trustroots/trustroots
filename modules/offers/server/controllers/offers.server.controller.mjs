@@ -186,14 +186,13 @@ service.create = function (req, res) {
 
   // Update timestamp
   offer.updated = new Date();
-  offer.save(function (err) {
-    if (err) {
-      return res.status(400).send({
+  offer.save().then(
+    () => res.json(prepareOfferMutationResponse('Offer saved.')),
+    () =>
+      res.status(400).send({
         message: 'Failed to save offer.',
-      });
-    }
-    res.json(prepareOfferMutationResponse('Offer saved.'));
-  });
+      }),
+  );
 };
 
 /**
@@ -254,9 +253,10 @@ service.update = function (req, res) {
       },
       // Save offer
       function (offer, done) {
-        offer.save(function (err) {
-          done(err);
-        });
+        offer.save().then(
+          () => done(),
+          err => done(err),
+        );
       },
       // Done!
       function () {
@@ -279,17 +279,12 @@ service.delete = function (req, res) {
   if (!req.user || !req.offer.user._id.equals(req.user._id)) {
     return errorService.sendForbidden(res);
   }
-  Offer.findOneAndRemove(
-    {
-      _id: req.offer._id,
-      user: req.user._id,
-    },
-    function (err) {
-      if (err) {
-        return errorService.sendBadRequest(res, err);
-      }
-      res.json(prepareOfferMutationResponse('Offer removed.'));
-    },
+  Offer.findOneAndDelete({
+    _id: req.offer._id,
+    user: req.user._id,
+  }).then(
+    () => res.json(prepareOfferMutationResponse('Offer removed.')),
+    err => errorService.sendBadRequest(res, err),
   );
 };
 
@@ -632,13 +627,15 @@ service.getOffer = function (req, res) {
         if (!offer.user.member || offer.user.member.length === 0) {
           return done(null, offer);
         }
-        User.populate(
-          offer.user,
-          tribes.tribePopulateOptions(),
-          function (err, user) {
+        User.populate(offer.user, tribes.tribePopulateOptions()).then(
+          user => {
             // Overwrite old `offer.user` with new `user` object
             // containing populated `member.tribe` to `offer`
             offer.user = user;
+            done(null, offer);
+          },
+          err => {
+            offer.user = undefined;
             done(err, offer);
           },
         );
@@ -726,21 +723,20 @@ service.offersByUserId = function (req, res, next, userId) {
   }
 
   // Get offers
-  Offer.find(query, function (err, offers) {
-    // Errors
-    if (err) {
-      return next(err);
-    }
-    if (!offers || offers.length === 0) {
-      return errorService.sendNotFound(res);
-    }
+  Offer.find(query).then(
+    offers => {
+      if (!offers || offers.length === 0) {
+        return errorService.sendNotFound(res);
+      }
 
-    // Sanitize offers
-    req.offers = _.map(offers, function (offer) {
-      return sanitizeOffer(offer, req.user);
-    });
-    next();
-  });
+      // Sanitize offers
+      req.offers = _.map(offers, function (offer) {
+        return sanitizeOffer(offer, req.user);
+      });
+      next();
+    },
+    err => next(err),
+  );
 };
 
 // Offer reading middleware
@@ -760,14 +756,17 @@ service.offerById = function (req, res, next, offerId) {
       function (done) {
         Offer.findById(offerId)
           .populate('user', getUserProfile().userListingProfileFields)
-          .exec(function (err, offer) {
-            // No offer
-            if (err) {
+          .then(
+            offer => offer,
+            err => {
               log('error', 'Getting offer by id caused an error. #2kg3g3', {
                 error: err,
               });
-            }
-            if (err || !offer) {
+              return null;
+            },
+          )
+          .then(offer => {
+            if (!offer) {
               return errorService.sendNotFound(res);
             }
             done(null, offer);
@@ -794,11 +793,15 @@ service.offerById = function (req, res, next, offerId) {
  * Clear all offers by user id
  */
 service.removeAllByUserId = function (userId, callback) {
-  Offer.deleteMany(
-    {
-      user: userId,
+  Offer.deleteMany({
+    user: userId,
+  }).then(
+    () => {
+      if (callback) {
+        callback();
+      }
     },
-    function (err) {
+    err => {
       if (callback) {
         callback(err);
       }

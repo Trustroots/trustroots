@@ -212,7 +212,7 @@ export const sendScammerWarning = async (req, res) => {
 /*
  * This middleware sends response with an array of found users
  */
-export const getMessages = (req, res) => {
+export const getMessages = async (req, res) => {
   const user1 = _.get(req, ['body', 'user1']);
   const user2 = _.get(req, ['body', 'user2']);
 
@@ -226,7 +226,7 @@ export const getMessages = (req, res) => {
       message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
-  Message.find({
+  const pairQuery = {
     $or: [
       {
         userFrom: user1,
@@ -237,59 +237,36 @@ export const getMessages = (req, res) => {
         userTo: user1,
       },
     ],
-  })
-    .sort({
-      created: 1,
-    })
-    .populate({
-      path: 'userFrom',
-      select: 'username displayName',
-      model: 'User',
-    })
-    .populate({
-      path: 'userTo',
-      select: 'username displayName',
-      model: 'User',
-    })
-    .exec((err, messages) => {
-      if (err) {
-        return errorService.sendBadRequest(res, err);
-      }
-      ReferenceThread.find({
-        $or: [
-          {
-            userFrom: user1,
-            userTo: user2,
-          },
-          {
-            userFrom: user2,
-            userTo: user1,
-          },
-        ],
+  };
+  const populateUser = path => ({
+    path,
+    select: 'username displayName',
+    model: 'User',
+  });
+  let messages;
+  let referenceThreads;
+  try {
+    messages = await Message.find(pairQuery)
+      .sort({
+        created: 1,
       })
-        .sort({
-          created: 1,
-        })
-        .populate({
-          path: 'userFrom',
-          select: 'username displayName',
-          model: 'User',
-        })
-        .populate({
-          path: 'userTo',
-          select: 'username displayName',
-          model: 'User',
-        })
-        .exec((referenceThreadErr, referenceThreads) => {
-          if (referenceThreadErr) {
-            return errorService.sendBadRequest(res, referenceThreadErr);
-          }
-          return res.send({
-            messages: MessagesController.sanitizeMessages(messages),
-            referenceThreads: referenceThreads || [],
-          });
-        });
-    });
+      .populate(populateUser('userFrom'))
+      .populate(populateUser('userTo'))
+      .exec();
+    referenceThreads = await ReferenceThread.find(pairQuery)
+      .sort({
+        created: 1,
+      })
+      .populate(populateUser('userFrom'))
+      .populate(populateUser('userTo'))
+      .exec();
+  } catch (err) {
+    return errorService.sendBadRequest(res, err);
+  }
+  return res.send({
+    messages: MessagesController.sanitizeMessages(messages),
+    referenceThreads: referenceThreads || [],
+  });
 };
 const defaultInterop = {
   getScammerRecipients,

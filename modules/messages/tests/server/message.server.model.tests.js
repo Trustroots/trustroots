@@ -1,7 +1,7 @@
 /**
  * Module dependencies.
  */
-const should = require('should');
+require('should');
 const mongoose = require('mongoose');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
@@ -19,7 +19,7 @@ let message;
  * Unit tests
  */
 describe('Message Model Unit Tests:', function () {
-  beforeEach(function (done) {
+  beforeEach(async function () {
     userFrom = new User({
       firstName: 'Full',
       lastName: 'Name',
@@ -42,46 +42,33 @@ describe('Message Model Unit Tests:', function () {
     afterEach(utils.clearDatabase);
 
     // Create users
-    userFrom.save(function () {
-      userTo.save(function () {
-        // Check id for userTo
-        User.findOne({ username: userTo.username }, function (err, userTo) {
-          // Create message & continue
-          message = new Message({
-            content: 'Message content',
-            userTo: userTo._id,
-            read: false,
-          });
-          return done();
-        });
-      });
+    await userFrom.save();
+    await userTo.save();
+    // Check id for userTo
+    const savedUserTo = await User.findOne({ username: userTo.username });
+    // Create message & continue
+    message = new Message({
+      content: 'Message content',
+      userTo: savedUserTo._id,
+      read: false,
     });
   });
 
   describe('Method Save', function () {
-    it('should be able to save without problems', function (done) {
-      message.save(function (err) {
-        should.not.exist(err);
-        return done();
-      });
+    it('should be able to save without problems', async function () {
+      await message.save();
     });
 
-    it('should be able to show an error when try to send without content', function (done) {
+    it('should be able to show an error when try to send without content', async function () {
       message.userTo = '';
 
-      message.save(function (err) {
-        should.exist(err);
-        return done();
-      });
+      await message.save().should.be.rejected();
     });
 
-    it('should be able to show an error when try to send without receiver', function (done) {
+    it('should be able to show an error when try to send without receiver', async function () {
       message.content = '';
 
-      message.save(function (err) {
-        should.exist(err);
-        return done();
-      });
+      await message.save().should.be.rejected();
     });
   });
 });

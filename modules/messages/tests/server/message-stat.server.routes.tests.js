@@ -1,5 +1,4 @@
 const should = require('should');
-const async = require('async');
 const request = require('supertest');
 const mongoose = require('mongoose');
 const express = require('./../../../../config/lib/express.mjs');
@@ -46,7 +45,7 @@ describe('Display Message Statistics in User Route', function () {
   });
 
   // create testing messageStats
-  before(function (done) {
+  before(async function () {
     // every thread is initiated by different user (user 0 is the receiver of all)
 
     let userno = 3; // the index of user who sent the first message
@@ -96,13 +95,7 @@ describe('Display Message Statistics in User Route', function () {
     generateMessageStats(2, 0, 0, 0, NOW);
 
     // Save the messageStats to database
-    async.each(
-      messageStats,
-      function (messageStat, callback) {
-        messageStat.save(callback);
-      },
-      done,
-    );
+    await Promise.all(messageStats.map(messageStat => messageStat.save()));
   });
   after(utils.clearDatabase);
 

@@ -61,7 +61,7 @@ describe('Admin messages controller unit tests', () => {
   it('returns 400 when message lookup fails', async () => {
     sinon
       .stub(Message, 'find')
-      .returns(messageQuery(cb => cb(new Error('lookup failed'))));
+      .returns(messageQuery(() => Promise.reject(new Error('lookup failed'))));
 
     const res = mockResponse();
     adminMessages.getMessages(
@@ -78,10 +78,16 @@ describe('Admin messages controller unit tests', () => {
   });
 
   it('returns 400 when reference thread lookup fails', async () => {
-    sinon.stub(Message, 'find').returns(messageQuery(cb => cb(null, [])));
+    sinon
+      .stub(Message, 'find')
+      .returns(messageQuery(() => Promise.resolve([])));
     sinon
       .stub(ReferenceThread, 'find')
-      .returns(messageQuery(cb => cb(new Error('reference lookup failed'))));
+      .returns(
+        messageQuery(() =>
+          Promise.reject(new Error('reference lookup failed')),
+        ),
+      );
 
     const res = mockResponse();
     adminMessages.getMessages(
@@ -98,10 +104,12 @@ describe('Admin messages controller unit tests', () => {
   });
 
   it('uses an empty reference thread list when the lookup returns null', async () => {
-    sinon.stub(Message, 'find').returns(messageQuery(cb => cb(null, [])));
+    sinon
+      .stub(Message, 'find')
+      .returns(messageQuery(() => Promise.resolve([])));
     sinon
       .stub(ReferenceThread, 'find')
-      .returns(messageQuery(cb => cb(null, null)));
+      .returns(messageQuery(() => Promise.resolve(null)));
 
     const res = mockResponse();
     adminMessages.getMessages(

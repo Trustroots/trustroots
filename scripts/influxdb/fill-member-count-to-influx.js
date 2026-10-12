@@ -70,9 +70,12 @@ async.waterfall([
   */
 
   function (done) {
-    User.find(whereQuery).count().exec(function (err, usersCount) {
+    User.countDocuments(whereQuery).exec().then(function (usersCount) {
       console.log('Found ' + usersCount + ' users currently in the DB.\n');
-      done(err, usersCount);
+      done(null, usersCount);
+    }, function (err) {
+      console.log('Found undefined users currently in the DB.\n');
+      done(err);
     });
   },
 
@@ -82,8 +85,10 @@ async.waterfall([
       aggregateMatch,
       aggregateGrouping,
       aggregateSort
-    ], function (err, cursor) {
-      done(err, cursor, usersCount);
+    ]).then(function (cursor) {
+      done(null, cursor, usersCount);
+    }, function (err) {
+      done(err);
     });
 
   },

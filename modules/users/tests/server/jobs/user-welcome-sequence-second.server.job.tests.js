@@ -32,7 +32,7 @@ describe.skip('Job: welcome sequence, second email', function () {
   });
 
   // Create time points to test that welcome sequence is sent in correct time
-  beforeEach(function (done) {
+  beforeEach(function () {
     // Take limit from config and set timer to past
     timeLimit = moment().subtract(
       moment.duration(config.limits.welcomeSequence.second),
@@ -41,12 +41,10 @@ describe.skip('Job: welcome sequence, second email', function () {
     // Move timer 15 minutes to past and future for testing
     timePast = moment(timeLimit).subtract(moment.duration({ minutes: 1 }));
     timeFuture = moment(timeLimit).add(moment.duration({ minutes: 15 }));
-
-    done();
   });
 
   // Create an unconfirmed user
-  beforeEach(function (done) {
+  beforeEach(async function () {
     // Create a new user
     _unConfirmedUser = {
       public: false,
@@ -66,11 +64,11 @@ describe.skip('Job: welcome sequence, second email', function () {
     unConfirmedUser = new User(_unConfirmedUser);
 
     // Save a user to the test db
-    unConfirmedUser.save(done);
+    await unConfirmedUser.save();
   });
 
   // Create a confirmed user
-  beforeEach(function (done) {
+  beforeEach(async function () {
     _confirmedUser = {
       public: true,
       firstName: 'Full',
@@ -88,7 +86,7 @@ describe.skip('Job: welcome sequence, second email', function () {
     confirmedUser = new User(_confirmedUser);
 
     // Save a user to the test db
-    confirmedUser.save(done);
+    await confirmedUser.save();
   });
 
   it('Send second welcome sequence email to confirmed users only', function (done) {
@@ -124,33 +122,35 @@ describe.skip('Job: welcome sequence, second email', function () {
 
   it('Do not send second welcome sequence email to suspended users', function (done) {
     confirmedUser.roles = ['suspended'];
-    confirmedUser.save(function (err) {
-      if (err) return done(err);
-
-      userWelcomeSequenceSecondJobHandler({}, function (err) {
-        if (err) return done(err);
-        // Confirmed who is suspended, did not receive welcome email
-        // Unconfirmed user didn't receive it neither
-        jobs.length.should.equal(0);
-        done();
-      });
-    });
+    confirmedUser
+      .save()
+      .then(() => {
+        userWelcomeSequenceSecondJobHandler({}, function (err) {
+          if (err) return done(err);
+          // Confirmed who is suspended, did not receive welcome email
+          // Unconfirmed user didn't receive it neither
+          jobs.length.should.equal(0);
+          done();
+        });
+      })
+      .catch(done);
   });
 
   it('Do not send second welcome sequence email too early', function (done) {
     confirmedUser.welcomeSequenceSent = timeFuture;
-    confirmedUser.save(function (err) {
-      if (err) return done(err);
-
-      userWelcomeSequenceSecondJobHandler({}, function (err) {
-        if (err) return done(err);
-        jobs.length.should.equal(0);
-        done();
-      });
-    });
+    confirmedUser
+      .save()
+      .then(() => {
+        userWelcomeSequenceSecondJobHandler({}, function (err) {
+          if (err) return done(err);
+          jobs.length.should.equal(0);
+          done();
+        });
+      })
+      .catch(done);
   });
 
-  afterEach(function (done) {
-    User.deleteMany().exec(done);
+  afterEach(async function () {
+    await User.deleteMany();
   });
 });

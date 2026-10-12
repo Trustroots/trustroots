@@ -27,9 +27,9 @@ function mockResponse() {
   return res;
 }
 
-async function loadController(execHandler) {
-  const exec = sinon.stub().callsFake(execHandler);
-  const limit = sinon.stub().withArgs(500).returns({ exec });
+async function loadController(resultHandler) {
+  const exec = { then: resultHandler };
+  const limit = sinon.stub().withArgs(500).returns(exec);
   const sort = sinon.stub().withArgs('firstName username').returns({ limit });
   const select = sinon.stub().withArgs('username firstName roles').returns({
     sort,
@@ -48,7 +48,7 @@ async function loadController(execHandler) {
 describe('Volunteers controller unit tests', () => {
   afterEach(() => sinon.restore());
   it('queries volunteer and alumni roles with bounded selected results', async () => {
-    const harness = await loadController(callback => callback(null, []));
+    const harness = await loadController(resolve => resolve([]));
     const res = mockResponse();
 
     harness.controller.list({}, res);
@@ -67,8 +67,8 @@ describe('Volunteers controller unit tests', () => {
   });
 
   it('returns 400 when the database lookup fails', async () => {
-    const harness = await loadController(callback =>
-      callback(new Error('lookup failed')),
+    const harness = await loadController((resolve, reject) =>
+      reject(new Error('lookup failed')),
     );
     const res = mockResponse();
 
@@ -102,7 +102,7 @@ describe('Volunteers controller unit tests', () => {
         username: 'bothvol',
       },
     ];
-    const harness = await loadController(callback => callback(null, users));
+    const harness = await loadController(resolve => resolve(users));
     const res = mockResponse();
 
     harness.controller.list({}, res);

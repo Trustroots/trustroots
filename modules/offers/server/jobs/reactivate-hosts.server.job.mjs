@@ -39,9 +39,10 @@ function run(job, agendaDone) {
           },
         })
           .populate('user', 'public email firstName displayName')
-          .exec(function (err, offers) {
-            done(err, offers || []);
-          });
+          .then(
+            offers => done(null, offers || []),
+            err => done(err, []),
+          );
       },
       // Send emails
       function (offers, done) {
@@ -57,16 +58,13 @@ function run(job, agendaDone) {
                 return callback(err);
               } else {
                 // Mark reactivation mail sent
-                Offer.findByIdAndUpdate(
-                  offer._id,
-                  {
-                    $set: {
-                      reactivateReminderSent: new Date(),
-                    },
+                Offer.findByIdAndUpdate(offer._id, {
+                  $set: {
+                    reactivateReminderSent: new Date(),
                   },
-                  function (err) {
-                    callback(err);
-                  },
+                }).then(
+                  () => callback(),
+                  err => callback(err),
                 );
               }
             });

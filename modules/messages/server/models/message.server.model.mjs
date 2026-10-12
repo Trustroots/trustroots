@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import mongoosePaginate from 'mongoose-paginate';
+import mongoosePaginate from '../../../../config/lib/mongoose-paginate.mjs';
 const service = {};
 
 /**

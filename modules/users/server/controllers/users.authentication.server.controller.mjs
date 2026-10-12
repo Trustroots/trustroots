@@ -134,13 +134,20 @@ service.signup = function (req, res) {
         user.emailToken = authenticationService.generateEmailToken(user, salt);
 
         // Then save the user
-        user.save(function (err) {
-          // Remove sensitive data before login
-          user.password = undefined;
-          user.salt = undefined;
+        user.save().then(
+          () => {
+            user.password = undefined;
+            user.salt = undefined;
 
-          done(err, user);
-        });
+            done(null, user);
+          },
+          err => {
+            user.password = undefined;
+            user.salt = undefined;
+
+            done(err, user);
+          },
+        );
       },
 
       // Send email
@@ -256,11 +263,10 @@ service.signupValidation = function (req, res) {
 
       // Check username availability against database
       function (done) {
-        User.findOne(
-          {
-            username,
-          },
-          function (err, user) {
+        User.findOne({
+          username,
+        }).then(
+          user => {
             if (user) {
               return done(
                 new Error('Username is not available.'),
@@ -270,6 +276,7 @@ service.signupValidation = function (req, res) {
 
             done();
           },
+          () => done(),
         );
       },
     ],
@@ -445,12 +452,8 @@ service.removeOAuthProvider = function (req, res) {
     user.avatarSource = 'gravatar';
   }
 
-  user.save(function (err) {
-    if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err),
-      });
-    } else {
+  user.save().then(
+    () => {
       req.login(user, function (err) {
         if (err) {
           return res.status(400).send(err);
@@ -460,24 +463,29 @@ service.removeOAuthProvider = function (req, res) {
         user = userProfile.sanitizeOwnProfile(user);
         res.json(user);
       });
-    }
-  });
+    },
+    err => {
+      res.status(400).send({
+        message: errorService.getErrorMessage(err),
+      });
+    },
+  );
 };
 
 /**
  * Confirm email GET from email token
  */
 service.validateEmailToken = function (req, res) {
-  User.findOne(
-    {
-      emailToken: req.params.token,
-    },
-    function (err, user) {
+  User.findOne({
+    emailToken: req.params.token,
+  }).then(
+    user => {
       if (!user) {
         return res.redirect('/confirm-email-invalid');
       }
       res.redirect('/confirm-email/' + req.params.token);
     },
+    () => res.redirect('/confirm-email-invalid'),
   );
 };
 
@@ -489,12 +497,11 @@ service.confirmEmail = function (req, res) {
     [
       function (done) {
         // Check if user exists with this token
-        User.findOne(
-          {
-            emailToken: req.params.token,
-          },
-          function (err, user) {
-            if (!err && user) {
+        User.findOne({
+          emailToken: req.params.token,
+        }).then(
+          user => {
+            if (user) {
               // Will be the returned object when no errors
               const result = {};
 
@@ -508,6 +515,10 @@ service.confirmEmail = function (req, res) {
               });
             }
           },
+          () =>
+            res.status(400).send({
+              message: 'Email confirm token is invalid or has expired.',
+            }),
         );
       },
 
@@ -545,9 +556,9 @@ service.confirmEmail = function (req, res) {
             // Return the document after updates if `new = true`
             new: true,
           },
-          function (err, modifiedUser) {
-            done(err, result, modifiedUser);
-          },
+        ).then(
+          modifiedUser => done(null, result, modifiedUser),
+          err => done(err, result, undefined),
         );
       },
 
@@ -615,10 +626,10 @@ service.resendConfirmation = function (req, res) {
         const user = req.user;
         user.updated = Date.now();
         user.emailToken = authenticationService.generateEmailToken(user, salt);
-        user.save(function (err) {
-          if (err) return done(err);
-          done(null, user);
-        });
+        user.save().then(
+          () => done(null, user),
+          err => done(err),
+        );
       },
 
       // Send email

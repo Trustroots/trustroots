@@ -69,37 +69,38 @@ describe('Support request Model Unit Tests:', function () {
       should.exist(invalid.validateSync().errors.category);
     });
     it('should be able to save without problems', function (done) {
-      support.save(function (err, supportRes) {
-        should.not.exist(err);
-        supportRes.email.should.equal(_support.email);
-        supportRes.username.should.equal(_support.username);
-        supportRes.message.should.equal(_support.message);
-        supportRes.userAgent.should.equal(_support.userAgent);
-        supportRes.reportMember.should.equal(_support.reportMember);
-        supportRes.category.should.equal('other');
-        should.exist(supportRes.sent);
-        return done();
-      });
+      support
+        .save()
+        .then(supportRes => {
+          supportRes.email.should.equal(_support.email);
+          supportRes.username.should.equal(_support.username);
+          supportRes.message.should.equal(_support.message);
+          supportRes.userAgent.should.equal(_support.userAgent);
+          supportRes.reportMember.should.equal(_support.reportMember);
+          supportRes.category.should.equal('other');
+          should.exist(supportRes.sent);
+          return done();
+        })
+        .catch(done);
     });
 
     it('should be able to save without problems without user id', function (done) {
       const supportWithoutUser = new SupportRequest(_support);
 
-      supportWithoutUser.save(function (err, supportRes) {
-        should.not.exist(err);
-        should.not.exist(supportRes.user);
-        return done();
-      });
+      supportWithoutUser
+        .save()
+        .then(supportRes => {
+          should.not.exist(supportRes.user);
+          return done();
+        })
+        .catch(done);
     });
 
-    it('should not be able to save without message', function (done) {
+    it('should not be able to save without message', async function () {
       delete _support.message;
       const supportWithoutMessage = new SupportRequest(_support);
 
-      supportWithoutMessage.save(function (err) {
-        should.exist(err);
-        return done();
-      });
+      await supportWithoutMessage.save().should.be.rejected();
     });
 
     it('should be able to save without problems without any other fields than message', function (done) {
@@ -107,17 +108,19 @@ describe('Support request Model Unit Tests:', function () {
         message: _support.message,
       });
 
-      supportOnlyMessage.save(function (err, supportRes) {
-        should.not.exist(err);
-        should.exist(supportRes.sent);
-        supportRes.message.should.equal(_support.message);
-        should.not.exist(supportRes.user);
-        should.not.exist(supportRes.username);
-        should.not.exist(supportRes.email);
-        should.not.exist(supportRes.reportUser);
-        should.not.exist(supportRes.userAgent);
-        return done();
-      });
+      supportOnlyMessage
+        .save()
+        .then(supportRes => {
+          should.exist(supportRes.sent);
+          supportRes.message.should.equal(_support.message);
+          should.not.exist(supportRes.user);
+          should.not.exist(supportRes.username);
+          should.not.exist(supportRes.email);
+          should.not.exist(supportRes.reportUser);
+          should.not.exist(supportRes.userAgent);
+          return done();
+        })
+        .catch(done);
     });
   });
 });

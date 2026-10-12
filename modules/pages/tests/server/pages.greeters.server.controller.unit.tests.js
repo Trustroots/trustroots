@@ -22,9 +22,9 @@ function mockResponse() {
   return res;
 }
 
-async function loadController(execHandler) {
-  const exec = sinon.stub().callsFake(execHandler);
-  const limit = sinon.stub().withArgs(500).returns({ exec });
+async function loadController(resultHandler) {
+  const exec = { then: resultHandler };
+  const limit = sinon.stub().withArgs(500).returns(exec);
   const sort = sinon.stub().withArgs('displayName username').returns({ limit });
   const select = sinon
     .stub()
@@ -50,7 +50,7 @@ describe('Greeters controller unit tests', () => {
         email: 'private@example.test',
       },
     ];
-    const harness = await loadController(callback => callback(null, users));
+    const harness = await loadController(resolve => resolve(users));
     const res = mockResponse();
 
     harness.controller.list({}, res);
@@ -79,8 +79,8 @@ describe('Greeters controller unit tests', () => {
   });
 
   it('returns a server error when the database lookup fails', async () => {
-    const harness = await loadController(callback =>
-      callback(new Error('lookup failed')),
+    const harness = await loadController((resolve, reject) =>
+      reject(new Error('lookup failed')),
     );
     const res = mockResponse();
 

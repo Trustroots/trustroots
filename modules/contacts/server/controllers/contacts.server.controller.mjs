@@ -53,17 +53,19 @@ service.add = function (req, res) {
               userFrom: req.body.friendUserId,
             },
           ],
-        }).exec(function (err, existingContact) {
-          if (err) return done(err);
-          if (existingContact) {
-            // Contact already exists!
-            return res.status(409).json({
-              message: errorService.getErrorMessageByKey('conflict'),
-              confirmed: existingContact.confirmed,
-            });
-          }
-          done();
-        });
+        }).then(
+          existingContact => {
+            if (existingContact) {
+              // Contact already exists!
+              return res.status(409).json({
+                message: errorService.getErrorMessageByKey('conflict'),
+                confirmed: existingContact.confirmed,
+              });
+            }
+            done();
+          },
+          err => done(err),
+        );
       },
       // Sanitize message
       function (done) {
@@ -93,16 +95,19 @@ service.add = function (req, res) {
             },
           },
           'email displayName roles blocked',
-        ).exec(function (err, friend) {
-          if (!friend)
-            return done(
-              new Error('Failed to load user ' + req.body.friendUserId),
-            );
-          if (friend.blocked?.some(id => id.equals(req.user._id))) {
-            return errorService.sendForbidden(res);
-          }
-          done(err, messageHTML, messagePlain, friend);
-        });
+        ).then(
+          friend => {
+            if (!friend)
+              return done(
+                new Error('Failed to load user ' + req.body.friendUserId),
+              );
+            if (friend.blocked?.some(id => id.equals(req.user._id))) {
+              return errorService.sendForbidden(res);
+            }
+            done(null, messageHTML, messagePlain, friend);
+          },
+          () => done(new Error('Failed to load user ' + req.body.friendUserId)),
+        );
       },
       // Create Contact
       function (messageHTML, messagePlain, friend, done) {
@@ -114,9 +119,10 @@ service.add = function (req, res) {
       },
       // Save contact
       function (messageHTML, messagePlain, friend, done) {
-        contact.save(function (err) {
-          done(err, messageHTML, messagePlain, friend);
-        });
+        contact.save().then(
+          () => done(null, messageHTML, messagePlain, friend),
+          err => done(err, messageHTML, messagePlain, friend),
+        );
       },
       // Send email
       function (messageHTML, messagePlain, friend, done) {
@@ -139,9 +145,10 @@ service.add = function (req, res) {
       /* istanbul ignore else */
       if (err) {
         if (contact) {
-          contact.remove(function () {
-            return errorService.sendBadRequest(res, err);
-          });
+          contact
+            .deleteOne()
+            .catch(() => {})
+            .then(() => errorService.sendBadRequest(res, err));
         } else {
           return errorService.sendBadRequest(res, err);
         }
@@ -155,33 +162,36 @@ service.add = function (req, res) {
  */
 service.remove = function (req, res) {
   const contact = req.contact;
-  contact.remove(function (err) {
-    if (err) {
-      return errorService.sendBadRequest(res, err);
-    } else {
+  contact.deleteOne().then(
+    () => {
       res.status(200).send({
         message: 'Contact removed.',
       });
-    }
-  });
+    },
+    err => errorService.sendBadRequest(res, err),
+  );
 };
 
 /**
  * Clear all contacts by user id
  */
 service.removeAllByUserId = function (userId, callback) {
-  Contact.deleteMany(
-    {
-      $or: [
-        {
-          userTo: userId,
-        },
-        {
-          userFrom: userId,
-        },
-      ],
+  Contact.deleteMany({
+    $or: [
+      {
+        userTo: userId,
+      },
+      {
+        userFrom: userId,
+      },
+    ],
+  }).then(
+    () => {
+      if (callback) {
+        callback();
+      }
     },
-    function (err) {
+    err => {
       if (callback) {
         callback(err);
       }
@@ -201,13 +211,10 @@ service.confirm = function (req, res) {
   // Ta'da!
   const contact = req.contact;
   contact.confirmed = true;
-  contact.save(function (err) {
-    if (err) {
-      return errorService.sendBadRequest(res, err);
-    } else {
-      res.json(contact);
-    }
-  });
+  contact.save().then(
+    () => res.json(contact),
+    err => errorService.sendBadRequest(res, err),
+  );
 };
 
 /**
@@ -256,14 +263,16 @@ service.contactByUserId = function (req, res, next, userId) {
           excludeRestrictedRoles: true,
         }),
       )
-      .exec(function (err, contact) {
-        if (err) return next(err);
-        if (!contact || !contact.userFrom || !contact.userTo) {
-          return errorService.sendNotFound(res);
-        }
-        req.contact = contact;
-        next();
-      });
+      .then(
+        contact => {
+          if (!contact || !contact.userFrom || !contact.userTo) {
+            return errorService.sendNotFound(res);
+          }
+          req.contact = contact;
+          next();
+        },
+        err => next(err),
+      );
   } else {
     next();
   }
@@ -284,23 +293,24 @@ service.contactById = function (req, res, next, contactId) {
           excludeRestrictedRoles: true,
         }),
       )
-      .exec(function (err, contact) {
-        if (err) return next(err);
-
-        // If nothing was found or neither of the user ID's match currently authenticated user's id, return 404
-        if (
-          !contact ||
-          !contact.userFrom ||
-          !contact.userTo ||
-          !req.user ||
-          (!contact.userFrom._id.equals(req.user._id.valueOf()) &&
-            !contact.userTo._id.equals(req.user._id.valueOf()))
-        ) {
-          return errorService.sendNotFound(res);
-        }
-        req.contact = contact;
-        next();
-      });
+      .then(
+        contact => {
+          // If nothing was found or neither of the user ID's match currently authenticated user's id, return 404
+          if (
+            !contact ||
+            !contact.userFrom ||
+            !contact.userTo ||
+            !req.user ||
+            (!contact.userFrom._id.equals(req.user._id.valueOf()) &&
+              !contact.userTo._id.equals(req.user._id.valueOf()))
+          ) {
+            return errorService.sendNotFound(res);
+          }
+          req.contact = contact;
+          next();
+        },
+        err => next(err),
+      );
   } else {
     next();
   }
@@ -340,11 +350,7 @@ service.filterByCommon = function (req, res, next) {
       userTo: 1,
       test: '$userTo',
     },
-  ).exec(function (err, authUserContacts) {
-    if (err) {
-      return next(err);
-    }
-
+  ).then(function (authUserContacts) {
     // No contacts to match, just return empty array
     if (!authUserContacts || !authUserContacts.length) {
       req.contacts = [];
@@ -378,7 +384,7 @@ service.filterByCommon = function (req, res, next) {
       return authUserContactUsers.indexOf(contact.user._id.toString()) > -1;
     });
     next();
-  });
+  }, next);
 };
 
 /**
@@ -466,12 +472,14 @@ service.contactListByUser = function (req, res, next, listUserId) {
         }),
       },
     },
-  ]).exec(function (err, contacts) {
-    if (err) return next(err);
-    if (!contacts) return next(new Error('Failed to load contacts.'));
-    req.contacts = contacts;
-    next();
-  });
+  ]).then(
+    contacts => {
+      if (!contacts) return next(new Error('Failed to load contacts.'));
+      req.contacts = contacts;
+      next();
+    },
+    err => next(err),
+  );
 };
 const add = service.add;
 const confirm = service.confirm;

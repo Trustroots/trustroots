@@ -67,7 +67,7 @@ describe('User signup validation CRUD tests', function () {
         done,
       );
     });
-    it('should show an error when validating taken username', function (done) {
+    it('should show an error when validating taken username', async function () {
       // Create an user
       user = new User({
         public: true,
@@ -80,18 +80,19 @@ describe('User signup validation CRUD tests', function () {
         password: 'TR-I$Aw3$0m4',
         provider: 'local',
       });
-      user.save(function () {
+      await user.save();
+      await new Promise((resolve, reject) => {
         validationFailure(
           {
             username: 'taken-username',
           },
           'username-not-available',
           'Username is not available.',
-          done,
+          err => (err ? reject(err) : resolve()),
         );
       });
     });
-    it('should validate taken username case-insensitively', function (done) {
+    it('should validate taken username case-insensitively', async function () {
       user = new User({
         public: true,
         firstName: 'Full',
@@ -103,14 +104,15 @@ describe('User signup validation CRUD tests', function () {
         password: 'TR-I$Aw3$0m4',
         provider: 'local',
       });
-      user.save(function () {
+      await user.save();
+      await new Promise((resolve, reject) => {
         validationFailure(
           {
             username: 'TAKEN_CASE_USERNAME',
           },
           'username-not-available',
           'Username is not available.',
-          done,
+          err => (err ? reject(err) : resolve()),
         );
       });
     });

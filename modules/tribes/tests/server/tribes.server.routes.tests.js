@@ -33,7 +33,7 @@ describe('Tribe CRUD tests', function () {
       done();
     })().catch(done);
   });
-  beforeEach(function (done) {
+  beforeEach(async function () {
     // Create user credentials
     credentials = {
       username: 'tr_username',
@@ -73,16 +73,9 @@ describe('Tribe CRUD tests', function () {
     tribeNonPublic = new Tribe(_tribeNonPublic);
 
     // Save a user to the test db
-    user.save(function (err) {
-      should.not.exist(err);
-      tribe.save(function (err) {
-        should.not.exist(err);
-        tribeNonPublic.save(function (err) {
-          should.not.exist(err);
-          done(err);
-        });
-      });
-    });
+    await user.save();
+    await tribe.save();
+    await tribeNonPublic.save();
   });
   afterEach(utils.clearDatabase);
   it('formats stored descriptions consistently in catalogue and detail responses', async () => {
@@ -326,84 +319,56 @@ describe('Tribe CRUD tests', function () {
           });
       });
   });
-  it('should be able to read only 2 most popular tribes from page 1', function (done) {
+  it('should be able to read only 2 most popular tribes from page 1', async function () {
     // Create more tribes
     const tribe1 = new Tribe(_tribe);
     tribe1.label = 'Tribe 1';
     tribe1.count = 50;
-    tribe1.save(function (err) {
-      should.not.exist(err);
-      const tribe2 = new Tribe(_tribe);
-      tribe2.label = 'Tribe 2';
-      tribe2.count = 40;
-      tribe2.save(function (err) {
-        should.not.exist(err);
-        const tribe3 = new Tribe(_tribe);
-        tribe3.label = 'Tribe 3';
-        tribe3.count = 30;
-        tribe3.save(function (err) {
-          should.not.exist(err);
-          const tribe4 = new Tribe(_tribe);
-          tribe4.label = 'Tribe 4';
-          tribe4.count = 20;
-          tribe4.save(function (err) {
-            should.not.exist(err);
+    await tribe1.save();
+    const tribe2 = new Tribe(_tribe);
+    tribe2.label = 'Tribe 2';
+    tribe2.count = 40;
+    await tribe2.save();
+    const tribe3 = new Tribe(_tribe);
+    tribe3.label = 'Tribe 3';
+    tribe3.count = 30;
+    await tribe3.save();
+    const tribe4 = new Tribe(_tribe);
+    tribe4.label = 'Tribe 4';
+    tribe4.count = 20;
+    await tribe4.save();
 
-            // Read tribes
-            agent
-              .get('/api/tribes?limit=2') // defaults to `&page=1`
-              .expect(200)
-              .end(function (tribesReadErr, tribesReadRes) {
-                tribesReadRes.body.should.have.length(2);
-                tribesReadRes.body[0].label.should.equal('Tribe 1');
-                tribesReadRes.body[1].label.should.equal('Tribe 2');
-
-                // Call the assertion callback
-                return done(tribesReadErr);
-              });
-          });
-        });
-      });
-    });
+    // Read tribes
+    const tribesReadRes = await agent.get('/api/tribes?limit=2').expect(200);
+    tribesReadRes.body.should.have.length(2);
+    tribesReadRes.body[0].label.should.equal('Tribe 1');
+    tribesReadRes.body[1].label.should.equal('Tribe 2');
   });
-  it('should be able to read most popular tribes from page 2', function (done) {
+  it('should be able to read most popular tribes from page 2', async function () {
     // Create more tribes
     const tribe1 = new Tribe(_tribe);
     tribe1.label = 'Tribe 1';
     tribe1.count = 50;
-    tribe1.save(function (err) {
-      should.not.exist(err);
-      const tribe2 = new Tribe(_tribe);
-      tribe2.label = 'Tribe 2';
-      tribe2.count = 40;
-      tribe2.save(function (err) {
-        should.not.exist(err);
-        const tribe3 = new Tribe(_tribe);
-        tribe3.label = 'Tribe 3';
-        tribe3.count = 30;
-        tribe3.save(function (err) {
-          should.not.exist(err);
-          const tribe4 = new Tribe(_tribe);
-          tribe4.label = 'Tribe 4';
-          tribe4.count = 20;
-          tribe4.save(function (err) {
-            should.not.exist(err);
+    await tribe1.save();
+    const tribe2 = new Tribe(_tribe);
+    tribe2.label = 'Tribe 2';
+    tribe2.count = 40;
+    await tribe2.save();
+    const tribe3 = new Tribe(_tribe);
+    tribe3.label = 'Tribe 3';
+    tribe3.count = 30;
+    await tribe3.save();
+    const tribe4 = new Tribe(_tribe);
+    tribe4.label = 'Tribe 4';
+    tribe4.count = 20;
+    await tribe4.save();
 
-            // Read tribes
-            agent
-              .get('/api/tribes?limit=2&page=2')
-              .expect(200)
-              .end(function (tribesReadErr, tribesReadRes) {
-                tribesReadRes.body.should.have.length(2);
-                tribesReadRes.body[0].label.should.equal('Tribe 3');
-                tribesReadRes.body[1].label.should.equal('Tribe 4');
-
-                // Call the assertion callback
-                return done(tribesReadErr);
-              });
-          });
-        });
-      });
-    });
+    // Read tribes
+    const tribesReadRes = await agent
+      .get('/api/tribes?limit=2&page=2')
+      .expect(200);
+    tribesReadRes.body.should.have.length(2);
+    tribesReadRes.body[0].label.should.equal('Tribe 3');
+    tribesReadRes.body[1].label.should.equal('Tribe 4');
   });
 });

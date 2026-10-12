@@ -35,7 +35,7 @@ function mockResponse() {
 async function loadController(options = {}) {
   const savedSupportRequests = [];
   const SupportRequest = mongoose.model('SupportRequest');
-  sinon.stub(SupportRequest.prototype, 'save').callsFake(function (callback) {
+  sinon.stub(SupportRequest.prototype, 'save').callsFake(function () {
     savedSupportRequests.push(
       Object.fromEntries(
         Object.entries({
@@ -49,7 +49,9 @@ async function loadController(options = {}) {
         }).filter(([, value]) => value !== undefined),
       ),
     );
-    callback(options.saveError || null);
+    return options.saveError
+      ? Promise.reject(options.saveError)
+      : Promise.resolve(this);
   });
   const sendSupportRequest = sinon
     .stub(emailService, 'sendSupportRequest')
