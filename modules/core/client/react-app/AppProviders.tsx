@@ -12,7 +12,6 @@ import { getBootstrapData } from './bootstrap';
 
 export type BootstrapData = {
   env?: string;
-  gaId?: string;
   isNativeMobileApp?: boolean;
   settings: NonNullable<Window['settings']>;
   title: string;
@@ -54,14 +53,13 @@ export function useSettings(): BootstrapData['settings'] {
 }
 
 export function useAppConfig() {
-  const { env, gaId, isNativeMobileApp, title } = useBootstrapData();
-  return { env, gaId, isNativeMobileApp, title };
+  const { env, isNativeMobileApp, title } = useBootstrapData();
+  return { env, isNativeMobileApp, title };
 }
 
 AppProviders.propTypes = {
   bootstrapData: PropTypes.shape({
     env: PropTypes.string,
-    gaId: PropTypes.string,
     isNativeMobileApp: PropTypes.bool,
     settings: PropTypes.object,
     title: PropTypes.string,
