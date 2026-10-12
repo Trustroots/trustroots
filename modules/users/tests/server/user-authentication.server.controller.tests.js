@@ -1068,6 +1068,41 @@ describe('Authentication controller OAuth unit tests', () => {
       login.calledOnce.should.be.true();
     });
 
+    it('preserves a legacy MFA session without an authVersion field', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            mfaEnabled: true,
+            mfaSecretEncrypted: 'encrypted-secret',
+            emailTemporary: 'legacy-new@example.test',
+            emailToken: 'legacy-verified-confirm-token',
+          },
+          $unset: { authVersion: '' },
+        },
+      );
+      const login = sinon.spy((user, cb) => cb());
+      const res = deferredResponse();
+
+      authController.confirmEmail(
+        {
+          params: { token: 'legacy-verified-confirm-token' },
+          user: {
+            _id: saved._id,
+            $locals: { mfaVerified: true },
+          },
+          login,
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      res.body.mfaRequired.should.be.false();
+      login.calledOnce.should.be.true();
+    });
+
     it('does not preserve an MFA session with a stale authVersion', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       await User.updateOne(
