@@ -71,6 +71,7 @@ test.describe('admin moderation inspection flows', () => {
         ).toBeVisible();
       }
 
+      welcomer.roles = ['user', 'welcome-team'];
       await signInViaApi(page, request, welcomer);
       await page.goto('/admin/staff-blockers');
       await expect(

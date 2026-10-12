@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import ProfileEditPage from './ProfileEditPage.component';
+import MemberSessions from './MemberSessions.component';
 import {
   changePassword,
   removeProfile,
@@ -12,6 +13,7 @@ import {
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import type { UserProfile } from '../types';
 import { readApiError } from '../utils/api-error';
+import MfaSettings from './MfaSettings.component';
 
 interface ProfileEditAccountProps {
   user: UserProfile;
@@ -249,6 +251,8 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
         </div>
       </div>
 
+      <MfaSettings />
+
       <div className="panel panel-default">
         <div className="panel-heading">{t('News and updates')}</div>
         <div className="panel-body">
@@ -343,6 +347,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
           {removalMessage && <p className="help-block">{removalMessage}</p>}
         </div>
       </div>
+      <MemberSessions />
     </ProfileEditPage>
   );
 }

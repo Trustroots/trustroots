@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 import MapKit
 import Security
 import SwiftUI
@@ -714,15 +715,32 @@ final class TrustrootsAPI {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.httpBody = try encoder.encode([
+        let credentials: [String: String] = [
             "username": usernameOrEmail,
             "password": password,
-        ])
+        ]
+        request.httpBody = try encoder.encode(credentials)
 
         do {
-            let (data, response) = try await session.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse else {
+            var (data, response) = try await session.data(for: request)
+            guard var httpResponse = response as? HTTPURLResponse else {
                 throw TrustrootsAPIError.invalidResponse
+            }
+            if httpResponse.statusCode == 429,
+               let challenge = signinChallenge(from: data) {
+                let solution = try await solveSigninChallenge(token: challenge.token, difficulty: challenge.difficulty)
+                var retry = request
+                let body = try JSONSerialization.data(withJSONObject: [
+                    "username": usernameOrEmail,
+                    "password": password,
+                    "signinProof": ["token": challenge.token, "solution": solution],
+                ])
+                retry.httpBody = body
+                (data, response) = try await session.data(for: retry)
+                guard let retriedResponse = response as? HTTPURLResponse else {
+                    throw TrustrootsAPIError.invalidResponse
+                }
+                httpResponse = retriedResponse
             }
             guard (200..<300).contains(httpResponse.statusCode) else {
                 throw decodedError(from: data, statusCode: httpResponse.statusCode, isSignIn: true)
@@ -751,6 +769,44 @@ final class TrustrootsAPI {
             throw error
         } catch {
             throw TrustrootsAPIError.requestFailed(error.localizedDescription)
+        }
+    }
+
+    private struct SigninChallenge: Decodable {
+        let token: String
+        let difficulty: Int
+    }
+
+    private func signinChallenge(from data: Data) -> SigninChallenge? {
+        struct Envelope: Decodable { let signinChallenge: SigninChallenge? }
+        guard let challenge = try? decoder.decode(Envelope.self, from: data).signinChallenge,
+              !challenge.token.isEmpty, challenge.token.utf8.count <= 2048,
+              challenge.difficulty == 14 else { return nil }
+        return challenge
+    }
+
+    private func solveSigninChallenge(token: String, difficulty: Int) async throws -> Int {
+        guard difficulty == 14, !token.isEmpty, token.utf8.count <= 2048 else {
+            throw TrustrootsAPIError.serverMessage("Sign-in check was invalid. Please try again later.")
+        }
+        do {
+            return try await Task.detached(priority: .utility) {
+                let start = DispatchTime.now().uptimeNanoseconds
+                for solution in 0...4_194_304 {
+                    if (solution & 0x3fff) == 0 {
+                        try Task.checkCancellation()
+                        if DispatchTime.now().uptimeNanoseconds - start >= 25_000_000_000 {
+                            throw TrustrootsAPIError.serverMessage("Sign-in check timed out. Please try again.")
+                        }
+                    }
+                    let input = Data("\(token):\(solution)".utf8)
+                    let hash = Array(SHA256.hash(data: input))
+                    if hash[0] == 0 && (hash[1] & 0xfc) == 0 { return solution }
+                }
+                throw TrustrootsAPIError.serverMessage("Sign-in check could not be completed. Please try again.")
+            }.value
+        } catch is CancellationError {
+            throw TrustrootsAPIError.serverMessage("Sign-in check timed out. Please try again.")
         }
     }
 

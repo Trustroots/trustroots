@@ -1,3 +1,7 @@
+import {
+  matchToken,
+  setToken,
+} from '../services/action-token.server.service.mjs';
 import errorService from '../../../core/server/services/error.server.service.mjs';
 import analyticsHandler from '../../../core/server/controllers/analytics.server.controller.mjs';
 import emailService from '../../../core/server/services/email.server.service.mjs';
@@ -68,7 +72,7 @@ service.forgot = function (req, res) {
             return reportStat('failed:noUser');
           }
 
-          user.resetPasswordToken = buffer.toString('hex');
+          setToken(user, 'resetPasswordToken', buffer.toString('hex'));
           user.resetPasswordExpires = Date.now() + 24 * 3600000; // 24 hours
 
           user.save(saveErr => {
@@ -99,7 +103,7 @@ service.forgot = function (req, res) {
 service.validateResetToken = function (req, res) {
   User.findOne(
     {
-      resetPasswordToken: req.params.token,
+      resetPasswordToken: matchToken(req.params.token),
       resetPasswordExpires: {
         $gt: Date.now(),
       },
@@ -156,7 +160,7 @@ service.reset = async function (req, res) {
   const now = new Date();
   User.findOneAndUpdate(
     {
-      resetPasswordToken: req.params.token,
+      resetPasswordToken: matchToken(req.params.token),
       resetPasswordExpires: { $gt: now },
     },
     {
@@ -178,6 +182,28 @@ service.reset = async function (req, res) {
           message: err
             ? 'Password reset failed.'
             : 'Password reset token is invalid or has expired.',
+        });
+      }
+
+      if (user.mfaEnabled === true) {
+        // Password recovery changes a credential, but it cannot satisfy the
+        // second factor. Force a fresh password + MFA sign-in.
+        return req.logout(logoutErr => {
+          if (logoutErr) {
+            return res.status(400).send({ message: 'Password reset failed.' });
+          }
+          emailService.sendResetPasswordConfirm(
+            { displayName: user.displayName, email: user.email },
+            emailErr => {
+              if (emailErr) {
+                log(
+                  'error',
+                  'Password reset confirmation email delivery failed.',
+                );
+              }
+              return res.json({ mfaRequired: true });
+            },
+          );
         });
       }
 
@@ -297,6 +323,10 @@ service.changePassword = function (req, res) {
 
       // Login again and return new user
       function (user, done) {
+        if (user.mfaEnabled === true) {
+          user.$locals = user.$locals || {};
+          user.$locals.mfaVerified = req.user.$locals?.mfaVerified === true;
+        }
         req.login(user, function (err) {
           if (err) return done(err);
           done(null, user);

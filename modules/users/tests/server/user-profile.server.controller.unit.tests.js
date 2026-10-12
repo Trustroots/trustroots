@@ -403,6 +403,21 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
+    it('returns 400 without sending a removal email when token persistence fails', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      sinon
+        .stub(User, 'findOneAndUpdate')
+        .callsFake((query, update, options, callback) =>
+          callback(new Error('storage unavailable')),
+        );
+      const { res } = await runHandler(res =>
+        profileController.initializeRemoveProfile({ user: userDoc }, res),
+      );
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Removing your profile failed.');
+    });
+
     it('returns 400 when generating the removal token fails', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
