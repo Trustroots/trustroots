@@ -1,3 +1,4 @@
+import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -33,7 +34,7 @@ function contact(username: string, confirmed = true): ContactListEntry {
 
 function contactWithoutCreatedDate(username: string): ContactListEntry {
   // Preserve the malformed legacy fixture that exercises the missing-date sort fallback.
-  return { ...contact(username), created: undefined as unknown as string };
+  return malformedFixture(contact(username), { created: undefined });
 }
 
 describe('<ContactListPresentational />', () => {
@@ -98,12 +99,14 @@ describe('<ContactListPresentational />', () => {
             _id: 'id-numeric',
             confirmed: true,
             created: '2025-01-02T00:00:00.000Z',
-            user: {
-              _id: 'user-numeric',
-              username: 'numeric-member',
-              displayName: 'Numeric Member',
-              id: 12345,
-            },
+            user: malformedFixture<ContactListEntry['user']>(
+              {
+                _id: 'user-numeric',
+                username: 'numeric-member',
+                displayName: 'Numeric Member',
+              },
+              { id: 12345 },
+            ),
           },
         ]}
         onContactRemoved={() => {}}

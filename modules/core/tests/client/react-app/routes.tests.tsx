@@ -19,7 +19,7 @@ import {
   REACT_OWNED_PATHS,
   REACT_ROUTE_POLICIES,
   normalizePath,
-} from '@/modules/core/shared/react-route-ownership';
+} from '@/modules/core/shared/react-route-ownership.mts';
 
 type UserRouteProps = { user?: AuthUser | null };
 type MembershipRouteProps = UserRouteProps & {

@@ -72,7 +72,10 @@ function asServiceSubscription(
   subscription: MockRelaySubscription,
 ): ServiceSubscription {
   // Relay subscription doubles expose only the close method exercised here.
-  return subscription as unknown as ServiceSubscription;
+  // Install a deliberately minimal external subscription double.
+  const subscriptions = new Map<string, ServiceSubscription>();
+  Reflect.apply(subscriptions.set, subscriptions, ['fixture', subscription]);
+  return subscriptions.get('fixture')!;
 }
 
 function mockVisibilityResponse(payload: unknown, ok = true): Response {
@@ -133,14 +136,14 @@ describe('NostrService', () => {
     });
 
     it('returns existing relay if already connected', async () => {
-      const relay1 = (await service.connect()) as unknown as MockRelayInstance;
+      const relay1 = (await service.connect(), lastRelay());
       const relay2 = await service.connect();
       expect(relay1).toBe(relay2);
       expect(Relay).toHaveBeenCalledTimes(1);
     });
 
     it('creates a new relay if the previous relay has closed', async () => {
-      const relay1 = (await service.connect()) as unknown as MockRelayInstance;
+      const relay1 = (await service.connect(), lastRelay());
       relay1.connected = false;
 
       const relay2 = await service.connect();
@@ -150,7 +153,7 @@ describe('NostrService', () => {
     });
 
     it('clears the relay and subscriptions when the active relay closes', async () => {
-      const relay = (await service.connect()) as unknown as MockRelayInstance;
+      const relay = (await service.connect(), lastRelay());
       service.subscriptions.set(
         'mapNotes',
         asServiceSubscription({ close: jest.fn() }),
@@ -163,7 +166,7 @@ describe('NostrService', () => {
     });
 
     it('leaves a newer relay in place when an older relay closes', async () => {
-      const relay1 = (await service.connect()) as unknown as MockRelayInstance;
+      const relay1 = (await service.connect(), lastRelay());
       relay1.connected = false;
       const relay2 = await service.connect();
       service.subscriptions.set(

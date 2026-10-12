@@ -3,15 +3,16 @@ import React, { useEffect, useState } from 'react';
 
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { trackEvent } from '@/modules/core/client/services/client-runtime';
-import { deleteOffer, getOffers, type Offer } from '../api/offers.api';
+import { deleteOffer, getOffers } from '../api/offers.api';
+import type { OfferPayload } from '../../shared/offer';
 import NoMeets from './NoMeets.component';
 import OfferLocation from './OfferLocation.component';
 
-interface MeetOffer extends Offer {
+type MeetOffer = Omit<OfferPayload, '_id' | 'type' | 'validUntil'> & {
   _id: string;
   type: 'meet';
-  validUntil: string | number | Date;
-}
+  validUntil: string;
+};
 
 interface OfferMeetListPageProps {
   user: { _id: string };
@@ -32,11 +33,16 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
       setIsLoading(true);
 
       try {
-        const data = (await getOffers(user._id, 'meet')) as MeetOffer[];
+        const data = (await getOffers(user._id, 'meet')).filter(
+          (offer): offer is MeetOffer =>
+            offer._id !== undefined &&
+            offer.type === 'meet' &&
+            offer.validUntil !== undefined,
+        );
 
         if (isMounted) {
           setOffers(
-            (data || []).sort(
+            data.sort(
               (left, right) =>
                 new Date(right.validUntil).getTime() -
                 new Date(left.validUntil).getTime(),

@@ -299,8 +299,10 @@ describe('<AdminNewsletter />', () => {
 
   it('handles an empty circle response and can reselect a location source', async () => {
     // Preserve the malformed null payload regression case from the API.
-    mockedTribesApi.read.mockResolvedValueOnce(
-      null as unknown as Awaited<ReturnType<typeof tribesApi.read>>,
+    Reflect.apply(
+      mockedTribesApi.read.mockResolvedValueOnce,
+      mockedTribesApi.read,
+      [null],
     );
     render(<AdminNewsletter />);
 

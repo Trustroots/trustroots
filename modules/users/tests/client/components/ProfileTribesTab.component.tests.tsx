@@ -36,6 +36,7 @@ const memberships: (TribeMembership & { tribe: TribeSummary })[] = [
       slug: 'cyclists',
       label: 'Cyclists',
       count: 42,
+      color: '2f6f4e',
     },
   },
   {
@@ -65,6 +66,9 @@ describe('ProfileTribesTab', () => {
     expect(screen.getByText('42 members')).toBeInTheDocument();
     expect(screen.getByText('No members yet')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Join Cyclists' })).toBeVisible();
+    expect(document.querySelector('.tribe')).toHaveStyle({
+      backgroundColor: '#2f6f4e',
+    });
   });
 
   it('renders no cards when membership data is empty', () => {

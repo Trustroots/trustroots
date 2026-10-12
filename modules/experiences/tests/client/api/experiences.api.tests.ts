@@ -13,18 +13,9 @@ import type {
 } from '@/modules/experiences/shared/experience';
 
 jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
 );
-// The shared axios test transport intentionally models only response data.
-type PartialResponse = { data: unknown };
-type MockRequest = jest.Mock<
-  Promise<PartialResponse>,
-  [url: string, options?: unknown]
->;
-const mockedAxios = axios as unknown as {
-  get: MockRequest;
-  post: MockRequest;
-};
+const mockedAxios = jest.mocked(axios);
 
 afterEach(() => {
   jest.clearAllMocks();

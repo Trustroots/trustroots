@@ -11,7 +11,11 @@ const mockedUsersApi = jest.mocked(usersApi);
 
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('nostr-tools', () => ({
-  nip19: { npubEncode: jest.fn(() => 'npub1suggestedkey') },
+  ...jest.requireActual('nostr-tools'),
+  nip19: {
+    ...jest.requireActual('nostr-tools').nip19,
+    npubEncode: jest.fn(() => 'npub1suggestedkey'),
+  },
 }));
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -130,7 +134,7 @@ describe('ProfileEditNetworks', () => {
     mockedUsersApi.removeSocialAccount.mockRejectedValue(new Error('offline'));
     renderPage({
       additionalProvidersData: {
-        github: { id: 'github-id' },
+        github: { login: 'fictional-login' },
       },
     });
 
@@ -221,7 +225,7 @@ describe('ProfileEditNetworks', () => {
     });
     renderPage({
       additionalProvidersData: {
-        github: { id: 'github-id' },
+        github: { login: 'fictional-login' },
       },
       extSitesWS: '123',
     });
