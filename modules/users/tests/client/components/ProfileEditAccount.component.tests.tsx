@@ -8,10 +8,13 @@ import * as usersApi from '@/modules/users/client/api/users.api';
 import type { UserProfile } from '@/modules/users/client/types';
 
 jest.mock('@/modules/users/client/api/users.api');
-jest.mock('@/modules/users/client/components/PasskeySettings.component', () => ({
-  __esModule: true,
-  default: () => <section>Staff passkey settings</section>,
-}));
+jest.mock(
+  '@/modules/users/client/components/PasskeySettings.component',
+  () => ({
+    __esModule: true,
+    default: () => <section>Staff passkey settings</section>,
+  }),
+);
 const updateUser = jest.mocked(usersApi.update);
 const changePassword = jest.mocked(usersApi.changePassword);
 const resendConfirmation = jest.mocked(usersApi.resendEmailConfirmation);
@@ -75,7 +78,9 @@ function renderPage(overrides: Partial<UserProfile> = {}) {
 describe('ProfileEditAccount', () => {
   it('shows optional passkey settings only to staff', () => {
     const ordinary = renderPage({ roles: ['user'] });
-    expect(screen.queryByText('Staff passkey settings')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Staff passkey settings'),
+    ).not.toBeInTheDocument();
     ordinary.unmount();
     renderPage({ roles: ['user', 'admin'] });
     expect(screen.getByText('Staff passkey settings')).toBeInTheDocument();

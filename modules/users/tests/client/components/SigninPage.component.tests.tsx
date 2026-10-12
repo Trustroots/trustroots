@@ -55,12 +55,20 @@ function renderPage() {
 describe('SigninPage', () => {
   it('completes a staff second factor using a registered passkey', async () => {
     signin.mockResolvedValue({ mfaRequired: true, passkeyAvailable: true });
-    jest.mocked(signinWithPasskey).mockResolvedValue({ _id: 'user-1', username: 'fictional-member' });
+    jest
+      .mocked(signinWithPasskey)
+      .mockResolvedValue({ _id: 'user-1', username: 'fictional-member' });
     renderPage();
-    fireEvent.change(screen.getByLabelText('Email or username'), { target: { value: 'fictional-member' } });
-    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'FictionalPassword123!' } });
+    fireEvent.change(screen.getByLabelText('Email or username'), {
+      target: { value: 'fictional-member' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'FictionalPassword123!' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Login', exact: true }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Use a registered passkey' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Use a registered passkey' }),
+    );
     await waitFor(() => expect(redirectAfterSignin).toHaveBeenCalled());
     expect(signinWithPasskey).toHaveBeenCalledTimes(1);
     expect(verifyMfa).not.toHaveBeenCalled();

@@ -14,4 +14,3 @@ const schema = new mongoose.Schema({
   lastUsedAt: Date,
 });
 mongoose.model('MemberPasskey', schema);
-

@@ -24,7 +24,10 @@ let service = {};
 service = {
   passkeys: {
     rpId: process.env.TRUSTROOTS_PASSKEY_RP_ID || 'localhost',
-    origins: (process.env.TRUSTROOTS_PASSKEY_ORIGINS || 'http://localhost:4300,http://localhost:4301').split(','),
+    origins: (
+      process.env.TRUSTROOTS_PASSKEY_ORIGINS ||
+      'http://localhost:4300,http://localhost:4301'
+    ).split(','),
   },
   // Test-only key; deployments must supply MFA_ENCRYPTION_KEY independently.
   mfaEncryptionKey:

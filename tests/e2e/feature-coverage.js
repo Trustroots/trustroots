@@ -1112,21 +1112,60 @@ const features = [
     id: 'account.staff-passkeys',
     area: AREA.authAccount,
     status: STATUS.active,
-    description: 'Staff can register and manage optional passkeys for second-factor sign-in.',
+    description:
+      'Staff can register and manage optional passkeys for second-factor sign-in.',
     roles: ['admin'],
     references: {
-      clientRoutes: [clientRoute('profile-edit.account', '/profile/edit/account', source.usersClient, { requiresAuth: true })],
+      clientRoutes: [
+        clientRoute(
+          'profile-edit.account',
+          '/profile/edit/account',
+          source.usersClient,
+          { requiresAuth: true },
+        ),
+      ],
       apiRoutes: [
-        apiRoute('GET', '/api/users/passkeys', 'modules/users/server/routes/passkeys.server.routes.mjs'),
-        apiRoute('POST', '/api/users/passkeys/register/options', 'modules/users/server/routes/passkeys.server.routes.mjs'),
-        apiRoute('POST', '/api/users/passkeys/register/verify', 'modules/users/server/routes/passkeys.server.routes.mjs'),
-        apiRoute('DELETE', '/api/users/passkeys/:id', 'modules/users/server/routes/passkeys.server.routes.mjs'),
-        apiRoute('POST', '/api/auth/passkeys/options', 'modules/users/server/routes/passkeys.server.routes.mjs'),
-        apiRoute('POST', '/api/auth/passkeys/verify', 'modules/users/server/routes/passkeys.server.routes.mjs'),
+        apiRoute(
+          'GET',
+          '/api/users/passkeys',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+        apiRoute(
+          'POST',
+          '/api/users/passkeys/register/options',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+        apiRoute(
+          'POST',
+          '/api/users/passkeys/register/verify',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+        apiRoute(
+          'DELETE',
+          '/api/users/passkeys/:id',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+        apiRoute(
+          'POST',
+          '/api/auth/passkeys/options',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+        apiRoute(
+          'POST',
+          '/api/auth/passkeys/verify',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
       ],
     },
-    requiredScenarios: ['A staff member can use a registered passkey after password sign-in.'],
-    relatedSpecs: [spec('staff-passkeys.spec.js', 'staff register, use and remove an optional device passkey')],
+    requiredScenarios: [
+      'A staff member can use a registered passkey after password sign-in.',
+    ],
+    relatedSpecs: [
+      spec(
+        'staff-passkeys.spec.js',
+        'staff register, use and remove an optional device passkey',
+      ),
+    ],
   },
   {
     id: 'account.mfa',

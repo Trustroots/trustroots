@@ -5,7 +5,11 @@ const schema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, required: true },
   session: { type: String, required: true },
   authVersion: { type: Number, required: true },
-  type: { type: String, enum: ['registration', 'authentication'], required: true },
+  type: {
+    type: String,
+    enum: ['registration', 'authentication'],
+    required: true,
+  },
   challenge: { type: String, required: true },
   userHandle: String,
   label: String,
@@ -13,4 +17,3 @@ const schema = new mongoose.Schema({
 });
 schema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 mongoose.model('PasskeyCeremony', schema);
-
