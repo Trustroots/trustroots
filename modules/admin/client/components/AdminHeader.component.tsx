@@ -23,6 +23,7 @@ export default function AdminHeader() {
 
   const pages = [
     { path: 'support', label: 'Support inbox' },
+    { path: 'hackerspaces', label: 'Hackerspaces' },
     {
       path: 'messages',
       label: 'Messages',
