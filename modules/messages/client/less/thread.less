@@ -261,4 +261,62 @@
   @media (max-width: @screen-xs-max) {
     max-height: 25vh;
   }
+
+  // Fill the thread container, which already follows the virtual keyboard
+  // inset. Keep the editor scrollable and reserve a separate actions row.
+  &.message-reply-expanded {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    max-height: none;
+    padding: 8px;
+    background: @body-bg;
+
+    .message-reply-editor-row {
+      display: flex;
+      flex-wrap: nowrap;
+      margin: 0 0 8px;
+
+      > div {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        padding: 0;
+        width: 100%;
+      }
+
+      > div > .panel,
+      .message-draft-preview {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+        margin: 0;
+      }
+
+      > div > .panel {
+        display: flex;
+        flex-direction: column;
+      }
+    }
+
+    .panel #message-reply-content {
+      flex: 1 1 auto;
+      min-height: 0;
+      max-height: none;
+    }
+
+    .message-reply-actions {
+      padding: 0;
+    }
+
+    .message-preview-toggle {
+      margin-left: 0;
+    }
+
+    @media (max-width: @screen-xs-max) {
+      .message-reply-actions {
+        padding-right: 45px;
+      }
+    }
+  }
 }

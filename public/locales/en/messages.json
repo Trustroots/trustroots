@@ -40,6 +40,8 @@
   "Yes, I can host!": "Yes, I can host!",
   "Preview": "Preview",
   "Edit": "Edit",
+  "Expand": "Expand",
+  "Collapse": "Collapse",
   "Message preview": "Message preview",
   "Loading preview…": "Loading preview…",
   "Failed to load preview. Please try again.": "Failed to load preview. Please try again.",

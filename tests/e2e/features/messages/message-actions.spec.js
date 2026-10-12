@@ -1,3 +1,5 @@
+/* global document */
+
 const { annotateFeature, expect, test } = require('../../support/fixtures');
 
 const {
@@ -27,6 +29,61 @@ test.describe.serial('message action feature coverage', () => {
     ['desktop', { width: 1280, height: 800 }],
     ['mobile', { width: 390, height: 844 }],
   ]) {
+    test(`${layout} members can expand and collapse a long draft`, async ({
+      page,
+    }, testInfo) => {
+      annotateFeature(testInfo, 'messages.reply-send', [
+        'Members can enlarge the composer without changing their draft.',
+        'Expanded controls remain visible when the available height changes.',
+      ]);
+      await page.setViewportSize(viewport);
+      await page.goto(`/messages/${portland.username}`);
+      const editor = page.locator('#message-reply-content');
+      const draft = Array(12).fill('A fictional draft line.').join('\n');
+      await editor.fill(draft);
+      const originalMarkup = await editor.innerHTML();
+      const collapsedHeight = await editor.evaluate(el => el.clientHeight);
+      const expand = page.getByRole('button', { name: 'Expand', exact: true });
+      await expand.focus();
+      await page.keyboard.press('Enter');
+      const collapse = page.getByRole('button', {
+        name: 'Collapse',
+        exact: true,
+      });
+      await expect(collapse).toHaveAttribute('aria-expanded', 'true');
+      const expanded = await editor.evaluate(el => ({
+        height: el.clientHeight,
+        contentHeight: el.scrollHeight,
+      }));
+      expect(expanded.height).toBeGreaterThan(collapsedHeight);
+      expect(expanded.contentHeight).toBeLessThanOrEqual(expanded.height);
+      expect(await editor.innerHTML()).toBe(originalMarkup);
+
+      await page.setViewportSize({ width: viewport.width, height: 300 });
+      await page.evaluate(() => {
+        document.documentElement.style.setProperty(
+          '--trustroots-keyboard-inset',
+          '80px',
+        );
+      });
+      await expect(collapse).toBeInViewport();
+      await expect(page.locator('#messageReplySubmit')).toBeInViewport();
+      const shortLayout = await editor.evaluate(el => ({
+        height: el.clientHeight,
+        contentHeight: el.scrollHeight,
+        bottom: el.getBoundingClientRect().bottom,
+        actionsTop: document
+          .querySelector('.message-reply-actions')
+          .getBoundingClientRect().top,
+      }));
+      expect(shortLayout.height).toBeGreaterThan(0);
+      expect(shortLayout.contentHeight).toBeGreaterThan(shortLayout.height);
+      expect(shortLayout.bottom).toBeLessThanOrEqual(shortLayout.actionsTop);
+      await collapse.click();
+      await expect(expand).toHaveAttribute('aria-expanded', 'false');
+      expect(await editor.innerHTML()).toBe(originalMarkup);
+    });
+
     test(`${layout} members can preview, edit and send a formatted draft`, async ({
       page,
       request,
@@ -43,6 +100,7 @@ test.describe.serial('message action feature coverage', () => {
       );
       await page.goto(`/messages/${portland.username}?userId=${recipientId}`);
       const editor = page.locator('#message-reply-content');
+      await page.getByRole('button', { name: 'Expand', exact: true }).click();
       const draft = `<p><strong>Fictional preview ${Date.now()}</strong></p><p><a href="https://outside.example/">External label</a> <a href="/profile/fictional">Internal label</a></p>`;
       await editor.evaluate((element, content) => {
         element.innerHTML = content;
@@ -72,6 +130,9 @@ test.describe.serial('message action feature coverage', () => {
       await page.getByRole('button', { name: 'Edit', exact: true }).click();
       await expect(editor).toBeFocused();
       expect(await editor.innerHTML()).toBe(draft);
+      await expect(
+        page.getByRole('button', { name: 'Collapse', exact: true }),
+      ).toHaveAttribute('aria-expanded', 'true');
       await page.getByRole('button', { name: 'Preview', exact: true }).click();
       await expect(preview.locator('b')).toContainText('Fictional preview');
       const sent = page.waitForResponse(
@@ -87,6 +148,9 @@ test.describe.serial('message action feature coverage', () => {
       await expect(preview).toHaveCount(0);
       await expect(editor).toBeFocused();
       await expect(editor).toBeEmpty();
+      await expect(
+        page.getByRole('button', { name: 'Expand', exact: true }),
+      ).toHaveAttribute('aria-expanded', 'false');
       await expect(page.locator('.message .panel-body b').last()).toContainText(
         'Fictional preview',
       );

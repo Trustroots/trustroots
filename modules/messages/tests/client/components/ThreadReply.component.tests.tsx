@@ -53,6 +53,34 @@ function getForm(container: HTMLElement): HTMLFormElement {
 }
 
 describe('<ThreadReply>', () => {
+  it('expands and collapses without replacing the editor or changing the draft', () => {
+    const { container, getByRole } = render(
+      <ThreadReply cacheKey="expanded-draft" onSend={jest.fn()} />,
+    );
+    const editor = getByRole('textbox');
+    fireEvent.change(editor, { target: { value: 'A longer fictional draft' } });
+    const expand = getByRole('button', { name: 'Expand' });
+    expect(expand).toHaveAttribute('aria-expanded', 'false');
+    expect(expand).toHaveAttribute(
+      'aria-controls',
+      'message-reply-writing-area',
+    );
+    fireEvent.click(expand);
+    expect(getForm(container)).toHaveClass('message-reply-expanded');
+    expect(getByRole('button', { name: 'Collapse' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    expect(getByRole('textbox')).toBe(editor);
+    fireEvent.click(getByRole('button', { name: 'Collapse' }));
+    expect(getForm(container)).not.toHaveClass('message-reply-expanded');
+    expect(getByRole('textbox')).toBe(editor);
+    expect(editor).toHaveValue('A longer fictional draft');
+    expect(window.localStorage.getItem('expanded-draft')).toBe(
+      'A longer fictional draft',
+    );
+  });
+
   it('disables preview for empty drafts and shows formatted content without changing the cached draft', async () => {
     const draft = '<p><strong>Fictional draft</strong></p>';
     previewMessageMock.mockResolvedValue('<p><b>Fictional draft</b></p>');
@@ -181,6 +209,7 @@ describe('<ThreadReply>', () => {
       <ThreadReply cacheKey="preview-draft" onSend={onSend} />,
     );
     fireEvent.change(getByRole('textbox'), { target: { value: draft } });
+    fireEvent.click(getByRole('button', { name: 'Expand' }));
     fireEvent.click(getByRole('button', { name: 'Preview' }));
     await waitFor(() => expect(queryByRole('status')).not.toBeInTheDocument());
     fireEvent.click(getByRole('button', { name: /Send/ }));
@@ -189,11 +218,19 @@ describe('<ThreadReply>', () => {
     );
     expect(onSend).toHaveBeenCalledWith(draft);
     expect(getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    expect(getByRole('button', { name: 'Collapse' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
     expect(window.localStorage.getItem('preview-draft')).toBe(draft);
     fireEvent.click(getByRole('button', { name: /Send/ }));
     await waitFor(() => expect(getByRole('textbox')).toHaveValue(''));
     expect(getByRole('textbox')).toHaveFocus();
     expect(window.localStorage.getItem('preview-draft')).toBeNull();
+    expect(getByRole('button', { name: 'Expand' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
   });
 
   it('focuses the editor when desktop autofocus is enabled', () => {

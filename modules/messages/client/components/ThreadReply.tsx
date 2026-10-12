@@ -22,6 +22,7 @@ export default function ThreadReply({
   const { t } = useTranslation('messages');
 
   const [sending, setSending] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [editorKeyCounter, setEditorKeyCounter] = useState(0);
   const [content, setContent] = useState(() => getDraft() || '');
   const [previewing, setPreviewing] = useState(false);
@@ -84,6 +85,7 @@ export default function ThreadReply({
     if (sent) {
       previewRequest.current += 1;
       setPreviewing(false);
+      setExpanded(false);
       setContent('');
       // There is a bug somewhere that means just setting content to '' does not
       // set the text in the editor after pressing send, we can work around that by
@@ -124,10 +126,13 @@ export default function ThreadReply({
     <form
       id="message-reply"
       name="messageForm"
-      className="form-horizontal"
+      className={`form-horizontal${expanded ? ' message-reply-expanded' : ''}`}
       onSubmit={event => send(event)}
     >
-      <div className="row message-reply-editor-row">
+      <div
+        id="message-reply-writing-area"
+        className="row message-reply-editor-row"
+      >
         <div className="col-xs-12">
           {previewing ? (
             <section
@@ -192,6 +197,15 @@ export default function ThreadReply({
           onClick={previewing ? edit : showPreview}
         >
           {previewing ? t<string>('Edit') : t<string>('Preview')}
+        </button>
+        <button
+          type="button"
+          className="btn btn-default message-size-toggle"
+          aria-expanded={expanded}
+          aria-controls="message-reply-writing-area"
+          onClick={() => setExpanded(value => !value)}
+        >
+          {expanded ? t<string>('Collapse') : t<string>('Expand')}
         </button>
         <small className="text-muted hidden-xs">
           {t<string>(
