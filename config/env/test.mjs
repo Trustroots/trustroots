@@ -22,6 +22,10 @@ let service = {};
  */
 
 service = {
+  // Test-only key; deployments must supply MFA_ENCRYPTION_KEY independently.
+  mfaEncryptionKey:
+    process.env.MFA_ENCRYPTION_KEY ||
+    'dHJ1c3Ryb290cy10ZXN0LWtleS1mb3ItbWZhLW9ubHk=',
   // Test-only VAPID pair. Production keys must be supplied through environment variables.
   webPush: {
     publicKey:
@@ -32,6 +36,16 @@ service = {
   },
   targetedRequestLimits: {
     signin: { windowMs: 60 * 60 * 1000, ipLimit: 10000, identityLimit: 10000 },
+    mfaVerify: {
+      windowMs: 60 * 60 * 1000,
+      ipLimit: 10000,
+      identityLimit: 10000,
+    },
+    mfaManage: {
+      windowMs: 60 * 60 * 1000,
+      ipLimit: 10000,
+      identityLimit: 10000,
+    },
     forgotPassword: {
       windowMs: 60 * 60 * 1000,
       ipLimit: 10000,

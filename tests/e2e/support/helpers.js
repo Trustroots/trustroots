@@ -243,6 +243,8 @@ async function elevateAdminViaApi(request, password) {
 }
 
 async function authenticateViaApi(request, user) {
+  const { provisionFixtureMfa } = require('./mfa');
+  const code = await provisionFixtureMfa(user);
   const credentials = { username: user.username, password: user.password };
   let response = await request.post('/api/auth/signin', {
     data: credentials,
@@ -275,6 +277,13 @@ async function authenticateViaApi(request, user) {
         });
       }
     }
+  }
+  if (code) {
+    expect(response.status()).toBe(202);
+    response = await request.post('/api/auth/mfa/verify', {
+      headers: { 'X-Trustroots-Request': '1' },
+      data: { code },
+    });
   }
   expect(
     response.ok(),

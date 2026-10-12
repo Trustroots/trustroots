@@ -24,9 +24,13 @@ export interface AuthenticatedUser {
   [key: string]: unknown;
 }
 
+export interface MfaChallenge {
+  mfaRequired: true;
+}
+
 export async function signin(
   credentials: SigninCredentials,
-): Promise<AuthenticatedUser> {
+): Promise<AuthenticatedUser | MfaChallenge> {
   try {
     const { data } = await axios.post('/api/auth/signin', credentials);
     return data;
@@ -50,6 +54,11 @@ export async function signin(
     });
     return data;
   }
+}
+
+export async function verifyMfa(code: string): Promise<AuthenticatedUser> {
+  const { data } = await axios.post('/api/auth/mfa/verify', { code });
+  return data;
 }
 
 export async function signup(
@@ -84,6 +93,7 @@ export async function validateSignup(
 export interface ConfirmEmailResponse {
   user: AuthenticatedUser;
   profileMadePublic?: boolean;
+  mfaRequired?: boolean;
 }
 
 export async function confirmEmail(
@@ -103,7 +113,7 @@ export async function forgotPassword(credentials: {
 export async function resetPassword(
   token: string,
   passwordDetails: PasswordDetails,
-): Promise<AuthenticatedUser> {
+): Promise<AuthenticatedUser | MfaChallenge> {
   const { data } = await axios.post(
     `/api/auth/reset/${token}`,
     passwordDetails,

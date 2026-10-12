@@ -37,6 +37,8 @@ export default function SigninPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaCode, setMfaCode] = useState('');
   const hasRedirected = useRef(false);
   const signinDestination = useRef({
     continueSignin: Boolean(continueSignin),
@@ -67,7 +69,16 @@ export default function SigninPage() {
     setErrorMessage('');
 
     try {
-      const signedInUser = await authApi.signin(credentials);
+      const authentication = mfaRequired
+        ? await authApi.verifyMfa(mfaCode)
+        : await authApi.signin(credentials);
+
+      if ('mfaRequired' in authentication) {
+        setMfaRequired(true);
+        setIsLoading(false);
+        return;
+      }
+      const signedInUser = authentication;
 
       let session;
       try {
@@ -129,63 +140,90 @@ export default function SigninPage() {
                 onSubmit={handleSubmit}
               >
                 <fieldset>
-                  <div className="form-group">
-                    <label htmlFor="username" className="lead">
-                      Email or username
-                    </label>
-                    <input
-                      type="text"
-                      autoCapitalize="off"
-                      autoFocus
-                      required
-                      id="username"
-                      name="username"
-                      className="form-control input-lg"
-                      placeholder="Email or username"
-                      value={credentials.username}
-                      disabled={isLoading}
-                      onChange={event =>
-                        updateCredential('username', event.target.value)
-                      }
-                      tabIndex={1}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="password" className="lead">
-                      Password
-                    </label>
-                    <div className="input-group">
+                  {!mfaRequired && (
+                    <div className="form-group">
+                      <label htmlFor="username" className="lead">
+                        Email or username
+                      </label>
+                      <input
+                        type="text"
+                        autoCapitalize="off"
+                        autoFocus
+                        required
+                        id="username"
+                        name="username"
+                        className="form-control input-lg"
+                        placeholder="Email or username"
+                        value={credentials.username}
+                        disabled={isLoading}
+                        onChange={event =>
+                          updateCredential('username', event.target.value)
+                        }
+                        tabIndex={1}
+                      />
+                    </div>
+                  )}
+                  {!mfaRequired && (
+                    <div className="form-group">
+                      <label htmlFor="password" className="lead">
+                        Password
+                      </label>
+                      <div className="input-group">
+                        <input
+                          required
+                          id="password"
+                          name="password"
+                          placeholder="Password"
+                          className="form-control input-lg"
+                          type={showPassword ? 'text' : 'password'}
+                          autoCapitalize="off"
+                          disabled={isLoading}
+                          value={credentials.password}
+                          onChange={event =>
+                            updateCredential('password', event.target.value)
+                          }
+                          tabIndex={2}
+                        />
+                        <span className="input-group-btn">
+                          <button
+                            type="button"
+                            className="btn btn-lg btn-default btn-password-toggle"
+                            aria-label="Toggle password visibility"
+                            onClick={() => setShowPassword(current => !current)}
+                          >
+                            <i
+                              className={`icon-lg ${
+                                showPassword ? 'icon-eye-off' : 'icon-eye'
+                              }`}
+                            />
+                          </button>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {mfaRequired && (
+                    <div className="form-group">
+                      <label htmlFor="mfa-code" className="lead">
+                        Authenticator or recovery code
+                      </label>
                       <input
                         required
-                        id="password"
-                        name="password"
-                        placeholder="Password"
+                        id="mfa-code"
+                        name="mfaCode"
                         className="form-control input-lg"
-                        type={showPassword ? 'text' : 'password'}
+                        autoComplete="one-time-code"
                         autoCapitalize="off"
+                        autoFocus
                         disabled={isLoading}
-                        value={credentials.password}
-                        onChange={event =>
-                          updateCredential('password', event.target.value)
-                        }
-                        tabIndex={2}
+                        value={mfaCode}
+                        onChange={event => setMfaCode(event.target.value)}
                       />
-                      <span className="input-group-btn">
-                        <button
-                          type="button"
-                          className="btn btn-lg btn-default btn-password-toggle"
-                          aria-label="Toggle password visibility"
-                          onClick={() => setShowPassword(current => !current)}
-                        >
-                          <i
-                            className={`icon-lg ${
-                              showPassword ? 'icon-eye-off' : 'icon-eye'
-                            }`}
-                          />
-                        </button>
-                      </span>
+                      <p className="help-block">
+                        Enter the current code from your authenticator app or
+                        one of your recovery codes.
+                      </p>
                     </div>
-                  </div>
+                  )}
                   <div className="form-group">
                     <button
                       type="submit"
@@ -195,26 +233,30 @@ export default function SigninPage() {
                     >
                       {isLoading
                         ? 'Wait...'
+                        : mfaRequired
+                        ? 'Verify and sign in'
                         : continueSignin
                         ? 'Sign in to continue'
                         : 'Login'}
                     </button>
                     <span className="btn space-h" />
-                    <a
-                      href={forgotHref}
-                      className={`btn-link${
-                        authError ? ' btn-lg btn-link' : ''
-                      }`}
-                      tabIndex={4}
-                    >
-                      Forgot?
-                      {authError && (
-                        <span className="hidden-xs">
-                          {' '}
-                          Recover your password
-                        </span>
-                      )}
-                    </a>
+                    {!mfaRequired && (
+                      <a
+                        href={forgotHref}
+                        className={`btn-link${
+                          authError ? ' btn-lg btn-link' : ''
+                        }`}
+                        tabIndex={4}
+                      >
+                        Forgot?
+                        {authError && (
+                          <span className="hidden-xs">
+                            {' '}
+                            Recover your password
+                          </span>
+                        )}
+                      </a>
+                    )}
                   </div>
                 </fieldset>
               </form>

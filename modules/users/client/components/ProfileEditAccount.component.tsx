@@ -13,6 +13,7 @@ import {
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import type { UserProfile } from '../types';
 import { readApiError } from '../utils/api-error';
+import MfaSettings from './MfaSettings.component';
 
 interface ProfileEditAccountProps {
   user: UserProfile;
@@ -249,6 +250,8 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
           </form>
         </div>
       </div>
+
+      <MfaSettings />
 
       <div className="panel panel-default">
         <div className="panel-heading">{t('News and updates')}</div>

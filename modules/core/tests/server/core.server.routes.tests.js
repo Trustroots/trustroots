@@ -340,7 +340,7 @@ describe('Core CRUD tests', function () {
         ...adminCredentials,
       })
         .then(function () {
-          return utils.signIn(adminCredentials, agent);
+          return utils.signInPrivileged(adminCredentials, agent);
         })
         .then(function () {
           agent.get('/admin').end(function (err, res) {

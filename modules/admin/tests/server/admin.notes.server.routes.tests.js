@@ -5,13 +5,13 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 const AdminNote = mongoose.model('AdminNote');
 describe('Admin Notes Log CRUD tests', () => {
+  // Get application
+  let app;
+  let agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
-  // Get application
-  let app;
-  let agent;
   let adminUserId;
   let notesUserId;
   const noteInputHtml =
@@ -77,14 +77,14 @@ describe('Admin Notes Log CRUD tests', () => {
         body.message.should.equal('Forbidden.');
       });
       it('admin users should be allowed to read notes', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .get(`/api/admin/notes?userId=${notesUserId}`)
           .expect(200);
         body.length.should.equal(1);
       });
       it('admin users should be allowed to write notes', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/notes')
           .send({
@@ -95,7 +95,7 @@ describe('Admin Notes Log CRUD tests', () => {
         body.message.should.equal('Note saved.');
       });
       it('notes cannot be empty', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/notes')
           .send({
@@ -106,7 +106,7 @@ describe('Admin Notes Log CRUD tests', () => {
         body.message.should.equal('Empty note.');
       });
       it('notes are formatted before returning', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .get(`/api/admin/notes?userId=${notesUserId}`)
           .expect(200);
