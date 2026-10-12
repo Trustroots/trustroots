@@ -85,6 +85,7 @@ test.describe('seeded message API flows', () => {
         await updateUserByUsername(member.username, {
           $set: { roles: ['user', role] },
         });
+        await authenticateViaApi(request, member);
         expect((await send()).ok()).toBeTruthy();
         const thread = await request.get(
           `/api/messages/${SEEDED_MEMBERS[1].id}`,

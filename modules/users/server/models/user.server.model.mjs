@@ -330,6 +330,38 @@ const UserSchema = new Schema({
     type: Number,
     default: 0,
   },
+  // MFA credentials are excluded from ordinary queries and profile payloads.
+  mfaEnabled: {
+    type: Boolean,
+    default: false,
+  },
+  mfaSecretEncrypted: {
+    type: String,
+    select: false,
+  },
+  mfaPendingSecretEncrypted: {
+    type: String,
+    select: false,
+  },
+  mfaPendingSecretExpires: {
+    type: Date,
+    select: false,
+  },
+  mfaPendingLastTotpCounter: {
+    type: Number,
+    default: -1,
+    select: false,
+  },
+  mfaLastTotpCounter: {
+    type: Number,
+    default: -1,
+    select: false,
+  },
+  mfaRecoveryCodeHashes: {
+    type: [String],
+    default: [],
+    select: false,
+  },
   /* For email confirmations */
   emailToken: {
     type: String,

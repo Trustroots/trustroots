@@ -83,7 +83,7 @@ describe('Admin acquisition stories CRUD tests', () => {
           .expect(403);
       });
       it('admin users should be allowed to read acquisition stories', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/acquisition-stories')
           .set('X-Trustroots-Request', '1')
@@ -97,14 +97,9 @@ describe('Admin acquisition stories CRUD tests', () => {
     });
   });
   it('returns 404 for the retired analysis API', async () => {
-    await utils.signIn(credentialsAdmin, agent);
-    try {
-      await agent
-        .post('/api/admin/acquisition-stories/analysis')
-        .set('X-Trustroots-Request', '1')
-        .expect(404);
-    } finally {
-      await utils.signOut(agent);
-    }
+    await agent
+      .post('/api/admin/acquisition-stories/analysis')
+      .set('X-Trustroots-Request', '1')
+      .expect(404);
   });
 });

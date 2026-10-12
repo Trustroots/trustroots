@@ -4,7 +4,9 @@
 
 Allow people to create, secure, recover, and end access to their Trustroots
 account.
+
 ## Requirements
+
 ### Requirement: Explicit profile response fields
 
 Profile responses SHALL include only explicitly approved fields. Account-owner
@@ -503,19 +505,157 @@ an anonymous session. Session cookie security settings SHALL remain unchanged.
 - **THEN** the client explains that it could not check the session and offers a retry
 - **AND** it does not claim cookies are blocked or redirect
 
+### Requirement: Member session controls and expiry
+
+The system SHALL let an authenticated member list their own active sessions
+using opaque identifiers and identify the current session. Session controls
+SHALL expose no browser fingerprint or precise location. Individual revocation
+and account-wide sign-out SHALL require the member's current password. The
+system SHALL enforce a seven-day idle and 28-day absolute lifetime for every
+signed-in member, including administrators and welcome-team greeters. Privileged
+admin tooling SHALL use a separate password step-up instead of a shorter
+session. Revoked records SHALL remain as tombstones until absolute expiry so
+concurrent requests cannot recreate revoked sessions. Session-control responses
+SHALL not be cached, and mutations SHALL use a dedicated shared request limit.
+Deployments SHALL create the MemberSession TTL index because production disables
+automatic index creation.
+
+#### Scenario: Member reviews active sessions
+
+- **WHEN** a member opens session controls
+- **THEN** they see active sessions for their own account, including which one
+  is current
+- **AND** the response does not expose browser fingerprints or precise location
+
+#### Scenario: Member revokes one session
+
+- **WHEN** a member submits the current password to revoke one of their sessions
+- **THEN** that session cannot access authenticated routes again
+- **AND** other sessions remain active
+
+#### Scenario: Member signs out everywhere
+
+- **WHEN** a member submits the current password to sign out everywhere
+- **THEN** the account authentication version increments
+- **AND** every existing session requires sign-in again
+
+#### Scenario: Session reaches an idle or absolute lifetime
+
+- **WHEN** a member session reaches its idle or absolute lifetime
+- **THEN** the server destroys the session and requires sign-in again
+
 ### Requirement: Account access deployed version
+
 The system SHALL display the deployed build date and commit link on signin, signup, password recovery/reset and not-found pages when build metadata is available.
 
 #### Scenario: Visitor diagnoses account access
+
 - **WHEN** a visitor opens an account access page with build metadata available
 - **THEN** a compact footer exposes the deployed date and commit
 
 ### Requirement: Login route alias
+
 The system SHALL redirect /login to /signin while preserving query parameters.
 
 #### Scenario: Visitor uses the login alias
+
 - **WHEN** a visitor requests /login with a returnTo query parameter
 - **THEN** the visitor is redirected to /signin with the same parameter
+
+### Requirement: Hashed account action credentials
+
+The system SHALL store SHA-256 digests of newly issued email-confirmation, password-reset and account-removal tokens. Email links SHALL contain the original random bearer token and existing URL formats SHALL remain compatible. Stored digests SHALL not be accepted as bearer tokens.
+
+#### Scenario: Member follows a new action link
+
+- **WHEN** an action token is issued
+- **THEN** its digest is stored in the user document and its original value is sent in the email link
+- **AND** a valid original token can complete its action while the stored digest cannot
+
+#### Scenario: Password reset is repeated
+
+- **WHEN** a password reset consumes a valid token
+- **THEN** the token is atomically removed and a subsequent attempt is rejected
+
+#### Scenario: Outstanding legacy link is used
+
+- **WHEN** a member follows an outstanding legacy token link
+- **THEN** the link remains valid under its existing expiry and action requirements
+
+#### Scenario: Signup reminder races with confirmation
+
+- **WHEN** a reminder prepares a fresh confirmation token while another request consumes or replaces the existing token
+- **THEN** the reminder does not restore or overwrite that token and sends no stale reminder
+
+#### Scenario: Operator migrates outstanding legacy credentials
+
+- **WHEN** the maintenance migration is run without an apply flag
+- **THEN** it reports aggregate counts without modifying credentials or disclosing bearer values
+- **WHEN** the migration is explicitly applied
+- **THEN** legacy tokens are replaced by digests without changing expiry or restoring concurrently consumed tokens
+- **AND** repeated application is idempotent
+
+### Requirement: Authenticator-based multi-factor access
+
+Members MAY enable authenticator-app MFA. The system SHALL encrypt pending and
+active TOTP secrets with AES-256-GCM using a dedicated deployment key, and
+SHALL store recovery codes only as one-way hashes. Enrolment and management
+operations SHALL require password confirmation. Each TOTP time step and
+recovery code SHALL be accepted at most once through an atomic database update.
+
+#### Scenario: Member enrols an authenticator
+
+- **WHEN** a signed-in member confirms their password and begins enrolment
+- **THEN** the system returns an authenticator provisioning URI and a short-lived
+  pending secret
+- **AND** MFA remains inactive until a current code is confirmed
+- **AND** successful enrolment displays recovery codes once
+
+#### Scenario: MFA member signs in
+
+- **WHEN** a member with MFA enabled submits a valid password
+- **THEN** the system creates only a short-lived pre-authentication challenge
+- **AND** it establishes a member session only after a valid unused TOTP or
+  recovery code
+- **AND** concurrent attempts cannot consume the same factor more than once
+
+#### Scenario: MFA member manages factors
+
+- **WHEN** a member views, replaces recovery codes, or disables MFA
+- **THEN** the system does not expose TOTP secrets or recovery-code hashes
+- **AND** management requires password confirmation and a valid unused factor
+- **AND** replacing codes invalidates previous codes
+
+#### Scenario: Recovery and confirmation do not bypass MFA
+
+- **WHEN** an MFA member resets a password, confirms an email address, or
+  completes another direct login path
+- **THEN** the operation does not create an MFA-verified session without a
+  successful second factor
+- **AND** MFA-enabled members cannot use member routes until their session has
+  verified the second factor
+
+#### Scenario: MFA verification is rate limited
+
+- **WHEN** a person submits repeated TOTP or recovery-code attempts
+- **THEN** the system applies shared per-IP and per-account limits across
+  application instances
+
+#### Scenario: Privileged member requires verified MFA
+
+- **WHEN** an administrator, moderator, or welcome-team member has no verified
+  MFA session
+- **THEN** account APIs remain blocked until enrolment and verification finish
+- **AND** an unenrolled member can reach the account screen to enrol
+- **AND** sign-in, sign-out, session status, and MFA endpoints remain reachable
+  so the member can establish a verified session
+
+#### Scenario: Native client does not implement MFA challenge
+
+- **WHEN** a member with MFA enabled signs in through a native client that does
+  not support the challenge response
+- **THEN** the client cannot complete sign-in until its MFA challenge flow is
+  implemented
 
 ### Requirement: Production script policy
 
@@ -536,3 +676,82 @@ The system SHALL forbid JavaScript eval and unnonced inline scripts in productio
 
 - **WHEN** the development application serves a document
 - **THEN** eval source maps remain supported under a report-only policy
+
+### Requirement: Account-wide sign-in challenge
+
+The system SHALL enforce a shared account-identifier attempt limit across
+client addresses while retaining the existing address-based limits and bounded
+password-verification queue. After the configured account threshold, it SHALL
+require a short-lived proof-of-work challenge bound to the normalised submitted
+username or email and the trusted client address. The challenge SHALL be
+single-use, and its counter data SHALL not store the identifier in plaintext.
+The system SHALL not permanently lock an account based on submitted sign-in
+attempts.
+
+#### Scenario: Account threshold requires additional work
+
+- **WHEN** sign-in attempts for one normalised account identifier exceed the
+  shared threshold across addresses
+- **THEN** the server returns HTTP 429 with a signed challenge and its fixed
+  difficulty
+- **AND** a valid challenge proof permits one password verification
+
+#### Scenario: Browser and native clients complete the challenge
+
+- **WHEN** a browser, Android client, or iOS client receives the challenge
+- **THEN** it computes the bounded proof without blocking the user interface
+- **AND** retries the credentials with the proof at most once
+
+#### Scenario: Challenge is replayed or bound to another identity
+
+- **WHEN** a challenge is expired, already used, or presented for another
+  account identifier or trusted address
+- **THEN** the server rejects the proof and requires a fresh challenge
+
+#### Scenario: Ordinary address throttling is reached
+
+- **WHEN** a sign-in request reaches an existing address-based limit
+- **THEN** the server returns its ordinary rate-limit response without a
+  proof-of-work challenge
+
+### Requirement: Authenticator MFA
+
+Members MAY enable authenticator-app MFA using TOTP. Enrolment SHALL remain pending until the member confirms a valid code. The system SHALL encrypt pending and active TOTP secrets with AES-256-GCM using a dedicated deployment key, separate from the session and password keys. The deployment SHALL document key generation, configuration, rotation, and backup requirements.
+
+#### Scenario: A member enrols an authenticator
+
+- **WHEN** a member confirms their current password and requests enrolment
+- **THEN** the system returns a one-time authenticator provisioning URI and a pending secret
+- **AND** it does not mark MFA active until a valid, unused TOTP is verified
+- **AND** the pending secret expires after a short period
+
+#### Scenario: An active member verifies MFA
+
+- **WHEN** a member signs in with a valid password and has MFA enabled
+- **THEN** the password check creates only a short-lived pre-authentication challenge
+- **AND** the system establishes an authenticated session only after a valid TOTP or recovery code
+- **AND** concurrent requests cannot consume the same TOTP time step or recovery code more than once
+
+#### Scenario: A member manages MFA
+
+- **WHEN** a member views or changes MFA settings
+- **THEN** the system never returns the active secret or recovery-code hashes
+- **AND** enrolment, replacement recovery codes, and disablement require a recent password confirmation
+- **AND** replacement recovery codes are shown only once and previous codes stop working atomically
+
+#### Scenario: A privileged account lacks verified MFA
+
+- **WHEN** an administrator, moderator, or other configured privileged role has no verified MFA session
+- **THEN** privileged routes treat that account as an ordinary member
+- **AND** promotion of a privileged account requires MFA to be enrolled and verified before privileged access is granted
+
+#### Scenario: Account recovery does not bypass MFA
+
+- **WHEN** a member resets or changes their password, confirms an email address, or uses another direct login path
+- **THEN** the operation cannot establish an MFA-verified session without a successful second factor
+- **AND** credential changes invalidate older sessions
+
+#### Scenario: MFA verification is rate limited
+
+- **WHEN** a client submits too many sign-in challenges, TOTP codes, recovery codes, or password confirmations
+- **THEN** the system applies bounded IP and account or challenge limits and returns a retry response

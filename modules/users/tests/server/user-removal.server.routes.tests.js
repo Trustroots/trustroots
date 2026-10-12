@@ -1,4 +1,7 @@
 const fs = require('fs');
+const {
+  hashToken,
+} = require('../../server/services/action-token.server.service.mjs');
 const async = require('async');
 const should = require('should');
 const sinon = require('sinon');
@@ -187,8 +190,10 @@ describe('User removal CRUD tests', function () {
                 if (findUsersErr) {
                   return done(findUsersErr);
                 }
-                jobs[0].data.text.should.containEql(
-                  '/remove/' + findUser.removeProfileToken,
+                findUser.removeProfileToken.should.equal(
+                  hashToken(
+                    jobs[0].data.text.match(/\/remove\/([a-f0-9]+)/)[1],
+                  ),
                 );
                 should.exist(findUser.removeProfileExpires);
                 should.exist(findUser.removeProfileToken);
@@ -232,8 +237,10 @@ describe('User removal CRUD tests', function () {
                 if (findUsersErr1) {
                   return done(findUsersErr1);
                 }
-                jobs[0].data.text.should.containEql(
-                  '/remove/' + findUser1.removeProfileToken,
+                findUser1.removeProfileToken.should.equal(
+                  hashToken(
+                    jobs[0].data.text.match(/\/remove\/([a-f0-9]+)/)[1],
+                  ),
                 );
                 should.exist(findUser1.removeProfileExpires);
                 should.exist(findUser1.removeProfileToken);
@@ -264,8 +271,10 @@ describe('User removal CRUD tests', function () {
                         if (findUsersErr2) {
                           return done(findUsersErr2);
                         }
-                        jobs[1].data.text.should.containEql(
-                          '/remove/' + findUser2.removeProfileToken,
+                        findUser2.removeProfileToken.should.equal(
+                          hashToken(
+                            jobs[1].data.text.match(/\/remove\/([a-f0-9]+)/)[1],
+                          ),
                         );
                         should.exist(findUser2.removeProfileExpires);
                         should.exist(findUser2.removeProfileToken);

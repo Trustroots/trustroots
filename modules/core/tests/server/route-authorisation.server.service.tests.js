@@ -74,6 +74,28 @@ describe('Route authorisation service', function () {
     roles.should.deepEqual(['guest']);
   });
 
+  it('retains member access for an unenrolled privileged user without member role', function () {
+    let roles;
+    const acl = {
+      areAnyRolesAllowed(requestRoles, path, method, callback) {
+        roles = requestRoles;
+        callback(null, true);
+      },
+    };
+
+    createRouteAuthorisation(acl)(
+      {
+        user: { roles: ['admin'], mfaEnabled: false },
+        route: { path: '/api/examples' },
+        method: 'GET',
+      },
+      mockResponse(),
+      function () {},
+    );
+
+    roles.should.deepEqual(['user']);
+  });
+
   it('passes the user roles and calls next when the ACL allows the request', function () {
     let aclArgs;
     let nextCalled = false;

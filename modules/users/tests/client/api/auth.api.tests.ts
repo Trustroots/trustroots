@@ -1,6 +1,8 @@
 import axios, { type AxiosResponse } from 'axios';
+import { solveSigninChallenge } from '@/modules/users/client/utils/signin-challenge';
 
 import * as authApi from '@/modules/users/client/api/auth.api';
+jest.mock('@/modules/users/client/utils/signin-challenge');
 
 jest.mock('axios', () =>
   jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
@@ -32,6 +34,49 @@ describe('auth.api', () => {
     expect(axiosMock.post).toHaveBeenCalledWith('/api/auth/signin', {
       password: 'secret',
       username: 'ada',
+    });
+  });
+
+  it('solves one elevated-activity challenge and retries the same credentials', async () => {
+    const challenge = { token: 'signed-challenge', difficulty: 14 };
+    axiosMock.post
+      .mockRejectedValueOnce({
+        response: { status: 429, data: { signinChallenge: challenge } },
+      })
+      .mockResolvedValueOnce(response({ _id: 'sample' }));
+    jest.mocked(solveSigninChallenge).mockResolvedValue({
+      token: challenge.token,
+      solution: 42,
+    });
+    const credentials = { username: 'sample', password: 'example' };
+    await expect(authApi.signin(credentials)).resolves.toEqual({
+      _id: 'sample',
+    });
+    expect(solveSigninChallenge).toHaveBeenCalledWith(challenge);
+    expect(axiosMock.post).toHaveBeenLastCalledWith('/api/auth/signin', {
+      ...credentials,
+      signinProof: { token: challenge.token, solution: 42 },
+    });
+  });
+  it.each([
+    {},
+    { response: { status: 400 } },
+    { response: { status: 429 } },
+    { response: { status: 429, data: {} } },
+  ])('preserves ordinary sign-in failures', async error => {
+    axiosMock.post.mockRejectedValue(error);
+    await expect(
+      authApi.signin({ username: 'sample', password: 'example' }),
+    ).rejects.toBe(error);
+  });
+  it('verifies the second factor for a staged sign-in', async () => {
+    axiosMock.post.mockResolvedValue(response({ _id: 'user-1' }));
+
+    await expect(authApi.verifyMfa('123456')).resolves.toEqual({
+      _id: 'user-1',
+    });
+    expect(axiosMock.post).toHaveBeenCalledWith('/api/auth/mfa/verify', {
+      code: '123456',
     });
   });
 

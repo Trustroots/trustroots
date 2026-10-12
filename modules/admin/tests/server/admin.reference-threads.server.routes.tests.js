@@ -5,13 +5,13 @@ const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const ReferenceThread = mongoose.model('ReferenceThread');
 describe('Admin Reference thread CRUD tests', () => {
+  // Get application
+  let app;
+  let agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
-  // Get application
-  let app;
-  let agent;
   let users;
   let userRegular1Id;
   let userRegular2Id;
@@ -69,7 +69,7 @@ describe('Admin Reference thread CRUD tests', () => {
         body.message.should.equal('Forbidden.');
       });
       it('admin users should be allowed to read reference threads', async () => {
-        await utils.signIn(_users[0], agent);
+        await utils.signInPrivileged(_users[0], agent);
         const { body } = await agent
           .get('/api/admin/reference-threads')
           .expect(200);

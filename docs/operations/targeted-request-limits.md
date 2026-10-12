@@ -1,7 +1,7 @@
 # Targeted request-limit index rollout
 
-The targeted sign-in, recovery, confirmation-resend and avatar-upload limits
-store counters in the `requestlimits` collection. Before enabling the updated
+The targeted sign-in, recovery, confirmation-resend, session-management and
+avatar-upload limits store counters in the `requestlimits` collection. Before enabling the updated
 application in production, create its unique and TTL indexes against the
 application database:
 
@@ -25,3 +25,7 @@ key, so existing counters will no longer be found until their TTL cleanup
 completes; coordinate a rotation as a reset of active request limits.
 Test configuration sets high limits so route suites that deliberately issue
 many requests from localhost remain unaffected.
+
+Session-management mutations use a separate `manageSessions` policy in
+`targetedRequestLimits` so password-protected session changes do not consume
+the confirmation-email resend allowance.

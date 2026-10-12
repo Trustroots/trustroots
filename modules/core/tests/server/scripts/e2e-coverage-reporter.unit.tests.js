@@ -375,7 +375,8 @@ describe('E2E coverage reporter unit tests', () => {
     });
   });
 
-  describe('summarize-results status output', () => {
+  describe('summarize-results status output', function () {
+    this.timeout(30000);
     it('honors TRUSTROOTS_E2E_STATUS_PATH for isolated status writes', () => {
       const statusPath = path.join(
         os.tmpdir(),

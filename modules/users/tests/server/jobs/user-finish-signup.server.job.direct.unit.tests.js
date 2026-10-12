@@ -23,6 +23,7 @@ describe('Job: user finish signup direct unit tests', function () {
     const User = mongoose.model('User');
     sinon.stub(User, 'find').returns(query);
     sinon.stub(User, 'findByIdAndUpdate');
+    sinon.stub(User, 'updateOne').callsArgWith(2, null, { matchedCount: 1 });
     sinon.stub(emailService, 'sendSignupEmailReminder');
     sinon.stub(config, 'limits').value(overrides.limits);
     const log = sinon.stub(winston.Logger.prototype, 'log');

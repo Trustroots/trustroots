@@ -66,6 +66,7 @@ const source = {
   usersClient: 'modules/users/client/config/users.client.routes.js',
   usersServer: 'modules/users/server/routes/users.server.routes.js',
   usersAuthServer: 'modules/users/server/routes/auth.server.routes.js',
+  usersSessionsServer: 'modules/users/server/routes/sessions.server.routes.mjs',
   usersBlockServer: 'modules/users/server/routes/users-block.server.routes.js',
 };
 
@@ -88,6 +89,7 @@ function apiRoute(method, path, routeSource, extra = {}) {
 }
 
 const specPaths = {
+  'signin-challenge.spec.js': 'features/auth-account/signin-challenge.spec.js',
   'account-email-tokens.spec.js':
     'features/auth-account/account-email-tokens.spec.js',
   'account-settings.spec.js': 'features/auth-account/account-settings.spec.js',
@@ -806,6 +808,7 @@ const features = [
     requiredScenarios: [
       'Sign in page links to signup.',
       'Username sign in succeeds.',
+      'Elevated account activity requires a proof before sign-in succeeds.',
       'Email sign in succeeds.',
       'Continue query redirects to the original protected destination.',
     ],
@@ -815,6 +818,10 @@ const features = [
         'sign in and sign up pages link to each other',
       ),
       spec('auth-smoke.spec.js', 'signed out user can sign in with username'),
+      spec(
+        'signin-challenge.spec.js',
+        'a member signs in through the browser after an account-wide challenge',
+      ),
       spec('auth-smoke.spec.js', 'signed out user can sign in with email'),
     ],
   },
@@ -1089,6 +1096,47 @@ const features = [
     relatedSpecs: [],
   },
   {
+    id: 'account.mfa',
+    area: AREA.authAccount,
+    status: STATUS.active,
+    description:
+      'Members can enrol authenticator MFA, protect sign-in, and recover with single-use codes.',
+    roles: ['member', 'visitor'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'profile-edit.account',
+          '/profile/edit/account',
+          source.usersClient,
+          {
+            requiresAuth: true,
+          },
+        ),
+        clientRoute('signin', '/signin', source.usersClient),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/users/mfa', source.usersServer),
+        apiRoute('POST', '/api/users/mfa/enrol', source.usersServer),
+        apiRoute('POST', '/api/users/mfa/enrol/verify', source.usersServer),
+        apiRoute('POST', '/api/users/mfa/recovery-codes', source.usersServer),
+        apiRoute('POST', '/api/users/mfa/disable', source.usersServer),
+        apiRoute('POST', '/api/auth/mfa/verify', source.usersAuthServer),
+      ],
+    },
+    requiredScenarios: [
+      'Member confirms their password before enrolling an authenticator.',
+      'Authenticator enrolment returns recovery codes only once.',
+      'MFA-enabled sign-in requires a second factor before establishing a session.',
+      'Profile API responses do not expose MFA secrets or recovery hashes.',
+    ],
+    relatedSpecs: [
+      spec(
+        'account-settings.spec.js',
+        'members can enrol an authenticator and use it at sign-in',
+      ),
+    ],
+  },
+  {
     id: 'account.details-update',
     area: AREA.authAccount,
     status: STATUS.active,
@@ -1150,6 +1198,44 @@ const features = [
       spec(
         'authenticated.spec.js',
         'member can download their combined data export',
+      ),
+    ],
+  },
+  {
+    id: 'account.session-controls',
+    area: AREA.authAccount,
+    status: STATUS.active,
+    description:
+      'Members can inspect active sessions and revoke one session or all sessions after confirming their password.',
+    roles: ['member'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'profile-edit.account',
+          '/profile/edit/account',
+          source.usersClient,
+          { requiresAuth: true },
+        ),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/auth/sessions', source.usersSessionsServer),
+        apiRoute('DELETE', '/api/auth/sessions', source.usersSessionsServer),
+        apiRoute(
+          'DELETE',
+          '/api/auth/sessions/:id',
+          source.usersSessionsServer,
+        ),
+      ],
+    },
+    requiredScenarios: [
+      'Members can identify the current session and see another active session.',
+      'A member can revoke another session after confirming their password.',
+      'A revoked session can no longer access authenticated APIs.',
+    ],
+    relatedSpecs: [
+      spec(
+        'account-settings.spec.js',
+        'members can revoke another active session from account settings',
       ),
     ],
   },
