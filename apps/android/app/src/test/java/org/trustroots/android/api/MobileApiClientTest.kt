@@ -7,6 +7,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertThrows
 import org.junit.Test
+import kotlinx.coroutines.runBlocking
+import com.sun.net.httpserver.HttpServer
+import java.net.InetSocketAddress
 
 class MobileApiClientTest {
     @Test
@@ -118,6 +121,69 @@ class MobileApiClientTest {
     fun verifiesSigninProofUsingTheServerHashFormat() {
         assertTrue(isSigninProofSolution("fictional-challenge", 13049))
         assertFalse(isSigninProofSolution("fictional-challenge", 13048))
+    }
+
+    @Test
+    fun doesNotTreatPreAuthCookieOnMfaChallengeAsMemberSession() = runBlocking {
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        var requests = 0
+        server.createContext("/api/auth/signin") { exchange ->
+            requests += 1
+            val (status, body) = if (requests == 1) {
+                429 to """{"signinChallenge":{"token":"fictional-challenge","difficulty":14}}"""
+            } else {
+                202 to """{"username":"quiet-fox","displayName":"Quiet Fox","public":true,"mfaRequired":true,"challenge":"pre-auth-challenge"}"""
+            }
+            exchange.responseHeaders.add("Content-Type", "application/json")
+            if (requests == 2) {
+                exchange.responseHeaders.add("Set-Cookie", "connect.sid=pre-auth-session; Path=/; HttpOnly")
+            }
+            val response = body.toByteArray()
+            exchange.sendResponseHeaders(status, response.size.toLong())
+            exchange.responseBody.use { it.write(response) }
+        }
+        server.start()
+
+        try {
+            val result = MobileApiClient("http://127.0.0.1:${server.address.port}")
+                .signIn("quiet-fox", "fictional-password")
+            val error = result.exceptionOrNull()
+            val mobileError = error as? MobileApiException
+
+            assertEquals("Proof retry failed: ${error?.message}", 2, requests)
+            assertTrue("An MFA challenge must not produce a member session", result.isFailure)
+            assertTrue(mobileError != null)
+            assertEquals(202, mobileError?.statusCode)
+            assertTrue(mobileError?.message.orEmpty().contains("browser", ignoreCase = true))
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun rejectsMfaMarkerEvenWhenResponseStatusIsSuccessful() = runBlocking {
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/api/auth/signin") { exchange ->
+            exchange.responseHeaders.add("Content-Type", "application/json")
+            exchange.responseHeaders.add("Set-Cookie", "connect.sid=pre-auth-session; Path=/; HttpOnly")
+            val body = """{"username":"quiet-fox","displayName":"Quiet Fox","public":true,"mfaRequired":true,"challenge":"pre-auth-challenge"}"""
+                .toByteArray()
+            exchange.sendResponseHeaders(200, body.size.toLong())
+            exchange.responseBody.use { it.write(body) }
+        }
+        server.start()
+
+        try {
+            val result = MobileApiClient("http://127.0.0.1:${server.address.port}")
+                .signIn("quiet-fox", "fictional-password")
+            val error = result.exceptionOrNull() as? MobileApiException
+
+            assertTrue("An MFA marker must not produce a member session", result.isFailure)
+            assertEquals(202, error?.statusCode)
+            assertTrue(error?.message.orEmpty().contains("browser", ignoreCase = true))
+        } finally {
+            server.stop(0)
+        }
     }
 
     @Test

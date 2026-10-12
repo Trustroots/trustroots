@@ -292,7 +292,10 @@ async function authenticateViaApi(request, user) {
 
   // Privileged browser sessions stay signed in as members; unlock admin APIs
   // with the same password so specs can exercise moderation tools.
-  const roles = user.roles || [];
+  const responseJSON = await response.json().catch(() => null);
+  const roles =
+    responseJSON?.roles ||
+    (responseJSON?.isGreeter ? ['welcome-team'] : user.roles || []);
   if (roles.includes('admin') || roles.includes('welcome-team')) {
     await elevateAdminViaApi(request, user.password);
   } else if (user.username === SEEDED_ADMIN.username) {

@@ -10,9 +10,9 @@ Add combined scenarios for member sessions, account action tokens, sign-in chall
 
 ## Impact
 
-Test fixtures, feature coverage registry, account-access browser/API scenarios and CI grouping. Depends on the four existing account-access PRs being integrated; does not merge copies of their implementations into this proposal. Production behaviour remains unchanged.
+Test fixtures, feature coverage registry, account-access browser/API scenarios and native client contracts. Depends on the four existing account-access PRs being integrated. Correct the session lifetime initialisation and native intermediate-response handling exercised by the new regressions, and require the test runner to use an explicit test environment and database.
 
 ## Delivery
 
-This is a proposal-only change. Runtime implementation, migrations and deployment are separate follow-up work after the design is reviewed. The proposal remains unarchived until implementation is complete.
+Implement the combined regression matrix and the compatibility corrections together, then archive the proposal and retain the scenarios in the living account-access specification.
 

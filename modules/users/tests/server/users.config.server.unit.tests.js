@@ -39,7 +39,9 @@ describe('Users Passport session configuration', () => {
     sinon.stub(User, 'findOne').callsFake(findOne);
     const handlers = await installSessionHandlers();
 
-    handlers.serialize(user, (serializeErr, session) => {
+    const req = { session: {} };
+    handlers.serialize(req, user, (serializeErr, session) => {
+      should(req.session.memberSessionCreatedAt).be.a.Number();
       should.not.exist(serializeErr);
       session.should.deepEqual({
         id: 'member-id',

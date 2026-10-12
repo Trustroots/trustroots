@@ -34,7 +34,7 @@ export async function checkMemberSession(req, res, next) {
             user: req.user._id,
             authVersion: req.user.authVersion || 0,
             createdAt: new Date(createdAt),
-            lastSeenAt: new Date(now),
+            lastSeenAt: new Date(createdAt),
             expiresAt,
           },
         },

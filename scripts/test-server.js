@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 
+if (process.env.NODE_ENV !== 'test') {
+  console.error('Server tests require NODE_ENV=test; refusing to connect.');
+  process.exit(1);
+}
+
 const glob = require('glob');
 const Mocha = require('mocha');
 const path = require('path');
@@ -30,6 +35,15 @@ async function finish(error) {
 }
 
 mongooseService.connect(db => {
+  const databaseName = db?.db?.databaseName || db?.name;
+  if (!/^trustroots-test(?:-worker-[a-f0-9]{12}-[1-8])?$/.test(databaseName)) {
+    return finish(
+      new Error(
+        `Refusing to run server tests against unexpected database: ${databaseName || 'unknown'}`,
+      ),
+    );
+  }
+
   mongooseService.dropDatabase(db, () => {
     mongooseService.loadModels(async () => {
       const modelNames = require('mongoose').connection.modelNames();

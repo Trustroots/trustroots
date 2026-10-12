@@ -204,6 +204,7 @@ describe('Admin access route tests', () => {
       .set('X-Trustroots-Request', '1')
       .send({ code: currentTotp(secret) })
       .expect(200);
+    await utils.elevateAdminAccess(agent, credentialsRegular.password);
     for (const endpoint of adminRequests()) {
       const expected =
         endpoint.path.startsWith('/api/admin/acquisition-stories') ||
@@ -248,7 +249,7 @@ describe('Admin access route tests', () => {
       roles: ['user', 'admin'],
     }).save();
     const agent = request.agent(app);
-    await utils.signIn(credentials, agent);
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
     const blocked = await agent.get('/api/admin/dashboard').expect(403);
     blocked.body.mfaRequired.should.be.true();
     const enrolment = await agent
@@ -266,6 +267,11 @@ describe('Admin access route tests', () => {
       .expect(200);
     activation.body.recoveryCodes.should.have.length(10);
     activation.body.user.should.not.have.property('mfaSecretEncrypted');
+    const elevationRequired = await agent
+      .get('/api/admin/dashboard')
+      .expect(403);
+    elevationRequired.body.code.should.equal('ADMIN_ELEVATION_REQUIRED');
+    await utils.elevateAdminAccess(agent, credentials.password);
     await agent.get('/api/admin/dashboard').expect(200);
   });
   it('does not allow guests to use admin endpoints', async () => {

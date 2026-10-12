@@ -203,6 +203,8 @@ async function clearDatabase() {
  * @param {string} user.username
  * @param {string} user.password
  * @param {object} agent - supertest's agent
+ * @param {object} [options]
+ * @param {boolean} [options.privilegedAccess=true] - prepare full privileged access
  * @returns {Promise<void>}
  */
 async function elevateAdminAccess(agent, password) {
@@ -213,34 +215,36 @@ async function elevateAdminAccess(agent, password) {
     .expect(200);
 }
 
-async function signIn(user, agent) {
+async function signIn(user, agent, { privilegedAccess = true } = {}) {
   const { username, password } = user;
-  await agent.post('/api/auth/signin').send({ username, password }).expect(200);
-  // Privileged accounts need a password step-up before admin APIs. Avoid
-  // probing the endpoint for regular members, since that request itself is
-  // authenticated activity and can affect unrelated middleware behaviour.
-  const authenticatedUser = await mongoose
-    .model('User')
-    .findOne({ username }, 'roles')
-    .lean();
-  if (
-    authenticatedUser?.roles?.some(role =>
-      ['admin', 'welcome-team'].includes(role),
-    )
-  ) {
-    await elevateAdminAccess(agent, password);
+  if (privilegedAccess) {
+    const storedUser = await mongoose
+      .model('User')
+      .findOne({ username }, 'roles')
+      .lean();
+    if (
+      storedUser?.roles?.some(role =>
+        ['admin', 'moderator', 'welcome-team'].includes(role),
+      )
+    ) {
+      return signInPrivileged(user, agent);
+    }
   }
+  await agent.post('/api/auth/signin').send({ username, password }).expect(200);
 }
 
 /**
- * Sign in a privileged test user through the real MFA challenge. The fixture
- * provisions a fixed test-only secret before password sign-in; access is still
- * granted only after the server verifies a current TOTP code.
+ * Sign in a privileged test user through the real MFA challenge and, by
+ * default, password step-up. The fixture provisions a fixed test-only secret
+ * before sign-in; access is granted only after the server verifies a current
+ * TOTP code. Elevation tests can opt out of password step-up.
  * @param {object} user
  * @param {object} agent - supertest's agent
+ * @param {object} [options]
+ * @param {boolean} [options.elevate=true]
  * @returns {Promise<void>}
  */
-async function signInPrivileged(user, agent) {
+async function signInPrivileged(user, agent, { elevate = true } = {}) {
   const User = mongoose.model('User');
   const storedUser = await User.findOne({ username: user.username }).exec();
   if (
@@ -249,7 +253,7 @@ async function signInPrivileged(user, agent) {
       ['admin', 'moderator', 'welcome-team'].includes(role),
     )
   ) {
-    return signIn(user, agent);
+    return signIn(user, agent, { privilegedAccess: false });
   }
 
   const { default: mfaService } = await import(
@@ -286,6 +290,13 @@ async function signInPrivileged(user, agent) {
     .set('X-Trustroots-Request', '1')
     .send({ code })
     .expect(200);
+
+  if (
+    elevate &&
+    storedUser.roles.some(role => ['admin', 'welcome-team'].includes(role))
+  ) {
+    await elevateAdminAccess(agent, password);
+  }
 }
 
 /**

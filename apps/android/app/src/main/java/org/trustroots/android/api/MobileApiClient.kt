@@ -6,7 +6,6 @@ import java.net.URLEncoder
 import java.io.IOException
 import java.time.Instant
 import java.security.MessageDigest
-import android.os.SystemClock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -193,6 +192,15 @@ class MobileApiClient(
                         rejectedMessage = "Sign-in check failed. Please try again.",
                     )
                 } else initial
+                val requiresMfa = response.statusCode == 202 || runCatching {
+                    JSONObject(response.body).optBoolean("mfaRequired", false)
+                }.getOrDefault(false)
+                if (requiresMfa) {
+                    throw MobileApiException(
+                        statusCode = 202,
+                        message = "This account requires multi-factor authentication, which is not supported in the mobile app. Sign in using a browser to continue.",
+                    )
+                }
                 MemberSession(
                     cookieHeader = requireNotNull(response.sessionCookie) {
                         "Trustroots did not return a member session."
@@ -668,11 +676,11 @@ private suspend fun solveSigninChallenge(token: String, difficulty: Int): Long {
         withTimeout(30_000) {
             withContext(Dispatchers.Default) {
                 val digest = MessageDigest.getInstance("SHA-256")
-                val startedAt = SystemClock.elapsedRealtime()
+                val startedAt = System.nanoTime()
                 for (solution in 0L..4_194_304L) {
                     if ((solution and 0x3fffL) == 0L) {
                         currentCoroutineContext().ensureActive()
-                        if (SystemClock.elapsedRealtime() - startedAt >= 25_000) {
+                        if (System.nanoTime() - startedAt >= 25_000_000_000L) {
                             throw MobileApiException(429, "Sign-in check timed out. Please try again.")
                         }
                     }
