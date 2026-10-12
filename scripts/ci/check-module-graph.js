@@ -15,15 +15,12 @@
  */
 const fs = require('fs');
 const path = require('path');
+const ts = require('typescript');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const BASELINE_FILE = 'module-graph-baseline.json';
 const SOURCE_DIRS = ['client', 'server', 'shared'];
-const SOURCE_FILE = /\.(js|mjs|cjs|ts|tsx)$/;
-const SPECIFIER =
-  /(?:\bfrom|\bimport|\brequire|\bresolve|\bmock|\bimportActual)\s*\(?\s*(['"])([^'"\n]+)\1/g;
-const MODEL_DEFINITION = /\bmodel\(\s*(['"])(\w+)\1\s*,/g;
-const MODEL_LOOKUP = /\bmodel\(\s*(['"])(\w+)\1\s*\)/g;
+const SOURCE_FILE = /\.(js|mjs|cjs|ts|mts|tsx)$/;
 
 function listModules(root) {
   return fs
@@ -46,8 +43,48 @@ function listSourceFiles(dir) {
   });
 }
 
-function matches(pattern, text) {
-  return [...text.matchAll(pattern)];
+function sourceLinks(file, text) {
+  const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
+  const imports = [];
+  const definitions = [];
+  const lookups = [];
+  const visit = node => {
+    if (
+      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+      node.moduleSpecifier &&
+      ts.isStringLiteral(node.moduleSpecifier)
+    ) {
+      imports.push(node.moduleSpecifier.text);
+    }
+    if (ts.isCallExpression(node)) {
+      const callee = node.expression;
+      const name = ts.isPropertyAccessExpression(callee)
+        ? callee.name.text
+        : ts.isIdentifier(callee)
+        ? callee.text
+        : callee.kind === ts.SyntaxKind.ImportKeyword
+        ? 'import'
+        : null;
+      const [argument] = node.arguments;
+      if (argument && ts.isStringLiteral(argument)) {
+        if (
+          ['import', 'require', 'resolve', 'mock', 'importActual'].includes(
+            name,
+          )
+        ) {
+          imports.push(argument.text);
+        }
+        if (name === 'model') {
+          (node.arguments.length > 1 ? definitions : lookups).push(
+            argument.text,
+          );
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return { imports, definitions, lookups };
 }
 
 function targetModule(specifier, file, root, modules) {
@@ -68,14 +105,14 @@ function analyze(root = ROOT) {
       listSourceFiles(path.join(root, 'modules', name, dir)).map(file => ({
         module: name,
         file,
-        text: fs.readFileSync(file, 'utf8'),
+        links: sourceLinks(file, fs.readFileSync(file, 'utf8')),
       })),
     ),
   );
 
   const modelOwners = {};
-  files.forEach(({ module, text }) => {
-    matches(MODEL_DEFINITION, text).forEach(([, , model]) => {
+  files.forEach(({ module, links }) => {
+    links.definitions.forEach(model => {
       modelOwners[model] = module;
     });
   });
@@ -87,14 +124,14 @@ function analyze(root = ROOT) {
       graph[from] = [...new Set([...(graph[from] || []), to])].sort();
     }
   };
-  files.forEach(({ module, file, text }) => {
-    matches(SPECIFIER, text).forEach(([, , specifier]) => {
+  files.forEach(({ module, file, links }) => {
+    links.imports.forEach(specifier => {
       const target = targetModule(specifier, file, root, modules);
       if (target) {
         add(imports, module, target);
       }
     });
-    matches(MODEL_LOOKUP, text).forEach(([, , model]) => {
+    links.lookups.forEach(model => {
       if (modelOwners[model]) {
         add(models, module, modelOwners[model]);
       }
