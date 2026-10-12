@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
+    "skipLibCheck": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"]
+  },
+  "include": [
+    "testutils/common/**/*.mts",
+    "testutils/common/**/*.d.ts",
+    "testutils/server/**/*.mts",
+    "modules/*/tests/fixtures/*fixture*.mts"
+  ]
+}

@@ -7,12 +7,8 @@ import {
   trackEvent,
 } from '@/modules/core/client/services/client-runtime';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
-import {
-  createOffer,
-  getOffers,
-  updateOffer,
-  type Offer,
-} from '../api/offers.api';
+import { createOffer, getOffers, updateOffer } from '../api/offers.api';
+import type { CreateOfferRequest } from '../../shared/offer';
 import OfferLocationEditor from './OfferLocationEditor.component';
 
 type HostStatus = 'yes' | 'maybe' | 'no';
@@ -93,8 +89,9 @@ export default function OfferHostPage({ user }: HostPageProps) {
           : defaultHostOffer();
 
         if (
-          routeParams.status &&
-          ['yes', 'maybe', 'no'].includes(routeParams.status)
+          routeParams.status === 'yes' ||
+          routeParams.status === 'maybe' ||
+          routeParams.status === 'no'
         ) {
           nextOffer.status = routeParams.status;
         }
@@ -162,7 +159,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
     setIsSaving(true);
 
     try {
-      const payload: Offer = {
+      const payload: CreateOfferRequest = {
         type: 'host',
         status: offer.status,
         description: offer.description,

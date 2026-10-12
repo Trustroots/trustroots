@@ -13,7 +13,7 @@ import {
 } from '@/modules/search/client/utils/location';
 
 jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
 );
 jest.mock('@/modules/core/client/utils/map', () => ({
   getMapBoxToken: jest.fn(),

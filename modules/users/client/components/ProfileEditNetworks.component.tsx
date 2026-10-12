@@ -15,7 +15,7 @@ declare global {
   }
 }
 
-const LEGACY_SOCIAL_PROVIDERS = ['facebook', 'github', 'twitter'];
+const LEGACY_SOCIAL_PROVIDERS = ['facebook', 'github', 'twitter'] as const;
 const NPUB_PATTERN = /^(|npub1[ac-hj-np-z02-9]+)$/i;
 
 function normalizeNpub(npub?: string) {
@@ -35,7 +35,7 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
-  const { setUser } = useAuth() as { setUser: (user: UserProfile) => void };
+  const { setUser } = useAuth();
   const [draftUser, setDraftUser] = useState({ ...user });
   const [hasChanges, setHasChanges] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
@@ -72,8 +72,14 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
     setStatusMessage('');
 
     try {
-      const savedUser = await update(draftUser);
-      setUser(savedUser);
+      const savedUser = await update({
+        nostrNpub: draftUser.nostrNpub,
+        extSitesCouchers: draftUser.extSitesCouchers,
+        extSitesBW: draftUser.extSitesBW,
+        extSitesCS: draftUser.extSitesCS,
+        extSitesWS: draftUser.extSitesWS,
+      });
+      setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
       setHasChanges(false);
       setStatusMessage(t('Hospitality networks updated.'));
@@ -86,7 +92,7 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
   async function handleRemoveSocialAccount(provider: string) {
     try {
       const savedUser = await removeSocialAccount(provider);
-      setUser(savedUser);
+      setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
       setStatusMessage(
         t('Successfully deleted the {{provider}} connection.', { provider }),

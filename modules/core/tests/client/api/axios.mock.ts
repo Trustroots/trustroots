@@ -7,6 +7,7 @@ const client = {
   put: jest.fn(),
   patch: jest.fn(),
   delete: jest.fn(),
+  create: jest.fn(),
 };
 
 client.create = jest.fn(() => client);

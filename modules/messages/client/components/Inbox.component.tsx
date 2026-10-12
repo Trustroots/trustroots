@@ -34,13 +34,17 @@ export default function Inbox({ user }: InboxProps) {
   const query = searchText.trim().toLocaleLowerCase();
   const visibleThreads = query
     ? threads.filter(thread => {
-        const otherUser =
-          thread.userFrom._id === user._id ? thread.userTo : thread.userFrom;
-        return [
-          otherUser.displayName,
-          otherUser.username,
-          thread.message.excerpt,
-        ].some(value => value?.toLocaleLowerCase().includes(query));
+        const fromId = thread.userFrom?._id;
+        const otherUser = fromId === user._id ? thread.userTo : thread.userFrom;
+        const displayName =
+          otherUser && 'displayName' in otherUser
+            ? otherUser.displayName
+            : undefined;
+        const username =
+          otherUser && 'username' in otherUser ? otherUser.username : undefined;
+        return [displayName, username, thread.message.excerpt].some(value =>
+          value?.toLocaleLowerCase().includes(query),
+        );
       })
     : threads;
 

@@ -1,14 +1,10 @@
-interface SocialProfile {
-  additionalProvidersData?: Record<
-    string,
-    Record<string, string | number | undefined>
-  >;
-}
+import type {
+  PublicProviderIdentities,
+  PublicProviderIdentity,
+} from '../../shared/profile';
 
-interface SocialProviderData {
-  id?: string | number;
-  screen_name?: string;
-  login?: string;
+interface SocialProfile {
+  additionalProvidersData?: PublicProviderIdentities;
 }
 
 /**
@@ -38,13 +34,21 @@ export function hasConnectedAdditionalSocialAccounts(
  */
 export function socialAccountLink(
   providerName: string,
-  providerData: SocialProviderData,
+  providerData: PublicProviderIdentity = {},
 ): string {
-  if (providerName === 'facebook' && providerData.id) {
+  if (providerName === 'facebook' && 'id' in providerData && providerData.id) {
     return `https://www.facebook.com/app_scoped_user_id/${providerData.id}`;
-  } else if (providerName === 'twitter' && providerData.screen_name) {
+  } else if (
+    providerName === 'twitter' &&
+    'screen_name' in providerData &&
+    providerData.screen_name
+  ) {
     return `https://twitter.com/${providerData.screen_name}`;
-  } else if (providerName === 'github' && providerData.login) {
+  } else if (
+    providerName === 'github' &&
+    'login' in providerData &&
+    providerData.login
+  ) {
     return `https://github.com/${providerData.login}`;
   } else {
     return '#';

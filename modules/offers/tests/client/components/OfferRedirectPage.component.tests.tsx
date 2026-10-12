@@ -19,7 +19,7 @@ describe('OfferRedirectPage', () => {
   it('provides a browser redirect fallback', () => {
     const replace = jest.fn<void, [string]>();
 
-    defaultNavigate('/offer/host', { replace } as unknown as Location);
+    Reflect.apply(defaultNavigate, undefined, ['/offer/host', { replace }]);
 
     expect(replace).toHaveBeenCalledWith('/offer/host');
   });

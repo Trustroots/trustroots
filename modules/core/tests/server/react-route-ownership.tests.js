@@ -7,7 +7,7 @@ const {
   REACT_OWNED_PATHS,
   REACT_ROUTE_POLICIES,
   routeRequiresAuth,
-} = require('../../shared/react-route-ownership');
+} = require('../../shared/react-route-ownership.mts');
 
 const should = require('should');
 

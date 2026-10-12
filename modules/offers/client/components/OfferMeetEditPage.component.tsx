@@ -8,12 +8,8 @@ import {
 } from '@/modules/core/client/services/client-runtime';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
-import {
-  createOffer,
-  getOffer,
-  updateOffer,
-  type Offer,
-} from '../api/offers.api';
+import { createOffer, getOffer, updateOffer } from '../api/offers.api';
+import type { CreateOfferRequest } from '../../shared/offer';
 import MeetsExplanation from './MeetsExplanation.component';
 import OfferLocationEditor from './OfferLocationEditor.component';
 
@@ -152,7 +148,7 @@ export default function OfferMeetEditPage() {
 
     setIsSaving(true);
 
-    const payload: Offer = {
+    const payload: CreateOfferRequest = {
       type: 'meet',
       description: loadedOffer.description,
       location: loadedOffer.location!,

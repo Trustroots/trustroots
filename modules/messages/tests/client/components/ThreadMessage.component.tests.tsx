@@ -121,6 +121,25 @@ describe('<ThreadMessage />', function () {
     expect(screen.getByText('Unknown member')).toBeInTheDocument();
   });
 
+  it('shows a placeholder when the sender is absent', () => {
+    render(
+      <ThreadMessage
+        user={me}
+        message={{
+          _id: 'message-without-sender',
+          created: '2026-06-05T12:00:00.000Z',
+          read: false,
+          content: '<p>A fictional message</p>',
+          userTo: me,
+          userFrom: null,
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Unknown member')).toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
+
   it('preserves the hosting acceptance marker on outgoing bubbles', () => {
     const { container } = render(
       <ThreadMessage

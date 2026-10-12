@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 
 import OfferMeetEditPage from '@/modules/offers/client/components/OfferMeetEditPage.component';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
-import type { Offer } from '@/modules/offers/client/api/offers.api';
+import type { OfferReadPayload } from '@/modules/offers/shared/offer';
 import type { TabsProps } from 'react-bootstrap';
 import type OfferLocationEditor from '@/modules/offers/client/components/OfferLocationEditor.component';
 import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
@@ -46,9 +46,10 @@ jest.mock(
   () => ({
     __esModule: true,
     default: ({
+      location,
       onLocationChange,
     }: React.ComponentProps<typeof OfferLocationEditor>) => (
-      <div data-testid="location-editor">
+      <div data-testid="location-editor" data-location={location.join(',')}>
         <button type="button" onClick={() => onLocationChange([52, 4])}>
           Change location
         </button>
@@ -64,7 +65,7 @@ describe('OfferMeetEditPage', () => {
   });
 
   it('keeps an empty expiry editable and prevents saving until it is valid', async () => {
-    offersApiMock.createOffer.mockResolvedValue({});
+    offersApiMock.createOffer.mockResolvedValue({ message: 'Offer saved.' });
     render(<OfferMeetEditPage user={{ _id: 'member-1' }} />);
     const expiry = await screen.findByLabelText(
       'How long should this be visible?',
@@ -117,7 +118,7 @@ describe('OfferMeetEditPage', () => {
   });
 
   it('creates a new meet offer after filling details', async () => {
-    offersApiMock.createOffer.mockResolvedValue({});
+    offersApiMock.createOffer.mockResolvedValue({ message: 'Offer saved.' });
     render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
 
     fireEvent.change(await screen.findByPlaceholderText('Write here...'), {
@@ -151,11 +152,14 @@ describe('OfferMeetEditPage', () => {
   it('loads and updates an existing meet offer', async () => {
     getCurrentRouteParamsMock.mockReturnValue({ offerId: 'offer-1' });
     offersApiMock.getOffer.mockResolvedValue({
+      _id: 'offer-1',
+      type: 'meet',
+      user: { _id: 'user-1', username: 'fictional-user' },
       description: 'Existing meet.',
       location: [51.5, -0.12],
       validUntil: new Date(Date.now() + 86400000).toISOString(),
     });
-    offersApiMock.updateOffer.mockResolvedValue({});
+    offersApiMock.updateOffer.mockResolvedValue({ message: 'Offer updated.' });
 
     render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
 
@@ -178,6 +182,9 @@ describe('OfferMeetEditPage', () => {
     getCurrentRouteParamsMock.mockReturnValue({ offerId: 'legacy-offer' });
     offersApiMock.getOffer.mockResolvedValue({
       _id: 'legacy-offer',
+      type: 'meet',
+      user: { _id: 'user-1', username: 'fictional-user' },
+      location: [0, 0],
       validUntil: new Date(Date.now() + 86400000).toISOString(),
     });
 
@@ -186,6 +193,58 @@ describe('OfferMeetEditPage', () => {
     expect(await screen.findByPlaceholderText('Write here...')).toHaveValue('');
     fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
     expect(await screen.findByTestId('location-editor')).toBeInTheDocument();
+  });
+
+  it('uses the default location when a legacy offer has no location', async () => {
+    getCurrentRouteParamsMock.mockReturnValue({ offerId: 'legacy-offer' });
+    const legacyOffer = {
+      _id: 'legacy-offer',
+      type: 'meet',
+      user: { _id: 'user-1', username: 'fictional-user' },
+      description: 'Coffee in the park.',
+      validUntil: new Date(Date.now() + 86400000).toISOString(),
+    };
+    Reflect.apply(
+      offersApiMock.getOffer.mockResolvedValueOnce,
+      offersApiMock.getOffer,
+      [legacyOffer],
+    );
+
+    render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'Location' }));
+    expect(await screen.findByTestId('location-editor')).toHaveAttribute(
+      'data-location',
+      '48.6908333333,9.14055555556',
+    );
+  });
+
+  it('falls back to the route id when a loaded legacy offer lacks its id', async () => {
+    getCurrentRouteParamsMock.mockReturnValue({ offerId: 'route-offer' });
+    const legacyOffer = {
+      type: 'meet',
+      user: { _id: 'user-1', username: 'fictional-user' },
+      description: 'Coffee in the park.',
+      location: [51.5, -0.12],
+      validUntil: new Date(Date.now() + 86400000).toISOString(),
+    };
+    Reflect.apply(
+      offersApiMock.getOffer.mockResolvedValueOnce,
+      offersApiMock.getOffer,
+      [legacyOffer],
+    );
+    offersApiMock.updateOffer.mockResolvedValue({ message: 'Offer updated.' });
+
+    render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+    await screen.findByPlaceholderText('Write here...');
+    fireEvent.submit(document.querySelector('form')!);
+
+    await waitFor(() => {
+      expect(offersApiMock.updateOffer).toHaveBeenCalledWith(
+        'route-offer',
+        expect.objectContaining({ description: 'Coffee in the park.' }),
+      );
+    });
   });
 
   it('keeps loading when an existing meet offer cannot be loaded', async () => {
@@ -219,9 +278,9 @@ describe('OfferMeetEditPage', () => {
   it('ignores loaded meet offers after unmounting', async () => {
     getCurrentRouteParamsMock.mockReturnValue({ offerId: 'offer-1' });
 
-    let resolveOffer!: (offer: Offer) => void;
+    let resolveOffer!: (offer: OfferReadPayload) => void;
     offersApiMock.getOffer.mockReturnValue(
-      new Promise<Offer>(resolve => {
+      new Promise<OfferReadPayload>(resolve => {
         resolveOffer = resolve;
       }),
     );
@@ -230,6 +289,8 @@ describe('OfferMeetEditPage', () => {
     unmount();
     resolveOffer({
       _id: 'offer-1',
+      type: 'meet',
+      user: { _id: 'user-1', username: 'fictional-user' },
       description: 'Late offer.',
       location: [51.5, -0.12],
       validUntil: new Date(Date.now() + 86400000).toISOString(),
@@ -243,6 +304,8 @@ describe('OfferMeetEditPage', () => {
     });
     offersApiMock.getOffer.mockResolvedValue({
       _id: 'offer-without-expiry',
+      type: 'meet',
+      user: { _id: 'user-1', username: 'fictional-user' },
       description: 'Coffee in the park.',
       location: [51.5, -0.12],
     });
@@ -263,7 +326,7 @@ describe('OfferMeetEditPage', () => {
 
     let rejectOffer!: (error: Error) => void;
     offersApiMock.getOffer.mockReturnValue(
-      new Promise<Offer>((resolve, reject) => {
+      new Promise<OfferReadPayload>((resolve, reject) => {
         rejectOffer = reject;
       }),
     );

@@ -10,7 +10,7 @@ import {
 } from '@/modules/admin/client/api/newsletter.api';
 
 jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
 );
 
 const axiosMock = jest.mocked(axios);

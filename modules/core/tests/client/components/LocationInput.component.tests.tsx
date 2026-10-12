@@ -11,7 +11,7 @@ type LocationChange = LocationInputProps['onChange'];
 type GeocodingFeature = NonNullable<Parameters<LocationChange>[1]>;
 
 jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
 );
 
 jest.mock('@/modules/core/client/react-app/AppProviders', () => ({

@@ -1,3 +1,4 @@
+import { invokeMalformed } from '@/testutils/client/malformed-fixtures';
 import { getGender } from '@/modules/core/client/utils/user_info';
 
 jest.mock('react-i18next', () => ({
@@ -21,6 +22,6 @@ describe('user info utilities', function () {
   it('returns undefined for empty input', function () {
     expect(getGender('')).toBeUndefined();
     // Preserve the empty runtime input case beyond the public string contract.
-    expect(getGender(undefined as unknown as string)).toBeUndefined();
+    expect(invokeMalformed(getGender, undefined)).toBeUndefined();
   });
 });

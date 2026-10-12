@@ -118,7 +118,7 @@ module.exports = webpackMerge.merge(shims, {
         type: 'javascript/auto',
       },
       {
-        test: /\.[jt]sx?$/,
+        test: /\.(?:[jt]sx?|mts)$/,
         // Transpile our own code, plus the modern-syntax dependencies that
         // must match the application's supported browser targets.
         exclude: /node_modules[\\/](?!(nostr-tools|@noble|@scure)[\\/])/,
