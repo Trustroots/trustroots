@@ -519,11 +519,20 @@ service.confirmEmail = function (req, res) {
       // We can't do regular `user.save()` here because we've got user document with password and we'd just override it:
       // Instead we'll do normal Mongoose update with previously fetched user ID
       function (result, user, done) {
+        const authVersion = user.authVersion || 0;
+        const authVersionQuery =
+          authVersion === 0
+            ? {
+                $or: [{ authVersion: { $exists: false } }, { authVersion: 0 }],
+              }
+            : { authVersion };
         User.findOneAndUpdate(
           {
             _id: user._id,
-            ...tokenQuery,
             emailTemporary: user.emailTemporary,
+            // The token query already contains an $or for legacy expiry
+            // handling, so combine both conditions without overwriting it.
+            $and: [tokenQuery, authVersionQuery],
           },
           {
             $unset: {
