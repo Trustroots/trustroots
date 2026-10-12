@@ -90,6 +90,8 @@ function apiRoute(method, path, routeSource, extra = {}) {
 
 const specPaths = {
   'staff-passkeys.spec.js': 'features/auth-account/staff-passkeys.spec.js',
+  'integrated-account-access.spec.js':
+    'features/auth-account/integrated-account-access.spec.js',
   'signin-challenge.spec.js': 'features/auth-account/signin-challenge.spec.js',
   'account-email-tokens.spec.js':
     'features/auth-account/account-email-tokens.spec.js',
@@ -809,6 +811,8 @@ const features = [
     requiredScenarios: [
       'Sign in page links to signup.',
       'Username sign in succeeds.',
+      'Combined proof and second-factor responses do not establish an intermediate session.',
+      'Password recovery keeps second-factor verification required.',
       'Elevated account activity requires a proof before sign-in succeeds.',
       'Email sign in succeeds.',
       'Continue query redirects to the original protected destination.',
@@ -819,6 +823,14 @@ const features = [
         'sign in and sign up pages link to each other',
       ),
       spec('auth-smoke.spec.js', 'signed out user can sign in with username'),
+      spec(
+        'integrated-account-access.spec.js',
+        'combined account checks establish one session and sign out everywhere',
+      ),
+      spec(
+        'integrated-account-access.spec.js',
+        'password recovery leaves an MFA member signed out until a fresh second factor',
+      ),
       spec(
         'signin-challenge.spec.js',
         'a member signs in through the browser after an account-wide challenge',

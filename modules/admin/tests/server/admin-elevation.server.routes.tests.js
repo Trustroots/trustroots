@@ -33,13 +33,14 @@ describe('Admin elevation route tests', () => {
 
   it('keeps the member signed in while requiring password step-up for admin APIs', async () => {
     const agent = request.agent(app);
-    await agent
-      .post('/api/auth/signin')
-      .send({
+    await utils.signInPrivileged(
+      {
         username: usersRaw[0].username,
         password: usersRaw[0].password,
-      })
-      .expect(200);
+      },
+      agent,
+      { elevate: false },
+    );
 
     const blocked = await agent.get('/api/admin/dashboard').expect(403);
     blocked.body.code.should.equal('ADMIN_ELEVATION_REQUIRED');

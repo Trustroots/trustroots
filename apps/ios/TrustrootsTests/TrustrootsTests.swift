@@ -590,6 +590,92 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertEqual(result.credentials.cookieHeader, "connect.sid=session-value")
     }
 
+    func testSignInDoesNotReturnPreAuthSessionWhenProofRetryNeedsMFA() async throws {
+        var requestBodies: [[String: Any]] = []
+        APIURLProtocol.handler = { request in
+            requestBodies.append(
+                (try? JSONSerialization.jsonObject(with: request.bodyData ?? Data()) as? [String: Any]) ?? [:]
+            )
+            let isProofRetry = requestBodies.count == 2
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: isProofRetry ? 202 : 429,
+                httpVersion: nil,
+                headerFields: isProofRetry
+                    ? ["Set-Cookie": "connect.sid=pre-auth-session; Path=/; HttpOnly"]
+                    : nil
+            )!
+            let body = isProofRetry
+                ? Data(#"{"username":"quiet-fox","displayName":"Quiet Fox","public":true,"mfaRequired":true,"challenge":"pre-auth-challenge"}"#.utf8)
+                : Data(#"{"signinChallenge":{"token":"fictional-challenge","difficulty":14}}"#.utf8)
+            return (response, body)
+        }
+        defer { APIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [APIURLProtocol.self]
+        let api = TrustrootsAPI(session: URLSession(configuration: configuration))
+        var returnedSession = false
+
+        do {
+            _ = try await api.signIn(
+                serverURLString: "https://api.example.test",
+                usernameOrEmail: "quiet-fox",
+                password: "fictional-password"
+            )
+            returnedSession = true
+        } catch let error as TrustrootsAPIError {
+            XCTAssertEqual(
+                error,
+                .serverMessage(
+                    "This account requires multi-factor authentication, which is not supported in the app. Sign in using a browser to continue."
+                )
+            )
+        } catch {
+            XCTFail("Unexpected sign-in error: \(error)")
+        }
+
+        XCTAssertFalse(returnedSession, "MFA proof retry must not return a SessionResponse")
+        XCTAssertEqual(requestBodies.count, 2)
+        XCTAssertNotNil(requestBodies[1]["signinProof"])
+    }
+
+    func testSignInRejectsMFARequiredMarkerOnSuccessfulHTTPStatus() async throws {
+        APIURLProtocol.handler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Set-Cookie": "connect.sid=pre-auth-session; Path=/; HttpOnly"]
+            )!
+            return (
+                response,
+                Data(#"{"username":"quiet-fox","displayName":"Quiet Fox","public":true,"mfaRequired":true,"challenge":"pre-auth-challenge"}"#.utf8)
+            )
+        }
+        defer { APIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [APIURLProtocol.self]
+        let api = TrustrootsAPI(session: URLSession(configuration: configuration))
+
+        do {
+            _ = try await api.signIn(
+                serverURLString: "https://api.example.test",
+                usernameOrEmail: "quiet-fox",
+                password: "fictional-password"
+            )
+            XCTFail("An MFA marker must not produce a SessionResponse")
+        } catch let error as TrustrootsAPIError {
+            XCTAssertEqual(
+                error,
+                .serverMessage(
+                    "This account requires multi-factor authentication, which is not supported in the app. Sign in using a browser to continue."
+                )
+            )
+        }
+    }
+
     func testOfflineResponseCacheIsScopedAndRetainsTimestamp() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("trustroots-cache-test-\(UUID().uuidString)", isDirectory: true)

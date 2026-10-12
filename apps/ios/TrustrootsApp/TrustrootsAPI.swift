@@ -742,6 +742,14 @@ final class TrustrootsAPI {
                 }
                 httpResponse = retriedResponse
             }
+            let responseObject = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            let requiresMFA = httpResponse.statusCode == 202 ||
+                responseObject?["mfaRequired"] as? Bool == true
+            if requiresMFA {
+                throw TrustrootsAPIError.serverMessage(
+                    "This account requires multi-factor authentication, which is not supported in the app. Sign in using a browser to continue."
+                )
+            }
             guard (200..<300).contains(httpResponse.statusCode) else {
                 throw decodedError(from: data, statusCode: httpResponse.statusCode, isSignIn: true)
             }

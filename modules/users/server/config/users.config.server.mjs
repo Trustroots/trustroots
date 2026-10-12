@@ -13,7 +13,8 @@ import requireMfaForAccountAccess from './../middleware/mfa-session.server.middl
 const User = mongoose.model('User');
 const defaultExport = async function (app) {
   // Serialize sessions
-  passport.serializeUser(function (user, done) {
+  passport.serializeUser(function (req, user, done) {
+    req.session.memberSessionCreatedAt = Date.now();
     done(null, {
       id: user.id,
       authVersion: user.authVersion || 0,
