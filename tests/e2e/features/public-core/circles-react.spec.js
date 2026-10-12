@@ -307,17 +307,17 @@ test('Hackers circle foregrounds the public place map and verification limits', 
     await expect(link).toHaveAttribute('href', /^https:\/\//);
   }
   expect(wikiRequested).toBe(false);
-  const map = page.locator('.hackerspace-map');
+  const map = page.locator('.circle-location-map');
   await expect(map).toBeVisible();
-  const panel = await page.locator('.hackerspace-map-panel').boundingBox();
+  const panel = await page.locator('.circle-location-map-panel').boundingBox();
   const viewportHeight = await page.evaluate(() => window.innerHeight);
   expect(panel.y).toBeLessThan(viewportHeight);
   await expect(page.getByText('1 SpaceAPI-reported places')).toBeVisible();
-  await expect(page.locator('.hackerspace-map-panel')).toHaveCSS(
+  await expect(page.locator('.circle-location-map-panel--brand')).toHaveCSS(
     'border-top-color',
     'rgb(18, 181, 145)',
   );
-  await expect(page.locator('.hackerspace-map-panel')).toHaveCSS(
+  await expect(page.locator('.circle-location-map-panel--brand')).toHaveCSS(
     'text-shadow',
     'none',
   );

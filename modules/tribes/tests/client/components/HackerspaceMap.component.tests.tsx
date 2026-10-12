@@ -6,39 +6,23 @@ import HackerspaceMap, {
   decodeGeohash,
   parseHackerPlace,
 } from '@/modules/tribes/client/components/HackerspaceMap';
+import { nostrService } from '@/modules/search/client/services/nostr.client.service';
 
-jest.mock('leaflet', () => ({
-  __esModule: true,
-  default: {
-    map: jest.fn(),
-    tileLayer: jest.fn(),
-    layerGroup: jest.fn(),
-    circleMarker: jest.fn(),
-    latLngBounds: jest.fn(points => points),
-  },
-}));
-jest.mock('@/modules/core/client/utils/map', () => ({
-  getRasterMapTiles: () => ({
-    url: 'https://tiles.example.test/{z}/{x}/{y}',
-    options: {},
-  }),
-}));
 jest.mock('@/modules/search/client/services/nostr.client.service', () => ({
   nostrService: {
     subscribeHackerPlaces: jest.fn(),
     unsubscribeHackerPlaces: jest.fn(),
   },
 }));
-const leaflet = jest.requireMock('leaflet').default as Record<
-  string,
-  jest.Mock
->;
-const service = jest.requireMock(
-  '@/modules/search/client/services/nostr.client.service',
-).nostrService as {
-  subscribeHackerPlaces: jest.Mock;
-  unsubscribeHackerPlaces: jest.Mock;
-};
+jest.mock('@/modules/tribes/client/components/CircleLocationMap', () => ({
+  __esModule: true,
+  default: (props: unknown) => <pre>{JSON.stringify(props)}</pre>,
+}));
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
 function place(tags: string[][] = [], content = ''): Event {
   return {
     id: 'event-id',
@@ -55,138 +39,7 @@ function place(tags: string[][] = [], content = ''): Event {
     ],
   };
 }
-function callbacks() {
-  const [onevent, lifecycle] = service.subscribeHackerPlaces.mock.calls[0] as [
-    (event: Event) => void,
-    { onEose: () => void; onClose: () => void },
-  ];
-  return { onevent, ...lifecycle };
-}
-
-describe('public hackerspace map', () => {
-  const map = { setView: jest.fn(), remove: jest.fn(), fitBounds: jest.fn() };
-  const markers = { addTo: jest.fn(), clearLayers: jest.fn() };
-  const marker = { bindPopup: jest.fn(), addTo: jest.fn() };
-  beforeEach(() => {
-    jest.clearAllMocks();
-    service.subscribeHackerPlaces.mockResolvedValue(undefined);
-    leaflet.map.mockReturnValue(map);
-    map.setView.mockReturnValue(map);
-    leaflet.tileLayer.mockReturnValue({ addTo: jest.fn() });
-    leaflet.layerGroup.mockReturnValue(markers);
-    markers.addTo.mockReturnValue(markers);
-    leaflet.circleMarker.mockReturnValue(marker);
-    marker.bindPopup.mockReturnValue(marker);
-  });
-  it('shows loading and empty states and cleans up map and subscription', () => {
-    const { unmount } = render(<HackerspaceMap />);
-    expect(
-      screen.getByText('Loading places from Trustroots and Nomadwiki relays…'),
-    ).toBeVisible();
-    act(() => callbacks().onEose());
-    expect(
-      screen.getByText('No place events are available yet.'),
-    ).toBeVisible();
-    expect(leaflet.tileLayer).toHaveBeenCalledWith(
-      'https://tiles.example.test/{z}/{x}/{y}',
-      {},
-    );
-    unmount();
-    expect(map.remove).toHaveBeenCalledTimes(1);
-    expect(service.unsubscribeHackerPlaces).toHaveBeenCalledTimes(1);
-    act(() => {
-      callbacks().onEose();
-      callbacks().onClose();
-      callbacks().onevent(place());
-    });
-    expect(leaflet.circleMarker).not.toHaveBeenCalled();
-  });
-  it('renders safe popup details, replaces stable identifiers and hides inactive places', () => {
-    render(<HackerspaceMap />);
-    act(() => {
-      callbacks().onevent(
-        place(
-          [
-            ['d', 'spaceapi:example'],
-            ['address', '1 Fictional Road'],
-            ['website', 'https://workshop.example.test'],
-            ['meta', 'open', 'closed'],
-            ['meta', 'fetched_at', '2026-10-12T10:00:00Z'],
-          ],
-          '<img src=x onerror=alert(1)>',
-        ),
-      );
-      callbacks().onEose();
-    });
-    expect(screen.getByText('1 SpaceAPI-reported places')).toBeVisible();
-    const popup = marker.bindPopup.mock.calls[0][0] as HTMLElement;
-    expect(popup).toHaveTextContent('1 Fictional Road');
-    expect(popup).toHaveTextContent('SpaceAPI-reported snapshot: closed');
-    expect(popup).toHaveTextContent('Trustroots fetched: 2026-10-12T10:00:00Z');
-    expect(popup.querySelector('img')).toBeNull();
-    expect(popup.querySelector('a')).toHaveAttribute(
-      'rel',
-      'noopener noreferrer',
-    );
-    expect(popup.querySelector('a')).toHaveAttribute(
-      'href',
-      'https://workshop.example.test',
-    );
-    expect(map.fitBounds).toHaveBeenCalled();
-    act(() => callbacks().onevent(place([['d', 'spaceapi:example']])));
-    expect(screen.getByText('1 SpaceAPI-reported places')).toBeVisible();
-    const minimal = marker.bindPopup.mock.calls[
-      marker.bindPopup.mock.calls.length - 1
-    ][0] as HTMLElement;
-    expect(minimal.querySelectorAll('p, a')).toHaveLength(0);
-    const rendered = leaflet.circleMarker.mock.calls.length;
-    act(() =>
-      callbacks().onevent(
-        place([
-          ['d', 'spaceapi:example'],
-          ['meta', 'status', 'inactive'],
-        ]),
-      ),
-    );
-    expect(leaflet.circleMarker).toHaveBeenCalledTimes(rendered);
-    act(() => callbacks().onevent({ ...place(), tags: [] }));
-    expect(leaflet.circleMarker).toHaveBeenCalledTimes(rendered);
-  });
-  it('shows relay closure and connection failures', async () => {
-    const { unmount } = render(<HackerspaceMap />);
-    act(() => callbacks().onClose());
-    expect(
-      screen.getByText('Places could not be loaded from the relay.'),
-    ).toBeVisible();
-    unmount();
-    service.subscribeHackerPlaces.mockRejectedValue(new Error('offline'));
-    render(<HackerspaceMap />);
-    expect(
-      await screen.findByText('Places could not be loaded from the relay.'),
-    ).toBeVisible();
-  });
-  it('ignores a connection rejection after unmount', async () => {
-    let reject!: (error: Error) => void;
-    service.subscribeHackerPlaces.mockReturnValue(
-      new Promise((_resolve, fail) => {
-        reject = fail;
-      }),
-    );
-    const { unmount } = render(<HackerspaceMap />);
-    unmount();
-    await act(async () => {
-      reject(new Error('offline'));
-    });
-    expect(service.unsubscribeHackerPlaces).toHaveBeenCalled();
-  });
-});
-
 describe('hackerspace place event parsing', () => {
-  it('decodes a standard geohash to a location', () => {
-    const point = decodeGeohash('gcpvj0');
-    expect(point?.[0]).toBeCloseTo(51.5, 0);
-    expect(point?.[1]).toBeCloseTo(-0.1, 0);
-  });
   it('handles legacy metadata, multiple precisions, missing names and inactive states', () => {
     const legacy = place();
     legacy.tags = [
@@ -226,6 +79,12 @@ describe('hackerspace place event parsing', () => {
       }),
     ).toBeNull();
     expect(decodeGeohash('')).toBeNull();
+  });
+
+  it('decodes a standard geohash to a location', () => {
+    const point = decodeGeohash('gcpvj0');
+    expect(point?.[0]).toBeCloseTo(51.5, 0);
+    expect(point?.[1]).toBeCloseTo(-0.1, 0);
   });
   it('uses the stable identifier, location, source metadata and safe website', () => {
     const authored = place([['d', 'shared-place']]);
@@ -282,4 +141,151 @@ describe('hackerspace place event parsing', () => {
       })?.website,
     ).toBeUndefined();
   });
+});
+
+it('adapts hackerspace metadata into the shared map and excludes inactive/invalid events', () => {
+  jest.mocked(nostrService.subscribeHackerPlaces).mockResolvedValue({
+    close: jest.fn(),
+  });
+  const event = {
+    id: 'event',
+    content: 'A workshop',
+    tags: [
+      ['meta', 'source', 'https://api.spaceapi.io/'],
+      ['g', 'gcpvj0'],
+      ['g', 'gcp'],
+      ['name', 'Example Workshop'],
+      ['address', 'Fictional Road'],
+      ['website', 'https://example.test/'],
+      ['meta', 'open', 'open'],
+      ['meta', 'fetched_at', '2026-10-12'],
+    ],
+  } as Event;
+  render(<HackerspaceMap />);
+  const onEvent = jest.mocked(nostrService.subscribeHackerPlaces).mock
+    .calls[0][0];
+  const callbacks = jest.mocked(nostrService.subscribeHackerPlaces).mock
+    .calls[0][1];
+  act(() => {
+    onEvent(event);
+    onEvent(event);
+    onEvent({
+      ...event,
+      id: 'inactive',
+      tags: [...event.tags, ['status', 'inactive']],
+    });
+    onEvent({
+      ...event,
+      id: 'bare',
+      content: '',
+      tags: [
+        ['meta:source', 'https://api.spaceapi.io/'],
+        ['g', 'gcpvj0'],
+        ['name', 'Bare Workshop'],
+        ['website', 'javascript:alert(1)'],
+      ],
+    });
+    onEvent({ ...event, id: 'empty', tags: [] });
+    callbacks.onEose?.();
+  });
+  const props = JSON.parse(
+    screen.getByText(/SpaceAPI-reported places/).textContent!,
+  );
+  expect(props.locations).toHaveLength(2);
+  expect(props.locations[0].details).toEqual([
+    'Fictional Road',
+    'A workshop',
+    'SpaceAPI-reported snapshot: open',
+    'Trustroots fetched: 2026-10-12',
+  ]);
+  expect(props.locations[0].link.url).toBe('https://example.test/');
+  expect(props.locations[1].link).toBeUndefined();
+  expect(props.locations[1].details).toEqual([]);
+  expect(props.markerColor).toBe('#12b591');
+  expect(props.className).toBe('circle-location-map-panel--brand');
+  expect(props.loadingText).toBe(
+    'Loading places from Trustroots and Nomadwiki relays…',
+  );
+  expect(props.state).toBe('ready');
+  expect(
+    parseHackerPlace({
+      ...event,
+      tags: [
+        ['meta', 'source', 'https://api.spaceapi.io/'],
+        ['name', 'No coordinates'],
+      ],
+    }),
+  ).toBeNull();
+  expect(
+    parseHackerPlace({
+      ...event,
+      tags: [
+        ['meta', 'source', 'https://api.spaceapi.io/'],
+        ['g', 'gcpvj0'],
+      ],
+    }),
+  ).toBeNull();
+  expect(
+    parseHackerPlace({
+      ...event,
+      tags: [...event.tags, ['meta:status', 'inactive']],
+    })?.inactive,
+  ).toBe(true);
+  expect(
+    parseHackerPlace({
+      ...event,
+      tags: event.tags.filter(tag => tag[0] !== 'website'),
+    })?.website,
+  ).toBeUndefined();
+});
+
+it('reports relay closure and ignores updates after unmount', async () => {
+  jest.mocked(nostrService.subscribeHackerPlaces).mockResolvedValue({
+    close: jest.fn(),
+  });
+  const { unmount } = render(<HackerspaceMap />);
+  const subscription = jest
+    .mocked(nostrService.subscribeHackerPlaces)
+    .mock.calls.at(-1)!;
+  const onEvent = subscription[0];
+  const callbacks = subscription[1];
+  act(() => callbacks.onClose?.());
+  expect(
+    JSON.parse(screen.getByText(/could not be loaded/).textContent!).state,
+  ).toBe('error');
+  unmount();
+  expect(nostrService.unsubscribeHackerPlaces).toHaveBeenCalled();
+  act(() => {
+    onEvent(place());
+    callbacks.onEose?.();
+    callbacks.onClose?.();
+  });
+});
+
+it('shows an error when the relay subscription fails', async () => {
+  jest
+    .mocked(nostrService.subscribeHackerPlaces)
+    .mockRejectedValue(new Error('offline'));
+  render(<HackerspaceMap />);
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(
+    JSON.parse(screen.getByText(/could not be loaded/).textContent!).state,
+  ).toBe('error');
+});
+
+it('ignores a connection rejection after unmount', async () => {
+  let reject!: (error: Error) => void;
+  jest.mocked(nostrService.subscribeHackerPlaces).mockReturnValue(
+    new Promise((_resolve, fail) => {
+      reject = fail;
+    }),
+  );
+  const { unmount } = render(<HackerspaceMap />);
+  unmount();
+  await act(async () => {
+    reject(new Error('offline'));
+  });
+  expect(nostrService.unsubscribeHackerPlaces).toHaveBeenCalled();
 });
