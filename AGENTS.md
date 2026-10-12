@@ -2,6 +2,18 @@ This is the canonical AI coding guideline file for this repository. Keep other
 assistant-specific files, such as `.cursorrules` and `CLAUDE.md`, as short
 pointers back to this file so the project guidance does not drift.
 
+## Commands
+
+This repository uses pnpm (the version is pinned in `packageManager`) and Node 24; npm is no longer supported. Run `pnpm install` after switching branches.
+
+- `pnpm check`: lint, typecheck and client unit tests. Run it before every commit; it needs no database.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test:client`: the three parts of `pnpm check` on their own.
+- `pnpm test:server`: the Mocha/Supertest suite. It needs MongoDB on localhost:27017. For selected files use `pnpm test:server:files modules/foo/tests/server/bar.tests.js`.
+- `pnpm test:e2e`: the Playwright end-to-end suite.
+- `pnpm test:coverage` and `pnpm coverage:check`: coverage runs and the comparison against `coverage-baseline.json`.
+- `pnpm build`: the production client build.
+- `pnpm reformat-files <files>`: run Prettier on the given files.
+
 This project is under active development again (no longer in maintenance mode),
 so improvements, refactors, and cleanups are welcome where they add value.
 
