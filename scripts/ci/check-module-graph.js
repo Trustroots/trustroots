@@ -43,8 +43,24 @@ function listSourceFiles(dir) {
   });
 }
 
+function scriptKind(file) {
+  if (file.endsWith('.tsx') || file.endsWith('.jsx') || file.endsWith('.js')) {
+    return ts.ScriptKind.TSX;
+  }
+  if (file.endsWith('.mts') || file.endsWith('.ts')) {
+    return ts.ScriptKind.TS;
+  }
+  return ts.ScriptKind.JS;
+}
+
 function sourceLinks(file, text) {
-  const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
+  const source = ts.createSourceFile(
+    file,
+    text,
+    ts.ScriptTarget.Latest,
+    true,
+    scriptKind(file),
+  );
   const imports = [];
   const definitions = [];
   const lookups = [];
