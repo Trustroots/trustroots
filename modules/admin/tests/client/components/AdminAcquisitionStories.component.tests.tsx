@@ -114,15 +114,13 @@ describe('<AdminAcquisitionStories />', () => {
       render(<AdminAcquisitionStories />);
       await screen.findByRole('table');
       const row = screen
-        .getByRole('link', { name: 'restricted-member', exact: true })
+        .getByRole('link', { name: 'restricted-member' })
         .closest('tr')!;
       expect(within(row).getByText('Suspended')).toHaveClass('label-danger');
       expect(within(row).getAllByText('Shadowbanned')).toHaveLength(2);
       expect(within(row).getByText('Visible', { exact: true })).toBeVisible();
       for (const name of ['active-member', 'older-member']) {
-        const activeRow = screen
-          .getByRole('link', { name, exact: true })
-          .closest('tr')!;
+        const activeRow = screen.getByRole('link', { name }).closest('tr')!;
         expect(
           within(activeRow).queryByText(/Suspended|Shadowbanned/),
         ).not.toBeInTheDocument();
@@ -200,9 +198,7 @@ describe('<AdminAcquisitionStories />', () => {
     expect(screen.queryByRole('table')).not.toBeInTheDocument();
     expect(checkbox).toBeVisible();
     fireEvent.click(checkbox);
-    expect(
-      screen.getByRole('link', { name: 'forest', exact: true }),
-    ).toBeVisible();
+    expect(screen.getByRole('link', { name: 'forest' })).toBeVisible();
   });
 
   it('filters by profile visibility together with assignment without refetching', async () => {
@@ -305,11 +301,12 @@ describe('<AdminAcquisitionStories />', () => {
       ]);
       render(<AdminAcquisitionStories />);
       expect(
-        await screen.findByRole('link', { name: 'river', exact: true }),
+        await screen.findByRole('link', { name: 'river' }),
       ).toHaveAttribute('href', '/profile/river');
-      expect(
-        screen.getByRole('link', { name: 'forest', exact: true }),
-      ).toHaveAttribute('href', '/profile/forest');
+      expect(screen.getByRole('link', { name: 'forest' })).toHaveAttribute(
+        'href',
+        '/profile/forest',
+      );
     },
   );
 

@@ -59,9 +59,10 @@ function renderNavigation(props: Partial<TopNavigationProps> = {}) {
 describe('<TopNavigationSmall />', () => {
   it('adds an Admin link for administrators on another member and their own profile', () => {
     const { rerender } = renderNavigation({ isAdmin: true });
-    expect(
-      screen.getByRole('link', { name: 'Admin', exact: true }),
-    ).toHaveAttribute('href', '/admin/user/alice');
+    expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute(
+      'href',
+      '/admin/user/alice',
+    );
     rerender(
       <TopNavigationSmall
         isAdmin
@@ -73,22 +74,23 @@ describe('<TopNavigationSmall />', () => {
         onContactRemoved={jest.fn()}
       />,
     );
-    expect(
-      screen.getByRole('link', { name: 'Admin', exact: true }),
-    ).toHaveAttribute('href', '/admin/user/river');
+    expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute(
+      'href',
+      '/admin/user/river',
+    );
   });
 
   it('omits Admin navigation before the member ID is loaded', () => {
     renderNavigation({ isAdmin: true, userId: '' });
     expect(
-      screen.queryByRole('link', { name: 'Admin', exact: true }),
+      screen.queryByRole('link', { name: 'Admin' }),
     ).not.toBeInTheDocument();
   });
 
   it('omits Admin navigation for ordinary viewers', () => {
     renderNavigation();
     expect(
-      screen.queryByRole('link', { name: 'Admin', exact: true }),
+      screen.queryByRole('link', { name: 'Admin' }),
     ).not.toBeInTheDocument();
   });
   it('links own profile visitors to profile editing', () => {

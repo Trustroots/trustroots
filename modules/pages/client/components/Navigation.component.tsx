@@ -218,6 +218,5 @@ export default function Navigation({ user, onSignout }: NavigationProps) {
 
 Navigation.propTypes = {
   user: userType,
-  isNativeMobileApp: PropTypes.bool,
   onSignout: PropTypes.func,
 };

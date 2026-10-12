@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 
@@ -316,7 +315,3 @@ export default function OfferMeetEditPage() {
     </section>
   );
 }
-
-OfferMeetEditPage.propTypes = {
-  user: PropTypes.object.isRequired,
-};

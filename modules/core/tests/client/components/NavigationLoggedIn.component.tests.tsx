@@ -125,7 +125,7 @@ describe('<NavigationLoggedIn />', () => {
         user={{ ...user, roles: ['user', 'admin'] }}
       />,
     );
-    const admin = screen.getByRole('link', { name: 'Admin', exact: true });
+    const admin = screen.getByRole('link', { name: 'Admin' });
     expect(admin).toHaveAttribute('href', '/admin');
     expect(admin.closest('li')).toHaveClass('active', 'hidden-xs');
     const adminListItem = requireElement(admin.closest('li'));
@@ -146,7 +146,7 @@ describe('<NavigationLoggedIn />', () => {
         />,
       );
       expect(
-        screen.queryByRole('link', { name: 'Admin', exact: true }),
+        screen.queryByRole('link', { name: 'Admin' }),
       ).not.toBeInTheDocument();
     },
   );
@@ -159,9 +159,10 @@ describe('<NavigationLoggedIn />', () => {
         user={{ ...user, roles: ['user', 'welcome-team'] }}
       />,
     );
-    expect(
-      screen.getByRole('link', { name: 'Admin', exact: true }),
-    ).toHaveAttribute('href', '/admin/acquisition-stories');
+    expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute(
+      'href',
+      '/admin/acquisition-stories',
+    );
     rerender(
       <NavigationLoggedIn
         currentPath="/admin"
@@ -169,9 +170,10 @@ describe('<NavigationLoggedIn />', () => {
         user={{ ...user, roles: ['user', 'admin'] }}
       />,
     );
-    expect(
-      screen.getByRole('link', { name: 'Admin', exact: true }),
-    ).toHaveAttribute('href', '/admin');
+    expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute(
+      'href',
+      '/admin',
+    );
   });
 
   it('forwards signout click to callback', () => {

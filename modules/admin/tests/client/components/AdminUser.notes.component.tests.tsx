@@ -81,11 +81,10 @@ it.each([
       expect(mockedNotesApi.listNotes).toHaveBeenCalledTimes(1),
     );
     fireEvent.change(draft, { target: { value: 'An unfinished note.' } });
-    fireEvent.click(screen.getByRole('button', { name: label, exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: label }));
     fireEvent.click(
       within(await screen.findByRole('dialog')).getByRole('button', {
         name: label,
-        exact: true,
       }),
     );
 

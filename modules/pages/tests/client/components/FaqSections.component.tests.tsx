@@ -130,9 +130,7 @@ describe('FAQ page sections', () => {
       'href',
       '/support?category=reportBug',
     );
-    expect(
-      screen.getByRole('link', { name: 'GitHub', exact: true }),
-    ).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
       'href',
       'https://github.com/Trustroots/trustroots/issues',
     );

@@ -2,6 +2,7 @@
 import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
 import ReactMapGL from 'react-map-gl';
+import { reactMapGLDefaultProps } from './reactMapGLDefaultProps';
 
 // Internal dependencies
 import './map.less';
@@ -89,6 +90,7 @@ export default function Map(props: MapProps) {
 
   return (
     <ReactMapGL
+      {...reactMapGLDefaultProps}
       reuseMaps
       controller={mapController}
       dragRotate={false}
