@@ -653,10 +653,7 @@ describe('API route registrations', () => {
       confirmAdminPassword: handler('adminPolicy.confirmAdminPassword'),
       elevateAdminSession: handler('adminPolicy.elevateAdminSession'),
     };
-    const acquisitionStories = controller(
-      ['list'],
-      'adminAcquisitionStories',
-    );
+    const acquisitionStories = controller(['list'], 'adminAcquisitionStories');
     const auditLog = controller(['list', 'record', 'actors'], 'adminAuditLog');
     const messages = controller(['getMessages'], 'adminMessages');
     const newsletter = controller(
