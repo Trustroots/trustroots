@@ -27,13 +27,6 @@ const registerRoutes = app => {
     .all(...privileged)
     .post(adminAuditLog.record, adminAcquisitionStories.list);
   app
-<<<<<<< HEAD
-=======
-    .route('/api/admin/acquisition-stories/analysis')
-    .all(...privileged)
-    .post(adminAuditLog.record, adminAcquisitionStories.getAnalysis);
-  app
->>>>>>> origin/codex/hardening-sessions
     .route('/api/admin/audit-log')
     .all(...privileged)
     .get(adminAuditLog.list);

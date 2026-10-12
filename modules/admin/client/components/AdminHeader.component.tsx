@@ -80,8 +80,7 @@ export default function AdminHeader() {
                 page =>
                   isAdmin ||
                   (page.path === 'staff-blockers' && isWelcomeTeam) ||
-                  page.path === 'acquisition-stories' ||
-                  page.path === 'acquisition-stories/analysis',
+                  page.path === 'acquisition-stories',
               )
               .map(page => renderTab(page))}
           </ul>
@@ -89,26 +88,8 @@ export default function AdminHeader() {
             {isAdmin && renderTab({ path: 'audit-log', label: 'Audit log' })}
           </ul>
         </div>
-<<<<<<< HEAD
-        <ul className="nav navbar-nav">
-          {pages
-            .filter(
-              page =>
-                isAdmin ||
-                (page.path === 'staff-blockers' && isWelcomeTeam) ||
-                page.path === 'acquisition-stories',
-            )
-            .map(page => renderTab(page))}
-        </ul>
-        <ul className="nav navbar-nav pull-right">
-          {isAdmin && renderTab({ path: 'audit-log', label: 'Audit log' })}
-        </ul>
-      </div>
-    </nav>
-=======
       </nav>
     </>
->>>>>>> origin/codex/hardening-sessions
   );
 }
 

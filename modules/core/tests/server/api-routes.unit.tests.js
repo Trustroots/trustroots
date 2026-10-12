@@ -451,6 +451,8 @@ describe('API route registrations', () => {
   });
 
   it('registers local authentication routes without social OAuth', () => {
+    const signinChallenge =
+      require('../../../users/server/services/signin-challenge.server.service.mjs').default;
     const authentication = controller(
       [
         'confirmEmail',
@@ -511,8 +513,13 @@ describe('API route registrations', () => {
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/signin').post, [
       targetedRequestLimit.signin,
+      signinChallenge,
       authentication.signin,
     ]);
+    assert.equal(
+      routeByPath(routes, '/api/auth/signin').post[1],
+      signinChallenge,
+    );
     const signoutRoute = routeByPath(routes, '/api/auth/signout');
     let getSignoutStatus;
     signoutRoute.get[0](
@@ -606,10 +613,6 @@ describe('API route registrations', () => {
   });
 
   it('registers admin routes with audit log middleware where required', () => {
-<<<<<<< HEAD
-    const policy = { isAllowed: handler('adminPolicy.isAllowed') };
-    const acquisitionStories = controller(['list'], 'adminAcquisitionStories');
-=======
     const policy = {
       isAllowed: handler('adminPolicy.isAllowed'),
       requireAdminElevation: handler('adminPolicy.requireAdminElevation'),
@@ -617,10 +620,9 @@ describe('API route registrations', () => {
       elevateAdminSession: handler('adminPolicy.elevateAdminSession'),
     };
     const acquisitionStories = controller(
-      ['getAnalysis', 'list'],
+      ['list'],
       'adminAcquisitionStories',
     );
->>>>>>> origin/codex/hardening-sessions
     const auditLog = controller(['list', 'record', 'actors'], 'adminAuditLog');
     const messages = controller(['getMessages'], 'adminMessages');
     const newsletter = controller(

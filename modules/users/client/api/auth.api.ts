@@ -1,4 +1,5 @@
 import axios from '../../../core/client/api/http-client.js';
+import { solveSigninChallenge } from '../utils/signin-challenge';
 
 export interface SigninCredentials {
   username: string;
@@ -26,8 +27,29 @@ export interface AuthenticatedUser {
 export async function signin(
   credentials: SigninCredentials,
 ): Promise<AuthenticatedUser> {
-  const { data } = await axios.post('/api/auth/signin', credentials);
-  return data;
+  try {
+    const { data } = await axios.post('/api/auth/signin', credentials);
+    return data;
+  } catch (error) {
+    const response = (
+      error as {
+        response?: {
+          status?: number;
+          data?: { signinChallenge?: { token: string; difficulty: number } };
+        };
+      }
+    ).response;
+    if (response?.status !== 429 || !response.data?.signinChallenge)
+      throw error;
+    const signinProof = await solveSigninChallenge(
+      response.data.signinChallenge,
+    );
+    const { data } = await axios.post('/api/auth/signin', {
+      ...credentials,
+      signinProof,
+    });
+    return data;
+  }
 }
 
 export async function signup(
