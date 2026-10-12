@@ -49,7 +49,10 @@ jest.mock(
       location,
       onLocationChange,
     }: React.ComponentProps<typeof OfferLocationEditor>) => (
-      <div data-testid="location-editor" data-location={location.join(',')}>
+      <div
+        data-testid="location-editor"
+        data-location={location?.join(',') ?? ''}
+      >
         <button type="button" onClick={() => onLocationChange([52, 4])}>
           Change location
         </button>
