@@ -24,10 +24,17 @@ const user: UserProfile = {
 
 jest.mock('@/modules/tribes/client/api/tribes.api');
 jest.mock(
+  '@/modules/tribes/client/components/HitchhikingMap',
+  () =>
+    function MockHitchhikingMap() {
+      return <div>Recent Hitchwiki locations</div>;
+    },
+);
+jest.mock(
   '@/modules/tribes/client/components/HackerspaceMap',
   () =>
     function MockHackerspaceMap() {
-      return <div data-testid="hackerspace-map" />;
+      return <div data-testid="hackerspace-map">Reported hackerspaces</div>;
     },
 );
 
@@ -104,6 +111,24 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     getMock.mockResolvedValue(tribe);
+  });
+
+  it.each([
+    ['hitchhikers', 'Recent Hitchwiki locations'],
+    ['hackers', 'Reported hackerspaces'],
+    ['fictional', null],
+  ])('selects the appropriate prominent map for %s', async (slug, mapText) => {
+    getMock.mockResolvedValue({ ...tribe, slug });
+    const { container } = render(
+      <TribeDetailPage circle={slug!} onMembershipUpdated={jest.fn()} />,
+    );
+    await screen.findByRole('heading', { name: 'Hitchhikers' });
+    if (mapText) {
+      expect(screen.getByText(mapText)).toBeInTheDocument();
+      expect(
+        container.querySelector('.has-location-map .circle-hero-map'),
+      ).toBeInTheDocument();
+    } else expect(container.querySelector('.circle-hero-map')).toBeNull();
   });
 
   it.each([undefined, user])(
