@@ -21,6 +21,7 @@ export default function AdminHeader() {
   }, []);
 
   const pages = [
+    { path: 'hackerspaces', label: 'Hackerspaces' },
     {
       path: 'messages',
       label: 'Messages',

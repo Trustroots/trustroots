@@ -6,7 +6,7 @@ import {
   getCurrentUser,
 } from '@/modules/core/client/services/client-runtime';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
-import { generateClientUser } from '@/testutils/common/data.common.testutil';
+import { generateClientUser } from '@/testutils/common/data.common.testutil.mts';
 
 jest.mock('@/modules/core/client/services/client-runtime');
 jest.mock('@/modules/messages/client/api/messages.api');

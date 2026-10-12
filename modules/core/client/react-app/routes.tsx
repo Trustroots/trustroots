@@ -16,6 +16,7 @@ import {
   toTanStackPath,
 } from '@/modules/core/shared/react-route-ownership.mts';
 import Admin from '@/modules/admin/client/components/Admin.component';
+import AdminHackerspaces from '@/modules/admin/client/components/AdminHackerspaces.component';
 import AdminStaffBlockers from '@/modules/admin/client/components/AdminStaffBlockers.component';
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
 import AdminAuditLog from '@/modules/admin/client/components/AdminAuditLog.component';
@@ -239,6 +240,7 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/': renderWithUser(HomeRoute),
     '/about': renderWithUser(HomeRoute),
     '/admin': () => <Admin />,
+    '/admin/hackerspaces': () => <AdminHackerspaces />,
     '/admin/staff-blockers': () => <AdminStaffBlockers />,
     '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
     '/admin/audit-log': () => <AdminAuditLog />,
