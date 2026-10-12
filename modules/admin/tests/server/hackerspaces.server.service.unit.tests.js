@@ -101,4 +101,160 @@ describe('SpaceAPI Collector import service', () => {
     );
     assert.equal(service.SPACEAPI_COLLECTOR_URL, 'https://api.spaceapi.io/');
   });
+
+  it('strips URL credentials and parameters and excludes malformed links', () => {
+    const normalise = (url, website) =>
+      service.normaliseCollectorEntry({ url, data: { url: website } }, 'now');
+    assert.equal(
+      normalise(
+        'https://user:password@example.test/api?token=fictional#fragment',
+        'https://user:password@example.test/?key=fictional#fragment',
+      ).endpoint,
+      'https://example.test/api',
+    );
+    assert.equal(normalise('', '').website, '');
+    assert.equal(normalise('', 'javascript:invalid').website, '');
+    assert.equal(normalise(undefined, undefined).endpoint, '');
+    assert.equal(normalise('invalid', 'invalid').endpoint, 'invalid:invalid');
+    assert.equal(
+      normalise('file:///example', null).endpoint,
+      'invalid:file:///example',
+    );
+    assert.equal(
+      service.normaliseCollectorEntry(undefined, 'now').eligible,
+      false,
+    );
+  });
+
+  it('keeps optional source details and all structured address fields', () => {
+    const entry = service.normaliseCollectorEntry(
+      {
+        url: 'https://example.test/api',
+        valid: true,
+        data: {
+          space: 'Example Lab',
+          description: 'Shared tools',
+          space_type: 'fablab',
+          location: {
+            lat: -90,
+            lon: -180,
+            address: '1 Fictional Road',
+            city: 'Example City',
+            state: 'Example Region',
+            zip: '00000',
+            country_code: 'XX',
+          },
+          state: { open: false },
+        },
+      },
+      'now',
+    );
+    assert.equal(entry.eligible, true);
+    assert.equal(entry.open, 'closed');
+    assert.equal(entry.spaceType, 'fablab');
+    assert.equal(entry.description, 'Shared tools');
+    assert.deepEqual(entry.addressParts, [
+      '1 Fictional Road',
+      'Example City',
+      'Example Region',
+      '00000',
+      'XX',
+    ]);
+    const country = service.normaliseCollectorEntry(
+      { data: { location: { country: 'Example Country' } } },
+      'now',
+    );
+    assert.equal(country.address, 'Example Country');
+    for (const [lat, lon] of [
+      [-91, 0],
+      [0, 181],
+      [0, -181],
+      [0, 'invalid'],
+      [0, 0],
+    ]) {
+      assert.equal(
+        service.normaliseCollectorEntry(
+          { valid: true, data: { location: { lat, lon } } },
+          'now',
+        ).eligible,
+        false,
+      );
+    }
+  });
+
+  it('accepts supported Collector envelopes and the default fetch transport', async () => {
+    const original = global.fetch;
+    try {
+      global.fetch = async (url, options) => {
+        assert.equal(url, service.SPACEAPI_COLLECTOR_URL);
+        assert.equal(options.headers.accept, 'application/json');
+        assert.ok(options.signal);
+        return { ok: true, json: async () => ({ spaces: [{ valid: false }] }) };
+      };
+      assert.equal((await service.fetchSpaceApiCollector()).length, 1);
+      assert.equal(
+        (
+          await service.fetchSpaceApiCollector(async () => ({
+            ok: true,
+            json: async () => ({ data: [] }),
+          }))
+        ).length,
+        0,
+      );
+      await assert.rejects(
+        service.fetchSpaceApiCollector(async () => ({
+          ok: true,
+          json: async () => null,
+        })),
+        /not a list/,
+      );
+    } finally {
+      global.fetch = original;
+    }
+  });
+});
+
+describe('SpaceAPI import preview controller', () => {
+  let controller;
+  const originalFetch = global.fetch;
+  before(async () => {
+    controller = await import(
+      '../../server/controllers/admin.hackerspaces.server.controller.mjs'
+    );
+  });
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+  function response() {
+    return {
+      statusCode: 200,
+      body: undefined,
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+      json(body) {
+        this.body = body;
+      },
+    };
+  }
+  it('returns a reviewable preview without signing or publishing', async () => {
+    global.fetch = async () => ({ ok: true, json: async () => [] });
+    const res = response();
+    await controller.preview({}, res);
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(res.body, []);
+  });
+  it('reports upstream failures and handles missing error messages', async () => {
+    for (const error of [new Error('Collector unavailable'), null]) {
+      global.fetch = () => Promise.reject(error);
+      const res = response();
+      await controller.preview({}, res);
+      assert.equal(res.statusCode, 502);
+      assert.equal(
+        res.body.message,
+        error?.message || 'Could not fetch the SpaceAPI Collector.',
+      );
+    }
+  });
 });

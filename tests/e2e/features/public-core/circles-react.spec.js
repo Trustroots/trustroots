@@ -262,6 +262,61 @@ test('Hackers circle foregrounds the public place map and verification limits', 
 test('administrators can review a SpaceAPI import preview', async ({
   page,
 }) => {
+  await page.addInitScript(() => {
+    const NativeWebSocket = window.WebSocket;
+    window.placePublications = [];
+    // Keep the browser test offline for the two publication relays while
+    // retaining normal sockets (including the webpack development server).
+    window.WebSocket = class PlaceRelaySocket {
+      static CONNECTING = 0;
+      static OPEN = 1;
+      static CLOSING = 2;
+      static CLOSED = 3;
+      readyState = 0;
+      constructor(url, ...args) {
+        if (!/^wss:\/\/relay\.(trustroots|nomadwiki)\.org\/?$/.test(url)) {
+          return new NativeWebSocket(url, ...args);
+        }
+        this.url = url;
+        setTimeout(() => {
+          this.readyState = 1;
+          this.onopen?.(new Event('open'));
+        }, 0);
+      }
+      send(message) {
+        const [type, value] = JSON.parse(message);
+        let reply;
+        if (type === 'REQ') reply = ['EOSE', value];
+        if (type === 'EVENT') {
+          window.placePublications.push({ relay: this.url, event: value });
+          reply = ['OK', value.id, true, 'accepted'];
+        }
+        if (reply)
+          queueMicrotask(() =>
+            this.onmessage?.(
+              new MessageEvent('message', { data: JSON.stringify(reply) }),
+            ),
+          );
+      }
+      close() {
+        this.readyState = 3;
+        queueMicrotask(() => this.onclose?.(new Event('close')));
+      }
+    };
+    window.nostr = {
+      getPublicKey: async () => 'a'.repeat(64),
+      signEvent: event =>
+        new Promise(resolve => {
+          window.approvePlaceSignature = () =>
+            resolve({
+              ...event,
+              id: 'c'.repeat(64),
+              pubkey: 'a'.repeat(64),
+              sig: 'b'.repeat(128),
+            });
+        }),
+    };
+  });
   await signInViaApi(page, undefined, SEEDED_ADMIN);
   await page.route('**/api/admin/hackerspaces/preview', route =>
     route.fulfill({
@@ -275,6 +330,9 @@ test('administrators can review a SpaceAPI import preview', async ({
           latitude: 51.5,
           longitude: -0.1,
           address: 'Example City',
+          addressParts: ['', 'Example City', '', '', ''],
+          description: 'A shared workshop',
+          open: 'closed',
           fetchedAt: '2026-10-12T10:00:00Z',
           spaceType: 'hackerspace',
         },
@@ -306,6 +364,30 @@ test('administrators can review a SpaceAPI import preview', async ({
   await expect(
     page.getByRole('button', { name: 'Sign and publish approved changes' }),
   ).toBeEnabled();
+  await page
+    .getByRole('button', { name: 'Sign and publish approved changes' })
+    .click();
+  await expect(page.getByText(/Signing and publishing 1 of 1/)).toBeVisible();
+  expect(await page.evaluate(() => window.placePublications)).toHaveLength(0);
+  await page.evaluate(() => window.approvePlaceSignature());
+  await expect(
+    page.getByText(/Published 1 place events; 0 failed/),
+  ).toBeVisible();
+  await expect(
+    page.getByText('wss://relay.trustroots.org: 1 published; 0 failed'),
+  ).toBeVisible();
+  await expect(
+    page.getByText('wss://relay.nomadwiki.org: 1 published; 0 failed'),
+  ).toBeVisible();
+  const publications = await page.evaluate(() => window.placePublications);
+  expect(publications).toHaveLength(2);
+  expect(publications[0].event).toEqual(publications[1].event);
+  expect(publications[0].event.kind).toBe(33000);
+  expect(
+    publications[0].event.tags.every(tag =>
+      tag.every(value => typeof value === 'string'),
+    ),
+  ).toBe(true);
 });
 
 test('member navigation menus and narrow layout remain usable', async ({
