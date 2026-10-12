@@ -53,32 +53,73 @@ function getForm(container: HTMLElement): HTMLFormElement {
 }
 
 describe('<ThreadReply>', () => {
-  it('expands and collapses without replacing the editor or changing the draft', () => {
+  it('resizes with the keyboard within limits without replacing the editor or changing the draft', () => {
     const { container, getByRole } = render(
       <ThreadReply cacheKey="expanded-draft" onSend={jest.fn()} />,
     );
     const editor = getByRole('textbox');
     fireEvent.change(editor, { target: { value: 'A longer fictional draft' } });
-    const expand = getByRole('button', { name: 'Expand' });
-    expect(expand).toHaveAttribute('aria-expanded', 'false');
-    expect(expand).toHaveAttribute(
+    const form = getForm(container);
+    Object.defineProperty(form.parentElement, 'clientHeight', { value: 1000 });
+    jest
+      .spyOn(form, 'getBoundingClientRect')
+      .mockImplementation(
+        () =>
+          ({ height: Number.parseFloat(form.style.height) || 120 } as DOMRect),
+      );
+    const handle = getByRole('separator', { name: 'Resize message editor' });
+    expect(handle).toHaveAttribute(
       'aria-controls',
       'message-reply-writing-area',
     );
-    fireEvent.click(expand);
-    expect(getForm(container)).toHaveClass('message-reply-expanded');
-    expect(getByRole('button', { name: 'Collapse' })).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    );
+    fireEvent.keyDown(handle, { key: 'Tab' });
+    expect(form).not.toHaveClass('message-reply-resized');
+    fireEvent.keyDown(handle, { key: 'ArrowUp' });
+    expect(form).toHaveStyle({ height: '152px' });
+    expect(form).toHaveClass('message-reply-resized');
+    fireEvent.keyDown(handle, { key: 'ArrowDown' });
+    expect(form).toHaveStyle({ height: '120px' });
+    fireEvent.keyDown(handle, { key: 'End' });
+    expect(form).toHaveStyle({ height: '800px' });
+    fireEvent.keyDown(handle, { key: 'ArrowUp' });
+    expect(form).toHaveStyle({ height: '800px' });
+    fireEvent.keyDown(handle, { key: 'Home' });
+    expect(form).toHaveStyle({ height: '88px' });
+    fireEvent.keyDown(handle, { key: 'ArrowDown' });
+    expect(form).toHaveStyle({ height: '88px' });
     expect(getByRole('textbox')).toBe(editor);
-    fireEvent.click(getByRole('button', { name: 'Collapse' }));
-    expect(getForm(container)).not.toHaveClass('message-reply-expanded');
     expect(getByRole('textbox')).toBe(editor);
     expect(editor).toHaveValue('A longer fictional draft');
     expect(window.localStorage.getItem('expanded-draft')).toBe(
       'A longer fictional draft',
     );
+  });
+
+  it('drags upwards and downwards and stops resizing after pointer capture is lost', () => {
+    const originalPointerEvent = window.PointerEvent;
+    window.PointerEvent = MouseEvent as typeof PointerEvent;
+    const { container, getByRole } = render(<ThreadReply onSend={jest.fn()} />);
+    const form = getForm(container);
+    Object.defineProperty(form.parentElement, 'clientHeight', { value: 1000 });
+    jest
+      .spyOn(form, 'getBoundingClientRect')
+      .mockReturnValue({ height: 120 } as DOMRect);
+    const handle = getByRole('separator');
+    handle.setPointerCapture = jest.fn();
+    fireEvent.pointerMove(handle, { clientY: 50 });
+    expect(form).not.toHaveClass('message-reply-resized');
+    fireEvent.pointerDown(handle, { button: 2, clientY: 100 });
+    expect(handle.setPointerCapture).not.toHaveBeenCalled();
+    fireEvent.pointerDown(handle, { button: 0, clientY: 100 });
+    expect(handle.setPointerCapture).toHaveBeenCalledTimes(1);
+    fireEvent.pointerMove(handle, { clientY: 20 });
+    expect(form).toHaveStyle({ height: '200px' });
+    fireEvent.pointerMove(handle, { clientY: 180 });
+    expect(form).toHaveStyle({ height: '88px' });
+    fireEvent.lostPointerCapture(handle);
+    fireEvent.pointerMove(handle, { clientY: 0 });
+    expect(form).toHaveStyle({ height: '88px' });
+    window.PointerEvent = originalPointerEvent;
   });
 
   it('disables preview for empty drafts and shows formatted content without changing the cached draft', async () => {
@@ -209,7 +250,7 @@ describe('<ThreadReply>', () => {
       <ThreadReply cacheKey="preview-draft" onSend={onSend} />,
     );
     fireEvent.change(getByRole('textbox'), { target: { value: draft } });
-    fireEvent.click(getByRole('button', { name: 'Expand' }));
+    fireEvent.keyDown(getByRole('separator'), { key: 'ArrowUp' });
     fireEvent.click(getByRole('button', { name: 'Preview' }));
     await waitFor(() => expect(queryByRole('status')).not.toBeInTheDocument());
     fireEvent.click(getByRole('button', { name: /Send/ }));
@@ -218,19 +259,15 @@ describe('<ThreadReply>', () => {
     );
     expect(onSend).toHaveBeenCalledWith(draft);
     expect(getByRole('button', { name: 'Edit' })).toBeInTheDocument();
-    expect(getByRole('button', { name: 'Collapse' })).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    );
+    expect(getByRole('separator').closest('form')).toHaveStyle({
+      height: '88px',
+    });
     expect(window.localStorage.getItem('preview-draft')).toBe(draft);
     fireEvent.click(getByRole('button', { name: /Send/ }));
     await waitFor(() => expect(getByRole('textbox')).toHaveValue(''));
     expect(getByRole('textbox')).toHaveFocus();
     expect(window.localStorage.getItem('preview-draft')).toBeNull();
-    expect(getByRole('button', { name: 'Expand' })).toHaveAttribute(
-      'aria-expanded',
-      'false',
-    );
+    expect(getByRole('separator')).not.toHaveAttribute('aria-valuenow');
   });
 
   it('focuses the editor when desktop autofocus is enabled', () => {

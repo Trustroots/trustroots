@@ -22,7 +22,9 @@ export default function ThreadReply({
   const { t } = useTranslation('messages');
 
   const [sending, setSending] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [composerHeight, setComposerHeight] = useState<number | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const drag = useRef<{ y: number; height: number } | null>(null);
   const [editorKeyCounter, setEditorKeyCounter] = useState(0);
   const [content, setContent] = useState(() => getDraft() || '');
   const [previewing, setPreviewing] = useState(false);
@@ -30,6 +32,48 @@ export default function ThreadReply({
   const [previewError, setPreviewError] = useState(false);
   const previewRequest = useRef(0);
   const editButton = useRef<HTMLButtonElement>(null);
+
+  function resize(height: number) {
+    const maximum = formRef.current!.parentElement!.clientHeight * 0.8;
+    setComposerHeight(Math.max(88, Math.min(maximum, height)));
+  }
+
+  function startResize(event: React.PointerEvent<HTMLDivElement>) {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    drag.current = {
+      y: event.clientY,
+      height: formRef.current!.getBoundingClientRect().height,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function moveResize(event: React.PointerEvent<HTMLDivElement>) {
+    if (drag.current) {
+      resize(drag.current.height + drag.current.y - event.clientY);
+    }
+  }
+
+  function resizeWithKeyboard(event: React.KeyboardEvent<HTMLDivElement>) {
+    const height = formRef.current!.getBoundingClientRect().height;
+    switch (event.key) {
+      case 'ArrowUp':
+        resize(height + 32);
+        break;
+      case 'ArrowDown':
+        resize(height - 32);
+        break;
+      case 'Home':
+        resize(88);
+        break;
+      case 'End':
+        resize(Infinity);
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+  }
 
   useEffect(() => {
     return () => {
@@ -85,7 +129,7 @@ export default function ThreadReply({
     if (sent) {
       previewRequest.current += 1;
       setPreviewing(false);
-      setExpanded(false);
+      setComposerHeight(null);
       setContent('');
       // There is a bug somewhere that means just setting content to '' does not
       // set the text in the editor after pressing send, we can work around that by
@@ -124,11 +168,37 @@ export default function ThreadReply({
 
   return (
     <form
+      ref={formRef}
       id="message-reply"
       name="messageForm"
-      className={`form-horizontal${expanded ? ' message-reply-expanded' : ''}`}
+      className={`form-horizontal${
+        composerHeight === null ? '' : ' message-reply-resized'
+      }`}
+      style={{ height: composerHeight ?? undefined }}
       onSubmit={event => send(event)}
     >
+      <div
+        className="message-reply-resize-handle"
+        role="separator"
+        tabIndex={0}
+        aria-orientation="horizontal"
+        aria-label={t<string>('Resize message editor')}
+        aria-controls="message-reply-writing-area"
+        aria-keyshortcuts="ArrowUp ArrowDown Home End"
+        aria-valuemin={88}
+        aria-valuemax={
+          composerHeight === null
+            ? undefined
+            : Math.max(88, formRef.current!.parentElement!.clientHeight * 0.8)
+        }
+        aria-valuenow={composerHeight ?? undefined}
+        onPointerDown={startResize}
+        onPointerMove={moveResize}
+        onLostPointerCapture={() => {
+          drag.current = null;
+        }}
+        onKeyDown={resizeWithKeyboard}
+      />
       <div
         id="message-reply-writing-area"
         className="row message-reply-editor-row"
@@ -197,15 +267,6 @@ export default function ThreadReply({
           onClick={previewing ? edit : showPreview}
         >
           {previewing ? t<string>('Edit') : t<string>('Preview')}
-        </button>
-        <button
-          type="button"
-          className="btn btn-default message-size-toggle"
-          aria-expanded={expanded}
-          aria-controls="message-reply-writing-area"
-          onClick={() => setExpanded(value => !value)}
-        >
-          {expanded ? t<string>('Collapse') : t<string>('Expand')}
         </button>
         <small className="text-muted hidden-xs">
           {t<string>(

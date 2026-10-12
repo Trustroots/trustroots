@@ -273,26 +273,31 @@ The system SHALL offer authenticated POST /api/messages-preview accepting a stri
 - **WHEN** the content field is missing, non-string or empty after stripping markup
 - **THEN** the system rejects the preview request
 
-### Requirement: Expandable message composer
+### Requirement: Resizable message composer
 
-The system SHALL let members expand and collapse the opening-message and reply composer on desktop and mobile. Expanded mode SHALL use the available conversation area, preserve the draft and preview state, and keep the size toggle and Send action visible. Drafts exceeding the available area SHALL remain scrollable.
+The system SHALL let members resize the opening-message and reply composer by dragging its top handle upwards or downwards using a mouse or touch. The handle SHALL support keyboard resizing. Resizing SHALL preserve the draft and preview state, fit within the available conversation area and keep Send visible. Drafts exceeding the selected height SHALL remain scrollable. A successful send SHALL restore the default composer size.
 
-#### Scenario: Member expands a draft
+#### Scenario: Member resizes a draft
 
-- **WHEN** a member selects Expand while composing a message
-- **THEN** the writing area fills the available conversation area
+- **WHEN** a member drags the handle upwards or downwards
+- **THEN** the writing area grows or shrinks within its size limits
 - **AND** the draft content is preserved
-- **AND** the control reports its expanded state to assistive technology
 
-#### Scenario: Member collapses or previews an expanded draft
+#### Scenario: Member resizes using the keyboard
 
-- **WHEN** a member collapses the composer or switches between editing and preview
-- **THEN** the draft content is preserved
-- **AND** preview toggling retains the selected composer size
+- **WHEN** the handle has focus and the member presses Arrow Up or Arrow Down
+- **THEN** the writing area grows or shrinks
+- **AND** Home and End select the minimum and maximum sizes
+
+#### Scenario: Member previews or sends a resized draft
+
+- **WHEN** a member switches between editing and preview
+- **THEN** the draft and selected composer size are preserved
 - **AND** Send remains available
+- **AND** sending successfully restores the default size
 
 #### Scenario: Available mobile height changes
 
 - **WHEN** the viewport or virtual keyboard changes the available height
-- **THEN** the expanded editor fits the available conversation area
-- **AND** the size toggle and Send action remain visible
+- **THEN** the resized editor fits the available conversation area
+- **AND** the handle and Send action remain visible

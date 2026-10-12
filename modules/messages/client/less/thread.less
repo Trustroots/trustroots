@@ -130,8 +130,31 @@
   // text and the actions row overlap.
   flex: 0 0 auto;
   min-height: 0;
-  max-height: 50vh;
+  max-height: ~'max(100px, 50vh)';
   overflow: hidden;
+
+  .message-reply-resize-handle {
+    flex: 0 0 16px;
+    cursor: ns-resize;
+    touch-action: none;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:before {
+      content: '';
+      width: 40px;
+      height: 4px;
+      border-radius: 2px;
+      background: @gray-light;
+    }
+
+    &:focus-visible {
+      outline: 2px solid @brand-primary;
+      outline-offset: -2px;
+    }
+  }
 
   .message-reply-editor-row {
     flex: 1 1 auto;
@@ -209,7 +232,7 @@
       margin-bottom: 0;
       min-height: 53px;
       // Reserve space for the send-actions row inside the 50vh composer cap.
-      max-height: ~'min(250px, calc(50vh - 45px))';
+      max-height: ~'min(250px, calc(50vh - 61px))';
       overflow: auto;
       resize: none;
       &:focus {
@@ -231,7 +254,7 @@
         margin-bottom: 0px;
         min-height: 43px;
         border-radius: 0;
-        max-height: ~'min(100px, calc(25vh - 45px))';
+        max-height: ~'min(100px, calc(25vh - 61px))';
         &:after {
           top: 2px;
           left: 5px;
@@ -259,29 +282,23 @@
     }
   }
   @media (max-width: @screen-xs-max) {
-    max-height: 25vh;
+    max-height: ~'max(100px, 25vh)';
   }
 
-  // Fill the thread container, which already follows the virtual keyboard
-  // inset. Keep the editor scrollable and reserve a separate actions row.
-  &.message-reply-expanded {
-    position: absolute;
-    inset: 0;
-    z-index: 10;
-    max-height: none;
-    padding: 8px;
-    background: @body-bg;
+  // The thread container follows the virtual keyboard inset. Clamp manually
+  // resized composers to it, with room left for the conversation above.
+  &.message-reply-resized {
+    max-height: 80%;
 
     .message-reply-editor-row {
       display: flex;
       flex-wrap: nowrap;
-      margin: 0 0 8px;
+      margin-bottom: 0;
 
       > div {
         display: flex;
         flex-direction: column;
         min-height: 0;
-        padding: 0;
         width: 100%;
       }
 
@@ -290,7 +307,7 @@
         flex: 1 1 auto;
         min-height: 0;
         max-height: none;
-        margin: 0;
+        margin-bottom: 0;
       }
 
       > div > .panel {
@@ -303,20 +320,6 @@
       flex: 1 1 auto;
       min-height: 0;
       max-height: none;
-    }
-
-    .message-reply-actions {
-      padding: 0;
-    }
-
-    .message-preview-toggle {
-      margin-left: 0;
-    }
-
-    @media (max-width: @screen-xs-max) {
-      .message-reply-actions {
-        padding-right: 45px;
-      }
     }
   }
 }
