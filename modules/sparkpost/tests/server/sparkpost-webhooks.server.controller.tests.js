@@ -4,7 +4,7 @@ const should = require('should');
 const influx = require('influx');
 const sinon = require('sinon');
 const config = require('./../../../../config/config.mjs');
-const sparkpostWebhooks = require('./../../server/controllers/sparkpost-webhooks.server.controller.mjs');
+const sparkpostWebhooks = require('./../../server/controllers/sparkpost-webhooks.server.controller.mts');
 
 describe('Sparkpost Webhooks - Integration Test', function () {
   // restoring the stubs

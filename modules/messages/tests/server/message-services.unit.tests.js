@@ -2,7 +2,7 @@ const should = require('should');
 const mongoose = require('mongoose');
 const config = require('./../../../../config/config.mjs');
 const winston = require('winston');
-const statService = require('./../../../stats/server/services/stats.server.service.mjs');
+const statService = require('./../../../stats/server/services/stats.server.service.mts');
 const sinon = require('sinon');
 
 function queryResult(value, err) {

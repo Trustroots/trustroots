@@ -1,7 +1,7 @@
 import async from 'async';
 import mongoose from 'mongoose';
 import errorService from './../../../core/server/services/error.server.service.mjs';
-import statService from './../../../stats/server/services/stats.server.service.mjs';
+import statService from './../../../stats/server/services/stats.server.service.mts';
 import log from './../../../../config/lib/logger.mjs';
 const service = {};
 

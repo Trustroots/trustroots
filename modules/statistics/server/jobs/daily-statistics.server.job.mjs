@@ -9,7 +9,7 @@
  * Module dependencies.
  */
 import async from 'async';
-import statsService from './../../../stats/server/services/stats.server.service.mjs';
+import statsService from './../../../stats/server/services/stats.server.service.mts';
 import statistics from './../controllers/statistics.server.controller.mjs';
 import log from './../../../../config/lib/logger.mjs';
 const defaultInterop = function (job, agendaDone) {

@@ -6,7 +6,7 @@ import errorService from '../../../core/server/services/error.server.service.mjs
 import analyticsHandler from '../../../core/server/controllers/analytics.server.controller.mjs';
 import emailService from '../../../core/server/services/email.server.service.mjs';
 import profileHandler from './users.profile.server.controller.mjs';
-import statService from '../../../stats/server/services/stats.server.service.mjs';
+import statService from '../../../stats/server/services/stats.server.service.mts';
 import log from '../../../../config/lib/logger.mjs';
 import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../lib/account-identifier.server.mjs';
 import async from 'async';

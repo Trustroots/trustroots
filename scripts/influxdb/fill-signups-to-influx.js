@@ -20,7 +20,7 @@ var async = require('async'),
     mongoose = require('mongoose'),
     argv = require('yargs').argv,
     mongooseHelper = require('./../../config/lib/mongoose.mjs'),
-    statService = require('./../../modules/stats/server/services/stats.server.service.mjs');
+    statService = require('./../../modules/stats/server/services/stats.server.service.mts');
 
 require('./../../modules/users/server/models/user.server.model.mjs');
 

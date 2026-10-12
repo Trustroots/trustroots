@@ -1,6 +1,6 @@
 import config from './../config.mjs';
 import dependency1 from 'util';
-import statService from './../../modules/stats/server/services/stats.server.service.mjs';
+import statService from './../../modules/stats/server/services/stats.server.service.mts';
 import dependency3 from 'mongodb';
 const service = {};
 const format = dependency1.format;

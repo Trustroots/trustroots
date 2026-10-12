@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const emailService = require('./../../../core/server/services/email.server.service.mjs');
-const statsService = require('./../../../stats/server/services/stats.server.service.mjs');
+const statsService = require('./../../../stats/server/services/stats.server.service.mts');
 const config = require('./../../../../config/config.mjs');
 const winston = require('winston');
 require('./../../server/models/support.server.model.mjs');

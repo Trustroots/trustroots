@@ -14,7 +14,7 @@ import textService from './../../../core/server/services/text.server.service.mjs
 import tribesHandler from './../../../tribes/server/controllers/tribes.server.controller.mjs';
 import authenticationService from '../services/authentication.server.service.mjs';
 import emailService from './../../../core/server/services/email.server.service.mjs';
-import statService from './../../../stats/server/services/stats.server.service.mjs';
+import statService from './../../../stats/server/services/stats.server.service.mts';
 import log from './../../../../config/lib/logger.mjs';
 import fileRemovalService from '../../../core/server/services/file-removal.server.service.mjs';
 import messageStatService from './../../../messages/server/services/message-stat.server.service.mjs';

@@ -10,7 +10,7 @@ require('./../../../experiences/server/models/experiences.server.model.mjs');
 require('./../../../messages/server/models/message-stat.server.model.mjs');
 require('./../../../references-thread/server/models/reference-thread.server.model.mjs');
 const statistics = require('./../../server/controllers/statistics.server.controller.mjs');
-const statService = require('./../../../stats/server/services/stats.server.service.mjs');
+const statService = require('./../../../stats/server/services/stats.server.service.mts');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 

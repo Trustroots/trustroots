@@ -758,7 +758,7 @@ describe('API route registrations', () => {
       },
     );
     const sparkpostRoutes = register(
-      './../../../sparkpost/server/routes/sparkpost.server.routes.mjs',
+      './../../../sparkpost/server/routes/sparkpost.server.routes.mts',
       {
         '../controllers/sparkpost-webhooks.server.controller': sparkpost,
       },
