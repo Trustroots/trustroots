@@ -67,6 +67,12 @@ describe('Member account activity', function () {
         createdAt: new Date(),
       },
       {
+        _id: 'activity-expired',
+        user: memberA.user._id,
+        eventType: 'password_reset',
+        createdAt: new Date(Date.now() - 91 * 24 * 60 * 60 * 1000),
+      },
+      {
         _id: 'activity-b',
         user: memberB.user._id,
         eventType: 'email_changed',
@@ -86,6 +92,10 @@ describe('Member account activity', function () {
       'eventType',
     ]);
     assert.equal(JSON.stringify(response.body).includes('activity-a'), false);
+    assert.equal(
+      response.body.events.some(event => event.eventType === 'password_reset'),
+      false,
+    );
     assert.equal(
       JSON.stringify(response.body).includes(memberB.user.id),
       false,
@@ -140,6 +150,44 @@ describe('Member account activity', function () {
       .expect(200);
     assert.ok(boundedPage.body.events.length <= 50);
     await agent.get('/api/users/activity?cursor=invalid').expect(400);
+    const invalidCursor = Buffer.from(
+      JSON.stringify({ createdAt: 'not-a-date', id: 'page-id' }),
+    ).toString('base64url');
+    await agent
+      .get('/api/users/activity')
+      .query({ cursor: invalidCursor })
+      .expect(400);
+    const oversizedIdentifier = Buffer.from(
+      JSON.stringify({
+        createdAt: new Date().toISOString(),
+        id: 'x'.repeat(129),
+      }),
+    ).toString('base64url');
+    await agent
+      .get('/api/users/activity')
+      .query({ cursor: oversizedIdentifier })
+      .expect(400);
+    await agent
+      .get(`/api/users/activity?cursor=${'x'.repeat(513)}`)
+      .expect(400);
+    await agent.get('/api/users/activity?limit=abc').expect(400);
+  });
+
+  it('forwards storage errors to the application error handler', async function () {
+    const member = await createMember('activity-storage-error');
+    const agent = await signedInAgent(member.credentials);
+    const query = {
+      sort: () => query,
+      limit: () => query,
+      select: () => query,
+      lean: () => query,
+      exec: async () => {
+        throw new Error('temporary storage failure');
+      },
+    };
+    sinon.stub(AccountActivity, 'find').returns(query);
+
+    await agent.get('/api/users/activity').expect(500);
   });
 
   it('retries storage with the same event identifier and creates retention indexes', async function () {
@@ -177,5 +225,33 @@ describe('Member account activity', function () {
           fields.user === 1 && fields.createdAt === -1 && fields._id === -1,
       ),
     );
+  });
+
+  it('stops after the final failed storage retry', async function () {
+    sinon.stub(AccountActivity, 'updateOne').callsFake(async () => {
+      const error = new Error('temporary storage failure');
+      error.code = 1234;
+      throw error;
+    });
+
+    const recorded = await recordActivity({
+      userId: new mongoose.Types.ObjectId(),
+      eventType: 'password_changed',
+      eventId: 'failed-retry-event',
+    });
+    assert.equal(recorded, false);
+  });
+
+  it('handles storage failures without a numeric database code', async function () {
+    sinon.stub(AccountActivity, 'updateOne').callsFake(async () => {
+      throw new Error('temporary storage failure');
+    });
+
+    const recorded = await recordActivity({
+      userId: new mongoose.Types.ObjectId(),
+      eventType: 'password_changed',
+      eventId: 'unclassified-retry-event',
+    });
+    assert.equal(recorded, false);
   });
 });
