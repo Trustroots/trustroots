@@ -23,6 +23,13 @@ const user: UserProfile = {
 };
 
 jest.mock('@/modules/tribes/client/api/tribes.api');
+jest.mock(
+  '@/modules/tribes/client/components/HackerspaceMap',
+  () =>
+    function MockHackerspaceMap() {
+      return <div data-testid="hackerspace-map" />;
+    },
+);
 
 jest.mock('@/modules/core/client/components/LoadingIndicator', () => ({
   __esModule: true,
@@ -98,6 +105,38 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     jest.clearAllMocks();
     getMock.mockResolvedValue(tribe);
   });
+
+  it.each([undefined, user])(
+    'renders the Hackers map and attributed resources for viewer %p',
+    async viewer => {
+      getMock.mockResolvedValue({
+        ...tribe,
+        slug: 'hackers',
+        label: 'Hackers',
+      });
+      render(
+        <TribeDetailPage
+          circle="hackers"
+          user={viewer}
+          onMembershipUpdated={jest.fn()}
+        />,
+      );
+      await screen.findByRole('heading', { name: 'Hackers' });
+      expect(screen.getByTestId('hackerspace-map')).toBeVisible();
+      expect(
+        screen.getByRole('link', { name: 'View the source page' }),
+      ).toHaveAttribute(
+        'href',
+        'https://wiki.trustroots.org/index.php?title=Hackers&oldid=26505',
+      );
+      expect(
+        screen.getByRole('link', { name: 'CC BY-SA 4.0' }),
+      ).toHaveAttribute(
+        'href',
+        'https://creativecommons.org/licenses/by-sa/4.0/',
+      );
+    },
+  );
 
   it('shows a loading indicator while the circle is fetched', () => {
     getMock.mockReturnValue(new Promise(() => {}));

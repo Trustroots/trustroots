@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 
 import AdminHeader from './AdminHeader.component';
 import axios from '@/modules/core/client/api/http-client.js';
-import { nostrService } from '@/modules/search/client/services/nostr.client.service';
+import {
+  nostrService,
+  type HackerPlaceRelayConnection,
+} from '@/modules/search/client/services/nostr.client.service';
 import {
   buildInactiveSpaceApiPlaceEvent,
   buildSpaceApiPlaceEvent,
@@ -50,8 +53,17 @@ export default function AdminHackerspaces() {
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
+  const [relayResults, setRelayResults] = useState<
+    {
+      url: string;
+      available: boolean;
+      published: number;
+      failed: number;
+    }[]
+  >([]);
   async function preview() {
     setBusy(true);
+    setRelayResults([]);
     setStatus('Fetching the SpaceAPI Collector and published place events…');
     try {
       const [{ data }, events] = await Promise.all([
@@ -143,9 +155,19 @@ export default function AdminHackerspaces() {
     setBusy(true);
     let published = 0;
     let failed = 0;
+    let relays: HackerPlaceRelayConnection[] = [];
     try {
       await window.nostr.getPublicKey();
-      const relay = await nostrService.connect();
+      relays = await nostrService.connectHackerPlaceRelays();
+      const outcomes = relays.map(({ url, relay }) => ({
+        url,
+        available: Boolean(relay),
+        published: 0,
+        failed: 0,
+      }));
+      setRelayResults(outcomes);
+      if (!relays.some(({ relay }) => relay))
+        throw new Error('No publication relays available');
       for (const [index, job] of jobs.entries()) {
         setStatus(
           `Signing and publishing ${index + 1} of ${jobs.length}: ${
@@ -154,8 +176,22 @@ export default function AdminHackerspaces() {
         );
         try {
           const signed = await window.nostr.signEvent(job.event);
-          await relay.publish(signed as never);
-          published += 1;
+          const accepted = await Promise.all(
+            relays.map(async ({ relay }, index) => {
+              try {
+                if (!relay) throw new Error('Relay unavailable');
+                await relay.publish(signed as never);
+                outcomes[index].published += 1;
+                return true;
+              } catch {
+                outcomes[index].failed += 1;
+                return false;
+              }
+            }),
+          );
+          setRelayResults(outcomes.map(outcome => ({ ...outcome })));
+          if (accepted.some(Boolean)) published += 1;
+          else failed += 1;
         } catch {
           failed += 1;
         }
@@ -166,6 +202,7 @@ export default function AdminHackerspaces() {
     } catch {
       setStatus('Could not connect to the relay or signer.');
     } finally {
+      for (const { relay } of relays) relay?.close();
       setBusy(false);
     }
   }
@@ -181,7 +218,8 @@ export default function AdminHackerspaces() {
           Preview the SpaceAPI Collector against published place events, then
           approve publication with your NIP-07 extension. Source validation is
           automated and does not mean a person verified the location. Trustroots
-          stores no signing key.
+          stores no signing key. Each event is signed once and published to
+          relay.trustroots.org and relay.nomadwiki.org.
         </p>
         <p>
           <button className="btn btn-default" disabled={busy} onClick={preview}>
@@ -198,6 +236,17 @@ export default function AdminHackerspaces() {
         <p role="status" aria-live="polite">
           {status}
         </p>
+        {relayResults.length > 0 && (
+          <ul aria-label="Relay publication results">
+            {relayResults.map(result => (
+              <li key={result.url}>
+                {result.url}: {result.published} published; {result.failed}{' '}
+                failed
+                {result.available ? '' : '; connection unavailable'}
+              </li>
+            ))}
+          </ul>
+        )}
         {spaces.length > 0 && (
           <div className="table-responsive">
             <table className="table table-striped">
