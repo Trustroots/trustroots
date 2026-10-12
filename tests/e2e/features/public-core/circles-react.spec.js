@@ -83,12 +83,57 @@ test('circle membership retains account roles and legacy member links', async ({
     );
     await expect(page.getByText('No members to show yet')).toHaveCount(0);
     await page.unroute('**/api/tribes/hitchhikers/members');
+    await page.route('**/api/tribes/hitchhikers/members', route =>
+      route.fulfill({
+        json: {
+          contacts: [
+            {
+              _id: 'fictional-contact',
+              username: 'sample-contact',
+              displayName: 'Sample Contact',
+              avatarSource: 'none',
+              locationLiving: 'Fictional Harbour',
+              locationFrom: 'Example Coast',
+              tagline: 'Glad to share a meal',
+            },
+          ],
+          recommenders: [
+            {
+              _id: 'fictional-recommender',
+              username: 'sample-recommender',
+              displayName: 'Sample Recommender',
+              avatarSource: 'none',
+            },
+          ],
+          active: [
+            {
+              _id: 'fictional-active',
+              username: 'sample-active',
+              displayName: 'Sample Active',
+              avatarSource: 'none',
+            },
+          ],
+        },
+      }),
+    );
     const retryResponse = page.waitForResponse(response =>
       response.url().endsWith('/api/tribes/hitchhikers/members'),
     );
     await page.getByRole('button', { name: 'Try again', exact: true }).click();
     expect((await retryResponse).ok()).toBeTruthy();
     await expect(page.locator('.circle-member-error')).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: /Sample Contact/ }),
+    ).toHaveClass(/member-search-card/);
+    await expect(page.getByText('Fictional Harbour')).toBeVisible();
+    await expect(page.getByText('Glad to share a meal')).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /Sample Recommender/ }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /Sample Active/ }),
+    ).toBeVisible();
+    await page.unroute('**/api/tribes/hitchhikers/members');
     await expect(
       page.getByRole('button', { name: 'Leave circle', exact: true }),
     ).toBeVisible();
@@ -152,6 +197,115 @@ test('circle membership retains account roles and legacy member links', async ({
         headers: { 'X-Trustroots-Request': '1' },
       });
   }
+});
+
+test('Hackers circle foregrounds the public place map and verification limits', async ({
+  page,
+}) => {
+  let wikiRequested = false;
+  await page.route('https://wiki.trustroots.org/**', route => {
+    wikiRequested = true;
+    return route.abort();
+  });
+  await page.route('**/api/tribes/hackers', route =>
+    route.fulfill({
+      json: {
+        _id: 'hackers-circle',
+        slug: 'hackers',
+        label: 'Hackers',
+        count: 0,
+        description: 'People who enjoy building and sharing technology.',
+      },
+    }),
+  );
+  await page.goto('/circles/hackers');
+  await expect(
+    page.getByRole('heading', { name: 'Hackers', exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Hackerspaces around the world' }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      'SpaceAPI-reported locations. Listings have not been independently verified.',
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Hackerspaces and community workshops' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'HackerspaceWiki' }),
+  ).toHaveAttribute(
+    'href',
+    'https://wiki.hackerspaces.org/Category:Hackerspace',
+  );
+  await expect(
+    page.getByRole('link', { name: 'View the source page' }),
+  ).toHaveAttribute(
+    'href',
+    'https://wiki.trustroots.org/index.php?title=Hackers&oldid=26505',
+  );
+  const resourceLinks = page.locator('.hackers-circle-resources a');
+  for (const link of await resourceLinks.all()) {
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    await expect(link).toHaveAttribute('referrerpolicy', 'no-referrer');
+    await expect(link).toHaveAttribute('href', /^https:\/\//);
+  }
+  expect(wikiRequested).toBe(false);
+  const map = page.locator('.hackerspace-map');
+  await expect(map).toBeVisible();
+  const panel = await page.locator('.hackerspace-map-panel').boundingBox();
+  const viewportHeight = await page.evaluate(() => window.innerHeight);
+  expect(panel.y).toBeLessThan(viewportHeight);
+});
+
+test('administrators can review a SpaceAPI import preview', async ({
+  page,
+}) => {
+  await signInViaApi(page, undefined, SEEDED_ADMIN);
+  await page.route('**/api/admin/hackerspaces/preview', route =>
+    route.fulfill({
+      json: [
+        {
+          endpoint: 'https://example.test/api',
+          valid: true,
+          eligible: true,
+          name: 'Example Workshop',
+          website: 'https://example.test',
+          latitude: 51.5,
+          longitude: -0.1,
+          address: 'Example City',
+          fetchedAt: '2026-10-12T10:00:00Z',
+          spaceType: 'hackerspace',
+        },
+        {
+          endpoint: 'https://offline.test/api',
+          valid: false,
+          eligible: false,
+          name: '',
+          website: '',
+          latitude: null,
+          longitude: null,
+          address: '',
+          fetchedAt: '2026-10-12T10:00:00Z',
+          spaceType: 'hackerspace',
+        },
+      ],
+    }),
+  );
+  await page.goto('/admin/hackerspaces');
+  await page.getByRole('button', { name: 'Fetch preview' }).click();
+  await expect(page.getByText('Example Workshop')).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'Addition' })).toBeVisible();
+  await expect(page.getByText(/not human-verified/i)).toBeVisible();
+  await expect(
+    page.getByRole('cell', {
+      name: 'Temporarily invalid; keep last-known listing',
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Sign and publish approved changes' }),
+  ).toBeEnabled();
 });
 
 test('member navigation menus and narrow layout remain usable', async ({

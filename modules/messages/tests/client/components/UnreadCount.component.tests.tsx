@@ -6,7 +6,7 @@ import '@/config/client/i18n';
 import UnreadCount from 'modules/messages/client/components/UnreadCount.component';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import { getCurrentUser } from '@/modules/core/client/services/client-runtime';
-import { generateClientUser } from '@/testutils/common/data.common.testutil';
+import { generateClientUser } from '@/testutils/common/data.common.testutil.mts';
 import {
   enable as enableVisibilityWatching,
   disable as disableVisibilityWatching,

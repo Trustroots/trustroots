@@ -341,6 +341,11 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/hackerspaces',
+    title: 'Admin - Hackerspaces',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/audit-log',
     title: 'Admin - Audit log',
   },
