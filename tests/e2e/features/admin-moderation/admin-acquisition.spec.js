@@ -14,6 +14,94 @@ test.describe('admin acquisition feature coverage', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
   });
 
+  test('greeters see restriction badges without moderation access', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.acquisition-stories', [
+      'Greeters see suspended and shadowbanned statuses on members and restricted matches.',
+      'Restriction visibility does not grant moderation access.',
+    ]);
+    const greeter = createUser();
+    const member = createUser();
+    const match = createUser();
+    const context = await createIsolatedContext(browser, baseURL);
+    try {
+      for (const user of [greeter, member, match]) {
+        await registerViaApi(context.request, user);
+      }
+      await withE2eDb(async db => {
+        await db.collection('users').updateOne(
+          { username: greeter.username },
+          {
+            $set: { roles: ['user', 'welcome-team'], public: true },
+          },
+        );
+        await db.collection('users').updateOne(
+          { username: member.username },
+          {
+            $set: {
+              roles: ['user', 'suspended'],
+              public: true,
+              acquisitionStory: 'A fictional recommendation.',
+              emailTemporary: `${match.username}@example.test`,
+            },
+          },
+        );
+        await db.collection('users').updateOne(
+          { username: match.username },
+          {
+            $set: {
+              roles: ['user', 'shadowban', 'volunteer'],
+              acquisitionStory: '',
+            },
+          },
+        );
+      });
+      const page = await context.newPage();
+      await signInViaApi(page, context.request, greeter);
+      const response = await context.request.post(
+        '/api/admin/acquisition-stories',
+        {
+          headers: { 'X-Trustroots-Request': '1' },
+        },
+      );
+      expect(response.ok()).toBeTruthy();
+      const story = (await response.json()).find(
+        row => row.username === member.username,
+      );
+      expect(story.restrictionStatuses).toEqual(['suspended']);
+      const restrictedMatch = story.restrictedMatches.find(
+        row => row.username === match.username,
+      );
+      expect(restrictedMatch.restrictionStatuses).toEqual(['shadowban']);
+      expect(restrictedMatch.roles).toBeUndefined();
+      await page.goto('/admin/acquisition-stories');
+      const row = page.locator('tbody tr').filter({
+        has: page.locator(`a[href="/profile/${member.username}"]`),
+      });
+      await expect(row.getByText('Suspended', { exact: true })).toBeVisible();
+      await expect(
+        row.getByText('Shadowbanned', { exact: true }),
+      ).toBeVisible();
+      await expect(row.getByText('Visible', { exact: true })).toBeVisible();
+      const denied = await context.request.post('/api/admin/user/change-role', {
+        headers: { 'X-Trustroots-Request': '1' },
+        data: { id: story._id, role: 'suspended', action: 'remove' },
+      });
+      expect(denied.status()).toBe(403);
+    } finally {
+      await withE2eDb(db =>
+        db.collection('users').deleteMany({
+          username: {
+            $in: [greeter.username, member.username, match.username],
+          },
+        }),
+      );
+      await context.close();
+    }
+  });
+
   test('admin can filter acquisition stories to unassigned members', async ({
     page,
   }, testInfo) => {
@@ -104,7 +192,7 @@ test.describe('admin acquisition feature coverage', () => {
     await expect(members).toHaveText(['forest-member']);
   });
 
-  test('admin acquisition story tools return deterministic rows and analysis', async ({
+  test('admin acquisition stories remain available without analysis', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.acquisition-stories', [
@@ -116,10 +204,7 @@ test.describe('admin acquisition feature coverage', () => {
       'Story rows show whether profiles are visible.',
       'Story rows show matching restricted accounts.',
       'Story columns can be sorted.',
-    ]);
-    annotateFeature(testInfo, 'admin.acquisition-analysis', [
-      'Acquisition story analysis page loads.',
-      'Analysis API returns deterministic analysis.',
+      'Acquisition stories remain available without Analysis navigation or API.',
     ]);
 
     await page.goto('/admin/acquisition-stories');
@@ -172,15 +257,15 @@ test.describe('admin acquisition feature coverage', () => {
       }),
     ]);
 
-    await page.goto('/admin/acquisition-stories/analysis');
-    await expect(page).toHaveURL(/\/admin\/acquisition-stories\/analysis/);
+    await expect(
+      page.getByRole('link', { name: 'Analysis', exact: true }),
+    ).toHaveCount(0);
 
     const analysis = await page.request.post(
       '/api/admin/acquisition-stories/analysis',
       { headers: { 'X-Trustroots-Request': '1' } },
     );
-    expect(analysis.ok()).toBeTruthy();
-    expect(Object.keys(await analysis.json()).length).toBeGreaterThan(0);
+    expect(analysis.status()).toBe(404);
   });
 
   test('welcome team list prioritises shared languages and marks a welcomed member', async ({

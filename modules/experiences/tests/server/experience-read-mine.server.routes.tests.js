@@ -5,19 +5,19 @@ const sinon = require('sinon');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const express = require('./../../../../config/lib/express.mjs');
 describe('Read my experience to userTo Id', () => {
+  let app;
+  let agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
   // GET /my-experience&userTo=:UserId
 
-  let app;
-  let agent;
   let users;
-  const _usersPublic = utils.generateUsers(6, {
+  const _usersPublic = utils.generateUsersWithSharedPassword(6, {
     public: true,
   });
-  const _usersPrivate = utils.generateUsers(1, {
+  const _usersPrivate = utils.generateUsersWithSharedPassword(1, {
     public: false,
     username: 'nonpublic',
     email: 'nonpublic@example.com',
@@ -25,7 +25,8 @@ describe('Read my experience to userTo Id', () => {
   const _users = [..._usersPublic, ..._usersPrivate];
   beforeEach(() => {
     sinon.useFakeTimers({
-      now: new Date('2018-01-12'),
+      // MongoDB uses real time to expire authentication sessions.
+      now: Date.now(),
       toFake: ['Date'],
     });
   });
@@ -33,7 +34,7 @@ describe('Read my experience to userTo Id', () => {
     sinon.restore();
   });
   beforeEach(async () => {
-    users = await utils.saveUsers(_users);
+    users = await utils.saveUsersWithCachedPasswords(_users);
   });
 
   /**

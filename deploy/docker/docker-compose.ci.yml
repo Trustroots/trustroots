@@ -1,5 +1,7 @@
 services:
   mongodb:
+    # Mirror the official image so unauthenticated Docker Hub limits cannot stop CI.
+    image: public.ecr.aws/docker/library/mongo:4.4
     volumes:
       - type: tmpfs
         target: /data/db

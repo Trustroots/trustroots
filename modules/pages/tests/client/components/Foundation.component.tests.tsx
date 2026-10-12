@@ -1,0 +1,57 @@
+import React, { type PropsWithChildren } from 'react';
+import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
+
+import '@/config/client/i18n';
+import Foundation from '@/modules/pages/client/components/Foundation.component';
+
+jest.mock('@/modules/core/client/components/Board.js', () => {
+  const actualReact = jest.requireActual<typeof import('react')>('react');
+  function MockBoard({ children }: PropsWithChildren) {
+    return actualReact.createElement('div', null, children);
+  }
+  return MockBoard;
+});
+
+describe('<Foundation />', () => {
+  it('renders foundation heading without Board sections', () => {
+    render(
+      <Foundation
+        user={{
+          _id: 'me',
+          username: 'me',
+          displayName: 'Current User',
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Trustroots Foundation')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Board' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Past board members' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders core mission and foundation copy', () => {
+    render(
+      <Foundation user={{ _id: 'me', username: 'me', displayName: 'Me' }} />,
+    );
+
+    expect(screen.getByText('Vision, Mission & Values')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Trustroots is owned and operated by Trustroots Foundation/,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('shows a join button for logged-out visitors', () => {
+    render(<Foundation user={null} />);
+
+    expect(
+      screen.getByRole('link', { name: 'Join Trustroots' }),
+    ).toHaveAttribute('href', '/signup');
+  });
+});

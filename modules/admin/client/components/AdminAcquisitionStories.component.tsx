@@ -5,7 +5,6 @@ import React, { useMemo, useState, useEffect } from 'react';
 
 // Internal dependencies
 import { getAcquisitionStories } from '../api/acquisition-stories.api';
-import AdminAcquisitionStoriesMenu from './AdminAcquisitionStoriesMenu';
 import AdminHeader from './AdminHeader.component';
 import UserLink from './UserLink.component';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
@@ -21,12 +20,30 @@ type StorySortColumn =
   | 'welcomer';
 type SortDirection = 'ascending' | 'descending';
 type ProfileVisibility = 'all' | 'visible' | 'hidden';
+type RestrictionStatus = 'suspended' | 'shadowban';
+
+function RestrictionBadges({
+  statuses = [],
+}: {
+  statuses?: RestrictionStatus[];
+}) {
+  return (
+    <>
+      {statuses.map(status => (
+        <span className="label label-danger admin-label" key={status}>
+          {status === 'suspended' ? 'Suspended' : 'Shadowbanned'}
+        </span>
+      ))}
+    </>
+  );
+}
 
 interface RestrictedMatch {
   _id: string;
   username: string;
   displayName?: string;
   matchReasons: string[];
+  restrictionStatuses?: RestrictionStatus[];
 }
 
 interface AcquisitionStory {
@@ -40,6 +57,7 @@ interface AcquisitionStory {
   hostingLocation?: number[];
   acquisitionStory?: string;
   public?: boolean;
+  restrictionStatuses?: RestrictionStatus[];
   restrictedMatches?: RestrictedMatch[];
   languages?: string[];
   welcomer?: {
@@ -247,8 +265,6 @@ export default function AdminAcquisitionStories() {
         <h2>Acquisition stories</h2>
         <p>Based on latest 500 stories</p>
 
-        <AdminAcquisitionStoriesMenu active="stories" />
-
         <div className="form-check mb-3">
           <input
             checked={unassignedOnly}
@@ -396,6 +412,7 @@ export default function AdminAcquisitionStories() {
                           username: story.username,
                         }}
                       />
+                      <RestrictionBadges statuses={story.restrictionStatuses} />
                     </div>
                   </td>
                   <td>{story.circleCount || 0}</td>
@@ -422,6 +439,9 @@ export default function AdminAcquisitionStories() {
                           publicProfile={
                             !(getCurrentUser()?.roles || []).includes('admin')
                           }
+                        />
+                        <RestrictionBadges
+                          statuses={match.restrictionStatuses}
                         />
                         <small className="text-muted">
                           {' '}

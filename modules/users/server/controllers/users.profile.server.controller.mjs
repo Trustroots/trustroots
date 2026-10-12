@@ -10,7 +10,7 @@ import tribesHandler from './../../../tribes/server/controllers/tribes.server.co
 import emailService from './../../../core/server/services/email.server.service.mjs';
 import statService from './../../../stats/server/services/stats.server.service.mjs';
 import log from './../../../../config/lib/logger.mjs';
-import del from 'del';
+import fileRemovalService from '../../../core/server/services/file-removal.server.service.mjs';
 import messageStatService from './../../../messages/server/services/message-stat.server.service.mjs';
 import config from './../../../../config/config.mjs';
 import async from 'async';
@@ -21,7 +21,12 @@ import moment from 'moment';
 import * as nip19 from 'nostr-tools/nip19';
 import validator from 'validator';
 import deprecatedLanguages from './../../../../config/languages/deprecated.mjs';
-import { selectProfileResponse } from '../services/profile-response.server.service.mjs';
+import {
+  profileQueryFields,
+  selectMiniProfileResponse,
+  selectProfileResponse,
+  selectProfileUpdateFields,
+} from '../services/profile-response.server.service.mjs';
 import userMiniService from '../services/user-mini.server.service.mjs';
 
 const locales = JSON.parse(
@@ -44,45 +49,7 @@ const User = mongoose.model('User');
 // Fields to send publicly about any user profile
 // to make sure we're not sending unsecure content (eg. passwords)
 // Pick here fields to send
-service.userProfileFields = [
-  'id',
-  'displayName',
-  'username',
-  'gender',
-  'tagline',
-  'description',
-  'locationFrom',
-  'locationLiving',
-  'languages',
-  'birthdate',
-  'seen',
-  'created',
-  'updated',
-  'passwordUpdated',
-  'avatarSource',
-  'avatarUploaded',
-  'avatarVersion',
-  'member',
-  'replyRate',
-  'replyTime',
-  'extSitesCouchers',
-  // BeWelcome username
-  'extSitesBW',
-  // BeWelcome username
-  'extSitesCS',
-  // CouchSurfing username
-  'extSitesWS',
-  // WarmShowers username
-  'nostrNpub',
-  // nostr npub
-  'emailHash',
-  // MD5 hashed email to use with Gravatars
-  'additionalProvidersData.facebook.id',
-  // For FB avatars and profile links
-  'additionalProvidersData.twitter.screen_name',
-  // For Twitter profile links
-  'additionalProvidersData.github.login', // For GitHub profile links
-].join(' ');
+service.userProfileFields = profileQueryFields.join(' ');
 
 // Restricted set of profile fields when only really "miniprofile" is needed.
 // Single source of truth lives in the user-mini service.
@@ -265,28 +232,7 @@ service.update = function (req, res) {
       },
       // Update user
       function (token, email, done) {
-        const editableFields = [
-          'firstName',
-          'lastName',
-          'tagline',
-          'description',
-          'birthdate',
-          'gender',
-          'languages',
-          'locationLiving',
-          'locationFrom',
-          'username',
-          'extSitesCouchers',
-          'extSitesBW',
-          'extSitesCS',
-          'extSitesWS',
-          'nostrNpub',
-          'avatarSource',
-          'avatarUploaded',
-          'newsletter',
-          'locale',
-        ];
-        const user = _.extend(req.user, _.pick(req.body, editableFields));
+        const user = _.extend(req.user, selectProfileUpdateFields(req.body));
         user.updated = Date.now();
 
         // This is set only if user edited email
@@ -537,9 +483,9 @@ service.removeProfile = function (req, res) {
       // Remove uploaded images
       function (user, done) {
         // All user's uploads are under their own folder
-        del(path.resolve(config.uploadDir) + '/' + user._id).then(function () {
-          done(null, user);
-        });
+        fileRemovalService
+          .removeLocalPath(path.resolve(config.uploadDir) + '/' + user._id)
+          .then(() => done(null, user), done);
       },
       // Send email
       function (user, done) {
@@ -635,17 +581,10 @@ service.getUser = function (req, res) {
 service.getMiniUser = function (req, res) {
   if (req.profile) {
     const profile = req.profile.toObject();
-
-    // 'public' isn't needed at frontend.
-    // We had to bring it until here trough
-    // ACL policy since it's needed there.
-    delete profile.public;
-
-    // 'roles' isn't needed at frontend.
-    // We had to bring it until here trough
-    // checks in `userMiniByID`
-    delete profile.roles;
-    return res.json(profile);
+    // 'public' and 'roles' are only used by access checks. The existing
+    // endpoint also returns 'blocked', so keep that response field while
+    // allowing only the explicit mini-profile projection through.
+    return res.json(selectMiniProfileResponse(profile));
   }
   res.json({});
 };

@@ -7,6 +7,8 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 const userProfile = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
 const express = require('./../../../../config/lib/express.mjs');
 describe('Read a single experience by experience id', () => {
+  let app;
+  let agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
@@ -15,12 +17,10 @@ describe('Read a single experience by experience id', () => {
   // logged in public user can read a single public experience by id
   // .....                 can read a single private experience if it is from self
   // logged in public user can not read other private experiences
-  let app;
-  let agent;
-  const _usersPublic = utils.generateUsers(4, {
+  const _usersPublic = utils.generateUsersWithSharedPassword(4, {
     public: true,
   });
-  const _usersPrivate = utils.generateUsers(1, {
+  const _usersPrivate = utils.generateUsersWithSharedPassword(1, {
     public: false,
     username: 'private',
     email: 'non@example.com',
@@ -30,7 +30,8 @@ describe('Read a single experience by experience id', () => {
   let experiences;
   beforeEach(() => {
     sinon.useFakeTimers({
-      now: new Date('2019-01-13 13:21:55.1'),
+      // MongoDB uses real time to expire authentication sessions.
+      now: Date.now(),
       toFake: ['Date'],
     });
   });
@@ -38,7 +39,7 @@ describe('Read a single experience by experience id', () => {
     sinon.restore();
   });
   beforeEach(async () => {
-    users = await utils.saveUsers(_users);
+    users = await utils.saveUsersWithCachedPasswords(_users);
   });
 
   /**

@@ -119,6 +119,75 @@ describe('User signup and authentication CRUD tests', function () {
       response.body.username.should.equal(username.toLowerCase());
     });
   }
+  it('initialises only the supported signup fields', async function () {
+    const payload = {
+      firstName: 'Sample',
+      lastName: 'Member',
+      username: 'payload-member',
+      password: 'ExamplePassword123!',
+      email: 'payload-member@example.test',
+      newsletter: true,
+      acquisitionStory: 'A fictional invitation',
+      locale: 'en',
+      authVersion: 99,
+      roles: ['admin'],
+      avatarVersion: 'unexpected-avatar',
+      avatarUploaded: true,
+      blocked: ['000000000000000000000001'],
+      additionalProvidersData: { github: { id: 'unexpected-provider' } },
+      resetPasswordToken: 'unexpected-token',
+    };
+    const response = await agent
+      .post('/api/auth/signup')
+      .send(payload)
+      .expect(200);
+    const stored = await User.findOne({ username: payload.username });
+    stored.authVersion.should.equal(0);
+    stored.roles.should.deepEqual(['user']);
+    stored.newsletter.should.equal(true);
+    stored.locale.should.equal('en');
+    stored.acquisitionStory.should.equal(payload.acquisitionStory);
+    stored.avatarUploaded.should.equal(false);
+    stored.blocked.should.have.length(0);
+    should.not.exist(stored.avatarVersion);
+    should.not.exist(stored.resetPasswordToken);
+    should.not.exist(stored.additionalProvidersData?.github);
+    response.body.username.should.equal(payload.username);
+  });
+
+  it('rejects structured required fields and malformed signup preferences', async function () {
+    const payload = {
+      firstName: 'Sample',
+      lastName: 'Member',
+      username: 'typed-member',
+      password: 'ExamplePassword123!',
+      email: 'typed-member@example.test',
+    };
+    for (const field of [
+      'firstName',
+      'lastName',
+      'username',
+      'password',
+      'email',
+    ]) {
+      const response = await agent
+        .post('/api/auth/signup')
+        .send({ ...payload, [field]: { $ne: null } })
+        .expect(400);
+      response.body.message.should.equal('Please provide required fields.');
+    }
+    for (const field of ['locale', 'acquisitionStory', 'newsletter']) {
+      const response = await agent
+        .post('/api/auth/signup')
+        .send({ ...payload, [field]: { $ne: null } })
+        .expect(400);
+      response.body.message.should.equal(
+        'Please provide valid signup preferences.',
+      );
+    }
+    should.not.exist(await User.findOne({ username: payload.username }));
+  });
+
   it('should be able to register a new user', function (done) {
     _unConfirmedUser.username = 'RegisterNewUser';
     _unConfirmedUser.email = 'register-new-user@example.org';

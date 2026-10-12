@@ -1,10 +1,16 @@
 import axios from '../../../core/client/api/http-client.js';
-import type { UserProfile } from '../types';
+import type {
+  MiniProfile,
+  OwnProfile,
+  PublicProfile,
+  UpdateProfileRequest,
+} from '../../shared/profile.js';
+import type { ClientOwnProfile } from '../types.js';
 
-export type UserUpdate = Partial<UserProfile> & Record<string, unknown>;
+export type UserUpdate = UpdateProfileRequest;
 
 export interface PasswordChangeResult {
-  user: UserProfile;
+  user: ClientOwnProfile;
 }
 
 export interface ProfileRemovalResult {
@@ -17,20 +23,24 @@ export interface ChangePasswordInput {
   verifyPassword: string;
 }
 
-export async function update(data: UserUpdate): Promise<UserProfile> {
-  const { data: user } = await axios.put('/api/users', data);
+export async function update(data: UserUpdate): Promise<OwnProfile> {
+  const { data: user } = await axios.put<OwnProfile>('/api/users', data);
   return user;
 }
 
-export async function fetch(username: string): Promise<UserProfile> {
-  const { data: user } = await axios.get(`/api/users/${username}`);
+export async function fetch(
+  username: string,
+): Promise<PublicProfile | OwnProfile> {
+  const { data: user } = await axios.get<PublicProfile | OwnProfile>(
+    `/api/users/${username}`,
+  );
   return user;
 }
 
-export async function fetchMini(
-  userId: string,
-): Promise<Pick<UserProfile, '_id' | 'username' | 'displayName'>> {
-  const { data: user } = await axios.get(`/api/users/mini/${userId}`);
+export async function fetchMini(userId: string): Promise<MiniProfile> {
+  const { data: user } = await axios.get<MiniProfile>(
+    `/api/users/mini/${userId}`,
+  );
   return user;
 }
 
@@ -66,7 +76,9 @@ export async function removeProfile(): Promise<ProfileRemovalResult> {
 
 export async function removeSocialAccount(
   provider: string,
-): Promise<UserProfile> {
-  const { data } = await axios.delete(`/api/users/accounts/${provider}`);
+): Promise<ClientOwnProfile> {
+  const { data } = await axios.delete<ClientOwnProfile>(
+    `/api/users/accounts/${provider}`,
+  );
   return data;
 }

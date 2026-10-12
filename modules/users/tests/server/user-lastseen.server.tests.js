@@ -26,7 +26,8 @@ describe('User last seen CRUD tests', function () {
   });
   beforeEach(function () {
     sinon.useFakeTimers({
-      now: 1500000000000,
+      // MongoDB uses real time to expire authentication sessions.
+      now: Date.now(),
       toFake: ['Date'],
     });
   });

@@ -25,7 +25,7 @@ interface LeafletViewport {
 
 interface LeafletPointProperties {
   id: string;
-  offer?: OfferColourKey;
+  offer?: OfferColourKey | null;
   cluster?: never;
   cluster_id?: never;
   point_count?: never;

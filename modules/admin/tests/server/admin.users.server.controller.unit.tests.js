@@ -929,6 +929,23 @@ describe('Admin users controller unit tests', () => {
   });
 
   describe('usernameToUserId', () => {
+    it('rejects structured and oversized usernames before looking up an account', async () => {
+      const find = sinon.spy(User, 'findOne');
+      for (const username of [
+        { $ne: null },
+        ['sample-member'],
+        null,
+        12,
+        'a'.repeat(321),
+      ]) {
+        const res = mockResponse();
+        const next = sinon.spy();
+        await adminUsers.usernameToUserId({ body: { username } }, res, next);
+        res.statusCode.should.equal(400);
+        next.called.should.be.false();
+      }
+      find.called.should.be.false();
+    });
     it('attaches a user id when the username exists', async () => {
       const users = await utils.saveUsers(utils.generateUsers(1));
       const req = { body: { username: users[0].username } };

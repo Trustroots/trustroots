@@ -2,19 +2,27 @@ import axios, {
   getErrorResponse,
 } from '../../../core/client/api/http-client.js';
 import type { AxiosRequestConfig } from 'axios';
+import type {
+  CreateOfferRequest,
+  OfferMutationResponse,
+  OfferPayload,
+  OfferReadPayload,
+  OfferSearchFeatureCollection,
+  UpdateOfferRequest,
+} from '../../shared/offer.js';
 
-export interface Offer {
-  _id?: string;
-  description?: string;
-  location?: [number, number];
-  maxGuests?: number;
-  noOfferDescription?: string;
-  showOnlyInMyCircles?: boolean;
-  status?: 'maybe' | 'no' | 'yes';
-  type?: 'host' | 'meet';
-  validUntil?: string | number | Date;
-  [key: string]: unknown;
-}
+export type {
+  CreateOfferRequest,
+  OfferMutationResponse,
+  OfferPayload,
+  OfferReadPayload,
+  OfferSearchFeatureCollection,
+  OfferType,
+  UpdateOfferRequest,
+} from '../../shared/offer.js';
+
+/** @deprecated Use OfferPayload for read responses and request-specific types. */
+export type Offer = Partial<OfferPayload>;
 
 export type OfferQuery = Record<string, string | number | boolean | undefined>;
 type OfferRequestOptions = AxiosRequestConfig & {
@@ -30,12 +38,15 @@ export async function getOffers(
   userId: string,
   types: string | string[],
   requestOptions: OfferRequestOptions = {},
-): Promise<Offer[]> {
+): Promise<OfferPayload[]> {
   try {
-    const { data } = await axios.get(`/api/offers-by/${userId}`, {
-      ...requestOptions,
-      params: { ...requestOptions.params, types },
-    });
+    const { data } = await axios.get<OfferPayload[]>(
+      `/api/offers-by/${userId}`,
+      {
+        ...requestOptions,
+        params: { ...requestOptions.params, types },
+      },
+    );
     return data;
   } catch (e: unknown) {
     /*
@@ -54,40 +65,59 @@ export async function getOffers(
 }
 
 /**
- * API request: reade offer by id
+ * API request: read an offer by id with its populated owner profile.
  * @param {int} offerId - id of offer
- * @returns Promise<Offer> - a single offer
+ * @returns Promise<OfferReadPayload> - the offer and populated owner profile
  */
-export async function getOffer(offerId: string): Promise<Offer> {
-  const { data } = await axios.get(`/api/offers/${offerId}`);
+export async function getOffer(offerId: string): Promise<OfferReadPayload> {
+  const { data } = await axios.get<OfferReadPayload>(`/api/offers/${offerId}`);
   return data;
 }
 
 /**
- * API request: query for offers by search arguments, namely bounding box location coordinates and other search filters
+ * API request: query for offers by search arguments, including bounding-box coordinates and filters.
  * @param {int} offerId - id of offer
- * @returns Promise<Offer[]> - array of the found offers with limited info, mainly offer id and type.
+ * @returns Promise<OfferSearchFeatureCollection> - matching offers as GeoJSON
  */
-export async function queryOffers(query: OfferQuery = {}): Promise<Offer[]> {
+export async function queryOffers(
+  query: OfferQuery = {},
+): Promise<OfferSearchFeatureCollection> {
   const params = new URLSearchParams();
   Object.entries(query).forEach(([key, value]) => {
     if (value !== undefined) params.set(key, String(value));
   });
-  const { data } = await axios.get(`/api/offers?${params}`);
+  const { data } = await axios.get<OfferSearchFeatureCollection>(
+    `/api/offers?${params}`,
+  );
   return data;
 }
 
-export async function createOffer(payload: Offer) {
-  const { data } = await axios.post('/api/offers', payload);
+export async function createOffer(
+  payload: CreateOfferRequest,
+): Promise<OfferMutationResponse> {
+  const { data } = await axios.post<OfferMutationResponse>(
+    '/api/offers',
+    payload,
+  );
   return data;
 }
 
-export async function updateOffer(offerId: string, payload: Offer) {
-  const { data } = await axios.put(`/api/offers/${offerId}`, payload);
+export async function updateOffer(
+  offerId: string,
+  payload: UpdateOfferRequest,
+): Promise<OfferMutationResponse> {
+  const { data } = await axios.put<OfferMutationResponse>(
+    `/api/offers/${offerId}`,
+    payload,
+  );
   return data;
 }
 
-export async function deleteOffer(offerId: string) {
-  const { data } = await axios.delete(`/api/offers/${offerId}`);
+export async function deleteOffer(
+  offerId: string,
+): Promise<OfferMutationResponse> {
+  const { data } = await axios.delete<OfferMutationResponse>(
+    `/api/offers/${offerId}`,
+  );
   return data;
 }

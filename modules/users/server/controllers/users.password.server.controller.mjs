@@ -4,6 +4,7 @@ import emailService from '../../../core/server/services/email.server.service.mjs
 import profileHandler from './users.profile.server.controller.mjs';
 import statService from '../../../stats/server/services/stats.server.service.mjs';
 import log from '../../../../config/lib/logger.mjs';
+import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../lib/account-identifier.server.mjs';
 import async from 'async';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
@@ -17,7 +18,11 @@ const User = mongoose.model('User');
  * Forgot for reset password (forgot POST)
  */
 service.forgot = function (req, res) {
-  if (!req.body.username) {
+  if (
+    typeof req.body?.username !== 'string' ||
+    !req.body.username ||
+    req.body.username.length > ACCOUNT_IDENTIFIER_MAX_LENGTH
+  ) {
     return res.status(400).send({
       message: 'Please, we really need your username or email first...',
     });
@@ -28,7 +33,7 @@ service.forgot = function (req, res) {
       message:
         'If an account matches that username or email, we will send recovery instructions.',
     });
-  const userHandle = req.body.username.toString().toLowerCase();
+  const userHandle = req.body.username.toLowerCase();
   acknowledge();
 
   // Account lookup, persistence, and email delivery must not affect the

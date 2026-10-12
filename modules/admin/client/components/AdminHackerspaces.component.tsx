@@ -80,7 +80,7 @@ export default function AdminHackerspaces() {
       });
       const removed = [...existing.entries()]
         .filter(([id, event]) => !listed.has(id) && !isInactive(event))
-        .map(([id, event]) => ({
+        .map<Space>(([id, event]) => ({
           endpoint: id.slice('spaceapi:'.length),
           valid: true,
           eligible: false,

@@ -14,12 +14,11 @@ import {
   REACT_ROUTE_POLICIES,
   normalizePath,
   toTanStackPath,
-} from '@/modules/core/shared/react-route-ownership';
+} from '@/modules/core/shared/react-route-ownership.mts';
 import Admin from '@/modules/admin/client/components/Admin.component';
 import AdminHackerspaces from '@/modules/admin/client/components/AdminHackerspaces.component';
 import AdminStaffBlockers from '@/modules/admin/client/components/AdminStaffBlockers.component';
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
-import AdminAcquisitionStoriesAnalysis from '@/modules/admin/client/components/AdminAcquisitionStoriesAnalysis.component';
 import AdminAuditLog from '@/modules/admin/client/components/AdminAuditLog.component';
 import AdminMessages from '@/modules/admin/client/components/AdminMessages.component';
 import AdminNewsletter from '@/modules/admin/client/components/AdminNewsletter.component';
@@ -244,9 +243,6 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/admin/hackerspaces': () => <AdminHackerspaces />,
     '/admin/staff-blockers': () => <AdminStaffBlockers />,
     '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
-    '/admin/acquisition-stories/analysis': () => (
-      <AdminAcquisitionStoriesAnalysis />
-    ),
     '/admin/audit-log': () => <AdminAuditLog />,
     '/admin/messages': () => <AdminMessages />,
     '/admin/newsletter': () => <AdminNewsletter />,

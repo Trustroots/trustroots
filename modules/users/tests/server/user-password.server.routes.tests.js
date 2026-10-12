@@ -72,6 +72,19 @@ describe('User password CRUD tests', function () {
   });
   afterEach(utils.clearDatabase);
 
+  it('rejects structured and oversized recovery identifiers', async function () {
+    for (const username of [
+      { $ne: null },
+      ['sample-member'],
+      12,
+      'a'.repeat(321),
+    ]) {
+      await agent.post('/api/auth/forgot').send({ username }).expect(400);
+    }
+    const stored = await User.findById(user._id);
+    should.not.exist(stored.resetPasswordToken);
+  });
+
   it('forgot password acknowledges non-existent usernames consistently', function (done) {
     user.roles = ['user'];
     user.save(function (err) {

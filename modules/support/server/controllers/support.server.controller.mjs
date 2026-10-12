@@ -8,7 +8,7 @@ import log from './../../../../config/lib/logger.mjs';
 import config from './../../../../config/config.mjs';
 import mongoose from 'mongoose';
 import validator from 'validator';
-import { SUPPORT_CATEGORIES } from '../../shared/categories.js';
+import { SUPPORT_CATEGORIES } from '../../shared/categories.ts';
 const SupportRequest = mongoose.model('SupportRequest');
 
 /**
@@ -38,7 +38,6 @@ export const supportRequest = function (req, res) {
   // Prepare support request variables for the email template
   const supportRequestData = {
     category,
-    /* eslint-disable key-spacing */
     message: req.body.message ? textService.plainText(req.body.message) : '—',
     username: req.user
       ? req.user.username
@@ -60,7 +59,6 @@ export const supportRequest = function (req, res) {
         ? textService.plainText(req.body.reportMember)
         : false,
     build: build || false,
-    /* eslint-enable key-spacing */
   };
   const replyTo = {
     // Trust registered user's email, otherwise validate it

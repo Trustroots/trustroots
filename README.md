@@ -1,7 +1,7 @@
 <p align="center">
   <br>
-  <a href="https://www.trustroots.org/"><img width="150" src="docs/assets/trustroots-logo-white-bg.svg" alt="Trustroots"></a>
-  <br>
+  <a href="https://www.trustroots.org/"><img width="180" src="docs/assets/trustroots-logo-white-bg.svg" alt="Trustroots"></a>
+  <br><br>
   <em>Travellers' community. Sharing, hosting and getting people together.</em>
   <br>
 </p>

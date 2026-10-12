@@ -14,6 +14,15 @@ import userRolesService from '../../../users/server/services/user-roles.server.s
 import statService from '../../../stats/server/services/stats.server.service.mjs';
 import paginationService from '../../../core/server/services/pagination.server.service.mjs';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
+import {
+  prepareMarkReadSelector,
+  prepareMarkReadResponse,
+  prepareMessageForClient,
+  prepareNewMessageFields,
+  preparePreviewMessageResponse,
+  prepareThreadSummary,
+  prepareUnreadMessageCount,
+} from '../services/messages-payload.server.service.mjs';
 
 const service = {};
 
@@ -147,19 +156,16 @@ function sanitizeThreads(threads, authenticatedUserId, callback) {
       thread = thread.toObject();
 
       // Clean message content from html + clean all whitespace + shorten
+      let excerpt;
       if (thread.message) {
-        thread.message.excerpt = thread.message.content
+        excerpt = thread.message.content
           ? textService
               .plainText(thread.message.content, true)
               .substring(0, 100)
           : '…';
-        delete thread.message.content;
-        delete thread.message.spam; // Don't reveal spam status
       } else {
         // Ensure this works even if messages couldn't be found for some reason
-        thread.message = {
-          excerpt: '…',
-        };
+        excerpt = '…';
       }
       // If latest message in the thread was from current user, show
       // it as read - sender obviously read his/her own message
@@ -170,7 +176,7 @@ function sanitizeThreads(threads, authenticatedUserId, callback) {
       ) {
         thread.read = true;
       }
-      done(null, thread);
+      done(null, prepareThreadSummary(thread, excerpt));
     },
     callback,
   );
@@ -443,13 +449,16 @@ service.send = async function (req, res) {
       },
       // Save message
       function (spamStatus, done) {
-        const message = new Message({
-          content: req.body.content,
-          userTo: req.body.userTo,
-        });
-
-        // Allow some HTML
-        message.content = textService.html(message.content);
+        const message = new Message(
+          prepareNewMessageFields(
+            {
+              userTo: req.body.userTo,
+              content: textService.html(req.body.content),
+              read: false,
+            },
+            req.user._id,
+          ),
+        );
         message.userFrom = req.user;
         // "Ghost-send" behavior: restricted senders can still see own messages,
         // but they are hidden from recipients.
@@ -544,12 +553,8 @@ service.send = async function (req, res) {
             // Turn to object to be able to delete fields
             message = message.toObject();
 
-            // Don't return these fields
-            delete message.notified;
-            delete message.spam;
-
-            // Finally return saved message
-            return res.json(message);
+            // Finally return the approved message fields.
+            return res.json(prepareMessageForClient(message));
           },
         );
       },
@@ -571,7 +576,7 @@ service.thread = function (req, res) {
   // Sanitize messages
   const messages =
     req.messages && req.messages.length ? sanitizeMessages(req.messages) : [];
-  res.json(messages);
+  res.json(messages.map(prepareMessageForClient));
 };
 
 /**
@@ -719,25 +724,9 @@ service.markRead = function (req, res) {
   if (!req.user) {
     return errorService.sendForbidden(res);
   }
-  const messages = [];
-
-  // Produce an array of messages to be updated
-  req.body.messageIds.forEach(function (messageId) {
-    messages.push({
-      _id: messageId,
-      // read: false,
-
-      // Although this isn't in index, but it ensures
-      // user has access to update only his/hers own messages
-      userTo: req.user.id,
-    });
-  });
-
   // Mark messages read
   Message.update(
-    {
-      $or: messages,
-    },
+    prepareMarkReadSelector(req.body.messageIds, req.user.id),
     {
       read: true,
     },
@@ -750,7 +739,7 @@ service.markRead = function (req, res) {
           message: errorService.getErrorMessage(err),
         });
       } else {
-        res.status(200).send({});
+        res.status(200).send(prepareMarkReadResponse());
       }
     },
   );
@@ -779,9 +768,7 @@ service.messagesCount = function (req, res) {
           message: errorService.getErrorMessage(err),
         });
       }
-      return res.json({
-        unread: unreadCount ? parseInt(unreadCount, 10) : 0,
-      });
+      return res.json(prepareUnreadMessageCount(unreadCount));
     },
   );
 };
@@ -953,6 +940,20 @@ service.markAllMessagesToUserNotified = function (userId, callback) {
     },
   );
 };
+/** Format a draft without saving it or touching conversation state. */
+service.preview = function (req, res) {
+  if (!req.user) {
+    return res.status(403).json({
+      message: errorService.getErrorMessageByKey('forbidden'),
+    });
+  }
+  const content = req.body?.content;
+  if (typeof content !== 'string' || textService.isEmpty(content)) {
+    return res.status(400).json({ message: 'Please write a message.' });
+  }
+  return res.json(preparePreviewMessageResponse(textService.html(content)));
+};
+const preview = service.preview;
 const inbox = service.inbox;
 const markAllMessagesToUserNotified = service.markAllMessagesToUserNotified;
 const markRead = service.markRead;
@@ -963,6 +964,7 @@ const sync = service.sync;
 const thread = service.thread;
 const threadByUser = service.threadByUser;
 export {
+  preview,
   inbox,
   markAllMessagesToUserNotified,
   markRead,
