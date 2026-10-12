@@ -1,4 +1,4 @@
-import crypto from "node:crypto";
+import crypto from 'node:crypto';
 import faker from 'faker';
 import mongoose, { type HydratedDocument, type Model } from 'mongoose';
 
@@ -237,7 +237,10 @@ export async function clearDatabase(): Promise<void> {
   }
 }
 
-export async function elevateAdminAccess(agent: SupertestAgent, password: string) {
+export async function elevateAdminAccess(
+  agent: SupertestAgent,
+  password: string,
+) {
   await agent
     .post('/api/admin/elevate')
     .set('X-Trustroots-Request', '1')
@@ -245,7 +248,11 @@ export async function elevateAdminAccess(agent: SupertestAgent, password: string
     .expect(200);
 }
 
-export async function signIn(user: { username: string; password: string }, agent: SupertestAgent, { privilegedAccess = true } = {}) {
+export async function signIn(
+  user: { username: string; password: string },
+  agent: SupertestAgent,
+  { privilegedAccess = true } = {},
+): Promise<void> {
   const { username, password } = user;
   if (privilegedAccess) {
     const storedUser = await mongoose
@@ -253,7 +260,7 @@ export async function signIn(user: { username: string; password: string }, agent
       .findOne({ username }, 'roles')
       .lean();
     if (
-      storedUser?.roles?.some(role =>
+      storedUser?.roles?.some((role: string) =>
         ['admin', 'moderator', 'welcome-team'].includes(role),
       )
     ) {
@@ -274,12 +281,16 @@ export async function signIn(user: { username: string; password: string }, agent
  * @param {boolean} [options.elevate=true]
  * @returns {Promise<void>}
  */
-export async function signInPrivileged(user: { username: string; password: string }, agent: SupertestAgent, { elevate = true } = {}) {
-  const User = mongoose.model('User');
+export async function signInPrivileged(
+  user: { username: string; password: string },
+  agent: SupertestAgent,
+  { elevate = true } = {},
+): Promise<void> {
+  const User = mongoose.model<CachedUserFixtureData, UserFixtureModel>('User');
   const storedUser = await User.findOne({ username: user.username }).exec();
   if (
     !storedUser ||
-    !storedUser.roles.some(role =>
+    !storedUser.roles.some((role: string) =>
       ['admin', 'moderator', 'welcome-team'].includes(role),
     )
   ) {
@@ -323,12 +334,13 @@ export async function signInPrivileged(user: { username: string; password: strin
 
   if (
     elevate &&
-    storedUser.roles.some(role => ['admin', 'welcome-team'].includes(role))
+    storedUser.roles.some((role: string) =>
+      ['admin', 'welcome-team'].includes(role),
+    )
   ) {
     await elevateAdminAccess(agent, password);
   }
 }
-
 
 /** Sign out from the app using a Supertest agent. */
 export async function signOut(agent: SupertestAgent): Promise<void> {
@@ -341,15 +353,21 @@ export async function signOut(agent: SupertestAgent): Promise<void> {
 export { generateUsers, generateExperiences };
 
 export async function saveUsersWithSharedPassword(users: UserFixtureData[]) {
-  const User = mongoose.model('User');
+  const User = mongoose.model<CachedUserFixtureData, UserFixtureModel>('User');
   const password = users.find(user => user.password)?.password;
+  if (!password)
+    throw new Error('Shared-password fixtures require a password.');
   const hashedPassword = await User.hashPassword(password);
   const documents = users.map(user => {
     const document = new User({ ...user, password: hashedPassword });
     document.displayName = `${document.firstName} ${document.lastName}`;
     return document.toObject();
   });
-  await User.collection.insertMany(documents);
+  await User.collection.insertMany(
+    documents.map(document => ({
+      ...document,
+      _id: new mongoose.Types.ObjectId(String(document._id)),
+    })),
+  );
   return documents;
 }
-
