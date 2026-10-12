@@ -1,6 +1,7 @@
 const path = require('path');
 
 const AREA_BY_SPEC = {
+  'staff-passkeys.spec.js': 'Authentication',
   'hashed-action-tokens.spec.js': 'Authentication',
   'csp.spec.js': 'Public pages',
   'signin-challenge.spec.js': 'Authentication',

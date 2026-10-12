@@ -12,6 +12,12 @@ let service = {};
  */
 
 service = {
+  passkeys: {
+    rpId: process.env.TRUSTROOTS_PASSKEY_RP_ID || '',
+    origins: (process.env.TRUSTROOTS_PASSKEY_ORIGINS || '')
+      .split(',')
+      .filter(Boolean),
+  },
   featureFlags: {
     reference: true,
   },

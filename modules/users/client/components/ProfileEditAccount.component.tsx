@@ -14,6 +14,7 @@ import { useAuth } from '@/modules/core/client/react-app/auth';
 import type { UserProfile } from '../types';
 import { readApiError } from '../utils/api-error';
 import MfaSettings from './MfaSettings.component';
+import PasskeySettings from './PasskeySettings.component';
 
 interface ProfileEditAccountProps {
   user: UserProfile;
@@ -252,6 +253,9 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
       </div>
 
       <MfaSettings />
+      {user.roles?.some(role =>
+        ['admin', 'moderator', 'welcome-team'].includes(role),
+      ) && <PasskeySettings />}
 
       <div className="panel panel-default">
         <div className="panel-heading">{t('News and updates')}</div>

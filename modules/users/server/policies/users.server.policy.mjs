@@ -54,6 +54,16 @@ service.invokeRolesPolicies = function () {
     {
       roles: ['user'],
       allows: [
+        { resources: '/api/users/passkeys', permissions: ['get'] },
+        {
+          resources: '/api/users/passkeys/register/options',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/users/passkeys/register/verify',
+          permissions: ['post'],
+        },
+        { resources: '/api/users/passkeys/:id', permissions: ['delete'] },
         {
           resources: '/api/users',
           permissions: ['get', 'put', 'delete'],

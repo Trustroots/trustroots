@@ -12,6 +12,7 @@ import {
   redirectAfterSignin,
 } from '@/modules/users/client/utils/auth';
 import { readApiError } from '../utils/api-error';
+import { signinWithPasskey } from '../api/passkeys.api';
 
 const BoardWithPhotoList = Board as unknown as React.ComponentType<{
   names: string | string[];
@@ -38,6 +39,7 @@ export default function SigninPage() {
   const [authError, setAuthError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [mfaRequired, setMfaRequired] = useState(false);
+  const [passkeyAvailable, setPasskeyAvailable] = useState(false);
   const [mfaCode, setMfaCode] = useState('');
   const hasRedirected = useRef(false);
   const signinDestination = useRef({
@@ -62,19 +64,21 @@ export default function SigninPage() {
     }));
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function authenticate(usePasskey = false) {
     setIsLoading(true);
     setAuthError(false);
     setErrorMessage('');
 
     try {
-      const authentication = mfaRequired
+      const authentication = usePasskey
+        ? await signinWithPasskey()
+        : mfaRequired
         ? await authApi.verifyMfa(mfaCode)
         : await authApi.signin(credentials);
 
       if ('mfaRequired' in authentication) {
         setMfaRequired(true);
+        setPasskeyAvailable(authentication.passkeyAvailable === true);
         setIsLoading(false);
         return;
       }
@@ -114,6 +118,11 @@ export default function SigninPage() {
         label: 'Login failed',
       });
     }
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void authenticate();
   }
 
   const forgotHref = credentials.username
@@ -223,6 +232,16 @@ export default function SigninPage() {
                         one of your recovery codes.
                       </p>
                     </div>
+                  )}
+                  {mfaRequired && passkeyAvailable && (
+                    <button
+                      type="button"
+                      className="btn btn-default"
+                      disabled={isLoading}
+                      onClick={() => void authenticate(true)}
+                    >
+                      Use a registered passkey
+                    </button>
                   )}
                   <div className="form-group">
                     <button

@@ -26,6 +26,7 @@ export interface AuthenticatedUser {
 
 export interface MfaChallenge {
   mfaRequired: true;
+  passkeyAvailable?: boolean;
 }
 
 export async function signin(

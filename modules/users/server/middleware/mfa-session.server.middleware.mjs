@@ -5,6 +5,8 @@ const allowedMfaPaths = new Set([
   '/api/auth/session',
   '/api/auth/signout',
   '/api/auth/mfa/verify',
+  '/api/auth/passkeys/options',
+  '/api/auth/passkeys/verify',
   '/api/users/mfa',
   '/api/users/mfa/enrol',
   '/api/users/mfa/enrol/verify',

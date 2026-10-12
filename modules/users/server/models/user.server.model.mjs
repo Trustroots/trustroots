@@ -7,6 +7,8 @@ import crypto from 'crypto';
 import mongoose from 'mongoose';
 import uniqueValidation from '../../../../config/lib/mongoose-unique-validation.mjs';
 import validator from 'validator';
+import './member-passkey.server.model.mjs';
+import './passkey-ceremony.server.model.mjs';
 /**
  * Module dependencies.
  */
@@ -579,6 +581,15 @@ UserSchema.index(
   },
   { name: 'circle_discovery_member_seen' },
 );
+UserSchema.post('findOneAndRemove', async function (user) {
+  if (user) {
+    await Promise.all([
+      mongoose.model('MemberPasskey').deleteMany({ user: user._id }),
+      mongoose.model('PasskeyCeremony').deleteMany({ user: user._id }),
+    ]);
+  }
+});
+
 mongoose.model('User', UserSchema);
 
 const defaultExport = {};

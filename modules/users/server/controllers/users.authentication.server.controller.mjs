@@ -388,7 +388,10 @@ service.signin = function (req, res, next) {
           }
           statsObject.tags.status = 'mfa-required';
           statService.stat(statsObject, function () {});
-          return res.status(202).json({ mfaRequired: true });
+          return res.status(202).json({
+            mfaRequired: true,
+            passkeyAvailable: mfaService.isPrivileged(user),
+          });
         });
       });
     }

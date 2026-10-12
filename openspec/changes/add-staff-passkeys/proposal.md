@@ -14,5 +14,5 @@ Users models, authentication services/routes, account settings, deployment confi
 
 ## Delivery
 
-This is a proposal-only change. Runtime implementation, migrations and deployment are separate follow-up work after the design is reviewed. The proposal remains unarchived until implementation is complete.
+Implement the browser and server flows together with deployment documentation and regression tests. Archive the completed proposal and retain its requirements in the living account-access specification.
 
