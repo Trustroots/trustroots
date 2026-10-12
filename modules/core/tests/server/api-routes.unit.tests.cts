@@ -115,6 +115,9 @@ function assertPolicy(
   const expected = [policy.isAllowed];
   if (route.path.startsWith('/api/users/mfa/'))
     expected.push(handler('requestLimit.mfaManage'));
+  if (route.path === '/api/users/activity') {
+    expected.unshift(handler('setActivityResponseHeaders'));
+  }
   if (
     route.path.startsWith('/api/admin/') &&
     route.path !== '/api/admin/elevate' &&
