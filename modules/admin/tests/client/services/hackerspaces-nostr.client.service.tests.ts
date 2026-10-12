@@ -6,6 +6,7 @@ import {
   type AddressablePlaceEvent,
   type SpaceApiPlace,
 } from '@/modules/admin/client/services/hackerspaces-nostr.client.service';
+import { OpenLocationCode } from 'open-location-code';
 
 const space: SpaceApiPlace = {
   endpoint: 'https://example.test/spaceapi.json',
@@ -22,6 +23,40 @@ const space: SpaceApiPlace = {
 };
 
 describe('NIP-41 SpaceAPI place events', () => {
+  it('uses display defaults when optional details are missing and Plus Codes fail', () => {
+    const encode = jest
+      .spyOn(OpenLocationCode.prototype, 'encode')
+      .mockImplementation(() => {
+        throw new Error('optional encoding unavailable');
+      });
+    try {
+      const result = buildSpaceApiPlaceEvent({
+        ...space,
+        addressParts: undefined,
+        spaceType: '',
+        description: '',
+      });
+      expect(result.tags).toContainEqual([
+        'address',
+        space.address,
+        '',
+        '',
+        '',
+        '',
+      ]);
+      expect(result.tags).toContainEqual([
+        'l',
+        'hackerspace',
+        'physical-location',
+      ]);
+      expect(result.tags.some(tag => tag[2] === 'open-location-code')).toBe(
+        false,
+      );
+      expect(result.content).toMatch(/not been independently verified/);
+    } finally {
+      encode.mockRestore();
+    }
+  });
   it('uses stable identifiers and geohash ladders', () => {
     expect(getSpaceApiIdentifier(space.endpoint)).toBe(
       'spaceapi:https://example.test/spaceapi.json',

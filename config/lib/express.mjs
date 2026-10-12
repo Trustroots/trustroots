@@ -321,6 +321,7 @@ service.initHelmetHeaders = function (app) {
           'https://fonts.openmaptiles.org',
           'https://tile.openstreetmap.org',
           'wss://relay.trustroots.org',
+          'wss://relay.nomadwiki.org',
           'https://www.google-analytics.com',
           'https://stats.g.doubleclick.net',
           'https://1p.trustroots.org', // Umami analytics
