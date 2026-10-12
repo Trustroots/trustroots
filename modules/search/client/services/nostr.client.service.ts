@@ -91,6 +91,60 @@ export default class NostrService {
    * Close only the map notes subscription, leaving the relay open for other
    * consumers (profile badge, username resolution).
    */
+  unsubscribeHackerPlaces() {
+    const existing = this.subscriptions.get('hackerPlaces');
+    if (existing) {
+      existing.close();
+      this.subscriptions.delete('hackerPlaces');
+    }
+  }
+
+  async fetchHackerPlaceEvents(): Promise<Event[]> {
+    const relay = await this.connect();
+    const events: Event[] = [];
+    return new Promise(resolve => {
+      let finished = false;
+      const subscription = relay.subscribe([{ kinds: [33000], limit: 1000 }], {
+        onevent(event) {
+          events.push(event);
+        },
+        oneose() {
+          if (finished) return;
+          finished = true;
+          subscription.close();
+          resolve([
+            ...new Map(events.map(event => [event.id, event])).values(),
+          ]);
+        },
+        onclose() {
+          if (finished) return;
+          finished = true;
+          resolve([
+            ...new Map(events.map(event => [event.id, event])).values(),
+          ]);
+        },
+      });
+    });
+  }
+
+  async subscribeHackerPlaces(
+    onEvent: (event: Event) => void,
+    { onClose, onEose }: MapNoteSubscriptionCallbacks = {},
+  ) {
+    const relay = await this.connect();
+    this.unsubscribeHackerPlaces();
+    const sub = relay.subscribe(
+      [{ kinds: [33000], '#L': ['physical-location'] }],
+      {
+        onevent: onEvent,
+        oneose: onEose || (() => {}),
+        onclose: onClose,
+      },
+    );
+    this.subscriptions.set('hackerPlaces', sub);
+    return sub;
+  }
+
   unsubscribeMapNotes() {
     const existing = this.subscriptions.get('mapNotes');
     if (existing) {
