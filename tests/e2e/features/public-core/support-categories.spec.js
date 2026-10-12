@@ -8,7 +8,7 @@ const { SEEDED_MEMBERS, signInViaApi } = require('../../support/helpers');
 const { withE2eDb } = require('../../support/db');
 const {
   SUPPORT_CATEGORIES,
-} = require('../../../../modules/support/shared/categories');
+} = require('../../../../modules/support/shared/categories.ts');
 
 // Leave the form visible so the screenshots workflow captures each category's
 // guidance, rather than only the confirmation shown by submission tests.

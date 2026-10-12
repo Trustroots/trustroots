@@ -33,9 +33,10 @@ type ThreadMessageProps = { message: Message; user: MessageUser };
 export default function ThreadMessage({ message, user }: ThreadMessageProps) {
   const { t } = useTranslation('messages');
 
-  const sentByMe = message.userFrom._id === user._id;
+  const sender = message.userFrom ?? { _id: '' };
+  const sentByMe = sender._id === user._id;
 
-  const deletedUser = !message.userFrom.username;
+  const deletedUser = !sender.username;
 
   return (
     <MessageBubble
@@ -47,9 +48,7 @@ export default function ThreadMessage({ message, user }: ThreadMessageProps) {
           {sentByMe ? (
             <span>{t<string>('You')}</span>
           ) : !deletedUser ? (
-            <a href={`/profile/${message.userFrom.username}`}>
-              {message.userFrom.displayName}
-            </a>
+            <a href={`/profile/${sender.username}`}>{sender.displayName}</a>
           ) : (
             <span>{t<string>('Unknown member')}</span>
           )}
@@ -66,7 +65,7 @@ export default function ThreadMessage({ message, user }: ThreadMessageProps) {
         </div>
       </div>
       <div className="message-author">
-        <Avatar user={message.userFrom} size={32} link={!deletedUser} />
+        <Avatar user={sender} size={32} link={!deletedUser} />
       </div>
     </MessageBubble>
   );

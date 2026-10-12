@@ -16,6 +16,8 @@ import LanguageList from './LanguageList';
 import ProfileNostrBadge from './ProfileNostrBadge.component';
 import type { UserProfile } from '../types';
 
+const PUBLIC_PROVIDER_NAMES = ['facebook', 'github', 'twitter'] as const;
+
 function npubToHex(npub: string): string | null {
   try {
     const { type, data } = nip19.decode(npub);
@@ -44,10 +46,10 @@ export default function ProfileViewBasics({
   const getBirthdate = (birthdate: string) =>
     t('{{birthdate, age}} years.', { birthdate: new Date(birthdate) });
 
-  const getReplyRate = (replyRate: number) =>
+  const getReplyRate = (replyRate: string) =>
     t('Reply rate {{replyRate}}.', { replyRate });
 
-  const getReplyTime = (replyTime: number) =>
+  const getReplyTime = (replyTime: string) =>
     t('Replies within {{replyTime}}.', { replyTime });
 
   const getMemberSince = (created?: string) =>
@@ -63,7 +65,7 @@ export default function ProfileViewBasics({
   /*
    * Rendering functions
    */
-  const renderReplyData = (replyRate?: number, replyTime?: number) => (
+  const renderReplyData = (replyRate?: string, replyTime?: string) => (
     <div className="profile-sidebar-section text-muted">
       {replyRate && <span>{getReplyRate(replyRate)}</span>}
       {replyTime && (
@@ -164,7 +166,12 @@ export default function ProfileViewBasics({
         */}
         {/* facebook, github, twitter*/}
         {profile.additionalProvidersData &&
-          Object.keys(profile.additionalProvidersData).map(network => {
+          PUBLIC_PROVIDER_NAMES.filter(network =>
+            Object.prototype.hasOwnProperty.call(
+              profile.additionalProvidersData,
+              network,
+            ),
+          ).map(network => {
             return (
               network !== 'facebook' && (
                 <li className="social-profile" key={network}>

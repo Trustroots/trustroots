@@ -7,7 +7,7 @@ import JoinButton from '@/modules/tribes/client/components/JoinButton';
 import type { TribeMembership, UserProfile } from '../types';
 import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
 
-type Membership = TribeMembership & { tribe: TribeSummary };
+type Membership = TribeMembership;
 type MembershipUpdated = (data: { user?: UserProfile } | null) => void;
 
 function TribeCard({
@@ -22,7 +22,18 @@ function TribeCard({
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
-  const tribe = membership.tribe;
+  const tribe: TribeSummary = {
+    _id: membership.tribe._id,
+    slug: membership.tribe.slug,
+    label: membership.tribe.label,
+    count: membership.tribe.count,
+    ...(membership.tribe.color === undefined
+      ? {}
+      : { color: membership.tribe.color }),
+    ...(membership.tribe.image === undefined
+      ? {}
+      : { image: membership.tribe.image }),
+  };
   const countLabel =
     tribe.count === 0
       ? t('No members yet')

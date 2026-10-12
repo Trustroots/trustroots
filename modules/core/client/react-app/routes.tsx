@@ -14,7 +14,7 @@ import {
   REACT_ROUTE_POLICIES,
   normalizePath,
   toTanStackPath,
-} from '@/modules/core/shared/react-route-ownership';
+} from '@/modules/core/shared/react-route-ownership.mts';
 import Admin from '@/modules/admin/client/components/Admin.component';
 import SupportInbox, {
   SupportMemberPage,

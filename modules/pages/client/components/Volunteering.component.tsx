@@ -2,7 +2,7 @@ import type { PageTranslator } from '../types';
 import React from 'react';
 import Board from './PageBoard';
 import { useTranslation } from 'react-i18next';
-import { VOLUNTEERING_DISCLAIMER } from '@/modules/support/shared/volunteering-copy';
+import { VOLUNTEERING_DISCLAIMER } from '@/modules/support/shared/volunteering-copy.ts';
 
 export default function Volunteering() {
   const { t: rawT } = useTranslation(['pages', 'support']);

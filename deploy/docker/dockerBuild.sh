@@ -27,6 +27,7 @@ fi
 COMMIT=$(git rev-parse --short HEAD)
 BUILD_COMMIT=$(git rev-parse HEAD)
 BUILD_COMMITTED_AT=$(git log -1 --format=%cI)
+IMAGE=ghcr.io/trustrootsops/trustroots
 
 OS=$(uname -s)
 
@@ -47,18 +48,18 @@ fi
   --build-arg "TRUSTROOTS_BUILD_COMMITTED_AT=${BUILD_COMMITTED_AT}" \
   --build-arg "TRUSTROOTS_BUILD_BRANCH=${BUILD_BRANCH}" \
   -f ./production.Dockerfile . \
-  -t ghcr.io/trustrootsops/trustroots:latest \
-  -t "ghcr.io/trustrootsops/trustroots:git-${COMMIT}"
+  -t "${IMAGE}:latest" \
+  -t "${IMAGE}:git-${COMMIT}"
 
 echo
 echo "Docker images built."
 echo
 echo "The following images will be pushed automatically:"
 echo
-echo "docker push ghcr.io/trustrootsops/trustroots:git-${COMMIT} && docker push ghcr.io/trustrootsops/trustroots:latest"
+echo "docker push ${IMAGE}:git-${COMMIT} && docker push ${IMAGE}:latest"
 echo
 echo "Pushing images in 10 seconds. Press Ctrl-C to cancel."
 sleep 10
 
-"${DOCKER[@]}" push "ghcr.io/trustrootsops/trustroots:git-${COMMIT}"
-"${DOCKER[@]}" push ghcr.io/trustrootsops/trustroots:latest
+"${DOCKER[@]}" push "${IMAGE}:git-${COMMIT}"
+"${DOCKER[@]}" push "${IMAGE}:latest"

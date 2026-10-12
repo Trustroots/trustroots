@@ -6,8 +6,8 @@ import { Trans, useTranslation } from 'react-i18next';
 // Internal dependencies
 import { send } from '../api/support.api';
 import usePersistentSupportMessage from '../hooks/use-persistent-support-message';
-import { SUPPORT_CATEGORIES } from '../../shared/categories';
-import { VOLUNTEERING_DISCLAIMER } from '../../shared/volunteering-copy';
+import { SUPPORT_CATEGORIES } from '../../shared/categories.ts';
+import { VOLUNTEERING_DISCLAIMER } from '../../shared/volunteering-copy.ts';
 
 type SupportUser = { displayName?: string; username?: string; email?: string };
 type SupportFormProps = { user?: SupportUser | null };

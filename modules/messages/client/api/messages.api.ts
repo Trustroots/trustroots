@@ -1,53 +1,33 @@
 import axios from '../../../core/client/api/http-client.js';
-import parseLinkheader from 'parse-link-header';
-export type MessageUser = {
-  _id: string;
-  username?: string | null;
-  displayName?: string | null;
-  photo?: string;
-  member?: unknown[];
-  languages?: unknown[];
-};
+import { nextPageParams } from './pagination';
+import type {
+  MarkMessagesReadRequest,
+  MarkMessagesReadResponse,
+  MessageMember,
+  MessagePayload,
+  MessageThreadSummary,
+  PreviewMessageRequest,
+  PreviewMessageResponse,
+  SendMessageRequest,
+  UnreadMessageCountResponse,
+} from '../../shared/messages';
 
-export type Message = {
-  _id: string;
-  content: string;
-  created: string;
-  read: boolean;
-  userFrom: MessageUser;
-  userTo: MessageUser;
-};
-
-export type MessageThreadSummary = {
-  _id: string;
-  read: boolean;
-  updated: string;
-  userFrom: MessageUser;
-  userTo: MessageUser;
-  message: { excerpt: string };
-};
+export type MessageUser = MessageMember;
+export type Message = MessagePayload;
+export type { MessageThreadSummary };
 
 export type RequestParams = Record<
   string,
-  string | number | boolean | undefined
+  string | string[] | number | boolean | undefined
 >;
-export type PageParams = Record<string, string | number | undefined>;
+export type PageParams = Record<string, string | string[] | number | undefined>;
 
 async function fetchWithNextParams<Data = unknown>(
   url: string,
   params: RequestParams,
 ): Promise<{ data: Data; nextParams?: PageParams }> {
   const { data, headers } = await axios.get<Data>(url, { params });
-  let nextParams: PageParams | undefined;
-  if (headers.link) {
-    const links = parseLinkheader(headers.link);
-    if (links?.next) {
-      const params: Partial<typeof links.next> = { ...links.next };
-      delete params.url;
-      delete params.rel;
-      nextParams = params as PageParams;
-    }
-  }
+  const nextParams = nextPageParams(headers.link);
   return { data, nextParams };
 }
 
@@ -75,30 +55,31 @@ export async function sendMessage(
   userToId: string,
   content: string,
 ): Promise<import('axios').AxiosResponse<Message>> {
-  return await axios.post<Message>('/api/messages', {
+  const payload: SendMessageRequest = {
     userTo: userToId,
     content,
     read: false,
-  });
+  };
+  return await axios.post<Message>('/api/messages', payload);
 }
 
 export async function markRead(messageIds: string[]): Promise<void> {
-  await axios.post('/api/messages-read', { messageIds });
+  const payload: MarkMessagesReadRequest = { messageIds };
+  await axios.post<MarkMessagesReadResponse>('/api/messages-read', payload);
 }
 
 export async function unreadCount(): Promise<number> {
   const {
     data: { unread },
-  } = await axios.get<{ unread: number }>('/api/messages-count');
+  } = await axios.get<UnreadMessageCountResponse>('/api/messages-count');
   return unread;
 }
 
 export async function previewMessage(content: string): Promise<string> {
-  const { data } = await axios.post<{ content: string }>(
+  const payload: PreviewMessageRequest = { content };
+  const { data } = await axios.post<PreviewMessageResponse>(
     '/api/messages-preview',
-    {
-      content,
-    },
+    payload,
   );
   return data.content;
 }

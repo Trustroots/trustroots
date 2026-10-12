@@ -1,3 +1,9 @@
+const { FlatCompat } = require('@eslint/eslintrc');
+const { fixupConfigRules } = require('@eslint/compat');
+const js = require('@eslint/js');
+const fs = require('fs');
+const path = require('path');
+const { defineConfig } = require('eslint/config');
 const semver = require('semver');
 
 // Converts semver range `~16.6.0` to strict version `16.6.0`
@@ -39,13 +45,20 @@ const rules = {
   'quote-props': 0,
   'no-var': 2,
   'prefer-const': 2,
+  // Preserve ESLint 8's treatment of unused catch bindings.
+  'no-unused-vars': [2, { caughtErrors: 'none' }],
   'arrow-spacing': [2, { before: true, after: true }],
   'require-atomic-updates': 0,
   'import/first': 2,
   'prettier/prettier': 2,
 };
 
-module.exports = {
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+  recommendedConfig: js.configs.recommended,
+});
+
+const legacyConfig = {
   // Keep linting scoped to this worktree (parent repo .eslintrc must not load).
   root: true,
   extends: ['eslint:recommended', 'plugin:import/errors', 'prettier'],
@@ -64,8 +77,8 @@ module.exports = {
   },
   parserOptions: {
     ecmaVersion: 2022,
+    ecmaFeatures: { jsx: true },
   },
-  parser: '@babel/eslint-parser',
   overrides: [
     /**
      * Overrides for server side app files
@@ -77,10 +90,11 @@ module.exports = {
         '*.cjs',
         'config/**',
         'migrations/**',
-        'modules/*/shared/**/*.js',
+        'modules/*/shared/**/*.{js,ts,mts}',
         'modules/*/server/*.{js,mjs}',
         'modules/*/server/**/*.{js,mjs}',
         'testutils/server/**',
+        'testutils/common/**',
       ],
       env: {
         node: true,
@@ -123,12 +137,11 @@ module.exports = {
           version: reactVersion,
         },
       },
-      parser: '@babel/eslint-parser',
       parserOptions: {
         ecmaFeatures: {
           jsx: true,
         },
-        ecmaVersion: 2018,
+        ecmaVersion: 2022,
 
         sourceType: 'module',
       },
@@ -145,7 +158,7 @@ module.exports = {
       files: [
         'modules/*/tests/client/*.{js,ts,tsx}',
         'modules/*/tests/client/**/*.{js,ts,tsx}',
-        'testutils/client/*.js',
+        'testutils/client/*.{js,ts,tsx}',
       ],
       extends: [
         'plugin:react/recommended',
@@ -175,8 +188,12 @@ module.exports = {
     {
       files: [
         'modules/*/client/**/*.{ts,tsx}',
-        'modules/*/shared/**/*.{ts,tsx}',
-        'modules/*/tests/client/**/*.{ts,tsx}',
+        'modules/*/shared/**/*.{ts,tsx,mts}',
+        'modules/*/tests/client/**/*.{ts,tsx,mts}',
+        'testutils/client/**/*.{ts,tsx}',
+        'testutils/common/**/*.{mts,ts}',
+        'testutils/server/**/*.mts',
+        'modules/*/tests/fixtures/**/*.mts',
       ],
       parser: '@typescript-eslint/parser',
       extends: ['plugin:@typescript-eslint/recommended', 'prettier'],
@@ -220,3 +237,24 @@ module.exports = {
     },
   ],
 };
+
+// Share the existing ignore list with Prettier; flat config owns lint ignores.
+const ignores = fs
+  .readFileSync(path.join(__dirname, '.prettierignore'), 'utf8')
+  .split(/\r?\n/)
+  .map(line => line.trim())
+  .filter(line => line && !line.startsWith('#'))
+  .map(pattern => (pattern.endsWith('/') ? `${pattern}**` : pattern));
+
+module.exports = defineConfig([
+  // ESLint 8 ignored dotfiles and hidden directories by default.
+  { ignores: [...ignores, '**/.*'] },
+  {
+    files: ['**/*.{js,mjs,cjs,ts,tsx,mts}'],
+    extends: fixupConfigRules(compat.config(legacyConfig)),
+  },
+  {
+    files: ['**/*.cjs'],
+    languageOptions: { sourceType: 'commonjs' },
+  },
+]);

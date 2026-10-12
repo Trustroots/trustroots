@@ -1,9 +1,31 @@
-const {
+import {
   createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
-} = require('@tanstack/react-router');
+} from '@tanstack/react-router';
+
+export type ReactRoutePolicy = {
+  path: string;
+  title: string;
+  footerHidden?: boolean;
+  footerVariant?: string;
+  headerHidden?: boolean;
+  noScrollingTop?: boolean;
+  redirectTo?: string;
+  requiresAuth?: boolean;
+  requiresAuthParams?: Record<string, readonly string[]>;
+  requiresRole?: string | readonly string[];
+};
+
+export type ReactRouteMatch = {
+  params: Record<string, string>;
+  policy: ReactRoutePolicy;
+};
+
+export type ReactRouteUser = {
+  roles?: readonly string[];
+};
 
 const ADMIN_ROUTE_DEFAULTS = {
   footerVariant: 'admin',
@@ -13,7 +35,7 @@ const ADMIN_ROUTE_DEFAULTS = {
 
 const ACCOUNT_ACCESS_FOOTER = { footerVariant: 'account' };
 
-const REACT_ROUTE_POLICIES = [
+export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   {
     path: '/',
     title: 'Home',
@@ -383,9 +405,9 @@ const REACT_ROUTE_POLICIES = [
   },
 ];
 
-const REACT_OWNED_PATHS = REACT_ROUTE_POLICIES.map(route => route.path);
+export const REACT_OWNED_PATHS = REACT_ROUTE_POLICIES.map(route => route.path);
 
-function toTanStackPath(path) {
+export function toTanStackPath(path: string): string {
   return path
     .split('/')
     .map(segment =>
@@ -412,7 +434,7 @@ const policyByRouteId = new Map(
   policyRouteEntries.map(({ policy, route }) => [route.id, policy]),
 );
 
-function normalizePath(path) {
+export function normalizePath(path: string): string {
   const parsedPath = (path || '/').split('?')[0].split('#')[0] || '/';
 
   if (parsedPath.length > 1 && parsedPath.endsWith('/')) {
@@ -422,7 +444,7 @@ function normalizePath(path) {
   return parsedPath;
 }
 
-function matchReactRoute(path) {
+export function matchReactRoute(path: string): ReactRouteMatch | null {
   const normalizedPath = normalizePath(path);
   const circleMatch = /^\/circles\/([^/]+)$/.exec(normalizedPath);
   if (normalizedPath.startsWith('/circles/') && !circleMatch) {
@@ -431,15 +453,16 @@ function matchReactRoute(path) {
   if (circleMatch) {
     let circle;
     try {
-      circle = decodeURIComponent(circleMatch[1]);
+      circle = decodeURIComponent(circleMatch[1] ?? '');
     } catch {
       circle = '';
     }
     if (!/^[a-z0-9-]+$/.test(circle)) {
-      return {
-        params: {},
-        policy: REACT_ROUTE_POLICIES.find(route => route.path === '/not-found'),
-      };
+      const policy = REACT_ROUTE_POLICIES.find(
+        route => route.path === '/not-found',
+      );
+
+      return policy ? { params: {}, policy } : null;
     }
   }
   const matches = policyRouter.matchRoutes(normalizedPath);
@@ -454,22 +477,31 @@ function matchReactRoute(path) {
     : null;
 }
 
-function getReactRoutePolicy(path) {
+export function getReactRoutePolicy(path: string): ReactRoutePolicy | null {
   return matchReactRoute(path)?.policy ?? null;
 }
 
-function isReactOwnedPath(path) {
+export function isReactOwnedPath(path: string): boolean {
   return Boolean(getReactRoutePolicy(path));
 }
 
-function userHasRequiredRole(user, requiredRole) {
-  return Boolean(
-    requiredRole &&
-      [].concat(requiredRole).some(role => (user?.roles || []).includes(role)),
-  );
+export function userHasRequiredRole(
+  user: ReactRouteUser | null | undefined,
+  requiredRole: ReactRoutePolicy['requiresRole'],
+): boolean {
+  if (!requiredRole) {
+    return false;
+  }
+
+  const roles =
+    typeof requiredRole === 'string' ? [requiredRole] : requiredRole;
+  return roles.some(role => (user?.roles ?? []).includes(role));
 }
 
-function routeRequiresAuth(route, path) {
+export function routeRequiresAuth(
+  route: ReactRoutePolicy | null | undefined,
+  path?: string,
+): boolean {
   if (!route) {
     return false;
   }
@@ -482,14 +514,18 @@ function routeRequiresAuth(route, path) {
     return false;
   }
 
-  const params = matchReactRoute(path)?.params || {};
+  const params = matchReactRoute(path ?? '/')?.params || {};
 
   return Object.entries(route.requiresAuthParams).some(([param, values]) =>
     values.includes(params[param]),
   );
 }
 
-function getReactRouteAccessRedirect(route, user, returnTo) {
+export function getReactRouteAccessRedirect(
+  route: ReactRoutePolicy | null | undefined,
+  user: ReactRouteUser | null | undefined,
+  returnTo?: string,
+): string | null {
   if (!route) {
     return null;
   }
@@ -509,7 +545,7 @@ function getReactRouteAccessRedirect(route, user, returnTo) {
   return null;
 }
 
-module.exports = {
+const reactRouteOwnership = {
   getReactRouteAccessRedirect,
   getReactRoutePolicy,
   matchReactRoute,
@@ -521,3 +557,5 @@ module.exports = {
   toTanStackPath,
   userHasRequiredRole,
 };
+
+export default reactRouteOwnership;

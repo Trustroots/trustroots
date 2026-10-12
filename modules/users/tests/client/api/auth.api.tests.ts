@@ -3,7 +3,7 @@ import axios, { type AxiosResponse } from 'axios';
 import * as authApi from '@/modules/users/client/api/auth.api';
 
 jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
 );
 
 const axiosMock = jest.mocked(axios);
