@@ -65,6 +65,7 @@ async function findUser(id: unknown): Promise<AuthenticationUserDocument> {
   if (!user) throw new Error('Expected test user to exist');
   return user;
 }
+const AccountActivity = mongoose.model('AccountActivity');
 const controllerPath =
   '../../server/controllers/users.authentication.server.controller.mts';
 
@@ -1399,6 +1400,7 @@ describe('Authentication controller OAuth unit tests', () => {
             mfaEnabled: true,
             mfaSecretEncrypted: 'encrypted-secret',
             authVersion: 2,
+            public: true,
             emailTemporary: 'new@example.test',
             emailToken: 'verified-confirm-token',
           },
@@ -1422,6 +1424,12 @@ describe('Authentication controller OAuth unit tests', () => {
       res.statusCode.should.equal(200);
       responseField(res, 'mfaRequired').should.be.false();
       login.calledOnce.should.be.true();
+      (
+        await AccountActivity.countDocuments({
+          user: saved._id,
+          eventType: 'email_changed',
+        })
+      ).should.equal(1);
     });
 
     it('preserves a legacy MFA session without an authVersion field', async () => {
