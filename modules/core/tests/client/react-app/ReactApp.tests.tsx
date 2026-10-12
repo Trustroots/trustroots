@@ -19,9 +19,10 @@ import * as usersApi from '@/modules/users/client/api/users.api';
 import * as messagesApi from '@/modules/messages/client/api/messages.api';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
 import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
-import { REACT_ROUTE_POLICIES } from '@/modules/core/shared/react-route-ownership';
+import { REACT_ROUTE_POLICIES } from '@/modules/core/shared/react-route-ownership.mts';
 import type { Message } from '@/modules/messages/client/api/messages.api';
 import type { Offer } from '@/modules/offers/client/api/offers.api';
+import type { OfferReadPayload } from '@/modules/offers/shared/offer';
 
 const mockedUsersApi = jest.mocked(usersApi);
 const mockedMessagesApi = jest.mocked(messagesApi);
@@ -192,7 +193,7 @@ jest.mock('@/modules/contacts/client/api/contacts.api', () => ({
   list: jest.fn(async () => []),
 }));
 
-/* eslint-disable react/display-name, react/prop-types -- unrelated presentation is stubbed; page state and routing are real. */
+/* eslint-disable react/display-name -- unrelated presentation is stubbed; page state and routing are real. */
 jest.mock(
   '@/modules/messages/client/components/ThreadReply',
   () =>
@@ -248,8 +249,10 @@ jest.mock(
       ),
 );
 const mockMapMount = jest.fn();
-const mockOffer: Offer = {
+const mockOffer: OfferReadPayload = {
   _id: '665100000000000000000001',
+  type: 'meet',
+  user: { _id: 'member-1', username: 'member' },
   location: [10, 20],
 };
 jest.mock('@/modules/search/client/components/SearchMap.component', () => {
@@ -274,7 +277,7 @@ jest.mock('@/modules/search/client/components/SearchMap.component', () => {
     );
   };
 });
-/* eslint-enable react/display-name, react/prop-types */
+/* eslint-enable react/display-name */
 
 function UpdateUser() {
   const { user, setUser } = useAuth();
@@ -514,11 +517,13 @@ describe('<ReactApp />', () => {
         },
       ],
       // Preserve the API's explicit terminal null cursor at this mock boundary.
-      nextParams: null as unknown as Awaited<
-        ReturnType<typeof messagesApi.fetchMessages>
-      >['nextParams'],
+      nextParams: null,
     };
-    mockedMessagesApi.fetchMessages.mockResolvedValue(messagesResponse);
+    Reflect.apply(
+      mockedMessagesApi.fetchMessages.mockResolvedValue,
+      mockedMessagesApi.fetchMessages,
+      [messagesResponse],
+    );
     const sentMessage: Message = {
       _id: 'message-two',
       content: 'A fictional message',

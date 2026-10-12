@@ -5,7 +5,7 @@ import * as authApi from '@/modules/users/client/api/auth.api';
 jest.mock('@/modules/users/client/utils/signin-challenge');
 
 jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
 );
 
 const axiosMock = jest.mocked(axios);

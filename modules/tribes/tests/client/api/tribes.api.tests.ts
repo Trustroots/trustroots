@@ -22,7 +22,7 @@ function response<T>(data: T): AxiosResponse<T> {
 }
 
 jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
 );
 
 afterEach(() => {

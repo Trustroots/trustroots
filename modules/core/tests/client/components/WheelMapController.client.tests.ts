@@ -39,9 +39,9 @@ describe('map wheel zoom', () => {
     // implementation so wheel events reach the real map controller.
     // The browser Hammer implementation and mjolnir's bundled Hammer types
     // differ across package entry points; runtime constructor is compatible.
-    eventManager = new EventManager(element, {
-      Manager: Manager as unknown as EventManagerOptions['Manager'],
-    });
+    const managerOptions: EventManagerOptions = {};
+    Reflect.set(managerOptions, 'Manager', Manager);
+    eventManager = new EventManager(element, managerOptions);
     const controller = new WheelMapController();
     viewport = {
       width: 640,

@@ -1,3 +1,4 @@
+import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -35,7 +36,10 @@ describe('<AdminUserResultsTable />', () => {
     // The null callback exercises runtime fallback behaviour despite the typed prop.
     render(
       <AdminUserResultsTable
-        onSortChange={null as unknown as SortChange}
+        {...malformedFixture<{ onSortChange: SortChange }>(
+          { onSortChange: undefined },
+          { onSortChange: null },
+        )}
         sort={{ column: 'username', direction: 'ascending' }}
         userResults={users}
       />,

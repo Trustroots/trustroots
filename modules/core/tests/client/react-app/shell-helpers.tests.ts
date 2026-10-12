@@ -15,7 +15,7 @@ function browserLocation(fixture: LocationFixture): Location {
 
 // These cases exercise navigation with only the History method under test.
 function browserHistory(pushState: History['pushState']): History {
-  return { pushState } as unknown as History;
+  return { pushState } as History;
 }
 
 type NavigationClick = Pick<
@@ -234,7 +234,7 @@ describe('React shell helpers', () => {
       .mockImplementation(() => {});
 
     // Preserve coverage when the browser does not expose postMessage.
-    window.postMessage = undefined as unknown as typeof window.postMessage;
+    Reflect.set(window, 'postMessage', undefined);
 
     try {
       expect(() => signout()).not.toThrow();

@@ -6,6 +6,7 @@ import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 import ProfileEditAccount from '@/modules/users/client/components/ProfileEditAccount.component';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import type { UserProfile } from '@/modules/users/client/types';
+import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock(
@@ -322,11 +323,10 @@ describe('ProfileEditAccount', () => {
   it('uses blank inputs and a default removal success message', async () => {
     removeProfile.mockResolvedValue({});
     // This legacy API fixture deliberately omits required UserProfile fields.
-    const incompleteProfile = {
-      ...user,
+    const incompleteProfile = malformedFixture(user, {
       email: undefined,
       username: undefined,
-    } as unknown as UserProfile;
+    });
     renderUser(incompleteProfile);
 
     expect(screen.getByLabelText('Email Address')).toHaveValue('');

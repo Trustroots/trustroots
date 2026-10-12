@@ -3,12 +3,13 @@ import React, { useRef } from 'react';
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import CommunityNotesSidebar from './CommunityNotesSidebar.component';
+import type { OfferStatus, OfferType } from '@/modules/offers/shared/offer';
 
 interface SearchOfferUser {
   _id?: string;
   username: string;
   displayName?: string;
-  birthdate?: string | number;
+  birthdate?: string | null;
   gender?: string;
   tagline?: string;
   languages?: string[];
@@ -18,10 +19,10 @@ export interface SearchResultOffer {
   _id?: string;
   location?: [number, number];
   user: SearchOfferUser;
-  type: 'host' | 'meet';
-  status?: string;
+  type: OfferType;
+  status?: OfferStatus;
   description?: string;
-  updated?: string | number;
+  updated?: string;
 }
 
 export interface CommunityNoteSummary {

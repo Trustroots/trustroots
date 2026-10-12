@@ -63,9 +63,9 @@ describe('SearchMyCirclesToggle', () => {
 
   it('handles an empty membership response', async () => {
     // Deliberately malformed response exercises the defensive fallback.
-    listMembershipsMock.mockResolvedValue(
-      null as unknown as MembershipUpdate[],
-    );
+    Reflect.apply(listMembershipsMock.mockResolvedValue, listMembershipsMock, [
+      null,
+    ]);
 
     render(<SearchMyCirclesToggle onChange={onChange} selectedTribeIds={[]} />);
 

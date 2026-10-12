@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Volunteering from '@/modules/pages/client/components/Volunteering.component';
-import { VOLUNTEERING_DISCLAIMER } from '@/modules/support/shared/volunteering-copy';
+import { VOLUNTEERING_DISCLAIMER } from '@/modules/support/shared/volunteering-copy.ts';
 
 jest.mock('@/modules/core/client/components/Board.js', () => {
   const actualReact = jest.requireActual<typeof import('react')>('react');

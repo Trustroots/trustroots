@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 
 import OfferMeetListPage from '@/modules/offers/client/components/OfferMeetListPage.component';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
-import type { Offer } from '@/modules/offers/client/api/offers.api';
+import type { OfferPayload } from '@/modules/offers/shared/offer';
 
 const offersApiMock = jest.mocked(offersApi);
 
@@ -14,7 +14,9 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
 }));
 jest.mock('@/modules/offers/client/components/OfferLocation.component', () => ({
   __esModule: true,
-  default: () => <div data-testid="offer-location" />,
+  default: ({ location }: { location: number[] }) => (
+    <div data-testid="offer-location" data-location={location.join(',')} />
+  ),
 }));
 jest.mock('@/modules/offers/client/components/NoMeets.component', () => ({
   __esModule: true,
@@ -46,6 +48,8 @@ describe('OfferMeetListPage', () => {
       {
         _id: 'offer-1',
         type: 'meet',
+        user: 'user-1',
+        location: [51.5, -0.12],
         description: 'Coffee meetup.',
         validUntil: '2030-01-01T00:00:00.000Z',
       },
@@ -60,17 +64,39 @@ describe('OfferMeetListPage', () => {
     ).toHaveAttribute('href', '/offer/meet/offer-1');
   });
 
+  it('shows an empty location for a legacy offer without one', async () => {
+    const legacyOffer = {
+      _id: 'offer-legacy-location',
+      type: 'meet',
+      user: 'user-1',
+      description: 'Coffee meetup.',
+      validUntil: '2030-01-01T00:00:00.000Z',
+    };
+    Reflect.apply(
+      offersApiMock.getOffers.mockResolvedValueOnce,
+      offersApiMock.getOffers,
+      [[legacyOffer]],
+    );
+    render(<OfferMeetListPage user={user} />);
+
+    expect(await screen.findByTestId('offer-location')).toHaveAttribute(
+      'data-location',
+      '',
+    );
+  });
+
   it('removes a meet offer after confirmation', async () => {
     offersApiMock.getOffers.mockResolvedValue([
       {
         _id: 'offer-1',
         type: 'meet',
+        user: 'user-1',
         description: 'Coffee meetup.',
         location: [51.5, -0.12],
         validUntil: '2030-01-01T00:00:00.000Z',
       },
     ]);
-    offersApiMock.deleteOffer.mockResolvedValue({});
+    offersApiMock.deleteOffer.mockResolvedValue({ message: 'Offer removed.' });
     render(<OfferMeetListPage user={user} />);
 
     fireEvent.click(
@@ -89,6 +115,7 @@ describe('OfferMeetListPage', () => {
       {
         _id: 'offer-2',
         type: 'meet',
+        user: 'user-1',
         description: longDescription,
         location: [51.5, -0.12],
         validUntil: '2030-01-01T00:00:00.000Z',
@@ -106,6 +133,7 @@ describe('OfferMeetListPage', () => {
       {
         _id: 'offer-fade',
         type: 'meet',
+        user: 'user-1',
         description: `<p>${'B'.repeat(2100)}</p>`,
         location: [51.5, -0.12],
         validUntil: '2030-01-01T00:00:00.000Z',
@@ -130,6 +158,7 @@ describe('OfferMeetListPage', () => {
       {
         _id: 'offer-3',
         type: 'meet',
+        user: 'user-1',
         description: '',
         location: [51.5, -0.12],
         validUntil: '2030-01-01T00:00:00.000Z',
@@ -149,6 +178,7 @@ describe('OfferMeetListPage', () => {
       {
         _id: 'offer-1',
         type: 'meet',
+        user: 'user-1',
         description: 'Coffee meetup.',
         location: [51.5, -0.12],
         validUntil: '2030-01-01T00:00:00.000Z',
@@ -165,7 +195,7 @@ describe('OfferMeetListPage', () => {
   });
 
   it('ignores meet offers loaded after unmounting', async () => {
-    let resolveOffers!: (offers: Offer[]) => void;
+    let resolveOffers!: (offers: OfferPayload[]) => void;
     offersApiMock.getOffers.mockReturnValue(
       new Promise(resolve => {
         resolveOffers = resolve;
@@ -178,6 +208,7 @@ describe('OfferMeetListPage', () => {
       {
         _id: 'offer-late',
         type: 'meet',
+        user: 'user-1',
         description: 'Late meetup.',
         location: [51.5, -0.12],
         validUntil: '2030-01-01T00:00:00.000Z',
@@ -188,7 +219,11 @@ describe('OfferMeetListPage', () => {
 
   it('handles empty and late-failing meet offer loads', async () => {
     // Exercise a malformed API response despite the declared array return type.
-    offersApiMock.getOffers.mockResolvedValueOnce(null as unknown as Offer[]);
+    Reflect.apply(
+      offersApiMock.getOffers.mockResolvedValueOnce,
+      offersApiMock.getOffers,
+      [null],
+    );
     const firstRender = render(<OfferMeetListPage user={user} />);
 
     expect(await screen.findByText('No meetups yet')).toBeVisible();
@@ -211,6 +246,7 @@ describe('OfferMeetListPage', () => {
       {
         _id: 'offer-old',
         type: 'meet',
+        user: 'user-1',
         description: 'Older meetup.',
         location: [51.5, -0.12],
         validUntil: '2029-01-01T00:00:00.000Z',
@@ -218,6 +254,7 @@ describe('OfferMeetListPage', () => {
       {
         _id: 'offer-new',
         type: 'meet',
+        user: 'user-1',
         description: 'Newer meetup.',
         location: [51.5, -0.12],
         validUntil: '2030-01-01T00:00:00.000Z',

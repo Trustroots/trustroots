@@ -7,12 +7,16 @@ import {
   previewMessage,
   sendMessage,
   unreadCount,
-  type Message,
   type MessageThreadSummary,
 } from '@/modules/messages/client/api/messages.api';
+import {
+  generateClientUser,
+  generateMessage,
+  generateThread,
+} from '@/testutils/client/data.client.testutil';
 
 jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
 );
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
@@ -32,7 +36,7 @@ describe('messages api', () => {
     });
   });
   it('fetches threads and extracts next pagination params', async () => {
-    const threads = [{ _id: 'thread-1' }] as MessageThreadSummary[];
+    const threads: MessageThreadSummary[] = [generateThread()];
     mockedAxios.get.mockResolvedValueOnce({
       data: threads,
       headers: {
@@ -51,7 +55,7 @@ describe('messages api', () => {
   });
 
   it('fetches threads with default params', async () => {
-    const threads = [{ _id: 'thread-1' }] as MessageThreadSummary[];
+    const threads: MessageThreadSummary[] = [generateThread()];
     mockedAxios.get.mockResolvedValueOnce({
       data: threads,
       headers: {},
@@ -68,7 +72,7 @@ describe('messages api', () => {
   });
 
   it('ignores pagination links without next params', async () => {
-    const threads = [{ _id: 'thread-1' }] as MessageThreadSummary[];
+    const threads: MessageThreadSummary[] = [generateThread()];
     mockedAxios.get.mockResolvedValueOnce({
       data: threads,
       headers: {
@@ -83,7 +87,7 @@ describe('messages api', () => {
   });
 
   it('fetches messages for a user without pagination params', async () => {
-    const messages = [{ _id: 'message-1', content: 'Hello' }] as Message[];
+    const messages = [generateMessage(generateClientUser())];
     mockedAxios.get.mockResolvedValueOnce({
       data: messages,
       headers: {},
@@ -100,7 +104,7 @@ describe('messages api', () => {
   });
 
   it('fetches messages for a user and extracts next pagination params', async () => {
-    const messages = [{ _id: 'message-1', content: 'Hello' }] as Message[];
+    const messages = [generateMessage(generateClientUser())];
     mockedAxios.get.mockResolvedValueOnce({
       data: messages,
       headers: {
