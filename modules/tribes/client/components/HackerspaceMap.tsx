@@ -123,6 +123,7 @@ export default function HackerspaceMap() {
     nostrService
       .subscribeHackerPlaces(
         event => {
+          if (!active) return;
           const place = parseHackerPlace(event);
           if (place)
             setPlaces(current => [
@@ -148,8 +149,7 @@ export default function HackerspaceMap() {
     };
   }, []);
   useEffect(() => {
-    if (!container.current) return;
-    const map = L.map(container.current, { scrollWheelZoom: false }).setView(
+    const map = L.map(container.current!, { scrollWheelZoom: false }).setView(
       [20, 0],
       2,
     );
@@ -164,9 +164,9 @@ export default function HackerspaceMap() {
     };
   }, []);
   useEffect(() => {
-    const map = mapRef.current;
-    const markers = markersRef.current;
-    if (!map || !markers) return;
+    // The preceding mount effect creates both before this effect runs.
+    const map = mapRef.current!;
+    const markers = markersRef.current!;
     markers.clearLayers();
     const visible = places.filter(place => !place.inactive);
     visible.forEach(place => {

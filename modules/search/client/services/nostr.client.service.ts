@@ -3,6 +3,14 @@ import { Relay } from 'nostr-tools/relay';
 import type { Event } from 'nostr-tools';
 
 export const NOSTR_RELAY_URL = 'wss://relay.trustroots.org';
+export const HACKER_PLACE_RELAY_URLS = [
+  NOSTR_RELAY_URL,
+  'wss://relay.nomadwiki.org',
+] as const;
+export interface HackerPlaceRelayConnection {
+  url: string;
+  relay: InstanceType<typeof Relay> | null;
+}
 export const MAP_NOTES_LIMIT = 500;
 export const NOSTR_AUTHOR_VISIBILITY_ENDPOINT = '/api/nostr/author-visibility';
 export const AUTHOR_VISIBILITY_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -97,6 +105,23 @@ export default class NostrService {
       existing.close();
       this.subscriptions.delete('hackerPlaces');
     }
+  }
+
+  async connectHackerPlaceRelays(): Promise<HackerPlaceRelayConnection[]> {
+    return Promise.all(
+      HACKER_PLACE_RELAY_URLS.map(async url => {
+        // Publication connections have their own lifetime; map subscriptions
+        // continue using the shared Trustroots connection.
+        const relay = new Relay(url);
+        try {
+          await relay.connect();
+          return { url, relay };
+        } catch {
+          relay.close();
+          return { url, relay: null };
+        }
+      }),
+    );
   }
 
   async fetchHackerPlaceEvents(): Promise<Event[]> {
