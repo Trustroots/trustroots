@@ -172,6 +172,37 @@ describe('Member session controls', function () {
     result.req.user._id.should.equal(record.user);
   });
 
+  it('keeps the activity event id when recording fails so a later request can retry', async function () {
+    const record = activeSessionRecord();
+    const eventId = 'stable-session-event-id';
+    sinon.stub(MemberSession, 'updateOne').resolves({});
+    sinon.stub(MemberSession, 'findById').resolves(record);
+    sinon.stub(MemberSession, 'findOneAndUpdate').resolves(record);
+    sinon
+      .stub(AccountActivity, 'updateOne')
+      .rejects(new Error('activity store unavailable'));
+    const req = {
+      user: { _id: record.user, authVersion: 0 },
+      sessionID: 'opaque-session-id',
+      session: {
+        memberSessionCreatedAt: Date.now(),
+        memberActivityEventId: eventId,
+      },
+    };
+    let nextCalled = false;
+    let nextError;
+
+    await checkMemberSession(req, {}, error => {
+      nextCalled = true;
+      nextError = error;
+    });
+
+    assert.equal(nextCalled, true);
+    should.not.exist(nextError);
+    assert.equal(req.session.memberActivityEventId, eventId);
+    assert.equal(AccountActivity.updateOne.callCount, 3);
+  });
+
   it('passes storage failures and a missing record to error handling', async function () {
     const storageError = new Error('storage unavailable');
     const failedWrite = await runMiddleware(null, {
