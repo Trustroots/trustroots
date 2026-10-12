@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-disable no-console */
 import { readFile } from 'node:fs/promises';
 import mongoose from 'mongoose';
 import config from '../../config/config.mjs';
