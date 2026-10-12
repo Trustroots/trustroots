@@ -66,7 +66,9 @@ describe('Member session controls', function () {
       user,
       sessionID: 'opaque-session-id',
       session: {
-        memberSessionCreatedAt: options.createdAt || now,
+        memberSessionCreatedAt: options.legacySession
+          ? undefined
+          : options.createdAt || now,
         destroy(callback) {
           options.destroyed = true;
           callback(options.destroyError);
@@ -124,6 +126,20 @@ describe('Member session controls', function () {
     };
     return result;
   }
+
+  it('initialises the lifetime of a legacy session on its first request', async function () {
+    const now = Date.now();
+    sinon.stub(Date, 'now').returns(now);
+    const result = await runMiddleware(activeSessionRecord(), {
+      legacySession: true,
+    });
+    assert.equal(result.req.session.memberSessionCreatedAt, now);
+    assert.equal(result.nextCalled, true);
+    assert.equal(result.nextError, undefined);
+    const inserted = MemberSession.updateOne.firstCall.args[1].$setOnInsert;
+    assert.equal(inserted.createdAt.getTime(), now);
+    assert.equal(inserted.lastSeenAt.getTime(), now);
+  });
 
   it('uses deterministic opaque identifiers and equal member lifetimes', function () {
     sessionId('session-value').should.equal(sessionId('session-value'));

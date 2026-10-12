@@ -355,7 +355,8 @@ export { generateUsers, generateExperiences };
 export async function saveUsersWithSharedPassword(users: UserFixtureData[]) {
   const User = mongoose.model<CachedUserFixtureData, UserFixtureModel>('User');
   const password = users.find(user => user.password)?.password;
-  if (!password) throw new Error('Shared-password fixtures require a password.');
+  if (!password)
+    throw new Error('Shared-password fixtures require a password.');
   const hashedPassword = await User.hashPassword(password);
   const documents = users.map(user => {
     const document = new User({ ...user, password: hashedPassword });
