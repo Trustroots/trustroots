@@ -76,6 +76,11 @@ test.describe.serial('auth email and token feature coverage', () => {
     await registerViaApi(request, user);
     const storedUser = await findUserByUsername(user.username);
     expect(storedUser.emailToken).toMatch(/^sha256:[a-f0-9]{64}$/);
+    expect(storedUser.emailTokenIssuedAt).toBeTruthy();
+    expect(
+      new Date(storedUser.emailTokenExpires).getTime() -
+        new Date(storedUser.emailTokenIssuedAt).getTime(),
+    ).toBe(24 * 60 * 60 * 1000);
     const emailToken = await findActionToken(user.username, 'emailToken');
 
     const validation = await request.get(
@@ -118,6 +123,42 @@ test.describe.serial('auth email and token feature coverage', () => {
     expect(invalidPost.status()).toBe(400);
   });
 
+  test('expired confirmation links return to the invalid-link flow', async ({
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.email-confirm-invalid', [
+      'Expired confirmation links cannot activate an account.',
+      'Expired confirmation links route to the recovery page.',
+    ]);
+
+    const user = createUser();
+    await registerViaApi(request, user);
+    const token = 'deadbeef'.repeat(5);
+    const now = new Date();
+    await updateUserByUsername(user.username, {
+      $set: {
+        emailToken: token,
+        emailTokenIssuedAt: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+        emailTokenExpires: now,
+      },
+    });
+
+    const validation = await request.get(`/api/auth/confirm-email/${token}`, {
+      maxRedirects: 0,
+    });
+    expect(validation.status()).toBe(302);
+    expect(validation.headers().location).toBe('/confirm-email-invalid');
+
+    const confirmation = await request.post(
+      `/api/auth/confirm-email/${token}`,
+      { headers: { 'X-Trustroots-Request': '1' } },
+    );
+    expect(confirmation.status()).toBe(400);
+    const unchanged = await findUserByUsername(user.username);
+    expect(unchanged.public).toBe(false);
+    expect(unchanged.emailTemporary).toBe(user.email);
+  });
+
   test('members can request confirmation email resends', async ({
     request,
   }, testInfo) => {
@@ -129,6 +170,10 @@ test.describe.serial('auth email and token feature coverage', () => {
     const unconfirmed = createUser();
     await registerViaApi(request, unconfirmed);
     await authenticateViaApi(request, unconfirmed);
+    const originalToken = await findActionToken(
+      unconfirmed.username,
+      'emailToken',
+    );
 
     const resend = await request.post('/api/auth/resend-confirmation', {
       headers: { 'X-Trustroots-Request': '1' },
@@ -137,6 +182,23 @@ test.describe.serial('auth email and token feature coverage', () => {
     expect(await resend.json()).toMatchObject({
       message: 'Sent confirmation email.',
     });
+    const replacementToken = await findActionToken(
+      unconfirmed.username,
+      'emailToken',
+    );
+    expect(replacementToken).not.toBe(originalToken);
+
+    const replacedLink = await request.post(
+      `/api/auth/confirm-email/${originalToken}`,
+      { headers: { 'X-Trustroots-Request': '1' } },
+    );
+    expect(replacedLink.status()).toBe(400);
+
+    const confirmReplacement = await request.post(
+      `/api/auth/confirm-email/${replacementToken}`,
+      { headers: { 'X-Trustroots-Request': '1' } },
+    );
+    expect(confirmReplacement.ok()).toBeTruthy();
 
     await authenticateViaApi(request, SEEDED_MEMBERS[0]);
     const alreadyConfirmed = await request.post(

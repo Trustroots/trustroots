@@ -336,7 +336,13 @@ describe('Profile controller unit tests', () => {
 
       const reloaded = await User.findById(userDoc._id);
       reloaded.emailTemporary.should.equal('brand-new-email@example.com');
-      reloaded.emailToken.should.be.a.String();
+      reloaded.emailToken.should.match(/^sha256:[a-f0-9]{64}$/);
+      reloaded.emailTokenIssuedAt.should.be.a.Date();
+      reloaded.emailTokenExpires
+        .getTime()
+        .should.equal(
+          reloaded.emailTokenIssuedAt.getTime() + 24 * 60 * 60 * 1000,
+        );
     });
   });
 

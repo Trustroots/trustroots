@@ -2,12 +2,17 @@
 
 ### Requirement: Bounded email confirmation lifetime
 
-The system SHALL issue email confirmation credentials with a 24-hour lifetime and SHALL store only their digests once digest-token support is available. Legacy credentials lacking expiry metadata SHALL be accepted only within a configured, deployment-wide seven-day transition window.
+The system SHALL issue email confirmation credentials with a 24-hour lifetime and SHALL store only their digests. Legacy credentials lacking expiry metadata SHALL be accepted only before a configured, deployment-wide deadline that is set seven days after rollout.
 
 #### Scenario: Link reaches its expiry boundary
 
 - **WHEN** an email confirmation is submitted at or after its stored expiry
 - **THEN** the system rejects it and leaves the account and pending email unchanged
+
+#### Scenario: Legacy transition deadline passes
+
+- **WHEN** a legacy confirmation without expiry metadata is submitted at or after the configured deadline
+- **THEN** the system rejects it and offers the existing resend flow
 
 #### Scenario: Member requests a replacement
 
@@ -17,7 +22,7 @@ The system SHALL issue email confirmation credentials with a 24-hour lifetime an
 
 ### Requirement: Atomic confirmation consumption
 
-The system SHALL consume the current email confirmation and apply its account changes in one atomic operation matching the pending email and expiry. Read-only link validation SHALL never consume a credential.
+The system SHALL consume the current email confirmation and apply its account changes in one atomic operation matching the token digest, pending email and valid expiry. Read-only link validation SHALL never consume a credential.
 
 #### Scenario: Two requests confirm concurrently
 
@@ -29,4 +34,3 @@ The system SHALL consume the current email confirmation and apply its account ch
 
 - **WHEN** a reminder races with consumption or pending-address replacement
 - **THEN** it cannot restore the consumed credential or overwrite the newer pending change
-

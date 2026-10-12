@@ -60,6 +60,10 @@ service = {
     .map(origin => origin.trim())
     .filter(Boolean),
   supportEmail: 'support@trustroots.org',
+  // Absolute deployment-wide deadline for links issued before expiry metadata
+  // was introduced. Configure one identical ISO timestamp on every instance.
+  emailConfirmationLegacyDeadline:
+    process.env.TRUSTROOTS_EMAIL_CONFIRMATION_LEGACY_DEADLINE || '',
   // TO-address for support requests
   supportVolunteerNames: ['Dario', 'Noah'],
   // Used as "from" name to send some automated emails

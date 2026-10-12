@@ -25,6 +25,8 @@ describe('Job: user finish signup unit tests', () => {
       email: 'finish-signup-unit@test.com',
       emailTemporary: 'finish-signup-unit@test.com',
       emailToken: 'initial email token',
+      emailTokenIssuedAt: new Date(),
+      emailTokenExpires: new Date(Date.now() + 86400000),
       username: 'finishsignupunit',
       password: 'M3@n.jsI$Aw3$0m3',
       provider: 'local',
@@ -79,6 +81,7 @@ describe('Job: user finish signup unit tests', () => {
   for (const change of [
     { public: true },
     { emailToken: 'newer-confirmation-token' },
+    { emailTemporary: 'newer-pending-address@example.test' },
   ]) {
     it(
       'skips a reminder whose member state changed after lookup: ' +

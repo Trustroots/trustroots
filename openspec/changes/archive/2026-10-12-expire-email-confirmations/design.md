@@ -17,4 +17,3 @@ Expired or consumed links receive the existing invalid-link outcome with a clear
 ## Validation
 
 Test the exact expiry boundary, concurrent consumption, replacement, reminder races, changed pending addresses, legacy grace before/after the cut-off, GET idempotence and preservation of MFA restrictions. Add a browser resend-and-confirm flow using anonymous members.
-

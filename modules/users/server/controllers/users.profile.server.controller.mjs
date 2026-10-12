@@ -1,8 +1,8 @@
 import {
   hashToken,
   matchToken,
-  setToken,
 } from '../services/action-token.server.service.mjs';
+import { setEmailConfirmationToken } from '../services/email-confirmation.server.service.mjs';
 import { readFileSync } from 'node:fs';
 import getContactHandlerModule from './../../../contacts/server/controllers/contacts.server.controller.mjs';
 import getMessageHandlerModule from './../../../messages/server/controllers/messages.server.controller.mjs';
@@ -263,7 +263,7 @@ service.update = function (req, res) {
 
         // This is set only if user edited email
         if (token && email) {
-          setToken(user, 'emailToken', token);
+          setEmailConfirmationToken(user, token);
           user.emailTemporary = email;
         }
         user.save(function (err) {
@@ -882,6 +882,8 @@ function sanitizeProfile(profile, isOwnProfile, authenticatedUser) {
   delete profile.removeProfileToken;
   delete profile.removeProfileExpires;
   delete profile.emailToken;
+  delete profile.emailTokenIssuedAt;
+  delete profile.emailTokenExpires;
   delete profile.password;
   delete profile.salt;
   delete profile.roles;
