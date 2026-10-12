@@ -12,6 +12,11 @@ import * as api from '../api/tribes.api';
 import type { MembershipUpdate, TribeSummary } from '../api/tribes.api';
 import type { UserProfile } from '@/modules/users/client/types';
 
+const resourceLinkProps = {
+  rel: 'noopener noreferrer',
+  referrerPolicy: 'no-referrer' as const,
+};
+
 export function getTribeHeaderBackgroundStyle(tribe: TribeSummary) {
   const style = getCircleBackgroundStyle(tribe, '1400x900');
 
@@ -299,6 +304,8 @@ export default function TribeDetailPage({
           )}
         </div>
       </Header>
+      {/* Keep this a reviewed snapshot rendered as JSX text and fixed HTTPS links.
+          Do not embed remote wiki HTML, scripts, images or frames here. */}
       {isHackersCircle && (
         <section className="container container-spacer hackers-circle-resources">
           <div className="row">
@@ -310,7 +317,10 @@ export default function TribeDetailPage({
                     'Trustroots is open source, and hackers are welcome to help improve the codebase that runs the network.',
                   ) as string
                 }{' '}
-                <a href="https://github.com/trustroots/trustroots/">
+                <a
+                  {...resourceLinkProps}
+                  href="https://github.com/trustroots/trustroots/"
+                >
                   {t('Explore the Trustroots codebase') as string}
                 </a>
                 .
@@ -324,42 +334,67 @@ export default function TribeDetailPage({
               </p>
               <ul>
                 <li>
-                  <a href="https://wiki.hackerspaces.org/Category:Hackerspace">
+                  <a
+                    {...resourceLinkProps}
+                    href="https://wiki.hackerspaces.org/Category:Hackerspace"
+                  >
                     HackerspaceWiki
                   </a>{' '}
                   — {t('community-maintained directory') as string}
                 </li>
                 <li>
-                  <a href="https://atlas.hackerspace.sh/">Hackerspace Atlas</a>{' '}
+                  <a
+                    {...resourceLinkProps}
+                    href="https://atlas.hackerspace.sh/"
+                  >
+                    Hackerspace Atlas
+                  </a>{' '}
                   — {t('map based on HackerspaceWiki data') as string}
                 </li>
                 <li>
-                  <a href="https://github.com/SpaceApi/directory">
+                  <a
+                    {...resourceLinkProps}
+                    href="https://github.com/SpaceApi/directory"
+                  >
                     SpaceAPI directory
                   </a>{' '}
                   — {t('spaces publishing a SpaceAPI endpoint') as string}
                 </li>
                 <li>
-                  <a href="https://www.wikidata.org/wiki/Wikidata:SPARQL_query_service">
+                  <a
+                    {...resourceLinkProps}
+                    href="https://www.wikidata.org/wiki/Wikidata:SPARQL_query_service"
+                  >
                     Wikidata Query Service
                   </a>{' '}
                   — {t('structured data for places and communities') as string}
                 </li>
                 <li>
-                  <a href="https://hackspace.org.uk/">HackspaceUK</a> —{' '}
-                  {t('UK-focused directory and community resource') as string}
+                  <a {...resourceLinkProps} href="https://hackspace.org.uk/">
+                    HackspaceUK
+                  </a>{' '}
+                  — {t('UK-focused directory and community resource') as string}
                 </li>
               </ul>
               <p className="text-muted">
                 {
                   t(
-                    'Resource links and guidance adapted from the Trustroots Wiki Hackers page, licensed under CC BY-SA 4.0.',
+                    'Resource links and guidance adapted from the Trustroots Wiki Hackers page, fetched on 12 October 2026.',
                   ) as string
                 }{' '}
-                <a href="https://wiki.trustroots.org/en/Hackers">
+                <a
+                  {...resourceLinkProps}
+                  href="https://wiki.trustroots.org/index.php?title=Hackers&oldid=26505"
+                >
                   {t('View the source page') as string}
                 </a>
-                .
+                {' · '}
+                <a
+                  {...resourceLinkProps}
+                  href="https://creativecommons.org/licenses/by-sa/4.0/"
+                >
+                  CC BY-SA 4.0
+                </a>
               </p>
             </div>
           </div>

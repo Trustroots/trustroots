@@ -30,6 +30,9 @@ The Hackers circle page SHALL provide links to relevant community-maintained
 hackerspace directories and explain that listings may be outdated or incomplete.
 It SHALL attribute material adapted from the Trustroots Wiki Hackers page under
 its CC BY-SA 4.0 licence.
+Wiki-derived content SHALL be a reviewed text snapshot with fixed HTTPS links,
+attributed to its source revision. Rendering the page SHALL NOT fetch or embed
+wiki HTML, scripts, frames or images. Resource links SHALL suppress referrers.
 
 #### Scenario: Visitor explores discovery resources
 

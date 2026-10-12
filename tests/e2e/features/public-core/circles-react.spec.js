@@ -202,6 +202,11 @@ test('circle membership retains account roles and legacy member links', async ({
 test('Hackers circle foregrounds the public place map and verification limits', async ({
   page,
 }) => {
+  let wikiRequested = false;
+  await page.route('https://wiki.trustroots.org/**', route => {
+    wikiRequested = true;
+    return route.abort();
+  });
   await page.route('**/api/tribes/hackers', route =>
     route.fulfill({
       json: {
@@ -236,7 +241,17 @@ test('Hackers circle foregrounds the public place map and verification limits', 
   );
   await expect(
     page.getByRole('link', { name: 'View the source page' }),
-  ).toHaveAttribute('href', 'https://wiki.trustroots.org/en/Hackers');
+  ).toHaveAttribute(
+    'href',
+    'https://wiki.trustroots.org/index.php?title=Hackers&oldid=26505',
+  );
+  const resourceLinks = page.locator('.hackers-circle-resources a');
+  for (const link of await resourceLinks.all()) {
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    await expect(link).toHaveAttribute('referrerpolicy', 'no-referrer');
+    await expect(link).toHaveAttribute('href', /^https:\/\//);
+  }
+  expect(wikiRequested).toBe(false);
   const map = page.locator('.hackerspace-map');
   await expect(map).toBeVisible();
   const panel = await page.locator('.hackerspace-map-panel').boundingBox();
