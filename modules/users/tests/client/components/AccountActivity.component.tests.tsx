@@ -98,7 +98,9 @@ describe('AccountActivity', () => {
         render(<AccountActivity />);
       });
       await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: 'Refresh activity' }));
+        fireEvent.click(
+          screen.getByRole('button', { name: 'Refresh activity' }),
+        );
       });
       expect(
         await screen.findByText('No recent account activity.'),
