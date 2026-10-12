@@ -73,6 +73,10 @@ jobs:
           eslint_flags: '--ext .js,.mjs,.mts,.ts,.tsx .'
       - name: Enforce lint
         run: npm run lint
+      - name: Check module graph
+        run: |
+          npm run lint:modules:test
+          npm run lint:modules
       - name: Upload ESLint report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
