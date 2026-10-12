@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import supportCategories from '../../shared/categories.js';
+import supportCategories from '../../shared/categories.ts';
 
 /**
  * Module dependencies.

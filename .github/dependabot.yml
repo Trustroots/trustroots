@@ -18,6 +18,11 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 10
+    # Babel major upgrades need a coordinated loader, lint and extractor migration.
+    ignore:
+      - dependency-name: '@babel/*'
+        update-types:
+          - version-update:semver-major
     groups:
       npm-minor-and-patch:
         update-types:

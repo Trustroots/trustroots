@@ -6,7 +6,7 @@ import {
 } from '@/modules/core/client/api/languages.api';
 
 jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
 );
 
 const mockUseQuery = jest.fn();
@@ -38,9 +38,7 @@ describe('languages api', () => {
     );
     mockedAxios.get.mockResolvedValueOnce({ data: payload });
 
-    const result = useLanguagesQuery() as unknown as {
-      queryFn: QueryFn;
-    };
+    const result = useLanguagesQuery();
     const [queryKey, queryFn, queryOptions] = mockUseQuery.mock.calls[0] as [
       unknown,
       QueryFn,
@@ -53,7 +51,7 @@ describe('languages api', () => {
     expect(mockedAxios.get).toHaveBeenCalledWith(
       '/api/languages?format=object',
     );
-    expect(queryFn).toBe(result.queryFn);
+    expect(queryFn).toBe(Reflect.get(result, 'queryFn'));
   });
 
   it('loads array format when requested', async () => {
@@ -70,9 +68,7 @@ describe('languages api', () => {
     );
     mockedAxios.get.mockResolvedValueOnce({ data: payload });
 
-    const result = useLanguagesQuery({ format: 'array' }) as unknown as {
-      queryFn: QueryFn;
-    };
+    const result = useLanguagesQuery({ format: 'array' });
     const [queryKey, queryFn, queryOptions] = mockUseQuery.mock.calls[0] as [
       unknown,
       QueryFn,
@@ -83,7 +79,7 @@ describe('languages api', () => {
     expect(queryOptions).toEqual({ refetchOnWindowFocus: false });
     await expect(queryFn()).resolves.toEqual(payload);
     expect(mockedAxios.get).toHaveBeenCalledWith('/api/languages?format=array');
-    expect(queryFn).toBe(result.queryFn);
+    expect(queryFn).toBe(Reflect.get(result, 'queryFn'));
   });
 
   it('forwards request failures', async () => {
@@ -97,7 +93,8 @@ describe('languages api', () => {
     );
     mockedAxios.get.mockRejectedValue(networkError);
 
-    const { queryFn } = useLanguagesQuery() as unknown as { queryFn: QueryFn };
+    useLanguagesQuery();
+    const queryFn: QueryFn = mockUseQuery.mock.calls[0][1];
     await expect(queryFn()).rejects.toBe(networkError);
   });
 });

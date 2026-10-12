@@ -19,10 +19,6 @@ export const invokeRolesPolicies = () => {
           permissions: ['post'],
         },
         {
-          resources: '/api/admin/acquisition-stories/analysis',
-          permissions: ['post'],
-        },
-        {
           resources: '/api/admin/staff-blockers',
           permissions: ['get'],
         },
@@ -32,11 +28,11 @@ export const invokeRolesPolicies = () => {
       roles: ['admin'],
       allows: [
         {
-          resources: '/api/admin/acquisition-stories',
-          permissions: ['post'],
+          resources: '/api/admin/hackerspaces/preview',
+          permissions: ['get'],
         },
         {
-          resources: '/api/admin/acquisition-stories/analysis',
+          resources: '/api/admin/acquisition-stories',
           permissions: ['post'],
         },
         { resources: '/api/admin/staff-blockers', permissions: ['get'] },

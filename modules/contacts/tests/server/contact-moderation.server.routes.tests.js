@@ -5,17 +5,17 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 const express = require('./../../../../config/lib/express.mjs');
 const Contact = mongoose.model('Contact');
 describe('Direct contact moderation visibility', () => {
+  let agent;
   before(async function () {
     agent = request.agent(await express.init(mongoose.connection));
   });
-  let agent;
   let users;
   let credentials;
   beforeEach(async () => {
-    credentials = utils.generateUsers(2, {
+    credentials = utils.generateUsersWithSharedPassword(2, {
       public: true,
     });
-    users = await utils.saveUsers(credentials);
+    users = await utils.saveUsersWithCachedPasswords(credentials);
     await utils.signIn(credentials[0], agent);
   });
   afterEach(async () => {

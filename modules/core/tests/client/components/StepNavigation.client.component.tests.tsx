@@ -1,0 +1,238 @@
+import React, { type ComponentProps } from 'react';
+import { render, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
+
+import '@/config/client/i18n';
+
+import StepNavigation from '@/modules/core/client/components/StepNavigation';
+
+type StepNavigationProps = ComponentProps<typeof StepNavigation>;
+type NavigationAction = 'onBack' | 'onNext' | 'onSubmit';
+
+describe('Step Navigation through 3 steps', () => {
+  const handlers: Pick<StepNavigationProps, NavigationAction> = {
+    onBack: () => {},
+    onNext: () => {},
+    onSubmit: () => {},
+  };
+
+  /**
+   * Given current step and amount of steps, test that specific buttons are present
+   */
+  const stepCases: Array<{
+    currentStep: number;
+    numberOfSteps: number;
+    buttons: string[];
+  }> = [
+    { currentStep: 0, numberOfSteps: 3, buttons: ['Next'] },
+    { currentStep: 1, numberOfSteps: 3, buttons: ['Back', 'Next'] },
+    { currentStep: 2, numberOfSteps: 3, buttons: ['Back', 'Finish'] },
+  ];
+
+  stepCases.forEach(({ currentStep, numberOfSteps, buttons }) => {
+    it(`when currentStep=${currentStep} and numberOfSteps=${3} there is only ${buttons.join(
+      ' and ',
+    )} button`, () => {
+      const { getAllByRole } = render(
+        <StepNavigation
+          currentStep={currentStep}
+          numberOfSteps={numberOfSteps}
+          disabled={false}
+          {...handlers}
+        />,
+      );
+      const foundButtons = getAllByRole('button');
+      // we have navigation for large and for small screen
+      // so we have all buttons twice
+      expect(foundButtons).toHaveLength(buttons.length * 2);
+      buttons.forEach((button, index) => {
+        expect(foundButtons[index]).toHaveTextContent(button);
+      });
+    });
+  });
+
+  /**
+   * Test whether buttons are disabled and enabled in different contexts
+   */
+  const disabledCases: Array<{
+    currentStep: number;
+    numberOfSteps: number;
+    disabled: boolean;
+    buttons: Array<{ name: string; disabled: boolean }>;
+  }> = [
+    {
+      currentStep: 1,
+      numberOfSteps: 3,
+      disabled: true,
+      buttons: [
+        { name: 'Back', disabled: false },
+        { name: 'Next', disabled: true },
+      ],
+    },
+    {
+      currentStep: 1,
+      numberOfSteps: 3,
+      disabled: false,
+      buttons: [
+        { name: 'Back', disabled: false },
+        { name: 'Next', disabled: false },
+      ],
+    },
+    {
+      currentStep: 2,
+      numberOfSteps: 3,
+      disabled: true,
+      buttons: [
+        { name: 'Back', disabled: false },
+        { name: 'Finish', disabled: true },
+      ],
+    },
+    {
+      currentStep: 2,
+      numberOfSteps: 3,
+      disabled: false,
+      buttons: [
+        { name: 'Back', disabled: false },
+        { name: 'Finish', disabled: false },
+      ],
+    },
+  ];
+
+  disabledCases.forEach(({ currentStep, numberOfSteps, disabled, buttons }) => {
+    const expectations = buttons.map(
+      ({ name, disabled: shouldBeDisabled }) =>
+        `the ${name} button should be ${
+          shouldBeDisabled ? 'disabled' : 'enabled'
+        }`,
+    );
+
+    it(`when currentStep=${currentStep}, numberOfSteps=${numberOfSteps} and disabled=${JSON.stringify(
+      disabled,
+    )}, ${expectations.join(' and ')}`, () => {
+      const { getAllByRole } = render(
+        <StepNavigation
+          currentStep={currentStep}
+          disabled={disabled}
+          numberOfSteps={numberOfSteps}
+          {...handlers}
+        />,
+      );
+      const foundButtons = getAllByRole('button');
+      // we have navigation for large and for small screen
+      // so we have all buttons twice
+      expect(foundButtons).toHaveLength(buttons.length * 2);
+      buttons.forEach(({ name, disabled }, index) => {
+        const testedButton = foundButtons[index];
+        expect(testedButton).toHaveTextContent(name);
+        if (disabled) {
+          expect(testedButton).toBeDisabled();
+        } else {
+          expect(testedButton).toBeEnabled();
+        }
+      });
+    });
+  });
+
+  /**
+   * Test that clicking a button triggers an event handler provided in props
+   */
+  const clickCases: Array<{
+    currentStep: number;
+    numberOfSteps: number;
+    disabled: boolean;
+    button: string;
+    buttonIndex: number;
+    testTrigger: NavigationAction;
+  }> = [
+    {
+      currentStep: 1,
+      numberOfSteps: 3,
+      disabled: true,
+      button: 'Back',
+      buttonIndex: 0,
+      testTrigger: 'onBack',
+    },
+    {
+      currentStep: 1,
+      numberOfSteps: 3,
+      disabled: false,
+      button: 'Next',
+      buttonIndex: 1,
+      testTrigger: 'onNext',
+    },
+    {
+      currentStep: 2,
+      numberOfSteps: 3,
+      disabled: false,
+      button: 'Finish',
+      buttonIndex: 1,
+      testTrigger: 'onSubmit',
+    },
+  ];
+
+  clickCases.forEach(
+    ({
+      currentStep,
+      numberOfSteps,
+      disabled,
+      button,
+      buttonIndex,
+      testTrigger,
+    }) => {
+      it(`when ${button} button is clicked, the ${testTrigger} should be triggered`, () => {
+        const handler = jest.fn<void, []>();
+        const actionHandlers = { ...handlers, [testTrigger]: handler };
+        const { getAllByRole } = render(
+          <StepNavigation
+            currentStep={currentStep}
+            disabled={disabled}
+            numberOfSteps={numberOfSteps}
+            {...actionHandlers}
+          />,
+        );
+        const testedButton = getAllByRole('button')[buttonIndex];
+        expect(testedButton).toHaveTextContent(button);
+        expect(handler).not.toHaveBeenCalled();
+        fireEvent.click(testedButton);
+        expect(handler).toHaveBeenCalledTimes(1);
+      });
+    },
+  );
+
+  it('renders small-screen icon variants and a disabled reason tooltip', () => {
+    const { getAllByRole } = render(
+      <StepNavigation
+        currentStep={1}
+        numberOfSteps={3}
+        disabled={true}
+        disabledReason="Complete the required fields"
+        {...handlers}
+      />,
+    );
+
+    const buttons = getAllByRole('button');
+    expect(buttons[1]).toBeDisabled();
+    expect(buttons[3]).toHaveTextContent('Next');
+    expect(buttons[3].querySelector('.icon-right')).toBeInTheDocument();
+    expect(buttons[3]).toBeDisabled();
+  });
+
+  it('keeps next actions enabled when disabled prop is omitted', () => {
+    const onNext = jest.fn();
+    const { getAllByRole } = render(
+      <StepNavigation
+        currentStep={0}
+        numberOfSteps={2}
+        {...handlers}
+        onNext={onNext}
+      />,
+    );
+
+    const nextButton = getAllByRole('button')[0];
+    expect(nextButton).toBeEnabled();
+
+    fireEvent.click(nextButton);
+
+    expect(onNext).toHaveBeenCalledTimes(1);
+  });
+});

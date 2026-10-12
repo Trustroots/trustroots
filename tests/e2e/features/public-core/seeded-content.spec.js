@@ -6,6 +6,7 @@ const {
 } = require('../../support/fixtures');
 
 const { SEEDED_MEMBERS, waitForTribesList } = require('../../support/helpers');
+const { stubStatisticsImages } = require('../../support/statistics');
 
 /* global window */
 
@@ -71,6 +72,7 @@ test.describe('seeded content and public API flows', () => {
       'Visitors do not see an experience-writing encouragement.',
     ]);
 
+    await stubStatisticsImages(page.context());
     await page.goto('/statistics');
 
     await expect(page).toHaveURL(/\/statistics/);

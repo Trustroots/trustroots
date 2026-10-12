@@ -47,6 +47,47 @@ function deferredResponse() {
 }
 
 describe('Messages controller unit tests', () => {
+  describe('draft previews', () => {
+    it('requires authentication', () => {
+      const res = deferredResponse();
+      messagesController.preview({}, res);
+      res.statusCode.should.equal(403);
+    });
+
+    for (const content of [undefined, null, 7, {}, '', '<p> </p>']) {
+      it(`rejects invalid draft content: ${JSON.stringify(content)}`, () => {
+        const res = deferredResponse();
+        messagesController.preview({ user: {}, body: { content } }, res);
+        res.statusCode.should.equal(400);
+      });
+    }
+
+    it('rejects a missing body', () => {
+      const res = deferredResponse();
+      messagesController.preview({ user: {} }, res);
+      res.statusCode.should.equal(400);
+    });
+
+    it('formats and sanitises a draft without altering messages, threads or statistics', async () => {
+      const res = deferredResponse();
+      const content =
+        '<p><strong>Fictional draft</strong> <a href="javascript:alert(1)">Link</a></p><script>alert(1)</script>';
+      const textService = require('../../../core/server/services/text.server.service.mjs');
+      const messageBefore = await Message.find({}).lean();
+      const threadBefore = await Thread.find({}).lean();
+      const statsBefore = await mongoose.model('MessageStat').find({}).lean();
+      messagesController.preview({ user: {}, body: { content } }, res);
+      res.body.content.should.equal(textService.html(content));
+      res.body.content.should.containEql('<b>Fictional draft</b>');
+      res.body.content.should.not.containEql('<script');
+      res.body.content.should.not.containEql('javascript:');
+      (await Message.find({}).lean()).should.deepEqual(messageBefore);
+      (await Thread.find({}).lean()).should.deepEqual(threadBefore);
+      (await mongoose.model('MessageStat').find({}).lean()).should.deepEqual(
+        statsBefore,
+      );
+    });
+  });
   afterEach(() => {
     sinon.restore();
     return utils.clearDatabase();
