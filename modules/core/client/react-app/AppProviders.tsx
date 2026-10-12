@@ -5,7 +5,7 @@ import React, {
   type ReactNode,
 } from 'react';
 import PropTypes from 'prop-types';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { AuthProvider, type AuthUser } from './auth';
 import { getBootstrapData } from './bootstrap';

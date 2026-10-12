@@ -1,4 +1,4 @@
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import axios from '../../../core/client/api/http-client.js';
 
 export type LanguageOption = {
@@ -28,7 +28,9 @@ export function useLanguagesQuery<Format extends LanguageFormat = 'object'>(
   options: Partial<LanguagesOptions<Format>> = {},
 ) {
   const format = options.format || ('object' as Format);
-  return useQuery(['languages', format], () => getLanguages({ format }), {
+  return useQuery({
+    queryKey: ['languages', format],
+    queryFn: () => getLanguages({ format }),
     refetchOnWindowFocus: false,
   });
 }

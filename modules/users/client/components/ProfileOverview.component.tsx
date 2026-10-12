@@ -9,7 +9,7 @@ import PropTypes from 'prop-types';
 import Avatar from './Avatar.component';
 import ProfileViewBasics from './ProfileViewBasics';
 import { Modal } from 'react-bootstrap';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { UserProfile } from '../types';
 
 const queryClient = new QueryClient();

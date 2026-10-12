@@ -1,6 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import PropTypes from 'prop-types';
 import React from 'react';
 

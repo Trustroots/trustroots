@@ -10,7 +10,7 @@ jest.mock('axios', () =>
 );
 
 const mockUseQuery = jest.fn();
-jest.mock('react-query', () => ({
+jest.mock('@tanstack/react-query', () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args),
 }));
 
@@ -29,21 +29,12 @@ describe('languages api', () => {
       { value: 'eng', label: 'English' },
       { value: 'fin', label: 'Finnish' },
     ];
-    mockUseQuery.mockImplementation(
-      (queryKey: unknown, queryFn: QueryFn, queryOptions: unknown) => ({
-        queryKey,
-        queryFn,
-        queryOptions,
-      }),
-    );
+    mockUseQuery.mockImplementation((options: unknown) => options);
     mockedAxios.get.mockResolvedValueOnce({ data: payload });
 
     const result = useLanguagesQuery();
-    const [queryKey, queryFn, queryOptions] = mockUseQuery.mock.calls[0] as [
-      unknown,
-      QueryFn,
-      unknown,
-    ];
+    const { queryKey, queryFn, ...queryOptions } = mockUseQuery.mock
+      .calls[0][0] as { queryKey: unknown; queryFn: QueryFn };
 
     expect(queryKey).toEqual(['languages', 'object']);
     expect(queryOptions).toEqual({ refetchOnWindowFocus: false });
@@ -59,21 +50,12 @@ describe('languages api', () => {
       { value: 'eng', label: 'English' },
       { value: 'fin', label: 'Finnish' },
     ];
-    mockUseQuery.mockImplementation(
-      (queryKey: unknown, queryFn: QueryFn, queryOptions: unknown) => ({
-        queryKey,
-        queryFn,
-        queryOptions,
-      }),
-    );
+    mockUseQuery.mockImplementation((options: unknown) => options);
     mockedAxios.get.mockResolvedValueOnce({ data: payload });
 
     const result = useLanguagesQuery({ format: 'array' });
-    const [queryKey, queryFn, queryOptions] = mockUseQuery.mock.calls[0] as [
-      unknown,
-      QueryFn,
-      unknown,
-    ];
+    const { queryKey, queryFn, ...queryOptions } = mockUseQuery.mock
+      .calls[0][0] as { queryKey: unknown; queryFn: QueryFn };
 
     expect(queryKey).toEqual(['languages', 'array']);
     expect(queryOptions).toEqual({ refetchOnWindowFocus: false });
@@ -84,17 +66,11 @@ describe('languages api', () => {
 
   it('forwards request failures', async () => {
     const networkError = new Error('network failed');
-    mockUseQuery.mockImplementation(
-      (queryKey: unknown, queryFn: QueryFn, queryOptions: unknown) => ({
-        queryKey,
-        queryFn,
-        queryOptions,
-      }),
-    );
+    mockUseQuery.mockImplementation((options: unknown) => options);
     mockedAxios.get.mockRejectedValue(networkError);
 
     useLanguagesQuery();
-    const queryFn: QueryFn = mockUseQuery.mock.calls[0][1];
+    const { queryFn }: { queryFn: QueryFn } = mockUseQuery.mock.calls[0][0];
     await expect(queryFn()).rejects.toBe(networkError);
   });
 });

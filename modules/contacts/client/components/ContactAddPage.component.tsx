@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 
 import ActivateProfileNotice from '@/modules/users/client/components/ActivateProfileNotice.component';
 import Avatar from '@/modules/users/client/components/Avatar.component';
@@ -30,25 +30,21 @@ export default function ContactAddPage({ user }: { user: UserProfile }) {
   const [wasConnected, setWasConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const isSelf = userId === user._id;
-  const friendQuery = useQuery(
-    ['contact-add-friend', userId],
-    () => fetchMini(userId),
-    {
-      enabled: user.public && !isSelf,
-      refetchOnWindowFocus: false,
-      retry: false,
-    },
-  );
+  const friendQuery = useQuery({
+    queryKey: ['contact-add-friend', userId],
+    queryFn: () => fetchMini(userId),
+    enabled: user.public && !isSelf,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
   const friend = friendQuery.data;
-  const contactQuery = useQuery(
-    ['contact-add-existing', userId],
-    () => contactsApi.getByUserId(userId),
-    {
-      enabled: user.public && !isSelf && Boolean(friend),
-      refetchOnWindowFocus: false,
-      retry: false,
-    },
-  );
+  const contactQuery = useQuery({
+    queryKey: ['contact-add-existing', userId],
+    queryFn: () => contactsApi.getByUserId(userId),
+    enabled: user.public && !isSelf && Boolean(friend),
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
   const existingContact = contactQuery.data;
   const existingContactMessage = existingContact
     ? existingContact.confirmed
