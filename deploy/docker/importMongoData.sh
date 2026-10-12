@@ -1,14 +1,12 @@
 #!/bin/bash
 
-cd "$(dirname "$0")"
+set -eo pipefail
 
-pwd
+cd "$(dirname "$0")"
 
 DB_NAME="trustroots"
 
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-
-set -e
 
 if docker compose version >/dev/null 2>&1; then
   DOCKER_COMPOSE_CMD="docker compose"
@@ -19,7 +17,7 @@ else
   exit 1
 fi
 
-if ! $DOCKER_COMPOSE_CMD ps --services --status running | rg -x "mongodb" >/dev/null; then
+if ! $DOCKER_COMPOSE_CMD ps --services --status running | grep -Fx "mongodb" >/dev/null; then
   echo "Error: mongodb service is not running."
   echo "Start it with: $DOCKER_COMPOSE_CMD up -d mongodb"
   exit 1
@@ -43,7 +41,6 @@ fi
 
 MONGODUMP_PATH=$(realpath mongodumps)
 
-
 echo "This will drop the existing '$DB_NAME' database and import fresh data."
 read -p "Are you sure you want to continue? (y/N): " -n 1 -r
 echo
@@ -51,8 +48,6 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "Import cancelled."
     exit 1
 fi
-
-DB_NAME="trustroots"
 
 echo "Dropping existing collections..."
 $DOCKER_COMPOSE_CMD exec -T mongodb "$MONGO_SHELL" "$DB_NAME" --quiet --eval "db.dropDatabase()"
