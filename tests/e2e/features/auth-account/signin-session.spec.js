@@ -112,6 +112,8 @@ test('login works while the analytics script stalls and fails', async ({
   } finally {
     releaseAnalytics();
   }
-  await page.unroute('https://1p.trustroots.org/**');
+  await page.unroute('https://1p.trustroots.org/**', {
+    behavior: 'wait',
+  });
   expect(errors).toEqual([]);
 });
