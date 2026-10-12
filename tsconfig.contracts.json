@@ -4,6 +4,8 @@
     "checkJs": true,
     "strict": true,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true,
     "skipLibCheck": true,
     "target": "ES2022",
     "module": "NodeNext",
@@ -13,7 +15,14 @@
   },
   "include": [
     "modules/*/shared/**/*.ts",
+    "modules/*/shared/**/*.mts",
+    "modules/users/tests/fixtures/profile-api-contracts.mjs",
+    "modules/users/tests/fixtures/profile-client-api-contracts.mts",
+    "modules/users/server/services/profile-response.server.service.mjs",
+    "modules/messages/server/services/messages-payload.server.service.mjs",
     "modules/admin/server/services/staff-blockers-payload.server.service.mjs",
-    "modules/experiences/server/services/experience-payload.server.service.mjs"
+    "modules/experiences/server/services/experience-payload.server.service.mjs",
+    "modules/offers/server/services/offer-payload.server.service.mjs",
+    "modules/offers/tests/client/api/offer-contract.types.mts"
   ]
 }

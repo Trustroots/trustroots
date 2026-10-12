@@ -30,6 +30,29 @@ const threads: messagesApi.MessageThreadSummary[] = generateThreads(10);
 const moreThreads: messagesApi.MessageThreadSummary[] = generateThreads(7);
 
 describe('<Inbox>', () => {
+  it('filters a conversation with an absent participant by its preview', async () => {
+    const missingParticipant: messagesApi.MessageThreadSummary = {
+      _id: 'thread-without-sender',
+      updated: '2026-06-05T12:00:00.000Z',
+      read: true,
+      userFrom: null,
+      userTo: me,
+      message: { excerpt: 'A fictional matching preview' },
+    };
+    api.fetchThreads.mockResolvedValue({ threads: [missingParticipant] });
+    const { findByRole, getByRole } = render(<Inbox user={me} />);
+    await findByRole('listitem');
+
+    fireEvent.change(getByRole('searchbox', { name: 'Filter conversations' }), {
+      target: { value: 'matching preview' },
+    });
+
+    expect(getByRole('listitem')).toHaveTextContent('Unknown member');
+    expect(getByRole('listitem')).toHaveTextContent(
+      'A fictional matching preview',
+    );
+  });
+
   it('asks private users to activate their profile before loading threads', () => {
     const privateUser = generateClientUser({ public: false });
 
@@ -123,10 +146,13 @@ describe('<Inbox>', () => {
   });
 
   it('will load the next page on clicking the button', async () => {
+    const olderThreads = generateThreads(7);
+    olderThreads[olderThreads.length - 1].message.excerpt =
+      'A later fictional conversation preview.';
     api.fetchThreads.mockImplementation((params = {}) =>
       Promise.resolve(
         params.page === 2
-          ? { threads: moreThreads }
+          ? { threads: olderThreads }
           : { threads, nextParams: { page: 2 } },
       ),
     );
@@ -145,10 +171,10 @@ describe('<Inbox>', () => {
       await fireEvent.click(more);
     });
 
-    await findByText(moreThreads[moreThreads.length - 1].message.excerpt);
+    await findByText(olderThreads[olderThreads.length - 1].message.excerpt);
 
     const items = queryAllByRole('listitem');
-    expect(items.length).toBe(threads.length + moreThreads.length);
+    expect(items.length).toBe(threads.length + olderThreads.length);
 
     expect(trackEvent).toHaveBeenCalledWith('inbox-pagination', {
       category: 'messages.inbox',

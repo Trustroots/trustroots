@@ -1,3 +1,4 @@
+import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 import React from 'react';
 import { render } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -101,7 +102,14 @@ describe('<LeafletMap />', () => {
       .mockImplementation(() => {});
 
     // The null location exercises the component's runtime guard for malformed data.
-    render(<LeafletMap location={null as unknown as [number, number]} />);
+    render(
+      <LeafletMap
+        {...malformedFixture(
+          { location: [0, 0] as [number, number] },
+          { location: null },
+        )}
+      />,
+    );
 
     expect(mockMap.setView).toHaveBeenCalledTimes(1);
     expect(L.circleMarker).not.toHaveBeenCalled();

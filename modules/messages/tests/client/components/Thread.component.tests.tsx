@@ -12,6 +12,10 @@ import '@/config/client/i18n';
 import Thread from '@/modules/messages/client/components/Thread.component';
 import * as usersAPI from '@/modules/users/client/api/users.api';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
+import {
+  malformedFixture,
+  resolveMalformed,
+} from '@/testutils/client/malformed-fixtures';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
 import {
   generateClientUser,
@@ -22,7 +26,6 @@ import type { UserProfile } from '@/modules/users/client/types';
 import type {
   Message,
   MessageUser,
-  PageParams,
 } from '@/modules/messages/client/api/messages.api';
 
 const api = {
@@ -339,7 +342,7 @@ describe('<Thread>', () => {
           content: '<p>Hello, can I stay next Tuesday?</p>',
           created: '2026-06-05T12:00:00.000Z',
         },
-      } as unknown as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
+      } as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
 
       render(<Thread user={me} profileMinimumLength={0} />);
 
@@ -472,17 +475,15 @@ describe('<Thread>', () => {
         status: 404,
       },
     });
-    api.messages.fetchMessages.mockResolvedValueOnce({
-      messages: [
-        {
-          ...createMessage(otherUser),
-          _id: 'removed-user-message',
-          content: 'I used to be here',
-          // Deleted-member endpoints may be missing in historical message data.
-          userFrom: null as unknown as MessageUser,
-          userTo: null as unknown as MessageUser,
-        },
-      ],
+    const removedMessage = malformedFixture(createMessage(otherUser), {
+      _id: 'removed-user-message',
+      content: 'I used to be here',
+      // Deleted-member endpoints may be missing in historical message data.
+      userFrom: null,
+      userTo: null,
+    });
+    resolveMalformed(api.messages.fetchMessages, {
+      messages: [removedMessage],
     });
 
     render(<Thread user={me} profileMinimumLength={0} />);
@@ -580,9 +581,12 @@ describe('<Thread>', () => {
       })
       .mockResolvedValueOnce({
         messages: [oldestMessage],
-        // The API uses null to represent the end of pagination.
-        nextParams: null as unknown as PageParams,
       });
+    resolveMalformed(api.messages.fetchMessages, {
+      messages: [oldestMessage],
+      // The API uses null to represent the end of pagination.
+      nextParams: null,
+    });
 
     render(<Thread user={me} profileMinimumLength={0} />);
 
@@ -629,9 +633,12 @@ describe('<Thread>', () => {
       })
       .mockResolvedValueOnce({
         messages: [middleMessage, oldestMessage],
-        // The API uses null to represent the end of pagination.
-        nextParams: null as unknown as PageParams,
       });
+    resolveMalformed(api.messages.fetchMessages, {
+      messages: [middleMessage, oldestMessage],
+      // The API uses null to represent the end of pagination.
+      nextParams: null,
+    });
 
     render(<Thread user={me} profileMinimumLength={0} />);
 
@@ -650,7 +657,7 @@ describe('<Thread>', () => {
   });
 
   it('does not fetch older messages when no next pagination params exist', async () => {
-    api.messages.fetchMessages.mockResolvedValueOnce({
+    resolveMalformed(api.messages.fetchMessages, {
       messages: [
         {
           ...createMessage(otherUser),
@@ -660,7 +667,7 @@ describe('<Thread>', () => {
         },
       ],
       // The API uses null to represent the end of pagination.
-      nextParams: null as unknown as PageParams,
+      nextParams: null,
     });
 
     render(<Thread user={me} profileMinimumLength={0} />);
@@ -783,7 +790,7 @@ describe('<Thread>', () => {
           content: '<p data-hosting="yes"><b><i>Yes, I can host!</i></b></p>',
           created: '2026-06-05T12:00:00.000Z',
         },
-      } as unknown as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
+      } as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
 
       render(<Thread user={me} profileMinimumLength={0} />);
       await screen.findByRole('button', { name: 'Yes, I can host!' });

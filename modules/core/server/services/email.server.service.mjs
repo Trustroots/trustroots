@@ -13,7 +13,7 @@ import agenda from './../../../../config/lib/agenda.mjs';
 import config from './../../../../config/config.mjs';
 import log from './../../../../config/lib/logger.mjs';
 import userRolesService from './../../../users/server/services/user-roles.server.service.mjs';
-import categories from '../../../support/shared/categories.js';
+import categories from '../../../support/shared/categories.ts';
 const service = {};
 
 /**

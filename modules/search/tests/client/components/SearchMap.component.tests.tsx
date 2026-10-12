@@ -8,6 +8,28 @@ import type { Event as NostrEvent } from 'nostr-tools';
 import { MAP_STYLE_OSM } from '@/modules/core/client/components/Map/constants';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import SearchMap from '@/modules/search/client/components/SearchMap.component';
+import type {
+  getOffer,
+  queryOffers,
+} from '@/modules/offers/client/api/offers.api';
+import type {
+  OfferReadPayload,
+  OfferSearchFeature,
+  OfferSearchFeatureCollection,
+} from '@/modules/offers/shared/offer';
+import { resolveMalformed } from '@/testutils/client/malformed-fixtures';
+
+function readOffer(
+  overrides: Partial<OfferReadPayload> = {},
+): OfferReadPayload {
+  return {
+    _id: 'offer-1',
+    type: 'host',
+    location: [12, 34],
+    user: { _id: 'member-1', username: 'fictional-host' },
+    ...overrides,
+  };
+}
 
 type OpenLocationCodeRuntime = OpenLocationCode & {
   encode(latitude: number, longitude: number, codeLength?: number): string;
@@ -43,13 +65,7 @@ type MockMapProps = {
   onInteractionStateChange: () => void;
   onError: (event: unknown) => void;
 };
-type OfferSearchResponse = {
-  type: 'FeatureCollection';
-  features: {
-    geometry: { coordinates: number[] };
-    properties: { id: string };
-  }[];
-};
+type OfferSearchResponse = OfferSearchFeatureCollection;
 type MockSourceProps = {
   id: string;
   data: { type: string; features: MockMapFeature[] };
@@ -97,10 +113,8 @@ jest.mock('@/modules/search/client/services/nostr.client.service', () => ({
   },
 }));
 
-type MockGetOffer = (offerId: string) => Promise<unknown>;
-type MockQueryOffers = (
-  query?: Record<string, string | number | boolean | undefined>,
-) => Promise<unknown>;
+type MockGetOffer = typeof getOffer;
+type MockQueryOffers = typeof queryOffers;
 const mockGetOffer = jest.fn<
   ReturnType<MockGetOffer>,
   Parameters<MockGetOffer>
@@ -370,11 +384,27 @@ const WORLD_BOUNDS = {
   getSouthWest: () => ({ lat: -90, lng: -180 }),
 };
 
-const DATELINE_OFFER_FEATURES = [
-  { geometry: { coordinates: [179, 0] }, properties: { id: 'east' } },
-  { geometry: { coordinates: [-179, 0] }, properties: { id: 'west' } },
-  { geometry: { coordinates: [0, 0] }, properties: { id: 'middle' } },
-  { geometry: { coordinates: [179, 20] }, properties: { id: 'north' } },
+const DATELINE_OFFER_FEATURES: OfferSearchFeature[] = [
+  {
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [179, 0] },
+    properties: { id: 'east' },
+  },
+  {
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [-179, 0] },
+    properties: { id: 'west' },
+  },
+  {
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [0, 0] },
+    properties: { id: 'middle' },
+  },
+  {
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [179, 20] },
+    properties: { id: 'north' },
+  },
 ];
 
 function flushMapViewport(viewport: Record<string, number>) {
@@ -429,7 +459,7 @@ beforeEach(() => {
   mockSource.getClusterLeaves.mockReset();
   mockSourceInstance = mockSource;
   mockMap.getSource.mockImplementation(() => mockSourceInstance);
-  mockGetOffer.mockResolvedValue({ _id: 'offer-1' });
+  mockGetOffer.mockResolvedValue(readOffer());
   mockQueryOffers.mockResolvedValue({
     features: [],
     type: 'FeatureCollection',
@@ -459,6 +489,15 @@ describe('Search', () => {
 
   it('uses the Leaflet renderer when WebGL is unavailable', async () => {
     mockIsWebGLSupported.mockReturnValue(false);
+    const feature: OfferSearchFeature = {
+      type: 'Feature',
+      properties: { id: 'fallback-offer', offer: null },
+      geometry: { type: 'Point', coordinates: [13, 52] },
+    };
+    mockQueryOffers.mockResolvedValue({
+      type: 'FeatureCollection',
+      features: [feature],
+    });
 
     renderSearchMap();
 
@@ -501,6 +540,11 @@ describe('Search', () => {
         southWestLat: 49.333333333333336,
         southWestLng: 10.333333333333334,
       }),
+    );
+    await waitFor(() =>
+      expect(mockLeafletSearchMap).toHaveBeenLastCalledWith(
+        expect.objectContaining({ offers: { features: [feature] } }),
+      ),
     );
   });
 
@@ -749,7 +793,11 @@ describe('Search', () => {
     await act(async () => {
       requests[1]!({
         features: [
-          { geometry: { coordinates: [13, 52] }, properties: { id: 'new' } },
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [13, 52] },
+            properties: { id: 'new' },
+          },
         ],
         type: 'FeatureCollection',
       });
@@ -762,7 +810,11 @@ describe('Search', () => {
     await act(async () => {
       requests[0]!({
         features: [
-          { geometry: { coordinates: [12, 51] }, properties: { id: 'old' } },
+          {
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [12, 51] },
+            properties: { id: 'old' },
+          },
         ],
         type: 'FeatureCollection',
       });
@@ -770,7 +822,11 @@ describe('Search', () => {
     });
 
     expect(mockSourceProps.data.features).toEqual([
-      { geometry: { coordinates: [13, 52] }, properties: { id: 'new' } },
+      {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [13, 52] },
+        properties: { id: 'new' },
+      },
     ]);
     expect(onVisibleOffersChange).toHaveBeenLastCalledWith(['new']);
   });
@@ -896,7 +952,7 @@ describe('Search', () => {
 
   it('marks clicked offers selected and opens the offer details', async () => {
     const onOfferOpen = jest.fn();
-    const offer = { _id: 'offer-1', offer: 'host-yes' };
+    const offer = readOffer();
     mockGetOffer.mockResolvedValueOnce(offer);
 
     renderSearchMap({ onOfferOpen });
@@ -941,7 +997,7 @@ describe('Search', () => {
 
   it('does not open the sidebar when clicked offer details are unavailable', async () => {
     const onOfferOpen = jest.fn();
-    mockGetOffer.mockResolvedValueOnce(null);
+    resolveMalformed(mockGetOffer, null);
 
     renderSearchMap({ onOfferOpen });
 
@@ -1448,9 +1504,7 @@ describe('Search', () => {
       await Promise.resolve();
     });
 
-    await waitFor(() =>
-      expect(onOfferOpen).toHaveBeenCalledWith({ _id: 'offer-1' }),
-    );
+    await waitFor(() => expect(onOfferOpen).toHaveBeenCalledWith(readOffer()));
     expect(mockSource.getClusterLeaves).not.toHaveBeenCalled();
   });
 

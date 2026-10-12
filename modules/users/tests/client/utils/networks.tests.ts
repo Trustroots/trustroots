@@ -47,6 +47,7 @@ describe('user network utilities', () => {
     expect(socialAccountLink('facebook', {})).toBe('#');
     expect(socialAccountLink('twitter', {})).toBe('#');
     expect(socialAccountLink('github', {})).toBe('#');
+    expect(socialAccountLink('facebook')).toBe('#');
     expect(socialAccountLink('mastodon', unknownProviderData)).toBe('#');
   });
 
@@ -56,6 +57,7 @@ describe('user network utilities', () => {
     expect(getNetworkName('couchsurfing')).toBe('Couchsurfing');
     expect(getNetworkName('facebook')).toBe('Facebook');
     expect(getNetworkName('github')).toBe('GitHub');
+    expect(getNetworkName('nostr')).toBe('Nostroots');
     expect(getNetworkName('twitter')).toBe('Twitter');
     expect(getNetworkName('warmshowers')).toBe('Warmshowers');
     expect(getNetworkName('unknown-network')).toBe('unknown-network');

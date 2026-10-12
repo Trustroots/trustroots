@@ -1,75 +1,34 @@
-export interface TribeMembership {
-  tribe: {
-    _id: string;
-    slug: string;
-    label: string;
-    count: number;
-    image?: string;
-    color?: string;
-  };
-}
+import type {
+  MiniProfile,
+  OwnProfile,
+  ProfileMembership,
+} from '../shared/profile.js';
 
-export interface UserProfile {
-  _id: string;
-  username: string;
-  displayName: string;
+export type TribeMembership = ProfileMembership;
+
+/** Profile data held by the client, including bootstrap-only role information. */
+export interface UserProfile extends OwnProfile {
   name?: string;
-  firstName?: string;
-  lastName?: string;
-  tagline?: string;
-  description?: string;
-  emailTemporary?: string;
-  public?: boolean;
-  isGreeter?: boolean;
-  isVolunteer?: boolean;
-  isVolunteerAlumni?: boolean;
-  member?: TribeMembership[];
-  memberIds?: string[];
-  blocked?: string[];
-  email?: string;
-  gender?: string;
-  birthdate?: string | null;
-  created?: string;
-  updated?: string;
   lastSeen?: string;
-  seen?: string;
-  avatarSource?: string;
-  avatarUploaded?: boolean;
-  avatarVersion?: string;
   roles?: string[];
-  replyRate?: number;
-  replyTime?: number;
-  nostrNpub?: string;
-  emailHash?: string;
   subscriptions?: Record<string, boolean>;
-  extSitesCouchers?: string;
-  extSitesBW?: string;
-  extSitesCS?: string;
-  extSitesWS?: string;
-  locationLiving?: string;
-  locationFrom?: string;
-  languages?: string[];
-  additionalProvidersData?: Record<
-    string,
-    Record<string, string | number | undefined>
-  >;
   networks?: Record<string, string>;
   profile?: Record<string, unknown>;
   [key: string]: unknown;
 }
 
-export interface UserSummary
-  extends Pick<
-    UserProfile,
-    | '_id'
-    | 'username'
-    | 'displayName'
-    | 'avatarSource'
-    | 'avatarUploaded'
-    | 'avatarVersion'
-    | 'updated'
-    | 'emailHash'
-    | 'additionalProvidersData'
-  > {
+/** Own-profile response with the client compatibility fields used by auth state. */
+export type ClientOwnProfile = UserProfile;
+
+export type UserSummary = Pick<
+  MiniProfile,
+  '_id' | 'username' | 'displayName'
+> & {
   avatar?: string;
-}
+  avatarSource?: string;
+  avatarUploaded?: boolean;
+  avatarVersion?: string;
+  updated?: string;
+  emailHash?: string;
+  additionalProvidersData?: MiniProfile['additionalProvidersData'];
+};

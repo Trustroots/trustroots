@@ -17,7 +17,7 @@ type ContactFixture = Omit<ContactRecord, 'userFrom' | 'userTo'> & {
 
 function asContactRecord(contact: ContactFixture): ContactRecord {
   // This regression preserves contact payloads with only user IDs present.
-  return contact as unknown as ContactRecord;
+  return contact as ContactRecord;
 }
 
 jest.mock('@/modules/contacts/client/components/RemoveContactContainer', () => {

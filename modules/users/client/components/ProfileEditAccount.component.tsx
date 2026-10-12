@@ -23,7 +23,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
-  const { setUser } = useAuth() as { setUser: (user: UserProfile) => void };
+  const { setUser } = useAuth();
   const [draftUser, setDraftUser] = useState({ ...user });
   const [emailMessage, setEmailMessage] = useState('');
   const [usernameMessage, setUsernameMessage] = useState('');
@@ -40,11 +40,8 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
     setEmailMessage('');
 
     try {
-      const savedUser = await update({
-        ...draftUser,
-        username: undefined,
-      });
-      setUser(savedUser);
+      const savedUser = await update({ email: draftUser.email });
+      setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
       setEmailMessage(
         t(
@@ -63,11 +60,8 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
     setUsernameMessage('');
 
     try {
-      const savedUser = await update({
-        ...draftUser,
-        email: undefined,
-      });
-      setUser(savedUser);
+      const savedUser = await update({ username: draftUser.username });
+      setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
       setUsernameMessage(t('Username updated.'));
     } catch (error: unknown) {
@@ -76,12 +70,13 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
     }
   }
 
-  async function handleSubscriptionsChange(field: string, value: boolean) {
-    const nextUser = { ...draftUser, [field]: value };
-
+  async function handleSubscriptionsChange(
+    field: 'newsletter',
+    value: boolean,
+  ) {
     try {
-      const savedUser = await update(nextUser);
-      setUser(savedUser);
+      const savedUser = await update({ newsletter: value });
+      setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
     } catch (error: unknown) {
       const { message } = readApiError(error);
@@ -99,7 +94,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
         newPassword,
         verifyPassword,
       });
-      setUser(savedUser);
+      setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
       setCurrentPassword('');
       setNewPassword('');

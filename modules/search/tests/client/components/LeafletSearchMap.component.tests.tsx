@@ -154,8 +154,10 @@ function pointCollection(
 ): LeafletSearchMapProps['offers'] {
   // Note fixtures intentionally rely on the top-level id without a property id.
   return {
-    features:
-      features as unknown as LeafletSearchMapProps['offers']['features'],
+    features: features.map(feature => ({
+      ...feature,
+      properties: { id: '', ...feature.properties },
+    })),
   };
 }
 

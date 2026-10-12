@@ -4,7 +4,6 @@ import '@testing-library/jest-dom';
 
 import AdminThreads from '@/modules/admin/client/components/AdminThreads.component';
 import * as threadsApi from '@/modules/admin/client/api/threads.api';
-import type { AdminThread } from '@/modules/admin/client/api/threads.api';
 
 jest.mock('@/modules/admin/client/api/threads.api');
 const mockedThreadsApi = jest.mocked(threadsApi);
@@ -151,8 +150,10 @@ describe('<AdminThreads />', () => {
 
   it('shows an empty state when the thread query returns no payload', async () => {
     // Preserve the malformed empty-payload regression case from this API.
-    mockedThreadsApi.getThreads.mockResolvedValueOnce(
-      null as unknown as AdminThread[],
+    Reflect.apply(
+      mockedThreadsApi.getThreads.mockResolvedValueOnce,
+      mockedThreadsApi.getThreads,
+      [null],
     );
 
     render(<AdminThreads />);
