@@ -5,6 +5,11 @@ lockfile for each evaluation. A second lockfile is not maintained in the
 repository. npm remains the supported package manager while the candidate is
 evaluated.
 
+This change delivers the evaluation harness and initial diagnostic reports for
+[#2796](https://github.com/Trustroots/trustroots/issues/2796). Completing the
+package-manager evaluation and deciding whether to migrate are follow-up work;
+merging this tooling does not recommend or enable a switch.
+
 Run scripts/benchmark-package-managers.sh from a disposable checkout on
 Node.js 24, npm 11.17.0, and pnpm 11.25.0. With Node 24 active, install isolated
 tool versions without changing the project's package manager:
@@ -23,8 +28,11 @@ full output under `tmp/package-manager-benchmark-*`. Pass a report directory as
 the first argument to choose another location. Keep that report alongside the
 decision; failed installs also retain their output. Check both managers'
 output for ignored dependency build scripts: a successful install with skipped
-native builds does not prove application compatibility. Approve the required builds
-explicitly and rerun the comparison before drawing a performance conclusion.
+native builds does not prove application compatibility. The current harness has
+no input for snapshot build approvals, and discards uncommitted policy edits
+when it archives HEAD. Extend it to apply explicit approvals inside both managers'
+snapshots before rerunning a comparison for a performance conclusion. Until then,
+its timings are diagnostic only.
 
 Candidate pnpm commands use `--pm-on-fail=ignore` to permit this one-off trial
 in a project whose `packageManager` remains npm. The script checks pnpm's exact
@@ -36,6 +44,31 @@ native modules (sharp, canvas, gm, and the file-magic fallback) before
 proposing a package-manager switch. The current draft does not update CI,
 Dockerfiles, deployment scripts, contributor setup, or the supported
 packageManager field.
+
+## Recording another run
+
+Copy these rows for each host or container comparison. Record the source commit
+and link the full install log and generated candidate lockfile beside the table.
+Include skipped build scripts in the notes even when an install exits zero.
+
+| Environment / OS / architecture | Source commit | Node | npm | pnpm | Manager | Cold seconds | Warm seconds | Cold / warm exit codes | Notes / report |
+| ------------------------------- | ------------- | ---- | --- | ---- | ------- | ------------ | ------------ | ---------------------- | -------------- |
+| To record                       | To record     |      |     |      | npm     |              |              |                        |                |
+| To record                       | To record     |      |     |      | pnpm    |              |              |                        |                |
+
+## Follow-up gates before a migration proposal
+
+Track these experiments in #2796. They are not completion criteria for merging
+the harness and its diagnostic reports:
+
+- Add explicit snapshot build approvals for both managers, verify all required
+  builds, and rerun an equivalent cold/warm comparison.
+- Compare development and production container installs, including strict
+  dependency resolution and the pinned Git dependency.
+- Verify gm and the file-magic fallback in the target environments, alongside
+  canvas and sharp.
+- Propose a separate migration only if the results and compatibility checks
+  justify it.
 
 ## First local run: 28 September 2026
 
