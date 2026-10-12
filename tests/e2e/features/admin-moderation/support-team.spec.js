@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const { annotateFeature, expect, test } = require('../../support/fixtures');
 const {
   createUser,
@@ -134,6 +136,16 @@ test('support can triage a report and investigate only its verified member pair'
       path: testInfo.outputPath('support-inbox.png'),
       contentType: 'image/png',
     });
+    if (process.env.TRUSTROOTS_E2E_SCREENSHOTS === 'true') {
+      const screenshotsDir =
+        process.env.TRUSTROOTS_E2E_SCREENSHOTS_DIR ||
+        path.join(__dirname, '../../../../tmp/screenshots');
+      fs.mkdirSync(screenshotsDir, { recursive: true });
+      fs.copyFileSync(
+        testInfo.outputPath('support-inbox.png'),
+        path.join(screenshotsDir, `${testInfo.project.name}-support-inbox.png`),
+      );
+    }
     await page
       .getByRole('link', { name: 'Reported account and notes' })
       .click();

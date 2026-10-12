@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { SUPPORT_CATEGORIES } from '../../../support/shared/categories.js';
+import { SUPPORT_CATEGORIES } from '../../../support/shared/categories.ts';
 
 const SupportRequest = mongoose.model('SupportRequest');
 const User = mongoose.model('User');
