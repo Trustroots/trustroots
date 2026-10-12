@@ -5,14 +5,14 @@
  *
  * Usage:
  *
- *  npm run ensure-indexes
+ *  pnpm run ensure-indexes
  *
  * Ensure indexes only for specific Mongoose Model
  *
- *  npm run ensure-indexes -- ModelName
+ *  pnpm run ensure-indexes ModelName
  *
  * Example:
- *  npm run ensure-indexes -- User
+ *  pnpm run ensure-indexes User
  */
 import mongooseService from './../../config/lib/mongoose.mjs';
 let predefinedModel;

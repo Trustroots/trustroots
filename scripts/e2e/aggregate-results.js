@@ -114,7 +114,7 @@ function aggregateReports(entries, jobResult = 'success') {
         ? problems.join(' ')
         : 'All three e2e groups passed with complete feature coverage.',
       generatedAt: new Date().toISOString(),
-      command: 'npm run test:e2e (three CI groups)',
+      command: 'pnpm run test:e2e (three CI groups)',
       reportPath: 'playwright-report/index.html',
       metrics,
     },

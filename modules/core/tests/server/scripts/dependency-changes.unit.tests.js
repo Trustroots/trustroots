@@ -256,6 +256,106 @@ describe('PR dependency summaries', () => {
       ),
     );
   });
+  it('reads resolved entries from a pnpm lockfile and treats version changes as updates', () => {
+    const directory = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'fictional-pnpm-git-'),
+    );
+    const git = args =>
+      execFileSync('git', args, {
+        cwd: directory,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      }).trim();
+    const commit = () => {
+      git(['add', '.']);
+      git([
+        '-c',
+        'user.name=Fixture Member',
+        '-c',
+        'user.email=fixture@example.test',
+        'commit',
+        '-m',
+        'Fixture',
+      ]);
+      return git(['rev-parse', 'HEAD']);
+    };
+    const lockfile = packages =>
+      `lockfileVersion: '9.0'\n\nimporters:\n\n  .:\n    dependencies:\n      fictional:\n        specifier: 1.0.0\n        version: 1.0.0\n\npackages:\n\n${packages}\nsnapshots:\n\n  fictional@1.0.0: {}\n`;
+    try {
+      git(['init', '-b', 'main']);
+      fs.writeFileSync(
+        path.join(directory, 'pnpm-lock.yaml'),
+        lockfile(
+          "  fictional@1.0.0:\n    resolution: {integrity: sha512-x}\n\n  '@example/scoped@2.0.0':\n    resolution: {integrity: sha512-y}\n",
+        ),
+      );
+      const base = commit();
+      fs.writeFileSync(
+        path.join(directory, 'pnpm-lock.yaml'),
+        lockfile(
+          "  fictional@1.0.0:\n    resolution: {integrity: sha512-x}\n\n  fictional@2.0.0:\n    resolution: {integrity: sha512-z}\n\n  '@example/scoped@2.0.0':\n    resolution: {integrity: sha512-y}\n\n  added@1.0.0:\n    resolution: {integrity: sha512-w}\n",
+        ),
+      );
+      const [, , resolved] = collectDependencyChanges(
+        base,
+        commit(),
+        directory,
+      );
+      assert.deepStrictEqual(
+        resolved.changes.map(({ name, before, after }) => [
+          name,
+          before,
+          after,
+        ]),
+        [
+          ['added', undefined, '1.0.0'],
+          ['fictional', '1.0.0', '1.0.0, 2.0.0'],
+        ],
+      );
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it('inventories the real packages in a pnpm virtual store once, ignoring symlinks', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fictional-pnpm-'));
+    try {
+      for (const [location, name, version] of [
+        ['node_modules/.pnpm/fictional@1.0.0/node_modules/fictional', 'fictional', '1.0.0'],
+        ['node_modules/.pnpm/@example+scoped@2.0.0/node_modules/@example/scoped', '@example/scoped', '2.0.0'],
+      ]) {
+        fs.mkdirSync(path.join(root, location), { recursive: true });
+        fs.writeFileSync(
+          path.join(root, location, 'package.json'),
+          JSON.stringify({ name, version }),
+        );
+      }
+      fs.symlinkSync(
+        '.pnpm/fictional@1.0.0/node_modules/fictional',
+        path.join(root, 'node_modules/fictional'),
+      );
+      fs.symlinkSync(
+        '../../@example+scoped@2.0.0/node_modules/@example/scoped',
+        path.join(
+          root,
+          'node_modules/.pnpm/fictional@1.0.0/node_modules/scoped',
+        ),
+      );
+      assert.deepStrictEqual(
+        collectInstalledPackages(root).map(({ name, version }) => [
+          name,
+          version,
+        ]),
+        [
+          ['@example/scoped', '2.0.0'],
+          ['fictional', '1.0.0'],
+        ],
+      );
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('inventories actual nested and scoped installations, including duplicate versions', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fictional-installed-'));
     try {

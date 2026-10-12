@@ -3,7 +3,7 @@
 /**
  * Create only the indexes required by circle member discovery.
  *
- * Usage: npm run ensure-circle-discovery-indexes
+ * Usage: pnpm run ensure-circle-discovery-indexes
  *
  * This is safe to run more than once. It never drops or synchronises indexes.
  */

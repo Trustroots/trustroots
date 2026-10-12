@@ -41,6 +41,24 @@ function summariseDependencies(before, after) {
   }));
 }
 
+function pnpmLockfile(source) {
+  const versions = {};
+  let inPackages = false;
+  for (const line of source.split('\n')) {
+    if (/^\S/.test(line)) inPackages = line === 'packages:';
+    const match = inPackages && line.match(/^ {2}'?(@?[^@']+)@([^':]+)'?:/);
+    if (match) (versions[match[1]] = versions[match[1]] || []).push(match[2]);
+  }
+  return {
+    packages: Object.fromEntries(
+      Object.entries(versions).map(([name, found]) => [
+        name,
+        { version: found.sort().join(', ') },
+      ]),
+    ),
+  };
+}
+
 function collectDependencyChanges(baseSha, headSha, cwd) {
   if (![baseSha, headSha].every(sha => /^[a-f0-9]{40,64}$/i.test(sha || ''))) {
     throw new Error('PR base and head commit SHAs are required');
@@ -60,10 +78,14 @@ function collectDependencyChanges(baseSha, headSha, cwd) {
       '--',
       'package.json',
       'package-lock.json',
+      'pnpm-lock.yaml',
     ]).split('\n');
     const json = file =>
       files.includes(file) ? JSON.parse(git(['show', `${sha}:${file}`])) : {};
-    return { manifest: json('package.json'), lock: json('package-lock.json') };
+    const lock = files.includes('pnpm-lock.yaml')
+      ? pnpmLockfile(git(['show', `${sha}:pnpm-lock.yaml`]))
+      : json('package-lock.json');
+    return { manifest: json('package.json'), lock };
   };
   return summariseDependencies(read(mergeBase), read(headSha));
 }

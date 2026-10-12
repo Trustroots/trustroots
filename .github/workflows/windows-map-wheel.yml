@@ -36,20 +36,20 @@ jobs:
       BROWSERSLIST_IGNORE_OLD_DATA: '1'
     steps:
       - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - uses: actions/setup-node@v7
         with:
           node-version: '24.21.0'
-          cache: npm
+          cache: pnpm
       - name: Install dependencies
         run: |
-          npm install --global npm@11.17.0
           # These map tests do not use native image processing or upload modules.
-          npm ci --ignore-scripts
+          pnpm install --frozen-lockfile --ignore-scripts
           # Use current Firefox and branded-browser protocol support in this job.
-          npm install --no-save --package-lock=false --ignore-scripts @playwright/test@1.63.0
+          pnpm add --workspace-root --ignore-scripts @playwright/test@1.63.0
       - name: Install Firefox and Brave
         run: |
-          npx playwright install firefox ffmpeg
+          pnpm exec playwright install firefox ffmpeg
           $version = '1.96.59'
           $archive = Join-Path $env:RUNNER_TEMP 'brave.zip'
           Invoke-WebRequest "https://github.com/brave/brave-browser/releases/download/v$version/brave-v$version-win32-x64.zip" -OutFile $archive
@@ -95,7 +95,7 @@ jobs:
       - name: Run Windows wheel scenarios
         run: |
           node -p "JSON.stringify({ platform: process.platform, release: require('os').release(), node: process.version, playwright: require('@playwright/test/package.json').version })"
-          npx playwright test --config playwright.windows-wheel.config.cjs
+          pnpm exec playwright test --config playwright.windows-wheel.config.cjs
       - name: Upload browser diagnostics
         if: always()
         uses: actions/upload-artifact@v7

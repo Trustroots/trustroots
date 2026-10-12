@@ -1,6 +1,6 @@
 # Development image for local `docker compose up` and devcontainer.
 #
-# Node 24, native build deps, npm ci to seed the `node_modules` named volume.
+# Node 24, native build deps, pnpm install to seed the `node_modules` named volume.
 # App code is bind-mounted at runtime. Playwright Chromium is baked for E2E.
 
 FROM node:24.21.0-bookworm-slim
@@ -37,13 +37,13 @@ RUN apt-get -qq update && apt-get -q install -y \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Keep the package manager consistent across runtime images.
-RUN npm -g i npm@11.19.0
+# Keep the package manager consistent with `packageManager` in package.json.
+RUN npm -g i pnpm@11.18.0
 
 WORKDIR /home/app/trustroots
 
-COPY package*.json ./
-RUN --mount=type=cache,target=/root/.npm \
-  npm ci --quiet
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+  pnpm install --frozen-lockfile
 
-RUN npx playwright install chromium
+RUN pnpm exec playwright install chromium

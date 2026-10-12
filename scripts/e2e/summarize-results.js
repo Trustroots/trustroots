@@ -215,7 +215,7 @@ function writeStatus(status, exitCode, message, metrics) {
         exitCode: Number(exitCode),
         message: formatMessage(metrics, message),
         generatedAt: new Date().toISOString(),
-        command: 'npm run test:e2e',
+        command: 'pnpm run test:e2e',
         reportPath: 'playwright-report/index.html',
         metrics,
       },
