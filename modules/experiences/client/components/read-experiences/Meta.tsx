@@ -23,8 +23,8 @@ export default function Meta({
   interactions,
   recommend,
 }: {
-  interactions: ExperienceInteractions;
-  recommend: ExperienceRecommendation;
+  interactions?: ExperienceInteractions;
+  recommend?: ExperienceRecommendation;
 }) {
   const { t } = useTranslation('experiences') as {
     t: (key: string, options?: Record<string, unknown>) => string;

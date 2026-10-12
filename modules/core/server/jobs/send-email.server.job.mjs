@@ -1,8 +1,7 @@
 import _ from 'lodash';
 import nodemailer from 'nodemailer';
-import config from '../../../../config/config.js';
-import log from '../../../../config/lib/logger.js';
-
+import config from './../../../../config/config.mjs';
+import log from './../../../../config/lib/logger.mjs';
 const defaultExport = function (job, done) {
   const smtpTransport = nodemailer.createTransport(config.mailer.options);
 
@@ -11,8 +10,9 @@ const defaultExport = function (job, done) {
   const jobId = _.get(job, 'attrs._id').toString();
 
   // Log that we're sending an email
-  log('debug', 'Starting `send email` job #wGcxmQ', { jobId });
-
+  log('debug', 'Starting `send email` job #wGcxmQ', {
+    jobId,
+  });
   smtpTransport.sendMail(job.attrs.data, function (err) {
     smtpTransport.close(); // close the connection pool
 
@@ -22,16 +22,15 @@ const defaultExport = function (job, done) {
         jobId,
         error: err,
       });
-
       return done(err);
     } else {
       // Log the successful delivery of the message
       log('info', 'Successfully finished `send email` job #4vO5Vt', {
         jobId,
       });
-
       return done();
     }
   });
 };
 export default defaultExport;
+export { defaultExport as 'module.exports' };

@@ -98,6 +98,31 @@
   .site-footer-build-commit {
     white-space: nowrap;
   }
+
+  @media (max-width: (@screen-xs-max)) {
+    .site-footer-content {
+      display: block;
+    }
+
+    .site-footer-links {
+      padding-left: 0;
+      text-align: center;
+    }
+
+    .site-footer-meta {
+      margin: 12px 0 0;
+      text-align: center;
+    }
+
+    .site-footer-build {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .site-footer-build-commit {
+      white-space: normal;
+    }
+  }
 }
 
 .site-footer-home {
@@ -111,5 +136,27 @@
     &:hover {
       border-bottom: 1px solid #fff;
     }
+  }
+}
+
+// Keep the deployed version visible on account access photo boards.
+.site-footer-account {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 8px 12px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+
+  .site-footer-build {
+    color: #555;
+  }
+
+  @media (max-width: 767px) {
+    // Leave room for the account page's fixed mobile action bar.
+    bottom: 60px;
   }
 }

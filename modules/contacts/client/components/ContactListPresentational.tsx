@@ -1,5 +1,4 @@
-import classnames from 'classnames';
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
@@ -22,9 +21,24 @@ export default function ContactListPresentational({
   const { t } = useTranslation('contacts') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
+  const [sortBy, setSortBy] = useState<'date' | 'name'>('date');
 
-  const confirmed = contacts.filter(contact => contact.confirmed);
-  const unconfirmed = contacts.filter(contact => !contact.confirmed);
+  const sortContacts = (items: ContactListEntry[]) =>
+    [...items].sort((a, b) => {
+      if (sortBy === 'name') {
+        return (a.user.displayName || a.user.username).localeCompare(
+          b.user.displayName || b.user.username,
+          undefined,
+          { sensitivity: 'base' },
+        );
+      }
+      return (Date.parse(b.created) || 0) - (Date.parse(a.created) || 0);
+    });
+
+  const confirmed = sortContacts(contacts.filter(contact => contact.confirmed));
+  const unconfirmed = sortContacts(
+    contacts.filter(contact => !contact.confirmed),
+  );
 
   /**
    * We can also apply a filter on users
@@ -36,12 +50,7 @@ export default function ContactListPresentational({
   return (
     <div className="contacts-list">
       <div className="row">
-        <div
-          className={classnames('col-xs-12', {
-            'col-sm-8': contacts.length >= 6,
-            'text-center': contacts.length < 6,
-          })}
-        >
+        <div className="col-xs-12 col-sm-5">
           <h4 className="text-muted">
             {/* Confirmed contacts */}
             <span>
@@ -60,12 +69,25 @@ export default function ContactListPresentational({
           </h4>
         </div>
 
-        {
-          /**
-           * When there are 6+ users, provide a field for filtering contacts
-           */
-          contacts.length >= 6 && (
-            <div className="col-xs-12 col-sm-4 text-right">
+        <div className="col-xs-12 col-sm-7">
+          <div className="contacts-list-controls">
+            <div className="form-group">
+              <label htmlFor="contacts-sort">{t('Sort by') as string}</label>
+              <select
+                id="contacts-sort"
+                className="form-control"
+                value={sortBy}
+                onChange={event =>
+                  setSortBy(event.target.value as 'date' | 'name')
+                }
+              >
+                <option value="date">
+                  {t('Date added (newest first)') as string}
+                </option>
+                <option value="name">{t('Name (A–Z)') as string}</option>
+              </select>
+            </div>
+            {contacts.length >= 6 && (
               <div className="form-group">
                 <label htmlFor="contacts-search" className="sr-only">
                   {t('Search contacts') as string}
@@ -78,9 +100,9 @@ export default function ContactListPresentational({
                   placeholder={t('Search contacts') as string}
                 />
               </div>
-            </div>
-          )
-        }
+            )}
+          </div>
+        </div>
       </div>
 
       {
@@ -88,13 +110,13 @@ export default function ContactListPresentational({
         [unconfirmedFiltered, confirmedFiltered].map(
           (filteredContacts, index) =>
             filteredContacts.length > 0 && (
-              <div className="row" key={index}>
+              <div className="contacts-grid" key={index}>
                 {filteredContacts.map(contact => (
-                  <div className="col-xs-12 col-sm-6" key={contact._id}>
+                  <div key={contact._id}>
                     <Contact
                       className="contacts-contact panel panel-default"
                       contact={contact}
-                      avatarSize={128}
+                      avatarSize={64}
                       selfId={selfId}
                       onContactRemoved={() => onContactRemoved(contact)}
                     />

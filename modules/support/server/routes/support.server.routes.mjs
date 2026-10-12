@@ -1,4 +1,4 @@
-import support from '../controllers/support.server.controller.js';
+import support from './../controllers/support.server.controller.mjs';
 
 /**
  * Module dependencies.
@@ -7,6 +7,6 @@ import support from '../controllers/support.server.controller.js';
 const registerRoutes = function (app) {
   app.route('/api/support').post(support.supportRequest);
 };
-
 export { registerRoutes };
 export default registerRoutes;
+export { registerRoutes as 'module.exports' };

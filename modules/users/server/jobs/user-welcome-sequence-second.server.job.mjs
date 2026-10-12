@@ -112,3 +112,4 @@ const defaultExport = function (job, agendaDone) {
 };
 */
 export default defaultExport;
+export { defaultExport as 'module.exports' };

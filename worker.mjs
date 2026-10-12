@@ -4,9 +4,9 @@
  * Worker main entry file
  */
 import async from 'async';
-import mongooseService from './config/lib/mongoose.js';
-import worker from './config/lib/worker.js';
-import log from './config/lib/logger.js';
+import mongooseService from './config/lib/mongoose.mjs';
+import worker from './config/lib/worker.mjs';
+import log from './config/lib/logger.mjs';
 
 async.waterfall(
   [

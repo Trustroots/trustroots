@@ -16,6 +16,12 @@ export TRUSTROOTS_E2E_API_PORT="${TRUSTROOTS_E2E_API_PORT:-4301}"
 export TRUSTROOTS_E2E_HOST="${TRUSTROOTS_E2E_HOST:-127.0.0.1}"
 export TRUSTROOTS_E2E_REUSE_SERVER="${TRUSTROOTS_E2E_REUSE_SERVER:-false}"
 
+# A selected group intentionally exercises only part of the feature manifest.
+# CI enforces complete coverage after combining all three group reports.
+if [ -n "${TRUSTROOTS_E2E_GROUP:-}" ]; then
+  export TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE=true
+fi
+
 if [ "${CI:-}" = "true" ]; then
   if [ -z "${HOME:-}" ] || [ "$HOME" = "/root" ]; then
     export HOME="$PWD/tmp/ci-home"
@@ -367,7 +373,7 @@ DB_1_PORT_27017_TCP_ADDR="$MONGO_HOST" \
 TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
 TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
 TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
-npx playwright test "$@"
+npx playwright test --config playwright.config.cjs "$@"
 playwright_status="$?"
 set -e
 

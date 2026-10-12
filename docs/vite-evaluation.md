@@ -12,6 +12,8 @@ Vite uses Less 4 through its `less` peer dependency. The default Webpack
 configuration explicitly uses `less-webpack`, pinned to the existing Less
 3.13.1 compiler, so this prototype does not upgrade Webpack's stylesheet
 compiler.
+Vite enables legacy Less arithmetic so existing unparenthesised divisions
+compile with the same behaviour as Less 3.
 
 `npm run build:vite` emits a single IIFE `public/assets/react-main.js` and
 extracted `react-main.css`, matching Express's production classic script tag
@@ -29,8 +31,7 @@ a database; full API and member workflows remain separate end-to-end checks.
 `npm run test:vite:development` runs the same three route checks through the
 actual Vite development server proxy to Express. It verifies module loading
 and injected styles from the Vite browser origin. Both smoke commands run in
-CI. Dependency scanning treats legacy `.js` components as JSX, pre-bundles the
-shared CommonJS route policy, and injects the browser `process` shim into
+CI. Dependency scanning treats legacy `.js` components as JSX and injects the browser `process` shim into
 pre-bundled dependencies such as `parse-link-header`.
 
 CSS and RTL parity, hybrid route smoke tests, and build measurements remain

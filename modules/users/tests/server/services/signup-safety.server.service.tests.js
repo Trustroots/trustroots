@@ -1,4 +1,4 @@
-const signupSafety = require('../../../server/services/signup-safety.server.service');
+const signupSafety = require('./../../../server/services/signup-safety.server.service.mjs');
 require('should');
 
 describe('Signup safety service', () => {

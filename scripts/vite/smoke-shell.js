@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const { once } = require('node:events');
 const { chromium } = require('@playwright/test');
 const express = require('express');
-const expressConfig = require('../../config/lib/express');
+const expressConfig = require('../../config/lib/express.mjs');
 
 async function main() {
   const development = process.env.NODE_ENV === 'development';

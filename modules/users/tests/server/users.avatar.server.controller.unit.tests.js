@@ -5,12 +5,12 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const mongoose = require('mongoose');
-const proxyquire = require('proxyquire').noCallThru();
+const proxyquire = require('./../../../../testutils/server/mock-module');
 
-const config = require('../../../../config/config');
-require('../../server/models/user.server.model');
+const config = require('./../../../../config/config.mjs');
+require('./../../server/models/user.server.model.mjs');
 
-const avatarController = require('../../server/controllers/users.avatar.server.controller');
+const avatarController = require('./../../server/controllers/users.avatar.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
@@ -80,7 +80,7 @@ describe('Avatar controller unit tests', () => {
     it('delegates authenticated uploads to the file upload service', () => {
       let uploadArgs;
       const controller = loadAvatarWithStubs({
-        '../../../core/server/services/file-upload.service': {
+        './../../../core/server/services/file-upload.service.mjs': {
           uploadFile: (...args) => {
             uploadArgs = args;
           },
@@ -196,6 +196,26 @@ describe('Avatar controller unit tests', () => {
       );
       await res.waitForResponse();
       res.redirectUrl.should.containEql('/img/avatar-');
+    });
+
+    it('redirects to the default avatar for a suspended profile', async () => {
+      const [viewer] = await utils.saveUsers(utils.generateUsers(1));
+      const [target] = await utils.saveUsers(
+        utils.generateUsers(1, { public: true }),
+      );
+      const targetDoc = await User.findById(target._id);
+      targetDoc.roles = ['user', 'suspended'];
+      targetDoc.avatarUploaded = true;
+      targetDoc.avatarSource = 'local';
+      await targetDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        { user: viewer, profile: targetDoc, query: { size: '128' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('/img/avatar-128.png');
     });
 
     it('redirects to the default avatar when the profile blocked the viewer', async () => {
@@ -517,14 +537,16 @@ describe('Avatar controller unit tests', () => {
 
   function loadAvatarWithStubs(stubs) {
     return proxyquire(
-      '../../server/controllers/users.avatar.server.controller',
+      require.resolve(
+        './../../server/controllers/users.avatar.server.controller.mjs',
+      ),
       stubs,
     );
   }
 
   function loadAvatarWithProcessor(processor) {
     return loadAvatarWithStubs({
-      '../../server/services/avatar-processing.server.service': processor,
+      './../../server/services/avatar-processing.server.service.mjs': processor,
     });
   }
 
@@ -540,7 +562,7 @@ describe('Avatar controller unit tests', () => {
             },
           },
         },
-        '../../../../config/lib/logger': (...args) => logged.push(args),
+        './../../../../config/lib/logger.mjs': (...args) => logged.push(args),
         '../services/avatar-processing.server.service': {
           enqueueAvatarProcessing: value => {
             job = value;
@@ -577,8 +599,8 @@ describe('Avatar controller unit tests', () => {
       );
       fs.writeFileSync(sourcePath, 'anonymous-test-image');
       const controller = loadAvatarWithStubs({
-        '../../../../config/lib/logger': (...args) => logged.push(args),
-        '../../../core/server/services/error.server.service': {
+        './../../../../config/lib/logger.mjs': (...args) => logged.push(args),
+        './../../../core/server/services/error.server.service.mjs': {
           getErrorMessage: () => '',
         },
         '../services/avatar-processing.server.service': {
@@ -621,7 +643,7 @@ describe('Avatar controller unit tests', () => {
       const originalFindById = User.findById;
       const logged = [];
       const controller = loadAvatarWithStubs({
-        '../../../../config/lib/logger': (...args) => logged.push(args),
+        './../../../../config/lib/logger.mjs': (...args) => logged.push(args),
         '../services/avatar-processing.server.service': {
           enqueueAvatarProcessing: job => {
             process.nextTick(() =>
@@ -703,7 +725,7 @@ describe('Avatar controller unit tests', () => {
       const originalFindById = User.findById;
       const logged = [];
       const controller = loadAvatarWithStubs({
-        '../../../../config/lib/logger': (...args) => logged.push(args),
+        './../../../../config/lib/logger.mjs': (...args) => logged.push(args),
         '../services/avatar-processing.server.service': {
           enqueueAvatarProcessing: job => {
             process.nextTick(() =>

@@ -4,9 +4,11 @@
 import _ from 'lodash';
 import mongoose from 'mongoose';
 import net from 'net';
+import { prepareStaffBlockers } from '../services/staff-blockers-payload.server.service.mjs';
 
-import errorService from '../../../core/server/services/error.server.service.js';
-import log from '../../../../config/lib/logger.js';
+import errorService from '../../../core/server/services/error.server.service.mjs';
+import log from '../../../../config/lib/logger.mjs';
+import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../../../users/server/lib/account-identifier.server.mjs';
 
 const AdminNote = mongoose.model('AdminNote');
 const Contact = mongoose.model('Contact');
@@ -515,19 +517,7 @@ export const listStaffBlockers = async (req, res) => {
           .lean()
       : [];
 
-    /** @type {import('../../shared/staff-blockers').StaffBlocker<import('mongoose').Types.ObjectId>[]} */
-    const staffBlockers = staffMembers.map(staff => ({
-      _id: staff._id,
-      username: staff.username,
-      displayName: staff.displayName,
-      blockedBy: blockers
-        .filter(blocker => blocker.blocked.some(id => id.equals(staff._id)))
-        .map(({ _id, username, displayName }) => ({
-          _id,
-          username,
-          displayName,
-        })),
-    }));
+    const staffBlockers = prepareStaffBlockers(staffMembers, blockers);
     res.send(staffBlockers);
   } catch (err) {
     log('error', 'Failed to load members who blocked staff.', { error: err });
@@ -561,25 +551,55 @@ export const changeRole = async (req, res) => {
     });
   }
 
-  // If switching role to 'suspended', change also these settings straight up
-  const additionalChangesForSuspended =
-    action === 'add' && role === 'suspended'
-      ? { $set: { newsletter: false, public: false } }
-      : {};
-
   try {
-    const user = await User.updateOne(
-      { _id: userId },
-      {
-        ...additionalChangesForSuspended,
-        [action === 'remove' ? '$pull' : '$addToSet']: {
-          roles: role,
-        },
-      },
-    );
+    const id = new mongoose.Types.ObjectId(userId);
+    let changedUser = false;
 
-    // No documents were updated
-    if (!user.matchedCount) {
+    // Compare-and-set the role array so overlapping updates cannot overwrite
+    // another role change or lose an authVersion increment.
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const current = await User.findById(id).select('roles').lean().exec();
+      if (!current) break;
+
+      const currentRoles = current.roles || [];
+      const nextRoles = currentRoles.filter(existingRole => {
+        if (action === 'remove') return existingRole !== role;
+        if (
+          (role === 'volunteer' && existingRole === 'volunteer-alumni') ||
+          (role === 'volunteer-alumni' && existingRole === 'volunteer') ||
+          (role === 'shadowban' && existingRole === 'suspended') ||
+          (role === 'suspended' && existingRole === 'shadowban')
+        ) {
+          return false;
+        }
+        return true;
+      });
+      if (action === 'add' && !nextRoles.includes(role)) nextRoles.push(role);
+
+      const rolesChanged =
+        currentRoles.length !== nextRoles.length ||
+        currentRoles.some(
+          (existingRole, index) => existingRole !== nextRoles[index],
+        );
+      const filter = { _id: id };
+      filter.roles = Object.prototype.hasOwnProperty.call(current, 'roles')
+        ? current.roles
+        : { $exists: false };
+      const update = { $set: { roles: nextRoles } };
+      if (action === 'add' && role === 'suspended') {
+        update.$set.newsletter = false;
+        update.$set.public = false;
+      }
+      if (rolesChanged) update.$inc = { authVersion: 1 };
+
+      const result = await User.updateOne(filter, update);
+      if (result.matchedCount) {
+        changedUser = true;
+        break;
+      }
+    }
+
+    if (!changedUser) {
       return res.status(404).send({
         message: errorService.getErrorMessageByKey('not-found'),
       });
@@ -591,22 +611,16 @@ export const changeRole = async (req, res) => {
 
     // If adding role 'volunteer-alumni', remove 'volunteer' role
     if (action === 'add' && role === 'volunteer-alumni') {
-      await User.updateOne({ _id: userId }, { $pull: { roles: 'volunteer' } });
       roleChangeMessage = 'User made into volunteer-alumni.';
     }
 
     // If adding role 'volunteer', remove 'volunteer-alumni' role
     if (action === 'add' && role === 'volunteer') {
-      await User.updateOne(
-        { _id: userId },
-        { $pull: { roles: 'volunteer-alumni' } },
-      );
       roleChangeMessage = 'User made into volunteer.';
     }
 
     // If adding role 'shadowban', remove 'suspended' role
     if (action === 'add' && role === 'shadowban') {
-      await User.updateOne({ _id: userId }, { $pull: { roles: 'suspended' } });
       roleChangeMessage = 'User shadowbanned.';
     }
 
@@ -616,7 +630,6 @@ export const changeRole = async (req, res) => {
 
     // If adding role 'suspended', remove 'shadowban' role
     if (action === 'add' && role === 'suspended') {
-      await User.updateOne({ _id: userId }, { $pull: { roles: 'shadowban' } });
       roleChangeMessage = 'User suspended.';
     }
 
@@ -640,9 +653,19 @@ export const changeRole = async (req, res) => {
 export const usernameToUserId = async (req, res, next) => {
   const username = _.get(req, ['body', 'username']);
 
+  if (
+    username !== undefined &&
+    (typeof username !== 'string' ||
+      username.length > ACCOUNT_IDENTIFIER_MAX_LENGTH)
+  ) {
+    return res.status(400).send({ message: 'Invalid username.' });
+  }
+
   // Get userID based on provided username
   if (username) {
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ username }).setOptions({
+      sanitizeFilter: true,
+    });
 
     if (user) {
       req.userIdFromUsername = user._id;
@@ -652,7 +675,7 @@ export const usernameToUserId = async (req, res, next) => {
   next();
 };
 
-export default {
+const service = {
   searchUsers,
   listUsersByRole,
   listUsersByLastIpAddress,
@@ -662,3 +685,7 @@ export default {
   changeRole,
   usernameToUserId,
 };
+
+export default service;
+
+export { service as 'module.exports' };

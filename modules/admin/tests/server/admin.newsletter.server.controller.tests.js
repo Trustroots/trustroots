@@ -5,8 +5,8 @@
  */
 const mongoose = require('mongoose');
 
-const adminNewsletter = require('../../server/controllers/admin.newsletter.server.controller');
-const errorService = require('../../../core/server/services/error.server.service');
+const adminNewsletter = require('./../../server/controllers/admin.newsletter.server.controller.mjs');
+const errorService = require('./../../../core/server/services/error.server.service.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 

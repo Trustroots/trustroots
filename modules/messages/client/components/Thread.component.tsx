@@ -67,12 +67,16 @@ const FlexGrow = styled.div`
   flex-grow: 1;
 `;
 
-function YouHaveNotBeenTalkingYet() {
+function YouHaveNotBeenTalkingYet({ name }: { name?: string | null }) {
   const { t } = useTranslation('messages');
   return (
     <div className="content-empty">
       <i className="icon-3x icon-messages-alt" />
-      <h4>{t<string>("You haven't been talking yet.")}</h4>
+      <h4>
+        {name
+          ? t<string>("You haven't been talking with {{name}} yet.", { name })
+          : t<string>("You haven't been talking yet.")}
+      </h4>
       <Flashcard />
     </div>
   );
@@ -178,28 +182,32 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
   );
 
   const userHasReplied = Boolean(
-    messages.find(message => message.userFrom._id === user._id),
+    messages.find(message => message.userFrom?._id === user._id),
   );
   const showReply = (messages.length > 0 || !hasEmptyProfile) && !removed;
-  const showQuickReply = showReply && !userHasReplied;
+  const showQuickReply = showReply && messages.length > 0 && !userHasReplied;
 
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
 
   useEffect(() => {
     const viewport = window.visualViewport;
     if (!viewport) return;
+    let keyboardInset = 0;
 
     const updateKeyboardInset = () => {
       const isWritingMessage =
         document.activeElement?.id === 'message-reply-content';
-      const keyboardInset = isWritingMessage
-        ? Math.max(
-            0,
-            Math.round(
-              window.innerHeight - viewport.height - viewport.offsetTop,
-            ),
-          )
-        : 0;
+      // Native text menus can temporarily take focus from the editor. Keep
+      // the composer in place until the viewport shows the keyboard has closed.
+      keyboardInset =
+        isWritingMessage || keyboardInset > 0
+          ? Math.max(
+              0,
+              Math.round(
+                window.innerHeight - viewport.height - viewport.offsetTop,
+              ),
+            )
+          : 0;
       document.documentElement.style.setProperty(
         '--trustroots-keyboard-inset',
         `${keyboardInset}px`,
@@ -245,9 +253,6 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     return {
       _id: userId,
       displayName: t<string>('Unknown member'),
-      username: null,
-      member: [],
-      languages: [],
     };
   }
 
@@ -348,7 +353,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     async function markRead() {
       const unreadMessages = messages
         .filter(message => !message.read) // only unread
-        .filter(message => message.userFrom._id !== user._id); // only other persons messages
+        .filter(message => message.userFrom?._id !== user._id); // only other persons messages
       if (unreadMessages.length > 0) {
         await api.messages.markRead(unreadMessages.map(message => message._id));
         setMessages(messages =>
@@ -390,7 +395,9 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
                   {hasEmptyProfile ? (
                     <YourProfileSeemsQuiteEmpty />
                   ) : (
-                    <YouHaveNotBeenTalkingYet />
+                    <YouHaveNotBeenTalkingYet
+                      name={otherUser?.displayName || otherUser?.username}
+                    />
                   )}
                   <FlexGrow />
                 </>
@@ -418,6 +425,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
               )}
               {!isBlocked && showReply && (
                 <ThreadReply
+                  key={cacheKey}
                   cacheKey={cacheKey}
                   autoFocus={!isExtraSmall}
                   onSend={content => sendMessage(content)}

@@ -5,13 +5,13 @@
  */
 
 const async = require('async');
-const mongooseService = require('../../config/lib/mongoose');
+const mongooseService = require('./../../config/lib/mongoose.mjs');
 const mongoose = require('mongoose');
 // eslint-disable-next-line no-unused-vars
-const tribeModels = require('../../modules/tribes/server/models/tribe.server.model');
+const tribeModels = require('./../../modules/tribes/server/models/tribe.server.model.mjs');
 const Tribe = mongoose.model('Tribe');
 // eslint-disable-next-line no-unused-vars
-const userModels = require('../../modules/users/server/models/user.server.model');
+const userModels = require('./../../modules/users/server/models/user.server.model.mjs');
 const User = mongoose.model('User');
 
 exports.up = function (next) {

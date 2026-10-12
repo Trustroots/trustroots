@@ -2,11 +2,10 @@ import _ from 'lodash';
 import async from 'async';
 import basicAuth from 'basic-auth';
 import speakingurl from 'speakingurl';
-import log from '../../../../config/lib/logger.js';
-import errorService from '../../../core/server/services/error.server.service.js';
-import statService from '../../../stats/server/services/stats.server.service.js';
-import config from '../../../../config/config.js';
-
+import log from './../../../../config/lib/logger.mjs';
+import errorService from './../../../core/server/services/error.server.service.mjs';
+import statService from './../../../stats/server/services/stats.server.service.mjs';
+import config from './../../../../config/config.mjs';
 const service = {};
 
 /**
@@ -66,7 +65,6 @@ service.processAndSendMetrics = function (event, callback) {
     country: '',
     campaignId: '',
   };
-
   const tags = {};
 
   // Validate against these event categories
@@ -137,8 +135,10 @@ service.processAndSendMetrics = function (event, callback) {
     // "Slugify" `campaignId` to ensure we don't get any carbage
     // Allows only `A-Za-z0-9_-`
     meta.campaignId = speakingurl(campaignId, {
-      separator: '-', // char that replaces the whitespaces
-      maintainCase: false, // don't maintain case
+      separator: '-',
+      // char that replaces the whitespaces
+      maintainCase: false,
+      // don't maintain case
       truncate: 255, // truncate to 255 chars
     });
   }
@@ -148,7 +148,6 @@ service.processAndSendMetrics = function (event, callback) {
   if (_.isString(country) && country.length > 0 && country.length <= 3) {
     meta.country = country.replace(/\W/g, '').toUpperCase();
   }
-
   const statObj = {
     namespace: 'transactionalEmailEvent',
     counts: {
@@ -176,7 +175,6 @@ service.basicAuthenticate = function (req, res, next) {
   // The Authorization header is parsed and if the header is invalid,
   // undefined is returned, otherwise an object with name and pass properties.
   const credentials = basicAuth(req);
-
   const enabled = _.get(config, 'sparkpostWebhook.enabled');
 
   // Access denied
@@ -195,9 +193,9 @@ service.basicAuthenticate = function (req, res, next) {
   // Access granted
   return next();
 };
-
 const defaultExport = service;
 export default defaultExport;
 export const basicAuthenticate = defaultExport.basicAuthenticate;
 export const processAndSendMetrics = defaultExport.processAndSendMetrics;
 export const receiveBatch = defaultExport.receiveBatch;
+export { defaultExport as 'module.exports' };

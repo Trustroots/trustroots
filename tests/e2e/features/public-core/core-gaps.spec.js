@@ -4,7 +4,7 @@ const {
   test,
   expect,
   useViewportScreenshot,
-} = require('../../support/test');
+} = require('../../support/fixtures');
 
 test.describe('public core manifest gap coverage', () => {
   test('support API accepts valid guest requests', async ({

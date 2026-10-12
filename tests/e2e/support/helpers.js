@@ -228,9 +228,19 @@ async function signUp(page, user) {
 }
 
 /**
- * Sign in through the API and open the search page so the browser context
- * picks up the session cookie. Used by Playwright setup projects.
+ * Authenticate a request context without opening a browser page.
  */
+async function authenticateViaApi(request, user) {
+  const response = await request.post('/api/auth/signin', {
+    data: { username: user.username, password: user.password },
+  });
+  expect(
+    response.ok(),
+    `Signin API responded with ${response.status()}: ${await response.text()}`,
+  ).toBeTruthy();
+  return response;
+}
+
 async function signInViaApi(page, request, user) {
   // A project storage state can be shared by many test contexts. Passport
   // regenerates the current session on login, so never send that shared cookie
@@ -241,17 +251,7 @@ async function signInViaApi(page, request, user) {
   // specs use it for API setup after signing in, while browser-context requests
   // alone do not refresh that fixture's cookie jar.
   const signInRequest = request || page.context().request;
-  const response = await signInRequest.post('/api/auth/signin', {
-    data: {
-      username: user.username,
-      password: user.password,
-    },
-  });
-
-  expect(
-    response.ok(),
-    `Signin API responded with ${response.status()}: ${await response.text()}`,
-  ).toBeTruthy();
+  const response = await authenticateViaApi(signInRequest, user);
 
   const setCookie = response.headers()['set-cookie'];
   if (setCookie) {
@@ -265,9 +265,6 @@ async function signInViaApi(page, request, user) {
       },
     ]);
   }
-
-  await page.goto('/search');
-  await expect(page).toHaveURL(/\/search/);
 }
 
 /**
@@ -369,6 +366,7 @@ module.exports = {
   createIsolatedContext,
   registerViaApi,
   signUp,
+  authenticateViaApi,
   signInViaApi,
   signIn,
   signOut,

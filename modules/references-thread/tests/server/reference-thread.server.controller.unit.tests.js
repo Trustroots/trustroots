@@ -4,8 +4,8 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const referenceController = require('../../server/controllers/reference-thread.server.controller');
-const statService = require('../../../stats/server/services/stats.server.service');
+const referenceController = require('./../../server/controllers/reference-thread.server.controller.mjs');
+const statService = require('./../../../stats/server/services/stats.server.service.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
@@ -94,8 +94,8 @@ describe('Reference thread controller unit tests', () => {
     });
 
     it('responds with 400 for an invalid id', async () => {
-      const [user] = await utils.saveUsers(
-        utils.generateUsers(1, { public: true }),
+      const [user] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1, { public: true }),
       );
       const res = deferredResponse();
       referenceController.readReferenceThreadById(
@@ -109,8 +109,8 @@ describe('Reference thread controller unit tests', () => {
     });
 
     it('calls next when a reference thread exists', async () => {
-      const [author, other] = await utils.saveUsers(
-        utils.generateUsers(2, { public: true }),
+      const [author, other] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(2, { public: true }),
       );
       const { thread: messageThread } = await createThreadWithMessage(
         author,
@@ -143,8 +143,8 @@ describe('Reference thread controller unit tests', () => {
     });
 
     it('responds with 404 and allowCreatingReference when messaging is allowed', async () => {
-      const [author, other] = await utils.saveUsers(
-        utils.generateUsers(2, { public: true }),
+      const [author, other] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(2, { public: true }),
       );
       await createThreadWithMessage(author, other, false);
 
@@ -161,8 +161,8 @@ describe('Reference thread controller unit tests', () => {
     });
 
     it('passes message lookup errors to next when no reference exists', async () => {
-      const [author, other] = await utils.saveUsers(
-        utils.generateUsers(2, { public: true }),
+      const [author, other] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(2, { public: true }),
       );
       sinon.stub(ReferenceThread, 'findOne').returns({
         sort: () => ({
@@ -191,8 +191,8 @@ describe('Reference thread controller unit tests', () => {
     });
 
     it('passes database errors to next', async () => {
-      const [user] = await utils.saveUsers(
-        utils.generateUsers(1, { public: true }),
+      const [user] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1, { public: true }),
       );
       sinon.stub(ReferenceThread, 'findOne').returns({
         sort: () => ({
@@ -227,8 +227,8 @@ describe('Reference thread controller unit tests', () => {
     });
 
     it('rejects an invalid userTo id', async () => {
-      const [user] = await utils.saveUsers(
-        utils.generateUsers(1, { public: true }),
+      const [user] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1, { public: true }),
       );
       const res = deferredResponse();
       referenceController.createReferenceThread(
@@ -240,8 +240,8 @@ describe('Reference thread controller unit tests', () => {
     });
 
     it('rejects references for non-existing threads', async () => {
-      const [user] = await utils.saveUsers(
-        utils.generateUsers(1, { public: true }),
+      const [user] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1, { public: true }),
       );
       const res = deferredResponse();
       referenceController.createReferenceThread(
@@ -257,8 +257,8 @@ describe('Reference thread controller unit tests', () => {
     });
 
     it('rejects references when the other person has not messaged you', async () => {
-      const [author, other] = await utils.saveUsers(
-        utils.generateUsers(2, { public: true }),
+      const [author, other] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(2, { public: true }),
       );
       const Message = mongoose.model('Message');
       const Thread = mongoose.model('Thread');
@@ -289,8 +289,8 @@ describe('Reference thread controller unit tests', () => {
 
     it('creates a reference thread when messaging rules allow it', async () => {
       sinon.stub(statService, 'stat').callsFake((data, cb) => cb());
-      const [author, other] = await utils.saveUsers(
-        utils.generateUsers(2, { public: true }),
+      const [author, other] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(2, { public: true }),
       );
       await createThreadWithMessage(author, other, false);
 
@@ -320,8 +320,8 @@ describe('Reference thread controller unit tests', () => {
 
     it('responds with 400 when saving the reference fails', async () => {
       sinon.stub(statService, 'stat').callsFake((data, cb) => cb());
-      const [author, other] = await utils.saveUsers(
-        utils.generateUsers(2, { public: true }),
+      const [author, other] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(2, { public: true }),
       );
       await createThreadWithMessage(author, other, false);
       sinon
@@ -345,8 +345,8 @@ describe('Reference thread controller unit tests', () => {
 
     it('responds with 400 when the waterfall fails', async () => {
       sinon.stub(statService, 'stat').callsFake((data, cb) => cb());
-      const [author, other] = await utils.saveUsers(
-        utils.generateUsers(2, { public: true }),
+      const [author, other] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(2, { public: true }),
       );
       await createThreadWithMessage(author, other, false);
       sinon.stub(User, 'findById').callsFake((id, fields, cb) => {
@@ -370,9 +370,10 @@ describe('Reference thread controller unit tests', () => {
     });
 
     it('rejects references when the user is not in the thread', async () => {
-      const [author, other, stranger] = await utils.saveUsers(
-        utils.generateUsers(3, { public: true }),
-      );
+      const [author, other, stranger] =
+        await utils.saveUsersWithCachedPasswords(
+          utils.generateUsersWithSharedPassword(3, { public: true }),
+        );
       sinon.stub(Thread, 'findOne').callsFake((query, fields, cb) => {
         const callback = typeof fields === 'function' ? fields : cb;
         callback(null, {

@@ -2,6 +2,7 @@
 import classnames from 'classnames';
 import React from 'react';
 import PropTypes from 'prop-types';
+import { formatRoleLabel } from '../utils/role-label';
 
 /**
  * Gives information about different profile "states" useful for debugging for support requests:
@@ -52,7 +53,7 @@ export default function UserState({ user }: { user: UserStateUser }) {
 
             return (
               <span className={classes} key={role}>
-                {role === 'welcome-team' ? 'Welcome team' : role}
+                {formatRoleLabel(role)}
               </span>
             );
           })}

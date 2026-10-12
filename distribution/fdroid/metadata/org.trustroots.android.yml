@@ -1,5 +1,5 @@
 Categories:
-  - Internet
+  - Social Network
 License: AGPL-3.0-only
 AuthorName: Trustroots
 WebSite: https://www.trustroots.org/
@@ -7,19 +7,23 @@ SourceCode: https://github.com/Trustroots/trustroots
 IssueTracker: https://github.com/Trustroots/trustroots/issues
 Changelog: https://github.com/Trustroots/trustroots/releases
 
+AutoName: Trustroots
+
 RepoType: git
 Repo: https://github.com/Trustroots/trustroots
 
 Builds:
-  - versionName: 0.1-20261002-2013
-    versionCode: 100008
-    commit: 000750aaa5da164b529b690a5a15bcf772d7b412
+  - versionName: 0.1-20261008-0919
+    versionCode: 100015
+    commit: 52839d4d3aa5a0e8c972f4101dd17371e6b31c0e
     subdir: apps/android
     output: app/build/outputs/apk/release/app-release-unsigned.apk
-    build: ANDROID_VERSION_CODE=$$VERCODE$$ ANDROID_VERSION_NAME=$$VERSION$$ gradle assembleRelease
+    build:
+      ANDROID_VERSION_CODE=$$VERCODE$$ ANDROID_VERSION_NAME=$$VERSION$$ gradle
+      assembleRelease
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags ^android-preview-[0-9]+-v.+$
 UpdateCheckData: '|^android-preview-([0-9]+)-v||^android-preview-[0-9]+-v(.+)$'
-CurrentVersion: 0.1-20261002-2013
-CurrentVersionCode: 100008
+CurrentVersion: 0.1-20261008-0919
+CurrentVersionCode: 100015

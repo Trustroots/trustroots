@@ -1,5 +1,7 @@
 {
   "Cancel": "Cancel",
+  "Members of this circle who have been active in the past month": "Members of this circle who have been active in the past month",
+  "Members of this circle who recommend you": "Members of this circle who recommend you",
   "Discover circles": "Discover circles",
   "Do you want to leave \"{{label}}\"?": "Do you want to leave \"{{label}}\"?",
   "Join": "Join",
@@ -12,9 +14,14 @@
   "Missing your circle?": "Missing your circle?",
   "New circle!": "New circle!",
   "No members yet": "No members yet",
+  "No members to show yet": "No members to show yet",
+  "Other active members": "Other active members",
+  "People you already know on Trustroots": "People you already know on Trustroots",
+  "People who recommend you": "People who recommend you",
   "Send us suggestions!": "Send us suggestions!",
   "Sign up with Trustroots": "Sign up with Trustroots",
   "You're a member": "You're a member",
+  "Your contacts in this circle": "Your contacts in this circle",
   "{{count, number}} members": "One member",
   "{{count, number}} members_plural": "{{count, number}} members"
 }

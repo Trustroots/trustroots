@@ -1,10 +1,9 @@
 const should = require('should');
 const request = require('supertest');
 const mongoose = require('mongoose');
-const express = require('../../../../config/lib/express');
+const express = require('./../../../../config/lib/express.mjs');
 const testutils = require('../../../../testutils/server/server.testutil');
 const dataUtils = require('../../../../testutils/server/data.server.testutil');
-
 const User = mongoose.model('User');
 
 /**
@@ -24,13 +23,13 @@ let _unConfirmedUser;
  */
 describe('User signup and authentication CRUD tests', function () {
   const jobs = testutils.catchJobs();
-
   before(function (done) {
-    // Get application
-    app = express.init(mongoose.connection);
-    agent = request.agent(app);
-
-    done();
+    (async () => {
+      // Get application
+      app = await express.init(mongoose.connection);
+      agent = request.agent(app);
+      done();
+    })().catch(done);
   });
 
   // Create an user
@@ -54,7 +53,6 @@ describe('User signup and authentication CRUD tests', function () {
       password: confirmedCredentials.password,
       provider: 'local',
     };
-
     confirmedUser = new User(_confirmedUser);
 
     // Save a user to the test db
@@ -67,28 +65,25 @@ describe('User signup and authentication CRUD tests', function () {
       username: 'TR_username_unconfirmed',
       password: 'TR-I$Aw3$0m4',
     };
-
     _unConfirmedUser = {
       firstName: 'Full',
       lastName: 'Name',
       displayName: 'Full Name',
       email: 'unconfirmed-test@example.org',
-      emailTemporary: 'unconfirmed-test@example.org', // unconfirmed users have this set
+      emailTemporary: 'unconfirmed-test@example.org',
+      // unconfirmed users have this set
       emailToken: 'initial email token',
       username: unConfirmedCredentials.username.toLowerCase(),
       password: unConfirmedCredentials.password,
       provider: 'local',
       acquisitionStory: 'A fish told me...',
     };
-
     unConfirmedUser = new User(_unConfirmedUser);
 
     // Save a user to the test db
     unConfirmedUser.save(done);
   });
-
   afterEach(dataUtils.clearDatabase);
-
   it('explains underscore rejection without creating an account', async function () {
     const response = await agent
       .post('/api/auth/signup')
@@ -103,9 +98,12 @@ describe('User signup and authentication CRUD tests', function () {
     response.body.message.should.equal(
       'Use 3-34 letters, numbers, periods or hyphens. Underscores are not allowed at signup.',
     );
-    should.not.exist(await User.findOne({ username: 'sample_member' }));
+    should.not.exist(
+      await User.findOne({
+        username: 'sample_member',
+      }),
+    );
   });
-
   for (const username of ['Sample.Member', 'sample-member', '12345678']) {
     it('preserves signup support for ' + username, async function () {
       const response = await agent
@@ -121,11 +119,78 @@ describe('User signup and authentication CRUD tests', function () {
       response.body.username.should.equal(username.toLowerCase());
     });
   }
+  it('initialises only the supported signup fields', async function () {
+    const payload = {
+      firstName: 'Sample',
+      lastName: 'Member',
+      username: 'payload-member',
+      password: 'ExamplePassword123!',
+      email: 'payload-member@example.test',
+      newsletter: true,
+      acquisitionStory: 'A fictional invitation',
+      locale: 'en',
+      authVersion: 99,
+      roles: ['admin'],
+      avatarVersion: 'unexpected-avatar',
+      avatarUploaded: true,
+      blocked: ['000000000000000000000001'],
+      additionalProvidersData: { github: { id: 'unexpected-provider' } },
+      resetPasswordToken: 'unexpected-token',
+    };
+    const response = await agent
+      .post('/api/auth/signup')
+      .send(payload)
+      .expect(200);
+    const stored = await User.findOne({ username: payload.username });
+    stored.authVersion.should.equal(0);
+    stored.roles.should.deepEqual(['user']);
+    stored.newsletter.should.equal(true);
+    stored.locale.should.equal('en');
+    stored.acquisitionStory.should.equal(payload.acquisitionStory);
+    stored.avatarUploaded.should.equal(false);
+    stored.blocked.should.have.length(0);
+    should.not.exist(stored.avatarVersion);
+    should.not.exist(stored.resetPasswordToken);
+    should.not.exist(stored.additionalProvidersData?.github);
+    response.body.username.should.equal(payload.username);
+  });
+
+  it('rejects structured required fields and malformed signup preferences', async function () {
+    const payload = {
+      firstName: 'Sample',
+      lastName: 'Member',
+      username: 'typed-member',
+      password: 'ExamplePassword123!',
+      email: 'typed-member@example.test',
+    };
+    for (const field of [
+      'firstName',
+      'lastName',
+      'username',
+      'password',
+      'email',
+    ]) {
+      const response = await agent
+        .post('/api/auth/signup')
+        .send({ ...payload, [field]: { $ne: null } })
+        .expect(400);
+      response.body.message.should.equal('Please provide required fields.');
+    }
+    for (const field of ['locale', 'acquisitionStory', 'newsletter']) {
+      const response = await agent
+        .post('/api/auth/signup')
+        .send({ ...payload, [field]: { $ne: null } })
+        .expect(400);
+      response.body.message.should.equal(
+        'Please provide valid signup preferences.',
+      );
+    }
+    should.not.exist(await User.findOne({ username: payload.username }));
+  });
 
   it('should be able to register a new user', function (done) {
     _unConfirmedUser.username = 'RegisterNewUser';
     _unConfirmedUser.email = 'register-new-user@example.org';
-
     agent
       .post('/api/auth/signup')
       .send(_unConfirmedUser)
@@ -151,12 +216,10 @@ describe('User signup and authentication CRUD tests', function () {
         should.not.exist(signupRes.body.password);
         should.not.exist(signupRes.body.salt);
         should.not.exist(signupRes.body.roles);
-
         jobs.length.should.equal(1);
         jobs[0].type.should.equal('send email');
         jobs[0].data.subject.should.equal('Confirm Email');
         jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
-
         User.findById(signupRes.body._id, function (err, savedUser) {
           if (err) return done(err);
           savedUser.acquisitionStory.should.equal(
@@ -166,12 +229,10 @@ describe('User signup and authentication CRUD tests', function () {
         });
       });
   });
-
   it('should be able to register a new user but not inject additional roles', function (done) {
     _unConfirmedUser.username = 'RegisterNewUser';
     _unConfirmedUser.email = 'register-new-user@example.org';
     _unConfirmedUser.roles = ['user', 'admin'];
-
     agent
       .post('/api/auth/signup')
       .send(_unConfirmedUser)
@@ -179,7 +240,6 @@ describe('User signup and authentication CRUD tests', function () {
       .end(function (err, signupRes) {
         should.not.exist(err);
         should.not.exist(signupRes.body.roles);
-
         User.findById(signupRes.body._id, function (err, userFindRes) {
           should.not.exist(err);
           userFindRes.roles.should.be.instanceof(Array).and.have.lengthOf(1);
@@ -188,11 +248,9 @@ describe('User signup and authentication CRUD tests', function () {
         });
       });
   });
-
   it('should be able to register a new user and confirm email with token and user should become public', function (done) {
     _unConfirmedUser.username = 'RegisterNewUser';
     _unConfirmedUser.email = 'register-new-user@example.org';
-
     agent
       .post('/api/auth/signup')
       .send(_unConfirmedUser)
@@ -202,25 +260,23 @@ describe('User signup and authentication CRUD tests', function () {
         if (signupErr) {
           return done(signupErr);
         }
-
         signupRes.body.public.should.equal(false);
         should.not.exist(signupRes.body.emailToken);
         should.not.exist(signupRes.body.password);
         should.not.exist(signupRes.body.salt);
         signupRes.body.emailTemporary.should.equal(_unConfirmedUser.email);
-
         jobs.length.should.equal(1);
         jobs[0].type.should.equal('send email');
         jobs[0].data.subject.should.equal('Confirm Email');
         jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
-
         User.findOne(
-          { username: _unConfirmedUser.username.toLowerCase() },
+          {
+            username: _unConfirmedUser.username.toLowerCase(),
+          },
           function (err, userRes1) {
             if (err) {
               return done(err);
             }
-
             userRes1.public.should.equal(false);
             userRes1.email.should.not.be.empty();
             userRes1.emailToken.should.not.be.empty();
@@ -233,7 +289,6 @@ describe('User signup and authentication CRUD tests', function () {
                 if (confirmEmailPostErr) {
                   return done(confirmEmailPostErr);
                 }
-
                 confirmEmailGetRes.text.should.equal(
                   'Found. Redirecting to /confirm-email/' + userRes1.emailToken,
                 );
@@ -247,7 +302,6 @@ describe('User signup and authentication CRUD tests', function () {
                     if (confirmEmailPostErr) {
                       return done(confirmEmailPostErr);
                     }
-
                     jobs.length.should.equal(1);
                     jobs[0].type.should.equal('send email');
 
@@ -262,7 +316,6 @@ describe('User signup and authentication CRUD tests', function () {
                     should.not.exist(confirmEmailPostRes.body.user.emailToken);
                     should.not.exist(confirmEmailPostRes.body.user.password);
                     should.not.exist(confirmEmailPostRes.body.user.salt);
-
                     return done();
                   });
               });
@@ -270,11 +323,9 @@ describe('User signup and authentication CRUD tests', function () {
         );
       });
   });
-
   it('should be able to register a new user and confirming email with wrong token should redirect error and yeld an error and user should not be public', function (done) {
     _unConfirmedUser.username = 'RegisterNewUser';
     _unConfirmedUser.email = 'register-new-user@example.org';
-
     agent
       .post('/api/auth/signup')
       .send(_unConfirmedUser)
@@ -284,20 +335,19 @@ describe('User signup and authentication CRUD tests', function () {
         if (signupErr) {
           return done(signupErr);
         }
-
         signupRes.body.public.should.equal(false);
         should.not.exist(signupRes.body.emailToken);
         should.not.exist(signupRes.body.password);
         should.not.exist(signupRes.body.salt);
         signupRes.body.emailTemporary.should.equal(_unConfirmedUser.email);
-
         User.findOne(
-          { username: _unConfirmedUser.username.toLowerCase() },
+          {
+            username: _unConfirmedUser.username.toLowerCase(),
+          },
           function (err, userRes1) {
             if (err) {
               return done(err);
             }
-
             userRes1.public.should.equal(false);
             userRes1.email.should.not.be.empty();
             userRes1.emailToken.should.not.be.empty();
@@ -310,7 +360,6 @@ describe('User signup and authentication CRUD tests', function () {
                 if (confirmEmailPostErr) {
                   return done(confirmEmailPostErr);
                 }
-
                 confirmEmailGetRes.text.should.equal(
                   'Found. Redirecting to /confirm-email-invalid',
                 );
@@ -324,11 +373,9 @@ describe('User signup and authentication CRUD tests', function () {
                     if (confirmEmailPostErr) {
                       return done(confirmEmailPostErr);
                     }
-
                     confirmEmailPostRes.body.message.should.equal(
                       'Email confirm token is invalid or has expired.',
                     );
-
                     return done();
                   });
               });
@@ -336,7 +383,6 @@ describe('User signup and authentication CRUD tests', function () {
         );
       });
   });
-
   it('should be able to login successfully using username and logout successfully', function (done) {
     agent
       .post('/api/auth/signin')
@@ -362,15 +408,12 @@ describe('User signup and authentication CRUD tests', function () {
             if (signoutErr) {
               return done(signoutErr);
             }
-
             signoutRes.redirect.should.equal(true);
             signoutRes.text.should.equal('Found. Redirecting to /');
-
             return done();
           });
       });
   });
-
   it('should be able to login successfully using email and logout successfully', function (done) {
     agent
       .post('/api/auth/signin')
@@ -394,15 +437,12 @@ describe('User signup and authentication CRUD tests', function () {
             if (signoutErr) {
               return done(signoutErr);
             }
-
             signoutRes.redirect.should.equal(true);
             signoutRes.text.should.equal('Found. Redirecting to /');
-
             return done();
           });
       });
   });
-
   it('should reject signin with an unknown username', function (done) {
     agent
       .post('/api/auth/signin')
@@ -415,12 +455,10 @@ describe('User signup and authentication CRUD tests', function () {
         if (signinErr) {
           return done(signinErr);
         }
-
         signinRes.body.message.should.equal('Unknown user or invalid password');
         done();
       });
   });
-
   it('should reject signin with an invalid password', function (done) {
     agent
       .post('/api/auth/signin')
@@ -433,15 +471,12 @@ describe('User signup and authentication CRUD tests', function () {
         if (signinErr) {
           return done(signinErr);
         }
-
         signinRes.body.message.should.equal('Unknown user or invalid password');
         done();
       });
   });
-
   it('should not be able to login successfully if user has "suspended" role', function (done) {
     confirmedUser.roles = ['user', 'suspended'];
-
     confirmedUser.save(function (err) {
       should.not.exist(err);
       agent
@@ -453,16 +488,13 @@ describe('User signup and authentication CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           signinRes.body.message.should.equal(
             'Your account has been suspended.',
           );
-
           return done();
         });
     });
   });
-
   it('should invalidate sessions of authenticated user with "suspended" role and return error for json requests', function (done) {
     agent
       .post('/api/auth/signin')
@@ -492,7 +524,6 @@ describe('User signup and authentication CRUD tests', function () {
               if (err) {
                 return done(err);
               }
-
               res.body.message.should.equal('Your account has been suspended.');
 
               // Load some json from API again,
@@ -505,16 +536,13 @@ describe('User signup and authentication CRUD tests', function () {
                   if (err) {
                     return done(err);
                   }
-
                   res.body.message.should.equal('Forbidden.');
-
                   return done();
                 });
             });
         });
       });
   });
-
   it('should invalidate sessions of authenticated user with "suspended" role and return error page for text/html requests', function (done) {
     agent
       .post('/api/auth/signin')
@@ -559,14 +587,12 @@ describe('User signup and authentication CRUD tests', function () {
                   if (err) {
                     return done(err);
                   }
-
                   return done();
                 });
             });
         });
       });
   });
-
   context('logged in as a confirmed user', function () {
     beforeEach(function (done) {
       agent
@@ -580,7 +606,6 @@ describe('User signup and authentication CRUD tests', function () {
           done();
         });
     });
-
     it('should not resend confirmation token', function (done) {
       agent
         .post('/api/auth/resend-confirmation')
@@ -592,13 +617,11 @@ describe('User signup and authentication CRUD tests', function () {
           done();
         });
     });
-
     context('with changed email address', function () {
       beforeEach(function (done) {
         confirmedUser.emailTemporary = 'confirmed-test-changed@example.org';
         confirmedUser.save(done);
       });
-
       it('should resend confirmation token for email change', function (done) {
         agent
           .post('/api/auth/resend-confirmation')
@@ -618,7 +641,6 @@ describe('User signup and authentication CRUD tests', function () {
       });
     });
   });
-
   context('logged in as un-confirmed user', function () {
     beforeEach(function (done) {
       agent
@@ -632,7 +654,6 @@ describe('User signup and authentication CRUD tests', function () {
           done();
         });
     });
-
     it('should resend confirmation token', function (done) {
       agent
         .post('/api/auth/resend-confirmation')
@@ -642,7 +663,9 @@ describe('User signup and authentication CRUD tests', function () {
           if (err) return done(err);
           resendRes.body.message.should.equal('Sent confirmation email.');
           User.findOne(
-            { username: _unConfirmedUser.username.toLowerCase() },
+            {
+              username: _unConfirmedUser.username.toLowerCase(),
+            },
             'emailToken',
             function (err, userRes) {
               if (err) return done(err);

@@ -2,7 +2,7 @@
  * Module dependencies.
  */
 import _ from 'lodash';
-import errorService from '../../../core/server/services/error.server.service.js';
+import errorService from './../../../core/server/services/error.server.service.mjs';
 import mongoose from 'mongoose';
 const Thread = mongoose.model('Thread');
 
@@ -15,11 +15,8 @@ export const getThreads = async (req, res) => {
   const userId = req.userIdFromUsername || _.get(req, ['body', 'userId']);
 
   // Check that provided ID is valid
-  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
-  }
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId))
+    return errorService.sendInvalidId(res);
 
   Thread.aggregate([
     {
@@ -27,9 +24,13 @@ export const getThreads = async (req, res) => {
       $match: {
         $or: [
           // eslint-disable-next-line new-cap
-          { userFrom: new mongoose.Types.ObjectId(userId) },
+          {
+            userFrom: new mongoose.Types.ObjectId(userId),
+          },
           // eslint-disable-next-line new-cap
-          { userTo: new mongoose.Types.ObjectId(userId) },
+          {
+            userTo: new mongoose.Types.ObjectId(userId),
+          },
         ],
       },
     },
@@ -64,17 +65,19 @@ export const getThreads = async (req, res) => {
       },
     },
     {
-      $sort: { updated: -1 },
+      $sort: {
+        updated: -1,
+      },
     },
   ]).exec((err, threads) => {
     if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err),
-      });
+      return errorService.sendBadRequest(res, err);
     }
-
     return res.send(threads);
   });
 };
-
-export default { getThreads };
+const defaultInterop = {
+  getThreads,
+};
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

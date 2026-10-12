@@ -1,8 +1,12 @@
 import axios, {
   getErrorResponse,
 } from '../../../core/client/api/http-client.js';
-import type { Experience, ExperienceMine } from '../experiences.prop-types';
-import type { CreateExperienceRequest } from '../../shared/experience';
+import type {
+  Experience,
+  ExperienceMine,
+  ExperienceCount,
+  CreateExperienceRequest,
+} from '../../shared/experience';
 
 export type { CreateExperienceRequest } from '../../shared/experience';
 
@@ -21,8 +25,8 @@ interface UserWith {
  */
 export async function create(
   experience: CreateExperienceRequest,
-): Promise<Experience> {
-  const { data: responseExperience } = await axios.post(
+): Promise<ExperienceMine> {
+  const { data: responseExperience } = await axios.post<ExperienceMine>(
     '/api/experiences',
     experience,
   );
@@ -37,9 +41,12 @@ export async function create(
  * @returns {array} - array of experience objects, which include the "responses" to them where exist
  */
 export async function read({ userTo }: UserTarget): Promise<Experience[]> {
-  const { data: experiences } = await axios.get('/api/experiences', {
-    params: { userTo },
-  });
+  const { data: experiences } = await axios.get<Experience[]>(
+    '/api/experiences',
+    {
+      params: { userTo },
+    },
+  );
   return experiences;
 }
 
@@ -60,9 +67,12 @@ export async function readMine({
 }: UserWith): Promise<ExperienceMine | null> {
   const params = { userWith };
   try {
-    const { data: experience } = await axios.get('/api/my-experience', {
-      params,
-    });
+    const { data: experience } = await axios.get<ExperienceMine>(
+      '/api/my-experience',
+      {
+        params,
+      },
+    );
     return experience;
   } catch (err: unknown) {
     if (getErrorResponse(err)?.status === 404) {
@@ -79,13 +89,14 @@ export async function readMine({
  * @param {string} userTo - id of the user with whom the experiences were shared
  * @returns {object} - Number of experiences as `{count: Int, hasPending: Bool}`
  */
-export async function getCount(
-  userTo: string,
-): Promise<{ count: number; hasPending?: boolean }> {
+export async function getCount(userTo: string): Promise<ExperienceCount> {
   try {
-    const { data } = await axios.get('/api/experiences/count', {
-      params: { userTo },
-    });
+    const { data } = await axios.get<ExperienceCount>(
+      '/api/experiences/count',
+      {
+        params: { userTo },
+      },
+    );
     return data;
   } catch {
     return { count: 0 };

@@ -3,12 +3,12 @@
  */
 
 const async = require('async');
-const mongooseService = require('../../config/lib/mongoose');
+const mongooseService = require('./../../config/lib/mongoose.mjs');
 const mongoose = require('mongoose');
 // userModels = require(path.resolve('./modules/users/server/models/user.server.model')),
 // User = mongoose.model('User'),
 // eslint-disable-next-line no-unused-vars
-const contactModels = require('../../modules/contacts/server/models/contacts.server.model');
+const contactModels = require('./../../modules/contacts/server/models/contacts.server.model.mjs');
 const Contact = mongoose.model('Contact');
 
 exports.up = function (next) {

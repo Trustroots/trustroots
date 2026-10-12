@@ -5,8 +5,8 @@ const should = require('should');
 const influx = require('influx');
 const sinon = require('sinon');
 
-const statsService = require('../../server/services/stats.server.service');
-const config = require('../../../../config/config');
+const statsService = require('./../../server/services/stats.server.service.mjs');
+const config = require('./../../../../config/config.mjs');
 
 describe('Stat API integration tests', function () {
   // restoring stubs

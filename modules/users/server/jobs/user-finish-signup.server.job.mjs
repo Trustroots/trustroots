@@ -1,7 +1,7 @@
 import _ from 'lodash';
-import emailService from '../../../core/server/services/email.server.service.js';
-import config from '../../../../config/config.js';
-import log from '../../../../config/lib/logger.js';
+import emailService from './../../../core/server/services/email.server.service.mjs';
+import config from './../../../../config/config.mjs';
+import log from './../../../../config/lib/logger.mjs';
 import async from 'async';
 import moment from 'moment';
 import mongoose from 'mongoose';
@@ -21,25 +21,33 @@ import mongoose from 'mongoose';
  */
 
 const User = mongoose.model('User');
-
 const defaultExport = function (job, agendaDone) {
   async.waterfall(
     [
       // Find un-confirmed users
       function (done) {
         // Ignore very recently signed up users
-        const createdTimeAgo = moment().subtract(moment.duration({ hours: 4 }));
+        const createdTimeAgo = moment().subtract(
+          moment.duration({
+            hours: 4,
+          }),
+        );
 
         // Ignore very recently reminded users
-        const remindedTimeAgo = moment().subtract(moment.duration({ days: 2 }));
-
+        const remindedTimeAgo = moment().subtract(
+          moment.duration({
+            days: 2,
+          }),
+        );
         User.find({
           public: false,
           created: {
             $lt: createdTimeAgo,
           },
           // Exclude users with restricted roles.
-          roles: { $nin: ['suspended', 'shadowban'] },
+          roles: {
+            $nin: ['suspended', 'shadowban'],
+          },
         })
           .and([
             {
@@ -49,13 +57,25 @@ const defaultExport = function (job, agendaDone) {
                     $lt: config.limits.maxSignupReminders || 3,
                   },
                 },
-                { publicReminderCount: { $exists: false } },
+                {
+                  publicReminderCount: {
+                    $exists: false,
+                  },
+                },
               ],
             },
             {
               $or: [
-                { publicReminderSent: { $lt: remindedTimeAgo } },
-                { publicReminderSent: { $exists: false } },
+                {
+                  publicReminderSent: {
+                    $lt: remindedTimeAgo,
+                  },
+                },
+                {
+                  publicReminderSent: {
+                    $exists: false,
+                  },
+                },
               ],
             },
           ])
@@ -64,14 +84,12 @@ const defaultExport = function (job, agendaDone) {
             done(err, users);
           });
       },
-
       // Send emails
       function (users, done) {
         // No users to send emails to
         if (!users.length) {
           return done();
         }
-
         async.eachSeries(
           users,
           function (user, callback) {
@@ -119,3 +137,4 @@ const defaultExport = function (job, agendaDone) {
   );
 };
 export default defaultExport;
+export { defaultExport as 'module.exports' };

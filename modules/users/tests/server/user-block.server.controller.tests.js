@@ -8,8 +8,8 @@
  */
 const mongoose = require('mongoose');
 
-const blockController = require('../../server/controllers/users.block.server.controller');
-const errorService = require('../../../core/server/services/error.server.service');
+const blockController = require('./../../server/controllers/users.block.server.controller.mjs');
+const errorService = require('./../../../core/server/services/error.server.service.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 

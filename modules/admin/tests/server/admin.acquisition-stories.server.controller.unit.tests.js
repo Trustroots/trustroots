@@ -5,7 +5,7 @@ const should = require('should');
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const adminAcquisitionStories = require('../../server/controllers/admin.acquisition-stories.server.controller');
+const adminAcquisitionStories = require('./../../server/controllers/admin.acquisition-stories.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
@@ -161,6 +161,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       this.timeout(30000);
       const stories = Array.from({ length: 500 }, (_, index) => ({
         _id: `visitor-${index}`,
+        roles: ['user'],
         username: `visitor${index}`,
         email: `visitor${index}@example.test`,
         emailTemporary: '',
@@ -169,6 +170,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       }));
       const restrictedUsers = Array.from({ length: 1000 }, (_, index) => ({
         _id: `restricted-${index}`,
+        roles: ['user', 'suspended'],
         username: `restricted${index}`,
         email: `restricted${index}@example.test`,
         emailTemporary: '',
@@ -306,7 +308,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       users[5].username = 'temporary-match-user';
       users[5].email = 'other@example.test';
       users[5].emailTemporary = 'temporary-clue@example.test';
-      users[5].roles = ['user', 'shadowban'];
+      users[5].roles = ['user', 'shadowban', 'suspended', 'volunteer'];
       users[5].acquisitionStory = 'Yet another unrelated source.';
 
       await utils.saveUsers(users);
@@ -318,6 +320,19 @@ describe('Admin acquisition stories controller unit tests', () => {
         user => user.username === 'identifier-clue-copy',
       );
       story.restrictedMatches.should.have.length(3);
+      story.restrictionStatuses.should.deepEqual([]);
+      res.body
+        .find(user => user.username === 'identifierclue')
+        .restrictionStatuses.should.deepEqual(['shadowban']);
+      res.body
+        .find(user => user.username === 'email-match-user')
+        .restrictionStatuses.should.deepEqual(['suspended']);
+      res.body
+        .find(user => user.username === 'temporary-match-user')
+        .restrictionStatuses.should.deepEqual(['suspended', 'shadowban']);
+      story.restrictedMatches
+        .find(user => user.username === 'temporary-match-user')
+        .restrictionStatuses.should.deepEqual(['suspended', 'shadowban']);
       should(
         story.restrictedMatches.find(
           user => user.username === 'exact-story-user',
@@ -339,8 +354,9 @@ describe('Admin acquisition stories controller unit tests', () => {
         .matchReasons.should.deepEqual(['Temporary email identifier']);
       story.restrictedMatches.forEach(match => {
         should(match.email).be.undefined();
+        should(match.roles).be.undefined();
         ['shadowban', 'suspended']
-          .some(role => match.roles.includes(role))
+          .some(role => match.restrictionStatuses.includes(role))
           .should.equal(true);
       });
     });
@@ -438,120 +454,6 @@ describe('Admin acquisition stories controller unit tests', () => {
       await adminAcquisitionStories.list({}, res);
 
       res.body.should.eql([]);
-    });
-  });
-
-  describe('getAnalysis', () => {
-    const acquisitionStories = [
-      '123',
-      'Google',
-      'facebook',
-      'googling',
-      'googl',
-      'singles',
-      'ws',
-      'warmshower',
-      'www.warmshowers.com',
-      'warm showers',
-      'something else ... :)',
-      'example.org',
-      'http://example.org',
-      'www example org',
-      'www.example.org',
-    ];
-
-    beforeEach(async () => {
-      const users = utils
-        .generateUsers(acquisitionStories.length)
-        .map((user, index) => {
-          user.acquisitionStory = acquisitionStories[index];
-          return user;
-        });
-
-      await utils.saveUsers(users);
-    });
-
-    it('returns frequency analysis with expected shape', async () => {
-      const find = sinon.spy(User, 'find');
-      const res = mockResponse();
-      await adminAcquisitionStories.getAnalysis({}, res);
-
-      find.firstCall.returnValue.options.limit.should.equal(3000);
-      should.exist(res.body);
-      should(res.body).have.property('table');
-      should(res.body).have.property('size');
-      should(res.body).have.property('sum');
-      should(res.body).have.property('x2');
-      should(res.body).have.property('df');
-      should(res.body).have.property('entropy');
-      res.body.table.should.be.an.Array();
-      res.body.table.length.should.be.above(0);
-      should(res.body.table[0]).have.property('category');
-      should(res.body.table[0]).have.property('observed');
-      should(res.body.table[0]).have.property('percentage');
-      should(res.body.table[0]).have.property('expected');
-    });
-
-    it('normalizes synonyms, compounds, typos, and domains', async () => {
-      const res = mockResponse();
-      await adminAcquisitionStories.getAnalysis({}, res);
-
-      const categories = res.body.table.map(row => row.category);
-
-      categories.should.containEql('google');
-      categories.should.containEql('facebook');
-      categories.should.containEql('warmshowers');
-      categories.should.containEql('example');
-      categories.should.containEql('single');
-      categories.should.containEql('something');
-    });
-
-    it('corrects one edit but does not treat a transposition as one edit', async () => {
-      const stories = [
-        'community',
-        'comunity',
-        'commuunity',
-        'commanity',
-        'commuinty',
-        'coxxunity',
-      ].map(acquisitionStory => ({ acquisitionStory }));
-      const storyQuery = {
-        exec: sinon.stub().resolves(stories),
-      };
-      storyQuery.sort = sinon.stub().returns(storyQuery);
-      storyQuery.limit = sinon.stub().returns(storyQuery);
-      sinon.stub(User, 'find').returns(storyQuery);
-
-      const res = mockResponse();
-      await adminAcquisitionStories.getAnalysis({}, res);
-
-      const counts = Object.fromEntries(
-        res.body.table.map(({ category, observed }) => [category, observed]),
-      );
-      counts.community.should.equal(4);
-      counts.commuinty.should.equal(1);
-      counts.coxxunity.should.equal(1);
-    });
-
-    it('ignores URL tokens that cannot be parsed', async () => {
-      sinon.stub(global, 'URL').callsFake(() => {
-        throw new TypeError('invalid URL');
-      });
-      const storyQuery = {
-        exec: sinon
-          .stub()
-          .resolves([{ acquisitionStory: 'https://example.com' }]),
-      };
-      storyQuery.sort = sinon.stub().returns(storyQuery);
-      storyQuery.limit = sinon.stub().returns(storyQuery);
-      sinon.stub(User, 'find').returns(storyQuery);
-
-      const res = mockResponse();
-      await adminAcquisitionStories.getAnalysis({}, res);
-
-      should.exist(res.body);
-      res.body.table.should.be.an.Array();
-      res.body.table.should.have.length(0);
     });
   });
 });

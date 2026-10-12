@@ -158,3 +158,116 @@ fetched PR commits SHALL be used solely as diff data.
 - **THEN** all open PRs below that number receive updated line-change tables
 - **AND** existing coverage content is retained
 - **AND** only trusted main-branch report code executes
+
+### Requirement: Shared API contracts check payload construction
+
+The project SHALL strictly check the server payload construction and client
+consumption of the staff-blocker and experience APIs against shared contracts.
+The experience contracts SHALL represent private payloads and reciprocal
+responses without claiming that hidden fields are present.
+
+#### Scenario: A server payload drifts from its shared contract
+
+- **WHEN** a checked payload builder returns an incompatible field or omits a required field
+- **THEN** the blocking typecheck command fails
+
+#### Scenario: A client misuses an API response
+
+- **WHEN** a client treats a reciprocal experience response as a complete experience or assumes private feedback is present
+- **THEN** the blocking typecheck command fails
+
+#### Scenario: Contract checking preserves runtime behaviour
+
+- **WHEN** the server constructs a staff-blocker or experience response
+- **THEN** existing HTTP shapes and privacy filtering remain unchanged
+- **AND** existing client/server coverage requirements and end-to-end scenarios are retained
+
+### Requirement: Pull request dependency summary
+
+The automated pull request overview SHALL show added, removed, changed and net counts for direct runtime dependencies, direct development dependencies and resolved lockfile entries alongside line changes. It SHALL compare the PR merge base with its head, retain coverage content when refreshed, and list changed dependency declarations and resolved versions. Trusted reporting code SHALL parse manifests and lockfiles as data without executing PR code. Reports SHALL explain that lockfile entries count installed paths, including duplicates, and do not measure production-image pruning.
+
+#### Scenario: Dependency removal and version update
+
+- **WHEN** a PR removes a direct dependency and updates a resolved version
+- **THEN** the overview reports the removal and update separately
+- **AND** it lists the affected dependency names and before/after values
+
+#### Scenario: Manifest or lockfile is absent
+
+- **WHEN** a compared commit lacks a manifest or lockfile
+- **THEN** its dependency inventory is empty for that file
+- **AND** added or removed entries remain visible
+
+#### Scenario: Refresh and merge-base comparison
+
+- **WHEN** the overview is refreshed after the base branch advances
+- **THEN** it compares against the merge base without counting unrelated base work
+- **AND** the same comment contains one dependency summary and retains coverage content
+
+### Requirement: Production image dependency inventory
+
+The production image job SHALL inventory application npm packages from the built image after pruning. The overview SHALL show installed-path and unique name/version counts and provide a complete inventory artifact. It SHALL explicitly report an unavailable inventory when the image job is skipped or fails, and SHALL NOT infer installed packages from the source lockfile or claim an image-to-image delta without a baseline image inventory.
+
+#### Scenario: Image built successfully
+
+- **WHEN** the production image is built
+- **THEN** CI collects package metadata from its actual application node_modules directory
+- **AND** the overview shows installed and unique package counts with a downloadable inventory
+
+#### Scenario: Image inventory unavailable
+
+- **WHEN** the image is not built or its inventory cannot be collected
+- **THEN** the overview states that its installed inventory is unavailable
+- **AND** lockfile counts remain labelled separately
+
+### Requirement: Browser-facing message offer and profile contracts
+
+The project SHALL share strict request and response contracts between browser-facing messages, offers and profile client APIs and checked JavaScript server payload builders, preserving existing HTTP shapes, validation and privacy rules.
+
+#### Scenario: An implementation drifts from its contract
+
+- **WHEN** a checked request or response builder constructs an incompatible field
+- **THEN** the blocking type-check command fails
+
+#### Scenario: Responses vary by visibility or endpoint
+
+- **WHEN** clients consume deleted message participants, offer GeoJSON or public and own profiles
+- **THEN** their types represent the actual response variants and omitted private fields
+- **AND** runtime sanitisation and location privacy remain unchanged
+
+#### Scenario: Message pagination uses native URL parsing
+
+- **WHEN** a message response supplies a Link header
+- **THEN** the client extracts the next relation's query parameters without a third-party Link-header parser
+- **AND** relative and absolute links, repeated query values, absent next links and the existing 2,000-character limit retain their behaviour
+
+### Requirement: All client tests use strict TypeScript
+
+All module client tests and client-specific test utilities SHALL use TypeScript and be included in strict checking, linting and existing test discovery, without reducing assertions or coverage.
+
+#### Scenario: A test fixture or mock violates a contract
+
+- **WHEN** strict test type-checking runs
+- **THEN** incompatible typed fixtures and mocks fail checking without blanket diagnostic suppressions
+
+#### Scenario: The migrated suite runs
+
+- **WHEN** the client tests and coverage run
+- **THEN** all previous scenarios remain discoverable and covered
+- **AND** established client and server coverage requirements remain satisfied
+
+### Requirement: Shared runtime modules and data fixtures use strict TypeScript
+
+The project SHALL check shared support constants, route policies and common/server data fixture implementations with strict TypeScript. Native server loading SHALL use Node 24 built-in type stripping without an additional compiler dependency, while legacy CommonJS fixture entry points remain compatible.
+
+#### Scenario: A route policy or fixture violates its declared shape
+
+- **WHEN** type checking runs against the shared modules and fixture helpers
+- **THEN** incompatible policy values, fixture overrides and helper results fail checking without blanket diagnostic suppressions
+
+#### Scenario: Native and browser consumers load the migrated modules
+
+- **WHEN** Jest, the production bundle or the native server runner loads a migrated module
+- **THEN** the existing exported values and functions remain available
+- **AND** route access rules, support text and fixture defaults retain their behaviour
+- **AND** existing coverage thresholds and end-to-end scenarios remain satisfied

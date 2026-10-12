@@ -1,17 +1,20 @@
 /** Unit tests for the OAuth helpers of the authentication controller. */
 const crypto = require('crypto');
 const mongoose = require('mongoose');
+const mockModule = require('../../../../testutils/server/mock-module');
 const sinon = require('sinon');
 const winston = require('winston');
 const should = require('should');
 
 const testutils = require('../../../../testutils/server/server.testutil');
-require('../../server/models/user.server.model');
-const authController = require('../../server/controllers/users.authentication.server.controller');
+require('./../../server/models/user.server.model.mjs');
+const authController = require('./../../server/controllers/users.authentication.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 const User = mongoose.model('User');
+const controllerPath =
+  '../../server/controllers/users.authentication.server.controller.mjs';
 
 function stubControllerDependencies(dependencyStubs) {
   for (const [dependencyPath, methods] of Object.entries(dependencyStubs)) {
@@ -258,7 +261,7 @@ describe('Authentication controller OAuth unit tests', () => {
 
     it('returns 400 when resending the confirmation email fails', async () => {
       const controller = stubControllerDependencies({
-        '../../../core/server/services/email.server.service': {
+        './../../../core/server/services/email.server.service.mjs': {
           sendSignupEmailConfirmation: (user, cb) => cb(new Error('smtp down')),
         },
       });
@@ -333,7 +336,7 @@ describe('Authentication controller OAuth unit tests', () => {
   describe('signup', () => {
     function loadSignupController() {
       return stubControllerDependencies({
-        '../../../core/server/services/email.server.service': {
+        './../../../core/server/services/email.server.service.mjs': {
           sendSignupEmailConfirmation: (user, cb) => cb(),
         },
       });
@@ -434,6 +437,30 @@ describe('Authentication controller OAuth unit tests', () => {
       );
     });
 
+    it('returns retryable service unavailable when password hashing is overloaded', async () => {
+      const overload = Object.assign(
+        new Error('Password service is temporarily busy. Please try again.'),
+        { code: 'KDF_OVERLOADED', userFacing: true },
+      );
+      const controller = mockModule(require.resolve(controllerPath), {
+        async: {
+          waterfall(steps, done) {
+            done(overload);
+          },
+        },
+        '../../../stats/server/services/stats.server.service.mjs': {
+          stat: (statsObject, callback) => callback(),
+        },
+      });
+      const res = deferredResponse();
+
+      controller.signup({ body: {} }, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(503);
+      res.body.message.should.equal(overload.message);
+    });
+
     it('creates a user and logs them in', async () => {
       const controller = loadSignupController();
       const res = deferredResponse();
@@ -458,7 +485,7 @@ describe('Authentication controller OAuth unit tests', () => {
         .stub()
         .callsFake((user, matchedKeywords, callback) => callback());
       const controller = stubControllerDependencies({
-        '../../../core/server/services/email.server.service': {
+        './../../../core/server/services/email.server.service.mjs': {
           sendFlaggedSignupAlert,
           sendSignupEmailConfirmation: (user, callback) => callback(),
         },
@@ -492,7 +519,7 @@ describe('Authentication controller OAuth unit tests', () => {
         return this;
       });
       const controller = stubControllerDependencies({
-        '../../../core/server/services/email.server.service': {
+        './../../../core/server/services/email.server.service.mjs': {
           sendFlaggedSignupAlert: (user, matchedKeywords, callback) =>
             callback(new Error('alert mail failed')),
           sendSignupEmailConfirmation: (user, callback) => callback(),
@@ -531,7 +558,7 @@ describe('Authentication controller OAuth unit tests', () => {
             done(null);
           },
         },
-        '../../../stats/server/services/stats.server.service': {
+        './../../../stats/server/services/stats.server.service.mjs': {
           stat: (statsObject, callback) => callback(),
         },
       });
@@ -573,7 +600,7 @@ describe('Authentication controller OAuth unit tests', () => {
             done({ errors: {} });
           },
         },
-        '../../../stats/server/services/stats.server.service': {
+        './../../../stats/server/services/stats.server.service.mjs': {
           stat: (statsObject, callback) => {
             stats = statsObject;
             callback();
@@ -622,6 +649,21 @@ describe('Authentication controller OAuth unit tests', () => {
       controller.signin({}, res, () => {});
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+    });
+
+    it('returns retryable service unavailable for password hash overload', async () => {
+      const overload = Object.assign(new Error('busy'), {
+        code: 'KDF_OVERLOADED',
+      });
+      const controller = loadSigninController(() => [overload, null, null]);
+      const res = deferredResponse();
+
+      controller.signin({}, res, () => {});
+      await res.waitForResponse();
+      res.statusCode.should.equal(503);
+      res.body.message.should.equal(
+        'Password service is temporarily busy. Please try again.',
+      );
     });
 
     it('rejects suspended users', async () => {

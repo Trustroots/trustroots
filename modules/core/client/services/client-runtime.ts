@@ -1,4 +1,4 @@
-import { matchReactRoute } from '@/modules/core/shared/react-route-ownership';
+import { matchReactRoute } from '@/modules/core/shared/react-route-ownership.mts';
 import { navigateTo } from '@/modules/core/client/react-app/shell-helpers';
 
 const STATE_TARGETS: Record<string, string> = {
@@ -148,6 +148,11 @@ export function trackEvent(
   return undefined;
 }
 
-export function getCurrentUser(): NonNullable<Window['user']> | null {
+type CurrentUser = Pick<
+  NonNullable<Window['user']>,
+  '_id' | 'id' | 'public' | 'roles' | 'username' | 'languages'
+>;
+
+export function getCurrentUser(): CurrentUser | null {
   return window.user || null;
 }

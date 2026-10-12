@@ -57,6 +57,9 @@ export default function Team({ user }: { user?: PageUser | null }) {
               </em>
             </p>
             <small className="text-muted">{t('African proverb')}</small>
+            <p>
+              <a href="/team/greeters">{t('Meet our greeters')}</a>
+            </p>
             <hr />
           </div>
         </div>

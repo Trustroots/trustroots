@@ -2,7 +2,7 @@
 /* eslint-disable no-console */
 
 const nodemon = require('nodemon');
-const assets = require('../config/assets/default').server;
+const assets = require('./../config/assets/default.mjs').server;
 
 const worker = process.argv[2] === 'worker';
 const name = worker ? 'Worker' : 'Server';

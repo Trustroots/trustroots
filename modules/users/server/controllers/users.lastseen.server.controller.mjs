@@ -1,20 +1,18 @@
 import mongoose from 'mongoose';
 import moment from 'moment';
 import net from 'net';
-import config from '../../../../config/config.js';
+import config from './../../../../config/config.mjs';
 
 /**
  * Module dependencies.
  */
 
 const User = mongoose.model('User');
-
 function getClientIpAddress(req) {
   // Passenger creates this secure header after Nginx has restored a Cloudflare
   // visitor address. Do not trust ordinary forwarding headers from clients.
   const passengerClientAddress = req.get('!~Passenger-Client-Address');
   const clientIpAddress = passengerClientAddress || req.ip;
-
   return net.isIP(clientIpAddress) ? clientIpAddress : undefined;
 }
 
@@ -54,7 +52,7 @@ const defaultExport = function (req, res, next) {
     return next();
   }
 };
-
 defaultExport.getClientIpAddress = getClientIpAddress;
 export default defaultExport;
 export { getClientIpAddress };
+export { defaultExport as 'module.exports' };

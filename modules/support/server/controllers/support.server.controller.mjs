@@ -1,14 +1,14 @@
 /**
  * Module dependencies.
  */
-import textService from '../../../core/server/services/text.server.service.js';
-import emailService from '../../../core/server/services/email.server.service.js';
-import statService from '../../../stats/server/services/stats.server.service.js';
-import log from '../../../../config/lib/logger.js';
-import config from '../../../../config/config.js';
+import textService from './../../../core/server/services/text.server.service.mjs';
+import emailService from './../../../core/server/services/email.server.service.mjs';
+import statService from './../../../stats/server/services/stats.server.service.mjs';
+import log from './../../../../config/lib/logger.mjs';
+import config from './../../../../config/config.mjs';
 import mongoose from 'mongoose';
 import validator from 'validator';
-import { SUPPORT_CATEGORIES } from '../../shared/categories.js';
+import { SUPPORT_CATEGORIES } from '../../shared/categories.ts';
 const SupportRequest = mongoose.model('SupportRequest');
 
 /**
@@ -25,9 +25,9 @@ export const supportRequest = function (req, res) {
     typeof category !== 'string' ||
     !Object.prototype.hasOwnProperty.call(SUPPORT_CATEGORIES, category)
   ) {
-    return res
-      .status(400)
-      .send({ message: 'Please select a valid support category.' });
+    return res.status(400).send({
+      message: 'Please select a valid support category.',
+    });
   }
   const build =
     req.app &&
@@ -38,7 +38,6 @@ export const supportRequest = function (req, res) {
   // Prepare support request variables for the email template
   const supportRequestData = {
     category,
-    /* eslint-disable key-spacing */
     message: req.body.message ? textService.plainText(req.body.message) : '—',
     username: req.user
       ? req.user.username
@@ -60,9 +59,7 @@ export const supportRequest = function (req, res) {
         ? textService.plainText(req.body.reportMember)
         : false,
     build: build || false,
-    /* eslint-enable key-spacing */
   };
-
   const replyTo = {
     // Trust registered user's email, otherwise validate it
     // Default to TO-support email
@@ -91,7 +88,6 @@ export const supportRequest = function (req, res) {
   if (supportRequestData.reportMember) {
     storedSupportRequestData.reportMember = supportRequestData.reportMember;
   }
-
   const supportRequest = new SupportRequest(storedSupportRequestData);
 
   // Save support request to db
@@ -111,17 +107,14 @@ export const supportRequest = function (req, res) {
           log('error', 'Failed sending support request via email. #49ghsd', {
             error: emailServiceErr,
           });
-
           return res.status(400).send({
             message:
               'Failure while sending your support request. Please try again.',
           });
         }
-
         res.json({
           message: 'Support request sent.',
         });
-
         const statsObject = {
           namespace: 'supportRequest',
           counts: {
@@ -133,7 +126,6 @@ export const supportRequest = function (req, res) {
             type: supportRequestData.reportMember ? 'reportMember' : 'normal',
           },
         };
-
         statService.stat(statsObject, function () {
           log(
             'info',
@@ -144,5 +136,8 @@ export const supportRequest = function (req, res) {
     );
   });
 };
-
-export default { supportRequest };
+const defaultInterop = {
+  supportRequest,
+};
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

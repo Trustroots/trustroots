@@ -3,9 +3,8 @@ const request = require('supertest');
 const async = require('async');
 const moment = require('moment');
 const mongoose = require('mongoose');
-const express = require('../../../../config/lib/express');
+const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
-
 const User = mongoose.model('User');
 const Offer = mongoose.model('Offer');
 const Tribe = mongoose.model('Tribe');
@@ -32,7 +31,6 @@ let tribe1;
 let tribe2;
 let tribe1Id;
 let tribe2Id;
-
 const testLocations = {
   Europe: {
     queryBoundingBox:
@@ -73,13 +71,13 @@ const testLocations = {
  */
 describe('Offer CRUD tests', function () {
   before(function (done) {
-    // Get application
-    app = express.init(mongoose.connection);
-    agent = request.agent(app);
-
-    done();
+    (async () => {
+      // Get application
+      app = await express.init(mongoose.connection);
+      agent = request.agent(app);
+      done();
+    })().catch(done);
   });
-
   beforeEach(function (doneBeforeEach) {
     // Create user credentials
     credentials = {
@@ -143,7 +141,6 @@ describe('Offer CRUD tests', function () {
       location: testLocations.Europe.location,
       showOnlyInMyCircles: false,
     };
-
     offer2 = new Offer({
       type: 'host',
       status: 'yes',
@@ -153,7 +150,6 @@ describe('Offer CRUD tests', function () {
       updated: new Date(),
       location: [52.498981209298776, 13.418329954147339],
     });
-
     offer3 = new Offer({
       type: 'host',
       status: 'yes',
@@ -163,7 +159,6 @@ describe('Offer CRUD tests', function () {
       updated: new Date(),
       location: [52.49898120929877, 13.41832995414733],
     });
-
     offerMeet = new Offer({
       type: 'meet',
       description: '<p>Dinner party!</p>',
@@ -171,7 +166,6 @@ describe('Offer CRUD tests', function () {
       updated: new Date(),
       location: [52.49898120929888, 13.41832995414744],
     });
-
     tribe1 = new Tribe({
       slug: 'tribe1',
       label: 'tribe1',
@@ -180,7 +174,6 @@ describe('Offer CRUD tests', function () {
       count: 1,
       public: true,
     });
-
     tribe2 = new Tribe({
       slug: 'tribe2',
       label: 'tribe2',
@@ -261,9 +254,7 @@ describe('Offer CRUD tests', function () {
       },
     );
   });
-
   afterEach(utils.clearDatabase);
-
   describe('Read offer by offer id:', function () {
     it('should not be able to read offer by offer id if not authenticated', function (done) {
       agent
@@ -276,7 +267,6 @@ describe('Offer CRUD tests', function () {
           return done(offerSaveErr);
         });
     });
-
     it('should be able to read offers of other users by offer id when authenticated', function (done) {
       agent
         .post('/api/auth/signin')
@@ -322,7 +312,6 @@ describe('Offer CRUD tests', function () {
             });
         });
     });
-
     it('should be able to read offers by id and get populated tribes array', function (done) {
       agent
         .post('/api/auth/signin')
@@ -366,7 +355,6 @@ describe('Offer CRUD tests', function () {
         });
     });
   });
-
   describe('Read offer by user id:', function () {
     it('should not be able to read offer by user id if not authenticated', function (done) {
       agent
@@ -379,7 +367,6 @@ describe('Offer CRUD tests', function () {
           return done(offerSaveErr);
         });
     });
-
     it('should be able to read offers of other users by user id when authenticated', function (done) {
       agent
         .post('/api/auth/signin')
@@ -430,7 +417,6 @@ describe('Offer CRUD tests', function () {
         });
     });
   });
-
   describe('Deleting offer', function () {
     it('should not be able to delete offer if not authenticated', function (done) {
       agent
@@ -444,7 +430,6 @@ describe('Offer CRUD tests', function () {
           return done(offerSaveErr);
         });
     });
-
     it('should not be able to delete offer of other user', function (done) {
       agent
         .post('/api/auth/signin')
@@ -462,7 +447,6 @@ describe('Offer CRUD tests', function () {
             .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
-
               Offer.findOne(
                 {
                   _id: offer2Id,
@@ -476,7 +460,6 @@ describe('Offer CRUD tests', function () {
             });
         });
     });
-
     it('should be able to delete offer if authenticated', function (done) {
       agent
         .post('/api/auth/signin')
@@ -494,7 +477,6 @@ describe('Offer CRUD tests', function () {
             .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
-
               Offer.findOne(
                 {
                   _id: offer2Id,
@@ -509,7 +491,6 @@ describe('Offer CRUD tests', function () {
         });
     });
   });
-
   describe('Creating offer', function () {
     it('should not be able to save offer if not authenticated', function (done) {
       agent
@@ -523,7 +504,6 @@ describe('Offer CRUD tests', function () {
           return done(offerSaveErr);
         });
     });
-
     it('should be able to create offer if authenticated', function (done) {
       agent
         .post('/api/auth/signin')
@@ -544,12 +524,10 @@ describe('Offer CRUD tests', function () {
 
               // Set assertions
               offerSaveRes.body.message.should.equal('Offer saved.');
-
               return done();
             });
         });
     });
-
     it('should be able to create offer if authenticated', function (done) {
       agent
         .post('/api/auth/signin')
@@ -610,7 +588,6 @@ describe('Offer CRUD tests', function () {
             });
         });
     });
-
     it('should be able to create offer without status and status should default to "yes"', function (done) {
       agent
         .post('/api/auth/signin')
@@ -619,7 +596,6 @@ describe('Offer CRUD tests', function () {
         .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
-
           const offerWithoutStatus = offer1;
           delete offerWithoutStatus.status;
 
@@ -648,7 +624,6 @@ describe('Offer CRUD tests', function () {
             });
         });
     });
-
     it('should not be able to create offer without type', function (done) {
       agent
         .post('/api/auth/signin')
@@ -657,7 +632,6 @@ describe('Offer CRUD tests', function () {
         .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
-
           const offerWithoutType = offer1;
           delete offerWithoutType.type;
 
@@ -668,16 +642,13 @@ describe('Offer CRUD tests', function () {
             .expect(400)
             .end(function (offerSaveErr, offerSaveRes) {
               if (offerSaveErr) return done(offerSaveErr);
-
               offerSaveRes.body.message.should.equal(
                 'Missing or invalid offer type.',
               );
-
               return done();
             });
         });
     });
-
     it('should not be able to create offer without location', function (done) {
       agent
         .post('/api/auth/signin')
@@ -686,7 +657,6 @@ describe('Offer CRUD tests', function () {
         .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
-
           const offerWithoutLocation = offer1;
           delete offerWithoutLocation.location;
 
@@ -703,7 +673,6 @@ describe('Offer CRUD tests', function () {
             });
         });
     });
-
     it.skip('should be able to set `validUntil`', function (done) {
       agent
         .post('/api/auth/signin')
@@ -712,7 +681,6 @@ describe('Offer CRUD tests', function () {
         .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
-
           offerMeet.validUntil = moment().add(5, 'days').toDate();
 
           // Post offer
@@ -723,23 +691,19 @@ describe('Offer CRUD tests', function () {
             .end(function (offerPostErr) {
               // Handle offer post error
               if (offerPostErr) return done(offerPostErr);
-
               agent
                 .get('/api/offers-by/' + user1Id)
                 .expect(200)
                 .end(function (offersByErr, offers) {
                   if (offersByErr) return done(offersByErr);
-
                   moment(offers.body[0].validUntil)
                     .diff(moment(), 'days')
                     .should.equal(4);
-
                   return done();
                 });
             });
         });
     });
-
     it.skip('should default to 30 days from now when trying to set `validUntil` to past', function (done) {
       agent
         .post('/api/auth/signin')
@@ -748,7 +712,6 @@ describe('Offer CRUD tests', function () {
         .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
-
           offerMeet.validUntil = moment().subtract(5, 'days').toDate();
 
           // Post offer
@@ -759,23 +722,19 @@ describe('Offer CRUD tests', function () {
             .end(function (offerPostErr) {
               // Handle offer post error
               if (offerPostErr) return done(offerPostErr);
-
               agent
                 .get('/api/offers-by/' + user1Id)
                 .expect(200)
                 .end(function (offersByErr, offers) {
                   if (offersByErr) return done(offersByErr);
-
                   moment(offers.body[0].validUntil)
                     .diff(moment(), 'days')
                     .should.equal(29);
-
                   return done();
                 });
             });
         });
     });
-
     it.skip('should default to 30 days from now when trying to set `validUntil` to over 30 days from now', function (done) {
       agent
         .post('/api/auth/signin')
@@ -784,7 +743,6 @@ describe('Offer CRUD tests', function () {
         .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
-
           offerMeet.validUntil = moment().add(32, 'days').toDate();
 
           // Post offer
@@ -795,23 +753,19 @@ describe('Offer CRUD tests', function () {
             .end(function (offerPostErr) {
               // Handle offer post error
               if (offerPostErr) return done(offerPostErr);
-
               agent
                 .get('/api/offers-by/' + user1Id)
                 .expect(200)
                 .end(function (offersByErr, offers) {
                   if (offersByErr) return done(offersByErr);
-
                   moment(offers.body[0].validUntil)
                     .diff(moment(), 'days')
                     .should.equal(29);
-
                   return done();
                 });
             });
         });
     });
-
     it.skip('should default to 30 days from now when not explicitly setting `validUntil`', function (done) {
       agent
         .post('/api/auth/signin')
@@ -820,7 +774,6 @@ describe('Offer CRUD tests', function () {
         .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
-
           delete offerMeet.validUntil;
 
           // Post offer
@@ -831,24 +784,20 @@ describe('Offer CRUD tests', function () {
             .end(function (offerPostErr) {
               // Handle offer post error
               if (offerPostErr) return done(offerPostErr);
-
               agent
                 .get('/api/offers-by/' + user1Id)
                 .expect(200)
                 .end(function (offersByErr, offers) {
                   if (offersByErr) return done(offersByErr);
-
                   moment(offers.body[0].validUntil)
                     .diff(moment(), 'days')
                     .should.equal(29);
-
                   return done();
                 });
             });
         });
     });
   });
-
   describe('Updating offer', function () {
     it('should not be able to update offer if not authenticated', function (done) {
       agent
@@ -862,7 +811,6 @@ describe('Offer CRUD tests', function () {
           return done(offerSaveErr);
         });
     });
-
     it.skip('should be able to update existing offer', function (done) {
       agent
         .post('/api/auth/signin')
@@ -906,9 +854,7 @@ describe('Offer CRUD tests', function () {
                     .end(function (offerPutErr, offerPutRes) {
                       // Handle offer put error
                       if (offerPutErr) return done(offerPutErr);
-
                       offerPutRes.body.message.should.equal('Offer updated.');
-
                       Offer.findOne(
                         {
                           _id: offer._id,
@@ -927,7 +873,6 @@ describe('Offer CRUD tests', function () {
             });
         });
     });
-
     it('should not be able to update offer of other user', function (done) {
       agent
         .post('/api/auth/signin')
@@ -936,7 +881,6 @@ describe('Offer CRUD tests', function () {
         .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
-
           offer2.description = '<p>Not allowed</p>';
 
           // Update offer
@@ -947,7 +891,6 @@ describe('Offer CRUD tests', function () {
             .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
-
               Offer.findOne(
                 {
                   _id: offer2Id,
@@ -961,7 +904,6 @@ describe('Offer CRUD tests', function () {
             });
         });
     });
-
     it('should not able to change offer type when updating offer', function (done) {
       agent
         .post('/api/auth/signin')
@@ -1001,11 +943,9 @@ describe('Offer CRUD tests', function () {
                     .end(function (offerSaveErr, offerSaveRes) {
                       // Handle offer save error
                       if (offerSaveErr) return done(offerSaveErr);
-
                       offerSaveRes.body.message.should.equal(
                         'You cannot update offer type.',
                       );
-
                       Offer.find(
                         {
                           user: user1Id,
@@ -1022,21 +962,16 @@ describe('Offer CRUD tests', function () {
             });
         });
     });
-
     it.skip('should be able to update `validUntil` value to 31 days from now', function (done) {
       const now = moment();
       const fromNow1 = moment().add(2, 'days');
       const fromNow2 = moment().add(31, 'days');
-
       offerMeet.user = user1Id;
       offerMeet.validUntil = fromNow1.toDate();
-
       offerMeet.save(function (offerMeetErr, offerMeetSaved) {
         // Handle save error
         if (offerMeetErr) return done(offerMeetErr);
-
         moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
-
         agent
           .post('/api/auth/signin')
           .send(credentials)
@@ -1044,7 +979,6 @@ describe('Offer CRUD tests', function () {
           .end(function (signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
-
             offerMeet.validUntil = fromNow2.toDate();
 
             // Update offer
@@ -1055,7 +989,6 @@ describe('Offer CRUD tests', function () {
               .end(function (offerPutErr) {
                 // Handle offer put error
                 if (offerPutErr) return done(offerPutErr);
-
                 Offer.findOne(
                   {
                     _id: offerMeetSaved._id,
@@ -1064,7 +997,6 @@ describe('Offer CRUD tests', function () {
                     moment(offerNew.validUntil)
                       .diff(now, 'days')
                       .should.equal(30);
-
                     return done(err);
                   },
                 );
@@ -1072,19 +1004,14 @@ describe('Offer CRUD tests', function () {
           });
       });
     });
-
     it.skip('should be keep `validUntil` value to previously saved when updating offer', function (done) {
       const now = moment();
-
       offerMeet.user = user1Id;
       offerMeet.validUntil = moment().add(2, 'days');
-
       offerMeet.save(function (offerMeetErr, offerMeetSaved) {
         // Handle save error
         if (offerMeetErr) return done(offerMeetErr);
-
         moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
-
         agent
           .post('/api/auth/signin')
           .send(credentials)
@@ -1101,7 +1028,6 @@ describe('Offer CRUD tests', function () {
               .end(function (offerPutErr) {
                 // Handle offer put error
                 if (offerPutErr) return done(offerPutErr);
-
                 Offer.findOne(
                   {
                     _id: offerMeetSaved._id,
@@ -1110,7 +1036,6 @@ describe('Offer CRUD tests', function () {
                     moment(offerNew.validUntil)
                       .diff(now, 'days')
                       .should.equal(2);
-
                     return done(err);
                   },
                 );
@@ -1118,21 +1043,16 @@ describe('Offer CRUD tests', function () {
           });
       });
     });
-
     it.skip('should default to 30 days from now when attempting to set `validUntil` value to over 30 days from now', function (done) {
       const now = moment();
       const fromNow1 = moment().add(2, 'days');
       const fromNow2 = moment().add(32, 'days');
-
       offerMeet.user = user1Id;
       offerMeet.validUntil = fromNow1.toDate();
-
       offerMeet.save(function (offerMeetErr, offerMeetSaved) {
         // Handle save error
         if (offerMeetErr) return done(offerMeetErr);
-
         moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
-
         agent
           .post('/api/auth/signin')
           .send(credentials)
@@ -1140,7 +1060,6 @@ describe('Offer CRUD tests', function () {
           .end(function (signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
-
             offerMeet.validUntil = fromNow2.toDate();
 
             // Update offer
@@ -1151,7 +1070,6 @@ describe('Offer CRUD tests', function () {
               .end(function (offerPutErr) {
                 // Handle offer put error
                 if (offerPutErr) return done(offerPutErr);
-
                 Offer.findOne(
                   {
                     _id: offerMeetSaved._id,
@@ -1161,7 +1079,6 @@ describe('Offer CRUD tests', function () {
                     moment(offerNew.validUntil)
                       .diff(now, 'days')
                       .should.equal(30);
-
                     return done(err);
                   },
                 );
@@ -1169,21 +1086,16 @@ describe('Offer CRUD tests', function () {
           });
       });
     });
-
     it.skip('should default to 30 days from now when attempting to set `validUntil` value to past', function (done) {
       const now = moment();
       const fromNow1 = moment().add(2, 'days');
       const fromNow2 = moment().subtract(1, 'days');
-
       offerMeet.user = user1Id;
       offerMeet.validUntil = fromNow1.toDate();
-
       offerMeet.save(function (offerMeetErr, offerMeetSaved) {
         // Handle save error
         if (offerMeetErr) return done(offerMeetErr);
-
         moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
-
         agent
           .post('/api/auth/signin')
           .send(credentials)
@@ -1191,7 +1103,6 @@ describe('Offer CRUD tests', function () {
           .end(function (signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
-
             offerMeet.validUntil = fromNow2.toDate();
 
             // Update offer
@@ -1202,7 +1113,6 @@ describe('Offer CRUD tests', function () {
               .end(function (offerPutErr) {
                 // Handle offer put error
                 if (offerPutErr) return done(offerPutErr);
-
                 Offer.findOne(
                   {
                     _id: offerMeetSaved._id,
@@ -1212,7 +1122,6 @@ describe('Offer CRUD tests', function () {
                     moment(offerNew.validUntil)
                       .diff(now, 'days')
                       .should.equal(30);
-
                     return done(err);
                   },
                 );
@@ -1220,7 +1129,6 @@ describe('Offer CRUD tests', function () {
           });
       });
     });
-
     it.skip('should remove reactivation flag field when updating offer', function (done) {
       agent
         .post('/api/auth/signin')
@@ -1244,7 +1152,6 @@ describe('Offer CRUD tests', function () {
               .end(function (offerSaveErr) {
                 // Handle offer save error
                 if (offerSaveErr) return done(offerSaveErr);
-
                 Offer.findOne(
                   {
                     user: user2Id,

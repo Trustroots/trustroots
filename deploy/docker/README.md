@@ -1,11 +1,21 @@
 # Docker
 
-This directory is the **single** local Docker setup for Trustroots (dev,
-Mailpit, MongoDB, optional prod-like image test, data import, and production
-image build).
+This directory contains the local Docker setup and production support tools.
+Production uses a separate, deployment-owned Compose file and images published
+by GitHub Actions.
 
-> Production is **not** deployed from this `docker-compose.yml`. Production runs
-> images built by `dockerBuild.sh` elsewhere.
+## Files
+
+- `docker-compose.yml` — local development and optional production-like services.
+- `docker-compose.ci.yml` — CI overrides for the local stack.
+- `dev.Dockerfile` — development and CI image.
+- `nginx-confd.conf`, `webapp.conf` — configuration copied into the production image.
+- `fetchMongoDumps.sh`, `importMongoData.sh` — local data import helpers.
+- `dockerBuild.sh` — manual production image build and push.
+- `production-deploy.py`, `test-production-deploy.py` — deployment tool and tests.
+- `data/`, `mongodumps/` — ignored local configuration and data.
+
+The production Dockerfile is at the repository root: `production.Dockerfile`.
 
 ## First-time setup
 
@@ -84,11 +94,15 @@ docker compose --profile prod up --build
 
 - Webapp at http://localhost:8080, plus the background `worker`.
 - Assets are baked into the image at build time, so rebuild after changing code.
+- The production image installs the full dependency tree to build assets, then
+  removes development dependencies before packaging the runtime image.
 - This is only for local verification; it is not how production is deployed.
 
 ## Importing MongoDB data
 
-With the stack running, import dumps into the `trustroots` database:
+With the stack running, import dumps into the `trustroots` database. Fetching
+requires SSH access to the source server and `pv` locally; importing requires
+Docker Compose and `gunzip`. The import prompts before dropping the local database:
 
 ```bash
 ./fetchMongoDumps.sh      # fetch dumps (see script)
@@ -115,38 +129,14 @@ npm run test:all
 **CI:** GitHub Actions builds this dev image and runs tests via
 `docker compose run dev` (see `docker-compose.ci.yml`).
 
-After changing `package.json` / `package-lock.json`, rebuild the dev image:
-
-```bash
-cd deploy/docker
-docker compose build dev
-docker volume rm trustroots_node_modules   # if native modules misbehave
-docker compose up -d -V --force-recreate dev
-```
+For dependency changes, see [After changing dependencies](#after-changing-dependencies).
 
 ## Other profiles
 
 - `--profile stats` — influxdb + grafana
 - `--profile mongo-localhost` — expose mongodb on 127.0.0.1:27017
 
-## Building the production image
+## Production
 
-Build and push the production images:
-
-```bash
-./dockerBuild.sh
-```
-
-Then `docker push` the tags printed by the script. You need the relevant
-permissions on the registry.
-
-Alternatively, to build the production image directly from the repo root:
-
-```bash
-docker build \
-  --build-arg "TRUSTROOTS_BUILD_COMMIT=$(git rev-parse HEAD)" \
-  --build-arg "TRUSTROOTS_BUILD_COMMITTED_AT=$(git log -1 --format=%cI)" \
-  --build-arg "TRUSTROOTS_BUILD_BRANCH=$(git rev-parse --abbrev-ref HEAD)" \
-  -f ./production.Dockerfile . \
-  -t ghcr.io/trustrootsops/trustroots:latest
-```
+See [production operations](PRODUCTION.md) for image publishing, deployment
+checks, rollback, storage and logging configuration, and telemetry outages.

@@ -4,17 +4,14 @@ import os from 'node:os';
 import fs from 'node:fs';
 
 // Internal dependencies
-import config from '../../../../config/config.js';
+import config from './../../../../config/config.mjs';
 import * as errorService from './error.server.service.mjs';
-
 function detectMimeTypeFallback(filePath, callback) {
   fs.readFile(filePath, (err, buffer) => {
     if (err) {
       return callback(err);
     }
-
     const header = buffer.toString('utf8', 0, 256).trim();
-
     if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
       return callback(null, 'image/jpeg');
     }
@@ -30,16 +27,13 @@ function detectMimeTypeFallback(filePath, callback) {
     if (/^<\?xml[\s\S]*<svg|^<svg/i.test(header)) {
       return callback(null, 'image/svg+xml');
     }
-
     return callback(null, 'application/octet-stream');
   });
 }
-
 function detectMimeType(filePath, callback) {
   if (process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK === 'true') {
     return detectMimeTypeFallback(filePath, callback);
   }
-
   import('file-type')
     .then(({ fileTypeFromFile }) => fileTypeFromFile(filePath))
     .then(result => {
@@ -73,7 +67,8 @@ export const uploadFile = (validMimeTypes, uploadField, req, res, next) => {
   const upload = multer({
     dest: config.uploadTmpDir || os.tmpdir(),
     limits: {
-      fileSize: config.maxUploadSize, // max file size in bytes
+      fileSize: config.maxUploadSize,
+      // max file size in bytes
       files: 1,
       fields: 10,
       parts: 11,
@@ -97,7 +92,6 @@ export const uploadFile = (validMimeTypes, uploadField, req, res, next) => {
       callback(null, true);
     },
   }).single(uploadField);
-
   upload(req, res, err => {
     // An error occurred when uploading
     // See Multer default error codes:
@@ -129,7 +123,6 @@ export const uploadFile = (validMimeTypes, uploadField, req, res, next) => {
         errorMessage = errorService.getErrorMessageByKey('default');
         errorStatus = 400;
       }
-
       return res.status(errorStatus).send({
         message: errorMessage,
       });
@@ -164,5 +157,8 @@ export const uploadFile = (validMimeTypes, uploadField, req, res, next) => {
     });
   });
 };
-
-export default { uploadFile };
+const defaultInterop = {
+  uploadFile,
+};
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

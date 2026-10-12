@@ -3,7 +3,7 @@
  */
 require('should');
 const moment = require('moment');
-const emailService = require('../../../../core/server/services/email.server.service');
+const emailService = require('./../../../../core/server/services/email.server.service.mjs');
 const sinon = require('sinon');
 const async = require('async');
 const testutils = require('../../../../../testutils/server/server.testutil');
@@ -30,7 +30,7 @@ describe('Job: message unread', function () {
   const jobs = testutils.catchJobs();
 
   before(function () {
-    messageUnreadJobHandler = require('../../../server/jobs/message-unread.server.job');
+    messageUnreadJobHandler = require('./../../../server/jobs/message-unread.server.job.mjs');
   });
 
   // Create an user
@@ -131,7 +131,7 @@ describe('Job: message unread', function () {
   });
 
   it('sends one generic UnifiedPush alert with the first eligible reminder', async function () {
-    const pushService = require('../../../../users/server/services/unified-push.server.service');
+    const pushService = require('./../../../../users/server/services/unified-push.server.service.mjs');
     await pushService.register(userToId, {
       endpoint: 'https://ntfy.sh/anonymous-unread-test',
       publicKey:
@@ -171,7 +171,7 @@ describe('Job: message unread', function () {
   });
 
   it('still schedules the email when UnifiedPush delivery fails', async function () {
-    const pushService = require('../../../../users/server/services/unified-push.server.service');
+    const pushService = require('./../../../../users/server/services/unified-push.server.service.mjs');
     const notifyUnread = sinon
       .stub(pushService, 'notifyUnread')
       .rejects(new Error('push unavailable'));
@@ -335,7 +335,7 @@ describe('Job: message unread', function () {
   });
 
   it('does not push when a sender is shadowbanned', async function () {
-    const pushService = require('../../../../users/server/services/unified-push.server.service');
+    const pushService = require('./../../../../users/server/services/unified-push.server.service.mjs');
     await pushService.register(userToId, {
       endpoint: 'https://ntfy.sh/anonymous-restricted-test',
       publicKey:
@@ -660,7 +660,7 @@ describe('Job: message unread', function () {
     });
 
     it('logs queue drain errors but still completes', function (done) {
-      const jobWithQueueError = require('../../../server/jobs/message-unread.server.job');
+      const jobWithQueueError = require('./../../../server/jobs/message-unread.server.job.mjs');
       sinon.stub(async, 'queue').callsFake(() => {
         const queue = {
           push() {
@@ -709,7 +709,7 @@ describe('Job: message unread', function () {
     });
 
     it('continues when notifications have no message ids', function (done) {
-      const jobWithEmptyMessages = require('../../../server/jobs/message-unread.server.job');
+      const jobWithEmptyMessages = require('./../../../server/jobs/message-unread.server.job.mjs');
       sinon.stub(emailService, 'sendMessagesUnread').callsArg(3);
 
       sinon.stub(Message, 'aggregate').yields(null, [

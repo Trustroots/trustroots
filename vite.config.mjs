@@ -26,7 +26,7 @@ const legacyJsx = {
   },
 };
 
-// Less 3 still uses Webpack-style ~ imports throughout the client styles.
+// Client styles still use Webpack-style ~ imports.
 const legacyLessImports = {
   install(less, pluginManager) {
     class LegacyAliasFileManager extends less.FileManager {
@@ -112,8 +112,8 @@ export default defineConfig({
   },
   optimizeDeps: {
     // Source transforms do not run during the dependency scan. Legacy .js
-    // components contain JSX, and the shared route policy is CommonJS.
-    include: ['@/modules/core/shared/react-route-ownership', 'process/browser'],
+    // components contain JSX.
+    include: ['process/browser'],
     rolldownOptions: {
       moduleTypes: { '.js': 'jsx' },
       // Pre-bundled CommonJS dependencies can also use Node's process global.
@@ -123,6 +123,8 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       less: {
+        // Preserve the unparenthesised division used by our Less 3 styles.
+        math: 'always',
         plugins: [legacyLessImports],
         modifyVars: { 'icon-font-path': '"~bootstrap/fonts/"' },
       },

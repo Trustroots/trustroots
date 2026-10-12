@@ -1,7 +1,7 @@
-const config = require('../../../../config/config');
+const config = require('./../../../../config/config.mjs');
 const winston = require('winston');
-const statService = require('../../../stats/server/services/stats.server.service');
-const controller = require('../../server/controllers/sparkpost-webhooks.server.controller');
+const statService = require('./../../../stats/server/services/stats.server.service.mjs');
+const controller = require('./../../server/controllers/sparkpost-webhooks.server.controller.mjs');
 const sinon = require('sinon');
 const should = require('should');
 

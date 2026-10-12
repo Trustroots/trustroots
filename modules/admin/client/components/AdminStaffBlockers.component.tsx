@@ -23,10 +23,7 @@ export default function AdminStaffBlockers() {
           {isAdmin ? 'Members who blocked staff' : 'Members who blocked you'}
         </h2>
         {isAdmin && (
-          <p>
-            Review members who have blocked any administrator or Welcome team
-            member.
-          </p>
+          <p>Review members who have blocked any administrator or greeter.</p>
         )}
         {hasError ? (
           <p role="alert">Could not load members. Please try again later.</p>

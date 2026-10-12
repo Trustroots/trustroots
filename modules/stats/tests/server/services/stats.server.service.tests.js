@@ -1,6 +1,6 @@
 const should = require('should');
-const statsService = require('../../../server/services/stats.server.service');
-const influxService = require('../../../server/services/influx.server.service');
+const statsService = require('./../../../server/services/stats.server.service.mjs');
+const influxService = require('./../../../server/services/influx.server.service.mjs');
 const sinon = require('sinon');
 
 describe('General Stats API Service Unit Tests', function () {

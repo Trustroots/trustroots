@@ -1,4 +1,4 @@
-const { annotateFeature, test, expect } = require('../../support/test');
+const { annotateFeature, test, expect } = require('../../support/fixtures');
 
 const {
   SEEDED_ADMIN,
@@ -209,7 +209,7 @@ test.describe('admin moderation search flows', () => {
     await page.getByRole('button', { name: 'Next' }).click();
 
     await expect(page.getByText(/page-two-member/).first()).toBeVisible();
-    expect(requests[1]).toMatchObject({
+    expect(requests.find(request => request.page === 2)).toMatchObject({
       page: 2,
       role: 'volunteer',
       sort: { column: 'username', direction: 'ascending' },

@@ -5,5 +5,5 @@ export function jsonForScript(value) {
     character => `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`,
   );
 }
-
 export default jsonForScript;
+export { jsonForScript as 'module.exports' };

@@ -1,4 +1,4 @@
-const analytics = require('../../../server/controllers/analytics.server.controller');
+const analytics = require('./../../../server/controllers/analytics.server.controller.mjs');
 const winston = require('winston');
 
 require('should');

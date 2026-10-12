@@ -1,8 +1,6 @@
-import memoryPolicy from '../../../core/server/services/memory-policy.server.service.js';
-import errorService from '../../../core/server/services/error.server.service.js';
-
+import memoryPolicy from './../../../core/server/services/memory-policy.server.service.mjs';
+import errorService from './../../../core/server/services/error.server.service.mjs';
 const service = {};
-
 const acl = memoryPolicy();
 service.invokeRolesPolicies = function () {
   acl.allow([
@@ -33,22 +31,18 @@ service.invokeRolesPolicies = function () {
     },
   ]);
 };
-
 service.isAllowed = async function (req, res, next) {
   try {
     const roles = req.user && req.user.roles ? req.user.roles : ['guest'];
-
     const isAllowed = await acl.areAnyRolesAllowed(
       roles,
       req.route.path,
       req.method.toLowerCase(),
     );
-
     if (isAllowed && req.user.public) {
       // Access granted! Invoke next middleware
       return next();
     }
-
     return res.status(403).json({
       message: errorService.getErrorMessageByKey('forbidden'),
     });
@@ -56,11 +50,11 @@ service.isAllowed = async function (req, res, next) {
     return next(e);
   }
 };
-
 const invokeRolesPolicies = service.invokeRolesPolicies;
 const isAllowed = service.isAllowed;
-export { invokeRolesPolicies as invokeRolesPolicies, isAllowed as isAllowed };
+export { invokeRolesPolicies, isAllowed };
 export default service;
 
 // Expose the ACL dependency for native ESM boundary stubs.
 export { acl as _acl };
+export { service as 'module.exports' };

@@ -193,3 +193,111 @@ The system SHALL display external links in message bodies as plain text while pr
 
 - **WHEN** a member opens a conversation containing a link to the current Trustroots origin
 - **THEN** that link remains clickable
+
+### Requirement: Hosting replies require an incoming conversation
+
+Hosting quick replies SHALL appear only when the thread contains a received message and the current member has not yet replied. Empty conversations and conversations containing only the current member's messages SHALL offer the normal message editor without hosting quick replies.
+
+#### Scenario: Member starts a conversation or waits for a response
+
+- **WHEN** a member opens an empty conversation or a conversation containing only their own messages
+- **THEN** hosting quick reply buttons are hidden
+
+#### Scenario: Member receives their first message
+
+- **WHEN** a member opens a conversation containing messages from the other member and has not replied yet
+- **THEN** hosting quick replies are available as reply options
+
+### Requirement: Representative reply statistics
+
+Reply statistics SHALL exclude deleted senders and conversations started by current `welcome-team` members before the existing statistics window selection. Fewer than three selected eligible conversations SHALL yield null reply rate and time, formatted as empty strings. Three or more eligible conversations SHALL retain the existing calculation, including a legitimate zero reply rate. Current roles SHALL apply to historical conversations without migration.
+
+#### Scenario: Welcome conversations leave an insufficient sample
+
+- **WHEN** excluding current greeter conversations leaves fewer than three eligible conversations
+- **THEN** both reply statistics are unavailable
+
+#### Scenario: Three unanswered eligible conversations
+
+- **WHEN** three eligible conversations have no replies
+- **THEN** reply rate is zero and reply time is unavailable
+
+### Requirement: Named empty conversation
+
+An empty conversation SHALL display translatable text identifying the recipient by public display name, falling back to username and then the existing generic text. The name SHALL be selectable text and safely interpolated.
+
+#### Scenario: Recipient has a display name
+
+- **WHEN** a member opens an empty conversation with a named recipient
+- **THEN** the heading says they have not been talking with that name yet
+
+### Requirement: Optional draft message preview
+
+The composer SHALL offer a translatable, accessible Preview / Edit toggle for non-empty opening messages and replies on desktop and mobile. Preview SHALL display the formatted draft in an outgoing message bubble labelled Message preview, without sent metadata. Send SHALL remain available in both views and SHALL submit the original draft.
+
+#### Scenario: Member previews and edits a draft
+
+- **WHEN** a member selects Preview for a non-empty draft
+- **THEN** the composer shows formatted content using existing message formatting and link rules
+- **AND** selecting Edit restores the draft and editor focus without changing cached content
+
+#### Scenario: Preview formatting fails or finishes late
+
+- **WHEN** preview formatting fails
+- **THEN** the composer offers a retry and preserves the draft
+- **AND** responses after leaving preview or changing conversations are ignored
+
+#### Scenario: Member sends from preview
+
+- **WHEN** a member sends from preview
+- **THEN** the original draft is submitted through the existing send flow
+- **AND** success clears the draft and returns to a focused editor
+- **AND** failure preserves the draft and selected view
+
+### Requirement: Side-effect-free draft formatting
+
+The system SHALL offer authenticated POST /api/messages-preview accepting a string content field and returning a content field formatted by the existing server text service. Preview SHALL NOT persist messages or alter threads, read state, notifications or statistics.
+
+#### Scenario: Eligible member requests a preview
+
+- **WHEN** an eligible authenticated member posts draft content
+- **THEN** the system returns sanitised, formatted content without message side effects
+
+#### Scenario: Visitor requests a preview
+
+- **WHEN** a signed-out visitor requests a preview
+- **THEN** access is denied
+
+#### Scenario: Invalid content is submitted
+
+- **WHEN** the content field is missing, non-string or empty after stripping markup
+- **THEN** the system rejects the preview request
+
+### Requirement: Resizable message composer
+
+The system SHALL let members resize the opening-message and reply composer by dragging its top handle upwards or downwards using a mouse or touch. The handle SHALL support keyboard resizing. Resizing SHALL preserve the draft and preview state, fit within the available conversation area and keep Send visible. Drafts exceeding the selected height SHALL remain scrollable. A successful send SHALL restore the default composer size.
+
+#### Scenario: Member resizes a draft
+
+- **WHEN** a member drags the handle upwards or downwards
+- **THEN** the writing area grows or shrinks within its size limits
+- **AND** the draft content is preserved
+
+#### Scenario: Member resizes using the keyboard
+
+- **WHEN** the handle has focus and the member presses Arrow Up or Arrow Down
+- **THEN** the writing area grows or shrinks
+- **AND** Home and End select the minimum and maximum sizes
+
+#### Scenario: Member previews or sends a resized draft
+
+- **WHEN** a member switches between editing and preview
+- **THEN** the draft and selected composer size are preserved
+- **AND** Send remains available
+- **AND** sending successfully restores the default size
+
+#### Scenario: Available mobile height changes
+
+- **WHEN** the viewport or virtual keyboard changes the available height
+- **THEN** the resized editor fits the available conversation area
+- **AND** the handle and Send action remain visible

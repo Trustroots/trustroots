@@ -2,7 +2,7 @@
  * Module dependencies.
  */
 const testutils = require('../../../../../testutils/server/server.testutil');
-const config = require('../../../../../config/config');
+const config = require('./../../../../../config/config.mjs');
 const moment = require('moment');
 const mongoose = require('mongoose');
 require('should');
@@ -25,9 +25,9 @@ describe.skip('Job: welcome sequence, first email', function () {
   const jobs = testutils.catchJobs();
 
   before(function () {
-    userWelcomeSequenceFirstJobHandler = require('../../../server/jobs/user-welcome-sequence-first.server.job');
-    userWelcomeSequenceSecondJobHandler = require('../../../server/jobs/user-welcome-sequence-second.server.job');
-    userWelcomeSequenceThirdJobHandler = require('../../../server/jobs/user-welcome-sequence-third.server.job');
+    userWelcomeSequenceFirstJobHandler = require('./../../../server/jobs/user-welcome-sequence-first.server.job.mjs');
+    userWelcomeSequenceSecondJobHandler = require('./../../../server/jobs/user-welcome-sequence-second.server.job.mjs');
+    userWelcomeSequenceThirdJobHandler = require('./../../../server/jobs/user-welcome-sequence-third.server.job.mjs');
   });
 
   // Create time points to test that welcome sequence is sent in correct time

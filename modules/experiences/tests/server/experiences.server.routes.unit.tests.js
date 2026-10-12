@@ -1,9 +1,9 @@
 const express = require('express');
 const sinon = require('sinon');
-const config = require('../../../../config/config');
-const policy = require('../../server/policies/experiences.server.policy');
-const controller = require('../../server/controllers/experiences.server.controller');
-const registerRoutes = require('../../server/routes/experiences.server.routes');
+const config = require('./../../../../config/config.mjs');
+const policy = require('./../../server/policies/experiences.server.policy.mjs');
+const controller = require('./../../server/controllers/experiences.server.controller.mjs');
+const registerRoutes = require('./../../server/routes/experiences.server.routes.mjs');
 const request = require('supertest');
 require('should');
 

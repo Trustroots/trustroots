@@ -3,9 +3,9 @@
  * Invoked by scripts/e2e/test-e2e.sh after the database is dropped.
  */
 const mongoose = require('mongoose');
-const mongooseService = require('../../config/lib/mongoose');
+const mongooseService = require('./../../config/lib/mongoose.mjs');
 
-require('../../modules/offers/server/models/offer.server.model');
+require('./../../modules/offers/server/models/offer.server.model.mjs');
 
 const E2E_PASSWORD = 'Tester123';
 const PROFILE_DESCRIPTION =

@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const adminThreads = require('../../server/controllers/admin.threads.server.controller');
+const adminThreads = require('./../../server/controllers/admin.threads.server.controller.mjs');
 require('should');
 
 const Thread = mongoose.model('Thread');

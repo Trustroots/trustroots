@@ -9,13 +9,11 @@
  * Module dependencies.
  */
 import async from 'async';
-import statsService from '../../../stats/server/services/stats.server.service.js';
-import statistics from '../controllers/statistics.server.controller.js';
-import log from '../../../../config/lib/logger.js';
-
-export default function (job, agendaDone) {
+import statsService from './../../../stats/server/services/stats.server.service.mjs';
+import statistics from './../controllers/statistics.server.controller.mjs';
+import log from './../../../../config/lib/logger.mjs';
+const defaultInterop = function (job, agendaDone) {
   let totalUserCount;
-
   async.waterfall(
     [
       // Member count
@@ -25,7 +23,6 @@ export default function (job, agendaDone) {
             log('error', 'Daily statistics: failed fetching user count.', err);
             return done();
           }
-
           totalUserCount = count;
 
           // Write number to stats
@@ -43,55 +40,59 @@ export default function (job, agendaDone) {
           );
         });
       },
-
       // Future push: optionally count historical pushRegistration rows here
       // (previously getPushRegistrationCount → pushRegistrations measurement).
 
       function (done) {
         collectLastSeen(
-          { days: 7 },
+          {
+            days: 7,
+          },
           'memberLastSeenPast7days',
           totalUserCount,
           done,
         );
       },
-
       function (done) {
         collectLastSeen(
-          { days: 14 },
+          {
+            days: 14,
+          },
           'memberLastSeenPast14days',
           totalUserCount,
           done,
         );
       },
-
       function (done) {
         collectLastSeen(
-          { days: 30 },
+          {
+            days: 30,
+          },
           'memberLastSeenPast30days',
           totalUserCount,
           done,
         );
       },
-
       function (done) {
         collectLastSeen(
-          { months: 6 },
+          {
+            months: 6,
+          },
           'memberLastSeenPast6months',
           totalUserCount,
           done,
         );
       },
-
       function (done) {
         collectLastSeen(
-          { months: 12 },
+          {
+            months: 12,
+          },
           'memberLastSeenPast12months',
           totalUserCount,
           done,
         );
       },
-
       // Hosting offer count
       function (done) {
         statistics.getHostOffersCount(function (err, hostOfferCounts) {
@@ -127,7 +128,6 @@ export default function (job, agendaDone) {
           );
         });
       },
-
       // Meet offer count
       function (done) {
         statistics.getMeetOffersCount(function (err, count) {
@@ -151,7 +151,6 @@ export default function (job, agendaDone) {
           );
         });
       },
-
       // Connected to networks counters
       function (done) {
         const networks = [
@@ -199,7 +198,6 @@ export default function (job, agendaDone) {
           done,
         );
       },
-
       // Get statistics for top 40 spoken languages
       function (done) {
         statistics.getUserLanguagesCount(40, function (err, languageCounts) {
@@ -244,8 +242,8 @@ export default function (job, agendaDone) {
       agendaDone();
     },
   );
-}
-
+};
+export default defaultInterop;
 /**
  * A helper to write to statistics, mainly to keep this job DRY by not repeating
  * all those `log()`s.
@@ -253,7 +251,7 @@ export default function (job, agendaDone) {
 function writeDailyStat(statObject, callback) {
   // Save to influx via Stats api
   // eslint-disable-next-line no-unused-vars
-  statsService.stat(statObject, function (err, result) {
+  statsService.deliver(statObject, function (err, result) {
     // Log errors
     if (err) {
       // if there exist stat-service specific errors, log them separately
@@ -305,3 +303,4 @@ function collectLastSeen(seenSinceDays, namespace, totalUserCount, callback) {
     );
   });
 }
+export { defaultInterop as 'module.exports' };

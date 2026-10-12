@@ -63,6 +63,13 @@ export class Offers extends Component<OffersProps, OffersState> {
   render() {
     const { isOwnOffer, isUserPublic, offer } = this.state;
 
+    // An empty offer is only meaningful after the profile's offers have
+    // loaded. In particular, don't briefly present the default "no" status
+    // while switching back to this tab remounts the component and refetches.
+    if (this.state.isLoading || !this.props.profile?._id) {
+      return null;
+    }
+
     return (
       <OffersPresentational
         isOwnOffer={isOwnOffer}

@@ -1,7 +1,5 @@
-import config from '../../../../config/config.js';
-
+import config from './../../../../config/config.mjs';
 const service = {};
-
 service.generateEmailToken = function (user, saltBuffer) {
   const email = user.emailTemporary || user.email;
   const buf = Buffer.concat([saltBuffer, Buffer.from(email)]);
@@ -24,7 +22,6 @@ service.validateUsername = function (username) {
   username = String(username).toLowerCase();
   const usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/;
   const dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/;
-
   return (
     username &&
     usernameRegex.test(username) &&
@@ -44,9 +41,9 @@ service.validateUsername = function (username) {
 service.isUsernameReserved = function (username) {
   return config.illegalStrings.indexOf(username.toLowerCase()) !== -1;
 };
-
 const defaultExport = service;
 export default defaultExport;
 export const generateEmailToken = defaultExport.generateEmailToken;
 export const isUsernameReserved = defaultExport.isUsernameReserved;
 export const validateUsername = defaultExport.validateUsername;
+export { defaultExport as 'module.exports' };

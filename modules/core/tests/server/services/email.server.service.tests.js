@@ -1,8 +1,8 @@
 const should = require('should');
 const sinon = require('sinon');
-const agenda = require('../../../../../config/lib/agenda');
+const agenda = require('./../../../../../config/lib/agenda.mjs');
 const nunjucks = require('nunjucks');
-const config = require('../../../../../config/config');
+const config = require('./../../../../../config/config.mjs');
 
 let emailService;
 
@@ -33,7 +33,7 @@ describe('Service: email', function () {
     const render = stubs['../../../../config/lib/render'];
     if (render)
       sandbox.stub(nunjucks.Environment.prototype, 'render').callsFake(render);
-    return require('../../../server/services/email.server.service');
+    return require('./../../../server/services/email.server.service.mjs');
   }
 
   afterEach(function () {
@@ -718,6 +718,26 @@ describe('Service: email', function () {
 
   it('returns an empty object when base template params are invalid', function () {
     emailService.addEmailBaseTemplateParams(null).should.deepEqual({});
+  });
+
+  it('builds HTTPS account links when loaded with production proxy settings', async function () {
+    sandbox.stub(config, 'https').value(true);
+    sandbox.stub(config, 'domain').value('secure.example.test');
+    const { default: secureService } = await import(
+      '../../../server/services/email.server.service.mjs?production-https'
+    );
+    const send = sandbox.stub(secureService, 'renderEmailAndSend');
+    secureService.sendResetPassword(
+      {
+        displayName: 'Example Member',
+        email: 'member@example.test',
+        resetPasswordToken: 'fictional-token',
+      },
+      function () {},
+    );
+    send.firstCall.args[1].urlConfirmPlainText.should.equal(
+      'https://secure.example.test/api/auth/reset/fictional-token',
+    );
   });
 
   it('builds HTTPS base template URLs when HTTPS is configured', function () {

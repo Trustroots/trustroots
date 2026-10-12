@@ -1,12 +1,11 @@
-import '../models/message.server.model.js';
+import './../models/message.server.model.mjs';
 import async from 'async';
 import nodeProcess from 'node:process';
-import config from '../../../../config/config.js';
+import config from './../../../../config/config.mjs';
 import mongoose from 'mongoose';
-import log from '../../../../config/lib/logger.js';
-import statService from '../../../stats/server/services/stats.server.service.js';
-import textService from '../../../core/server/services/text.server.service.js';
-
+import log from './../../../../config/lib/logger.mjs';
+import statService from './../../../stats/server/services/stats.server.service.mjs';
+import textService from './../../../core/server/services/text.server.service.mjs';
 const service = {};
 
 // This service takes care of fetching and sending message statistics to stats api.
@@ -80,14 +79,12 @@ service.save = function (message, callback) {
         }
         return done();
       },
-
       // Process the message provided
       function (done) {
         service.process(message, function (err, statObject) {
           return done(err, statObject);
         });
       },
-
       // Send the message provided to influxService
       function (statObject, done) {
         service.send(statObject, function (err) {
@@ -132,7 +129,6 @@ service.process = function (message, callback) {
     ? message.userFrom._id
     : message.userFrom;
   const userTo = message.userTo._id ? message.userTo._id : message.userTo;
-
   async.waterfall(
     [
       function readFirstMessage(done) {
@@ -149,10 +145,11 @@ service.process = function (message, callback) {
             },
           ],
         })
-          .sort({ created: 1 })
+          .sort({
+            created: 1,
+          })
           .exec(done);
       },
-
       function readFirstReply(firstMessage, done) {
         // if no message was found, throw error (there is always the first message
         // already (at least the one just saved))
@@ -177,7 +174,9 @@ service.process = function (message, callback) {
             userTo: firstMessage.userFrom,
             userFrom: firstMessage.userTo,
           })
-            .sort({ created: 1 })
+            .sort({
+              created: 1,
+            })
             .exec(function (err, firstReply) {
               return done(err, firstMessage, firstReply);
             });
@@ -185,7 +184,6 @@ service.process = function (message, callback) {
           return done(null, firstMessage, null);
         }
       },
-
       function prepareData(firstMessage, firstReply, done) {
         // is the new message the first reply of the thread?
         isFirstReply = Boolean(
@@ -212,7 +210,6 @@ service.process = function (message, callback) {
         } else {
           position = 'other';
         }
-
         const msgLenType =
           msgLen < config.limits.longMessageMinimumLength ? 'short' : 'long';
 
@@ -234,14 +231,18 @@ service.process = function (message, callback) {
           },
           values: {},
           tags: {
-            spam, // spam (yes|no|unknown)
-            position, // position (first|firstReply|other)
+            spam,
+            // spam (yes|no|unknown)
+            position,
+            // position (first|firstReply|other)
             messageLengthType: msgLenType, // (short|long) content (shortness defined in a config)
           },
           meta: {
             messageId: String(message._id),
-            userFrom: String(userFrom), // id of sender
-            userTo: String(userTo), // id of receiver
+            userFrom: String(userFrom),
+            // id of sender
+            userTo: String(userTo),
+            // id of receiver
             messageLength: msgLen, // length of the content
           },
           time: message.created,
@@ -252,7 +253,6 @@ service.process = function (message, callback) {
         if (isFirstReply) {
           statObject.values.timeToFirstReply = replyTime;
         }
-
         return done(null, statObject);
       },
     ],
@@ -268,9 +268,9 @@ service.process = function (message, callback) {
 service.send = function (statObject, callback) {
   return statService.stat(statObject, callback);
 };
-
 const process = service.process;
 const save = service.save;
 const send = service.send;
-export { process as process, save as save, send as send };
+export { process, save, send };
 export default service;
+export { service as 'module.exports' };

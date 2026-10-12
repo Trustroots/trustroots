@@ -129,6 +129,55 @@ body.is-site-announcement-visible {
   }
 }
 
+.search-result-list {
+  list-style: none;
+  margin: 0 10px 12px;
+  padding: 0;
+
+  li + li {
+    margin-top: 6px;
+  }
+}
+
+.search-result-list-item {
+  align-items: center;
+  color: @text-color;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 10px;
+  text-align: left;
+  transition: border-color 0.1s linear, background-color 0.1s linear;
+  white-space: normal;
+  width: 100%;
+
+  &:hover {
+    border-color: @brand-primary;
+    background: #fafafa;
+  }
+
+  &:focus-visible {
+    outline: 2px solid @brand-primary;
+    outline-offset: 2px;
+  }
+
+  .avatar {
+    flex: 0 0 36px;
+    float: none;
+    margin: 0;
+  }
+
+  > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}
+
+.search-results-back {
+  margin: 0 10px 10px;
+}
+
 .search-result-label,
 .search-result-languages h4 {
   .text-muted;

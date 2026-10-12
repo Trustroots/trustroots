@@ -21,6 +21,7 @@ export default function AdminHeader() {
   }, []);
 
   const pages = [
+    { path: 'hackerspaces', label: 'Hackerspaces' },
     {
       path: 'messages',
       label: 'Messages',
@@ -40,10 +41,6 @@ export default function AdminHeader() {
     {
       path: 'staff-blockers',
       label: 'Staff blockers',
-    },
-    {
-      path: 'acquisition-stories/analysis',
-      label: 'Analysis',
     },
     {
       path: 'newsletter',
@@ -70,7 +67,7 @@ export default function AdminHeader() {
             className="navbar-brand"
             href={isAdmin ? '/admin' : '/admin/acquisition-stories'}
           >
-            {isAdmin ? 'Admin' : 'Welcome team'}
+            {isAdmin ? 'Admin' : 'Greeters'}
           </a>
         </div>
         <ul className="nav navbar-nav">
@@ -79,8 +76,7 @@ export default function AdminHeader() {
               page =>
                 isAdmin ||
                 (page.path === 'staff-blockers' && isWelcomeTeam) ||
-                page.path === 'acquisition-stories' ||
-                page.path === 'acquisition-stories/analysis',
+                page.path === 'acquisition-stories',
             )
             .map(page => renderTab(page))}
         </ul>

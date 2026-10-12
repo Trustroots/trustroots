@@ -1,15 +1,15 @@
-import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useRef } from 'react';
 
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import CommunityNotesSidebar from './CommunityNotesSidebar.component';
+import type { OfferStatus, OfferType } from '@/modules/offers/shared/offer';
 
 interface SearchOfferUser {
-  _id: string;
+  _id?: string;
   username: string;
   displayName?: string;
-  birthdate?: string | number;
+  birthdate?: string | null;
   gender?: string;
   tagline?: string;
   languages?: string[];
@@ -19,13 +19,13 @@ export interface SearchResultOffer {
   _id?: string;
   location?: [number, number];
   user: SearchOfferUser;
-  type: 'host' | 'meet';
-  status?: string;
+  type: OfferType;
+  status?: OfferStatus;
   description?: string;
-  updated?: string | number;
+  updated?: string;
 }
 
-interface CommunityNoteSummary {
+export interface CommunityNoteSummary {
   notes: import('nostr-tools').Event[];
   plusCode: string | null;
 }
@@ -34,6 +34,12 @@ interface SearchSidebarResultsProps {
   communityNote?: CommunityNoteSummary | null;
   isLoadingOffer?: boolean;
   offer?: SearchResultOffer | null;
+  offers?: SearchResultOffer[];
+  communityNoteThreads?: CommunityNoteSummary[];
+  onOfferSelect?: (offer: SearchResultOffer) => void;
+  onCommunityNoteSelect?: (note: CommunityNoteSummary) => void;
+  onBackToOffers?: () => void;
+  isLoadingOffers?: boolean;
   onCloseSidebar: () => void;
 }
 
@@ -96,15 +102,16 @@ export function OfferDescription({
   );
 }
 
-OfferDescription.propTypes = {
-  description: PropTypes.string,
-  offerType: PropTypes.string,
-};
-
 export default function SearchSidebarResults({
   communityNote,
   isLoadingOffer,
   offer,
+  offers = [],
+  communityNoteThreads = [],
+  onOfferSelect = () => {},
+  onCommunityNoteSelect = () => {},
+  onBackToOffers = () => {},
+  isLoadingOffers,
   onCloseSidebar,
 }: SearchSidebarResultsProps) {
   /* istanbul ignore next -- the language query always returns its cache object. */
@@ -112,6 +119,30 @@ export default function SearchSidebarResults({
     data?: Record<string, string>;
   };
   const languageNames = languageQuery.data || {};
+  const selectedResultId = useRef<string | undefined>();
+  const showList = !offer && !isLoadingOffer && !communityNote;
+
+  const renderResultButton = (
+    resultId: string,
+    ariaLabel: string,
+    onSelect: () => void,
+    children: React.ReactNode,
+  ) => (
+    <li key={resultId}>
+      <button
+        aria-label={ariaLabel}
+        className="panel panel-default search-result-list-item"
+        data-result-id={resultId}
+        onClick={() => {
+          selectedResultId.current = resultId;
+          onSelect();
+        }}
+        type="button"
+      >
+        {children}
+      </button>
+    </li>
+  );
 
   return (
     <section className="search-sidebar-results">
@@ -124,16 +155,71 @@ export default function SearchSidebarResults({
         </div>
       )}
 
-      {!offer && !isLoadingOffer && !communityNote && (
+      {showList && offers.length > 0 && (
+        <ul aria-label="Visible search results" className="search-result-list">
+          {offers.map(item =>
+            renderResultButton(
+              item._id!,
+              `Open ${item.type === 'host' ? 'hosting' : 'meet'} offer from ${
+                item.user.displayName || item.user.username
+              }`,
+              () => onOfferSelect(item),
+              <>
+                <Avatar link={false} size={32} user={item.user} />
+                <span>
+                  <strong>{item.user.displayName || item.user.username}</strong>
+                  <span className="text-muted"> @{item.user.username}</span>
+                  <br />
+                  {item.type === 'host' ? 'Hosting' : 'Meet'}
+                  {item.type === 'host' && item.status && ` · ${item.status}`}
+                </span>
+              </>,
+            ),
+          )}
+        </ul>
+      )}
+
+      {showList && communityNoteThreads.length > 0 && (
+        <ul
+          aria-label="Visible community note results"
+          className="search-result-list"
+        >
+          {communityNoteThreads.map(thread => {
+            const firstNote = thread.notes[0];
+            const resultId = thread.plusCode || firstNote?.id || '';
+            return renderResultButton(
+              resultId,
+              `Open community note thread at ${
+                thread.plusCode || 'map location'
+              }`,
+              () => onCommunityNoteSelect(thread),
+              <span>
+                <strong>Community note</strong>
+                <span className="text-muted">
+                  {thread.plusCode ? ` · ${thread.plusCode}` : ''}
+                </span>
+                <br />
+                {firstNote?.content?.slice(0, 140) || 'Open note thread'}
+              </span>,
+            );
+          })}
+        </ul>
+      )}
+
+      {showList && offers.length === 0 && communityNoteThreads.length === 0 && (
         <section
-          aria-label="Search results: nothing selected, please choose offers from the map to load them here."
+          aria-label="Search results: no results are visible in this map area."
           aria-live="polite"
           className="content-empty text-muted text-center"
           tabIndex={0}
         >
           <br />
           <br />
-          <em>Choose something from the map.</em>
+          <em>
+            {isLoadingOffers
+              ? 'Loading visible offers…'
+              : 'No results are visible in this map area.'}
+          </em>
         </section>
       )}
 
@@ -231,6 +317,31 @@ export default function SearchSidebarResults({
         </div>
       )}
 
+      {(offer || communityNote) && (
+        <button
+          className="btn btn-default search-results-back"
+          onClick={() => {
+            onBackToOffers();
+            window.requestAnimationFrame(() => {
+              const resultButtons = Array.from(
+                document.querySelectorAll<HTMLButtonElement>(
+                  '[data-result-id]',
+                ),
+              );
+              resultButtons
+                .find(
+                  button =>
+                    button.dataset.resultId === selectedResultId.current,
+                )
+                ?.focus();
+            });
+          }}
+          type="button"
+        >
+          Back to results
+        </button>
+      )}
+
       <button
         className="btn btn-action btn-primary visible-xs-block search-sidebar-close"
         onClick={onCloseSidebar}
@@ -241,10 +352,3 @@ export default function SearchSidebarResults({
     </section>
   );
 }
-
-SearchSidebarResults.propTypes = {
-  communityNote: PropTypes.object,
-  isLoadingOffer: PropTypes.bool,
-  offer: PropTypes.object,
-  onCloseSidebar: PropTypes.func.isRequired,
-};

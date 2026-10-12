@@ -4,7 +4,7 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const adminAuditLog = require('../../server/controllers/admin.audit-log.server.controller');
+const adminAuditLog = require('./../../server/controllers/admin.audit-log.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 

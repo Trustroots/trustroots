@@ -1,4 +1,4 @@
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 const {
   SEEDED_ADMIN,
   SEEDED_MEMBERS,
@@ -30,14 +30,14 @@ test('profile actions align and expose admin records only to administrators', as
   await expect(primaryLinks.nth(1)).toHaveText('Circles');
   const actions = page.locator('.profile-actions');
   const admin = actions.getByRole('link', { name: 'Admin', exact: true });
-  await expect(admin).toHaveAttribute('href', `/admin/user?id=${member.id}`);
+  await expect(admin).toHaveAttribute('href', `/admin/user/${member.username}`);
   const links = await actions.locator('a').all();
   const boxes = await Promise.all(links.map(link => link.boundingBox()));
   expect(boxes.every(box => box !== null)).toBeTruthy();
   const centres = boxes.map(box => box.y + box.height / 2);
   expect(Math.max(...centres) - Math.min(...centres)).toBeLessThan(1);
   await admin.click();
-  await expect(page).toHaveURL(new RegExp(`/admin/user\\?id=${member.id}$`));
+  await expect(page).toHaveURL(new RegExp(`/admin/user/${member.username}$`));
   await expect(
     page.getByRole('link', { name: 'Public profile', exact: true }),
   ).toHaveAttribute('href', `/profile/${member.username}`);
@@ -65,7 +65,7 @@ test('profile actions align and expose admin records only to administrators', as
     page
       .locator('.visible-xs-block')
       .getByRole('link', { name: 'Admin', exact: true }),
-  ).toHaveAttribute('href', `/admin/user?id=${member.id}`);
+  ).toHaveAttribute('href', `/admin/user/${member.username}`);
   const context = await createIsolatedContext(browser, baseURL);
   try {
     const memberPage = await context.newPage();

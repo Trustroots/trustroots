@@ -1,7 +1,6 @@
-import memoryPolicy from '../../../core/server/services/memory-policy.server.service.js';
-import errorService from '../../../core/server/services/error.server.service.js';
+import memoryPolicy from './../../../core/server/services/memory-policy.server.service.mjs';
+import errorService from './../../../core/server/services/error.server.service.mjs';
 import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mjs';
-
 const service = {};
 
 /**
@@ -24,6 +23,10 @@ service.invokeRolesPolicies = function () {
         {
           resources: '/api/messages/:messageUserId',
           permissions: [],
+        },
+        {
+          resources: '/api/messages-preview',
+          permissions: ['post'],
         },
         {
           resources: '/api/messages-read',
@@ -49,6 +52,10 @@ service.invokeRolesPolicies = function () {
         {
           resources: '/api/messages/:messageUserId',
           permissions: ['get'],
+        },
+        {
+          resources: '/api/messages-preview',
+          permissions: ['post'],
         },
         {
           resources: '/api/messages-read',
@@ -77,14 +84,13 @@ service.isAllowed = function (req, res, next) {
       message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
-
   return authoriseRoute(req, res, next);
 };
-
 const invokeRolesPolicies = service.invokeRolesPolicies;
 const isAllowed = service.isAllowed;
-export { invokeRolesPolicies as invokeRolesPolicies, isAllowed as isAllowed };
+export { invokeRolesPolicies, isAllowed };
 export default service;
 
 // Expose the ACL dependency for native ESM boundary stubs.
 export { acl as _acl };
+export { service as 'module.exports' };

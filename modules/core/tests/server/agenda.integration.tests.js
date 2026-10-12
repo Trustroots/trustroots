@@ -1,7 +1,7 @@
 const Agenda = require('agenda');
 const MongoClient = require('mongodb').MongoClient;
-const config = require('../../../../config/config');
-const worker = require('../../../../config/lib/worker');
+const config = require('./../../../../config/config.mjs');
+const worker = require('./../../../../config/lib/worker.mjs');
 require('should');
 
 describe('Agenda integration tests', function () {

@@ -1,6 +1,5 @@
 import _ from 'lodash';
-import errorService from '../../../core/server/services/error.server.service.js';
-
+import errorService from './../../../core/server/services/error.server.service.mjs';
 const service = {};
 
 /**
@@ -27,7 +26,6 @@ service.invalidateSuspendedSessions = function (req, res, next) {
       // https://github.com/expressjs/session#sessiondestroycallback
       return req.session.destroy(function () {
         const suspendedMessage = errorService.getErrorMessageByKey('suspended');
-
         res.status(403).format({
           'text/html'() {
             res.render('suspended.server.view.html', {
@@ -47,8 +45,8 @@ service.invalidateSuspendedSessions = function (req, res, next) {
   // User isn't suspended, just continue
   next();
 };
-
 const defaultExport = service;
 export default defaultExport;
 export const invalidateSuspendedSessions =
   defaultExport.invalidateSuspendedSessions;
+export { defaultExport as 'module.exports' };

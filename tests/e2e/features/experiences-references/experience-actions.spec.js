@@ -1,4 +1,4 @@
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 
 const {
   SEEDED_EXPERIENCE,
@@ -11,6 +11,7 @@ const {
 } = require('../../support/helpers');
 const {
   findContactByUsers,
+  objectId,
   updateUserByUsername,
   withE2eDb,
 } = require('../../support/db');
@@ -160,6 +161,7 @@ test.describe.serial('experience and reference feature coverage', () => {
     ]);
     const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
+    const createdExperienceIds = [];
     try {
       const author = await createPublicUser(context.request);
       const recipient = await createPublicUser(context.request);
@@ -182,6 +184,7 @@ test.describe.serial('experience and reference feature coverage', () => {
       });
       expect(opposite.status()).toBe(201);
       const oppositeExperience = await opposite.json();
+      createdExperienceIds.push(oppositeExperience._id);
       await signInViaApi(page, context.request, author);
       await updateUserByUsername(author.username, {
         $addToSet: { roles: 'shadowban' },
@@ -202,7 +205,9 @@ test.describe.serial('experience and reference feature coverage', () => {
         },
       });
       expect(submitted.status()).toBe(201);
-      expect(await submitted.json()).toMatchObject({
+      const submittedExperience = await submitted.json();
+      createdExperienceIds.push(submittedExperience._id);
+      expect(submittedExperience).toMatchObject({
         public: false,
         response: null,
       });
@@ -221,7 +226,17 @@ test.describe.serial('experience and reference feature coverage', () => {
       });
       expect(await list.json()).toEqual([]);
     } finally {
-      await context.close();
+      try {
+        if (createdExperienceIds.length > 0) {
+          await withE2eDb(db =>
+            db.collection('experiences').deleteMany({
+              _id: { $in: createdExperienceIds.map(objectId) },
+            }),
+          );
+        }
+      } finally {
+        await context.close();
+      }
     }
   });
 

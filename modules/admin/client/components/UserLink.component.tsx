@@ -1,6 +1,7 @@
 // External dependencies
 import React from 'react';
 import PropTypes from 'prop-types';
+import { getAdminUserHref } from '../utils/member-url';
 
 interface UserSummary {
   _id?: string;
@@ -31,7 +32,7 @@ export default function UserLink({
       <span>{label}</span>
     );
   }
-  return <a href={`/admin/user?id=${_id}`}>{label}</a>;
+  return <a href={getAdminUserHref({ _id, username })}>{label}</a>;
 }
 
 UserLink.propTypes = {

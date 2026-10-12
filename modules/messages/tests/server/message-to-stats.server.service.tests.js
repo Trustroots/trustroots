@@ -6,8 +6,8 @@ const _ = require('lodash');
 const async = require('async');
 const sinon = require('sinon');
 const winston = require('winston');
-const config = require('../../../../config/config');
-const messageToStatsService = require('../../server/services/message-to-stats.server.service');
+const config = require('./../../../../config/config.mjs');
+const messageToStatsService = require('./../../server/services/message-to-stats.server.service.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 

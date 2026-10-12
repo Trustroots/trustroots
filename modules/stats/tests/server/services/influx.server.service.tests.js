@@ -1,11 +1,10 @@
 const should = require('should');
 const sinon = require('sinon');
 const influx = require('influx');
-const Promise = require('promise');
 const winston = require('winston');
 // influx = require('influx'),
-const influxService = require('../../../server/services/influx.server.service');
-const config = require('../../../../../config/config');
+const influxService = require('./../../../server/services/influx.server.service.mjs');
+const config = require('./../../../../../config/config.mjs');
 
 function loadInfluxServiceWithLogger(logger) {
   sinon.stub(winston.Logger.prototype, 'log').callsFake(logger);
@@ -81,9 +80,22 @@ describe('Service: influx', function () {
       // and it returns a Promise
       influx.InfluxDB.prototype.writeMeasurement.returns(
         new Promise(function (resolve) {
-          process.nextTick(resolve());
+          process.nextTick(resolve);
         }),
       );
+    });
+
+    it('enforces bounded network requests even when configuration asks for retries', function (done) {
+      config.influxdb.options.pool = { requestTimeout: 60000, maxRetries: 10 };
+      const constructor = sinon.stub(influx, 'InfluxDB').returns({});
+      influxService._getClient(function (err) {
+        should.not.exist(err);
+        constructor.firstCall.args[0].pool.should.deepEqual({
+          requestTimeout: 2000,
+          maxRetries: 0,
+        });
+        done();
+      });
     });
 
     context('invalid data', function () {

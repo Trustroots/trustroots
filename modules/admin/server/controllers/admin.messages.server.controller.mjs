@@ -3,29 +3,28 @@
  */
 import _ from 'lodash';
 import crypto from 'crypto';
-import errorService from '../../../core/server/services/error.server.service.js';
+import errorService from './../../../core/server/services/error.server.service.mjs';
 import mongoose from 'mongoose';
-import MessagesController from '../../../messages/server/controllers/messages.server.controller.js';
-import textService from '../../../core/server/services/text.server.service.js';
+import MessagesController from './../../../messages/server/controllers/messages.server.controller.mjs';
+import textService from './../../../core/server/services/text.server.service.mjs';
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');
 const ReferenceThread = mongoose.model('ReferenceThread');
 const User = mongoose.model('User');
-
 async function findScammerRecipients(username, currentUserId) {
   if (typeof username !== 'string' || !username.trim()) {
     const error = new Error('Missing `username` field.');
     error.statusCode = 400;
     throw error;
   }
-
-  const scammer = await User.findOne({ username: username.trim() }).exec();
+  const scammer = await User.findOne({
+    username: username.trim(),
+  }).exec();
   if (!scammer) {
     const error = new Error('Member does not exist.');
     error.statusCode = 404;
     throw error;
   }
-
   const recipientIds = await Message.distinct('userTo', {
     userFrom: scammer._id,
   }).exec();
@@ -37,12 +36,15 @@ async function findScammerRecipients(username, currentUserId) {
     },
   })
     .select('username displayName')
-    .sort({ username: 1 })
+    .sort({
+      username: 1,
+    })
     .exec();
-
-  return { scammer, recipients };
+  return {
+    scammer,
+    recipients,
+  };
 }
-
 export const getScammerRecipients = async (req, res) => {
   try {
     const { scammer, recipients } = await findScammerRecipients(
@@ -50,7 +52,10 @@ export const getScammerRecipients = async (req, res) => {
       req.user && req.user._id,
     );
     return res.send({
-      scammer: { _id: scammer._id, username: scammer.username },
+      scammer: {
+        _id: scammer._id,
+        username: scammer.username,
+      },
       recipients,
     });
   } catch (err) {
@@ -59,14 +64,14 @@ export const getScammerRecipients = async (req, res) => {
     });
   }
 };
-
 export const sendScammerWarning = async (req, res) => {
   const content = _.get(req, ['body', 'content']);
   const cleanContent = textService.html(content);
   if (!cleanContent || textService.isEmpty(cleanContent)) {
-    return res.status(400).send({ message: 'Please write a message.' });
+    return res.status(400).send({
+      message: 'Please write a message.',
+    });
   }
-
   try {
     const { scammer, recipients } = await findScammerRecipients(
       _.get(req, ['body', 'username']),
@@ -74,9 +79,9 @@ export const sendScammerWarning = async (req, res) => {
     );
     const requestId = _.get(req, ['body', 'requestId']);
     if (typeof requestId !== 'string' || !/^[a-f0-9]{32}$/.test(requestId)) {
-      return res
-        .status(400)
-        .send({ message: 'A valid warning request ID is required.' });
+      return res.status(400).send({
+        message: 'A valid warning request ID is required.',
+      });
     }
     // The primary key makes retries atomic even on a standalone MongoDB server.
     // Keep each recipient's original content, timestamp and read state on retry.
@@ -95,7 +100,9 @@ export const sendScammerWarning = async (req, res) => {
           .digest('hex')
           .slice(0, 24);
         return Message.findOneAndUpdate(
-          { _id: id },
+          {
+            _id: id,
+          },
           {
             $setOnInsert: {
               content: cleanContent,
@@ -105,7 +112,11 @@ export const sendScammerWarning = async (req, res) => {
               shadowHidden: false,
             },
           },
-          { upsert: true, new: true, setDefaultsOnInsert: true },
+          {
+            upsert: true,
+            new: true,
+            setDefaultsOnInsert: true,
+          },
         ).exec();
       }),
     );
@@ -113,8 +124,14 @@ export const sendScammerWarning = async (req, res) => {
       const updates = savedMessages.flatMap(message => {
         const pair = {
           $or: [
-            { userTo: message.userTo, userFrom: message.userFrom },
-            { userTo: message.userFrom, userFrom: message.userTo },
+            {
+              userTo: message.userTo,
+              userFrom: message.userFrom,
+            },
+            {
+              userTo: message.userFrom,
+              userFrom: message.userTo,
+            },
           ],
         };
         const latest = {
@@ -139,7 +156,12 @@ export const sendScammerWarning = async (req, res) => {
           {
             updateOne: {
               filter: pair,
-              update: { $setOnInsert: { ...latest, _id: threadId } },
+              update: {
+                $setOnInsert: {
+                  ...latest,
+                  _id: threadId,
+                },
+              },
               upsert: true,
             },
           },
@@ -147,23 +169,37 @@ export const sendScammerWarning = async (req, res) => {
           // read warning unread again or replacing a newer conversation message.
           {
             updateOne: {
-              filter: { ...pair, updated: { $lt: message.created } },
-              update: { $set: latest },
+              filter: {
+                ...pair,
+                updated: {
+                  $lt: message.created,
+                },
+              },
+              update: {
+                $set: latest,
+              },
             },
           },
         ];
       });
       try {
-        await Thread.bulkWrite(updates, { ordered: false });
+        await Thread.bulkWrite(updates, {
+          ordered: false,
+        });
       } catch (err) {
         if (err.code !== 11000) throw err;
         // Another request inserted a shared primary key. The unordered batch
         // has finished; retry against the now-existing threads to repair state.
-        await Thread.bulkWrite(updates, { ordered: false });
+        await Thread.bulkWrite(updates, {
+          ordered: false,
+        });
       }
     }
     return res.send({
-      scammer: { _id: scammer._id, username: scammer.username },
+      scammer: {
+        _id: scammer._id,
+        username: scammer.username,
+      },
       sent: savedMessages.length,
     });
   } catch (err) {
@@ -190,14 +226,21 @@ export const getMessages = (req, res) => {
       message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
-
   Message.find({
     $or: [
-      { userFrom: user1, userTo: user2 },
-      { userFrom: user2, userTo: user1 },
+      {
+        userFrom: user1,
+        userTo: user2,
+      },
+      {
+        userFrom: user2,
+        userTo: user1,
+      },
     ],
   })
-    .sort({ created: 1 })
+    .sort({
+      created: 1,
+    })
     .populate({
       path: 'userFrom',
       select: 'username displayName',
@@ -210,18 +253,23 @@ export const getMessages = (req, res) => {
     })
     .exec((err, messages) => {
       if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       }
-
       ReferenceThread.find({
         $or: [
-          { userFrom: user1, userTo: user2 },
-          { userFrom: user2, userTo: user1 },
+          {
+            userFrom: user1,
+            userTo: user2,
+          },
+          {
+            userFrom: user2,
+            userTo: user1,
+          },
         ],
       })
-        .sort({ created: 1 })
+        .sort({
+          created: 1,
+        })
         .populate({
           path: 'userFrom',
           select: 'username displayName',
@@ -234,11 +282,8 @@ export const getMessages = (req, res) => {
         })
         .exec((referenceThreadErr, referenceThreads) => {
           if (referenceThreadErr) {
-            return res.status(400).send({
-              message: errorService.getErrorMessage(referenceThreadErr),
-            });
+            return errorService.sendBadRequest(res, referenceThreadErr);
           }
-
           return res.send({
             messages: MessagesController.sanitizeMessages(messages),
             referenceThreads: referenceThreads || [],
@@ -246,5 +291,10 @@ export const getMessages = (req, res) => {
         });
     });
 };
-
-export default { getScammerRecipients, sendScammerWarning, getMessages };
+const defaultInterop = {
+  getScammerRecipients,
+  sendScammerWarning,
+  getMessages,
+};
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

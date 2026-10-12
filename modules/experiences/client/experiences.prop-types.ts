@@ -1,41 +1,12 @@
 import PropTypes from 'prop-types';
-import type {
-  ExperienceInteractions,
-  ExperienceRecommendation,
-} from '../shared/experience';
 
 export type {
+  Experience,
+  ExperienceMine,
+  ExperienceUser,
   ExperienceInteractions,
   ExperienceRecommendation,
 } from '../shared/experience';
-
-export interface ExperienceUser {
-  _id: string;
-  username: string;
-  name?: string;
-  displayName?: string;
-  avatar?: string;
-  created?: string;
-  gender?: string;
-}
-
-export interface Experience {
-  _id: string;
-  public: boolean;
-  userFrom: ExperienceUser;
-  userTo: ExperienceUser;
-  created: string;
-  interactions: ExperienceInteractions;
-  recommend: ExperienceRecommendation;
-  feedbackPublic: string;
-  response?: Experience | null;
-}
-
-export interface ExperienceMine {
-  userFrom: string | ExperienceUser;
-  public: boolean;
-  response?: Experience | null;
-}
 
 export const interactionsType = PropTypes.shape({
   met: PropTypes.bool.isRequired,

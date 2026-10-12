@@ -12,7 +12,7 @@ type InboxThreadProps = { user: MessageUser; thread: MessageThreadSummary };
 export default function InboxThread({ user, thread }: InboxThreadProps) {
   const { t } = useTranslation('messages');
   const otherUser = findOtherUser(user, thread);
-  const haveReplied = thread.userFrom._id === user._id;
+  const haveReplied = thread.userFrom?._id === user._id;
   const { read } = thread;
 
   return (
@@ -64,7 +64,7 @@ function findOtherUser(
   currentUser: MessageUser,
   thread: MessageThreadSummary,
 ): MessageUser {
-  return [thread.userFrom, thread.userTo].find(
-    user => user._id !== currentUser._id,
-  )!;
+  const otherUser =
+    thread.userFrom?._id === currentUser._id ? thread.userTo : thread.userFrom;
+  return otherUser ?? { _id: '', displayName: 'Unknown member' };
 }

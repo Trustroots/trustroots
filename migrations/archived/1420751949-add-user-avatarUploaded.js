@@ -3,10 +3,10 @@
  * Determines if avatars exist at users upload folder
  */
 
-const mongooseService = require('../../config/lib/mongoose');
+const mongooseService = require('./../../config/lib/mongoose.mjs');
 const mongoose = require('mongoose');
 // eslint-disable-next-line no-unused-vars
-const userModels = require('../../modules/users/server/models/user.server.model');
+const userModels = require('./../../modules/users/server/models/user.server.model.mjs');
 const User = mongoose.model('User');
 
 exports.up = function (next) {

@@ -1,4 +1,4 @@
-const { annotateFeature, test, expect } = require('../../support/test');
+const { annotateFeature, test, expect } = require('../../support/fixtures');
 
 const {
   SEEDED_EXPERIENCE,
@@ -77,6 +77,61 @@ test.describe('confirmed member flows', () => {
         .filter({ hasText: /contacts/i })
         .getByText('0'),
     ).toBeVisible();
+  });
+
+  test('contacts can be sorted by date or member name', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'contacts.lists-and-common', [
+      'Contact list shows confirmed contacts.',
+    ]);
+    const selfId = berlin.id;
+    const contacts = [
+      {
+        username: 'e2e-sort-alpha',
+        displayName: 'Alpha Example',
+        created: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        username: 'e2e-sort-bravo',
+        displayName: 'Bravo Example',
+        created: '2026-03-01T00:00:00.000Z',
+      },
+      {
+        username: 'e2e-sort-charlie',
+        displayName: 'Charlie Example',
+        created: '2026-02-01T00:00:00.000Z',
+      },
+    ].map((member, index) => ({
+      _id: `66500000000000000000000${index + 1}`,
+      confirmed: true,
+      created: member.created,
+      userFrom: selfId,
+      userTo: `66500000000000000000001${index + 1}`,
+      user: {
+        _id: `66500000000000000000001${index + 1}`,
+        username: member.username,
+        displayName: member.displayName,
+        roles: ['user'],
+        public: true,
+      },
+    }));
+    await page.route(`**/api/contacts/${selfId}`, route =>
+      route.fulfill({ json: contacts }),
+    );
+    await page.goto(`/profile/${berlin.username}/contacts`);
+    const contactNames = page.locator('.contacts-contact h4 a');
+    await expect(contactNames).toHaveText([
+      'Bravo Example',
+      'Charlie Example',
+      'Alpha Example',
+    ]);
+    await page.getByLabel('Sort by').selectOption('name');
+    await expect(contactNames).toHaveText([
+      'Alpha Example',
+      'Bravo Example',
+      'Charlie Example',
+    ]);
   });
 
   test('profile edit networks page is reachable', async ({
@@ -515,7 +570,12 @@ test.describe('confirmed member flows', () => {
 
     await page.goto(`/messages/${recipient.username}`);
 
-    await expect(page.getByText(/you haven't been talking yet/i)).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        name: `You haven't been talking with ${recipient.firstName} ${recipient.lastName} yet.`,
+      }),
+    ).toBeVisible();
+    await expect(page.getByTestId('quick-reply')).toHaveCount(0);
     await expect(
       page.getByRole('link', { name: /safety tips/i }),
     ).toHaveAttribute('href', '/safety');

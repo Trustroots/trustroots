@@ -1,6 +1,6 @@
 /* global CompositionEvent, document */
 
-const { expect } = require('./test');
+const { expect } = require('./fixtures');
 
 async function assertReplyComposerCaretAndComposition(page, threadUrl) {
   await page.goto(threadUrl);

@@ -125,7 +125,7 @@ export default function AdminAuditLog() {
           >
             <option value="">All teams</option>
             <option value="admin">Admin</option>
-            <option value="welcome-team">Welcome team</option>
+            <option value="welcome-team">Greeters</option>
           </select>
         </div>
         {error && (

@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-
 const service = {};
 
 /**
@@ -9,7 +8,6 @@ const service = {};
  */
 
 const BATCH_SIZE = 1000;
-
 const CAMPAIGN_WINDOWS = [
   {
     start: new Date('2021-07-04T00:00:00.000Z'),
@@ -20,37 +18,58 @@ const CAMPAIGN_WINDOWS = [
     end: new Date('2023-03-01T00:00:00.000Z'),
   },
 ];
-
 function emptyArrayOrMissing(field) {
   return {
-    $or: [{ [field]: { $size: 0 } }, { [field]: { $exists: false } }],
+    $or: [
+      {
+        [field]: {
+          $size: 0,
+        },
+      },
+      {
+        [field]: {
+          $exists: false,
+        },
+      },
+    ],
   };
 }
-
 function candidateQuery() {
   return {
     $and: [
-      { public: false },
-      { roles: { $all: ['user', 'suspended'], $size: 2 } },
+      {
+        public: false,
+      },
+      {
+        roles: {
+          $all: ['user', 'suspended'],
+          $size: 2,
+        },
+      },
       {
         $or: CAMPAIGN_WINDOWS.map(({ start, end }) => ({
-          created: { $gte: start, $lt: end },
+          created: {
+            $gte: start,
+            $lt: end,
+          },
         })),
       },
       emptyArrayOrMissing('member'),
       emptyArrayOrMissing('blocked'),
       emptyArrayOrMissing('pushRegistration'),
-      { avatarUploaded: { $ne: true } },
+      {
+        avatarUploaded: {
+          $ne: true,
+        },
+      },
     ],
   };
 }
-
 function addIds(ids, users, field) {
   users.forEach(user => {
     ids.add(user[field].toString());
   });
 }
-
 async function findUsersWithProtectedActivity(userIds) {
   const Message = mongoose.model('Message');
   const Thread = mongoose.model('Thread');
@@ -59,8 +78,9 @@ async function findUsersWithProtectedActivity(userIds) {
   const Experience = mongoose.model('Experience');
   const ReferenceThread = mongoose.model('ReferenceThread');
   const AdminNote = mongoose.model('AdminNote');
-  const queryByUser = { $in: userIds };
-
+  const queryByUser = {
+    $in: userIds,
+  };
   const [
     messagesSent,
     messagesReceived,
@@ -75,20 +95,67 @@ async function findUsersWithProtectedActivity(userIds) {
     referencesReceived,
     adminNotes,
   ] = await Promise.all([
-    Message.find({ userFrom: queryByUser }).select('userFrom').lean(),
-    Message.find({ userTo: queryByUser }).select('userTo').lean(),
-    Thread.find({ userFrom: queryByUser }).select('userFrom').lean(),
-    Thread.find({ userTo: queryByUser }).select('userTo').lean(),
-    Contact.find({ userFrom: queryByUser }).select('userFrom').lean(),
-    Contact.find({ userTo: queryByUser }).select('userTo').lean(),
-    Offer.find({ user: queryByUser }).select('user').lean(),
-    Experience.find({ userFrom: queryByUser }).select('userFrom').lean(),
-    Experience.find({ userTo: queryByUser }).select('userTo').lean(),
-    ReferenceThread.find({ userFrom: queryByUser }).select('userFrom').lean(),
-    ReferenceThread.find({ userTo: queryByUser }).select('userTo').lean(),
-    AdminNote.find({ user: queryByUser }).select('user').lean(),
+    Message.find({
+      userFrom: queryByUser,
+    })
+      .select('userFrom')
+      .lean(),
+    Message.find({
+      userTo: queryByUser,
+    })
+      .select('userTo')
+      .lean(),
+    Thread.find({
+      userFrom: queryByUser,
+    })
+      .select('userFrom')
+      .lean(),
+    Thread.find({
+      userTo: queryByUser,
+    })
+      .select('userTo')
+      .lean(),
+    Contact.find({
+      userFrom: queryByUser,
+    })
+      .select('userFrom')
+      .lean(),
+    Contact.find({
+      userTo: queryByUser,
+    })
+      .select('userTo')
+      .lean(),
+    Offer.find({
+      user: queryByUser,
+    })
+      .select('user')
+      .lean(),
+    Experience.find({
+      userFrom: queryByUser,
+    })
+      .select('userFrom')
+      .lean(),
+    Experience.find({
+      userTo: queryByUser,
+    })
+      .select('userTo')
+      .lean(),
+    ReferenceThread.find({
+      userFrom: queryByUser,
+    })
+      .select('userFrom')
+      .lean(),
+    ReferenceThread.find({
+      userTo: queryByUser,
+    })
+      .select('userTo')
+      .lean(),
+    AdminNote.find({
+      user: queryByUser,
+    })
+      .select('user')
+      .lean(),
   ]);
-
   const ids = new Set();
   addIds(ids, messagesSent, 'userFrom');
   addIds(ids, messagesReceived, 'userTo');
@@ -104,7 +171,6 @@ async function findUsersWithProtectedActivity(userIds) {
   addIds(ids, adminNotes, 'user');
   return ids;
 }
-
 async function processBatch(userIds, deleteAccounts) {
   const User = mongoose.model('User');
   const protectedIds = await findUsersWithProtectedActivity(userIds);
@@ -112,7 +178,6 @@ async function processBatch(userIds, deleteAccounts) {
     userId => !protectedIds.has(userId.toString()),
   );
   let deleted = 0;
-
   if (deleteAccounts && eligibleIds.length) {
     // Check associated activity once more immediately before deletion. Suspended
     // accounts cannot create member activity, but this protects a concurrent
@@ -121,15 +186,20 @@ async function processBatch(userIds, deleteAccounts) {
     eligibleIds = eligibleIds.filter(
       userId => !newlyProtectedIds.has(userId.toString()),
     );
-
     if (eligibleIds.length) {
       const deletion = await User.deleteMany({
-        $and: [candidateQuery(), { _id: { $in: eligibleIds } }],
+        $and: [
+          candidateQuery(),
+          {
+            _id: {
+              $in: eligibleIds,
+            },
+          },
+        ],
       });
       deleted = deletion.deletedCount || deletion.n || 0;
     }
   }
-
   return {
     candidates: userIds.length,
     deleted,
@@ -137,10 +207,8 @@ async function processBatch(userIds, deleteAccounts) {
     protected: userIds.length - eligibleIds.length,
   };
 }
-
 service.CAMPAIGN_WINDOWS = CAMPAIGN_WINDOWS;
 service.candidateQuery = candidateQuery;
-
 service.run = async function ({
   deleteAccounts = false,
   onBatch,
@@ -149,12 +217,19 @@ service.run = async function ({
   const User = mongoose.model('User');
   const cursor = User.find(candidateQuery())
     .select('_id')
-    .sort({ created: 1, _id: 1 })
+    .sort({
+      created: 1,
+      _id: 1,
+    })
     .lean()
     .cursor();
-  const result = { candidates: 0, eligible: 0, protected: 0, deleted: 0 };
+  const result = {
+    candidates: 0,
+    eligible: 0,
+    protected: 0,
+    deleted: 0,
+  };
   let userIds = [];
-
   async function flushBatch() {
     const batchResult = await processBatch(userIds, deleteAccounts);
     result.candidates += batchResult.candidates;
@@ -162,12 +237,10 @@ service.run = async function ({
     result.protected += batchResult.protected;
     result.deleted += batchResult.deleted;
     userIds = [];
-
     if (onBatch) {
       onBatch(batchResult);
     }
   }
-
   for await (const user of cursor) {
     userIds.push(user._id);
     if (userIds.length === batchSize) {
@@ -179,9 +252,9 @@ service.run = async function ({
   }
   return result;
 };
-
 const defaultExport = service;
 export default defaultExport;
 export { CAMPAIGN_WINDOWS };
 export { candidateQuery };
 export const run = defaultExport.run;
+export { defaultExport as 'module.exports' };

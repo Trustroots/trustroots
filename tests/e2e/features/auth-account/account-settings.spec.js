@@ -1,11 +1,13 @@
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 
 const {
   DEFAULT_PASSWORD,
+  createIsolatedContext,
   createUser,
   registerViaApi,
   signIn,
   signInViaApi,
+  authenticateViaApi,
   signOut,
 } = require('../../support/helpers');
 const {
@@ -38,7 +40,9 @@ test.describe.serial('account settings feature coverage', () => {
     expect(download.suggestedFilename()).toBe('trustroots-data.json');
   });
 
-  test('members can change their password with validation', async ({
+  test('password changes refresh the current browser and revoke other sessions', async ({
+    browser,
+    baseURL,
     page,
     request,
   }, testInfo) => {
@@ -51,31 +55,114 @@ test.describe.serial('account settings feature coverage', () => {
     const user = createUser();
     await registerViaApi(request, user);
     await signInViaApi(page, request, user);
+    const otherContext = await createIsolatedContext(browser, baseURL);
+    const otherPage = await otherContext.newPage();
+    try {
+      await signInViaApi(otherPage, otherContext.request, user);
 
-    const missingCurrent = await page.request.post('/api/users/password', {
-      data: {
-        newPassword: `${DEFAULT_PASSWORD}Changed`,
-        verifyPassword: `${DEFAULT_PASSWORD}Changed`,
-      },
-    });
-    expect(missingCurrent.status()).toBe(400);
+      const missingCurrent = await page.request.post('/api/users/password', {
+        data: {
+          newPassword: `${DEFAULT_PASSWORD}Changed`,
+          verifyPassword: `${DEFAULT_PASSWORD}Changed`,
+        },
+      });
+      expect(missingCurrent.status()).toBe(400);
 
-    const newPassword = `${DEFAULT_PASSWORD}Changed`;
-    const changed = await page.request.post('/api/users/password', {
-      data: {
-        currentPassword: user.password,
-        newPassword,
-        verifyPassword: newPassword,
-      },
-    });
-    expect(changed.ok()).toBeTruthy();
-    const changedProfile = (await changed.json()).user;
-    expect(changedProfile.username).toBe(user.username);
-    expect(changedProfile).not.toHaveProperty('password');
-    expect(changedProfile).not.toHaveProperty('salt');
-    expect(changedProfile).not.toHaveProperty('emailToken');
-    expect(changedProfile).not.toHaveProperty('resetPasswordToken');
-    expect(changedProfile).not.toHaveProperty('pushRegistration');
+      const newPassword = `${DEFAULT_PASSWORD}Changed`;
+      const changed = await page.request.post('/api/users/password', {
+        data: {
+          currentPassword: user.password,
+          newPassword,
+          verifyPassword: newPassword,
+        },
+      });
+      expect(changed.ok()).toBeTruthy();
+      const changedBody = await changed.json();
+      expect(changedBody.user).not.toHaveProperty('password');
+      expect(changedBody.user).not.toHaveProperty('salt');
+      expect(changedBody.user).not.toHaveProperty('emailToken');
+      expect(changedBody.user).not.toHaveProperty('resetPasswordToken');
+      expect(changedBody.user).not.toHaveProperty('pushRegistration');
+      expect((await page.request.get('/api/users/export')).ok()).toBeTruthy();
+      expect(
+        (await otherContext.request.get('/api/users/export')).status(),
+      ).toBe(403);
+
+      await signInViaApi(otherPage, otherContext.request, {
+        ...user,
+        password: newPassword,
+      });
+      expect(
+        (await otherContext.request.get('/api/users/export')).ok(),
+      ).toBeTruthy();
+    } finally {
+      await otherContext.close();
+    }
+  });
+
+  test('concurrent password changes cannot overwrite each other or lose a version increment', async ({
+    browser,
+    baseURL,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.password-change', [
+      'Concurrent password changes using the same current password cannot both succeed.',
+      'The successful password change atomically updates the scrypt hash, clears the legacy salt, and increments the session version.',
+    ]);
+
+    const user = createUser();
+    await registerViaApi(request, user);
+    const contexts = await Promise.all([
+      createIsolatedContext(browser, baseURL),
+      createIsolatedContext(browser, baseURL),
+    ]);
+    try {
+      await Promise.all(
+        contexts.map(async context => {
+          const page = await context.newPage();
+          await signInViaApi(page, context.request, user);
+        }),
+      );
+
+      const passwords = [
+        `${DEFAULT_PASSWORD}FirstChange`,
+        `${DEFAULT_PASSWORD}SecondChange`,
+      ];
+      const responses = await Promise.all(
+        contexts.map((context, index) =>
+          context.request.post('/api/users/password', {
+            data: {
+              currentPassword: user.password,
+              newPassword: passwords[index],
+              verifyPassword: passwords[index],
+            },
+          }),
+        ),
+      );
+      expect(responses.map(response => response.status()).sort()).toEqual([
+        200, 400,
+      ]);
+
+      const changedUser = await findUserByUsername(user.username);
+      expect(changedUser.authVersion).toBe(1);
+      expect(changedUser.passwordUpdated).toBeTruthy();
+      expect(changedUser.salt).toBeFalsy();
+      expect(changedUser.password).toMatch(/^\$scrypt\$/);
+      expect(changedUser.password).not.toBe(user.password);
+
+      const successfulPassword = passwords[responses[0].ok() ? 0 : 1];
+      const checkContext = await createIsolatedContext(browser, baseURL);
+      try {
+        const signin = await checkContext.request.post('/api/auth/signin', {
+          data: { username: user.username, password: successfulPassword },
+        });
+        expect(signin.ok()).toBeTruthy();
+      } finally {
+        await checkContext.close();
+      }
+    } finally {
+      await Promise.all(contexts.map(context => context.close()));
+    }
   });
 
   test('members can change their password through account settings', async ({
@@ -95,6 +182,19 @@ test.describe.serial('account settings feature coverage', () => {
 
     await page.goto('/profile/edit/account#password');
     await expect(page.locator('#password')).toBeVisible();
+
+    await page.locator('#newPassword').fill(newPassword);
+    await page.locator('#verifyPassword').fill(newPassword);
+    const invalidPassword = page.waitForResponse(
+      response =>
+        response.url().includes('/api/users/password') &&
+        response.request().method() === 'POST',
+    );
+    await page.getByRole('button', { name: /change password/i }).click();
+    expect((await invalidPassword).status()).toBe(400);
+    await expect(
+      page.getByText('Current password is incorrect.'),
+    ).toBeVisible();
 
     await page.locator('#currentPassword').fill(user.password);
     await page.locator('#newPassword').fill(newPassword);
@@ -117,8 +217,8 @@ test.describe.serial('account settings feature coverage', () => {
   });
 
   test('members can update account details and see validation errors', async ({
-    page,
     request,
+    baseURL,
   }, testInfo) => {
     annotateFeature(testInfo, 'account.details-update', [
       'Valid account details update persists.',
@@ -127,17 +227,17 @@ test.describe.serial('account settings feature coverage', () => {
 
     const user = createUser();
     await registerViaApi(request, user);
-    await signInViaApi(page, request, user);
+    await authenticateViaApi(request, user);
 
-    const invalid = await page.request.put('/api/users', {
-      headers: { Origin: new URL(page.url()).origin },
+    const invalid = await request.put('/api/users', {
+      headers: { Origin: new URL(baseURL).origin },
       data: { locale: 'definitely-invalid-locale' },
     });
     expect(invalid.status()).toBe(400);
 
     const tagline = 'E2E account update tagline';
-    const valid = await page.request.put('/api/users', {
-      headers: { Origin: new URL(page.url()).origin },
+    const valid = await request.put('/api/users', {
+      headers: { Origin: new URL(baseURL).origin },
       data: { tagline },
     });
     expect(valid.ok()).toBeTruthy();
@@ -398,7 +498,6 @@ test.describe.serial('account settings feature coverage', () => {
   });
 
   test('members cannot add push registrations and can remove historical tokens', async ({
-    page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'account.push-registrations', [
@@ -409,9 +508,9 @@ test.describe.serial('account settings feature coverage', () => {
     const user = createUser();
     const token = `web-push-token-${Date.now()}`;
     await registerViaApi(request, user);
-    await signInViaApi(page, request, user);
+    await authenticateViaApi(request, user);
 
-    const add = await page.request.post('/api/users/push/registrations', {
+    const add = await request.post('/api/users/push/registrations', {
       data: {
         token,
         platform: 'web',
@@ -436,7 +535,7 @@ test.describe.serial('account settings feature coverage', () => {
       },
     });
 
-    const remove = await page.request.delete(
+    const remove = await request.delete(
       `/api/users/push/registrations/${token}`,
       { headers: { 'X-Trustroots-Request': '1' } },
     );
@@ -447,7 +546,6 @@ test.describe.serial('account settings feature coverage', () => {
   });
 
   test('Android members can register and remove a UnifiedPush endpoint', async ({
-    page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'account.android-message-alerts', [
@@ -456,8 +554,8 @@ test.describe.serial('account settings feature coverage', () => {
     ]);
     const user = createUser();
     await registerViaApi(request, user);
-    await signInViaApi(page, request, user);
-    const config = await page.request.get('/api/users/unified-push');
+    await authenticateViaApi(request, user);
+    const config = await request.get('/api/users/unified-push');
     expect(config.ok()).toBeTruthy();
     expect(await config.json()).toMatchObject({ enabled: true });
     const registration = {
@@ -466,15 +564,15 @@ test.describe.serial('account settings feature coverage', () => {
         'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
       auth: 'abcdefghijklmnopqrstuv',
     };
-    const rejected = await page.request.post('/api/users/unified-push', {
+    const rejected = await request.post('/api/users/unified-push', {
       data: { ...registration, endpoint: 'https://example.org/push' },
     });
     expect(rejected.status()).toBe(400);
-    const added = await page.request.post('/api/users/unified-push', {
+    const added = await request.post('/api/users/unified-push', {
       data: registration,
     });
     expect(added.status()).toBe(204);
-    const removed = await page.request.delete('/api/users/unified-push', {
+    const removed = await request.delete('/api/users/unified-push', {
       data: { endpoint: registration.endpoint },
     });
     expect(removed.status()).toBe(204);

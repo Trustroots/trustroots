@@ -6,21 +6,22 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-require('../../server/models/user.server.model');
-require('../../../contacts/server/models/contacts.server.model');
-require('../../../messages/server/models/message.server.model');
-require('../../../messages/server/models/message-stat.server.model');
-require('../../../messages/server/models/thread.server.model');
-require('../../../offers/server/models/offer.server.model');
-require('../../../tribes/server/models/tribe.server.model');
+require('./../../server/models/user.server.model.mjs');
+require('./../../../contacts/server/models/contacts.server.model.mjs');
+require('./../../../messages/server/models/message.server.model.mjs');
+require('./../../../messages/server/models/message-stat.server.model.mjs');
+require('./../../../messages/server/models/thread.server.model.mjs');
+require('./../../../offers/server/models/offer.server.model.mjs');
+require('./../../../tribes/server/models/tribe.server.model.mjs');
 
-const profileController = require('../../server/controllers/users.profile.server.controller');
+const profileController = require('./../../server/controllers/users.profile.server.controller.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 const User = mongoose.model('User');
 
-const errorServicePath = '../../../core/server/services/error.server.service';
+const errorServicePath =
+  './../../../core/server/services/error.server.service.mjs';
 
 function loadControllerWithEmptyErrorMessage() {
   sinon.stub(require(errorServicePath), 'getErrorMessage').returns(false);

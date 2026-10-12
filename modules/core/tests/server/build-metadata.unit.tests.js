@@ -1,8 +1,8 @@
 const assert = require('assert');
-const proxyquire = require('proxyquire').noCallThru();
+const proxyquire = require('./../../../../testutils/server/mock-module');
 const sinon = require('sinon');
 
-const buildMetadata = require('../../../../config/lib/build-metadata');
+const buildMetadata = require('./../../../../config/lib/build-metadata.mjs');
 
 describe('Build metadata helper', () => {
   const buildEnvironmentVariables = [
@@ -91,7 +91,7 @@ describe('Build metadata helper', () => {
     process.env.TRUSTROOTS_BUILD_COMMITTED_AT = '2026-06-21T19:06:12+01:00';
     const execFile = sinon.spy();
     const environmentBuildMetadata = proxyquire(
-      '../../../../config/lib/build-metadata',
+      require.resolve('./../../../../config/lib/build-metadata.mjs'),
       {
         child_process: { execFile },
       },

@@ -5,7 +5,7 @@ const {
   test,
   useElementScreenshot,
   useViewportScreenshot,
-} = require('../../support/test');
+} = require('../../support/fixtures');
 
 test.describe('public footer', () => {
   test('standard footer shows compact links and build metadata on desktop', async ({

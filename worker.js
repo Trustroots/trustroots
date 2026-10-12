@@ -1,1 +1,1 @@
-require('./worker.mjs');
+import './worker.mjs';

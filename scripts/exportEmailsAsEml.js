@@ -13,11 +13,11 @@
 
 var path = require('path'),
     fs = require('fs'),
-    del = require('del'),
+    removeLocalPath = require('../modules/core/server/services/file-removal.server.service.mjs').removeLocalPath,
     async = require('async'),
     nodemailer = require('nodemailer'),
-    config = require('../config/config'),
-    emailService = require('../modules/core/server/services/email.server.service');
+    config = require('./../config/config.mjs'),
+    emailService = require('./../modules/core/server/services/email.server.service.mjs');
 
 // Default temp folder
 var tempFolder = (process.argv[2] == null) ? path.resolve('./tmp/renderedEmails') : process.argv[2];
@@ -125,8 +125,11 @@ function ensureTempDir(done) {
 
 function emptyTempDir(done) {
   console.log('Emptying temp directory from *.eml files.');
-  del([ tempFolder + '/*.eml' ]);
-  done();
+  fs.promises.readdir(tempFolder)
+    .then(names => Promise.all(names
+      .filter(name => !name.startsWith('.') && name.endsWith('.eml'))
+      .map(name => removeLocalPath(path.join(tempFolder, name)))))
+    .then(() => done(), done);
 }
 
 

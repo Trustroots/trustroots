@@ -5,34 +5,35 @@ const { pathToFileURL } = require('node:url');
 
 const root = path.resolve(__dirname, '../../../..');
 const modules = [
-  'modules/users/server/config/strategies/local.js',
-  'modules/users/server/config/users.config.server.js',
-  'modules/users/server/controllers/users.authentication.server.controller.js',
-  'modules/users/server/controllers/users.avatar.server.controller.js',
-  'modules/users/server/controllers/users.block.server.controller.js',
-  'modules/users/server/controllers/users.export.server.controller.js',
-  'modules/users/server/controllers/users.lastseen.server.controller.js',
-  'modules/users/server/controllers/users.password.server.controller.js',
-  'modules/users/server/controllers/users.profile.server.controller.js',
-  'modules/users/server/controllers/users.suspended.server.controller.js',
-  'modules/users/server/jobs/user-finish-signup.server.job.js',
-  'modules/users/server/jobs/user-welcome-sequence-first.server.job.js',
-  'modules/users/server/jobs/user-welcome-sequence-second.server.job.js',
-  'modules/users/server/jobs/user-welcome-sequence-third.server.job.js',
-  'modules/users/server/models/user.server.model.js',
-  'modules/users/server/policies/users.server.policy.js',
-  'modules/users/server/routes/auth.server.routes.js',
-  'modules/users/server/routes/users-block.server.routes.js',
-  'modules/users/server/routes/users.server.routes.js',
-  'modules/users/server/services/authentication.server.service.js',
-  'modules/users/server/services/historical-spam-cleanup.server.service.js',
-  'modules/core/server/controllers/analytics.server.controller.js',
-  'modules/core/server/controllers/core.server.controller.js',
-  'modules/core/server/jobs/send-email.server.job.js',
-  'modules/core/server/routes/core.server.routes.js',
-  'modules/core/server/services/email.server.service.js',
-  'modules/sparkpost/server/controllers/sparkpost-webhooks.server.controller.js',
-  'modules/sparkpost/server/routes/sparkpost.server.routes.js',
+  'modules/users/server/config/strategies/local.mjs',
+  'modules/users/server/config/users.config.server.mjs',
+  'modules/users/server/controllers/users.authentication.server.controller.mjs',
+  'modules/users/server/controllers/users.avatar.server.controller.mjs',
+  'modules/users/server/controllers/users.block.server.controller.mjs',
+  'modules/users/server/controllers/users.export.server.controller.mjs',
+  'modules/users/server/controllers/users.lastseen.server.controller.mjs',
+  'modules/users/server/controllers/users.password.server.controller.mjs',
+  'modules/users/server/controllers/users.profile.server.controller.mjs',
+  'modules/users/server/controllers/users.suspended.server.controller.mjs',
+  'modules/users/server/jobs/user-finish-signup.server.job.mjs',
+  'modules/users/server/jobs/user-welcome-sequence-first.server.job.mjs',
+  'modules/users/server/jobs/user-welcome-sequence-second.server.job.mjs',
+  'modules/users/server/jobs/user-welcome-sequence-third.server.job.mjs',
+  'modules/users/server/models/user.server.model.mjs',
+  'modules/users/server/policies/users.server.policy.mjs',
+  'modules/users/server/routes/auth.server.routes.mjs',
+  'modules/users/server/routes/users-block.server.routes.mjs',
+  'modules/users/server/routes/users.server.routes.mjs',
+  'modules/users/server/services/authentication.server.service.mjs',
+  'modules/users/server/services/historical-spam-cleanup.server.service.mjs',
+  'modules/users/server/services/password-hashing.server.service.mjs',
+  'modules/core/server/controllers/analytics.server.controller.mjs',
+  'modules/core/server/controllers/core.server.controller.mjs',
+  'modules/core/server/jobs/send-email.server.job.mjs',
+  'modules/core/server/routes/core.server.routes.mjs',
+  'modules/core/server/services/email.server.service.mjs',
+  'modules/sparkpost/server/controllers/sparkpost-webhooks.server.controller.mjs',
+  'modules/sparkpost/server/routes/sparkpost.server.routes.mjs',
 ];
 
 describe('ESM interoperability: identity-platform', () => {
@@ -43,12 +44,13 @@ describe('ESM interoperability: identity-platform', () => {
       [
         '-e',
         `
+      (async () => {
       const assert = require('node:assert/strict');
-      const config = require('./config/config');
+      const config = require('./config/config.mjs');
       config.https = true;
       config.domain = 'secure.example.test';
       config.imageProcessor = 'imagemagic';
-      require('./config/lib/mongoose').loadModels();
+      await require('./config/lib/mongoose.mjs').loadModels();
       const gm = require('gm');
       const originalSubClass = gm.subClass;
       let processorOptions;
@@ -56,9 +58,9 @@ describe('ESM interoperability: identity-platform', () => {
         processorOptions = options;
         return originalSubClass(options);
       };
-      require('./modules/users/server/controllers/users.avatar.server.controller');
+      require('./modules/users/server/controllers/users.avatar.server.controller.mjs');
       assert.deepEqual(processorOptions, { imageMagick: true });
-      const email = require('./modules/core/server/services/email.server.service');
+      const email = require('./modules/core/server/services/email.server.service.mjs');
       let confirmationUrl;
       email.renderEmailAndSend = (template, params) => {
         assert.equal(template, 'reset-password');
@@ -70,6 +72,7 @@ describe('ESM interoperability: identity-platform', () => {
       }, () => {});
       assert.equal(confirmationUrl, 'https://secure.example.test/api/auth/reset/example-token');
       process.exit(0);
+      })().catch(error => { console.error(error); process.exit(1); });
     `,
       ],
       { cwd: root, stdio: 'pipe' },

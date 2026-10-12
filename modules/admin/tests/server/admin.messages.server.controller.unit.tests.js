@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-const adminMessages = require('../../server/controllers/admin.messages.server.controller');
+const adminMessages = require('./../../server/controllers/admin.messages.server.controller.mjs');
 require('should');
 
 const Message = mongoose.model('Message');

@@ -1,17 +1,15 @@
-import contactsPolicy from '../policies/contacts.server.policy.js';
-import contacts from '../controllers/contacts.server.controller.js';
+import contactsPolicy from './../policies/contacts.server.policy.mjs';
+import contacts from './../controllers/contacts.server.controller.mjs';
 
 /**
  * Module dependencies.
  */
 function register(app) {
   app.route('/api/contact').all(contactsPolicy.isAllowed).post(contacts.add);
-
   app
     .route('/api/contact-by/:contactUserId')
     .all(contactsPolicy.isAllowed)
     .get(contacts.get);
-
   app
     .route('/api/contact/:contactId')
     .all(contactsPolicy.isAllowed)
@@ -36,6 +34,6 @@ function register(app) {
   app.param('contactId', contacts.contactById);
   app.param('contactUserId', contacts.contactByUserId);
 }
-
 export { register };
 export default register;
+export { register as 'module.exports' };

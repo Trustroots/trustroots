@@ -1,9 +1,9 @@
 const sinon = require('sinon');
-const config = require('../../../../../config/config');
+const config = require('./../../../../../config/config.mjs');
 
 require('should');
 
-const authenticationService = require('../../../server/services/authentication.server.service');
+const authenticationService = require('./../../../server/services/authentication.server.service.mjs');
 
 describe('Service: authentication', function () {
   beforeEach(function () {

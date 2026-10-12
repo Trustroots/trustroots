@@ -1,6 +1,10 @@
 import type { PageTranslator, PageUser } from '../types';
 import React from 'react';
 import Avatar from '@/modules/users/client/components/Avatar.component.js';
+import {
+  infoAndSupportHeading,
+  infoAndSupportLinks,
+} from '@/modules/core/shared/navigation-links';
 import PropTypes from 'prop-types';
 import { userType } from '@/modules/users/client/users.prop-types';
 import { useTranslation } from 'react-i18next';
@@ -75,48 +79,24 @@ export default function Navigation({ user, onSignout }: NavigationProps) {
       </div>
 
       <div className="container">
-        <h5 className="text-uppercase text-muted">{t('Info & support')}</h5>
+        <h5 className="text-uppercase text-muted">
+          {t(infoAndSupportHeading)}
+        </h5>
       </div>
 
       <div className="list-group font-brand-regular">
-        <a className="list-group-item" href="/about">
-          {t('About')}
-        </a>
-        <a className="list-group-item" href="https://ideas.trustroots.org/">
-          {t('Blog')}
-        </a>
-        <a className="list-group-item" href="/support">
-          {t('Contact & Support')}
-        </a>
-        <a className="list-group-item" href="/faq">
-          {t('FAQ')}
-        </a>
-        <a className="list-group-item" href="/foundation">
-          {t('Foundation')}
-        </a>
-        <a className="list-group-item" href="/media">
-          {t('Media')}
-        </a>
-        <a
-          className="list-group-item"
-          href="https://wiki.trustroots.org/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {t('Wiki')}
-        </a>
-        <a className="list-group-item" href="/privacy">
-          {t('Privacy')}
-        </a>
-        <a className="list-group-item" href="/rules">
-          {t('Rules')}
-        </a>
-        <a className="list-group-item" href="/safety">
-          {t('Safety')}
-        </a>
-        <a className="list-group-item" href="/statistics">
-          {t('Statistics')}
-        </a>
+        {infoAndSupportLinks.map(link => (
+          <a
+            key={link.id}
+            className="list-group-item"
+            href={link.href}
+            {...(link.opensInNewTab
+              ? { target: '_blank', rel: 'noopener noreferrer' }
+              : {})}
+          >
+            {t(link.label)}
+          </a>
+        ))}
         {/* Disable shop and navigation links - issue #2672
         <a className="list-group-item" href="https://trustroots.teemill.com">
           {t('Shop')}

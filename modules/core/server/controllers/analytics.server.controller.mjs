@@ -1,6 +1,5 @@
 import url from 'url';
-import log from '../../../../config/lib/logger.js';
-
+import log from './../../../../config/lib/logger.mjs';
 const service = {};
 
 /**
@@ -84,10 +83,9 @@ service.appendUTMParams = function (trackUrl, utmParams) {
 
   // This makes format compose the search string out of the query object
   delete obj.search;
-
   return url.format(obj);
 };
-
 const defaultExport = service;
 export default defaultExport;
 export const appendUTMParams = defaultExport.appendUTMParams;
+export { defaultExport as 'module.exports' };

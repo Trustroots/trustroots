@@ -1,9 +1,9 @@
 const should = require('should');
-const config = require('../../../../../config/config');
+const config = require('./../../../../../config/config.mjs');
 const mongoose = require('mongoose');
 const winston = require('winston');
-const emailService = require('../../../../core/server/services/email.server.service');
-const job = require('../../../server/jobs/user-finish-signup.server.job');
+const emailService = require('./../../../../core/server/services/email.server.service.mjs');
+const job = require('./../../../server/jobs/user-finish-signup.server.job.mjs');
 const sinon = require('sinon');
 
 describe('Job: user finish signup direct unit tests', function () {

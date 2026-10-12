@@ -1,4 +1,6 @@
-const { annotateFeature, expect, test } = require('../../support/test');
+/* global document */
+
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 
 const {
   SEEDED_MEMBERS,
@@ -18,10 +20,177 @@ const berlin = SEEDED_MEMBERS[0];
 const portland = SEEDED_MEMBERS[1];
 const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
 
+async function dragComposer(page, layout, distance) {
+  const handle = page.getByRole('separator', { name: 'Resize message editor' });
+  const box = await handle.boundingBox();
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+  if (layout === 'mobile') {
+    const session = await page.context().newCDPSession(page);
+    await session.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x, y }],
+    });
+    await session.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: [{ x, y: y - distance }],
+    });
+    await session.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: [],
+    });
+    await session.detach();
+  } else {
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y - distance, { steps: 10 });
+    await page.mouse.up();
+  }
+}
+
 test.describe.serial('message action feature coverage', () => {
   test.beforeEach(async ({ page, request }) => {
     await signInViaApi(page, request, berlin);
   });
+
+  for (const [layout, viewport] of [
+    ['desktop', { width: 1280, height: 800 }],
+    ['mobile', { width: 390, height: 844 }],
+  ]) {
+    test(`${layout} members can drag the composer larger and smaller`, async ({
+      page,
+    }, testInfo) => {
+      annotateFeature(testInfo, 'messages.reply-send', [
+        'Members can enlarge the composer without changing their draft.',
+        'Resized controls remain visible when the available height changes.',
+      ]);
+      await page.setViewportSize(viewport);
+      await page.goto(`/messages/${portland.username}`);
+      const editor = page.locator('#message-reply-content');
+      const draft = Array(12).fill('A fictional draft line.').join('\n');
+      await editor.fill(draft);
+      const originalMarkup = await editor.innerHTML();
+      const collapsedHeight = await editor.evaluate(el => el.clientHeight);
+      const handle = page.getByRole('separator', {
+        name: 'Resize message editor',
+      });
+      await dragComposer(page, layout, 350);
+      const expanded = await editor.evaluate(el => ({
+        height: el.clientHeight,
+        contentHeight: el.scrollHeight,
+      }));
+      expect(expanded.height).toBeGreaterThan(collapsedHeight);
+      expect(expanded.contentHeight).toBeLessThanOrEqual(expanded.height);
+      expect(await editor.innerHTML()).toBe(originalMarkup);
+
+      await dragComposer(page, layout, -100);
+      expect(await editor.evaluate(el => el.clientHeight)).toBeLessThan(
+        expanded.height,
+      );
+      expect(await editor.innerHTML()).toBe(originalMarkup);
+      await dragComposer(page, layout, 100);
+
+      await page.setViewportSize({ width: viewport.width, height: 300 });
+      await page.evaluate(() => {
+        document.documentElement.style.setProperty(
+          '--trustroots-keyboard-inset',
+          '80px',
+        );
+      });
+      await expect(handle).toBeInViewport();
+      await expect(page.locator('#messageReplySubmit')).toBeInViewport();
+      const shortLayout = await editor.evaluate(el => ({
+        height: el.clientHeight,
+        contentHeight: el.scrollHeight,
+        bottom: el.getBoundingClientRect().bottom,
+        actionsTop: document
+          .querySelector('.message-reply-actions')
+          .getBoundingClientRect().top,
+      }));
+      expect(shortLayout.height).toBeGreaterThan(0);
+      expect(shortLayout.contentHeight).toBeGreaterThan(shortLayout.height);
+      expect(shortLayout.bottom).toBeLessThanOrEqual(shortLayout.actionsTop);
+      await handle.focus();
+      await page.keyboard.press('Home');
+      await expect(handle).toHaveAttribute('aria-valuenow', '88');
+      expect(await editor.innerHTML()).toBe(originalMarkup);
+    });
+
+    test(`${layout} members can preview, edit and send a formatted draft`, async ({
+      page,
+      request,
+    }, testInfo) => {
+      annotateFeature(testInfo, 'messages.draft-preview', [
+        'Members can preview and edit a formatted draft without sending it.',
+        'Sending from preview sends the original draft and returns to editing.',
+        'Preview follows message link rules on desktop and mobile.',
+      ]);
+      await page.setViewportSize(viewport);
+      const recipientId = await fetchUserIdByUsername(
+        request,
+        portland.username,
+      );
+      await page.goto(`/messages/${portland.username}?userId=${recipientId}`);
+      const editor = page.locator('#message-reply-content');
+      await dragComposer(page, layout, 200);
+      const selectedHeight = await page
+        .locator('#message-reply')
+        .evaluate(el => el.style.height);
+      const draft = `<p><strong>Fictional preview ${Date.now()}</strong></p><p><a href="https://outside.example/">External label</a> <a href="/profile/fictional">Internal label</a></p>`;
+      await editor.evaluate((element, content) => {
+        element.innerHTML = content;
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+      }, draft);
+      const sends = [];
+      page.on('request', outgoing => {
+        if (
+          new URL(outgoing.url()).pathname === '/api/messages' &&
+          outgoing.method() === 'POST'
+        )
+          sends.push(outgoing);
+      });
+      await page.getByRole('button', { name: 'Preview', exact: true }).click();
+      const preview = page.getByRole('region', { name: 'Message preview' });
+      await expect(preview.locator('b')).toContainText('Fictional preview');
+      await expect(
+        preview.getByRole('link', { name: 'External label' }),
+      ).toHaveCount(0);
+      await expect(
+        preview.getByRole('link', { name: 'Internal label' }),
+      ).toHaveAttribute('href', '/profile/fictional');
+      expect(sends).toHaveLength(0);
+      await expect(
+        page.getByRole('button', { name: 'Edit', exact: true }),
+      ).toBeInViewport();
+      await page.getByRole('button', { name: 'Edit', exact: true }).click();
+      await expect(editor).toBeFocused();
+      expect(await editor.innerHTML()).toBe(draft);
+      expect(
+        await page.locator('#message-reply').evaluate(el => el.style.height),
+      ).toBe(selectedHeight);
+      await page.getByRole('button', { name: 'Preview', exact: true }).click();
+      await expect(preview.locator('b')).toContainText('Fictional preview');
+      const sent = page.waitForResponse(
+        response =>
+          new URL(response.url()).pathname === '/api/messages' &&
+          response.request().method() === 'POST' &&
+          response.ok(),
+      );
+      await page.locator('#messageReplySubmit').click();
+      await sent;
+      expect(sends).toHaveLength(1);
+      expect(sends[0].postDataJSON().content).toBe(draft);
+      await expect(preview).toHaveCount(0);
+      await expect(editor).toBeFocused();
+      await expect(editor).toBeEmpty();
+      await expect(
+        page.locator('.message-reply-resize-handle[aria-valuenow]'),
+      ).toHaveCount(0);
+      await expect(page.locator('.message .panel-body b').last()).toContainText(
+        'Fictional preview',
+      );
+    });
+  }
 
   test('members can send replies and validation blocks empty messages', async ({
     page,

@@ -12,7 +12,7 @@ import {
   getReactRouteAccessRedirect,
   getReactRoutePolicy,
   isReactOwnedPath,
-} from '@/modules/core/shared/react-route-ownership';
+} from '@/modules/core/shared/react-route-ownership.mts';
 import { useAuth } from './auth';
 import { useAppConfig, useSettings } from './AppProviders';
 import ReactFooter from './ReactFooter';
@@ -108,7 +108,7 @@ export default function ReactAppShell() {
       {!route?.footerHidden && (
         <ReactFooter
           build={build as React.ComponentProps<typeof ReactFooter>['build']}
-          variant={route?.footerVariant || 'standard'}
+          variant={route?.footerVariant || (!route ? 'account' : 'standard')}
         />
       )}
     </>

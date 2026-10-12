@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { expect } = require('./test');
+const { expect } = require('./fixtures');
 
 const fixturesDir = path.join(__dirname, '../fixtures/maps');
 const providerHosts = [
@@ -131,11 +131,62 @@ async function waitForSearchMap(page) {
   await expect(page.locator('.mapboxgl-canvas')).toBeVisible();
 }
 
+const RASTER_TILE_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL0iAAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+async function disableWebGL(page) {
+  await page.addInitScript(() => {
+    const getContext = window.HTMLCanvasElement.prototype.getContext;
+    window.HTMLCanvasElement.prototype.getContext = function (type, ...args) {
+      if (type === 'webgl' || type === 'experimental-webgl') {
+        return null;
+      }
+      return getContext.call(this, type, ...args);
+    };
+  });
+}
+
+async function routeRasterMapTiles(router, { includeMapbox = false } = {}) {
+  const fulfill = route =>
+    route.fulfill({ body: RASTER_TILE_PNG, contentType: 'image/png' });
+  await router.route('**://*.tile.openstreetmap.org/**', fulfill);
+  if (includeMapbox) {
+    await router.route(
+      '**://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/**',
+      fulfill,
+    );
+  }
+}
+
+async function prepareRasterSearchMap(
+  page,
+  router,
+  { includeMapbox = false } = {},
+) {
+  await disableWebGL(page);
+  await routeRasterMapTiles(router, { includeMapbox });
+}
+
+async function stubNostrAuthorVisibility(page, pubkeys) {
+  const authors = [...new Set(pubkeys)];
+  await page.route('**/api/nostr/author-visibility?*', route =>
+    route.fulfill({
+      json: { linkedPubkeys: authors, pubkeys: authors },
+    }),
+  );
+}
+
 module.exports = {
   blockUnexpectedMapNetwork,
+  disableWebGL,
   fixturePath,
+  prepareRasterSearchMap,
   readFixture,
+  routeRasterMapTiles,
   seedMapState,
+  stubNostrAuthorVisibility,
   useMapProviderHar,
   useMapRouteFixtures,
   waitForSearchMap,

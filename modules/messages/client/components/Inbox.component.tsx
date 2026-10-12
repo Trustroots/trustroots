@@ -34,13 +34,17 @@ export default function Inbox({ user }: InboxProps) {
   const query = searchText.trim().toLocaleLowerCase();
   const visibleThreads = query
     ? threads.filter(thread => {
-        const otherUser =
-          thread.userFrom._id === user._id ? thread.userTo : thread.userFrom;
-        return [
-          otherUser.displayName,
-          otherUser.username,
-          thread.message.excerpt,
-        ].some(value => value?.toLocaleLowerCase().includes(query));
+        const fromId = thread.userFrom?._id;
+        const otherUser = fromId === user._id ? thread.userTo : thread.userFrom;
+        const displayName =
+          otherUser && 'displayName' in otherUser
+            ? otherUser.displayName
+            : undefined;
+        const username =
+          otherUser && 'username' in otherUser ? otherUser.username : undefined;
+        return [displayName, username, thread.message.excerpt].some(value =>
+          value?.toLocaleLowerCase().includes(query),
+        );
       })
     : threads;
 
@@ -109,45 +113,58 @@ export default function Inbox({ user }: InboxProps) {
 
   return (
     <section className="container-spacer">
-      <nav aria-label={t<string>('Conversation filter')} className="container">
-        <a
-          href="/messages"
-          rel="external"
-          aria-current={unreadOnly ? undefined : 'page'}
-          className="btn btn-default"
+      <div className="container inbox-controls">
+        <nav
+          aria-label={t<string>('Conversation filter')}
+          className="inbox-view-filters"
         >
-          {t<string>('All conversations')}
-        </a>{' '}
-        <a
-          href="/messages?filter=unread"
-          rel="external"
-          aria-current={unreadOnly ? 'page' : undefined}
-          className="btn btn-default"
-        >
-          {t<string>('Unread conversations')}
-        </a>
-      </nav>
-      <div className="container">
-        <input
-          type="search"
-          className="form-control"
-          aria-label={t<string>('Filter conversations')}
-          placeholder={t<string>('Filter conversations')}
-          value={searchText}
-          onChange={event => {
-            setSearchText(event.target.value);
-            setSearchLoadFailed(false);
-          }}
-        />
+          <a
+            href="/messages"
+            rel="external"
+            aria-current={unreadOnly ? undefined : 'page'}
+            aria-label={t<string>('All conversations')}
+            className="btn btn-default"
+          >
+            <span className="hidden-xs">{t<string>('All conversations')}</span>
+            <span className="visible-xs-inline">{t<string>('All')}</span>
+          </a>
+          <a
+            href="/messages?filter=unread"
+            rel="external"
+            aria-current={unreadOnly ? 'page' : undefined}
+            aria-label={t<string>('Unread conversations')}
+            className="btn btn-default"
+          >
+            <span className="hidden-xs">
+              {t<string>('Unread conversations')}
+            </span>
+            <span className="visible-xs-inline">{t<string>('Unread')}</span>
+          </a>
+        </nav>
+        <div className="inbox-search">
+          <input
+            type="search"
+            className="form-control"
+            aria-label={t<string>('Filter conversations')}
+            placeholder={t<string>('Filter conversations')}
+            value={searchText}
+            onChange={event => {
+              setSearchText(event.target.value);
+              setSearchLoadFailed(false);
+            }}
+          />
+          {isLoadingForSearch && (
+            <p className="inbox-search-status" role="status">
+              {t<string>('Searching older conversations…')}
+            </p>
+          )}
+          {searchLoadFailed && (
+            <p className="inbox-search-status" role="alert">
+              {t<string>('Older conversations could not be loaded.')}
+            </p>
+          )}
+        </div>
       </div>
-      {isLoadingForSearch && (
-        <p>{t<string>('Searching older conversations…')}</p>
-      )}
-      {searchLoadFailed && (
-        <p role="alert">
-          {t<string>('Older conversations could not be loaded.')}
-        </p>
-      )}
       {!isFetching &&
         !isLoadingForSearch &&
         !searchLoadFailed &&

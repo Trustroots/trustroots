@@ -1,11 +1,10 @@
 const _ = require('lodash');
 const request = require('supertest');
 const mongoose = require('mongoose');
-const express = require('../../../../config/lib/express');
-const config = require('../../../../config/config');
+const express = require('./../../../../config/lib/express.mjs');
+const config = require('./../../../../config/config.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const should = require('should');
-
 const User = mongoose.model('User');
 
 /**
@@ -32,13 +31,13 @@ const cspViolationReport = {
  */
 describe('Core CRUD tests', function () {
   before(function (done) {
-    // Get application
-    app = express.init(mongoose.connection);
-    agent = request.agent(app);
-
-    done();
+    (async () => {
+      // Get application
+      app = await express.init(mongoose.connection);
+      agent = request.agent(app);
+      done();
+    })().catch(done);
   });
-
   describe('Content Security Policy Tests:', function () {
     it('Responses should have content security policy header', function (done) {
       agent
@@ -48,7 +47,6 @@ describe('Core CRUD tests', function () {
           return done(err);
         });
     });
-
     it('Responses should have content security policy header with "report-uri" value', function (done) {
       agent
         .get('/')
@@ -60,7 +58,6 @@ describe('Core CRUD tests', function () {
           return done(err);
         });
     });
-
     it('Responses should allow the Umami analytics origin', function (done) {
       agent
         .get('/')
@@ -69,7 +66,6 @@ describe('Core CRUD tests', function () {
           return done(err);
         });
     });
-
     it('Responses should load Umami analytics', function (done) {
       agent
         .get('/')
@@ -81,7 +77,23 @@ describe('Core CRUD tests', function () {
           return done(err);
         });
     });
-
+    it('loads analytics asynchronously without delaying document readiness', async function () {
+      const response = await agent.get('/').expect(200);
+      response.text.should.match(
+        /<script\s+async\s+src="https:\/\/1p\.trustroots\.org\/script\.js"/,
+      );
+    });
+    it('can disable analytics without changing the application scripts', async function () {
+      const previous = app.locals.umami;
+      try {
+        app.locals.umami = { ...previous, enabled: false };
+        const response = await agent.get('/').expect(200);
+        response.text.should.not.match(/data-website-id=/);
+        response.text.should.match(/react-main\.js/);
+      } finally {
+        app.locals.umami = previous;
+      }
+    });
     it('should be able to receive CSP report with "application/json" accept header', function (done) {
       agent
         .post('/api/report-csp-violation')
@@ -96,11 +108,9 @@ describe('Core CRUD tests', function () {
 
           // Set assertion
           res.body.should.be.empty;
-
           return done();
         });
     });
-
     it('should be able to receive CSP report with "application/csp-report" accept header', function (done) {
       agent
         .post('/api/report-csp-violation')
@@ -115,12 +125,10 @@ describe('Core CRUD tests', function () {
 
           // Set assertion
           res.body.should.be.empty;
-
           return done();
         });
     });
   });
-
   describe('Member-only circle routes', function () {
     it('redirects visitors away from the Naturists circle', function (done) {
       agent
@@ -130,7 +138,6 @@ describe('Core CRUD tests', function () {
         .end(done);
     });
   });
-
   describe('Expect-CT header Tests:', function () {
     it('Responses should have Expect-CT header', function (done) {
       agent
@@ -140,7 +147,6 @@ describe('Core CRUD tests', function () {
           return done(err);
         });
     });
-
     it('Responses should have Expect-CT header with correct "report-uri" value', function (done) {
       agent
         .get('/')
@@ -165,7 +171,6 @@ describe('Core CRUD tests', function () {
           return done(err);
         });
     });
-
     it('Responses should have Expect-CT header with correct "max-age" value', function (done) {
       agent
         .get('/')
@@ -174,13 +179,11 @@ describe('Core CRUD tests', function () {
           return done(err);
         });
     });
-
     it('Responses should not have Expect-CT header with "enforce" value', function (done) {
       agent
         .get('/')
         .expect(function (res) {
           const header = _.get(res, 'headers.expect-ct');
-
           if (!header || _.includes(header, 'enforce;')) {
             throw new Error('Found "enforce" value');
           }
@@ -189,12 +192,13 @@ describe('Core CRUD tests', function () {
           return done(err);
         });
     });
-
     it('should be able to receive Expect-CT violation report with "application/json" accept header', function (done) {
       agent
         .post('/api/report-expect-ct-violation')
         .set('Accept', 'application/json')
-        .send({ foo: 'bar' })
+        .send({
+          foo: 'bar',
+        })
         .expect(204)
         .end(function (err, res) {
           // Handle errors
@@ -204,64 +208,47 @@ describe('Core CRUD tests', function () {
 
           // Set assertion
           res.body.should.be.empty;
-
           return done();
         });
     });
   });
-
   describe('Mobile app wrapper detection Tests:', function () {
     it('Mobile app state should be false without "app" query argument', function (done) {
       agent.get('/').end(function (err, res) {
         should.not.exist(err);
         res.text.should.containEql('isNativeMobileApp = false');
-
         return done();
       });
     });
-
     it('Mobile app state should be true with "app" query argument', function (done) {
       agent.get('/?app').end(function (err, res) {
         should.not.exist(err);
-
         res.text.should.containEql('isNativeMobileApp = true');
-
         return done();
       });
     });
   });
-
   describe('Frontend app root selection', function () {
     afterEach(utils.clearDatabase);
-
     function createUser(overrides) {
-      return new User(
-        Object.assign(
-          {
-            email: 'frontend-root-user@example.com',
-            firstName: 'Frontend',
-            lastName: 'User',
-            password: 'Password123!',
-            provider: 'local',
-            public: true,
-            roles: ['user'],
-            username: 'frontend-root-user',
-          },
-          overrides,
-        ),
-      ).save();
+      return utils
+        .createTestUser({
+          email: 'frontend-root-user@example.com',
+          firstName: 'Frontend',
+          lastName: 'User',
+          username: 'frontend-root-user',
+          ...overrides,
+        })
+        .save();
     }
-
     it('renders React assets and root for React-owned pages', function (done) {
       agent.get('/support').end(function (err, res) {
         should.not.exist(err);
         res.text.should.containEql('id="tr-react-root"');
         res.text.should.containEql('assets/react-main.js');
-
         return done();
       });
     });
-
     it('redirects guests away from protected React-owned pages', function (done) {
       agent
         .get('/admin?tab=activity')
@@ -272,7 +259,6 @@ describe('Core CRUD tests', function () {
         )
         .end(done);
     });
-
     it('requires sign-in for all React member entry pages', async function () {
       for (const page of [
         '/welcome',
@@ -288,7 +274,6 @@ describe('Core CRUD tests', function () {
           );
       }
     });
-
     it('renders React assets for a signed-in member on entry pages', async function () {
       const credentials = {
         username: 'sample-entry-member',
@@ -314,13 +299,11 @@ describe('Core CRUD tests', function () {
         await utils.signOut(agent);
       }
     });
-
     it('redirects non-admin users away from admin React-owned pages', function (done) {
       const memberCredentials = {
         password: 'Password123!',
         username: 'frontend-root-member',
       };
-
       createUser({
         email: 'frontend-root-member@example.com',
         roles: ['user'],
@@ -338,7 +321,6 @@ describe('Core CRUD tests', function () {
               if (err) {
                 return done(err);
               }
-
               utils
                 .signOut(agent)
                 .then(() => done())
@@ -347,13 +329,11 @@ describe('Core CRUD tests', function () {
         })
         .catch(done);
     });
-
     it('renders React assets and root for admin users on admin pages', function (done) {
       const adminCredentials = {
         password: 'Password123!',
         username: 'frontend-root-admin',
       };
-
       createUser({
         email: 'frontend-root-admin@example.com',
         roles: ['user', 'admin'],
@@ -368,7 +348,6 @@ describe('Core CRUD tests', function () {
             res.text.should.containEql('id="tr-react-root"');
             res.text.should.containEql('assets/react-main.js');
             res.text.should.not.containEql('data-ui-view');
-
             utils
               .signOut(agent)
               .then(() => done())
@@ -377,7 +356,6 @@ describe('Core CRUD tests', function () {
         })
         .catch(done);
     });
-
     it('redirects guests away from profile pages', function (done) {
       agent
         .get('/profile/alice')
@@ -385,13 +363,11 @@ describe('Core CRUD tests', function () {
         .expect('Location', '/signin?continue=true&returnTo=%2Fprofile%2Falice')
         .end(done);
     });
-
     it('renders React assets and root for authenticated profile pages', function (done) {
       const profileCredentials = {
         password: 'Password123!',
         username: 'frontend-root-profile',
       };
-
       createUser({
         email: 'frontend-root-profile@example.com',
         roles: ['user'],
@@ -406,7 +382,6 @@ describe('Core CRUD tests', function () {
             res.text.should.containEql('id="tr-react-root"');
             res.text.should.containEql('assets/react-main.js');
             res.text.should.not.containEql('data-ui-view');
-
             utils
               .signOut(agent)
               .then(() => done())
@@ -416,14 +391,21 @@ describe('Core CRUD tests', function () {
         .catch(done);
     });
   });
-
   describe('Legacy redirect routes', function () {
     afterEach(utils.clearDatabase);
-
+    it('redirects /login to /signin', function (done) {
+      agent.get('/login').expect(302).expect('Location', '/signin').end(done);
+    });
+    it('preserves query parameters when redirecting /login', function (done) {
+      agent
+        .get('/login?continue=true&returnTo=%2Fmessages')
+        .expect(302)
+        .expect('Location', '/signin?continue=true&returnTo=%2Fmessages')
+        .end(done);
+    });
     it('redirects /invite to /signup', function (done) {
       agent.get('/invite').expect(301).expect('Location', '/signup').end(done);
     });
-
     it('redirects /tribes/lgbt to /circles/lgbtq', function (done) {
       agent
         .get('/tribes/lgbt')
@@ -431,11 +413,9 @@ describe('Core CRUD tests', function () {
         .expect('Location', '/circles/lgbtq')
         .end(done);
     });
-
     it('redirects /tribes to /circles', function (done) {
       agent.get('/tribes').expect(301).expect('Location', '/circles').end(done);
     });
-
     it('redirects /tribes/:slug to /circles/:slug when tribe exists', function (done) {
       const Tribe = mongoose.model('Tribe');
       const tribe = new Tribe({
@@ -444,12 +424,10 @@ describe('Core CRUD tests', function () {
         description: 'A test circle',
         public: true,
       });
-
       tribe.save(function (saveErr, savedTribe) {
         if (saveErr) {
           return done(saveErr);
         }
-
         agent
           .get('/tribes/' + savedTribe.slug)
           .expect(301)
@@ -457,7 +435,6 @@ describe('Core CRUD tests', function () {
           .end(done);
       });
     });
-
     it('redirects unknown tribe slugs to /circles', function (done) {
       agent
         .get('/tribes/missing-circle')
@@ -466,7 +443,6 @@ describe('Core CRUD tests', function () {
         .end(done);
     });
   });
-
   describe('NIP-05 nostr Tests:', function () {
     const validNpub =
       'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
@@ -474,31 +450,21 @@ describe('Core CRUD tests', function () {
       '0000000000000000000000000000000000000000000000000000000000000000';
     const nsec =
       'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqwkhnav';
-
     afterEach(utils.clearDatabase);
-
     function createNostrUser(overrides, done) {
       const username = overrides.username || 'nostruser';
-      const user = new User(
-        Object.assign(
-          {
-            public: true,
-            firstName: 'Nostr',
-            lastName: 'User',
-            email: `${username}@example.com`,
-            username,
-            password: 'M3@n.jsI$Aw3$0m3',
-            provider: 'local',
-            roles: ['user'],
-            nostrNpub: validNpub,
-          },
-          overrides,
-        ),
-      );
+      const user = utils.createTestUser({
+        firstName: 'Nostr',
+        lastName: 'User',
+        email: `${username}@example.com`,
+        username,
+        password: 'M3@n.jsI$Aw3$0m3',
+        nostrNpub: validNpub,
+        ...overrides,
+      });
 
       user.save(done);
     }
-
     function expectEmptyNames(username, done) {
       agent
         .get('/.well-known/nostr.json?name=' + username)
@@ -507,17 +473,15 @@ describe('Core CRUD tests', function () {
           if (err) {
             return done(err);
           }
-
-          res.body.should.deepEqual({ names: {} });
-
+          res.body.should.deepEqual({
+            names: {},
+          });
           return done();
         });
     }
-
     it('should return 500 when the user lookup fails', function (done) {
       const sinon = require('sinon');
       sinon.stub(User, 'findOne').yields(new Error('db down'));
-
       agent
         .get('/.well-known/nostr.json?name=nostruser')
         .expect(500)
@@ -526,12 +490,10 @@ describe('Core CRUD tests', function () {
           if (err) {
             return done(err);
           }
-
           res.body.error.should.equal('Internal server error');
           done();
         });
     });
-
     it('should reject nostr requests with a query object as username', function (done) {
       agent
         .get('/.well-known/nostr.json?name[$ne]=x')
@@ -540,13 +502,10 @@ describe('Core CRUD tests', function () {
           if (err) {
             return done(err);
           }
-
           res.body.error.should.equal('Valid username required.');
-
           return done();
         });
     });
-
     it('should reject nostr requests with duplicate username values', function (done) {
       agent
         .get('/.well-known/nostr.json?name=userone&name=usertwo')
@@ -555,13 +514,10 @@ describe('Core CRUD tests', function () {
           if (err) {
             return done(err);
           }
-
           res.body.error.should.equal('Valid username required.');
-
           return done();
         });
     });
-
     it('should reject nostr requests with an empty username', function (done) {
       agent
         .get('/.well-known/nostr.json?name=')
@@ -570,13 +526,10 @@ describe('Core CRUD tests', function () {
           if (err) {
             return done(err);
           }
-
           res.body.error.should.equal('Valid username required.');
-
           return done();
         });
     });
-
     it('should reject nostr requests with an invalid username', function (done) {
       agent
         .get('/.well-known/nostr.json?name=' + 'a'.repeat(35))
@@ -585,19 +538,15 @@ describe('Core CRUD tests', function () {
           if (err) {
             return done(err);
           }
-
           res.body.error.should.equal('Valid username required.');
-
           return done();
         });
     });
-
     it('should use the normalized username as the nostr response key', function (done) {
       createNostrUser({}, function (saveErr) {
         if (saveErr) {
           return done(saveErr);
         }
-
         agent
           .get('/.well-known/nostr.json?name=NostrUser')
           .expect(200)
@@ -605,20 +554,16 @@ describe('Core CRUD tests', function () {
             if (err) {
               return done(err);
             }
-
             res.body.names.should.have.property('nostruser', validNpubHex);
             res.body.names.should.not.have.property('NostrUser');
             res.headers['access-control-allow-origin'].should.equal('*');
-
             return done();
           });
       });
     });
-
     it('should return empty names for a missing user', function (done) {
       expectEmptyNames('missinguser', done);
     });
-
     it('should return empty names for a private or unconfirmed user', function (done) {
       createNostrUser(
         {
@@ -630,40 +575,45 @@ describe('Core CRUD tests', function () {
           if (saveErr) {
             return done(saveErr);
           }
-
           expectEmptyNames('nostruser', done);
         },
       );
     });
-
     it('should return empty names for suspended users', function (done) {
-      createNostrUser({ roles: ['user', 'suspended'] }, function (saveErr) {
-        if (saveErr) {
-          return done(saveErr);
-        }
-
-        expectEmptyNames('nostruser', done);
-      });
-    });
-
-    it('should return empty names for shadowbanned users', function (done) {
-      createNostrUser({ roles: ['user', 'shadowban'] }, function (saveErr) {
-        if (saveErr) {
-          return done(saveErr);
-        }
-
-        expectEmptyNames('nostruser', done);
-      });
-    });
-
-    it('should verify public users with pending email changes', function (done) {
       createNostrUser(
-        { emailTemporary: 'changed-nostruser@example.com' },
+        {
+          roles: ['user', 'suspended'],
+        },
         function (saveErr) {
           if (saveErr) {
             return done(saveErr);
           }
-
+          expectEmptyNames('nostruser', done);
+        },
+      );
+    });
+    it('should return empty names for shadowbanned users', function (done) {
+      createNostrUser(
+        {
+          roles: ['user', 'shadowban'],
+        },
+        function (saveErr) {
+          if (saveErr) {
+            return done(saveErr);
+          }
+          expectEmptyNames('nostruser', done);
+        },
+      );
+    });
+    it('should verify public users with pending email changes', function (done) {
+      createNostrUser(
+        {
+          emailTemporary: 'changed-nostruser@example.com',
+        },
+        function (saveErr) {
+          if (saveErr) {
+            return done(saveErr);
+          }
           agent
             .get('/.well-known/nostr.json?name=nostruser')
             .expect(200)
@@ -671,99 +621,97 @@ describe('Core CRUD tests', function () {
               if (err) {
                 return done(err);
               }
-
               res.body.names.should.have.property('nostruser', validNpubHex);
-
               return done();
             });
         },
       );
     });
-
     it('should return empty names for public users without a current email', function (done) {
       createNostrUser({}, function (saveErr, user) {
         if (saveErr) {
           return done(saveErr);
         }
-
         User.updateOne(
-          { _id: user._id },
-          { $set: { email: '' } },
+          {
+            _id: user._id,
+          },
+          {
+            $set: {
+              email: '',
+            },
+          },
           function (updateErr) {
             if (updateErr) {
               return done(updateErr);
             }
-
             expectEmptyNames('nostruser', done);
           },
         );
       });
     });
-
     it('should return empty names for users without a nostr npub', function (done) {
-      createNostrUser({ nostrNpub: '' }, function (saveErr) {
-        if (saveErr) {
-          return done(saveErr);
-        }
-
-        expectEmptyNames('nostruser', done);
-      });
+      createNostrUser(
+        {
+          nostrNpub: '',
+        },
+        function (saveErr) {
+          if (saveErr) {
+            return done(saveErr);
+          }
+          expectEmptyNames('nostruser', done);
+        },
+      );
     });
-
     it('should return empty names for malformed stored nostr npubs', function (done) {
-      createNostrUser({ nostrNpub: 'npub1invalid' }, function (saveErr) {
-        if (saveErr) {
-          return done(saveErr);
-        }
-
-        expectEmptyNames('nostruser', done);
-      });
+      createNostrUser(
+        {
+          nostrNpub: 'npub1invalid',
+        },
+        function (saveErr) {
+          if (saveErr) {
+            return done(saveErr);
+          }
+          expectEmptyNames('nostruser', done);
+        },
+      );
     });
-
     it('should return empty names for stored nostr values that are not npubs', function (done) {
-      createNostrUser({ nostrNpub: nsec }, function (saveErr) {
-        if (saveErr) {
-          return done(saveErr);
-        }
-
-        expectEmptyNames('nostruser', done);
-      });
+      createNostrUser(
+        {
+          nostrNpub: nsec,
+        },
+        function (saveErr) {
+          if (saveErr) {
+            return done(saveErr);
+          }
+          expectEmptyNames('nostruser', done);
+        },
+      );
     });
   });
-
   describe('Nostr author visibility API', function () {
     const validNpub =
       'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
     const validNpubHex =
       '0000000000000000000000000000000000000000000000000000000000000000';
-
     afterEach(utils.clearDatabase);
-
     function createNostrUser(overrides, done) {
-      const user = new User(
-        Object.assign(
-          {
-            public: true,
-            firstName: 'Nostr',
-            lastName: 'User',
-            email: 'nostruser@example.com',
-            username: 'nostruser',
-            password: 'M3@n.jsI$Aw3$0m3',
-            provider: 'local',
-            roles: ['user'],
-            nostrNpub: validNpub,
-          },
-          overrides,
-        ),
-      );
+      const user = utils.createTestUser({
+        firstName: 'Nostr',
+        lastName: 'User',
+        email: 'nostruser@example.com',
+        username: 'nostruser',
+        password: 'M3@n.jsI$Aw3$0m3',
+        nostrNpub: validNpub,
+        ...overrides,
+      });
 
       user.save(done);
     }
-
     it('returns only eligible public author keys from a batch', function (done) {
       createNostrUser({}, function (saveErr) {
         if (saveErr) return done(saveErr);
-
         agent
           .get(
             '/api/nostr/author-visibility?pubkey=' +
@@ -782,53 +730,62 @@ describe('Core CRUD tests', function () {
           });
       });
     });
-
     it('excludes shadowbanned author keys', function (done) {
-      createNostrUser({ roles: ['user', 'shadowban'] }, function (saveErr) {
-        if (saveErr) return done(saveErr);
-
-        agent
-          .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
-          .expect(200)
-          .end(function (err, res) {
-            if (err) return done(err);
-            res.body.should.deepEqual({
-              linkedPubkeys: [validNpubHex],
-              pubkeys: [],
+      createNostrUser(
+        {
+          roles: ['user', 'shadowban'],
+        },
+        function (saveErr) {
+          if (saveErr) return done(saveErr);
+          agent
+            .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
+            .expect(200)
+            .end(function (err, res) {
+              if (err) return done(err);
+              res.body.should.deepEqual({
+                linkedPubkeys: [validNpubHex],
+                pubkeys: [],
+              });
+              return done();
             });
-            return done();
-          });
-      });
+        },
+      );
     });
-
     it('identifies private author keys without making them visible', function (done) {
-      createNostrUser({ public: false }, function (saveErr) {
-        if (saveErr) return done(saveErr);
-
-        agent
-          .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
-          .expect(200)
-          .end(function (err, res) {
-            if (err) return done(err);
-            res.body.should.deepEqual({
-              linkedPubkeys: [validNpubHex],
-              pubkeys: [],
+      createNostrUser(
+        {
+          public: false,
+        },
+        function (saveErr) {
+          if (saveErr) return done(saveErr);
+          agent
+            .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
+            .expect(200)
+            .end(function (err, res) {
+              if (err) return done(err);
+              res.body.should.deepEqual({
+                linkedPubkeys: [validNpubHex],
+                pubkeys: [],
+              });
+              return done();
             });
-            return done();
-          });
-      });
+        },
+      );
     });
-
     it('identifies unconfirmed author keys without making them visible', function (done) {
       createNostrUser({}, function (saveErr, user) {
         if (saveErr) return done(saveErr);
-
         User.updateOne(
-          { _id: user._id },
-          { $set: { email: '' } },
+          {
+            _id: user._id,
+          },
+          {
+            $set: {
+              email: '',
+            },
+          },
           function (updateErr) {
             if (updateErr) return done(updateErr);
-
             agent
               .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
               .expect(200)
@@ -844,7 +801,6 @@ describe('Core CRUD tests', function () {
         );
       });
     });
-
     it('rejects invalid author key batches', function (done) {
       agent
         .get('/api/nostr/author-visibility?pubkey=invalid')
@@ -855,16 +811,13 @@ describe('Core CRUD tests', function () {
           return done();
         });
     });
-
     it('rejects non-string and oversized author key batches', function (done) {
       const oversizedBatch = Array(101).fill(validNpubHex).join('&pubkey=');
-
       agent
         .get('/api/nostr/author-visibility?pubkey[$ne]=x')
         .expect(400)
         .end(function (objectErr) {
           if (objectErr) return done(objectErr);
-
           agent
             .get('/api/nostr/author-visibility?pubkey=' + oversizedBatch)
             .expect(400)
@@ -877,11 +830,9 @@ describe('Core CRUD tests', function () {
             });
         });
     });
-
     it('returns an error when the author lookup fails', function (done) {
       const sinon = require('sinon');
       sinon.stub(User, 'find').yields(new Error('db unavailable'));
-
       agent
         .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
         .expect(500)

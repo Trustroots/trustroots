@@ -1,4 +1,4 @@
-const { expect, test } = require('../../support/test');
+const { expect, test } = require('../../support/fixtures');
 const {
   createIsolatedContext,
   createUser,

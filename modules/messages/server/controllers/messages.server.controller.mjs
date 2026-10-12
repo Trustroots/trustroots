@@ -1,26 +1,30 @@
-import { createRequire } from 'module';
 import _ from 'lodash';
 import async from 'async';
 import sanitizeHtml from 'sanitize-html';
-import paginate from 'express-paginate';
 import moment from 'moment';
 import mongoose from 'mongoose';
-import config from '../../../../config/config.js';
-import log from '../../../../config/lib/logger.js';
-import messageToStatsService from '../services/message-to-stats.server.service.js';
-import messageStatService from '../services/message-stat.server.service.js';
-import errorService from '../../../core/server/services/error.server.service.js';
-import textService from '../../../core/server/services/text.server.service.js';
-import spamService from '../../../core/server/services/spam.server.service.js';
-import userRolesService from '../../../users/server/services/user-roles.server.service.js';
-import statService from '../../../stats/server/services/stats.server.service.js';
+import config from '../../../../config/config.mjs';
+import log from '../../../../config/lib/logger.mjs';
+import messageToStatsService from '../services/message-to-stats.server.service.mjs';
+import messageStatService from '../services/message-stat.server.service.mjs';
+import errorService from '../../../core/server/services/error.server.service.mjs';
+import textService from '../../../core/server/services/text.server.service.mjs';
+import spamService from '../../../core/server/services/spam.server.service.mjs';
+import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
+import statService from '../../../stats/server/services/stats.server.service.mjs';
+import paginationService from '../../../core/server/services/pagination.server.service.mjs';
+import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
+import {
+  prepareMarkReadSelector,
+  prepareMarkReadResponse,
+  prepareMessageForClient,
+  prepareNewMessageFields,
+  preparePreviewMessageResponse,
+  prepareThreadSummary,
+  prepareUnreadMessageCount,
+} from '../services/messages-payload.server.service.mjs';
 
 const service = {};
-const require = createRequire(import.meta.url);
-
-function getUserProfile() {
-  return require('../../../users/server/controllers/users.profile.server.controller.js');
-}
 
 /**
  * Module dependencies.
@@ -28,24 +32,24 @@ function getUserProfile() {
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
-
 function blockedUserIds(user) {
   return (user.blocked || []).map(blockedUser => blockedUser.toString());
 }
-
 function excludeBlockedUsers(query, user) {
   const blocked = blockedUserIds(user);
-
   if (blocked.length === 0) {
     return query;
   }
-
   return {
     $and: [
       query,
       {
-        userFrom: { $nin: blocked },
-        userTo: { $nin: blocked },
+        userFrom: {
+          $nin: blocked,
+        },
+        userTo: {
+          $nin: blocked,
+        },
       },
     ],
   };
@@ -80,7 +84,6 @@ function sanitizeMessages(messages) {
   if (!messages || !messages.length) {
     return [];
   }
-
   const messagesCleaned = [];
 
   // Sanitize each outgoing message's contents
@@ -91,7 +94,6 @@ function sanitizeMessages(messages) {
     );
     messagesCleaned.push(message);
   });
-
   return messagesCleaned;
 }
 service.sanitizeMessages = sanitizeMessages;
@@ -114,7 +116,6 @@ function fillDeletedProfiles(threads, callback) {
   if (!threads || !threads.length) {
     return callback(null, []);
   }
-
   async.mapSeries(
     threads,
     function (thread, done) {
@@ -124,7 +125,6 @@ function fillDeletedProfiles(threads, callback) {
 
       // Check which field is `null` — only one of them can
       const field = !thread.userTo ? 'userTo' : 'userFrom';
-
       Thread.findById(thread._id, field, function (err, newThread) {
         if (!err && newThread) {
           thread[field] = {
@@ -149,7 +149,6 @@ function sanitizeThreads(threads, authenticatedUserId, callback) {
   if (!threads || !threads.length) {
     return callback(null, []);
   }
-
   async.mapSeries(
     threads,
     function (thread, done) {
@@ -157,19 +156,16 @@ function sanitizeThreads(threads, authenticatedUserId, callback) {
       thread = thread.toObject();
 
       // Clean message content from html + clean all whitespace + shorten
+      let excerpt;
       if (thread.message) {
-        thread.message.excerpt = thread.message.content
+        excerpt = thread.message.content
           ? textService
               .plainText(thread.message.content, true)
               .substring(0, 100)
           : '…';
-        delete thread.message.content;
-        delete thread.message.spam; // Don't reveal spam status
       } else {
         // Ensure this works even if messages couldn't be found for some reason
-        thread.message = {
-          excerpt: '…',
-        };
+        excerpt = '…';
       }
       // If latest message in the thread was from current user, show
       // it as read - sender obviously read his/her own message
@@ -180,27 +176,11 @@ function sanitizeThreads(threads, authenticatedUserId, callback) {
       ) {
         thread.read = true;
       }
-
-      done(null, thread);
+      done(null, prepareThreadSummary(thread, excerpt));
     },
     callback,
   );
 }
-
-/**
- * Constructs link headers for pagination
- */
-const setLinkHeader = function (req, res, pageCount) {
-  if (paginate.hasNextPages(req)(pageCount)) {
-    const url = (config.https ? 'https' : 'http') + '://' + config.domain;
-    const nextPage =
-      url + res.locals.paginate.href({ page: req.query.page + 1 });
-    res.links({
-      next: nextPage,
-      // last: ''
-    });
-  }
-};
 
 /**
  * List of threads aka inbox
@@ -208,18 +188,25 @@ const setLinkHeader = function (req, res, pageCount) {
 service.inbox = function (req, res) {
   // No user
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
-
   Thread.paginate(
     excludeBlockedUsers(
       req.query.filter === 'unread'
-        ? { read: false, userTo: req.user._id }
+        ? {
+            read: false,
+            userTo: req.user._id,
+          }
         : {
             // Returns only threads where currently authenticated user is participating member
-            $or: [{ userFrom: req.user }, { userTo: req.user }],
+            $or: [
+              {
+                userFrom: req.user,
+              },
+              {
+                userTo: req.user,
+              },
+            ],
           },
       req.user,
     ),
@@ -233,21 +220,15 @@ service.inbox = function (req, res) {
           path: 'message',
           select: 'content',
         },
-        {
-          path: 'userFrom userTo',
-          select: getUserProfile().userMiniProfileFields,
-          model: 'User',
-        },
+        userMiniService.miniUserPopulate('userFrom userTo'),
       ],
     },
     function (err, data) {
       if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       } else {
         // Pass pagination data to construct link header
-        setLinkHeader(req, res, data.pages);
+        paginationService.setLinkHeader(req, res, data.pages);
 
         // Sanitize and return threads
         sanitizeThreads(data.docs, req.user._id, function (err, threads) {
@@ -284,7 +265,6 @@ async function shouldThottleUser(userId) {
     },
     userFrom: userId,
   });
-
   return writtenTo.length > count;
 }
 
@@ -294,11 +274,8 @@ async function shouldThottleUser(userId) {
 service.send = async function (req, res) {
   // No user
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
-
   const senderIsRestricted = userRolesService.hasRestrictedMessagingRole(
     req.user,
   );
@@ -312,9 +289,7 @@ service.send = async function (req, res) {
 
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
+    return errorService.sendInvalidId(res);
   }
 
   // Don't allow sending messages to myself
@@ -349,12 +324,10 @@ service.send = async function (req, res) {
       },
       () => {},
     );
-
     return res.status(429).send({
       message: 'You are writing too many messages.',
     });
   }
-
   async.waterfall(
     [
       // Check that receiving user is legitimate:
@@ -366,9 +339,10 @@ service.send = async function (req, res) {
           ? {}
           : {
               public: true,
-              roles: { $nin: ['suspended', 'shadowban'] },
+              roles: {
+                $nin: ['suspended', 'shadowban'],
+              },
             };
-
         User.findOne({
           _id: req.body.userTo,
           ...publicityLimit,
@@ -382,7 +356,6 @@ service.send = async function (req, res) {
           done();
         });
       },
-
       // Check if this is first message to this thread (=does the thread object exist?)
       function (done) {
         Thread.findOne(
@@ -404,7 +377,6 @@ service.send = async function (req, res) {
           },
         );
       },
-
       // Check sender's profile isn't empty If it was first message
       // If the sending user has an empty profile, reject the message
       function (thread, done) {
@@ -418,7 +390,6 @@ service.send = async function (req, res) {
             if (err) {
               return done(err);
             }
-
             const descriptionLength = sender.description
               ? textService.plainText(sender.description).length
               : 0;
@@ -443,7 +414,6 @@ service.send = async function (req, res) {
           done();
         }
       },
-
       // Spam filter
       function (done) {
         // Skip filter when disabled or when running a test
@@ -451,18 +421,16 @@ service.send = async function (req, res) {
         if (!config.akismet.enabled || process.env.NODE_ENV === 'test') {
           return done(null, 'unknown');
         }
-
         const userIp =
           // https://www.phusionpassenger.com/library/indepth/nodejs/secure_http_headers.html#passenger-client-address
           // Note that Passenger also appends the X-Forwarded-For header, which serves the same function.
           // But since X-Forwarded-For can be spoofed by the client, you should prefer !~Passenger-Client-Address instead.
           req.headers['!~passenger-client-address'] ||
           req.headers['x-forwarded-for'] ||
-          req.ip || // http://expressjs.com/en/5x/api.html#req.ip — can be spoofed by client
+          req.ip ||
+          // http://expressjs.com/en/5x/api.html#req.ip — can be spoofed by client
           '';
-
         const userAgent = req.headers['user-agent'] || '';
-
         spamService
           .check({
             content: req.body.content,
@@ -479,17 +447,18 @@ service.send = async function (req, res) {
             done(null, 'unknown');
           });
       },
-
       // Save message
       function (spamStatus, done) {
-        const message = new Message({
-          content: req.body.content,
-          userTo: req.body.userTo,
-        });
-
-        // Allow some HTML
-        message.content = textService.html(message.content);
-
+        const message = new Message(
+          prepareNewMessageFields(
+            {
+              userTo: req.body.userTo,
+              content: textService.html(req.body.content),
+              read: false,
+            },
+            req.user._id,
+          ),
+        );
         message.userFrom = req.user;
         // "Ghost-send" behavior: restricted senders can still see own messages,
         // but they are hidden from recipients.
@@ -503,17 +472,14 @@ service.send = async function (req, res) {
         } else if (spamStatus === 'not-spam') {
           message.spam = false;
         }
-
         message.save(done);
       },
-
       // Create/upgrade Thread handle between these two users
       function (message, done) {
         // Don't update recipient thread/inbox delivery state for shadow-hidden messages.
         if (message.shadowHidden) {
           return done(null, message);
         }
-
         const thread = new Thread();
         thread.updated = Date.now();
         thread.userFrom = message.userFrom;
@@ -547,23 +513,22 @@ service.send = async function (req, res) {
             ],
           },
           upsertData,
-          { upsert: true },
+          {
+            upsert: true,
+          },
           err => {
             done(err, message);
           },
         );
       },
-
       // Here we send some metrics to Stats API to measure how many messages
       // are sent, what type of messages, etc.
       function (message, done) {
         messageToStatsService.save(message, function () {
           // do nothing
         });
-
         return done(null, message);
       },
-
       // Here we create or update the related MessageStat document in mongodb
       // It serves to count the user's reply rate and reply time
       function (message, done) {
@@ -574,23 +539,12 @@ service.send = async function (req, res) {
             // do nothing
           });
         }
-
         return done(null, message);
       },
-
       // We'll need some info about related users, populate some fields
       function (message, done) {
         message.populate(
-          [
-            {
-              path: 'userFrom',
-              select: getUserProfile().userMiniProfileFields,
-            },
-            {
-              path: 'userTo',
-              select: getUserProfile().userMiniProfileFields,
-            },
-          ],
+          [userMiniService.miniUserPopulate('userFrom userTo')],
           function (err, message) {
             if (err) {
               return done(err);
@@ -599,12 +553,8 @@ service.send = async function (req, res) {
             // Turn to object to be able to delete fields
             message = message.toObject();
 
-            // Don't return these fields
-            delete message.notified;
-            delete message.spam;
-
-            // Finally return saved message
-            return res.json(message);
+            // Finally return the approved message fields.
+            return res.json(prepareMessageForClient(message));
           },
         );
       },
@@ -613,9 +563,7 @@ service.send = async function (req, res) {
       /* istanbul ignore else */
       if (err) {
         log('error', 'Message failed to send. #sa239', err);
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       }
     },
   );
@@ -628,8 +576,7 @@ service.thread = function (req, res) {
   // Sanitize messages
   const messages =
     req.messages && req.messages.length ? sanitizeMessages(req.messages) : [];
-
-  res.json(messages);
+  res.json(messages.map(prepareMessageForClient));
 };
 
 /**
@@ -637,16 +584,12 @@ service.thread = function (req, res) {
  */
 service.threadByUser = function (req, res, next, userId) {
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
 
   // Not user id or its not a valid ObjectId
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-    return res.status(400).send({
-      message: errorService.getErrorMessageByKey('invalid-id'),
-    });
+    return errorService.sendInvalidId(res);
   }
 
   // TODO do we want to allow to see the messages from suspended or banned users
@@ -691,11 +634,16 @@ service.threadByUser = function (req, res, next, userId) {
           excludeBlockedUsers(
             {
               $or: [
-                { userFrom: req.user._id, userTo: userId },
+                {
+                  userFrom: req.user._id,
+                  userTo: userId,
+                },
                 {
                   userTo: req.user._id,
                   userFrom: userId,
-                  shadowHidden: { $ne: true },
+                  shadowHidden: {
+                    $ne: true,
+                  },
                 },
               ],
             },
@@ -706,30 +654,24 @@ service.threadByUser = function (req, res, next, userId) {
             limit: req.query.limit || 20,
             sort: '-created',
             select: messageFields,
-            populate: {
-              path: 'userFrom userTo',
-              select: getUserProfile().userMiniProfileFields,
-            },
+            populate: userMiniService.miniUserPopulate('userFrom userTo'),
           },
           function (err, data) {
             if (err) {
               return done(err);
             }
-
             if (!data || !data.docs) {
               return done(new Error('Failed to load messages.'));
             }
 
             // Pass pagination data to construct link header
             if (data.docs.length > 0) {
-              setLinkHeader(req, res, data.pages);
+              paginationService.setLinkHeader(req, res, data.pages);
             }
-
             done(err, data.docs);
           },
         );
       },
-
       /* Mark the thread read
        *
        * @todo: mark it read:true only when it was read:false,
@@ -739,7 +681,6 @@ service.threadByUser = function (req, res, next, userId) {
         if (!messages || messages.length === 0) {
           return done();
         }
-
         req.messages = messages;
 
         // If latest message in the thread was to current user, mark thread read
@@ -753,8 +694,12 @@ service.threadByUser = function (req, res, next, userId) {
               userTo: req.user._id,
               userFrom: userId,
             },
-            { read: true },
-            { multi: false },
+            {
+              read: true,
+            },
+            {
+              multi: false,
+            },
             done,
           );
         } else {
@@ -764,11 +709,8 @@ service.threadByUser = function (req, res, next, userId) {
     ],
     function (err) {
       if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        return errorService.sendBadRequest(res, err);
       }
-
       next();
     },
   );
@@ -780,30 +722,11 @@ service.threadByUser = function (req, res, next, userId) {
  */
 service.markRead = function (req, res) {
   if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
+    return errorService.sendForbidden(res);
   }
-
-  const messages = [];
-
-  // Produce an array of messages to be updated
-  req.body.messageIds.forEach(function (messageId) {
-    messages.push({
-      _id: messageId,
-      // read: false,
-
-      // Although this isn't in index, but it ensures
-      // user has access to update only his/hers own messages
-      userTo: req.user.id,
-    });
-  });
-
   // Mark messages read
   Message.update(
-    {
-      $or: messages,
-    },
+    prepareMarkReadSelector(req.body.messageIds, req.user.id),
     {
       read: true,
     },
@@ -816,7 +739,7 @@ service.markRead = function (req, res) {
           message: errorService.getErrorMessage(err),
         });
       } else {
-        res.status(200).send({});
+        res.status(200).send(prepareMarkReadResponse());
       }
     },
   );
@@ -831,7 +754,6 @@ service.messagesCount = function (req, res) {
       message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
-
   Thread.countDocuments(
     excludeBlockedUsers(
       {
@@ -846,7 +768,7 @@ service.messagesCount = function (req, res) {
           message: errorService.getErrorMessage(err),
         });
       }
-      return res.json({ unread: unreadCount ? parseInt(unreadCount, 10) : 0 });
+      return res.json(prepareUnreadMessageCount(unreadCount));
     },
   );
 };
@@ -866,7 +788,6 @@ service.sync = function (req, res) {
     messages: [],
     users: [],
   };
-
   async.waterfall(
     [
       // Find messages
@@ -875,7 +796,6 @@ service.sync = function (req, res) {
         let dateFrom;
         let dateTo;
         const queryDate = {};
-
         if (_.has(req, 'query.dateFrom')) {
           dateFrom = moment(req.query.dateFrom);
 
@@ -889,7 +809,6 @@ service.sync = function (req, res) {
           // Append dateFrom to date query
           _.set(queryDate, 'created.$gt', dateFrom.toDate());
         }
-
         if (_.has(req, 'query.dateTo')) {
           dateTo = moment(req.query.dateTo);
           // Validate `dateTo`
@@ -917,8 +836,15 @@ service.sync = function (req, res) {
         const queryUsers = excludeBlockedUsers(
           {
             $or: [
-              { userFrom: req.user._id },
-              { userTo: req.user._id, shadowHidden: { $ne: true } },
+              {
+                userFrom: req.user._id,
+              },
+              {
+                userTo: req.user._id,
+                shadowHidden: {
+                  $ne: true,
+                },
+              },
             ],
           },
           req.user,
@@ -937,7 +863,9 @@ service.sync = function (req, res) {
 
         // Run the query
         Message.find(query)
-          .sort({ created: -1 })
+          .sort({
+            created: -1,
+          })
           .select(messageFields)
           .exec(function (err, messages) {
             if (err) {
@@ -965,11 +893,9 @@ service.sync = function (req, res) {
 
             // Ensure we have only one of each user ids
             userIds = _.uniq(userIds);
-
             done(err, userIds);
           });
       },
-
       // Collect users
       function (userIds, done) {
         // Get objects for users based on above user ids
@@ -978,13 +904,12 @@ service.sync = function (req, res) {
             $in: userIds,
           },
         })
-          .select(getUserProfile().userMiniProfileFields)
+          .select(userMiniService.userMiniProfileFields)
           .exec(function (err, users) {
             data.users = users;
             done(err);
           });
       },
-
       // Return the package
       function () {
         return res.json(data);
@@ -1007,11 +932,28 @@ service.sync = function (req, res) {
  * @param {function} callback - function (?error) {}
  */
 service.markAllMessagesToUserNotified = function (userId, callback) {
-  Message.update({ userTo: userId }, { notificationCount: 2 }, function (err) {
-    callback(err);
-  });
+  Message.updateMany(
+    { userTo: userId },
+    { $set: { notificationCount: 2 } },
+    function (err) {
+      callback(err);
+    },
+  );
 };
-
+/** Format a draft without saving it or touching conversation state. */
+service.preview = function (req, res) {
+  if (!req.user) {
+    return res.status(403).json({
+      message: errorService.getErrorMessageByKey('forbidden'),
+    });
+  }
+  const content = req.body?.content;
+  if (typeof content !== 'string' || textService.isEmpty(content)) {
+    return res.status(400).json({ message: 'Please write a message.' });
+  }
+  return res.json(preparePreviewMessageResponse(textService.html(content)));
+};
+const preview = service.preview;
 const inbox = service.inbox;
 const markAllMessagesToUserNotified = service.markAllMessagesToUserNotified;
 const markRead = service.markRead;
@@ -1022,14 +964,16 @@ const sync = service.sync;
 const thread = service.thread;
 const threadByUser = service.threadByUser;
 export {
-  inbox as inbox,
-  markAllMessagesToUserNotified as markAllMessagesToUserNotified,
-  markRead as markRead,
-  messagesCount as messagesCount,
+  preview,
+  inbox,
+  markAllMessagesToUserNotified,
+  markRead,
+  messagesCount,
   sanitizeMessagesExport as sanitizeMessages,
-  send as send,
-  sync as sync,
-  thread as thread,
-  threadByUser as threadByUser,
+  send,
+  sync,
+  thread,
+  threadByUser,
 };
 export default service;
+export { service as 'module.exports' };

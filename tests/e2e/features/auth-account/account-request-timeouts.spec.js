@@ -1,5 +1,5 @@
 /* global XMLHttpRequest, window */
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 
 const cases = [
   {

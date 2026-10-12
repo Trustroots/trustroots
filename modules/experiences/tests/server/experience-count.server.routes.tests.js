@@ -2,18 +2,21 @@ const mongoose = require('mongoose');
 const should = require('should');
 const request = require('supertest');
 const utils = require('../../../../testutils/server/data.server.testutil');
-const express = require('../../../../config/lib/express');
-
+const express = require('./../../../../config/lib/express.mjs');
 describe('Read count of experiences received by user', () => {
+  let app;
+  let agent;
+  before(async function () {
+    app = await express.init(mongoose.connection);
+    agent = request.agent(app);
+  });
   // GET /experiences/count?userTo=:UserId
 
-  const app = express.init(mongoose.connection);
-  const agent = request.agent(app);
-
   let users;
-
-  const _usersPublic = utils.generateUsers(6, { public: true });
-  const _usersPrivate = utils.generateUsers(3, {
+  const _usersPublic = utils.generateUsersWithSharedPassword(6, {
+    public: true,
+  });
+  const _usersPrivate = utils.generateUsersWithSharedPassword(3, {
     public: false,
     username: 'nonpublic',
     email: 'nonpublic@example.com',
@@ -41,8 +44,20 @@ describe('Read count of experiences received by user', () => {
   const experienceData = [
     [0, 1],
     [0, 2],
-    [0, 3, { public: false }],
-    [0, 4, { public: false }],
+    [
+      0,
+      3,
+      {
+        public: false,
+      },
+    ],
+    [
+      0,
+      4,
+      {
+        public: false,
+      },
+    ],
     [0, 5],
     [1, 0],
     [1, 2],
@@ -50,14 +65,31 @@ describe('Read count of experiences received by user', () => {
     [1, 5],
     [2, 0],
     [2, 3],
-    [2, 4, { public: false }],
+    [
+      2,
+      4,
+      {
+        public: false,
+      },
+    ],
     [2, 5],
     [3, 0],
-    [3, 2, { public: false }],
-    [4, 0, { public: false }],
+    [
+      3,
+      2,
+      {
+        public: false,
+      },
+    ],
+    [
+      4,
+      0,
+      {
+        public: false,
+      },
+    ],
     [5, 0],
   ];
-
   const credentialsPublic = {
     username: _usersPublic[0].username,
     password: _usersPublic[0].password,
@@ -66,22 +98,18 @@ describe('Read count of experiences received by user', () => {
     username: _usersPrivate[0].username,
     password: _usersPrivate[0].password,
   };
-
   beforeEach(async () => {
-    users = await utils.saveUsers(
+    users = await utils.saveUsersWithCachedPasswords(
       _users.map(user => ({
         ...user,
         username: user.username,
         password: user.password,
       })),
     );
-
     const _experiences = utils.generateExperiences(users, experienceData);
     await utils.saveExperiences(_experiences);
   });
-
   afterEach(utils.clearDatabase);
-
   context('logged in as public user', () => {
     beforeEach(async () => {
       await utils.signIn(credentialsPublic, agent);
@@ -89,7 +117,6 @@ describe('Read count of experiences received by user', () => {
     afterEach(async () => {
       await utils.signOut(agent);
     });
-
     it('respond with all public experiences to userTo', async () => {
       const { body } = await agent
         .get(`/api/experiences/count?userTo=${users[2]._id}`)
@@ -99,31 +126,24 @@ describe('Read count of experiences received by user', () => {
       body.count.should.equal(2);
       should.not.exist(body.hasPending);
     });
-
     it('private experiences are included when own profile', async () => {
       const { body } = await agent
         .get(`/api/experiences/count?userTo=${users[0]._id}`)
         .expect(200);
-
       body.count.should.equal(5);
       body.hasPending.should.be.true();
     });
-
     it('[no params] 400 and error', async () => {
       const { body } = await agent.get('/api/experiences/count').expect(400);
-
       body.message.should.equal('Missing or invalid `userTo` request param');
     });
-
     it('[invalid params] 400 and error', async () => {
       const { body } = await agent
         .get('/api/experiences/count?userTo=1')
         .expect(400);
-
       body.message.should.equal('Missing or invalid `userTo` request param');
     });
   });
-
   context('logged in as non-public user', () => {
     beforeEach(async () => {
       await utils.signIn(credentialsPrivate, agent);
@@ -131,14 +151,12 @@ describe('Read count of experiences received by user', () => {
     afterEach(async () => {
       await utils.signOut(agent);
     });
-
     it('403', async () => {
       await agent
         .get(`/api/experiences/count?userTo=${users[2]._id}`)
         .expect(403);
     });
   });
-
   context('not logged in', () => {
     it('403', async () => {
       await agent

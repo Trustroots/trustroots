@@ -1,10 +1,9 @@
 /**
  * Module dependencies.
  */
-import errorService from '../../../core/server/services/error.server.service.js';
-import log from '../../../../config/lib/logger.js';
+import errorService from './../../../core/server/services/error.server.service.mjs';
+import log from './../../../../config/lib/logger.mjs';
 import mongoose from 'mongoose';
-
 const AuditLog = mongoose.model('AuditLog');
 const User = mongoose.model('User');
 
@@ -16,7 +15,6 @@ export const record = (req, res, next) => {
   // https://www.phusionpassenger.com/library/indepth/nodejs/secure_http_headers.html#passenger-client-address
   const passengerClientAddress = req.get('!~Passenger-Client-Address');
   const xForwardedFor = req.get('X-Forwarded-For');
-
   const auditLogItem = new AuditLog({
     body: req.body,
     ip: passengerClientAddress || xForwardedFor || req.ip,
@@ -71,7 +69,6 @@ export const list = async (req, res) => {
     return res.status(400).send({ message: errorService.getErrorMessage(err) });
   }
 };
-
 /** Existing actors from the whole history, independent of the current filters. */
 export const actors = async (req, res) => {
   try {
@@ -86,4 +83,10 @@ export const actors = async (req, res) => {
   }
 };
 
-export default { record, list, actors };
+const defaultInterop = {
+  record,
+  list,
+  actors,
+};
+export default defaultInterop;
+export { defaultInterop as 'module.exports' };

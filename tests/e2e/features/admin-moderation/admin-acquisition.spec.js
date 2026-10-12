@@ -1,4 +1,4 @@
-const { annotateFeature, expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/fixtures');
 
 const {
   SEEDED_ADMIN,
@@ -14,7 +14,185 @@ test.describe('admin acquisition feature coverage', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
   });
 
-  test('admin acquisition story tools return deterministic rows and analysis', async ({
+  test('greeters see restriction badges without moderation access', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.acquisition-stories', [
+      'Greeters see suspended and shadowbanned statuses on members and restricted matches.',
+      'Restriction visibility does not grant moderation access.',
+    ]);
+    const greeter = createUser();
+    const member = createUser();
+    const match = createUser();
+    const context = await createIsolatedContext(browser, baseURL);
+    try {
+      for (const user of [greeter, member, match]) {
+        await registerViaApi(context.request, user);
+      }
+      await withE2eDb(async db => {
+        await db.collection('users').updateOne(
+          { username: greeter.username },
+          {
+            $set: { roles: ['user', 'welcome-team'], public: true },
+          },
+        );
+        await db.collection('users').updateOne(
+          { username: member.username },
+          {
+            $set: {
+              roles: ['user', 'suspended'],
+              public: true,
+              acquisitionStory: 'A fictional recommendation.',
+              emailTemporary: `${match.username}@example.test`,
+            },
+          },
+        );
+        await db.collection('users').updateOne(
+          { username: match.username },
+          {
+            $set: {
+              roles: ['user', 'shadowban', 'volunteer'],
+              acquisitionStory: '',
+            },
+          },
+        );
+      });
+      const page = await context.newPage();
+      await signInViaApi(page, context.request, greeter);
+      const response = await context.request.post(
+        '/api/admin/acquisition-stories',
+        {
+          headers: { 'X-Trustroots-Request': '1' },
+        },
+      );
+      expect(response.ok()).toBeTruthy();
+      const story = (await response.json()).find(
+        row => row.username === member.username,
+      );
+      expect(story.restrictionStatuses).toEqual(['suspended']);
+      const restrictedMatch = story.restrictedMatches.find(
+        row => row.username === match.username,
+      );
+      expect(restrictedMatch.restrictionStatuses).toEqual(['shadowban']);
+      expect(restrictedMatch.roles).toBeUndefined();
+      await page.goto('/admin/acquisition-stories');
+      const row = page.locator('tbody tr').filter({
+        has: page.locator(`a[href="/profile/${member.username}"]`),
+      });
+      await expect(row.getByText('Suspended', { exact: true })).toBeVisible();
+      await expect(
+        row.getByText('Shadowbanned', { exact: true }),
+      ).toBeVisible();
+      await expect(row.getByText('Visible', { exact: true })).toBeVisible();
+      const denied = await context.request.post('/api/admin/user/change-role', {
+        headers: { 'X-Trustroots-Request': '1' },
+        data: { id: story._id, role: 'suspended', action: 'remove' },
+      });
+      expect(denied.status()).toBe(403);
+    } finally {
+      await withE2eDb(db =>
+        db.collection('users').deleteMany({
+          username: {
+            $in: [greeter.username, member.username, match.username],
+          },
+        }),
+      );
+      await context.close();
+    }
+  });
+
+  test('admin can filter acquisition stories to unassigned members', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.acquisition-stories', [
+      'Unassigned only hides assigned members and restores them when cleared.',
+      'Filtering preserves the selected sort order and handles empty results.',
+    ]);
+    const assigned = {
+      _id: '111111111111111111111111',
+      username: 'forest-member',
+      public: true,
+      created: '2026-01-01T00:00:00.000Z',
+      welcomer: {
+        _id: '222222222222222222222222',
+        username: 'fictional-greeter',
+        created: '2026-01-02T00:00:00.000Z',
+      },
+    };
+    let stories = [
+      assigned,
+      {
+        _id: '333333333333333333333333',
+        username: 'brook-member',
+        public: false,
+        created: '2026-01-03T00:00:00.000Z',
+        welcomer: null,
+      },
+      {
+        _id: '444444444444444444444444',
+        username: 'river-member',
+        public: true,
+        created: '2026-01-04T00:00:00.000Z',
+      },
+    ];
+    let requests = 0;
+    await page.route('**/api/admin/acquisition-stories', async route => {
+      requests += 1;
+      await route.fulfill({ contentType: 'application/json', json: stories });
+    });
+
+    await page.goto('/admin/acquisition-stories');
+    const checkbox = page.getByRole('checkbox', { name: 'Unassigned only' });
+    const visibility = page.getByRole('combobox', {
+      name: 'Profile visibility',
+    });
+    const members = page.locator('tbody tr td:nth-child(2)');
+    await expect(checkbox).not.toBeChecked();
+    await expect(visibility).toHaveValue('all');
+    await expect(
+      page.getByText(
+        'Hidden profiles have not activated their signup through email confirmation.',
+      ),
+    ).toBeVisible();
+    await expect(members).toHaveCount(3);
+    await page.getByRole('button', { name: 'Member', exact: true }).click();
+    await checkbox.check();
+    await expect(members).toHaveText(['brook-member', 'river-member']);
+    await visibility.selectOption('visible');
+    await expect(members).toHaveText(['river-member']);
+    await visibility.selectOption('hidden');
+    await expect(members).toHaveText(['brook-member']);
+    await visibility.selectOption('all');
+    await expect(members).toHaveText(['brook-member', 'river-member']);
+    await expect(page.locator('tbody tr')).toContainText([
+      'Unassigned',
+      'Unassigned',
+    ]);
+    await page.getByRole('button', { name: 'Member ▲', exact: true }).click();
+    await expect(members).toHaveText(['river-member', 'brook-member']);
+    await checkbox.uncheck();
+    await expect(members).toHaveText([
+      'river-member',
+      'forest-member',
+      'brook-member',
+    ]);
+    expect(requests).toBe(1);
+
+    stories = [assigned];
+    await page.reload();
+    await expect(members).toHaveCount(1);
+    await checkbox.check();
+    await expect(
+      page.getByText('No unassigned acquisition stories found.'),
+    ).toBeVisible();
+    await expect(checkbox).toBeVisible();
+    await expect(visibility).toBeVisible();
+    await checkbox.uncheck();
+    await expect(members).toHaveText(['forest-member']);
+  });
+
+  test('admin acquisition stories remain available without analysis', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.acquisition-stories', [
@@ -26,10 +204,7 @@ test.describe('admin acquisition feature coverage', () => {
       'Story rows show whether profiles are visible.',
       'Story rows show matching restricted accounts.',
       'Story columns can be sorted.',
-    ]);
-    annotateFeature(testInfo, 'admin.acquisition-analysis', [
-      'Acquisition story analysis page loads.',
-      'Analysis API returns deterministic analysis.',
+      'Acquisition stories remain available without Analysis navigation or API.',
     ]);
 
     await page.goto('/admin/acquisition-stories');
@@ -51,7 +226,7 @@ test.describe('admin acquisition feature coverage', () => {
       aliceRow.getByRole('link', {
         name: 'e2e-seeded-shadow (Shadow Spammer)',
       }),
-    ).toHaveAttribute('href', '/admin/user?id=665000000000000000000004');
+    ).toHaveAttribute('href', '/admin/user/e2e-seeded-shadow');
     await expect(
       aliceRow.getByText(/Temporary email identifier/),
     ).toBeVisible();
@@ -82,15 +257,15 @@ test.describe('admin acquisition feature coverage', () => {
       }),
     ]);
 
-    await page.goto('/admin/acquisition-stories/analysis');
-    await expect(page).toHaveURL(/\/admin\/acquisition-stories\/analysis/);
+    await expect(
+      page.getByRole('link', { name: 'Analysis', exact: true }),
+    ).toHaveCount(0);
 
     const analysis = await page.request.post(
       '/api/admin/acquisition-stories/analysis',
       { headers: { 'X-Trustroots-Request': '1' } },
     );
-    expect(analysis.ok()).toBeTruthy();
-    expect(Object.keys(await analysis.json()).length).toBeGreaterThan(0);
+    expect(analysis.status()).toBe(404);
   });
 
   test('welcome team list prioritises shared languages and marks a welcomed member', async ({

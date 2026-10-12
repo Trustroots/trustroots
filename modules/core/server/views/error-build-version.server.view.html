@@ -1,0 +1,9 @@
+<p class="small" aria-label="Currently deployed code">
+  {% if appSettings.build and appSettings.build.shortCommit and
+  appSettings.build.committedAt %} Deployed code: {{
+  appSettings.build.committedAt }} UTC (<a
+    href="{{ appSettings.build.commitUrl }}"
+    >{{ appSettings.build.shortCommit }}</a
+  >) {% elif appSettings.commit %} Deployed code: {{ appSettings.commit }} {%
+  else %} Deployed code: version unavailable {% endif %}
+</p>

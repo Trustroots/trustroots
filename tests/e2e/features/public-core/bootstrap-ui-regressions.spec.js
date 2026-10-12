@@ -4,7 +4,7 @@ const {
   expect,
   test,
   useViewportScreenshot,
-} = require('../../support/test');
+} = require('../../support/fixtures');
 const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
 
 async function expectTricon(locator) {

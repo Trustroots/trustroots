@@ -11,11 +11,11 @@ describe('job: send email', function () {
   const sentEmails = testutils.catchEmails();
 
   before(function () {
-    sendEmailJobHandler = require('../../../server/jobs/send-email.server.job');
+    sendEmailJobHandler = require('./../../../server/jobs/send-email.server.job.mjs');
   });
 
   it('reports send failures', function (done) {
-    const config = require('../../../../../config/config');
+    const config = require('./../../../../../config/config.mjs');
     const originalSend = config.mailer.options.send;
     config.mailer.options.send = function (data, callback) {
       callback(new Error('smtp failed'));

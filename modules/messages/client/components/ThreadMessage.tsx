@@ -1,7 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
+
+import MessageBubble from './MessageBubble';
+import { disableExternalLinks } from '../utils/message-content';
 
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
@@ -26,102 +28,34 @@ function getHostingData(content: string): { 'data-hosting'?: 'yes' | 'no' } {
   };
 }
 
-function disableExternalLinks(content: string): string {
-  const template = document.createElement('template');
-  template.innerHTML = content;
-
-  for (const link of Array.from(template.content.querySelectorAll('a'))) {
-    let internal = false;
-    try {
-      const href = link.getAttribute('href');
-      if (href) {
-        const url = new URL(href, window.location.href);
-        internal =
-          ['http:', 'https:'].includes(url.protocol) &&
-          url.origin === window.location.origin;
-      }
-    } catch {
-      // An invalid destination cannot be an internal link.
-    }
-
-    if (!internal) link.replaceWith(...Array.from(link.childNodes));
-  }
-
-  return template.innerHTML;
-}
-
-const MessageContainerBase = styled.div.attrs<{ message: Message }>(
-  ({ message }) => ({
-    className: 'message',
-    ...getHostingData(message.content),
-  }),
-)`
-  display: flex;
-
-  .message-main {
-    flex-grow: 1;
-
-    .avatar {
-      display: none;
-    }
-  }
-
-  .panel {
-    display: flex;
-  }
-
-  .message-author {
-    margin: 0 15px;
-  }
-
-  @media (max-width: 767px) {
-    .panel-body {
-      padding: 8px 15px 8px 4px;
-    }
-    .message-main {
-      .avatar {
-        display: block;
-        margin: 8px;
-      }
-    }
-    .message-author {
-      display: none;
-    }
-  }
-`;
-const MessageContainer = MessageContainerBase as unknown as React.ComponentType<
-  React.HTMLAttributes<HTMLDivElement> & { message: Message }
->;
-
 type ThreadMessageProps = { message: Message; user: MessageUser };
 
 export default function ThreadMessage({ message, user }: ThreadMessageProps) {
   const { t } = useTranslation('messages');
 
-  function isMe(otherUser: MessageUser) {
-    return otherUser._id === user._id;
-  }
+  const sender = message.userFrom ?? { _id: '' };
+  const sentByMe = sender._id === user._id;
 
-  const deletedUser = !message.userFrom.username;
+  const deletedUser = !sender.username;
 
   return (
-    <MessageContainer message={message}>
+    <MessageBubble
+      {...getHostingData(message.content)}
+      className={sentByMe ? 'message-sender-me' : 'message-sender-other'}
+    >
       <div className="message-main">
         <div className="message-meta">
-          {isMe(message.userFrom) ? (
+          {sentByMe ? (
             <span>{t<string>('You')}</span>
           ) : !deletedUser ? (
-            <a href={`/profile/${message.userFrom.username}`}>
-              {message.userFrom.displayName}
-            </a>
+            <a href={`/profile/${sender.username}`}>{sender.displayName}</a>
           ) : (
             <span>{t<string>('Unknown member')}</span>
           )}
-          —
+          <span aria-hidden="true">·</span>
           <TimeAgo date={new Date(message.created)} />
         </div>
         <div className="panel panel-default">
-          <Avatar user={message.userFrom} size={24} link={!deletedUser} />
           <div
             className="panel-body"
             dangerouslySetInnerHTML={{
@@ -131,9 +65,9 @@ export default function ThreadMessage({ message, user }: ThreadMessageProps) {
         </div>
       </div>
       <div className="message-author">
-        <Avatar user={message.userFrom} size={32} link={!deletedUser} />
+        <Avatar user={sender} size={32} link={!deletedUser} />
       </div>
-    </MessageContainer>
+    </MessageBubble>
   );
 }
 

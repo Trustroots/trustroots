@@ -1,7 +1,7 @@
 import Influx from 'influx';
 import _ from 'lodash';
-import config from '../../../../config/config.js';
-import log from '../../../../config/lib/logger.js';
+import config from './../../../../config/config.mjs';
+import log from './../../../../config/lib/logger.mjs';
 
 /**
  * Get InfluxDB Client
@@ -11,7 +11,6 @@ const getClient = function (callback) {
   const enabled = _.get(config, 'influxdb.enabled');
   const host = _.get(config, 'influxdb.options.host');
   const database = _.get(config, 'influxdb.options.database');
-
   const isNotConfigured =
     enabled !== true || _.isUndefined(host) || _.isUndefined(database);
   if (isNotConfigured) {
@@ -19,12 +18,19 @@ const getClient = function (callback) {
   }
 
   // Init Influx client with configuration
-  const client = new Influx.InfluxDB(config.influxdb.options);
-
+  const client = new Influx.InfluxDB({
+    ...config.influxdb.options,
+    pool: {
+      ...config.influxdb.options.pool,
+      requestTimeout: 2000,
+      maxRetries: 0,
+    },
+  });
   callback(null, client);
 };
-
-const influxService = { _getClient: getClient };
+const influxService = {
+  _getClient: getClient,
+};
 
 /**
  * Write measurement to InfluxDB
@@ -50,7 +56,6 @@ const influxService = { _getClient: getClient };
  */
 const writeMeasurement = function (measurementName, fields, tags, callback) {
   let errorMessage;
-
   if (!measurementName || !_.isString(measurementName)) {
     errorMessage = 'InfluxDB Service: no `measurementName` defined. #ghi3kH';
     // Log the failure
@@ -59,7 +64,6 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
     }
     return callback(new Error(errorMessage));
   }
-
   if (!_.isPlainObject(fields)) {
     errorMessage = 'InfluxDB Service: no `fields` defined. #ghugGJ';
     // Log the failure
@@ -70,7 +74,6 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
     }
     return callback(new Error(errorMessage));
   }
-
   if (!_.isPlainObject(tags)) {
     errorMessage = 'InfluxDB Service: no `tags` defined. #ghj3ig';
     // Log the failure
@@ -110,12 +113,10 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
     point.timestamp = fields.time;
     delete fields.time;
   }
-
   influxService._getClient(function (err, client) {
     if (err) {
       return callback(err);
     }
-
     client
       .writeMeasurement(measurementName, [point])
       .then(function () {
@@ -135,7 +136,6 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
             },
           );
         }
-
         return callback(err);
       });
   });
@@ -193,7 +193,6 @@ const stat = function (stat, callback) {
   if (!enabled) {
     return callback();
   }
-
   const namespace = stat.namespace;
   const meta = stat.meta;
   const values = stat.values;
@@ -201,7 +200,11 @@ const stat = function (stat, callback) {
   const tags = stat.tags || {};
 
   // If stat contains a time, we need to add it
-  const timeExtend = stat.time ? { time: stat.time } : {};
+  const timeExtend = stat.time
+    ? {
+        time: stat.time,
+      }
+    : {};
 
   // the name of the measurement.
   // we rename 'messages' to stay compatible with older influxdb points
@@ -214,7 +217,6 @@ const stat = function (stat, callback) {
   // IPoint.timestamp in the writeMeasurement function.
   // Meta field exists separately for historical reasons; we used to support "Stathat" service which couldn't handle string data.
   const fields = _.extend({}, meta, values, counts, timeExtend);
-
   writeMeasurement(name, fields, tags, callback);
 };
 
@@ -222,6 +224,10 @@ const stat = function (stat, callback) {
 export { stat };
 export const _getClient = getClient;
 export const _writeMeasurement = writeMeasurement;
-
-Object.assign(influxService, { stat, _getClient, _writeMeasurement });
+Object.assign(influxService, {
+  stat,
+  _getClient,
+  _writeMeasurement,
+});
 export default influxService;
+export { influxService as 'module.exports' };

@@ -13,18 +13,17 @@ export function normaliseOfferExpiry(type, validUntil, maxValidFromNow, now) {
   if (type === 'host') {
     return undefined;
   }
-
-  const maximumAge = maxValidFromNow || { days: 30 };
+  const maximumAge = maxValidFromNow || {
+    days: 30,
+  };
   const parsedValidUntil = moment(validUntil);
   const minDate = moment(now).startOf('day');
   const maxDate = moment(now)
     .add(maximumAge)
     // Add one extra day just to accommodate oddities from timezones
     .endOf('day');
-
   if (validUntil && parsedValidUntil.isValid()) {
     const validUntilEndOfDay = parsedValidUntil.clone().endOf('day');
-
     if (
       validUntilEndOfDay.isSameOrAfter(minDate) &&
       validUntilEndOfDay.isSameOrBefore(maxDate)
@@ -32,8 +31,7 @@ export function normaliseOfferExpiry(type, validUntil, maxValidFromNow, now) {
       return parsedValidUntil.toDate();
     }
   }
-
   return moment(now).add(maximumAge).toDate();
 }
-
 export default normaliseOfferExpiry;
+export { normaliseOfferExpiry as 'module.exports' };

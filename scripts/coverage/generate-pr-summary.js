@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { collectLineChanges, renderLineChanges } = require('./line-changes');
+const { renderProductionInventory } = require('./dependency-changes');
 
 const root = path.resolve(__dirname, '../..');
 const reportDir = path.join(root, 'coverage-report');
@@ -297,6 +298,8 @@ function buildMarkdown(lanes, options = {}) {
       '## Pull request overview',
       '',
       renderLineChanges(options.lineChanges),
+      '',
+      renderProductionInventory(options.productionInventory),
     ].join('\n')}\n`;
   }
   const runUrl = options.runUrl || process.env.GITHUB_RUN_URL;
@@ -314,6 +317,7 @@ function buildMarkdown(lanes, options = {}) {
   if (options.lineChanges) {
     details.push('', renderLineChanges(options.lineChanges));
   }
+  details.push('', renderProductionInventory(options.productionInventory));
 
   if (areaTable) {
     details.push('', areaTable);
@@ -334,6 +338,11 @@ function run() {
   process.stdout.write(
     buildMarkdown(lanes, {
       includeCoverage: process.env.TRUSTROOTS_PR_INCLUDE_COVERAGE !== 'false',
+      productionInventory: fs.existsSync(
+        path.join(root, 'coverage/production/dependencies.json'),
+      )
+        ? readJson(path.join(root, 'coverage/production/dependencies.json'))
+        : undefined,
       lineChanges:
         process.env.PR_BASE_SHA && process.env.PR_HEAD_SHA
           ? collectLineChanges(

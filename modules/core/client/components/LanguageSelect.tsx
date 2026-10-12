@@ -1,5 +1,4 @@
 // External dependencies
-import { matchSorter } from 'match-sorter';
 import { useTranslation } from 'react-i18next';
 import AsyncSelect from 'react-select/async';
 import type { OnChangeValue } from 'react-select';
@@ -8,8 +7,20 @@ import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
 import { useLanguagesQuery, type LanguageOption } from '../api/languages.api';
+import { normaliseForSearch } from '../utils/locales';
 
 const INPUT_MIN_LENGTH = 2;
+
+function filterLanguagesByLabel(
+  languages: LanguageOption[],
+  inputValue: string,
+): LanguageOption[] {
+  const query = normaliseForSearch(inputValue);
+  return languages.filter(language =>
+    normaliseForSearch(language.label).includes(query),
+  );
+}
+
 type LanguageSelectProps = {
   excludeDeprecated?: boolean;
   preSelectedLanguages?: string[];
@@ -50,8 +61,7 @@ export default function LanguageSelect({
       const options = excludeDeprecated
         ? languages.filter(language => !language.deprecated)
         : languages;
-      const res = matchSorter(options, inputValue, { keys: ['label'] });
-      resolve(res);
+      resolve(filterLanguagesByLabel(options, inputValue));
     });
 
   const onChange = (selectedOptions: OnChangeValue<LanguageOption, true>) => {

@@ -1,9 +1,9 @@
 const sinon = require('sinon');
 const winston = require('winston');
-const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
+const userProfile = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
 const languagesObject = require('../../../../config/languages/languages.json');
 const languagesArray = require('../../../../config/languages/languages-array.json');
-const deprecatedLanguages = require('../../../../config/languages/deprecated');
+const deprecatedLanguages = require('./../../../../config/languages/deprecated.mjs');
 
 require('should');
 
@@ -11,7 +11,7 @@ const sanitizeOwnProfile = user => ({
   sanitized: true,
   username: user.username,
 });
-const coreController = require('../../server/controllers/core.server.controller');
+const coreController = require('./../../server/controllers/core.server.controller.mjs');
 
 /**
  * Minimal Express-like response mock for unit-testing controller actions

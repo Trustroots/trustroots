@@ -28,7 +28,7 @@ Icon
 # Env/development
 .eslintcache
 .nodemonignore
-node_modules/
+node_modules
 /.tmp/
 /.worktrees/
 .vagrant

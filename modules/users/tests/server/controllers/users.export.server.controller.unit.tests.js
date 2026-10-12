@@ -2,14 +2,14 @@ const sinon = require('sinon');
 require('should');
 
 const path = require('path');
-const config = require('../../../../../config/config');
+const config = require('./../../../../../config/config.mjs');
 config.files.server.models.forEach(modelPath =>
   require(path.resolve(modelPath)),
 );
-const contactsService = require('../../../../contacts/server/controllers/contacts.server.controller');
-const offersService = require('../../../../offers/server/controllers/offers.server.controller');
-const profilesService = require('../../../server/controllers/users.profile.server.controller');
-const controller = require('../../../server/controllers/users.export.server.controller');
+const contactsService = require('./../../../../contacts/server/controllers/contacts.server.controller.mjs');
+const offersService = require('./../../../../offers/server/controllers/offers.server.controller.mjs');
+const profilesService = require('./../../../server/controllers/users.profile.server.controller.mjs');
+const controller = require('./../../../server/controllers/users.export.server.controller.mjs');
 
 function loadController({ profile, contacts, offers }) {
   sinon.stub(profilesService, 'userByUsername').callsFake(profile);
