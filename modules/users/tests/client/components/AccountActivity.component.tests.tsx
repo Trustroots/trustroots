@@ -84,6 +84,56 @@ describe('AccountActivity', () => {
     ).toBeInTheDocument();
   });
 
+  it.each(['success', 'failure'])(
+    'ignores a stale %s after refreshing',
+    async outcome => {
+      let resolveRequest!: (value: unknown) => void;
+      let rejectRequest!: (error: Error) => void;
+      const staleRequest = new Promise((resolve, reject) => {
+        resolveRequest = resolve;
+        rejectRequest = reject;
+      });
+      mockedAxios.get.mockImplementationOnce(() => staleRequest as never);
+      await act(async () => {
+        render(<AccountActivity />);
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Refresh activity' }));
+      });
+      expect(
+        await screen.findByText('No recent account activity.'),
+      ).toBeInTheDocument();
+
+      await act(async () => {
+        if (outcome === 'failure') {
+          rejectRequest(new Error('stale failure'));
+        } else {
+          resolveRequest({
+            data: {
+              events: [
+                {
+                  eventType: 'password_changed',
+                  createdAt: '2026-10-12T10:00:00.000Z',
+                },
+              ],
+              nextCursor: 'stale-cursor',
+            },
+          });
+        }
+      });
+      expect(
+        screen.getByText('No recent account activity.'),
+      ).toBeInTheDocument();
+      expect(screen.queryByText('Password changed')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Could not load account activity. Try again.'),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Load more activity' }),
+      ).not.toBeInTheDocument();
+    },
+  );
+
   it('loads the next page and reports pagination failures', async () => {
     let resolveNextPage: ((value: { data: unknown }) => void) | undefined;
     mockedAxios.get
@@ -114,6 +164,8 @@ describe('AccountActivity', () => {
     expect(
       screen.getByRole('button', { name: 'Loading activity…' }),
     ).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Loading activity…' }));
+    expect(mockedAxios.get).toHaveBeenCalledTimes(2);
     await act(async () => {
       resolveNextPage?.({
         data: {
