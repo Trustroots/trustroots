@@ -1,7 +1,6 @@
 export function getBootstrapData() {
   return {
     env: window.env || 'production',
-    gaId: window.gaId,
     isNativeMobileApp: Boolean(window.isNativeMobileApp),
     settings: {
       ...(window.settings || {}),
