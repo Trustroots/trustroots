@@ -14,5 +14,8 @@ Users authentication/account services, a dedicated activity model, account-setti
 
 ## Delivery
 
-This is a proposal-only change. Runtime implementation, migrations and deployment are separate follow-up work after the design is reviewed. The proposal remains unarchived until implementation is complete.
+Implemented with a 90-day API retention window, owner-only paginated history,
+account-settings interface, activity recording at completed account/session
+transitions, deployment index guidance, and automated server, client and
+browser tests.
 
