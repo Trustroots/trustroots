@@ -31,8 +31,9 @@ device and is independent of the signed-in account.
 
 When enabled, the app sends foreground app-open counts and fixed native
 top-level screen views to `https://1p.trustroots.org/api/send`, using the existing
-production Umami website identifier. Filter by `android.trustroots.org` or
-`/android/` paths to separate Android usage from website traffic. Opens are
+Android Umami website identifier `95c86802-44fe-4bff-ab54-dbe9dff27e42`. Filter by
+`android.trustroots.org` or `/android/` paths to separate Android usage from
+website traffic. Opens are
 custom `app-open` events; screen views are pageviews. Profile names, conversation
 details, search inputs, map coordinates and browser URLs are never sent. These
 counts cover participating installations only.

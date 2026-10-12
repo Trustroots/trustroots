@@ -49,7 +49,7 @@ internal class UsageAnalytics(
     private fun track(path: String, title: String, name: String? = null) {
         if (!consentState.value) return
         val payload = JSONObject()
-            .put("website", "23ec0c85-2ebc-4d85-9063-c23d90b8ded1")
+            .put("website", "95c86802-44fe-4bff-ab54-dbe9dff27e42")
             .put("hostname", "android.trustroots.org")
             .put("url", path)
             .put("title", title)

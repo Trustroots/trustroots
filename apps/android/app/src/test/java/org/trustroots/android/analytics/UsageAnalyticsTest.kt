@@ -42,7 +42,7 @@ class UsageAnalyticsTest {
             val payload = event.getJSONObject("payload")
             assertEquals(setOf("website", "hostname", "url", "title"), payload.keys().asSequence().toSet())
             assertEquals("android.trustroots.org", payload.getString("hostname"))
-            assertEquals("23ec0c85-2ebc-4d85-9063-c23d90b8ded1", payload.getString("website"))
+            assertEquals("95c86802-44fe-4bff-ab54-dbe9dff27e42", payload.getString("website"))
             assertEquals("/android/${UsageScreen.entries[index].path}", payload.getString("url"))
             assertEquals(UsageScreen.entries[index].title, payload.getString("title"))
         }

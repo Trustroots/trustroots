@@ -82,7 +82,7 @@ The Android app SHALL default to sending no native analytics, including in F-Dro
 
 - **WHEN** the member enables usage analytics
 - **THEN** subsequent foreground app opens and native top-level screen views are sent to the self-hosted Trustroots Umami endpoint
-- **AND** native traffic uses `android.trustroots.org`, fixed `/android/` paths and the existing production website identifier
+- **AND** native traffic uses `android.trustroots.org`, fixed `/android/` paths and the Android Umami website identifier `95c86802-44fe-4bff-ab54-dbe9dff27e42`
 - **AND** requests contain no credentials, cookies, member data, message data, user-entered values, browser URLs or persistent identifiers
 
 #### Scenario: Member opts out

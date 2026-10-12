@@ -4,7 +4,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.key
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -40,16 +43,28 @@ class UsageAnalyticsJourneyTest {
     @Test fun memberOptsInNavigatesRestartsAndOptsOut() {
         val analytics = mutableStateOf(UsageAnalytics(AndroidUsageConsentStore(context), transport))
         val screen = mutableStateOf<UsageScreen?>(UsageScreen.Account)
+        var openedUri: String? = null
+        val uriHandler = object : UriHandler {
+            override fun openUri(uri: String) { openedUri = uri }
+        }
         compose.setContent {
             key(analytics.value) {
                 Column {
                     UsageScreenTracking(analytics.value, screen.value)
-                    UsageAnalyticsSettings(analytics.value)
+                    CompositionLocalProvider(LocalUriHandler provides uriHandler) {
+                        UsageAnalyticsSettings(analytics.value)
+                    }
                     TextButton(onClick = { screen.value = UsageScreen.Search }) { Text("Open search") }
                 }
             }
         }
         compose.runOnIdle { analytics.value.appOpened(); assertTrue(bodies.isEmpty()) }
+        compose.onNodeWithText("Privacy policy").performClick()
+        compose.runOnIdle {
+            assertEquals("https://www.trustroots.org/privacy", openedUri)
+            assertFalse(analytics.value.enabled.value)
+            assertTrue(bodies.isEmpty())
+        }
         compose.onNodeWithText("Turn on usage analytics").performClick()
         compose.waitForIdle()
         compose.onNodeWithText("Open search").performClick()
