@@ -577,6 +577,7 @@ service.confirmEmail = function (req, res) {
                   !(
                     req.user &&
                     String(req.user._id) === String(user._id) &&
+                    (req.user.authVersion || 0) === (user.authVersion || 0) &&
                     req.user.$locals?.mfaVerified === true
                   ),
               );

@@ -932,6 +932,7 @@ describe('Authentication controller OAuth unit tests', () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
       userDoc.public = false;
+      userDoc.authVersion = 1;
       userDoc.emailTemporary = userDoc.email;
       userDoc.emailToken = 'confirm-token';
       await userDoc.save();
@@ -1008,6 +1009,7 @@ describe('Authentication controller OAuth unit tests', () => {
           $set: {
             mfaEnabled: true,
             mfaSecretEncrypted: 'encrypted-secret',
+            authVersion: 2,
             emailTemporary: 'new@example.test',
             emailToken: 'mfa-confirm-token',
           },
@@ -1038,6 +1040,7 @@ describe('Authentication controller OAuth unit tests', () => {
           $set: {
             mfaEnabled: true,
             mfaSecretEncrypted: 'encrypted-secret',
+            authVersion: 2,
             emailTemporary: 'new@example.test',
             emailToken: 'verified-confirm-token',
           },
@@ -1049,7 +1052,11 @@ describe('Authentication controller OAuth unit tests', () => {
       authController.confirmEmail(
         {
           params: { token: 'verified-confirm-token' },
-          user: { _id: saved._id, $locals: { mfaVerified: true } },
+          user: {
+            _id: saved._id,
+            authVersion: 2,
+            $locals: { mfaVerified: true },
+          },
           login,
         },
         res,
@@ -1059,6 +1066,42 @@ describe('Authentication controller OAuth unit tests', () => {
       res.statusCode.should.equal(200);
       res.body.mfaRequired.should.be.false();
       login.calledOnce.should.be.true();
+    });
+
+    it('does not preserve an MFA session with a stale authVersion', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            mfaEnabled: true,
+            mfaSecretEncrypted: 'encrypted-secret',
+            authVersion: 2,
+            emailTemporary: 'new@example.test',
+            emailToken: 'stale-session-confirm-token',
+          },
+        },
+      );
+      const login = sinon.spy((user, cb) => cb());
+      const res = deferredResponse();
+
+      authController.confirmEmail(
+        {
+          params: { token: 'stale-session-confirm-token' },
+          user: {
+            _id: saved._id,
+            authVersion: 1,
+            $locals: { mfaVerified: true },
+          },
+          login,
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      res.body.mfaRequired.should.be.true();
+      login.called.should.be.false();
     });
 
     it('returns 400 when the token is invalid', async () => {
