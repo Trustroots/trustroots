@@ -1,7 +1,7 @@
 import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import type { UseQueryResult } from 'react-query';
+import type { UseQueryResult } from '@tanstack/react-query';
 
 import '@/config/client/i18n';
 import LanguageSelect from '@/modules/core/client/components/LanguageSelect';
@@ -53,14 +53,14 @@ function latestSelectProps(): CapturedAsyncSelectProps {
 }
 
 function mockLanguagesQuery(
-  partial: Partial<UseQueryResult<LanguageOption[], unknown>> & {
+  partial: Partial<UseQueryResult<LanguageOption[], Error>> & {
     data?: LanguageOption[] | undefined;
     isLoading: boolean;
     isError: boolean;
   },
 ) {
   useLanguagesQueryMock.mockReturnValue(
-    partial as UseQueryResult<LanguageOption[], unknown>,
+    partial as UseQueryResult<LanguageOption[], Error>,
   );
 }
 
@@ -351,12 +351,12 @@ describe('<LanguageSelect />', () => {
         data: undefined,
         isLoading: false,
         isError: false,
-      } as UseQueryResult<LanguageOption[], unknown>)
+      } as UseQueryResult<LanguageOption[], Error>)
       .mockReturnValueOnce({
         data: [{ value: 'eng', label: 'English' }],
         isLoading: false,
         isError: false,
-      } as UseQueryResult<LanguageOption[], unknown>);
+      } as UseQueryResult<LanguageOption[], Error>);
 
     const { rerender } = render(<LanguageSelect />);
 

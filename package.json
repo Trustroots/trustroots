@@ -158,7 +158,7 @@
     "react-dom": "18.3.1",
     "react-i18next": "11.15.1",
     "react-map-gl": "5.3.19",
-    "react-query": "3.39.3",
+    "@tanstack/react-query": "5.100.0",
     "react-responsive": "8.2.0",
     "react-select": "5.10.2",
     "sanitize-html": "2.17.7",
