@@ -330,6 +330,9 @@ test('administrators can review a SpaceAPI import preview', async ({
           latitude: 51.5,
           longitude: -0.1,
           address: 'Example City',
+          addressParts: ['', 'Example City', '', '', ''],
+          description: 'A shared workshop',
+          open: 'closed',
           fetchedAt: '2026-10-12T10:00:00Z',
           spaceType: 'hackerspace',
         },
@@ -380,6 +383,11 @@ test('administrators can review a SpaceAPI import preview', async ({
   expect(publications).toHaveLength(2);
   expect(publications[0].event).toEqual(publications[1].event);
   expect(publications[0].event.kind).toBe(33000);
+  expect(
+    publications[0].event.tags.every(tag =>
+      tag.every(value => typeof value === 'string'),
+    ),
+  ).toBe(true);
 });
 
 test('member navigation menus and narrow layout remain usable', async ({
