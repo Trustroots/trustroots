@@ -9,6 +9,7 @@ import profileHandler from './users.profile.server.controller.mjs';
 import statService from '../../../stats/server/services/stats.server.service.mts';
 import log from '../../../../config/lib/logger.mjs';
 import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../lib/account-identifier.server.mts';
+import { recordActivity } from '../services/account-activity.server.service.mjs';
 import async from 'async';
 import crypto from 'crypto';
 import mongoose, { type FilterQuery, type UpdateQuery } from 'mongoose';
@@ -238,7 +239,7 @@ service.reset = async function (req, res) {
       $inc: { authVersion: 1 },
     },
     { new: true, runValidators: true },
-    (err: Error | null, user: UserServerDocument | null) => {
+    async (err: Error | null, user: UserServerDocument | null) => {
       if (err || !user) {
         const passwordError = err as PasswordError | null;
         return res.status(passwordError?.status || 400).send({
@@ -247,6 +248,11 @@ service.reset = async function (req, res) {
             : 'Password reset token is invalid or has expired.',
         });
       }
+
+      await recordActivity({
+        userId: user._id,
+        eventType: 'password_reset',
+      });
 
       if (user.mfaEnabled === true) {
         // Password recovery changes a credential, but it cannot satisfy the
@@ -386,7 +392,10 @@ service.changePassword = function (req, res) {
               if (!updatedUser) {
                 return done(new Error('Current password is incorrect.'));
               }
-              return done(null, updatedUser);
+              return recordActivity({
+                userId: updatedUser._id,
+                eventType: 'password_changed',
+              }).then(() => done(null, updatedUser));
             });
           })
           .catch(done);

@@ -18,6 +18,7 @@ import {
   SIGNUP_USERNAME_FORMAT_MESSAGE,
 } from '../config/username.client.constants';
 import MfaSettings from './MfaSettings.component';
+import AccountActivity from './AccountActivity.component';
 
 interface ProfileEditAccountProps {
   user: UserProfile;
@@ -407,6 +408,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
         </div>
       </div>
       <MemberSessions />
+      <AccountActivity />
     </ProfileEditPage>
   );
 }

@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import mongoose from 'mongoose';
 import config from '../../../../config/config.mts';
+import { recordActivity } from './account-activity.server.service.mjs';
 
 export function sessionId(id) {
   return crypto
@@ -27,7 +28,7 @@ export async function checkMemberSession(req, res, next) {
     const id = sessionId(req.sessionID);
     // Insert once. Revoked records remain as tombstones until absolute expiry.
     try {
-      await Session.updateOne(
+      const result = await Session.updateOne(
         { _id: id },
         {
           $setOnInsert: {
@@ -40,6 +41,17 @@ export async function checkMemberSession(req, res, next) {
         },
         { upsert: true },
       );
+      if (result.upsertedCount === 1 && !req.session.memberActivityEventId) {
+        req.session.memberActivityEventId = crypto.randomUUID();
+      }
+      if (req.session.memberActivityEventId) {
+        const recorded = await recordActivity({
+          userId: req.user._id,
+          eventType: 'session_created',
+          eventId: req.session.memberActivityEventId,
+        });
+        if (recorded) delete req.session.memberActivityEventId;
+      }
     } catch (error) {
       // Simultaneous first requests can race to create the same session record.
       if (error.code !== 11000) throw error;

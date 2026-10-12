@@ -8,6 +8,7 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
 const MemberSession = mongoose.model('MemberSession');
+const AccountActivity = mongoose.model('AccountActivity');
 
 describe('Member session controls', function () {
   let app;
@@ -452,7 +453,7 @@ describe('Member session controls', function () {
   });
 
   it('requires the current password and revokes the selected session', async function () {
-    const { credentials } = await createMember();
+    const { credentials, user } = await createMember();
     const current = request.agent(app);
     const other = request.agent(app);
     await signIn(current, credentials);
@@ -474,6 +475,12 @@ describe('Member session controls', function () {
     const revoked = await MemberSession.findById(otherSession.id);
     should.exist(revoked);
     revoked.revoked.should.equal(true);
+    (
+      await AccountActivity.countDocuments({
+        user: user._id,
+        eventType: 'session_revoked',
+      })
+    ).should.equal(1);
     (await other.get('/api/users/export').expect(403)).status.should.equal(403);
     (await current.get('/api/users/export').expect(200)).status.should.equal(
       200,
@@ -498,6 +505,12 @@ describe('Member session controls', function () {
     (
       await MemberSession.countDocuments({ user: user._id, revoked: true })
     ).should.equal(2);
+    (
+      await AccountActivity.countDocuments({
+        user: user._id,
+        eventType: 'sessions_signed_out',
+      })
+    ).should.equal(1);
     const currentSession = await current.get('/api/auth/session').expect(200);
     should(currentSession.body.userId).equal(null);
     (await other.get('/api/users/export').expect(403)).status.should.equal(403);

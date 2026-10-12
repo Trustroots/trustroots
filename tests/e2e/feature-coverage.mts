@@ -1315,6 +1315,34 @@ const features = [
     ],
   },
   {
+    id: 'account.activity',
+    area: AREA.authAccount,
+    status: STATUS.active,
+    description:
+      'Members can review a private, recent history of sign-ins and account changes.',
+    roles: ['member'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'profile-edit.account',
+          '/profile/edit/account',
+          source.usersClient,
+          { requiresAuth: true },
+        ),
+      ],
+      apiRoutes: [apiRoute('GET', '/api/users/activity', source.usersServer)],
+    },
+    requiredScenarios: [
+      'Members can see a credential change in account activity.',
+    ],
+    relatedSpecs: [
+      spec(
+        'account-settings.spec.js',
+        'members can review credential activity from account settings',
+      ),
+    ],
+  },
+  {
     id: 'account.profile-removal',
     area: AREA.authAccount,
     status: STATUS.active,

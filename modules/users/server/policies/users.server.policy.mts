@@ -73,6 +73,10 @@ function invokeRolesPolicies() {
           permissions: ['get'],
         },
         {
+          resources: '/api/users/activity',
+          permissions: ['get'],
+        },
+        {
           resources: '/api/users/remove/:token',
           permissions: ['delete'],
         },
