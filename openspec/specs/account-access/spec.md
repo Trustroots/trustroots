@@ -877,3 +877,20 @@ Members MAY enable authenticator-app MFA using TOTP. Enrolment SHALL remain pend
 
 - **WHEN** a client submits too many sign-in challenges, TOTP codes, recovery codes, or password confirmations
 - **THEN** the system applies bounded IP and account or challenge limits and returns a retry response
+
+### Requirement: Combined account access regression coverage
+
+The account-access test suite SHALL exercise recovery, session revocation,
+sign-in challenges and MFA together, including concurrent use of single-use
+credentials and native-client handling of unsupported authentication steps.
+These scenarios SHALL use anonymous fixtures and retain the established
+coverage thresholds.
+
+#### Scenario: Combined account-access flows are exercised
+
+- **WHEN** account-access integration tests run
+- **THEN** they cover password recovery and confirmation on MFA-enabled
+  accounts, session invalidation, sign-in challenge completion and concurrent
+  credential use
+- **AND** a native client that cannot complete a required step does not retain
+  an authenticated session
