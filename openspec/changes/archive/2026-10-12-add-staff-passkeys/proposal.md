@@ -15,4 +15,3 @@ Users models, authentication services/routes, account settings, deployment confi
 ## Delivery
 
 Implement the browser and server flows together with deployment documentation and regression tests. Archive the completed proposal and retain its requirements in the living account-access specification.
-

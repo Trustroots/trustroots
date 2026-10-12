@@ -21,4 +21,3 @@ Document relying-party and origin configuration for production and isolated prev
 ## Validation
 
 Use browser virtual authenticators for registration, sign-in and deletion. Test wrong origin/RP, replay, ownership, missing user verification, expired ceremonies, authentication-version changes and recovery. Validate current WebAuthn guidance against the [W3C specification](https://www.w3.org/TR/webauthn-3/) when selecting the library.
-

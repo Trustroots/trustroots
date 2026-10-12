@@ -28,4 +28,3 @@ The system SHALL accept a passkey as a second factor only after server verificat
 
 - **WHEN** a response is expired, replayed, unverified or bound to another member, origin or relying party
 - **THEN** it does not establish a verified session
-
