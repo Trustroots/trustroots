@@ -107,6 +107,111 @@ describe('NostrService', () => {
     });
   });
 
+  describe('hackerspace place subscriptions', () => {
+    it('opens independent publication connections to both fixed relays', async () => {
+      const shared = await service.connect();
+      const connections = await service.connectHackerPlaceRelays();
+      expect(connections.map(connection => connection.url)).toEqual([
+        'wss://relay.trustroots.org',
+        'wss://relay.nomadwiki.org',
+      ]);
+      expect(Relay).toHaveBeenCalledTimes(3);
+      expect(connections.every(connection => connection.relay !== null)).toBe(
+        true,
+      );
+      expect(service.relay).toBe(shared);
+      expect(connections.every(connection => connection.relay !== shared)).toBe(
+        true,
+      );
+      for (const connection of connections) connection.relay?.close();
+    });
+
+    it('closes a failed connection and keeps the other available', async () => {
+      const close = jest.fn();
+      Relay.mockImplementationOnce((url: string) => ({
+        url,
+        connect: jest.fn().mockRejectedValue(new Error('offline')),
+        close,
+        subscribe: jest.fn(),
+        onclose: jest.fn(),
+      }));
+      const connections = await service.connectHackerPlaceRelays();
+      expect(connections[0]).toEqual({
+        url: 'wss://relay.trustroots.org',
+        relay: null,
+      });
+      expect(connections[1].relay).not.toBeNull();
+      expect(close).toHaveBeenCalledTimes(1);
+      connections[1].relay?.close();
+    });
+
+    it('subscribes to physical places, delivers lifecycle callbacks and replaces only its own subscription', async () => {
+      await service.connect();
+      const relay = lastRelay();
+      const first = { close: jest.fn() };
+      const replacement = { close: jest.fn() };
+      const notes = { close: jest.fn() };
+      service.subscriptions.set('mapNotes', asServiceSubscription(notes));
+      relay.subscribe
+        .mockReturnValueOnce(first)
+        .mockReturnValueOnce(replacement);
+      const onEvent = jest.fn();
+      const onEose = jest.fn();
+      const onClose = jest.fn();
+      await service.subscribeHackerPlaces(onEvent, { onEose, onClose });
+      expect(relay.subscribe).toHaveBeenCalledWith(
+        [{ kinds: [33000], '#L': ['physical-location'] }],
+        expect.any(Object),
+      );
+      const callbacks = relay.subscribe.mock.calls[0][1];
+      callbacks.onevent({ id: 'place-event' });
+      callbacks.oneose();
+      callbacks.onclose('offline');
+      expect(onEvent).toHaveBeenCalledWith({ id: 'place-event' });
+      expect(onEose).toHaveBeenCalledTimes(1);
+      expect(onClose).toHaveBeenCalledWith('offline');
+      await service.subscribeHackerPlaces(onEvent);
+      relay.subscribe.mock.calls[1][1].oneose();
+      expect(first.close).toHaveBeenCalledTimes(1);
+      expect(notes.close).not.toHaveBeenCalled();
+      service.unsubscribeHackerPlaces();
+      service.unsubscribeHackerPlaces();
+      expect(replacement.close).toHaveBeenCalledTimes(1);
+    });
+
+    it.each(['eose', 'close'])(
+      'collects and deduplicates events until %s',
+      async completion => {
+        await service.connect();
+        const relay = lastRelay();
+        const subscription = { close: jest.fn() };
+        relay.subscribe.mockReturnValue(subscription);
+        const result = service.fetchHackerPlaceEvents();
+        await Promise.resolve();
+        const callbacks = relay.subscribe.mock.calls[0][1];
+        const first = { id: 'first', content: 'old' };
+        const latest = { id: 'first', content: 'latest' };
+        callbacks.onevent(first);
+        callbacks.onevent(latest);
+        if (completion === 'eose') {
+          callbacks.oneose();
+          callbacks.oneose();
+          callbacks.onclose('closed');
+          expect(subscription.close).toHaveBeenCalledTimes(1);
+        } else {
+          callbacks.onclose('closed');
+          callbacks.onclose('closed again');
+          callbacks.oneose();
+          expect(subscription.close).not.toHaveBeenCalled();
+        }
+        expect(await result).toEqual([latest]);
+        expect(relay.subscribe.mock.calls[0][0]).toEqual([
+          { kinds: [33000], limit: 1000 },
+        ]);
+      },
+    );
+  });
+
   describe('constructor', () => {
     it('stores the relay URL', () => {
       expect(service.relayUrl).toBe(RELAY_URL);

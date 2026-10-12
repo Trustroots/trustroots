@@ -490,37 +490,6 @@ jobs:
           path: playwright-report
           if-no-files-found: error
 
-  dependency-summary:
-    needs: changes
-    if: >
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    concurrency:
-      group: pr-line-changes-${{ github.event.pull_request.number }}
-      cancel-in-progress: true
-    permissions:
-      contents: read
-      issues: write
-      pull-requests: write
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-      - name: Refresh dependency changes before the test suites finish
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        with:
-          script: |
-            const { backfill } = require('./scripts/coverage/backfill-pr-line-changes');
-            await backfill({
-              github,
-              ...context.repo,
-              before: context.issue.number + 1,
-              only: context.issue.number,
-              cwd: process.cwd(),
-            });
-
   coverage-summary:
     if: always() && !cancelled() && github.event_name == 'pull_request'
     needs: [changes, client, server, e2e, build-production-image]
