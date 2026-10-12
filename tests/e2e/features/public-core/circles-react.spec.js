@@ -1,6 +1,7 @@
 /* global getComputedStyle, window */
 const { annotateFeature, expect, test } = require('../../support/fixtures');
 const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
+const { finalizeEvent } = require('nostr-tools/pure');
 
 test('invalid circle addresses show a stable not-found page', async ({
   page,
@@ -201,7 +202,61 @@ test('circle membership retains account roles and legacy member links', async ({
 
 test('Hackers circle foregrounds the public place map and verification limits', async ({
   page,
-}) => {
+}, testInfo) => {
+  const nomadwikiPlace = finalizeEvent(
+    {
+      kind: 33000,
+      created_at: 1700000000,
+      content: 'A community workshop.',
+      tags: [
+        ['d', 'spaceapi:https://workshop.example.test/api'],
+        ['L', 'physical-location'],
+        ['name', 'Example Workshop'],
+        ['g', 'gcpvj0'],
+        ['website', 'https://workshop.example.test'],
+        ['meta', 'source', 'https://api.spaceapi.io/'],
+      ],
+    },
+    new Uint8Array(32).fill(7),
+  );
+  await page.addInitScript(place => {
+    const NativeWebSocket = window.WebSocket;
+    window.WebSocket = class PlaceDiscoverySocket {
+      static CONNECTING = 0;
+      static OPEN = 1;
+      static CLOSING = 2;
+      static CLOSED = 3;
+      readyState = 0;
+      constructor(url, ...args) {
+        if (!/^wss:\/\/relay\.(trustroots|nomadwiki)\.org\/?$/.test(url))
+          return new NativeWebSocket(url, ...args);
+        this.url = url;
+        setTimeout(() => {
+          this.readyState = 1;
+          this.onopen?.(new Event('open'));
+        }, 0);
+      }
+      send(message) {
+        const [type, id] = JSON.parse(message);
+        if (type !== 'REQ') return;
+        queueMicrotask(() => {
+          if (this.url.includes('nomadwiki'))
+            this.onmessage?.(
+              new MessageEvent('message', {
+                data: JSON.stringify(['EVENT', id, place]),
+              }),
+            );
+          this.onmessage?.(
+            new MessageEvent('message', { data: JSON.stringify(['EOSE', id]) }),
+          );
+        });
+      }
+      close() {
+        this.readyState = 3;
+        queueMicrotask(() => this.onclose?.(new Event('close')));
+      }
+    };
+  }, nomadwikiPlace);
   let wikiRequested = false;
   await page.route('https://wiki.trustroots.org/**', route => {
     wikiRequested = true;
@@ -257,6 +312,26 @@ test('Hackers circle foregrounds the public place map and verification limits', 
   const panel = await page.locator('.hackerspace-map-panel').boundingBox();
   const viewportHeight = await page.evaluate(() => window.innerHeight);
   expect(panel.y).toBeLessThan(viewportHeight);
+  await expect(page.getByText('1 SpaceAPI-reported places')).toBeVisible();
+  await expect(page.locator('.hackerspace-map-panel')).toHaveCSS(
+    'border-top-color',
+    'rgb(18, 181, 145)',
+  );
+  await expect(page.locator('.hackerspace-map-panel')).toHaveCSS(
+    'text-shadow',
+    'none',
+  );
+  const marker = map.locator('.leaflet-interactive');
+  await expect(marker).toHaveAttribute('fill', '#12b591');
+  await marker.click();
+  await expect(page.locator('.leaflet-popup-content strong')).toHaveText(
+    'Example Workshop',
+  );
+  await expect(map.locator('.leaflet-popup')).toHaveCSS('opacity', '1');
+  await page.screenshot({
+    path: testInfo.outputPath('hackerspace-map.png'),
+    fullPage: true,
+  });
 });
 
 test('administrators can review a SpaceAPI import preview', async ({

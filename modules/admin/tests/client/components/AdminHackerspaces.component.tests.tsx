@@ -50,6 +50,8 @@ const space = (endpoint = 'https://workshop.example.test/api') => ({
 });
 const event = (endpoint: string, tags: string[][] = []) => ({
   id: endpoint,
+  created_at: 1,
+  pubkey: 'fictional-author',
   content: 'Last-known description',
   tags: [['d', `spaceapi:${endpoint}`], ...tags],
 });
@@ -241,7 +243,18 @@ describe('administrator place import', () => {
   it('allows publication when the only change is a removed directory entry', async () => {
     http.get.mockResolvedValue({ data: [] });
     service.fetchHackerPlaceEvents.mockResolvedValue([
-      event('https://removed.example.test/api', [['meta', 'status', 'active']]),
+      {
+        ...event('https://removed.example.test/api', [
+          ['meta', 'status', 'active'],
+        ]),
+        created_at: 3,
+      },
+      {
+        ...event('https://removed.example.test/api', [
+          ['meta', 'status', 'inactive'],
+        ]),
+        created_at: 1,
+      },
     ]);
     render(<AdminHackerspaces />);
     fetchPreview();
@@ -366,7 +379,7 @@ describe('administrator place import', () => {
           },
           { url: 'wss://relay.nomadwiki.org', relay: null },
         ]);
-      } else publishNomadwiki.mockRejectedValue(new Error('rejected'));
+      } else publishNomadwiki.mockRejectedValue('blocked: unsupported kind');
       render(<AdminHackerspaces />);
       fetchPreview();
       await screen.findByText('Example Workshop');
@@ -379,6 +392,8 @@ describe('administrator place import', () => {
         screen.getByText(/wss:\/\/relay.nomadwiki.org: 0 published; 1 failed/),
       ).toBeVisible();
       expect(signEvent).toHaveBeenCalledTimes(1);
+      if (failure !== 'connection')
+        expect(screen.getByText(/blocked: unsupported kind/)).toBeVisible();
       expect(closeTrustroots).toHaveBeenCalledTimes(1);
     },
   );

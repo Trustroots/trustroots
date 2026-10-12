@@ -47,6 +47,7 @@ const metadata = (tags: string[][], key: string) => {
 };
 export function parseHackerPlace(event: {
   id: string;
+  pubkey?: string;
   tags: string[][];
   content: string;
 }): HackerPlace | null {
@@ -61,7 +62,9 @@ export function parseHackerPlace(event: {
   if (!metadata(event.tags, 'source')?.includes('spaceapi.io')) return null;
   if (!point || !name) return null;
   return {
-    id: tag(event.tags, 'd') || event.id,
+    id: event.pubkey
+      ? `${event.pubkey}:${tag(event.tags, 'd') || event.id}`
+      : tag(event.tags, 'd') || event.id,
     name,
     latitude: point[0],
     longitude: point[1],
@@ -174,7 +177,7 @@ export default function HackerspaceMap() {
         radius: 8,
         color: '#fff',
         weight: 2,
-        fillColor: '#488261',
+        fillColor: '#12b591',
         fillOpacity: 1,
       })
         .bindPopup(popupContent(place))
@@ -207,7 +210,7 @@ export default function HackerspaceMap() {
       />
       <p className="hackerspace-map-status" aria-live="polite">
         {state === 'loading'
-          ? 'Loading places from Trustroots relay…'
+          ? 'Loading places from Trustroots and Nomadwiki relays…'
           : state === 'error'
           ? 'Places could not be loaded from the relay.'
           : places.length

@@ -81,7 +81,7 @@ describe('public hackerspace map', () => {
   it('shows loading and empty states and cleans up map and subscription', () => {
     const { unmount } = render(<HackerspaceMap />);
     expect(
-      screen.getByText('Loading places from Trustroots relay…'),
+      screen.getByText('Loading places from Trustroots and Nomadwiki relays…'),
     ).toBeVisible();
     act(() => callbacks().onEose());
     expect(
@@ -200,7 +200,7 @@ describe('hackerspace place event parsing', () => {
       ['website', 'javascript:invalid'],
     ];
     expect(parseHackerPlace(legacy)).toMatchObject({
-      id: legacy.id,
+      id: `${legacy.pubkey}:${legacy.id}`,
       inactive: true,
       website: undefined,
     });
@@ -228,6 +228,14 @@ describe('hackerspace place event parsing', () => {
     expect(decodeGeohash('')).toBeNull();
   });
   it('uses the stable identifier, location, source metadata and safe website', () => {
+    const authored = place([['d', 'shared-place']]);
+    expect(parseHackerPlace(authored)?.id).toBe('fictional-key:shared-place');
+    expect(parseHackerPlace({ ...authored, pubkey: undefined })?.id).toBe(
+      'shared-place',
+    );
+    expect(parseHackerPlace({ ...place(), pubkey: undefined })?.id).toBe(
+      'event-id',
+    );
     expect(
       parseHackerPlace({
         id: 'event-id',
