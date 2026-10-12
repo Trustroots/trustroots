@@ -17,6 +17,9 @@ describe('<CircleMemberDiscovery />', () => {
     _id: id,
     username,
     displayName: `Member ${username}`,
+    locationLiving: 'Example City',
+    locationFrom: 'Somewhere',
+    tagline: 'Happy to host',
     avatarSource: 'none',
   });
 
@@ -53,17 +56,23 @@ describe('<CircleMemberDiscovery />', () => {
     expect(recommendersHeading.compareDocumentPosition(activeHeading)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
-    expect(screen.getByRole('link', { name: 'Member known' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Member known/ })).toHaveAttribute(
       'href',
       '/profile/known',
     );
     expect(
-      screen.getByRole('link', { name: 'Member recommender' }),
+      screen.getByRole('link', { name: /Member recommender/ }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: 'Member active' }),
+      screen.getByRole('link', { name: /Member active/ }),
     ).toBeInTheDocument();
     expect(screen.getByText('Member known')).toBeInTheDocument();
+    expect(screen.getAllByText('Lives in: Example City')).toHaveLength(3);
+    expect(screen.getAllByText('From: Somewhere')).toHaveLength(3);
+    expect(screen.getAllByText('Happy to host')).toHaveLength(3);
+    expect(
+      screen.getAllByRole('link', { name: /Member known/ })[0],
+    ).toHaveClass('member-search-card');
     expect(tribesApi.listMembers).toHaveBeenCalledWith('hitchhikers');
   });
 

@@ -8,12 +8,17 @@ import adminUsers from './../controllers/admin.users.server.controller.mjs';
 import adminDashboard from './../controllers/admin.dashboard.server.controller.mjs';
 import adminNotes from './../controllers/admin.notes.server.controller.mjs';
 import adminReferenceThreads from './../controllers/admin.reference-threads.server.controller.mjs';
+import adminHackerspaces from './../controllers/admin.hackerspaces.server.controller.mjs';
 
 /**
  * Module dependencies.
  */
 
 const registerRoutes = app => {
+  app
+    .route('/api/admin/hackerspaces/preview')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminHackerspaces.preview);
   app
     .route('/api/admin/acquisition-stories')
     .all(adminPolicy.isAllowed)

@@ -319,6 +319,11 @@ const REACT_ROUTE_POLICIES = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/hackerspaces',
+    title: 'Admin - Hackerspaces',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/audit-log',
     title: 'Admin - Audit log',
   },

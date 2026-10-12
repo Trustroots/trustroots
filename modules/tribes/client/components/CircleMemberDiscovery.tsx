@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import Avatar from '@/modules/users/client/components/Avatar.component';
-import UserLink from '@/modules/users/client/components/UserLink';
+import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 import type {
   CircleMemberGroups,
@@ -54,8 +53,7 @@ function MemberSection({
       <ul className="list-unstyled">
         {members.map(member => (
           <li className="circle-member-row" key={member._id}>
-            <Avatar user={member} size={64} />
-            <UserLink className="circle-member-link" user={member} />
+            <MemberSearchCard user={member} />
           </li>
         ))}
       </ul>
