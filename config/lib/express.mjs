@@ -34,7 +34,6 @@ service.initLocalVariables = function (app) {
   app.locals.twitterUsername = config.twitter.username;
   app.locals.facebookPage = config.facebook.page;
   app.locals.googlePage = config.google.page;
-  app.locals.googleAnalytics = config.googleAnalytics;
   app.locals.umami = config.umami;
   app.locals.env =
     ['development', 'test', 'production'].indexOf(process.env.NODE_ENV) > -1
@@ -255,7 +254,6 @@ service.initHelmetHeaders = function (app) {
           // Only the development bundle uses eval-based source maps.
           ...(process.env.NODE_ENV === 'production' ? [] : ["'unsafe-eval'"]),
           "'self'",
-          'https://www.google-analytics.com',
           'https://1p.trustroots.org',
           // Umami analytics
           // Use `nonce` for `<script>` tags
@@ -292,13 +290,9 @@ service.initHelmetHeaders = function (app) {
           '*.fbsbx.com',
           // Facebook related
           '*.twitter.com',
-          '*.google-analytics.com',
           '*.gstatic.com',
-          // Google analytics related
           '*.googleusercontent.com',
           // Google CDN. Android app related.
-          '*.g.doubleclick.net',
-          // Google Analytics related
           'gravatar.com',
           // Gravatar (WordPress.com)
           'i0.wp.com',
@@ -322,8 +316,6 @@ service.initHelmetHeaders = function (app) {
           'https://tile.openstreetmap.org',
           'wss://relay.trustroots.org',
           'wss://relay.nomadwiki.org',
-          'https://www.google-analytics.com',
-          'https://stats.g.doubleclick.net',
           'https://1p.trustroots.org', // Umami analytics
         ],
         // Allows control over Flash and other plugins.
