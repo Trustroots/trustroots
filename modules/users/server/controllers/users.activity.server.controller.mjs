@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 
 const MAX_PAGE_SIZE = 50;
 const DEFAULT_PAGE_SIZE = 20;
+const RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 
 function encodeCursor(event) {
   return Buffer.from(
@@ -53,11 +54,18 @@ export async function list(req, res, next) {
   }
 
   try {
-    const filter = { user: req.user._id };
+    const filter = {
+      user: req.user._id,
+      createdAt: { $gte: new Date(Date.now() - RETENTION_MS) },
+    };
     if (cursor) {
-      filter.$or = [
-        { createdAt: { $lt: cursor.createdAt } },
-        { createdAt: cursor.createdAt, _id: { $lt: cursor.id } },
+      filter.$and = [
+        {
+          $or: [
+            { createdAt: { $lt: cursor.createdAt } },
+            { createdAt: cursor.createdAt, _id: { $lt: cursor.id } },
+          ],
+        },
       ];
     }
     const events = await mongoose

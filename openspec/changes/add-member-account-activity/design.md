@@ -8,7 +8,7 @@ Record successful session creation, session revocation, all-session sign-out, pa
 
 Persist only the owning member ID, event type, timestamp and minimal outcome/context needed for the display. Do not store passwords, bearer/action tokens, TOTP secrets, recovery codes, private messages, exact locations, full IP addresses or raw user-agent strings. An optional device label must be bounded and normalised and is not trusted identity evidence.
 
-Provide an owner-only API with opaque cursor pagination, a maximum page size of 50 and no-store responses. A caller cannot request another member's history. Use a dedicated collection with a TTL index for 90 days, plus a member/timestamp index. Account removal deletes the member's activity. Describe eventual TTL deletion accurately.
+Provide an owner-only API with opaque cursor pagination, a maximum page size of 50 and no-store responses. A caller cannot request another member's history. Return only the last 90 days and use a dedicated collection with a TTL index for 90 days, plus a member/timestamp index. Account removal deletes the member's activity. Describe eventual TTL deletion accurately.
 
 ## Reliability
 

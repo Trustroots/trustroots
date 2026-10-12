@@ -80,7 +80,8 @@ only the context needed to identify a session event. It SHALL not record
 credentials, action tokens, session-store identifiers, precise location,
 browser fingerprints or private content. The history SHALL support opaque
 cursor pagination of at most 50 events, SHALL avoid shared caching, SHALL
-expire events after 90 days, and SHALL remove them when the account is deleted.
+return only events from the last 90 days, SHALL expire events after 90 days,
+and SHALL remove them when the account is deleted.
 Activity write failures SHALL not reverse a completed account operation, and
 transient failures SHALL be retried with the same event identifier.
 
