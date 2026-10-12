@@ -12,6 +12,7 @@ jest.mock(
     },
 );
 jest.mock('@/modules/core/client/api/http-client.js', () => ({
+  ...jest.requireActual('@/modules/core/client/api/http-client.js'),
   __esModule: true,
   default: { get: jest.fn() },
 }));
@@ -172,6 +173,65 @@ describe('administrator place import', () => {
     fetchPreview();
     await screen.findByText(
       'Could not fetch the SpaceAPI Collector. No events were changed.',
+    );
+    expect(
+      screen.getByRole('button', { name: /Sign and publish/ }),
+    ).toBeDisabled();
+  });
+
+  it('clears a previous preview when refreshing fails', async () => {
+    render(<AdminHackerspaces />);
+    fetchPreview();
+    await screen.findByText(/Preview: 1 additions/);
+    http.get.mockRejectedValueOnce({
+      response: {
+        status: 502,
+        data: { message: 'Collector request timed out.' },
+      },
+    });
+    fetchPreview();
+    await screen.findByText(
+      'Could not fetch the SpaceAPI Collector: Collector request timed out. No events were changed.',
+    );
+    expect(
+      screen.queryByRole('cell', { name: 'Example Workshop' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Sign and publish/ }),
+    ).toBeDisabled();
+    expect(signEvent).not.toHaveBeenCalled();
+  });
+
+  it.each([401, 403])('explains access failures (%s)', async status => {
+    http.get.mockRejectedValueOnce({ response: { status } });
+    render(<AdminHackerspaces />);
+    fetchPreview();
+    await screen.findByText(/Administrator access is required/);
+    expect(
+      screen.getByRole('button', { name: /Sign and publish/ }),
+    ).toBeDisabled();
+  });
+
+  it.each([undefined, 12, ''])(
+    'handles an absent or invalid server error message (%s)',
+    async message => {
+      http.get.mockRejectedValueOnce({
+        response: { status: 502, data: { message } },
+      });
+      render(<AdminHackerspaces />);
+      fetchPreview();
+      await screen.findByText(
+        'Could not fetch the SpaceAPI Collector. No events were changed.',
+      );
+    },
+  );
+
+  it('distinguishes processing errors from Collector request failures', async () => {
+    http.get.mockResolvedValueOnce({ data: {} });
+    render(<AdminHackerspaces />);
+    fetchPreview();
+    await screen.findByText(
+      'Could not prepare the import preview. No events were changed.',
     );
     expect(
       screen.getByRole('button', { name: /Sign and publish/ }),

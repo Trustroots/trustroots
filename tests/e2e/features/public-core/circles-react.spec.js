@@ -388,6 +388,25 @@ test('administrators can review a SpaceAPI import preview', async ({
       tag.every(value => typeof value === 'string'),
     ),
   ).toBe(true);
+  await page.route('**/api/admin/hackerspaces/preview', route =>
+    route.fulfill({
+      status: 502,
+      json: { message: 'Collector request timed out.' },
+    }),
+  );
+  await page.getByRole('button', { name: 'Fetch preview' }).click();
+  await expect(
+    page.getByText(
+      'Could not fetch the SpaceAPI Collector: Collector request timed out. No events were changed.',
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('cell', { name: 'Example Workshop' }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Sign and publish approved changes' }),
+  ).toBeDisabled();
+  expect(await page.evaluate(() => window.placePublications)).toHaveLength(2);
 });
 
 test('member navigation menus and narrow layout remain usable', async ({
