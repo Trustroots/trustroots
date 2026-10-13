@@ -325,13 +325,13 @@ describe('Admin acquisition stories controller unit tests', () => {
         .find(user => user.username === 'identifierclue')
         .restrictionStatuses.should.deepEqual(['shadowban']);
       res.body
-        .find(user => user.username === 'email-match-user')
+        .find(user => user.username === 'emailmatchuser')
         .restrictionStatuses.should.deepEqual(['suspended']);
       res.body
-        .find(user => user.username === 'temporary-match-user')
+        .find(user => user.username === 'temporarymatchuser')
         .restrictionStatuses.should.deepEqual(['suspended', 'shadowban']);
       story.restrictedMatches
-        .find(user => user.username === 'temporary-match-user')
+        .find(user => user.username === 'temporarymatchuser')
         .restrictionStatuses.should.deepEqual(['suspended', 'shadowban']);
       should(
         story.restrictedMatches.find(

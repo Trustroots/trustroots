@@ -29,7 +29,8 @@ describe('Signup and support request allowances', () => {
     return {
       firstName: 'Amina',
       lastName: 'Vale',
-      username: email.split('@')[0],
+      // Selection policy allows letters and numbers only; emails may still use hyphens.
+      username: email.split('@')[0].replace(/[^A-Za-z0-9]/g, ''),
       email,
       password: 'fictional-password-123',
     };
