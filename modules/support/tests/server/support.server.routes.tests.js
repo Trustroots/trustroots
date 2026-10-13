@@ -10,12 +10,13 @@ const utils = require('../../../../testutils/server/data.server.testutil');
  * Support routes tests
  */
 describe('Support CRUD tests', () => {
+  let app;
+  let agent;
+
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
-  let app;
-  let agent;
 
   // We'll catch emails
   const jobs = testutils.catchJobs();
@@ -120,9 +121,13 @@ describe('Support CRUD tests', () => {
     });
     it('should be able to report user in support message', async () => {
       const job = await assertSendingSupportMessage({
-        reportMember: 'reported-username',
+        reportMember: users[1].username,
       });
-      should(job.data.text).containEql('reported-username');
+      should(job.data.text).containEql(users[1].username);
+      const stored = await mongoose
+        .model('SupportRequest')
+        .findOne({ user: users[0]._id });
+      stored.reportedUser.toString().should.equal(users[1]._id.toString());
     });
   });
   context('logged in as non-public user', () => {

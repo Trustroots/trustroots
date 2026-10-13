@@ -6,6 +6,7 @@ import { getCurrentUser } from '../../../core/client/services/client-runtime';
 export default function AdminHeader() {
   const roles = getCurrentUser()?.roles || [];
   const isAdmin = roles.includes('admin');
+  const isSupport = roles.includes('support-team');
   const isWelcomeTeam = roles.includes('welcome-team');
   const currentPath = window.location.pathname.replace('/admin/', '');
 
@@ -20,6 +21,7 @@ export default function AdminHeader() {
   }, []);
 
   const pages = [
+    { path: 'support', label: 'Support inbox' },
     { path: 'hackerspaces', label: 'Hackerspaces' },
     {
       path: 'messages',
@@ -72,9 +74,15 @@ export default function AdminHeader() {
         <div className="navbar-header">
           <a
             className="navbar-brand"
-            href={isAdmin ? '/admin' : '/admin/acquisition-stories'}
+            href={
+              isAdmin
+                ? '/admin'
+                : isSupport
+                  ? '/admin/support'
+                  : '/admin/acquisition-stories'
+            }
           >
-            {isAdmin ? 'Admin' : 'Greeters'}
+            {isAdmin ? 'Admin' : isSupport ? 'Support' : 'Greeters'}
           </a>
         </div>
         <ul className="nav navbar-nav">
@@ -82,9 +90,12 @@ export default function AdminHeader() {
             .filter(
               page =>
                 isAdmin ||
-                (page.path === 'staff-blockers' && isWelcomeTeam) ||
+                (page.path === 'support' && isSupport) ||
+                (page.path === 'staff-blockers' &&
+                  (isWelcomeTeam || isSupport)) ||
                 page.path === 'acquisition-stories' ||
-                (isWelcomeTeam && page.path === 'location-corrections'),
+                ((isWelcomeTeam || isSupport) &&
+                  page.path === 'location-corrections'),
             )
             .map(page => renderTab(page))}
         </ul>

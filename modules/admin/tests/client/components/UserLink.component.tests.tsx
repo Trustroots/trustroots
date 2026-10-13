@@ -12,6 +12,21 @@ afterEach(() => {
 });
 
 describe('<UserLink />', () => {
+  it.each([
+    { roles: ['support-team'] },
+    { roles: ['support-team', 'admin'] },
+    { roles: [] },
+    { roles: undefined },
+  ])('uses the permitted account view for %j', ({ roles }) => {
+    window.user = { roles };
+    render(<UserLink user={{ _id: 'member-id', username: 'river' }} />);
+    expect(screen.getByRole('link')).toHaveAttribute(
+      'href',
+      roles?.includes('support-team') && !roles.includes('admin')
+        ? '/admin/support/member/member-id'
+        : '/admin/user/river',
+    );
+  });
   it('uses public profile links or plain text when requested', () => {
     const { rerender } = render(
       <UserLink publicProfile user={{ _id: 'member-id', username: 'river' }} />,

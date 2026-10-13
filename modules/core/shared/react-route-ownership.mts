@@ -346,6 +346,18 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/support',
+    requiresRole: ['admin', 'support-team'],
+    title: 'Support',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/support/member/:memberId',
+    requiresRole: ['admin', 'support-team'],
+    title: 'Support - Member',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/hackerspaces',
     title: 'Admin - Hackerspaces',
   },
@@ -357,13 +369,13 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   {
     ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/acquisition-stories',
-    requiresRole: ['admin', 'welcome-team'],
+    requiresRole: ['admin', 'welcome-team', 'support-team'],
     title: 'Admin - Acquisition stories',
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/staff-blockers',
-    requiresRole: ['admin', 'welcome-team'],
+    requiresRole: ['admin', 'welcome-team', 'support-team'],
     title: 'Admin - Staff blockers',
   },
   {

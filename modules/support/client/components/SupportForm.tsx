@@ -199,6 +199,13 @@ export default function SupportForm({ user }: SupportFormProps) {
                     )}
                   </em>
                 </p>
+                {user && (
+                  <p>
+                    {t<string>(
+                      'Reporting this member lets our support team read your entire conversation and all experiences between you, including unpublished feedback. This access continues after the report is resolved.',
+                    )}
+                  </p>
+                )}
                 <p className="form-control-static">
                   <em>
                     {t<string>(

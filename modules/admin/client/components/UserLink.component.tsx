@@ -2,6 +2,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { getAdminUserHref } from '../utils/member-url';
+import { getCurrentUser } from '../../../core/client/services/client-runtime';
 
 interface UserSummary {
   _id?: string;
@@ -30,6 +31,12 @@ export default function UserLink({
       <a href={`/profile/${username}`}>{label}</a>
     ) : (
       <span>{label}</span>
+    );
+  }
+  const roles = getCurrentUser()?.roles || [];
+  if (roles.includes('support-team') && !roles.includes('admin')) {
+    return (
+      <a href={`/admin/support/member/${encodeURIComponent(_id)}`}>{label}</a>
     );
   }
   return <a href={getAdminUserHref({ _id, username })}>{label}</a>;

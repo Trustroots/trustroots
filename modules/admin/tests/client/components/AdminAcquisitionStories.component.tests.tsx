@@ -84,7 +84,7 @@ afterEach(() => {
 });
 
 describe('<AdminAcquisitionStories />', () => {
-  it.each(['admin', 'welcome-team'])(
+  it.each(['admin', 'welcome-team', 'support-team'])(
     'shows restriction badges independently of visibility for %s',
     async role => {
       window.user = { roles: [role] };
@@ -130,7 +130,7 @@ describe('<AdminAcquisitionStories />', () => {
     },
   );
 
-  it.each(['admin', 'welcome-team'] as const)(
+  it.each(['admin', 'welcome-team', 'support-team'] as const)(
     'filters unassigned members and preserves sorting for %s',
     async role => {
       window.user = { roles: [role] };
