@@ -92,8 +92,8 @@ async.waterfall(
       let progress = 0; // progress counter
 
       // this is the test for async.doWhilst
-      function testKeepGoing() {
-        return keepGoing;
+      function testKeepGoing(testCallback) {
+        testCallback(null, keepGoing);
       }
 
       // here we process the message and (sometimes) print progress
