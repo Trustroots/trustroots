@@ -89,13 +89,13 @@ sudo ln -s /srv/uploads-profile uploads-profile
 
 echo ""
 echo "Building..."
-sudo npm install --cache /tmp/empty-cache
+sudo pnpm install --frozen-lockfile
 
-# TODO: for some reason bower stuff didn't get installed with `npm install`, so running this manually:
+# TODO: for some reason bower stuff didn't get installed with `pnpm install`, so running this manually:
 # 2018-08-20
-#npm run postinstall
+#pnpm run postinstall
 
-npm run build
+pnpm run build
 
 # Symlink config file
 echo ""
