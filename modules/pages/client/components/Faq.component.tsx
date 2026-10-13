@@ -3,6 +3,22 @@ import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import Board from './PageBoard';
 import { Trans, useTranslation } from 'react-i18next';
+import GeneralQuestions from './FaqGeneralQuestions';
+import CircleQuestions from './FaqTribesQuestions';
+import FoundationQuestions from './FaqFoundationQuestions';
+import TechnologyQuestions from './FaqTechnologyQuestions';
+import BugsQuestions from './FaqBugsAndFeaturesQuestions';
+
+const FAQ_CATEGORIES = [
+  { key: 'general', Questions: GeneralQuestions },
+  { key: 'circles', Questions: CircleQuestions },
+  { key: 'foundation', Questions: FoundationQuestions },
+  { key: 'technology', Questions: TechnologyQuestions },
+  {
+    key: 'bugs-and-features',
+    Questions: BugsQuestions,
+  },
+];
 
 interface FaqProps {
   category?:
@@ -21,6 +37,15 @@ export default function Faq({ category, children }: FaqProps) {
   const questionsRef = useRef<HTMLDivElement>(null);
   const [filter, setFilter] = useState('');
   const [hasMatches, setHasMatches] = useState(true);
+  const selectedCategory =
+    category === 'tribes' ? 'circles' : category || 'general';
+  const categoryLabels: Record<string, string> = {
+    general: t('Site & community'),
+    circles: t('Circles'),
+    foundation: t('Foundation'),
+    technology: t('Technology'),
+    'bugs-and-features': t('Bugs & Features'),
+  };
 
   useEffect(() => {
     const query = filter.trim().toLocaleLowerCase();
@@ -35,8 +60,16 @@ export default function Faq({ category, children }: FaqProps) {
       if (matches) matchCount += 1;
     });
 
+    questionsRef.current
+      ?.querySelectorAll<HTMLElement>('.faq-results-category')
+      .forEach(group => {
+        group.hidden = query
+          ? !group.querySelector('.faq-question:not([hidden])')
+          : group.dataset.category !== selectedCategory;
+      });
+
     setHasMatches(!query || matchCount > 0);
-  }, [children, filter]);
+  }, [children, filter, selectedCategory]);
 
   return (
     <>
@@ -49,7 +82,9 @@ export default function Faq({ category, children }: FaqProps) {
               {category === 'general' && (
                 <h3>{t('about the site & community')}</h3>
               )}
-              {category === 'tribes' && <h3>{t('about circles')}</h3>}
+              {(category === 'tribes' || category === 'circles') && (
+                <h3>{t('about circles')}</h3>
+              )}
               {category === 'foundation' && (
                 <h3>{t('about the foundation')}</h3>
               )}
@@ -349,7 +384,9 @@ export default function Faq({ category, children }: FaqProps) {
           </div>
           <div className="col-xs-12 col-sm-8 col-md-8">
             <div className="faq-filter form-group">
-              <label htmlFor="faq-filter">{t('Search this category')}</label>
+              <label htmlFor="faq-filter">
+                {t('Search all frequently asked questions')}
+              </label>
               <input
                 id="faq-filter"
                 type="search"
@@ -358,11 +395,26 @@ export default function Faq({ category, children }: FaqProps) {
                 onChange={event => setFilter(event.target.value)}
               />
             </div>
-            <div ref={questionsRef}>{children}</div>
+            <div ref={questionsRef}>
+              {FAQ_CATEGORIES.map(({ key, Questions }) => (
+                <section
+                  key={key}
+                  className="faq-results-category"
+                  data-category={key}
+                  hidden={key !== selectedCategory && !filter.trim()}
+                  aria-label={categoryLabels[key]}
+                >
+                  {filter.trim() && <h2>{categoryLabels[key]}</h2>}
+                  {key === selectedCategory ? (
+                    children
+                  ) : filter.trim() ? (
+                    <Questions />
+                  ) : null}
+                </section>
+              ))}
+            </div>
             {!hasMatches && (
-              <p role="status">
-                {t('No questions match your search in this category.')}
-              </p>
+              <p role="status">{t('No questions match your search.')}</p>
             )}
             <br />
             <br />

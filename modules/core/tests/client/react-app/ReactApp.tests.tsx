@@ -392,6 +392,16 @@ describe('<ReactApp />', () => {
     expect(screen.queryByText('Admin route')).not.toBeInTheDocument();
   });
 
+  it('preserves the removal fragment when guests need to sign in', async () => {
+    const navigate = jest.fn();
+    renderApp('/profile/edit/account#remove', {}, { navigate });
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith(
+        '/signin?continue=true&returnTo=%2Fprofile%2Fedit%2Faccount%23remove',
+      ),
+    );
+  });
+
   it('defensively redirects non-admin users away from admin routes', async () => {
     const navigate = jest.fn();
 

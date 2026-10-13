@@ -18,6 +18,8 @@
     "extends @wordpress/browserslist-config"
   ],
   "scripts": {
+    "check:links": "node scripts/ci/check-internal-links.mjs",
+    "test:links": "node --test scripts/ci/check-internal-links.test.mjs",
     "agenda-maintenance": "node ./bin/db-maintenance/archive-done-agenda-jobs.mjs",
     "build": "npm run clean:public && npm run build:generate-circle-images && npm run build:webpack",
     "build:generate-circle-images": "NODE_ENV=production npm run generate-circle-images",
