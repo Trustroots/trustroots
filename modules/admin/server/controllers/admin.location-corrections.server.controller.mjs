@@ -68,8 +68,8 @@ function compareCandidates(a, b) {
   return a.match === b.match
     ? a.username.localeCompare(b.username)
     : a.match === 'exact'
-    ? -1
-    : 1;
+      ? -1
+      : 1;
 }
 
 async function findCandidates(senderId) {
