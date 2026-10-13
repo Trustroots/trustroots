@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import mongooseService from './../../config/lib/mongoose.mjs';
 import yargs from 'yargs';
-import faker from 'faker';
+import { faker } from '@faker-js/faker';
 import mongoose from 'mongoose';
 import config from './../../config/config.mjs';
 /**
@@ -92,16 +92,16 @@ const circleImageUUIDs = [
  */
 function seedCircle(circle, circleIndex) {
   circle.label = faker.lorem.word() + '_' + circleIndex;
-  circle.labelHistory = faker.random.words();
-  circle.slugHistory = faker.random.words();
-  circle.synonyms = faker.random.words();
-  circle.color = faker.internet.color().slice(1);
+  circle.labelHistory = faker.lorem.words();
+  circle.slugHistory = faker.lorem.words();
+  circle.synonyms = faker.lorem.words();
+  circle.color = faker.color.rgb({ format: 'hex', prefix: '' });
   circle.count = 0;
   circle.created = Date.now();
   circle.modified = Date.now();
   circle.public = true;
   circle.image_UUID = _.sample(circleImageUUIDs);
-  circle.attribution = faker.name.findName();
+  circle.attribution = faker.person.fullName();
   circle.attribution_url = faker.internet.url();
   circle.description = faker.lorem.sentences();
   return circle;

@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import mongooseService from './../../config/lib/mongoose.mjs';
 import yargs from 'yargs';
-import faker from 'faker';
+import { faker } from '@faker-js/faker';
 import mongoose from 'mongoose';
 import queue from 'async/queue';
 import config from './../../config/config.mjs';

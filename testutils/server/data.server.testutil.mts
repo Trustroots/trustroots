@@ -1,4 +1,4 @@
-import faker from 'faker';
+import { faker } from '@faker-js/faker';
 import mongoose, { type HydratedDocument, type Model } from 'mongoose';
 
 import {
@@ -186,7 +186,7 @@ export function createTestUser(
     firstName: 'Full',
     lastName: 'Name',
     displayName: 'Full Name',
-    username: faker.internet.userName(),
+    username: faker.internet.username(),
     email: faker.internet.email(),
     password: 'Password123!',
     provider: 'local',

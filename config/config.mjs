@@ -2,7 +2,7 @@ import { createRequire } from 'node:module';
 
 import _ from 'lodash';
 import fs from 'fs';
-import glob from 'glob';
+import { globSync } from 'node:fs';
 import defaultAssets from './assets/default.mjs';
 import developmentAssets from './assets/development.mjs';
 import productionAssets from './assets/production.mjs';
@@ -47,7 +47,7 @@ const getGlobbedPaths = function (globPatterns, excludes) {
     if (urlRegex.test(globPatterns)) {
       output.push(globPatterns);
     } else {
-      let files = glob.sync(globPatterns);
+      let files = globSync(globPatterns).sort();
       if (excludes) {
         files = files.map(function (file) {
           if (_.isArray(excludes)) {
