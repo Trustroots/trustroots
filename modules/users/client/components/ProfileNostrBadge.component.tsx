@@ -11,7 +11,7 @@ interface CommunityNote {
 }
 
 export default function ProfileNostrBadge({
-  npubHex,
+  npubHex = null,
 }: {
   npubHex?: string | null;
 }) {
@@ -84,8 +84,4 @@ export default function ProfileNostrBadge({
 
 ProfileNostrBadge.propTypes = {
   npubHex: PropTypes.string,
-};
-
-ProfileNostrBadge.defaultProps = {
-  npubHex: null,
 };
