@@ -23,6 +23,12 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
+function latestSubscription() {
+  const calls = jest.mocked(nostrService.subscribeHackerPlaces).mock.calls;
+  const call = calls[calls.length - 1];
+  return { onEvent: call[0], callbacks: call[1] ?? {} };
+}
+
 function place(tags: string[][] = [], content = ''): Event {
   return {
     id: 'event-id',
@@ -162,10 +168,7 @@ it('adapts hackerspace metadata into the shared map and excludes inactive/invali
     ],
   } as Event;
   render(<HackerspaceMap />);
-  const onEvent = jest.mocked(nostrService.subscribeHackerPlaces).mock
-    .calls[0][0];
-  const callbacks = jest.mocked(nostrService.subscribeHackerPlaces).mock
-    .calls[0][1];
+  const { onEvent, callbacks } = latestSubscription();
   act(() => {
     onEvent(event);
     onEvent(event);
@@ -244,12 +247,8 @@ it('reports relay closure and ignores updates after unmount', async () => {
     close: jest.fn(),
   });
   const { unmount } = render(<HackerspaceMap />);
-  const subscription = jest
-    .mocked(nostrService.subscribeHackerPlaces)
-    .mock.calls.at(-1)!;
-  const onEvent = subscription[0];
-  const callbacks = subscription[1];
-  act(() => callbacks.onClose?.());
+  const { onEvent, callbacks } = latestSubscription();
+  act(() => callbacks.onClose?.('closed'));
   expect(
     JSON.parse(screen.getByText(/could not be loaded/).textContent!).state,
   ).toBe('error');
@@ -258,7 +257,7 @@ it('reports relay closure and ignores updates after unmount', async () => {
   act(() => {
     onEvent(place());
     callbacks.onEose?.();
-    callbacks.onClose?.();
+    callbacks.onClose?.('closed');
   });
 });
 
