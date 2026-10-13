@@ -11,6 +11,7 @@ const {
 } = require('../../support/helpers');
 const {
   findUserByUsername,
+  findActionToken,
   updateUserByUsername,
 } = require('../../support/db');
 
@@ -74,18 +75,18 @@ test.describe.serial('auth email and token feature coverage', () => {
     const user = createUser();
     await registerViaApi(request, user);
     const storedUser = await findUserByUsername(user.username);
+    expect(storedUser.emailToken).toMatch(/^sha256:[a-f0-9]{64}$/);
+    const emailToken = await findActionToken(user.username, 'emailToken');
 
     const validation = await request.get(
-      `/api/auth/confirm-email/${storedUser.emailToken}?signup=true`,
+      `/api/auth/confirm-email/${emailToken}?signup=true`,
       { maxRedirects: 0 },
     );
     expect(validation.status()).toBe(302);
-    expect(validation.headers().location).toBe(
-      `/confirm-email/${storedUser.emailToken}`,
-    );
+    expect(validation.headers().location).toBe(`/confirm-email/${emailToken}`);
 
     const confirm = await request.post(
-      `/api/auth/confirm-email/${storedUser.emailToken}`,
+      `/api/auth/confirm-email/${emailToken}`,
       { headers: { 'X-Trustroots-Request': '1' } },
     );
     expect(confirm.ok()).toBeTruthy();
