@@ -26,7 +26,10 @@ bin/admin
 deploy
 migrations/archived
 public
-scripts
+scripts/*
+!scripts/ci/
+scripts/ci/*
+!scripts/ci/*.mts
 modules/core/server/views/email-templates/
 modules/core/server/views/email-templates-text/
 .github/**/*.md
