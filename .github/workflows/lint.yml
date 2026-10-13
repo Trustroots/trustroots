@@ -21,6 +21,7 @@ jobs:
       always() && !cancelled() && needs.changes.outputs.run-code != 'false'
 
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       checks: write
@@ -84,6 +85,7 @@ jobs:
     needs: changes
     if: always() && !cancelled() && needs.changes.outputs.run-code != 'false'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Use Node.js
