@@ -7,8 +7,9 @@ const Message = mongoose.model('Message');
 const Experience = mongoose.model('Experience');
 const AuditLog = mongoose.model('AuditLog');
 const PAGE_SIZE = 50;
-const REQUEST_FIELDS =
-  '_id category user reportedUser sent email username message reportMember status resolvedAt resolvedBy';
+const LIST_FIELDS =
+  '_id category user reportedUser sent email username reportMember status resolvedAt resolvedBy';
+const REQUEST_FIELDS = `${LIST_FIELDS} message`;
 const MEMBER_FIELDS =
   '_id username displayName email emailTemporary public roles created description tagline locationLiving locationFrom languages removeProfileToken';
 
@@ -86,7 +87,7 @@ export const list = handler(async (req, res) => {
     criteria.$or = [{ status: 'open' }, { status: { $exists: false } }];
   if (status === 'resolved') criteria.status = 'resolved';
   const items = await SupportRequest.find(criteria)
-    .select(REQUEST_FIELDS)
+    .select(LIST_FIELDS)
     .sort({ sent: -1, _id: -1 })
     .skip((page - 1) * PAGE_SIZE)
     .limit(PAGE_SIZE + 1)

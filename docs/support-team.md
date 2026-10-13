@@ -2,7 +2,8 @@
 
 Administrators can add or remove **Support team** on a member record. The role
 provides the support inbox at `/admin/support`, member search and account details,
-internal member notes, acquisition stories and the staff member's own blocker list.
+internal member notes, acquisition stories, location corrections and the staff
+member's own blocker list.
 It does not grant suspension, shadowbanning, role changes, bulk exports, audit-log
 browsing or unrestricted private conversations. Legacy moderators are unchanged.
 

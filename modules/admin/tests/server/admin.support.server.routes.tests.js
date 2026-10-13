@@ -81,9 +81,9 @@ describe('Support team access and investigation', () => {
       feedbackPublic: 'Unpublished feedback',
       public: false,
     });
-    (
-      await agent.get('/api/admin/support').expect(200)
-    ).body.items.length.should.equal(1);
+    const listed = await agent.get('/api/admin/support').expect(200);
+    listed.body.items.length.should.equal(1);
+    Object.hasOwn(listed.body.items[0], 'message').should.equal(false);
     (
       await agent.get(endpoint(report._id)).expect(200)
     ).body.message.should.equal(report.message);

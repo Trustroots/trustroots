@@ -94,7 +94,8 @@ export default function AdminHeader() {
                 (page.path === 'staff-blockers' &&
                   (isWelcomeTeam || isSupport)) ||
                 page.path === 'acquisition-stories' ||
-                (isWelcomeTeam && page.path === 'location-corrections'),
+                ((isWelcomeTeam || isSupport) &&
+                  page.path === 'location-corrections'),
             )
             .map(page => renderTab(page))}
         </ul>
