@@ -102,8 +102,8 @@ importers:
         specifier: 1.2.0
         version: 1.2.0
       helmet:
-        specifier: 5.1.1
-        version: 5.1.1
+        specifier: 8.3.0
+        version: 8.3.0
       html-to-text:
         specifier: 8.2.1
         version: 8.2.1
@@ -4385,9 +4385,9 @@ packages:
     resolution: {integrity: sha512-F/1DnUGPopORZi0ni+CvrCgHQ5FyEAHRLSApuYWMmrbSwoN2Mn/7k+Gl38gJnR7yyDZk6WLXwiGod1JOWNDKGw==}
     hasBin: true
 
-  helmet@5.1.1:
-    resolution: {integrity: sha512-/yX0oVZBggA9cLJh8aw3PPCfedBnbd7J2aowjzsaWwZh7/UFY0nccn/aHAggIgWUFfnykX8GKd3a1pSbrmlcVQ==}
-    engines: {node: '>=12.0.0'}
+  helmet@8.3.0:
+    resolution: {integrity: sha512-Qgpiaws3Sm30Av8Eah6sjMCZZwjlBu+E68rhpCWBshY1lb09HtLwj5GviX0OyQIn+ulUS0iX0AxN5n3tLZzz1w==}
+    engines: {node: '>=18.0.0'}
 
   hoist-non-react-statics@3.3.2:
     resolution: {integrity: sha512-/gGivxi8JPKWNm/W0jSmzcMPpfpPLc3dY/6GxhX2hQ9iGj3aDfklV4ET7NjKpSinLpJ5vafa9iiGIEZg10SfBw==}
@@ -11999,7 +11999,7 @@ snapshots:
 
   he@1.2.0: {}
 
-  helmet@5.1.1: {}
+  helmet@8.3.0: {}
 
   hoist-non-react-statics@3.3.2:
     dependencies:
