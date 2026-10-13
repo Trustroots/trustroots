@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import type { Event } from 'nostr-tools';
 import { nostrService } from '@/modules/search/client/services/nostr.client.service';
 import CircleLocationMap, { type CircleLocation } from './CircleLocationMap';
-import { useCircleMapEvents } from '../hooks/useCircleMapEvents';
+import { currentPlaceEvents } from '../hooks/useCircleMapEvents';
 
 export interface HackerPlace {
   id: string;
@@ -45,6 +46,7 @@ const metadata = (tags: string[][], key: string) => {
 };
 export function parseHackerPlace(event: {
   id: string;
+  pubkey?: string;
   tags: string[][];
   content: string;
 }): HackerPlace | null {
@@ -59,7 +61,9 @@ export function parseHackerPlace(event: {
   if (!metadata(event.tags, 'source')?.includes('spaceapi.io')) return null;
   if (!point || !name) return null;
   return {
-    id: tag(event.tags, 'd') || event.id,
+    id: event.pubkey
+      ? `${event.pubkey}:${tag(event.tags, 'd') || event.id}`
+      : tag(event.tags, 'd') || event.id,
     name,
     latitude: point[0],
     longitude: point[1],
@@ -74,13 +78,40 @@ export function parseHackerPlace(event: {
   };
 }
 
-const filters = [{ kinds: [33000], '#L': ['physical-location'] }];
-
 export default function HackerspaceMap() {
-  const { events, state } = useCircleMapEvents(nostrService, filters);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
+  useEffect(() => {
+    let active = true;
+    nostrService
+      .subscribeHackerPlaces(
+        event => {
+          if (!active) return;
+          setEvents(current => [
+            ...current.filter(value => value.id !== event.id),
+            event,
+          ]);
+        },
+        {
+          onEose: () => {
+            if (active) setState('ready');
+          },
+          onClose: () => {
+            if (active) setState('error');
+          },
+        },
+      )
+      .catch(() => {
+        if (active) setState('error');
+      });
+    return () => {
+      active = false;
+      nostrService.unsubscribeHackerPlaces();
+    };
+  }, []);
   const locations = useMemo<CircleLocation[]>(
     () =>
-      events
+      currentPlaceEvents(events)
         .map(parseHackerPlace)
         .filter((place): place is HackerPlace => !!place && !place.inactive)
         .map(place => ({
@@ -104,10 +135,12 @@ export default function HackerspaceMap() {
       mapLabel="Map of SpaceAPI-reported hackerspaces"
       locations={locations}
       state={state}
-      loadingText="Loading places from Trustroots relay…"
+      loadingText="Loading places from Trustroots and Nomadwiki relays…"
       errorText="Places could not be loaded from the relay."
       emptyText="No place events are available yet."
       countLabel="SpaceAPI-reported places"
+      markerColor="#12b591"
+      className="circle-location-map-panel--brand"
     />
   );
 }

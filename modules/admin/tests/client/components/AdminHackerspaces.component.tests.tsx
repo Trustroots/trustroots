@@ -12,6 +12,7 @@ jest.mock(
     },
 );
 jest.mock('@/modules/core/client/api/http-client.js', () => ({
+  ...jest.requireActual('@/modules/core/client/api/http-client.js'),
   __esModule: true,
   default: { get: jest.fn() },
 }));
@@ -49,6 +50,8 @@ const space = (endpoint = 'https://workshop.example.test/api') => ({
 });
 const event = (endpoint: string, tags: string[][] = []) => ({
   id: endpoint,
+  created_at: 1,
+  pubkey: 'fictional-author',
   content: 'Last-known description',
   tags: [['d', `spaceapi:${endpoint}`], ...tags],
 });
@@ -178,10 +181,80 @@ describe('administrator place import', () => {
     ).toBeDisabled();
   });
 
+  it('clears a previous preview when refreshing fails', async () => {
+    render(<AdminHackerspaces />);
+    fetchPreview();
+    await screen.findByText(/Preview: 1 additions/);
+    http.get.mockRejectedValueOnce({
+      response: {
+        status: 502,
+        data: { message: 'Collector request timed out.' },
+      },
+    });
+    fetchPreview();
+    await screen.findByText(
+      'Could not fetch the SpaceAPI Collector: Collector request timed out. No events were changed.',
+    );
+    expect(
+      screen.queryByRole('cell', { name: 'Example Workshop' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Sign and publish/ }),
+    ).toBeDisabled();
+    expect(signEvent).not.toHaveBeenCalled();
+  });
+
+  it.each([401, 403])('explains access failures (%s)', async status => {
+    http.get.mockRejectedValueOnce({ response: { status } });
+    render(<AdminHackerspaces />);
+    fetchPreview();
+    await screen.findByText(/Administrator access is required/);
+    expect(
+      screen.getByRole('button', { name: /Sign and publish/ }),
+    ).toBeDisabled();
+  });
+
+  it.each([undefined, 12, ''])(
+    'handles an absent or invalid server error message (%s)',
+    async message => {
+      http.get.mockRejectedValueOnce({
+        response: { status: 502, data: { message } },
+      });
+      render(<AdminHackerspaces />);
+      fetchPreview();
+      await screen.findByText(
+        'Could not fetch the SpaceAPI Collector. No events were changed.',
+      );
+    },
+  );
+
+  it('distinguishes processing errors from Collector request failures', async () => {
+    http.get.mockResolvedValueOnce({ data: {} });
+    render(<AdminHackerspaces />);
+    fetchPreview();
+    await screen.findByText(
+      'Could not prepare the import preview. No events were changed.',
+    );
+    expect(
+      screen.getByRole('button', { name: /Sign and publish/ }),
+    ).toBeDisabled();
+  });
+
   it('allows publication when the only change is a removed directory entry', async () => {
     http.get.mockResolvedValue({ data: [] });
     service.fetchHackerPlaceEvents.mockResolvedValue([
-      event('https://removed.example.test/api', [['meta', 'status', 'active']]),
+      {
+        ...event('https://removed.example.test/api', [
+          ['meta', 'status', 'active'],
+        ]),
+        created_at: 3,
+      },
+      {
+        ...event('https://removed.example.test/api', [
+          ['meta', 'status', 'inactive'],
+        ]),
+        created_at: 1,
+      },
     ]);
     render(<AdminHackerspaces />);
     fetchPreview();
@@ -306,7 +379,7 @@ describe('administrator place import', () => {
           },
           { url: 'wss://relay.nomadwiki.org', relay: null },
         ]);
-      } else publishNomadwiki.mockRejectedValue(new Error('rejected'));
+      } else publishNomadwiki.mockRejectedValue('blocked: unsupported kind');
       render(<AdminHackerspaces />);
       fetchPreview();
       await screen.findByText('Example Workshop');
@@ -319,6 +392,8 @@ describe('administrator place import', () => {
         screen.getByText(/wss:\/\/relay.nomadwiki.org: 0 published; 1 failed/),
       ).toBeVisible();
       expect(signEvent).toHaveBeenCalledTimes(1);
+      if (failure !== 'connection')
+        expect(screen.getByText(/blocked: unsupported kind/)).toBeVisible();
       expect(closeTrustroots).toHaveBeenCalledTimes(1);
     },
   );
