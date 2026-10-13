@@ -3,7 +3,7 @@ const sinon = require('sinon');
 const influx = require('influx');
 const winston = require('winston');
 // influx = require('influx'),
-const influxService = require('./../../../server/services/influx.server.service.mjs');
+const influxService = require('./../../../server/services/influx.server.service.mts');
 const config = require('./../../../../../config/config.mjs');
 
 function loadInfluxServiceWithLogger(logger) {
@@ -19,7 +19,7 @@ describe('Service: influx', function () {
 
   it('keeps the CommonJS adapter identical to the ESM default and named exports', async function () {
     const esmService = await import(
-      '../../../server/services/influx.server.service.mjs'
+      '../../../server/services/influx.server.service.mts'
     );
 
     esmService.default.should.equal(influxService);
