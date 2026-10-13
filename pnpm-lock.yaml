@@ -349,8 +349,8 @@ importers:
         specifier: 6.1.1
         version: 6.1.1(vite@8.3.1(@types/node@26.6.4)(jiti@2.7.0)(less@4.9.1(supports-color@5.5.0))(terser@5.49.0)(yaml@2.9.1))
       '@wordpress/browserslist-config':
-        specifier: 4.1.2
-        version: 4.1.2
+        specifier: 6.57.0
+        version: 6.57.0
       agendash:
         specifier: 2.1.1
         version: 2.1.1(supports-color@5.5.0)
@@ -2775,9 +2775,9 @@ packages:
   '@webassemblyjs/wast-printer@1.14.1':
     resolution: {integrity: sha512-kPSSXE6De1XOR820C90RIo2ogvZG+c3KiHzqUoO/F34Y2shGzesfqv7o57xrxovZJH/MetF5UjroJ/R/3isoiw==}
 
-  '@wordpress/browserslist-config@4.1.2':
-    resolution: {integrity: sha512-UH0Ifmm4tEjVPOtiqH6yxDvk2EKtqSAhnyhyfSIb0wUnEoGsWTjREZjzuhgjt/I2nTqfg+0gUSzL5D0yQH6wDQ==}
-    engines: {node: '>=12'}
+  '@wordpress/browserslist-config@6.57.0':
+    resolution: {integrity: sha512-FhgKf5DOa7W3KywIkSQcXL876nTqabaEY3EBJk+tO6XtgA14V9VoXXsk0ZtjWDFunZe/TVhZCtA9X0s27b9D+w==}
+    engines: {node: '>=18.12.0'}
 
   '@xtuc/ieee754@1.2.0':
     resolution: {integrity: sha512-DX8nKgqcGwsc0eJSqYt5lwP4DH5FlHnmuWWBRy7X0NcaGR0ZtuyeESgMwTYVEtxmsNGY+qit4QYT/MIYTOTPeA==}
@@ -10155,7 +10155,7 @@ snapshots:
       '@webassemblyjs/ast': 1.14.1
       '@xtuc/long': 4.2.2
 
-  '@wordpress/browserslist-config@4.1.2': {}
+  '@wordpress/browserslist-config@6.57.0': {}
 
   '@xtuc/ieee754@1.2.0': {}
 
