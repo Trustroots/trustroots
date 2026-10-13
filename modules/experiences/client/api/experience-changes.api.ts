@@ -3,6 +3,7 @@ import axios from 'axios';
 import type {
   ExperienceChangeAccess,
   ExperienceChangeRequestSummary,
+  ExperienceChangeSubmissionResult,
   ExperienceChangeSubmission,
 } from '../../shared/experience-change';
 
@@ -32,8 +33,8 @@ export async function submit(
   id: string,
   secret: string,
   request: ExperienceChangeSubmission,
-): Promise<ExperienceChangeRequestSummary> {
-  const { data } = await axios.post<ExperienceChangeRequestSummary>(
+): Promise<ExperienceChangeSubmissionResult> {
+  const { data } = await axios.post<ExperienceChangeSubmissionResult>(
     `${base(id)}/change-requests`,
     request,
     { headers: { 'X-Experience-Change-Secret': secret } },

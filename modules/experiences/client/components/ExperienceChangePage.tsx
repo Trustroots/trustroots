@@ -6,6 +6,7 @@ import { getErrorResponse } from '@/modules/core/client/api/http-client';
 import type {
   ExperienceChangeAccess,
   ExperienceChangeRequestSummary,
+  ExperienceChangeSubmissionResult,
 } from '../../shared/experience-change';
 import type {
   ExperienceInteractions,
@@ -43,9 +44,9 @@ export default function ExperienceChangePage({
   const [experience, setExperience] = useState<ExperienceChangeAccess | null>(
     null,
   );
-  const [request, setRequest] = useState<ExperienceChangeRequestSummary | null>(
-    null,
-  );
+  const [request, setRequest] = useState<
+    ExperienceChangeRequestSummary | ExperienceChangeSubmissionResult | null
+  >(null);
   const [accessError, setAccessError] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [loading, setLoading] = useState(true);

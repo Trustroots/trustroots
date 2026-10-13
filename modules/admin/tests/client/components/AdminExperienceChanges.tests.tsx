@@ -20,6 +20,7 @@ const apiMock = jest.mocked(api);
 
 const experience: AdminExperienceChangeSearchExperience = {
   _id: 'experience-1',
+  created: '2026-10-13T00:00:00.000Z',
   public: true,
   userFrom: { _id: 'author-1', displayName: 'Fictional Author' },
   userTo: { _id: 'recipient-1', displayName: 'Fictional Recipient' },

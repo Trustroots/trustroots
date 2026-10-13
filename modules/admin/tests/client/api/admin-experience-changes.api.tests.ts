@@ -23,6 +23,7 @@ afterEach(() => jest.clearAllMocks());
 it('uses the admin-only lookup, link, queue, and decision APIs', async () => {
   const experience: AdminExperienceChangeSearchExperience = {
     _id: 'experience-1',
+    created: '2026-10-13T00:00:00.000Z',
     public: true,
     userFrom: { _id: 'member-1' },
     userTo: { _id: 'member-2' },

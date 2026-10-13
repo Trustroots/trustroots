@@ -370,6 +370,14 @@ describe('Experience change requests', () => {
       .send({ memberId: 'invalid' })
       .expect(400);
     await adminAgent
+      .post(`/api/admin/experiences/${experience._id}/change-links`)
+      .send({ memberId: 123 })
+      .expect(400);
+    await adminAgent
+      .post(`/api/admin/experiences/${experience._id}/change-links`)
+      .send({ memberId: {} })
+      .expect(400);
+    await adminAgent
       .post(
         `/api/admin/experiences/${new mongoose.Types.ObjectId()}/change-links`,
       )
@@ -422,6 +430,7 @@ describe('Experience change requests', () => {
       .expect(400);
     for (const proposed of [
       undefined,
+      'not-an-object',
       {
         feedbackPublic: 'Changed',
         recommend: 'invalid',
@@ -431,6 +440,11 @@ describe('Experience change requests', () => {
         feedbackPublic: 'Changed',
         recommend: 'no',
         interactions: { met: 'yes', host: false, guest: false },
+      },
+      {
+        feedbackPublic: 'Changed',
+        recommend: 'no',
+        interactions: null,
       },
       {
         feedbackPublic: 'Changed',
@@ -449,6 +463,73 @@ describe('Experience change requests', () => {
         .send({ kind: 'edit', proposed })
         .expect(400);
     }
+  });
+
+  it('passes null and missing request bodies through the controller error path', async () => {
+    const secret = await issue(author._id);
+    const next = sinon.spy();
+    const response = {
+      status() {
+        return this;
+      },
+      json() {
+        return this;
+      },
+    };
+
+    await memberChanges.submit(
+      {
+        params: { id: String(experience._id) },
+        body: null,
+        user: author,
+        get: () => secret,
+      },
+      response,
+      next,
+    );
+    next.calledOnce.should.equal(true);
+    next.firstCall.args[0].should.be.instanceof(TypeError);
+
+    next.resetHistory();
+    await adminChanges.issueLink(
+      { params: { id: String(experience._id) }, body: undefined, user: author },
+      response,
+      next,
+    );
+    next.calledOnce.should.equal(true);
+    next.firstCall.args[0].should.be.instanceof(TypeError);
+  });
+
+  it('checks invalid admin IDs before reading null request bodies', async () => {
+    const next = sinon.spy();
+    const response = {
+      status: sinon.stub().returnsThis(),
+      json: sinon.spy(),
+    };
+
+    await adminChanges.issueLink(
+      { params: { id: 'invalid' }, body: null, user: author },
+      response,
+      next,
+    );
+    response.status.calledWith(400).should.equal(true);
+    response.json
+      .calledWith({ message: 'Invalid Experience or member.' })
+      .should.equal(true);
+    next.called.should.equal(false);
+
+    response.status.resetHistory();
+    response.json.resetHistory();
+    await adminChanges.decide(
+      { params: { id: 'invalid' }, body: null, user: author },
+      response,
+      next,
+    );
+    response.status.calledWith(400).should.equal(true);
+    response.json
+      .calledWith({ message: 'Invalid review decision.' })
+      .should.equal(true);
+    next.called.should.equal(false);
   });
 
   it('keeps a failed approval pending for retry and reports a processing request as pending', async () => {
@@ -492,6 +573,47 @@ describe('Experience change requests', () => {
       .set(secretHeader(secret))
       .send({ kind: 'remove' })
       .expect(409);
+  });
+
+  it('preserves the error path for nullish and primitive create rejections', async () => {
+    const secret = await issue(author._id);
+    const response = {
+      status() {
+        return this;
+      },
+      json() {
+        return this;
+      },
+    };
+    const request = {
+      params: { id: String(experience._id) },
+      body: { kind: 'remove' },
+      user: author,
+      get: () => secret,
+    };
+
+    for (const error of [null, undefined]) {
+      sinon
+        .stub(ExperienceChangeRequest, 'create')
+        .callsFake(() => Promise.reject(error));
+      let rejected;
+      try {
+        await memberChanges.submit(request, response, sinon.spy());
+      } catch (caught) {
+        rejected = caught;
+      }
+      rejected.should.be.instanceof(TypeError);
+      sinon.restore();
+    }
+
+    const primitiveError = 'Database unavailable';
+    const next = sinon.spy();
+    sinon
+      .stub(ExperienceChangeRequest, 'create')
+      .callsFake(() => Promise.reject(primitiveError));
+    await memberChanges.submit(request, response, next);
+    next.calledOnceWithExactly(primitiveError).should.equal(true);
+    sinon.restore();
   });
 
   it('passes database failures to the API error handler', async () => {
