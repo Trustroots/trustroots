@@ -4,7 +4,9 @@
 
 Allow people to create, secure, recover, and end access to their Trustroots
 account.
+
 ## Requirements
+
 ### Requirement: Explicit profile response fields
 
 Profile responses SHALL include only explicitly approved fields. Account-owner
@@ -504,16 +506,20 @@ an anonymous session. Session cookie security settings SHALL remain unchanged.
 - **AND** it does not claim cookies are blocked or redirect
 
 ### Requirement: Account access deployed version
+
 The system SHALL display the deployed build date and commit link on signin, signup, password recovery/reset and not-found pages when build metadata is available.
 
 #### Scenario: Visitor diagnoses account access
+
 - **WHEN** a visitor opens an account access page with build metadata available
 - **THEN** a compact footer exposes the deployed date and commit
 
 ### Requirement: Login route alias
+
 The system SHALL redirect /login to /signin while preserving query parameters.
 
 #### Scenario: Visitor uses the login alias
+
 - **WHEN** a visitor requests /login with a returnTo query parameter
 - **THEN** the visitor is redirected to /signin with the same parameter
 
@@ -536,3 +542,21 @@ The system SHALL forbid JavaScript eval and unnonced inline scripts in productio
 
 - **WHEN** the development application serves a document
 - **THEN** eval source maps remain supported under a report-only policy
+
+### Requirement: Bounded signup requests
+
+Signup SHALL accept only supported registration fields. The server SHALL apply
+shared request limits by client address and normalised recipient email before
+account creation and email delivery, returning HTTP 429 and Retry-After when a
+policy is exceeded.
+
+#### Scenario: Signup recipient reaches its limit
+
+- **WHEN** signup attempts for the same normalised email exceed the configured limit
+- **THEN** further attempts are rejected even from another client address
+- **AND** no account or email job is created for the rejected request
+
+#### Scenario: Caller supplies account state
+
+- **WHEN** signup contains fields outside the supported registration fields
+- **THEN** those fields do not alter server-owned account state
