@@ -19,6 +19,7 @@ const AREA_BY_SPEC = {
   'account-input-validation.spec.js': 'Authentication',
   'signup-and-support-limits.spec.js': 'Authentication',
   'account-settings.spec.js': 'Authentication',
+  'signup-and-support-limits.spec.js': 'Authentication',
   'authenticated.spec.js': 'Member flows',
   'profile-react.spec.js': 'Member flows',
   'member.spec.js': 'Member flows',
