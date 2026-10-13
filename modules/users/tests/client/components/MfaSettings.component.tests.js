@@ -1,5 +1,11 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 import MfaSettings from '@/modules/users/client/components/MfaSettings.component';
 import * as mfaApi from '@/modules/users/client/api/mfa.api';
@@ -80,6 +86,23 @@ describe('MfaSettings', () => {
     unmount();
     resolveStatus({ enabled: false, recoveryCodesRemaining: 0 });
     await Promise.resolve();
+  });
+
+  it('ignores a settings failure after the component unmounts', async () => {
+    let rejectStatus;
+    mfaApi.getMfaStatus.mockReturnValue(
+      new Promise((_resolve, reject) => {
+        rejectStatus = reject;
+      }),
+    );
+    const { unmount } = render(<MfaSettings />);
+    unmount();
+    await act(async () => {
+      rejectStatus(new Error('offline'));
+    });
+    expect(
+      screen.queryByText('Could not load authenticator settings.'),
+    ).not.toBeInTheDocument();
   });
 
   it('reports setup and verification failures', async () => {
