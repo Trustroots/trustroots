@@ -54,7 +54,7 @@ interface AdminUserResultsTableProps {
   showPublicProfileLink?: boolean;
   showUserState?: boolean;
   showZendeskActions?: boolean;
-  sort: UserSort;
+  sort?: UserSort;
   userResults: UserResult[];
 }
 
