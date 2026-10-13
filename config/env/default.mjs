@@ -307,10 +307,6 @@ service = {
       .map(host => host.trim().toLowerCase())
       .filter(Boolean),
   },
-  googleAnalytics: {
-    enabled: false,
-    code: '',
-  },
   umami: {
     scriptSrc: 'https://1p.trustroots.org/script.js',
     websiteId: '',

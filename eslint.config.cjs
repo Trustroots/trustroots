@@ -89,10 +89,11 @@ const legacyConfig = {
         '*.mjs',
         '*.cjs',
         'config/**',
+        'scripts/ci/**/*.mts',
         'migrations/**',
         'modules/*/shared/**/*.{js,ts,mts}',
         'modules/*/server/*.{js,mjs}',
-        'modules/*/server/**/*.{js,mjs}',
+        'modules/*/server/**/*.{js,mjs,mts}',
         'testutils/server/**',
         'testutils/common/**',
       ],
@@ -104,7 +105,7 @@ const legacyConfig = {
     /** Native server implementations must not regain CommonJS syntax. */
     {
       files: [
-        'modules/*/server/**/*.mjs',
+        'modules/*/server/**/*.{mjs,mts}',
         'config/lib/**/*.mjs',
         'bin/**/*.mjs',
       ],
@@ -187,8 +188,12 @@ const legacyConfig = {
      */
     {
       files: [
+        'config/vite/**/*.{ts,tsx}',
+        'scripts/ci/**/*.mts',
         'modules/*/client/**/*.{ts,tsx}',
         'modules/*/shared/**/*.{ts,tsx,mts}',
+        'modules/*/server/**/*.mts',
+        'config/**/*.d.mts',
         'modules/*/tests/client/**/*.{ts,tsx,mts}',
         'testutils/client/**/*.{ts,tsx}',
         'testutils/common/**/*.{mts,ts}',
@@ -226,7 +231,7 @@ const legacyConfig = {
      * Overrides for CLI scripts and application config
      */
     {
-      files: ['bin/**', 'config/**', 'migrations/**'],
+      files: ['bin/**', 'config/**', 'migrations/**', 'scripts/ci/**/*.mts'],
       env: {
         node: true,
       },
@@ -244,7 +249,11 @@ const ignores = fs
   .split(/\r?\n/)
   .map(line => line.trim())
   .filter(line => line && !line.startsWith('#'))
-  .map(pattern => (pattern.endsWith('/') ? `${pattern}**` : pattern));
+  .map(pattern =>
+    !pattern.startsWith('!') && pattern.endsWith('/')
+      ? `${pattern}**`
+      : pattern,
+  );
 
 module.exports = defineConfig([
   // ESLint 8 ignored dotfiles and hidden directories by default.

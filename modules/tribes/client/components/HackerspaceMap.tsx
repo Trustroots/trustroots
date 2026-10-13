@@ -1,9 +1,8 @@
-import L from 'leaflet';
-import React, { useEffect, useRef, useState } from 'react';
-
-import { getRasterMapTiles } from '@/modules/core/client/utils/map';
+import React, { useEffect, useMemo, useState } from 'react';
+import type { Event } from 'nostr-tools';
 import { nostrService } from '@/modules/search/client/services/nostr.client.service';
-import './hackerspace-map.less';
+import CircleLocationMap, { type CircleLocation } from './CircleLocationMap';
+import { currentPlaceEvents } from '../hooks/useCircleMapEvents';
 
 export interface HackerPlace {
   id: string;
@@ -47,6 +46,7 @@ const metadata = (tags: string[][], key: string) => {
 };
 export function parseHackerPlace(event: {
   id: string;
+  pubkey?: string;
   tags: string[][];
   content: string;
 }): HackerPlace | null {
@@ -61,7 +61,9 @@ export function parseHackerPlace(event: {
   if (!metadata(event.tags, 'source')?.includes('spaceapi.io')) return null;
   if (!point || !name) return null;
   return {
-    id: tag(event.tags, 'd') || event.id,
+    id: event.pubkey
+      ? `${event.pubkey}:${tag(event.tags, 'd') || event.id}`
+      : tag(event.tags, 'd') || event.id,
     name,
     latitude: point[0],
     longitude: point[1],
@@ -76,59 +78,19 @@ export function parseHackerPlace(event: {
   };
 }
 
-function popupContent(place: HackerPlace): HTMLElement {
-  const root = document.createElement('div');
-  const title = document.createElement('strong');
-  title.textContent = place.name;
-  root.append(title);
-  if (place.address) {
-    const address = document.createElement('p');
-    address.textContent = place.address;
-    root.append(address);
-  }
-  if (place.description) {
-    const description = document.createElement('p');
-    description.textContent = place.description;
-    root.append(description);
-  }
-  if (place.open) {
-    const state = document.createElement('p');
-    state.textContent = `SpaceAPI-reported snapshot: ${place.open}`;
-    root.append(state);
-  }
-  if (place.fetchedAt) {
-    const fetched = document.createElement('p');
-    fetched.textContent = `Trustroots fetched: ${place.fetchedAt}`;
-    root.append(fetched);
-  }
-  if (place.website) {
-    const link = document.createElement('a');
-    link.href = place.website;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.textContent = 'Visit website';
-    root.append(link);
-  }
-  return root;
-}
-
 export default function HackerspaceMap() {
-  const container = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const markersRef = useRef<L.LayerGroup | null>(null);
-  const [places, setPlaces] = useState<HackerPlace[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   useEffect(() => {
     let active = true;
     nostrService
       .subscribeHackerPlaces(
         event => {
-          const place = parseHackerPlace(event);
-          if (place)
-            setPlaces(current => [
-              ...current.filter(value => value.id !== place.id),
-              place,
-            ]);
+          if (!active) return;
+          setEvents(current => [
+            ...current.filter(value => value.id !== event.id),
+            event,
+          ]);
         },
         {
           onEose: () => {
@@ -147,73 +109,38 @@ export default function HackerspaceMap() {
       nostrService.unsubscribeHackerPlaces();
     };
   }, []);
-  useEffect(() => {
-    if (!container.current) return;
-    const map = L.map(container.current, { scrollWheelZoom: false }).setView(
-      [20, 0],
-      2,
-    );
-    const tiles = getRasterMapTiles();
-    L.tileLayer(tiles.url, tiles.options).addTo(map);
-    mapRef.current = map;
-    markersRef.current = L.layerGroup().addTo(map);
-    return () => {
-      map.remove();
-      mapRef.current = null;
-      markersRef.current = null;
-    };
-  }, []);
-  useEffect(() => {
-    const map = mapRef.current;
-    const markers = markersRef.current;
-    if (!map || !markers) return;
-    markers.clearLayers();
-    const visible = places.filter(place => !place.inactive);
-    visible.forEach(place => {
-      L.circleMarker([place.latitude, place.longitude], {
-        radius: 8,
-        color: '#fff',
-        weight: 2,
-        fillColor: '#488261',
-        fillOpacity: 1,
-      })
-        .bindPopup(popupContent(place))
-        .addTo(markers);
-    });
-    if (visible.length)
-      map.fitBounds(
-        L.latLngBounds(
-          visible.map(
-            place => [place.latitude, place.longitude] as [number, number],
-          ),
-        ),
-        { padding: [24, 24], maxZoom: 8 },
-      );
-  }, [places]);
+  const locations = useMemo<CircleLocation[]>(
+    () =>
+      currentPlaceEvents(events)
+        .map(parseHackerPlace)
+        .filter((place): place is HackerPlace => !!place && !place.inactive)
+        .map(place => ({
+          ...place,
+          details: [
+            place.address,
+            place.description,
+            place.open && `SpaceAPI-reported snapshot: ${place.open}`,
+            place.fetchedAt && `Trustroots fetched: ${place.fetchedAt}`,
+          ].filter((value): value is string => !!value),
+          link: place.website
+            ? { url: place.website, label: 'Visit website' }
+            : undefined,
+        })),
+    [events],
+  );
   return (
-    <section className="hackerspace-map-panel" aria-label="Hackerspace map">
-      <div className="hackerspace-map-heading">
-        <h3>Hackerspaces around the world</h3>
-        <p>
-          SpaceAPI-reported locations. Listings have not been independently
-          verified.
-        </p>
-      </div>
-      <div
-        className="hackerspace-map"
-        ref={container}
-        role="application"
-        aria-label="Map of SpaceAPI-reported hackerspaces"
-      />
-      <p className="hackerspace-map-status" aria-live="polite">
-        {state === 'loading'
-          ? 'Loading places from Trustroots relay…'
-          : state === 'error'
-          ? 'Places could not be loaded from the relay.'
-          : places.length
-          ? `${places.length} SpaceAPI-reported places`
-          : 'No place events are available yet.'}
-      </p>
-    </section>
+    <CircleLocationMap
+      title="Hackerspaces around the world"
+      description="SpaceAPI-reported locations. Listings have not been independently verified."
+      mapLabel="Map of SpaceAPI-reported hackerspaces"
+      locations={locations}
+      state={state}
+      loadingText="Loading places from Trustroots and Nomadwiki relays…"
+      errorText="Places could not be loaded from the relay."
+      emptyText="No place events are available yet."
+      countLabel="SpaceAPI-reported places"
+      markerColor="#12b591"
+      className="circle-location-map-panel--brand"
+    />
   );
 }

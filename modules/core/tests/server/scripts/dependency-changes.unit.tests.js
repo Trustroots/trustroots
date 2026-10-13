@@ -34,7 +34,7 @@ describe('PR dependency summaries', () => {
       cwd: root,
       nycrcPath: '.nycrc-server',
     });
-    assert.deepStrictEqual(config.include, ['modules/*/server/**/*.mjs']);
+    assert.deepStrictEqual(config.include, ['modules/*/server/**/*.{mjs,mts}']);
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'fictional-nyc-'));
     try {
       fs.writeFileSync(
