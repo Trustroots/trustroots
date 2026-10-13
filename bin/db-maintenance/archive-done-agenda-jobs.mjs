@@ -8,11 +8,11 @@
  *
  * Usage:
  *
- *  npm run agenda-maintenance
+ *  pnpm run agenda-maintenance
  *
  * To reverse ALL the documents from archive back to live db:
  *
- *  npm run agenda-maintenance -- reverse
+ *  pnpm run agenda-maintenance reverse
  */
 import dependency0 from 'mongodb';
 import async from 'async';

@@ -163,8 +163,8 @@ const { spawnSync } = require('child_process');
 const timeout = Number(process.env.TRUSTROOTS_PLAYWRIGHT_INSTALL_TIMEOUT_MS) || 120000;
 const browsers = process.env.PLAYWRIGHT_BROWSERS.split(/\s+/).filter(Boolean);
 const result = spawnSync(
-  process.platform === 'win32' ? 'npx.cmd' : 'npx',
-  ['playwright', 'install', ...browsers],
+  process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm',
+  ['exec', 'playwright', 'install', ...browsers],
   {
     encoding: 'utf8',
     timeout,
@@ -358,7 +358,7 @@ if [ "${TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER:-false}" != "true" ]; then
 
   if [ "${TRUSTROOTS_E2E_SKIP_WEB_BUILD:-false}" != "true" ]; then
     echo "Building client assets for end-to-end tests..."
-    if ! npm run build:e2e; then
+    if ! pnpm run build:e2e; then
       exit_with_status \
         "blocked" \
         1 \
@@ -373,7 +373,7 @@ DB_1_PORT_27017_TCP_ADDR="$MONGO_HOST" \
 TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
 TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
 TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
-npx playwright test --config playwright.config.cjs "$@"
+pnpm exec playwright test --config playwright.config.cjs "$@"
 playwright_status="$?"
 set -e
 

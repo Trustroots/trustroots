@@ -31,6 +31,16 @@ const MessageSchema = new Schema({
     ref: 'User',
     index: true,
   },
+  // One welcome-team correction message per member and set of offer locations.
+  locationCorrectionKey: {
+    type: String,
+  },
+  locationCorrectionOffers: [
+    {
+      offer: { type: Schema.ObjectId, ref: 'Offer' },
+      location: [Number],
+    },
+  ],
   read: {
     type: Boolean,
     default: false,
@@ -54,15 +64,14 @@ const MessageSchema = new Schema({
     required: true,
   },
 });
-MessageSchema.index({
-  read: 1,
-  created: 1,
-  notificationSent: 1,
-});
-MessageSchema.index({
-  created: -1,
-  userFrom: 1,
-});
+
+MessageSchema.index({ read: 1, created: 1, notificationSent: 1 });
+MessageSchema.index({ created: -1, userFrom: 1 });
+MessageSchema.index(
+  { locationCorrectionKey: 1 },
+  { unique: true, sparse: true },
+);
+
 MessageSchema.plugin(mongoosePaginate);
 mongoose.model('Message', MessageSchema);
 export default service;

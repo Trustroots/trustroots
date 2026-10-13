@@ -20,6 +20,9 @@ describe('<Media />', () => {
     expect(screen.getByText('Trustroots in Media')).toBeInTheDocument();
     expect(screen.getByText('Interviews')).toBeInTheDocument();
     expect(screen.getByText('Fact sheet')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'frequently asked questions' }),
+    ).toHaveAttribute('href', '/faq');
     expect(screen.getByRole('link', { name: 'PNG' })).toHaveAttribute(
       'href',
       'https://raw.githubusercontent.com/Trustroots/community/master/media/logo/logo.png',
