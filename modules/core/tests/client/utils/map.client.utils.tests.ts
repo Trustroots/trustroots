@@ -1,13 +1,18 @@
+import { invokeMalformed } from '@/testutils/client/malformed-fixtures';
 import {
   getRasterMapTiles,
   isWebGLSupported,
 } from '@/modules/core/client/utils/map';
 
+const createCanvas = document.createElement.bind(document);
+
 // Preserve the minimal WebGL doubles; only getContext is used by this helper.
 function canvasElement(
   getContext: (type: string) => object | null,
 ): HTMLCanvasElement {
-  return { getContext } as unknown as HTMLCanvasElement;
+  const canvas = createCanvas('canvas');
+  Object.defineProperty(canvas, 'getContext', { value: getContext });
+  return canvas;
 }
 
 describe('map utilities', () => {
@@ -65,9 +70,7 @@ describe('map utilities', () => {
   it('falls back to OpenStreetMap raster tiles without a Mapbox token', () => {
     expect(
       // Preserve the original null token beyond the public optional-token type.
-      getRasterMapTiles(
-        null as unknown as Parameters<typeof getRasterMapTiles>[0],
-      ),
+      invokeMalformed(getRasterMapTiles, null),
     ).toEqual({
       options: expect.objectContaining({ maxZoom: 19 }),
       url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',

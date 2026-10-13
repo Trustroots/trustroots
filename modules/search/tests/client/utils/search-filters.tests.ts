@@ -1,3 +1,4 @@
+import { invokeMalformed } from '@/testutils/client/malformed-fixtures';
 import {
   DEFAULT_FILTERS,
   getSearchFilters,
@@ -67,9 +68,7 @@ describe('search-filters utils', () => {
   it('normalises empty and meet-only type values', () => {
     expect(normalizeTypes()).toEqual(['meet']);
     // Cached input can be malformed at runtime despite the typed helper API.
-    expect(
-      normalizeTypes(null as unknown as Parameters<typeof normalizeTypes>[0]),
-    ).toEqual(['meet']);
+    expect(invokeMalformed(normalizeTypes, null)).toEqual(['meet']);
     expect(normalizeTypes([{ id: 'meet' }])).toEqual(['meet']);
   });
 

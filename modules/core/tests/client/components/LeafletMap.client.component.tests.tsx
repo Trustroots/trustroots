@@ -1,3 +1,4 @@
+import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 import React from 'react';
 import { render } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -101,7 +102,14 @@ describe('<LeafletMap />', () => {
       .mockImplementation(() => {});
 
     // The null location exercises the component's runtime guard for malformed data.
-    render(<LeafletMap location={null as unknown as [number, number]} />);
+    render(
+      <LeafletMap
+        {...malformedFixture(
+          { location: [0, 0] as [number, number] },
+          { location: null },
+        )}
+      />,
+    );
 
     expect(mockMap.setView).toHaveBeenCalledTimes(1);
     expect(L.circleMarker).not.toHaveBeenCalled();
@@ -115,7 +123,7 @@ it('reports the panned centre to the latest listener without resetting zoom', ()
   const { rerender } = render(
     <LeafletMap location={[50.12, 19.89]} zoom={11} onLocationChange={first} />,
   );
-  const move = mockMap.on.mock.calls.find(([name]) => name === 'moveend')?.[1];
+  const move = mockMap.on.mock.calls.find(([name]) => name === 'dragend')?.[1];
   rerender(
     <LeafletMap
       location={[50.12, 19.89]}

@@ -56,6 +56,16 @@ function thread(overrides: ThreadOverrides = {}): MessageThreadSummary {
 }
 
 describe('<InboxThread />', () => {
+  it('renders a placeholder when the other participant is absent', () => {
+    render(<InboxThread user={me} thread={{ ...thread(), userFrom: null }} />);
+
+    expect(screen.getByText('Unknown member')).toBeInTheDocument();
+    expect(screen.getByRole('link')).toHaveAttribute(
+      'href',
+      '/messages/undefined?userId=',
+    );
+  });
+
   it('renders unread state, other member link, avatar, time, and excerpt', () => {
     const { container } = render(<InboxThread user={me} thread={thread()} />);
 
@@ -67,11 +77,21 @@ describe('<InboxThread />', () => {
       '/messages/other?userId=other',
     );
     expect(screen.getByText('Other Member')).toBeInTheDocument();
-    expect(container.querySelector('.threadlist-thread-excerpt')).toContainHTML(
-      '<strong>Hello</strong>',
-    );
+    expect(
+      container.querySelector('.threadlist-thread-excerpt'),
+    ).toHaveTextContent('<strong>Hello</strong>');
     expect(screen.getByText('recently')).toBeInTheDocument();
     expect(container.querySelector('.icon-reply')).not.toBeInTheDocument();
+  });
+
+  it('renders markup characters in previews as literal text', () => {
+    const excerpt = '<img src=x onerror=alert(1)><a href="/signin">Hello</a>';
+    const { container } = render(
+      <InboxThread user={me} thread={thread({ message: { excerpt } })} />,
+    );
+    const preview = container.querySelector('.threadlist-thread-excerpt');
+    expect(preview).toHaveTextContent(excerpt);
+    expect(preview?.querySelector('img, a')).toBeNull();
   });
 
   it('renders replied and unknown-member states for read threads', () => {

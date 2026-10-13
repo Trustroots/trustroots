@@ -28,7 +28,7 @@ const sparseProfile = {
   _id: 'user-1',
   username: 'member-one',
   avatarSource: 'none',
-} as unknown as UserProfile & { displayUsername?: string };
+} as UserProfile & { displayUsername?: string };
 
 describe('profile onboarding components', () => {
   it('invites new members to complete their profile', () => {

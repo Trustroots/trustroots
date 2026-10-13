@@ -19,7 +19,7 @@ import {
   REACT_OWNED_PATHS,
   REACT_ROUTE_POLICIES,
   normalizePath,
-} from '@/modules/core/shared/react-route-ownership';
+} from '@/modules/core/shared/react-route-ownership.mts';
 
 type UserRouteProps = { user?: AuthUser | null };
 type MembershipRouteProps = UserRouteProps & {
@@ -44,6 +44,10 @@ jest.mock(
 jest.mock(
   '@/modules/admin/client/components/AdminMessages.component',
   () => () => <main>Admin messages</main>,
+);
+jest.mock(
+  '@/modules/admin/client/components/AdminLocationCorrections.component',
+  () => () => <main>Location corrections</main>,
 );
 jest.mock(
   '@/modules/admin/client/components/AdminNewsletter.component',

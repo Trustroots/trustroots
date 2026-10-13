@@ -7,14 +7,30 @@ import {
   getOffer,
   queryOffers,
   updateOffer,
-  type Offer,
 } from '@/modules/offers/client/api/offers.api';
+import type {
+  CreateOfferRequest,
+  OfferPayload,
+  OfferReadPayload,
+  OfferSearchFeatureCollection,
+  UpdateOfferRequest,
+} from '@/modules/offers/shared/offer';
 
 jest.mock('axios', () =>
-  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
 );
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
+
+function makeOffer(overrides: Partial<OfferPayload> = {}): OfferPayload {
+  return {
+    _id: 'offer-1',
+    type: 'host',
+    user: 'member-1',
+    location: [12, 34],
+    ...overrides,
+  };
+}
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -22,7 +38,7 @@ afterEach(() => {
 
 describe('offers api', () => {
   it('fetches offers by user and types', async () => {
-    const offers: Offer[] = [{ _id: 'offer-1' }];
+    const offers: OfferPayload[] = [makeOffer()];
     mockedAxios.get.mockResolvedValueOnce({ data: offers });
 
     await expect(getOffers('user-1', ['host'])).resolves.toBe(offers);
@@ -61,7 +77,10 @@ describe('offers api', () => {
   });
 
   it('fetches a single offer by id', async () => {
-    const offer: Offer = { _id: 'offer-1' };
+    const offer: OfferReadPayload = {
+      ...makeOffer(),
+      user: { _id: 'member-1', username: 'fictional-member' },
+    };
     mockedAxios.get.mockResolvedValueOnce({ data: offer });
 
     await expect(getOffer('offer-1')).resolves.toBe(offer);
@@ -69,7 +88,10 @@ describe('offers api', () => {
   });
 
   it('queries offers serializing the query into a URL', async () => {
-    const offers: Offer[] = [{ _id: 'offer-1', type: 'host' }];
+    const offers: OfferSearchFeatureCollection = {
+      type: 'FeatureCollection',
+      features: [],
+    };
     mockedAxios.get.mockResolvedValueOnce({ data: offers });
 
     await expect(
@@ -97,31 +119,34 @@ describe('offers api', () => {
   });
 
   it('creates an offer', async () => {
-    const offer: Offer = { _id: 'offer-1', type: 'meet' };
-    mockedAxios.post.mockResolvedValueOnce({ data: offer });
-
-    await expect(createOffer({ type: 'meet' })).resolves.toBe(offer);
-    expect(mockedAxios.post).toHaveBeenCalledWith('/api/offers', {
+    const response = { message: 'Offer saved.' };
+    const payload: CreateOfferRequest = {
       type: 'meet',
-    });
+      location: [12, 34],
+    };
+    mockedAxios.post.mockResolvedValueOnce({ data: response });
+
+    await expect(createOffer(payload)).resolves.toBe(response);
+    expect(mockedAxios.post).toHaveBeenCalledWith('/api/offers', payload);
   });
 
   it('updates an offer', async () => {
-    const offer: Offer = { _id: 'offer-1', type: 'host' };
-    mockedAxios.put.mockResolvedValueOnce({ data: offer });
+    const response = { message: 'Offer updated.' };
+    const payload: UpdateOfferRequest = { status: 'yes', location: [12, 34] };
+    mockedAxios.put.mockResolvedValueOnce({ data: response });
 
-    await expect(updateOffer('offer-1', { status: 'yes' })).resolves.toBe(
-      offer,
+    await expect(updateOffer('offer-1', payload)).resolves.toBe(response);
+    expect(mockedAxios.put).toHaveBeenCalledWith(
+      '/api/offers/offer-1',
+      payload,
     );
-    expect(mockedAxios.put).toHaveBeenCalledWith('/api/offers/offer-1', {
-      status: 'yes',
-    });
   });
 
   it('deletes an offer', async () => {
-    mockedAxios.delete.mockResolvedValueOnce({ data: { ok: true } });
+    const response = { message: 'Offer removed.' };
+    mockedAxios.delete.mockResolvedValueOnce({ data: response });
 
-    await expect(deleteOffer('offer-1')).resolves.toEqual({ ok: true });
+    await expect(deleteOffer('offer-1')).resolves.toBe(response);
     expect(mockedAxios.delete).toHaveBeenCalledWith('/api/offers/offer-1');
   });
 });

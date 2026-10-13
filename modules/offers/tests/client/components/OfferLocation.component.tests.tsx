@@ -41,8 +41,9 @@ describe('<OfferLocation />', () => {
   });
 
   it('renders nothing for invalid location data', () => {
-    const invalidLocation = null as unknown as number[];
-    const { container } = render(<OfferLocation location={invalidLocation} />);
+    const { container } = render(
+      Reflect.apply(OfferLocation, undefined, [{ location: null }]),
+    );
 
     expect(container).toBeEmptyDOMElement();
   });

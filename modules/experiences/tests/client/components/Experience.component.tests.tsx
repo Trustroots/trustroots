@@ -1,3 +1,4 @@
+import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -94,11 +95,14 @@ describe('<Experience />', () => {
           public: false,
           recommend: 'no',
           // This intentionally incomplete API member omits username; keep its cast at the fixture boundary.
-          userFrom: {
-            _id: 'anonymous-from',
-            displayName: 'Anonymous From',
-            avatarSource: 'none',
-          } as unknown as ExperienceModel['userFrom'],
+          userFrom: malformedFixture<ExperienceModel['userFrom']>(
+            {
+              _id: 'anonymous-from',
+              username: 'anonymous',
+              displayName: 'Anonymous From',
+            },
+            { username: undefined },
+          ),
           userTo,
           response: {
             _id: 'response-2b',

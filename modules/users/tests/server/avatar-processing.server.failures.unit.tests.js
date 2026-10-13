@@ -1,4 +1,5 @@
 const assert = require('assert');
+require('should');
 const fs = require('fs').promises;
 const path = require('path');
 const proxyquire = require('./../../../../testutils/server/mock-module');

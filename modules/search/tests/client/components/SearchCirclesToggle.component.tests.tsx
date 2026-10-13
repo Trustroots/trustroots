@@ -90,7 +90,7 @@ describe('SearchCirclesToggle', () => {
 
   it('handles an empty circle response', async () => {
     // Deliberately malformed response exercises the defensive fallback.
-    readMock.mockResolvedValue(null as unknown as TribeSummary[]);
+    Reflect.apply(readMock.mockResolvedValue, readMock, [null]);
 
     const { container } = render(
       <SearchCirclesToggle onChange={onChange} selectedTribeIds={[]} />,

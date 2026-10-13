@@ -11,6 +11,7 @@ import type { Event as NostrEvent } from 'nostr-tools';
 import type { Map as MapboxMap, MapboxGeoJSONFeature } from 'mapbox-gl';
 import type { SearchFilters } from '../utils/search-filters';
 import type { SearchResultOffer } from './SearchSidebarResults.component';
+import type { OfferSearchFeatureCollection } from '@/modules/offers/shared/offer';
 
 // Internal dependencies
 import {
@@ -343,7 +344,7 @@ export default function SearchMap({
   const [map, setMap] = useState<MapboxMap | undefined>();
   const [hoveredOffer, setHoveredOffer] = useState<MapFeature | false>(false);
   const [selectedOffer, setSelectedOffer] = useState<MapFeature | false>(false);
-  const [offers, setOffers] = useState<FeatureCollection>({
+  const [offers, setOffers] = useState<OfferSearchFeatureCollection>({
     features: [],
     type: 'FeatureCollection',
   });
@@ -839,7 +840,7 @@ export default function SearchMap({
     if (offer) {
       // Delegated to the search shell.
       // The offer endpoint returns the sidebar profile fields at runtime.
-      onOfferOpen(offer as unknown as SearchResultOffer);
+      onOfferOpen(offer);
     }
   }
 
@@ -859,7 +860,7 @@ export default function SearchMap({
         ...boundingBox,
       });
       if (requestId === offersRequestRef.current) {
-        setOffers(data as unknown as FeatureCollection);
+        setOffers(data);
       }
     } catch {
       // @TODO Error handling
@@ -1076,13 +1077,23 @@ export default function SearchMap({
   }, [location]);
 
   if (!webGLSupported) {
+    const leafletOffers = {
+      features: offers.features.map(feature => ({
+        type: 'Feature' as const,
+        geometry: feature.geometry,
+        properties: {
+          id: feature.properties.id,
+          offer: feature.properties.offer,
+        },
+      })),
+    };
     return (
       <LeafletSearchMap
         bounds={
           bounds?.northEast && bounds?.southWest ? (bounds as MapBounds) : null
         }
         communityNotes={communityNotes}
-        offers={offers}
+        offers={leafletOffers}
         onCommunityNoteClick={openCommunityNote}
         onMapChange={onLeafletMapChange}
         onMapClick={onOfferClose}
@@ -1165,7 +1176,7 @@ export default function SearchMap({
           clusterMaxZoom={CLUSTER_MAX_ZOOM}
           clusterMinPoints={3}
           clusterRadius={50}
-          data={offers as unknown as GeoJSON.FeatureCollection}
+          data={offers as GeoJSON.FeatureCollection}
           id={SOURCE_OFFERS}
           promoteId="id" // Use feature.properties.id as feature ID; used e.g. for hover effect with `setFeatureState()`
           ref={sourceRef}
@@ -1184,7 +1195,7 @@ export default function SearchMap({
           <TypedSource
             id={SOURCE_COMMUNITY_NOTES}
             type="geojson"
-            data={communityNotes as unknown as GeoJSON.FeatureCollection}
+            data={communityNotes as GeoJSON.FeatureCollection}
             cluster
             clusterMaxZoom={14}
             clusterRadius={50}

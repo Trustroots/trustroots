@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
@@ -35,12 +35,13 @@ type AcquisitionStoryFixture = {
   locationFrom?: string;
   locationLiving?: string;
   public?: boolean;
+  restrictionStatuses?: ('suspended' | 'shadowban')[];
   restrictedMatches?: Array<{
     _id: string;
     username: string;
     displayName?: string;
     matchReasons: string[];
-    roles?: string[];
+    restrictionStatuses?: ('suspended' | 'shadowban')[];
   }>;
   languages?: string[];
   welcomer?: {
@@ -83,6 +84,52 @@ afterEach(() => {
 });
 
 describe('<AdminAcquisitionStories />', () => {
+  it.each(['admin', 'welcome-team'])(
+    'shows restriction badges independently of visibility for %s',
+    async role => {
+      window.user = { roles: [role] };
+      mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+        {
+          _id: 'restricted-id',
+          username: 'restricted-member',
+          public: true,
+          restrictionStatuses: ['suspended', 'shadowban'],
+          restrictedMatches: [
+            {
+              _id: 'match-id',
+              username: 'matched-member',
+              matchReasons: ['Username identifier'],
+              restrictionStatuses: ['shadowban'],
+            },
+            { _id: 'old-match-id', username: 'older-match', matchReasons: [] },
+          ],
+        },
+        {
+          _id: 'active-id',
+          username: 'active-member',
+          restrictionStatuses: [],
+        },
+        { _id: 'older-id', username: 'older-member' },
+      ]);
+      render(<AdminAcquisitionStories />);
+      await screen.findByRole('table');
+      const row = screen
+        .getByRole('link', { name: 'restricted-member', exact: true })
+        .closest('tr')!;
+      expect(within(row).getByText('Suspended')).toHaveClass('label-danger');
+      expect(within(row).getAllByText('Shadowbanned')).toHaveLength(2);
+      expect(within(row).getByText('Visible', { exact: true })).toBeVisible();
+      for (const name of ['active-member', 'older-member']) {
+        const activeRow = screen
+          .getByRole('link', { name, exact: true })
+          .closest('tr')!;
+        expect(
+          within(activeRow).queryByText(/Suspended|Shadowbanned/),
+        ).not.toBeInTheDocument();
+      }
+    },
+  );
+
   it.each(['admin', 'welcome-team'] as const)(
     'filters unassigned members and preserves sorting for %s',
     async role => {
@@ -283,7 +330,7 @@ describe('<AdminAcquisitionStories />', () => {
             _id: '222222222222222222222222',
             displayName: 'Restricted Example',
             matchReasons: ['Username identifier'],
-            roles: ['user', 'shadowban'],
+            restrictionStatuses: ['shadowban'],
             username: 'restricted',
           },
         ],

@@ -58,11 +58,32 @@ export default function Map(props: MapProps) {
     [],
   );
 
+  const dragStartZoom = useRef<number | null>(null);
+
   function handleMove(event: { viewState: typeof viewState }) {
     setViewState(event.viewState);
-    if (onLocationChange) {
+  }
+
+  function handleDragStart(event: { viewState: typeof viewState }) {
+    dragStartZoom.current = event.viewState.zoom;
+    setViewState(event.viewState);
+  }
+
+  // Zoom controls and external place searches also change the viewport.
+  // Only a deliberate pan (drag without zoom) should choose a new offer location.
+  function handleDrag(event: { viewState: typeof viewState }) {
+    setViewState(event.viewState);
+    if (
+      onLocationChange &&
+      dragStartZoom.current !== null &&
+      event.viewState.zoom === dragStartZoom.current
+    ) {
       onLocationChange([event.viewState.latitude, event.viewState.longitude]);
     }
+  }
+
+  function handleDragEnd() {
+    dragStartZoom.current = null;
   }
   function handleLoad(event: Parameters<NonNullable<MapProps['onLoad']>>[0]) {
     event.target.touchZoomRotate.disableRotation();
@@ -138,6 +159,9 @@ export default function Map(props: MapProps) {
       mapStyle={mapStyle as React.ComponentProps<typeof ReactMapGL>['mapStyle']}
       onLoad={handleLoad}
       onMove={handleMove}
+      onDragStart={handleDragStart}
+      onDrag={handleDrag}
+      onDragEnd={handleDragEnd}
       {...viewState}
       {...overrideProps}
     >

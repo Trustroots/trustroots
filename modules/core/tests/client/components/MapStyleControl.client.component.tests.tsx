@@ -135,9 +135,9 @@ describe('<MapStyleControl />', () => {
 
   it('disables map style buttons when no Mapbox token exists', () => {
     // Preserve the original null token input for this no-token regression.
-    mockedGetMapBoxToken.mockReturnValue(
-      null as unknown as ReturnType<typeof getMapBoxToken>,
-    );
+    Reflect.apply(mockedGetMapBoxToken.mockReturnValue, mockedGetMapBoxToken, [
+      null,
+    ]);
     render(
       <MapStyleControl
         mapStyle={MAP_STYLE_MAPBOX_STREETS}

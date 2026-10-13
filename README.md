@@ -31,10 +31,11 @@ maintenance from 2022 to June 2026, we welcome contributions and improvements.
 
 Current areas of work include:
 
+- Hardening.
+- Continuing the move to TypeScript.
+- Developing the Nostr/Nostroots integration.
 - Simplifying older code and reducing duplication.
 - Improving the development setup and updating dependencies.
-- Continuing the move to React and TypeScript where it makes sense.
-- Developing the Nostr/Nostroots integration.
 - Making Trustroots easier to run independently and adapt for forks.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and tests,

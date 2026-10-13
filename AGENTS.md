@@ -2,6 +2,18 @@ This is the canonical AI coding guideline file for this repository. Keep other
 assistant-specific files, such as `.cursorrules` and `CLAUDE.md`, as short
 pointers back to this file so the project guidance does not drift.
 
+## Commands
+
+This repository uses pnpm (the version is pinned in `packageManager`) and Node 24; npm is no longer supported. Run `pnpm install` after switching branches.
+
+- `pnpm check`: lint, typecheck and client unit tests. Run it before every commit; it needs no database.
+- `pnpm lint`, `pnpm typecheck`, `pnpm test:client`: the three parts of `pnpm check` on their own.
+- `pnpm test:server`: the Mocha/Supertest suite. It needs MongoDB on localhost:27017. For selected files use `pnpm test:server:files modules/foo/tests/server/bar.tests.js`.
+- `pnpm test:e2e`: the Playwright end-to-end suite.
+- `pnpm test:coverage` and `pnpm coverage:check`: coverage runs and the comparison against `coverage-baseline.json`.
+- `pnpm build`: the production client build.
+- `pnpm reformat-files <files>`: run Prettier on the given files.
+
 This project is under active development again (no longer in maintenance mode),
 so improvements, refactors, and cleanups are welcome where they add value.
 
@@ -17,6 +29,11 @@ turning a public bug report or security disclosure (including a GitHub issue)
 into a test, preserve only what is needed to reproduce the behaviour and
 replace names, usernames, email addresses, locations, IDs, message content,
 and other identifying data with fictional values.
+
+Never publish security vulnerability details, Dependabot alert information, or
+the security motivation for a change in public PRs, issues, comments, commit
+messages, release notes, or other public-facing text. Keep that context private
+and describe dependency updates neutrally in public.
 
 Prefer git worktrees for parallel, exploratory, or potentially disruptive work.
 Create them under `.worktrees/` inside this repository so they remain within
@@ -47,3 +64,10 @@ only to change the extension. Jest already matches `.tests.[jt]s?(x)`, and
 Use British spelling for any new text (for example decentralisation, organisation,
 licence, emphasise). Do not change US spellings in code identifiers, CSS
 properties, URLs, or third-party names.
+
+Links between `modules/*` (imports and `mongoose.model('X')` lookups of another
+module's models) are recorded in `module-graph-baseline.json`, and CI fails when
+they differ from it. Do not add a link from one module to another without a
+reason you can state in the PR. If one is intended, run
+`npm run modules:update-baseline` and explain it in the PR; after removing one,
+run the same command to lock in the improvement.

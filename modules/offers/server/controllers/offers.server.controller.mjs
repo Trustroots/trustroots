@@ -11,6 +11,13 @@ import sanitizeHtml from 'sanitize-html';
 import moment from 'moment';
 import mongoose from 'mongoose';
 import normaliseOfferExpiry from './../services/offer-expiry.server.service.mjs';
+import {
+  prepareNewOffer,
+  prepareOfferMutationResponse,
+  prepareOfferPayload,
+  prepareOfferSearchResults,
+  prepareOfferUpdate,
+} from './../services/offer-payload.server.service.mjs';
 const service = {};
 function getUserProfile() {
   return userProfile;
@@ -21,32 +28,16 @@ function getUserProfile() {
  */
 const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
+const DEFAULT_MAP_LOCATION = [48.6908333333, 9.14055555556];
 
-// Selected fields to return publicly for offers
-const publicOfferFields = [
-  '_id',
-  'type',
-  'status',
-  'user',
-  'description',
-  'noOfferDescription',
-  'maxGuests',
-  'location',
-  'updated',
-  'validUntil',
-  'showOnlyInMyCircles',
-];
-
-// Offer fields users can modify
-const allowedOfferFields = [
-  'status',
-  'description',
-  'noOfferDescription',
-  'maxGuests',
-  'location',
-  'validUntil',
-  'showOnlyInMyCircles',
-];
+function isDefaultMapLocation(location) {
+  return (
+    Array.isArray(location) &&
+    location.length === 2 &&
+    location[0] === DEFAULT_MAP_LOCATION[0] &&
+    location[1] === DEFAULT_MAP_LOCATION[1]
+  );
+}
 
 /**
  * Parse filters object from json string
@@ -120,8 +111,7 @@ function sanitizeOffer(offer, authenticatedUser, alwaysFuzzyLocation) {
   }
 
   // Pick fields to send out, leaves out e.g. `locationFuzzy` and `reactivateReminderSent`
-  offer = _.pick(offer, publicOfferFields);
-  return offer;
+  return prepareOfferPayload(offer);
 }
 
 /**
@@ -187,6 +177,12 @@ service.create = function (req, res) {
       message: 'Missing offer location.',
     });
   }
+  if (isDefaultMapLocation(req.body.location)) {
+    return res.status(400).send({
+      message: 'Choose a location for your offer.',
+    });
+  }
+
   const validUntil = normaliseOfferExpiry(
     req.body.type,
     req.body.validUntil,
@@ -201,9 +197,7 @@ service.create = function (req, res) {
 
   // Create new offer by filtering out what users can modify
   // When creating an offer, we allow type field
-  const offer = new Offer(
-    _.pick(req.body, _.concat(allowedOfferFields, 'type')),
-  );
+  const offer = new Offer(prepareNewOffer(req.body));
   offer.user = req.user._id;
 
   // Update timestamp
@@ -214,9 +208,7 @@ service.create = function (req, res) {
         message: 'Failed to save offer.',
       });
     }
-    res.json({
-      message: 'Offer saved.',
-    });
+    res.json(prepareOfferMutationResponse('Offer saved.'));
   });
 };
 
@@ -237,6 +229,11 @@ service.update = function (req, res) {
         if (!req.body.location) {
           return res.status(400).send({
             message: 'Missing offer location.',
+          });
+        }
+        if (isDefaultMapLocation(req.body.location)) {
+          return res.status(400).send({
+            message: 'Choose a location for your offer.',
           });
         }
 
@@ -263,7 +260,7 @@ service.update = function (req, res) {
         }
 
         // Pick only fields user is allowed to modify
-        const offerModifications = _.pick(req.body, allowedOfferFields);
+        const offerModifications = prepareOfferUpdate(req.body);
 
         // Extend offer in request (picked by `offerById` middleware earlier)
         const offer = _.extend(req.offer, offerModifications);
@@ -284,9 +281,7 @@ service.update = function (req, res) {
       },
       // Done!
       function () {
-        return res.json({
-          message: 'Offer updated.',
-        });
+        return res.json(prepareOfferMutationResponse('Offer updated.'));
       },
     ],
     function (err) {
@@ -314,9 +309,7 @@ service.delete = function (req, res) {
       if (err) {
         return errorService.sendBadRequest(res, err);
       }
-      res.json({
-        message: 'Offer removed.',
-      });
+      res.json(prepareOfferMutationResponse('Offer removed.'));
     },
   );
 };
@@ -622,20 +615,7 @@ service.list = function (req, res) {
     .exec()
     .then(
       function (features) {
-        // @TODO :-(
-        const reversedFeatures = features.map(feature => {
-          feature.geometry.coordinates = [
-            feature.geometry.coordinates[1],
-            feature.geometry.coordinates[0],
-          ];
-          return feature;
-        });
-
-        // Geojson
-        res.json({
-          features: reversedFeatures,
-          type: 'FeatureCollection',
-        });
+        res.json(prepareOfferSearchResults(features));
       },
       function (err) {
         // Log the failure

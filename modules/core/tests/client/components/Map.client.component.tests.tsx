@@ -235,20 +235,44 @@ function latestReactMapProps(): MapProps {
   return call[0];
 }
 
-function changeMapViewport(): void {
-  const onMove = latestReactMapProps().onMove as
-    | ((event: {
-        viewState: {
-          latitude: number;
-          longitude: number;
-          zoom: number;
-        };
-      }) => void)
-    | undefined;
+type Viewport = {
+  latitude: number;
+  longitude: number;
+  zoom: number;
+};
+type InteractionState = { isPanning?: boolean; isZooming?: boolean };
+type ViewStateHandler = (event: { viewState: Viewport }) => void;
+
+function changeMapViewport(
+  viewport: Viewport = { latitude: 51, longitude: 11, zoom: 15 },
+  interactionState?: InteractionState,
+): void {
+  const props = latestReactMapProps();
+  const onMove = props.onMove as ViewStateHandler | undefined;
+  const onDragStart = props.onDragStart as ViewStateHandler | undefined;
+  const onDrag = props.onDrag as ViewStateHandler | undefined;
+  const onDragEnd = props.onDragEnd as (() => void) | undefined;
+
+  if (interactionState?.isPanning) {
+    if (!onDragStart || !onDrag) {
+      throw new Error('Expected the map drag callbacks to be provided');
+    }
+    const dragStartZoom = interactionState.isZooming
+      ? viewport.zoom - 1
+      : viewport.zoom;
+    act(() => {
+      onDragStart({ viewState: { ...viewport, zoom: dragStartZoom } });
+      onDrag({ viewState: viewport });
+      onDragEnd?.();
+    });
+    return;
+  }
+
   if (!onMove) {
     throw new Error('Expected the map move callback to be provided');
   }
-  act(() => onMove({ viewState: { latitude: 51, longitude: 11, zoom: 15 } }));
+  // Programmatic camera updates (place search, etc.) go through onMove only.
+  act(() => onMove({ viewState: viewport }));
 }
 
 it('synchronises panning and external place searches while retaining zoom', () => {
@@ -257,11 +281,22 @@ it('synchronises panning and external place searches while retaining zoom', () =
   const { rerender } = render(
     <Map location={[50, 10]} onLocationChange={onLocationChange} />,
   );
-  changeMapViewport();
+  changeMapViewport(
+    { latitude: 51, longitude: 11, zoom: 15 },
+    { isPanning: true, isZooming: false },
+  );
   expect(onLocationChange).toHaveBeenCalledWith([51, 11]);
+  onLocationChange.mockClear();
+  changeMapViewport(
+    { latitude: 51, longitude: 11, zoom: 16 },
+    { isPanning: true, isZooming: true },
+  );
+  expect(onLocationChange).not.toHaveBeenCalled();
+  changeMapViewport({ latitude: 51, longitude: 11, zoom: 16 });
+  expect(onLocationChange).not.toHaveBeenCalled();
   rerender(<Map location={[52, 12]} onLocationChange={onLocationChange} />);
   expect(latestReactMapProps()).toEqual(
-    expect.objectContaining({ latitude: 52, longitude: 12, zoom: 15 }),
+    expect.objectContaining({ latitude: 52, longitude: 12, zoom: 16 }),
   );
 });
 it('allows maps to pan without a location callback', () => {

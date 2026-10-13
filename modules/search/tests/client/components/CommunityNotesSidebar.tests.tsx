@@ -83,11 +83,9 @@ function renderNotes(notes?: NostrNoteFixture[]) {
   // Note fixtures intentionally omit unused Nostr event fields. Passing
   // undefined also preserves the component's missing-notes regression case.
   const props = {
-    ...(notes === undefined
-      ? {}
-      : { notes: notes as unknown as SidebarProps['notes'] }),
+    ...(notes === undefined ? {} : { notes: notes as SidebarProps['notes'] }),
     plusCode: '9F2X+3Q',
-  } as unknown as SidebarProps;
+  } as SidebarProps;
   return render(<CommunityNotesSidebar {...props} />);
 }
 

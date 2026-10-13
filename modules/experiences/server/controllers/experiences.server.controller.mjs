@@ -187,14 +187,19 @@ async function findMyExperience(req, userTo) {
   return await Experience.findOne({
     userFrom: req.user._id,
     userTo,
+    removedAt: { $exists: false },
   }).exec();
 }
 
 /**
  * Check if the experience already exists. If it exists, return an error in a callback.
+ * Removed experiences still block duplicates for the same author/recipient pair.
  */
 async function checkDuplicate(req) {
-  const ref = await findMyExperience(req, req.body.userTo);
+  const ref = await Experience.findOne({
+    userFrom: req.user._id,
+    userTo: req.body.userTo,
+  }).exec();
   if (ref === null) return;
 
   throw new ResponseError({ status: 409, body: { errType: 'conflict' } });
@@ -344,6 +349,7 @@ service.create = async function (req, res, next) {
       : await Experience.findOne({
           userFrom: req.body.userTo,
           userTo: selfId,
+          removedAt: { $exists: false },
         }).exec();
 
     // when the other experience is public, this one can only have value of recommend: yes
@@ -435,6 +441,7 @@ service.readMany = async function readMany(req, res, next) {
 
     const userToId = new mongoose.Types.ObjectId(userTo);
     let matchQuery = {
+      removedAt: { $exists: false },
       $or: [{ userTo: userToId }, { userFrom: userToId }],
     };
     // Allow non-public experiences only when userTo is self
@@ -446,6 +453,7 @@ service.readMany = async function readMany(req, res, next) {
       userFrom: selfId,
       userTo: userToId,
       public: false,
+      removedAt: { $exists: false },
     };
 
     matchQuery = {
@@ -569,6 +577,7 @@ service.experienceById = async function experienceById(req, res, next, id) {
     // nonpublic experience can be exposed to userFrom or userTo only.
     const isExistentPublicOrFromToSelf =
       experience &&
+      !experience.removedAt &&
       userFromId &&
       (experience.public ||
         userFromId.equals(selfId) ||
@@ -588,6 +597,7 @@ service.experienceById = async function experienceById(req, res, next, id) {
     const response = await Experience.findOne({
       userFrom: userToId,
       userTo: userFromId,
+      removedAt: { $exists: false },
     })
       .populate({ path: 'userFrom', match: { roles: visibleAuthorRoles } })
       .exec();
@@ -631,6 +641,7 @@ service.readMine = async function readMine(req, res) {
     ? await Experience.findOne({
         userFrom: userWith,
         userTo: selfId,
+        removedAt: { $exists: false },
       }).exec()
     : null;
 
@@ -664,6 +675,7 @@ service.getCount = async function getCount(req, res, next) {
 
     const query = {
       userTo: new mongoose.Types.ObjectId(userTo),
+      removedAt: { $exists: false },
     };
 
     const counts = await Experience.aggregate([

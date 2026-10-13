@@ -293,6 +293,7 @@ describe('API route registrations', () => {
       'tribes',
     );
     const support = controller(['supportRequest'], 'support');
+    const supportLimit = { support: handler('requestLimit.support') };
 
     const tribeRoutes = register(
       './../../../tribes/server/routes/tribes.server.routes.mjs',
@@ -305,6 +306,8 @@ describe('API route registrations', () => {
       './../../../support/server/routes/support.server.routes.mjs',
       {
         '../controllers/support.server.controller': support,
+        '../../../core/server/middleware/targeted-request-limit.server.middleware':
+          supportLimit,
       },
     );
 
@@ -323,6 +326,7 @@ describe('API route registrations', () => {
       [['tribe', 'tribes.tribeBySlug']],
     );
     assertHandlers(routeByPath(supportRoutes.routes, '/api/support').post, [
+      supportLimit.support,
       support.supportRequest,
     ]);
   });
@@ -452,7 +456,13 @@ describe('API route registrations', () => {
       'userPassword',
     );
     const targetedRequestLimit = controller(
-      ['resendConfirmation', 'forgotPassword', 'resetPassword', 'signin'],
+      [
+        'resendConfirmation',
+        'forgotPassword',
+        'resetPassword',
+        'signin',
+        'signup',
+      ],
       'requestLimit',
     );
 
@@ -488,6 +498,7 @@ describe('API route registrations', () => {
       password.reset,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/signup').post, [
+      targetedRequestLimit.signup,
       authentication.signup,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/signup/validate').post, [
@@ -546,6 +557,10 @@ describe('API route registrations', () => {
     const policy = { isAllowed: handler('adminPolicy.isAllowed') };
     const acquisitionStories = controller(['list'], 'adminAcquisitionStories');
     const auditLog = controller(['list', 'record', 'actors'], 'adminAuditLog');
+    const locationCorrections = controller(
+      ['list', 'send'],
+      'adminLocationCorrections',
+    );
     const messages = controller(['getMessages'], 'adminMessages');
     const newsletter = controller(
       [
@@ -578,6 +593,8 @@ describe('API route registrations', () => {
         '../controllers/admin.acquisition-stories.server.controller':
           acquisitionStories,
         '../controllers/admin.audit-log.server.controller': auditLog,
+        '../controllers/admin.location-corrections.server.controller':
+          locationCorrections,
         '../controllers/admin.messages.server.controller': messages,
         '../controllers/admin.newsletter.server.controller': newsletter,
         '../controllers/admin.notes.server.controller': notes,
@@ -589,6 +606,14 @@ describe('API route registrations', () => {
       },
     );
 
+    assertHandlers(routeByPath(routes, '/api/admin/location-corrections').get, [
+      auditLog.record,
+      locationCorrections.list,
+    ]);
+    assertHandlers(
+      routeByPath(routes, '/api/admin/location-corrections/send').post,
+      [auditLog.record, locationCorrections.send],
+    );
     assertHandlers(routeByPath(routes, '/api/admin/acquisition-stories').post, [
       auditLog.record,
       acquisitionStories.list,

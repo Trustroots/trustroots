@@ -69,7 +69,7 @@ if (missing.length > 0) {
     );
   }
   console.error(
-    'Run npm run test:coverage for CI-style coverage, or run the client/server coverage scripts separately when debugging locally.',
+    'Run pnpm run test:coverage for CI-style coverage, or run the client/server coverage scripts separately when debugging locally.',
   );
   process.exit(1);
 }

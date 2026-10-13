@@ -12,7 +12,7 @@ type InboxThreadProps = { user: MessageUser; thread: MessageThreadSummary };
 export default function InboxThread({ user, thread }: InboxThreadProps) {
   const { t } = useTranslation('messages');
   const otherUser = findOtherUser(user, thread);
-  const haveReplied = thread.userFrom._id === user._id;
+  const haveReplied = thread.userFrom?._id === user._id;
   const { read } = thread;
 
   return (
@@ -36,10 +36,9 @@ export default function InboxThread({ user, thread }: InboxThreadProps) {
             </small>
             <span>{otherUser.displayName || t<string>('Unknown member')}</span>
             <br />
-            <span
-              className="text-muted threadlist-thread-excerpt"
-              dangerouslySetInnerHTML={{ __html: thread.message.excerpt }}
-            />
+            <span className="text-muted threadlist-thread-excerpt">
+              {thread.message.excerpt}
+            </span>
           </div>
         </div>
       </a>
@@ -64,7 +63,7 @@ function findOtherUser(
   currentUser: MessageUser,
   thread: MessageThreadSummary,
 ): MessageUser {
-  return [thread.userFrom, thread.userTo].find(
-    user => user._id !== currentUser._id,
-  )!;
+  const otherUser =
+    thread.userFrom?._id === currentUser._id ? thread.userTo : thread.userFrom;
+  return otherUser ?? { _id: '', displayName: 'Unknown member' };
 }

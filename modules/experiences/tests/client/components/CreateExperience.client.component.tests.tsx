@@ -37,7 +37,7 @@ const render = (component: React.ReactNode) =>
 function mockReadMineOnce(result: ExperienceMineFixture | [] | null) {
   // Some retry/error cases deliberately keep incomplete legacy API payloads.
   mockedExperiencesApi.readMine.mockResolvedValueOnce(
-    result as unknown as ExperienceMine | null,
+    result as ExperienceMine | null,
   );
 }
 
@@ -58,9 +58,7 @@ function makeSavedExperience(isPublic: boolean): ExperienceMine {
 function mockCreateOnce(isPublic: boolean | null) {
   const result = isPublic === null ? null : makeSavedExperience(isPublic);
   // The empty response case intentionally models a malformed API response.
-  mockedExperiencesApi.create.mockResolvedValueOnce(
-    result as unknown as ExperienceMine,
-  );
+  mockedExperiencesApi.create.mockResolvedValueOnce(result as ExperienceMine);
 }
 
 afterEach(() => {

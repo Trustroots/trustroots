@@ -9,6 +9,19 @@ const longContent = (character: string, length: number) =>
   `<p>${character.repeat(length)}</p>`;
 
 describe('<ReadMorePanel />', () => {
+  it('keeps encoded markup literal in collapsed and expanded descriptions', () => {
+    const content = `&lt;img src=x onerror=alert(1)&gt;${'A'.repeat(2100)}`;
+    const { container } = render(
+      <ReadMorePanel content={content} id="literal" />,
+    );
+    expect(container.querySelector('#literal')).toHaveTextContent(
+      '<img src=x onerror=alert(1)>',
+    );
+    expect(container.querySelector('img')).toBeNull();
+    fireEvent.click(screen.getByText('Read more…'));
+    expect(container).toHaveTextContent('<img src=x onerror=alert(1)>');
+    expect(container.querySelector('img')).toBeNull();
+  });
   it('renders nothing for empty content', () => {
     const { container } = render(<ReadMorePanel content="" id="empty" />);
 
