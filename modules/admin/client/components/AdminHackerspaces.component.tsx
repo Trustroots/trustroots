@@ -301,10 +301,10 @@ export default function AdminHackerspaces() {
                       {space.action === 'new'
                         ? 'Addition'
                         : space.action === 'updated'
-                        ? 'Update'
-                        : space.action === 'retained'
-                        ? 'Temporarily invalid; keep last-known listing'
-                        : 'Removed from directory; mark inactive'}
+                          ? 'Update'
+                          : space.action === 'retained'
+                            ? 'Temporarily invalid; keep last-known listing'
+                            : 'Removed from directory; mark inactive'}
                     </td>
                     <td>
                       {space.website && /^https?:\/\//i.test(space.website) && (

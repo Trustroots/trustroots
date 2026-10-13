@@ -3,9 +3,8 @@ const assert = require('node:assert/strict');
 describe('SpaceAPI Collector import service', () => {
   let service;
   before(async () => {
-    service = await import(
-      '../../server/services/hackerspaces.server.service.mjs'
-    );
+    service =
+      await import('../../server/services/hackerspaces.server.service.mjs');
   });
   it('normalises valid geolocated entries and source snapshots', () => {
     const result = service.normaliseCollectorEntry(
@@ -284,9 +283,8 @@ describe('SpaceAPI import preview controller', () => {
   let controller;
   const originalFetch = global.fetch;
   before(async () => {
-    controller = await import(
-      '../../server/controllers/admin.hackerspaces.server.controller.mjs'
-    );
+    controller =
+      await import('../../server/controllers/admin.hackerspaces.server.controller.mjs');
   });
   afterEach(() => {
     global.fetch = originalFetch;

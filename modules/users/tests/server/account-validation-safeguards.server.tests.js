@@ -203,9 +203,9 @@ describe('Account validation safeguards', function () {
         step +
         ' welcome job without sending email',
       function () {
-        const handler = require('../../server/jobs/user-welcome-sequence-' +
-          step +
-          '.server.job.mjs');
+        const handler = require(
+          '../../server/jobs/user-welcome-sequence-' + step + '.server.job.mjs',
+        );
         let calls = 0;
         const jobCount = jobs.length;
         handler({}, function (err) {

@@ -22,12 +22,12 @@ export function getTribeHeaderBackgroundStyle(tribe: TribeSummary) {
   const style = getCircleBackgroundStyle(tribe, '1400x900');
 
   return css`
-    ${style.backgroundImage
-      ? `background-image: ${style.backgroundImage};`
-      : ''}
-    ${style.backgroundColor
-      ? `background-color: ${style.backgroundColor};`
-      : ''}
+    ${
+      style.backgroundImage ? `background-image: ${style.backgroundImage};` : ''
+    }
+    ${
+      style.backgroundColor ? `background-color: ${style.backgroundColor};` : ''
+    }
   `;
 }
 
@@ -148,8 +148,8 @@ export default function TribeDetailPage({
     tribe.count === 0
       ? (t('No members yet') as string)
       : tribe.count === 1
-      ? (t('One member') as string)
-      : (t('{{count, number}} members', { count: tribe.count }) as string);
+        ? (t('One member') as string)
+        : (t('{{count, number}} members', { count: tribe.count }) as string);
   const wikiUrl = circleWikiUrl(tribe);
   const isHackersCircle = tribe.slug === 'hackers';
   const hasLocationMap = isHackersCircle || tribe.slug === 'hitchhikers';

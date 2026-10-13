@@ -52,9 +52,8 @@ function response() {
 
 describe('Targeted request limit middleware', function () {
   before(async function () {
-    ({ createTargetedRequestLimits, getRequestIdentity } = await import(
-      '../../server/middleware/targeted-request-limit.server.middleware.mjs'
-    ));
+    ({ createTargetedRequestLimits, getRequestIdentity } =
+      await import('../../server/middleware/targeted-request-limit.server.middleware.mjs'));
   });
 
   it('counts signup by normalised recipient independently of client address', async function () {

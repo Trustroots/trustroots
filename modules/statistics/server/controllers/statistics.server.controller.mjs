@@ -814,19 +814,18 @@ export const getPublicStatistics = function (req, res) {
       },
       // Newsletter subscribers
       function (done) {
-        statisticsService.getNewsletterSubscriptionsCount(function (
-          err,
-          count,
-        ) {
-          if (err) {
-            return done(err);
-          }
-          req.statistics.newsletter = {
-            count,
-            percentage: Math.round((count / req.statistics.total) * 100),
-          };
-          done();
-        });
+        statisticsService.getNewsletterSubscriptionsCount(
+          function (err, count) {
+            if (err) {
+              return done(err);
+            }
+            req.statistics.newsletter = {
+              count,
+              percentage: Math.round((count / req.statistics.total) * 100),
+            };
+            done();
+          },
+        );
       },
       // Experience statistics
       function (done) {

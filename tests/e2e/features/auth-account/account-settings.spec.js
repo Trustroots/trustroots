@@ -428,8 +428,8 @@ test.describe.serial('account settings feature coverage', () => {
         (nostroots, hospitality) =>
           Boolean(
             nostroots.compareDocumentPosition(hospitality) &
-              nostroots.ownerDocument.defaultView.Node
-                .DOCUMENT_POSITION_FOLLOWING,
+            nostroots.ownerDocument.defaultView.Node
+              .DOCUMENT_POSITION_FOLLOWING,
           ),
         await hospitalityHeading.elementHandle(),
       ),
@@ -449,7 +449,7 @@ test.describe.serial('account settings feature coverage', () => {
         (save, legacy) =>
           Boolean(
             save.compareDocumentPosition(legacy) &
-              save.ownerDocument.defaultView.Node.DOCUMENT_POSITION_FOLLOWING,
+            save.ownerDocument.defaultView.Node.DOCUMENT_POSITION_FOLLOWING,
           ),
         await legacyConnections.elementHandle(),
       ),

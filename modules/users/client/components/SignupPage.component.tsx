@@ -586,8 +586,8 @@ export default function SignupPage() {
                     {usernamePending
                       ? 'Checking username…'
                       : isStepOneValid
-                      ? 'Next'
-                      : 'Please fill in the form'}
+                        ? 'Next'
+                        : 'Please fill in the form'}
                   </button>
                   <br />
                   <br />

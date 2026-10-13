@@ -12,37 +12,45 @@ permalink: /apps/latest-apk/
     Finding the newest signed Android APK…
   </p>
   <p>
-    <a id="latest-apk-link" class="apps-button apps-button-primary" href="https://github.com/Trustroots/trustroots/releases">
+    <a
+      id="latest-apk-link"
+      class="apps-button apps-button-primary"
+      href="https://github.com/Trustroots/trustroots/releases"
+    >
       Open Android releases <span aria-hidden="true">↗</span>
     </a>
   </p>
   <p class="latest-apk-help">
-    If the download does not start, open the releases page and choose the
-    newest Android preview APK.
+    If the download does not start, open the releases page and choose the newest
+    Android preview APK.
   </p>
 </section>
 
 <script>
   (() => {
-    const status = document.getElementById("latest-apk-status");
-    const downloadLink = document.getElementById("latest-apk-link");
-    const releasesUrl = "https://github.com/Trustroots/trustroots/releases";
+    const status = document.getElementById('latest-apk-status');
+    const downloadLink = document.getElementById('latest-apk-link');
+    const releasesUrl = 'https://github.com/Trustroots/trustroots/releases';
 
-    fetch("https://api.github.com/repos/Trustroots/trustroots/releases?per_page=30", {
-      headers: { Accept: "application/vnd.github+json" },
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error("Release lookup failed");
+    fetch(
+      'https://api.github.com/repos/Trustroots/trustroots/releases?per_page=30',
+      {
+        headers: { Accept: 'application/vnd.github+json' },
+      },
+    )
+      .then(response => {
+        if (!response.ok) throw new Error('Release lookup failed');
         return response.json();
       })
-      .then((releases) => {
-        const release = releases.find((item) =>
-          item.prerelease &&
-          item.tag_name.startsWith("android-preview-") &&
-          item.assets.some((asset) => asset.name.endsWith(".apk")),
+      .then(releases => {
+        const release = releases.find(
+          item =>
+            item.prerelease &&
+            item.tag_name.startsWith('android-preview-') &&
+            item.assets.some(asset => asset.name.endsWith('.apk')),
         );
-        const apk = release?.assets.find((asset) => asset.name.endsWith(".apk"));
-        if (!apk) throw new Error("No signed APK found");
+        const apk = release?.assets.find(asset => asset.name.endsWith('.apk'));
+        if (!apk) throw new Error('No signed APK found');
 
         downloadLink.href = apk.browser_download_url;
         downloadLink.textContent = `Download ${apk.name}`;
@@ -50,7 +58,7 @@ permalink: /apps/latest-apk/
         window.location.replace(apk.browser_download_url);
       })
       .catch(() => {
-        status.textContent = "We could not look up the latest APK just now.";
+        status.textContent = 'We could not look up the latest APK just now.';
         downloadLink.href = releasesUrl;
       });
   })();

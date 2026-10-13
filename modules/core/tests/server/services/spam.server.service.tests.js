@@ -30,9 +30,8 @@ describe('Service: spam', function () {
 
   it('exposes the same default service through CommonJS and ESM', async function () {
     const commonJsService = require(servicePath);
-    const esmService = await import(
-      '../../../server/services/spam.server.service.mjs'
-    );
+    const esmService =
+      await import('../../../server/services/spam.server.service.mjs');
 
     commonJsService.should.equal(esmService.default);
     esmService.check.should.equal(esmService.default.check);

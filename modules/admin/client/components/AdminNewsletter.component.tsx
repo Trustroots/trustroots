@@ -96,8 +96,8 @@ function isAudienceCriteriaReady(criteria: NewsletterAudienceCriteria) {
   if (criteria.sources.includes('hosting')) {
     return Boolean(
       String(criteria.latitude).trim() &&
-        String(criteria.longitude).trim() &&
-        String(criteria.radiusKm).trim(),
+      String(criteria.longitude).trim() &&
+      String(criteria.radiusKm).trim(),
     );
   }
 
@@ -107,8 +107,7 @@ function isAudienceCriteriaReady(criteria: NewsletterAudienceCriteria) {
 function audienceError(error: unknown, fallback: string) {
   if (typeof error === 'object' && error !== null && 'response' in error) {
     const response = error.response as
-      | { data?: { message?: string } }
-      | undefined;
+      { data?: { message?: string } } | undefined;
     return response?.data?.message || fallback;
   }
   return fallback;
@@ -175,9 +174,8 @@ export default function AdminNewsletter() {
       setIsAudienceCountLoading(true);
 
       try {
-        const preview: AudiencePreview = await previewNewsletterAudience(
-          criteria,
-        );
+        const preview: AudiencePreview =
+          await previewNewsletterAudience(criteria);
         if (audiencePreviewRequestId.current === requestId) {
           setAudienceCount(preview.count);
         }
@@ -274,9 +272,8 @@ export default function AdminNewsletter() {
     setErrorMessage(null);
 
     try {
-      const splitResult: SplitResult = await splitNewsletterSubscribers(
-        selectedFile,
-      );
+      const splitResult: SplitResult =
+        await splitNewsletterSubscribers(selectedFile);
       setResult(splitResult);
     } catch (error) {
       const message = audienceError(

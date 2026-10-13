@@ -113,10 +113,10 @@ export default function CircleLocationMap(props: Props) {
         {props.state === 'loading'
           ? props.loadingText
           : props.state === 'error'
-          ? props.errorText
-          : props.locations.length
-          ? `${props.locations.length} ${props.countLabel}`
-          : props.emptyText}
+            ? props.errorText
+            : props.locations.length
+              ? `${props.locations.length} ${props.countLabel}`
+              : props.emptyText}
       </p>
       {props.attribution && (
         <p className="circle-location-map-attribution">{props.attribution}</p>

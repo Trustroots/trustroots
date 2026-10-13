@@ -29,9 +29,7 @@ export interface GithubProviderIdentity {
 }
 
 export type PublicProviderIdentity =
-  | FacebookProviderIdentity
-  | TwitterProviderIdentity
-  | GithubProviderIdentity;
+  FacebookProviderIdentity | TwitterProviderIdentity | GithubProviderIdentity;
 
 export interface PublicProviderIdentities {
   facebook?: FacebookProviderIdentity;
@@ -74,8 +72,10 @@ export interface PublicProfile<Id = string, Timestamp = string> {
 }
 
 /** Additional account-only fields returned to the member who owns the profile. */
-export interface OwnProfile<Id = string, Timestamp = string>
-  extends PublicProfile<Id, Timestamp> {
+export interface OwnProfile<
+  Id = string,
+  Timestamp = string,
+> extends PublicProfile<Id, Timestamp> {
   public?: boolean;
   firstName?: string;
   lastName?: string;

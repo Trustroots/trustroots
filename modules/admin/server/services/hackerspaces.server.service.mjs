@@ -38,14 +38,14 @@ export function normaliseCollectorEntry(entry, fetchedAt) {
   const longitude = Number(location?.lon);
   const eligible = Boolean(
     entry?.valid &&
-      data &&
-      Number.isFinite(latitude) &&
-      latitude >= -90 &&
-      latitude <= 90 &&
-      Number.isFinite(longitude) &&
-      longitude >= -180 &&
-      longitude <= 180 &&
-      data.space,
+    data &&
+    Number.isFinite(latitude) &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    Number.isFinite(longitude) &&
+    longitude >= -180 &&
+    longitude <= 180 &&
+    data.space,
   );
   return {
     endpoint: publicEndpoint(entry?.url),

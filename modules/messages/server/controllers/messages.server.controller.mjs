@@ -382,33 +382,32 @@ service.send = async function (req, res) {
       function (thread, done) {
         // If this was first message to the thread
         if (!thread) {
-          User.findById(req.user._id, 'description').exec(function (
-            err,
-            sender,
-          ) {
-            // Handle errors
-            if (err) {
-              return done(err);
-            }
-            const descriptionLength = sender.description
-              ? textService.plainText(sender.description).length
-              : 0;
+          User.findById(req.user._id, 'description').exec(
+            function (err, sender) {
+              // Handle errors
+              if (err) {
+                return done(err);
+              }
+              const descriptionLength = sender.description
+                ? textService.plainText(sender.description).length
+                : 0;
 
-            // If the sender has too empty description, return an error
-            if (descriptionLength < config.profileMinimumLength) {
-              return res.status(400).send({
-                error: 'empty-profile',
-                limit: config.profileMinimumLength,
-                message:
-                  descriptionLength === 0
-                    ? 'Please fill out your profile description before you send messages.'
-                    : 'Please write longer profile description before you send messages.',
-              });
-            }
+              // If the sender has too empty description, return an error
+              if (descriptionLength < config.profileMinimumLength) {
+                return res.status(400).send({
+                  error: 'empty-profile',
+                  limit: config.profileMinimumLength,
+                  message:
+                    descriptionLength === 0
+                      ? 'Please fill out your profile description before you send messages.'
+                      : 'Please write longer profile description before you send messages.',
+                });
+              }
 
-            // Continue
-            done(err);
-          });
+              // Continue
+              done(err);
+            },
+          );
         } else {
           // It wasn't first message to this thread
           done();
