@@ -40,6 +40,22 @@ describe('Controller: analytics', function () {
       result.should.containEql('utm_source=transactional_email');
     });
 
+    it('returns relative URLs unchanged', function () {
+      analytics
+        .appendUTMParams('/reset?foo=bar', utmParams)
+        .should.equal('/reset?foo=bar');
+    });
+
+    it('keeps the hash and replaces existing UTM parameters', function () {
+      const result = analytics.appendUTMParams(
+        'https://www.trustroots.org/page?utm_source=old#section',
+        utmParams,
+      );
+      result.should.containEql('utm_source=transactional_email');
+      result.should.not.containEql('utm_source=old');
+      result.should.endWith('#section');
+    });
+
     it('returns the original URL when UTM params are missing', function () {
       const result = analytics.appendUTMParams('https://www.trustroots.org/', {
         source: 'transactional_email',
