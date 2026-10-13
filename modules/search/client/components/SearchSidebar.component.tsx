@@ -1,5 +1,5 @@
 import React from 'react';
-import * as ReactBootstrap from 'react-bootstrap';
+import { Tab, Tabs } from 'react-bootstrap';
 
 import SearchPlaceInput from './SearchPlaceInput.component';
 import SearchSidebarFilters from './SearchSidebarFilters.component';
@@ -38,27 +38,6 @@ interface SearchSidebarProps extends SearchSidebarResultsPassthrough {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 }
-
-interface TabProps {
-  children: React.ReactNode;
-  'aria-label'?: string;
-  eventKey: string;
-  title: React.ReactNode;
-}
-
-interface TabsProps {
-  children: React.ReactNode;
-  activeKey: string;
-  className: string;
-  id: string;
-  justify: boolean;
-  onSelect: (key: string | null) => void;
-}
-
-const { Tab, Tabs } = ReactBootstrap as unknown as {
-  Tab: React.ComponentType<TabProps>;
-  Tabs: React.ComponentType<TabsProps>;
-};
 
 export default function SearchSidebar({
   activeTab,
