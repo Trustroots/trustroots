@@ -1,4 +1,3 @@
-import url from 'url';
 import log from './../../../../config/lib/logger.mjs';
 const service = {};
 
@@ -67,23 +66,36 @@ service.appendUTMParams = function (trackUrl, utmParams) {
     return trackUrl || '';
   }
 
+  let parsed;
+  let isRelative = false;
+  try {
+    parsed = new URL(trackUrl);
+  } catch (err) {
+    try {
+      parsed = new URL(trackUrl, 'http://relative.invalid');
+      isRelative = true;
+    } catch (relativeErr) {
+      return trackUrl;
+    }
+  }
+
   // Append required UTM parameters
-  const obj = url.parse(trackUrl, true, false);
-  obj.query.utm_source = String(utmParams.source);
-  obj.query.utm_medium = String(utmParams.medium);
-  obj.query.utm_campaign = String(utmParams.campaign);
+  parsed.searchParams.set('utm_source', String(utmParams.source));
+  parsed.searchParams.set('utm_medium', String(utmParams.medium));
+  parsed.searchParams.set('utm_campaign', String(utmParams.campaign));
 
   // Optional UTM parameters
   if (utmParams.term) {
-    obj.query.utm_term = String(utmParams.term);
+    parsed.searchParams.set('utm_term', String(utmParams.term));
   }
   if (utmParams.content) {
-    obj.query.utm_content = String(utmParams.content);
+    parsed.searchParams.set('utm_content', String(utmParams.content));
   }
 
-  // This makes format compose the search string out of the query object
-  delete obj.search;
-  return url.format(obj);
+  parsed.search = parsed.searchParams.toString().replace(/\+/g, '%20');
+  return isRelative
+    ? `${parsed.pathname}${parsed.search}${parsed.hash}`
+    : parsed.toString();
 };
 const defaultExport = service;
 export default defaultExport;

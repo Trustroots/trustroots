@@ -13,6 +13,7 @@ type MockMapProps = {
   children?: React.ReactNode;
   fallbackMarker?: { location: [number, number] };
   onClick: (event: { lngLat?: [number, number] }) => void;
+  onLocationChange: (location: [number, number]) => void;
 };
 
 jest.mock(
@@ -64,14 +65,46 @@ jest.mock(
   },
 );
 jest.mock('@/modules/core/client/components/Map/index', () => {
-  function MockMap({ children, fallbackMarker, onClick }: MockMapProps) {
+  function MockMap({
+    children,
+    fallbackMarker,
+    onClick,
+    onLocationChange,
+  }: MockMapProps) {
     return (
       <div data-testid="offer-map">
+        <button
+          type="button"
+          onClick={() => onLocationChange([48.6908333333, 9.14055555556])}
+        >
+          Report initial centre
+        </button>
+        <button
+          type="button"
+          onClick={() => onLocationChange([48.690834, 9.140556])}
+        >
+          Drag near default
+        </button>
+        <button type="button" onClick={() => onLocationChange([50, 10])}>
+          Drag map
+        </button>
+        <button
+          type="button"
+          onClick={() => onLocationChange([48.6908333333, 10])}
+        >
+          Drag map east
+        </button>
         <button
           type="button"
           onClick={() => onClick({ lngLat: [2.35, 48.85] })}
         >
           Click map
+        </button>
+        <button
+          type="button"
+          onClick={() => onClick({ lngLat: [9.14055555556, 48.6908333333] })}
+        >
+          Click initial centre
         </button>
         <button type="button" onClick={() => onClick({})}>
           Empty map click
@@ -92,6 +125,45 @@ jest.mock('@/modules/offers/client/components/OfferLocationOverlay', () => ({
 }));
 
 describe('OfferLocationEditor', () => {
+  it('shows a map without an offer marker before a location is chosen', () => {
+    render(
+      <OfferLocationEditor location={null} onLocationChange={jest.fn()} />,
+    );
+
+    expect(screen.getByTestId('offer-map')).toBeInTheDocument();
+    expect(screen.queryByText(/Marker at/)).not.toBeInTheDocument();
+    expect(screen.queryByTestId('location-overlay')).not.toBeInTheDocument();
+  });
+
+  it('waits for a place search or map movement before choosing a location', () => {
+    const onLocationChange = jest.fn();
+    render(
+      <OfferLocationEditor
+        location={null}
+        onLocationChange={onLocationChange}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Report initial centre' }),
+    );
+    expect(onLocationChange).not.toHaveBeenCalled();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Click initial centre' }),
+    );
+    expect(onLocationChange).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drag near default' }));
+    expect(onLocationChange).toHaveBeenCalledWith([48.690834, 9.140556]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drag map' }));
+    expect(onLocationChange).toHaveBeenCalledWith([50, 10]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drag map east' }));
+    expect(onLocationChange).toHaveBeenCalledWith([48.6908333333, 10]);
+  });
+
   it('renders the map and location guidance', () => {
     render(
       <OfferLocationEditor
@@ -145,6 +217,13 @@ describe('OfferLocationEditor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Click map' }));
 
     expect(onLocationChange).toHaveBeenCalledWith([48.85, 2.35]);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Report initial centre' }),
+    );
+    expect(onLocationChange).toHaveBeenCalledWith([
+      48.6908333333, 9.14055555556,
+    ]);
   });
 
   it('updates the location when a place bounds search completes', () => {

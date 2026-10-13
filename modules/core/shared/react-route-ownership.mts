@@ -368,6 +368,12 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/location-corrections',
+    requiresRole: ['admin', 'welcome-team'],
+    title: 'Welcome team - Location corrections',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/messages',
     title: 'Admin - Messages',
   },
