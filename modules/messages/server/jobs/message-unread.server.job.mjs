@@ -320,8 +320,7 @@ function sendUnreadMessageReminders(reminder, callback) {
             notification,
             notificationCallback,
           );
-        },
-        5); // How many notifications to process simultaneously?
+        }, 5); // How many notifications to process simultaneously?
 
         // Start processing notifications
         notificationsQueue.push(notifications);

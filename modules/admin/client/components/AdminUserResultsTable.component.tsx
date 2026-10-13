@@ -15,7 +15,7 @@ const USER_SORT_COLUMNS = [
   'lastIpAddress',
   'username',
 ];
-type UserSortColumn = typeof USER_SORT_COLUMNS[number];
+type UserSortColumn = (typeof USER_SORT_COLUMNS)[number];
 
 interface UserSort {
   column: UserSortColumn;
@@ -54,7 +54,7 @@ interface AdminUserResultsTableProps {
   showPublicProfileLink?: boolean;
   showUserState?: boolean;
   showZendeskActions?: boolean;
-  sort: UserSort;
+  sort?: UserSort;
   userResults: UserResult[];
 }
 
@@ -94,13 +94,13 @@ SortableHeader.propTypes = {
 };
 
 export default function AdminUserResultsTable({
-  onPageChange,
-  onSortChange,
-  pagination,
-  showPublicProfileLink,
-  showUserState,
-  showZendeskActions,
-  sort,
+  onPageChange = () => {},
+  onSortChange = () => {},
+  pagination = null,
+  showPublicProfileLink = false,
+  showUserState = false,
+  showZendeskActions = false,
+  sort = { column: 'username', direction: 'ascending' },
   userResults,
 }: AdminUserResultsTableProps) {
   const sortChange = onSortChange || (() => {});
@@ -271,17 +271,4 @@ AdminUserResultsTable.propTypes = {
     direction: PropTypes.oneOf(['ascending', 'descending']).isRequired,
   }),
   userResults: PropTypes.array.isRequired,
-};
-
-AdminUserResultsTable.defaultProps = {
-  onPageChange: () => {},
-  onSortChange: () => {},
-  pagination: null,
-  showPublicProfileLink: false,
-  showUserState: false,
-  showZendeskActions: false,
-  sort: {
-    column: 'username',
-    direction: 'ascending',
-  },
 };

@@ -54,9 +54,8 @@ describe('Create an experience', () => {
     sinon.restore();
   });
   beforeEach(async () => {
-    [user1, user2, user3Nonpublic] = await utils.saveUsersWithCachedPasswords(
-      _users,
-    );
+    [user1, user2, user3Nonpublic] =
+      await utils.saveUsersWithCachedPasswords(_users);
   });
   afterEach(utils.clearDatabase);
   context('logged in', () => {

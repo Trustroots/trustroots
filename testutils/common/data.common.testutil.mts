@@ -80,8 +80,9 @@ export interface GenerateUserOptions {
 }
 
 /** Optional fields callers may override on one generated client fixture. */
-export interface GenerateClientUserOptions
-  extends Partial<Omit<ClientUserFixture, '_id' | 'displayName'>> {
+export interface GenerateClientUserOptions extends Partial<
+  Omit<ClientUserFixture, '_id' | 'displayName'>
+> {
   _id?: string;
   displayName?: string;
   roles?: string[];

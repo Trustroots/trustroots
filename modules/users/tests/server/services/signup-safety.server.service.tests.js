@@ -3,9 +3,8 @@ require('should');
 
 describe('Signup safety service', () => {
   it('exposes the same matching function and keywords through ESM', async () => {
-    const esmService = await import(
-      '../../../server/services/signup-safety.server.service.mjs'
-    );
+    const esmService =
+      await import('../../../server/services/signup-safety.server.service.mjs');
     esmService.matchSignupProfile.should.equal(signupSafety.matchSignupProfile);
     esmService.KEYWORDS.should.equal(signupSafety.KEYWORDS);
   });

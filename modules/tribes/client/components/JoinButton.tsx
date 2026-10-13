@@ -20,11 +20,10 @@ interface PresentationalProps {
   onToggle?: () => void;
 }
 
-interface JoinButtonProps
-  extends Omit<
-    PresentationalProps,
-    'isMember' | 'isLoggedIn' | 'isLoading' | 'onToggle'
-  > {
+interface JoinButtonProps extends Omit<
+  PresentationalProps,
+  'isMember' | 'isLoggedIn' | 'isLoading' | 'onToggle'
+> {
   tribe: TribeSummary;
   user?: UserProfile;
   onUpdated?: (data: MembershipUpdate) => void;

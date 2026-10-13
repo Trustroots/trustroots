@@ -1,8 +1,7 @@
 let policyModule;
 before(async function () {
-  policyModule = await import(
-    '../../server/policies/contacts.server.policy.mjs'
-  );
+  policyModule =
+    await import('../../server/policies/contacts.server.policy.mjs');
 });
 const sinon = require('sinon');
 require('should');
