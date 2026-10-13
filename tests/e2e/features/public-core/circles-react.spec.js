@@ -2,7 +2,7 @@
 const { annotateFeature, expect, test } = require('../../support/fixtures');
 const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
 const { installNostrRelayStub } = require('../../support/nostr');
-const { finalizeEvent } = require('nostr-tools/pure');
+const { finalizeEvent, generateSecretKey } = require('nostr-tools/pure');
 
 test('invalid circle addresses show a stable not-found page', async ({
   page,
@@ -584,7 +584,46 @@ test('member navigation menus and narrow layout remain usable', async ({
 test('Hackers circle puts community resources beside members on desktop and stacks them on mobile', async ({
   page,
 }) => {
-  await installNostrRelayStub(page);
+  const events = [
+    finalizeEvent(
+      {
+        kind: 33000,
+        created_at: Math.floor(Date.now() / 1000),
+        content: 'A fictional community workshop.',
+        tags: [
+          ['d', 'fictional-workshop'],
+          ['L', 'physical-location'],
+          ['g', 'u09tvw'],
+          ['name', 'Example Workshop'],
+          ['meta', 'source', 'https://api.spaceapi.io/'],
+          ['meta', 'open', 'open'],
+          ['website', 'https://workshop.example.test/'],
+        ],
+      },
+      generateSecretKey(),
+    ),
+  ];
+  await installNostrRelayStub(page, { events });
+  await installNostrRelayStub(page, {
+    events,
+    relayUrl: 'wss://relay.nomadwiki.org',
+  });
+  // Clearly labelled synthetic tiles keep visual layout checks independent of
+  // remote map servers. These are test graphics, not geographical evidence.
+  await page.route(
+    /https:\/\/(?:[abc]\.tile\.openstreetmap\.org\/|api\.mapbox\.com\/styles\/)/,
+    route =>
+      route.fulfill({
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#dce9e2"/><path d="M0 0H256V256H0Z M0 128H256 M128 0V256" fill="none" stroke="#becfc4"/><text x="128" y="120" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#6f8478">Map tile fixture</text></svg>',
+      }),
+  );
+  await page.route('**/uploads-circle/hackers/**', route =>
+    route.fulfill({
+      path: 'public/uploads-circle/hackers.jpg',
+      contentType: 'image/jpeg',
+    }),
+  );
   await signInViaApi(page, undefined, SEEDED_ADMIN);
   await page.goto('/circles');
   const response = await page.request.get('/api/tribes/hitchhikers');
@@ -597,10 +636,44 @@ test('Hackers circle puts community resources beside members on desktop and stac
     headers: { 'X-Trustroots-Request': '1' },
   });
   await page.route('**/api/tribes/hackers', route =>
-    route.fulfill({ json: { ...circle, slug: 'hackers', label: 'Hackers' } }),
+    route.fulfill({
+      json: {
+        ...circle,
+        slug: 'hackers',
+        label: 'Hackers',
+        color: '12b591',
+        image: 'hackers.jpg',
+        description: 'People who enjoy building and sharing technology.',
+      },
+    }),
   );
   await page.route('**/api/tribes/hackers/members', route =>
-    route.fulfill({ json: { contacts: [], recommenders: [], active: [] } }),
+    route.fulfill({
+      json: {
+        contacts: [],
+        recommenders: [],
+        active: [
+          {
+            _id: 'fictional-builder',
+            username: 'example-builder',
+            displayName: 'Example Builder',
+            avatarSource: 'none',
+            locationLiving: 'Fictional Harbour',
+            locationFrom: 'Example Coast',
+            tagline: 'Sharing tools and ideas',
+          },
+          {
+            _id: 'fictional-tinkerer',
+            username: 'sample-tinkerer',
+            displayName: 'Sample Tinkerer',
+            avatarSource: 'none',
+            locationLiving: 'Example Valley',
+            locationFrom: 'Fictional Island',
+            tagline: 'Building things together',
+          },
+        ],
+      },
+    }),
   );
   try {
     await page.setViewportSize({ width: 1280, height: 900 });
@@ -608,7 +681,15 @@ test('Hackers circle puts community resources beside members on desktop and stac
     const community = page.locator('.hackers-circle-community.has-members');
     const resources = community.locator('.hackers-circle-resources');
     const members = community.locator('.circle-member-discovery');
-    await expect(members.getByText('No members to show yet')).toBeVisible();
+    await expect(members.locator('.member-search-card')).toHaveCount(2);
+    await expect(members.getByText('Example Builder')).toBeVisible();
+    await expect(members.getByText('Sample Tinkerer')).toBeVisible();
+    await expect(page.locator('.leaflet-tile-loaded').first()).toBeVisible();
+    await page.evaluate(async () => {
+      const image = new window.Image();
+      image.src = '/uploads-circle/hackers/1400x900.jpg';
+      await image.decode();
+    });
     await expect(
       resources.getByRole('link', { name: 'Circle Wiki', exact: true }),
     ).toHaveAttribute('href', 'https://wiki.trustroots.org/en/Hackers');

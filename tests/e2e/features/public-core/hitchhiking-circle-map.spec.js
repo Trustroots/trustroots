@@ -75,6 +75,7 @@ test('both circle maps support wheel and pinch zoom without zooming out beyond t
   await touch.send('Emulation.setTouchEmulationEnabled', { enabled: true });
   await prepareCircle(page);
   await installNostrRelayStub(page);
+  await installNostrRelayStub(page, { relayUrl: 'wss://relay.nomadwiki.org' });
   await page.route('**/api/tribes/hackers', route =>
     route.fulfill({
       json: {
@@ -142,6 +143,10 @@ test('hackerspace popups keep links and close controls visible and omit closed s
     ),
   );
   await installNostrRelayStub(page, { events });
+  await installNostrRelayStub(page, {
+    events,
+    relayUrl: 'wss://relay.nomadwiki.org',
+  });
   await page.route('**/api/tribes/hackers', route =>
     route.fulfill({
       json: {
