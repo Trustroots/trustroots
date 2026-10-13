@@ -21,6 +21,7 @@ const AREA_BY_SPEC = {
   'signup-and-support-limits.spec.js': 'Authentication',
   'account-settings.spec.js': 'Authentication',
   'authenticated.spec.js': 'Member flows',
+  'desktop-navigation.spec.js': 'Member flows',
   'profile-react.spec.js': 'Member flows',
   'member.spec.js': 'Member flows',
   'contacts-and-blocks.spec.js': 'Member flows',

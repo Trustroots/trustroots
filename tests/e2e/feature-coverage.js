@@ -113,6 +113,8 @@ const specPaths = {
   'contacts-and-blocks.spec.js':
     'features/relationships-safety/contacts-and-blocks.spec.js',
   'core-gaps.spec.js': 'features/public-core/core-gaps.spec.js',
+  'desktop-navigation.spec.js':
+    'features/public-core/desktop-navigation.spec.js',
   'experience-actions.spec.js':
     'features/experiences-references/experience-actions.spec.js',
   'experiences.spec.js': 'features/experiences-references/experiences.spec.js',
