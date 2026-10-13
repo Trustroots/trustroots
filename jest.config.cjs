@@ -31,8 +31,8 @@ module.exports = {
   transform: {
     '^.+\\.m?[jt]sx?$': 'babel-jest',
   },
-  // Include nostr-tools so nested ESM-only @noble and @scure packages are transformed.
+  // Transform Faker and nostr-tools, including nested ESM-only @noble and @scure packages.
   transformIgnorePatterns: [
-    '/node_modules/(?!(\\.pnpm/[^/]+/node_modules/)?(use-local-storage-state|nostr-tools|@noble|@scure)/)',
+    '/node_modules/(?!(\\.pnpm/[^/]+/node_modules/)?(use-local-storage-state|nostr-tools|@noble|@scure|@faker-js)/)',
   ],
 };

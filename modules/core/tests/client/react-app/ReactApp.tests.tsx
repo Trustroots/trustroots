@@ -1,4 +1,5 @@
 import React from 'react';
+import * as reactRouter from '@tanstack/react-router';
 import { AxiosHeaders } from 'axios';
 import {
   act,
@@ -27,6 +28,13 @@ import type { OfferReadPayload } from '@/modules/offers/shared/offer';
 const mockedUsersApi = jest.mocked(usersApi);
 const mockedMessagesApi = jest.mocked(messagesApi);
 const mockedOffersApi = jest.mocked(offersApi);
+
+jest.mock('@tanstack/react-router', () => ({
+  __esModule: true,
+  ...jest.requireActual<typeof import('@tanstack/react-router')>(
+    '@tanstack/react-router',
+  ),
+}));
 
 jest.mock('@/modules/admin/client/components/Admin.component', () => {
   const React = jest.requireActual<typeof import('react')>('react');
@@ -338,6 +346,12 @@ describe('<ReactApp />', () => {
   });
 
   it('scrolls to the element named by the URL fragment after the route renders', async () => {
+    const animationFrame = jest
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation(callback => {
+        callback(0);
+        return 1;
+      });
     const target = document.createElement('div');
     target.id = 'rules-anchor';
     target.scrollIntoView = jest.fn();
@@ -347,17 +361,55 @@ describe('<ReactApp />', () => {
       renderApp('/rules#rules-anchor');
 
       expect(await screen.findByText('Rules route')).toBeInTheDocument();
-      expect(target.scrollIntoView).toHaveBeenCalled();
+      expect(target.scrollIntoView).toHaveBeenCalledWith({ block: 'start' });
     } finally {
+      animationFrame.mockRestore();
       target.remove();
     }
   });
 
   it('renders normally when the URL fragment matches no element', async () => {
-    renderApp('/rules#missing-anchor');
+    const animationFrame = jest
+      .spyOn(window, 'requestAnimationFrame')
+      .mockImplementation(callback => {
+        callback(0);
+        return 1;
+      });
 
-    expect(await screen.findByText('Rules route')).toBeInTheDocument();
-    expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
+    try {
+      renderApp('/rules#missing-anchor');
+
+      expect(await screen.findByText('Rules route')).toBeInTheDocument();
+      expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
+    } finally {
+      animationFrame.mockRestore();
+    }
+  });
+
+  it('renders normally when the URL fragment is empty', async () => {
+    const useRouterState = reactRouter.useRouterState;
+    const routerState = jest
+      .spyOn(reactRouter, 'useRouterState')
+      .mockImplementation(options => {
+        const state = useRouterState();
+        const fragmentState = {
+          ...state,
+          location: { ...state.location, hash: '#' },
+        };
+        // Jest's spy erases the hook's generic selected return type.
+        return (
+          options?.select ? options.select(fragmentState) : fragmentState
+        ) as typeof state;
+      });
+
+    try {
+      renderApp('/rules#');
+
+      expect(await screen.findByText('Rules route')).toBeInTheDocument();
+      expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
+    } finally {
+      routerState.mockRestore();
+    }
   });
 
   it('passes bootstrap user data to route and shell components', async () => {
