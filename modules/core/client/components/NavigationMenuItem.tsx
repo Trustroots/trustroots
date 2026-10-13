@@ -8,6 +8,7 @@ type NavigationMenuItemProps = React.LiHTMLAttributes<HTMLLIElement> & {
   currentPath: string;
   path: string;
   target?: string;
+  submenu?: ReactNode;
 };
 
 export default function NavigationMenuItem({
@@ -16,6 +17,7 @@ export default function NavigationMenuItem({
   currentPath,
   path,
   target,
+  submenu,
   ...rest
 }: NavigationMenuItemProps) {
   return (
@@ -28,6 +30,7 @@ export default function NavigationMenuItem({
       <a href={path} target={target}>
         {children}
       </a>
+      {submenu}
     </li>
   );
 }
@@ -38,4 +41,5 @@ NavigationMenuItem.propTypes = {
   currentPath: PropTypes.string.isRequired,
   path: PropTypes.string.isRequired,
   target: PropTypes.string,
+  submenu: PropTypes.node,
 };
