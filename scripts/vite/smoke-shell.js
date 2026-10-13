@@ -84,6 +84,29 @@ async function main() {
           true,
         );
       }
+      assert.deepEqual(
+        await page.evaluate(() => {
+          const probe = document.createElement('div');
+          probe.innerHTML =
+            '<div class="row"><div class="col-md-6"></div></div><div class="d-none"></div>';
+          document.body.append(probe);
+          const styles = {
+            rowDisplay: getComputedStyle(probe.querySelector('.row')).display,
+            hiddenDisplay: getComputedStyle(probe.querySelector('.d-none'))
+              .display,
+            columnBoxSizing: getComputedStyle(probe.querySelector('.col-md-6'))
+              .boxSizing,
+          };
+          probe.remove();
+          return styles;
+        }),
+        {
+          rowDisplay: 'flex',
+          hiddenDisplay: 'none',
+          columnBoxSizing: 'border-box',
+        },
+        `Bootstrap grid and utilities must be available on ${route}`,
+      );
     }
     assert.deepEqual(errors, []);
     console.log(

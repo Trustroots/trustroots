@@ -4,25 +4,33 @@
  * from `module-graph-baseline.json`, so links between modules can only be
  * removed, never added unnoticed.
  *
- *   node scripts/ci/check-module-graph.js            check against the baseline
- *   node scripts/ci/check-module-graph.js --update   rewrite the baseline
- *   node scripts/ci/check-module-graph.js --graph    print the graph and cycles
+ *   node scripts/ci/check-module-graph.mts            check against the baseline
+ *   node scripts/ci/check-module-graph.mts --update   rewrite the baseline
+ *   node scripts/ci/check-module-graph.mts --graph    print the graph and cycles
  *
  * Two kinds of links are recorded, both from non-test code in
  * `modules/<name>/{client,server,shared}`:
  * - imports: `@/modules/x/...`, `modules/x/...` and relative paths into another module.
  * - models: `mongoose.model('X')` for a model that another module defines.
  */
-const fs = require('fs');
-const path = require('path');
-const ts = require('typescript');
+import fs from 'node:fs';
+import path from 'node:path';
+import ts from 'typescript';
 
-const ROOT = path.resolve(__dirname, '..', '..');
+type Graph = Record<string, string[]>;
+type ModuleGraph = { imports: Graph; models: Graph };
+type SourceLinks = {
+  imports: string[];
+  definitions: string[];
+  lookups: string[];
+};
+
+const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const BASELINE_FILE = 'module-graph-baseline.json';
 const SOURCE_DIRS = ['client', 'server', 'shared'];
 const SOURCE_FILE = /\.(js|mjs|cjs|ts|mts|tsx)$/;
 
-function listModules(root) {
+function listModules(root: string): string[] {
   return fs
     .readdirSync(path.join(root, 'modules'), { withFileTypes: true })
     .filter(entry => entry.isDirectory())
@@ -30,7 +38,7 @@ function listModules(root) {
     .sort();
 }
 
-function listSourceFiles(dir) {
+function listSourceFiles(dir: string): string[] {
   if (!fs.existsSync(dir)) {
     return [];
   }
@@ -43,7 +51,7 @@ function listSourceFiles(dir) {
   });
 }
 
-function scriptKind(file) {
+function scriptKind(file: string): ts.ScriptKind {
   if (file.endsWith('.tsx') || file.endsWith('.jsx') || file.endsWith('.js')) {
     return ts.ScriptKind.TSX;
   }
@@ -53,7 +61,7 @@ function scriptKind(file) {
   return ts.ScriptKind.JS;
 }
 
-function sourceLinks(file, text) {
+function sourceLinks(file: string, text: string): SourceLinks {
   const source = ts.createSourceFile(
     file,
     text,
@@ -61,16 +69,23 @@ function sourceLinks(file, text) {
     true,
     scriptKind(file),
   );
-  const imports = [];
-  const definitions = [];
-  const lookups = [];
-  const visit = node => {
+  const imports: string[] = [];
+  const definitions: string[] = [];
+  const lookups: string[] = [];
+  const visit = (node: ts.Node): void => {
     if (
       (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
       node.moduleSpecifier &&
       ts.isStringLiteral(node.moduleSpecifier)
     ) {
       imports.push(node.moduleSpecifier.text);
+    }
+    if (
+      ts.isImportTypeNode(node) &&
+      ts.isLiteralTypeNode(node.argument) &&
+      ts.isStringLiteral(node.argument.literal)
+    ) {
+      imports.push(node.argument.literal.text);
     }
     if (ts.isCallExpression(node)) {
       const callee = node.expression;
@@ -84,6 +99,7 @@ function sourceLinks(file, text) {
       const [argument] = node.arguments;
       if (argument && ts.isStringLiteral(argument)) {
         if (
+          name !== null &&
           ['import', 'require', 'resolve', 'mock', 'importActual'].includes(
             name,
           )
@@ -103,7 +119,12 @@ function sourceLinks(file, text) {
   return { imports, definitions, lookups };
 }
 
-function targetModule(specifier, file, root, modules) {
+function targetModule(
+  specifier: string,
+  file: string,
+  root: string,
+  modules: string[],
+): string | null {
   let resolved;
   if (specifier.startsWith('.')) {
     resolved = path.relative(root, path.resolve(path.dirname(file), specifier));
@@ -114,7 +135,7 @@ function targetModule(specifier, file, root, modules) {
   return top === 'modules' && modules.includes(name) ? name : null;
 }
 
-function analyze(root = ROOT) {
+export function analyze(root = ROOT): ModuleGraph {
   const modules = listModules(root);
   const files = modules.flatMap(name =>
     SOURCE_DIRS.flatMap(dir =>
@@ -126,16 +147,16 @@ function analyze(root = ROOT) {
     ),
   );
 
-  const modelOwners = {};
+  const modelOwners: Record<string, string> = {};
   files.forEach(({ module, links }) => {
     links.definitions.forEach(model => {
       modelOwners[model] = module;
     });
   });
 
-  const imports = {};
-  const models = {};
-  const add = (graph, from, to) => {
+  const imports: Graph = {};
+  const models: Graph = {};
+  const add = (graph: Graph, from: string, to: string): void => {
     if (from !== to) {
       graph[from] = [...new Set([...(graph[from] || []), to])].sort();
     }
@@ -157,21 +178,24 @@ function analyze(root = ROOT) {
   return { imports: sortKeys(imports), models: sortKeys(models) };
 }
 
-function sortKeys(object) {
+function sortKeys(object: Graph): Graph {
   return Object.fromEntries(
     Object.entries(object).sort(([a], [b]) => a.localeCompare(b)),
   );
 }
 
-function edgeList(graph) {
+function edgeList(graph: Graph): string[] {
   return Object.entries(graph).flatMap(([from, targets]) =>
     targets.map(to => `${from} -> ${to}`),
   );
 }
 
-function diffGraphs(baseline, current) {
-  const result = { added: [], removed: [] };
-  ['imports', 'models'].forEach(kind => {
+export function diffGraphs(baseline: ModuleGraph, current: ModuleGraph) {
+  const result: { added: string[]; removed: string[] } = {
+    added: [],
+    removed: [],
+  };
+  (['imports', 'models'] as const).forEach(kind => {
     const before = new Set(edgeList(baseline[kind] || {}));
     const after = new Set(edgeList(current[kind] || {}));
     after.forEach(
@@ -185,18 +209,18 @@ function diffGraphs(baseline, current) {
 }
 
 // Tarjan's strongly connected components, keeping those with more than one module.
-function findCycles(graph) {
+export function findCycles(graph: Graph): string[][] {
   const nodes = [
     ...new Set([...Object.keys(graph), ...Object.values(graph).flat()]),
   ].sort();
-  const index = {};
-  const low = {};
-  const onStack = new Set();
-  const stack = [];
-  const cycles = [];
+  const index: Record<string, number> = {};
+  const low: Record<string, number> = {};
+  const onStack = new Set<string>();
+  const stack: string[] = [];
+  const cycles: string[][] = [];
   let counter = 0;
 
-  const visit = node => {
+  const visit = (node: string): void => {
     index[node] = low[node] = counter++;
     stack.push(node);
     onStack.add(node);
@@ -209,10 +233,10 @@ function findCycles(graph) {
       }
     });
     if (low[node] === index[node]) {
-      const component = [];
-      let member;
+      const component: string[] = [];
+      let member: string;
       do {
-        member = stack.pop();
+        member = stack.pop()!;
         onStack.delete(member);
         component.push(member);
       } while (member !== node);
@@ -226,7 +250,7 @@ function findCycles(graph) {
   return cycles.sort((a, b) => a[0].localeCompare(b[0]));
 }
 
-function formatGraph(graph) {
+function formatGraph(graph: ModuleGraph): string {
   const cycles = findCycles(graph.imports);
   const lines = Object.entries(graph.imports).map(
     ([from, targets]) => `${from}: ${targets.join(', ')}`,
@@ -240,7 +264,7 @@ function formatGraph(graph) {
   return lines.join('\n');
 }
 
-function main(argv, root = ROOT) {
+export function main(argv: string[], root = ROOT): number {
   const baselinePath = path.join(root, BASELINE_FILE);
   const current = analyze(root);
 
@@ -291,8 +315,6 @@ function main(argv, root = ROOT) {
   return 0;
 }
 
-if (require.main === module) {
+if (import.meta.main) {
   process.exitCode = main(process.argv.slice(2));
 }
-
-module.exports = { analyze, diffGraphs, findCycles, main };

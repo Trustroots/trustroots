@@ -1,0 +1,132 @@
+const assert = require('node:assert/strict');
+const mongoose = require('mongoose');
+const request = require('supertest');
+const config = require('../../../../config/config.mjs');
+const express = require('../../../../config/lib/express.mjs');
+const utils = require('../../../../testutils/server/data.server.testutil');
+const testutils = require('../../../../testutils/server/server.testutil');
+
+describe('Signup and support request allowances', () => {
+  const jobs = testutils.catchJobs();
+  let app;
+  let originalSignup;
+  let originalSupport;
+  before(async () => {
+    app = await express.init(mongoose.connection);
+  });
+  beforeEach(() => {
+    originalSignup = config.targetedRequestLimits.signup;
+    originalSupport = config.targetedRequestLimits.support;
+    jobs.length = 0;
+  });
+  afterEach(async () => {
+    config.targetedRequestLimits.signup = originalSignup;
+    config.targetedRequestLimits.support = originalSupport;
+    await utils.clearDatabase();
+  });
+
+  function signup(email) {
+    return {
+      firstName: 'Amina',
+      lastName: 'Vale',
+      username: email.split('@')[0],
+      email,
+      password: 'fictional-password-123',
+    };
+  }
+
+  it('limits signup per client before creating another account or email', async () => {
+    config.targetedRequestLimits.signup = {
+      windowMs: 60000,
+      ipLimit: 1,
+      identityLimit: 10,
+    };
+    await request(app)
+      .post('/api/auth/signup')
+      .send(signup('first-member@example.org'))
+      .expect(200);
+    const queued = jobs.length;
+    const response = await request(app)
+      .post('/api/auth/signup')
+      .send(signup('second-member@example.org'))
+      .expect(429);
+    assert.match(response.headers['retry-after'], /^\d+$/);
+    assert.equal(await mongoose.model('User').countDocuments(), 1);
+    assert.equal(jobs.length, queued);
+  });
+
+  it('shares the signup recipient allowance across client addresses', async () => {
+    config.targetedRequestLimits.signup = {
+      windowMs: 60000,
+      ipLimit: 10,
+      identityLimit: 1,
+    };
+    await request(app)
+      .post('/api/auth/signup')
+      .set('!~Passenger-Client-Address', '198.51.100.21')
+      .send(signup('recipient@example.org'))
+      .expect(200);
+    const queued = jobs.length;
+    await request(app)
+      .post('/api/auth/signup')
+      .set('!~Passenger-Client-Address', '198.51.100.22')
+      .send({
+        ...signup('recipient@example.org'),
+        email: 'Recipient@Example.org',
+      })
+      .expect(429);
+    assert.equal(await mongoose.model('User').countDocuments(), 1);
+    assert.equal(jobs.length, queued);
+    const counters = await mongoose.model('RequestLimit').find({}).lean();
+    assert.ok(
+      counters.every(counter => !counter.key.includes('recipient@example.org')),
+    );
+  });
+
+  it('limits anonymous support before storing or emailing another request', async () => {
+    config.targetedRequestLimits.support = {
+      windowMs: 60000,
+      ipLimit: 1,
+      identityLimit: 10,
+    };
+    const body = {
+      email: 'support-sender@example.org',
+      message: 'A fictional support enquiry.',
+    };
+    await request(app).post('/api/support').send(body).expect(200);
+    const queued = jobs.length;
+    const response = await request(app)
+      .post('/api/support')
+      .send(body)
+      .expect(429);
+    assert.match(response.headers['retry-after'], /^\d+$/);
+    assert.equal(await mongoose.model('SupportRequest').countDocuments(), 1);
+    assert.equal(jobs.length, queued);
+  });
+
+  it('shares signed-in support allowance across client addresses', async () => {
+    config.targetedRequestLimits.support = {
+      windowMs: 60000,
+      ipLimit: 10,
+      identityLimit: 1,
+    };
+    const [credentials] = utils.generateUsers(1, { public: true });
+    await utils.saveUsers([credentials]);
+    const agent = request.agent(app);
+    await utils.signIn(credentials, agent);
+    const body = { message: 'A fictional member enquiry.' };
+    await agent
+      .post('/api/support')
+      .set('!~Passenger-Client-Address', '198.51.100.31')
+      .send(body)
+      .expect(200);
+    const queued = jobs.length;
+    await agent
+      .post('/api/support')
+      .set('!~Passenger-Client-Address', '198.51.100.32')
+      .send(body)
+      .expect(429);
+    assert.equal(await mongoose.model('SupportRequest').countDocuments(), 1);
+    assert.equal(jobs.length, queued);
+  });
+});

@@ -80,6 +80,61 @@ const legacyConfig = {
     ecmaFeatures: { jsx: true },
   },
   overrides: [
+    {
+      files: ['modules/*/client/**/*.{js,ts,tsx}'],
+      rules: {
+        'react/no-danger': 2,
+        'no-restricted-properties': [
+          2,
+          {
+            property: 'innerHTML',
+            message: 'Use text or a reviewed HTML boundary.',
+          },
+          {
+            property: 'outerHTML',
+            message: 'Use text or a reviewed HTML boundary.',
+          },
+          {
+            property: 'insertAdjacentHTML',
+            message: 'Use text or a reviewed HTML boundary.',
+          },
+          {
+            object: 'document',
+            property: 'write',
+            message: 'Use React rendering.',
+          },
+          {
+            object: 'document',
+            property: 'writeln',
+            message: 'Use React rendering.',
+          },
+        ],
+      },
+    },
+    {
+      // Full rich text is formatted on the server before reaching these views.
+      files: [
+        'modules/core/client/components/ReadMorePanel.tsx',
+        'modules/core/client/components/TrEditor.tsx',
+        'modules/messages/client/components/ThreadMessage.tsx',
+        'modules/messages/client/components/ThreadReply.tsx',
+        'modules/admin/client/components/AdminMessages.component.tsx',
+        'modules/admin/client/components/AdminNotes.tsx',
+        'modules/offers/client/components/OfferMeetListPage.component.tsx',
+        'modules/search/client/components/SearchSidebarResults.component.tsx',
+        'modules/tribes/client/components/TribeDetailPage.component.tsx',
+      ],
+      rules: { 'react/no-danger': 0 },
+    },
+    {
+      // DOM parsing and the editor need access to their existing HTML boundary.
+      files: [
+        'modules/core/client/components/TrEditor.tsx',
+        'modules/core/client/utils/filters.ts',
+        'modules/messages/client/utils/message-content.ts',
+      ],
+      rules: { 'no-restricted-properties': 0 },
+    },
     /**
      * Overrides for server side app files
      */
@@ -89,6 +144,7 @@ const legacyConfig = {
         '*.mjs',
         '*.cjs',
         'config/**',
+        'scripts/ci/**/*.mts',
         'migrations/**',
         'modules/*/shared/**/*.{js,ts,mts}',
         'modules/*/server/*.{js,mjs}',
@@ -188,6 +244,7 @@ const legacyConfig = {
     {
       files: [
         'config/vite/**/*.{ts,tsx}',
+        'scripts/ci/**/*.mts',
         'modules/*/client/**/*.{ts,tsx}',
         'modules/*/shared/**/*.{ts,tsx,mts}',
         'modules/*/server/**/*.mts',
@@ -229,7 +286,7 @@ const legacyConfig = {
      * Overrides for CLI scripts and application config
      */
     {
-      files: ['bin/**', 'config/**', 'migrations/**'],
+      files: ['bin/**', 'config/**', 'migrations/**', 'scripts/ci/**/*.mts'],
       env: {
         node: true,
       },
@@ -247,7 +304,11 @@ const ignores = fs
   .split(/\r?\n/)
   .map(line => line.trim())
   .filter(line => line && !line.startsWith('#'))
-  .map(pattern => (pattern.endsWith('/') ? `${pattern}**` : pattern));
+  .map(pattern =>
+    !pattern.startsWith('!') && pattern.endsWith('/')
+      ? `${pattern}**`
+      : pattern,
+  );
 
 module.exports = defineConfig([
   // ESLint 8 ignored dotfiles and hidden directories by default.
