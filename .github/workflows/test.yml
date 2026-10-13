@@ -337,7 +337,8 @@ jobs:
             -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
             -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
             -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
-            dev npm run test:coverage:server
+            -e SERVER_TEST_WORKERS=4 \
+            dev npm run test:coverage:server:parallel
           exit_code="$?"
           if [ "$exit_code" -eq 0 ]; then
             docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
@@ -356,7 +357,7 @@ jobs:
             message="Server coverage failed."
           fi
           STATUS="$status" EXIT_CODE="$exit_code" DURATION_MS="$duration_ms" MESSAGE="$message" \
-          COMMAND="npm run test:coverage:server && npm run coverage:check -- --scope=server" \
+          COMMAND="npm run test:coverage:server:parallel && npm run coverage:check -- --scope=server" \
           node - <<'NODE'
           const fs = require('fs');
           const status = {
