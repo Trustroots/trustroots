@@ -19,6 +19,40 @@ jest.mock('@/modules/core/client/components/Board.js', () => {
 });
 
 describe('<Faq />', () => {
+  it('searches answers across categories and labels the matching category', async () => {
+    render(
+      <Faq>
+        <div className="faq-question">
+          <h3>General question</h3>
+        </div>
+      </Faq>,
+    );
+    const filter = screen.getByRole('searchbox', {
+      name: 'Search all frequently asked questions',
+    });
+    fireEvent.change(filter, { target: { value: 'F-Droid' } });
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Could you offer mobile app at F-Droid store?',
+      }),
+    ).toBeVisible();
+    expect(screen.getByRole('region', { name: 'Technology' })).toBeVisible();
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('heading', { name: 'General question' }),
+      ).not.toBeInTheDocument(),
+    );
+    fireEvent.change(filter, { target: { value: '' } });
+    expect(
+      await screen.findByRole('heading', { name: 'General question' }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole('heading', {
+        name: 'Could you offer mobile app at F-Droid store?',
+      }),
+    ).not.toBeInTheDocument();
+  });
+
   it('renders category-specific header copy for general', () => {
     render(
       <Faq category="general">
@@ -94,7 +128,7 @@ describe('<Faq />', () => {
     );
 
     const filter = screen.getByRole('searchbox', {
-      name: 'Search this category',
+      name: 'Search all frequently asked questions',
     });
     const firstQuestion = document.getElementById('first-question');
     const secondQuestion = document.getElementById('second-question');
@@ -105,9 +139,7 @@ describe('<Faq />', () => {
 
     fireEvent.change(filter, { target: { value: 'no such answer' } });
     expect(
-      await screen.findByText(
-        'No questions match your search in this category.',
-      ),
+      await screen.findByText('No questions match your search.'),
     ).toBeVisible();
     expect(firstQuestion).toHaveAttribute('hidden');
 
@@ -115,7 +147,7 @@ describe('<Faq />', () => {
     await waitFor(() => expect(firstQuestion).not.toHaveAttribute('hidden'));
     expect(secondQuestion).not.toHaveAttribute('hidden');
     expect(
-      screen.queryByText('No questions match your search in this category.'),
+      screen.queryByText('No questions match your search.'),
     ).not.toBeInTheDocument();
   });
 });

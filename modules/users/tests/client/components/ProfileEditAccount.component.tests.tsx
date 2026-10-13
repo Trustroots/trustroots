@@ -89,6 +89,35 @@ describe('ProfileEditAccount', () => {
     expect(
       screen.getByLabelText('Yes, I want to remove my profile'),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(/permanently deletes your Trustroots account/),
+    ).toBeVisible();
+    expect(
+      screen.getByText(/Open the link in the email within 24 hours/),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('link', { name: 'Read the account removal FAQ' }),
+    ).toHaveAttribute('href', '/faq#how-can-i-remove-my-account');
+  });
+
+  it('focuses and scrolls to removal when opened with its fragment', async () => {
+    window.history.replaceState({}, '', '/profile/edit/account#remove');
+    const scrollIntoView = jest.fn();
+    const previous = HTMLElement.prototype.scrollIntoView;
+    HTMLElement.prototype.scrollIntoView = scrollIntoView;
+    try {
+      renderPage();
+      await waitFor(() =>
+        expect(
+          screen.getByRole('region', { name: 'Remove profile' }),
+        ).toHaveFocus(),
+      );
+      expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start' });
+      expect(removeProfile).not.toHaveBeenCalled();
+    } finally {
+      HTMLElement.prototype.scrollIntoView = previous;
+      window.history.replaceState({}, '', '/');
+    }
   });
 
   it('saves an email change and shows confirmation', async () => {

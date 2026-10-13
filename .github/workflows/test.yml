@@ -188,6 +188,11 @@ jobs:
           load: true
       - name: Prepare compose local config
         run: node ./scripts/ci/ensure-compose-local.js
+      - name: Check internal client links
+        working-directory: deploy/docker
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
+            dev sh -c 'npm run test:links && npm run check:links'
       - name: Type-check client TypeScript
         working-directory: deploy/docker
         run: |
