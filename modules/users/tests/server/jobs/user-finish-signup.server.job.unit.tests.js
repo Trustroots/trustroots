@@ -25,7 +25,7 @@ describe('Job: user finish signup unit tests', () => {
       email: 'finish-signup-unit@test.com',
       emailTemporary: 'finish-signup-unit@test.com',
       emailToken: 'initial email token',
-      username: 'finish_signup_unit',
+      username: 'finishsignupunit',
       password: 'M3@n.jsI$Aw3$0m3',
       provider: 'local',
       created: moment().subtract(moment.duration({ hours: 4 })),

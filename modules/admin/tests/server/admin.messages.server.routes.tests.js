@@ -34,13 +34,13 @@ describe('Admin Message CRUD tests', () => {
     try {
       // Create admin credentials
       credentialsAdmin = {
-        username: 'user-admin',
+        username: 'useradmin',
         password: 'Password123!',
       };
 
       // Create regular user credentials
       credentialsRegular = {
-        username: 'user-regular1',
+        username: 'userregular1',
         password: 'Password123!',
       };
 
@@ -81,7 +81,7 @@ describe('Admin Message CRUD tests', () => {
         provider: 'local',
         public: true,
         roles: ['user'],
-        username: 'user-regular2',
+        username: 'userregular2',
         password: 'Password123!',
       });
       const { _id: _userRegular1Id } = await userRegular1.save();
@@ -171,18 +171,16 @@ describe('Admin Message CRUD tests', () => {
             .end((err, res) => {
               res.body.messages.length.should.equal(2);
               res.body.messages[0].userFrom.username.should.equal(
-                'user-regular1',
+                'userregular1',
               );
-              res.body.messages[0].userTo.username.should.equal(
-                'user-regular2',
-              );
+              res.body.messages[0].userTo.username.should.equal('userregular2');
               res.body.referenceThreads.length.should.equal(1);
               res.body.referenceThreads[0].reference.should.equal('yes');
               res.body.referenceThreads[0].userFrom.username.should.equal(
-                'user-regular1',
+                'userregular1',
               );
               res.body.referenceThreads[0].userTo.username.should.equal(
-                'user-regular2',
+                'userregular2',
               );
               return done(err);
             });

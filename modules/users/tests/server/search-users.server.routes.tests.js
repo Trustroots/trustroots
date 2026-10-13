@@ -180,24 +180,24 @@ describe('Search users: GET /users?search=string', function () {
         createUsers(
           [
             { username: 'riverside' },
-            { username: 'location-match', locationLiving: 'Riverside' },
-            { username: 'origin-match', locationFrom: 'Riverside' },
+            { username: 'locationmatch', locationLiving: 'Riverside' },
+            { username: 'originmatch', locationFrom: 'Riverside' },
             {
-              username: 'tagline-match',
+              username: 'taglinematch',
               tagline: 'Riverside pottery enthusiast',
             },
             {
-              username: 'private-match',
+              username: 'privatematch',
               locationLiving: 'Riverside',
               public: false,
             },
             {
-              username: 'suspended-match',
+              username: 'suspendedmatch',
               locationLiving: 'Riverside',
               roles: ['suspended'],
             },
             {
-              username: 'shadow-match',
+              username: 'shadowmatch',
               locationLiving: 'Riverside',
               roles: ['shadowban'],
             },
@@ -213,9 +213,9 @@ describe('Search users: GET /users?search=string', function () {
                   .map(member => member.username)
                   .should.eql([
                     'riverside',
-                    'location-match',
-                    'origin-match',
-                    'tagline-match',
+                    'locationmatch',
+                    'originmatch',
+                    'taglinematch',
                   ]);
                 response.body[3].tagline.should.eql(
                   'Riverside pottery enthusiast',

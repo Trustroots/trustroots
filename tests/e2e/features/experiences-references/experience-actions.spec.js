@@ -1,5 +1,4 @@
 const { annotateFeature, expect, test } = require('../../support/fixtures');
-
 const {
   SEEDED_EXPERIENCE,
   SEEDED_MEMBERS,

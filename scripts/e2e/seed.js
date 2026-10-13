@@ -274,7 +274,7 @@ async function seedUsers(User, Offer, members, tribesByLabel, tribeCounts) {
   const usersByUsername = {};
 
   for (const member of members) {
-    const user = new User(buildUser(member));
+    let user = new User(buildUser(member));
 
     for (const tribeLabel of member.tribes || []) {
       const tribe = tribesByLabel[tribeLabel];
@@ -285,7 +285,15 @@ async function seedUsers(User, Offer, members, tribesByLabel, tribeCounts) {
       tribeCounts[tribeLabel] += 1;
     }
 
+    // These fixtures represent members whose punctuation predates selection policy.
+    const legacyUsername = user.username;
+    user.username = legacyUsername.replace(/[^a-z0-9]/gi, '');
     await user.save();
+    await User.collection.updateOne(
+      { _id: user._id },
+      { $set: { username: legacyUsername } },
+    );
+    user = await User.findById(user._id);
     usersByUsername[member.username] = user;
 
     if (member.location) {

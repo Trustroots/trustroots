@@ -6,27 +6,27 @@ service.generateEmailToken = function (user, saltBuffer) {
   return buf.toString('hex');
 };
 
-/**
- * A Validation function for username
- *
- * Used at Mongoose Schema
- *
- * - at least 3 characters
- * - only a-z0-9_-.
- * - contain at least one alphanumeric character
- * - not in list of illegal usernames
- * - no consecutive dots: "." ok, ".." nope
- * - not begin or end with "."
- */
-service.validateUsername = function (username) {
-  username = String(username).toLowerCase();
-  const usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/;
-  const dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/;
+/** Selection policy for new accounts and changed usernames; never use for lookups. */
+service.usernameFormatMessage =
+  'Use 3–34 letters and numbers, including at least one letter.';
+service.isUsernameFormatValid = function (username) {
   return (
-    username &&
-    usernameRegex.test(username) &&
-    dotsRegex.test(username) &&
+    typeof username === 'string' &&
+    /^(?=.*[A-Za-z])[A-Za-z0-9]{3,34}$/.test(username)
+  );
+};
+service.validateUsername = function (username) {
+  return (
+    service.isUsernameFormatValid(username) &&
     !service.isUsernameReserved(username)
+  );
+};
+
+/** Preserve the pre-policy lookup alphabet, including digits-only and reserved identities. */
+service.isLegacyUsernameLookupValid = function (username) {
+  return (
+    typeof username === 'string' &&
+    /^(?=.*[0-9A-Za-z])[0-9A-Za-z._-]{3,34}$/.test(username)
   );
 };
 
@@ -46,4 +46,8 @@ export default defaultExport;
 export const generateEmailToken = defaultExport.generateEmailToken;
 export const isUsernameReserved = defaultExport.isUsernameReserved;
 export const validateUsername = defaultExport.validateUsername;
+export const isUsernameFormatValid = defaultExport.isUsernameFormatValid;
+export const isLegacyUsernameLookupValid =
+  defaultExport.isLegacyUsernameLookupValid;
+export const usernameFormatMessage = defaultExport.usernameFormatMessage;
 export { defaultExport as 'module.exports' };

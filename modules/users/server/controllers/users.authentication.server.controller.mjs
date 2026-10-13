@@ -31,18 +31,6 @@ function isNameSpam(input) {
   return false;
 }
 
-function isUsernameInvalid(input) {
-  if (
-    input.includes(' ') ||
-    input.includes(':') ||
-    input.includes('www') ||
-    input.includes('/')
-  ) {
-    return true;
-  }
-  return false;
-}
-
 /**
  * Signup
  */
@@ -85,9 +73,11 @@ service.signup = function (req, res) {
           return done(new Error('Invalid signup attempt'));
         }
 
-        if (isNameSpam(username) || isUsernameInvalid(username)) {
+        if (!authenticationService.validateUsername(username)) {
           const err = new Error(
-            'Use 3-34 letters, numbers, periods or hyphens. Underscores are not allowed at signup.',
+            authenticationService.isUsernameFormatValid(username)
+              ? 'Username is not available.'
+              : authenticationService.usernameFormatMessage,
           );
           err.userFacing = true;
           return done(err);
@@ -220,17 +210,31 @@ service.signup = function (req, res) {
  * Signup validation
  */
 service.signupValidation = function (req, res) {
-  const username = String(req.body.username || '').toLowerCase();
+  const username = req.body.username;
+  if (username !== undefined && typeof username !== 'string') {
+    return res.status(400).send({
+      valid: false,
+      error: 'username-invalid',
+      message: authenticationService.usernameFormatMessage,
+    });
+  }
 
   async.waterfall(
     [
       // Validate username
       function (done) {
         // Check if we have the required data before hitting more strict validations
-        if (!username) {
+        if (username === undefined || username === '') {
           return done(
             new Error('Please provide required `username` field.'),
             'username-missing',
+          );
+        }
+
+        if (!authenticationService.isUsernameFormatValid(username)) {
+          return done(
+            new Error(authenticationService.usernameFormatMessage),
+            'username-invalid',
           );
         }
 
@@ -243,14 +247,6 @@ service.signupValidation = function (req, res) {
           );
         }
 
-        // Is username valid?
-        if (!authenticationService.validateUsername(username)) {
-          return done(
-            new Error('Username is in invalid format.'),
-            'username-invalid',
-          );
-        }
-
         done();
       },
 
@@ -258,7 +254,7 @@ service.signupValidation = function (req, res) {
       function (done) {
         User.findOne(
           {
-            username,
+            username: username.toLowerCase(),
           },
           function (err, user) {
             if (user) {

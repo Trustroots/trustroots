@@ -84,7 +84,7 @@ describe('Account validation safeguards', function () {
       },
     );
   }
-  it('rejects profile changes for an existing reserved username', async function () {
+  it('preserves profile changes for an existing reserved username', async function () {
     const [user] = await utils.saveUsers([member()]);
     await User.updateOne(
       {
@@ -113,10 +113,10 @@ describe('Account validation safeguards', function () {
         lastName: 'River',
       },
     ]) {
-      await agent.put('/api/users').send(body).expect(400);
+      await agent.put('/api/users').send(body).expect(200);
       const saved = await User.findById(user._id);
       saved.username.should.equal('nostr');
-      saved.lastName.should.equal(member().lastName);
+      saved.lastName.should.equal('River');
     }
   });
   it('rejects changing an existing username to a reserved name', async function () {

@@ -36,7 +36,7 @@ describe('Job: user finish signup', function () {
       email: 'test@test.com',
       emailTemporary: 'test@test.com', // unconfirmed users have this set
       emailToken: 'initial email token',
-      username: 'user_unconfirmed',
+      username: 'userunconfirmed',
       password: 'M3@n.jsI$Aw3$0m3',
       provider: 'local',
       created: moment().subtract(moment.duration({ hours: 4 })),
@@ -56,7 +56,7 @@ describe('Job: user finish signup', function () {
       lastName: 'Name',
       displayName: 'Full Name',
       email: 'confirmed-test@test.com',
-      username: 'user_confirmed',
+      username: 'userconfirmed',
       password: 'M3@n.jsI$Aw3$0m4',
       provider: 'local',
       created: moment().subtract(moment.duration({ hours: 4 })),

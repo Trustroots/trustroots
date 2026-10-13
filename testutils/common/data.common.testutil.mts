@@ -142,9 +142,20 @@ export type ExperienceDataEntry = readonly [
   overrides?: GenerateExperienceOptions,
 ];
 
+function generateValidUsername(): string {
+  const suffix = faker.number.int({ min: 100, max: 9999 });
+  const stem = faker.internet
+    .username()
+    .replace(/[^a-z0-9]/gi, '')
+    .toLowerCase()
+    .replace(/^[0-9]+/, '');
+  const username = `${stem || 'member'}${suffix}`.slice(0, 34);
+  return username.length >= 3 ? username : `member${suffix}`.slice(0, 34);
+}
+
 function generateBaseUser(): Omit<UserFixture, '_id'> {
   return {
-    username: faker.internet.username(),
+    username: generateValidUsername(),
     firstName: faker.person.firstName(),
     lastName: faker.person.lastName(),
     email: faker.internet.email(),
@@ -162,6 +173,8 @@ function generateServerUser(overrides: GenerateUserOptions): ServerUserFixture {
     ...overrides,
   };
 }
+
+export { generateValidUsername };
 
 export function generateId(): string {
   return new ObjectId().toString();

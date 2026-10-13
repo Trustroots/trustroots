@@ -44,11 +44,11 @@ describe('Reference Thread CRUD tests', function () {
   beforeEach(function (done) {
     // Create userFrom credentials
     referenceUserFromCredentials = {
-      username: 'user_from',
+      username: 'userfrom',
       password: 'password123!',
     };
     referenceUserNonpublicCredentials = {
-      username: 'user_non_public',
+      username: 'usernonpublic',
       password: 'password123!',
     };
     userFrom = new User({
@@ -66,7 +66,7 @@ describe('Reference Thread CRUD tests', function () {
       lastName: 'Name',
       displayName: 'Full Name',
       email: 'user_to@test.com',
-      username: 'user_to',
+      username: 'userto',
       password: 'password123!',
       provider: 'local',
       public: true,

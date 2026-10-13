@@ -130,10 +130,7 @@ const defaultExport = function (app) {
     const User = mongoose.model('User');
     res.set('Access-Control-Allow-Origin', '*');
     const rawName = req.query.name;
-    if (
-      typeof rawName !== 'string' ||
-      !authenticationService.validateUsername(rawName)
-    ) {
+    if (!authenticationService.isLegacyUsernameLookupValid(rawName)) {
       return res.status(400).send({
         error: 'Valid username required.',
       });

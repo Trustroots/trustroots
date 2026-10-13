@@ -28,7 +28,7 @@ describe('Sign-in session confirmation', function () {
 
   it('recognises the signed-in account only when its session cookie is returned', async function () {
     const credentials = {
-      username: 'session-test-member',
+      username: 'sessiontestmember',
       password: 'ExamplePassword123!',
     };
     const user = await new User({
