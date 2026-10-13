@@ -16,6 +16,45 @@ const {
 } = require('../../support/db');
 
 test.describe.serial('account settings feature coverage', () => {
+  test('FAQ removal links focus the account section and return to the answer', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.profile-removal', [
+      'FAQ removal links reach the focused section and link back.',
+    ]);
+    const user = createUser();
+    await registerViaApi(request, user);
+    await signInViaApi(page, request, user);
+    await page.goto('/faq#how-can-i-remove-my-account');
+    await page
+      .locator('#how-can-i-remove-my-account')
+      .getByRole('link', { name: 'account page' })
+      .click();
+    await expect(page).toHaveURL(/\/profile\/edit\/account#remove$/);
+    const removal = page.getByRole('region', { name: 'Remove profile' });
+    await expect(removal).toBeFocused();
+    await expect(removal).toBeInViewport();
+    await expect(
+      removal.getByText(/This does not delete your account yet/),
+    ).toBeVisible();
+    await expect(
+      removal.getByRole('button', { name: 'Remove profile', exact: true }),
+    ).toBeDisabled();
+    await removal
+      .getByRole('link', { name: 'Read the account removal FAQ' })
+      .click();
+    await expect(page).toHaveURL(/\/faq#how-can-i-remove-my-account$/);
+    await expect(page.locator('#how-can-i-remove-my-account')).toBeInViewport();
+    await page.goto('/profile/edit/account#remove');
+    await expect(
+      page.getByRole('region', { name: 'Remove profile' }),
+    ).toBeFocused();
+    await expect(
+      page.getByRole('region', { name: 'Remove profile' }),
+    ).toBeInViewport();
+  });
+
   test('members can download their data from account settings', async ({
     page,
     request,

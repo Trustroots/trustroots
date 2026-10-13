@@ -50,6 +50,10 @@ describe('FAQ page sections', () => {
       'https://nos.trustroots.org/',
     );
     expect(screen.getByText(/not a traditional forum/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'account page' })).toHaveAttribute(
+      'href',
+      '/profile/edit/account#remove',
+    );
     expect(
       screen.queryByRole('link', { name: 'Twitter' }),
     ).not.toBeInTheDocument();
@@ -101,6 +105,12 @@ describe('FAQ page sections', () => {
       screen.getByRole('heading', { name: 'Is Trustroots open source?' }),
     ).toBeInTheDocument();
     expect(screen.getByText(/active development again/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'React Native app issue' }),
+    ).toHaveAttribute(
+      'href',
+      'https://github.com/Trustroots/Trustroots-React-Native/issues/17',
+    );
     expect(screen.getByRole('link', { name: 'Nostroots' })).toHaveAttribute(
       'href',
       'https://nos.trustroots.org/',

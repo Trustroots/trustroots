@@ -291,7 +291,7 @@ const features = [
     },
     requiredScenarios: [
       'General FAQ page loads.',
-      'FAQ filter matches answer text and can be cleared.',
+      'FAQ filter matches answer text across categories and can be cleared.',
       'FAQ filter reports when no questions match.',
     ],
     relatedSpecs: [
