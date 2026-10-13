@@ -111,7 +111,7 @@ export default function FaqGeneralQuestions() {
         <span id="why-is-there-facebook-connection" aria-hidden="true" />
         <h3>{t('What happened to Facebook connections?')}</h3>
         {t(
-          'New Facebook connections are no longer supported. Members who connected Facebook in the past can continue using their stored Facebook profile image or disconnect the legacy connection from their account settings.',
+          'Facebook connections and profile images are no longer supported. You can upload a profile photo or use Gravatar. Members who connected Facebook in the past can disconnect the legacy connection from their account settings.',
         )}{' '}
         <Trans t={rawT} ns="pages">
           <a href="https://ideas.trustroots.org/2014/12/29/life-outside-big-blue-box/">

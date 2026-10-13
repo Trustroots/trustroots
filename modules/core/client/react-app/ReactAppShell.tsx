@@ -77,12 +77,7 @@ export default function ReactAppShell() {
       return undefined;
     }
 
-    const targetId = decodeURIComponent(
-      rawHash.startsWith('#') ? rawHash.slice(1) : rawHash,
-    );
-    if (!targetId) {
-      return undefined;
-    }
+    const targetId = decodeURIComponent(rawHash);
 
     // Wait until the app shell has finished resetting the page scroll position.
     const frame = window.requestAnimationFrame(() => {

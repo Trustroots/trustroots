@@ -127,7 +127,7 @@ describe('User profile CRUD tests', function () {
             res.body.should.be.instanceof(Object);
             res.body.username.should.equal(unConfirmedUser.username);
             res.body.public.should.equal(false); // Unpublic right after signup
-            res.body.avatarSource.should.equal('gravatar'); // Defaults to `gravatar`
+            res.body.avatarSource.should.equal('none'); // Defaults to `none`
             should.exist(res.body.languages);
             should.exist(res.body.gender);
             should.exist(res.body.description);
