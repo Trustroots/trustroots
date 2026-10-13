@@ -1,7 +1,8 @@
 @font-face {
   font-family: 'tricons';
   src: url('../font/tricons.eot?19666065');
-  src: url('../font/tricons.eot?19666065#iefix') format('embedded-opentype'),
+  src:
+    url('../font/tricons.eot?19666065#iefix') format('embedded-opentype'),
     url('../font/tricons.woff2?19666065') format('woff2'),
     url('../font/tricons.woff?19666065') format('woff'),
     url('../font/tricons.ttf?19666065') format('truetype'),

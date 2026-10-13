@@ -197,18 +197,18 @@ jest.mock('@/modules/contacts/client/api/contacts.api', () => ({
 jest.mock(
   '@/modules/messages/client/components/ThreadReply',
   () =>
-    ({ onSend }: { onSend: (content: string) => void }) =>
-      (
-        <button type="button" onClick={() => onSend('A fictional message')}>
-          Send message
-        </button>
-      ),
+    ({ onSend }: { onSend: (content: string) => void }) => (
+      <button type="button" onClick={() => onSend('A fictional message')}>
+        Send message
+      </button>
+    ),
 );
 jest.mock(
   '@/modules/messages/client/components/ThreadMessages',
   () =>
-    ({ otherUser }: { otherUser: { username: string } }) =>
-      <div>Conversation with {otherUser.username}</div>,
+    ({ otherUser }: { otherUser: { username: string } }) => (
+      <div>Conversation with {otherUser.username}</div>
+    ),
 );
 jest.mock('@/modules/users/client/components/Monkeybox', () => () => null);
 jest.mock(
@@ -222,8 +222,9 @@ jest.mock(
 jest.mock(
   '@/modules/users/client/components/AboutMe.component',
   () =>
-    ({ profile }: { profile: { description?: string } }) =>
-      <p>{profile.description}</p>,
+    ({ profile }: { profile: { description?: string } }) => (
+      <p>{profile.description}</p>
+    ),
 );
 jest.mock(
   '@/modules/search/client/components/SearchPlaceInput.component',
@@ -238,15 +239,14 @@ jest.mock(
     }: {
       offer?: Offer | null;
       onCloseSidebar: () => void;
-    }) =>
-      (
-        <aside>
-          {offer && <span>Selected offer {offer._id}</span>}
-          <button type="button" onClick={onCloseSidebar}>
-            Close search sidebar
-          </button>
-        </aside>
-      ),
+    }) => (
+      <aside>
+        {offer && <span>Selected offer {offer._id}</span>}
+        <button type="button" onClick={onCloseSidebar}>
+          Close search sidebar
+        </button>
+      </aside>
+    ),
 );
 const mockMapMount = jest.fn();
 const mockOffer: OfferReadPayload = {

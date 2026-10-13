@@ -7,9 +7,8 @@ require('should');
  */
 describe('Text processor tests', function () {
   it('provides the same service through ESM and CommonJS', async function () {
-    const esmService = await import(
-      '../../../server/services/text.server.service.mjs'
-    );
+    const esmService =
+      await import('../../../server/services/text.server.service.mjs');
 
     for (const name of [
       'html',

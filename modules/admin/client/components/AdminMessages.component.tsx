@@ -62,8 +62,7 @@ interface MessagesResponse {
 function getErrorMessage(error: unknown, fallback: string): string {
   if (typeof error === 'object' && error !== null && 'response' in error) {
     const response = error.response as
-      | { data?: { message?: string } }
-      | undefined;
+      { data?: { message?: string } } | undefined;
     return response?.data?.message || fallback;
   }
   return fallback;

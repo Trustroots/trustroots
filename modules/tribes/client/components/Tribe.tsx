@@ -20,12 +20,16 @@ const Container = styled.div.attrs({
     ${({ tribe }) => {
       const style = getCircleBackgroundStyle(tribe, '742x496');
       return css`
-        ${style.backgroundImage
-          ? `background-image: ${style.backgroundImage};`
-          : ''}
-        ${style.backgroundColor
-          ? `background-color: ${style.backgroundColor};`
-          : ''}
+        ${
+          style.backgroundImage
+            ? `background-image: ${style.backgroundImage};`
+            : ''
+        }
+        ${
+          style.backgroundColor
+            ? `background-color: ${style.backgroundColor};`
+            : ''
+        }
       `;
     }}
   }

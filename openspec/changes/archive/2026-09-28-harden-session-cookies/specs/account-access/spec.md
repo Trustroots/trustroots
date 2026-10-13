@@ -29,4 +29,3 @@ unchanged sessions, and SHALL refresh their expiry through the session store.
 
 - **WHEN** a person makes a request without changing an existing session
 - **THEN** the system refreshes the session expiry without rewriting the session
-

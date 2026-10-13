@@ -723,9 +723,8 @@ describe('Service: email', function () {
   it('builds HTTPS account links when loaded with production proxy settings', async function () {
     sandbox.stub(config, 'https').value(true);
     sandbox.stub(config, 'domain').value('secure.example.test');
-    const { default: secureService } = await import(
-      '../../../server/services/email.server.service.mjs?production-https'
-    );
+    const { default: secureService } =
+      await import('../../../server/services/email.server.service.mjs?production-https');
     const send = sandbox.stub(secureService, 'renderEmailAndSend');
     secureService.sendResetPassword(
       {

@@ -28,8 +28,8 @@ export function nextPageParams(header: unknown): PaginationParams | undefined {
         previous === undefined
           ? value
           : Array.isArray(previous)
-          ? [...previous, value]
-          : [previous, value],
+            ? [...previous, value]
+            : [previous, value],
       );
     }
     for (const attribute of match[2].split(';').slice(1)) {

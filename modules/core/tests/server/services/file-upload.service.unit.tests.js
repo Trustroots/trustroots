@@ -104,9 +104,8 @@ describe('file-upload.service unit tests', () => {
   });
 
   it('shares its mutable default object and named function with CommonJS', async () => {
-    const esmService = await import(
-      '../../../server/services/file-upload.service.mjs'
-    );
+    const esmService =
+      await import('../../../server/services/file-upload.service.mjs');
     esmService.default.should.equal(uploadService);
     esmService.uploadFile.should.equal(uploadService.uploadFile);
     Object.isFrozen(uploadService).should.equal(false);

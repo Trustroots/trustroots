@@ -1,8 +1,11 @@
 # module-http-client Specification
 
 ## Purpose
+
 Define consistent HTTP defaults and request options for module API wrappers.
+
 ## Requirements
+
 ### Requirement: Module API wrappers share a configured HTTP client
 
 Module API wrappers SHALL make requests through one shared Axios client with a
