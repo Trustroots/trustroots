@@ -18,12 +18,26 @@ describe('API payload native ESM imports', () => {
         'modules/experiences/server/services/experience-payload.server.service.mjs',
       ),
     ).href;
+    const messages = pathToFileURL(
+      path.join(
+        root,
+        'modules/messages/server/services/messages-payload.server.service.mts',
+      ),
+    ).href;
+    const offers = pathToFileURL(
+      path.join(
+        root,
+        'modules/offers/server/services/offer-payload.server.service.mts',
+      ),
+    ).href;
     const source = `
       import { prepareStaffBlockers } from ${JSON.stringify(staff)};
       import { prepareExperienceCount, prepareNewExperience, prepareSendingToClient } from ${JSON.stringify(
         experiences,
       )};
-      console.log(JSON.stringify([prepareStaffBlockers, prepareExperienceCount, prepareNewExperience, prepareSendingToClient].map(value => typeof value)));
+      import { prepareNewMessageFields } from ${JSON.stringify(messages)};
+      import { prepareOfferPayload } from ${JSON.stringify(offers)};
+      console.log(JSON.stringify([prepareStaffBlockers, prepareExperienceCount, prepareNewExperience, prepareSendingToClient, prepareNewMessageFields, prepareOfferPayload].map(value => typeof value)));
     `;
     const output = execFileSync(
       process.execPath,
@@ -38,6 +52,43 @@ describe('API payload native ESM imports', () => {
       'function',
       'function',
       'function',
+      'function',
+      'function',
     ]);
+  });
+
+  it('keeps the payload builders available through synchronous CommonJS adapters', () => {
+    const root = path.resolve(__dirname, '../../../..');
+    const messages = path.join(
+      root,
+      'modules/messages/server/services/messages-payload.server.service.cjs',
+    );
+    const offers = path.join(
+      root,
+      'modules/offers/server/services/offer-payload.server.service.cjs',
+    );
+    const source = `
+      const messages = require(${JSON.stringify(messages)});
+      const offers = require(${JSON.stringify(offers)});
+      console.log(JSON.stringify([
+        messages.prepareNewMessageFields,
+        messages.prepareMessageForClient,
+        messages.prepareThreadSummary,
+        messages.prepareMarkReadSelector,
+        messages.prepareMarkReadResponse,
+        messages.prepareUnreadMessageCount,
+        messages.preparePreviewMessageResponse,
+        offers.prepareNewOffer,
+        offers.prepareOfferMutationResponse,
+        offers.prepareOfferPayload,
+        offers.prepareOfferSearchResults,
+        offers.prepareOfferUpdate,
+      ].map(value => typeof value)));
+    `;
+    const output = execFileSync(process.execPath, ['-e', source], {
+      env: { ...process.env, NODE_OPTIONS: '' },
+      encoding: 'utf8',
+    });
+    assert.deepEqual(JSON.parse(output), Array(12).fill('function'));
   });
 });

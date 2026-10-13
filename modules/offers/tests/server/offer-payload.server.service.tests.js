@@ -6,7 +6,7 @@ const {
   prepareOfferPayload,
   prepareOfferSearchResults,
   prepareOfferUpdate,
-} = require('../../server/services/offer-payload.server.service.mjs');
+} = require('../../server/services/offer-payload.server.service.mts');
 
 describe('Offer API payload construction', () => {
   it('projects only the public offer fields', () => {

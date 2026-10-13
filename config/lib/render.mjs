@@ -1,5 +1,5 @@
 import nunjucks from 'nunjucks';
-import jsonForScript from './../../modules/core/server/services/json-for-script.server.service.mjs';
+import jsonForScript from './../../modules/core/server/services/json-for-script.server.service.mts';
 let service = {};
 // Configure nunjucks
 // https://mozilla.github.io/nunjucks/

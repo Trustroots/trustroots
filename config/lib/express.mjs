@@ -19,7 +19,7 @@ import path from 'path';
 import paginate from './../../modules/core/server/services/pagination.server.service.mjs';
 import { randomUUID } from 'node:crypto';
 import qs from 'qs';
-import jsonForScript from './../../modules/core/server/services/json-for-script.server.service.mjs';
+import jsonForScript from './../../modules/core/server/services/json-for-script.server.service.mts';
 const service = {};
 /**
  * Module dependencies.

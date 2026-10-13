@@ -22,7 +22,7 @@ import {
   preparePreviewMessageResponse,
   prepareThreadSummary,
   prepareUnreadMessageCount,
-} from '../services/messages-payload.server.service.mjs';
+} from '../services/messages-payload.server.service.mts';
 
 const service = {};
 

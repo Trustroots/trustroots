@@ -17,7 +17,7 @@ import {
   prepareOfferPayload,
   prepareOfferSearchResults,
   prepareOfferUpdate,
-} from './../services/offer-payload.server.service.mjs';
+} from './../services/offer-payload.server.service.mts';
 const service = {};
 function getUserProfile() {
   return userProfile;

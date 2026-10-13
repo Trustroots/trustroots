@@ -19,7 +19,7 @@ describe('Message shared API contract compiler checks', function () {
           file:
             before === undefined
               ? undefined
-              : 'modules/messages/server/services/messages-payload.server.service.mjs',
+              : 'modules/messages/server/services/messages-payload.server.service.mts',
           before,
           after,
         }),

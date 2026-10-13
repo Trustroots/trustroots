@@ -1,11 +1,11 @@
 const should = require('should');
 const nunjucks = require('nunjucks');
-const jsonForScript = require('./../../../server/services/json-for-script.server.service.mjs');
+const jsonForScript = require('./../../../server/services/json-for-script.server.service.mts');
 
 describe('Bootstrap JSON formatting', () => {
   it('exposes the same function through the ESM entry point', async () => {
     const { jsonForScript: esmJsonForScript } =
-      await import('../../../server/services/json-for-script.server.service.mjs');
+      await import('../../../server/services/json-for-script.server.service.mts');
     esmJsonForScript.should.equal(jsonForScript);
   });
 

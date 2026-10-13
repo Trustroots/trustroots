@@ -6,7 +6,7 @@ describe('Offer API contract compiler regressions', function () {
   this.timeout(30000);
   const root = path.resolve(__dirname, '../../../..');
   const implementation =
-    'modules/offers/server/services/offer-payload.server.service.mjs';
+    'modules/offers/server/services/offer-payload.server.service.mts';
 
   function diagnostics(before, after) {
     const output = execFileSync(
