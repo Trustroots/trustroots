@@ -655,6 +655,7 @@ describe('API route registrations', () => {
     };
     const acquisitionStories = controller(['list'], 'adminAcquisitionStories');
     const auditLog = controller(['list', 'record', 'actors'], 'adminAuditLog');
+    const hackerspaces = controller(['preview'], 'adminHackerspaces');
     const messages = controller(['getMessages'], 'adminMessages');
     const newsletter = controller(
       [
@@ -693,6 +694,7 @@ describe('API route registrations', () => {
         '../controllers/admin.reference-threads.server.controller':
           referenceThreads,
         '../controllers/admin.threads.server.controller': threads,
+        '../controllers/admin.hackerspaces.server.controller': hackerspaces,
         '../controllers/admin.users.server.controller': users,
         '../policies/admin.server.policy': policy,
       },
@@ -701,6 +703,11 @@ describe('API route registrations', () => {
     assertHandlers(routeByPath(routes, '/api/admin/elevate').post, [
       policy.confirmAdminPassword,
       policy.elevateAdminSession,
+    ]);
+
+    assertHandlers(routeByPath(routes, '/api/admin/hackerspaces/preview').get, [
+      auditLog.record,
+      hackerspaces.preview,
     ]);
 
     assertHandlers(routeByPath(routes, '/api/admin/acquisition-stories').post, [
