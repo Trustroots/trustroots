@@ -2,7 +2,7 @@ import _ from 'lodash';
 import winston from 'winston';
 import config from './../config.mjs';
 import dependency3 from './log-redaction.mjs';
-import dependency4 from 'winston-papertrail';
+import dependency4 from 'winston-papertrail-transport';
 let service = {};
 /*
  * A general purpose logging service that can be used anywhere in the app
@@ -15,23 +15,22 @@ let service = {};
  */
 
 const { redactMetadata } = dependency3;
+const { PapertrailTransport } = dependency4;
 
-// Requiring `winston-papertrail` will expose
-// `winston.transports.Papertrail`
-dependency4.Papertrail;
 const papertrailConfig = _.get(config, 'log.papertrail');
 
-// Add the `logFormat()` function to the papertrail config
-papertrailConfig.logFormat = function (level, message) {
-  return level + ': ' + message;
-};
+winston.configure({
+  level: 'info',
+  format: winston.format.combine(
+    winston.format.colorize(),
+    winston.format.simple(),
+  ),
+  transports: [new winston.transports.Console()],
+});
 
 // If there we have a host and port for papertrail, then configure it
 if (papertrailConfig.host && papertrailConfig.port) {
-  // Add and instantiate the papertrail transport
-  winston.add(winston.transports.Papertrail, papertrailConfig);
-  // NOTE: We don't instantiate the papertrail transport, the call to `.add()`
-  // does that on its own.
+  winston.add(new PapertrailTransport(papertrailConfig));
 }
 
 // Log that the logger has been instantiated

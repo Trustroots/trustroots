@@ -225,8 +225,18 @@ describe('diagnostic log redaction', () => {
     const addCalls = [];
     const papertrailConfig = { host: 'logs.example.test', port: 1234 };
     const returnValue = { accepted: true };
+    const transportConfigs = [];
+    function PapertrailTransport(options) {
+      transportConfigs.push(options);
+    }
     const winston = {
-      transports: { Papertrail: function Papertrail() {} },
+      transports: { Console: function Console() {} },
+      format: {
+        combine: () => ({}),
+        colorize: () => ({}),
+        simple: () => ({}),
+      },
+      configure() {},
       add() {
         addCalls.push(Array.from(arguments));
       },
@@ -240,15 +250,13 @@ describe('diagnostic log redaction', () => {
       {
         winston,
         '../config': { log: { papertrail: papertrailConfig } },
-        'winston-papertrail': { Papertrail: function Papertrail() {} },
+        'winston-papertrail-transport': { PapertrailTransport },
       },
     );
     calls.length = 0;
     assert.strictEqual(addCalls.length, 1);
-    assert.strictEqual(
-      papertrailConfig.logFormat('error', 'event'),
-      'error: event',
-    );
+    assert.ok(addCalls[0][0] instanceof PapertrailTransport);
+    assert.strictEqual(transportConfigs[0], papertrailConfig);
 
     const callback = () => {};
     const result = logger(
