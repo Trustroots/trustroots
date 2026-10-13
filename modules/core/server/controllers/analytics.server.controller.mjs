@@ -67,10 +67,16 @@ service.appendUTMParams = function (trackUrl, utmParams) {
   }
 
   let parsed;
+  let isRelative = false;
   try {
     parsed = new URL(trackUrl);
   } catch (err) {
-    return trackUrl;
+    try {
+      parsed = new URL(trackUrl, 'http://relative.invalid');
+      isRelative = true;
+    } catch (relativeErr) {
+      return trackUrl;
+    }
   }
 
   // Append required UTM parameters
@@ -87,7 +93,9 @@ service.appendUTMParams = function (trackUrl, utmParams) {
   }
 
   parsed.search = parsed.searchParams.toString().replace(/\+/g, '%20');
-  return parsed.toString();
+  return isRelative
+    ? `${parsed.pathname}${parsed.search}${parsed.hash}`
+    : parsed.toString();
 };
 const defaultExport = service;
 export default defaultExport;

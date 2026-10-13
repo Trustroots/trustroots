@@ -40,10 +40,10 @@ describe('Controller: analytics', function () {
       result.should.containEql('utm_source=transactional_email');
     });
 
-    it('returns relative URLs unchanged', function () {
-      analytics
-        .appendUTMParams('/reset?foo=bar', utmParams)
-        .should.equal('/reset?foo=bar');
+    it('appends UTM parameters to relative URLs and keeps them relative', function () {
+      const result = analytics.appendUTMParams('/reset?foo=bar', utmParams);
+      result.should.startWith('/reset?foo=bar&utm_source=transactional_email');
+      result.should.not.containEql('relative.invalid');
     });
 
     it('keeps the hash and replaces existing UTM parameters', function () {
