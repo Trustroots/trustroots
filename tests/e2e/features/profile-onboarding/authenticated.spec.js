@@ -546,9 +546,11 @@ test.describe('authenticated member flows', () => {
       'Oversized photo selections are rejected before upload.',
     ]);
     await page.goto('/profile/edit/photo');
-    const limit = await page.locator('input[type="file"]').evaluate(
-      input => input.ownerDocument.defaultView.settings.maxUploadSize,
-    );
+    const limit = await page
+      .locator('input[type="file"]')
+      .evaluate(
+        input => input.ownerDocument.defaultView.settings.maxUploadSize,
+      );
     const help = page.locator('#profile-photo-upload-help');
     await expect(help).toContainText('JPG, PNG or GIF. Maximum file size:');
     await expect(help).toContainText('Photos are automatically resized.');
