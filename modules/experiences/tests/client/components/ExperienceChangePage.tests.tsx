@@ -4,16 +4,35 @@ import '@testing-library/jest-dom';
 
 import ExperienceChangePage from '@/modules/experiences/client/components/ExperienceChangePage';
 import * as api from '@/modules/experiences/client/api/experience-changes.api';
+import type {
+  ExperienceChangeAccess,
+  ExperienceChangeRequestSummary,
+} from '@/modules/experiences/shared/experience-change';
 
 jest.mock('@/modules/experiences/client/api/experience-changes.api');
 
-const experience = {
+const apiMock = jest.mocked(api);
+
+const experience: ExperienceChangeAccess = {
   _id: 'experience-1',
+  public: true,
   canEdit: true,
   feedbackPublic: 'Original feedback',
   recommend: 'yes',
   interactions: { met: true, host: false, guest: false },
 };
+
+function request(
+  kind: ExperienceChangeRequestSummary['kind'],
+  status: ExperienceChangeRequestSummary['status'],
+): ExperienceChangeRequestSummary {
+  return {
+    _id: 'request-1',
+    kind,
+    status,
+    createdAt: '2026-10-13T00:00:00.000Z',
+  };
+}
 
 beforeEach(() => {
   window.history.replaceState(
@@ -21,14 +40,14 @@ beforeEach(() => {
     '',
     '/experiences/experience-1/change?secret=example',
   );
-  api.readAccess.mockResolvedValue(experience);
-  api.readMine.mockResolvedValue(null);
+  apiMock.readAccess.mockResolvedValue(experience);
+  apiMock.readMine.mockResolvedValue(null);
 });
 
 afterEach(() => jest.clearAllMocks());
 
 it('lets the author propose an edit while retaining the current values initially', async () => {
-  api.submit.mockResolvedValue({ kind: 'edit', status: 'pending' });
+  apiMock.submit.mockResolvedValue(request('edit', 'pending'));
   render(<ExperienceChangePage id="experience-1" />);
 
   expect(await screen.findByLabelText('Written feedback')).toHaveValue(
@@ -44,7 +63,7 @@ it('lets the author propose an edit while retaining the current values initially
   fireEvent.click(screen.getByRole('button', { name: 'Request edit' }));
 
   await waitFor(() =>
-    expect(api.submit).toHaveBeenCalledWith('experience-1', 'example', {
+    expect(apiMock.submit).toHaveBeenCalledWith('experience-1', 'example', {
       kind: 'edit',
       proposed: {
         feedbackPublic: 'Revised feedback',
@@ -59,23 +78,27 @@ it('lets the author propose an edit while retaining the current values initially
 });
 
 it('shows removal without edit controls to the recipient', async () => {
-  api.readAccess.mockResolvedValueOnce({ _id: 'experience-1', canEdit: false });
-  api.submit.mockResolvedValue({ kind: 'remove', status: 'pending' });
+  apiMock.readAccess.mockResolvedValueOnce({
+    _id: 'experience-1',
+    public: true,
+    canEdit: false,
+  });
+  apiMock.submit.mockResolvedValue(request('remove', 'pending'));
   render(<ExperienceChangePage id="experience-1" />);
 
   await screen.findByRole('button', { name: 'Request removal' });
   expect(screen.queryByLabelText('Written feedback')).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Request removal' }));
   await waitFor(() =>
-    expect(api.submit).toHaveBeenCalledWith('experience-1', 'example', {
+    expect(apiMock.submit).toHaveBeenCalledWith('experience-1', 'example', {
       kind: 'remove',
     }),
   );
 });
 
 it('shows status after a link expires without allowing another submission', async () => {
-  api.readAccess.mockRejectedValueOnce(new Error('expired'));
-  api.readMine.mockResolvedValueOnce({ kind: 'edit', status: 'approved' });
+  apiMock.readAccess.mockRejectedValueOnce(new Error('expired'));
+  apiMock.readMine.mockResolvedValueOnce(request('edit', 'approved'));
   render(<ExperienceChangePage id="experience-1" />);
 
   expect(await screen.findByRole('status')).toHaveTextContent('approved');
@@ -88,7 +111,7 @@ it('shows status after a link expires without allowing another submission', asyn
 });
 
 it('shows a rejected removal request and keeps the new request controls available', async () => {
-  api.readMine.mockResolvedValueOnce({ kind: 'remove', status: 'rejected' });
+  apiMock.readMine.mockResolvedValueOnce(request('remove', 'rejected'));
   render(<ExperienceChangePage id="experience-1" />);
 
   expect(await screen.findByRole('status')).toHaveTextContent(
@@ -98,7 +121,7 @@ it('shows a rejected removal request and keeps the new request controls availabl
 });
 
 it('shows server validation errors from submission', async () => {
-  api.submit.mockRejectedValueOnce({
+  apiMock.submit.mockRejectedValueOnce({
     response: { data: { message: 'A request is already pending.' } },
   });
   render(<ExperienceChangePage id="experience-1" />);
@@ -110,14 +133,31 @@ it('shows server validation errors from submission', async () => {
   );
 });
 
-it('handles a missing secret and unavailable status or submission', async () => {
-  window.history.replaceState({}, '', '/experiences/experience-1/change');
-  api.readMine.mockRejectedValueOnce(new Error('unavailable'));
-  api.submit.mockRejectedValueOnce(new Error('unavailable'));
+it.each([
+  ['missing response data', { response: {} }],
+  ['null response data', { response: { data: null } }],
+  ['missing message', { response: { data: {} } }],
+  ['non-string message', { response: { data: { message: 409 } } }],
+  ['empty message', { response: { data: { message: '' } } }],
+])('uses the fallback for a %s', async (_caseName, error: unknown) => {
+  apiMock.submit.mockRejectedValueOnce(error);
   render(<ExperienceChangePage id="experience-1" />);
   await screen.findByRole('button', { name: 'Request removal' });
 
-  expect(api.readAccess).toHaveBeenCalledWith('experience-1', '');
+  fireEvent.click(screen.getByRole('button', { name: 'Request removal' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Could not submit your request.',
+  );
+});
+
+it('handles a missing secret and unavailable status or submission', async () => {
+  window.history.replaceState({}, '', '/experiences/experience-1/change');
+  apiMock.readMine.mockRejectedValueOnce(new Error('unavailable'));
+  apiMock.submit.mockRejectedValueOnce(new Error('unavailable'));
+  render(<ExperienceChangePage id="experience-1" />);
+  await screen.findByRole('button', { name: 'Request removal' });
+
+  expect(apiMock.readAccess).toHaveBeenCalledWith('experience-1', '');
   fireEvent.click(screen.getByRole('button', { name: 'Request removal' }));
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'Could not submit your request.',
@@ -125,8 +165,8 @@ it('handles a missing secret and unavailable status or submission', async () => 
 });
 
 it('discards access results after leaving the page', async () => {
-  let resolveAccess;
-  api.readAccess.mockReturnValueOnce(
+  let resolveAccess!: (value: ExperienceChangeAccess) => void;
+  apiMock.readAccess.mockReturnValueOnce(
     new Promise(resolve => {
       resolveAccess = resolve;
     }),
@@ -134,5 +174,5 @@ it('discards access results after leaving the page', async () => {
   const { unmount } = render(<ExperienceChangePage id="experience-1" />);
   unmount();
   resolveAccess(experience);
-  await waitFor(() => expect(api.readAccess).toHaveBeenCalledTimes(1));
+  await waitFor(() => expect(apiMock.readAccess).toHaveBeenCalledTimes(1));
 });
