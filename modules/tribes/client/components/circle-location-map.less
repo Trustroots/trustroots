@@ -34,3 +34,33 @@
 .tribe-header .circle-location-map-panel a:not(.btn) {
   color: #097d69;
 }
+
+.circle-location-map-panel--brand {
+  border: 1px solid fade(@brand-primary, 25%);
+  border-top: 4px solid @brand-primary;
+  box-shadow: 0 6px 28px fade(darken(@brand-primary, 30%), 18%);
+
+  h3,
+  .leaflet-popup-content strong {
+    color: darken(@brand-primary, 18%);
+  }
+
+  .circle-location-map {
+    background: lighten(@brand-primary, 52%);
+  }
+
+  a:not(.btn) {
+    &,
+    &:hover,
+    &:focus,
+    &:active {
+      color: darken(@brand-primary, 15%);
+      text-shadow: none;
+    }
+  }
+
+  .leaflet-popup-content-wrapper {
+    border-top: 3px solid @brand-primary;
+    border-radius: 12px;
+  }
+}
