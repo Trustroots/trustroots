@@ -66,6 +66,9 @@ export default function ReactAppShell() {
     if (!route?.noScrollingTop) {
       window.scrollTo(0, 0);
     }
+
+    const anchor = decodeURIComponent(location.hash.slice(1));
+    if (anchor) document.getElementById(anchor)?.scrollIntoView();
   }, [route, title]);
 
   useEffect(() => {

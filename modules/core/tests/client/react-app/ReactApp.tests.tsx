@@ -337,6 +337,29 @@ describe('<ReactApp />', () => {
     expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
   });
 
+  it('scrolls to the element named by the URL fragment after the route renders', async () => {
+    const target = document.createElement('div');
+    target.id = 'rules-anchor';
+    target.scrollIntoView = jest.fn();
+    document.body.appendChild(target);
+
+    try {
+      renderApp('/rules#rules-anchor');
+
+      expect(await screen.findByText('Rules route')).toBeInTheDocument();
+      expect(target.scrollIntoView).toHaveBeenCalled();
+    } finally {
+      target.remove();
+    }
+  });
+
+  it('renders normally when the URL fragment matches no element', async () => {
+    renderApp('/rules#missing-anchor');
+
+    expect(await screen.findByText('Rules route')).toBeInTheDocument();
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
+  });
+
   it('passes bootstrap user data to route and shell components', async () => {
     renderApp('/support?report=alice', {
       user: {
