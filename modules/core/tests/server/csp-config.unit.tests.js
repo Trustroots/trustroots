@@ -27,6 +27,8 @@ describe('Production content security policy', function () {
     assert.ok(policy.includes("'nonce-" + res.body.nonce + "'"));
     assert.ok(!policy.match(/script-src[^;]*\*\./));
     assert.ok(policy.includes("worker-src 'self' blob:"));
+    // Helmet 8 defaults include this; it must stay off so HTTP e2e/dev still load.
+    assert.ok(!policy.includes('upgrade-insecure-requests'));
     assert.ok(!policy.includes('google-analytics.com'));
     assert.ok(!policy.includes('doubleclick.net'));
     assert.ok(policy.includes('https://1p.trustroots.org'));

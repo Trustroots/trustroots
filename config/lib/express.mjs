@@ -347,6 +347,9 @@ service.initHelmetHeaders = function (app) {
         workerSrc: ["'self'", 'blob:'],
         // Restricts the URLs that can appear in a page's `<base>` element.
         baseUri: ["'self'"],
+        // Helmet 8 enables upgrade-insecure-requests by default; that breaks
+        // local/CI HTTP (e2e and development) by forcing HTTPS subresource loads.
+        upgradeInsecureRequests: null,
         // Browsers report CSP violations to this path using `POST` method
         // See `modules/core/server/routes/core.server.routes.js`
         // Note: If you’re using a CSRF module like csurf, you might have problems
