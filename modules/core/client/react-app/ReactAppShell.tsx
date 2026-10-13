@@ -69,19 +69,17 @@ export default function ReactAppShell() {
     if (!route?.noScrollingTop) {
       window.scrollTo(0, 0);
     }
-
-    const anchor = decodeURIComponent(location.hash.slice(1));
-    if (anchor) document.getElementById(anchor)?.scrollIntoView();
   }, [route, title]);
 
   useEffect(() => {
-    if (!locationHash) {
+    const rawHash = locationHash || location.hash;
+    if (!rawHash) {
       return undefined;
     }
 
-    const targetId = locationHash.startsWith('#')
-      ? locationHash.slice(1)
-      : locationHash;
+    const targetId = decodeURIComponent(
+      rawHash.startsWith('#') ? rawHash.slice(1) : rawHash,
+    );
     if (!targetId) {
       return undefined;
     }
