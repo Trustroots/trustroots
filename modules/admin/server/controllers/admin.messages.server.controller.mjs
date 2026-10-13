@@ -6,11 +6,13 @@ import crypto from 'crypto';
 import errorService from './../../../core/server/services/error.server.service.mjs';
 import mongoose from 'mongoose';
 import MessagesController from './../../../messages/server/controllers/messages.server.controller.mjs';
+import { findPairRecords } from '../services/admin-pair-records.server.service.mts';
 import textService from './../../../core/server/services/text.server.service.mjs';
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');
 const ReferenceThread = mongoose.model('ReferenceThread');
 const User = mongoose.model('User');
+
 async function findScammerRecipients(username, currentUserId) {
   if (typeof username !== 'string' || !username.trim()) {
     const error = new Error('Missing `username` field.');
@@ -226,70 +228,22 @@ export const getMessages = (req, res) => {
       message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
-  Message.find({
-    $or: [
-      {
-        userFrom: user1,
-        userTo: user2,
-      },
-      {
-        userFrom: user2,
-        userTo: user1,
-      },
-    ],
-  })
-    .sort({
-      created: 1,
-    })
-    .populate({
-      path: 'userFrom',
-      select: 'username displayName',
-      model: 'User',
-    })
-    .populate({
-      path: 'userTo',
-      select: 'username displayName',
-      model: 'User',
-    })
-    .exec((err, messages) => {
-      if (err) {
-        return errorService.sendBadRequest(res, err);
-      }
-      ReferenceThread.find({
-        $or: [
-          {
-            userFrom: user1,
-            userTo: user2,
-          },
-          {
-            userFrom: user2,
-            userTo: user1,
-          },
-        ],
-      })
-        .sort({
-          created: 1,
-        })
-        .populate({
-          path: 'userFrom',
-          select: 'username displayName',
-          model: 'User',
-        })
-        .populate({
-          path: 'userTo',
-          select: 'username displayName',
-          model: 'User',
-        })
-        .exec((referenceThreadErr, referenceThreads) => {
-          if (referenceThreadErr) {
-            return errorService.sendBadRequest(res, referenceThreadErr);
-          }
-          return res.send({
-            messages: MessagesController.sanitizeMessages(messages),
-            referenceThreads: referenceThreads || [],
-          });
+  findPairRecords(Message, user1, user2).exec((err, messages) => {
+    if (err) {
+      return errorService.sendBadRequest(res, err);
+    }
+    findPairRecords(ReferenceThread, user1, user2).exec(
+      (referenceThreadErr, referenceThreads) => {
+        if (referenceThreadErr) {
+          return errorService.sendBadRequest(res, referenceThreadErr);
+        }
+        return res.send({
+          messages: MessagesController.sanitizeMessages(messages),
+          referenceThreads: referenceThreads || [],
         });
-    });
+      },
+    );
+  });
 };
 const defaultInterop = {
   getScammerRecipients,
