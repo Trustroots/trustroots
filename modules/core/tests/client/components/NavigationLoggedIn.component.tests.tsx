@@ -1,9 +1,18 @@
 import React, { type ComponentProps } from 'react';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import NavigationLoggedIn from '@/modules/core/client/components/NavigationLoggedIn';
+import {
+  listMemberships,
+  type MembershipUpdate,
+} from '@/modules/tribes/client/api/tribes.api';
+
+jest.mock('@/modules/tribes/client/api/tribes.api', () => ({
+  listMemberships: jest.fn(),
+}));
+const mockListMemberships = jest.mocked(listMemberships);
 
 type AuthUser = ComponentProps<typeof NavigationLoggedIn>['user'];
 
@@ -23,6 +32,11 @@ jest.mock('@/modules/users/client/components/Avatar.component.js', () => {
 });
 
 describe('<NavigationLoggedIn />', () => {
+  beforeEach(() => {
+    mockListMemberships.mockReset();
+    mockListMemberships.mockResolvedValue([]);
+  });
+
   it.each([{ roles: ['support-team'] }, { roles: ['support-team', 'admin'] }])(
     'opens the permitted staff landing page for %j',
     ({ roles }) => {
@@ -188,5 +202,139 @@ describe('<NavigationLoggedIn />', () => {
 
     const messagesLink = screen.getByRole('link', { name: 'Messages' });
     expect(messagesLink.closest('li')).toHaveClass('active');
+  });
+
+  it('lists only the ten largest own circles without changing membership order', async () => {
+    const member = Array.from({ length: 12 }, (_, index) => ({
+      tribe: {
+        _id: `circle-${index}`,
+        slug: `circle-${index}`,
+        label: `Circle ${index}`,
+        count: index * 10,
+      },
+    }));
+    mockListMemberships.mockResolvedValue([...member, {}]);
+    render(
+      <NavigationLoggedIn
+        currentPath="/circles"
+        onSignout={jest.fn()}
+        user={{ ...user, member }}
+      />,
+    );
+    await screen.findByRole('link', { name: 'Circle 11', exact: true });
+    const item = requireElement(
+      screen.getByRole('link', { name: 'Circles', exact: true }).closest('li'),
+    );
+    expect(item).toHaveClass('dropdown', 'header-link-dropdown', 'active');
+    const menu = requireElement(
+      item.querySelector<HTMLElement>('.dropdown-menu'),
+    );
+    expect(menu).toHaveClass('hidden-xs');
+    const links = within(menu).getAllByRole('link');
+    expect(links.map(link => link.textContent)).toEqual(
+      Array.from({ length: 10 }, (_, index) => `Circle ${11 - index}`),
+    );
+    expect(links[0]).toHaveAttribute('href', '/circles/circle-11');
+    expect(member[0].tribe._id).toBe('circle-0');
+  });
+
+  it.each([undefined, []])('omits an empty circles menu for %j', member => {
+    render(
+      <NavigationLoggedIn
+        currentPath="/search"
+        onSignout={jest.fn()}
+        user={{ ...user, member }}
+      />,
+    );
+    const item = requireElement(
+      screen.getByRole('link', { name: 'Circles', exact: true }).closest('li'),
+    );
+    expect(item.querySelector('.dropdown-menu')).toBeNull();
+    expect(item).not.toHaveClass('dropdown');
+    expect(
+      screen.getByRole('link', { name: 'Find member by name' }),
+    ).toHaveAttribute('href', '/search/members');
+  });
+
+  it('puts Hackers first even when it would fall outside the ten largest circles', async () => {
+    const member = Array.from({ length: 12 }, (_, index) => ({
+      tribe: {
+        _id: `circle-${index}`,
+        slug: index === 0 ? 'hackers' : `circle-${index}`,
+        label: index === 0 ? 'Hackers' : `Circle ${index}`,
+        count: index,
+      },
+    }));
+    mockListMemberships.mockResolvedValue(member);
+    render(
+      <NavigationLoggedIn
+        currentPath="/circles"
+        onSignout={jest.fn()}
+        user={{ ...user, member }}
+      />,
+    );
+    await screen.findByRole('link', { name: 'Hackers', exact: true });
+    const item = requireElement(
+      screen.getByRole('link', { name: 'Circles', exact: true }).closest('li'),
+    );
+    const menu = requireElement(
+      item.querySelector<HTMLElement>('.dropdown-menu'),
+    );
+    const links = within(menu).getAllByRole('link');
+    expect(links.map(link => link.textContent)).toEqual([
+      'Hackers',
+      ...Array.from({ length: 9 }, (_, index) => `Circle ${11 - index}`),
+    ]);
+    expect(links[0]).toHaveAttribute('href', '/circles/hackers');
+  });
+
+  it('keeps primary links available when memberships fail to load', async () => {
+    mockListMemberships.mockRejectedValue(new Error('Unavailable'));
+    await act(async () => {
+      render(
+        <NavigationLoggedIn
+          currentPath="/search"
+          onSignout={jest.fn()}
+          user={user}
+        />,
+      );
+    });
+    expect(
+      screen.getByRole('link', { name: 'Circles', exact: true }),
+    ).toHaveAttribute('href', '/circles');
+    expect(
+      screen.getByRole('link', { name: 'Find member by name' }),
+    ).toHaveAttribute('href', '/search/members');
+  });
+
+  it('ignores stale membership responses after the user changes', async () => {
+    let resolveMemberships!: (value: MembershipUpdate[]) => void;
+    mockListMemberships.mockReturnValueOnce(
+      new Promise(resolve => {
+        resolveMemberships = resolve;
+      }),
+    );
+    const { rerender } = render(
+      <NavigationLoggedIn
+        currentPath="/search"
+        onSignout={jest.fn()}
+        user={user}
+      />,
+    );
+    rerender(
+      <NavigationLoggedIn
+        currentPath="/search"
+        onSignout={jest.fn()}
+        user={{ ...user, _id: 'user-2' }}
+      />,
+    );
+    await act(async () => {
+      resolveMemberships([
+        { tribe: { _id: 'old', slug: 'old', label: 'Old circle', count: 1 } },
+      ]);
+    });
+    expect(
+      screen.queryByRole('link', { name: 'Old circle' }),
+    ).not.toBeInTheDocument();
   });
 });

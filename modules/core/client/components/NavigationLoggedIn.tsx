@@ -1,7 +1,7 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
-import React, { type MouseEvent } from 'react';
+import React, { useEffect, useState, type MouseEvent } from 'react';
 import { Navbar, NavDropdown, Nav, Dropdown } from 'react-bootstrap';
 
 // Internal dependencies
@@ -12,6 +12,10 @@ import UnreadCount from '@/modules/messages/client/components/UnreadCount.compon
 import Icon from './Icon';
 import MenuItem from './NavigationMenuItem';
 import SubMenuList from './NavigationSubMenuList';
+import {
+  listMemberships,
+  type TribeSummary,
+} from '@/modules/tribes/client/api/tribes.api';
 
 type Props = {
   currentPath: string;
@@ -24,6 +28,31 @@ export default function NavigationLoggedIn({
   user,
 }: Props) {
   const { t } = useTranslation('core');
+  const [memberships, setMemberships] = useState<TribeSummary[]>([]);
+  useEffect(() => {
+    let active = true;
+    setMemberships([]);
+    listMemberships().then(
+      result => {
+        if (active) {
+          setMemberships(result.flatMap(({ tribe }) => (tribe ? [tribe] : [])));
+        }
+      },
+      () => {
+        // Keep the primary Circles link available if shortcuts cannot be loaded.
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [user._id, user.member]);
+  const circles = [...memberships]
+    .sort(
+      (left, right) =>
+        Number(right.slug === 'hackers') - Number(left.slug === 'hackers') ||
+        right.count - left.count,
+    )
+    .slice(0, 10);
 
   return (
     <div className="container">
@@ -92,6 +121,25 @@ export default function NavigationLoggedIn({
           currentPath={currentPath}
           path="/circles"
           aria-label={t<string>('Circles')}
+          className={
+            circles.length ? 'dropdown header-link-dropdown' : undefined
+          }
+          submenu={
+            circles.length > 0 && (
+              <ul className="dropdown-menu hidden-xs">
+                {circles.map(tribe => (
+                  <li key={tribe._id}>
+                    <a
+                      className="dropdown-item"
+                      href={`/circles/${encodeURIComponent(tribe.slug)}`}
+                    >
+                      {tribe.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )
+          }
         >
           <Icon
             className="visible-xs-block"
@@ -105,6 +153,16 @@ export default function NavigationLoggedIn({
           currentPath={currentPath}
           path="/search"
           aria-label={t<string>('Search hosts')}
+          className="dropdown header-link-dropdown"
+          submenu={
+            <ul className="dropdown-menu hidden-xs">
+              <li>
+                <a className="dropdown-item" href="/search/members">
+                  {t<string>('Find member by name')}
+                </a>
+              </li>
+            </ul>
+          }
         >
           <Icon
             className="visible-xs-block"

@@ -128,6 +128,10 @@
 
   /* Bootstrap dropdowns */
   @media (min-width: @grid-float-breakpoint) {
+    .header-link-dropdown:focus-within .dropdown-menu {
+      display: block;
+    }
+
     // Bootstrap 5 adds a gap below the toggle. It breaks the hover path into
     // the menu, closing it before the pointer reaches the first item.
     .dropdown-menu {
