@@ -1,6 +1,8 @@
-import config from './../../../../config/config.mjs';
-import experiencesPolicy from './../policies/experiences.server.policy.mjs';
-import experiences from './../controllers/experiences.server.controller.mjs';
+import config from '../../../../config/config.mjs';
+import experiencesPolicy from '../policies/experiences.server.policy.mjs';
+import experiences from '../controllers/experiences.server.controller.mjs';
+import changes from '../controllers/experience-changes.server.controller.mjs';
+
 function register(app) {
   if (config.featureFlags.reference) {
     app
@@ -24,6 +26,22 @@ function register(app) {
       .route('/api/experiences/:experienceId')
       .all(experiencesPolicy.isAllowed)
       .get(experiences.readOne);
+
+    app
+      .route('/api/experiences/:id/change-access')
+      .all(experiencesPolicy.isAllowedChange)
+      .get(changes.readAccess);
+
+    app
+      .route('/api/experiences/:id/change-requests')
+      .all(experiencesPolicy.isAllowedChange)
+      .post(changes.submit);
+
+    app
+      .route('/api/experiences/:id/change-requests/mine')
+      .all(experiencesPolicy.isAllowedChange)
+      .get(changes.readMine);
+
     app.param('experienceId', experiences.experienceById);
   }
 }
