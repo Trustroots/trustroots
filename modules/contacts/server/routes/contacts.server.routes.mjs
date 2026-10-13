@@ -1,4 +1,4 @@
-import contactsPolicy from './../policies/contacts.server.policy.mjs';
+import contactsPolicy from './../policies/contacts.server.policy.mts';
 import contacts from './../controllers/contacts.server.controller.mjs';
 
 /**

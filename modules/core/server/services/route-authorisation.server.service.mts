@@ -1,8 +1,21 @@
 import errorService from './error.server.service.mjs';
+import type {
+  MemoryPolicy,
+  PolicyNext,
+  PolicyRequest,
+  PolicyResponse,
+} from './policy-types.server.mts';
 
 /** Each policy retains its own grants and performs domain checks first. */
-export const createRouteAuthorisation = function (acl, errorMethod = 'json') {
-  return function authoriseRoute(req, res, next) {
+export const createRouteAuthorisation = function (
+  acl: MemoryPolicy,
+  errorMethod: 'json' | 'send' = 'json',
+) {
+  return function authoriseRoute(
+    req: PolicyRequest,
+    res: PolicyResponse,
+    next: PolicyNext,
+  ): unknown {
     const roles = req.user && req.user.roles ? req.user.roles : ['guest'];
     return acl.areAnyRolesAllowed(
       roles,

@@ -1,7 +1,7 @@
 let policyModule;
 before(async function () {
   policyModule =
-    await import('../../server/policies/experiences.server.policy.mjs');
+    await import('../../server/policies/experiences.server.policy.mts');
 });
 const sinon = require('sinon');
 require('should');
@@ -140,5 +140,77 @@ describe('Experiences policy unit tests', () => {
 
     res.statusCode.should.equal(403);
     res.body.message.should.equal('Forbidden.');
+  });
+
+  it('allows signed-in users whose change-request route is permitted', async () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.resolves(true);
+    const next = sinon.stub();
+
+    await policy.isAllowedChange(
+      {
+        user: { roles: ['user'] },
+        route: { path: '/api/experiences/:id/change-requests/mine' },
+        method: 'GET',
+      },
+      mockResponse(),
+      next,
+    );
+
+    mockAcl.areAnyRolesAllowed
+      .calledWith(['user'], '/api/experiences/:id/change-requests/mine', 'get')
+      .should.be.true();
+    next.calledOnce.should.be.true();
+  });
+
+  it('denies guests and signed-in users when change-request access is not allowed', async () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.resolves(false);
+    const response = mockResponse();
+
+    await policy.isAllowedChange(
+      {
+        route: { path: '/api/experiences/:id/change-requests/mine' },
+        method: 'GET',
+      },
+      response,
+      () => {},
+    );
+
+    response.statusCode.should.equal(403);
+    mockAcl.areAnyRolesAllowed.called.should.be.false();
+
+    await policy.isAllowedChange(
+      {
+        user: { roles: ['user'] },
+        route: { path: '/api/experiences/:id/change-requests/mine' },
+        method: 'GET',
+      },
+      response,
+      () => {},
+    );
+
+    response.statusCode.should.equal(403);
+  });
+
+  it('passes change-request ACL errors to next', async () => {
+    const { policy, mockAcl } = loadPolicy();
+    const aclError = new Error('acl down');
+    mockAcl.areAnyRolesAllowed.rejects(aclError);
+    let nextArg;
+
+    await policy.isAllowedChange(
+      {
+        user: { roles: ['user'] },
+        route: { path: '/api/experiences/:id/change-requests/mine' },
+        method: 'GET',
+      },
+      mockResponse(),
+      err => {
+        nextArg = err;
+      },
+    );
+
+    nextArg.should.equal(aclError);
   });
 });

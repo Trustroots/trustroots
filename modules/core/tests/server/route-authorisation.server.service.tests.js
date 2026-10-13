@@ -1,6 +1,6 @@
 const {
   createRouteAuthorisation,
-} = require('./../../server/services/route-authorisation.server.service.mjs');
+} = require('./../../server/services/route-authorisation.server.service.mts');
 require('should');
 
 function mockResponse() {
@@ -26,7 +26,7 @@ function mockResponse() {
 describe('Route authorisation service', function () {
   it('exposes the same factory through ESM', async function () {
     const { createRouteAuthorisation: esmFactory } =
-      await import('../../server/services/route-authorisation.server.service.mjs');
+      await import('../../server/services/route-authorisation.server.service.mts');
     esmFactory.should.equal(createRouteAuthorisation);
   });
 

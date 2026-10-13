@@ -1,7 +1,11 @@
-import memoryPolicy from './../../../core/server/services/memory-policy.server.service.mjs';
+import memoryPolicy from './../../../core/server/services/memory-policy.server.service.mts';
 import errorService from './../../../core/server/services/error.server.service.mjs';
-import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mjs';
-const service = {};
+import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mts';
+import type {
+  PolicyNext,
+  PolicyRequest,
+  PolicyResponse,
+} from '../../../core/server/services/policy-types.server.mts';
 
 /**
  * Module dependencies.
@@ -11,7 +15,7 @@ const authoriseRoute = createRouteAuthorisation(acl);
 /**
  * Invoke Messages Permissions
  */
-service.invokeRolesPolicies = function () {
+function invokeRolesPolicies() {
   acl.allow([
     {
       roles: ['admin'],
@@ -72,12 +76,12 @@ service.invokeRolesPolicies = function () {
       ],
     },
   ]);
-};
+}
 
 /**
  * Check If Messages Policy Allows
  */
-service.isAllowed = function (req, res, next) {
+function isAllowed(req: PolicyRequest, res: PolicyResponse, next: PolicyNext) {
   // No messages feature for un-published users
   if (req.user && req.user.public !== true) {
     return res.status(403).json({
@@ -85,9 +89,11 @@ service.isAllowed = function (req, res, next) {
     });
   }
   return authoriseRoute(req, res, next);
+}
+const service = {
+  invokeRolesPolicies,
+  isAllowed,
 };
-const invokeRolesPolicies = service.invokeRolesPolicies;
-const isAllowed = service.isAllowed;
 export { invokeRolesPolicies, isAllowed };
 export default service;
 

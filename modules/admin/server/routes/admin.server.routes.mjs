@@ -2,7 +2,7 @@ import adminAcquisitionStories from './../controllers/admin.acquisition-stories.
 import adminAuditLog from './../controllers/admin.audit-log.server.controller.mjs';
 import adminMessages from './../controllers/admin.messages.server.controller.mjs';
 import adminNewsletter from './../controllers/admin.newsletter.server.controller.mjs';
-import adminPolicy from './../policies/admin.server.policy.mjs';
+import adminPolicy from './../policies/admin.server.policy.mts';
 import adminThreads from './../controllers/admin.threads.server.controller.mjs';
 import adminUsers from './../controllers/admin.users.server.controller.mjs';
 import adminDashboard from './../controllers/admin.dashboard.server.controller.mjs';

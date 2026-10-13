@@ -1,7 +1,14 @@
-import memoryPolicy from './../../../core/server/services/memory-policy.server.service.mjs';
+import memoryPolicy from './../../../core/server/services/memory-policy.server.service.mts';
 import errorService from './../../../core/server/services/error.server.service.mjs';
-import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mjs';
-const service = {};
+import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mts';
+import type {
+  PolicyNext,
+  PolicyRequest,
+  PolicyResponse,
+} from '../../../core/server/services/policy-types.server.mts';
+type ReferenceThreadRequest = PolicyRequest & {
+  referenceThread?: { userFrom: { equals(id: unknown): boolean } };
+};
 
 /**
  * Module dependencies.
@@ -11,7 +18,7 @@ const authoriseRoute = createRouteAuthorisation(acl, 'send');
 /**
  * Invoke References Permissions
  */
-service.invokeRolesPolicies = function () {
+function invokeRolesPolicies() {
   acl.allow([
     {
       roles: ['admin'],
@@ -40,12 +47,16 @@ service.invokeRolesPolicies = function () {
       ],
     },
   ]);
-};
+}
 
 /**
  * Check If References Policy Allows
  */
-service.isAllowed = function (req, res, next) {
+function isAllowed(
+  req: ReferenceThreadRequest,
+  res: PolicyResponse,
+  next: PolicyNext,
+) {
   // No references for non-authenticated users
   // No reference writing for authenticated but un-published users, except if they're reading existing reference
   if (
@@ -66,9 +77,11 @@ service.isAllowed = function (req, res, next) {
     return next();
   }
   return authoriseRoute(req, res, next);
+}
+const service = {
+  invokeRolesPolicies,
+  isAllowed,
 };
-const invokeRolesPolicies = service.invokeRolesPolicies;
-const isAllowed = service.isAllowed;
 export { invokeRolesPolicies, isAllowed };
 export default service;
 

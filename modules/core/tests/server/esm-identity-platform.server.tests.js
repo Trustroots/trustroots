@@ -20,7 +20,7 @@ const modules = [
   'modules/users/server/jobs/user-welcome-sequence-second.server.job.mjs',
   'modules/users/server/jobs/user-welcome-sequence-third.server.job.mjs',
   'modules/users/server/models/user.server.model.mjs',
-  'modules/users/server/policies/users.server.policy.mjs',
+  'modules/users/server/policies/users.server.policy.mts',
   'modules/users/server/routes/auth.server.routes.mjs',
   'modules/users/server/routes/users-block.server.routes.mjs',
   'modules/users/server/routes/users.server.routes.mjs',

@@ -15,7 +15,7 @@ const modules = [
   'modules/admin/server/controllers/admin.users.server.controller.mjs',
   'modules/admin/server/models/admin-note.server.model.mjs',
   'modules/admin/server/models/audit-log.server.model.mjs',
-  'modules/admin/server/policies/admin.server.policy.mjs',
+  'modules/admin/server/policies/admin.server.policy.mts',
   'modules/admin/server/routes/admin.server.routes.mjs',
   'modules/statistics/server/controllers/statistics.server.controller.mjs',
   'modules/statistics/server/jobs/daily-statistics.server.job.mjs',

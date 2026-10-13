@@ -1,4 +1,4 @@
-import usersPolicy from './../policies/users.server.policy.mjs';
+import usersPolicy from './../policies/users.server.policy.mts';
 import userBlock from './../controllers/users.block.server.controller.mjs';
 
 /**

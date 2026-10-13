@@ -1,7 +1,7 @@
 let policyModule;
 before(async function () {
   policyModule =
-    await import('../../server/policies/reference-thread.server.policy.mjs');
+    await import('../../server/policies/reference-thread.server.policy.mts');
 });
 const sinon = require('sinon');
 require('should');

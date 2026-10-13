@@ -1,6 +1,10 @@
-import memoryPolicy from './../../../core/server/services/memory-policy.server.service.mjs';
-import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mjs';
-const service = {};
+import memoryPolicy from './../../../core/server/services/memory-policy.server.service.mts';
+import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mts';
+import type {
+  PolicyNext,
+  PolicyRequest,
+  PolicyResponse,
+} from '../../../core/server/services/policy-types.server.mts';
 
 /**
  * Module dependencies.
@@ -10,7 +14,7 @@ const authoriseRoute = createRouteAuthorisation(acl, 'send');
 /**
  * Invoke Tribes Permissions
  */
-service.invokeRolesPolicies = function () {
+function invokeRolesPolicies() {
   acl.allow([
     {
       roles: ['admin'],
@@ -60,16 +64,18 @@ service.invokeRolesPolicies = function () {
       ],
     },
   ]);
-};
+}
 
 /**
  * Check If Tribes Policy Allows
  */
-service.isAllowed = function (req, res, next) {
+function isAllowed(req: PolicyRequest, res: PolicyResponse, next: PolicyNext) {
   return authoriseRoute(req, res, next);
+}
+const service = {
+  invokeRolesPolicies,
+  isAllowed,
 };
-const invokeRolesPolicies = service.invokeRolesPolicies;
-const isAllowed = service.isAllowed;
 export { invokeRolesPolicies, isAllowed };
 export default service;
 

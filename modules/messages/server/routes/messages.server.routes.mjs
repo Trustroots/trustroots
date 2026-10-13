@@ -1,4 +1,4 @@
-import messagesPolicy from './../policies/messages.server.policy.mjs';
+import messagesPolicy from './../policies/messages.server.policy.mts';
 import messages from './../controllers/messages.server.controller.mjs';
 
 /**

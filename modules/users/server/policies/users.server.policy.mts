@@ -1,7 +1,17 @@
-import createMemoryPolicy from './../../../core/server/services/memory-policy.server.service.mjs';
+import createMemoryPolicy from './../../../core/server/services/memory-policy.server.service.mts';
 import errorService from './../../../core/server/services/error.server.service.mjs';
-import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mjs';
-const service = {};
+import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mts';
+import type {
+  PolicyNext,
+  PolicyRequest,
+  PolicyResponse,
+} from '../../../core/server/services/policy-types.server.mts';
+type UsersRequest = PolicyRequest & {
+  profile?: {
+    public?: boolean;
+    _id: { equals(id: unknown): boolean };
+  };
+};
 
 /**
  * Module dependencies.
@@ -12,7 +22,7 @@ const authoriseRoute = createRouteAuthorisation(acl);
 /**
  * Invoke Users Permissions
  */
-service.invokeRolesPolicies = function () {
+function invokeRolesPolicies() {
   acl.allow([
     {
       roles: ['admin'],
@@ -121,12 +131,12 @@ service.invokeRolesPolicies = function () {
       ],
     },
   ]);
-};
+}
 
 /**
  * Check If Users Policy Allows
  */
-service.isAllowed = function (req, res, next) {
+function isAllowed(req: UsersRequest, res: PolicyResponse, next: PolicyNext) {
   // Non-public profiles are invisible
   if (
     req.profile &&
@@ -151,10 +161,13 @@ service.isAllowed = function (req, res, next) {
     });
   }
   return authoriseRoute(req, res, next);
+}
+const service = {
+  invokeRolesPolicies,
+  isAllowed,
 };
 const defaultExport = service;
 export default defaultExport;
-export const invokeRolesPolicies = defaultExport.invokeRolesPolicies;
-export const isAllowed = defaultExport.isAllowed;
+export { invokeRolesPolicies, isAllowed };
 export { acl as _acl };
 export { defaultExport as 'module.exports' };

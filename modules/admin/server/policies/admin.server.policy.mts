@@ -1,9 +1,14 @@
 /**
  * Module dependencies.
  */
-import createMemoryPolicy from './../../../core/server/services/memory-policy.server.service.mjs';
+import createMemoryPolicy from './../../../core/server/services/memory-policy.server.service.mts';
 import _ from 'lodash';
 import errorService from './../../../core/server/services/error.server.service.mjs';
+import type {
+  PolicyNext,
+  PolicyRequest,
+  PolicyResponse,
+} from '../../../core/server/services/policy-types.server.mts';
 const aclInstance = createMemoryPolicy();
 
 /**
@@ -141,7 +146,11 @@ export const invokeRolesPolicies = () => {
 /**
  * Check If Users Policy Allows
  */
-export const isAllowed = (req, res, next) => {
+export const isAllowed = (
+  req: PolicyRequest,
+  res: PolicyResponse,
+  next: PolicyNext,
+) => {
   // Check for user roles
   const roles = _.get(req, ['user', 'roles'], ['guest']);
   aclInstance.areAnyRolesAllowed(

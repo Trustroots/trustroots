@@ -10,7 +10,7 @@ const statistics = require('../../../statistics/server/controllers/statistics.se
 const publishExperiences = require('../../server/jobs/experiences-publish.server.job.mjs');
 const adminChanges = require('../../../admin/server/controllers/admin.experience-changes.server.controller.mjs');
 const memberChanges = require('../../server/controllers/experience-changes.server.controller.mjs');
-const experiencePolicy = require('../../server/policies/experiences.server.policy.mjs');
+const experiencePolicy = require('../../server/policies/experiences.server.policy.mts');
 
 const Experience = mongoose.model('Experience');
 const ExperienceChangeLink = mongoose.model('ExperienceChangeLink');
