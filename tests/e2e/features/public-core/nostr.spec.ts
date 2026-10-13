@@ -145,6 +145,14 @@ test.describe.serial('nostr npub on the profile networks form', () => {
   test('offers personalised onboarding and a scannable desktop QR above the public key field', async ({
     page,
   }, testInfo) => {
+    // Exercise the anchor independently of the external analytics script.
+    await page.route('https://1p.trustroots.org/script.js', route =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/javascript',
+        body: '',
+      }),
+    );
     annotateFeature(testInfo, 'profile.edit-networks', [
       'Network settings offer username-prefilled Nostroots onboarding.',
       'The desktop QR preserves the exact onboarding URL.',

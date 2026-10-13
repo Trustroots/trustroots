@@ -124,7 +124,6 @@ describe('NostrootsActionModal', () => {
   it('focuses the onboarding link and uses the current viewer from authentication', () => {
     getCurrentUser.mockReturnValueOnce({
       username: 'sampleviewer',
-      nostrNpub: 'npub-unused',
     });
     const { getByRole } = render(
       <NostrootsActionModal
