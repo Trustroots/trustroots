@@ -196,8 +196,8 @@ export default function SigninPage() {
                       {isLoading
                         ? 'Wait...'
                         : continueSignin
-                        ? 'Sign in to continue'
-                        : 'Login'}
+                          ? 'Sign in to continue'
+                          : 'Login'}
                     </button>
                     <span className="btn space-h" />
                     <a

@@ -86,16 +86,16 @@ export default function TopNavigationSmall({
             link: `/contact-add/${userId}`,
           }
         : contact.confirmed
-        ? {
-            id: 'remove-contact',
-            label: t('Remove contact'),
-            onClick: () => setShowRemoveModal(true),
-          }
-        : {
-            id: 'delete-contact-request',
-            label: t('Delete contact request'),
-            onClick: () => setShowRemoveModal(true),
-          };
+          ? {
+              id: 'remove-contact',
+              label: t('Remove contact'),
+              onClick: () => setShowRemoveModal(true),
+            }
+          : {
+              id: 'delete-contact-request',
+              label: t('Delete contact request'),
+              onClick: () => setShowRemoveModal(true),
+            };
 
       links.push(contactLink);
     }

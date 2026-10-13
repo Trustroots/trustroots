@@ -20,8 +20,10 @@ export interface ContactListEntry extends ContactRecord {
 
 export type ContactList = ContactListEntry[] & { $resolved: boolean };
 
-export interface ContactConfirmation
-  extends Omit<ContactRecord, 'userFrom' | 'userTo'> {
+export interface ContactConfirmation extends Omit<
+  ContactRecord,
+  'userFrom' | 'userTo'
+> {
   userFrom: UserProfile;
   userTo: UserProfile;
 }
