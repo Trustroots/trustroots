@@ -175,7 +175,7 @@ type TrEditorProps = {
 export default function TrEditor({
   id,
   onChange,
-  onCtrlEnter,
+  onCtrlEnter = () => {},
   placeholder,
   text,
 }: TrEditorProps) {
@@ -241,10 +241,6 @@ export default function TrEditor({
     />
   );
 }
-
-TrEditor.defaultProps = {
-  onCtrlEnter: () => {},
-};
 
 TrEditor.propTypes = {
   id: PropTypes.string,
