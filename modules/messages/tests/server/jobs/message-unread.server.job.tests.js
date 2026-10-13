@@ -418,7 +418,6 @@ describe('Job: message unread', function () {
     message2.created = moment().subtract(moment.duration({ minutes: 11 }));
 
     // Attach non-existing user to this message
-    // eslint-disable-next-line new-cap
     message2.userFrom = new mongoose.Types.ObjectId();
     message2
       .save()
