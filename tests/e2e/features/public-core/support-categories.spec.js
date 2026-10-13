@@ -6,6 +6,7 @@ const {
 } = require('../../support/fixtures');
 const { SEEDED_MEMBERS, signInViaApi } = require('../../support/helpers');
 const { withE2eDb } = require('../../support/db');
+const { stubStatisticsImages } = require('../../support/statistics');
 const {
   SUPPORT_CATEGORIES,
 } = require('../../../../modules/support/shared/categories.ts');
@@ -186,6 +187,7 @@ for (const [path, name, selector] of [
   test(`volunteer link ${name} on ${path} opens the selected support category`, async ({
     page,
   }) => {
+    if (path === '/statistics') await stubStatisticsImages(page.context());
     await page.goto(path);
     const scope = selector ? page.locator(selector) : page;
     const link = scope.getByRole('link', { name, exact: true });
