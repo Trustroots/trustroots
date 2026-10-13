@@ -2,9 +2,8 @@
 /* eslint-disable no-console */
 const { spawn } = require('node:child_process');
 const { randomBytes } = require('node:crypto');
-const { statSync } = require('node:fs');
+const { globSync, statSync } = require('node:fs');
 const path = require('node:path');
-const glob = require('glob');
 const { MongoClient } = require('mongodb');
 
 const root = path.resolve(__dirname, '..');
@@ -153,7 +152,7 @@ async function main() {
     ? files
     : process.env.SERVER_TEST_FILES
     ? process.env.SERVER_TEST_FILES.split(',').filter(Boolean)
-    : glob.sync('modules/*/tests/server/**/*.js', { cwd: root });
+    : globSync('modules/*/tests/server/**/*.js', { cwd: root }).sort();
   const plan = createPlan(selected, process.env.SERVER_TEST_WORKERS ?? '2');
   process.exitCode = await runWorkers(plan);
 }

@@ -1,11 +1,10 @@
 import { registerHooks, createRequire, stripTypeScriptTypes } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { readFileSync } from 'node:fs';
+import { globSync, readFileSync } from 'node:fs';
 
 const require = createRequire(import.meta.url);
 const { createInstrumenter } = require('istanbul-lib-instrument');
-const glob = require('glob');
 const config = JSON.parse(
   readFileSync(new URL('../../.nycrc-server', import.meta.url), 'utf8'),
 );
@@ -33,7 +32,7 @@ const readSource = filename => {
 // NYC's CommonJS require hook cannot safely instrument native require(ESM).
 globalThis.__coverage__ = globalThis.__coverage__ || {};
 for (const pattern of config.include) {
-  for (const relative of glob.sync(pattern, { cwd: root })) {
+  for (const relative of globSync(pattern, { cwd: root }).sort()) {
     if (config.exclude.some(excluded => path.matchesGlob(relative, excluded)))
       continue;
     const filename = path.join(root, relative);
