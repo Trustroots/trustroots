@@ -9,6 +9,10 @@ import { prepareStaffBlockers } from '../services/staff-blockers-payload.server.
 import errorService from '../../../core/server/services/error.server.service.mjs';
 import log from '../../../../config/lib/logger.mjs';
 import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../../../users/server/lib/account-identifier.server.mjs';
+import {
+  getAdminIdentityIdentifiers,
+  getUniqueAdminIdentityIdentifiers,
+} from '../services/admin-identity.server.service.mts';
 
 const AdminNote = mongoose.model('AdminNote');
 const Contact = mongoose.model('Contact');
@@ -125,14 +129,6 @@ function createMemberSearchRegexp(search) {
   return new RegExp('.*' + whitespaceTolerantSearch + '.*', 'i');
 }
 
-function normalizeIdentifier(value) {
-  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-
-function getEmailLocalPart(value) {
-  return value.split('@')[0];
-}
-
 function normalizeAcquisitionStory(value) {
   return value.trim().replace(/\s+/g, ' ').toLowerCase();
 }
@@ -150,20 +146,9 @@ function createFlexibleIdentifierRegexp(identifier, emailLocalPartOnly) {
 }
 
 function getPotentialMatchSignals(user) {
-  const signals = [
-    { label: 'Username identifier', value: normalizeIdentifier(user.username) },
-    {
-      label: 'Email identifier',
-      value: normalizeIdentifier(getEmailLocalPart(user.email)),
-    },
-    {
-      label: 'Temporary email identifier',
-      value: normalizeIdentifier(getEmailLocalPart(user.emailTemporary)),
-    },
-  ].filter(
-    ({ value }, index, items) =>
-      value.length >= POTENTIAL_MATCH_MIN_IDENTIFIER_LENGTH &&
-      items.findIndex(item => item.value === value) === index,
+  const signals = getUniqueAdminIdentityIdentifiers(
+    user,
+    POTENTIAL_MATCH_MIN_IDENTIFIER_LENGTH,
   );
   const acquisitionStory = normalizeAcquisitionStory(user.acquisitionStory);
 
@@ -174,11 +159,9 @@ function getPotentialMatchSignals(user) {
 }
 
 function getPotentialMatchReasons(user, signals) {
-  const candidateIdentifiers = [
-    normalizeIdentifier(user.username),
-    normalizeIdentifier(getEmailLocalPart(user.email)),
-    normalizeIdentifier(getEmailLocalPart(user.emailTemporary)),
-  ];
+  const candidateIdentifiers = getAdminIdentityIdentifiers(user).map(
+    ({ value }) => value,
+  );
   const reasons = signals.identifiers
     .filter(({ value }) =>
       candidateIdentifiers.some(identifier => identifier.includes(value)),
