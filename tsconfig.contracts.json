@@ -18,10 +18,11 @@
     "modules/*/shared/**/*.mts",
     "modules/users/tests/fixtures/profile-api-contracts.mjs",
     "modules/users/tests/fixtures/profile-client-api-contracts.mts",
-    "modules/users/server/services/profile-response.server.service.mjs",
+    "modules/users/tests/fixtures/profile-response-overloads.contracts.mts",
+    "modules/users/server/services/profile-response.server.service.mts",
     "modules/messages/server/services/messages-payload.server.service.mts",
-    "modules/admin/server/services/staff-blockers-payload.server.service.mjs",
-    "modules/experiences/server/services/experience-payload.server.service.mjs",
+    "modules/admin/server/services/staff-blockers-payload.server.service.mts",
+    "modules/experiences/server/services/experience-payload.server.service.mts",
     "modules/offers/server/services/offer-payload.server.service.mts",
     "modules/offers/tests/client/api/offer-contract.types.mts"
   ]

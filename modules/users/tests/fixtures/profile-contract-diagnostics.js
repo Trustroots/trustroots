@@ -12,7 +12,7 @@ const host = ts.createCompilerHost(parsed.options);
 const original = host.readFile.bind(host);
 const target = path.join(
   root,
-  'modules/users/server/services/profile-response.server.service.mjs',
+  'modules/users/server/services/profile-response.server.service.mts',
 );
 host.readFile = filename => {
   const source = original(filename);

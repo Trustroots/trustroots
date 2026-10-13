@@ -4,7 +4,7 @@ const {
   prepareExperienceCount,
   prepareNewExperience,
   prepareSendingToClient,
-} = require('../../server/services/experience-payload.server.service.mjs');
+} = require('../../server/services/experience-payload.server.service.cjs');
 
 describe('Experience API payload construction', () => {
   const author = new ObjectId('111111111111111111111111');
