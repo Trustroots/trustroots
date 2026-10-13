@@ -197,8 +197,8 @@ export default function OfferHostPage({ user }: HostPageProps) {
             isDescriptionTooShort
               ? 'Write longer description first'
               : !hasLocation
-              ? 'Choose a location first'
-              : undefined
+                ? 'Choose a location first'
+                : undefined
           }
           type="submit"
         >

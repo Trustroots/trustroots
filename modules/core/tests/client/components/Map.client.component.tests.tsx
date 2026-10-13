@@ -133,8 +133,7 @@ function changeMapViewport(
   interactionState?: InteractionState,
 ): void {
   const onViewportChange = latestReactMapProps().onViewportChange as
-    | ViewportChangeHandler
-    | undefined;
+    ViewportChangeHandler | undefined;
   if (!onViewportChange) {
     throw new Error('Expected the map viewport callback to be provided');
   }

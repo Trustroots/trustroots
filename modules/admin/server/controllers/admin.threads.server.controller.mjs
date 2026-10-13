@@ -28,7 +28,6 @@ export const getThreads = async (req, res) => {
             {
               userFrom: new mongoose.Types.ObjectId(userId),
             },
-
             {
               userTo: new mongoose.Types.ObjectId(userId),
             },
