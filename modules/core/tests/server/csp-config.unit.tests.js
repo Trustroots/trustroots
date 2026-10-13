@@ -35,6 +35,7 @@ describe('Production content security policy', function () {
       .find(directive => directive.trim().startsWith('connect-src'));
     assert.ok(connections.includes('wss://relay.trustroots.org'));
     assert.ok(connections.includes('wss://relay.nomadwiki.org'));
+    assert.ok(connections.includes('wss://relay.maps.hitchwiki.org'));
     assert.notEqual(res.body.nonce, (await response('production')).body.nonce);
   });
   it('retains development eval source maps in report-only mode', async function () {
