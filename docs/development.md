@@ -49,3 +49,16 @@ in-process JSON transport and does not start the Mailpit UI.
 For Docker setup, troubleshooting, dependency rebuilds, and test workflows, see
 the [Docker guide](../deploy/docker/README.md). For editor and test workflow
 details, see the [dev container guide](../.devcontainer/README.md).
+
+## Check internal links
+
+Run `npm run check:links` to check literal JSX links against the browser route
+registry and fragment IDs in the destination components. CI runs this check and
+its regression tests (`npm run test:links`) with the client checks.
+
+Use paths starting with `/` for internal navigation. The check follows local
+component imports and recognises literal IDs supplied in data objects and the
+app shell. It checks source definitions, so browser tests are still needed to
+verify scrolling, focus and conditionally rendered targets. It does not check
+external website availability, API endpoints or links constructed from runtime
+data.

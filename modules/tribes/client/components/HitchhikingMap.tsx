@@ -42,15 +42,15 @@ export default function HitchhikingMap() {
   );
   return (
     <CircleLocationMap
-      title="Hitchhiking in the past 7 days"
-      description="Hitchwiki-reported ride origins. Uses the recorded ride date, or submission date when unknown. Locations have not been independently verified."
+      title="Hitchhikers on the road"
+      description="Recent rides shared on Hitchwiki Maps."
       mapLabel="Map of recent Hitchwiki hitchhiking locations"
       locations={locations}
       state={state}
       loadingText="Loading recent locations from Hitchwiki relay…"
       emptyText="No reported locations in the past 7 days."
       errorText="Recent locations could not be loaded from Hitchwiki relay."
-      countLabel="recent ride origins"
+      countLabel="ride origins in the past 7 days"
       attribution={
         <>
           Data:{' '}
