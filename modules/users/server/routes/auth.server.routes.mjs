@@ -32,7 +32,9 @@ const defaultExport = function (app) {
     .post(targetedRequestLimit.resetPassword, userPassword.reset);
 
   // Setting up the users authentication api
-  app.route('/api/auth/signup').post(userAuthentication.signup);
+  app
+    .route('/api/auth/signup')
+    .post(targetedRequestLimit.signup, userAuthentication.signup);
   app
     .route('/api/auth/signup/validate')
     .post(userAuthentication.signupValidation);

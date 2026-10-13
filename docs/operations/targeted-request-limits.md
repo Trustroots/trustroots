@@ -1,9 +1,9 @@
 # Targeted request-limit index rollout
 
-The targeted sign-in, recovery, confirmation-resend, session-management and
-avatar-upload limits store counters in the `requestlimits` collection. Before enabling the updated
-application in production, create its unique and TTL indexes against the
-application database:
+The targeted signup, support, sign-in, recovery, confirmation-resend,
+session-management and avatar-upload limits store counters in the
+`requestlimits` collection. Before enabling the updated application in
+production, create its unique and TTL indexes against the application database:
 
 ```javascript
 db.requestlimits.createIndex({ key: 1 }, { unique: true });
@@ -29,3 +29,10 @@ many requests from localhost remain unaffected.
 Session-management mutations use a separate `manageSessions` policy in
 `targetedRequestLimits` so password-protected session changes do not consume
 the confirmation-email resend allowance.
+
+Signup defaults to 20 attempts per client address and three attempts per
+normalised recipient email address per hour. The recipient allowance is shared
+across client addresses. Support defaults to ten requests per client address
+and ten per signed-in member per hour; anonymous requests use the address
+allowance. Configure these policies under `targetedRequestLimits.signup` and
+`targetedRequestLimits.support`.

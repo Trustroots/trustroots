@@ -42,6 +42,8 @@ service = {
     allowedHosts: ['ntfy.sh'],
   },
   targetedRequestLimits: {
+    signup: { windowMs: 60 * 60 * 1000, ipLimit: 10000, identityLimit: 10000 },
+    support: { windowMs: 60 * 60 * 1000, ipLimit: 10000, identityLimit: 10000 },
     signin: { windowMs: 60 * 60 * 1000, ipLimit: 10000, identityLimit: 10000 },
     mfaVerify: {
       windowMs: 60 * 60 * 1000,

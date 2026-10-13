@@ -18,6 +18,7 @@ const {
   SEEDED_SHADOW_MESSAGE,
   fetchUserIdByUsername,
   authenticateViaApi,
+  signInViaApi,
 } = require('../../support/helpers');
 
 const test = base.extend({
@@ -30,6 +31,133 @@ const test = base.extend({
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe('seeded message API flows', () => {
+  test('conversation retrieval preserves unread state until acknowledgement', async ({
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.read-count-sync', [
+      'Conversation retrieval preserves read state until explicit acknowledgement.',
+    ]);
+    const userTo = new ObjectId(SEEDED_MEMBERS[0].id);
+    const userFrom = new ObjectId(SEEDED_MEMBERS[1].id);
+    const messageId = new ObjectId();
+    const thread = await withE2eDb(async db => {
+      const original = await db.collection('threads').findOne({
+        $or: [
+          { userTo, userFrom },
+          { userTo: userFrom, userFrom: userTo },
+        ],
+      });
+      await db.collection('messages').insertOne({
+        _id: messageId,
+        userFrom,
+        userTo,
+        content: 'A fictional unread reply.',
+        read: false,
+        created: new Date(),
+      });
+      await db.collection('threads').updateOne(
+        { _id: original._id },
+        {
+          $set: { userFrom, userTo, message: messageId, read: false },
+        },
+      );
+      return original;
+    });
+    const persistedThread = () =>
+      withE2eDb(db => db.collection('threads').findOne({ _id: thread._id }));
+    try {
+      expect(
+        (await request.get(`/api/messages/${userFrom}`)).ok(),
+      ).toBeTruthy();
+      expect((await persistedThread()).read).toBe(false);
+      for (const messageIds of [[{ $ne: null }], ['invalid'], [null]]) {
+        expect(
+          (
+            await request.post('/api/messages-read', { data: { messageIds } })
+          ).status(),
+        ).toBe(400);
+        expect((await persistedThread()).read).toBe(false);
+      }
+      expect(
+        (await request.get('/api/auth/session?name[$ne]=value')).status(),
+      ).toBe(400);
+      expect(
+        (
+          await request.post('/api/messages-read', {
+            data: { messageIds: [messageId.toString()] },
+            headers: { Origin: 'https://fictional.example' },
+          })
+        ).status(),
+      ).toBe(403);
+      expect((await persistedThread()).read).toBe(false);
+      expect(
+        (
+          await request.post('/api/messages-read', {
+            data: { messageIds: [messageId.toString()] },
+          })
+        ).ok(),
+      ).toBeTruthy();
+      expect((await persistedThread()).read).toBe(true);
+    } finally {
+      await withE2eDb(async db => {
+        await db.collection('threads').replaceOne({ _id: thread._id }, thread);
+        await db.collection('messages').deleteOne({ _id: messageId });
+      });
+    }
+  });
+
+  test('inbox and collapsed profile previews display literal markup characters', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.inbox', [
+      'Inbox previews display literal text.',
+    ]);
+    annotateFeature(testInfo, 'profile.view-about', [
+      'Collapsed profile previews display literal text.',
+    ]);
+    const member = SEEDED_MEMBERS[0];
+    const original = await findUserByUsername(member.username);
+    const literal = '<img src=x onerror=alert(1)>';
+    const encoded = '&lt;img src=x onerror=alert(1)&gt;';
+    await signInViaApi(page, request, member);
+    try {
+      expect(
+        (
+          await page.request.put('/api/users', {
+            data: { description: `${encoded}${'A'.repeat(2100)}` },
+          })
+        ).ok(),
+      ).toBeTruthy();
+      await page.goto(`/profile/${member.username}/about`);
+      const preview = page.locator('#profile-description');
+      await expect(preview).toContainText(literal);
+      await expect(preview.locator('img')).toHaveCount(0);
+      await page.getByText('Read more…', { exact: true }).click();
+      await expect(page.locator('.profile-view img[src="x"]')).toHaveCount(0);
+      expect(
+        (
+          await page.request.post('/api/messages', {
+            data: {
+              userTo: SEEDED_MEMBERS[1].id,
+              content: '&amp;lt;img src=x onerror=alert(1)&amp;gt;',
+            },
+          })
+        ).ok(),
+      ).toBeTruthy();
+      await page.goto('/messages');
+      const excerpt = page
+        .locator('.threadlist-thread-excerpt')
+        .filter({ hasText: literal });
+      await expect(excerpt).toHaveCount(1);
+      await expect(excerpt.locator('img')).toHaveCount(0);
+    } finally {
+      await updateUserByUsername(member.username, {
+        $set: { description: original.description },
+      });
+    }
+  });
+
   test('a sent message is populated and persists through the native client', async ({
     request,
   }, testInfo) => {
