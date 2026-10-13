@@ -52,3 +52,10 @@ only to change the extension. Jest already matches `.tests.[jt]s?(x)`, and
 Use British spelling for any new text (for example decentralisation, organisation,
 licence, emphasise). Do not change US spellings in code identifiers, CSS
 properties, URLs, or third-party names.
+
+Links between `modules/*` (imports and `mongoose.model('X')` lookups of another
+module's models) are recorded in `module-graph-baseline.json`, and CI fails when
+they differ from it. Do not add a link from one module to another without a
+reason you can state in the PR. If one is intended, run
+`npm run modules:update-baseline` and explain it in the PR; after removing one,
+run the same command to lock in the improvement.

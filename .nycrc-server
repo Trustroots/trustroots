@@ -1,13 +1,13 @@
 {
   "all": false,
+  "extension": [".js", ".cjs", ".mjs", ".mts"],
   "include": [
-    "modules/*/server/**/*.mjs"
+    "modules/*/server/**/*.{mjs,mts}"
   ],
   "exclude": [
     "modules/*/tests/**",
     "deploy/docker/data/**",
-    "modules/*/server/**/*.model.mjs",
-    "modules/*/server/**/*.model.mjs",
+    "modules/*/server/**/*.model.{mjs,mts}",
     "modules/*/server/models/**",
     "modules/core/server/jobs/send-push-message.server.job.mjs",
     "modules/users/server/jobs/user-welcome-sequence-first.server.job.mjs",

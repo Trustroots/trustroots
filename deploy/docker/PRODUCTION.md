@@ -1,5 +1,10 @@
 # Production Docker operations
 
+After an upgrade or database restore, run `npm run ensure-circle-discovery-indexes`
+inside the application container. Production disables automatic index creation;
+without these indexes, circle member discovery can exceed its query time limit.
+This command is idempotent and does not drop indexes or change member data.
+
 GitHub Actions validates production image builds on pull requests and publishes
 `linux/amd64` images tagged `latest` and `git-<short-commit>` to GHCR after
 code-bearing pushes to `main`.

@@ -34,7 +34,6 @@ service.initLocalVariables = function (app) {
   app.locals.twitterUsername = config.twitter.username;
   app.locals.facebookPage = config.facebook.page;
   app.locals.googlePage = config.google.page;
-  app.locals.googleAnalytics = config.googleAnalytics;
   app.locals.umami = config.umami;
   app.locals.env =
     ['development', 'test', 'production'].indexOf(process.env.NODE_ENV) > -1
@@ -58,12 +57,24 @@ service.initLocalVariables = function (app) {
 
   // Assets
   if (
+    process.env.TRUSTROOTS_VITE_DEV_SERVER === 'true' &&
+    process.env.NODE_ENV === 'development'
+  ) {
+    app.locals.reactUsesVite = true;
+    app.locals.reactJsFiles = [
+      'assets/@vite/client',
+      'assets/config/vite/react-main.tsx',
+    ];
+    app.locals.reactCssFiles = [];
+  } else if (
     process.env.NODE_ENV === 'production' ||
     process.env.TRUSTROOTS_E2E_USE_EXTRACTED_CSS === 'true'
   ) {
+    app.locals.reactUsesVite = false;
     app.locals.reactJsFiles = ['assets/react-main.js'];
     app.locals.reactCssFiles = ['assets/react-main.css'];
   } else {
+    app.locals.reactUsesVite = false;
     app.locals.reactJsFiles = ['assets/react-main.js'];
     app.locals.reactCssFiles = []; // style is bundled with javascript
   }
@@ -255,7 +266,6 @@ service.initHelmetHeaders = function (app) {
           // Only the development bundle uses eval-based source maps.
           ...(process.env.NODE_ENV === 'production' ? [] : ["'unsafe-eval'"]),
           "'self'",
-          'https://www.google-analytics.com',
           'https://1p.trustroots.org',
           // Umami analytics
           // Use `nonce` for `<script>` tags
@@ -292,13 +302,9 @@ service.initHelmetHeaders = function (app) {
           '*.fbsbx.com',
           // Facebook related
           '*.twitter.com',
-          '*.google-analytics.com',
           '*.gstatic.com',
-          // Google analytics related
           '*.googleusercontent.com',
           // Google CDN. Android app related.
-          '*.g.doubleclick.net',
-          // Google Analytics related
           'gravatar.com',
           // Gravatar (WordPress.com)
           'i0.wp.com',
@@ -321,8 +327,8 @@ service.initHelmetHeaders = function (app) {
           'https://fonts.openmaptiles.org',
           'https://tile.openstreetmap.org',
           'wss://relay.trustroots.org',
-          'https://www.google-analytics.com',
-          'https://stats.g.doubleclick.net',
+          'wss://relay.nomadwiki.org',
+          'wss://relay.maps.hitchwiki.org',
           'https://1p.trustroots.org', // Umami analytics
         ],
         // Allows control over Flash and other plugins.

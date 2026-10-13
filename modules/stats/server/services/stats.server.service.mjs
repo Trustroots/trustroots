@@ -23,7 +23,7 @@
 
 import _ from 'lodash';
 // Use the adapter while NYC instruments native ESM through require hooks.
-import influxService from './influx.server.service.mjs';
+import influxService from './influx.server.service.mts';
 
 /**
  * The object which stats api .stat method expects as parameter

@@ -1,6 +1,7 @@
 /* global getComputedStyle, window */
 const { annotateFeature, expect, test } = require('../../support/fixtures');
 const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
+const { finalizeEvent } = require('nostr-tools/pure');
 
 test('invalid circle addresses show a stable not-found page', async ({
   page,
@@ -201,7 +202,61 @@ test('circle membership retains account roles and legacy member links', async ({
 
 test('Hackers circle foregrounds the public place map and verification limits', async ({
   page,
-}) => {
+}, testInfo) => {
+  const nomadwikiPlace = finalizeEvent(
+    {
+      kind: 33000,
+      created_at: 1700000000,
+      content: 'A community workshop.',
+      tags: [
+        ['d', 'spaceapi:https://workshop.example.test/api'],
+        ['L', 'physical-location'],
+        ['name', 'Example Workshop'],
+        ['g', 'gcpvj0'],
+        ['website', 'https://workshop.example.test'],
+        ['meta', 'source', 'https://api.spaceapi.io/'],
+      ],
+    },
+    new Uint8Array(32).fill(7),
+  );
+  await page.addInitScript(place => {
+    const NativeWebSocket = window.WebSocket;
+    window.WebSocket = class PlaceDiscoverySocket {
+      static CONNECTING = 0;
+      static OPEN = 1;
+      static CLOSING = 2;
+      static CLOSED = 3;
+      readyState = 0;
+      constructor(url, ...args) {
+        if (!/^wss:\/\/relay\.(trustroots|nomadwiki)\.org\/?$/.test(url))
+          return new NativeWebSocket(url, ...args);
+        this.url = url;
+        setTimeout(() => {
+          this.readyState = 1;
+          this.onopen?.(new Event('open'));
+        }, 0);
+      }
+      send(message) {
+        const [type, id] = JSON.parse(message);
+        if (type !== 'REQ') return;
+        queueMicrotask(() => {
+          if (this.url.includes('nomadwiki'))
+            this.onmessage?.(
+              new MessageEvent('message', {
+                data: JSON.stringify(['EVENT', id, place]),
+              }),
+            );
+          this.onmessage?.(
+            new MessageEvent('message', { data: JSON.stringify(['EOSE', id]) }),
+          );
+        });
+      }
+      close() {
+        this.readyState = 3;
+        queueMicrotask(() => this.onclose?.(new Event('close')));
+      }
+    };
+  }, nomadwikiPlace);
   let wikiRequested = false;
   await page.route('https://wiki.trustroots.org/**', route => {
     wikiRequested = true;
@@ -252,16 +307,91 @@ test('Hackers circle foregrounds the public place map and verification limits', 
     await expect(link).toHaveAttribute('href', /^https:\/\//);
   }
   expect(wikiRequested).toBe(false);
-  const map = page.locator('.hackerspace-map');
+  const map = page.locator('.circle-location-map');
   await expect(map).toBeVisible();
-  const panel = await page.locator('.hackerspace-map-panel').boundingBox();
+  const panel = await page.locator('.circle-location-map-panel').boundingBox();
   const viewportHeight = await page.evaluate(() => window.innerHeight);
   expect(panel.y).toBeLessThan(viewportHeight);
+  await expect(page.getByText('1 SpaceAPI-reported places')).toBeVisible();
+  await expect(page.locator('.circle-location-map-panel--brand')).toHaveCSS(
+    'border-top-color',
+    'rgb(18, 181, 145)',
+  );
+  await expect(page.locator('.circle-location-map-panel--brand')).toHaveCSS(
+    'text-shadow',
+    'none',
+  );
+  const marker = map.locator('.leaflet-interactive');
+  await expect(marker).toHaveAttribute('fill', '#12b591');
+  await marker.click();
+  await expect(page.locator('.leaflet-popup-content strong')).toHaveText(
+    'Example Workshop',
+  );
+  await expect(map.locator('.leaflet-popup')).toHaveCSS('opacity', '1');
+  await page.screenshot({
+    path: testInfo.outputPath('hackerspace-map.png'),
+    fullPage: true,
+  });
 });
 
 test('administrators can review a SpaceAPI import preview', async ({
   page,
 }) => {
+  await page.addInitScript(() => {
+    const NativeWebSocket = window.WebSocket;
+    window.placePublications = [];
+    // Keep the browser test offline for the two publication relays while
+    // retaining normal sockets (including the webpack development server).
+    window.WebSocket = class PlaceRelaySocket {
+      static CONNECTING = 0;
+      static OPEN = 1;
+      static CLOSING = 2;
+      static CLOSED = 3;
+      readyState = 0;
+      constructor(url, ...args) {
+        if (!/^wss:\/\/relay\.(trustroots|nomadwiki)\.org\/?$/.test(url)) {
+          return new NativeWebSocket(url, ...args);
+        }
+        this.url = url;
+        setTimeout(() => {
+          this.readyState = 1;
+          this.onopen?.(new Event('open'));
+        }, 0);
+      }
+      send(message) {
+        const [type, value] = JSON.parse(message);
+        let reply;
+        if (type === 'REQ') reply = ['EOSE', value];
+        if (type === 'EVENT') {
+          window.placePublications.push({ relay: this.url, event: value });
+          reply = ['OK', value.id, true, 'accepted'];
+        }
+        if (reply)
+          queueMicrotask(() =>
+            this.onmessage?.(
+              new MessageEvent('message', { data: JSON.stringify(reply) }),
+            ),
+          );
+      }
+      close() {
+        this.readyState = 3;
+        queueMicrotask(() => this.onclose?.(new Event('close')));
+      }
+    };
+    window.nostr = {
+      getPublicKey: async () => 'a'.repeat(64),
+      signEvent: event =>
+        new Promise(resolve => {
+          window.approvePlaceSignature = () =>
+            resolve({
+              ...event,
+              id: 'c'.repeat(64),
+              pubkey: 'a'.repeat(64),
+              sig: 'b'.repeat(128),
+            });
+        }),
+    };
+  });
   await signInViaApi(page, undefined, SEEDED_ADMIN);
   await page.route('**/api/admin/hackerspaces/preview', route =>
     route.fulfill({
@@ -275,6 +405,9 @@ test('administrators can review a SpaceAPI import preview', async ({
           latitude: 51.5,
           longitude: -0.1,
           address: 'Example City',
+          addressParts: ['', 'Example City', '', '', ''],
+          description: 'A shared workshop',
+          open: 'closed',
           fetchedAt: '2026-10-12T10:00:00Z',
           spaceType: 'hackerspace',
         },
@@ -306,6 +439,49 @@ test('administrators can review a SpaceAPI import preview', async ({
   await expect(
     page.getByRole('button', { name: 'Sign and publish approved changes' }),
   ).toBeEnabled();
+  await page
+    .getByRole('button', { name: 'Sign and publish approved changes' })
+    .click();
+  await expect(page.getByText(/Signing and publishing 1 of 1/)).toBeVisible();
+  expect(await page.evaluate(() => window.placePublications)).toHaveLength(0);
+  await page.evaluate(() => window.approvePlaceSignature());
+  await expect(
+    page.getByText(/Published 1 place events; 0 failed/),
+  ).toBeVisible();
+  await expect(
+    page.getByText('wss://relay.trustroots.org: 1 published; 0 failed'),
+  ).toBeVisible();
+  await expect(
+    page.getByText('wss://relay.nomadwiki.org: 1 published; 0 failed'),
+  ).toBeVisible();
+  const publications = await page.evaluate(() => window.placePublications);
+  expect(publications).toHaveLength(2);
+  expect(publications[0].event).toEqual(publications[1].event);
+  expect(publications[0].event.kind).toBe(33000);
+  expect(
+    publications[0].event.tags.every(tag =>
+      tag.every(value => typeof value === 'string'),
+    ),
+  ).toBe(true);
+  await page.route('**/api/admin/hackerspaces/preview', route =>
+    route.fulfill({
+      status: 502,
+      json: { message: 'Collector request timed out.' },
+    }),
+  );
+  await page.getByRole('button', { name: 'Fetch preview' }).click();
+  await expect(
+    page.getByText(
+      'Could not fetch the SpaceAPI Collector: Collector request timed out. No events were changed.',
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('cell', { name: 'Example Workshop' }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Sign and publish approved changes' }),
+  ).toBeDisabled();
+  expect(await page.evaluate(() => window.placePublications)).toHaveLength(2);
 });
 
 test('member navigation menus and narrow layout remain usable', async ({
