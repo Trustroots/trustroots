@@ -5,13 +5,13 @@ from [`Dockerfile`](Dockerfile) and defines only the development support
 services needed by the devcontainer.
 
 Open the repository with **Dev Containers: Reopen in Container**. The container
-runs `npm run check-environment`, which creates `config/env/local.js` and upload
+runs `pnpm run check-environment`, which creates `config/env/local.js` and upload
 directories when needed.
 
 The app is not started automatically. Start it from the integrated terminal:
 
 ```sh
-npm start
+pnpm start
 ```
 
 ## Port aliases
@@ -47,7 +47,7 @@ TRUSTROOTS_DEV_WEBPACK_BIND_ADDRESS=0.0.0.0 code .
 Start the app in the devcontainer as usual:
 
 ```sh
-npm start
+pnpm start
 ```
 
 From a host terminal, print the available phone URLs:
@@ -74,22 +74,22 @@ Run tests directly in the devcontainer terminal (no nested Docker):
 
 ```sh
 # Full suite with coverage checks
-npm run test:all
+pnpm run test:all
 
 # Individual suites
-npm run test:coverage:client
-npm run test:coverage:server
-npm run coverage:check -- --scope=client
-npm run coverage:check -- --scope=server
-npm run test:e2e
-npm run coverage:report
+pnpm run test:coverage:client
+pnpm run test:coverage:server
+pnpm run coverage:check --scope=client
+pnpm run coverage:check --scope=server
+pnpm run test:e2e
+pnpm run coverage:report
 ```
 
 For CI-parity E2E (prebuilt webpack, 2 workers):
 
 ```sh
-CI=true npm run test:e2e
+CI=true pnpm run test:e2e
 ```
 
-Headed Playwright (`npm run test:e2e:headed`) works inside the devcontainer when
+Headed Playwright (`pnpm run test:e2e:headed`) works inside the devcontainer when
 a display is forwarded.
