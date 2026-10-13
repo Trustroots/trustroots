@@ -247,7 +247,7 @@
     "react-refresh": "0.11.0",
     "sharp": "0.35.5",
     "should": "13.2.3",
-    "sinon": "11.1.2",
+    "sinon": "22.1.0",
     "style-loader": "2.0.0",
     "supertest": "6.1.6",
     "tiny-warning": "1.0.3",
