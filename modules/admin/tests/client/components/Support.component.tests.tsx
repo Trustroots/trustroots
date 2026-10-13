@@ -6,6 +6,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import SupportInbox, {
   SupportMemberPage,
@@ -108,6 +109,13 @@ test('triages a report and reads its whole conversation and unpublished experien
     }),
   );
   expect(await screen.findByText(report.message)).toBeInTheDocument();
+  const queue = screen.getByRole('region', { name: 'Request queue' });
+  expect(
+    within(queue).getByRole('button', { name: /fictional-reporter/ }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  const details = screen.getByRole('region', { name: 'Support request' });
+  expect(within(details).getByText(report.email)).toBeInTheDocument();
+  expect(within(details).getByText('Received')).toBeInTheDocument();
   expect(
     screen.getByRole('link', { name: 'Reported account and notes' }),
   ).toHaveAttribute('href', '/admin/support/member/target-1');
@@ -116,6 +124,12 @@ test('triages a report and reads its whole conversation and unpublished experien
   expect(screen.getByText('Hidden message')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'View experiences' }));
   expect(await screen.findByText('Unpublished feedback')).toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: 'View experiences' }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  expect(
+    screen.getByRole('button', { name: 'View conversation' }),
+  ).toHaveAttribute('aria-pressed', 'false');
   expect(
     screen.getByText('Unpublished · Recommendation: no'),
   ).toBeInTheDocument();
@@ -320,4 +334,24 @@ test('pages backwards and shows published experiences', async () => {
     await screen.findByRole('button', { name: 'View experiences' }),
   );
   await screen.findByText('Published · Recommendation: yes');
+});
+
+test('keeps a linked reported account visible when its original username is absent', async () => {
+  load.mockImplementation(async path => {
+    if (path === '/api/admin/support/report-1')
+      return { ...report, reportMember: undefined };
+    return { items: [report], hasMore: false };
+  });
+  render(<SupportInbox />);
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: /fictional-reporter · Report a member/,
+    }),
+  );
+  expect(
+    await screen.findByRole('link', { name: 'Reported account and notes' }),
+  ).toHaveAttribute('href', '/admin/support/member/target-1');
+  expect(
+    screen.getByRole('heading', { name: 'Reported member' }),
+  ).toBeInTheDocument();
 });

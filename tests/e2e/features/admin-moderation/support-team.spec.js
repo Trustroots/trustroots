@@ -128,6 +128,33 @@ test('support can triage a report and investigate only its verified member pair'
     await expect(
       page.getByText('Fictional unpublished feedback'),
     ).toBeVisible();
+    const queue = page.getByRole('region', { name: 'Request queue' });
+    const details = page.getByRole('region', { name: 'Support request' });
+    const queueBox = await queue.boundingBox();
+    const detailsBox = await details.boundingBox();
+    expect(queueBox.x + queueBox.width).toBeLessThan(detailsBox.x);
+    await expect(
+      page.getByRole('button', { name: 'View experiences' }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    const desktopViewport = page.viewportSize();
+    await page.setViewportSize({ width: 375, height: 812 });
+    const mobileQueue = await queue.boundingBox();
+    const mobileDetails = await details.boundingBox();
+    expect(mobileDetails.y).toBeGreaterThan(mobileQueue.y + mobileQueue.height);
+    expect(
+      await page
+        .locator('html')
+        .evaluate(element => element.scrollWidth <= element.clientWidth),
+    ).toBe(true);
+    await page.screenshot({
+      path: testInfo.outputPath('support-inbox-mobile.png'),
+      fullPage: true,
+    });
+    await testInfo.attach('Support inbox mobile', {
+      path: testInfo.outputPath('support-inbox-mobile.png'),
+      contentType: 'image/png',
+    });
+    await page.setViewportSize(desktopViewport);
     await page.screenshot({
       path: testInfo.outputPath('support-inbox.png'),
       fullPage: true,

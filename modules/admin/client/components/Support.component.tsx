@@ -55,7 +55,7 @@ function Pager({
   onPage: (page: number) => void;
 }) {
   return (
-    <div className="btn-group" aria-label="Pagination">
+    <div className="support-inbox__pager" aria-label="Pagination">
       <button
         className="btn btn-default"
         disabled={page === 1}
@@ -87,6 +87,7 @@ function Investigation({
   );
   return (
     <section
+      className="support-inbox__investigation"
       aria-label={
         kind === 'messages' ? 'Reported conversation' : 'Reported experiences'
       }
@@ -171,55 +172,100 @@ function RequestDetails({
   const linked =
     report.category === 'reportMember' && report.user && report.reportedUser;
   return (
-    <section aria-label="Support request">
-      <h2>
-        {SUPPORT_CATEGORIES[report.category as keyof typeof SUPPORT_CATEGORIES]}
-      </h2>
-      <p>
-        {report.username || 'Signed-out visitor'} · {report.email} ·{' '}
-        {report.status || 'open'}
-      </p>
-      <p style={{ whiteSpace: 'pre-wrap' }}>{report.message}</p>
-      <p>Reply using the existing support email system.</p>
-      <button
-        className="btn btn-default"
-        disabled={saving}
-        onClick={toggleStatus}
-      >
-        {report.status === 'resolved' ? 'Reopen request' : 'Resolve request'}
-      </button>
+    <section
+      className="support-inbox__card support-inbox__request"
+      aria-label="Support request"
+    >
+      <header className="support-inbox__request-header">
+        <div>
+          <p className="support-inbox__eyebrow">Selected request</p>
+          <h2>
+            {
+              SUPPORT_CATEGORIES[
+                report.category as keyof typeof SUPPORT_CATEGORIES
+              ]
+            }
+          </h2>
+        </div>
+        <span
+          className="support-inbox__status"
+          data-status={report.status || 'open'}
+        >
+          {report.status || 'open'}
+        </span>
+      </header>
+      <dl className="support-inbox__metadata">
+        <div>
+          <dt>From</dt>
+          <dd>{report.username || 'Signed-out visitor'}</dd>
+        </div>
+        <div>
+          <dt>Email</dt>
+          <dd>{report.email}</dd>
+        </div>
+        <div>
+          <dt>Received</dt>
+          <dd>
+            <time>{new Date(report.sent).toLocaleString()}</time>
+          </dd>
+        </div>
+      </dl>
+      <div className="support-inbox__message">{report.message}</div>
+      <div className="support-inbox__actions">
+        <p>Reply using the existing support email system.</p>
+        <button
+          className="btn btn-primary"
+          disabled={saving}
+          onClick={toggleStatus}
+        >
+          {report.status === 'resolved' ? 'Reopen request' : 'Resolve request'}
+        </button>
+      </div>
       {saveFailed && (
         <p role="alert">Unable to update this request. Please try again.</p>
       )}
-      {report.user && (
-        <p>
-          <a href={`/admin/support/member/${report.user}`}>
-            Reporter account and notes
-          </a>
-        </p>
-      )}
-      {report.reportMember && <p>Reported member: {report.reportMember}</p>}
-      {report.reportedUser && (
-        <p>
-          <a href={`/admin/support/member/${report.reportedUser}`}>
-            Reported account and notes
-          </a>
-        </p>
-      )}
+      <div className="support-inbox__members">
+        <div>
+          <h3>Reporter</h3>
+          <p>{report.username || 'Signed-out visitor'}</p>
+          {report.user && (
+            <a href={`/admin/support/member/${report.user}`}>
+              Reporter account and notes
+            </a>
+          )}
+        </div>
+        {(report.reportMember || report.reportedUser) && (
+          <div>
+            <h3>Reported member</h3>
+            {report.reportMember && <p>{report.reportMember}</p>}
+            {report.reportedUser && (
+              <a href={`/admin/support/member/${report.reportedUser}`}>
+                Reported account and notes
+              </a>
+            )}
+          </div>
+        )}
+      </div>
       {linked ? (
         <>
-          <p>
+          <p className="support-inbox__hint">
             Access is recorded in the audit log, including after resolution.
           </p>
-          <div className="btn-group">
+          <div
+            className="support-inbox__views"
+            role="group"
+            aria-label="Investigation views"
+          >
             <button
               className="btn btn-default"
+              aria-pressed={kind === 'messages'}
               onClick={() => setKind('messages')}
             >
               View conversation
             </button>
             <button
               className="btn btn-default"
+              aria-pressed={kind === 'experiences'}
               onClick={() => setKind('experiences')}
             >
               View experiences
@@ -260,7 +306,10 @@ function MemberSearch() {
     }
   }
   return (
-    <section aria-label="Member search">
+    <section
+      className="support-inbox__card support-inbox__search"
+      aria-label="Member search"
+    >
       <h2>Member search</h2>
       <form onSubmit={submit}>
         <label htmlFor="support-member-search">Name, username or email</label>
@@ -342,85 +391,122 @@ export default function SupportInbox() {
   return (
     <>
       <AdminHeader />
-      <main className="container">
-        <h1>Support inbox</h1>
-        <p>
-          Triage requests here. Reply through the existing support email system.
-        </p>
-        <div className="row">
-          <div className="col-md-5">
-            <label htmlFor="support-status">Status</label>
-            <select
-              className="form-control"
-              id="support-status"
-              value={status}
-              onChange={event => {
-                setStatus(event.target.value);
-                setPage(1);
-              }}
+      <main className="container support-inbox">
+        <header className="support-inbox__intro">
+          <h1>Support inbox</h1>
+          <p>
+            Triage requests here. Reply through the existing support email
+            system.
+          </p>
+        </header>
+        <div className="support-inbox__layout">
+          <div className="support-inbox__sidebar">
+            <section
+              className="support-inbox__card support-inbox__queue"
+              aria-label="Request queue"
             >
-              <option value="open">Open</option>
-              <option value="resolved">Resolved</option>
-              <option value="all">All</option>
-            </select>
-            <label htmlFor="support-category">Category</label>
-            <select
-              className="form-control"
-              id="support-category"
-              value={category}
-              onChange={event => {
-                setCategory(event.target.value);
-                setPage(1);
-              }}
-            >
-              <option value="">All categories</option>
-              {Object.entries(SUPPORT_CATEGORIES).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            {!data ? (
-              <>
-                <ResourceState failed={failed} />
-                {failed && <button onClick={reload}>Retry</button>}
-              </>
-            ) : (
-              <>
-                {data.items.length === 0 && (
-                  <p>No support requests match these filters.</p>
-                )}
-                <ul className="list-group">
-                  {data.items.map(report => (
-                    <li className="list-group-item" key={report._id}>
-                      <button
-                        className="btn btn-link"
-                        onClick={() => setSelected(report._id)}
-                      >
-                        {report.username || report.email} ·{' '}
-                        {
-                          SUPPORT_CATEGORIES[
-                            report.category as keyof typeof SUPPORT_CATEGORIES
-                          ]
-                        }
-                      </button>
-                      <div>
-                        <time>{new Date(report.sent).toLocaleString()}</time> ·{' '}
-                        {report.status || 'open'}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-                <Pager page={page} hasMore={data.hasMore} onPage={setPage} />
-              </>
-            )}
+              <h2>Requests</h2>
+              <div className="support-inbox__filters">
+                <div>
+                  <label htmlFor="support-status">Status</label>
+                  <select
+                    className="form-control"
+                    id="support-status"
+                    value={status}
+                    onChange={event => {
+                      setStatus(event.target.value);
+                      setPage(1);
+                    }}
+                  >
+                    <option value="open">Open</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="all">All</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="support-category">Category</label>
+                  <select
+                    className="form-control"
+                    id="support-category"
+                    value={category}
+                    onChange={event => {
+                      setCategory(event.target.value);
+                      setPage(1);
+                    }}
+                  >
+                    <option value="">All categories</option>
+                    {Object.entries(SUPPORT_CATEGORIES).map(
+                      ([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </div>
+              </div>
+              {!data ? (
+                <>
+                  <ResourceState failed={failed} />
+                  {failed && <button onClick={reload}>Retry</button>}
+                </>
+              ) : (
+                <>
+                  {data.items.length === 0 && (
+                    <p className="support-inbox__empty">
+                      No support requests match these filters.
+                    </p>
+                  )}
+                  <ul className="support-inbox__list">
+                    {data.items.map(report => (
+                      <li key={report._id}>
+                        <button
+                          className="support-inbox__queue-item"
+                          aria-pressed={selected === report._id}
+                          aria-label={`${report.username || report.email} · ${
+                            SUPPORT_CATEGORIES[
+                              report.category as keyof typeof SUPPORT_CATEGORIES
+                            ]
+                          }`}
+                          onClick={() => setSelected(report._id)}
+                        >
+                          <strong>
+                            {
+                              SUPPORT_CATEGORIES[
+                                report.category as keyof typeof SUPPORT_CATEGORIES
+                              ]
+                            }
+                          </strong>
+                          <span>{report.username || report.email}</span>
+                          <span className="support-inbox__queue-meta">
+                            <time>
+                              {new Date(report.sent).toLocaleString()}
+                            </time>
+                            <span
+                              className="support-inbox__status"
+                              data-status={report.status || 'open'}
+                            >
+                              {report.status || 'open'}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <Pager page={page} hasMore={data.hasMore} onPage={setPage} />
+                </>
+              )}
+            </section>
             <MemberSearch />
           </div>
-          <div className="col-md-7">
+          <div className="support-inbox__detail">
             {selected ? (
               <RequestDetails key={selected} id={selected} onChange={reload} />
             ) : (
-              <p>Select a request to view its details.</p>
+              <div className="support-inbox__card support-inbox__empty-detail">
+                <h2>Request details</h2>
+                <p>Select a request to view its details.</p>
+              </div>
             )}
           </div>
         </div>
