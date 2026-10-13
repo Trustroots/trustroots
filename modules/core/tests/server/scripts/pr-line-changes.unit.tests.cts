@@ -294,6 +294,10 @@ describe('PR line-change summaries', () => {
       assert.equal(summary.dependencies[2].removed, 1);
       const root = path.resolve(__dirname, '../../../../..');
       fs.mkdirSync(path.join(dir, 'scripts/coverage'), { recursive: true });
+      fs.writeFileSync(
+        path.join(dir, 'scripts/package.json'),
+        JSON.stringify({ type: 'commonjs' }),
+      );
       for (const name of [
         'generate-pr-summary.cts',
         'ci-timings.cts',

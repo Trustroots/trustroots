@@ -14,6 +14,7 @@ import {
   MEMBERS,
   SHADOW_MESSAGES,
 } from '../../../scripts/e2e/data.mts';
+import { provisionFixtureMfa } from './mfa.mts';
 
 export type SeededMember = {
   id: string;
@@ -252,13 +253,21 @@ export async function authenticateViaApi(
   request: APIRequestContext,
   user: Pick<SeededMember, 'username' | 'password'>,
 ): Promise<APIResponse> {
-  const response = await request.post('/api/auth/signin', {
+  const recoveryCode = await provisionFixtureMfa(user);
+  let response = await request.post('/api/auth/signin', {
     data: { username: user.username, password: user.password },
   });
+  if (recoveryCode) {
+    expect(response.status()).toBe(202);
+    response = await request.post('/api/auth/mfa/verify', {
+      headers: { 'X-Trustroots-Request': '1' },
+      data: { code: recoveryCode },
+    });
+  }
   expect(
-    response.ok(),
+    response.status(),
     `Signin API responded with ${response.status()}: ${await response.text()}`,
-  ).toBeTruthy();
+  ).toBe(200);
   return response;
 }
 

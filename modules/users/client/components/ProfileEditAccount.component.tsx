@@ -16,6 +16,8 @@ import {
   SIGNUP_USERNAME_REGEX,
   SIGNUP_USERNAME_FORMAT_MESSAGE,
 } from '../config/username.client.constants';
+import MfaSettings from './MfaSettings.component';
+import PasskeySettings from './PasskeySettings.component';
 
 interface ProfileEditAccountProps {
   user: UserProfile;
@@ -269,6 +271,13 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
           </form>
         </div>
       </div>
+
+      {user.roles?.includes('admin') && (
+        <>
+          <MfaSettings />
+          <PasskeySettings />
+        </>
+      )}
 
       <div className="panel panel-default">
         <div className="panel-heading">{t('News and updates')}</div>

@@ -646,6 +646,77 @@ SHALL remain removable independently of profile images.
 - **WHEN** a member disconnects stored Facebook provider data
 - **THEN** the connection is removed without enabling Facebook profile images
 
+### Requirement: Authenticator MFA
+
+Administrators MAY enable authenticator-app MFA using TOTP. Other members SHALL NOT enrol. Enrolment SHALL remain pending until the administrator confirms a valid code. The system SHALL encrypt pending and active TOTP secrets with AES-256-GCM using a dedicated deployment key, separate from the session and password keys. The deployment SHALL document key generation, configuration, rotation, and backup requirements.
+
+#### Scenario: A member enrols an authenticator
+
+- **WHEN** a member confirms their current password and requests enrolment
+- **THEN** the system returns a one-time authenticator provisioning URI and a pending secret
+- **AND** it does not mark MFA active until a valid, unused TOTP is verified
+- **AND** the pending secret expires after a short period
+
+#### Scenario: An active member verifies MFA
+
+- **WHEN** a member signs in with a valid password and has MFA enabled
+- **THEN** the password check creates only a short-lived pre-authentication challenge
+- **AND** the system establishes an authenticated session only after a valid TOTP or recovery code
+- **AND** concurrent requests cannot consume the same TOTP time step or recovery code more than once
+
+#### Scenario: A member manages MFA
+
+- **WHEN** a member views or changes MFA settings
+- **THEN** the system never returns the active secret or recovery-code hashes
+- **AND** enrolment, replacement recovery codes, and disablement require a recent password confirmation
+- **AND** replacement recovery codes are shown only once and previous codes stop working atomically
+
+#### Scenario: A privileged account lacks verified MFA
+
+- **WHEN** an administrator has no verified MFA session
+- **THEN** privileged routes treat that account as an ordinary member
+- **AND** promotion of a privileged account requires MFA to be enrolled and verified before privileged access is granted
+
+#### Scenario: Account recovery does not bypass MFA
+
+- **WHEN** a member resets or changes their password, confirms an email address, or uses another direct login path
+- **THEN** the operation cannot establish an MFA-verified session without a successful second factor
+- **AND** credential changes invalidate older sessions
+
+#### Scenario: MFA verification is rate limited
+
+- **WHEN** a client submits too many sign-in challenges, TOTP codes, recovery codes, or password confirmations
+- **THEN** the system applies bounded IP and account or challenge limits and returns a retry response
+
+### Requirement: Staff passkey registration
+
+The system SHALL let administrators register and manage optional WebAuthn credentials after fresh password and existing second-factor verification. It SHALL store public credential material and an opaque user handle, and SHALL preserve an available recovery method.
+
+#### Scenario: Verified staff member registers a passkey
+
+- **WHEN** a staff member completes a valid registration ceremony with required user verification
+- **THEN** the system stores a uniquely owned credential with a member-selected label
+- **AND** no authenticator private key is received or stored
+
+#### Scenario: Member attempts to remove the final available method
+
+- **WHEN** removal would leave the account without a usable sign-in or documented recovery method
+- **THEN** the operation is refused with actionable feedback
+
+### Requirement: Verified passkey second factor
+
+The system SHALL accept a passkey as a second factor only after server verification of origin, relying-party ID, ceremony challenge, ownership, signature and user verification. Challenges SHALL expire within five minutes and be atomically single-use.
+
+#### Scenario: Password-first sign-in uses a passkey
+
+- **WHEN** a member completes the current password-first passkey challenge
+- **THEN** the resulting session satisfies the same second-factor policy as an accepted authenticator code
+
+#### Scenario: Ceremony does not match its account or deployment
+
+- **WHEN** a response is expired, replayed, unverified or bound to another member, origin or relying party
+- **THEN** it does not establish a verified session
+
 ### Requirement: Bounded signup requests
 
 Signup SHALL accept only supported registration fields. The server SHALL apply

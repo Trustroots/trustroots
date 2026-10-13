@@ -146,6 +146,7 @@ const specPaths: Record<string, string> = {
   'account-email-tokens.spec.js':
     'features/auth-account/account-email-tokens.spec.js',
   'account-settings.spec.js': 'features/auth-account/account-settings.spec.js',
+  'staff-passkeys.spec.js': 'features/auth-account/staff-passkeys.spec.js',
   'experience-changes.spec.js':
     'features/experiences-references/experience-changes.spec.js',
   'admin-acquisition.spec.js':
@@ -1149,6 +1150,104 @@ const features = [
       'Validation errors are visible for invalid data.',
     ],
     relatedSpecs: [],
+  },
+  {
+    id: 'account.staff-passkeys',
+    area: AREA.authAccount,
+    status: STATUS.active,
+    description:
+      'Administrators can register and manage optional passkeys for second-factor sign-in.',
+    roles: ['admin'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'profile-edit.account',
+          '/profile/edit/account',
+          source.usersClient,
+          { requiresAuth: true },
+        ),
+      ],
+      apiRoutes: [
+        apiRoute(
+          'GET',
+          '/api/users/passkeys',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+        apiRoute(
+          'POST',
+          '/api/users/passkeys/register/options',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+        apiRoute(
+          'POST',
+          '/api/users/passkeys/register/verify',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+        apiRoute(
+          'DELETE',
+          '/api/users/passkeys/:id',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+        apiRoute(
+          'POST',
+          '/api/auth/passkeys/options',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+        apiRoute(
+          'POST',
+          '/api/auth/passkeys/verify',
+          'modules/users/server/routes/passkeys.server.routes.mjs',
+        ),
+      ],
+    },
+    requiredScenarios: [
+      'A staff member can use a registered passkey after password sign-in.',
+    ],
+    relatedSpecs: [
+      spec(
+        'staff-passkeys.spec.js',
+        'staff register, use and remove an optional device passkey',
+      ),
+    ],
+  },
+  {
+    id: 'account.mfa',
+    area: AREA.authAccount,
+    status: STATUS.active,
+    description:
+      'Administrators can enrol authenticator MFA, protect sign-in, and recover with single-use codes.',
+    roles: ['member', 'visitor'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'profile-edit.account',
+          '/profile/edit/account',
+          source.usersClient,
+          { requiresAuth: true },
+        ),
+        clientRoute('signin', '/signin', source.usersClient),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/users/mfa', source.usersServer),
+        apiRoute('POST', '/api/users/mfa/enrol', source.usersServer),
+        apiRoute('POST', '/api/users/mfa/enrol/verify', source.usersServer),
+        apiRoute('POST', '/api/users/mfa/recovery-codes', source.usersServer),
+        apiRoute('POST', '/api/users/mfa/disable', source.usersServer),
+        apiRoute('POST', '/api/auth/mfa/verify', source.usersAuthServer),
+      ],
+    },
+    requiredScenarios: [
+      'Member confirms their password before enrolling an authenticator.',
+      'Authenticator enrolment returns recovery codes only once.',
+      'MFA-enabled sign-in requires a second factor before establishing a session.',
+      'Profile API responses do not expose MFA secrets or recovery hashes.',
+    ],
+    relatedSpecs: [
+      spec(
+        'account-settings.spec.js',
+        'administrators can enrol an authenticator and use it at sign-in',
+      ),
+    ],
   },
   {
     id: 'account.details-update',

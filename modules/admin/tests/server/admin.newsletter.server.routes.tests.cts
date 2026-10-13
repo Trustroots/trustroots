@@ -110,7 +110,7 @@ describe('Admin Newsletter subscribers API tests', () => {
     await utils.signOut(agent);
   });
   it('admin users can split uploaded subscribers into two CSV exports', async () => {
-    await utils.signIn(adminAuth, agent);
+    await utils.signInPrivileged(adminAuth, agent);
     const { body } = await agent
       .post('/api/admin/newsletter-subscribers/split')
       .set('X-Trustroots-Request', '1')
@@ -148,7 +148,7 @@ describe('Admin Newsletter subscribers API tests', () => {
     await utils.signOut(agent);
   });
   it('admin users can split an uploaded NDJSON recipient list', async () => {
-    await utils.signIn(adminAuth, agent);
+    await utils.signInPrivileged(adminAuth, agent);
     const { body } = await agent
       .post('/api/admin/newsletter-subscribers/split')
       .set('X-Trustroots-Request', '1')
@@ -181,7 +181,7 @@ describe('Admin Newsletter subscribers API tests', () => {
     await utils.signOut(agent);
   });
   it('admin users can export all eligible newsletter subscribers', async () => {
-    await utils.signIn(adminAuth, agent);
+    await utils.signInPrivileged(adminAuth, agent);
     const { type, text } = await agent
       .get('/api/admin/newsletter-subscribers')
       .expect(200);
@@ -192,7 +192,7 @@ describe('Admin Newsletter subscribers API tests', () => {
     await utils.signOut(agent);
   });
   it('admin users can export eligible newsletter subscribers for a circle', async () => {
-    await utils.signIn(adminAuth, agent);
+    await utils.signInPrivileged(adminAuth, agent);
     const { type, text } = await agent
       .get(`/api/admin/newsletter-subscribers/circle?circleId=${circleId}`)
       .expect(200);
@@ -203,7 +203,7 @@ describe('Admin Newsletter subscribers API tests', () => {
     await utils.signOut(agent);
   });
   it('admin users can preview and export a targeted audience', async () => {
-    await utils.signIn(adminAuth, agent);
+    await utils.signInPrivileged(adminAuth, agent);
     const criteria = {
       circleIds: [circleId.toString()],
       locationText: 'Berlin',
@@ -230,7 +230,7 @@ describe('Admin Newsletter subscribers API tests', () => {
     await utils.signOut(agent);
   });
   it('admin users get a validation error when exporting circle subscribers without circleId', async () => {
-    await utils.signIn(adminAuth, agent);
+    await utils.signInPrivileged(adminAuth, agent);
     const response = await agent
       .get('/api/admin/newsletter-subscribers/circle')
       .expect(400);
@@ -240,7 +240,7 @@ describe('Admin Newsletter subscribers API tests', () => {
     await utils.signOut(agent);
   });
   it('admin users receive validation errors for missing CSV uploads', async () => {
-    await utils.signIn(adminAuth, agent);
+    await utils.signInPrivileged(adminAuth, agent);
     await agent
       .post('/api/admin/newsletter-subscribers/split')
       .set('X-Trustroots-Request', '1')
@@ -248,7 +248,7 @@ describe('Admin Newsletter subscribers API tests', () => {
     await utils.signOut(agent);
   });
   it('admin users receive unsupported media errors for non-csv files', async () => {
-    await utils.signIn(adminAuth, agent);
+    await utils.signInPrivileged(adminAuth, agent);
     const response = await agent
       .post('/api/admin/newsletter-subscribers/split')
       .set('X-Trustroots-Request', '1')

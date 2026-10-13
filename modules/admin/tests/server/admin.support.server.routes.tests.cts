@@ -293,7 +293,8 @@ describe('Support team access and investigation', () => {
         { $set: { roles: ['user', role] } },
       );
       const session = request.agent(app);
-      await utils.signIn(raw[4], session);
+      // Admins need a completed authenticator challenge before admin routes open.
+      await utils.signInPrivileged(raw[4], session);
       await session
         .get('/api/admin/support')
         .expect(role === 'admin' ? 200 : 403);
@@ -438,7 +439,7 @@ describe('Support team access and investigation', () => {
   });
   it('allows administrators to grant and remove the support role', async () => {
     const admin = request.agent(app);
-    await utils.signIn(raw[3], admin);
+    await utils.signInPrivileged(raw[3], admin);
     for (const action of ['add', 'remove']) {
       await admin
         .post('/api/admin/user/change-role')

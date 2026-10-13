@@ -4,6 +4,8 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 interface SessionUser {
   id: string;
   authVersion?: number;
+  mfaEnabled?: boolean;
+  $locals?: { mfaVerified?: boolean };
 }
 type SerializeHandler = (
   user: SessionUser,
@@ -46,7 +48,12 @@ describe('Users Passport session configuration', () => {
   afterEach(() => sinon.restore());
 
   it('serializes the authentication version and rejects legacy ID-only sessions', async () => {
-    const user = { id: 'member-id', authVersion: 3 };
+    const user = {
+      id: 'member-id',
+      authVersion: 3,
+      mfaEnabled: true,
+      $locals: { mfaVerified: true },
+    };
     const findOne = sinon.stub();
     sinon.stub(User, 'findOne').callsFake(findOne);
     const handlers = await installSessionHandlers();
@@ -57,7 +64,11 @@ describe('Users Passport session configuration', () => {
     const deserialize = handlers.deserialize;
     serialize(user, (serializeErr: Error | null, session: unknown) => {
       should.not.exist(serializeErr);
-      should(session).deepEqual({ id: 'member-id', authVersion: 3 });
+      should(session).deepEqual({
+        id: 'member-id',
+        authVersion: 3,
+        mfaVerified: true,
+      });
       deserialize(
         'member-id',
         (legacyErr: Error | null, legacyUser: SessionUser | false | null) => {
@@ -70,7 +81,11 @@ describe('Users Passport session configuration', () => {
   });
 
   it('rejects stale versions and deleted accounts while accepting the current version', async () => {
-    const currentUser = { id: 'member-id', authVersion: 4 };
+    const currentUser = {
+      id: 'member-id',
+      authVersion: 4,
+      mfaEnabled: true,
+    };
     const findOne = sinon
       .stub()
       .callsFake(
@@ -100,13 +115,17 @@ describe('Users Passport session configuration', () => {
         should.not.exist(staleErr);
         should(staleUser).equal(false);
         deserialize(
-          { id: 'member-id', authVersion: 4 },
+          { id: 'member-id', authVersion: 4, mfaVerified: true },
           (
             currentErr: Error | null,
             restoredUser: SessionUser | false | null,
           ) => {
             should.not.exist(currentErr);
             should(restoredUser).equal(currentUser);
+            if (!restoredUser) {
+              throw new Error('Expected the current session user');
+            }
+            should(restoredUser.$locals?.mfaVerified).equal(true);
             deserialize(
               { id: 'deleted-id', authVersion: 0 },
               (

@@ -1,5 +1,5 @@
 const mockModule: typeof import('../../../../../testutils/server/mock-module.mts').default = require('../../../../../testutils/server/mock-module');
-require('should');
+const should: typeof import('should') = require('should');
 
 type Callback = (error?: Error | null) => void;
 interface PasswordBody {
@@ -25,8 +25,9 @@ interface PasswordRequest {
   body: PasswordBody;
   params?: { token: string };
   query?: { utm_source?: string; utm_medium?: string; utm_campaign?: string };
-  user?: { id: string };
+  user?: { id: string; $locals?: { mfaVerified?: boolean } };
   login?: (user: TestUser, callback: Callback) => void;
+  logout?: (callback: Callback) => void;
 }
 interface PasswordUpdate {
   $set?: { password?: string; passwordUpdated?: Date };
@@ -42,6 +43,7 @@ interface TestUser {
   resetPasswordExpires?: number;
   salt?: string;
   authVersion?: number;
+  $locals?: { mfaVerified?: boolean };
   lastPasswordUpdate: {
     query: Record<string, unknown>;
     update: PasswordUpdate;
@@ -340,6 +342,77 @@ describe('Password controller direct unit tests', () => {
   });
 
   describe('reset', () => {
+    it('does not log an MFA account in after password recovery', async () => {
+      const user = fakeUser({ mfaEnabled: true });
+      const controller = loadController({
+        user,
+        confirmEmailError: new Error('email temporarily unavailable'),
+      });
+      const res = deferredResponse();
+      let loggedOut = false;
+      const req: PasswordRequest = {
+        params: { token: 'reset-token' },
+        body: {
+          newPassword: 'newpassword123',
+          verifyPassword: 'newpassword123',
+        },
+        login: () => {
+          throw new Error('MFA account must not be logged in');
+        },
+        logout: callback => {
+          loggedOut = true;
+          callback(null);
+        },
+      };
+
+      controller.reset(req, res);
+
+      await res.waitForResponse();
+      loggedOut.should.be.true();
+      should(res.body).deepEqual({ mfaRequired: true });
+    });
+
+    it('completes the MFA recovery response when confirmation email succeeds', async () => {
+      const user = fakeUser({ mfaEnabled: true });
+      const controller = loadController({ user });
+      const res = deferredResponse();
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          logout: callback => callback(null),
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      should(res.body).deepEqual({ mfaRequired: true });
+    });
+
+    it('returns a controlled error when logout fails for an MFA recovery', async () => {
+      const user = fakeUser({ mfaEnabled: true });
+      const controller = loadController({ user });
+      const res = deferredResponse();
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          logout: callback => callback(new Error('logout failed')),
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      responseMessage(res).should.equal('Password reset failed.');
+    });
+
     it('returns the reset failure response when login fails after the atomic update', async () => {
       const user = fakeUser();
       const controller = loadController({ user });
@@ -444,6 +517,59 @@ describe('Password controller direct unit tests', () => {
   });
 
   describe('changePassword', () => {
+    it('preserves an MFA-verified session when changing an MFA account password', async () => {
+      const user = fakeUser({ mfaEnabled: true });
+      const controller = loadController({ user });
+      const res = deferredResponse();
+
+      controller.changePassword(
+        {
+          user: { id: 'user-id', $locals: { mfaVerified: true } },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (authenticatedUser, callback) => {
+            should(authenticatedUser.$locals?.mfaVerified).be.true();
+            callback();
+          },
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+    });
+
+    it('does not grant MFA verification when the current session lacks it', async () => {
+      const user = fakeUser({
+        mfaEnabled: true,
+        $locals: { mfaVerified: true },
+      });
+      const controller = loadController({ user });
+      const res = deferredResponse();
+
+      controller.changePassword(
+        {
+          user: { id: 'user-id' },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (authenticatedUser, callback) => {
+            should(authenticatedUser.$locals?.mfaVerified).be.false();
+            callback();
+          },
+        },
+        res,
+      );
+
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+    });
+
     it('rejects a password that fails validation', async () => {
       const controller = loadController({ validPassword: false });
       const res = deferredResponse();

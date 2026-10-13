@@ -43,3 +43,25 @@ Untouched anonymous requests no longer create stored sessions, and unchanged
 authenticated requests refresh expiry through the session store's touch method.
 SameSite is an additional defence; the separate CSRF middleware also protects
 cookie-backed mutations.
+
+## Authenticator MFA encryption key
+
+Set `MFA_ENCRYPTION_KEY` on every application instance to the same dedicated
+base64-encoded 32-byte random key. Generate it with
+`openssl rand -base64 32`; do not reuse `SESSION_SECRET`, database credentials,
+or password-hashing material. The application uses this key only for
+AES-256-GCM encryption of authenticator secrets. Keep it in the deployment
+secret store and include it in the protected configuration backup needed to
+restore MFA after disaster recovery. Losing the key makes enrolled
+authenticator secrets unreadable and requires account recovery. Rotating the
+key requires decrypting and re-encrypting every active and pending secret
+before switching all instances; do not replace the value without that
+migration. Test environments use a fixed test-only key.
+
+Authenticator MFA and passkeys are available only to administrators. Admin
+permissions require a session that has completed MFA. Existing administrators
+should enrol an authenticator before relying on those permissions.
+The current MFA challenge is supported by the web sign-in flow. Native Android
+and iOS clients do not yet handle the `202 mfaRequired` response, so
+administrators who enable MFA must use the web client until native challenge
+support ships.

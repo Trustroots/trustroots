@@ -373,7 +373,10 @@ describe('Admin acquisition stories controller unit tests', () => {
         user.roles = ['user', 'shadowban'];
         user.acquisitionStory = `Restricted member story ${index}.`;
       });
-      await utils.saveUsers(users);
+      users.forEach(user => {
+        user.password = 'AcquisitionStoriesTestPassword123!';
+      });
+      await utils.saveUsersWithSharedPassword(users);
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
       const expected = await User.find({ roles: 'shadowban' }).sort({

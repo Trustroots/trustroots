@@ -9,6 +9,17 @@ import type { UserProfile } from '@/modules/users/client/types';
 import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 
 jest.mock('@/modules/users/client/api/users.api');
+jest.mock('@/modules/users/client/components/MfaSettings.component', () => ({
+  __esModule: true,
+  default: () => <section>Authenticator settings</section>,
+}));
+jest.mock(
+  '@/modules/users/client/components/PasskeySettings.component',
+  () => ({
+    __esModule: true,
+    default: () => <section>Staff passkey settings</section>,
+  }),
+);
 const updateUser = jest.mocked(usersApi.update);
 const changePassword = jest.mocked(usersApi.changePassword);
 const resendConfirmation = jest.mocked(usersApi.resendEmailConfirmation);
@@ -70,6 +81,20 @@ function renderPage(overrides: Partial<UserProfile> = {}) {
 }
 
 describe('ProfileEditAccount', () => {
+  it('shows authenticator and passkey settings only to administrators', () => {
+    const ordinary = renderPage({ roles: ['user', 'welcome-team'] });
+    expect(
+      screen.queryByText('Authenticator settings'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Staff passkey settings'),
+    ).not.toBeInTheDocument();
+    ordinary.unmount();
+    renderPage({ roles: ['user', 'admin'] });
+    expect(screen.getByText('Authenticator settings')).toBeInTheDocument();
+    expect(screen.getByText('Staff passkey settings')).toBeInTheDocument();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });

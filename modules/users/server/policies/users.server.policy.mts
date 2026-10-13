@@ -64,6 +64,16 @@ function invokeRolesPolicies() {
     {
       roles: ['user'],
       allows: [
+        { resources: '/api/users/passkeys', permissions: ['get'] },
+        {
+          resources: '/api/users/passkeys/register/options',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/users/passkeys/register/verify',
+          permissions: ['post'],
+        },
+        { resources: '/api/users/passkeys/:id', permissions: ['delete'] },
         {
           resources: '/api/users',
           permissions: ['get', 'put', 'delete'],
@@ -94,6 +104,26 @@ function invokeRolesPolicies() {
         },
         {
           resources: '/api/users/password',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/users/mfa',
+          permissions: ['get'],
+        },
+        {
+          resources: '/api/users/mfa/enrol',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/users/mfa/enrol/verify',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/users/mfa/recovery-codes',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/users/mfa/disable',
           permissions: ['post'],
         },
         {

@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import mongoose, { type HydratedDocument, type Model } from 'mongoose';
 
@@ -53,6 +54,10 @@ interface UserFixtureExtraFields {
   displayName?: string;
   nostrNpub?: string;
   member?: Array<{ tribe: mongoose.Types.ObjectId; since?: Date }>;
+  mfaEnabled?: boolean;
+  mfaSecretEncrypted?: string;
+  mfaLastTotpCounter?: number;
+  mfaRecoveryCodeHashes?: string[];
 }
 
 type UserFixtureData = Omit<ServerUserFixture, 'roles' | 'languages'> &
@@ -212,6 +217,29 @@ export function saveUsersWithCachedPasswords(
   return saveUserFixtures(documents, callback, true);
 }
 
+export async function saveUsersWithSharedPassword(
+  users: UserFixtureData[],
+): Promise<Array<Record<string, unknown>>> {
+  const User = mongoose.model<CachedUserFixtureData, UserFixtureModel>('User');
+  const password = users.find(user => user.password)?.password;
+  if (!password) {
+    throw new Error('Shared-password fixtures require a password.');
+  }
+  const hashedPassword = await User.hashPassword(password);
+  const documents = users.map(user => {
+    const document = new User({ ...user, password: hashedPassword });
+    document.displayName = `${document.firstName} ${document.lastName}`;
+    return document.toObject();
+  });
+  await User.collection.insertMany(
+    documents.map(document => ({
+      ...document,
+      _id: new mongoose.Types.ObjectId(String(document._id)),
+    })),
+  );
+  return documents;
+}
+
 /** Fields commonly overridden by direct model fixtures in server tests. */
 export type TestUserOverrides = Partial<UserFixtureData> &
   Record<string, unknown>;
@@ -294,6 +322,51 @@ export async function signIn(
 ): Promise<void> {
   const { username, password } = user;
   await agent.post('/api/auth/signin').send({ username, password }).expect(200);
+}
+
+/** Sign in a privileged test user through a current TOTP challenge. */
+export async function signInPrivileged(
+  user: { username: string; password: string },
+  agent: SupertestAgent,
+): Promise<void> {
+  const User = mongoose.model<CachedUserFixtureData, UserFixtureModel>('User');
+  const storedUser = await User.findOne({ username: user.username }).exec();
+  if (!storedUser || !storedUser.roles.some(role => role === 'admin')) {
+    return signIn(user, agent);
+  }
+
+  const { default: mfaService } =
+    await import('../../modules/users/server/services/mfa.server.service.mjs');
+  const secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+  await User.updateOne(
+    { _id: storedUser._id },
+    {
+      $set: {
+        mfaEnabled: true,
+        mfaSecretEncrypted: mfaService.encryptSecret(secret),
+        mfaLastTotpCounter: -1,
+        mfaRecoveryCodeHashes: [],
+      },
+    },
+  ).exec();
+
+  await agent.post('/api/auth/signin').send(user).expect(202);
+
+  const counter = Math.floor(Date.now() / 30000);
+  const key = Buffer.from('12345678901234567890');
+  const counterBuffer = Buffer.alloc(8);
+  counterBuffer.writeUInt32BE(Math.floor(counter / 0x100000000), 0);
+  counterBuffer.writeUInt32BE(counter % 0x100000000, 4);
+  const digest = crypto.createHmac('sha1', key).update(counterBuffer).digest();
+  const offset = digest[digest.length - 1] & 0x0f;
+  const binary = digest.readUInt32BE(offset) & 0x7fffffff;
+  const code = String(binary % 1000000).padStart(6, '0');
+
+  await agent
+    .post('/api/auth/mfa/verify')
+    .set('X-Trustroots-Request', '1')
+    .send({ code })
+    .expect(200);
 }
 
 /** Sign out from the app using a Supertest agent. */

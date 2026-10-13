@@ -11,6 +11,7 @@ export type TargetedRequestLimit = {
 
 export type E2EAppConfig = {
   sessionSecret: string;
+  mfaEncryptionKey: string;
   db: { uri: string };
   targetedRequestLimits: Record<string, TargetedRequestLimit>;
 };
@@ -55,7 +56,11 @@ try {
 }
 
 function isE2EAppConfig(value: unknown): value is E2EAppConfig {
-  if (!isRecord(value) || typeof value.sessionSecret !== 'string') {
+  if (
+    !isRecord(value) ||
+    typeof value.sessionSecret !== 'string' ||
+    typeof value.mfaEncryptionKey !== 'string'
+  ) {
     return false;
   }
   if (!isRecord(value.db) || typeof value.db.uri !== 'string') {

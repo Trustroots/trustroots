@@ -42,6 +42,13 @@ type AclCall = {
   method: string;
 };
 
+type TestPolicyUser = {
+  roles?: string[] | null;
+  _id: NonNullable<PolicyRequest['user']>['_id'];
+  mfaEnabled?: boolean;
+  $locals?: { mfaVerified?: boolean };
+};
+
 function mockAcl(error: Error | null, allowed: boolean) {
   let call: AclCall | undefined;
   const acl: MemoryPolicy = {
@@ -64,14 +71,16 @@ function policyRequest(
   roles: string[] | null | undefined,
   routePath: string,
   method: string,
+  mfaEnabled?: boolean,
 ): PolicyRequest {
   const user =
     roles === undefined
       ? undefined
-      : {
+      : ({
           roles,
           _id: { valueOf: () => 'fixture-user' },
-        };
+          ...(mfaEnabled === undefined ? {} : { mfaEnabled }),
+        } satisfies TestPolicyUser);
   return {
     user,
     route: { path: routePath },
@@ -115,6 +124,35 @@ describe('Route authorisation service', function () {
     );
 
     getCall()!.roles.should.deepEqual(['guest']);
+  });
+
+  it('retains member access for an unenrolled privileged user without member role', function () {
+    const { acl, getCall } = mockAcl(null, true);
+
+    createRouteAuthorisation(acl)(
+      policyRequest(['admin'], '/api/examples', 'GET', false),
+      mockResponse(),
+      function () {},
+    );
+
+    getCall()!.roles.should.deepEqual(['user']);
+  });
+
+  it('leaves welcome-team access in place when MFA is not enrolled', function () {
+    const { acl, getCall } = mockAcl(null, true);
+
+    createRouteAuthorisation(acl)(
+      policyRequest(
+        ['user', 'welcome-team'],
+        '/api/admin/acquisition-stories',
+        'GET',
+        false,
+      ),
+      mockResponse(),
+      function () {},
+    );
+
+    getCall()!.roles.should.deepEqual(['user', 'welcome-team']);
   });
 
   it('passes the user roles and calls next when the ACL allows the request', function () {
