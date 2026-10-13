@@ -44,6 +44,8 @@ export function getNostrEventAuthorPubkey(
  * Framework-agnostic; consumed by React components.
  */
 export default class NostrService {
+  private hackerPlaceSubscription: { close(): void } | null = null;
+  private hackerPlaceGeneration = 0;
   relayUrl: string;
   relay: InstanceType<typeof Relay> | null;
   subscriptions: Map<string, RelaySubscription>;
@@ -84,6 +86,7 @@ export default class NostrService {
    * Close all subscriptions, clear the subscription map, close the relay.
    */
   disconnect() {
+    this.unsubscribeHackerPlaces();
     for (const sub of this.subscriptions.values()) {
       sub.close();
     }
@@ -100,11 +103,9 @@ export default class NostrService {
    * consumers (profile badge, username resolution).
    */
   unsubscribeHackerPlaces() {
-    const existing = this.subscriptions.get('hackerPlaces');
-    if (existing) {
-      existing.close();
-      this.subscriptions.delete('hackerPlaces');
-    }
+    this.hackerPlaceGeneration += 1;
+    this.hackerPlaceSubscription?.close();
+    this.hackerPlaceSubscription = null;
   }
 
   async connectHackerPlaceRelays(): Promise<HackerPlaceRelayConnection[]> {
@@ -124,50 +125,111 @@ export default class NostrService {
     );
   }
 
+  private async openHackerPlaceSubscriptions(
+    onEvent: (event: Event) => void,
+    { onClose, onEose }: MapNoteSubscriptionCallbacks,
+  ) {
+    const connections = await this.connectHackerPlaceRelays();
+    const available = connections.filter(connection => connection.relay);
+    if (!available.length)
+      throw new Error('No place discovery relays available');
+    const remaining = new Set(available.map(connection => connection.url));
+    const pending = new Set(remaining);
+    const subscriptions: RelaySubscription[] = [];
+    const latest = new Map<string, Event>();
+    let closed = false;
+    let ended = false;
+    const ready = () => {
+      if (!ended && !pending.size && remaining.size) {
+        ended = true;
+        onEose?.();
+      }
+    };
+    for (const { url, relay } of available) {
+      subscriptions.push(
+        relay!.subscribe(
+          [{ kinds: [33000], '#L': ['physical-location'], limit: 1000 }],
+          {
+            onevent(event) {
+              if (closed) return;
+              const identifier = event.tags.find(tag => tag[0] === 'd')?.[1];
+              const key = `${event.pubkey}:${identifier || event.id}`;
+              const previous = latest.get(key);
+              // NIP-01 uses the lowest event ID to break timestamp ties.
+              if (
+                previous &&
+                (previous.created_at > event.created_at ||
+                  (previous.created_at === event.created_at &&
+                    previous.id <= event.id))
+              )
+                return;
+              latest.set(key, event);
+              onEvent(event);
+            },
+            oneose() {
+              if (closed) return;
+              pending.delete(url);
+              ready();
+            },
+            onclose(reason) {
+              if (closed) return;
+              remaining.delete(url);
+              pending.delete(url);
+              if (!remaining.size) onClose?.(reason);
+              else ready();
+            },
+          },
+        ),
+      );
+    }
+    return {
+      close() {
+        if (closed) return;
+        closed = true;
+        for (const subscription of subscriptions) subscription.close();
+        for (const { relay } of available) relay!.close();
+      },
+    };
+  }
+
   async fetchHackerPlaceEvents(): Promise<Event[]> {
-    const relay = await this.connect();
-    const events: Event[] = [];
-    return new Promise(resolve => {
+    const events = new Map<string, Event>();
+    return new Promise((resolve, reject) => {
+      let group: { close(): void } | undefined;
       let finished = false;
-      const subscription = relay.subscribe([{ kinds: [33000], limit: 1000 }], {
-        onevent(event) {
-          events.push(event);
+      const complete = () => {
+        finished = true;
+        group?.close();
+        resolve([...events.values()]);
+      };
+      this.openHackerPlaceSubscriptions(
+        event => {
+          const identifier = event.tags.find(tag => tag[0] === 'd')?.[1];
+          events.set(`${event.pubkey}:${identifier || event.id}`, event);
         },
-        oneose() {
-          if (finished) return;
-          finished = true;
-          subscription.close();
-          resolve([
-            ...new Map(events.map(event => [event.id, event])).values(),
-          ]);
-        },
-        onclose() {
-          if (finished) return;
-          finished = true;
-          resolve([
-            ...new Map(events.map(event => [event.id, event])).values(),
-          ]);
-        },
-      });
+        { onEose: complete, onClose: complete },
+      )
+        .then(subscription => {
+          group = subscription;
+          if (finished) group.close();
+        })
+        .catch(reject);
     });
   }
 
   async subscribeHackerPlaces(
     onEvent: (event: Event) => void,
-    { onClose, onEose }: MapNoteSubscriptionCallbacks = {},
+    callbacks: MapNoteSubscriptionCallbacks = {},
   ) {
-    const relay = await this.connect();
     this.unsubscribeHackerPlaces();
-    const sub = relay.subscribe(
-      [{ kinds: [33000], '#L': ['physical-location'] }],
-      {
-        onevent: onEvent,
-        oneose: onEose || (() => {}),
-        onclose: onClose,
-      },
+    const generation = this.hackerPlaceGeneration;
+    const subscription = await this.openHackerPlaceSubscriptions(
+      onEvent,
+      callbacks,
     );
-    this.subscriptions.set('hackerPlaces', sub);
-    return sub;
+    if (generation !== this.hackerPlaceGeneration) subscription.close();
+    else this.hackerPlaceSubscription = subscription;
+    return subscription;
   }
 
   unsubscribeMapNotes() {

@@ -65,7 +65,24 @@ describe('shared circle map', () => {
     );
     expect(screen.getByText('1 places')).toBeInTheDocument();
     expect(screen.getByText('Source attribution')).toBeInTheDocument();
-    expect(L.circleMarker).toHaveBeenCalledWith([12, 34], expect.any(Object));
+    expect(L.circleMarker).toHaveBeenCalledWith(
+      [12, 34],
+      expect.objectContaining({ fillColor: '#488261' }),
+    );
+    rerender(
+      <CircleLocationMap
+        {...props}
+        markerColor="#12b591"
+        className="circle-location-map-panel--brand"
+      />,
+    );
+    expect(screen.getByLabelText('Circle locations')).toHaveClass(
+      'circle-location-map-panel--brand',
+    );
+    expect(L.circleMarker).toHaveBeenCalledWith(
+      [12, 34],
+      expect.objectContaining({ fillColor: '#12b591' }),
+    );
     const popup = locationPopup(location);
     expect(popup.querySelector('b')).toBeNull();
     expect(popup.querySelector('script')).toBeNull();
