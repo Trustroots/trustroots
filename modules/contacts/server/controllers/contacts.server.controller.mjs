@@ -37,6 +37,10 @@ service.add = function (req, res) {
         if (!mongoose.Types.ObjectId.isValid(req.body.friendUserId))
           return errorService.sendInvalidId(res);
 
+        if (req.user.blocked?.some(id => id.equals(req.body.friendUserId))) {
+          return errorService.sendForbidden(res);
+        }
+
         // Check if contact already exists
         Contact.findOne({
           $or: [
@@ -88,12 +92,15 @@ service.add = function (req, res) {
               $nin: userRolesService.restrictedMessagingRoles,
             },
           },
-          'email displayName roles',
+          'email displayName roles blocked',
         ).exec(function (err, friend) {
           if (!friend)
             return done(
               new Error('Failed to load user ' + req.body.friendUserId),
             );
+          if (friend.blocked?.some(id => id.equals(req.user._id))) {
+            return errorService.sendForbidden(res);
+          }
           done(err, messageHTML, messagePlain, friend);
         });
       },
