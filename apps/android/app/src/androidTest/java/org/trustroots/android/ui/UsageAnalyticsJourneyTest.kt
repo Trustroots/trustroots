@@ -9,6 +9,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
@@ -59,13 +61,14 @@ class UsageAnalyticsJourneyTest {
             }
         }
         compose.runOnIdle { analytics.value.appOpened(); assertTrue(bodies.isEmpty()) }
+        compose.onNodeWithText("Usage analytics").assertIsOff()
         compose.onNodeWithText("Privacy policy").performClick()
         compose.runOnIdle {
             assertEquals("https://www.trustroots.org/privacy", openedUri)
             assertFalse(analytics.value.enabled.value)
             assertTrue(bodies.isEmpty())
         }
-        compose.onNodeWithText("Turn on usage analytics").performClick()
+        compose.onNodeWithText("Usage analytics").assertIsOff().performClick().assertIsOn()
         compose.waitForIdle()
         compose.onNodeWithText("Open search").performClick()
         compose.waitForIdle()
@@ -79,7 +82,7 @@ class UsageAnalyticsJourneyTest {
             analytics.value.appOpened()
             assertEquals("app-open", JSONObject(bodies.last()).getJSONObject("payload").getString("name"))
         }
-        compose.onNodeWithText("Turn off usage analytics").performClick()
+        compose.onNodeWithText("Usage analytics").assertIsOn().performClick().assertIsOff()
         compose.waitForIdle()
         compose.runOnIdle {
             val count = bodies.size
@@ -90,6 +93,7 @@ class UsageAnalyticsJourneyTest {
             analytics.value = UsageAnalytics(AndroidUsageConsentStore(context), transport)
         }
         compose.waitForIdle()
+        compose.onNodeWithText("Usage analytics").assertIsOff()
         compose.runOnIdle {
             assertFalse(analytics.value.enabled.value)
             assertEquals(4, bodies.size)

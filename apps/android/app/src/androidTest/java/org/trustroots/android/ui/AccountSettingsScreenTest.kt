@@ -61,6 +61,6 @@ class AccountSettingsScreenTest {
         compose.onNode(hasText("Change password") and hasClickAction()).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Sign out").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Turn on message alerts").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Turn on usage analytics").performScrollTo().assertIsDisplayed()
+        compose.onNode(hasText("Usage analytics") and hasClickAction()).performScrollTo().assertIsDisplayed()
     }
 }
