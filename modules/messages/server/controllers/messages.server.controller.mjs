@@ -702,12 +702,9 @@ service.markRead = async function (req, res) {
   }
   // Mark messages read
   try {
-    await Message.updateMany(
-      prepareMarkReadSelector(messageIds, req.user.id),
-      {
-        read: true,
-      },
-    );
+    await Message.updateMany(prepareMarkReadSelector(messageIds, req.user.id), {
+      read: true,
+    });
     await Thread.updateMany(
       { userTo: req.user._id, message: { $in: messageIds } },
       { $set: { read: true } },
