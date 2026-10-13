@@ -492,7 +492,7 @@ export function matchReactRoute(path: string): ReactRouteMatch | null {
 
   return policy
     ? {
-        params: match.params,
+        params: { ...match.params },
         policy,
       }
     : null;

@@ -428,6 +428,10 @@ export function createAppRouter() {
       navigateOverride: undefined,
     },
     defaultPreload: 'intent',
+    // Current router builds scroll the window on every render unless this
+    // returns false. The app shell still resets scroll, except where a route
+    // opts out.
+    scrollRestoration: () => false,
     parseSearch: parseLegacySearch,
     routeTree,
     stringifySearch: stringifyLegacySearch,
