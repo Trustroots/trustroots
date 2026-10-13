@@ -1378,6 +1378,8 @@ const features = [
     },
     requiredScenarios: [
       'Photo edit page is reachable.',
+      'Photo upload guidance shows the configured limit before selection.',
+      'Oversized photo selections are rejected before upload.',
       'Valid upload succeeds through deterministic file processing.',
       'Photo upload controls show keyboard focus.',
       'Visible photo control opens the file chooser.',
@@ -1387,6 +1389,10 @@ const features = [
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'profile edit photo page is reachable'),
+      spec(
+        'authenticated.spec.js',
+        'photo upload explains its limit before selection and rejects oversized files',
+      ),
       spec('authenticated.spec.js', 'member can upload a valid profile photo'),
       spec(
         'authenticated.spec.js',

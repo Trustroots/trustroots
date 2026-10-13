@@ -81,6 +81,7 @@ service = {
     checkCompatibility: false,
   },
   maxUploadSize: 10000,
+  maxAvatarUploadSize: 10000,
   // =10kb in bytes. Set ridiculously small just for tests
   host: process.env.TRUSTROOTS_E2E_HOST || 'localhost',
   port: Number(process.env.PORT) || 3001,

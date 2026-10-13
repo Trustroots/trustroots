@@ -17,7 +17,7 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
   };
   const { setUser } = useAuth();
   /* istanbul ignore next -- settings bootstrap always supplies the upload limit. */
-  const { maxUploadSize = 5 * 1024 * 1024 } = useSettings();
+  const { maxUploadSize = 20 * 1024 * 1024 } = useSettings();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [draftUser, setDraftUser] = useState({ ...user });
   const [previewStyle, setPreviewStyle] = useState('');
@@ -136,6 +136,7 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
                   type="file"
                   accept="image/jpeg,image/png,image/gif"
                   hidden
+                  aria-describedby="profile-photo-upload-help"
                   onChange={handleFileSelected}
                 />
                 <button
@@ -143,9 +144,16 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
                   className="btn btn-default profile-photo-picker"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
+                  aria-describedby="profile-photo-upload-help"
                 >
                   {t('Upload photo')}
                 </button>
+                <p id="profile-photo-upload-help" className="help-block">
+                  {t('JPG, PNG or GIF. Maximum file size: {{size}}.', {
+                    size: formatBytes(maxUploadSize),
+                  })}{' '}
+                  {t('Photos are automatically resized.')}
+                </p>
                 <div className="profile-edit-avatar-sources">
                   {draftUser.avatarUploaded && (
                     <label className="radio">

@@ -160,15 +160,20 @@ describe('Authentication controller OAuth unit tests', () => {
       ).should.be.false();
     });
 
-    it('falls back to Gravatar when removing the active Facebook avatar', async () => {
+    it('keeps no photo when removing a legacy Facebook connection', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      await User.collection.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            avatarSource: 'facebook',
+            additionalProvidersData: {
+              facebook: { id: 'fictional-facebook-id' },
+            },
+          },
+        },
+      );
       const userDoc = await User.findById(saved._id);
-      userDoc.additionalProvidersData = {
-        facebook: { id: 'fictional-facebook-id' },
-      };
-      userDoc.avatarSource = 'facebook';
-      userDoc.markModified('additionalProvidersData');
-      await userDoc.save();
 
       const req = {
         user: userDoc,
@@ -181,9 +186,9 @@ describe('Authentication controller OAuth unit tests', () => {
       await res.waitForResponse();
 
       res.statusCode.should.equal(200);
-      res.body.avatarSource.should.equal('gravatar');
+      res.body.avatarSource.should.equal('none');
       const reloaded = await User.findById(saved._id);
-      reloaded.avatarSource.should.equal('gravatar');
+      reloaded.avatarSource.should.equal('none');
     });
 
     it('allows removing a provider that is not connected', async () => {

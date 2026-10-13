@@ -15,6 +15,12 @@ import type Avatar from '@/modules/users/client/components/Avatar.component';
 import type { UserProfile } from '@/modules/users/client/types';
 
 jest.mock('@/modules/users/client/api/users.api');
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, values?: Record<string, unknown>) =>
+      key.replace('{{size}}', String(values?.size)),
+  }),
+}));
 const updateUser = jest.mocked(usersApi.update);
 const uploadAvatar = jest.mocked(usersApi.uploadAvatar);
 jest.mock(
@@ -102,6 +108,11 @@ describe('ProfileEditPhoto', () => {
     renderPage({ avatarUploaded: true, avatarSource: 'local' });
 
     expect(screen.getByRole('button', { name: 'Upload photo' })).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Upload photo' }),
+    ).toHaveAccessibleDescription(
+      'JPG, PNG or GIF. Maximum file size: 5 MB. Photos are automatically resized.',
+    );
     expect(screen.getByLabelText('My own')).toBeChecked();
     expect(screen.getByLabelText('Gravatar')).toBeInTheDocument();
     expect(screen.getByLabelText('None')).toBeInTheDocument();

@@ -30,7 +30,9 @@ service = {
     message: '',
   },
   maxUploadSize: 10 * 1024 * 1024,
-  // 10MB. Remember to change this to Nginx configs as well
+  // General upload limit in bytes.
+  maxAvatarUploadSize: 20 * 1024 * 1024,
+  // Keep Nginx request limits above this to allow multipart overhead.
   imageProcessor: 'graphicsmagick',
   // graphicsmagick|imagemagick
   uploadTmpDir: './tmp/',
@@ -270,9 +272,6 @@ service = {
     },
     user: '',
     publicKey: '',
-  },
-  facebook: {
-    page: '',
   },
   twitter: {
     username: '',

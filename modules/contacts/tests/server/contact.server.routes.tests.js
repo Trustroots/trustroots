@@ -259,10 +259,8 @@ describe('Contact CRUD tests', function () {
           contactsGetRes.body[user1Order].user.emailHash.should.equal(
             user1.emailHash,
           );
-          contactsGetRes.body[
-            user1Order
-          ].user.additionalProvidersData.facebook.id.should.equal(
-            user1.additionalProvidersData.facebook.id,
+          contactsGetRes.body[user1Order].user.should.not.have.property(
+            'additionalProvidersData',
           );
 
           // Call the assertion callback

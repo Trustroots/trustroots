@@ -80,6 +80,11 @@ describe('Controller: analytics', function () {
       result.should.equal('');
     });
 
+    it('returns the original URL when it cannot be parsed', function () {
+      const result = analytics.appendUTMParams('http://', utmParams);
+      result.should.equal('http://');
+    });
+
     it('logs only UTM presence when validation fails', function () {
       const originalLog = winston.log;
       const calls = [];

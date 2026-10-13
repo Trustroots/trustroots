@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
-import type { UserProfile } from '../types';
 
 type AvatarUser = {
   username?: string | null;
@@ -13,7 +12,6 @@ type AvatarUser = {
   avatarVersion?: string;
   updated?: string;
   emailHash?: string;
-  additionalProvidersData?: UserProfile['additionalProvidersData'];
 };
 
 interface AvatarProps {
@@ -28,7 +26,7 @@ interface AvatarProps {
  * User's avatar
  * @param {object} user - User object
  * @param {integer=256} size - Size of the image <img>. Supported values are 2048, 1024, 512, 256, 128, 64, 36, 32, 24 and 16. See avatar.less for details. Defaults to 256.
- * @param {string=''} source - Leave empty to use user's selected source. Values "none", "facebook", "local", "gravatar".
+ * @param {string=''} source - Leave empty to use user's selected source. Values "none", "local", "gravatar".
  * @param {boolean=true} link - Include a link to user's profile. Defaults to true.
  */
 export default function Avatar({
@@ -43,6 +41,7 @@ export default function Avatar({
   };
 
   source = source || user.avatarSource || '';
+  if (source === 'facebook') source = 'none';
   const defaultAvatar = '/img/avatar.png';
 
   const avatar = avatarUrl(user, source, size, defaultAvatar);
@@ -84,25 +83,6 @@ Avatar.propTypes = {
   link: PropTypes.bool,
   onClick: PropTypes.func,
 };
-
-/**
- * Generate avatar url from facebook
- * @link https://developers.facebook.com/docs/graph-api/reference/user/picture/
- * @param {object} user - user object
- * @param {string} user.additionalProvidersData.facebook.id - user's facebook id
- * @param {number} size - size of the image
- * @returns {string} - the url
- */
-function facebookAvatarUrl(user: AvatarUser, size: number): string | false {
-  const facebookId = user.additionalProvidersData?.facebook?.id;
-  const isValid =
-    typeof facebookId === 'string' || typeof facebookId === 'number';
-
-  return (
-    isValid &&
-    `https://graph.facebook.com/${facebookId}/picture/?width=${size}&height=${size}`
-  );
-}
 
 /**
  * Generate url to avatar image that user uploaded
@@ -169,7 +149,7 @@ function gravatarUrl(
  * Generate avatar url
  * @param {object} user - user object
  * @param {integer} size - size of the image. Supported values are 2048, 1024, 512, 256, 128, 64, 36, 32, 24, 16.
- * @param {string} source - avatar source. One of ['' (user's selected source), 'none', 'facebook', 'gravatar', 'local']
+ * @param {string} source - avatar source. One of ['' (user's selected source), 'none', 'gravatar', 'local']
  * @param {string} defaultAvatar - url to a default avatar
  * @returns {string} - the url
  */
@@ -182,7 +162,6 @@ function avatarUrl(
   return (
     (source === 'local' && localAvatarUrl(user, size)) ||
     (source === 'gravatar' && gravatarUrl(user, size, defaultAvatar)) ||
-    (source === 'facebook' && facebookAvatarUrl(user, size)) ||
     `${defaultAvatar}?none`
   );
 }

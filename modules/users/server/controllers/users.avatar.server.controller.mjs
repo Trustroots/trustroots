@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import fs from 'fs';
 import mongoose from 'mongoose';
 import log from './../../../../config/lib/logger.mjs';
@@ -25,7 +24,14 @@ const avatarUploadField = (req, res, next) => {
     'image/jpg',
     'image/png',
   ];
-  fileUpload.uploadFile(validImageMimeTypes, 'avatar', req, res, next);
+  fileUpload.uploadFile(
+    validImageMimeTypes,
+    'avatar',
+    req,
+    res,
+    next,
+    config.maxAvatarUploadSize,
+  );
 };
 
 /**
@@ -140,22 +146,6 @@ const avatarUpload = (req, res) => {
 };
 
 /**
- * Generate avatar url from facebook
- * @link https://developers.facebook.com/docs/graph-api/reference/user/picture/
- * @param {object} user - user object
- * @param {string} user.additionalProvidersData.facebook.id - user's facebook id
- * @param {number} size - size of the image
- * @returns {string} - the url
- */
-function getFacebookAvatarUrl(user, size) {
-  const id = _.get(user, ['additionalProvidersData', 'facebook', 'id'], false);
-  return (
-    id &&
-    `https://graph.facebook.com/${id}/picture/?width=${size}&height=${size}`
-  );
-}
-
-/**
  * Generate url to avatar image that user uploaded
  * @param {object} user - user object
  * @param {number} size - size of the image
@@ -204,14 +194,13 @@ function getGravatarUrl(user, size) {
  * Generate avatar url
  * @param {object} user - user object
  * @param {integer} size - size of the image. Supported values are 2048, 1024, 512, 256, 128, 64, 36, 32, 24, 16.
- * @param {string} source - avatar source. One of ['' (user's selected source), 'none', 'facebook', 'gravatar', 'local']
+ * @param {string} source - avatar source. One of ['' (user's selected source), 'none', 'gravatar', 'local']
  * @returns {string} - the url
  */
 function getAvatarUrl(profile, size, source) {
   return (
     (source === 'local' && getLocalAvatarUrl(profile, size)) ||
     (source === 'gravatar' && getGravatarUrl(profile, size)) ||
-    (source === 'facebook' && getFacebookAvatarUrl(profile, size)) ||
     getDefaultAvatarUrl(size)
   );
 }
@@ -310,8 +299,6 @@ const userForAvatarByUserId = async (req, res, next, userId) => {
     });
   }
   const fields = [
-    'additionalProvidersData.facebook.id',
-    // For FB avatars
     'avatarSource',
     'avatarUploaded',
     'avatarVersion',

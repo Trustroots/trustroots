@@ -145,7 +145,7 @@ export default function Privacy() {
                 </li>
                 <li>
                   {t(
-                    'Gravatar may be used for profile images. Members who connected Facebook in the past can continue using their stored Facebook profile image.',
+                    'Gravatar may be used for profile images. Facebook is no longer used for profile images.',
                   )}
                 </li>
                 <li>

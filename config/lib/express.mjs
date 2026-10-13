@@ -33,7 +33,6 @@ service.initLocalVariables = function (app) {
   app.locals.title = config.app.title;
   app.locals.description = config.app.description;
   app.locals.twitterUsername = config.twitter.username;
-  app.locals.facebookPage = config.facebook.page;
   app.locals.googlePage = config.google.page;
   app.locals.umami = config.umami;
   app.locals.env =
@@ -44,7 +43,7 @@ service.initLocalVariables = function (app) {
   app.locals.appSettings.mapbox = config.mapbox;
   app.locals.appSettings.time = new Date().toISOString();
   app.locals.appSettings.https = config.https;
-  app.locals.appSettings.maxUploadSize = config.maxUploadSize;
+  app.locals.appSettings.maxUploadSize = config.maxAvatarUploadSize;
   app.locals.appSettings.profileMinimumLength = config.profileMinimumLength;
   app.locals.appSettings.referencesEnabled = config.featureFlags.reference;
   app.locals.appSettings.limits = {
@@ -296,11 +295,6 @@ service.initHelmetHeaders = function (app) {
           // Map tiles
           '*.earthdata.nasa.gov',
           // Map tiles
-          '*.facebook.com',
-          '*.fbcdn.net',
-          // Facebook releated
-          '*.fbsbx.com',
-          // Facebook related
           '*.twitter.com',
           '*.gstatic.com',
           '*.googleusercontent.com',
