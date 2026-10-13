@@ -31,9 +31,6 @@ Icon
 node_modules
 /.tmp/
 /.worktrees/
-.vagrant
-*.pyc
-passenger.*
 *.pid
 
 # Ansible Deployment Junk
@@ -74,7 +71,6 @@ uploads
 public/uploads-profile
 public/uploads-circle/*
 !public/uploads-circle/*.jpg
-modules/users/client/img/profile/uploads # folder removed 2018-08
 
 # Jekyll files for /docs development
 docs/_site
@@ -94,5 +90,3 @@ trustroots.tar.gz*
 /playwright-report/
 /test-results/
 /tests/e2e/.auth/
-
-/.worktrees/

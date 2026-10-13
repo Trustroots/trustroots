@@ -123,7 +123,7 @@ in Container**, then run tests in the integrated terminal. MongoDB is already
 available via compose. See [`.devcontainer/README.md`](../../.devcontainer/README.md).
 
 ```bash
-npm run test:all
+pnpm run test:all
 ```
 
 **CI:** GitHub Actions builds this dev image and runs tests via

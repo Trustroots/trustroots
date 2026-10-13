@@ -1,9 +1,10 @@
 const express = require('express');
 const sinon = require('sinon');
-const config = require('./../../../../config/config.mjs');
-const policy = require('./../../server/policies/experiences.server.policy.mjs');
-const controller = require('./../../server/controllers/experiences.server.controller.mjs');
-const registerRoutes = require('./../../server/routes/experiences.server.routes.mjs');
+const config = require('../../../../config/config.mjs');
+const policy = require('../../server/policies/experiences.server.policy.mjs');
+const controller = require('../../server/controllers/experiences.server.controller.mjs');
+const changes = require('../../server/controllers/experience-changes.server.controller.mjs');
+const registerRoutes = require('../../server/routes/experiences.server.routes.mjs');
 const request = require('supertest');
 require('should');
 
@@ -13,6 +14,7 @@ describe('Experiences routes unit tests', () => {
     const app = express();
     sinon.stub(config.featureFlags, 'reference').value(referenceEnabled);
     sinon.stub(policy, 'isAllowed').callsFake((req, res, next) => next());
+    sinon.stub(policy, 'isAllowedChange').callsFake((req, res, next) => next());
     for (const name of [
       'create',
       'readMany',
@@ -28,6 +30,11 @@ describe('Experiences routes unit tests', () => {
     sinon
       .stub(controller, 'experienceById')
       .callsFake((req, res, next) => next());
+    for (const name of ['readAccess', 'submit', 'readMine']) {
+      sinon
+        .stub(changes, name)
+        .callsFake((req, res) => res.status(200).send({ action: name }));
+    }
     registerRoutes(app);
     return app;
   }

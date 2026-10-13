@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 import Map from '@/modules/core/client/components/Map/index';
+import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import OfferLocationOverlay from './OfferLocationOverlay';
 import SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
 import { getOfferHexColor } from '../utils/markers';
@@ -10,7 +11,7 @@ import type {
 } from '@/modules/search/client/utils/location';
 
 interface OfferLocationEditorProps {
-  location: [number, number];
+  location: [number, number] | null;
   offerStatus?: string;
   offerType?: string;
   onLocationChange: (location: [number, number]) => void;
@@ -20,7 +21,7 @@ interface OfferMapProps {
   children?: React.ReactNode;
   'aria-describedby'?: string;
   className: string;
-  fallbackMarker: { color: string; location: [number, number] };
+  fallbackMarker?: { color: string; location: [number, number] };
   height: number;
   location: [number, number];
   onLocationChange?: (location: [number, number]) => void;
@@ -39,6 +40,7 @@ export default function OfferLocationEditor({
   onLocationChange,
 }: OfferLocationEditorProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const mapLocation = location || [DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng];
 
   function handlePlaceSearch(
     data: MapBounds | MapPoint,
@@ -56,6 +58,18 @@ export default function OfferLocationEditor({
       const lng = (data.northEast.lng + data.southWest.lng) / 2;
       onLocationChange([lat, lng]);
     }
+  }
+
+  function handleMapLocationChange(nextLocation: [number, number]) {
+    // The unchosen map centre is not an offer location.
+    if (
+      !location &&
+      nextLocation[0] === DEFAULT_LOCATION.lat &&
+      nextLocation[1] === DEFAULT_LOCATION.lng
+    ) {
+      return;
+    }
+    onLocationChange(nextLocation);
   }
 
   return (
@@ -79,23 +93,27 @@ export default function OfferLocationEditor({
         <TypedMap
           aria-describedby="offerLocation"
           className="offer-location"
-          fallbackMarker={{
-            color: getOfferHexColor({ offerType, offerStatus }),
-            location,
-          }}
+          fallbackMarker={
+            location
+              ? {
+                  color: getOfferHexColor({ offerType, offerStatus }),
+                  location,
+                }
+              : undefined
+          }
           height={320}
-          location={location}
-          onLocationChange={onLocationChange}
+          location={mapLocation}
+          onLocationChange={handleMapLocationChange}
           onClick={event => {
             if (event?.lngLat) {
-              onLocationChange([event.lngLat[1], event.lngLat[0]]);
+              handleMapLocationChange([event.lngLat[1], event.lngLat[0]]);
             }
           }}
           scrollZoom
           width="100%"
           zoom={
             /* istanbul ignore next -- offer editors initialise a two-coordinate location. */
-            location?.length === 2 ? 13 : 4
+            location?.length === 2 ? 13 : DEFAULT_LOCATION.zoom
           }
         >
           {location?.length === 2 && (
