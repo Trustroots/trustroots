@@ -486,6 +486,114 @@ describe('Messages controller unit tests', () => {
   });
 
   describe('markRead', () => {
+    for (const messageIds of [
+      undefined,
+      null,
+      'invalid',
+      [null],
+      [1],
+      [{}],
+      [{ $ne: null }],
+      ['invalid'],
+      ['abcdefghijklmnopqrstuvwx'],
+    ]) {
+      it(`rejects invalid message identifiers ${JSON.stringify(
+        messageIds,
+      )}`, async () => {
+        const update = sinon.spy(Message, 'update');
+        const res = deferredResponse();
+        messagesController.markRead(
+          {
+            user: { _id: new mongoose.Types.ObjectId() },
+            body: { messageIds },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+        update.called.should.be.false();
+      });
+    }
+
+    it('rejects a missing body and accepts an empty acknowledgement', async () => {
+      const user = { _id: new mongoose.Types.ObjectId() };
+      const missing = deferredResponse();
+      messagesController.markRead({ user }, missing);
+      await missing.waitForResponse();
+      missing.statusCode.should.equal(400);
+      const empty = deferredResponse();
+      messagesController.markRead({ user, body: { messageIds: [] } }, empty);
+      await empty.waitForResponse();
+      empty.statusCode.should.equal(200);
+    });
+
+    it('acknowledges only the recipient’s threads whose latest message is read', async () => {
+      const [sender, receiver, stranger] = await utils.saveUsers(
+        utils.generateUsers(3, { public: true }),
+      );
+      const messages = await Message.create([
+        {
+          content: 'Earlier hello',
+          userFrom: sender._id,
+          userTo: receiver._id,
+        },
+        { content: 'Latest hello', userFrom: sender._id, userTo: receiver._id },
+        {
+          content: 'Separate hello',
+          userFrom: sender._id,
+          userTo: stranger._id,
+        },
+      ]);
+      const threads = await Thread.create([
+        {
+          userFrom: sender._id,
+          userTo: receiver._id,
+          message: messages[1]._id,
+          read: false,
+        },
+        {
+          userFrom: sender._id,
+          userTo: stranger._id,
+          message: messages[2]._id,
+          read: false,
+        },
+      ]);
+      const acknowledge = async ids => {
+        const res = deferredResponse();
+        messagesController.markRead(
+          {
+            user: receiver,
+            body: { messageIds: ids.map(id => id.toString()) },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+      };
+      await acknowledge([messages[0]._id]);
+      (await Thread.findById(threads[0]._id)).read.should.be.false();
+      await acknowledge([messages[1]._id, messages[2]._id]);
+      (await Thread.findById(threads[0]._id)).read.should.be.true();
+      (await Thread.findById(threads[1]._id)).read.should.be.false();
+      (await Message.findById(messages[2]._id)).read.should.be.false();
+    });
+
+    it('returns 400 when thread acknowledgement fails', async () => {
+      sinon.stub(Thread, 'updateMany').callsFake((query, update, callback) => {
+        callback(new Error('Thread update failed'));
+      });
+      const [receiver] = await utils.saveUsers(utils.generateUsers(1));
+      const res = deferredResponse();
+      messagesController.markRead(
+        {
+          user: receiver,
+          body: { messageIds: [new mongoose.Types.ObjectId().toString()] },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
     it('marks messages as read', async () => {
       const [sender, receiver] = await utils.saveUsers(
         utils.generateUsers(2, { public: true }),
@@ -695,7 +803,7 @@ describe('Messages controller unit tests', () => {
       });
     }
 
-    it('loads messages and marks the thread read', async () => {
+    it('loads messages without changing message or thread read state', async () => {
       const [sender, receiver] = await utils.saveUsers(
         utils.generateUsers(2, { public: true }),
       );
@@ -725,7 +833,8 @@ describe('Messages controller unit tests', () => {
         userFrom: sender._id,
         userTo: receiver._id,
       });
-      thread.read.should.be.true();
+      thread.read.should.be.false();
+      (await Message.findById(message._id)).read.should.be.false();
     });
 
     it('skips marking read when the latest message was sent by the viewer', async () => {

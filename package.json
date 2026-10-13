@@ -62,6 +62,7 @@
     "start:worker": "NODE_ENV=development node ./scripts/start-with-nodemon.js worker",
     "start": "concurrently --raw --kill-others --kill-others-on-fail 'npm:lint:watch' 'npm:start:develop' 'npm:webpack:server' 'npm:start:worker'",
     "test:client:watch": "NODE_OPTIONS='--require ./jest/jest.hide-canvas.js' jest --watch --no-watchman",
+    "test:boundaries": "mocha modules/core/tests/server/api-input.server.tests.js modules/core/tests/server/csrf-protection.server.tests.js",
     "test:client": "BROWSERSLIST_IGNORE_OLD_DATA=1 NODE_OPTIONS='--require ./jest/jest.hide-canvas.js' jest --no-watchman --silent --maxWorkers=50%",
     "test:coverage:client": "NODE_OPTIONS='--require ./jest/jest.hide-canvas.js' jest --coverage --runInBand --no-watchman",
     "test:coverage:client:ci": "NODE_OPTIONS='--require ./jest/jest.hide-canvas.js' jest --coverage --maxWorkers=50% --no-watchman",

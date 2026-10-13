@@ -672,39 +672,9 @@ service.threadByUser = function (req, res, next, userId) {
           },
         );
       },
-      /* Mark the thread read
-       *
-       * @todo: mark it read:true only when it was read:false,
-       * now it performs write each time thread is opened
-       */
       function (messages, done) {
-        if (!messages || messages.length === 0) {
-          return done();
-        }
         req.messages = messages;
-
-        // If latest message in the thread was to current user, mark thread read
-        if (
-          messages[0].userTo &&
-          messages[0].userTo._id &&
-          req.user._id.equals(messages[0].userTo._id)
-        ) {
-          Thread.update(
-            {
-              userTo: req.user._id,
-              userFrom: userId,
-            },
-            {
-              read: true,
-            },
-            {
-              multi: false,
-            },
-            done,
-          );
-        } else {
-          done();
-        }
+        done();
       },
     ],
     function (err) {
@@ -724,9 +694,19 @@ service.markRead = function (req, res) {
   if (!req.user) {
     return errorService.sendForbidden(res);
   }
+  const messageIds = req.body?.messageIds;
+  if (
+    !Array.isArray(messageIds) ||
+    !messageIds.every(id => typeof id === 'string' && /^[a-f\d]{24}$/i.test(id))
+  ) {
+    return res.status(400).send({ message: 'Invalid message identifiers.' });
+  }
+  if (messageIds.length === 0) {
+    return res.status(200).send(prepareMarkReadResponse());
+  }
   // Mark messages read
   Message.update(
-    prepareMarkReadSelector(req.body.messageIds, req.user.id),
+    prepareMarkReadSelector(messageIds, req.user.id),
     {
       read: true,
     },
@@ -738,9 +718,19 @@ service.markRead = function (req, res) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
         });
-      } else {
-        res.status(200).send(prepareMarkReadResponse());
       }
+      Thread.updateMany(
+        { userTo: req.user._id, message: { $in: messageIds } },
+        { $set: { read: true } },
+        function (threadError) {
+          if (threadError) {
+            return res.status(400).send({
+              message: errorService.getErrorMessage(threadError),
+            });
+          }
+          res.status(200).send(prepareMarkReadResponse());
+        },
+      );
     },
   );
 };
