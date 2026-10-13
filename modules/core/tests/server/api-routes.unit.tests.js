@@ -79,7 +79,8 @@ function assertPolicy(route, policy) {
 function register(modulePath, stubs) {
   const { app, params, routes } = createAppRecorder();
   const file = require.resolve(modulePath);
-  if (file.endsWith('.mjs')) {
+  const esmExtension = ['.mjs', '.mts'].find(ext => file.endsWith(ext));
+  if (esmExtension) {
     const sandbox = sinon.createSandbox();
     const dependencyRequire = createRequire(file);
     try {
