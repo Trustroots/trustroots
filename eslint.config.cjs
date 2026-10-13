@@ -80,6 +80,61 @@ const legacyConfig = {
     ecmaFeatures: { jsx: true },
   },
   overrides: [
+    {
+      files: ['modules/*/client/**/*.{js,ts,tsx}'],
+      rules: {
+        'react/no-danger': 2,
+        'no-restricted-properties': [
+          2,
+          {
+            property: 'innerHTML',
+            message: 'Use text or a reviewed HTML boundary.',
+          },
+          {
+            property: 'outerHTML',
+            message: 'Use text or a reviewed HTML boundary.',
+          },
+          {
+            property: 'insertAdjacentHTML',
+            message: 'Use text or a reviewed HTML boundary.',
+          },
+          {
+            object: 'document',
+            property: 'write',
+            message: 'Use React rendering.',
+          },
+          {
+            object: 'document',
+            property: 'writeln',
+            message: 'Use React rendering.',
+          },
+        ],
+      },
+    },
+    {
+      // Full rich text is formatted on the server before reaching these views.
+      files: [
+        'modules/core/client/components/ReadMorePanel.tsx',
+        'modules/core/client/components/TrEditor.tsx',
+        'modules/messages/client/components/ThreadMessage.tsx',
+        'modules/messages/client/components/ThreadReply.tsx',
+        'modules/admin/client/components/AdminMessages.component.tsx',
+        'modules/admin/client/components/AdminNotes.tsx',
+        'modules/offers/client/components/OfferMeetListPage.component.tsx',
+        'modules/search/client/components/SearchSidebarResults.component.tsx',
+        'modules/tribes/client/components/TribeDetailPage.component.tsx',
+      ],
+      rules: { 'react/no-danger': 0 },
+    },
+    {
+      // DOM parsing and the editor need access to their existing HTML boundary.
+      files: [
+        'modules/core/client/components/TrEditor.tsx',
+        'modules/core/client/utils/filters.ts',
+        'modules/messages/client/utils/message-content.ts',
+      ],
+      rules: { 'no-restricted-properties': 0 },
+    },
     /**
      * Overrides for server side app files
      */

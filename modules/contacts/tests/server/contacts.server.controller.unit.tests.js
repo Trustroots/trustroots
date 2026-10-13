@@ -58,6 +58,26 @@ describe('Contacts controller unit tests', () => {
   });
 
   describe('add', () => {
+    for (const blocker of ['sender', 'recipient']) {
+      it(`does not create or email a request when the ${blocker} blocked the other member`, async () => {
+        const blockedBy = blocker === 'sender' ? user1 : user2;
+        blockedBy.blocked = [blocker === 'sender' ? user2._id : user1._id];
+        await blockedBy.save();
+        const email = sinon.spy(emailService, 'sendConfirmContact');
+        const { res } = await runHandler(res =>
+          contactsController.add(
+            {
+              user: user1,
+              body: { friendUserId: user2.id, message: 'A fictional request.' },
+            },
+            res,
+          ),
+        );
+        res.statusCode.should.equal(403);
+        (await Contact.countDocuments()).should.equal(0);
+        email.called.should.be.false();
+      });
+    }
     it('rejects an invalid friend user id', async () => {
       const { res } = await runHandler(res =>
         contactsController.add(
