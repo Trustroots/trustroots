@@ -20,9 +20,8 @@ try {
     autoCreate: false,
   });
   await mongooseService.loadModels();
-  const { linkHistoricalReport } = await import(
-    '../../modules/support/server/services/report-link.server.service.mjs'
-  );
+  const { linkHistoricalReport } =
+    await import('../../modules/support/server/services/report-link.server.service.mjs');
   for (const mapping of mappings)
     console.log(
       await linkHistoricalReport(mapping, actorId, mode === '--apply'),

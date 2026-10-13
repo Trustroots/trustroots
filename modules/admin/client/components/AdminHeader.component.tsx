@@ -78,8 +78,8 @@ export default function AdminHeader() {
               isAdmin
                 ? '/admin'
                 : isSupport
-                ? '/admin/support'
-                : '/admin/acquisition-stories'
+                  ? '/admin/support'
+                  : '/admin/acquisition-stories'
             }
           >
             {isAdmin ? 'Admin' : isSupport ? 'Support' : 'Greeters'}

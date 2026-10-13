@@ -80,8 +80,8 @@ export default function NavigationLoggedIn({
               !user.roles?.includes('admin')
                 ? '/admin/support'
                 : user.roles?.includes('welcome-team')
-                ? '/admin/acquisition-stories'
-                : '/admin'
+                  ? '/admin/acquisition-stories'
+                  : '/admin'
             }
             className="hidden-xs"
           >
