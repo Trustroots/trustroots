@@ -1,8 +1,11 @@
 # native-android-member-app Specification
 
 ## Purpose
+
 TBD - created by archiving change notify-android-preview-updates. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Android preview APK update alerts
 
 The GitHub preview Android APK SHALL let a member opt in to periodic update

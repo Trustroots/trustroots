@@ -382,33 +382,32 @@ service.send = async function (req, res) {
       function (thread, done) {
         // If this was first message to the thread
         if (!thread) {
-          User.findById(req.user._id, 'description').exec(function (
-            err,
-            sender,
-          ) {
-            // Handle errors
-            if (err) {
-              return done(err);
-            }
-            const descriptionLength = sender.description
-              ? textService.plainText(sender.description).length
-              : 0;
+          User.findById(req.user._id, 'description').exec(
+            function (err, sender) {
+              // Handle errors
+              if (err) {
+                return done(err);
+              }
+              const descriptionLength = sender.description
+                ? textService.plainText(sender.description).length
+                : 0;
 
-            // If the sender has too empty description, return an error
-            if (descriptionLength < config.profileMinimumLength) {
-              return res.status(400).send({
-                error: 'empty-profile',
-                limit: config.profileMinimumLength,
-                message:
-                  descriptionLength === 0
-                    ? 'Please fill out your profile description before you send messages.'
-                    : 'Please write longer profile description before you send messages.',
-              });
-            }
+              // If the sender has too empty description, return an error
+              if (descriptionLength < config.profileMinimumLength) {
+                return res.status(400).send({
+                  error: 'empty-profile',
+                  limit: config.profileMinimumLength,
+                  message:
+                    descriptionLength === 0
+                      ? 'Please fill out your profile description before you send messages.'
+                      : 'Please write longer profile description before you send messages.',
+                });
+              }
 
-            // Continue
-            done(err);
-          });
+              // Continue
+              done(err);
+            },
+          );
         } else {
           // It wasn't first message to this thread
           done();
@@ -595,39 +594,8 @@ service.threadByUser = function (req, res, next, userId) {
   // TODO do we want to allow to see the messages from suspended or banned users
   // in order to make them "read"?
 
-  // // Only admins can read messages from banned users. For others they stay hidden.
-  // const publicityLimit =
-  //   req.user.roles.includes('admin')
-  //     ? {}
-  //     : {
-  //         public: true,
-  //         roles: { $nin: ['suspended', 'shadowban'] },
-  //       };
-
   async.waterfall(
     [
-      // TODO commented out just to make it work.
-      // We probably want to still return 404, if the user existed by didn't
-      // have conversation with logged-in user?
-
-      // // Check that other user is legitimate:
-      // // - Has to be confirmed their email (hence be public)
-      // // - Not suspended profile
-      // function (done) {
-      //   User.findOne({
-      //     _id: userId,
-      //     ...publicityLimit,
-      //   }).exec(function (err, receiver) {
-      //     // If we were unable to find the receiver, return the error and stop here
-      //     if (err || !receiver) {
-      //       return res.status(404).send({
-      //         message: 'Member does not exist.',
-      //       });
-      //     }
-      //     done();
-      //   });
-      // },
-
       // Find messages
       function (done) {
         Message.paginate(

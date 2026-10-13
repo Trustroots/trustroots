@@ -10,33 +10,24 @@ service.start = async function (options, callback) {
   // Initialise Agenda inside `start()` so importing worker helpers does not
   // open a database connection.
   ({ default: agenda } = await import('./agenda.mjs'));
-  const { default: dependency4 } = await import(
-    './../../modules/core/server/jobs/send-email.server.job.mjs'
-  );
-  const { default: dependency5 } = await import(
-    './../../modules/messages/server/jobs/message-unread.server.job.mjs'
-  );
-  const { default: dependency6 } = await import(
-    './../../modules/statistics/server/jobs/daily-statistics.server.job.mjs'
-  );
-  const { default: dependency7 } = await import(
-    './../../modules/users/server/jobs/user-finish-signup.server.job.mjs'
-  );
-  const { default: dependency8 } = await import(
-    './../../modules/offers/server/jobs/reactivate-hosts.server.job.mjs'
-  );
-  const { default: dependency9 } = await import(
-    './../../modules/users/server/jobs/user-welcome-sequence-first.server.job.mjs'
-  );
-  const { default: dependency10 } = await import(
-    './../../modules/users/server/jobs/user-welcome-sequence-second.server.job.mjs'
-  );
-  const { default: dependency11 } = await import(
-    './../../modules/users/server/jobs/user-welcome-sequence-third.server.job.mjs'
-  );
-  const { default: dependency12 } = await import(
-    './../../modules/experiences/server/jobs/experiences-publish.server.job.mjs'
-  );
+  const { default: dependency4 } =
+    await import('./../../modules/core/server/jobs/send-email.server.job.mjs');
+  const { default: dependency5 } =
+    await import('./../../modules/messages/server/jobs/message-unread.server.job.mjs');
+  const { default: dependency6 } =
+    await import('./../../modules/statistics/server/jobs/daily-statistics.server.job.mjs');
+  const { default: dependency7 } =
+    await import('./../../modules/users/server/jobs/user-finish-signup.server.job.mjs');
+  const { default: dependency8 } =
+    await import('./../../modules/offers/server/jobs/reactivate-hosts.server.job.mjs');
+  const { default: dependency9 } =
+    await import('./../../modules/users/server/jobs/user-welcome-sequence-first.server.job.mjs');
+  const { default: dependency10 } =
+    await import('./../../modules/users/server/jobs/user-welcome-sequence-second.server.job.mjs');
+  const { default: dependency11 } =
+    await import('./../../modules/users/server/jobs/user-welcome-sequence-third.server.job.mjs');
+  const { default: dependency12 } =
+    await import('./../../modules/experiences/server/jobs/experiences-publish.server.job.mjs');
 
   // Define jobs
 

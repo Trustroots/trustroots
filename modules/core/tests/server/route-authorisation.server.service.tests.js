@@ -25,9 +25,8 @@ function mockResponse() {
 
 describe('Route authorisation service', function () {
   it('exposes the same factory through ESM', async function () {
-    const { createRouteAuthorisation: esmFactory } = await import(
-      '../../server/services/route-authorisation.server.service.mjs'
-    );
+    const { createRouteAuthorisation: esmFactory } =
+      await import('../../server/services/route-authorisation.server.service.mjs');
     esmFactory.should.equal(createRouteAuthorisation);
   });
 

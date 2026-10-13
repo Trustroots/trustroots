@@ -17,7 +17,9 @@ const Card = styled.a.attrs({ className: 'member-search-card' })`
   color: inherit;
   overflow-wrap: anywhere;
   text-decoration: none;
-  transition: border-color 150ms ease, box-shadow 150ms ease,
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
     transform 150ms ease;
   &:hover,
   &:focus-visible {

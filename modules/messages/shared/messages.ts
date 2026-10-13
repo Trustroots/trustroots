@@ -14,9 +14,7 @@ export interface MessageMember<Id = string> {
 }
 
 export type MessageParticipant<Id = string> =
-  | MessageMember<Id>
-  | { _id: Id }
-  | null;
+  MessageMember<Id> | { _id: Id } | null;
 
 /** POST /api/messages request. The server ignores `read`; the client sends false. */
 export interface SendMessageRequest {

@@ -5,9 +5,8 @@ describe('In-memory route permissions', function () {
   let policy;
 
   it('exposes the same factory through ESM', async function () {
-    const { createMemoryPolicy: esmFactory } = await import(
-      '../../../core/server/services/memory-policy.server.service.mjs'
-    );
+    const { createMemoryPolicy: esmFactory } =
+      await import('../../../core/server/services/memory-policy.server.service.mjs');
     esmFactory.should.equal(createMemoryPolicy);
   });
 

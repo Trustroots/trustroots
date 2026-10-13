@@ -5,13 +5,13 @@ builds and device tests, see the [Android app README](../../apps/android/README.
 
 ## Channels
 
-| Channel         | Distribution                                                  | Next step                                                                                                      |
-| --------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| GitHub Releases | Signed preview APKs published by the Android release workflow | Verify each new release and keep the signing key stable                                                        |
-| Obtainium       | Tracks the same GitHub prereleases                            | Use the [import link and manual setup instructions](../../README.md#android-preview)                           |
-| Zapstore        | Configuration and optional CI publishing step exist           | Complete and verify the [first publication](zapstore.md) before enabling automation                            |
+| Channel         | Distribution                                                                                                  | Next step                                                                                       |
+| --------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| GitHub Releases | Signed preview APKs published by the Android release workflow                                                 | Verify each new release and keep the signing key stable                                         |
+| Obtainium       | Tracks the same GitHub prereleases                                                                            | Use the [import link and manual setup instructions](../../README.md#android-preview)            |
+| Zapstore        | Configuration and optional CI publishing step exist                                                           | Complete and verify the [first publication](zapstore.md) before enabling automation             |
 | F-Droid         | [Submitted to fdroiddata](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/51684); local build validated | Await maintainer CI and review; follow the [F-Droid next steps](../fdroid/README.md#next-steps) |
-| Google Play     | Current release workflow publishes APKs only                  | Prepare an AAB and [internal testing release](google-play.md)                                                  |
+| Google Play     | Current release workflow publishes APKs only                                                                  | Prepare an AAB and [internal testing release](google-play.md)                                   |
 
 We will not submit this app to IzzyOnDroid under its current
 [app inclusion policy](https://izzyondroid.org/docs/general/AppInclusionPolicy/),
