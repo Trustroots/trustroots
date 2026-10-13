@@ -114,7 +114,6 @@ function assertPolicy(route: RecordedRoute, policy: { isAllowed: NamedHandler; r
     route.path.startsWith('/api/admin/') &&
     route.path !== '/api/admin/elevate' &&
     !route.path.startsWith('/api/admin/support') &&
-    !route.path.startsWith('/api/admin/hackerspaces') &&
     !route.path.startsWith('/api/admin/location-corrections') &&
     policy.requireAdminElevation
   ) {
