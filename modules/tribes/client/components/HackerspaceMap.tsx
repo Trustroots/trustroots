@@ -113,7 +113,10 @@ export default function HackerspaceMap() {
     () =>
       currentPlaceEvents(events)
         .map(parseHackerPlace)
-        .filter((place): place is HackerPlace => !!place && !place.inactive)
+        .filter(
+          (place): place is HackerPlace =>
+            !!place && !place.inactive && place.open !== 'closed',
+        )
         .map(place => ({
           ...place,
           details: [
@@ -123,7 +126,7 @@ export default function HackerspaceMap() {
             place.fetchedAt && `Trustroots fetched: ${place.fetchedAt}`,
           ].filter((value): value is string => !!value),
           link: place.website
-            ? { url: place.website, label: 'Visit website' }
+            ? { url: place.website, label: place.website }
             : undefined,
         })),
     [events],

@@ -47,7 +47,7 @@ function serializedDependencies(defaultDependencies, serializedDependencies) {
 const webServers = useWebpackDevServer
   ? [
       {
-        command: 'npm run start:e2e:api',
+        command: 'pnpm run start:e2e:api',
         env: { TRUSTROOTS_TEST_STATS_OUTAGE: 'true' },
         url: `http://${applicationUrlHost}:${apiPort}/api/languages?format=array`,
         timeout: 120 * 1000,
@@ -55,7 +55,7 @@ const webServers = useWebpackDevServer
           process.env.TRUSTROOTS_E2E_REUSE_SERVER === 'true' && !process.env.CI,
       },
       {
-        command: 'npm run start:e2e:web',
+        command: 'pnpm run start:e2e:web',
         url: baseURL,
         timeout: 180 * 1000,
         reuseExistingServer:
@@ -64,7 +64,7 @@ const webServers = useWebpackDevServer
     ]
   : [
       {
-        command: 'npm run start:e2e:api',
+        command: 'pnpm run start:e2e:api',
         env: { TRUSTROOTS_TEST_STATS_OUTAGE: 'true' },
         url: `http://${applicationUrlHost}:${apiPort}/api/languages?format=array`,
         timeout: 120 * 1000,

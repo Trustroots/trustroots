@@ -58,6 +58,10 @@ export function getSpaceApiIdentifier(endpoint: string) {
 }
 
 export function buildSpaceApiPlaceEvent(space: SpaceApiPlace) {
+  if (space.open === 'closed')
+    throw new Error(
+      'Closed hackerspaces cannot be published as active places.',
+    );
   const tags: string[][] = [
     ['d', getSpaceApiIdentifier(space.endpoint)],
     ['L', 'physical-location'],
@@ -100,7 +104,7 @@ export function buildInactiveSpaceApiPlaceEvent(event: AddressablePlaceEvent) {
   tags.push(['meta', 'status', 'inactive']);
   return {
     kind: 33000,
-    created_at: Math.floor(Date.now() / 1000),
+    created_at: Math.max(Math.floor(Date.now() / 1000), event.created_at + 1),
     tags,
     content: event.content,
   };

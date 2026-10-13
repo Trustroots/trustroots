@@ -31,7 +31,11 @@ export default function ReactAppShell() {
   const location = new URL(locationHref, window.location.origin);
   const currentPath = `${location.pathname}${location.search}`;
   const route = getReactRoutePolicy(currentPath) as RoutePolicy | null;
-  const accessRedirect = getReactRouteAccessRedirect(route, user, currentPath);
+  const accessRedirect = getReactRouteAccessRedirect(
+    route,
+    user,
+    `${currentPath}${location.hash}`,
+  );
   const redirect =
     route?.redirectTo || accessRedirect || (!route && '/not-found');
   const navigate = (target: string) => {

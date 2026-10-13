@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
@@ -32,6 +32,18 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [verifyPassword, setVerifyPassword] = useState('');
+  const removalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Wait until the app shell has finished resetting the page scroll position.
+    const frame = window.requestAnimationFrame(() => {
+      if (window.location.hash === '#remove') {
+        removalRef.current!.focus({ preventScroll: true });
+        removalRef.current!.scrollIntoView({ block: 'start' });
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   async function handleEmailSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -312,9 +324,36 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
         </div>
       </div>
 
-      <div className="panel panel-default">
-        <div className="panel-heading">{t('Remove profile')}</div>
+      <div
+        className="panel panel-default profile-remove"
+        id="remove"
+        ref={removalRef}
+        tabIndex={-1}
+        role="region"
+        aria-labelledby="remove-heading"
+      >
+        <div className="panel-heading" id="remove-heading">
+          {t('Remove profile')}
+        </div>
         <div className="panel-body">
+          <p>
+            {t(
+              'Removing your profile permanently deletes your Trustroots account and cannot be undone. You will no longer be able to sign in with this account.',
+            )}
+          </p>
+          <p>
+            {t(
+              'Tick the box below and select Remove profile to request a confirmation email. This does not delete your account yet. Open the link in the email within 24 hours, then select Permanently delete my account to complete the removal.',
+            )}
+          </p>
+          <p>
+            {t(
+              'You can download your data above before removing your account.',
+            )}{' '}
+            <a href="/faq#how-can-i-remove-my-account">
+              {t('Read the account removal FAQ')}
+            </a>
+          </p>
           <div className="checkbox profile-remove-confirmation">
             <label>
               <input

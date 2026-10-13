@@ -131,7 +131,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     } else expect(container.querySelector('.circle-hero-map')).toBeNull();
   });
 
-  it.each([undefined, user])(
+  it.each([undefined, user, { ...user, memberIds: ['tribe-1'] }])(
     'renders the Hackers map and attributed resources for viewer %p',
     async viewer => {
       getMock.mockResolvedValue({
@@ -148,8 +148,12 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
       );
       await screen.findByRole('heading', { name: 'Hackers' });
       expect(screen.getByTestId('hackerspace-map')).toBeVisible();
+      expect(screen.getByRole('link', { name: 'Circle Wiki' })).toHaveAttribute(
+        'href',
+        'https://wiki.trustroots.org/en/Hackers',
+      );
       expect(
-        screen.getByRole('link', { name: 'View the source page' }),
+        screen.getByRole('link', { name: 'Trustroots Wiki' }),
       ).toHaveAttribute(
         'href',
         'https://wiki.trustroots.org/index.php?title=Hackers&oldid=26505',

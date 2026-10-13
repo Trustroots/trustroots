@@ -148,7 +148,7 @@ describe('SpaceAPI Collector import service', () => {
       },
       'now',
     );
-    assert.equal(entry.eligible, true);
+    assert.equal(entry.eligible, false);
     assert.equal(entry.open, 'closed');
     assert.equal(entry.spaceType, 'fablab');
     assert.equal(entry.description, 'Shared tools');

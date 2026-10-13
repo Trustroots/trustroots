@@ -651,6 +651,27 @@ The existing response array and admin-only access SHALL remain compatible.
 - **WHEN** no actors match valid filters
 - **THEN** the list returns an empty array
 
+### Requirement: Experience change administration
+
+The system SHALL let administrators find Experiences, issue member-scoped
+change links, and review pending change requests. These capabilities SHALL be
+unavailable to non-administrators.
+
+#### Scenario: Administrator issues a link
+
+- **WHEN** an administrator selects an Experience and its author or recipient
+- **THEN** the system returns a seven-day link scoped to that Experience and member
+
+#### Scenario: Administrator decides a request
+
+- **WHEN** an administrator approves or rejects a pending Experience change request
+- **THEN** the decision and administrator are recorded for audit
+
+#### Scenario: Regular member requests an admin action
+
+- **WHEN** a regular member requests link issuance or a review decision
+- **THEN** the system denies access
+
 ### Requirement: Descriptive newsletter audience export filenames
 
 Targeted newsletter CSV download filenames SHALL include the applicable location, hosting radius, selected location sources when narrowed, selected circle names, and the local export datetime in `yyyymmdd-hhmm` format. Filter text SHALL be sanitised for use in filenames. Hosting-only audiences SHALL describe their coordinates instead of an unused text location.

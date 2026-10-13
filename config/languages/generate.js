@@ -26,12 +26,6 @@ function fixName(name) {
     return 'Limburgish';
   }
 
-  // Follow Wikipedia's naming convention
-  // @link https://en.wikipedia.org/wiki/Punjabi_language
-  // if (name === 'Panjabi') {
-  //   return 'Punjabi';
-  // }
-
   return name;
 }
 
