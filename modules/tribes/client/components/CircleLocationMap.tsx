@@ -9,14 +9,27 @@ export interface CircleLocation {
   latitude: number;
   longitude: number;
   details: string[];
+  facts?: { label: string; value: string }[];
   link?: { url: string; label: string };
 }
 
 export function locationPopup(location: CircleLocation): HTMLElement {
   const root = document.createElement('div');
+  root.className = 'circle-location-popup';
   const title = document.createElement('strong');
   title.textContent = location.name;
   root.append(title);
+  if (location.facts?.length) {
+    const facts = document.createElement('dl');
+    location.facts.forEach(({ label, value }) => {
+      const term = document.createElement('dt');
+      const definition = document.createElement('dd');
+      term.textContent = label;
+      definition.textContent = value;
+      facts.append(term, definition);
+    });
+    root.append(facts);
+  }
   location.details.forEach(detail => {
     const paragraph = document.createElement('p');
     paragraph.textContent = detail;
@@ -53,10 +66,28 @@ export default function CircleLocationMap(props: Props) {
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
   useEffect(() => {
-    const map = L.map(container.current!, { scrollWheelZoom: false }).setView(
-      [20, 0],
-      2,
-    );
+    const element = container.current!;
+    const minimumZoom = () =>
+      Math.max(
+        3,
+        Math.ceil(
+          Math.log2(
+            Math.max(element.clientWidth, element.clientHeight, 1) / 256,
+          ),
+        ),
+      );
+    const map = L.map(element, {
+      scrollWheelZoom: true,
+      touchZoom: true,
+      bounceAtZoomLimits: false,
+      minZoom: minimumZoom(),
+      maxBounds: [
+        [-85, -180],
+        [85, 180],
+      ],
+      maxBoundsViscosity: 1,
+    }).setView([20, 0], minimumZoom());
+    map.on('resize', () => map.setMinZoom(minimumZoom()));
     const tiles = getRasterMapTiles();
     L.tileLayer(tiles.url, tiles.options).addTo(map);
     mapRef.current = map;
@@ -109,18 +140,23 @@ export default function CircleLocationMap(props: Props) {
         role="application"
         aria-label={props.mapLabel}
       />
-      <p className="circle-location-map-status" aria-live="polite">
-        {props.state === 'loading'
-          ? props.loadingText
-          : props.state === 'error'
-          ? props.errorText
-          : props.locations.length
-          ? `${props.locations.length} ${props.countLabel}`
-          : props.emptyText}
-      </p>
-      {props.attribution && (
-        <p className="circle-location-map-attribution">{props.attribution}</p>
-      )}
+      <div className="circle-location-map-footer">
+        <span className="circle-location-map-status" aria-live="polite">
+          {props.state === 'loading'
+            ? props.loadingText
+            : props.state === 'error'
+            ? props.errorText
+            : props.locations.length
+            ? `${props.locations.length} ${props.countLabel}`
+            : props.emptyText}
+        </span>
+        {props.attribution && (
+          <span className="circle-location-map-attribution">
+            {' '}
+            · {props.attribution}
+          </span>
+        )}
+      </div>
     </section>
   );
 }
