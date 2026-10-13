@@ -6,6 +6,7 @@ import express from 'express';
 import morgan from 'morgan';
 import session from 'express-session';
 import csrfProtection from './csrf-protection.mjs';
+import validateApiInput from '../../modules/core/server/middleware/api-input.server.middleware.mjs';
 import mongoStore from 'connect-mongo';
 import favicon from 'serve-favicon';
 import compress from 'compression';
@@ -507,6 +508,7 @@ service.init = async function (connection) {
   // Reject cross-origin state changes after method override and body parsing,
   // but before session and route middleware.
   app.use(csrfProtection(config));
+  app.use('/api', validateApiInput);
 
   // Initialize Express view engine
   this.initViewEngine(app);

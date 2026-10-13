@@ -1,0 +1,7 @@
+- [x] Validate the proposal before implementation.
+- [x] Verify supported signup fields remain explicit and persistence regressions pass.
+- [x] Check both members' blocks before creating or emailing contact requests.
+- [x] Extend existing limits with signup-recipient and support-member policies.
+- [x] Add server and end-to-end coverage for the new policies.
+- [x] Run focused tests, lint and coverage without lowering thresholds.
+- [x] Update living specifications and archive the completed change.

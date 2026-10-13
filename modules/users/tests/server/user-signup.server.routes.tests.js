@@ -172,14 +172,14 @@ describe('User signup and authentication CRUD tests', function () {
     ]) {
       const response = await agent
         .post('/api/auth/signup')
-        .send({ ...payload, [field]: { $ne: null } })
+        .send({ ...payload, [field]: { value: null } })
         .expect(400);
       response.body.message.should.equal('Please provide required fields.');
     }
     for (const field of ['locale', 'acquisitionStory', 'newsletter']) {
       const response = await agent
         .post('/api/auth/signup')
-        .send({ ...payload, [field]: { $ne: null } })
+        .send({ ...payload, [field]: { value: null } })
         .expect(400);
       response.body.message.should.equal(
         'Please provide valid signup preferences.',

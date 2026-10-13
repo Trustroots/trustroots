@@ -929,6 +929,20 @@ describe('Admin users controller unit tests', () => {
   });
 
   describe('usernameToUserId', () => {
+    for (const username of [null, 42, [], { $ne: null }]) {
+      it(`rejects a non-string username ${JSON.stringify(
+        username,
+      )}`, async () => {
+        const find = sinon.spy(User, 'findOne');
+        const res = mockResponse();
+        const next = sinon.spy();
+        await adminUsers.usernameToUserId({ body: { username } }, res, next);
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+        find.called.should.be.false();
+        next.called.should.be.false();
+      });
+    }
     it('rejects structured and oversized usernames before looking up an account', async () => {
       const find = sinon.spy(User, 'findOne');
       for (const username of [

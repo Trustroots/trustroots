@@ -10,6 +10,8 @@ function loadMiddleware(
 ) {
   const config = {
     targetedRequestLimits: {
+      signup: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
+      support: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       signin: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       forgotPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       resetPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
@@ -53,6 +55,63 @@ describe('Targeted request limit middleware', function () {
     ({ createTargetedRequestLimits, getRequestIdentity } = await import(
       '../../server/middleware/targeted-request-limit.server.middleware.mjs'
     ));
+  });
+
+  it('counts signup by normalised recipient independently of client address', async function () {
+    const calls = [];
+    const middleware = loadMiddleware(
+      async options => {
+        calls.push(options);
+        return { allowed: true };
+      },
+      req => req.ip,
+    );
+    for (const ip of ['198.51.100.21', '198.51.100.22']) {
+      await middleware.signup(
+        { ip, body: { email: ' Fictional@Example.org ' } },
+        response(),
+        () => {},
+      );
+    }
+    calls[0].operation.should.equal('signup');
+    for (const call of calls) {
+      call.dimensions[2].should.deepEqual({
+        name: 'recipient',
+        value: 'fictional@example.org',
+        limit: 2,
+      });
+    }
+    calls[0].dimensions[0].value.should.not.equal(calls[1].dimensions[0].value);
+  });
+
+  it('limits anonymous support by client address and signed-in support by member', async function () {
+    const calls = [];
+    const middleware = loadMiddleware(async options => {
+      calls.push(options);
+      return { allowed: true };
+    });
+    await middleware.support({}, response(), () => {});
+    await middleware.support(
+      { user: { id: 'fictional-member' } },
+      response(),
+      () => {},
+    );
+    calls[0].operation.should.equal('support');
+    calls[0].dimensions
+      .map(dimension => dimension.name)
+      .should.deepEqual(['ip']);
+    calls[1].dimensions
+      .map(dimension => dimension.name)
+      .should.deepEqual(['ip', 'ip-and-identity', 'member']);
+  });
+
+  it('ignores missing and non-string signup recipients', function () {
+    const assert = require('assert/strict');
+    assert.equal(getRequestIdentity({}, 'recipient'), undefined);
+    assert.equal(
+      getRequestIdentity({ body: { email: null } }, 'recipient'),
+      undefined,
+    );
   });
 
   it('combines trusted IP and normalised account identity', async function () {
