@@ -73,7 +73,7 @@ function createLimiter(
       hasIdentityLimit
     ) {
       dimensions.push({
-        name: identitySource,
+        name: identitySource === 'recipient' ? 'recipient' : 'member',
         value: identity,
         limit: policy.identityLimit,
       });
