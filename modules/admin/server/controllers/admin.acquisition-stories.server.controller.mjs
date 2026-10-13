@@ -1,5 +1,9 @@
 // External dependencies
 import mongoose from 'mongoose';
+import {
+  getAdminIdentityIdentifiers,
+  getUniqueAdminIdentityIdentifiers,
+} from '../services/admin-identity.server.service.mts';
 const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
 const Message = mongoose.model('Message');
@@ -32,31 +36,8 @@ function restrictionStatuses(user) {
     user.roles.includes(status),
   );
 }
-function normalizeIdentifier(value) {
-  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
-}
-function emailLocalPart(value) {
-  return value.split('@')[0];
-}
 function getRestrictedIdentifiers(user) {
-  return [
-    {
-      label: 'Username identifier',
-      value: normalizeIdentifier(user.username),
-    },
-    {
-      label: 'Email identifier',
-      value: normalizeIdentifier(emailLocalPart(user.email)),
-    },
-    {
-      label: 'Temporary email identifier',
-      value: normalizeIdentifier(emailLocalPart(user.emailTemporary)),
-    },
-  ].filter(
-    ({ value }, index, identifiers) =>
-      value.length >= MIN_IDENTIFIER_LENGTH &&
-      identifiers.findIndex(identifier => identifier.value === value) === index,
-  );
+  return getUniqueAdminIdentityIdentifiers(user, MIN_IDENTIFIER_LENGTH);
 }
 function getRestrictedMatchReasons(story, restrictedUser) {
   return restrictedUser.identifiers
@@ -67,11 +48,7 @@ function getRestrictedMatchReasons(story, restrictedUser) {
 }
 async function getRestrictedMatches(story, restrictedUsers) {
   const preparedStory = {
-    identifiers: [
-      normalizeIdentifier(story.username),
-      normalizeIdentifier(emailLocalPart(story.email)),
-      normalizeIdentifier(emailLocalPart(story.emailTemporary)),
-    ],
+    identifiers: getAdminIdentityIdentifiers(story).map(({ value }) => value),
   };
   const matches = [];
   for (let index = 0; index < restrictedUsers.length; index += 1) {
