@@ -250,6 +250,7 @@
     "sinon": "11.1.2",
     "style-loader": "2.0.0",
     "supertest": "6.1.6",
+    "tiny-warning": "1.0.3",
     "typescript": "6.0.3",
     "v8-to-istanbul": "9.3.0",
     "vite": "8.3.1",

@@ -321,8 +321,16 @@ describe('PR dependency summaries', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fictional-pnpm-'));
     try {
       for (const [location, name, version] of [
-        ['node_modules/.pnpm/fictional@1.0.0/node_modules/fictional', 'fictional', '1.0.0'],
-        ['node_modules/.pnpm/@example+scoped@2.0.0/node_modules/@example/scoped', '@example/scoped', '2.0.0'],
+        [
+          'node_modules/.pnpm/fictional@1.0.0/node_modules/fictional',
+          'fictional',
+          '1.0.0',
+        ],
+        [
+          'node_modules/.pnpm/@example+scoped@2.0.0/node_modules/@example/scoped',
+          '@example/scoped',
+          '2.0.0',
+        ],
       ]) {
         fs.mkdirSync(path.join(root, location), { recursive: true });
         fs.writeFileSync(
