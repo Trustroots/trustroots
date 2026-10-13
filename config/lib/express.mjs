@@ -328,6 +328,7 @@ service.initHelmetHeaders = function (app) {
           'https://tile.openstreetmap.org',
           'wss://relay.trustroots.org',
           'wss://relay.nomadwiki.org',
+          'wss://relay.maps.hitchwiki.org',
           'https://1p.trustroots.org', // Umami analytics
         ],
         // Allows control over Flash and other plugins.
