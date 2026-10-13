@@ -58,6 +58,52 @@ describe('Job: user finish signup unit tests', () => {
     );
   });
 
+  it('does not send a reminder when persisting its fresh token fails', function (done) {
+    sinon
+      .stub(User, 'updateOne')
+      .callsFake((query, update, callback) =>
+        callback(new Error('token persistence failed')),
+      );
+    const send = sinon.spy(emailService, 'sendSignupEmailReminder');
+    userFinishSignupJobHandler(
+      { attrs: { _id: new mongoose.Types.ObjectId() } },
+      function (err) {
+        err.message.should.equal('token persistence failed');
+        send.called.should.be.false();
+        jobs.length.should.equal(0);
+        done();
+      },
+    );
+  });
+
+  for (const change of [
+    { public: true },
+    { emailToken: 'newer-confirmation-token' },
+  ]) {
+    it(
+      'skips a reminder whose member state changed after lookup: ' +
+        Object.keys(change)[0],
+      function (done) {
+        const originalUpdate = User.updateOne.bind(User);
+        sinon.stub(User, 'updateOne').callsFake((query, update, callback) => {
+          originalUpdate({ _id: unConfirmedUser._id }, { $set: change })
+            .then(() => originalUpdate(query, update))
+            .then(result => callback(null, result), callback);
+        });
+        const send = sinon.spy(emailService, 'sendSignupEmailReminder');
+        userFinishSignupJobHandler(
+          { attrs: { _id: new mongoose.Types.ObjectId() } },
+          function (err) {
+            if (err) return done(err);
+            send.called.should.be.false();
+            jobs.length.should.equal(0);
+            done();
+          },
+        );
+      },
+    );
+  }
+
   it('passes email send errors to agenda', function (done) {
     sinon
       .stub(emailService, 'sendSignupEmailReminder')
