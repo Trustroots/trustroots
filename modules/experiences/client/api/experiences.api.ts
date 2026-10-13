@@ -5,6 +5,7 @@ import type {
   Experience,
   ExperienceMine,
   ExperienceCount,
+  ExperienceCountRequest,
   CreateExperienceRequest,
 } from '../../shared/experience';
 
@@ -91,11 +92,10 @@ export async function readMine({
  */
 export async function getCount(userTo: string): Promise<ExperienceCount> {
   try {
+    const params: ExperienceCountRequest = { userTo };
     const { data } = await axios.get<ExperienceCount>(
       '/api/experiences/count',
-      {
-        params: { userTo },
-      },
+      { params },
     );
     return data;
   } catch {

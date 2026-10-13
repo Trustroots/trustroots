@@ -133,6 +133,20 @@ describe('Read count of experiences received by user', () => {
       body.count.should.equal(5);
       body.hasPending.should.be.true();
     });
+    it('does not count removed experiences', async () => {
+      await mongoose
+        .model('Experience')
+        .updateOne(
+          { userFrom: users[0]._id, userTo: users[2]._id },
+          { $set: { removedAt: new Date() } },
+        );
+
+      const { body } = await agent
+        .get(`/api/experiences/count?userTo=${users[2]._id}`)
+        .expect(200);
+
+      body.count.should.equal(1);
+    });
     it('[no params] 400 and error', async () => {
       const { body } = await agent.get('/api/experiences/count').expect(400);
       body.message.should.equal('Missing or invalid `userTo` request param');
