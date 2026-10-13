@@ -1,3 +1,5 @@
+import RichText from '@/modules/core/client/components/RichText';
+import { plainText } from '@/modules/core/client/utils/filters';
 import React, { useRef } from 'react';
 
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
@@ -75,22 +77,16 @@ export function OfferDescription({
 
   if (description.length < 1000 || offerType === 'meet') {
     return (
-      <div
-        className="search-result-description"
-        dangerouslySetInnerHTML={{ __html: description }}
-      />
+      <RichText className="search-result-description" content={description} />
     );
   }
 
   return (
     <div className="search-result-description">
       <div className="panel-more-wrap">
-        <div
-          className="panel-more-excerpt"
-          dangerouslySetInnerHTML={{
-            __html: description.slice(0, 1000),
-          }}
-        />
+        <div className="panel-more-excerpt">
+          {plainText(description).slice(0, 1000)}
+        </div>
         <div
           aria-label="Open profile to see the rest of the description"
           className="panel-more-fade"

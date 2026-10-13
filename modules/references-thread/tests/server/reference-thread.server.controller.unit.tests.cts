@@ -216,6 +216,10 @@ describe('Reference thread controller unit tests', () => {
       );
       await createThreadWithMessage(author, other, false);
 
+      const suppliedId = new mongoose.Types.ObjectId();
+
+      const before = Date.now();
+
       const res = deferredResponse();
       controller.readReferenceThreadById(
         { user: author },
@@ -462,6 +466,9 @@ describe('Reference thread controller unit tests', () => {
           body: {
             userTo: other._id.toString(),
             reference: 'yes',
+            _id: suppliedId.toString(),
+            created: '2000-01-01',
+            userFrom: other.id,
           },
         },
         res,
@@ -480,6 +487,8 @@ describe('Reference thread controller unit tests', () => {
       });
       if (!saved) throw new Error('Expected a saved reference');
       saved.reference.should.equal('yes');
+      saved._id.equals(suppliedId).should.be.false();
+      (saved.created.getTime() >= before).should.be.true();
     });
 
     it('responds with 400 when saving the reference fails', async () => {

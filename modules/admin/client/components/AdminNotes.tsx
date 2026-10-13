@@ -1,3 +1,4 @@
+import RichText from '@/modules/core/client/components/RichText';
 // External dependencies
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
@@ -102,7 +103,7 @@ export default function AdminNotes({
                     {' by '}
                     <UserLink user={admin} />
                   </p>
-                  <div dangerouslySetInnerHTML={{ __html: note }} />
+                  <RichText content={note} />
                 </div>
               );
             })}

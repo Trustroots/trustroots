@@ -5,6 +5,11 @@ import _ from 'lodash';
 import { Autolinker } from 'autolinker';
 import sanitizeHtml, { type SanitizeOptions } from 'sanitize-html';
 import he from 'he';
+import {
+  richTextTags,
+  richTextAttributes,
+  richTextLinkSchemes,
+} from '../../shared/rich-text-policy.mts';
 
 /**
  * Rules for sanitizing texts coming in and out
@@ -15,25 +20,8 @@ import he from 'he';
  * @link https://github.com/punkave/sanitize-html
  */
 export const sanitizeOptions: SanitizeOptions = {
-  allowedTags: [
-    'p',
-    'br',
-    'b',
-    'i',
-    'em',
-    'strong',
-    'u',
-    'a',
-    'li',
-    'ul',
-    'blockquote',
-  ],
-  allowedAttributes: {
-    a: ['href'],
-    // Used for messages text
-    // at `modules/messages/client/controllers/thread.client.controller.js`
-    p: ['data-hosting'],
-  },
+  allowedTags: richTextTags,
+  allowedAttributes: richTextAttributes,
   // If we would allow class attributes, you can limit which classes are allowed:
   // allowedClasses: {
   //   'a': [ 'classname' ]
@@ -60,19 +48,7 @@ export const sanitizeOptions: SanitizeOptions = {
   allowProtocolRelative: true,
   // Allows `//www.example.com`
   allowedSchemesByTag: {
-    a: [
-      'http',
-      'https',
-      'ftp',
-      'sftp',
-      'tel',
-      'mailto',
-      'geo',
-      'irc',
-      'ge0',
-      // Maps.me
-      'tg', // Telegram
-    ],
+    a: richTextLinkSchemes,
   },
 };
 

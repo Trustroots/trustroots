@@ -8,6 +8,28 @@ import TrEditor from '@/modules/core/client/components/TrEditor';
 type TrEditorProps = React.ComponentProps<typeof TrEditor>;
 
 describe('<TrEditor /> with MediumEditor', () => {
+  it('applies the formatting policy to initial and externally replaced content', () => {
+    const onChange = jest.fn();
+    const { container, rerender } = render(
+      <TrEditor
+        id="formatted-editor"
+        text={'<p onclick="alert(1)">Initial<img src="/missing"></p>'}
+        onChange={onChange}
+      />,
+    );
+    const editor = container.querySelector('.tr-editor')!;
+    expect(editor.innerHTML).toBe('<p>Initial</p>');
+    rerender(
+      <TrEditor
+        id="formatted-editor"
+        text={'<p><b>Replacement</b><a href="javascript:alert(1)">Link</a></p>'}
+        onChange={onChange}
+      />,
+    );
+    expect(editor.querySelector('b')).toHaveTextContent('Replacement');
+    expect(editor.querySelector('a')).not.toHaveAttribute('href');
+    expect(onChange).not.toHaveBeenCalled();
+  });
   it.each([
     ['', ''],
     ['initial', ''],

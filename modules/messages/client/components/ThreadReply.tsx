@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import TrEditor from '@/modules/core/client/components/TrEditor';
 import { plainTextLength } from '@/modules/core/client/utils/filters';
 import { previewMessage } from '../api/messages.api';
-import { disableExternalLinks } from '../utils/message-content';
+import RichText from '@/modules/core/client/components/RichText';
 import MessageBubble from './MessageBubble';
 
 type ThreadReplyProps = {
@@ -233,11 +233,10 @@ export default function ThreadReply({
                 <MessageBubble className="message-sender-me">
                   <div className="message-main">
                     <div className="panel panel-default">
-                      <div
+                      <RichText
                         className="panel-body"
-                        dangerouslySetInnerHTML={{
-                          __html: disableExternalLinks(previewContent),
-                        }}
+                        content={previewContent}
+                        internalLinksOnly
                       />
                     </div>
                   </div>

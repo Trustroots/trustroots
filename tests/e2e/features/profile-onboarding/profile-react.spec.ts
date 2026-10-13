@@ -1,6 +1,47 @@
 import { annotateFeature, test, expect } from '../../support/fixtures.mts';
 import { SEEDED_MEMBERS, signInViaApi } from '../../support/helpers.mts';
 
+test('profile descriptions retain supported formatting in collapsed and expanded views', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'profile.view-about', [
+    'Own profile about tab loads.',
+  ]);
+  const member = SEEDED_MEMBERS[0];
+  await signInViaApi(page, request, member);
+  const content =
+    '<p onclick="window.fixtureMarkupExecuted=true"><b>Fictional formatted description</b><img src="/missing-fixture-image" onerror="window.fixtureMarkupExecuted=true">' +
+    'a'.repeat(2100) +
+    '</p><a href="javascript:window.fixtureMarkupExecuted=true">Link label</a>';
+  await page.route(`**/api/users/${member.username}`, async route => {
+    const response = await route.fetch();
+    await route.fulfill({
+      response,
+      json: { ...(await response.json()), description: content },
+    });
+  });
+  await page.goto(`/profile/${member.username}`);
+  await expect(page.getByText('Read more…')).toBeVisible();
+  await expect(
+    page.locator('#tr-react-root img[src="/missing-fixture-image"]'),
+  ).toHaveCount(0);
+  await page.getByText('Read more…').click();
+  await expect(
+    page.locator('#tr-react-root b', {
+      hasText: 'Fictional formatted description',
+    }),
+  ).toBeVisible();
+  await expect(
+    page.locator(
+      '#tr-react-root [onclick], #tr-react-root img[src="/missing-fixture-image"], #tr-react-root a[href^="javascript:"]',
+    ),
+  ).toHaveCount(0);
+  expect(await page.evaluate(() => window.fixtureMarkupExecuted === true)).toBe(
+    false,
+  );
+});
+
 test('profile viewing tabs load through the React shell', async ({
   page,
   request,

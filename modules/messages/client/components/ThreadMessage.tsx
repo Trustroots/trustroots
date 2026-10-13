@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import MessageBubble from './MessageBubble';
-import { disableExternalLinks } from '../utils/message-content';
+import RichText from '@/modules/core/client/components/RichText';
 
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
@@ -56,11 +56,10 @@ export default function ThreadMessage({ message, user }: ThreadMessageProps) {
           <TimeAgo date={new Date(message.created)} />
         </div>
         <div className="panel panel-default">
-          <div
+          <RichText
             className="panel-body"
-            dangerouslySetInnerHTML={{
-              __html: disableExternalLinks(message.content),
-            }}
+            content={message.content}
+            internalLinksOnly
           />
         </div>
       </div>
