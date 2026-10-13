@@ -4,23 +4,23 @@ default:
     @just --list
 
 test-all:
-    npm run test:all
+    pnpm run test:all
 
 test-client:
     BROWSERSLIST_IGNORE_OLD_DATA=1 NODE_OPTIONS='--require ./jest/jest.hide-canvas.js' ./node_modules/.bin/jest --coverage --no-watchman --silent --maxWorkers=50%
-    npm run coverage:report -- --scope=client
+    pnpm run coverage:report --scope=client
 
 test-server:
-    npm run test:server:codex
+    pnpm run test:server:codex
 
 test-e2e:
-    npm run test:e2e
+    pnpm run test:e2e
 
 coverage-client:
-    npm run test:coverage:client
+    pnpm run test:coverage:client
 
 coverage-server:
-    npm run test:coverage:server:codex
+    pnpm run test:coverage:server:codex
 
 # Serve coverage-report over HTTP so JSON loads without file:// CORS errors.
 coverage-serve:
@@ -85,6 +85,6 @@ coverage-report:
       return 0
     }
 
-    npm run test:coverage:client
-    npm run coverage:report -- --scope=client
+    pnpm run test:coverage:client
+    pnpm run coverage:report --scope=client
     open_report

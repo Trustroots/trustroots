@@ -192,6 +192,11 @@ jobs:
           load: true
       - name: Prepare compose local config
         run: node ./scripts/ci/ensure-compose-local.js
+      - name: Check internal client links
+        working-directory: deploy/docker
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
+            dev sh -c 'npm run test:links && npm run check:links'
       - name: Type-check client TypeScript
         working-directory: deploy/docker
         run: |
@@ -199,26 +204,26 @@ jobs:
             -e CI=true \
             -e NODE_ENV=test \
             -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
-            dev npm run typecheck
+            dev pnpm run typecheck
       - name: Build opt-in Vite assets
         working-directory: deploy/docker
         run: |
           docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
             -e CI=true \
             -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
-            dev npm run build:vite
+            dev pnpm run build:vite
       - name: Smoke-test Vite production script loading
         working-directory: deploy/docker
         run: |
           docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
             -e CI=true \
-            dev npm run test:vite:production
+            dev pnpm run test:vite:production
       - name: Smoke-test Vite development proxy and module loading
         working-directory: deploy/docker
         run: |
           docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
             -e CI=true \
-            dev npm run test:vite:development
+            dev pnpm run test:vite:development
       - name: Test client with coverage
         working-directory: deploy/docker
         run: |
@@ -230,13 +235,13 @@ jobs:
             -e CI=true \
             -e NODE_ENV=test \
             -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
-            dev npm run test:coverage:client
+            dev pnpm run test:coverage:client
           exit_code="$?"
           if [ "$exit_code" -eq 0 ]; then
             docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
               -e CI=true \
               -e NODE_ENV=test \
-              dev npm run coverage:check -- --scope=client
+              dev pnpm run coverage:check --scope=client
             exit_code="$?"
           fi
           set -e
@@ -249,7 +254,7 @@ jobs:
             message="Client coverage failed."
           fi
           STATUS="$status" EXIT_CODE="$exit_code" DURATION_MS="$duration_ms" MESSAGE="$message" \
-          COMMAND="npm run test:coverage:client && npm run coverage:check -- --scope=client" \
+          COMMAND="pnpm run test:coverage:client && pnpm run coverage:check --scope=client" \
           node - <<'NODE'
           const fs = require('fs');
           const status = {
@@ -337,13 +342,14 @@ jobs:
             -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
             -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
             -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
-            dev npm run test:coverage:server
+            -e SERVER_TEST_WORKERS=4 \
+            dev pnpm run test:coverage:server:parallel
           exit_code="$?"
           if [ "$exit_code" -eq 0 ]; then
             docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
               -e CI=true \
               -e NODE_ENV=test \
-              dev npm run coverage:check -- --scope=server
+              dev pnpm run coverage:check --scope=server
             exit_code="$?"
           fi
           set -e
@@ -356,7 +362,7 @@ jobs:
             message="Server coverage failed."
           fi
           STATUS="$status" EXIT_CODE="$exit_code" DURATION_MS="$duration_ms" MESSAGE="$message" \
-          COMMAND="npm run test:coverage:server && npm run coverage:check -- --scope=server" \
+          COMMAND="pnpm run test:coverage:server:parallel && pnpm run coverage:check --scope=server" \
           node - <<'NODE'
           const fs = require('fs');
           const status = {
@@ -459,7 +465,7 @@ jobs:
             -e TRUSTROOTS_BUILD_COMMIT \
             -e TRUSTROOTS_BUILD_COMMITTED_AT \
             -e TRUSTROOTS_BUILD_BRANCH \
-            dev npm run test:e2e
+            dev pnpm run test:e2e
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -535,6 +541,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - name: Download production dependency inventory
         if: needs.build-production-image.result != 'skipped'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
@@ -574,10 +581,10 @@ jobs:
         if: needs.changes.outputs.run-code != 'false' && needs.e2e.result == 'skipped'
         run: |
           mkdir -p coverage/e2e
-          node -e "const fs = require('fs'); const status = { status: 'skipped', exitCode: 0, message: 'End-to-end tests were not requested for this pull request run.', generatedAt: new Date().toISOString(), command: 'npm run test:e2e', reportPath: 'playwright-report/index.html', metrics: null }; fs.writeFileSync('coverage/e2e/status.json', JSON.stringify(status, null, 2) + '\n');"
+          node -e "const fs = require('fs'); const status = { status: 'skipped', exitCode: 0, message: 'End-to-end tests were not requested for this pull request run.', generatedAt: new Date().toISOString(), command: 'pnpm run test:e2e', reportPath: 'playwright-report/index.html', metrics: null }; fs.writeFileSync('coverage/e2e/status.json', JSON.stringify(status, null, 2) + '\n');"
       - name: Generate coverage overview
         if: needs.changes.outputs.run-code != 'false'
-        run: npm run coverage:report
+        run: pnpm run coverage:report
       - name: Generate pull request summary
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -585,7 +592,7 @@ jobs:
           TRUSTROOTS_PR_INCLUDE_COVERAGE: ${{ needs.changes.outputs.run-code != 'false' }}
         run: |
           mkdir -p coverage-report
-          npm run coverage:pr-summary > coverage-report/pr-summary.md
+          pnpm run coverage:pr-summary > coverage-report/pr-summary.md
           cat coverage-report/pr-summary.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload coverage overview
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -634,7 +641,7 @@ jobs:
             }
       - name: Require full client and server coverage
         if: needs.changes.outputs.run-code != 'false'
-        run: npm run coverage:check -- --require-full
+        run: pnpm run coverage:check --require-full
 
   pages:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
@@ -729,6 +736,7 @@ jobs:
       url: https://team.trustroots.org/
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - name: Download client coverage report
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -752,7 +760,7 @@ jobs:
           name: playwright-report
           path: playwright-report
       - name: Generate coverage report page
-        run: npm run coverage:report
+        run: pnpm run coverage:report
       - name: Configure GitHub Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
       - name: Build docs site

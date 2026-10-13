@@ -71,7 +71,7 @@ services:
       - mailpit
     ports:
       - '3000:3000'
-    command: ['npm', 'run', 'start:docker']
+    command: ['pnpm', 'run', 'start:docker']
 
   # Production-like image, for occasionally testing the built image locally.
   # Gated behind the `prod` profile so plain `docker compose up` skips it:

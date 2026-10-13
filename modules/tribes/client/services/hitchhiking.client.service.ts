@@ -1,4 +1,5 @@
 import type { Event } from 'nostr-tools';
+import { latLng } from 'leaflet';
 import type { CircleLocation } from '../components/CircleLocationMap';
 
 export const HITCHWIKI_RELAY = 'wss://relay.maps.hitchwiki.org';
@@ -7,12 +8,126 @@ export const HITCHWIKI_AUTHOR =
   '6623bb9cbae2220e94d5f7581e0fd926db5d67538a08a7f306768e978d4d142e';
 export const HITCHHIKING_KIND = 36820;
 export const SEVEN_DAYS_SECONDS = 7 * 24 * 60 * 60;
-const sources = new Set([
-  'maps.hitchwiki.org',
-  'hitchwiki.org',
-  'hitchmap.com',
-  'liftershalte.info',
-]);
+
+function displayTime(time: number): string {
+  return `${new Date(time * 1000)
+    .toISOString()
+    .slice(0, 16)
+    .replace('T', ' ')} UTC`;
+}
+
+function waitingTime(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const match =
+    /^P(?:(\d+(?:\.\d+)?)D)?(?:T(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?)?$/.exec(
+      value,
+    );
+  if (!match || !match.slice(1).some(part => part !== undefined)) return null;
+  const [, days = 0, hours = 0, minutes = 0, seconds = 0] = match;
+  return `${Math.round(
+    Number(days) * 1440 +
+      Number(hours) * 60 +
+      Number(minutes) +
+      Number(seconds) / 60,
+  )} min`;
+}
+
+function labels(values: unknown): string | null {
+  if (!Array.isArray(values)) return null;
+  const items = [
+    ...new Set(
+      values.filter(
+        (value): value is string => typeof value === 'string' && !!value.trim(),
+      ),
+    ),
+  ];
+  return items.length
+    ? items
+        .map(value =>
+          value.replace(/_/g, ' ').replace(/^./, char => char.toUpperCase()),
+        )
+        .join(', ')
+    : null;
+}
+
+interface RideStop {
+  location?: { latitude?: unknown; longitude?: unknown };
+  waiting_duration?: unknown;
+}
+
+interface RideData {
+  stops?: RideStop[];
+  signals?: { methods?: unknown }[];
+  hitchhikers?: { reasons_to_hitchhike?: unknown }[];
+  submission_time?: unknown;
+}
+
+function rideFacts(
+  data: RideData,
+  origin: RideStop,
+): NonNullable<CircleLocation['facts']> {
+  const facts: NonNullable<CircleLocation['facts']> = [];
+  const add = (label: string, value: string | null) => {
+    if (value !== null) facts.push({ label, value });
+  };
+  add('Waiting time', waitingTime(origin.waiting_duration));
+  const stops = data.stops;
+  if (
+    Array.isArray(stops) &&
+    stops.length > 1 &&
+    stops.every(
+      (
+        stop,
+      ): stop is RideStop & {
+        location: { latitude: number; longitude: number };
+      } =>
+        typeof stop?.location?.latitude === 'number' &&
+        Number.isFinite(stop.location.latitude) &&
+        Math.abs(stop.location.latitude) <= 90 &&
+        typeof stop?.location?.longitude === 'number' &&
+        Number.isFinite(stop.location.longitude) &&
+        Math.abs(stop.location.longitude) <= 180,
+    )
+  ) {
+    const distance = stops
+      .slice(1)
+      .reduce(
+        (total, stop, index) =>
+          total +
+          latLng(
+            stops[index].location.latitude,
+            stops[index].location.longitude,
+          ).distanceTo(latLng(stop.location.latitude, stop.location.longitude)),
+        0,
+      );
+    add('Distance (straight line)', `${Math.round(distance / 1000)} km`);
+  }
+  add(
+    'Signal',
+    labels(
+      Array.isArray(data.signals)
+        ? data.signals.flatMap(signal =>
+            Array.isArray(signal?.methods) ? signal.methods : [],
+          )
+        : null,
+    ),
+  );
+  const submitted = parseTime(data.submission_time);
+  if (Number.isFinite(submitted)) add('Submitted', displayTime(submitted));
+  add(
+    'Why hitchhiking',
+    labels(
+      Array.isArray(data.hitchhikers)
+        ? data.hitchhikers.flatMap(person =>
+            Array.isArray(person?.reasons_to_hitchhike)
+              ? person.reasons_to_hitchhike
+              : [],
+          )
+        : null,
+    ),
+  );
+  return facts;
+}
 
 function parseTime(value: unknown): number {
   // RFC 9557 can add a named timezone after the RFC 3339 offset.
@@ -38,7 +153,7 @@ export function parseHitchhikingLocation(
     const longitude = origin?.location?.longitude;
     const d = event.tags.find(tag => tag[0] === 'd')?.[1];
     if (
-      !sources.has(source) ||
+      source !== 'maps.hitchwiki.org' ||
       !d ||
       typeof latitude !== 'number' ||
       typeof longitude !== 'number' ||
@@ -59,12 +174,13 @@ export function parseHitchhikingLocation(
       name: 'Hitchhiking origin',
       latitude,
       longitude,
+      facts: rideFacts(data, origin),
       details: [
         `${
           Number.isFinite(recorded)
             ? 'Recorded'
             : 'Submitted (ride date unknown)'
-        }: ${new Date(time * 1000).toISOString()}`,
+        }: ${displayTime(time)}`,
         ...(origin.location.is_exact === false
           ? ['Approximate reported location.']
           : []),
