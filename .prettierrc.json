@@ -7,7 +7,7 @@
   "trailingComma": "all",
   "overrides": [
     {
-      "files": "modules/*/server/**/*.mts",
+      "files": ["modules/*/server/**/*.mts", "scripts/ci/**/*.mts"],
       "options": { "parser": "babel-ts" }
     }
   ]
