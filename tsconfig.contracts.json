@@ -24,6 +24,7 @@
     "modules/admin/server/services/staff-blockers-payload.server.service.mts",
     "modules/experiences/server/services/experience-payload.server.service.mts",
     "modules/offers/server/services/offer-payload.server.service.mts",
-    "modules/offers/tests/client/api/offer-contract.types.mts"
+    "modules/offers/tests/client/api/offer-contract.types.mts",
+    "modules/users/tests/fixtures/account-activity-client-api-contracts.mts"
   ]
 }
