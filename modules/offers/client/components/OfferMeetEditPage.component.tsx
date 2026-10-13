@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import React, { useEffect, useMemo, useState } from 'react';
-import * as ReactBootstrap from 'react-bootstrap';
+import { Tab, Tabs } from 'react-bootstrap';
 
 import {
   getCurrentRouteParams,
@@ -22,26 +22,6 @@ interface MeetOffer {
   location: [number, number] | null;
   validUntil: string | number | Date;
 }
-
-interface TabProps {
-  children: React.ReactNode;
-  eventKey: string | number;
-  title: React.ReactNode;
-  disabled?: boolean;
-}
-
-interface TabsProps {
-  children: React.ReactNode;
-  activeKey: string | number;
-  className: string;
-  id: string;
-  onSelect: (key: string | number | null) => void;
-}
-
-const { Tab, Tabs } = ReactBootstrap as unknown as {
-  Tab: React.ComponentType<TabProps>;
-  Tabs: React.ComponentType<TabsProps>;
-};
 
 function plainTextLength(value = ''): number {
   return value.replace(/<[^>]*>/g, '').trim().length;

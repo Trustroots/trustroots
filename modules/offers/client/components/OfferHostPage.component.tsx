@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
-import * as ReactBootstrap from 'react-bootstrap';
+import { Tab, Tabs } from 'react-bootstrap';
 
 import {
   getCurrentRouteParams,
@@ -28,26 +28,6 @@ interface HostOffer {
 interface HostPageProps {
   user: { _id: string; username: string };
 }
-
-interface TabProps {
-  children: React.ReactNode;
-  eventKey: string | number;
-  title: React.ReactNode;
-  disabled?: boolean;
-}
-
-interface TabsProps {
-  children: React.ReactNode;
-  activeKey: string | number;
-  className: string;
-  id: string;
-  onSelect: (key: string | number | null) => void;
-}
-
-const { Tab, Tabs } = ReactBootstrap as unknown as {
-  Tab: React.ComponentType<TabProps>;
-  Tabs: React.ComponentType<TabsProps>;
-};
 
 /* istanbul ignore next -- offer descriptions are initialised before validation. */
 function plainTextLength(value = ''): number {
