@@ -8,7 +8,7 @@ describe('React app bootstrap data', () => {
     'title',
     'user',
   ] as const;
-  type BootstrapKey = typeof bootstrapKeys[number];
+  type BootstrapKey = (typeof bootstrapKeys)[number];
   const originalWindowValues = new Map<BootstrapKey, unknown>();
 
   beforeEach(() => {

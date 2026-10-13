@@ -21,8 +21,8 @@ export function readApiError(error: unknown): ClientApiError {
       typeof response.status === 'number'
         ? response.status
         : typeof error.status === 'number'
-        ? error.status
-        : undefined,
+          ? error.status
+          : undefined,
     message: typeof data.message === 'string' ? data.message : undefined,
     data,
   };

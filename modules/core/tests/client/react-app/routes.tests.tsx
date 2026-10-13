@@ -27,7 +27,7 @@ type MembershipRouteProps = UserRouteProps & {
 };
 type StatisticsRouteProps = { isAuthenticated: boolean };
 type OfferShellRouteProps = UserRouteProps & { children?: React.ReactNode };
-type RouteToRender = Pick<typeof routes[number], 'path' | 'render'>;
+type RouteToRender = Pick<(typeof routes)[number], 'path' | 'render'>;
 
 /* eslint-disable react/display-name -- lightweight route renderer mocks for coverage */
 jest.mock('@/modules/admin/client/components/Admin.component', () => () => (
@@ -359,24 +359,24 @@ function renderRoute(
     route.path === '/admin/user/:username'
       ? { username: 'river' }
       : route.path === '/messages/:username'
-      ? { username: 'bob' }
-      : route.path === '/circles/:circle'
-      ? { circle: 'hitchhikers' }
-      : route.path === '/confirm-email/:token'
-      ? { token: 'confirm-token' }
-      : route.path === '/password/reset/:token'
-      ? { token: 'reset-token' }
-      : route.path === '/remove/:token'
-      ? { token: 'remove-token' }
-      : route.path === '/offer/meet/:offerId'
-      ? { offerId: '665100000000000000000001' }
-      : route.path.startsWith('/profile/:username')
-      ? { username: 'alice' }
-      : route.path === '/contact-add/:userId'
-      ? { userId: 'user-2' }
-      : route.path === '/contact-confirm/:contactId'
-      ? { contactId: 'contact-1' }
-      : {};
+        ? { username: 'bob' }
+        : route.path === '/circles/:circle'
+          ? { circle: 'hitchhikers' }
+          : route.path === '/confirm-email/:token'
+            ? { token: 'confirm-token' }
+            : route.path === '/password/reset/:token'
+              ? { token: 'reset-token' }
+              : route.path === '/remove/:token'
+                ? { token: 'remove-token' }
+                : route.path === '/offer/meet/:offerId'
+                  ? { offerId: '665100000000000000000001' }
+                  : route.path.startsWith('/profile/:username')
+                    ? { username: 'alice' }
+                    : route.path === '/contact-add/:userId'
+                      ? { userId: 'user-2' }
+                      : route.path === '/contact-confirm/:contactId'
+                        ? { contactId: 'contact-1' }
+                        : {};
 
   return render(
     <AppProviders

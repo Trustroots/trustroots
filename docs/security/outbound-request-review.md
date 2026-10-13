@@ -4,14 +4,14 @@
 
 This initial review covers the runtime server modules, configuration and maintenance scripts at origin/main eb28cb206. It does not establish a vulnerability in an uninspected dependency or production deployment.
 
-| Surface | Destination control | Finding |
-| --- | --- | --- |
-| `modules/core/server/jobs/send-email.server.job.js` | SMTP transport options come from deployment configuration | Outbound SMTP is present; application callers do not choose an HTTP fetch URL. |
-| `modules/core/server/services/email.server.service.js` | Rendered mail fields are constructed explicitly and queued through Agenda | Reviewed rendering does not pass arbitrary attachment URLs into the mail job. |
-| `modules/users/server/controllers/users.avatar.server.controller.js` | Avatar responses redirect the browser to configured/provider-derived image URLs | These redirects do not fetch an image on the server. Review redirect construction separately from SSRF. |
-| `modules/search/client/services/nostr.client.service.js` | Nostr retrieval runs in the browser | This is a client network boundary, not a server-side fetch sink. |
-| SparkPost webhook controller | Authenticated inbound request handler | An inbound webhook does not itself establish an outbound URL fetch sink. |
-| `modules/core/server/services/spam.server.service.js` | Akismet API key and blog URL come from deployment configuration | The blog URL is submitted as data; the dependency constructs its HTTP endpoint separately. Member message fields do not select the endpoint. |
+| Surface                                                              | Destination control                                                             | Finding                                                                                                                                      |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `modules/core/server/jobs/send-email.server.job.js`                  | SMTP transport options come from deployment configuration                       | Outbound SMTP is present; application callers do not choose an HTTP fetch URL.                                                               |
+| `modules/core/server/services/email.server.service.js`               | Rendered mail fields are constructed explicitly and queued through Agenda       | Reviewed rendering does not pass arbitrary attachment URLs into the mail job.                                                                |
+| `modules/users/server/controllers/users.avatar.server.controller.js` | Avatar responses redirect the browser to configured/provider-derived image URLs | These redirects do not fetch an image on the server. Review redirect construction separately from SSRF.                                      |
+| `modules/search/client/services/nostr.client.service.js`             | Nostr retrieval runs in the browser                                             | This is a client network boundary, not a server-side fetch sink.                                                                             |
+| SparkPost webhook controller                                         | Authenticated inbound request handler                                           | An inbound webhook does not itself establish an outbound URL fetch sink.                                                                     |
+| `modules/core/server/services/spam.server.service.js`                | Akismet API key and blog URL come from deployment configuration                 | The blog URL is submitted as data; the dependency constructs its HTTP endpoint separately. Member message fields do not select the endpoint. |
 
 A search for server-side fetch, Axios, HTTP request helpers and Nostr relay clients did not find a member-supplied server HTTP URL consumer in these reviewed surfaces. No SSRF vulnerability is claimed by this initial review.
 

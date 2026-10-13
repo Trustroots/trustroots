@@ -47,11 +47,9 @@ type ReportCardFixture = Omit<
     > & {
       created?: string | number | null;
       userFrom?:
-        | string
-        | { _id: string; displayName?: string; username?: string };
+        string | { _id: string; displayName?: string; username?: string };
       userTo?:
-        | string
-        | { _id: string; displayName?: string; username?: string };
+        string | { _id: string; displayName?: string; username?: string };
     }
   >;
 };

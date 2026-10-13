@@ -222,9 +222,8 @@ service.initSession = function (app, connection) {
  * Wire in user last seen middleware
  */
 service.initLastSeen = async function (app) {
-  const { default: lastSeenController } = await import(
-    '../../modules/users/server/controllers/users.lastseen.server.controller.mjs'
-  );
+  const { default: lastSeenController } =
+    await import('../../modules/users/server/controllers/users.lastseen.server.controller.mjs');
   app.use(lastSeenController);
 };
 

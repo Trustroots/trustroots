@@ -280,8 +280,8 @@ export default function SearchSidebarResults({
                       offer.status === 'yes'
                         ? 'btn-offer-hosting-yes'
                         : offer.status === 'maybe'
-                        ? 'btn-offer-hosting-maybe'
-                        : ''
+                          ? 'btn-offer-hosting-maybe'
+                          : ''
                     }`}
                   >
                     {offer.status}

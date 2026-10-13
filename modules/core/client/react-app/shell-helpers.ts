@@ -80,8 +80,8 @@ export function getClientNavigationTarget(
     eventTarget instanceof HTMLAnchorElement
       ? eventTarget
       : eventTarget instanceof Element
-      ? (eventTarget.closest('a[href]') as HTMLAnchorElement | null)
-      : null;
+        ? (eventTarget.closest('a[href]') as HTMLAnchorElement | null)
+        : null;
 
   if (
     !anchor ||

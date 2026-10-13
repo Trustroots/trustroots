@@ -9,7 +9,7 @@
 import async from 'async';
 import config from './../config/config.mjs';
 import fs from 'fs';
-import glob from 'glob';
+import { globSync } from 'node:fs';
 import path from 'path';
 import sharp from 'sharp';
 (async () => {
@@ -23,7 +23,7 @@ import sharp from 'sharp';
     [1400, 900],
   ];
   const dir = path.resolve(config.circleImagesDir);
-  const files = glob.sync(path.join(dir, '**.jpg'));
+  const files = globSync(path.join(dir, '*.jpg'));
   if (files.length === 0) {
     console.warn(`No circle images found from ${dir}!`);
     return;

@@ -533,9 +533,8 @@ export default class AdminUser extends Component<
       { hasSearched: true, isSearching: true, matchingUsers: [], user: false },
       async () => {
         try {
-          const user: MemberRecord | false = await getUserRecordByUsername(
-            username,
-          );
+          const user: MemberRecord | false =
+            await getUserRecordByUsername(username);
           this.setState({ isSearching: false, user });
         } catch {
           this.setState({ isSearching: false, user: false });
@@ -1301,8 +1300,8 @@ export default class AdminUser extends Component<
                   {isSettingUserRole
                     ? 'Updating…'
                     : roleChangeSucceeded
-                    ? 'Close'
-                    : roleChangeConfirmation.confirmLabel}
+                      ? 'Close'
+                      : roleChangeConfirmation.confirmLabel}
                 </button>
               </Modal.Footer>
             </>

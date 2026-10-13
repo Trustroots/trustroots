@@ -156,7 +156,7 @@ describe('Authentication controller OAuth unit tests', () => {
       const reloaded = await User.findById(saved._id);
       Boolean(
         reloaded.additionalProvidersData &&
-          reloaded.additionalProvidersData.github,
+        reloaded.additionalProvidersData.github,
       ).should.be.false();
     });
 

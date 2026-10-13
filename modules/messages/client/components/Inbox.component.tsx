@@ -176,8 +176,8 @@ export default function Inbox({ user }: InboxProps) {
               {query
                 ? t<string>('No matching conversations.')
                 : unreadOnly
-                ? t<string>('No unread conversations.')
-                : t<string>('No conversations yet.')}
+                  ? t<string>('No unread conversations.')
+                  : t<string>('No conversations yet.')}
             </h4>
           </div>
         )}

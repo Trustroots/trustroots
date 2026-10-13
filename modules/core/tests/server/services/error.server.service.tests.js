@@ -44,9 +44,8 @@ function mockResponse(acceptType) {
 
 describe('Service: error', function () {
   it('exposes callable named ESM exports', async function () {
-    const esmService = await import(
-      '../../../server/services/error.server.service.mjs'
-    );
+    const esmService =
+      await import('../../../server/services/error.server.service.mjs');
     for (const name of [
       'getErrorMessageByKey',
       'getErrorMessage',

@@ -27,14 +27,15 @@
 
 body {
   min-height: 100vh;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
     sans-serif;
   color: var(--foreground);
-  background: linear-gradient(
-      180deg,
-      rgba(152, 173, 70, 0.18),
-      transparent 360px
-    ),
+  background:
+    linear-gradient(180deg, rgba(152, 173, 70, 0.18), transparent 360px),
     linear-gradient(90deg, rgba(49, 189, 166, 0.08), rgba(243, 181, 42, 0.08)),
     var(--background);
   line-height: 1.55;

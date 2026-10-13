@@ -18,9 +18,8 @@ describe('Service: influx', function () {
   });
 
   it('keeps the CommonJS adapter identical to the ESM default and named exports', async function () {
-    const esmService = await import(
-      '../../../server/services/influx.server.service.mts'
-    );
+    const esmService =
+      await import('../../../server/services/influx.server.service.mts');
 
     esmService.default.should.equal(influxService);
     ['stat', '_getClient', '_writeMeasurement'].forEach(function (name) {

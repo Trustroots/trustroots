@@ -296,9 +296,7 @@ test.describe.serial('auth email and token feature coverage', () => {
     await expect
       .poll(
         async () =>
-          (
-            await findUserByUsername(user.username)
-          ).resetPasswordToken,
+          (await findUserByUsername(user.username)).resetPasswordToken,
       )
       .toBeTruthy();
     const storedUser = await findUserByUsername(user.username);
