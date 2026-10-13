@@ -43,7 +43,7 @@ const space = (endpoint = 'https://workshop.example.test/api') => ({
   address: '1 Fictional Road',
   addressParts: ['1 Fictional Road', '', '', '', ''],
   description: 'A shared workshop',
-  open: 'closed',
+  open: 'open',
   fetchedAt: '2026-10-12T10:00:00Z',
   spaceType: 'makerspace',
 });
@@ -145,12 +145,14 @@ describe('administrator place import', () => {
       screen.getByRole('cell', { name: /Temporarily invalid/ }),
     ).toBeVisible();
     expect(
-      screen.getAllByRole('cell', { name: /Removed from directory/ }),
+      screen.getAllByRole('cell', { name: /Closed or removed/ }),
     ).toHaveLength(2);
     expect(
       screen.getByText('spaceapi:https://unnamed.example.test/api'),
     ).toBeVisible();
-    expect(screen.getAllByRole('link', { name: 'Visit' })).toHaveLength(1);
+    expect(
+      screen.getAllByRole('link', { name: 'https://workshop.example.test' }),
+    ).toHaveLength(1);
     publishChanges();
     await screen.findByText(/Published 4 place events; 0 failed/);
     expect(signEvent).toHaveBeenCalledTimes(4);
@@ -163,6 +165,56 @@ describe('administrator place import', () => {
     expect(signEvent.mock.calls[2][0]).toMatchObject({
       tags: expect.arrayContaining([['meta', 'status', 'inactive']]),
       content: 'Last-known description',
+    });
+  });
+
+  it('skips closed additions and retires previously published closed spaces', async () => {
+    http.get.mockResolvedValue({
+      data: [
+        {
+          ...space('https://closed-new.example.test/api'),
+          name: 'Closed new workshop',
+          open: 'closed',
+        },
+        {
+          ...space('https://closed-existing.example.test/api'),
+          name: 'Closed existing workshop',
+          open: 'closed',
+          eligible: false,
+        },
+        {
+          ...space('https://closed-inactive.example.test/api'),
+          name: 'Already inactive workshop',
+          open: 'closed',
+          eligible: false,
+        },
+      ],
+    });
+    service.fetchHackerPlaceEvents.mockResolvedValue([
+      event('https://closed-existing.example.test/api', [
+        ['meta', 'status', 'active'],
+      ]),
+      event('https://closed-inactive.example.test/api', [
+        ['meta', 'status', 'inactive'],
+      ]),
+    ]);
+    render(<AdminHackerspaces />);
+    fetchPreview();
+    await screen.findByText(/0 additions, 0 updates/);
+    expect(
+      screen.getAllByRole('cell', { name: 'Closed; skip publication' }),
+    ).toHaveLength(2);
+    expect(
+      screen.getByRole('cell', { name: 'Closed or removed; mark inactive' }),
+    ).toBeVisible();
+    publishChanges();
+    await screen.findByText(/Published 1 place events; 0 failed/);
+    expect(signEvent).toHaveBeenCalledTimes(1);
+    expect(signEvent.mock.calls[0][0]).toMatchObject({
+      tags: expect.arrayContaining([
+        ['d', 'spaceapi:https://closed-existing.example.test/api'],
+        ['meta', 'status', 'inactive'],
+      ]),
     });
   });
 

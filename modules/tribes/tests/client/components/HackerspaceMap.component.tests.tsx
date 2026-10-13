@@ -162,6 +162,14 @@ it('adapts hackerspace metadata into the shared map and excludes inactive/invali
           ['website', 'javascript:alert(1)'],
         ],
       },
+      {
+        ...event,
+        id: 'closed',
+        tags: [
+          ...event.tags.filter(tag => tag[1] !== 'open'),
+          ['meta', 'open', 'closed'],
+        ],
+      },
       { ...event, tags: [] },
     ],
   });
@@ -176,7 +184,10 @@ it('adapts hackerspace metadata into the shared map and excludes inactive/invali
     'SpaceAPI-reported snapshot: open',
     'Trustroots fetched: 2026-10-12',
   ]);
-  expect(props.locations[0].link.url).toBe('https://example.test/');
+  expect(props.locations[0].link).toEqual({
+    url: 'https://example.test/',
+    label: 'https://example.test/',
+  });
   expect(props.locations[1].link).toBeUndefined();
   expect(props.locations[1].details).toEqual([]);
   expect(

@@ -29,7 +29,7 @@ type Space = {
   open: string;
   fetchedAt: string;
   spaceType: string;
-  action: 'new' | 'updated' | 'retained' | 'inactive';
+  action: 'new' | 'updated' | 'retained' | 'inactive' | 'excluded';
   existing?: NostrEvent;
 };
 declare global {
@@ -82,12 +82,18 @@ export default function AdminHackerspaces() {
         const event = existing.get(id);
         return {
           ...space,
+          eligible: space.eligible && space.open !== 'closed',
           existing: event,
-          action: space.eligible
-            ? event
-              ? ('updated' as const)
-              : ('new' as const)
-            : ('retained' as const),
+          action:
+            space.open === 'closed'
+              ? event && !isInactive(event)
+                ? ('inactive' as const)
+                : ('excluded' as const)
+              : space.eligible
+              ? event
+                ? ('updated' as const)
+                : ('new' as const)
+              : ('retained' as const),
         };
       });
       const removed = [...existing.entries()]
@@ -118,7 +124,8 @@ export default function AdminHackerspaces() {
         } updates, ${
           current.filter(space => space.action === 'retained').length
         } temporarily invalid or coordinate-less entries retained, ${
-          removed.length
+          [...current, ...removed].filter(space => space.action === 'inactive')
+            .length
         } removals to mark inactive. Source records are not human-verified.`,
       );
     } catch {
@@ -277,7 +284,9 @@ export default function AdminHackerspaces() {
                         ? 'Update'
                         : space.action === 'retained'
                         ? 'Temporarily invalid; keep last-known listing'
-                        : 'Removed from directory; mark inactive'}
+                        : space.action === 'excluded'
+                        ? 'Closed; skip publication'
+                        : 'Closed or removed; mark inactive'}
                     </td>
                     <td>
                       {space.website && /^https?:\/\//i.test(space.website) && (
@@ -286,7 +295,7 @@ export default function AdminHackerspaces() {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          Visit
+                          {space.website}
                         </a>
                       )}
                     </td>

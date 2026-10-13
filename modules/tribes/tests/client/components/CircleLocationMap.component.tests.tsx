@@ -15,6 +15,8 @@ jest.mock('leaflet', () => {
     setView: jest.fn().mockReturnThis(),
     remove: jest.fn(),
     fitBounds: jest.fn(),
+    on: jest.fn(),
+    setMinZoom: jest.fn(),
   };
   const group = { addTo: jest.fn().mockReturnThis(), clearLayers: jest.fn() };
   return {
@@ -64,8 +66,17 @@ describe('shared circle map', () => {
       <CircleLocationMap {...props} attribution="Source attribution" />,
     );
     expect(screen.getByText('1 places')).toBeInTheDocument();
-    expect(screen.getByText('Source attribution')).toBeInTheDocument();
+    expect(screen.getByText(/Source attribution/)).toBeInTheDocument();
     expect(L.circleMarker).toHaveBeenCalledWith([12, 34], expect.any(Object));
+    expect(L.map).toHaveBeenCalledWith(
+      expect.any(HTMLElement),
+      expect.objectContaining({
+        scrollWheelZoom: true,
+        touchZoom: true,
+        minZoom: 3,
+        maxBoundsViscosity: 1,
+      }),
+    );
     const popup = locationPopup(location);
     expect(popup.querySelector('b')).toBeNull();
     expect(popup.querySelector('script')).toBeNull();
@@ -90,6 +101,29 @@ describe('shared circle map', () => {
     expect(screen.getByText('Unavailable')).toBeInTheDocument();
     unmount();
     expect(jest.mocked(L.map).mock.results[0].value.remove).toHaveBeenCalled();
+  });
+  it('renders labelled popup facts as safe text and handles empty facts', () => {
+    const popup = locationPopup({
+      ...location,
+      facts: [{ label: '<b>Signal</b>', value: '<img src=x>Thumb' }],
+    });
+    expect(popup.querySelector('dt')).toHaveTextContent('<b>Signal</b>');
+    expect(popup.querySelector('dd')).toHaveTextContent('<img src=x>Thumb');
+    expect(popup.querySelector('img')).toBeNull();
+    expect(
+      locationPopup({ ...location, facts: [] }).querySelector('dl'),
+    ).toBeNull();
+  });
+  it('keeps tiles filling a map resized beyond the minimum zoom world size', () => {
+    render(<CircleLocationMap {...props} />);
+    const element = screen.getByRole('application');
+    Object.defineProperty(element, 'clientWidth', { value: 2500 });
+    const map = jest.mocked(L.map).mock.results.slice(-1)[0].value;
+    const resize = map.on.mock.calls
+      .filter(([name]: [string]) => name === 'resize')
+      .slice(-1)[0][1];
+    act(() => resize());
+    expect(map.setMinZoom).toHaveBeenCalledWith(4);
   });
 });
 

@@ -1,5 +1,6 @@
 const { expect, test } = require('../../support/fixtures');
 const { installNostrRelayStub } = require('../../support/nostr');
+const { finalizeEvent, generateSecretKey } = require('nostr-tools');
 
 async function prepareCircle(page, unavailable = false) {
   await installNostrRelayStub(page, {
@@ -25,7 +26,7 @@ test('Hitchhikers circle foregrounds the recent map and explains source and date
   await prepareCircle(page);
   await page.goto('/circles/hitchhikers');
   await expect(
-    page.getByRole('heading', { name: 'Hitchhiking in the past 7 days' }),
+    page.getByRole('heading', { name: 'Hitchhikers on the road' }),
   ).toBeVisible();
   await expect(
     page.getByRole('application', {
@@ -36,9 +37,7 @@ test('Hitchhikers circle foregrounds the recent map and explains source and date
     page.getByText('No reported locations in the past 7 days.'),
   ).toBeVisible();
   await expect(
-    page.getByText(
-      /Uses the recorded ride date, or submission date when unknown/,
-    ),
+    page.getByText('Recent rides shared on Hitchwiki Maps.'),
   ).toBeVisible();
   await expect(
     page.getByRole('link', { name: 'Hitchwiki Maps' }),
@@ -67,4 +66,109 @@ test('Hitchhikers circle remains usable when its relay refuses the subscription'
   await expect(
     page.getByRole('link', { name: 'Join Hitchhikers on Trustroots' }),
   ).toBeVisible();
+});
+
+test('both circle maps support wheel and pinch zoom without zooming out beyond the world', async ({
+  page,
+}) => {
+  const touch = await page.context().newCDPSession(page);
+  await touch.send('Emulation.setTouchEmulationEnabled', { enabled: true });
+  await prepareCircle(page);
+  await installNostrRelayStub(page);
+  await page.route('**/api/tribes/hackers', route =>
+    route.fulfill({
+      json: {
+        _id: 'fictional-hackers',
+        slug: 'hackers',
+        label: 'Hackers',
+        count: 0,
+      },
+    }),
+  );
+  for (const circle of ['hitchhikers', 'hackers']) {
+    await page.goto(`/circles/${circle}`);
+    const map = page.locator('.circle-location-map');
+    const zoomOut = map.locator('.leaflet-control-zoom-out');
+    await expect(zoomOut).toHaveClass(/leaflet-disabled/);
+    await map.hover();
+    await page.mouse.wheel(0, -240);
+    await expect(zoomOut).not.toHaveClass(/leaflet-disabled/);
+    await page.mouse.wheel(0, 10000);
+    await expect(zoomOut).toHaveClass(/leaflet-disabled/);
+    const box = await map.boundingBox();
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    const points = gap => [
+      { x: x - gap, y, id: 1 },
+      { x: x + gap, y, id: 2 },
+    ];
+    await touch.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: points(30),
+    });
+    await touch.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: points(90),
+    });
+    await touch.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: [],
+    });
+    await expect(zoomOut).not.toHaveClass(/leaflet-disabled/);
+  }
+});
+
+test('hackerspace popups keep links and close controls visible and omit closed spaces', async ({
+  page,
+}) => {
+  const secret = generateSecretKey();
+  const events = ['open', 'closed'].map(state =>
+    finalizeEvent(
+      {
+        kind: 33000,
+        created_at: Math.floor(Date.now() / 1000),
+        content: 'A fictional community workshop.',
+        tags: [
+          ['d', `fictional-${state}`],
+          ['L', 'physical-location'],
+          ['g', 's00000'],
+          ['name', `Example ${state} workshop`],
+          ['meta', 'source', 'https://api.spaceapi.io/'],
+          ['meta', 'open', state],
+          ['website', 'https://workshop.example.test/'],
+        ],
+      },
+      secret,
+    ),
+  );
+  await installNostrRelayStub(page, { events });
+  await page.route('**/api/tribes/hackers', route =>
+    route.fulfill({
+      json: {
+        _id: 'fictional-hackers',
+        slug: 'hackers',
+        label: 'Hackers',
+        count: 0,
+      },
+    }),
+  );
+  await page.goto('/circles/hackers');
+  await expect(page.locator('.circle-location-map-status')).toHaveText(
+    '1 SpaceAPI-reported places',
+  );
+  await page.locator('.circle-location-map .leaflet-interactive').click();
+  const popup = page.locator('.leaflet-popup');
+  await expect(popup).toContainText('Example open workshop');
+  const website = popup.getByRole('link', {
+    name: 'https://workshop.example.test/',
+  });
+  await website.hover();
+  await expect(website).not.toHaveCSS('color', 'rgb(255, 255, 255)');
+  const close = popup.locator('.leaflet-popup-close-button');
+  await close.hover();
+  await expect(close).not.toHaveCSS('color', 'rgb(255, 255, 255)');
+  const box = await close.boundingBox();
+  expect(box.width).toBeGreaterThanOrEqual(32);
+  await close.click();
+  await expect(popup).toHaveCount(0);
 });
