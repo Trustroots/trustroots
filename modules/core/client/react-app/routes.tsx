@@ -24,8 +24,11 @@ import AdminStaffBlockers from '@/modules/admin/client/components/AdminStaffBloc
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
 import AdminAuditLog from '@/modules/admin/client/components/AdminAuditLog.component';
 import AdminMessages from '@/modules/admin/client/components/AdminMessages.component';
+import AdminLocationCorrections from '@/modules/admin/client/components/AdminLocationCorrections.component';
 import AdminNewsletter from '@/modules/admin/client/components/AdminNewsletter.component';
 import AdminReferenceThreads from '@/modules/admin/client/components/AdminReferenceThreads.component';
+import AdminExperienceChanges from '@/modules/admin/client/components/AdminExperienceChanges';
+import ExperienceChangePage from '@/modules/experiences/client/components/ExperienceChangePage';
 import AdminSearchUsers from '@/modules/admin/client/components/AdminSearchUsers.component';
 import AdminThreads from '@/modules/admin/client/components/AdminThreads.component';
 import AdminUser from '@/modules/admin/client/components/AdminUser.component';
@@ -238,6 +241,10 @@ function renderCircleDetail({ user, params }: RouteContext) {
   );
 }
 
+function renderExperienceChange({ params }: RouteContext) {
+  return <ExperienceChangePage id={params.id} />;
+}
+
 const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
   {
     '/': renderWithUser(HomeRoute),
@@ -252,6 +259,8 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
     '/admin/audit-log': () => <AdminAuditLog />,
     '/admin/messages': () => <AdminMessages />,
+    '/admin/location-corrections': () => <AdminLocationCorrections />,
+    '/admin/experience-changes': () => <AdminExperienceChanges />,
     '/admin/newsletter': () => <AdminNewsletter />,
     '/admin/reference-threads': () => <AdminReferenceThreads />,
     '/admin/search-users': () => <AdminSearchUsers />,
@@ -276,6 +285,7 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/messages/:username': renderWithUser(ThreadRoute),
     '/navigation': renderWithUser(NavigationRoute),
     '/not-found': () => <NotFoundPage />,
+    '/experiences/:id/change': renderExperienceChange,
     '/offer': () => <OfferRedirectPage />,
     '/offer/host': renderOfferPage(OfferHostPage),
     '/offer/meet': renderOfferPage(OfferMeetListPage),

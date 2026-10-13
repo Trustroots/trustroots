@@ -24,6 +24,15 @@ describe('Admin access route tests', () => {
   const adminRequests = () => [
     {
       method: 'get',
+      path: '/api/admin/location-corrections',
+    },
+    {
+      method: 'post',
+      path: '/api/admin/location-corrections/send',
+      body: {},
+    },
+    {
+      method: 'get',
       path: '/api/admin/staff-blockers',
     },
     {
@@ -153,8 +162,11 @@ describe('Admin access route tests', () => {
     for (const endpoint of adminRequests()) {
       const expected =
         endpoint.path.startsWith('/api/admin/acquisition-stories') ||
-        endpoint.path === '/api/admin/staff-blockers'
+        endpoint.path === '/api/admin/staff-blockers' ||
+        endpoint.path === '/api/admin/location-corrections'
           ? 200
+          : endpoint.path === '/api/admin/location-corrections/send'
+          ? 400
           : 403;
       await agent[endpoint.method](endpoint.path)
         .send(endpoint.body || {})

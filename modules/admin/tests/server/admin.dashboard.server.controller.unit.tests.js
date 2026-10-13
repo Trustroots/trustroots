@@ -115,6 +115,7 @@ describe('Admin dashboard controller unit tests', () => {
     });
     sinon.assert.calledOnceWithExactly(findNegativeExperiences, {
       recommend: 'no',
+      removedAt: { $exists: false },
     });
     sinon.assert.calledOnceWithExactly(negativeExperienceSort, '-created');
     sinon.assert.calledOnceWithExactly(negativeExperienceLimit, 10);

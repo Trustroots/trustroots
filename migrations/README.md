@@ -3,19 +3,19 @@
 Run migration scripts manually:
 
 ```bash
-npm run migrate
+pnpm run migrate
 ```
 
 Revert migration scripts:
 
 ```bash
-npm run migrate-down
+pnpm run migrate-down
 ```
 
 Create a new migration script:
 
 ```bash
-npx migrate create migration-name-here
+pnpm exec migrate create migration-name-here
 ```
 
 State of your locally run migrations is stored at `.migrate` file in this folder.
@@ -28,5 +28,5 @@ On new installations the file is missing, **so all the migrations are run.**
 You can drop your entire database by running:
 
 ```bash
-npm run dropdb
+pnpm run dropdb
 ```

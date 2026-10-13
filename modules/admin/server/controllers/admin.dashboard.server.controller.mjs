@@ -89,6 +89,7 @@ async function getThreadVotes() {
 async function getNegativeExperiences() {
   const negativeExperiences = await Experience.find({
     recommend: 'no',
+    removedAt: { $exists: false },
   })
     .sort('-created')
     .limit(NEGATIVE_EXPERIENCES_LIMIT)

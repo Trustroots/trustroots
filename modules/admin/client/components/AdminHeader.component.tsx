@@ -4,11 +4,10 @@ import React, { useEffect } from 'react';
 import { getCurrentUser } from '../../../core/client/services/client-runtime';
 
 export default function AdminHeader() {
-  const isAdmin = (getCurrentUser()?.roles || []).includes('admin');
-  const isSupport = (getCurrentUser()?.roles || []).includes('support-team');
-  const isWelcomeTeam = (getCurrentUser()?.roles || []).includes(
-    'welcome-team',
-  );
+  const roles = getCurrentUser()?.roles || [];
+  const isAdmin = roles.includes('admin');
+  const isSupport = roles.includes('support-team');
+  const isWelcomeTeam = roles.includes('welcome-team');
   const currentPath = window.location.pathname.replace('/admin/', '');
 
   useEffect(() => {
@@ -37,12 +36,20 @@ export default function AdminHeader() {
       label: 'Reference threads',
     },
     {
+      path: 'experience-changes',
+      label: 'Experience changes',
+    },
+    {
       path: 'acquisition-stories',
       label: 'Acquisition stories',
     },
     {
       path: 'staff-blockers',
       label: 'Staff blockers',
+    },
+    {
+      path: 'location-corrections',
+      label: 'Location corrections',
     },
     {
       path: 'newsletter',
@@ -86,7 +93,8 @@ export default function AdminHeader() {
                 (page.path === 'support' && isSupport) ||
                 (page.path === 'staff-blockers' &&
                   (isWelcomeTeam || isSupport)) ||
-                page.path === 'acquisition-stories',
+                page.path === 'acquisition-stories' ||
+                (isWelcomeTeam && page.path === 'location-corrections'),
             )
             .map(page => renderTab(page))}
         </ul>
