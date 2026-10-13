@@ -89,6 +89,12 @@ describe('ProfileNostrBadge', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
+  it('renders nothing and fetches no notes when the prop is omitted', () => {
+    const { container } = render(<ProfileNostrBadge />);
+    expect(container).toBeEmptyDOMElement();
+    expect(fetchUserNotesMock).not.toHaveBeenCalled();
+  });
+
   it('opens and closes the Nostroots action modal from the notes link', async () => {
     render(<ProfileNostrBadge npubHex="abc123def456" />);
 
