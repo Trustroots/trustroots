@@ -36,10 +36,9 @@ export default function InboxThread({ user, thread }: InboxThreadProps) {
             </small>
             <span>{otherUser.displayName || t<string>('Unknown member')}</span>
             <br />
-            <span
-              className="text-muted threadlist-thread-excerpt"
-              dangerouslySetInnerHTML={{ __html: thread.message.excerpt }}
-            />
+            <span className="text-muted threadlist-thread-excerpt">
+              {thread.message.excerpt}
+            </span>
           </div>
         </div>
       </a>

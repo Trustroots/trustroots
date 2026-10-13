@@ -16,12 +16,9 @@ jobs:
     uses: ./.github/workflows/ci-changes.yml
 
   lint:
-    # Don't run inline ESlint test if PR is from a forked repo (i.e. it doesn't have read permission)
-    # See https://github.com/ataylorme/eslint-annotate-action/issues/28
     needs: changes
     if: >
-      always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
-      github.event.pull_request.head.repo.full_name == github.repository
+      always() && !cancelled() && needs.changes.outputs.run-code != 'false'
 
     runs-on: ubuntu-latest
     permissions:
@@ -62,6 +59,7 @@ jobs:
         # Continue to the next step even if this fails
         continue-on-error: true
       - name: Run ESLint with reviewdog
+        if: github.event.pull_request.head.repo.full_name == github.repository
         uses: reviewdog/action-eslint@3ee2a450da17e060b9dfa4bffd53976906c6b2b0 # v1.36.1
         # Keep lint enforcement independent of reviewdog's binary download.
         continue-on-error: true
@@ -73,6 +71,8 @@ jobs:
           eslint_flags: '--ext .js,.mjs,.mts,.ts,.tsx .'
       - name: Enforce lint
         run: npm run lint
+      - name: Check API input boundaries
+        run: npm run test:boundaries
       - name: Upload ESLint report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
