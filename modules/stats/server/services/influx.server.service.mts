@@ -3,10 +3,28 @@ import _ from 'lodash';
 import config from './../../../../config/config.mjs';
 import log from './../../../../config/lib/logger.mjs';
 
+type Callback = (error?: Error | null) => void;
+type ClientCallback = (error: Error | null, client?: Influx.InfluxDB) => void;
+type Fields = Record<string, unknown> & { time?: unknown };
+type Tags = Record<string, unknown>;
+type Point = {
+  fields: Fields;
+  tags: Tags;
+  timestamp?: Date;
+};
+type StatObject = {
+  namespace: string;
+  counts?: Record<string, number>;
+  values?: Record<string, number>;
+  tags?: Tags;
+  meta?: Record<string, unknown>;
+  time?: Date;
+};
+
 /**
  * Get InfluxDB Client
  */
-const getClient = function (callback) {
+const getClient = function (callback: ClientCallback) {
   // Check that influxdb is enabled and that we have a host and database value.
   const enabled = _.get(config, 'influxdb.enabled');
   const host = _.get(config, 'influxdb.options.host');
@@ -30,6 +48,10 @@ const getClient = function (callback) {
 };
 const influxService = {
   _getClient: getClient,
+} as {
+  _getClient: typeof getClient;
+  _writeMeasurement?: typeof writeMeasurement;
+  stat?: typeof stat;
 };
 
 /**
@@ -54,8 +76,13 @@ const influxService = {
  * tag_value
  * @param {function} callback - expected to be like function (err, result) {}
  */
-const writeMeasurement = function (measurementName, fields, tags, callback) {
-  let errorMessage;
+const writeMeasurement = function (
+  measurementName: string,
+  fields: Fields,
+  tags: Tags,
+  callback: Callback,
+) {
+  let errorMessage: string;
   if (!measurementName || !_.isString(measurementName)) {
     errorMessage = 'InfluxDB Service: no `measurementName` defined. #ghi3kH';
     // Log the failure
@@ -86,7 +113,7 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
   }
 
   // the point is the IPoint we'll send to node-influx's writeMeasurement
-  const point = {
+  const point: Point = {
     fields,
     tags,
   };
@@ -114,15 +141,15 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
     delete fields.time;
   }
   influxService._getClient(function (err, client) {
-    if (err) {
+    if (err || !client) {
       return callback(err);
     }
     client
-      .writeMeasurement(measurementName, [point])
+      .writeMeasurement(measurementName, [point as Influx.IPoint])
       .then(function () {
         if (callback) return callback();
       })
-      .catch(function (err) {
+      .catch(function (err: Error) {
         // Log the failure
         if (process.env.NODE_ENV !== 'test') {
           log(
@@ -187,7 +214,7 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
  * @param {Function} callback
  *
  */
-const stat = function (stat, callback) {
+const stat = function (stat: StatObject, callback: Callback) {
   // when influxdb is disabled, log info and finish without error
   const enabled = _.get(config, 'influxdb.enabled');
   if (!enabled) {

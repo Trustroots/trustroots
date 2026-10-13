@@ -92,7 +92,7 @@ const legacyConfig = {
         'migrations/**',
         'modules/*/shared/**/*.{js,ts,mts}',
         'modules/*/server/*.{js,mjs}',
-        'modules/*/server/**/*.{js,mjs}',
+        'modules/*/server/**/*.{js,mjs,mts}',
         'testutils/server/**',
         'testutils/common/**',
       ],
@@ -104,7 +104,7 @@ const legacyConfig = {
     /** Native server implementations must not regain CommonJS syntax. */
     {
       files: [
-        'modules/*/server/**/*.mjs',
+        'modules/*/server/**/*.{mjs,mts}',
         'config/lib/**/*.mjs',
         'bin/**/*.mjs',
       ],
@@ -190,6 +190,8 @@ const legacyConfig = {
         'config/vite/**/*.{ts,tsx}',
         'modules/*/client/**/*.{ts,tsx}',
         'modules/*/shared/**/*.{ts,tsx,mts}',
+        'modules/*/server/**/*.mts',
+        'config/**/*.d.mts',
         'modules/*/tests/client/**/*.{ts,tsx,mts}',
         'testutils/client/**/*.{ts,tsx}',
         'testutils/common/**/*.{mts,ts}',
