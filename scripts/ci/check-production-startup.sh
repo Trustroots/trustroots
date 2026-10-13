@@ -64,14 +64,14 @@ done
 # available in the runtime image.
 docker run --rm --entrypoint node "$image" -e '
   const assert = require("assert");
-  for (const dependency of ["jest", "webpack", "nodemon", "sharp"]) {
+  for (const dependency of ["jest", "webpack", "nodemon"]) {
     assert.throws(
       () => require.resolve(dependency),
       error => error.code === "MODULE_NOT_FOUND",
       `${dependency} should be omitted from the production image`,
     );
   }
-  for (const dependency of ["express", "file-type", "gm", "semver"]) {
+  for (const dependency of ["express", "file-type", "gm", "semver", "sharp"]) {
     require.resolve(dependency);
   }
   console.log("Production dependencies present; representative build tools omitted.");
