@@ -23,11 +23,10 @@ export const getThreads = async (req, res) => {
       // Latest message in thread is either from, or to user
       $match: {
         $or: [
-          // eslint-disable-next-line new-cap
           {
             userFrom: new mongoose.Types.ObjectId(userId),
           },
-          // eslint-disable-next-line new-cap
+
           {
             userTo: new mongoose.Types.ObjectId(userId),
           },
