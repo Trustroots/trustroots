@@ -119,6 +119,9 @@ module.exports = webpackMerge.merge(shims, {
       },
       {
         test: /\.(?:[jt]sx?|mts)$/,
+        // Babel emits CommonJS imports for application modules. Parse both
+        // module formats so Webpack replaces generated require() calls.
+        type: 'javascript/auto',
         // Transpile our own code, plus the modern-syntax dependencies that
         // must match the application's supported browser targets.
         exclude: /node_modules[\\/](?!(nostr-tools|@noble|@scure)[\\/])/,
