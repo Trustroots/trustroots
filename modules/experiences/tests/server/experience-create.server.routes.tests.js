@@ -2,7 +2,7 @@ const should = require('should');
 const request = require('supertest');
 const sinon = require('sinon');
 const mongoose = require('mongoose');
-const faker = require('faker');
+const { faker } = require('@faker-js/faker');
 const Experience = mongoose.model('Experience');
 const testutils = require('../../../../testutils/server/server.testutil');
 const utils = require('../../../../testutils/server/data.server.testutil');
@@ -54,9 +54,8 @@ describe('Create an experience', () => {
     sinon.restore();
   });
   beforeEach(async () => {
-    [user1, user2, user3Nonpublic] = await utils.saveUsersWithCachedPasswords(
-      _users,
-    );
+    [user1, user2, user3Nonpublic] =
+      await utils.saveUsersWithCachedPasswords(_users);
   });
   afterEach(utils.clearDatabase);
   context('logged in', () => {

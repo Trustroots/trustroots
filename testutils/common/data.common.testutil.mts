@@ -3,7 +3,7 @@
  */
 
 import { ObjectId } from 'mongodb';
-import faker from 'faker';
+import { faker } from '@faker-js/faker';
 import lodash from 'lodash';
 import type { PublicProviderIdentities } from '../../modules/users/shared/profile.ts';
 
@@ -80,8 +80,9 @@ export interface GenerateUserOptions {
 }
 
 /** Optional fields callers may override on one generated client fixture. */
-export interface GenerateClientUserOptions
-  extends Partial<Omit<ClientUserFixture, '_id' | 'displayName'>> {
+export interface GenerateClientUserOptions extends Partial<
+  Omit<ClientUserFixture, '_id' | 'displayName'>
+> {
   _id?: string;
   displayName?: string;
   roles?: string[];
@@ -143,9 +144,9 @@ export type ExperienceDataEntry = readonly [
 
 function generateBaseUser(): Omit<UserFixture, '_id'> {
   return {
-    username: faker.internet.userName(),
-    firstName: faker.name.firstName(),
-    lastName: faker.name.lastName(),
+    username: faker.internet.username(),
+    firstName: faker.person.firstName(),
+    lastName: faker.person.lastName(),
     email: faker.internet.email(),
     languages: [],
   };
@@ -175,7 +176,7 @@ export function generateClientUser(
 ): ClientUserFixture {
   return {
     _id: generateId(),
-    displayName: faker.name.findName(),
+    displayName: faker.person.fullName(),
     ...generateBaseUser(),
     ...overrides,
   };
@@ -246,16 +247,16 @@ function generateTribe(index: number): TribeFixture {
   return {
     _id: generateId(),
     label: `${faker.lorem.word()}_${index}`,
-    labelHistory: faker.random.words(),
-    slugHistory: faker.random.words(),
-    synonyms: faker.random.words(),
-    color: faker.internet.color().slice(1),
+    labelHistory: faker.lorem.words(),
+    slugHistory: faker.lorem.words(),
+    synonyms: faker.lorem.words(),
+    color: faker.color.rgb({ format: 'hex', prefix: '' }),
     count: Math.floor(Math.random() * 50000),
     created: Date.now(),
     modified: Date.now(),
     public: true,
     image: false,
-    attribution: faker.name.findName(),
+    attribution: faker.person.fullName(),
     attribution_url: faker.internet.url(),
     description: faker.lorem.sentences(),
   };

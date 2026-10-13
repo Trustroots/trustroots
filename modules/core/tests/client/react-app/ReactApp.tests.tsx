@@ -197,18 +197,18 @@ jest.mock('@/modules/contacts/client/api/contacts.api', () => ({
 jest.mock(
   '@/modules/messages/client/components/ThreadReply',
   () =>
-    ({ onSend }: { onSend: (content: string) => void }) =>
-      (
-        <button type="button" onClick={() => onSend('A fictional message')}>
-          Send message
-        </button>
-      ),
+    ({ onSend }: { onSend: (content: string) => void }) => (
+      <button type="button" onClick={() => onSend('A fictional message')}>
+        Send message
+      </button>
+    ),
 );
 jest.mock(
   '@/modules/messages/client/components/ThreadMessages',
   () =>
-    ({ otherUser }: { otherUser: { username: string } }) =>
-      <div>Conversation with {otherUser.username}</div>,
+    ({ otherUser }: { otherUser: { username: string } }) => (
+      <div>Conversation with {otherUser.username}</div>
+    ),
 );
 jest.mock('@/modules/users/client/components/Monkeybox', () => () => null);
 jest.mock(
@@ -222,8 +222,9 @@ jest.mock(
 jest.mock(
   '@/modules/users/client/components/AboutMe.component',
   () =>
-    ({ profile }: { profile: { description?: string } }) =>
-      <p>{profile.description}</p>,
+    ({ profile }: { profile: { description?: string } }) => (
+      <p>{profile.description}</p>
+    ),
 );
 jest.mock(
   '@/modules/search/client/components/SearchPlaceInput.component',
@@ -238,15 +239,14 @@ jest.mock(
     }: {
       offer?: Offer | null;
       onCloseSidebar: () => void;
-    }) =>
-      (
-        <aside>
-          {offer && <span>Selected offer {offer._id}</span>}
-          <button type="button" onClick={onCloseSidebar}>
-            Close search sidebar
-          </button>
-        </aside>
-      ),
+    }) => (
+      <aside>
+        {offer && <span>Selected offer {offer._id}</span>}
+        <button type="button" onClick={onCloseSidebar}>
+          Close search sidebar
+        </button>
+      </aside>
+    ),
 );
 const mockMapMount = jest.fn();
 const mockOffer: OfferReadPayload = {
@@ -334,6 +334,29 @@ describe('<ReactApp />', () => {
     expect(screen.getByText('Header guest')).toBeInTheDocument();
     expect(screen.getByText('Footer')).toBeInTheDocument();
     expect(document.title).toBe('Rules - Trustroots');
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
+  });
+
+  it('scrolls to the element named by the URL fragment after the route renders', async () => {
+    const target = document.createElement('div');
+    target.id = 'rules-anchor';
+    target.scrollIntoView = jest.fn();
+    document.body.appendChild(target);
+
+    try {
+      renderApp('/rules#rules-anchor');
+
+      expect(await screen.findByText('Rules route')).toBeInTheDocument();
+      expect(target.scrollIntoView).toHaveBeenCalled();
+    } finally {
+      target.remove();
+    }
+  });
+
+  it('renders normally when the URL fragment matches no element', async () => {
+    renderApp('/rules#missing-anchor');
+
+    expect(await screen.findByText('Rules route')).toBeInTheDocument();
     expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
   });
 

@@ -86,8 +86,8 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
                 },
               )
             : status === 415
-            ? t('Sorry, we do not support this type of file.')
-            : t('Oops! Something went wrong. Try again later.'),
+              ? t('Sorry, we do not support this type of file.')
+              : t('Oops! Something went wrong. Try again later.'),
         );
       } finally {
         setIsUploading(false);

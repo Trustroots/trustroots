@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import _ from 'lodash';
 import mongooseService from './../../config/lib/mongoose.mjs';
 import yargs from 'yargs';
-import faker from 'faker';
+import { faker } from '@faker-js/faker';
 import moment from 'moment';
 import mongoose from 'mongoose';
 import config from './../../config/config.mjs';
@@ -249,9 +249,13 @@ function addUsers() {
               }
 
               // Add mock data
-              user.gender = faker.random.arrayElement(genderValues);
-              user.firstName = faker.name.firstName(user.gender);
-              user.lastName = faker.name.lastName();
+              user.gender = faker.helpers.arrayElement(genderValues);
+              user.firstName = faker.person.firstName(
+                ['female', 'male'].includes(user.gender)
+                  ? user.gender
+                  : undefined,
+              );
+              user.lastName = faker.person.lastName();
               user.displayName = user.firstName + ' ' + user.lastName;
               user.provider = 'local';
               user.public = true;
@@ -264,7 +268,7 @@ function addUsers() {
                 .subtract(Math.random() * 3600, 's');
               // 0-4 random languages
               user.languages = [...Array(random(4))].map(() =>
-                faker.random.objectElement(languages, 'key'),
+                faker.helpers.objectKey(languages),
               );
               if (admin !== undefined) {
                 // admin user

@@ -38,9 +38,8 @@ async function loadController(resultHandler) {
   const User = mongoose.model('User');
   sinon.stub(User, 'find').returns({ select });
   sinon.stub(lodash, 'shuffle').callsFake(users => users);
-  const controller = await import(
-    '../../server/controllers/pages.volunteers.server.controller.mjs'
-  );
+  const controller =
+    await import('../../server/controllers/pages.volunteers.server.controller.mjs');
 
   return { controller, exec, find: User.find, limit, select, sort };
 }

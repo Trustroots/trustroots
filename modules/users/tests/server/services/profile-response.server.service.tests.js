@@ -10,9 +10,8 @@ describe('Service: profile-response', function () {
   let esmService;
 
   before(async function () {
-    esmService = await import(
-      '../../../server/services/profile-response.server.service.mjs'
-    );
+    esmService =
+      await import('../../../server/services/profile-response.server.service.mjs');
   });
 
   it('exposes the same service functions through ESM and CommonJS', function () {

@@ -92,10 +92,10 @@ function sourceLinks(file: string, text: string): SourceLinks {
       const name = ts.isPropertyAccessExpression(callee)
         ? callee.name.text
         : ts.isIdentifier(callee)
-        ? callee.text
-        : callee.kind === ts.SyntaxKind.ImportKeyword
-        ? 'import'
-        : null;
+          ? callee.text
+          : callee.kind === ts.SyntaxKind.ImportKeyword
+            ? 'import'
+            : null;
       const [argument] = node.arguments;
       if (argument && ts.isStringLiteral(argument)) {
         if (

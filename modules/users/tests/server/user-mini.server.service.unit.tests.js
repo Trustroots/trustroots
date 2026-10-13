@@ -5,9 +5,8 @@ require('should');
 
 describe('Service: user mini', function () {
   it('can be imported by ESM controllers', async function () {
-    const esmService = await import(
-      '../../server/services/user-mini.server.service.mjs'
-    );
+    const esmService =
+      await import('../../server/services/user-mini.server.service.mjs');
     esmService.default.should.equal(userMiniService);
   });
 

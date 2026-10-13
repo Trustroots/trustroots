@@ -300,7 +300,6 @@ service = {
       port: false,
       level: 'debug',
       program: 'production',
-      inlineMeta: true,
     },
   },
   // Spam detection

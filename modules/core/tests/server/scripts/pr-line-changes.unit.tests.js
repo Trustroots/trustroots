@@ -259,14 +259,14 @@ describe('PR line-change summaries', () => {
         return method === pulls.list
           ? [pr(2998), pr(2999), pr(3000), pr(3001)]
           : options.issue_number === 2998
-          ? [
-              {
-                id: 7,
-                user: { type: 'Bot' },
-                body: `${marker}\nCoverage: 100%`,
-              },
-            ]
-          : [{ id: 8, user: { type: 'User' }, body: marker }];
+            ? [
+                {
+                  id: 7,
+                  user: { type: 'Bot' },
+                  body: `${marker}\nCoverage: 100%`,
+                },
+              ]
+            : [{ id: 8, user: { type: 'User' }, body: marker }];
       },
     };
     const fetched = [];

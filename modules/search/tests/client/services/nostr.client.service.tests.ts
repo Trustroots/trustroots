@@ -6,12 +6,10 @@ import type { Event } from 'nostr-tools';
 interface MockRelaySubscription {
   close: jest.Mock;
 }
-type ServiceSubscription = NostrService['subscriptions'] extends Map<
-  string,
-  infer Subscription
->
-  ? Subscription
-  : never;
+type ServiceSubscription =
+  NostrService['subscriptions'] extends Map<string, infer Subscription>
+    ? Subscription
+    : never;
 
 type MockNostrEvent = Omit<Partial<Event>, 'tags'> & {
   tags?: Array<Array<string | undefined>>;

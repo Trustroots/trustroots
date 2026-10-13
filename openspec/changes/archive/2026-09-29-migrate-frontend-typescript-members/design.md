@@ -5,11 +5,13 @@ The five assigned client modules contain 90 JavaScript production files, includi
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Bring every production client module in the assigned scope under strict TypeScript checking.
 - Preserve current rendering, API calls, translations, exports and user interactions.
 - Retain all existing client tests and coverage thresholds.
 
 **Non-Goals:**
+
 - Change application behaviour, APIs, data models, dependencies, or module ownership.
 - Convert the JavaScript client tests as part of this batch.
 - Change files owned by other migration batches or alter shared tooling without coordination.

@@ -65,7 +65,7 @@ describe('<ThreadReply>', () => {
       .spyOn(form, 'getBoundingClientRect')
       .mockImplementation(
         () =>
-          ({ height: Number.parseFloat(form.style.height) || 120 } as DOMRect),
+          ({ height: Number.parseFloat(form.style.height) || 120 }) as DOMRect,
       );
     const handle = getByRole('separator', { name: 'Resize message editor' });
     expect(handle).toHaveAttribute(

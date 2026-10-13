@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 
-const glob = require('glob');
+const { globSync } = require('node:fs');
 const Mocha = require('mocha');
 const path = require('path');
 
@@ -13,7 +13,7 @@ const configuredTestFiles = process.env.SERVER_TEST_FILES
 const testFiles =
   configuredTestFiles.length > 0
     ? configuredTestFiles
-    : glob.sync('modules/*/tests/server/**/*.js');
+    : globSync('modules/*/tests/server/**/*.js').sort();
 
 async function finish(error) {
   try {

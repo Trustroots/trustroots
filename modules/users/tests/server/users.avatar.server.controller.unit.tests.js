@@ -51,9 +51,8 @@ function deferredResponse() {
 
 describe('Avatar controller unit tests', () => {
   it('exposes the bounded upload pipeline through the ESM adapter', async () => {
-    const esmController = await import(
-      '../../server/controllers/users.avatar.server.controller.mjs'
-    );
+    const esmController =
+      await import('../../server/controllers/users.avatar.server.controller.mjs');
 
     esmController.avatarUpload.should.equal(avatarController.avatarUpload);
     esmController.avatarUploadField.should.equal(
@@ -537,9 +536,7 @@ describe('Avatar controller unit tests', () => {
 
   function loadAvatarWithStubs(stubs) {
     return proxyquire(
-      require.resolve(
-        './../../server/controllers/users.avatar.server.controller.mjs',
-      ),
+      require.resolve('./../../server/controllers/users.avatar.server.controller.mjs'),
       stubs,
     );
   }

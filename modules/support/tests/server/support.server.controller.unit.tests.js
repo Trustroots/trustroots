@@ -63,9 +63,8 @@ async function loadController(options = {}) {
     .callsFake((statsObject, callback) => callback());
   const log = sinon.stub(winston.Logger.prototype, 'log');
   sinon.stub(config, 'supportEmail').value('support@example.test');
-  const controller = await import(
-    '../../server/controllers/support.server.controller.mjs'
-  );
+  const controller =
+    await import('../../server/controllers/support.server.controller.mjs');
 
   return {
     controller,

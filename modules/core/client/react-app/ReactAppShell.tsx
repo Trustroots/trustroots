@@ -27,6 +27,9 @@ export default function ReactAppShell() {
   const locationHref = useRouterState({
     select: state => state.location.href,
   });
+  const locationHash = useRouterState({
+    select: state => state.location.hash,
+  });
   const router = useRouter();
   const location = new URL(locationHref, window.location.origin);
   const currentPath = `${location.pathname}${location.search}`;
@@ -67,6 +70,26 @@ export default function ReactAppShell() {
       window.scrollTo(0, 0);
     }
   }, [route, title]);
+
+  useEffect(() => {
+    const rawHash = locationHash || location.hash;
+    if (!rawHash) {
+      return undefined;
+    }
+
+    const targetId = decodeURIComponent(
+      rawHash.startsWith('#') ? rawHash.slice(1) : rawHash,
+    );
+    if (!targetId) {
+      return undefined;
+    }
+
+    // Wait until the app shell has finished resetting the page scroll position.
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(targetId)?.scrollIntoView({ block: 'start' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [locationHash, locationHref, route]);
 
   useEffect(() => {
     if (redirect) {

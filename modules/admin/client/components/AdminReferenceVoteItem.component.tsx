@@ -37,8 +37,8 @@ function getReferenceLabel(reference = '') {
 
 export default function AdminReferenceVoteItem({
   referenceThread,
-  showBadge,
-  showMessagesLink,
+  showBadge = false,
+  showMessagesLink = false,
 }: {
   referenceThread: ReferenceVote;
   showBadge?: boolean;
@@ -110,9 +110,4 @@ AdminReferenceVoteItem.propTypes = {
   referenceThread: PropTypes.object.isRequired,
   showBadge: PropTypes.bool,
   showMessagesLink: PropTypes.bool,
-};
-
-AdminReferenceVoteItem.defaultProps = {
-  showBadge: false,
-  showMessagesLink: false,
 };

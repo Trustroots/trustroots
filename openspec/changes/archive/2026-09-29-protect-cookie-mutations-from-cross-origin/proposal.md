@@ -41,7 +41,6 @@ or Fetch Metadata. Native clients that omit browser-origin metadata remain
 compatible for JSON and receive the dedicated marker from their common request
 builders; sign-out and multipart upload clients must send the marker.
 Originless browser-simple API mutations and non-browser callers with an
-explicit foreign Origin or non-same-origin Fetch Metadata value receive HTTP
-403. This is defence in depth: originless JSON requests remain compatible, so
+explicit foreign Origin or non-same-origin Fetch Metadata value receive HTTP 403. This is defence in depth: originless JSON requests remain compatible, so
 full CSRF protection for every client still requires a synchroniser token or
 equivalent end-to-end request-header rollout.

@@ -32,9 +32,8 @@ async function loadController(resultHandler) {
     .returns({ sort });
   const User = mongoose.model('User');
   sinon.stub(User, 'find').returns({ select });
-  const controller = await import(
-    '../../server/controllers/pages.greeters.server.controller.mjs'
-  );
+  const controller =
+    await import('../../server/controllers/pages.greeters.server.controller.mjs');
   return { controller, exec, find: User.find, limit, select, sort };
 }
 

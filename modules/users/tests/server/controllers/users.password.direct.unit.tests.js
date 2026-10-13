@@ -67,9 +67,7 @@ function loadController({
   };
 
   return mockModule(
-    require.resolve(
-      '../../../server/controllers/users.password.server.controller.mjs',
-    ),
+    require.resolve('../../../server/controllers/users.password.server.controller.mjs'),
     {
       mongoose: {
         model: () => User,
