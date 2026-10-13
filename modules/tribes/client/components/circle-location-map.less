@@ -1,0 +1,36 @@
+@import '~less/global-variables';
+.circle-location-map-panel {
+  background: #fff;
+  color: #333;
+  text-shadow: none;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 6px 28px rgb(0 0 0 / 18%);
+}
+.circle-location-map-heading h3 {
+  margin: 0 0 4px;
+}
+.circle-location-map-heading p,
+.circle-location-map-status,
+.circle-location-map-attribution {
+  margin: 4px 0 0;
+  font-size: 13px;
+}
+.circle-location-map {
+  width: 100%;
+  height: 56vh;
+  min-height: 340px;
+  border-radius: 8px;
+  background: #e8eeea;
+  z-index: 0;
+}
+@media (max-width: @screen-sm-min) {
+  .circle-location-map {
+    height: 48vh;
+    min-height: 300px;
+  }
+}
+
+.tribe-header .circle-location-map-panel a:not(.btn) {
+  color: #097d69;
+}

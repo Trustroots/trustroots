@@ -7,6 +7,7 @@ import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator'
 import JoinButton from './JoinButton';
 import CircleMemberDiscovery from './CircleMemberDiscovery';
 import HackerspaceMap from './HackerspaceMap';
+import HitchhikingMap from './HitchhikingMap';
 import { getCircleBackgroundStyle } from '../utils';
 import * as api from '../api/tribes.api';
 import type { MembershipUpdate, TribeSummary } from '../api/tribes.api';
@@ -151,13 +152,14 @@ export default function TribeDetailPage({
       : (t('{{count, number}} members', { count: tribe.count }) as string);
   const wikiUrl = circleWikiUrl(tribe);
   const isHackersCircle = tribe.slug === 'hackers';
+  const hasLocationMap = isHackersCircle || tribe.slug === 'hitchhikers';
 
   return (
     <>
       <Header
         tribe={tribe}
         className={`${user ? '' : 'is-guest'} ${
-          isHackersCircle ? 'is-hackers-circle' : ''
+          hasLocationMap ? 'has-location-map' : ''
         }`}
       >
         <div className="tribe-header-info">
@@ -175,7 +177,7 @@ export default function TribeDetailPage({
             <div className="row">
               <div
                 className={
-                  isHackersCircle
+                  hasLocationMap
                     ? 'col-xs-12 col-md-5 col-lg-5'
                     : `${
                         user ? 'col-xs-10' : 'col-xs-12'
@@ -285,9 +287,9 @@ export default function TribeDetailPage({
                   </p>
                 )}
               </div>
-              {isHackersCircle && (
-                <div className="col-xs-12 col-md-7 col-lg-7 hackerspace-hero-map">
-                  <HackerspaceMap />
+              {hasLocationMap && (
+                <div className="col-xs-12 col-md-7 col-lg-7 circle-hero-map">
+                  {isHackersCircle ? <HackerspaceMap /> : <HitchhikingMap />}
                 </div>
               )}
             </div>
