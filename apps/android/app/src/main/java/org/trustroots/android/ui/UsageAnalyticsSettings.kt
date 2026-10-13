@@ -54,7 +54,7 @@ internal fun UsageAnalyticsSettings(analytics: UsageAnalytics? = null) {
             Switch(checked = enabled, onCheckedChange = null)
         }
         Text(
-            "Share app opens and screen views with Trustroots. Off by default.",
+            "Umami analytics, self-hosted by Trustroots.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
