@@ -23,6 +23,11 @@ const space: SpaceApiPlace = {
 };
 
 describe('NIP-41 SpaceAPI place events', () => {
+  it('refuses to build an active event for a closed space', () => {
+    expect(() => buildSpaceApiPlaceEvent({ ...space, open: 'closed' })).toThrow(
+      /Closed hackerspaces/,
+    );
+  });
   it('uses display defaults when optional details are missing and Plus Codes fail', () => {
     const encode = jest
       .spyOn(OpenLocationCode.prototype, 'encode')
@@ -94,6 +99,10 @@ describe('NIP-41 SpaceAPI place events', () => {
       sig: 'b'.repeat(128),
     } as AddressablePlaceEvent;
     const inactive = buildInactiveSpaceApiPlaceEvent(signed);
+    expect(inactive.created_at).toBeGreaterThan(signed.created_at);
+    expect(
+      buildInactiveSpaceApiPlaceEvent({ ...signed, created_at: 0 }).created_at,
+    ).toBeGreaterThan(0);
     expect(inactive.tags).toContainEqual(['meta', 'status', 'inactive']);
     expect(inactive.tags).toContainEqual(['address', ...space.addressParts!]);
     expect(inactive.content).toBe(space.description);

@@ -62,6 +62,22 @@
     margin-top: 18px;
     .btn {
       margin: 0;
+      padding: 10px 16px;
+      font-size: 16px;
+      line-height: 1.5;
+      border-radius: 6px;
+      text-shadow: none;
+    }
+    .circle-membership-active {
+      color: #fff;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      &:hover,
+      &:focus {
+        color: #fff;
+        background: rgba(0, 0, 0, 0.35);
+        border-color: #fff;
+      }
     }
   }
 }
@@ -151,16 +167,85 @@
   margin: 0;
 }
 .circle-hero-map {
-  margin-top: 24px;
-  margin-bottom: 32px;
+  margin-top: 20px;
+  margin-bottom: 16px;
+}
+.tribe-header.has-location-map {
+  min-height: 0;
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: linear-gradient(transparent, @body-bg);
+    pointer-events: none;
+  }
+  .tribe-header-info {
+    min-height: 0;
+    padding-bottom: 48px;
+  }
+  .container {
+    width: 100%;
+    max-width: 1600px;
+    padding-inline: 24px;
+  }
+  .tribe-header-back {
+    padding-top: 18px;
+    padding-bottom: 12px;
+    margin-left: -16px;
+    font-size: 16px;
+  }
+  .tribe-intro {
+    margin-top: 24px;
+    font-size: 17px;
+  }
+  .tribe-attribution {
+    bottom: 32px;
+    padding: 8px 24px;
+    z-index: 1;
+  }
+}
+.hackers-circle-community {
+  position: relative;
+  display: grid;
+  gap: 28px;
+  width: calc(100% - 32px);
+  max-width: 1552px;
+  margin: -24px auto 32px;
+  padding: 24px;
+  border-radius: 14px;
+  background: @body-bg;
+  box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.05);
+  .hackers-circle-resources {
+    min-width: 0;
+  }
+  h3 {
+    margin-top: 0;
+  }
+  .circle-member-discovery {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+  }
+}
+.hackers-circle-resource-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
 }
 @media (min-width: @screen-md-min) {
   .circle-hero-map {
     margin-top: 0;
   }
-  .tribe-header.has-location-map .tribe-header-info {
-    min-height: 100vh;
-    height: auto;
+  .hackers-circle-community.has-members {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    gap: 36px;
   }
 }
 

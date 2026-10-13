@@ -37,12 +37,104 @@ describe('Hitchwiki ride origins', () => {
       latitude: 12,
       longitude: 34,
       details: [
-        'Recorded: 2026-10-11T12:00:00.000Z',
+        'Recorded: 2026-10-11 12:00 UTC',
         'Approximate reported location.',
         'Source: maps.hitchwiki.org',
       ],
       link: { url: 'https://maps.hitchwiki.org/ride/example-ride' },
     });
+  });
+  it('shows concise ride facts from the standard, including a straight-line distance', () => {
+    expect(
+      parseHitchhikingLocation(
+        event({
+          ...data,
+          stops: [
+            {
+              location: { latitude: 0, longitude: 0 },
+              arrival_time: data.stops[0].arrival_time,
+              waiting_duration: 'PT3M',
+            },
+            { location: { latitude: 0, longitude: 0.045 } },
+          ],
+          signals: [{ methods: ['thumb', 'thumb'] }, { methods: ['sign'] }],
+          hitchhikers: [
+            { reasons_to_hitchhike: ['vacation', 'social_exchange'] },
+          ],
+        }),
+        now,
+      )?.facts,
+    ).toEqual([
+      { label: 'Waiting time', value: '3 min' },
+      { label: 'Distance (straight line)', value: '5 km' },
+      { label: 'Signal', value: 'Thumb, Sign' },
+      { label: 'Submitted', value: '2026-10-12 11:00 UTC' },
+      { label: 'Why hitchhiking', value: 'Vacation, Social exchange' },
+    ]);
+  });
+  it.each([
+    'hitchmap.com',
+    'https://hitchmap.com/',
+    'hitchwiki.org',
+    'liftershalte.info',
+    'maps.hitchwiki.org.example.test',
+  ])('excludes other sources: %s', source => {
+    expect(
+      parseHitchhikingLocation(event({ ...data, source }), now),
+    ).toBeNull();
+  });
+  it.each([
+    ['PT0M', '0 min'],
+    ['P1DT2H3M30S', '1564 min'],
+    ['PT30S', '1 min'],
+    ['P', null],
+    ['PT', null],
+    ['bad', null],
+    [3, null],
+  ])(
+    'handles waiting duration %s without showing invented values',
+    (duration, expected) => {
+      const result = parseHitchhikingLocation(
+        event({
+          ...data,
+          stops: [{ ...data.stops[0], waiting_duration: duration }],
+        }),
+        now,
+      );
+      expect(
+        result?.facts?.find(fact => fact.label === 'Waiting time')?.value ??
+          null,
+      ).toBe(expected);
+    },
+  );
+  it('omits unavailable or malformed optional values without dropping a valid origin', () => {
+    const result = parseHitchhikingLocation(
+      event({
+        ...data,
+        submission_time: null,
+        signals: [null, {}, { methods: [null, 4, '', '  '] }],
+        hitchhikers: [null, {}, { reasons_to_hitchhike: [null, false, ''] }],
+      }),
+      now,
+    );
+    expect(result?.facts).toEqual([]);
+  });
+  it.each([
+    null,
+    {},
+    { location: null },
+    { location: { latitude: '0', longitude: 1 } },
+    { location: { latitude: 91, longitude: 1 } },
+    { location: { latitude: 0, longitude: '1' } },
+    { location: { latitude: 0, longitude: 181 } },
+  ])('omits distance with incomplete or invalid stops: %j', destination => {
+    const result = parseHitchhikingLocation(
+      event({ ...data, stops: [data.stops[0], destination] }),
+      now,
+    );
+    expect(result?.facts?.map(fact => fact.label)).not.toContain(
+      'Distance (straight line)',
+    );
   });
   it('falls back to submission time for undated rides and handles exact locations and departure time', () => {
     const stops = [{ location: { latitude: 0, longitude: 0, is_exact: true } }];
