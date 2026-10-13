@@ -166,8 +166,8 @@ describe('Admin access route tests', () => {
         endpoint.path === '/api/admin/location-corrections'
           ? 200
           : endpoint.path === '/api/admin/location-corrections/send'
-          ? 400
-          : 403;
+            ? 400
+            : 403;
       await agent[endpoint.method](endpoint.path)
         .send(endpoint.body || {})
         .expect(expected);
