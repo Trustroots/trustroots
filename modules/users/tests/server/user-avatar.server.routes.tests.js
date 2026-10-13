@@ -5,13 +5,14 @@ const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 describe('User Avatar CRUD tests', () => {
+  // Get application
+  let app;
+  let agent;
+
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
-  // Get application
-  let app;
-  let agent;
   const _users = utils.generateUsers(6);
 
   // "Gravatar" avatar user
