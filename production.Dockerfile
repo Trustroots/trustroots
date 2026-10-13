@@ -16,21 +16,22 @@ RUN rm -f /etc/apt/sources.list.d/passenger.list \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN npm install -g npm@11.19.0
+RUN npm install -g --force pnpm@11.18.0
 
 RUN mkdir -p /trustroots
 WORKDIR /trustroots
 
-# Copy `package.json` and `package-lock.json` into the container. Then use `npm`
+# Copy `package.json` and `pnpm-lock.yaml` into the container. Then use `pnpm`
 # inside the container to install packages.
 # This does several things:
 # - Ensures that local changes to your `node_modules/` folder are not copied to
 #   the container
 # - Allows docker to reuse previous build layers if these files do not change
-COPY package*.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 # This takes FOREVER if it's run in the passenger container, that's why we
 # created the multi stage build with a build container first.
-RUN npm ci --quiet
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+  pnpm install --frozen-lockfile
 
 # Copy code into the container
 COPY .prettierrc.json .prettierignore eslint.config.cjs babel.config.* server.js server.mjs worker.js worker.mjs ./
@@ -42,12 +43,12 @@ COPY public public
 COPY testutils testutils
 
 # Build the app
-RUN npm run build
+RUN pnpm run build
 
 # The builder needs the full toolchain, but the published image only needs
 # runtime dependencies. Prune after the build so Webpack and other build tools
 # remain available while assets are generated.
-RUN npm prune --omit=dev --ignore-scripts --quiet
+RUN pnpm prune --prod --ignore-scripts
 
 # ------------------------------------------------------------------------------
 # Create the production container

@@ -179,6 +179,11 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
     noScrollingTop: true,
   },
   {
+    path: '/experiences/:id/change',
+    title: 'Change an Experience',
+    requiresAuth: true,
+  },
+  {
     path: '/profile/:username/experiences',
     title: 'Experiences',
     requiresAuth: true,
@@ -363,6 +368,12 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/location-corrections',
+    requiresRole: ['admin', 'welcome-team'],
+    title: 'Welcome team - Location corrections',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/messages',
     title: 'Admin - Messages',
   },
@@ -390,6 +401,11 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
     ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/reference-threads',
     title: 'Admin - Reference threads',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/experience-changes',
+    title: 'Admin - Experience changes',
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,

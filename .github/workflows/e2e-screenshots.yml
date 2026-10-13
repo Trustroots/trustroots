@@ -140,7 +140,7 @@ jobs:
             -e TRUSTROOTS_E2E_REQUIRE_FULL_FEATURE_COVERAGE=false \
             -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
             -e TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE=true \
-            dev npm run test:e2e -- "${specs[@]}"
+            dev pnpm run test:e2e "${specs[@]}"
           test_status="$?"
           set -e
           echo "test_status=$test_status" >> "$GITHUB_OUTPUT"
@@ -180,7 +180,19 @@ jobs:
           cp "$workdir"/*.png "$RUN_DIR/"
           git add "$RUN_DIR"
           git commit -m "PR #${{ github.event.pull_request.number }} e2e screenshots (${{ github.run_id }})"
-          git push origin HEAD:pr-screenshots
+          # Other PRs publish to this branch too. Replay only this upload when
+          # another workflow wins the push, preserving every PR's screenshots.
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:pr-screenshots; then
+              break
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              exit 1
+            fi
+            git fetch --depth=1 origin pr-screenshots
+            git rebase --onto FETCH_HEAD HEAD^
+            sleep "$attempt"
+          done
 
       - name: Upsert PR comment with screenshots
         if: steps.changed.outputs.has_specs == 'true'

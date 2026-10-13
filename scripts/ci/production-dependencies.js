@@ -24,6 +24,14 @@ function collectInstalledPackages(root) {
     }
   }
   scan(path.join(root, 'node_modules'));
+  const virtualStore = path.join(root, 'node_modules/.pnpm');
+  if (fs.existsSync(virtualStore)) {
+    for (const entry of fs.readdirSync(virtualStore, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        scan(path.join(virtualStore, entry.name, 'node_modules'));
+      }
+    }
+  }
   return packages.sort((a, b) => a.path.localeCompare(b.path));
 }
 
