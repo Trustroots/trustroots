@@ -1,11 +1,14 @@
 import { getNostrootsOnboardingUrl } from '@/modules/core/client/utils/nostroots-onboarding';
 
 describe('Nostroots onboarding URL', () => {
-  it.each([undefined, null, ''])('omits missing usernames (%s)', username => {
-    expect(getNostrootsOnboardingUrl(username)).toBe(
-      'https://nos.trustroots.org/open/onboarding',
-    );
-  });
+  it.each([undefined, null, ''])(
+    'omits missing usernames (%s)',
+    (username: string | null | undefined) => {
+      expect(getNostrootsOnboardingUrl(username)).toBe(
+        'https://nos.trustroots.org/open/onboarding',
+      );
+    },
+  );
 
   it('encodes the username as a single query parameter on the fixed route', () => {
     const username = 'sample&destination=https://example.org/#test';

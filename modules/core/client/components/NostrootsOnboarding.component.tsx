@@ -1,10 +1,24 @@
 import React, { useMemo } from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import qrcode from 'qrcode-generator';
 import { getNostrootsOnboardingUrl } from '../utils/nostroots-onboarding';
 
-export default function NostrootsOnboarding({ username, source, linkRef }) {
+export type NostrootsOnboardingSource =
+  | 'community-notes'
+  | 'profile-notes'
+  | 'network-settings';
+
+type Props = {
+  username?: string | null;
+  source: NostrootsOnboardingSource;
+  linkRef?: React.Ref<HTMLAnchorElement>;
+};
+
+export default function NostrootsOnboarding({
+  username,
+  source,
+  linkRef,
+}: Props) {
   const { t } = useTranslation('core');
   const url = getNostrootsOnboardingUrl(username);
   const qrImage = useMemo(() => {
@@ -56,13 +70,3 @@ export default function NostrootsOnboarding({ username, source, linkRef }) {
     </div>
   );
 }
-
-NostrootsOnboarding.propTypes = {
-  username: PropTypes.string,
-  source: PropTypes.oneOf([
-    'community-notes',
-    'profile-notes',
-    'network-settings',
-  ]).isRequired,
-  linkRef: PropTypes.shape({ current: PropTypes.any }),
-};

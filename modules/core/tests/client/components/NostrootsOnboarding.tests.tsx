@@ -1,12 +1,17 @@
-import React from 'react';
+import React, { createRef } from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import qrcode from 'qrcode-generator';
-import NostrootsOnboarding from '@/modules/core/client/components/NostrootsOnboarding.component';
+import NostrootsOnboarding, {
+  type NostrootsOnboardingSource,
+} from '@/modules/core/client/components/NostrootsOnboarding.component';
+
+const qrcodeMock = jest.mocked(qrcode);
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key, options) => key.replace('{{username}}', options?.username),
+    t: (key: string, options?: { username?: string }) =>
+      key.replace('{{username}}', options?.username ?? ''),
   }),
 }));
 
@@ -22,15 +27,21 @@ describe('Nostroots onboarding action', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('shares the exact link with the local QR encoder and updates both on username changes', () => {
+    const linkRef = createRef<HTMLAnchorElement>();
     const { rerender } = render(
-      <NostrootsOnboarding username="sampleviewer" source="network-settings" />,
+      <NostrootsOnboarding
+        username="sampleviewer"
+        source="network-settings"
+        linkRef={linkRef}
+      />,
     );
     const link = screen.getByRole('link', { name: 'Continue in Nostroots' });
     const image = screen.getByRole('img', {
       name: 'Scan to continue in Nostroots on your phone',
     });
-    const qr = qrcode.mock.results[0].value;
+    const qr = qrcodeMock.mock.results[0].value;
 
+    expect(linkRef.current).toBe(link);
     expect(link).toHaveAttribute(
       'href',
       'https://nos.trustroots.org/open/onboarding?username=sampleviewer',
@@ -55,7 +66,7 @@ describe('Nostroots onboarding action', () => {
       'href',
       'https://nos.trustroots.org/open/onboarding?username=anothermember',
     );
-    expect(qrcode.mock.results[1].value.addData).toHaveBeenCalledWith(
+    expect(qrcodeMock.mock.results[1].value.addData).toHaveBeenCalledWith(
       link.getAttribute('href'),
     );
 
@@ -64,7 +75,7 @@ describe('Nostroots onboarding action', () => {
       'href',
       'https://nos.trustroots.org/open/onboarding',
     );
-    expect(qrcode.mock.results[2].value.addData).toHaveBeenCalledWith(
+    expect(qrcodeMock.mock.results[2].value.addData).toHaveBeenCalledWith(
       link.getAttribute('href'),
     );
     expect(
@@ -72,9 +83,9 @@ describe('Nostroots onboarding action', () => {
     ).not.toBeInTheDocument();
   });
 
-  it.each(['community-notes', 'profile-notes', 'network-settings'])(
+  it.each(['community-notes', 'profile-notes', 'network-settings'] as const)(
     'labels %s clicks without including identity in analytics properties',
-    source => {
+    (source: NostrootsOnboardingSource) => {
       render(<NostrootsOnboarding username="sampleviewer" source={source} />);
       const link = screen.getByRole('link', { name: 'Continue in Nostroots' });
       const analytics = [...link.attributes]
