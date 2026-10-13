@@ -51,7 +51,7 @@ const registerRoutes = (app: RouteApp): void => {
     .get(support.member);
   app
     .route('/api/admin/hackerspaces/preview')
-    .all(adminPolicy.isAllowed)
+    .all(...privileged)
     .get(adminAuditLog.record, adminHackerspaces.preview);
   app
     .route('/api/admin/acquisition-stories')
