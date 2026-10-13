@@ -29,6 +29,7 @@ jobs:
   build-dev-image:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     outputs:
       image-ref: ${{ steps.image.outputs.image-ref }}
     steps:
@@ -63,6 +64,7 @@ jobs:
       (github.event_name != 'workflow_dispatch' || inputs.run_client) &&
       (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
       - name: Set up Docker Buildx
@@ -117,6 +119,7 @@ jobs:
       (github.event_name != 'workflow_dispatch' || inputs.run_server) &&
       (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
       - name: Set up Docker Buildx
@@ -181,6 +184,7 @@ jobs:
       ) &&
       (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
       - name: Set up Docker Buildx
@@ -242,6 +246,7 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
     needs: [client, server]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
       pages: write
