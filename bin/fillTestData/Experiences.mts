@@ -339,11 +339,11 @@ function seedExperiences(averageExpNumber: number, replyRate: number) {
             `Experiences still to be persisted: ${experienceSaveTaskQueue.length()}`,
           );
         }, 1000);
-        experienceSaveTaskQueue.drain = function () {
+        experienceSaveTaskQueue.drain(function () {
           clearInterval(intervalObject);
           console.log('All experiences have been saved');
           mongooseService.disconnect();
-        };
+        });
         experienceSharingMatrix.forEach((row, i) => {
           row.forEach((elem, j) => {
             if (elem) {

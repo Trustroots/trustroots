@@ -16,7 +16,11 @@ const sinon: typeof import('sinon') = require('sinon');
 type UnreadUser = Pick<UserRecord, 'email' | 'displayName' | 'roles'> & {
   _id: UserModelDocument['_id'];
 };
-type TestQueue = { push(): void; drain: ((error?: Error) => void) | null };
+type TestQueue = {
+  push(): void;
+  error(handler: (error: Error, task?: unknown) => void): void;
+  drain(handler: () => void): void;
+};
 const async: { queue: (...args: unknown[]) => TestQueue } = require('async');
 const testutils: typeof import('../../../../../testutils/server/server.testutil') = require('../../../../../testutils/server/server.testutil');
 const mongoose: typeof import('mongoose') = require('mongoose');
@@ -702,14 +706,21 @@ describe('Job: message unread', function () {
     it('logs queue drain errors but still completes', function (done) {
       const jobWithQueueError = require('./../../../server/jobs/message-unread.server.job.mjs');
       sinon.stub(async, 'queue').callsFake(() => {
+        let onDrain: (() => void) | undefined;
+        let onError: ((error: Error) => void) | undefined;
         const queue: TestQueue = {
           push() {
             setImmediate(() => {
-              if (typeof queue.drain === 'function')
-                queue.drain(new Error('queue failed'));
+              onError?.(new Error('queue failed'));
+              onDrain?.();
             });
           },
-          drain: null,
+          error(handler) {
+            onError = handler;
+          },
+          drain(handler) {
+            onDrain = handler;
+          },
         };
         return queue;
       });

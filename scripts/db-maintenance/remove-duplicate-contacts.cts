@@ -62,7 +62,7 @@ const q = async.queue<Types.ObjectId>(function (contactId, callback) {
 }, 2); // How many jobs to process simultaneously?
 
 // Assign a final callback to removal queue
-q.drain = function () {
+q.drain(function () {
   console.log('');
   console.log('Removing duplicate records done.');
 
@@ -83,7 +83,7 @@ q.drain = function () {
       );
       process.exit(0);
     });
-};
+})
 
 // Check for initial count
 Contact.find()
