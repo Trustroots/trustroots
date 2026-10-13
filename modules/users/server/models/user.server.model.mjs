@@ -272,6 +272,7 @@ const UserSchema = new Schema({
         enum: [
           'admin',
           'welcome-team',
+          'support-team',
           'moderator',
           'shadowban',
           'suspended',

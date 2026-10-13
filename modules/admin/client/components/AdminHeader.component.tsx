@@ -4,10 +4,10 @@ import React, { useEffect } from 'react';
 import { getCurrentUser } from '../../../core/client/services/client-runtime';
 
 export default function AdminHeader() {
-  const isAdmin = (getCurrentUser()?.roles || []).includes('admin');
-  const isWelcomeTeam = (getCurrentUser()?.roles || []).includes(
-    'welcome-team',
-  );
+  const roles = getCurrentUser()?.roles || [];
+  const isAdmin = roles.includes('admin');
+  const isSupport = roles.includes('support-team');
+  const isWelcomeTeam = roles.includes('welcome-team');
   const currentPath = window.location.pathname.replace('/admin/', '');
 
   useEffect(() => {
@@ -21,6 +21,8 @@ export default function AdminHeader() {
   }, []);
 
   const pages = [
+    { path: 'support', label: 'Support inbox' },
+    { path: 'hackerspaces', label: 'Hackerspaces' },
     {
       path: 'messages',
       label: 'Messages',
@@ -34,12 +36,20 @@ export default function AdminHeader() {
       label: 'Reference threads',
     },
     {
+      path: 'experience-changes',
+      label: 'Experience changes',
+    },
+    {
       path: 'acquisition-stories',
       label: 'Acquisition stories',
     },
     {
       path: 'staff-blockers',
       label: 'Staff blockers',
+    },
+    {
+      path: 'location-corrections',
+      label: 'Location corrections',
     },
     {
       path: 'newsletter',
@@ -64,9 +74,15 @@ export default function AdminHeader() {
         <div className="navbar-header">
           <a
             className="navbar-brand"
-            href={isAdmin ? '/admin' : '/admin/acquisition-stories'}
+            href={
+              isAdmin
+                ? '/admin'
+                : isSupport
+                  ? '/admin/support'
+                  : '/admin/acquisition-stories'
+            }
           >
-            {isAdmin ? 'Admin' : 'Greeters'}
+            {isAdmin ? 'Admin' : isSupport ? 'Support' : 'Greeters'}
           </a>
         </div>
         <ul className="nav navbar-nav">
@@ -74,8 +90,12 @@ export default function AdminHeader() {
             .filter(
               page =>
                 isAdmin ||
-                (page.path === 'staff-blockers' && isWelcomeTeam) ||
-                page.path === 'acquisition-stories',
+                (page.path === 'support' && isSupport) ||
+                (page.path === 'staff-blockers' &&
+                  (isWelcomeTeam || isSupport)) ||
+                page.path === 'acquisition-stories' ||
+                ((isWelcomeTeam || isSupport) &&
+                  page.path === 'location-corrections'),
             )
             .map(page => renderTab(page))}
         </ul>

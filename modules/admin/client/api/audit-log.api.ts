@@ -20,7 +20,7 @@ export interface AuditActor {
 
 export interface AuditLogFilters {
   username: string;
-  team: '' | 'admin' | 'welcome-team';
+  team: '' | 'admin' | 'welcome-team' | 'support-team';
 }
 
 export async function getAuditLog(

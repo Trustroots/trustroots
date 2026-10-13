@@ -6,12 +6,10 @@ import type { Event } from 'nostr-tools';
 interface MockRelaySubscription {
   close: jest.Mock;
 }
-type ServiceSubscription = NostrService['subscriptions'] extends Map<
-  string,
-  infer Subscription
->
-  ? Subscription
-  : never;
+type ServiceSubscription =
+  NostrService['subscriptions'] extends Map<string, infer Subscription>
+    ? Subscription
+    : never;
 
 type MockNostrEvent = Omit<Partial<Event>, 'tags'> & {
   tags?: Array<Array<string | undefined>>;
@@ -47,7 +45,7 @@ jest.mock('nostr-tools/relay', () => {
       url,
       connect: jest.fn().mockResolvedValue(undefined),
       close: jest.fn(),
-      subscribe: jest.fn(),
+      subscribe: jest.fn().mockImplementation(() => ({ close: jest.fn() })),
       onclose: jest.fn(),
     };
     // Store last created instance for test access
@@ -72,7 +70,10 @@ function asServiceSubscription(
   subscription: MockRelaySubscription,
 ): ServiceSubscription {
   // Relay subscription doubles expose only the close method exercised here.
-  return subscription as unknown as ServiceSubscription;
+  // Install a deliberately minimal external subscription double.
+  const subscriptions = new Map<string, ServiceSubscription>();
+  Reflect.apply(subscriptions.set, subscriptions, ['fixture', subscription]);
+  return subscriptions.get('fixture')!;
 }
 
 function mockVisibilityResponse(payload: unknown, ok = true): Response {
@@ -101,6 +102,223 @@ describe('NostrService', () => {
 
     it('returns undefined when event data is missing', () => {
       expect(getNostrEventAuthorPubkey(null)).toBeUndefined();
+    });
+  });
+
+  describe('hackerspace place subscriptions', () => {
+    it('opens independent publication connections to both fixed relays', async () => {
+      const shared = await service.connect();
+      const connections = await service.connectHackerPlaceRelays();
+      expect(connections.map(connection => connection.url)).toEqual([
+        'wss://relay.trustroots.org',
+        'wss://relay.nomadwiki.org',
+      ]);
+      expect(Relay).toHaveBeenCalledTimes(3);
+      expect(connections.every(connection => connection.relay !== null)).toBe(
+        true,
+      );
+      expect(service.relay).toBe(shared);
+      expect(connections.every(connection => connection.relay !== shared)).toBe(
+        true,
+      );
+      for (const connection of connections) connection.relay?.close();
+    });
+
+    it('closes a failed connection and keeps the other available', async () => {
+      const close = jest.fn();
+      Relay.mockImplementationOnce((url: string) => ({
+        url,
+        connect: jest.fn().mockRejectedValue(new Error('offline')),
+        close,
+        subscribe: jest.fn(),
+        onclose: jest.fn(),
+      }));
+      const connections = await service.connectHackerPlaceRelays();
+      expect(connections[0]).toEqual({
+        url: 'wss://relay.trustroots.org',
+        relay: null,
+      });
+      expect(connections[1].relay).not.toBeNull();
+      expect(close).toHaveBeenCalledTimes(1);
+      connections[1].relay?.close();
+    });
+
+    const placeRelays = () =>
+      Relay.mock.results
+        .slice(-2)
+        .map(result => result.value as MockRelayInstance);
+    const place = (
+      id: string,
+      created_at = 1,
+      pubkey = 'author',
+      tags = [['d', 'example-place']],
+    ) => ({ id, created_at, pubkey, tags, content: id });
+
+    it('merges both relays, ignores duplicates and old versions, and preserves separate authors', async () => {
+      const onEvent = jest.fn();
+      const onEose = jest.fn();
+      const onClose = jest.fn();
+      const notes = { close: jest.fn() };
+      service.subscriptions.set('mapNotes', asServiceSubscription(notes));
+      const group = await service.subscribeHackerPlaces(onEvent, {
+        onEose,
+        onClose,
+      });
+      const [trustroots, nomadwiki] = placeRelays();
+      for (const relay of [trustroots, nomadwiki])
+        expect(relay.subscribe).toHaveBeenCalledWith(
+          [{ kinds: [33000], '#L': ['physical-location'], limit: 1000 }],
+          expect.any(Object),
+        );
+      const a = trustroots.subscribe.mock.calls[0][1];
+      const b = nomadwiki.subscribe.mock.calls[0][1];
+      a.onevent(place('first'));
+      b.onevent(place('first'));
+      b.onevent(place('newest', 3));
+      a.onevent(place('older', 2));
+      a.onevent(place('zzzz', 3));
+      b.onevent(place('aaaa', 3));
+      b.onevent(place('other-author', 1, 'other-author'));
+      b.onevent(place('no-identifier', 1, 'author', []));
+      expect(onEvent.mock.calls.map(call => call[0].id)).toEqual([
+        'first',
+        'newest',
+        'aaaa',
+        'other-author',
+        'no-identifier',
+      ]);
+      a.oneose();
+      expect(onEose).not.toHaveBeenCalled();
+      b.oneose();
+      b.oneose();
+      expect(onEose).toHaveBeenCalledTimes(1);
+      a.onclose('first offline');
+      expect(onClose).not.toHaveBeenCalled();
+      b.onclose('both offline');
+      expect(onClose).toHaveBeenCalledWith('both offline');
+      group.close();
+      group.close();
+      a.onevent(place('after-close', 5));
+      a.oneose();
+      a.onclose('after close');
+      expect(onEvent).toHaveBeenCalledTimes(5);
+      service.unsubscribeHackerPlaces();
+      expect(notes.close).not.toHaveBeenCalled();
+      for (const relay of [trustroots, nomadwiki])
+        expect(relay.close).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps Nomadwiki discovery available when Trustroots cannot connect', async () => {
+      Relay.mockImplementationOnce((url: string) => ({
+        url,
+        connect: jest.fn().mockRejectedValue(new Error('offline')),
+        close: jest.fn(),
+      }));
+      const onEose = jest.fn();
+      const onClose = jest.fn();
+      await service.subscribeHackerPlaces(jest.fn(), { onEose, onClose });
+      const relay = lastRelay();
+      const callbacks = relay.subscribe.mock.calls[0][1];
+      callbacks.oneose();
+      expect(onEose).toHaveBeenCalledTimes(1);
+      callbacks.onclose('offline');
+      expect(onClose).toHaveBeenCalledWith('offline');
+      service.unsubscribeHackerPlaces();
+    });
+
+    it('finishes loading when the other relay closes before its end-of-stored-events', async () => {
+      const onEose = jest.fn();
+      await service.subscribeHackerPlaces(jest.fn(), { onEose });
+      const [a, b] = placeRelays().map(
+        relay => relay.subscribe.mock.calls[0][1],
+      );
+      a.oneose();
+      b.onclose('closed');
+      expect(onEose).toHaveBeenCalledTimes(1);
+      a.onclose('closed');
+      service.unsubscribeHackerPlaces();
+    });
+
+    it('supports default callbacks, replaces only place subscriptions, and cleans up on disconnect', async () => {
+      await service.subscribeHackerPlaces(jest.fn());
+      const first = placeRelays();
+      for (const relay of first) relay.subscribe.mock.calls[0][1].oneose();
+      for (const relay of first)
+        relay.subscribe.mock.calls[0][1].onclose('closed');
+      await service.subscribeHackerPlaces(jest.fn());
+      for (const relay of first) expect(relay.close).toHaveBeenCalledTimes(1);
+      const next = placeRelays();
+      service.disconnect();
+      for (const relay of next) expect(relay.close).toHaveBeenCalledTimes(1);
+    });
+
+    it('cleans up connections that finish opening after unsubscribe', async () => {
+      const opening = service.subscribeHackerPlaces(jest.fn());
+      service.unsubscribeHackerPlaces();
+      await opening;
+      for (const relay of placeRelays())
+        expect(relay.close).toHaveBeenCalledTimes(1);
+    });
+
+    it('reports complete connection failure for both discovery consumers', async () => {
+      jest.spyOn(service, 'connectHackerPlaceRelays').mockResolvedValue([
+        { url: 'trustroots', relay: null },
+        { url: 'nomadwiki', relay: null },
+      ]);
+      await expect(service.subscribeHackerPlaces(jest.fn())).rejects.toThrow(
+        'No place discovery relays',
+      );
+      await expect(service.fetchHackerPlaceEvents()).rejects.toThrow(
+        'No place discovery relays',
+      );
+    });
+
+    it.each(['eose', 'close'])(
+      'collects newest preview events from both relays until %s',
+      async completion => {
+        const result = service.fetchHackerPlaceEvents();
+        for (let count = 0; count < 8; count++) await Promise.resolve();
+        const [a, b] = placeRelays().map(
+          relay => relay.subscribe.mock.calls[0][1],
+        );
+        a.onevent(place('old'));
+        b.onevent(place('latest', 2));
+        b.onevent(place('unaddressed', 1, 'author', []));
+        if (completion === 'eose') {
+          a.oneose();
+          b.oneose();
+        } else {
+          a.onclose('closed');
+          b.onclose('closed');
+        }
+        expect(await result).toEqual([
+          place('latest', 2),
+          place('unaddressed', 1, 'author', []),
+        ]);
+        for (const relay of placeRelays()) {
+          expect(relay.close).toHaveBeenCalledTimes(1);
+          expect(
+            relay.subscribe.mock.results[0].value.close,
+          ).toHaveBeenCalledTimes(1);
+        }
+      },
+    );
+
+    it('cleans up if relays synchronously end a preview subscription', async () => {
+      for (let index = 0; index < 2; index++)
+        Relay.mockImplementationOnce((url: string) => ({
+          url,
+          connect: jest.fn().mockResolvedValue(undefined),
+          close: jest.fn(),
+          subscribe: jest.fn((_filters, callbacks) => {
+            callbacks.oneose();
+            return { close: jest.fn() };
+          }),
+        }));
+      expect(await service.fetchHackerPlaceEvents()).toEqual([]);
+      for (let count = 0; count < 4; count++) await Promise.resolve();
+      for (const relay of placeRelays())
+        expect(relay.close).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -133,14 +351,14 @@ describe('NostrService', () => {
     });
 
     it('returns existing relay if already connected', async () => {
-      const relay1 = (await service.connect()) as unknown as MockRelayInstance;
+      const relay1 = (await service.connect(), lastRelay());
       const relay2 = await service.connect();
       expect(relay1).toBe(relay2);
       expect(Relay).toHaveBeenCalledTimes(1);
     });
 
     it('creates a new relay if the previous relay has closed', async () => {
-      const relay1 = (await service.connect()) as unknown as MockRelayInstance;
+      const relay1 = (await service.connect(), lastRelay());
       relay1.connected = false;
 
       const relay2 = await service.connect();
@@ -150,7 +368,7 @@ describe('NostrService', () => {
     });
 
     it('clears the relay and subscriptions when the active relay closes', async () => {
-      const relay = (await service.connect()) as unknown as MockRelayInstance;
+      const relay = (await service.connect(), lastRelay());
       service.subscriptions.set(
         'mapNotes',
         asServiceSubscription({ close: jest.fn() }),
@@ -163,7 +381,7 @@ describe('NostrService', () => {
     });
 
     it('leaves a newer relay in place when an older relay closes', async () => {
-      const relay1 = (await service.connect()) as unknown as MockRelayInstance;
+      const relay1 = (await service.connect(), lastRelay());
       relay1.connected = false;
       const relay2 = await service.connect();
       service.subscriptions.set(

@@ -290,6 +290,7 @@ export const getExperienceStatistics = function (since, callback) {
       experiences: done => {
         Experience.aggregate(
           [
+            { $match: { removedAt: { $exists: false } } },
             {
               $group: {
                 _id: null,
@@ -378,6 +379,7 @@ export const getExperienceStatistics = function (since, callback) {
               $match: {
                 recommend: 'yes',
                 'interactions.met': true,
+                removedAt: { $exists: false },
               },
             },
             {
@@ -814,19 +816,18 @@ export const getPublicStatistics = function (req, res) {
       },
       // Newsletter subscribers
       function (done) {
-        statisticsService.getNewsletterSubscriptionsCount(function (
-          err,
-          count,
-        ) {
-          if (err) {
-            return done(err);
-          }
-          req.statistics.newsletter = {
-            count,
-            percentage: Math.round((count / req.statistics.total) * 100),
-          };
-          done();
-        });
+        statisticsService.getNewsletterSubscriptionsCount(
+          function (err, count) {
+            if (err) {
+              return done(err);
+            }
+            req.statistics.newsletter = {
+              count,
+              percentage: Math.round((count / req.statistics.total) * 100),
+            };
+            done();
+          },
+        );
       },
       // Experience statistics
       function (done) {

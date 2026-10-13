@@ -6,18 +6,54 @@ import adminPolicy from './../policies/admin.server.policy.mjs';
 import adminThreads from './../controllers/admin.threads.server.controller.mjs';
 import adminUsers from './../controllers/admin.users.server.controller.mjs';
 import adminDashboard from './../controllers/admin.dashboard.server.controller.mjs';
+import support from '../controllers/admin.support.server.controller.mjs';
 import adminNotes from './../controllers/admin.notes.server.controller.mjs';
 import adminReferenceThreads from './../controllers/admin.reference-threads.server.controller.mjs';
+import adminHackerspaces from './../controllers/admin.hackerspaces.server.controller.mjs';
+import adminLocationCorrections from '../controllers/admin.location-corrections.server.controller.mjs';
+import adminExperienceChanges from '../controllers/admin.experience-changes.server.controller.mjs';
 
 /**
  * Module dependencies.
  */
 
 const registerRoutes = app => {
+  app.route('/api/admin/support').all(adminPolicy.isAllowed).get(support.list);
+  app
+    .route('/api/admin/support/:requestId')
+    .all(adminPolicy.isAllowed)
+    .get(support.detail)
+    .patch(support.setStatus);
+  app
+    .route('/api/admin/support/:requestId/:kind')
+    .all(adminPolicy.isAllowed)
+    .get(support.investigation);
+  app
+    .route('/api/admin/support-members')
+    .all(adminPolicy.isAllowed)
+    .get(support.searchMembers);
+  app
+    .route('/api/admin/support-members/:memberId')
+    .all(adminPolicy.isAllowed)
+    .get(support.member);
+  app
+    .route('/api/admin/hackerspaces/preview')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminHackerspaces.preview);
   app
     .route('/api/admin/acquisition-stories')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminAcquisitionStories.list);
+  app
+    .route('/api/admin/location-corrections')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminLocationCorrections.list);
+
+  app
+    .route('/api/admin/location-corrections/send')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminLocationCorrections.send);
+
   app
     .route('/api/admin/audit-log')
     .all(adminPolicy.isAllowed)
@@ -89,6 +125,26 @@ const registerRoutes = app => {
     .route('/api/admin/reference-threads')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminReferenceThreads.list);
+  app
+    .route('/api/admin/experiences')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminExperienceChanges.findExperiences);
+
+  app
+    .route('/api/admin/experiences/:id/change-links')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminExperienceChanges.issueLink);
+
+  app
+    .route('/api/admin/experience-change-requests')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminExperienceChanges.listRequests);
+
+  app
+    .route('/api/admin/experience-change-requests/:id/decision')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminExperienceChanges.decide);
+
   app
     .route('/api/admin/newsletter-subscribers/split')
     .all(adminPolicy.isAllowed)

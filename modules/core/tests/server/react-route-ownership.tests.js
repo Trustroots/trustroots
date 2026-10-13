@@ -7,7 +7,7 @@ const {
   REACT_OWNED_PATHS,
   REACT_ROUTE_POLICIES,
   routeRequiresAuth,
-} = require('../../shared/react-route-ownership');
+} = require('../../shared/react-route-ownership.mts');
 
 const should = require('should');
 
@@ -188,7 +188,9 @@ describe('React route ownership', function () {
     for (const route of REACT_ROUTE_POLICIES.filter(route =>
       route.path.startsWith('/admin'),
     )) {
-      const acquisition = route.path.startsWith('/admin/acquisition-stories');
+      const acquisition =
+        route.path.startsWith('/admin/acquisition-stories') ||
+        route.path === '/admin/location-corrections';
       const staffSupport = route.path === '/admin/staff-blockers';
       should(
         getReactRouteAccessRedirect(route, { roles: ['welcome-team'] }),

@@ -19,9 +19,10 @@ import * as usersApi from '@/modules/users/client/api/users.api';
 import * as messagesApi from '@/modules/messages/client/api/messages.api';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
 import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
-import { REACT_ROUTE_POLICIES } from '@/modules/core/shared/react-route-ownership';
+import { REACT_ROUTE_POLICIES } from '@/modules/core/shared/react-route-ownership.mts';
 import type { Message } from '@/modules/messages/client/api/messages.api';
 import type { Offer } from '@/modules/offers/client/api/offers.api';
+import type { OfferReadPayload } from '@/modules/offers/shared/offer';
 
 const mockedUsersApi = jest.mocked(usersApi);
 const mockedMessagesApi = jest.mocked(messagesApi);
@@ -192,22 +193,22 @@ jest.mock('@/modules/contacts/client/api/contacts.api', () => ({
   list: jest.fn(async () => []),
 }));
 
-/* eslint-disable react/display-name, react/prop-types -- unrelated presentation is stubbed; page state and routing are real. */
+/* eslint-disable react/display-name -- unrelated presentation is stubbed; page state and routing are real. */
 jest.mock(
   '@/modules/messages/client/components/ThreadReply',
   () =>
-    ({ onSend }: { onSend: (content: string) => void }) =>
-      (
-        <button type="button" onClick={() => onSend('A fictional message')}>
-          Send message
-        </button>
-      ),
+    ({ onSend }: { onSend: (content: string) => void }) => (
+      <button type="button" onClick={() => onSend('A fictional message')}>
+        Send message
+      </button>
+    ),
 );
 jest.mock(
   '@/modules/messages/client/components/ThreadMessages',
   () =>
-    ({ otherUser }: { otherUser: { username: string } }) =>
-      <div>Conversation with {otherUser.username}</div>,
+    ({ otherUser }: { otherUser: { username: string } }) => (
+      <div>Conversation with {otherUser.username}</div>
+    ),
 );
 jest.mock('@/modules/users/client/components/Monkeybox', () => () => null);
 jest.mock(
@@ -221,8 +222,9 @@ jest.mock(
 jest.mock(
   '@/modules/users/client/components/AboutMe.component',
   () =>
-    ({ profile }: { profile: { description?: string } }) =>
-      <p>{profile.description}</p>,
+    ({ profile }: { profile: { description?: string } }) => (
+      <p>{profile.description}</p>
+    ),
 );
 jest.mock(
   '@/modules/search/client/components/SearchPlaceInput.component',
@@ -237,19 +239,20 @@ jest.mock(
     }: {
       offer?: Offer | null;
       onCloseSidebar: () => void;
-    }) =>
-      (
-        <aside>
-          {offer && <span>Selected offer {offer._id}</span>}
-          <button type="button" onClick={onCloseSidebar}>
-            Close search sidebar
-          </button>
-        </aside>
-      ),
+    }) => (
+      <aside>
+        {offer && <span>Selected offer {offer._id}</span>}
+        <button type="button" onClick={onCloseSidebar}>
+          Close search sidebar
+        </button>
+      </aside>
+    ),
 );
 const mockMapMount = jest.fn();
-const mockOffer: Offer = {
+const mockOffer: OfferReadPayload = {
   _id: '665100000000000000000001',
+  type: 'meet',
+  user: { _id: 'member-1', username: 'member' },
   location: [10, 20],
 };
 jest.mock('@/modules/search/client/components/SearchMap.component', () => {
@@ -274,7 +277,7 @@ jest.mock('@/modules/search/client/components/SearchMap.component', () => {
     );
   };
 });
-/* eslint-enable react/display-name, react/prop-types */
+/* eslint-enable react/display-name */
 
 function UpdateUser() {
   const { user, setUser } = useAuth();
@@ -334,6 +337,29 @@ describe('<ReactApp />', () => {
     expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
   });
 
+  it('scrolls to the element named by the URL fragment after the route renders', async () => {
+    const target = document.createElement('div');
+    target.id = 'rules-anchor';
+    target.scrollIntoView = jest.fn();
+    document.body.appendChild(target);
+
+    try {
+      renderApp('/rules#rules-anchor');
+
+      expect(await screen.findByText('Rules route')).toBeInTheDocument();
+      expect(target.scrollIntoView).toHaveBeenCalled();
+    } finally {
+      target.remove();
+    }
+  });
+
+  it('renders normally when the URL fragment matches no element', async () => {
+    renderApp('/rules#missing-anchor');
+
+    expect(await screen.findByText('Rules route')).toBeInTheDocument();
+    expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
+  });
+
   it('passes bootstrap user data to route and shell components', async () => {
     renderApp('/support?report=alice', {
       user: {
@@ -387,6 +413,16 @@ describe('<ReactApp />', () => {
       ),
     );
     expect(screen.queryByText('Admin route')).not.toBeInTheDocument();
+  });
+
+  it('preserves the removal fragment when guests need to sign in', async () => {
+    const navigate = jest.fn();
+    renderApp('/profile/edit/account#remove', {}, { navigate });
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith(
+        '/signin?continue=true&returnTo=%2Fprofile%2Fedit%2Faccount%23remove',
+      ),
+    );
   });
 
   it('defensively redirects non-admin users away from admin routes', async () => {
@@ -514,11 +550,13 @@ describe('<ReactApp />', () => {
         },
       ],
       // Preserve the API's explicit terminal null cursor at this mock boundary.
-      nextParams: null as unknown as Awaited<
-        ReturnType<typeof messagesApi.fetchMessages>
-      >['nextParams'],
+      nextParams: null,
     };
-    mockedMessagesApi.fetchMessages.mockResolvedValue(messagesResponse);
+    Reflect.apply(
+      mockedMessagesApi.fetchMessages.mockResolvedValue,
+      mockedMessagesApi.fetchMessages,
+      [messagesResponse],
+    );
     const sentMessage: Message = {
       _id: 'message-two',
       content: 'A fictional message',

@@ -7,7 +7,7 @@ import type { TabsProps } from 'react-bootstrap';
 import type OfferLocationEditor from '@/modules/offers/client/components/OfferLocationEditor.component';
 import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
-import type { Offer } from '@/modules/offers/client/api/offers.api';
+import type { OfferPayload } from '@/modules/offers/shared/offer';
 
 const offersApiMock = jest.mocked(offersApi);
 
@@ -56,9 +56,10 @@ const user: React.ComponentProps<typeof OfferHostPage>['user'] = {
   username: 'ada',
 };
 
-const hostOffer: Offer = {
+const hostOffer: OfferPayload = {
   _id: 'offer-1',
   type: 'host',
+  user: 'user-1',
   status: 'yes',
   description: 'A cosy spare room.',
   noOfferDescription: '',
@@ -96,7 +97,7 @@ describe('OfferHostPage', () => {
 
   it('creates a new host offer when saving', async () => {
     offersApiMock.getOffers.mockResolvedValue([]);
-    offersApiMock.createOffer.mockResolvedValue({});
+    offersApiMock.createOffer.mockResolvedValue({ message: 'Offer saved.' });
     render(<OfferHostPage user={user} />);
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
@@ -107,6 +108,13 @@ describe('OfferHostPage', () => {
     fireEvent.change(descriptionTextareas[descriptionTextareas.length - 1], {
       target: { value: 'Welcome to my home.' },
     });
+    expect(
+      screen.getByRole('button', { name: 'Save and Exit' }),
+    ).toBeDisabled();
+    fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
+    fireEvent.click(
+      document.querySelector('[data-testid="location-editor"] button')!,
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Save and Exit' }));
 
     await waitFor(() => {
@@ -115,13 +123,14 @@ describe('OfferHostPage', () => {
           description: 'Welcome to my home.',
           status: 'yes',
           type: 'host',
+          location: [52, 4],
         }),
       );
     });
   });
 
   it('updates an existing host offer when saving', async () => {
-    offersApiMock.updateOffer.mockResolvedValue({});
+    offersApiMock.updateOffer.mockResolvedValue({ message: 'Offer updated.' });
     render(<OfferHostPage user={user} />);
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
@@ -178,6 +187,11 @@ describe('OfferHostPage', () => {
     expect(
       await screen.findByText('Set your hosting location on the map.'),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Search for a place or move the map/),
+    ).toBeInTheDocument();
+    fireEvent.submit(document.querySelector('form')!);
+    expect(offersApiMock.createOffer).not.toHaveBeenCalled();
   });
 
   it('keeps the editor open when saving fails', async () => {
@@ -214,6 +228,22 @@ describe('OfferHostPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('explains the location requirement when a new member cannot host', async () => {
+    offersApiMock.getOffers.mockResolvedValue([]);
+    render(<OfferHostPage user={user} />);
+
+    expect(await screen.findByText('Can you host?')).toBeVisible();
+    fireEvent.click(screen.getByRole('radio', { name: 'No' }));
+
+    expect(
+      screen.getByText(/Choose a location in the Location tab before saving/),
+    ).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Location' })).toBeEnabled();
+    expect(
+      screen.getByRole('button', { name: 'Save and Exit' }),
+    ).toBeDisabled();
+  });
+
   it('adjusts guest count and circle visibility settings', async () => {
     render(<OfferHostPage user={user} />);
 
@@ -232,9 +262,9 @@ describe('OfferHostPage', () => {
   });
 
   it('ignores offer results after unmounting during load', async () => {
-    let resolveOffers!: (offers: Offer[]) => void;
+    let resolveOffers!: (offers: OfferPayload[]) => void;
     offersApiMock.getOffers.mockReturnValue(
-      new Promise(resolve => {
+      new Promise<OfferPayload[]>(resolve => {
         resolveOffers = resolve;
       }),
     );

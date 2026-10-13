@@ -1,7 +1,7 @@
 const sinon = require('sinon');
 require('should');
 const statsService = require('./../../server/services/stats.server.service.mjs');
-const influxService = require('./../../server/services/influx.server.service.mjs');
+const influxService = require('./../../server/services/influx.server.service.mts');
 
 function loadStatsService() {
   sinon.stub(influxService, 'stat').callsArg(1);
@@ -12,9 +12,8 @@ describe('Stats service unit tests', () => {
   afterEach(() => sinon.restore());
 
   it('keeps the CommonJS adapter identical to the ESM default and named exports', async () => {
-    const esmService = await import(
-      '../../server/services/stats.server.service.mjs'
-    );
+    const esmService =
+      await import('../../server/services/stats.server.service.mjs');
 
     esmService.default.should.equal(statsService);
     ['count', 'value', 'stat', 'deliver', '_validateStat'].forEach(name => {

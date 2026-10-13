@@ -3,13 +3,12 @@ import { getBootstrapData } from '@/modules/core/client/react-app/bootstrap';
 describe('React app bootstrap data', () => {
   const bootstrapKeys = [
     'env',
-    'gaId',
     'isNativeMobileApp',
     'settings',
     'title',
     'user',
   ] as const;
-  type BootstrapKey = typeof bootstrapKeys[number];
+  type BootstrapKey = (typeof bootstrapKeys)[number];
   const originalWindowValues = new Map<BootstrapKey, unknown>();
 
   beforeEach(() => {
@@ -31,7 +30,6 @@ describe('React app bootstrap data', () => {
   it('returns defaults when the server globals are absent', () => {
     expect(getBootstrapData()).toEqual({
       env: 'production',
-      gaId: undefined,
       isNativeMobileApp: false,
       settings: {
         flashTimeout: 6000,
@@ -43,7 +41,6 @@ describe('React app bootstrap data', () => {
 
   it('wraps server globals and preserves custom settings', () => {
     window.env = 'test';
-    window.gaId = 'ga-id';
     window.isNativeMobileApp = true;
     window.settings = {
       commit: 'abc123',
@@ -56,7 +53,6 @@ describe('React app bootstrap data', () => {
 
     expect(getBootstrapData()).toEqual({
       env: 'test',
-      gaId: 'ga-id',
       isNativeMobileApp: true,
       settings: {
         commit: 'abc123',

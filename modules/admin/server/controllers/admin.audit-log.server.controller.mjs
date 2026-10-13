@@ -42,7 +42,7 @@ export const list = async (req, res) => {
     [username, team].some(
       value => value !== undefined && typeof value !== 'string',
     ) ||
-    (team && !['admin', 'welcome-team'].includes(team))
+    (team && !['admin', 'welcome-team', 'support-team'].includes(team))
   ) {
     return res.status(400).send({ message: 'Invalid audit log filters.' });
   }

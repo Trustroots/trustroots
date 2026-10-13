@@ -24,7 +24,9 @@ function onChangeMock(): jest.MockedFunction<TrEditorProps['onChange']> {
   return jest.fn();
 }
 
-function onCtrlEnterMock(): jest.MockedFunction<TrEditorProps['onCtrlEnter']> {
+function onCtrlEnterMock(): jest.MockedFunction<
+  NonNullable<TrEditorProps['onCtrlEnter']>
+> {
   return jest.fn();
 }
 

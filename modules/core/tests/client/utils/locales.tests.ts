@@ -54,7 +54,7 @@ describe('locales utils', () => {
         english: undefined,
         production: true,
       },
-    ] as unknown as Locale[];
+    ] as Locale[];
 
     expect(getSearchedLocales(searchData)).toEqual(searchData);
     expect(getSearchedLocales(searchData, 'english')).toEqual([searchData[0]]);

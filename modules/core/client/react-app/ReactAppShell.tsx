@@ -12,7 +12,7 @@ import {
   getReactRouteAccessRedirect,
   getReactRoutePolicy,
   isReactOwnedPath,
-} from '@/modules/core/shared/react-route-ownership';
+} from '@/modules/core/shared/react-route-ownership.mts';
 import { useAuth } from './auth';
 import { useAppConfig, useSettings } from './AppProviders';
 import ReactFooter from './ReactFooter';
@@ -27,11 +27,18 @@ export default function ReactAppShell() {
   const locationHref = useRouterState({
     select: state => state.location.href,
   });
+  const locationHash = useRouterState({
+    select: state => state.location.hash,
+  });
   const router = useRouter();
   const location = new URL(locationHref, window.location.origin);
   const currentPath = `${location.pathname}${location.search}`;
   const route = getReactRoutePolicy(currentPath) as RoutePolicy | null;
-  const accessRedirect = getReactRouteAccessRedirect(route, user, currentPath);
+  const accessRedirect = getReactRouteAccessRedirect(
+    route,
+    user,
+    `${currentPath}${location.hash}`,
+  );
   const redirect =
     route?.redirectTo || accessRedirect || (!route && '/not-found');
   const navigate = (target: string) => {
@@ -63,6 +70,26 @@ export default function ReactAppShell() {
       window.scrollTo(0, 0);
     }
   }, [route, title]);
+
+  useEffect(() => {
+    const rawHash = locationHash || location.hash;
+    if (!rawHash) {
+      return undefined;
+    }
+
+    const targetId = decodeURIComponent(
+      rawHash.startsWith('#') ? rawHash.slice(1) : rawHash,
+    );
+    if (!targetId) {
+      return undefined;
+    }
+
+    // Wait until the app shell has finished resetting the page scroll position.
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(targetId)?.scrollIntoView({ block: 'start' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [locationHash, locationHref, route]);
 
   useEffect(() => {
     if (redirect) {

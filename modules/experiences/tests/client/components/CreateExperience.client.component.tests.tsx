@@ -37,7 +37,7 @@ const render = (component: React.ReactNode) =>
 function mockReadMineOnce(result: ExperienceMineFixture | [] | null) {
   // Some retry/error cases deliberately keep incomplete legacy API payloads.
   mockedExperiencesApi.readMine.mockResolvedValueOnce(
-    result as unknown as ExperienceMine | null,
+    result as ExperienceMine | null,
   );
 }
 
@@ -58,9 +58,7 @@ function makeSavedExperience(isPublic: boolean): ExperienceMine {
 function mockCreateOnce(isPublic: boolean | null) {
   const result = isPublic === null ? null : makeSavedExperience(isPublic);
   // The empty response case intentionally models a malformed API response.
-  mockedExperiencesApi.create.mockResolvedValueOnce(
-    result as unknown as ExperienceMine,
-  );
+  mockedExperiencesApi.create.mockResolvedValueOnce(result as ExperienceMine);
 }
 
 afterEach(() => {
@@ -209,8 +207,8 @@ describe('<CreateExperience />', () => {
       userTo: userTo._id,
     });
 
-    const successMessage = await waitFor(
-      () => getByText('Thank you for sharing your experience!').closest('div')!,
+    const successMessage = await waitFor(() =>
+      getByText('Thank you for sharing your experience!').closest('div')!,
     );
     expect(successMessage).toHaveTextContent(
       `Your experience will become public when ${userTo.displayName} shares their experience, or at most in 14 days.`,
@@ -454,7 +452,7 @@ describe('<CreateExperience />', () => {
 
   it.each(saveFailures)(
     'preserves the draft and enables retry after a failed save (%j)',
-    async (error: typeof saveFailures[number][0], message: string) => {
+    async (error: (typeof saveFailures)[number][0], message: string) => {
       mockedExperiencesApi.create.mockRejectedValueOnce(error);
       mockCreateOnce(false);
       await fillExperience();
@@ -704,7 +702,7 @@ describe('<CreateExperience />', () => {
 
   it.each(uncertainSaveErrors)(
     'confirms an uncertain save without another POST (%j)',
-    async (error: typeof uncertainSaveErrors[number]) => {
+    async (error: (typeof uncertainSaveErrors)[number]) => {
       await fillExperience();
       mockedExperiencesApi.create.mockRejectedValueOnce(error);
       mockReadMineOnce({

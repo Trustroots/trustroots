@@ -101,6 +101,12 @@ describe('E2E coverage reporter unit tests', () => {
       ).should.equal('Member flows');
     });
 
+    it('maps signup and support limit specs to Authentication', () => {
+      areaForSpec(
+        '/repo/tests/e2e/features/auth-account/signup-and-support-limits.spec.js',
+      ).should.equal('Authentication');
+    });
+
     it('maps missing or unknown specs to Other', () => {
       areaForSpec().should.equal('Other');
       areaForSpec('tests/e2e/features/custom/new-flow.spec.js').should.equal(

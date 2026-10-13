@@ -12,23 +12,54 @@ const aclInstance = createMemoryPolicy();
 export const invokeRolesPolicies = () => {
   aclInstance.allow([
     {
-      roles: ['welcome-team'],
+      roles: ['admin', 'support-team'],
+      allows: [
+        { resources: '/api/admin/support', permissions: ['get'] },
+        {
+          resources: '/api/admin/support/:requestId',
+          permissions: ['get', 'patch'],
+        },
+        {
+          resources: '/api/admin/support/:requestId/:kind',
+          permissions: ['get'],
+        },
+        { resources: '/api/admin/support-members', permissions: ['get'] },
+        {
+          resources: '/api/admin/support-members/:memberId',
+          permissions: ['get'],
+        },
+        { resources: '/api/admin/notes', permissions: ['get', 'post'] },
+      ],
+    },
+    {
+      roles: ['welcome-team', 'support-team'],
       allows: [
         {
           resources: '/api/admin/acquisition-stories',
           permissions: ['post'],
         },
+        { resources: '/api/admin/location-corrections', permissions: ['get'] },
         {
-          resources: '/api/admin/staff-blockers',
-          permissions: ['get'],
+          resources: '/api/admin/location-corrections/send',
+          permissions: ['post'],
         },
+        { resources: '/api/admin/staff-blockers', permissions: ['get'] },
       ],
     },
     {
       roles: ['admin'],
       allows: [
         {
+          resources: '/api/admin/hackerspaces/preview',
+          permissions: ['get'],
+        },
+        {
           resources: '/api/admin/acquisition-stories',
+          permissions: ['post'],
+        },
+        { resources: '/api/admin/location-corrections', permissions: ['get'] },
+        {
+          resources: '/api/admin/location-corrections/send',
           permissions: ['post'],
         },
         { resources: '/api/admin/staff-blockers', permissions: ['get'] },
@@ -72,9 +103,19 @@ export const invokeRolesPolicies = () => {
           resources: '/api/admin/users/by-last-ip-address',
           permissions: ['post'],
         },
+        { resources: '/api/admin/reference-threads', permissions: ['get'] },
+        { resources: '/api/admin/experiences', permissions: ['get'] },
         {
-          resources: '/api/admin/reference-threads',
+          resources: '/api/admin/experiences/:id/change-links',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/admin/experience-change-requests',
           permissions: ['get'],
+        },
+        {
+          resources: '/api/admin/experience-change-requests/:id/decision',
+          permissions: ['post'],
         },
         {
           resources: '/api/admin/newsletter-subscribers',

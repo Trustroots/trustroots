@@ -1,6 +1,8 @@
 /* global getComputedStyle, window */
 const { annotateFeature, expect, test } = require('../../support/fixtures');
 const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
+const { installNostrRelayStub } = require('../../support/nostr');
+const { finalizeEvent, generateSecretKey } = require('nostr-tools/pure');
 
 test('invalid circle addresses show a stable not-found page', async ({
   page,
@@ -36,7 +38,7 @@ test('circle pages use React and preserve guest navigation', async ({
   await page.getByRole('link', { name: /^Hitchhikers/ }).click();
   await expect(page).toHaveURL(/\/circles\/hitchhikers$/);
   await expect(
-    page.getByRole('heading', { name: 'Hitchhikers' }),
+    page.getByRole('heading', { name: 'Hitchhikers', exact: true }),
   ).toBeVisible();
   await page
     .getByRole('link', { name: 'Join Hitchhikers on Trustroots' })
@@ -83,12 +85,57 @@ test('circle membership retains account roles and legacy member links', async ({
     );
     await expect(page.getByText('No members to show yet')).toHaveCount(0);
     await page.unroute('**/api/tribes/hitchhikers/members');
+    await page.route('**/api/tribes/hitchhikers/members', route =>
+      route.fulfill({
+        json: {
+          contacts: [
+            {
+              _id: 'fictional-contact',
+              username: 'sample-contact',
+              displayName: 'Sample Contact',
+              avatarSource: 'none',
+              locationLiving: 'Fictional Harbour',
+              locationFrom: 'Example Coast',
+              tagline: 'Glad to share a meal',
+            },
+          ],
+          recommenders: [
+            {
+              _id: 'fictional-recommender',
+              username: 'sample-recommender',
+              displayName: 'Sample Recommender',
+              avatarSource: 'none',
+            },
+          ],
+          active: [
+            {
+              _id: 'fictional-active',
+              username: 'sample-active',
+              displayName: 'Sample Active',
+              avatarSource: 'none',
+            },
+          ],
+        },
+      }),
+    );
     const retryResponse = page.waitForResponse(response =>
       response.url().endsWith('/api/tribes/hitchhikers/members'),
     );
     await page.getByRole('button', { name: 'Try again', exact: true }).click();
     expect((await retryResponse).ok()).toBeTruthy();
     await expect(page.locator('.circle-member-error')).toHaveCount(0);
+    await expect(
+      page.getByRole('link', { name: /Sample Contact/ }),
+    ).toHaveClass(/member-search-card/);
+    await expect(page.getByText('Fictional Harbour')).toBeVisible();
+    await expect(page.getByText('Glad to share a meal')).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /Sample Recommender/ }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /Sample Active/ }),
+    ).toBeVisible();
+    await page.unroute('**/api/tribes/hitchhikers/members');
     await expect(
       page.getByRole('button', { name: 'Leave circle', exact: true }),
     ).toBeVisible();
@@ -152,6 +199,307 @@ test('circle membership retains account roles and legacy member links', async ({
         headers: { 'X-Trustroots-Request': '1' },
       });
   }
+});
+
+test('Hackers circle foregrounds the public place map and verification limits', async ({
+  page,
+}, testInfo) => {
+  const nomadwikiPlace = finalizeEvent(
+    {
+      kind: 33000,
+      created_at: 1700000000,
+      content: 'A community workshop.',
+      tags: [
+        ['d', 'spaceapi:https://workshop.example.test/api'],
+        ['L', 'physical-location'],
+        ['name', 'Example Workshop'],
+        ['g', 'gcpvj0'],
+        ['website', 'https://workshop.example.test'],
+        ['meta', 'source', 'https://api.spaceapi.io/'],
+      ],
+    },
+    new Uint8Array(32).fill(7),
+  );
+  await page.addInitScript(place => {
+    const NativeWebSocket = window.WebSocket;
+    window.WebSocket = class PlaceDiscoverySocket {
+      static CONNECTING = 0;
+      static OPEN = 1;
+      static CLOSING = 2;
+      static CLOSED = 3;
+      readyState = 0;
+      constructor(url, ...args) {
+        if (!/^wss:\/\/relay\.(trustroots|nomadwiki)\.org\/?$/.test(url))
+          return new NativeWebSocket(url, ...args);
+        this.url = url;
+        setTimeout(() => {
+          this.readyState = 1;
+          this.onopen?.(new Event('open'));
+        }, 0);
+      }
+      send(message) {
+        const [type, id] = JSON.parse(message);
+        if (type !== 'REQ') return;
+        queueMicrotask(() => {
+          if (this.url.includes('nomadwiki'))
+            this.onmessage?.(
+              new MessageEvent('message', {
+                data: JSON.stringify(['EVENT', id, place]),
+              }),
+            );
+          this.onmessage?.(
+            new MessageEvent('message', { data: JSON.stringify(['EOSE', id]) }),
+          );
+        });
+      }
+      close() {
+        this.readyState = 3;
+        queueMicrotask(() => this.onclose?.(new Event('close')));
+      }
+    };
+  }, nomadwikiPlace);
+  let wikiRequested = false;
+  await page.route('https://wiki.trustroots.org/**', route => {
+    wikiRequested = true;
+    return route.abort();
+  });
+  await page.route('**/api/tribes/hackers', route =>
+    route.fulfill({
+      json: {
+        _id: 'hackers-circle',
+        slug: 'hackers',
+        label: 'Hackers',
+        count: 0,
+        description: 'People who enjoy building and sharing technology.',
+      },
+    }),
+  );
+  await page.goto('/circles/hackers');
+  await expect(
+    page.getByRole('heading', { name: 'Hackers', exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Hackerspaces around the world' }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      'SpaceAPI-reported locations. Listings have not been independently verified.',
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Hackerspaces and community workshops' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'HackerspaceWiki' }),
+  ).toHaveAttribute(
+    'href',
+    'https://wiki.hackerspaces.org/Category:Hackerspace',
+  );
+  await expect(
+    page.getByRole('link', { name: 'Trustroots Wiki' }),
+  ).toHaveAttribute(
+    'href',
+    'https://wiki.trustroots.org/index.php?title=Hackers&oldid=26505',
+  );
+  const resourceLinks = page.locator('.hackers-circle-resources a');
+  for (const link of await resourceLinks.all()) {
+    await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    await expect(link).toHaveAttribute('referrerpolicy', 'no-referrer');
+    await expect(link).toHaveAttribute('href', /^https:\/\//);
+  }
+  expect(wikiRequested).toBe(false);
+  const map = page.locator('.circle-location-map');
+  await expect(map).toBeVisible();
+  const panel = await page.locator('.circle-location-map-panel').boundingBox();
+  const viewportHeight = await page.evaluate(() => window.innerHeight);
+  expect(panel.y).toBeLessThan(viewportHeight);
+  await expect(page.getByText('1 SpaceAPI-reported places')).toBeVisible();
+  await expect(page.locator('.circle-location-map-panel--brand')).toHaveCSS(
+    'border-top-color',
+    'rgb(18, 181, 145)',
+  );
+  await expect(page.locator('.circle-location-map-panel--brand')).toHaveCSS(
+    'text-shadow',
+    'none',
+  );
+  const marker = map.locator('.leaflet-interactive');
+  await expect(marker).toHaveAttribute('fill', '#12b591');
+  await marker.click();
+  await expect(page.locator('.leaflet-popup-content strong')).toHaveText(
+    'Example Workshop',
+  );
+  await expect(map.locator('.leaflet-popup')).toHaveCSS('opacity', '1');
+  await page.screenshot({
+    path: testInfo.outputPath('hackerspace-map.png'),
+    fullPage: true,
+  });
+});
+
+test('administrators can review a SpaceAPI import preview', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const NativeWebSocket = window.WebSocket;
+    window.placePublications = [];
+    // Keep the browser test offline for the two publication relays while
+    // retaining normal sockets (including the webpack development server).
+    window.WebSocket = class PlaceRelaySocket {
+      static CONNECTING = 0;
+      static OPEN = 1;
+      static CLOSING = 2;
+      static CLOSED = 3;
+      readyState = 0;
+      constructor(url, ...args) {
+        if (!/^wss:\/\/relay\.(trustroots|nomadwiki)\.org\/?$/.test(url)) {
+          return new NativeWebSocket(url, ...args);
+        }
+        this.url = url;
+        setTimeout(() => {
+          this.readyState = 1;
+          this.onopen?.(new Event('open'));
+        }, 0);
+      }
+      send(message) {
+        const [type, value] = JSON.parse(message);
+        let reply;
+        if (type === 'REQ') reply = ['EOSE', value];
+        if (type === 'EVENT') {
+          window.placePublications.push({ relay: this.url, event: value });
+          reply = ['OK', value.id, true, 'accepted'];
+        }
+        if (reply)
+          queueMicrotask(() =>
+            this.onmessage?.(
+              new MessageEvent('message', { data: JSON.stringify(reply) }),
+            ),
+          );
+      }
+      close() {
+        this.readyState = 3;
+        queueMicrotask(() => this.onclose?.(new Event('close')));
+      }
+    };
+    window.nostr = {
+      getPublicKey: async () => 'a'.repeat(64),
+      signEvent: event =>
+        new Promise(resolve => {
+          window.approvePlaceSignature = () =>
+            resolve({
+              ...event,
+              id: 'c'.repeat(64),
+              pubkey: 'a'.repeat(64),
+              sig: 'b'.repeat(128),
+            });
+        }),
+    };
+  });
+  await signInViaApi(page, undefined, SEEDED_ADMIN);
+  await page.route('**/api/admin/hackerspaces/preview', route =>
+    route.fulfill({
+      json: [
+        {
+          endpoint: 'https://example.test/api',
+          valid: true,
+          eligible: true,
+          name: 'Example Workshop',
+          website: 'https://example.test',
+          latitude: 51.5,
+          longitude: -0.1,
+          address: 'Example City',
+          addressParts: ['', 'Example City', '', '', ''],
+          description: 'A shared workshop',
+          open: 'open',
+          fetchedAt: '2026-10-12T10:00:00Z',
+          spaceType: 'hackerspace',
+        },
+        {
+          endpoint: 'https://closed.example.test/api',
+          valid: true,
+          eligible: false,
+          name: 'Closed Workshop',
+          website: 'https://closed.example.test',
+          latitude: null,
+          longitude: null,
+          address: 'Example City',
+          description: 'Closed workshop',
+          open: 'closed',
+          fetchedAt: '2026-10-12T10:00:00Z',
+          spaceType: 'hackerspace',
+        },
+        {
+          endpoint: 'https://offline.test/api',
+          valid: false,
+          eligible: false,
+          name: '',
+          website: '',
+          latitude: null,
+          longitude: null,
+          address: '',
+          fetchedAt: '2026-10-12T10:00:00Z',
+          spaceType: 'hackerspace',
+        },
+      ],
+    }),
+  );
+  await page.goto('/admin/hackerspaces');
+  await page.getByRole('button', { name: 'Fetch preview' }).click();
+  await expect(page.getByText('Example Workshop')).toBeVisible();
+  await expect(page.getByRole('cell', { name: 'Addition' })).toBeVisible();
+  await expect(
+    page.getByRole('cell', { name: 'Closed; skip publication' }),
+  ).toBeVisible();
+  await expect(page.getByText(/not human-verified/i)).toBeVisible();
+  await expect(
+    page.getByRole('cell', {
+      name: 'Temporarily invalid; keep last-known listing',
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Sign and publish approved changes' }),
+  ).toBeEnabled();
+  await page
+    .getByRole('button', { name: 'Sign and publish approved changes' })
+    .click();
+  await expect(page.getByText(/Signing and publishing 1 of 1/)).toBeVisible();
+  expect(await page.evaluate(() => window.placePublications)).toHaveLength(0);
+  await page.evaluate(() => window.approvePlaceSignature());
+  await expect(
+    page.getByText(/Published 1 place events; 0 failed/),
+  ).toBeVisible();
+  await expect(
+    page.getByText('wss://relay.trustroots.org: 1 published; 0 failed'),
+  ).toBeVisible();
+  await expect(
+    page.getByText('wss://relay.nomadwiki.org: 1 published; 0 failed'),
+  ).toBeVisible();
+  const publications = await page.evaluate(() => window.placePublications);
+  expect(publications).toHaveLength(2);
+  expect(publications[0].event).toEqual(publications[1].event);
+  expect(publications[0].event.kind).toBe(33000);
+  expect(
+    publications[0].event.tags.every(tag =>
+      tag.every(value => typeof value === 'string'),
+    ),
+  ).toBe(true);
+  await page.route('**/api/admin/hackerspaces/preview', route =>
+    route.fulfill({
+      status: 502,
+      json: { message: 'Collector request timed out.' },
+    }),
+  );
+  await page.getByRole('button', { name: 'Fetch preview' }).click();
+  await expect(
+    page.getByText(
+      'Could not fetch the SpaceAPI Collector: Collector request timed out. No events were changed.',
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('cell', { name: 'Example Workshop' }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Sign and publish approved changes' }),
+  ).toBeDisabled();
+  expect(await page.evaluate(() => window.placePublications)).toHaveLength(2);
 });
 
 test('member navigation menus and narrow layout remain usable', async ({
@@ -231,4 +579,147 @@ test('member navigation menus and narrow layout remain usable', async ({
   const headerBounds = await header.boundingBox();
   expect(headerBounds.x).toBeGreaterThanOrEqual(0);
   expect(headerBounds.x + headerBounds.width).toBeLessThanOrEqual(391);
+});
+
+test('Hackers circle puts community resources beside members on desktop and stacks them on mobile', async ({
+  page,
+}) => {
+  const events = [
+    finalizeEvent(
+      {
+        kind: 33000,
+        created_at: Math.floor(Date.now() / 1000),
+        content: 'A fictional community workshop.',
+        tags: [
+          ['d', 'fictional-workshop'],
+          ['L', 'physical-location'],
+          ['g', 'u09tvw'],
+          ['name', 'Example Workshop'],
+          ['meta', 'source', 'https://api.spaceapi.io/'],
+          ['meta', 'open', 'open'],
+          ['website', 'https://workshop.example.test/'],
+        ],
+      },
+      generateSecretKey(),
+    ),
+  ];
+  await installNostrRelayStub(page, { events });
+  await installNostrRelayStub(page, {
+    events,
+    relayUrl: 'wss://relay.nomadwiki.org',
+  });
+  // Clearly labelled synthetic tiles keep visual layout checks independent of
+  // remote map servers. These are test graphics, not geographical evidence.
+  await page.route(
+    /https:\/\/(?:[abc]\.tile\.openstreetmap\.org\/|api\.mapbox\.com\/styles\/)/,
+    route =>
+      route.fulfill({
+        contentType: 'image/svg+xml',
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#dce9e2"/><path d="M0 0H256V256H0Z M0 128H256 M128 0V256" fill="none" stroke="#becfc4"/><text x="128" y="120" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#6f8478">Map tile fixture</text></svg>',
+      }),
+  );
+  await page.route('**/uploads-circle/hackers/**', route =>
+    route.fulfill({
+      path: 'public/uploads-circle/hackers.jpg',
+      contentType: 'image/jpeg',
+    }),
+  );
+  await signInViaApi(page, undefined, SEEDED_ADMIN);
+  await page.goto('/circles');
+  const response = await page.request.get('/api/tribes/hitchhikers');
+  const circle = await response.json();
+  const wasMember = await page.evaluate(
+    id => window.user.memberIds.includes(id),
+    circle._id,
+  );
+  await page.request.post(`/api/users/memberships/${circle._id}`, {
+    headers: { 'X-Trustroots-Request': '1' },
+  });
+  await page.route('**/api/tribes/hackers', route =>
+    route.fulfill({
+      json: {
+        ...circle,
+        slug: 'hackers',
+        label: 'Hackers',
+        color: '12b591',
+        image: 'hackers.jpg',
+        description: 'People who enjoy building and sharing technology.',
+      },
+    }),
+  );
+  await page.route('**/api/tribes/hackers/members', route =>
+    route.fulfill({
+      json: {
+        contacts: [],
+        recommenders: [],
+        active: [
+          {
+            _id: 'fictional-builder',
+            username: 'example-builder',
+            displayName: 'Example Builder',
+            avatarSource: 'none',
+            locationLiving: 'Fictional Harbour',
+            locationFrom: 'Example Coast',
+            tagline: 'Sharing tools and ideas',
+          },
+          {
+            _id: 'fictional-tinkerer',
+            username: 'sample-tinkerer',
+            displayName: 'Sample Tinkerer',
+            avatarSource: 'none',
+            locationLiving: 'Example Valley',
+            locationFrom: 'Fictional Island',
+            tagline: 'Building things together',
+          },
+        ],
+      },
+    }),
+  );
+  try {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto('/circles/hackers');
+    const community = page.locator('.hackers-circle-community.has-members');
+    const resources = community.locator('.hackers-circle-resources');
+    const members = community.locator('.circle-member-discovery');
+    await expect(members.locator('.member-search-card')).toHaveCount(2);
+    await expect(members.getByText('Example Builder')).toBeVisible();
+    await expect(members.getByText('Sample Tinkerer')).toBeVisible();
+    await expect(page.locator('.leaflet-tile-loaded').first()).toBeVisible();
+    await page.evaluate(async () => {
+      const image = new window.Image();
+      image.src = '/uploads-circle/hackers/1400x900.jpg';
+      await image.decode();
+    });
+    await expect(
+      resources.getByRole('link', { name: 'Circle Wiki', exact: true }),
+    ).toHaveAttribute('href', 'https://wiki.trustroots.org/en/Hackers');
+    const desktopResources = await resources.boundingBox();
+    const desktopMembers = await members.boundingBox();
+    expect(Math.abs(desktopResources.y - desktopMembers.y)).toBeLessThan(2);
+    expect(desktopMembers.x).toBeGreaterThan(
+      desktopResources.x + desktopResources.width,
+    );
+    await page.screenshot({
+      path: 'tmp/screenshots/circle-hackers-desktop.png',
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    const mobileResources = await resources.boundingBox();
+    const mobileMembers = await members.boundingBox();
+    expect(mobileMembers.y).toBeGreaterThanOrEqual(
+      mobileResources.y + mobileResources.height,
+    );
+    expect(
+      await page.evaluate(() => window.document.documentElement.scrollWidth),
+    ).toBeLessThanOrEqual(390);
+    await page.screenshot({
+      path: 'tmp/screenshots/circle-hackers-mobile.png',
+      fullPage: true,
+    });
+  } finally {
+    if (!wasMember)
+      await page.request.delete(`/api/users/memberships/${circle._id}`, {
+        headers: { 'X-Trustroots-Request': '1' },
+      });
+  }
 });

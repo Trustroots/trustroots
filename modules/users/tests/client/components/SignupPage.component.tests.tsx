@@ -19,11 +19,8 @@ import {
 } from '@/modules/core/client/services/client-runtime';
 import type { AuthUser } from '@/modules/core/client/react-app/auth';
 import type JoinButton from '@/modules/tribes/client/components/JoinButton';
-import type {
-  MembershipUpdate,
-  TribeSummary,
-} from '@/modules/tribes/client/api/tribes.api';
-import type { AuthenticatedUser } from '@/modules/users/client/api/auth.api';
+import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
+import { resolveMalformed } from '@/testutils/client/malformed-fixtures';
 
 jest.mock('lodash/shuffle', () => jest.fn(items => items));
 jest.mock('@/modules/users/client/api/auth.api');
@@ -87,8 +84,9 @@ describe('SignupPage', () => {
     jest.clearAllMocks();
     routeParams.mockReturnValue({});
     readTribes.mockResolvedValue(suggestedTribes);
-    // The missing-tribe response is a supported API edge case.
-    getTribe.mockResolvedValue(null as unknown as TribeSummary);
+    // Keep the default missing-circle response persistent so per-test circle
+    // results are not preceded by a stale one-time response.
+    Reflect.apply(getTribe.mockResolvedValue, getTribe, [null]);
     validateSignup.mockResolvedValue({ valid: true });
   });
 
@@ -191,7 +189,7 @@ describe('SignupPage', () => {
 
   it('continues without a missing referred circle', async () => {
     routeParams.mockReturnValue({ tribe: 'missing-circle' });
-    getTribe.mockResolvedValue(null as unknown as TribeSummary);
+    resolveMalformed(getTribe, null);
 
     renderPage();
 
@@ -219,7 +217,7 @@ describe('SignupPage', () => {
 
   it('renders circle suggestions when signup leaves the current user unavailable', async () => {
     // Signup may complete while the browser has no current-user payload.
-    signup.mockResolvedValue(null as unknown as AuthenticatedUser);
+    resolveMalformed(signup, null);
 
     renderPage();
     fillStepOne();
@@ -276,8 +274,8 @@ describe('SignupPage', () => {
       count: 5,
     });
     // These responses exercise legacy endpoints that omit their user payload.
-    signup.mockResolvedValue(null as unknown as AuthenticatedUser);
-    joinTribe.mockResolvedValue({ user: null } as unknown as MembershipUpdate);
+    resolveMalformed(signup, null);
+    resolveMalformed(joinTribe, { user: null });
 
     renderPage();
     await screen.findByText('+ Circle Hitchhikers');

@@ -17,7 +17,7 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
-  const { setUser } = useAuth() as { setUser: (user: UserProfile) => void };
+  const { setUser } = useAuth();
   const { profileMinimumLength = 140 } = useSettings();
   const [draftUser, setDraftUser] = useState({ ...user });
   const [hasChanges, setHasChanges] = useState(false);
@@ -33,8 +33,16 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
     setStatusMessage('');
 
     try {
-      const savedUser = await update(draftUser);
-      setUser(savedUser);
+      const savedUser = await update({
+        firstName: draftUser.firstName,
+        lastName: draftUser.lastName,
+        tagline: draftUser.tagline,
+        description: draftUser.description,
+        gender: draftUser.gender,
+        birthdate: draftUser.birthdate,
+        languages: draftUser.languages,
+      });
+      setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
       setHasChanges(false);
       setStatusMessage(t('Profile updated.'));

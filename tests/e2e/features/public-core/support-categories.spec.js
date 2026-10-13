@@ -8,7 +8,7 @@ const { SEEDED_MEMBERS, signInViaApi } = require('../../support/helpers');
 const { withE2eDb } = require('../../support/db');
 const {
   SUPPORT_CATEGORIES,
-} = require('../../../../modules/support/shared/categories');
+} = require('../../../../modules/support/shared/categories.ts');
 
 // Leave the form visible so the screenshots workflow captures each category's
 // guidance, rather than only the confirmation shown by submission tests.
@@ -109,8 +109,8 @@ for (const category of ['account', 'reportBug', 'other']) {
       category === 'account'
         ? 'Account help requests retain their category in storage and email.'
         : category === 'reportBug'
-        ? 'Bug reports retain their category in storage and email.'
-        : 'Other requests retain their category in storage and email.',
+          ? 'Bug reports retain their category in storage and email.'
+          : 'Other requests retain their category in storage and email.',
     ]);
     await page.goto('/support');
     await expect(page.getByLabel('What can we help with?')).toHaveValue(

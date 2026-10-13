@@ -187,9 +187,9 @@ function redactMetadata(value) {
         const child = isSensitiveKey(key)
           ? REDACTED
           : descriptor &&
-            Object.prototype.hasOwnProperty.call(descriptor, 'value')
-          ? visit(descriptor.value, depth + 1)
-          : ACCESSOR;
+              Object.prototype.hasOwnProperty.call(descriptor, 'value')
+            ? visit(descriptor.value, depth + 1)
+            : ACCESSOR;
         Object.defineProperty(result, key, {
           value: child,
           enumerable: true,

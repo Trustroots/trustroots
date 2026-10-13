@@ -73,6 +73,11 @@ describe('Core CRUD tests', function () {
         .expect(/https:\/\/1p\.trustroots\.org\/script\.js/)
         .expect(new RegExp(`data-website-id="${config.umami.websiteId}"`))
         .expect(/data-do-not-track="true"/)
+        .expect(res => {
+          res.text.should.not.match(
+            /www\.google-analytics\.com|GoogleAnalyticsObject|\bgaId\b/,
+          );
+        })
         .end(function (err) {
           return done(err);
         });

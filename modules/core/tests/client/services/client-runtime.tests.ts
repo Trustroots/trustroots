@@ -12,7 +12,7 @@ type NavigationLocationMock = Pick<Partial<Location>, 'assign' | 'href'>;
 
 function asNavigationLocation(location: NavigationLocationMock): Location {
   // These tests intentionally provide only the browser fields navigation uses.
-  return location as unknown as Location;
+  return location as Location;
 }
 
 describe('client runtime helpers', () => {

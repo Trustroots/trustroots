@@ -33,6 +33,9 @@ function mockResponse() {
 }
 
 async function loadController(options = {}) {
+  sinon
+    .stub(mongoose.model('User'), 'findOne')
+    .returns({ select: async () => ({ _id: new mongoose.Types.ObjectId() }) });
   const savedSupportRequests = [];
   const SupportRequest = mongoose.model('SupportRequest');
   sinon.stub(SupportRequest.prototype, 'save').callsFake(function (callback) {
@@ -61,9 +64,8 @@ async function loadController(options = {}) {
     .callsFake((statsObject, callback) => callback());
   const log = sinon.stub(winston.Logger.prototype, 'log');
   sinon.stub(config, 'supportEmail').value('support@example.test');
-  const controller = await import(
-    '../../server/controllers/support.server.controller.mjs'
-  );
+  const controller =
+    await import('../../server/controllers/support.server.controller.mjs');
 
   return {
     controller,

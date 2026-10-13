@@ -6,21 +6,28 @@ import styled, { css } from 'styled-components';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import JoinButton from './JoinButton';
 import CircleMemberDiscovery from './CircleMemberDiscovery';
+import HackerspaceMap from './HackerspaceMap';
+import HitchhikingMap from './HitchhikingMap';
 import { getCircleBackgroundStyle } from '../utils';
 import * as api from '../api/tribes.api';
 import type { MembershipUpdate, TribeSummary } from '../api/tribes.api';
 import type { UserProfile } from '@/modules/users/client/types';
 
+const resourceLinkProps = {
+  rel: 'noopener noreferrer',
+  referrerPolicy: 'no-referrer' as const,
+};
+
 export function getTribeHeaderBackgroundStyle(tribe: TribeSummary) {
   const style = getCircleBackgroundStyle(tribe, '1400x900');
 
   return css`
-    ${style.backgroundImage
-      ? `background-image: ${style.backgroundImage};`
-      : ''}
-    ${style.backgroundColor
-      ? `background-color: ${style.backgroundColor};`
-      : ''}
+    ${
+      style.backgroundImage ? `background-image: ${style.backgroundImage};` : ''
+    }
+    ${
+      style.backgroundColor ? `background-color: ${style.backgroundColor};` : ''
+    }
   `;
 }
 
@@ -141,13 +148,20 @@ export default function TribeDetailPage({
     tribe.count === 0
       ? (t('No members yet') as string)
       : tribe.count === 1
-      ? (t('One member') as string)
-      : (t('{{count, number}} members', { count: tribe.count }) as string);
+        ? (t('One member') as string)
+        : (t('{{count, number}} members', { count: tribe.count }) as string);
   const wikiUrl = circleWikiUrl(tribe);
+  const isHackersCircle = tribe.slug === 'hackers';
+  const hasLocationMap = isHackersCircle || tribe.slug === 'hitchhikers';
 
   return (
     <>
-      <Header tribe={tribe} className={user ? undefined : 'is-guest'}>
+      <Header
+        tribe={tribe}
+        className={`${user ? '' : 'is-guest'} ${
+          hasLocationMap ? 'has-location-map' : ''
+        }`}
+      >
         <div className="tribe-header-info">
           <div className="container">
             <div className="row no-gutters">
@@ -162,9 +176,13 @@ export default function TribeDetailPage({
             </div>
             <div className="row">
               <div
-                className={`${
-                  user ? 'col-xs-10' : 'col-xs-12'
-                } col-sm-offset-1 col-sm-7 col-md-6 col-lg-6`}
+                className={
+                  hasLocationMap
+                    ? 'col-xs-12 col-md-5 col-lg-5'
+                    : `${
+                        user ? 'col-xs-10' : 'col-xs-12'
+                      } col-sm-offset-1 col-sm-7 col-md-6 col-lg-6`
+                }
               >
                 <p className="lead tribe-pre">
                   {user
@@ -181,8 +199,6 @@ export default function TribeDetailPage({
                     dangerouslySetInnerHTML={{ __html: tribe.description }}
                   />
                 )}
-                <br />
-                <br />
                 {!user && (
                   <p className="lead tribe-intro">
                     {
@@ -204,22 +220,21 @@ export default function TribeDetailPage({
                     <JoinButton
                       tribe={tribe}
                       user={user}
-                      className="btn btn-lg btn-default"
-                      activeClassName="btn btn-lg btn-primary btn-action"
+                      className="btn btn-default"
+                      activeClassName="btn btn-default circle-membership-active"
                       icon={false}
                       memberLabel={t("You're a member") as string}
                       onUpdated={handleMembershipUpdated}
                     />
-                    &nbsp;
                     <a
-                      className="btn btn-lg btn-default"
+                      className="btn btn-primary"
                       href={`/search?tribe=${tribe.slug}`}
                     >
                       {t('Find members') as string}
                     </a>
-                    {wikiUrl && (
+                    {wikiUrl && !isHackersCircle && (
                       <a
-                        className="btn btn-lg btn-default"
+                        className="btn btn-default"
                         href={wikiUrl}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -249,7 +264,7 @@ export default function TribeDetailPage({
                     {t('How does it work?') as string}
                   </a>
                 )}
-                {wikiUrl && !user && (
+                {wikiUrl && !user && !isHackersCircle && (
                   <a
                     className="btn btn-lg btn-link tribe-readmore"
                     href={wikiUrl}
@@ -269,6 +284,11 @@ export default function TribeDetailPage({
                   </p>
                 )}
               </div>
+              {hasLocationMap && (
+                <div className="col-xs-12 col-md-7 col-lg-7 circle-hero-map">
+                  {isHackersCircle ? <HackerspaceMap /> : <HitchhikingMap />}
+                </div>
+              )}
             </div>
           </div>
           {tribe.attribution && (
@@ -283,7 +303,113 @@ export default function TribeDetailPage({
           )}
         </div>
       </Header>
-      {user && isMember && <CircleMemberDiscovery circle={tribe} user={user} />}
+      {/* Keep this a reviewed snapshot rendered as JSX text and fixed HTTPS links.
+          Do not embed remote wiki HTML, scripts, images or frames here. */}
+      <div
+        className={
+          isHackersCircle
+            ? `hackers-circle-community${
+                user && isMember ? ' has-members' : ''
+              }`
+            : undefined
+        }
+      >
+        {isHackersCircle && (
+          <section className="hackers-circle-resources">
+            <h3>{t('Hackerspaces and community workshops') as string}</h3>
+            <p>
+              {
+                t(
+                  'Trustroots is open source, and hackers are welcome to help improve the codebase that runs the network.',
+                ) as string
+              }{' '}
+              <a
+                {...resourceLinkProps}
+                href="https://github.com/trustroots/trustroots/"
+              >
+                {t('Explore the Trustroots codebase') as string}
+              </a>
+              .
+            </p>
+            <p>
+              {
+                t(
+                  'Use these directories to discover hackerspaces, hacklabs, makerspaces and community workshops. Listings may be out of date or incomplete, so check a space’s own website or contact its members before visiting.',
+                ) as string
+              }
+            </p>
+            <ul>
+              <li>
+                <a
+                  {...resourceLinkProps}
+                  href="https://wiki.hackerspaces.org/Category:Hackerspace"
+                >
+                  HackerspaceWiki
+                </a>{' '}
+                — {t('community-maintained directory') as string}
+              </li>
+              <li>
+                <a {...resourceLinkProps} href="https://atlas.hackerspace.sh/">
+                  Hackerspace Atlas
+                </a>{' '}
+                — {t('map based on HackerspaceWiki data') as string}
+              </li>
+              <li>
+                <a
+                  {...resourceLinkProps}
+                  href="https://github.com/SpaceApi/directory"
+                >
+                  SpaceAPI directory
+                </a>{' '}
+                — {t('spaces publishing a SpaceAPI endpoint') as string}
+              </li>
+              <li>
+                <a
+                  {...resourceLinkProps}
+                  href="https://www.wikidata.org/wiki/Wikidata:SPARQL_query_service"
+                >
+                  Wikidata Query Service
+                </a>{' '}
+                — {t('structured data for places and communities') as string}
+              </li>
+              <li>
+                <a {...resourceLinkProps} href="https://hackspace.org.uk/">
+                  HackspaceUK
+                </a>{' '}
+                — {t('UK-focused directory and community resource') as string}
+              </li>
+            </ul>
+            <div className="hackers-circle-resource-footer">
+              <a
+                {...resourceLinkProps}
+                className="btn btn-default"
+                href={wikiUrl}
+              >
+                {t('Circle Wiki') as string}
+              </a>
+              <small className="text-muted">
+                {t('Adapted from the') as string}{' '}
+                <a
+                  {...resourceLinkProps}
+                  href="https://wiki.trustroots.org/index.php?title=Hackers&oldid=26505"
+                >
+                  Trustroots Wiki
+                </a>
+                {' · '}
+                <a
+                  {...resourceLinkProps}
+                  href="https://creativecommons.org/licenses/by-sa/4.0/"
+                >
+                  CC BY-SA 4.0
+                </a>
+              </small>
+            </div>
+          </section>
+        )}
+        {user && isMember && (
+          <CircleMemberDiscovery circle={tribe} user={user} />
+        )}
+      </div>
     </>
   );
 }

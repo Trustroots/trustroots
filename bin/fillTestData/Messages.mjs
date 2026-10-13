@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import mongooseService from './../../config/lib/mongoose.mjs';
 import yargs from 'yargs';
-import faker from 'faker';
+import { faker } from '@faker-js/faker';
 import mongoose from 'mongoose';
 import config from './../../config/config.mjs';
 /**
@@ -160,7 +160,7 @@ function seedThreads() {
             // Add messages until we reach the total
             while (messageIndex > 0) {
               // @TODO: valid lint issue that should be fixed
-              // eslint-disable-next-line no-inner-declarations
+
               function addMessage(depth, userTo, userFrom) {
                 const message = new Message();
                 message.created = addDays(Date.now(), -depth + 1);

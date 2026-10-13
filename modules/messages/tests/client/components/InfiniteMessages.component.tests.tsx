@@ -37,7 +37,7 @@ describe('<InfiniteMessages>', function () {
 
     // The source component intentionally accepts React.Ref, while forwardRef's
     // legacy ref type is broader. This narrows only the test component contract.
-    return ScrollableComponent as unknown as ScrollableComponentType;
+    return ScrollableComponent as ScrollableComponentType;
   }
 
   function setScrollMetrics(

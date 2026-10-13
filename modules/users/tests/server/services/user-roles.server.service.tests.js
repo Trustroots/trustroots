@@ -4,9 +4,8 @@ require('should');
 
 describe('Service: user-roles', function () {
   it('exposes the same roles and functions through ESM', async function () {
-    const esmService = await import(
-      '../../../server/services/user-roles.server.service.mjs'
-    );
+    const esmService =
+      await import('../../../server/services/user-roles.server.service.mjs');
     for (const name of [
       'restrictedMessagingRoles',
       'hasRole',

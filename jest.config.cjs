@@ -1,4 +1,5 @@
 module.exports = {
+  roots: ['<rootDir>/modules'],
   watchman: false,
   moduleNameMapper: {
     '^@/(.*)\\.js$': '<rootDir>/$1',
@@ -28,10 +29,10 @@ module.exports = {
   coverageReporters: ['text-summary', 'html', 'json-summary', 'lcov'],
   setupFilesAfterEnv: ['<rootDir>/jest/jest.setup.js'],
   transform: {
-    '^.+\\.[jt]sx?$': 'babel-jest',
+    '^.+\\.m?[jt]sx?$': 'babel-jest',
   },
   // Include nostr-tools so nested ESM-only @noble and @scure packages are transformed.
   transformIgnorePatterns: [
-    '/node_modules/(?!(use-local-storage-state|nostr-tools|@noble|@scure)/)',
+    '/node_modules/(?!(\\.pnpm/[^/]+/node_modules/)?(use-local-storage-state|nostr-tools|@noble|@scure)/)',
   ],
 };

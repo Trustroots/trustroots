@@ -17,7 +17,7 @@ function getStories(limit) {
         $ne: '',
       },
     },
-    '_id acquisitionStory created displayName email emailTemporary languages locationFrom locationLiving member public username',
+    '_id acquisitionStory created displayName email emailTemporary languages locationFrom locationLiving member public roles username',
   )
     .sort('-created')
     .limit(limit)
@@ -27,6 +27,11 @@ const RESTRICTED_MATCH_LIMIT = 10;
 const RESTRICTED_SOURCE_LIMIT = 1000;
 const MIN_IDENTIFIER_LENGTH = 4;
 const MATCH_BATCH_SIZE = 100;
+function restrictionStatuses(user) {
+  return ['suspended', 'shadowban'].filter(status =>
+    user.roles.includes(status),
+  );
+}
 function normalizeIdentifier(value) {
   return value.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
@@ -86,7 +91,7 @@ async function getRestrictedMatches(story, restrictedUsers) {
         _id: user._id,
         displayName: user.displayName,
         matchReasons,
-        roles: user.roles,
+        restrictionStatuses: restrictionStatuses(user),
         username: user.username,
       });
       if (matches.length === RESTRICTED_MATCH_LIMIT) {
@@ -123,6 +128,7 @@ function storyForList(story, hostingLocation, restrictedMatches, welcomer) {
     languages: story.languages || [],
     welcomer,
     public: story.public === true,
+    restrictionStatuses: restrictionStatuses(story),
     restrictedMatches,
     username: story.username,
   };

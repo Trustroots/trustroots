@@ -1,6 +1,4 @@
 const { annotateFeature, expect, test } = require('../../support/fixtures');
-const { ObjectId } = require('mongodb');
-
 const {
   SEEDED_EXPERIENCE,
   SEEDED_MEMBERS,
@@ -12,6 +10,7 @@ const {
 } = require('../../support/helpers');
 const {
   findContactByUsers,
+  objectId,
   updateUserByUsername,
   withE2eDb,
 } = require('../../support/db');
@@ -161,7 +160,7 @@ test.describe.serial('experience and reference feature coverage', () => {
     ]);
     const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
-    let submittedExperienceId;
+    const createdExperienceIds = [];
     try {
       const author = await createPublicUser(context.request);
       const recipient = await createPublicUser(context.request);
@@ -184,6 +183,7 @@ test.describe.serial('experience and reference feature coverage', () => {
       });
       expect(opposite.status()).toBe(201);
       const oppositeExperience = await opposite.json();
+      createdExperienceIds.push(oppositeExperience._id);
       await signInViaApi(page, context.request, author);
       await updateUserByUsername(author.username, {
         $addToSet: { roles: 'shadowban' },
@@ -205,7 +205,7 @@ test.describe.serial('experience and reference feature coverage', () => {
       });
       expect(submitted.status()).toBe(201);
       const submittedExperience = await submitted.json();
-      submittedExperienceId = submittedExperience._id;
+      createdExperienceIds.push(submittedExperience._id);
       expect(submittedExperience).toMatchObject({
         public: false,
         response: null,
@@ -225,14 +225,17 @@ test.describe.serial('experience and reference feature coverage', () => {
       });
       expect(await list.json()).toEqual([]);
     } finally {
-      if (submittedExperienceId) {
-        await withE2eDb(db =>
-          db.collection('experiences').deleteOne({
-            _id: new ObjectId(submittedExperienceId),
-          }),
-        );
+      try {
+        if (createdExperienceIds.length > 0) {
+          await withE2eDb(db =>
+            db.collection('experiences').deleteMany({
+              _id: { $in: createdExperienceIds.map(objectId) },
+            }),
+          );
+        }
+      } finally {
+        await context.close();
       }
-      await context.close();
     }
   });
 

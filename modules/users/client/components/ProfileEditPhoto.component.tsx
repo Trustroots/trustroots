@@ -15,7 +15,7 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
-  const { setUser } = useAuth() as { setUser: (user: UserProfile) => void };
+  const { setUser } = useAuth();
   /* istanbul ignore next -- settings bootstrap always supplies the upload limit. */
   const { maxUploadSize = 5 * 1024 * 1024 } = useSettings();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -26,10 +26,10 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
 
   async function persistUser(nextUser: UserProfile) {
     const savedUser = await update({
-      ...nextUser,
-      updated: new Date().toISOString(),
+      avatarSource: nextUser.avatarSource,
+      avatarUploaded: nextUser.avatarUploaded,
     });
-    setUser(savedUser);
+    setUser(current => ({ ...current, ...savedUser }));
     setDraftUser({ ...savedUser });
     setStatusMessage(t('Profile photo updated.'));
   }
@@ -86,8 +86,8 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
                 },
               )
             : status === 415
-            ? t('Sorry, we do not support this type of file.')
-            : t('Oops! Something went wrong. Try again later.'),
+              ? t('Sorry, we do not support this type of file.')
+              : t('Oops! Something went wrong. Try again later.'),
         );
       } finally {
         setIsUploading(false);

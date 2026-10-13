@@ -1,0 +1,76 @@
+{
+  "imports": {
+    "admin": ["core", "messages", "search", "support", "tribes", "users"],
+    "contacts": ["core", "users"],
+    "core": [
+      "admin",
+      "contacts",
+      "experiences",
+      "messages",
+      "offers",
+      "pages",
+      "search",
+      "statistics",
+      "support",
+      "tribes",
+      "users"
+    ],
+    "experiences": ["core", "support", "users"],
+    "messages": ["core", "references-thread", "stats", "support", "users"],
+    "offers": ["core", "search", "tribes", "users"],
+    "pages": ["core", "support", "tribes", "users"],
+    "references-thread": ["core", "stats", "users"],
+    "search": ["core", "offers", "tribes", "users"],
+    "sparkpost": ["core", "stats"],
+    "statistics": ["core", "experiences", "stats", "users"],
+    "support": ["core", "stats"],
+    "tribes": ["core", "search", "users"],
+    "users": [
+      "admin",
+      "contacts",
+      "core",
+      "experiences",
+      "messages",
+      "offers",
+      "search",
+      "stats",
+      "support",
+      "tribes"
+    ]
+  },
+  "models": {
+    "admin": [
+      "contacts",
+      "experiences",
+      "messages",
+      "offers",
+      "references-thread",
+      "support",
+      "users"
+    ],
+    "contacts": ["users"],
+    "core": ["users"],
+    "experiences": ["contacts", "users"],
+    "messages": ["users"],
+    "offers": ["users"],
+    "pages": ["users"],
+    "references-thread": ["messages", "users"],
+    "statistics": [
+      "experiences",
+      "messages",
+      "offers",
+      "references-thread",
+      "users"
+    ],
+    "support": ["admin", "users"],
+    "tribes": ["contacts", "experiences", "users"],
+    "users": [
+      "admin",
+      "contacts",
+      "experiences",
+      "messages",
+      "offers",
+      "references-thread"
+    ]
+  }
+}

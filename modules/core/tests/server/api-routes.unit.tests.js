@@ -34,10 +34,11 @@ function createAppRecorder() {
           get: [],
           post: [],
           put: [],
+          patch: [],
         };
         routes.push(route);
 
-        return ['all', 'delete', 'get', 'post', 'put'].reduce(
+        return ['all', 'delete', 'get', 'post', 'put', 'patch'].reduce(
           (chain, method) => {
             chain[method] = (...handlers) => {
               route[method].push(...handlers);
@@ -293,6 +294,7 @@ describe('API route registrations', () => {
       'tribes',
     );
     const support = controller(['supportRequest'], 'support');
+    const supportLimit = { support: handler('requestLimit.support') };
 
     const tribeRoutes = register(
       './../../../tribes/server/routes/tribes.server.routes.mjs',
@@ -305,6 +307,8 @@ describe('API route registrations', () => {
       './../../../support/server/routes/support.server.routes.mjs',
       {
         '../controllers/support.server.controller': support,
+        '../../../core/server/middleware/targeted-request-limit.server.middleware':
+          supportLimit,
       },
     );
 
@@ -323,6 +327,7 @@ describe('API route registrations', () => {
       [['tribe', 'tribes.tribeBySlug']],
     );
     assertHandlers(routeByPath(supportRoutes.routes, '/api/support').post, [
+      supportLimit.support,
       support.supportRequest,
     ]);
   });
@@ -452,7 +457,13 @@ describe('API route registrations', () => {
       'userPassword',
     );
     const targetedRequestLimit = controller(
-      ['resendConfirmation', 'forgotPassword', 'resetPassword', 'signin'],
+      [
+        'resendConfirmation',
+        'forgotPassword',
+        'resetPassword',
+        'signin',
+        'signup',
+      ],
       'requestLimit',
     );
 
@@ -488,6 +499,7 @@ describe('API route registrations', () => {
       password.reset,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/signup').post, [
+      targetedRequestLimit.signup,
       authentication.signup,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/signup/validate').post, [
@@ -544,8 +556,23 @@ describe('API route registrations', () => {
 
   it('registers admin routes with audit log middleware where required', () => {
     const policy = { isAllowed: handler('adminPolicy.isAllowed') };
+    const support = controller(
+      [
+        'list',
+        'detail',
+        'setStatus',
+        'investigation',
+        'searchMembers',
+        'member',
+      ],
+      'support',
+    );
     const acquisitionStories = controller(['list'], 'adminAcquisitionStories');
     const auditLog = controller(['list', 'record', 'actors'], 'adminAuditLog');
+    const locationCorrections = controller(
+      ['list', 'send'],
+      'adminLocationCorrections',
+    );
     const messages = controller(['getMessages'], 'adminMessages');
     const newsletter = controller(
       [
@@ -575,9 +602,12 @@ describe('API route registrations', () => {
     const { routes } = register(
       './../../../admin/server/routes/admin.server.routes.mjs',
       {
+        '../controllers/admin.support.server.controller': support,
         '../controllers/admin.acquisition-stories.server.controller':
           acquisitionStories,
         '../controllers/admin.audit-log.server.controller': auditLog,
+        '../controllers/admin.location-corrections.server.controller':
+          locationCorrections,
         '../controllers/admin.messages.server.controller': messages,
         '../controllers/admin.newsletter.server.controller': newsletter,
         '../controllers/admin.notes.server.controller': notes,
@@ -589,6 +619,24 @@ describe('API route registrations', () => {
       },
     );
 
+    assertHandlers(routeByPath(routes, '/api/admin/support').get, [
+      support.list,
+    ]);
+    assertHandlers(routeByPath(routes, '/api/admin/support/:requestId').patch, [
+      support.setStatus,
+    ]);
+    assertHandlers(
+      routeByPath(routes, '/api/admin/support/:requestId/:kind').get,
+      [support.investigation],
+    );
+    assertHandlers(routeByPath(routes, '/api/admin/location-corrections').get, [
+      auditLog.record,
+      locationCorrections.list,
+    ]);
+    assertHandlers(
+      routeByPath(routes, '/api/admin/location-corrections/send').post,
+      [auditLog.record, locationCorrections.send],
+    );
     assertHandlers(routeByPath(routes, '/api/admin/acquisition-stories').post, [
       auditLog.record,
       acquisitionStories.list,

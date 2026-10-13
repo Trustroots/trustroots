@@ -6,8 +6,8 @@ import { Trans, useTranslation } from 'react-i18next';
 // Internal dependencies
 import { send } from '../api/support.api';
 import usePersistentSupportMessage from '../hooks/use-persistent-support-message';
-import { SUPPORT_CATEGORIES } from '../../shared/categories';
-import { VOLUNTEERING_DISCLAIMER } from '../../shared/volunteering-copy';
+import { SUPPORT_CATEGORIES } from '../../shared/categories.ts';
+import { VOLUNTEERING_DISCLAIMER } from '../../shared/volunteering-copy.ts';
 
 type SupportUser = { displayName?: string; username?: string; email?: string };
 type SupportFormProps = { user?: SupportUser | null };
@@ -199,6 +199,13 @@ export default function SupportForm({ user }: SupportFormProps) {
                     )}
                   </em>
                 </p>
+                {user && (
+                  <p>
+                    {t<string>(
+                      'Reporting this member lets our support team read your entire conversation and all experiences between you, including unpublished feedback. This access continues after the report is resolved.',
+                    )}
+                  </p>
+                )}
                 <p className="form-control-static">
                   <em>
                     {t<string>(

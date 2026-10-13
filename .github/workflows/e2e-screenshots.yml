@@ -38,7 +38,7 @@ jobs:
           mapfile -t changed_specs < <(
             git diff --name-only --diff-filter=ACMR \
               "origin/${GITHUB_BASE_REF}...HEAD" \
-              -- 'tests/e2e/**/*.spec.js'
+              -- 'tests/e2e/**/*.spec.js' 'tests/e2e/**/*.spec.ts'
           )
 
           if [ "${#changed_specs[@]}" -eq 0 ]; then
@@ -63,7 +63,7 @@ jobs:
               marker,
               '## E2E screenshots',
               '',
-              '_No changed `tests/e2e/**/*.spec.js` files were found in this PR, so no screenshots were captured._',
+              '_No changed `tests/e2e/**/*.spec.{js,ts}` files were found in this PR, so no screenshots were captured._',
             ].join('\n');
 
             const { owner, repo } = context.repo;
@@ -114,7 +114,12 @@ jobs:
       - name: Start MongoDB
         if: steps.changed.outputs.has_specs == 'true'
         working-directory: deploy/docker
-        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d mongodb
+        run: |
+          if ! docker compose -f docker-compose.yml -f docker-compose.ci.yml pull mongodb; then
+            docker pull mongo:4.4
+            docker tag mongo:4.4 public.ecr.aws/docker/library/mongo:4.4
+          fi
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --pull never mongodb
 
       - name: Run changed e2e specs with screenshots
         if: steps.changed.outputs.has_specs == 'true'
@@ -140,7 +145,7 @@ jobs:
             -e TRUSTROOTS_E2E_REQUIRE_FULL_FEATURE_COVERAGE=false \
             -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
             -e TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE=true \
-            dev npm run test:e2e -- "${specs[@]}"
+            dev pnpm run test:e2e "${specs[@]}"
           test_status="$?"
           set -e
           echo "test_status=$test_status" >> "$GITHUB_OUTPUT"
@@ -180,7 +185,19 @@ jobs:
           cp "$workdir"/*.png "$RUN_DIR/"
           git add "$RUN_DIR"
           git commit -m "PR #${{ github.event.pull_request.number }} e2e screenshots (${{ github.run_id }})"
-          git push origin HEAD:pr-screenshots
+          # Other PRs publish to this branch too. Replay only this upload when
+          # another workflow wins the push, preserving every PR's screenshots.
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:pr-screenshots; then
+              break
+            fi
+            if [ "$attempt" -eq 5 ]; then
+              exit 1
+            fi
+            git fetch --depth=1 origin pr-screenshots
+            git rebase --onto FETCH_HEAD HEAD^
+            sleep "$attempt"
+          done
 
       - name: Upsert PR comment with screenshots
         if: steps.changed.outputs.has_specs == 'true'
@@ -252,3 +269,12 @@ jobs:
                 body,
               });
             }
+
+      - name: Enforce changed e2e results
+        if: steps.changed.outputs.has_specs == 'true'
+        env:
+          TEST_STATUS: ${{ steps.run.outputs.test_status }}
+          SCREENSHOT_COUNT: ${{ steps.collect.outputs.count }}
+        run: |
+          test "$TEST_STATUS" = '0'
+          test "$SCREENSHOT_COUNT" -gt 0

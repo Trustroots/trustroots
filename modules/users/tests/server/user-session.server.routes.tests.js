@@ -1,6 +1,6 @@
 const should = require('should');
 const sinon = require('sinon');
-const influxService = require('../../../stats/server/services/influx.server.service.mjs');
+const influxService = require('../../../stats/server/services/influx.server.service.mts');
 const request = require('supertest');
 const mongoose = require('mongoose');
 const express = require('../../../../config/lib/express.mjs');

@@ -62,8 +62,8 @@ export default function ContactAddPage({ user }: { user: UserProfile }) {
     (isSelf
       ? (t('You cannot connect with yourself. That is just silly!') as string)
       : friendQuery.isError || contactQuery.isError
-      ? (t('User does not exist.') as string)
-      : '');
+        ? (t('User does not exist.') as string)
+        : '');
   const displayedSuccess = success || existingContactMessage;
   const isConnected =
     wasConnected ||

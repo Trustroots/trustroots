@@ -4,5 +4,11 @@
   "bracketSameLine": false,
   "semi": true,
   "singleQuote": true,
-  "trailingComma": "all"
+  "trailingComma": "all",
+  "overrides": [
+    {
+      "files": ["modules/*/server/**/*.mts", "scripts/ci/**/*.mts"],
+      "options": { "parser": "babel-ts" }
+    }
+  ]
 }

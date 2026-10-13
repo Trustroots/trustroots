@@ -182,7 +182,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
   );
 
   const userHasReplied = Boolean(
-    messages.find(message => message.userFrom._id === user._id),
+    messages.find(message => message.userFrom?._id === user._id),
   );
   const showReply = (messages.length > 0 || !hasEmptyProfile) && !removed;
   const showQuickReply = showReply && messages.length > 0 && !userHasReplied;
@@ -253,9 +253,6 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     return {
       _id: userId,
       displayName: t<string>('Unknown member'),
-      username: null,
-      member: [],
-      languages: [],
     };
   }
 
@@ -356,7 +353,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     async function markRead() {
       const unreadMessages = messages
         .filter(message => !message.read) // only unread
-        .filter(message => message.userFrom._id !== user._id); // only other persons messages
+        .filter(message => message.userFrom?._id !== user._id); // only other persons messages
       if (unreadMessages.length > 0) {
         await api.messages.markRead(unreadMessages.map(message => message._id));
         setMessages(messages =>
@@ -428,6 +425,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
               )}
               {!isBlocked && showReply && (
                 <ThreadReply
+                  key={cacheKey}
                   cacheKey={cacheKey}
                   autoFocus={!isExtraSmall}
                   onSend={content => sendMessage(content)}

@@ -14,7 +14,7 @@ export default function ProfileEditLocations({ user }: { user: UserProfile }) {
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
-  const { setUser } = useAuth() as { setUser: (user: UserProfile) => void };
+  const { setUser } = useAuth();
   const [draftUser, setDraftUser] = useState({ ...user });
   const [hasChanges, setHasChanges] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
@@ -29,8 +29,11 @@ export default function ProfileEditLocations({ user }: { user: UserProfile }) {
     setStatusMessage('');
 
     try {
-      const savedUser = await update(draftUser);
-      setUser(savedUser);
+      const savedUser = await update({
+        locationLiving: draftUser.locationLiving,
+        locationFrom: draftUser.locationFrom,
+      });
+      setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
       setHasChanges(false);
       setStatusMessage(t('Profile updated.'));

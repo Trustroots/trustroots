@@ -6,16 +6,15 @@ service = {
     allJS: [
       'server.js',
       'config/**/*.{js,mjs}',
-      'modules/*/server/**/*.mjs',
-      'modules/*/server/**/*.mjs',
+      'modules/*/server/**/*.{mjs,mts}',
     ],
-    models: 'modules/*/server/models/**/*.mjs',
+    models: 'modules/*/server/models/**/*.{mjs,mts}',
     routes: [
-      'modules/!(core)/server/routes/**/*.mjs',
-      'modules/core/server/routes/**/*.mjs',
+      'modules/!(core)/server/routes/**/*.{mjs,mts}',
+      'modules/core/server/routes/**/*.{mjs,mts}',
     ],
-    config: 'modules/*/server/config/*.mjs',
-    policies: 'modules/*/server/policies/*.mjs',
+    config: 'modules/*/server/config/*.{mjs,mts}',
+    policies: 'modules/*/server/policies/*.{mjs,mts}',
     views: 'modules/*/server/views/*.html',
   },
 };

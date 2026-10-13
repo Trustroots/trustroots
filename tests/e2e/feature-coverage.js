@@ -26,6 +26,8 @@ const ROLE_DEFINITIONS = {
   'shadowbanned-member':
     'Authenticated user with the shadowban role, used to verify hidden member-facing behavior.',
   admin: 'Authenticated user with the admin role.',
+  'support-team':
+    'Authenticated support volunteer with report-scoped investigation access.',
   'welcome-team':
     'Authenticated user with acquisition and own-account blocker viewing access.',
   browser:
@@ -91,6 +93,8 @@ const specPaths = {
   'account-email-tokens.spec.js':
     'features/auth-account/account-email-tokens.spec.js',
   'account-settings.spec.js': 'features/auth-account/account-settings.spec.js',
+  'experience-changes.spec.js':
+    'features/experiences-references/experience-changes.spec.js',
   'admin-acquisition.spec.js':
     'features/admin-moderation/admin-acquisition.spec.js',
   'admin-inspection.spec.js':
@@ -291,7 +295,7 @@ const features = [
     },
     requiredScenarios: [
       'General FAQ page loads.',
-      'FAQ filter matches answer text and can be cleared.',
+      'FAQ filter matches answer text across categories and can be cleared.',
       'FAQ filter reports when no questions match.',
     ],
     relatedSpecs: [
@@ -2345,6 +2349,33 @@ const features = [
     ],
   },
   {
+    id: 'messages.draft-preview',
+    area: AREA.messages,
+    status: STATUS.active,
+    description: 'Members can preview formatted drafts before sending.',
+    roles: ['confirmed-member'],
+    references: {
+      apiRoutes: [
+        apiRoute('POST', '/api/messages-preview', source.messagesServer),
+      ],
+    },
+    requiredScenarios: [
+      'Members can preview and edit a formatted draft without sending it.',
+      'Sending from preview sends the original draft and returns to editing.',
+      'Preview follows message link rules on desktop and mobile.',
+    ],
+    relatedSpecs: [
+      spec(
+        'message-actions.spec.js',
+        'desktop members can preview, edit and send a formatted draft',
+      ),
+      spec(
+        'message-actions.spec.js',
+        'mobile members can preview, edit and send a formatted draft',
+      ),
+    ],
+  },
+  {
     id: 'messages.reply-statistics',
     area: AREA.messages,
     status: STATUS.active,
@@ -2452,6 +2483,75 @@ const features = [
       spec(
         'authenticated.spec.js',
         'inbox prompts an unconfirmed member to activate their profile',
+      ),
+    ],
+  },
+  {
+    id: 'experiences.change-requests',
+    area: AREA.experiencesReferences,
+    status: STATUS.active,
+    description:
+      'Support-issued links let members request Experience edits or removal for admin review.',
+    roles: ['member', 'admin'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'experience.change',
+          '/experiences/:id/change',
+          source.coreClient,
+          { requiresAuth: true },
+        ),
+        clientRoute(
+          'admin.experience-changes',
+          '/admin/experience-changes',
+          source.adminClient,
+          { requiresAuth: true, requiresRole: 'admin' },
+        ),
+      ],
+      apiRoutes: [
+        apiRoute(
+          'GET',
+          '/api/experiences/:id/change-access',
+          source.experiencesServer,
+        ),
+        apiRoute(
+          'GET',
+          '/api/experiences/:id/change-requests/mine',
+          source.experiencesServer,
+        ),
+        apiRoute(
+          'POST',
+          '/api/experiences/:id/change-requests',
+          source.experiencesServer,
+        ),
+        apiRoute('GET', '/api/admin/experiences', source.adminServer),
+        apiRoute(
+          'POST',
+          '/api/admin/experiences/:id/change-links',
+          source.adminServer,
+        ),
+        apiRoute(
+          'GET',
+          '/api/admin/experience-change-requests',
+          source.adminServer,
+        ),
+        apiRoute(
+          'POST',
+          '/api/admin/experience-change-requests/:id/decision',
+          source.adminServer,
+        ),
+      ],
+    },
+    requiredScenarios: [
+      'Admin generates a scoped support link.',
+      'Author proposes an edit that stays pending until approval.',
+      'Approved edit appears on the profile.',
+      'Approved removal hides the Experience.',
+    ],
+    relatedSpecs: [
+      spec(
+        'experience-changes.spec.js',
+        'support link lets an author request an edit and removal for admin review',
       ),
     ],
   },
@@ -2729,6 +2829,27 @@ const features = [
     ],
   },
   {
+    id: 'admin.support-team',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description:
+      'Support volunteers triage requests and investigate verified report pairs.',
+    roles: ['admin', 'support-team'],
+    references: {
+      clientRoutes: [
+        clientRoute('admin-support', '/admin/support', source.adminClient, {
+          requiresAuth: true,
+          requiresRole: ['admin', 'support-team'],
+        }),
+      ],
+      apiRoutes: [apiRoute('GET', '/api/admin/support', source.adminServer)],
+    },
+    requiredScenarios: [
+      'Support can triage requests and inspect linked conversations and experiences without moderation authority.',
+    ],
+    relatedSpecs: [],
+  },
+  {
     id: 'admin.acquisition-stories',
     area: AREA.adminModeration,
     status: STATUS.active,
@@ -2755,6 +2876,37 @@ const features = [
       'Story rows show available member and hosting locations.',
       'Story rows show matching restricted accounts.',
       'Acquisition stories remain available without Analysis navigation or API.',
+    ],
+    relatedSpecs: [],
+  },
+  {
+    id: 'admin.location-corrections',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description:
+      'Welcome team members can review and contact members whose offers may use the former map default.',
+    roles: ['admin', 'welcome-team'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'admin-location-corrections',
+          '/admin/location-corrections',
+          source.adminClient,
+          { requiresAuth: true, requiresRole: ['admin', 'welcome-team'] },
+        ),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/admin/location-corrections', source.adminServer),
+        apiRoute(
+          'POST',
+          '/api/admin/location-corrections/send',
+          source.adminServer,
+        ),
+      ],
+    },
+    requiredScenarios: [
+      'Welcome team reviews a default-location candidate.',
+      'Welcome team sends a personalised message and the candidate leaves the queue.',
     ],
     relatedSpecs: [],
   },

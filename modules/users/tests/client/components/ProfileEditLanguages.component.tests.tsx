@@ -6,6 +6,7 @@ import '@/config/client/i18n';
 import ProfileEditLanguages from '@/modules/users/client/components/ProfileEditLanguages.component';
 import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
 import type LanguageSelect from '@/modules/core/client/components/LanguageSelect';
+import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 
 type LanguageSelectProps = Pick<
   React.ComponentProps<typeof LanguageSelect>,
@@ -74,10 +75,13 @@ describe('<ProfileEditLanguages />', () => {
       // The public prop type currently marks this callback as required; this
       // boundary deliberately supplies it as absent to cover the runtime guard.
       <ProfileEditLanguages
-        {...({
-          profileLanguages: ['en'],
-          onChangeLanguages: undefined,
-        } as unknown as React.ComponentProps<typeof ProfileEditLanguages>)}
+        {...malformedFixture<React.ComponentProps<typeof ProfileEditLanguages>>(
+          {
+            profileLanguages: ['en'],
+            onChangeLanguages: () => undefined,
+          },
+          { onChangeLanguages: undefined },
+        )}
       />,
     );
 

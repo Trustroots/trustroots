@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import supportCategories from '../../shared/categories.js';
+import supportCategories from '../../shared/categories.ts';
 
 /**
  * Module dependencies.
@@ -44,7 +44,13 @@ const SupportRequestSchema = new Schema({
   reportMember: {
     type: String,
   },
+  reportedUser: { type: Schema.ObjectId, ref: 'User' },
+  linkageEvidence: { type: String },
+  status: { type: String, enum: ['open', 'resolved'], default: 'open' },
+  resolvedAt: { type: Date },
+  resolvedBy: { type: Schema.ObjectId, ref: 'User' },
 });
+SupportRequestSchema.index({ status: 1, sent: -1 });
 mongoose.model('SupportRequest', SupportRequestSchema);
 const defaultInterop = {};
 export default defaultInterop;
