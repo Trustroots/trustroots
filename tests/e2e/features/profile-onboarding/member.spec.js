@@ -379,7 +379,7 @@ test.describe('confirmed member flows', () => {
     await joinButton.click();
     await joinResponse;
     await expect(joinButton).toContainText("You're a member");
-    await expect(joinButton).toHaveClass(/btn-primary/);
+    await expect(joinButton).toHaveClass(/circle-membership-active/);
     await expect(joinButton).not.toHaveCSS(
       'background-color',
       'rgb(255, 255, 255)',

@@ -18,7 +18,6 @@ interface Window {
     [key: string]: unknown;
   };
   env?: string;
-  gaId?: string;
   title?: string;
   isNativeMobileApp?: boolean;
   ga?: (...args: unknown[]) => void;

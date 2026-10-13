@@ -623,7 +623,9 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await expect(scrollingOverviewJoinButton).toContainText(
         "You're a member",
       );
-      await expect(scrollingOverviewJoinButton).toHaveClass(/btn-primary/);
+      await expect(scrollingOverviewJoinButton).toHaveClass(
+        /circle-membership-active/,
+      );
       await expect(scrollingOverviewJoinButton).not.toHaveCSS(
         'background-color',
         'rgb(255, 255, 255)',

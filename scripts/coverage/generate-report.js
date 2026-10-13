@@ -46,7 +46,7 @@ const coverageSuites = {
     statusPath: path.join(root, 'coverage/client/coverage-status.json'),
     htmlPath: path.join(root, 'coverage/client/index.html'),
     artifactName: 'coverage-client',
-    command: 'npm run test:coverage:client',
+    command: 'pnpm run test:coverage:client',
   },
   server: {
     name: 'server',
@@ -56,7 +56,7 @@ const coverageSuites = {
     statusPath: path.join(root, 'coverage/server/coverage-status.json'),
     htmlPath: path.join(root, 'coverage/server/index.html'),
     artifactName: 'coverage-server',
-    command: 'npm run test:coverage:server',
+    command: 'pnpm run test:coverage:server',
   },
 };
 const testSuites = {
@@ -69,7 +69,7 @@ const testSuites = {
     statusPath: path.join(root, 'coverage/e2e/status.json'),
     htmlPath: path.join(root, 'playwright-report/index.html'),
     artifactName: 'playwright-report',
-    command: 'npm run test:e2e',
+    command: 'pnpm run test:e2e',
   },
 };
 const reportSuites = {

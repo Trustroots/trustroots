@@ -442,7 +442,7 @@ describe('Offer CRUD tests', function () {
           // Save a new offer
           agent
             .delete('/api/offers/' + offer2Id)
-            .send(offer2)
+            .send(offer2.toObject())
             .expect(403)
             .end(function (offerSaveErr) {
               // Handle offer save error
@@ -472,7 +472,7 @@ describe('Offer CRUD tests', function () {
           // Save a new offer
           agent
             .delete('/api/offers/' + offer2Id)
-            .send(offer2)
+            .send(offer2.toObject())
             .expect(200)
             .end(function (offerSaveErr) {
               // Handle offer save error
@@ -802,7 +802,7 @@ describe('Offer CRUD tests', function () {
     it('should not be able to update offer if not authenticated', function (done) {
       agent
         .put('/api/offers/' + offer2Id)
-        .send(offer2)
+        .send(offer2.toObject())
         .expect(403)
         .end(function (offerSaveErr, offerSaveRes) {
           offerSaveRes.body.message.should.equal('Forbidden.');
@@ -886,7 +886,7 @@ describe('Offer CRUD tests', function () {
           // Update offer
           agent
             .put('/api/offers/' + offer2Id)
-            .send(offer2)
+            .send(offer2.toObject())
             .expect(403)
             .end(function (offerSaveErr) {
               // Handle offer save error

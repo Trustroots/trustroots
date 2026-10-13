@@ -27,12 +27,11 @@ export default function ReadMorePanel({ content, id }: ReadMorePanelProps) {
     <div className="panel-more-wrap">
       <div
         className="panel-more-wrap"
-        dangerouslySetInnerHTML={{
-          __html: `${plainText(content).substr(0, LIMIT)} …`,
-        }}
         id={id}
         onClick={() => setShowMore(true)}
-      />
+      >
+        {`${plainText(content).substr(0, LIMIT)} …`}
+      </div>
       <div
         aria-controls={id}
         aria-expanded="false"

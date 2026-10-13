@@ -20,6 +20,7 @@ export default function AdminHeader() {
   }, []);
 
   const pages = [
+    { path: 'hackerspaces', label: 'Hackerspaces' },
     {
       path: 'messages',
       label: 'Messages',
@@ -31,6 +32,10 @@ export default function AdminHeader() {
     {
       path: 'reference-threads',
       label: 'Reference threads',
+    },
+    {
+      path: 'experience-changes',
+      label: 'Experience changes',
     },
     {
       path: 'acquisition-stories',

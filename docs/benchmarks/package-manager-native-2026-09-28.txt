@@ -1,0 +1,312 @@
+Native build probe: 28 September 2026
+Darwin 25.6.0 arm64; Node 24.21.0; npm 11.17.0; pnpm 11.25.0
+One clean install per manager; exact-version approvals in disposable snapshots only.
+
+Source commit: a88c4fd5eafea5cab75236316dcc6593682979c2
+Policy: {"canvas@3.2.0": true, "core-js@2.6.12": true, "core-js-pure@3.49.0": true, "styled-components@5.3.6": true, "unrs-resolver@1.12.2": true, "sharp@0.35.4": true}
+
+Command: pnpm --pm-on-fail=ignore import
+Progress: resolved 1, reused 0, downloaded 0, added 0
+[WARN] deprecated @babel/plugin-proposal-nullish-coalescing-operator@7.16.7: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-nullish-coalescing-operator instead.
+[WARN] deprecated @babel/plugin-proposal-class-properties@7.16.7: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-class-properties instead.
+[WARN] deprecated @babel/plugin-proposal-optional-chaining@7.16.7: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-optional-chaining instead.
+[WARN] deprecated @babel/plugin-proposal-object-rest-spread@7.16.0: This proposal has been merged to the ECMAScript standard and thus this plugin is no longer maintained. Please use @babel/plugin-transform-object-rest-spread instead.
+[WARN] deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+[WARN] deprecated sinon@11.1.2: 16.1.1
+[WARN] deprecated supertest@6.1.6: Please upgrade to supertest v7.1.3+, see release notes at https://github.com/forwardemail/supertest/releases/tag/v7.1.3 - maintenance is supported by Forward Email @ https://forwardemail.net
+[WARN] deprecated bootstrap@3.4.1: This version of Bootstrap is no longer supported. Please upgrade to the latest version.
+[WARN] deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+[WARN] deprecated gm@1.25.1: The gm module has been sunset. Please migrate to an alternative. https://github.com/aheckmann/gm?tab=readme-ov-file#2025-02-24-this-project-is-not-maintained
+[WARN] deprecated @playwright/test@1.32.3: Please update to the latest version of Playwright to test up-to-date browsers.
+Progress: resolved 634, reused 0, downloaded 0, added 0
+Progress: resolved 1397, reused 0, downloaded 0, added 0
+[WARN] 32 deprecated subdependencies found: @babel/plugin-proposal-async-generator-functions@7.20.7, @babel/plugin-proposal-class-static-block@7.21.0, @babel/plugin-proposal-dynamic-import@7.18.6, @babel/plugin-proposal-export-namespace-from@7.18.9, @babel/plugin-proposal-json-strings@7.18.6, @babel/plugin-proposal-logical-assignment-operators@7.20.7, @babel/plugin-proposal-numeric-separator@7.18.6, @babel/plugin-proposal-object-rest-spread@7.20.7, @babel/plugin-proposal-optional-catch-binding@7.18.6, @babel/plugin-proposal-private-methods@7.18.6, @babel/plugin-proposal-private-property-in-object@7.21.11, @babel/plugin-proposal-unicode-property-regex@7.18.6, @humanwhocodes/config-array@0.13.0, @humanwhocodes/object-schema@2.0.3, @sinonjs/text-encoding@0.7.3, core-js@2.6.12, cron-parser@3.5.0, formidable@1.2.6, glob@10.5.0, glob@7.1.6, inflight@1.0.6, lodash.clone@4.5.0, lodash.get@4.4.2, lodash.isequal@4.5.0, prebuild-install@7.1.3, rimraf@3.0.2, source-map-resolve@0.6.0, superagent@6.1.0, superagent@7.1.6, uuid@8.3.2, viewport-mercator-project@7.0.4, whatwg-encoding@3.1.1
+Progress: resolved 1601, reused 0, downloaded 0, added 0, done
+
+Exit: 0; seconds: 3
+
+Command: npm ci --cache=<checkout>/tmp/native-build-probe-2026-09-28/npm-cache --no-audit --no-fund
+npm warn Unknown user config "python". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn deprecated @humanwhocodes/config-array@0.13.0: Use @eslint/config-array instead
+npm warn deprecated @humanwhocodes/object-schema@2.0.3: Use @eslint/object-schema instead
+npm warn deprecated eslint@8.57.1: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+
+> trustroots@0.3.3 prepare
+> husky install
+
+.git can't be found (see https://git.io/Jc3F9)
+npm error code 1
+npm error path <checkout>/tmp/native-build-probe-2026-09-28/npm
+npm error command failed
+npm error command sh -c husky install
+npm notice
+npm notice New major version of npm available! 11.17.0 -> 12.1.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.1.0
+npm notice To update run: npm install -g npm@12.1.0
+npm notice
+npm error A complete log of this run can be found in: <checkout>/tmp/native-build-probe-2026-09-28/npm-cache/_logs/2026-09-28T21_52_19_298Z-debug-0.log
+Exit: 1; seconds: 49
+
+Command: node -e const assert=require('node:assert/strict'); const m=process.argv[1]; if(m==='canvas'){const c=require('canvas').createCanvas(2,2);c.getContext('2d').fillRect(0,0,2,2);assert.equal(c.toBuffer('image/png').subarray(1,4).toString(),'PNG');console.log('canvas PNG OK')}else{require('sharp')({create:{width:2,height:2,channels:4,background:'#ffffff'}}).png().toBuffer().then(b=>{assert.equal(b.subarray(1,4).toString(),'PNG');console.log('sharp PNG OK')}).catch(e=>{console.error(e);process.exitCode=1})} canvas
+canvas PNG OK
+Exit: 0; seconds: 8
+
+Command: node -e const assert=require('node:assert/strict'); const m=process.argv[1]; if(m==='canvas'){const c=require('canvas').createCanvas(2,2);c.getContext('2d').fillRect(0,0,2,2);assert.equal(c.toBuffer('image/png').subarray(1,4).toString(),'PNG');console.log('canvas PNG OK')}else{require('sharp')({create:{width:2,height:2,channels:4,background:'#ffffff'}}).png().toBuffer().then(b=>{assert.equal(b.subarray(1,4).toString(),'PNG');console.log('sharp PNG OK')}).catch(e=>{console.error(e);process.exitCode=1})} sharp
+sharp PNG OK
+Exit: 0; seconds: 1
+
+Command: pnpm --pm-on-fail=ignore install --frozen-lockfile --store-dir=<checkout>/tmp/native-build-probe-2026-09-28/pnpm-store
+✓ Lockfile passes supply-chain policies (verified 1m ago)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +1550
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Packages are cloned from the content-addressable store to the virtual store.
+  Content-addressable store is at: <checkout>/tmp/native-build-probe-2026-09-28/pnpm-store/v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 1550, reused 0, downloaded 82, added 79
+Progress: resolved 1550, reused 0, downloaded 196, added 193
+Progress: resolved 1550, reused 0, downloaded 371, added 363
+Progress: resolved 1550, reused 0, downloaded 567, added 564
+Progress: resolved 1550, reused 0, downloaded 794, added 708
+Progress: resolved 1550, reused 0, downloaded 1038, added 893
+[WARN] Tarball download average speed 47 KiB/s (size 57 KiB) is below 50 KiB/s: https://registry.npmjs.org/@math.gl/web-mercator/-/web-mercator-3.6.3.tgz (GET)
+Progress: resolved 1550, reused 0, downloaded 1228, added 1093
+Progress: resolved 1550, reused 0, downloaded 1331, added 1207
+[WARN] Tarball download average speed 41 KiB/s (size 72 KiB) is below 50 KiB/s: https://registry.npmjs.org/yargs/-/yargs-17.7.3.tgz (GET)
+Progress: resolved 1550, reused 0, downloaded 1488, added 1474
+Progress: resolved 1550, reused 0, downloaded 1543, added 1542
+Progress: resolved 1550, reused 0, downloaded 1545, added 1545
+[WARN] Tarball download average speed 48 KiB/s (size 212 KiB) is below 50 KiB/s: https://registry.npmjs.org/ajv/-/ajv-8.20.0.tgz (GET)
+Progress: resolved 1550, reused 0, downloaded 1547, added 1547
+Progress: resolved 1550, reused 0, downloaded 1549, added 1549
+Progress: resolved 1550, reused 0, downloaded 1550, added 1550, done
+.../core-js@2.6.12/node_modules/core-js postinstall$ node -e "try{require('./postinstall')}catch(e){}"
+.../node_modules/core-js-pure postinstall$ node -e "try{require('./postinstall')}catch(e){}"
+.../node_modules/styled-components postinstall$ node ./postinstall.js
+.../node_modules/unrs-resolver postinstall$ node postinstall.js
+.../canvas@3.2.0/node_modules/canvas install$ prebuild-install -r napi || node-gyp rebuild
+.../node_modules/core-js-pure postinstall: Done
+.../core-js@2.6.12/node_modules/core-js postinstall: Done
+.../node_modules/unrs-resolver postinstall: Done
+.../node_modules/styled-components postinstall: Done
+.../canvas@3.2.0/node_modules/canvas install: (node:81303) [DEP0176] DeprecationWarning: fs.R_OK is deprecated, use fs.constants.R_OK instead
+.../canvas@3.2.0/node_modules/canvas install: (Use `node --trace-deprecation ...` to show where the warning was created)
+.../canvas@3.2.0/node_modules/canvas install: Done
+
+dependencies:
++ @tanstack/react-router 1.120.5
++ agenda 4.4.0
++ akismet-api 5.3.0
++ async 2.6.4
++ autolinker 3.16.2
++ axios 1.18.1
++ basic-auth 2.0.1
++ body-parser 1.20.8
++ bootstrap 3.4.1
++ chalk 4.1.2
++ check-node-version 4.2.1
++ classnames 2.3.2
++ compression 1.8.1
++ connect-flash 0.1.1
++ connect-mongo 4.6.0
++ cookie-parser 1.4.7
++ del 6.1.1
++ expect-ct 1.0.0
++ express 4.22.2
++ express-paginate 1.0.2
++ express-session 1.19.0
++ file-type 22.0.1
++ glob 7.2.3
++ gm 1.25.1
++ he 1.2.0
++ helmet 5.1.1
++ html-to-text 8.2.1
++ i18next 20.6.1
++ i18next-browser-languagedetector 6.1.5
++ i18next-http-backend 4.0.0
++ influx 5.9.3
++ juice 8.1.0
++ leaflet 1.7.1
++ lodash 4.18.1
++ mapbox-gl 1.13.2
++ match-sorter 6.3.1
++ medium-editor 5.23.3
++ method-override 3.0.0
++ migrate 1.7.0
++ mkdir-recursive 0.4.0
++ moment 2.29.4
++ mongodb 4.17.2
++ mongoose 6.13.11
++ mongoose-integer 0.1.1
++ mongoose-paginate 5.0.3
++ mongoose-url-slugs 1.0.2
++ morgan 1.12.0
++ multer 2.3.0
++ natural 5.2.3
++ nodemailer 9.1.1
++ nostr-tools 2.7.2
++ nunjucks 3.2.4
++ open-location-code 1.0.3
++ passport 0.7.0
++ passport-local 1.0.0
++ pluralize 8.0.0
++ process 0.11.10
++ prop-types 15.7.2
++ qs 6.16.0
++ querystring-es3 0.2.1
++ randomcolor 0.6.2
++ react 18.3.1
++ react-bootstrap 0.33.1
++ react-dom 18.3.1
++ react-i18next 11.15.1
++ react-is 18.3.1
++ react-map-gl 5.3.19
++ react-query 3.39.3
++ react-responsive 8.2.0
++ react-select 5.10.2
++ sanitize-html 2.17.7
++ serve-favicon 2.5.0
++ speakingurl 14.0.1
++ stopword 1.0.11
++ styled-components 5.3.6
++ supercluster 7.1.5
++ url 0.11.4
++ use-debounce 3.4.3
++ use-local-storage-state 20.0.0
++ uuid 11.1.1
++ validator 13.15.35
++ wink-statistics 2.1.1
++ wink-tokenizer 5.3.0
++ winston 2.4.6
++ winston-papertrail 1.0.5
++ zod 4.4.3
+
+optionalDependencies:
++ chokidar 3.5.3
+
+devDependencies:
++ @automattic/webpack-rtl-plugin 6.0.0
++ @babel/cli 7.16.0
++ @babel/core 7.29.7
++ @babel/eslint-parser 7.16.3
++ @babel/plugin-proposal-class-properties 7.16.7
++ @babel/plugin-proposal-nullish-coalescing-operator 7.16.7
++ @babel/plugin-proposal-object-rest-spread 7.16.0
++ @babel/plugin-proposal-optional-chaining 7.16.7
++ @babel/preset-env 7.16.11
++ @babel/preset-react 7.16.7
++ @babel/preset-typescript 7.29.7
++ @playwright/test 1.32.3
++ @pmmmwh/react-refresh-webpack-plugin 0.5.17
++ @sinonjs/fake-timers 8.1.0
++ @testing-library/jest-dom 5.13.0
++ @testing-library/react 13.4.0
++ @types/jest 30.0.0
++ @types/node 24.10.13
++ @types/react 18.3.31
++ @types/react-dom 18.3.7
++ @types/testing-library__jest-dom 5.14.9
++ @typescript-eslint/eslint-plugin 8.70.1
++ @typescript-eslint/parser 8.70.1
++ @wordpress/browserslist-config 4.1.2
++ agendash 2.1.1
++ autoprefixer 10.4.4
++ babel-loader 8.2.4
++ babel-plugin-i18next-extract 0.8.3
++ canvas 3.2.0
++ concurrently 6.3.0
++ css-loader 5.2.7
++ eslint 8.57.1
++ eslint-config-prettier 8.5.0
++ eslint-import-resolver-webpack 0.13.2
++ eslint-plugin-import 2.32.0
++ eslint-plugin-jest-dom 3.9.2
++ eslint-plugin-prettier 4.0.0
++ eslint-plugin-react 7.27.1
++ eslint-plugin-testing-library 3.1.3
++ eslint-watch 8.0.0
++ eslint-webpack-plugin 3.1.1
++ faker 5.5.3
++ file-loader 6.2.0
++ husky 7.0.4
++ istanbul-lib-coverage 3.2.2
++ jest 30.4.2
++ jest-environment-jsdom 30.4.1
++ jquery 3.6.0
++ less 3.13.1
++ less-loader 7.3.0
++ lint-staged 17.0.8
++ mini-css-extract-plugin 1.6.0
++ mocha 8.4.0
++ nodemon 3.1.14
++ nyc 18.0.0
++ parse-link-header 2.0.0
++ postcss 8.5.23
++ postcss-loader 4.3.0
++ prettier 2.6.2
++ promise 8.1.0
++ proxyquire 2.1.3
++ react-refresh 0.11.0
++ semver 7.8.5
++ sharp 0.35.4
++ should 13.2.3
++ sinon 11.1.2
++ style-loader 2.0.0
++ supertest 6.1.6
++ typescript 5.3.3
++ url-loader 4.1.1
++ v8-to-istanbul 9.2.0
++ webpack 5.108.4
++ webpack-bundle-analyzer 4.5.0
++ webpack-cli 7.2.1
++ webpack-dev-server 5.2.6
++ webpack-merge 5.8.0
++ yargs 17.4.1
+
+. prepare$ husky install
+. prepare: .git can't be found (see https://git.io/Jc3F9)
+. prepare: Failed
+[ELIFECYCLE] Command failed with exit code 1.
+Exit: 1; seconds: 15
+
+Command: node -e const assert=require('node:assert/strict'); const m=process.argv[1]; if(m==='canvas'){const c=require('canvas').createCanvas(2,2);c.getContext('2d').fillRect(0,0,2,2);assert.equal(c.toBuffer('image/png').subarray(1,4).toString(),'PNG');console.log('canvas PNG OK')}else{require('sharp')({create:{width:2,height:2,channels:4,background:'#ffffff'}}).png().toBuffer().then(b=>{assert.equal(b.subarray(1,4).toString(),'PNG');console.log('sharp PNG OK')}).catch(e=>{console.error(e);process.exitCode=1})} canvas
+canvas PNG OK
+Exit: 0; seconds: 6
+
+Command: node -e const assert=require('node:assert/strict'); const m=process.argv[1]; if(m==='canvas'){const c=require('canvas').createCanvas(2,2);c.getContext('2d').fillRect(0,0,2,2);assert.equal(c.toBuffer('image/png').subarray(1,4).toString(),'PNG');console.log('canvas PNG OK')}else{require('sharp')({create:{width:2,height:2,channels:4,background:'#ffffff'}}).png().toBuffer().then(b=>{assert.equal(b.subarray(1,4).toString(),'PNG');console.log('sharp PNG OK')}).catch(e=>{console.error(e);process.exitCode=1})} sharp
+sharp PNG OK
+Exit: 0; seconds: 1
+
+Prepare hook follow-up after git init in each snapshot:
+
+Command: npm run prepare
+npm warn Unknown user config "python". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+> trustroots@0.3.3 prepare
+> husky install
+
+husky - Git hooks installed
+Exit: 0
+
+Command: pnpm --pm-on-fail=ignore run prepare
+[ERROR] This project is configured to use npm
+For help, run: pnpm help install
+[ERROR] Command failed with exit code 1: pnpm install
+
+pnpm: Command failed with exit code 1: pnpm install
+    at getFinalError (file://<isolated-tools>/node_modules/pnpm/dist/pnpm.mjs:89986:14)
+    at makeError (file://<isolated-tools>/node_modules/pnpm/dist/pnpm.mjs:92293:21)
+    at getSyncResult (file://<isolated-tools>/node_modules/pnpm/dist/pnpm.mjs:94137:10)
+    at spawnSubprocessSync (file://<isolated-tools>/node_modules/pnpm/dist/pnpm.mjs:94097:14)
+    at execaCoreSync (file://<isolated-tools>/node_modules/pnpm/dist/pnpm.mjs:94027:23)
+    at callBoundExeca (file://<isolated-tools>/node_modules/pnpm/dist/pnpm.mjs:96555:23)
+    at boundExeca (file://<isolated-tools>/node_modules/pnpm/dist/pnpm.mjs:96532:49)
+    at sync2 (file://<isolated-tools>/node_modules/pnpm/dist/pnpm.mjs:96687:14)
+    at runPnpmCli (file://<isolated-tools>/node_modules/pnpm/dist/pnpm.mjs:276906:5)
+    at runDepsStatusCheck (file://<isolated-tools>/node_modules/pnpm/dist/pnpm.mjs:278122:7)
+Exit: 1
+husky - Git hooks installed
+
+Command: husky install (direct project prepare hook in pnpm snapshot)
+Exit: 0
