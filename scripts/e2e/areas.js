@@ -7,6 +7,7 @@ const AREA_BY_SPEC = {
   'react-contact-confirmation.spec.js': 'Public pages',
   'react-home-safety.spec.js': 'Public pages',
   'circles-react.spec.js': 'Member flows',
+  'hitchhiking-circle-map.spec.js': 'Public pages',
   'webp-images.spec.js': 'Public pages',
   'member-entry-react.spec.js': 'Member flows',
   'auth-smoke.spec.js': 'Authentication',
