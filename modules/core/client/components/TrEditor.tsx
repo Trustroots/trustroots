@@ -168,7 +168,7 @@ function removeTrailingBr(value: string): string {
 type TrEditorProps = {
   id: string;
   onChange: (value: string) => void;
-  onCtrlEnter: (event: KeyboardEvent) => void;
+  onCtrlEnter?: (event: KeyboardEvent) => void;
   placeholder?: string;
   text: string;
 };
@@ -245,7 +245,7 @@ export default function TrEditor({
 TrEditor.propTypes = {
   id: PropTypes.string,
   onChange: PropTypes.func.isRequired,
-  onCtrlEnter: PropTypes.func.isRequired,
+  onCtrlEnter: PropTypes.func,
   placeholder: PropTypes.string,
   text: PropTypes.string.isRequired,
 };
