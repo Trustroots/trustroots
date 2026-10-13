@@ -1,18 +1,33 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import type { Event } from 'nostr-tools';
 import HackerspaceMap, {
   decodeGeohash,
   parseHackerPlace,
 } from '@/modules/tribes/client/components/HackerspaceMap';
-import { useCircleMapEvents } from '@/modules/tribes/client/hooks/useCircleMapEvents';
+import { nostrService } from '@/modules/search/client/services/nostr.client.service';
 
-jest.mock('@/modules/tribes/client/hooks/useCircleMapEvents');
+jest.mock('@/modules/search/client/services/nostr.client.service', () => ({
+  nostrService: {
+    subscribeHackerPlaces: jest.fn(),
+    unsubscribeHackerPlaces: jest.fn(),
+  },
+}));
 jest.mock('@/modules/tribes/client/components/CircleLocationMap', () => ({
   __esModule: true,
   default: (props: unknown) => <pre>{JSON.stringify(props)}</pre>,
 }));
+
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
+function latestSubscription() {
+  const calls = jest.mocked(nostrService.subscribeHackerPlaces).mock.calls;
+  const call = calls[calls.length - 1];
+  return { onEvent: call[0], callbacks: call[1] ?? {} };
+}
 
 function place(tags: string[][] = [], content = ''): Event {
   return {
@@ -30,7 +45,6 @@ function place(tags: string[][] = [], content = ''): Event {
     ],
   };
 }
-
 describe('hackerspace place event parsing', () => {
   it('handles legacy metadata, multiple precisions, missing names and inactive states', () => {
     const legacy = place();
@@ -45,7 +59,7 @@ describe('hackerspace place event parsing', () => {
       ['website', 'javascript:invalid'],
     ];
     expect(parseHackerPlace(legacy)).toMatchObject({
-      id: legacy.id,
+      id: `${legacy.pubkey}:${legacy.id}`,
       inactive: true,
       website: undefined,
     });
@@ -79,6 +93,14 @@ describe('hackerspace place event parsing', () => {
     expect(point?.[1]).toBeCloseTo(-0.1, 0);
   });
   it('uses the stable identifier, location, source metadata and safe website', () => {
+    const authored = place([['d', 'shared-place']]);
+    expect(parseHackerPlace(authored)?.id).toBe('fictional-key:shared-place');
+    expect(parseHackerPlace({ ...authored, pubkey: undefined })?.id).toBe(
+      'shared-place',
+    );
+    expect(parseHackerPlace({ ...place(), pubkey: undefined })?.id).toBe(
+      'event-id',
+    );
     expect(
       parseHackerPlace({
         id: 'event-id',
@@ -128,6 +150,9 @@ describe('hackerspace place event parsing', () => {
 });
 
 it('adapts hackerspace metadata into the shared map and excludes inactive/invalid events', () => {
+  jest.mocked(nostrService.subscribeHackerPlaces).mockResolvedValue({
+    close: jest.fn(),
+  });
   const event = {
     id: 'event',
     content: 'A workshop',
@@ -142,38 +167,38 @@ it('adapts hackerspace metadata into the shared map and excludes inactive/invali
       ['meta', 'fetched_at', '2026-10-12'],
     ],
   } as Event;
-  jest.mocked(useCircleMapEvents).mockReturnValue({
-    state: 'ready',
-    events: [
-      event,
-      {
-        ...event,
-        id: 'inactive',
-        tags: [...event.tags, ['status', 'inactive']],
-      },
-      {
-        ...event,
-        id: 'bare',
-        content: '',
-        tags: [
-          ['meta:source', 'https://api.spaceapi.io/'],
-          ['g', 'gcpvj0'],
-          ['name', 'Bare Workshop'],
-          ['website', 'javascript:alert(1)'],
-        ],
-      },
-      {
-        ...event,
-        id: 'closed',
-        tags: [
-          ...event.tags.filter(tag => tag[1] !== 'open'),
-          ['meta', 'open', 'closed'],
-        ],
-      },
-      { ...event, tags: [] },
-    ],
-  });
   render(<HackerspaceMap />);
+  const { onEvent, callbacks } = latestSubscription();
+  act(() => {
+    onEvent(event);
+    onEvent(event);
+    onEvent({
+      ...event,
+      id: 'inactive',
+      tags: [...event.tags, ['status', 'inactive']],
+    });
+    onEvent({
+      ...event,
+      id: 'bare',
+      content: '',
+      tags: [
+        ['meta:source', 'https://api.spaceapi.io/'],
+        ['g', 'gcpvj0'],
+        ['name', 'Bare Workshop'],
+        ['website', 'javascript:alert(1)'],
+      ],
+    });
+    onEvent({ ...event, id: 'empty', tags: [] });
+    onEvent({
+      ...event,
+      id: 'closed',
+      tags: [
+        ...event.tags.filter(tag => tag[1] !== 'open'),
+        ['meta', 'open', 'closed'],
+      ],
+    });
+    callbacks.onEose?.();
+  });
   const props = JSON.parse(
     screen.getByText(/SpaceAPI-reported places/).textContent!,
   );
@@ -190,6 +215,12 @@ it('adapts hackerspace metadata into the shared map and excludes inactive/invali
   });
   expect(props.locations[1].link).toBeUndefined();
   expect(props.locations[1].details).toEqual([]);
+  expect(props.markerColor).toBe('#12b591');
+  expect(props.className).toBe('circle-location-map-panel--brand');
+  expect(props.loadingText).toBe(
+    'Loading places from Trustroots and Nomadwiki relays…',
+  );
+  expect(props.state).toBe('ready');
   expect(
     parseHackerPlace({
       ...event,
@@ -220,4 +251,51 @@ it('adapts hackerspace metadata into the shared map and excludes inactive/invali
       tags: event.tags.filter(tag => tag[0] !== 'website'),
     })?.website,
   ).toBeUndefined();
+});
+
+it('reports relay closure and ignores updates after unmount', async () => {
+  jest.mocked(nostrService.subscribeHackerPlaces).mockResolvedValue({
+    close: jest.fn(),
+  });
+  const { unmount } = render(<HackerspaceMap />);
+  const { onEvent, callbacks } = latestSubscription();
+  act(() => callbacks.onClose?.('closed'));
+  expect(
+    JSON.parse(screen.getByText(/could not be loaded/).textContent!).state,
+  ).toBe('error');
+  unmount();
+  expect(nostrService.unsubscribeHackerPlaces).toHaveBeenCalled();
+  act(() => {
+    onEvent(place());
+    callbacks.onEose?.();
+    callbacks.onClose?.('closed');
+  });
+});
+
+it('shows an error when the relay subscription fails', async () => {
+  jest
+    .mocked(nostrService.subscribeHackerPlaces)
+    .mockRejectedValue(new Error('offline'));
+  render(<HackerspaceMap />);
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(
+    JSON.parse(screen.getByText(/could not be loaded/).textContent!).state,
+  ).toBe('error');
+});
+
+it('ignores a connection rejection after unmount', async () => {
+  let reject!: (error: Error) => void;
+  jest.mocked(nostrService.subscribeHackerPlaces).mockReturnValue(
+    new Promise((_resolve, fail) => {
+      reject = fail;
+    }),
+  );
+  const { unmount } = render(<HackerspaceMap />);
+  unmount();
+  await act(async () => {
+    reject(new Error('offline'));
+  });
+  expect(nostrService.unsubscribeHackerPlaces).toHaveBeenCalled();
 });

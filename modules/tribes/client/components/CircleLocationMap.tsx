@@ -57,6 +57,8 @@ interface Props {
   errorText: string;
   countLabel: string;
   attribution?: ReactNode;
+  markerColor?: string;
+  className?: string;
 }
 
 export default function CircleLocationMap(props: Props) {
@@ -104,7 +106,7 @@ export default function CircleLocationMap(props: Props) {
         radius: 8,
         color: '#fff',
         weight: 2,
-        fillColor: '#488261',
+        fillColor: props.markerColor || '#488261',
         fillOpacity: 1,
       })
         .bindPopup(locationPopup(location))
@@ -120,9 +122,14 @@ export default function CircleLocationMap(props: Props) {
         ),
         { padding: [24, 24], maxZoom: 8 },
       );
-  }, [props.locations]);
+  }, [props.locations, props.markerColor]);
   return (
-    <section className="circle-location-map-panel" aria-label={props.title}>
+    <section
+      className={`circle-location-map-panel${
+        props.className ? ` ${props.className}` : ''
+      }`}
+      aria-label={props.title}
+    >
       <div className="circle-location-map-heading">
         <h3>{props.title}</h3>
         <p>{props.description}</p>

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 
 import AdminHeader from './AdminHeader.component';
-import axios from '@/modules/core/client/api/http-client.js';
+import axios, {
+  getErrorResponse,
+} from '@/modules/core/client/api/http-client.js';
 import {
   nostrService,
   type HackerPlaceRelayConnection,
@@ -59,20 +61,27 @@ export default function AdminHackerspaces() {
       available: boolean;
       published: number;
       failed: number;
+      reason?: string;
     }[]
   >([]);
   async function preview() {
     setBusy(true);
+    setSpaces([]);
     setRelayResults([]);
     setStatus('Fetching the SpaceAPI Collector and published place events…');
+    let fetched = false;
     try {
       const [{ data }, events] = await Promise.all([
         axios.get('/api/admin/hackerspaces/preview'),
         nostrService.fetchHackerPlaceEvents().catch(() => [] as NostrEvent[]),
       ]);
+      fetched = true;
       const existing = new Map(
         events
           .filter(event => sourceId(event)?.startsWith('spaceapi:'))
+          .sort(
+            (a, b) => a.created_at - b.created_at || b.id.localeCompare(a.id),
+          )
           .map(event => [sourceId(event)!, event]),
       );
       const listed = new Set<string>();
@@ -128,10 +137,24 @@ export default function AdminHackerspaces() {
             .length
         } removals to mark inactive. Source records are not human-verified.`,
       );
-    } catch {
-      setStatus(
-        'Could not fetch the SpaceAPI Collector. No events were changed.',
-      );
+    } catch (error) {
+      const response = getErrorResponse(error);
+      const reason = response?.data?.message;
+      if (response?.status === 401 || response?.status === 403) {
+        setStatus(
+          'Administrator access is required. Sign in with an administrator account and retry. No events were changed.',
+        );
+      } else if (typeof reason === 'string' && reason) {
+        setStatus(
+          `Could not fetch the SpaceAPI Collector: ${reason} No events were changed.`,
+        );
+      } else {
+        setStatus(
+          fetched
+            ? 'Could not prepare the import preview. No events were changed.'
+            : 'Could not fetch the SpaceAPI Collector. No events were changed.',
+        );
+      }
     } finally {
       setBusy(false);
     }
@@ -190,8 +213,11 @@ export default function AdminHackerspaces() {
                 await relay.publish(signed as never);
                 outcomes[index].published += 1;
                 return true;
-              } catch {
+              } catch (error) {
                 outcomes[index].failed += 1;
+                const reason =
+                  error instanceof Error ? error.message : String(error);
+                Object.assign(outcomes[index], { reason });
                 return false;
               }
             }),
@@ -250,6 +276,7 @@ export default function AdminHackerspaces() {
                 {result.url}: {result.published} published; {result.failed}{' '}
                 failed
                 {result.available ? '' : '; connection unavailable'}
+                {result.reason && `; ${result.reason}`}
               </li>
             ))}
           </ul>

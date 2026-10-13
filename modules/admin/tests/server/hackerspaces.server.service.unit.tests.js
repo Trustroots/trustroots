@@ -212,6 +212,72 @@ describe('SpaceAPI Collector import service', () => {
       global.fetch = original;
     }
   });
+
+  it('retries transient failures once with a fresh timeout and returns the preview', async () => {
+    for (const error of [
+      Object.assign(new Error('timeout'), { name: 'TimeoutError' }),
+      ...[
+        'UND_ERR_CONNECT_TIMEOUT',
+        'ETIMEDOUT',
+        'ECONNRESET',
+        'EAI_AGAIN',
+      ].map(code => new TypeError('fetch failed', { cause: { code } })),
+    ]) {
+      const signals = [];
+      const entries = await service.fetchSpaceApiCollector(
+        async (url, options) => {
+          assert.equal(url, service.SPACEAPI_COLLECTOR_URL);
+          signals.push(options.signal);
+          if (signals.length === 1) throw error;
+          return { ok: true, json: async () => [] };
+        },
+      );
+      assert.deepEqual(entries, []);
+      assert.equal(signals.length, 2);
+      assert.notEqual(signals[0], signals[1]);
+    }
+  });
+
+  it('stops after two transient failures and reports a useful error', async () => {
+    for (const [error, message] of [
+      [
+        Object.assign(new Error('timeout'), { name: 'TimeoutError' }),
+        /timed out/,
+      ],
+      [
+        new TypeError('fetch failed', { cause: { code: 'EAI_AGAIN' } }),
+        /could not be reached/,
+      ],
+    ]) {
+      let calls = 0;
+      await assert.rejects(
+        service.fetchSpaceApiCollector(async () => {
+          calls += 1;
+          throw error;
+        }),
+        message,
+      );
+      assert.equal(calls, 2);
+    }
+  });
+
+  it('does not retry permanent transport, HTTP or response-format failures', async () => {
+    for (const result of [
+      new TypeError('fetch failed', { cause: { code: 'CERT_HAS_EXPIRED' } }),
+      { ok: false, status: 503 },
+      { ok: true, json: async () => ({ unexpected: true }) },
+    ]) {
+      let calls = 0;
+      await assert.rejects(
+        service.fetchSpaceApiCollector(async () => {
+          calls += 1;
+          if (result instanceof Error) throw result;
+          return result;
+        }),
+      );
+      assert.equal(calls, 1);
+    }
+  });
 });
 
 describe('SpaceAPI import preview controller', () => {
