@@ -82,11 +82,33 @@ export function normaliseCollectorEntry(entry, fetchedAt) {
   };
 }
 
+async function fetchCollectorResponse(fetcher, retry = true) {
+  try {
+    return await fetcher(SPACEAPI_COLLECTOR_URL, {
+      headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(15000),
+    });
+  } catch (error) {
+    const code = error?.cause?.code;
+    const timeout =
+      error?.name === 'TimeoutError' ||
+      code === 'UND_ERR_CONNECT_TIMEOUT' ||
+      code === 'ETIMEDOUT';
+    const transient = timeout || code === 'ECONNRESET' || code === 'EAI_AGAIN';
+    if (!transient) throw error;
+    // The Collector GET is read-only; allow one fresh, bounded attempt.
+    if (retry) return fetchCollectorResponse(fetcher, false);
+    throw new Error(
+      timeout
+        ? 'SpaceAPI Collector request timed out. Please retry.'
+        : 'SpaceAPI Collector could not be reached. Please retry.',
+      { cause: error },
+    );
+  }
+}
+
 export async function fetchSpaceApiCollector(fetcher = fetch) {
-  const response = await fetcher(SPACEAPI_COLLECTOR_URL, {
-    headers: { accept: 'application/json' },
-    signal: AbortSignal.timeout(15000),
-  });
+  const response = await fetchCollectorResponse(fetcher);
   if (!response.ok)
     throw new Error(`SpaceAPI Collector returned ${response.status}`);
   const payload = await response.json();
