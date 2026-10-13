@@ -139,7 +139,7 @@ service.add = function (req, res) {
       /* istanbul ignore else */
       if (err) {
         if (contact) {
-          contact.remove(function () {
+          contact.deleteOne(function () {
             return errorService.sendBadRequest(res, err);
           });
         } else {
@@ -155,7 +155,7 @@ service.add = function (req, res) {
  */
 service.remove = function (req, res) {
   const contact = req.contact;
-  contact.remove(function (err) {
+  contact.deleteOne(function (err) {
     if (err) {
       return errorService.sendBadRequest(res, err);
     } else {

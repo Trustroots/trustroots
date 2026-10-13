@@ -300,7 +300,7 @@ service.delete = function (req, res) {
   if (!req.user || !req.offer.user._id.equals(req.user._id)) {
     return errorService.sendForbidden(res);
   }
-  Offer.findOneAndRemove(
+  Offer.findOneAndDelete(
     {
       _id: req.offer._id,
       user: req.user._id,

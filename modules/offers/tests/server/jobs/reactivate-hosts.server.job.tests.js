@@ -182,7 +182,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
       if (err) return done(err);
 
       // Remove host offer as we don't want it to interfer with this test
-      offerHost.remove(function (err) {
+      offerHost.deleteOne(function (err) {
         if (err) return done(err);
 
         reactivateHostsJobHandler({}, function (err) {

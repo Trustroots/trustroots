@@ -58,7 +58,7 @@ async.waterfall([
 
   // count all messages to be able to show progress
   function countAllMessages(done) {
-    Message.count(searchMessagesParam).exec(function (err, messageNo) {
+    Message.countDocuments(searchMessagesParam).exec(function (err, messageNo) {
       done(err, messageNo);
     })
   },

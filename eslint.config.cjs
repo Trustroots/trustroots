@@ -244,6 +244,7 @@ const legacyConfig = {
     {
       files: [
         'config/vite/**/*.{ts,tsx}',
+        'config/lib/**/*.mts',
         'scripts/ci/**/*.mts',
         'modules/*/client/**/*.{ts,tsx}',
         'modules/*/shared/**/*.{ts,tsx,mts}',

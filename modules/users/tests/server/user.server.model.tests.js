@@ -206,7 +206,7 @@ describe('User Model Unit Tests:', function () {
       const _user = new User(user);
       const _user3 = new User(user3);
 
-      _user.remove(function (err) {
+      _user.deleteOne(function (err) {
         should.not.exist(err);
         _user.save(function (err) {
           should.not.exist(err);
@@ -229,7 +229,7 @@ describe('User Model Unit Tests:', function () {
       const _user = new User(user);
       const _user3 = new User(user3);
 
-      _user.remove(function (err) {
+      _user.deleteOne(function (err) {
         should.not.exist(err);
         _user.save(function (err) {
           should.not.exist(err);

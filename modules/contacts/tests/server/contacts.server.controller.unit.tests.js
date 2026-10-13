@@ -280,7 +280,7 @@ describe('Contacts controller unit tests', () => {
         confirmed: true,
       }).save();
 
-      sinon.stub(Contact.prototype, 'remove').callsFake(function (cb) {
+      sinon.stub(Contact.prototype, 'deleteOne').callsFake(function (cb) {
         cb(new Error('remove failed'));
       });
 

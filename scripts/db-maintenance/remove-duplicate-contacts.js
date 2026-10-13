@@ -41,7 +41,7 @@ console.log('Gathering data...');
 // @link https://github.com/caolan/async#queueworker-concurrency
 var q = async.queue(function (contactId, callback) {
   console.log('Removing ' + contactId);
-  Contact.findByIdAndRemove(contactId, function(err) {
+  Contact.findByIdAndDelete(contactId, function(err) {
     if(err) {
       console.error('Failed to remove contact record ' + contactId);
       callback();
@@ -59,7 +59,7 @@ q.drain = function() {
   console.log('Removing duplicate records done.');
 
   // All done
-  Contact.find().count().exec(function(err, contactsCount) {
+  Contact.find().countDocuments().exec(function(err, contactsCount) {
     console.log('- Found ' + totalRecordsWithIssues + ' problematic contact records.');
     console.log('- Removed ' + removedCounter + ' contact records.');
     console.log('- ' + contactsCount + ' contact records of ' + totalInitialContacts + ' left after this script.')
@@ -68,7 +68,7 @@ q.drain = function() {
 };
 
 // Check for initial count
-Contact.find().count().exec(function(err, contactsCount) {
+Contact.find().countDocuments().exec(function(err, contactsCount) {
   if (err) {
     console.error('Error:');
     console.log(err);

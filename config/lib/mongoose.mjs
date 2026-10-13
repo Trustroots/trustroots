@@ -6,6 +6,10 @@ import path from 'path';
 import log from './logger.mjs';
 import mongoose from 'mongoose';
 import semver from 'semver';
+import { installMongooseCallbackSupport } from './mongoose-callbacks.mts';
+
+// Mongoose 9 returns promises. Keep existing callback callers working.
+installMongooseCallbackSupport(mongoose);
 const dependency6 = JSON.parse(
   readFileSync(new URL('../../package.json', import.meta.url), 'utf8'),
 );

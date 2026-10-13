@@ -112,7 +112,7 @@ describe('Tribe Model Unit Tests:', function () {
 
       _tribe.save(function (err) {
         should.not.exist(err);
-        _tribe.remove(function (err) {
+        _tribe.deleteOne(function (err) {
           should.not.exist(err);
           done();
         });

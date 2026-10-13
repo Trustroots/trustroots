@@ -52,7 +52,7 @@ async.waterfall([
 
   // count all docs to be able to show progress
   function countAll(done) {
-    User.count(query).exec(function (err, count) {
+    User.countDocuments(query).exec(function (err, count) {
       done(err, count);
     });
   },

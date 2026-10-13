@@ -292,7 +292,7 @@ describe('Job: message unread', function () {
     );
     message.save(function (err) {
       if (err) return done(err);
-      userFrom.remove(function (err) {
+      userFrom.deleteOne(function (err) {
         if (err) return done(err);
 
         messageUnreadJobHandler({}, function (err) {

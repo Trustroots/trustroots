@@ -11,5 +11,5 @@
     "moduleResolution": "NodeNext",
     "types": ["node"]
   },
-  "include": ["scripts/ci/**/*.mts"]
+  "include": ["config/lib/**/*.mts", "scripts/ci/**/*.mts"]
 }

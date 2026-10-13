@@ -436,7 +436,7 @@ service.removeProfile = function (req, res) {
       },
       // Remove profile
       function (user, done) {
-        User.findOneAndRemove(
+        User.findOneAndDelete(
           {
             _id: user._id,
           },

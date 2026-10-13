@@ -410,34 +410,38 @@ export const getUser = async (req, res) => {
       });
     }
 
-    const messageFromCount = await Message.find({ userFrom: userId }).count();
+    const messageFromCount = await Message.find({
+      userFrom: userId,
+    }).countDocuments();
 
-    const messageToCount = await Message.find({ userTo: userId }).count();
+    const messageToCount = await Message.find({
+      userTo: userId,
+    }).countDocuments();
 
     const threadCount = await Thread.find({
       $or: [{ userFrom: userId }, { userTo: userId }],
-    }).count();
+    }).countDocuments();
 
     // @TODO these could be compiled using aggregate grouping
     const threadReferencesSentNo = await ReferenceThread.find({
       userFrom: userId,
       reference: 'no',
-    }).count();
+    }).countDocuments();
 
     const threadReferencesReceivedNo = await ReferenceThread.find({
       userTo: userId,
       reference: 'no',
-    }).count();
+    }).countDocuments();
 
     const threadReferencesReceivedYes = await ReferenceThread.find({
       userTo: userId,
       reference: 'yes',
-    }).count();
+    }).countDocuments();
 
     const threadReferencesSentYes = await ReferenceThread.find({
       userFrom: userId,
       reference: 'yes',
-    }).count();
+    }).countDocuments();
 
     const threadReferences = await ReferenceThread.find({
       $or: [{ userFrom: userId }, { userTo: userId }],

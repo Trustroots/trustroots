@@ -455,7 +455,7 @@ describe('Offers controller unit tests', () => {
     it('returns 400 when removing an offer fails', async () => {
       const offer = await createOffer(owner._id);
       const offerReq = await Offer.findById(offer._id).populate('user', '_id');
-      sinon.stub(Offer, 'findOneAndRemove').callsFake((query, cb) => {
+      sinon.stub(Offer, 'findOneAndDelete').callsFake((query, cb) => {
         cb(new Error('remove failed'));
       });
 

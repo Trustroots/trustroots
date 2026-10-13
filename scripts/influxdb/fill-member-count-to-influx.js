@@ -70,7 +70,7 @@ async.waterfall([
   */
 
   function (done) {
-    User.find(whereQuery).count().exec(function (err, usersCount) {
+    User.find(whereQuery).countDocuments().exec(function (err, usersCount) {
       console.log('Found ' + usersCount + ' users currently in the DB.\n');
       done(err, usersCount);
     });
