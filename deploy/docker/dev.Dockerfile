@@ -1,6 +1,6 @@
 # Development image for local `docker compose up` and devcontainer.
 #
-# Node 24, native build deps, npm ci to seed the `node_modules` named volume.
+# Node 24, native build deps, pnpm install to seed the `node_modules` named volume.
 # App code is bind-mounted at runtime. Playwright browsers are baked for E2E.
 
 FROM node:24.21.0-bookworm-slim
@@ -48,22 +48,21 @@ RUN apt-get -qq update && apt-get -q install -y \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Keep the package manager consistent across runtime images.
-RUN npm -g i npm@11.19.0
+# Keep the package manager consistent with `packageManager` in package.json.
+RUN npm -g i --force pnpm@11.18.0
 
 ENV PLAYWRIGHT_BROWSERS_PATH=/home/app/ms-playwright
 
 WORKDIR /home/app/trustroots
 
-COPY package*.json ./
-RUN --mount=type=cache,target=/root/.npm \
-  npm ci --quiet \
-  && npm rebuild mmmagic --build-from-source
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+  pnpm install --frozen-lockfile
 
 RUN mkdir -p "$PLAYWRIGHT_BROWSERS_PATH" \
   && chmod 777 "$PLAYWRIGHT_BROWSERS_PATH" \
   && for attempt in 1 2 3; do \
-    if npx playwright install chromium firefox; then \
+    if pnpm exec playwright install chromium firefox; then \
       break; \
     fi; \
     if [ "$attempt" -eq 3 ]; then exit 1; fi; \

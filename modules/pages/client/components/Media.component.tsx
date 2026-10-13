@@ -295,7 +295,7 @@ export default function Media() {
               </li>
               <li>
                 <Trans t={rawT} ns="pages">
-                  Read <a href="faq.general">frequently asked questions</a>
+                  Read <a href="/faq">frequently asked questions</a>
                 </Trans>
               </li>
             </ul>

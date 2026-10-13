@@ -5,8 +5,8 @@
   "workspaceFolder": "/home/app/trustroots",
   "shutdownAction": "stopCompose",
   "overrideCommand": true,
-  "postCreateCommand": "npm run check-environment",
-  "postStartCommand": "npm run check-environment",
+  "postCreateCommand": "pnpm run check-environment",
+  "postStartCommand": "pnpm run check-environment",
   "portsAttributes": {
     "3000": {
       "label": "Webpack dev server",

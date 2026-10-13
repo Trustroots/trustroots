@@ -1,0 +1,7 @@
+- [x] Validate the proposal before implementation.
+- [x] Repair stale internal links and account removal navigation and copy.
+- [x] Add an internal route and fragment check to CI, with regression tests.
+- [x] Add browser coverage for the FAQ and account removal round trip.
+- [x] Search all FAQ categories with category-labelled results and regression coverage.
+- [x] Run focused tests, lint and OpenSpec validation.
+- [x] Update the living specification and archive the completed change.

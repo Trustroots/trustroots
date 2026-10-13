@@ -1,11 +1,11 @@
 # End-to-end tests
 
-`npm run test:e2e` runs the full suite. For a focused run, select one group:
+`pnpm run test:e2e` runs the full suite. For a focused run, select one group:
 
 ```sh
-TRUSTROOTS_E2E_GROUP=account-public npm run test:e2e
-TRUSTROOTS_E2E_GROUP=community npm run test:e2e
-TRUSTROOTS_E2E_GROUP=admin-search npm run test:e2e
+TRUSTROOTS_E2E_GROUP=account-public pnpm run test:e2e
+TRUSTROOTS_E2E_GROUP=community pnpm run test:e2e
+TRUSTROOTS_E2E_GROUP=admin-search pnpm run test:e2e
 ```
 
 CI runs these groups on three separate runners with independent apps and MongoDB

@@ -18,10 +18,12 @@ export const invokeRolesPolicies = () => {
           resources: '/api/admin/acquisition-stories',
           permissions: ['post'],
         },
+        { resources: '/api/admin/location-corrections', permissions: ['get'] },
         {
-          resources: '/api/admin/staff-blockers',
-          permissions: ['get'],
+          resources: '/api/admin/location-corrections/send',
+          permissions: ['post'],
         },
+        { resources: '/api/admin/staff-blockers', permissions: ['get'] },
       ],
     },
     {
@@ -33,6 +35,11 @@ export const invokeRolesPolicies = () => {
         },
         {
           resources: '/api/admin/acquisition-stories',
+          permissions: ['post'],
+        },
+        { resources: '/api/admin/location-corrections', permissions: ['get'] },
+        {
+          resources: '/api/admin/location-corrections/send',
           permissions: ['post'],
         },
         { resources: '/api/admin/staff-blockers', permissions: ['get'] },
@@ -76,9 +83,19 @@ export const invokeRolesPolicies = () => {
           resources: '/api/admin/users/by-last-ip-address',
           permissions: ['post'],
         },
+        { resources: '/api/admin/reference-threads', permissions: ['get'] },
+        { resources: '/api/admin/experiences', permissions: ['get'] },
         {
-          resources: '/api/admin/reference-threads',
+          resources: '/api/admin/experiences/:id/change-links',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/admin/experience-change-requests',
           permissions: ['get'],
+        },
+        {
+          resources: '/api/admin/experience-change-requests/:id/decision',
+          permissions: ['post'],
         },
         {
           resources: '/api/admin/newsletter-subscribers',
