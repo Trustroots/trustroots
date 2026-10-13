@@ -173,13 +173,13 @@ describe('Admin access route tests', () => {
     _usersRaw = utils.generateUsers(3);
     _usersRaw.forEach(user => {
       user.roles = ['user'];
-      user.username = 'mfa-test-member';
+      user.username = 'mfatestmember';
       user.email = 'mfa-test-member@example.test';
       user.password = 'ExamplePassword123!';
     });
-    _usersRaw[1].username = 'mfa-test-second';
+    _usersRaw[1].username = 'mfatestsecond';
     _usersRaw[1].email = 'mfa-test-second@example.test';
-    _usersRaw[2].username = 'mfa-test-target';
+    _usersRaw[2].username = 'mfatesttarget';
     _usersRaw[2].email = 'mfa-test-target@example.test';
     credentialsRegular = {
       username: _usersRaw[0].username,
@@ -237,7 +237,7 @@ describe('Admin access route tests', () => {
   it('requires administrators to enrol MFA before account access', async () => {
     const User = mongoose.model('User');
     const credentials = {
-      username: 'mfa-admin-test',
+      username: 'mfaadmintest',
       password: 'ExamplePassword123!',
     };
     await new User({

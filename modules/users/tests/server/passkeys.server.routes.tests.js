@@ -21,7 +21,7 @@ describe('Passkey database and route integration', function () {
     user = await User.create({
       firstName: 'Fictional',
       lastName: 'Member',
-      username: 'fictional-staff',
+      username: 'fictionalstaff',
       email: 'fictional-staff@example.test',
       password: 'FictionalPassword123!',
       roles: ['user', 'admin'],
