@@ -99,10 +99,10 @@ export default function AdminHackerspaces() {
                 ? ('inactive' as const)
                 : ('excluded' as const)
               : space.eligible
-              ? event
-                ? ('updated' as const)
-                : ('new' as const)
-              : ('retained' as const),
+                ? event
+                  ? ('updated' as const)
+                  : ('new' as const)
+                : ('retained' as const),
         };
       });
       const removed = [...existing.entries()]
@@ -308,12 +308,12 @@ export default function AdminHackerspaces() {
                       {space.action === 'new'
                         ? 'Addition'
                         : space.action === 'updated'
-                        ? 'Update'
-                        : space.action === 'retained'
-                        ? 'Temporarily invalid; keep last-known listing'
-                        : space.action === 'excluded'
-                        ? 'Closed; skip publication'
-                        : 'Closed or removed; mark inactive'}
+                          ? 'Update'
+                          : space.action === 'retained'
+                            ? 'Temporarily invalid; keep last-known listing'
+                            : space.action === 'excluded'
+                              ? 'Closed; skip publication'
+                              : 'Closed or removed; mark inactive'}
                     </td>
                     <td>
                       {space.website && /^https?:\/\//i.test(space.website) && (
