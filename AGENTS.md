@@ -73,3 +73,12 @@ reason you can state in the PR. If one is intended, run
 run the same command to lock in the improvement.
 
 For how we work on GitHub (draft pull requests, rebasing instead of merging `main`, squash-merging, CI checks, keeping pull requests small, and keeping agent tooling out of the repo), see [GITHUB.md](GITHUB.md).
+
+### Merging as an agent
+
+When asked to merge a pull request onto `main`:
+
+- **Always wait for required CI to pass.** Do not merge on red or while checks are still running. Do not use admin bypass, `bypass_rules`, or similar to skip CI or status checks.
+- **Do not block on a human review** when the user wants the change on `main` without waiting for another reviewer. Bypassing the review requirement (or using an admin merge path that only skips review) is fine in that case.
+- Prefer **squash-merge**, matching [GITHUB.md](GITHUB.md).
+- If CI fails after a push meant for merge, fix it (or say why the failure is unrelated) and only merge once green again.
