@@ -11,6 +11,7 @@ import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-link
 import { getNetworkName } from '@/modules/users/client/utils/networks';
 import BoardImplementation from '@/modules/core/client/components/Board';
 import Stat from './Stat';
+import StatisticsImage from './StatisticsImage';
 import Tooltip from '@/modules/core/client/components/Tooltip';
 
 interface ExperienceSuggestion {
@@ -321,8 +322,7 @@ export default function Statistics({
 
               <Stat title={t('Member growth')} className="is-graph">
                 <a href="https://grafana.trustroots.org/d/000000002/members">
-                  <img
-                    className="img-responsive"
+                  <StatisticsImage
                     src="https://grafana.trustroots.org/render/d-solo/000000002/members?orgId=1&theme=light&panelId=1&width=800&height=400&tz=UTC"
                     width="100%"
                     alt={t('Member growth')}
@@ -381,8 +381,7 @@ export default function Statistics({
 
               <Stat title={t('Member retention')} className="is-graph">
                 <a href="https://grafana.trustroots.org/d/UCqv_IYiz/member-retention">
-                  <img
-                    className="img-responsive"
+                  <StatisticsImage
                     src="https://grafana.trustroots.org/render/d-solo/UCqv_IYiz/member-retention?orgId=1&theme=light&panelId=4&width=800&height=400&tz=UTC"
                     width="100%"
                     alt={t('Member retention')}
@@ -463,8 +462,7 @@ export default function Statistics({
               <Stat title={t('Message replies')} className="is-graph">
                 <p className="text-muted">{t('Weekly messages and replies')}</p>
                 <a href="https://grafana.trustroots.org/d/000000004/messages-detailed">
-                  <img
-                    className="img-responsive"
+                  <StatisticsImage
                     src="https://grafana.trustroots.org/render/d-solo/000000004/messages-detailed?orgId=1&theme=light&panelId=4&width=800&height=400&tz=UTC"
                     width="100%"
                     alt={t('Weekly messages and replies')}
@@ -474,7 +472,7 @@ export default function Statistics({
 
               <Stat title={t('Translation status')} className="is-graph">
                 <a href="https://hosted.weblate.org/engage/trustroots/">
-                  <img
+                  <StatisticsImage
                     alt={t('Translation status')}
                     src="https://hosted.weblate.org/widgets/trustroots/-/horizontal-auto.svg"
                   />

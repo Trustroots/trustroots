@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { test: base, expect } = require('@playwright/test');
+const { stubStatisticsImages } = require('./statistics');
 const {
   annotateFeature,
   featureAnnotation,
@@ -16,6 +17,10 @@ const coverageDir = path.join(__dirname, '../../../coverage/e2e/js-raw');
 const collectCoverage = process.env.TRUSTROOTS_E2E_SKIP_JS_COVERAGE !== 'true';
 
 const test = base.extend({
+  context: async ({ context }, use) => {
+    await stubStatisticsImages(context);
+    await use(context);
+  },
   page: async ({ page, browserName }, use, testInfo) => {
     if (!collectCoverage || browserName !== 'chromium') {
       await use(page);
