@@ -102,6 +102,7 @@ test.describe.serial('auth email and token feature coverage', () => {
   });
 
   test('invalid email confirmation tokens route to recovery states', async ({
+    page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'auth.email-confirm-invalid', [
@@ -121,6 +122,12 @@ test.describe.serial('auth email and token feature coverage', () => {
       { headers: { 'X-Trustroots-Request': '1' } },
     );
     expect(invalidPost.status()).toBe(400);
+
+    await page.goto('/confirm-email-invalid');
+    await expect(
+      page.getByText('Email confirm token is invalid or has expired.'),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Login first' })).toBeVisible();
   });
 
   test('expired confirmation links return to the invalid-link flow', async ({

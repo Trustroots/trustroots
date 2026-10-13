@@ -920,6 +920,40 @@ describe('Authentication controller OAuth unit tests', () => {
       unchanged.emailToken.should.equal(token);
     });
 
+    it('confirms an email when the account already has an auth version', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const token = 'versioned-confirm-token';
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            public: false,
+            emailTemporary: saved.email,
+            emailToken: token,
+            emailTokenIssuedAt: new Date(),
+            emailTokenExpires: new Date(Date.now() + 86400000),
+            authVersion: 2,
+          },
+        },
+      );
+
+      const res = deferredResponse();
+      authController.confirmEmail(
+        {
+          params: { token },
+          login: (_user, cb) => cb(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+
+      const reloaded = await User.findById(saved._id);
+      reloaded.public.should.be.true();
+      reloaded.authVersion.should.equal(2);
+      should.not.exist(reloaded.emailToken);
+    });
+
     it('returns 400 when the token is invalid', async () => {
       const res = deferredResponse();
       authController.confirmEmail({ params: { token: 'missing' } }, res);
