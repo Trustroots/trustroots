@@ -1,7 +1,17 @@
 {
   "imports": {
-    "admin": ["core", "messages", "search", "tribes", "users"],
-    "contacts": ["core", "users"],
+    "admin": [
+      "core",
+      "messages",
+      "search",
+      "support",
+      "tribes",
+      "users"
+    ],
+    "contacts": [
+      "core",
+      "users"
+    ],
     "core": [
       "admin",
       "contacts",
@@ -14,16 +24,60 @@
       "tribes",
       "users"
     ],
-    "experiences": ["core", "support", "users"],
-    "messages": ["core", "references-thread", "stats", "support", "users"],
-    "offers": ["core", "search", "tribes", "users"],
-    "pages": ["core", "support", "tribes", "users"],
-    "references-thread": ["core", "stats", "users"],
-    "search": ["core", "offers", "tribes", "users"],
-    "sparkpost": ["core", "stats"],
-    "statistics": ["core", "experiences", "stats", "users"],
-    "support": ["core", "stats"],
-    "tribes": ["core", "search", "users"],
+    "experiences": [
+      "core",
+      "support",
+      "users"
+    ],
+    "messages": [
+      "core",
+      "references-thread",
+      "stats",
+      "support",
+      "users"
+    ],
+    "offers": [
+      "core",
+      "search",
+      "tribes",
+      "users"
+    ],
+    "pages": [
+      "core",
+      "support",
+      "tribes",
+      "users"
+    ],
+    "references-thread": [
+      "core",
+      "stats",
+      "users"
+    ],
+    "search": [
+      "core",
+      "offers",
+      "tribes",
+      "users"
+    ],
+    "sparkpost": [
+      "core",
+      "stats"
+    ],
+    "statistics": [
+      "core",
+      "experiences",
+      "stats",
+      "users"
+    ],
+    "support": [
+      "core",
+      "stats"
+    ],
+    "tribes": [
+      "core",
+      "search",
+      "users"
+    ],
     "users": [
       "admin",
       "contacts",
@@ -44,15 +98,32 @@
       "messages",
       "offers",
       "references-thread",
+      "support",
       "users"
     ],
-    "contacts": ["users"],
-    "core": ["users"],
-    "experiences": ["contacts", "users"],
-    "messages": ["users"],
-    "offers": ["users"],
-    "pages": ["users"],
-    "references-thread": ["messages", "users"],
+    "contacts": [
+      "users"
+    ],
+    "core": [
+      "users"
+    ],
+    "experiences": [
+      "contacts",
+      "users"
+    ],
+    "messages": [
+      "users"
+    ],
+    "offers": [
+      "users"
+    ],
+    "pages": [
+      "users"
+    ],
+    "references-thread": [
+      "messages",
+      "users"
+    ],
     "statistics": [
       "experiences",
       "messages",
@@ -60,7 +131,15 @@
       "references-thread",
       "users"
     ],
-    "tribes": ["contacts", "experiences", "users"],
+    "support": [
+      "admin",
+      "users"
+    ],
+    "tribes": [
+      "contacts",
+      "experiences",
+      "users"
+    ],
     "users": [
       "admin",
       "contacts",
