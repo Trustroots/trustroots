@@ -1,72 +1,234 @@
 /**
  * Unit tests for uncovered admin users controller paths.
  */
-const mongoose = require('mongoose');
-const sinon = require('sinon');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const sinon: typeof import('sinon') = require('sinon');
 
-const adminUsers = require('./../../server/controllers/admin.users.server.controller.mjs');
-const errorService = require('./../../../core/server/services/error.server.service.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const should = require('should');
+const adminUsers: typeof import('../../server/controllers/admin.users.server.controller.mjs').default = require('./../../server/controllers/admin.users.server.controller.mjs');
+const errorService: typeof import('../../../core/server/services/error.server.service.mjs').default = require('./../../../core/server/services/error.server.service.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+const should: typeof import('should') = require('should');
 
-const User = mongoose.model('User');
-const Contact = mongoose.model('Contact');
-const Offer = mongoose.model('Offer');
-const ReferenceThread = mongoose.model('ReferenceThread');
+type UserRecord =
+  import('../../../../testutils/server/model-contracts.mts').UserRecord;
+type UserModel =
+  import('../../../../testutils/server/model-contracts.mts').UserModel;
+type UserDocument =
+  import('../../../../testutils/server/model-contracts.mts').UserModelDocument;
+type ContactRecord =
+  import('../../../../testutils/server/model-contracts.mts').ContactRecord;
+type ContactModel =
+  import('../../../../testutils/server/model-contracts.mts').ContactModel;
+type OfferRecord =
+  import('../../../../testutils/server/model-contracts.mts').OfferRecord;
+type OfferModel =
+  import('../../../../testutils/server/model-contracts.mts').OfferModel;
+type ReferenceThreadRecord =
+  import('../../../../testutils/server/model-contracts.mts').ReferenceThreadRecord;
+type ReferenceThreadModel =
+  import('../../../../testutils/server/model-contracts.mts').ReferenceThreadModel;
+const User = mongoose.model<UserRecord, UserModel>('User');
+const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
+const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
+const ReferenceThread = mongoose.model<
+  ReferenceThreadRecord,
+  ReferenceThreadModel
+>('ReferenceThread');
 const AdminNote = mongoose.model('AdminNote');
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');
 
-function mockResponse() {
-  let resolveResponse;
-  const promise = new Promise(resolve => {
+interface AdminUserResponse {
+  _id?: { toString(): string };
+  removeProfileToken?: string;
+  resetPasswordToken?: string;
+  additionalProvidersData?: {
+    facebook?: { accessToken?: string };
+    github?: { accessToken?: string };
+    twitter?: { token?: string };
+  };
+}
+interface AdminResponseBody {
+  message?: string;
+  users?: Array<AdminUserResponse | null | undefined>;
+  pagination?: {
+    page?: number;
+    pageSize?: number;
+    total?: number;
+    totalPages?: number;
+  };
+  sort?: { column?: string; direction?: string };
+  profile?: { username?: string };
+  messageFromCount?: number;
+  contacts?: unknown[];
+  offers?: unknown[];
+  threadReferences?: unknown[];
+  length?: number;
+}
+interface AdminBlockerResponse {
+  _id: { equals(id: unknown): boolean };
+  blockedBy: Array<{
+    _id?: import('mongoose').Types.ObjectId;
+    username?: string;
+    displayName?: string;
+  }>;
+}
+type AdminResponse = AdminResponseBody | AdminBlockerResponse[];
+interface MockResponse {
+  statusCode: number;
+  body: AdminResponse | null;
+  status(code: number): this;
+  send(body: AdminResponse): this;
+  waitForResponse(): Promise<MockResponse>;
+}
+function mockResponse(): MockResponse {
+  let resolveResponse: (value: MockResponse) => void;
+  const promise = new Promise<MockResponse>(resolve => {
     resolveResponse = resolve;
   });
-  const res = { statusCode: 200, body: null };
-  res.status = function (code) {
-    res.statusCode = code;
-    return res;
+  const res: MockResponse = {
+    statusCode: 200,
+    body: null,
+    status(code) {
+      res.statusCode = code;
+      return res;
+    },
+    send(body) {
+      res.body = body;
+      resolveResponse(res);
+      return res;
+    },
+    waitForResponse: () => promise,
   };
-  res.send = function (body) {
-    res.body = body;
-    resolveResponse(res);
-    return res;
-  };
-  res.waitForResponse = () => promise;
   return res;
 }
+function present<T>(
+  value: T | null | undefined,
+  description: string,
+): NonNullable<T> {
+  if (value === null || value === undefined)
+    throw new Error(`Expected ${description}`);
+  return value;
+}
+function assertPresent<T>(
+  value: T | null | undefined,
+  description: string,
+): asserts value is T {
+  if (value === null || value === undefined)
+    throw new Error(`Expected ${description}`);
+}
 
+function responseBody(res: MockResponse): AdminResponseBody {
+  if (res.body === null) throw new Error('Expected admin response body');
+  if (Array.isArray(res.body))
+    throw new Error('Expected an object admin response body');
+  return res.body;
+}
+function responseArray(res: MockResponse): AdminBlockerResponse[] {
+  if (!Array.isArray(res.body))
+    throw new Error('Expected an array response body');
+  return res.body;
+}
+function staffResponse(
+  res: MockResponse,
+  predicate: (staff: AdminBlockerResponse) => boolean,
+): AdminBlockerResponse {
+  const staff = responseArray(res).find(predicate);
+  if (!staff) throw new Error('Expected matching staff response');
+  return staff;
+}
+function adminUserAt(res: MockResponse, index: number): AdminUserResponse {
+  const user = responseField(res, 'users')[index];
+  if (!user) throw new Error(`Expected user at response index ${index}`);
+  return user;
+}
+function adminUserToken(
+  res: MockResponse,
+  index: number,
+  key: 'removeProfileToken' | 'resetPasswordToken',
+): string {
+  const token = adminUserAt(res, index)[key];
+  if (typeof token !== 'string')
+    throw new Error(`Expected ${key} in user response`);
+  return token;
+}
+function adminProviderCredential(
+  res: MockResponse,
+  index: number,
+  provider: 'facebook' | 'github' | 'twitter',
+): string {
+  const providers = adminUserAt(res, index).additionalProvidersData;
+  const credential =
+    provider === 'twitter'
+      ? providers?.twitter?.token
+      : providers?.[provider]?.accessToken;
+  if (typeof credential !== 'string')
+    throw new Error(`Expected ${provider} credential in user response`);
+  return credential;
+}
+function adminUserId(res: MockResponse, index: number): { toString(): string } {
+  const id = adminUserAt(res, index)._id;
+  if (!id) throw new Error('Expected user id in response');
+  return id;
+}
+function responseField<Key extends keyof AdminResponseBody>(
+  res: MockResponse,
+  key: Key,
+): NonNullable<AdminResponseBody[Key]> {
+  const value = responseBody(res)[key];
+  if (value === undefined || value === null)
+    throw new Error(`Expected admin response field ${key}`);
+  return value as NonNullable<AdminResponseBody[Key]>;
+}
+
+interface MemberListQueryOptions {
+  count?: number;
+  countError?: Error;
+  findError?: Error;
+  users?: Array<UserDocument | null> | null;
+}
+interface MemberListCalls {
+  sort?: Record<string, number>;
+  skip?: number;
+  limit?: number;
+}
 function stubMemberListQuery({
   count = 0,
   countError,
   findError,
   users = [],
-} = {}) {
-  const calls = {};
-  sinon.stub(User, 'countDocuments').returns({
+}: MemberListQueryOptions = {}): MemberListCalls {
+  const calls: MemberListCalls = {};
+  const countQuery = {
     exec: () =>
       countError ? Promise.reject(countError) : Promise.resolve(count),
-  });
-  sinon.stub(User, 'find').returns({
+  };
+  sinon
+    .stub(User, 'countDocuments')
+    .returns(countQuery as unknown as ReturnType<typeof User.countDocuments>);
+  const findQuery = {
     select() {
       return this;
     },
-    sort(value) {
-      calls.sort = value;
+    sort(value: Record<string, number>) {
+      calls.sort = value as Record<string, number>;
       return this;
     },
-    skip(value) {
+    skip(value: number) {
       calls.skip = value;
       return this;
     },
-    limit(value) {
+    limit(value: number) {
       calls.limit = value;
       return this;
     },
     exec() {
       return findError ? Promise.reject(findError) : Promise.resolve(users);
     },
-  });
+  };
+  sinon
+    .stub(User, 'find')
+    .returns(findQuery as unknown as ReturnType<typeof User.find>);
   return calls;
 }
 
@@ -82,7 +244,7 @@ describe('Admin users controller unit tests', () => {
       adminUsers.searchUsers({ body: {} }, res);
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      responseField(res, 'message').should.equal(
         'Query string at least 3 characters long required.',
       );
     });
@@ -92,7 +254,7 @@ describe('Admin users controller unit tests', () => {
       adminUsers.searchUsers({ body: { search: 'ab' } }, res);
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      responseField(res, 'message').should.equal(
         'Query string at least 3 characters long required.',
       );
     });
@@ -107,7 +269,9 @@ describe('Admin users controller unit tests', () => {
         const res = mockResponse();
         adminUsers.searchUsers({ body: { search: 'alice', ...options } }, res);
         res.statusCode.should.equal(400);
-        res.body.message.should.equal('Invalid member-list options.');
+        responseField(res, 'message').should.equal(
+          'Invalid member-list options.',
+        );
       });
     });
 
@@ -127,16 +291,19 @@ describe('Admin users controller unit tests', () => {
       );
       await res.waitForResponse();
 
-      calls.sort.should.deepEqual({ created: -1, _id: 1 });
-      calls.skip.should.equal(150);
-      calls.limit.should.equal(150);
-      res.body.pagination.should.deepEqual({
+      present(calls.sort, 'requested sort').should.deepEqual({
+        created: -1,
+        _id: 1,
+      });
+      present(calls.skip, 'requested skip').should.equal(150);
+      present(calls.limit, 'requested limit').should.equal(150);
+      responseField(res, 'pagination').should.deepEqual({
         page: 2,
         pageSize: 150,
         total: 151,
         totalPages: 2,
       });
-      res.body.sort.should.deepEqual({
+      responseField(res, 'sort').should.deepEqual({
         column: 'created',
         direction: 'descending',
       });
@@ -168,6 +335,7 @@ describe('Admin users controller unit tests', () => {
     it('obfuscates sensitive tokens in search results', async () => {
       const users = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(users[0]._id);
+      assertPresent(userDoc, 'saved user');
       userDoc.removeProfileToken = 'remove-token';
       userDoc.resetPasswordToken = 'reset-token';
       await userDoc.save();
@@ -176,20 +344,20 @@ describe('Admin users controller unit tests', () => {
       adminUsers.searchUsers({ body: { search: userDoc.username } }, res);
       await res.waitForResponse();
 
-      res.body.users.length.should.equal(1);
-      res.body.users[0].removeProfileToken.should.equal(
+      responseField(res, 'users').length.should.equal(1);
+      adminUserToken(res, 0, 'removeProfileToken').should.equal(
         '(Hidden from admins.)',
       );
-      res.body.users[0].resetPasswordToken.should.equal(
+      adminUserToken(res, 0, 'resetPasswordToken').should.equal(
         '(Hidden from admins.)',
       );
-      res.body.pagination.should.deepEqual({
+      responseField(res, 'pagination').should.deepEqual({
         page: 1,
         pageSize: 150,
         total: 1,
         totalPages: 1,
       });
-      res.body.sort.should.deepEqual({
+      responseField(res, 'sort').should.deepEqual({
         column: 'username',
         direction: 'ascending',
       });
@@ -198,11 +366,12 @@ describe('Admin users controller unit tests', () => {
     it('obfuscates OAuth tokens in search results', async () => {
       const users = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(users[0]._id);
+      assertPresent(userDoc, 'saved user');
       userDoc.additionalProvidersData = {
         facebook: { accessToken: 'fb-access', refreshToken: 'fb-refresh' },
         github: { accessToken: 'gh-access', refreshToken: 'gh-refresh' },
         twitter: { token: 'tw-token', tokenSecret: 'tw-secret' },
-      };
+      } as unknown as UserRecord['additionalProvidersData'];
       await userDoc.save();
 
       stubMemberListQuery({ count: 1, users: [userDoc] });
@@ -211,14 +380,14 @@ describe('Admin users controller unit tests', () => {
       adminUsers.searchUsers({ body: { search: userDoc.username } }, res);
       await res.waitForResponse();
 
-      res.body.users.length.should.equal(1);
-      res.body.users[0].additionalProvidersData.facebook.accessToken.should.equal(
+      responseField(res, 'users').length.should.equal(1);
+      adminProviderCredential(res, 0, 'facebook').should.equal(
         '(Hidden from admins.)',
       );
-      res.body.users[0].additionalProvidersData.github.accessToken.should.equal(
+      adminProviderCredential(res, 0, 'github').should.equal(
         '(Hidden from admins.)',
       );
-      res.body.users[0].additionalProvidersData.twitter.token.should.equal(
+      adminProviderCredential(res, 0, 'twitter').should.equal(
         '(Hidden from admins.)',
       );
     });
@@ -229,9 +398,9 @@ describe('Admin users controller unit tests', () => {
       const res = mockResponse();
       adminUsers.searchUsers({ body: { search: 'abc' } }, res);
       await res.waitForResponse();
-      res.body.users.should.deepEqual([]);
-      res.body.pagination.total.should.equal(0);
-      res.body.pagination.totalPages.should.equal(0);
+      responseField(res, 'users').should.deepEqual([]);
+      responseField(res, 'pagination').total!.should.equal(0);
+      responseField(res, 'pagination').totalPages!.should.equal(0);
     });
 
     it('keeps null database rows unchanged while obfuscating results', async () => {
@@ -240,7 +409,7 @@ describe('Admin users controller unit tests', () => {
       const res = mockResponse();
       adminUsers.searchUsers({ body: { search: 'abc' } }, res);
       await res.waitForResponse();
-      res.body.users.should.deepEqual([undefined]);
+      responseField(res, 'users').should.deepEqual([undefined]);
     });
 
     it('throws when creating a search expression from a non-string value', () => {
@@ -258,7 +427,7 @@ describe('Admin users controller unit tests', () => {
       adminUsers.listUsersByRole({ body: {} }, res);
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('Invalid role.');
+      responseField(res, 'message').should.equal('Invalid role.');
     });
 
     it('rejects an invalid role', async () => {
@@ -266,7 +435,7 @@ describe('Admin users controller unit tests', () => {
       adminUsers.listUsersByRole({ body: { role: 'not-a-role' } }, res);
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('Invalid role.');
+      responseField(res, 'message').should.equal('Invalid role.');
     });
 
     it('rejects the legacy moderator role', async () => {
@@ -274,20 +443,21 @@ describe('Admin users controller unit tests', () => {
       adminUsers.listUsersByRole({ body: { role: 'moderator' } }, res);
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('Invalid role.');
+      responseField(res, 'message').should.equal('Invalid role.');
     });
 
     it('returns users with the requested role', async () => {
       const users = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(users[0]._id);
+      assertPresent(userDoc, 'saved user');
       userDoc.roles = ['user', 'volunteer'];
       await userDoc.save();
 
       const res = mockResponse();
       adminUsers.listUsersByRole({ body: { role: 'volunteer' } }, res);
       await res.waitForResponse();
-      res.body.users.length.should.equal(1);
-      res.body.users[0]._id.toString().should.equal(userDoc._id.toString());
+      responseField(res, 'users').length.should.equal(1);
+      adminUserId(res, 0).toString().should.equal(userDoc._id.toString());
     });
 
     it('returns an empty array when the role lookup returns no users', async () => {
@@ -296,7 +466,7 @@ describe('Admin users controller unit tests', () => {
       const res = mockResponse();
       adminUsers.listUsersByRole({ body: { role: 'volunteer' } }, res);
       await res.waitForResponse();
-      res.body.users.should.deepEqual([]);
+      responseField(res, 'users').should.deepEqual([]);
     });
 
     it('returns 400 when the database lookup fails', async () => {
@@ -317,7 +487,7 @@ describe('Admin users controller unit tests', () => {
       adminUsers.listUsersByRole({ body: { role: 'volunteer' } }, res);
       await res.waitForResponse();
       res.statusCode.should.equal(200);
-      res.body.users.should.deepEqual([]);
+      responseField(res, 'users').should.deepEqual([]);
     });
   });
 
@@ -326,7 +496,9 @@ describe('Admin users controller unit tests', () => {
       const missingResponse = mockResponse();
       adminUsers.listUsersByLastIpAddress({ body: {} }, missingResponse);
       missingResponse.statusCode.should.equal(400);
-      missingResponse.body.message.should.equal('Invalid IP address.');
+      responseField(missingResponse, 'message').should.equal(
+        'Invalid IP address.',
+      );
 
       const invalidResponse = mockResponse();
       adminUsers.listUsersByLastIpAddress(
@@ -334,7 +506,9 @@ describe('Admin users controller unit tests', () => {
         invalidResponse,
       );
       invalidResponse.statusCode.should.equal(400);
-      invalidResponse.body.message.should.equal('Invalid IP address.');
+      responseField(invalidResponse, 'message').should.equal(
+        'Invalid IP address.',
+      );
     });
 
     it('returns exact IP-address matches', async () => {
@@ -350,8 +524,8 @@ describe('Admin users controller unit tests', () => {
       );
       await res.waitForResponse();
 
-      res.body.users.should.have.length(1);
-      res.body.users[0]._id.toString().should.equal(users[0]._id.toString());
+      responseField(res, 'users').should.have.length(1);
+      adminUserId(res, 0).toString().should.equal(users[0]._id.toString());
     });
 
     it('returns an empty array when no member has the requested address', async () => {
@@ -364,7 +538,7 @@ describe('Admin users controller unit tests', () => {
       );
       await res.waitForResponse();
 
-      res.body.users.should.deepEqual([]);
+      responseField(res, 'users').should.deepEqual([]);
     });
 
     it('returns 400 when the IP-address lookup fails', async () => {
@@ -388,7 +562,7 @@ describe('Admin users controller unit tests', () => {
       await adminUsers.getUser({ body: { id: 'bad-id' } }, res);
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      responseField(res, 'message').should.equal(
         errorService.getErrorMessageByKey('invalid-id'),
       );
     });
@@ -401,7 +575,7 @@ describe('Admin users controller unit tests', () => {
       );
 
       res.statusCode.should.equal(404);
-      res.body.message.should.equal(
+      responseField(res, 'message').should.equal(
         errorService.getErrorMessageByKey('not-found'),
       );
     });
@@ -412,28 +586,37 @@ describe('Admin users controller unit tests', () => {
 
       await adminUsers.getUser({ body: { id: users[0]._id.toString() } }, res);
 
-      res.body.profile.username.should.equal(users[0].username);
-      res.body.messageFromCount.should.equal(0);
+      responseField(res, 'profile').username!.should.equal(users[0].username);
+      responseField(res, 'messageFromCount').should.equal(0);
     });
 
     it('defaults nullable contact and offer lookups to empty arrays', async () => {
       const users = await utils.saveUsers(utils.generateUsers(1));
-      sinon.stub(Contact, 'find').returns({
+      const nullContactQuery = {
         populate() {
           return this;
         },
-        then(resolve) {
-          resolve(null);
+        then(resolve: (value: null) => unknown) {
+          return resolve(null);
         },
-      });
-      sinon.stub(Offer, 'find').returns(Promise.resolve(null));
+      };
+      sinon
+        .stub(Contact, 'find')
+        .returns(
+          nullContactQuery as unknown as ReturnType<typeof Contact.find>,
+        );
+      sinon
+        .stub(Offer, 'find')
+        .returns(
+          Promise.resolve(null) as unknown as ReturnType<typeof Offer.find>,
+        );
       const res = mockResponse();
 
       await adminUsers.getUser({ body: { id: users[0]._id.toString() } }, res);
 
       res.statusCode.should.equal(200);
-      res.body.contacts.should.deepEqual([]);
-      res.body.offers.should.deepEqual([]);
+      responseField(res, 'contacts').should.deepEqual([]);
+      responseField(res, 'offers').should.deepEqual([]);
     });
 
     it('defaults nullable thread references to an empty array', async () => {
@@ -442,25 +625,25 @@ describe('Admin users controller unit tests', () => {
       for (let index = 0; index < 4; index += 1) {
         referenceThreadFind.onCall(index).returns({
           count: () => Promise.resolve(0),
-        });
+        } as unknown as ReturnType<typeof ReferenceThread.find>);
       }
       referenceThreadFind.onCall(4).returns({
         sort: () => ({
           limit: () => ({
             populate: () => ({
               populate: () => ({
-                then: resolve => resolve(null),
+                then: (resolve: (value: null) => unknown) => resolve(null),
               }),
             }),
           }),
         }),
-      });
+      } as unknown as ReturnType<typeof ReferenceThread.find>);
       const res = mockResponse();
 
       await adminUsers.getUser({ body: { id: users[0]._id.toString() } }, res);
 
       res.statusCode.should.equal(200);
-      res.body.threadReferences.should.deepEqual([]);
+      responseField(res, 'threadReferences').should.deepEqual([]);
     });
 
     it('returns 400 when loading a user fails', async () => {
@@ -468,7 +651,7 @@ describe('Admin users controller unit tests', () => {
         select: () => ({
           populate: () => Promise.reject(new Error('lookup failed')),
         }),
-      });
+      } as unknown as ReturnType<typeof User.findById>);
 
       const res = mockResponse();
       await adminUsers.getUser(
@@ -487,7 +670,10 @@ describe('Admin users controller unit tests', () => {
       users[1].roles = ['user', 'welcome-team'];
       users[2].roles = ['user', 'admin'];
       const saved = await utils.saveUsers(users);
-      saved[3].blocked = [saved[0]._id, saved[1]._id];
+      saved[3].blocked = [
+        new mongoose.Types.ObjectId(saved[0]._id.toString()),
+        new mongoose.Types.ObjectId(saved[1]._id.toString()),
+      ];
       await saved[3].save();
 
       const res = mockResponse();
@@ -496,16 +682,20 @@ describe('Admin users controller unit tests', () => {
         res,
       );
 
-      res.body.length.should.equal(3);
-      res.body
-        .find(staff => staff._id.equals(saved[0]._id))
-        .blockedBy[0]._id.should.deepEqual(saved[3]._id);
-      res.body
-        .find(staff => staff._id.equals(saved[1]._id))
-        .blockedBy[0]._id.should.deepEqual(saved[3]._id);
-      res.body
-        .find(staff => staff._id.equals(saved[2]._id))
-        .blockedBy.should.deepEqual([]);
+      responseArray(res).length.should.equal(3);
+      present(
+        staffResponse(res, staff => staff._id.equals(saved[0]._id)).blockedBy[0]
+          ._id,
+        'blocking user id',
+      ).should.deepEqual(saved[3]._id);
+      present(
+        staffResponse(res, staff => staff._id.equals(saved[1]._id)).blockedBy[0]
+          ._id,
+        'blocking user id',
+      ).should.deepEqual(saved[3]._id);
+      staffResponse(res, staff =>
+        staff._id.equals(saved[2]._id),
+      ).blockedBy.should.deepEqual([]);
     });
 
     it('limits Welcome team members to blockers of their own account', async () => {
@@ -513,7 +703,10 @@ describe('Admin users controller unit tests', () => {
       users[0].roles = ['user', 'welcome-team'];
       users[1].roles = ['user', 'admin'];
       const saved = await utils.saveUsers(users);
-      saved[2].blocked = [saved[0]._id, saved[1]._id];
+      saved[2].blocked = [
+        new mongoose.Types.ObjectId(saved[0]._id.toString()),
+        new mongoose.Types.ObjectId(saved[1]._id.toString()),
+      ];
       await saved[2].save();
 
       const res = mockResponse();
@@ -525,9 +718,11 @@ describe('Admin users controller unit tests', () => {
         res,
       );
 
-      res.body.length.should.equal(1);
-      res.body[0].blockedBy[0].username.should.equal(saved[2].username);
-      Object.keys(res.body[0].blockedBy[0]).should.deepEqual([
+      responseArray(res).length.should.equal(1);
+      responseArray(res)[0].blockedBy[0].username!.should.equal(
+        saved[2].username,
+      );
+      Object.keys(responseArray(res)[0].blockedBy[0]).should.deepEqual([
         '_id',
         'username',
         'displayName',
@@ -543,7 +738,7 @@ describe('Admin users controller unit tests', () => {
           return this;
         },
         lean: () => Promise.resolve([]),
-      });
+      } as unknown as ReturnType<typeof User.find>);
       const res = mockResponse();
 
       await adminUsers.listStaffBlockers(
@@ -551,7 +746,7 @@ describe('Admin users controller unit tests', () => {
         res,
       );
 
-      res.body.should.deepEqual([]);
+      should(responseArray(res)).deepEqual([]);
     });
 
     it('returns 400 when staff blockers cannot be loaded', async () => {
@@ -563,7 +758,7 @@ describe('Admin users controller unit tests', () => {
           return this;
         },
         lean: () => Promise.reject(new Error('lookup failed')),
-      });
+      } as unknown as ReturnType<typeof User.find>);
       const res = mockResponse();
 
       await adminUsers.listStaffBlockers(
@@ -632,14 +827,17 @@ describe('Admin users controller unit tests', () => {
           },
           res,
         );
-        res.body.message.should.equal('Role changed.');
+        responseField(res, 'message').should.equal('Role changed.');
         const updated = await User.findById(target._id);
-        Array.from(updated.roles).should.deepEqual(
+        assertPresent(updated, 'updated user');
+        Array.from(present(updated.roles, 'user roles')).should.deepEqual(
           action === 'add'
             ? ['user', 'volunteer', 'welcome-team']
             : ['user', 'volunteer'],
         );
-        updated.authVersion.should.equal([1, 1, 2, 2][index]);
+        present(updated.authVersion, 'user auth version').should.equal(
+          [1, 1, 2, 2][index],
+        );
       }
       const notes = await mongoose
         .model('AdminNote')
@@ -680,11 +878,14 @@ describe('Admin users controller unit tests', () => {
         res,
       );
 
-      res.body.message.should.equal('Role changed.');
+      responseField(res, 'message').should.equal('Role changed.');
 
       const updated = await User.findById(target._id).exec();
-      updated.roles.should.containEql('volunteer');
-      updated.roles.should.not.containEql('volunteer-alumni');
+      assertPresent(updated, 'updated user');
+      present(updated.roles, 'user roles').should.containEql('volunteer');
+      present(updated.roles, 'user roles').should.not.containEql(
+        'volunteer-alumni',
+      );
     });
 
     it('promotes a user to volunteer-alumni and removes volunteer', async () => {
@@ -703,11 +904,14 @@ describe('Admin users controller unit tests', () => {
         res,
       );
 
-      res.body.message.should.equal('Role changed.');
+      responseField(res, 'message').should.equal('Role changed.');
 
       const updated = await User.findById(target._id).exec();
-      updated.roles.should.containEql('volunteer-alumni');
-      updated.roles.should.not.containEql('volunteer');
+      assertPresent(updated, 'updated user');
+      present(updated.roles, 'user roles').should.containEql(
+        'volunteer-alumni',
+      );
+      present(updated.roles, 'user roles').should.not.containEql('volunteer');
     });
 
     it('increments a missing legacy authVersion for concurrent role changes', async () => {
@@ -729,11 +933,14 @@ describe('Admin users controller unit tests', () => {
         }),
       );
 
-      responses.forEach(res => res.body.message.should.equal('Role changed.'));
+      responses.forEach(res =>
+        responseField(res, 'message').should.equal('Role changed.'),
+      );
       const updated = await User.findById(target._id).exec();
-      updated.authVersion.should.equal(2);
-      updated.roles.should.containEql('volunteer');
-      updated.roles.should.containEql('welcome-team');
+      assertPresent(updated, 'updated user');
+      present(updated.authVersion, 'user auth version').should.equal(2);
+      present(updated.roles, 'user roles').should.containEql('volunteer');
+      present(updated.roles, 'user roles').should.containEql('welcome-team');
     });
 
     it('updates a legacy account whose roles field is absent', async () => {
@@ -752,9 +959,10 @@ describe('Admin users controller unit tests', () => {
         res,
       );
 
-      res.body.message.should.equal('Role changed.');
+      responseField(res, 'message').should.equal('Role changed.');
       const updated = await User.findById(target._id).exec();
-      updated.roles.should.deepEqual(['welcome-team']);
+      assertPresent(updated, 'updated user');
+      present(updated.roles, 'user roles').should.deepEqual(['welcome-team']);
     });
 
     it('returns 404 when the target user does not exist', async () => {
@@ -773,7 +981,7 @@ describe('Admin users controller unit tests', () => {
       );
 
       res.statusCode.should.equal(404);
-      res.body.message.should.equal(
+      responseField(res, 'message').should.equal(
         errorService.getErrorMessageByKey('not-found'),
       );
     });
@@ -791,7 +999,7 @@ describe('Admin users controller unit tests', () => {
       );
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('Invalid role.');
+      responseField(res, 'message').should.equal('Invalid role.');
     });
 
     it('rejects the legacy moderator role', async () => {
@@ -807,7 +1015,7 @@ describe('Admin users controller unit tests', () => {
       );
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('Invalid role.');
+      responseField(res, 'message').should.equal('Invalid role.');
     });
 
     it('rejects missing user ids', async () => {
@@ -823,7 +1031,7 @@ describe('Admin users controller unit tests', () => {
       );
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      responseField(res, 'message').should.equal(
         errorService.getErrorMessageByKey('invalid-id'),
       );
     });
@@ -844,8 +1052,9 @@ describe('Admin users controller unit tests', () => {
       );
 
       const updated = await User.findById(target._id).exec();
-      updated.roles.should.containEql('shadowban');
-      updated.roles.should.not.containEql('suspended');
+      assertPresent(updated, 'updated user');
+      present(updated.roles, 'user roles').should.containEql('shadowban');
+      present(updated.roles, 'user roles').should.not.containEql('suspended');
     });
 
     it('removes a shadowban without changing other roles or profile settings', async () => {
@@ -878,9 +1087,14 @@ describe('Admin users controller unit tests', () => {
 
       res.statusCode.should.equal(200);
       const updated = await User.findById(target._id).exec();
-      updated.roles.should.deepEqual(['user', 'suspended', 'volunteer']);
-      updated.public.should.be.true();
-      updated.newsletter.should.be.true();
+      assertPresent(updated, 'updated user');
+      present(updated.roles, 'user roles').should.deepEqual([
+        'user',
+        'suspended',
+        'volunteer',
+      ]);
+      present(updated.public, 'user public setting').should.be.true();
+      present(updated.newsletter, 'user newsletter setting').should.be.true();
       const oldMessage = await Message.findById(hiddenMessage._id).exec();
       oldMessage.shadowHidden.should.be.true();
       const recipientThread = await Thread.findOne({
@@ -911,7 +1125,7 @@ describe('Admin users controller unit tests', () => {
       );
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('Invalid role.');
+      responseField(res, 'message').should.equal('Invalid role.');
     });
 
     it('suspends a user and removes shadowban role', async () => {
@@ -930,9 +1144,10 @@ describe('Admin users controller unit tests', () => {
       );
 
       const updated = await User.findById(target._id).exec();
-      updated.roles.should.containEql('suspended');
-      updated.roles.should.not.containEql('shadowban');
-      updated.public.should.be.false();
+      assertPresent(updated, 'updated user');
+      present(updated.roles, 'user roles').should.containEql('suspended');
+      present(updated.roles, 'user roles').should.not.containEql('shadowban');
+      present(updated.public, 'user public setting').should.be.false();
     });
 
     it('returns 400 when updating a role fails', async () => {
@@ -986,7 +1201,10 @@ describe('Admin users controller unit tests', () => {
     });
     it('attaches a user id when the username exists', async () => {
       const users = await utils.saveUsers(utils.generateUsers(1));
-      const req = { body: { username: users[0].username } };
+      const req: {
+        body: { username: string };
+        userIdFromUsername?: import('mongoose').Types.ObjectId;
+      } = { body: { username: users[0].username } };
       let nextCalled = false;
 
       await adminUsers.usernameToUserId(req, {}, () => {
@@ -994,11 +1212,16 @@ describe('Admin users controller unit tests', () => {
       });
 
       nextCalled.should.equal(true);
-      req.userIdFromUsername.toString().should.equal(users[0]._id.toString());
+      present(req.userIdFromUsername, 'resolved user id')
+        .toString()
+        .should.equal(users[0]._id.toString());
     });
 
     it('continues when the username is missing', async () => {
-      const req = { body: {} };
+      const req: {
+        body: Record<string, never>;
+        userIdFromUsername?: import('mongoose').Types.ObjectId;
+      } = { body: {} };
       let nextCalled = false;
 
       await adminUsers.usernameToUserId(req, {}, () => {
@@ -1010,7 +1233,10 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('continues when the username does not match a user', async () => {
-      const req = { body: { username: 'missing-user' } };
+      const req: {
+        body: { username: string };
+        userIdFromUsername?: import('mongoose').Types.ObjectId;
+      } = { body: { username: 'missing-user' } };
       let nextCalled = false;
 
       await adminUsers.usernameToUserId(req, {}, () => {

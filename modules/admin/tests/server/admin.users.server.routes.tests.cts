@@ -1,81 +1,101 @@
-const mongoose = require('mongoose');
-const request = require('supertest');
-const should = require('should');
-const express = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const request: typeof import('supertest') = require('supertest');
+const should: typeof import('should') = require('should');
+const express: import('../../../../testutils/server/model-contracts.mts').TestExpressModule = require('./../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+type UserRecord =
+  import('../../../../testutils/server/model-contracts.mts').UserRecord;
+type UserModel =
+  import('../../../../testutils/server/model-contracts.mts').UserModel;
+type Credentials =
+  import('../../../../testutils/server/model-contracts.mts').Credentials;
+type TestExpressApp =
+  import('../../../../testutils/server/model-contracts.mts').TestExpressApp;
+type TestAgent =
+  import('../../../../testutils/server/model-contracts.mts').TestAgent;
+const User = mongoose.model<UserRecord, UserModel>('User');
+
+interface AdminUserSummary {
+  username: string;
+  displayName?: string;
+  email?: string;
+  lastIpAddress?: string;
+  password?: string;
+  salt?: string;
+  removeProfileToken?: string;
+  resetPasswordToken?: string;
+}
+interface PotentialAdminUser extends AdminUserSummary {
+  matchReasons: string[];
+  acquisitionStory?: string;
+}
 
 /**
  * Globals
  */
-let credentialsAdmin;
-let credentialsRegular;
-let userAdmin;
-let userAdminId;
-let userRegular;
-let userRegularId;
+let credentialsAdmin: Credentials;
+let credentialsRegular: Credentials;
+let userAdmin: import('../../../../testutils/server/model-contracts.mts').UserModelDocument;
+let userAdminId: string;
+let userRegular: import('../../../../testutils/server/model-contracts.mts').UserModelDocument;
+let userRegularId: string;
 describe('Admin User CRUD tests', () => {
   // Get application
-  let app;
-  let agent;
+  let app: TestExpressApp;
+  let agent: TestAgent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
   beforeEach(async () => {
-    try {
-      // Create admin credentials
-      credentialsAdmin = {
-        username: 'useradmin',
-        password: 'Password123!',
-      };
+    // Create admin credentials
+    credentialsAdmin = {
+      username: 'useradmin',
+      password: 'Password123!',
+    };
 
-      // Create regular user credentials
-      credentialsRegular = {
-        username: 'userregular',
-        password: 'Password123!',
-      };
+    // Create regular user credentials
+    credentialsRegular = {
+      username: 'userregular',
+      password: 'Password123!',
+    };
 
-      // Create a new admin user
-      userAdmin = new User({
-        displayName: 'Admin Name',
-        email: 'admin@example.com',
-        emailToken: 'test-token',
-        firstName: 'Admin',
-        lastName: 'Name',
-        member: [],
-        provider: 'local',
-        public: true,
-        removeProfileToken: 'test-token',
-        resetPasswordToken: 'test-token',
-        roles: ['user', 'admin'],
-        ...credentialsAdmin,
-      });
+    // Create a new admin user
+    userAdmin = new User({
+      displayName: 'Admin Name',
+      email: 'admin@example.com',
+      emailToken: 'test-token',
+      firstName: 'Admin',
+      lastName: 'Name',
+      member: [],
+      provider: 'local',
+      public: true,
+      removeProfileToken: 'test-token',
+      resetPasswordToken: 'test-token',
+      roles: ['user', 'admin'],
+      ...credentialsAdmin,
+    });
 
-      // Create a new regular user
-      userRegular = new User({
-        displayName: 'Full Name',
-        email: 'regular@example.com',
-        emailToken: 'test-token',
-        firstName: 'Full',
-        lastName: 'Name',
-        member: [],
-        provider: 'local',
-        public: true,
-        removeProfileToken: 'test-token',
-        resetPasswordToken: 'test-token',
-        roles: ['user'],
-        created: new Date(),
-        ...credentialsRegular,
-      });
-      const { _id: _userAdminId } = await userAdmin.save();
-      userAdminId = _userAdminId.toString();
-      const { _id: _userRegularId } = await userRegular.save();
-      userRegularId = _userRegularId.toString();
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error(err);
-    }
+    // Create a new regular user
+    userRegular = new User({
+      displayName: 'Full Name',
+      email: 'regular@example.com',
+      emailToken: 'test-token',
+      firstName: 'Full',
+      lastName: 'Name',
+      member: [],
+      provider: 'local',
+      public: true,
+      removeProfileToken: 'test-token',
+      resetPasswordToken: 'test-token',
+      roles: ['user'],
+      created: new Date(),
+      ...credentialsRegular,
+    });
+    const { _id: _userAdminId } = await userAdmin.save();
+    userAdminId = _userAdminId.toString();
+    const { _id: _userRegularId } = await userRegular.save();
+    userRegularId = _userRegularId.toString();
   });
   afterEach(utils.clearDatabase);
   describe('As non-authenticated user...', () => {
@@ -163,7 +183,7 @@ describe('Admin User CRUD tests', () => {
         should.exist(users[1].created);
         should(users[0].username).equal('useradmin');
         should(users[1].username).equal('userregular');
-        users.forEach(user => {
+        users.forEach((user: AdminUserSummary) => {
           // These should have been removed
           should.not.exist(user.password);
           should.not.exist(user.salt);
@@ -195,10 +215,9 @@ describe('Admin User CRUD tests', () => {
             },
           })
           .expect(200);
-        should(body.users.map(user => user.displayName)).deepEqual([
-          'Full Name',
-          'Admin Name',
-        ]);
+        should(
+          body.users.map((user: AdminUserSummary) => user.displayName),
+        ).deepEqual(['Full Name', 'Admin Name']);
         should(body.sort).deepEqual({
           column: 'displayName',
           direction: 'descending',
@@ -464,23 +483,27 @@ describe('Admin User CRUD tests', () => {
           .expect(200);
         body.potentialMatches.should.have.length(4);
         const usernameLead = body.potentialMatches.find(
-          user => user.username === 'userregularcopy',
+          (user: PotentialAdminUser) => user.username === 'userregularcopy',
         );
+        should.exist(usernameLead);
         usernameLead.matchReasons.should.containEql('Username identifier');
         usernameLead.matchReasons.should.containEql('Email identifier');
         const emailLead = body.potentialMatches.find(
-          user => user.username === 'differentmember',
+          (user: PotentialAdminUser) => user.username === 'differentmember',
         );
+        should.exist(emailLead);
         emailLead.matchReasons.should.deepEqual(['Email identifier']);
         const temporaryEmailLead = body.potentialMatches.find(
-          user => user.username === 'anothermember',
+          (user: PotentialAdminUser) => user.username === 'anothermember',
         );
+        should.exist(temporaryEmailLead);
         temporaryEmailLead.matchReasons.should.deepEqual([
           'Temporary email identifier',
         ]);
         const storyLead = body.potentialMatches.find(
-          user => user.username === 'storymember',
+          (user: PotentialAdminUser) => user.username === 'storymember',
         );
+        should.exist(storyLead);
         storyLead.matchReasons.should.deepEqual(['Acquisition story']);
         storyLead.acquisitionStory.should.match(/fictional travel club/i);
       });
@@ -562,6 +585,8 @@ describe('Admin User CRUD tests', () => {
           })
           .expect(200);
         const updated = await User.findById(userRegularId).exec();
+        if (!updated) throw new Error('Expected updated user');
+        if (!updated.roles) throw new Error('Expected updated user roles');
         updated.roles.should.deepEqual(['user']);
         const { body } = await agent
           .get(`/api/admin/notes?userId=${userRegularId}`)
