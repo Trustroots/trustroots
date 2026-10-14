@@ -1,12 +1,12 @@
 # Vite evaluation
 
-Webpack remains the supported build. Vite is an opt-in React shell prototype.
-
-Run `pnpm start:vite`, then open <http://localhost:3000>. Vite serves
-`/assets/*` and proxies other requests to Express on port 3001. Opening Express
-on port 3001 directly with `TRUSTROOTS_VITE_DEV_SERVER=true` cannot load those
-development assets. Set `PORT` for Vite's browser port and
-`TRUSTROOTS_API_URL` for the Express target when using different ports.
+`pnpm start` serves the React shell with Vite. Open <http://localhost:3000>.
+Vite serves `/assets/*` and proxies other requests to Express on port 3001.
+`pnpm start:webpack` still starts the Webpack development server. Opening
+Express on port 3001 directly cannot load the Vite development assets; those
+requests have to go through Vite. Set `PORT` for Vite's browser port and
+`TRUSTROOTS_API_URL` for the Express target when using different ports. The
+Vite server listens on the same host as Webpack.
 
 Vite uses Less 4 through its `less` peer dependency. The default Webpack
 configuration explicitly uses `less-webpack`, pinned to the existing Less
@@ -23,7 +23,7 @@ extracted `react-main.css`, and `react-main.rtl.css`. The RTL file is produced
 with `rtlcss`, the same compiler Webpack's RTL plugin uses, and the client
 loads it for right-to-left languages. Build Webpack's output first if comparing
 both tools: Vite overwrites those entry files. It keeps other files in
-`public/assets`. Production deployment still runs the existing Webpack build.
+`public/assets`. `pnpm build` and production images still run Webpack.
 
 After building Vite, run `pnpm test:vite:production`. This browser smoke test
 uses Express's real production template and locals to load the bundle and CSS
@@ -50,5 +50,6 @@ Lightning CSS minifies it, while Webpack leaves the stylesheet pretty-printed.
 Measured on 14 October 2026, with Webpack's ESLint plugin skipped, Vite built
 in about 1.1 seconds: a 2.41 MiB script (706 KiB gzipped) and a 509 KiB
 stylesheet (124 KiB gzipped). Webpack built in 17.5 seconds: a 3.27 MiB script
-(879 KiB gzipped) and a 656 KiB stylesheet (141 KiB gzipped). CI end-to-end tests build that Vite bundle. `pnpm start` and `pnpm build` still
-use Webpack. A default switch remains after that suite is green on Vite.
+(879 KiB gzipped) and a 656 KiB stylesheet (141 KiB gzipped). CI end-to-end
+tests build that Vite bundle and are green. `pnpm start` uses Vite. `pnpm build`
+still uses Webpack.

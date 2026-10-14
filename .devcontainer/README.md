@@ -21,7 +21,7 @@ apps. Set `TRUSTROOTS_DEV_*_HOST_PORT` before rebuilding to customize.
 
 | Service               | Container port | Default host port |
 | --------------------- | -------------: | ----------------: |
-| Webpack dev server    |         `3000` |           `13000` |
+| Vite dev server       |         `3000` |           `13000` |
 | Express API/server    |         `3001` |           `13001` |
 | Mailpit web UI        |         `8025` |           `11080` |
 | MongoDB               |        `27017` |           `37017` |
@@ -57,8 +57,10 @@ node scripts/devcontainer/phone-url.js
 ```
 
 Open one of those URLs on a phone connected to the same Wi-Fi network. The
-webpack development server proxies requests to the API inside the devcontainer,
+Vite development server proxies requests to the API inside the devcontainer,
 so port `13000` is the only port that needs to be reachable.
+`TRUSTROOTS_DEV_WEBPACK_BIND_ADDRESS` still chooses which host address Docker
+publishes.
 
 Keep the default binding for ordinary development. When phone testing is
 finished, close VS Code and reopen it normally (without the environment
@@ -85,7 +87,7 @@ pnpm run test:e2e
 pnpm run coverage:report
 ```
 
-For CI-parity E2E (prebuilt webpack, 2 workers):
+For CI-parity E2E (prebuilt Vite client, 2 workers):
 
 ```sh
 CI=true pnpm run test:e2e

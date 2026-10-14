@@ -46,7 +46,7 @@ services:
       - mongo-localhost
 
   # Default local development service: bind-mounts the repo and runs the app
-  # with hot reload (webpack-dev-server on :3000, API on :3001 internally).
+  # with hot reload (Vite on :3000, API on :3001 internally).
   # Started by a plain `docker compose up`.
   dev:
     build:

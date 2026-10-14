@@ -1,0 +1,5 @@
+- [x] Serve local development with Vite from `pnpm start` and `pnpm start:docker`.
+- [x] Keep `pnpm start:webpack` and `pnpm build` on Webpack.
+- [x] Bind the Vite development server to the same host as Webpack.
+- [x] Document the development and production commands.
+- [x] Lock the script choice with a test and run the Vite development smoke.

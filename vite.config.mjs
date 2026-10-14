@@ -7,6 +7,7 @@ import inject from '@rollup/plugin-inject';
 import react from '@vitejs/plugin-react';
 import { defineConfig, transformWithOxc } from 'vite';
 
+import config from './config/config.mjs';
 import { rtlStylesheetPlugin } from './config/vite/rtl-stylesheet.mjs';
 
 const require = createRequire(import.meta.url);
@@ -143,7 +144,8 @@ export default defineConfig({
     },
   },
   server: {
-    host: '0.0.0.0',
+    // Same bind address as the Webpack development server, including local.js.
+    host: config.host,
     port,
     strictPort: true,
     proxy: {

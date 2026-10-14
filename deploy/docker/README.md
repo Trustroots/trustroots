@@ -57,8 +57,9 @@ cd deploy/docker
 docker compose up
 ```
 
-- App with hot reload at http://localhost:3000 (webpack-dev-server; the API runs
-  on :3001 inside the container).
+- App with hot reload at http://localhost:3000 (Vite; the API runs on :3001
+  inside the container). `pnpm start:webpack` still starts the Webpack
+  development server.
 - Mailpit UI at http://localhost:1080 (SMTP to `mailpit:1025` from the app).
 - Runs `dev` + `mongodb` + `mailpit`; the repo is bind-mounted.
 - Mailpit's UI is bound to localhost and its SMTP port is not published to the

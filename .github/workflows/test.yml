@@ -205,7 +205,7 @@ jobs:
             -e NODE_ENV=test \
             -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
             dev pnpm run typecheck
-      - name: Test Vite RTL stylesheet plugin
+      - name: Test Vite RTL stylesheet and development scripts
         working-directory: deploy/docker
         run: |
           docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
