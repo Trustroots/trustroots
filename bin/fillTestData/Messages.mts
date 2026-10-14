@@ -2,8 +2,29 @@ import _ from 'lodash';
 import mongooseService from './../../config/lib/mongoose.mjs';
 import yargs from 'yargs';
 import { faker } from '@faker-js/faker';
-import mongoose from 'mongoose';
+import mongoose, { type Document, type Types } from 'mongoose';
 import config from './../../config/config.mjs';
+
+interface SeedUser extends Document {
+  _id: Types.ObjectId;
+}
+
+interface SeedMessage extends Document {
+  created: Date;
+  content: string;
+  userTo: Types.ObjectId;
+  userFrom: Types.ObjectId;
+  read: boolean;
+  notificationCount: number;
+}
+
+interface SeedThread extends Document {
+  updated: Date;
+  userFrom: Types.ObjectId;
+  userTo: Types.ObjectId;
+  message: Types.ObjectId;
+  read: boolean;
+}
 /**
  * Required dependencies
  */
@@ -11,51 +32,64 @@ import config from './../../config/config.mjs';
 /**
  * Configure the script usage using yargs to obtain parameters and enforce usage.
  */
-const argv = yargs.usage(
-  '$0 <numberOfThreads> <maxMessages>',
-  'Seed database with number of threads with up to max messages per thread',
-  yargs => {
-    return yargs
-      .positional('numberOfThreads', {
-        describe: 'Number of threads to add',
-        type: 'number',
-      })
-      .positional('maxMessages', {
-        describe: 'Maximum number of messages per thread to add',
-        type: 'number',
-      })
-      .boolean('debug')
-      .boolean('limit')
-      .describe('debug', 'Enable extra database output (default=false)')
-      .describe(
-        'limit',
-        'If threads already exist in the database, only add up to the number of threads (default=false)',
-      )
-      .example(
-        '$0 100 10',
-        'Adds 100 random threads wth up to 10 messages per thread to the database',
-      )
-      .example(
-        '$0 100 10 --debug',
-        'Adds 100 random threads wth up to 10 messages per thread to the database with debug database output',
-      )
-      .example(
-        '$0 10 5 --limit',
-        'Adds up to 10 randomly seeded threads to the database with up to 5 message per thread (eg. If 5 threads already exist, 5 threads will be added)',
-      )
-      .check(argv => {
-        if (argv.numberOfThreads < 1) {
-          throw new Error('Error: Number of threads should be greater than 0');
-        } else if (argv.maxMessages < 1) {
-          throw new Error(
-            'Error: Max messages per thread should be greater than 0',
-          );
-        }
-        return true;
-      })
-      .strict().yargs;
-  },
-).argv;
+const argv = yargs(process.argv.slice(2))
+  .usage('$0 <numberOfThreads> <maxMessages>')
+  .command(
+    '$0 <numberOfThreads> <maxMessages>',
+    'Seed database with message threads',
+  )
+  .positional('numberOfThreads', {
+    describe: 'Number of threads to add',
+    type: 'number',
+  })
+  .positional('maxMessages', {
+    describe: 'Maximum number of messages per thread to add',
+    type: 'number',
+  })
+  .boolean('debug')
+  .boolean('limit')
+  .describe('debug', 'Enable extra database output (default=false)')
+  .describe(
+    'limit',
+    'If threads already exist in the database, only add up to the number of threads (default=false)',
+  )
+  .example(
+    '$0 100 10',
+    'Adds 100 random threads wth up to 10 messages per thread to the database',
+  )
+  .example(
+    '$0 100 10 --debug',
+    'Adds 100 random threads wth up to 10 messages per thread to the database with debug database output',
+  )
+  .example(
+    '$0 10 5 --limit',
+    'Adds up to 10 randomly seeded threads to the database with up to 5 message per thread (eg. If 5 threads already exist, 5 threads will be added)',
+  )
+  .check(arguments_ => {
+    if (
+      typeof arguments_.numberOfThreads !== 'number' ||
+      arguments_.numberOfThreads < 1
+    ) {
+      throw new Error('Error: Number of threads should be greater than 0');
+    } else if (
+      typeof arguments_.maxMessages !== 'number' ||
+      arguments_.maxMessages < 1
+    ) {
+      throw new Error(
+        'Error: Max messages per thread should be greater than 0',
+      );
+    }
+    return true;
+  })
+  .strict()
+  .parseSync();
+
+if (
+  typeof argv.numberOfThreads !== 'number' ||
+  typeof argv.maxMessages !== 'number'
+) {
+  throw new Error('Error: Thread and message counts must be greater than 0');
+}
 
 /**
  * This generates a random integer between 0 and max - 1 inclusively
@@ -63,7 +97,7 @@ const argv = yargs.usage(
  * @param {number} max The max value to use to generate the random integer
  * @returns random integer between 0 and max - 1
  */
-function random(max) {
+function random(max: number) {
   return Math.floor(Math.random() * max);
 }
 
@@ -74,7 +108,7 @@ function random(max) {
  * @param {number} days
  * @returns {Date} the new date object
  */
-function addDays(date, days) {
+function addDays(date: Date | number, days: number) {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
@@ -86,10 +120,8 @@ function addDays(date, days) {
  * determines how many new message threads to add. It then adds the
  * threads and prints status accordingly.
  */
-function seedThreads() {
+function seedThreads(numThreads: number, maxMessages: number) {
   let index = 0;
-  const numThreads = argv.numberOfThreads;
-  const maxMessages = argv.maxMessages;
   const debug = argv.debug === true;
   const limit = argv.limit === true;
   console.log('Generating ' + numThreads + ' message threads...');
@@ -106,9 +138,9 @@ function seedThreads() {
   // Bootstrap db connection
   mongooseService.connect(() => {
     mongooseService.loadModels(async () => {
-      const Thread = mongoose.model('Thread');
-      const Message = mongoose.model('Message');
-      const User = mongoose.model('User');
+      const Thread = mongoose.model<SeedThread>('Thread');
+      const Message = mongoose.model<SeedMessage>('Message');
+      const User = mongoose.model<SeedUser>('User');
 
       /**
        * Adds the number of threads using the values and options specified
@@ -118,10 +150,10 @@ function seedThreads() {
        * @returns {Promise} Promise that completes when all message threads have
        *  successfully been added.
        */
-      function addThreads(initialThreadCount) {
+      function addThreads(initialThreadCount: number): Promise<void> {
         // @TODO: valid lint issue that should be fixed
         // eslint-disable-next-line no-async-promise-executor
-        return new Promise(async (resolve, reject) => {
+        return new Promise<void>(async (resolve, reject) => {
           let threadsSaved = 0;
 
           // handle the limit option
@@ -154,14 +186,18 @@ function seedThreads() {
           while (index < numThreads) {
             const messageCount = random(maxMessages) + 1;
             let messageIndex = messageCount;
-            let to;
-            let from;
+            let to: Types.ObjectId | undefined;
+            let from: Types.ObjectId | undefined;
 
             // Add messages until we reach the total
             while (messageIndex > 0) {
               // @TODO: valid lint issue that should be fixed
 
-              function addMessage(depth, userTo, userFrom) {
+              function addMessage(
+                depth: number,
+                userTo?: Types.ObjectId,
+                userFrom?: Types.ObjectId,
+              ) {
                 const message = new Message();
                 message.created = addDays(Date.now(), -depth + 1);
                 message.content = faker.lorem.sentences();
@@ -175,13 +211,17 @@ function seedThreads() {
                 if (userTo) {
                   message.userTo = userTo;
                 } else {
-                  message.userTo = users[randomUsers[1]]._id;
+                  const recipient = users[randomUsers[1]];
+                  if (!recipient) throw new Error('Expected a second user');
+                  message.userTo = recipient._id;
                   to = message.userTo;
                 }
                 if (userFrom) {
                   message.userFrom = userFrom;
                 } else {
-                  message.userFrom = users[randomUsers[0]]._id;
+                  const sender = users[randomUsers[0]];
+                  if (!sender) throw new Error('Expected a first user');
+                  message.userFrom = sender._id;
                   from = message.userFrom;
                 }
 
@@ -285,7 +325,7 @@ function seedThreads() {
    * @param {Message} message
    * @returns
    */
-  function seedThread(thread, message) {
+  function seedThread(thread: SeedThread, message: SeedMessage): SeedThread {
     thread.updated = message.created;
     thread.userFrom = message.userFrom;
     thread.userTo = message.userTo;
@@ -295,4 +335,4 @@ function seedThreads() {
   } // seedThread
 } // seedThreads
 
-seedThreads();
+seedThreads(argv.numberOfThreads, argv.maxMessages);

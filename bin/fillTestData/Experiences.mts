@@ -2,10 +2,44 @@ import _ from 'lodash';
 import mongooseService from './../../config/lib/mongoose.mjs';
 import yargs from 'yargs';
 import { faker } from '@faker-js/faker';
-import mongoose from 'mongoose';
-import queue from 'async/queue';
+import mongoose, { type Document, type Types } from 'mongoose';
+import queue from 'async/queue.js';
 import config from './../../config/config.mjs';
 import moment from 'moment';
+
+interface SeedUser extends Document {
+  _id: Types.ObjectId;
+  username: string;
+}
+
+interface SeedExperience extends Document {
+  userTo: Types.ObjectId;
+  userFrom: Types.ObjectId;
+  created: Date;
+  feedbackPublic: string;
+  interactions: { met: boolean; guest: boolean; host: boolean };
+  recommend: 'no' | 'yes' | 'unknown';
+  public: boolean;
+}
+
+interface ProfileTypes {
+  noExperiences(seqNum: number): boolean;
+  receivedPublic(seqNum: number): boolean;
+  receivedPrivate(seqNum: number): boolean;
+  isWriter(seqNum: number): boolean;
+  isReplier(seqNum: number): boolean;
+  getSeqNumWithManyExperiences(): number;
+  prePopulatedProfilesRatio(): number;
+  minimumTestableUserNumber(): number;
+  isRecipient(seqNum: number): boolean;
+  isPrePopulated(seqNum: number): boolean;
+}
+
+type SharingMatrix = (boolean | undefined)[][];
+interface ExperienceTask {
+  userTo: Types.ObjectId;
+  userFrom: Types.ObjectId;
+}
 /**
  * Required dependencies
  */
@@ -13,54 +47,69 @@ import moment from 'moment';
 /**
  * Configure the script usage using yargs to obtain parameters and enforce usage.
  */
-const argv = yargs.usage(
-  '$0 <averageNumberPerProfile> <replyRate>',
-  'Seed database with experiences',
-  yargs => {
-    return yargs
-      .positional('averageNumberPerProfile', {
-        describe:
-          'Average Number of experiences a profile will have ' +
-          '(except for pre-populated profiles)',
-        type: 'number',
-      })
-      .positional('replyRate', {
-        describe:
-          'The probability that B will share experience with A if A shares one with B',
-        type: 'number',
-      })
-      .boolean('debug')
-      .describe('debug', 'Enable extra database output (default=false)')
-      .boolean('re-create')
-      .describe(
-        're-create',
-        'Remove existing experiences if there are any and create new ones',
-      )
-      .example(
-        '$0 10 0.8',
-        'Adds on average 10 experiences (8 of them having replies) to each profile to the database ',
-      )
-      .example(
-        '$0 10 0.8 --re-create',
-        'Adds on average 10 experiences (8 of them having replies) to each profile to the database after removing all existing experiences from the db ',
-      )
-      .example(
-        '$0 10 0.8 --debug',
-        'Adds on average 10 experiences (8 of them having replies) to each profile to the database with debug database output',
-      )
-      .check(function (argv) {
-        if (argv.replyRate > 1 || argv.replyRate < 0) {
-          throw new Error('Reply rate must be between 0 and 1');
-        }
-        if (argv.averageNumberPerProfile < 0) {
-          throw new Error('Number of experiences must be positive');
-        }
-        return true;
-      })
-      .strict().yargs;
-  },
-).argv;
-const profileType = {
+const argv = yargs(process.argv.slice(2))
+  .usage('$0 <averageNumberPerProfile> <replyRate>')
+  .command(
+    '$0 <averageNumberPerProfile> <replyRate>',
+    'Seed database with experiences',
+  )
+  .positional('averageNumberPerProfile', {
+    describe:
+      'Average Number of experiences a profile will have ' +
+      '(except for pre-populated profiles)',
+    type: 'number',
+  })
+  .positional('replyRate', {
+    describe:
+      'The probability that B will share experience with A if A shares one with B',
+    type: 'number',
+  })
+  .boolean('debug')
+  .describe('debug', 'Enable extra database output (default=false)')
+  .boolean('re-create')
+  .describe(
+    're-create',
+    'Remove existing experiences if there are any and create new ones',
+  )
+  .example(
+    '$0 10 0.8',
+    'Adds on average 10 experiences (8 of them having replies) to each profile to the database ',
+  )
+  .example(
+    '$0 10 0.8 --re-create',
+    'Adds on average 10 experiences (8 of them having replies) to each profile to the database after removing all existing experiences from the db ',
+  )
+  .example(
+    '$0 10 0.8 --debug',
+    'Adds on average 10 experiences (8 of them having replies) to each profile to the database with debug database output',
+  )
+  .check(function (arguments_) {
+    if (
+      typeof arguments_.replyRate !== 'number' ||
+      arguments_.replyRate > 1 ||
+      arguments_.replyRate < 0
+    ) {
+      throw new Error('Reply rate must be between 0 and 1');
+    }
+    if (
+      typeof arguments_.averageNumberPerProfile !== 'number' ||
+      arguments_.averageNumberPerProfile < 0
+    ) {
+      throw new Error('Number of experiences must be positive');
+    }
+    return true;
+  })
+  .strict()
+  .parseSync();
+
+if (
+  typeof argv.averageNumberPerProfile !== 'number' ||
+  typeof argv.replyRate !== 'number'
+) {
+  throw new Error('Average experiences and reply rate must be numbers');
+}
+
+const profileType: ProfileTypes = {
   noExperiences: seqNum => seqNum % 10 === 0,
   receivedPublic: seqNum => seqNum % 10 === 1,
   receivedPrivate: seqNum => seqNum % 10 === 2,
@@ -88,7 +137,7 @@ const profileType = {
   },
 };
 const experienceGenerator = {
-  interactions: (to, from) => ({
+  interactions: (to = Number.NaN, from = Number.NaN) => ({
     met: true,
     guest: to < from,
     host: from < to,
@@ -97,7 +146,8 @@ const experienceGenerator = {
     const r = Math.random();
     return r < 0.1 ? 'no' : r < 0.3 ? 'yes' : 'unknown';
   },
-  public: to => Math.random() < 0.9 && !profileType.receivedPrivate(to),
+  public: (to = Number.NaN) =>
+    Math.random() < 0.9 && !profileType.receivedPrivate(to),
   created: () =>
     moment()
       .subtract({
@@ -125,10 +175,14 @@ const experienceGenerator = {
  * @param {number} replyRate - the probability for a randomly populated experience to have a reply
  * @returns {*[]} user experience sharing matrix
  */
-function generateExperienceSharingMatrix(nUsers, averageExpNumber, replyRate) {
+function generateExperienceSharingMatrix(
+  nUsers: number,
+  averageExpNumber: number,
+  replyRate: number,
+): SharingMatrix {
   const matrix = Array(nUsers)
-    .fill()
-    .map(() => Array(nUsers).fill());
+    .fill(undefined)
+    .map(() => Array<boolean | undefined>(nUsers).fill(undefined));
 
   // cannot share experience with myself
   Array.from(
@@ -141,8 +195,8 @@ function generateExperienceSharingMatrix(nUsers, averageExpNumber, replyRate) {
   populateOneProfileWithLotsOfExperiences(matrix, replyRate);
   populateRandomly(matrix, averageExpNumber, replyRate);
   return matrix;
-  function prePopulate(expMatrix) {
-    const fromSameBatch = function differsOnlyLastDigit(x, y) {
+  function prePopulate(expMatrix: SharingMatrix) {
+    const fromSameBatch = function differsOnlyLastDigit(x: number, y: number) {
       return Math.floor(x / 10) === Math.floor(y / 10);
     };
     const pt = profileType;
@@ -160,7 +214,10 @@ function generateExperienceSharingMatrix(nUsers, averageExpNumber, replyRate) {
       }
     }
   }
-  function populateOneProfileWithLotsOfExperiences(expMatrix, replyRate) {
+  function populateOneProfileWithLotsOfExperiences(
+    expMatrix: SharingMatrix,
+    replyRate: number,
+  ) {
     const profileWithManyExperiences =
       profileType.getSeqNumWithManyExperiences();
     for (let from = 0; from < expMatrix.length; from++) {
@@ -174,8 +231,16 @@ function generateExperienceSharingMatrix(nUsers, averageExpNumber, replyRate) {
       }
     }
   }
-  function populateRandomly(expMatrix, averageExpNumber, replyRate) {
-    function getExperienceSharingRate(nUsers, averageExpNumber, replyRate) {
+  function populateRandomly(
+    expMatrix: SharingMatrix,
+    averageExpNumber: number,
+    replyRate: number,
+  ) {
+    function getExperienceSharingRate(
+      nUsers: number,
+      averageExpNumber: number,
+      replyRate: number,
+    ) {
       averageExpNumber /= 1 + replyRate;
       let expSharingRate =
         averageExpNumber /
@@ -210,7 +275,7 @@ function generateExperienceSharingMatrix(nUsers, averageExpNumber, replyRate) {
     }
   }
 }
-function seedExperiences() {
+function seedExperiences(averageExpNumber: number, replyRate: number) {
   const debug = argv.debug === true;
   console.log('--');
   console.log('Trustroots test experiences data');
@@ -220,8 +285,8 @@ function seedExperiences() {
   config.db.debug = debug;
   mongooseService.connect(() => {
     mongooseService.loadModels(async () => {
-      const Experience = mongoose.model('Experience');
-      const User = mongoose.model('User');
+      const Experience = mongoose.model<SeedExperience>('Experience');
+      const User = mongoose.model<SeedUser>('User');
       const users = await User.find().sort('username');
       if (users.length < profileType.minimumTestableUserNumber()) {
         console.error(
@@ -249,18 +314,21 @@ function seedExperiences() {
         );
         const experienceSharingMatrix = generateExperienceSharingMatrix(
           users.length,
-          argv.averageNumberPerProfile,
-          argv.replyRate,
+          averageExpNumber,
+          replyRate,
         );
         const nExperiencesToBeAdded = countTrueElements(
           experienceSharingMatrix,
         );
         console.log(`Saving ${nExperiencesToBeAdded} experiences ... `);
-        const experienceSaveTaskQueue = queue(async (task, callback) => {
-          const experience = createExperience(task.userTo, task.userFrom);
-          await experience.save();
-          callback();
-        }, 100);
+        const experienceSaveTaskQueue = queue<ExperienceTask>(
+          async (task, callback) => {
+            const experience = createExperience(task.userTo, task.userFrom);
+            await experience.save();
+            callback();
+          },
+          100,
+        );
         experienceSaveTaskQueue.error((err, task) => {
           console.log(
             `Error ${err} when saving experience of user ${task.userFrom} with ${task.userTo}`,
@@ -287,7 +355,10 @@ function seedExperiences() {
           });
         });
       }
-      function createExperience(userTo, userFrom) {
+      function createExperience(
+        userTo: Types.ObjectId,
+        userFrom: Types.ObjectId,
+      ): SeedExperience {
         const experience = new Experience();
         experience.userTo = userTo;
         experience.userFrom = userFrom;
@@ -298,7 +369,7 @@ function seedExperiences() {
         experience.public = experienceGenerator.public();
         return experience;
       }
-      function countTrueElements(matrix) {
+      function countTrueElements(matrix: SharingMatrix): number {
         return matrix
           .map(row => row.filter(v => v).length)
           .reduce((a, b) => a + b, 0);
@@ -306,4 +377,4 @@ function seedExperiences() {
     });
   });
 }
-seedExperiences();
+seedExperiences(argv.averageNumberPerProfile, argv.replyRate);

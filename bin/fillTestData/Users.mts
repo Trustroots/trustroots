@@ -4,79 +4,166 @@ import mongooseService from './../../config/lib/mongoose.mjs';
 import yargs from 'yargs';
 import { faker } from '@faker-js/faker';
 import moment from 'moment';
-import mongoose from 'mongoose';
+import mongoose, { type Document, type Types } from 'mongoose';
 import config from './../../config/config.mjs';
-import dependency9 from './../../modules/offers/server/models/offer.server.model.mjs';
-const dependency7 = JSON.parse(
-  readFileSync(new URL('./data/Cities.json', import.meta.url), 'utf8'),
+import './../../modules/offers/server/models/offer.server.model.mjs';
+
+interface City {
+  lat: number;
+  lon: number;
+}
+
+interface TribeRecord extends Document {
+  count: number;
+}
+
+interface UserRecord extends Document {
+  gender: string;
+  firstName: string;
+  lastName: string;
+  displayName: string;
+  provider: string;
+  public: boolean;
+  avatarUploaded: boolean;
+  avatarSource: string;
+  welcomeSequenceStep: number;
+  seen: Date;
+  languages: string[];
+  member: { tribe: Types.ObjectId; since: number }[];
+  email: string;
+  password: string;
+  username: string;
+}
+
+interface OfferRecord extends Document {
+  type: string;
+  status: 'yes' | 'maybe';
+  description: string;
+  maxGuests: number;
+  user: Types.ObjectId;
+  location: [number, number];
+  locationFuzzy: [number, number];
+}
+
+function parseCities(value: unknown): City[] {
+  if (!Array.isArray(value)) {
+    throw new Error('Cities data must be an array');
+  }
+  const entries: unknown[] = value;
+  const cities: City[] = [];
+  for (const city of entries) {
+    if (
+      typeof city === 'object' &&
+      city !== null &&
+      'lat' in city &&
+      typeof city.lat === 'number' &&
+      'lon' in city &&
+      typeof city.lon === 'number'
+    ) {
+      cities.push({ lat: city.lat, lon: city.lon });
+    } else {
+      throw new Error(
+        'Cities data must contain numeric latitude and longitude',
+      );
+    }
+  }
+  return cities;
+}
+
+function parseLanguages(value: unknown): Record<string, string> {
+  if (typeof value !== 'object' || value === null) {
+    throw new Error('Languages data must map language keys to names');
+  }
+  const languages: Record<string, string> = {};
+  for (const key of Reflect.ownKeys(value)) {
+    if (typeof key !== 'string') continue;
+    const language: unknown = Reflect.get(value, key);
+    if (typeof language !== 'string') {
+      throw new Error('Languages data must map language keys to names');
+    }
+    languages[key] = language;
+  }
+  return languages;
+}
+
+const cities = parseCities(
+  JSON.parse(
+    readFileSync(new URL('./data/Cities.json', import.meta.url), 'utf8'),
+  ),
 );
-const dependency8 = JSON.parse(
-  readFileSync(
-    new URL('../../config/languages/languages.json', import.meta.url),
-    'utf8',
+const languages = parseLanguages(
+  JSON.parse(
+    readFileSync(
+      new URL('../../config/languages/languages.json', import.meta.url),
+      'utf8',
+    ),
   ),
 );
 /**
  * Required dependencies
  */
 
-const cities = dependency7;
-const languages = dependency8;
-dependency9;
-
 /**
  * Configure the script usage using yargs to obtain parameters and enforce usage.
  */
-const argv = yargs.usage(
-  '$0 <numberOfUsers>',
-  'Seed database with number of tribes',
-  function (yargs) {
-    return yargs
-      .positional('numberOfUsers', {
-        describe: 'Number of users to add',
-        type: 'number',
-      })
-      .array('userNames')
-      .boolean('debug')
-      .boolean('limit')
-      .describe('userNames', 'List of admin usernames')
-      .describe('debug', 'Enable extra database output (default=false)')
-      .describe(
-        'limit',
-        'If users already exist in the database, only add up to the number of users (default=false)',
-      )
-      .example(
-        'node $0 1000',
-        'Adds 1000 randomly seeded users to the database',
-      )
-      .example(
-        'node $0 100 --userNames admin1 admin2 admin3 --',
-        "Adds 100 randomly seeded users including usernames: admin1, admin2, and admin3 all using the password 'password123'",
-      )
-      .example(
-        'node $0 100 --debug',
-        'Adds 100 randomly seeded users to the database with debug database output',
-      )
-      .example(
-        'node $0 100 --limit',
-        'Adds up to 100 randomly seeded users to the database (eg. If 20 users already exist, 80 users will be added)',
-      )
-      .check(function (argv) {
-        if (argv.numberOfUsers < 1) {
-          throw new Error('Error: Number of users should be greater than 0');
-        }
-        return true;
-      })
-      .strict().yargs;
-  },
-).argv;
+const argv = yargs(process.argv.slice(2))
+  .usage('$0 <numberOfUsers>')
+  .command('$0 <numberOfUsers>', 'Seed database with users and offers')
+  .positional('numberOfUsers', {
+    describe: 'Number of users to add',
+    type: 'number',
+  })
+  .array('userNames')
+  .boolean('debug')
+  .boolean('limit')
+  .describe('userNames', 'List of admin usernames')
+  .describe('debug', 'Enable extra database output (default=false)')
+  .describe(
+    'limit',
+    'If users already exist in the database, only add up to the number of users (default=false)',
+  )
+  .example('node $0 1000', 'Adds 1000 randomly seeded users to the database')
+  .example(
+    'node $0 100 --userNames admin1 admin2 admin3 --',
+    "Adds 100 randomly seeded users including usernames: admin1, admin2, and admin3 all using the password 'password123'",
+  )
+  .example(
+    'node $0 100 --debug',
+    'Adds 100 randomly seeded users to the database with debug database output',
+  )
+  .example(
+    'node $0 100 --limit',
+    'Adds up to 100 randomly seeded users to the database (eg. If 20 users already exist, 80 users will be added)',
+  )
+  .check(function (arguments_) {
+    if (
+      typeof arguments_.numberOfUsers !== 'number' ||
+      arguments_.numberOfUsers < 1
+    ) {
+      throw new Error('Error: Number of users should be greater than 0');
+    }
+    return true;
+  })
+  .strict()
+  .parseSync();
+
+const numberOfUsers = argv.numberOfUsers;
+if (typeof numberOfUsers !== 'number') {
+  throw new Error('Error: Number of users should be greater than 0');
+}
+const adminUserNames = argv.userNames?.map(userName => {
+  if (typeof userName !== 'string') {
+    throw new Error('Admin usernames must be strings');
+  }
+  return userName;
+});
 
 /**
  * Globals
  */
 let savedUsers = 0;
 let savedOffers = 0;
-const Offer = mongoose.model('Offer');
+const Offer = mongoose.model<OfferRecord>('Offer');
 
 /**
  * Generates a random integer between 0 and max - 1 inclusively
@@ -84,7 +171,7 @@ const Offer = mongoose.model('Offer');
  * @param {number} max The max value to use to generate the random integer
  * @returns random integer between 0 and max - 1
  */
-function random(max) {
+function random(max: number) {
   return Math.floor(Math.random() * max);
 }
 
@@ -109,7 +196,7 @@ function randomizeLocation() {
  * @param {number} countExisting
  * @param {number} countSaved
  */
-function printSummary(countExisting, countSaved) {
+function printSummary(countExisting: number, countSaved: number) {
   console.log('');
   console.log(countExisting + ' users existed in the database.');
   console.log(countSaved + ' users successfully added.');
@@ -129,20 +216,27 @@ function printSummary(countExisting, countSaved) {
  * @param {boolean} limit
  * @param {function} callback
  */
-function addOffer(userID, maxUsers, initialUserCount, limit, callback) {
+function addOffer(
+  userID: Types.ObjectId,
+  maxUsers: number,
+  initialUserCount: number,
+  limit: boolean,
+  callback: () => void,
+) {
   const offer = new Offer();
   const city = cities[random(cities.length)];
+  if (!city) throw new Error('Cities data must not be empty');
   const lat = city.lat + randomizeLocation();
   const lon = city.lon + randomizeLocation();
-  const location = [lat, lon];
+  const location: [number, number] = [lat, lon];
   offer.type = 'host';
-  offer.status = _.sample(['yes', 'maybe']);
+  offer.status = faker.helpers.arrayElement(['yes', 'maybe'] as const);
   offer.description = faker.lorem.sentence();
   offer.maxGuests = random(10);
   offer.user = userID;
   offer.location = location;
   offer.locationFuzzy = location;
-  offer.save(err => {
+  offer.save((err: Error | null) => {
     if (err != null) console.log(err);
     else {
       savedOffers++;
@@ -154,7 +248,7 @@ function addOffer(userID, maxUsers, initialUserCount, limit, callback) {
         (!limit && savedUsers >= maxUsers && savedOffers >= maxUsers)
       ) {
         printSummary(initialUserCount, savedUsers);
-        callback(null);
+        callback();
       }
     }
   });
@@ -164,18 +258,12 @@ function addOffer(userID, maxUsers, initialUserCount, limit, callback) {
  * Seed and add all the users
  *
  */
-function addUsers() {
+function addUsers(max: number, adminUsers: string[] = []) {
   let index = 0;
-  let numAdminUsers;
+  let numAdminUsers: number;
   const debug = argv.debug === true;
   const limit = argv.limit === true;
-  const max = argv.numberOfUsers;
-  const adminUsers = argv.userNames;
-  if (adminUsers === null || adminUsers === undefined) {
-    numAdminUsers = 0;
-  } else {
-    numAdminUsers = adminUsers.length;
-  }
+  numAdminUsers = adminUsers.length;
   const printWarning = function printWarning() {
     console.log('Generating ' + max + ' users...');
     if (max > 2000) {
@@ -192,10 +280,10 @@ function addUsers() {
   // Bootstrap db connection
   mongooseService.connect(() => {
     mongooseService.loadModels(async () => {
-      const Tribe = mongoose.model('Tribe');
-      const User = mongoose.model('User');
+      const Tribe = mongoose.model<TribeRecord>('Tribe');
+      const User = mongoose.model<UserRecord>('User');
       let userCount = 0;
-      let tribes = null;
+      let tribes: TribeRecord[] = [];
 
       /**
        * Gets the users and tribes from the database and saves them into the
@@ -204,7 +292,7 @@ function addUsers() {
        * @returns {Promise} Promise that completes when user and tribe data
        *  have successfully loaded into global variables.
        */
-      function getUserCountAndTribes() {
+      function getUserCountAndTribes(): Promise<void> {
         const getUserCount = User.countDocuments();
         const getTribes = Tribe.find();
         return Promise.all([getUserCount, getTribes])
@@ -222,8 +310,8 @@ function addUsers() {
        * @returns {Promise} Promise that completes when all users have
        *  successfully been added.
        */
-      function addAllUsers() {
-        return new Promise(resolve => {
+      function addAllUsers(): Promise<void> {
+        return new Promise<void>(resolve => {
           if (limit) {
             index = userCount;
           }
@@ -235,11 +323,20 @@ function addUsers() {
           console.log('--');
           console.log('Trustroots test user data');
           console.log('--');
-          const genderValues = User.schema.path('gender').enumValues;
+          const genderPath = User.schema.path('gender');
+          if (
+            !('enumValues' in genderPath) ||
+            !Array.isArray(genderPath.enumValues)
+          ) {
+            throw new Error('User gender schema must define enum values');
+          }
+          const genderValues = genderPath.enumValues.filter(
+            (gender): gender is string => typeof gender === 'string',
+          );
           while (index < max) {
             (function addNextUser() {
               const user = new User();
-              let admin;
+              let admin: string | undefined;
 
               // Check if this is an admin user
               if (numAdminUsers > 0) {
@@ -248,11 +345,11 @@ function addUsers() {
 
               // Add mock data
               user.gender = faker.helpers.arrayElement(genderValues);
-              user.firstName = faker.person.firstName(
-                ['female', 'male'].includes(user.gender)
+              const gender =
+                user.gender === 'female' || user.gender === 'male'
                   ? user.gender
-                  : undefined,
-              );
+                  : undefined;
+              user.firstName = faker.person.firstName(gender);
               user.lastName = faker.person.lastName();
               user.displayName = user.firstName + ' ' + user.lastName;
               user.provider = 'local';
@@ -263,7 +360,8 @@ function addUsers() {
               user.seen = moment()
                 .subtract(Math.random() * 365, 'd')
                 .subtract(Math.random() * 24, 'h')
-                .subtract(Math.random() * 3600, 's');
+                .subtract(Math.random() * 3600, 's')
+                .toDate();
               // 0-4 random languages
               user.languages = [...Array(random(4))].map(() =>
                 faker.helpers.objectKey(languages),
@@ -290,7 +388,7 @@ function addUsers() {
                 const userNumTribes = random(tribes.length);
 
                 // Randomize indecies
-                let randomTribes = [];
+                let randomTribes: number[] = [];
                 for (let i = 0; i < tribes.length; i++) {
                   randomTribes[i] = i;
                 }
@@ -299,16 +397,18 @@ function addUsers() {
                 // Add the tribes using the random indecies
                 for (let j = 0; j < userNumTribes; j++) {
                   const rand = randomTribes[j];
+                  const tribe = tribes[rand];
+                  if (!tribe) throw new Error('Expected a selected tribe');
                   user.member.push({
-                    tribe: tribes[rand]._id,
+                    tribe: tribe._id,
                     since: Date.now(),
                   });
-                  tribes[rand].count += 1;
+                  tribe.count += 1;
                 }
               }
 
               // Save the user
-              user.save(function (err) {
+              user.save(function (err: Error | null) {
                 savedUsers++;
                 process.stdout.write('.');
                 if (!err && admin !== undefined) {
@@ -321,7 +421,7 @@ function addUsers() {
                 } else if (err) {
                   console.log(err);
                 }
-                addOffer(user._id, max, userCount, limit, resolve);
+                addOffer(user._id, max, userCount, limit, () => resolve());
               });
 
               // No more admin users
@@ -343,8 +443,8 @@ function addUsers() {
        * @returns {Promise} Promise that completes when all the tribes have
        *  successfully been updated.
        */
-      function updateTribes() {
-        return new Promise(resolve => {
+      function updateTribes(): Promise<void> {
+        return new Promise<void>(resolve => {
           let numTribesUpdated = 0;
 
           // If we didn't add any users, tribes do not need to be updated
@@ -353,7 +453,9 @@ function addUsers() {
           } else {
             // Update tribes
             for (let j = 0; j < tribes.length; j++) {
-              Tribe.findByIdAndUpdate(tribes[j]._id, tribes[j], err => {
+              const tribe = tribes[j];
+              if (!tribe) throw new Error('Expected a selected tribe');
+              Tribe.findByIdAndUpdate(tribe._id, tribe, (err: Error | null) => {
                 if (err) {
                   console.error(err);
                 }
@@ -385,4 +487,4 @@ function addUsers() {
   });
 } // addUsers()
 
-addUsers();
+addUsers(numberOfUsers, adminUserNames);

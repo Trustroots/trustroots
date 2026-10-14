@@ -2,8 +2,24 @@ import _ from 'lodash';
 import mongooseService from './../../config/lib/mongoose.mjs';
 import yargs from 'yargs';
 import { faker } from '@faker-js/faker';
-import mongoose from 'mongoose';
+import mongoose, { type Document } from 'mongoose';
 import config from './../../config/config.mjs';
+
+interface SeedCircleRecord extends Document {
+  label: string;
+  labelHistory: string;
+  slugHistory: string;
+  synonyms: string;
+  color: string;
+  count: number;
+  created: number;
+  modified: number;
+  public: boolean;
+  image_UUID: string | undefined;
+  attribution: string;
+  attribution_url: string;
+  description: string;
+}
 /**
  * Required dependencies
  */
@@ -11,43 +27,42 @@ import config from './../../config/config.mjs';
 /**
  * Configure the script usage using yargs to obtain parameters and enforce usage.
  */
-const argv = yargs.usage(
-  '$0 <numberOfCircles>',
-  'Seed database with number of circles',
-  yargs => {
-    return yargs
-      .positional('numberOfCircles', {
-        describe: 'Number of circles to add',
-        type: 'number',
-      })
-      .boolean('debug')
-      .boolean('limit')
-      .describe('debug', 'Enable extra database output (default=false)')
-      .describe(
-        'limit',
-        'If circles already exist in the database, only add up to the number of circles (default=false)',
-      )
-      .example(
-        'node $0 1000',
-        'Adds 1000 randomly seeded circles to the database',
-      )
-      .example(
-        'node $0 100 --debug',
-        'Adds 100 randomly seeded circles to the database with debug database output',
-      )
-      .example(
-        'node $0 100 --limit',
-        'Adds up to 100 randomly seeded circles to the database (eg. If 20 circles already exist, 80 circles will be added)',
-      )
-      .check(function (argv) {
-        if (argv.numberOfCircles < 1) {
-          throw new Error('Error: Number of circles should be greater than 0');
-        }
-        return true;
-      })
-      .strict().yargs;
-  },
-).argv;
+const argv = yargs(process.argv.slice(2))
+  .usage('$0 <numberOfCircles>')
+  .command('$0 <numberOfCircles>', 'Seed database with circles')
+  .positional('numberOfCircles', {
+    describe: 'Number of circles to add',
+    type: 'number',
+  })
+  .boolean('debug')
+  .boolean('limit')
+  .describe('debug', 'Enable extra database output (default=false)')
+  .describe(
+    'limit',
+    'If circles already exist in the database, only add up to the number of circles (default=false)',
+  )
+  .example('node $0 1000', 'Adds 1000 randomly seeded circles to the database')
+  .example(
+    'node $0 100 --debug',
+    'Adds 100 randomly seeded circles to the database with debug database output',
+  )
+  .example(
+    'node $0 100 --limit',
+    'Adds up to 100 randomly seeded circles to the database (eg. If 20 circles already exist, 80 circles will be added)',
+  )
+  .check(function (argv) {
+    if (typeof argv.numberOfCircles !== 'number' || argv.numberOfCircles < 1) {
+      throw new Error('Error: Number of circles should be greater than 0');
+    }
+    return true;
+  })
+  .strict()
+  .parseSync();
+
+const numberOfCircles = argv.numberOfCircles;
+if (typeof numberOfCircles !== 'number') {
+  throw new Error('Error: Number of circles should be greater than 0');
+}
 
 /**
  * Hardcoded circle image ids stored on the CDN used for seeding. These were
@@ -90,7 +105,7 @@ const circleImageUUIDs = [
  * @param {number} circleIndex - index to add to the circle label
  * @returns {object} Returns the seeded circle object
  */
-function seedCircle(circle, circleIndex) {
+function seedCircle(circle: SeedCircleRecord, circleIndex: number) {
   circle.label = faker.lorem.word() + '_' + circleIndex;
   circle.labelHistory = faker.lorem.words();
   circle.slugHistory = faker.lorem.words();
@@ -112,9 +127,8 @@ function seedCircle(circle, circleIndex) {
  * parameter it determines how many circles to add. It adds the new circles
  * and prints status accordingly.
  */
-function seedCircles() {
+function seedCircles(max: number) {
   let index = 0;
-  const max = argv.numberOfCircles;
   const debug = argv.debug === true;
   const limit = argv.limit === true;
 
@@ -133,7 +147,7 @@ function seedCircles() {
   // Bootstrap db connection
   mongooseService.connect(() => {
     mongooseService.loadModels(async () => {
-      const Tribe = mongoose.model('Tribe');
+      const Tribe = mongoose.model<SeedCircleRecord>('Tribe');
 
       /**
        * Adds the number of circles using the values and options specified
@@ -144,8 +158,8 @@ function seedCircles() {
        * @returns {Promise} Promise that completes when all circles have
        *  successfully been added.
        */
-      function addCircles(initialCircleCount) {
-        return new Promise(resolve => {
+      function addCircles(initialCircleCount: number) {
+        return new Promise<void>(resolve => {
           let savedCircles = 0;
 
           // handle the limit option
@@ -218,4 +232,4 @@ function seedCircles() {
     });
   });
 }
-seedCircles();
+seedCircles(numberOfCircles);
