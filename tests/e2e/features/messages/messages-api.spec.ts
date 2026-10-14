@@ -254,6 +254,16 @@ test.describe('seeded message API flows', () => {
       } finally {
         await updateUserByUsername(member.username, {
           $set: { roles: sender.roles },
+          ...(role === 'admin'
+            ? {
+                $unset: {
+                  mfaEnabled: 1,
+                  mfaSecretEncrypted: 1,
+                  mfaLastTotpCounter: 1,
+                  mfaRecoveryCodeHashes: 1,
+                },
+              }
+            : {}),
         });
         await withE2eDb(db =>
           db.collection('messages').deleteMany({

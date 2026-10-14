@@ -1006,7 +1006,7 @@ describe('Authentication controller OAuth unit tests', () => {
 
     it('clears a challenge for a missing or suspended account', async () => {
       const missingSession: MfaSession = {
-        mfaChallenge: createChallenge('missing-fictional-user'),
+        mfaChallenge: createChallenge(new mongoose.Types.ObjectId().toString()),
         regenerate: callback => callback(),
         save: callback => callback(),
       };
