@@ -64,22 +64,25 @@ class ConversationJourneyTest {
             }
         }
         compose.setContent {
-            ConversationScreen(
-                api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
-                session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
-                member = MessageMember("member-one", "quiet-fox", "Quiet Fox"),
-                onSessionInvalidated = {},
-                onBack = { returnedToInbox.set(true) },
-            )
+            NativeTestAppFrame(Destination.Messages) {
+                ConversationScreen(
+                    api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                    session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
+                    member = MessageMember("member-one", "quiet-fox", "Quiet Fox"),
+                    onSessionInvalidated = {},
+                    onBack = { returnedToInbox.set(true) },
+                )
+            }
         }
         compose.onNodeWithTag("messageComposer").performTextInput("Hello there")
         compose.onNodeWithContentDescription("Send").assertIsDisplayed()
-        captureUsabilityScreenshot(compose, "android_conversation")
         compose.onNodeWithContentDescription("Send").performClick()
         compose.waitUntil(10_000) {
             posted.get() && compose.onAllNodesWithText("Hello there").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Just now").assertIsDisplayed()
+        hideTestKeyboard()
+        captureUsabilityScreenshot(compose, "android_conversation")
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         assertTrue(returnedToInbox.get())
         responder.join(1_000)

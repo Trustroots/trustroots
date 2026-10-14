@@ -28,6 +28,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PersonSearch
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
@@ -57,6 +60,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.ImeAction
@@ -91,6 +95,8 @@ internal fun MemberSearchScreen(
     session: MemberSession,
     onSessionInvalidated: () -> Unit,
     onProfileOpenChange: (Boolean) -> Unit = {},
+    searchMode: (@Composable () -> Unit)? = null,
+    onSwitchToMap: (() -> Unit)? = null,
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
@@ -121,34 +127,48 @@ internal fun MemberSearchScreen(
         MemberProfileScreen(api, session, username, onSessionInvalidated) { selected = null }
         return
     }
-    Column(Modifier.fillMaxSize().padding(20.dp)) {
-        Text("Find a member", style = MaterialTheme.typography.headlineMedium)
-        Text("Search by name or username.")
+    Column(Modifier.fillMaxSize()) {
+        Surface(color = TrustrootsPaleGreen, modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = query,
             onValueChange = { query = it; searched = false; error = null; results = emptyList() },
-            label = { Text("Name or username") },
+            placeholder = { Text("Name or username") },
+            leadingIcon = searchMode,
             singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(8.dp).testTag("memberSearchField"),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { search() }),
             trailingIcon = {
-                TextButton(onClick = search, enabled = query.trim().length >= 3 && !loading) {
-                    Text("Search")
+                IconButton(onClick = search, enabled = query.trim().length >= 3 && !loading) {
+                    Icon(Icons.Default.Search, contentDescription = "Search members")
                 }
             },
         )
+        }
         if (query.trim().isNotEmpty() && query.trim().length < 3) Text("Enter at least 3 characters.")
         if (loading) CircularProgressIndicator()
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         if (searched && results.isEmpty()) Text("No members found. Try another name or username.")
         if (!searched && results.isEmpty() && !loading && error == null) {
-            Column(Modifier.fillMaxWidth().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Default.PersonSearch, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.primary)
-                Text("Find someone you know by name or username.", modifier = Modifier.padding(top = 12.dp))
+            Column(
+                Modifier.weight(1f).fillMaxWidth().padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(Icons.Default.People, null, modifier = Modifier.size(72.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+                Text("Find a member", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
+                Text("Search using at least 3 letters of their name or username.", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
+                if (onSwitchToMap != null) {
+                    HorizontalDivider(Modifier.padding(vertical = 24.dp))
+                    TextButton(onClick = onSwitchToMap) {
+                        Icon(Icons.Default.Place, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Switch to map search")
+                    }
+                }
             }
         }
-        Column(Modifier.verticalScroll(rememberScrollState())) {
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
             results.forEach { member ->
                 Row(Modifier.fillMaxWidth().clickable { selected = member.username }.padding(vertical = 12.dp)) {
                     RemoteArtwork(

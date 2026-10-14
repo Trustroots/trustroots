@@ -63,11 +63,13 @@ class CirclesJourneyTest {
             }
         }
         compose.setContent {
-            CirclesScreen(
-                api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
-                session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
-                onSessionInvalidated = {},
-            )
+            NativeTestAppFrame(Destination.Circles) {
+                CirclesScreen(
+                    api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                    session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
+                    onSessionInvalidated = {},
+                )
+            }
         }
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Wanderers").fetchSemanticsNodes().isNotEmpty()

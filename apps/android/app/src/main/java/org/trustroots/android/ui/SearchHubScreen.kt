@@ -67,16 +67,11 @@ internal fun SearchHubScreen(
             onProfileOpenChange = { profileOpen = it },
             searchMode = { SearchModeMenu(tab, selectMode) },
         )
-        else -> Column(Modifier.fillMaxSize()) {
-            if (!profileOpen) Surface(color = TrustrootsPaleGreen, modifier = Modifier.fillMaxWidth()) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    SearchModeMenu(tab, selectMode)
-                    Text("Member search")
-                }
-            }
-            Box(Modifier.weight(1f)) {
-                MemberSearchScreen(api, session, onSessionInvalidated, onProfileOpenChange = { profileOpen = it })
-            }
-        }
+        else -> MemberSearchScreen(
+            api, session, onSessionInvalidated,
+            onProfileOpenChange = { profileOpen = it },
+            searchMode = { SearchModeMenu(tab, selectMode) },
+            onSwitchToMap = { selectMode(0) },
+        )
     }
 }

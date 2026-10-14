@@ -21,7 +21,6 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.TrustrootsCircle
-import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
 class HostResultCardJourneyTest {
@@ -31,7 +30,7 @@ class HostResultCardJourneyTest {
         val opened = AtomicBoolean(false)
         val closed = AtomicBoolean(false)
         compose.setContent {
-            TrustrootsTheme {
+            NativeTestAppFrame(Destination.Search) {
                 HostResultCard(
                     offer = HostOffer("offer-one", "maybe", "A spare room for visiting travellers.", 2, MessageMember(null, "quiet-fox", "Quiet Fox")),
                     profile = MemberProfile(null, "quiet-fox", "Quiet Fox", "Travelling slowly", null, null, languages = emptyList(), circles = listOf(TrustrootsCircle("circle-one", "wanderers", "Wanderers", null, 12, false, null))),
@@ -61,7 +60,7 @@ class HostResultCardJourneyTest {
             "A quiet fictional room is available for visiting travellers."
         }
         compose.setContent {
-            TrustrootsTheme {
+            NativeTestAppFrame(Destination.Search) {
                 HostResultCard(
                     offer = HostOffer("offer-two", "maybe", description, 2, MessageMember(null, "quiet-fox", "Quiet Fox")),
                     profile = MemberProfile(null, "quiet-fox", "Quiet Fox", null, null, null, languages = emptyList()),
@@ -82,8 +81,8 @@ class HostResultCardJourneyTest {
             .height
         val maxHeightPx = with(compose.density) { 180.dp.roundToPx() }
         assertTrue("Card exceeded its rounded 180 dp pixel cap: $cardHeightPx px > $maxHeightPx px", cardHeightPx <= maxHeightPx)
-        compose.onNodeWithText("Up to 2 guests").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithContentDescription("Close host result").performScrollTo().performClick()
+        compose.onNodeWithText("Up to 2 guests", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription("Close host result", useUnmergedTree = true).performScrollTo().performClick()
         assertTrue(closed.get())
     }
 }

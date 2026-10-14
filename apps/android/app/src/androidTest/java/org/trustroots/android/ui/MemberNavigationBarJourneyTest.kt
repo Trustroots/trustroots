@@ -1,16 +1,10 @@
 package org.trustroots.android.ui
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertIsDisplayed
@@ -25,7 +19,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
 class MemberNavigationBarJourneyTest {
@@ -33,28 +26,13 @@ class MemberNavigationBarJourneyTest {
 
     @Test fun showsSelectionUnreadBadgeAndProfileAndNavigates() {
         compose.setContent {
-            TrustrootsTheme {
-                var destination by remember { mutableStateOf(Destination.Circles) }
-                Scaffold(
-                    modifier = Modifier.fillMaxSize(),
-                    bottomBar = {
-                        MemberNavigationBar(
-                            destination = destination,
-                            unreadMessageCount = 2,
-                            avatarURL = null,
-                            sessionCookie = null,
-                            memberLabel = "Quiet Fox",
-                            onNavigate = { destination = it },
-                        )
-                    },
-                ) { insets ->
-                    Box(
-                        Modifier.fillMaxSize().padding(insets),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text("Community navigation")
-                    }
-                }
+            var destination by remember { mutableStateOf(Destination.Circles) }
+            NativeTestAppFrame(
+                destination = destination,
+                unreadMessageCount = 2,
+                onNavigate = { destination = it },
+            ) {
+                Text("Community navigation")
             }
         }
 

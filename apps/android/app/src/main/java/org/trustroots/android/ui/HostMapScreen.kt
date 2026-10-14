@@ -366,11 +366,11 @@ internal fun HostMapScreen(
                 .testTag("map-controls").background(TrustrootsPaleGreen.copy(alpha = 0.97f)),
         ) {
             Row(Modifier.fillMaxWidth().padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                searchMode()
                 OutlinedTextField(
                     locationQuery, { locationQuery = it; showSuggestions = true },
                     placeholder = { Text("Search places") },
                     singleLine = true,
+                    leadingIcon = searchMode,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                     keyboardActions = KeyboardActions(onSearch = { findLocation() }),
                     trailingIcon = {

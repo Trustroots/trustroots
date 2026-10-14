@@ -46,11 +46,13 @@ class HostMapJourneyTest {
             }
         }
         compose.setContent {
-            SearchHubScreen(
-                api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
-                session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
-                onSessionInvalidated = {},
-            )
+            NativeTestAppFrame(Destination.Search) {
+                SearchHubScreen(
+                    api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                    session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
+                    onSessionInvalidated = {},
+                )
+            }
         }
         compose.waitUntil(15_000) {
             compose.onAllNodesWithText("1 offers · 0 Nostroots notes in this area").fetchSemanticsNodes().isNotEmpty()
@@ -73,6 +75,8 @@ class HostMapJourneyTest {
         compose.onNodeWithContentDescription("Search mode").performClick()
         compose.onNodeWithText("Members").performClick()
         compose.onNodeWithText("Find a member").assertIsDisplayed()
+        compose.onNodeWithText("Switch to map search").performClick()
+        compose.onNodeWithTag("placeSearchField").assertIsDisplayed()
         responder.join(1_000)
     }
 

@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
@@ -56,8 +57,8 @@ class ProfileEditingJourneyTest {
                         savedBody.set(body.concatToString(0, offset))
                     }
                     val payload = when {
-                        request.startsWith("PUT ") -> """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox","tagline":"New line","languages":["eng"]}"""
-                        request.contains("/api/users/quiet-fox") -> """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox","tagline":"Old line","languages":["eng"]}"""
+                        request.startsWith("PUT ") -> """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox","tagline":"New line","description":"Hello travellers","languages":["eng"]}"""
+                        request.contains("/api/users/quiet-fox") -> """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox","tagline":"Old line","description":"Hello travellers","languages":["eng"]}"""
                         else -> "[]"
                     }
                     val bytes = payload.toByteArray()
@@ -69,16 +70,17 @@ class ProfileEditingJourneyTest {
             }
         }
         compose.setContent {
-            MemberProfileScreen(
-                MobileApiClient("http://127.0.0.1:${server.localPort}"),
-                MemberSession("connect.sid=test", MobileMember("quiet-fox", "Quiet Fox")),
-                "quiet-fox", onSessionInvalidated = {}, onBack = { returnedToMap.set(true) },
-            )
+            NativeTestAppFrame(Destination.Menu) {
+                MemberProfileScreen(
+                    MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                    MemberSession("connect.sid=test", MobileMember("quiet-fox", "Quiet Fox")),
+                    "quiet-fox", onSessionInvalidated = {}, onBack = { returnedToMap.set(true) },
+                )
+            }
         }
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Old line").fetchSemanticsNodes().isNotEmpty()
         }
-        captureUsabilityScreenshot(compose, "android_profile")
         compose.onNodeWithText("Edit your profile").performClick()
         compose.onNodeWithText("Tagline").performTextReplacement("New line")
         compose.onNodeWithText("Save changes").performClick()
@@ -90,6 +92,9 @@ class ProfileEditingJourneyTest {
         compose.onNodeWithText("New line").assertIsDisplayed()
         compose.onNodeWithText("Experiences").assertIsDisplayed()
         compose.onNodeWithText("About").assertIsDisplayed()
+        compose.onNodeWithText("About").performClick()
+        compose.onNodeWithText("Hello travellers").performScrollTo().assertIsDisplayed()
+        captureUsabilityScreenshot(compose, "android_profile")
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         assertTrue(returnedToMap.get())
     }

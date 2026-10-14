@@ -128,6 +128,7 @@ jobs:
             test -s tmp/mobile-screenshots/android_host_map.png
             test -s tmp/mobile-screenshots/android_circles.png
             test -s tmp/mobile-screenshots/android_profile.png
+            test -s tmp/mobile-screenshots/android_member_search.png
             test -s tmp/mobile-screenshots/android_edit_profile.png
             test -s tmp/mobile-screenshots/android_conversation.png
             test -s tmp/mobile-screenshots/android_host_result.png
@@ -167,6 +168,7 @@ jobs:
           test -s "$screenshots/android_host_map.png"
           test -s "$screenshots/android_circles.png"
           test -s "$screenshots/android_profile.png"
+          test -s "$screenshots/android_member_search.png"
           test -s "$screenshots/android_edit_profile.png"
           test -s "$screenshots/android_conversation.png"
           test -s "$screenshots/android_host_result.png"
@@ -226,6 +228,10 @@ jobs:
               '### Android profile',
               '',
               `![Android profile](${baseUrl}/android_profile.png)`,
+              '',
+              '### Android member search',
+              '',
+              `![Android member search](${baseUrl}/android_member_search.png)`,
               '',
               '### Android profile editor',
               '',

@@ -71,16 +71,20 @@ class MemberSearchJourneyTest {
             }
         }
         compose.setContent {
-            SearchHubScreen(
-                api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
-                session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
-                onSessionInvalidated = {},
-                initialTab = 1,
-            )
+            NativeTestAppFrame(Destination.Search) {
+                SearchHubScreen(
+                    api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                    session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
+                    onSessionInvalidated = {},
+                    initialTab = 1,
+                )
+            }
         }
+        compose.onNodeWithText("Name or username").assertIsDisplayed()
+        captureUsabilityScreenshot(compose, "android_member_search")
         compose.onNodeWithContentDescription("Search mode").assertIsDisplayed()
         compose.onNodeWithText("Name or username").performTextInput("quiet fox")
-        compose.onNodeWithText("Search").performClick()
+        compose.onNodeWithContentDescription("Search members").performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
         }

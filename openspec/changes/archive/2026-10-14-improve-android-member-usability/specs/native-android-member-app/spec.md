@@ -17,8 +17,11 @@ The app SHALL keep place search visible above the map, provide a search-mode
 menu and toggle filters independently. Place suggestions SHALL be optional
 and result statistics SHALL identify the visible map area. Host cards SHALL
 open profiles and show available avatars, usernames and shared circles.
-Profiles SHALL default to About with Contacts and Experiences available through
-native tabs and swipe navigation. Hosting details SHALL remain in About.
+Member search SHALL show a centred empty state with minimum-query guidance
+and an action to switch to map search. Both search modes SHALL use a compact
+search toolbar with the mode menu inside the field. Profiles SHALL default to
+About with Contacts and Experiences available through native tabs and swipe
+navigation. Hosting details SHALL remain in About.
 
 #### Scenario: Member searches and inspects a host
 

@@ -625,7 +625,11 @@ internal fun MemberNavigationBar(
                 onClick = { onNavigate(item) },
                 modifier = Modifier.testTag("navigation-${item.name.lowercase()}").semantics {
                     if (item == Destination.Messages) {
-                        stateDescription = if (unreadMessageCount == 0) "No unread conversations" else "$unreadMessageCount unread conversations"
+                        stateDescription = when (unreadMessageCount) {
+                            0 -> "No unread conversations"
+                            1 -> "1 unread conversation"
+                            else -> "$unreadMessageCount unread conversations"
+                        }
                     }
                 },
                 icon = {

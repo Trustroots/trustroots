@@ -2,7 +2,6 @@ package org.trustroots.android.ui
 
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.CompositionLocalProvider
@@ -14,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
@@ -25,7 +25,6 @@ import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
-import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
 class FormNavigationJourneyTest {
@@ -33,24 +32,25 @@ class FormNavigationJourneyTest {
 
     private fun showEditor() {
         compose.setContent {
-            TrustrootsTheme {
-                val guard = remember { mutableStateOf<LeaveGuard?>(null) }
-                var closed by remember { mutableStateOf(false) }
-                CompositionLocalProvider(LocalLeaveGuard provides guard) {
-                    Column(Modifier.fillMaxSize()) {
-                        TextButton(onClick = {
-                            val leave = { closed = true }
-                            guard.value?.invoke(leave) ?: leave()
-                        }) { Text("Open circles") }
-                        if (closed) Text("Editor closed") else EditProfileScreen(
-                            api = MobileApiClient("http://127.0.0.1:1"),
-                            session = MemberSession("connect.sid=test", MobileMember("quiet-fox", "Quiet Fox")),
-                            profile = MemberProfile("member-one", "quiet-fox", "Quiet Fox", "Travelling slowly", "Hello travellers", null, languages = listOf("eng")),
-                            onSessionInvalidated = {},
-                            onCancel = { closed = true },
-                            onSaved = {},
-                        )
-                    }
+            val guard = remember { mutableStateOf<LeaveGuard?>(null) }
+            var closed by remember { mutableStateOf(false) }
+            var destination by remember { mutableStateOf(Destination.Menu) }
+            CompositionLocalProvider(LocalLeaveGuard provides guard) {
+                NativeTestAppFrame(
+                    destination = destination,
+                    onNavigate = { next ->
+                        val navigate = { destination = next; closed = true }
+                        guard.value?.invoke(navigate) ?: navigate()
+                    },
+                ) {
+                    if (closed) Text("Editor closed") else EditProfileScreen(
+                        api = MobileApiClient("http://127.0.0.1:1"),
+                        session = MemberSession("connect.sid=test", MobileMember("quiet-fox", "Quiet Fox")),
+                        profile = MemberProfile("member-one", "quiet-fox", "Quiet Fox", "Travelling slowly", "Hello travellers", null, languages = listOf("eng")),
+                        onSessionInvalidated = {},
+                        onCancel = { closed = true },
+                        onSaved = {},
+                    )
                 }
             }
         }
@@ -66,7 +66,7 @@ class FormNavigationJourneyTest {
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithText("Discard changes?").assertIsDisplayed()
         compose.onNodeWithText("Keep editing").performClick()
-        compose.onNodeWithText("Open circles").performClick()
+        compose.onNodeWithTag("navigation-circles").performClick()
         compose.onNodeWithText("Discard changes?").assertIsDisplayed()
         captureUsabilityScreenshot(compose, "android_discard_changes")
         compose.onNodeWithText("Discard changes").performClick()
