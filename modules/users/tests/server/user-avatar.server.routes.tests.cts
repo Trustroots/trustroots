@@ -1,19 +1,32 @@
-const request = require('supertest');
-const mongoose = require('mongoose');
-const config = require('./../../../../config/config.mjs');
-const express = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+import type { ServerUserFixture } from '../../../../testutils/common/data.common.testutil.mts';
+
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const express: {
+  init(
+    connection: import('mongoose').Connection,
+  ): Promise<import('express').Express>;
+} = require('./../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 require('should');
 describe('User Avatar CRUD tests', () => {
   // Get application
-  let app;
-  let agent;
+  let app: import('express').Express;
+  let agent: ReturnType<typeof request.agent>;
 
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
-  const _users = utils.generateUsers(6);
+  type AvatarFixture = ServerUserFixture & {
+    avatarSource?: string;
+    avatarUploaded?: boolean;
+    additionalProvidersData?: {
+      facebook?: { id?: string };
+    };
+  };
+  const _users: AvatarFixture[] = utils.generateUsers(6);
 
   // "Gravatar" avatar user
   // By default users get assigned 'gravatar' as source
@@ -50,13 +63,16 @@ describe('User Avatar CRUD tests', () => {
     password: _users[0].password,
   };
   const defaultRedirect = `Found. Redirecting to http://${config.domain}/img/avatar-1024.png`;
-  let gravatarUser;
-  let gravatarHash;
-  let noneUser;
-  let localUser;
-  let facebookUser;
-  let nonPublicUser;
-  let shadowbannedUser;
+  type ResponseWithRawText = import('supertest').Response & {
+    res: { text: string };
+  };
+  let gravatarUser: import('mongoose').Types.ObjectId | string;
+  let gravatarHash: string | undefined;
+  let noneUser: import('mongoose').Types.ObjectId | string;
+  let localUser: import('mongoose').Types.ObjectId | string;
+  let facebookUser: import('mongoose').Types.ObjectId | string;
+  let nonPublicUser: import('mongoose').Types.ObjectId | string;
+  let shadowbannedUser: import('mongoose').Types.ObjectId | string;
   beforeEach(async () => {
     const users = await utils.saveUsers(_users);
     gravatarUser = users[0]._id;
@@ -87,9 +103,9 @@ describe('User Avatar CRUD tests', () => {
       it('Should not return images for invalid looking routes', async () =>
         await agent.get(`/api/users/123/avatar`).expect(400));
       it('Get default image for non-existing users', async () => {
-        const { res } = await agent
+        const { res } = (await agent
           .get(`/api/users/5eefc92b4f63d31861f91f57/avatar`)
-          .expect(302);
+          .expect(302)) as ResponseWithRawText;
         res.text.should.equal(defaultRedirect);
       });
       it('Get 404 response for non public users', async () => {
@@ -99,53 +115,53 @@ describe('User Avatar CRUD tests', () => {
         // res.text.should.equal(defaultRedirect);
       });
       it('Get default image for shadow banned users', async () => {
-        const { res } = await agent
+        const { res } = (await agent
           .get(`/api/users/${shadowbannedUser}/avatar`)
-          .expect(302);
+          .expect(302)) as ResponseWithRawText;
         res.text.should.equal(defaultRedirect);
       });
       it('Get default image when no profile picture', async () => {
-        const { res } = await agent
+        const { res } = (await agent
           .get(`/api/users/${noneUser}/avatar`)
-          .expect(302);
+          .expect(302)) as ResponseWithRawText;
         res.text.should.equal(defaultRedirect);
       });
       it('Authenticated user can receive their own avatar from different source', async () => {
-        const { res } = await agent
+        const { res } = (await agent
           .get(`/api/users/${gravatarUser}/avatar?source=local`)
-          .expect(302);
+          .expect(302)) as ResponseWithRawText;
         res.text.should.equal(
           `Found. Redirecting to http://${config.domain}/uploads-profile/${gravatarUser}/avatar/1024.jpg?`,
         );
       });
       it('Authenticated user canot receive other avatars from different source', async () => {
-        const { res } = await agent
+        const { res } = (await agent
           .get(`/api/users/${localUser}/avatar?source=gravatar`)
-          .expect(302);
+          .expect(302)) as ResponseWithRawText;
         res.text.should.equal(
           `Found. Redirecting to http://${config.domain}/uploads-profile/${localUser}/avatar/1024.jpg?`,
         );
       });
       it('Get Gravatar image', async () => {
-        const { res } = await agent
+        const { res } = (await agent
           .get(`/api/users/${gravatarUser}/avatar`)
-          .expect(302);
+          .expect(302)) as ResponseWithRawText;
         res.text.should.equal(
           `Found. Redirecting to https://gravatar.com/avatar/${gravatarHash}?s=1024&d=https%3A%2F%2Ftrustroots.org%2Fimg%2Favatar-1024.png`,
         );
       });
       it('Can get local image', async () => {
-        const { res } = await agent
+        const { res } = (await agent
           .get(`/api/users/${localUser}/avatar`)
-          .expect(302);
+          .expect(302)) as ResponseWithRawText;
         res.text.should.equal(
           `Found. Redirecting to http://${config.domain}/uploads-profile/${localUser}/avatar/1024.jpg?`,
         );
       });
       it('uses the default image for a legacy Facebook avatar', async () => {
-        const { res } = await agent
+        const { res } = (await agent
           .get(`/api/users/${facebookUser}/avatar`)
-          .expect(302);
+          .expect(302)) as ResponseWithRawText;
         res.text.should.equal(defaultRedirect);
       });
 

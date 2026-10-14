@@ -1,29 +1,58 @@
 /**
  * Module dependencies.
  */
-const testutils = require('../../../../../testutils/server/server.testutil');
-const config = require('./../../../../../config/config.mjs');
-const moment = require('moment');
-const mongoose = require('mongoose');
+import type { HydratedDocument } from 'mongoose';
+import type { UserRecord } from '../../../../../testutils/server/model-contracts.mts';
+
+const testutils: typeof import('../../../../../testutils/server/server.testutil.mts') = require('../../../../../testutils/server/server.testutil');
+const config: typeof import('../../../../../config/config.mjs').default = require('./../../../../../config/config.mjs');
+const moment: typeof import('moment') = require('moment');
+const mongoose: typeof import('mongoose') = require('mongoose');
 require('should');
-const User = mongoose.model('User');
+interface WelcomeSequenceUser extends UserRecord {
+  created?: moment.Moment;
+  welcomeSequenceStep?: number;
+  welcomeSequenceSent?: moment.Moment;
+  emailToken?: string;
+  emailTemporary?: string;
+}
+type WelcomeSequenceDocument = HydratedDocument<WelcomeSequenceUser>;
+type WelcomeSequenceJob = (
+  job: object,
+  done: (error?: Error | null) => void,
+) => void;
+interface WelcomeEmailJob {
+  type: string;
+  data: { from: { name: string }; subject: string; html: string };
+}
+const User = mongoose.model<WelcomeSequenceUser>('User');
+function saveWithCallback(
+  document: WelcomeSequenceDocument,
+  callback: (error?: Error | null) => void,
+): void {
+  void document.save().then(
+    () => callback(),
+    error =>
+      callback(error instanceof Error ? error : new Error(String(error))),
+  );
+}
 
 /**
  * Globals
  */
-let unConfirmedUser;
-let _unConfirmedUser;
-let confirmedUser;
-let _confirmedUser;
-let userWelcomeSequenceFirstJobHandler;
-let userWelcomeSequenceSecondJobHandler;
-let userWelcomeSequenceThirdJobHandler;
-let timeLimit;
-let timeFuture;
-let timePast;
+let unConfirmedUser: WelcomeSequenceDocument;
+let _unConfirmedUser: WelcomeSequenceUser;
+let confirmedUser: WelcomeSequenceDocument;
+let _confirmedUser: WelcomeSequenceUser;
+let userWelcomeSequenceFirstJobHandler: WelcomeSequenceJob;
+let userWelcomeSequenceSecondJobHandler: WelcomeSequenceJob;
+let userWelcomeSequenceThirdJobHandler: WelcomeSequenceJob;
+let timeLimit: moment.Moment;
+let timeFuture: moment.Moment;
+let timePast: moment.Moment;
 
 describe.skip('Job: welcome sequence, third email', function () {
-  const jobs = testutils.catchJobs();
+  const jobs = testutils.catchJobs() as WelcomeEmailJob[];
 
   before(function () {
     userWelcomeSequenceFirstJobHandler = require('./../../../server/jobs/user-welcome-sequence-first.server.job.mjs');
@@ -66,7 +95,7 @@ describe.skip('Job: welcome sequence, third email', function () {
     unConfirmedUser = new User(_unConfirmedUser);
 
     // Save a user to the test db
-    unConfirmedUser.save(done);
+    saveWithCallback(unConfirmedUser, done);
   });
 
   // Create a confirmed user
@@ -88,7 +117,7 @@ describe.skip('Job: welcome sequence, third email', function () {
     confirmedUser = new User(_confirmedUser);
 
     // Save a user to the test db
-    confirmedUser.save(done);
+    saveWithCallback(confirmedUser, done);
   });
 
   it('Send third welcome sequence email to confirmed users only', function (done) {
@@ -124,7 +153,7 @@ describe.skip('Job: welcome sequence, third email', function () {
 
   it('Do not send third welcome sequence email to suspended users', function (done) {
     confirmedUser.roles = ['suspended'];
-    confirmedUser.save(function (err) {
+    saveWithCallback(confirmedUser, function (err) {
       if (err) return done(err);
 
       userWelcomeSequenceThirdJobHandler({}, function (err) {
@@ -139,7 +168,7 @@ describe.skip('Job: welcome sequence, third email', function () {
 
   it('Do not send third welcome sequence email too early', function (done) {
     confirmedUser.welcomeSequenceSent = timeFuture;
-    confirmedUser.save(function (err) {
+    saveWithCallback(confirmedUser, function (err) {
       if (err) return done(err);
 
       userWelcomeSequenceThirdJobHandler({}, function (err) {
