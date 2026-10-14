@@ -16,7 +16,7 @@
   "include": [
     "modules/*/shared/**/*.ts",
     "modules/*/shared/**/*.mts",
-    "modules/users/tests/fixtures/profile-api-contracts.mjs",
+    "modules/users/tests/fixtures/profile-api-contracts.mts",
     "modules/users/tests/fixtures/profile-client-api-contracts.mts",
     "modules/users/tests/fixtures/profile-response-overloads.contracts.mts",
     "modules/users/server/services/profile-response.server.service.mts",

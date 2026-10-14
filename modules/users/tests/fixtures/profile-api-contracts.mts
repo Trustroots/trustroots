@@ -1,15 +1,18 @@
-// @ts-check
+import type {
+  MiniProfile,
+  OwnProfile,
+  PublicProfile,
+  UpdateProfileRequest,
+} from '../../shared/profile.js';
 
-/** @type {import('../../shared/profile.js').UpdateProfileRequest} */
-const update = {
+const update: UpdateProfileRequest = {
   description: 'A fictional profile.',
   languages: ['en'],
   email: 'member@example.test',
 };
 void update;
 
-/** @type {import('../../shared/profile.js').OwnProfile} */
-const own = {
+const own: OwnProfile = {
   _id: 'fictional-id',
   username: 'fictional-member',
   displayName: 'Fictional Member',
@@ -18,8 +21,7 @@ const own = {
 };
 void own;
 
-/** @type {import('../../shared/profile.js').PublicProfile} */
-const publicProfile = {
+const publicProfile: PublicProfile = {
   _id: 'fictional-id',
   username: 'fictional-member',
   displayName: 'Fictional Member',
@@ -27,29 +29,25 @@ const publicProfile = {
 };
 void publicProfile;
 
-/** @type {import('../../shared/profile.js').MiniProfile} */
-const mini = {
+const mini: MiniProfile = {
   _id: 'fictional-id',
   username: 'fictional-member',
 };
 void mini;
 
-/** @type {import('../../shared/profile.js').UpdateProfileRequest} */
-const invalidRequest = {
+const invalidRequest: UpdateProfileRequest = {
   // @ts-expect-error Email confirmation state is response-only.
   emailTemporary: 'pending@example.test',
 };
 void invalidRequest;
 
-/** @type {import('../../shared/profile.js').UpdateProfileRequest} */
-const invalidBootstrapRequest = {
+const invalidBootstrapRequest: UpdateProfileRequest = {
   // @ts-expect-error Bootstrap subscription state is not accepted by PUT /api/users.
   subscriptions: { news: true },
 };
 void invalidBootstrapRequest;
 
-/** @type {import('../../shared/profile.js').PublicProfile} */
-const invalidPublicProfile = {
+const invalidPublicProfile: PublicProfile = {
   _id: 'fictional-id',
   username: 'fictional-member',
   displayName: 'Fictional Member',
@@ -58,8 +56,7 @@ const invalidPublicProfile = {
 };
 void invalidPublicProfile;
 
-/** @type {import('../../shared/profile.js').PublicProfile} */
-const invalidPublicAccessField = {
+const invalidPublicAccessField: PublicProfile = {
   _id: 'fictional-id',
   username: 'fictional-member',
   displayName: 'Fictional Member',
@@ -68,8 +65,7 @@ const invalidPublicAccessField = {
 };
 void invalidPublicAccessField;
 
-/** @type {import('../../shared/profile.js').MiniProfile} */
-const invalidMiniProfile = {
+const invalidMiniProfile: MiniProfile = {
   _id: 'fictional-id',
   username: 'fictional-member',
   // @ts-expect-error Mini profiles intentionally omit full descriptions.

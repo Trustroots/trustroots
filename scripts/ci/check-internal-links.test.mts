@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
-import { test } from 'node:test';
+import { spawnSync, type SpawnSyncReturns } from 'node:child_process';
+import { test, type TestContext } from 'node:test';
+import { fileURLToPath } from 'node:url';
 
-function check(t, source) {
+function check(t: TestContext, source: string): SpawnSyncReturns<string> {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'internal-links-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const routes = path.join(root, 'modules/core/client/react-app');
@@ -36,7 +37,10 @@ function check(t, source) {
   fs.writeFileSync(path.join(routes, 'Faq.tsx'), source);
   return spawnSync(
     process.execPath,
-    [new URL('./check-internal-links.mjs', import.meta.url).pathname, root],
+    [
+      fileURLToPath(new URL('./check-internal-links.mjs', import.meta.url)),
+      root,
+    ],
     { encoding: 'utf8' },
   );
 }

@@ -17,7 +17,7 @@ describe('Profile API contract compiler regressions', function () {
     const output = execFileSync(
       process.execPath,
       [
-        path.join(__dirname, '../fixtures/profile-contract-diagnostics.js'),
+        path.join(__dirname, '../fixtures/profile-contract-diagnostics.mts'),
         JSON.stringify({ root, before, after }),
       ],
       { env: { ...process.env, NODE_OPTIONS: '' }, encoding: 'utf8' },

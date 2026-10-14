@@ -7,7 +7,7 @@ test-all:
     pnpm run test:all
 
 test-client:
-    BROWSERSLIST_IGNORE_OLD_DATA=1 NODE_OPTIONS='--require ./jest/jest.hide-canvas.js' ./node_modules/.bin/jest --coverage --no-watchman --silent --maxWorkers=50%
+    BROWSERSLIST_IGNORE_OLD_DATA=1 NODE_OPTIONS='--require ./jest/jest.hide-canvas.cts' ./node_modules/.bin/jest --coverage --no-watchman --silent --maxWorkers=50%
     pnpm run coverage:report --scope=client
 
 test-server:
