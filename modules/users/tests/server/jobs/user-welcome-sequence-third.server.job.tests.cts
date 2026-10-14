@@ -9,7 +9,7 @@ const config: typeof import('../../../../../config/config.mjs').default = requir
 const moment: typeof import('moment') = require('moment');
 const mongoose: typeof import('mongoose') = require('mongoose');
 require('should');
-interface WelcomeSequenceUser extends UserRecord {
+interface WelcomeSequenceUser extends Omit<UserRecord, 'created'> {
   created?: moment.Moment;
   welcomeSequenceStep?: number;
   welcomeSequenceSent?: moment.Moment;
