@@ -352,6 +352,13 @@ describe('Member data export controller', () => {
         read: false,
         userTo: 'recipient-2',
       },
+      {
+        _id: 'message-3',
+        created: '2024-01-03T00:00:00.000Z',
+        content: 'A concise reply',
+        read: true,
+        userTo: { _id: 'recipient-3' },
+      },
     ]);
     const experienceModel = mongoose.model<ExportRecord>('Experience');
     const experienceQuery = resolvableQuery(experienceModel, [
@@ -408,6 +415,13 @@ describe('Member data export controller', () => {
         read: false,
         userTo: 'recipient-2',
       },
+      {
+        _id: 'message-3',
+        created: '2024-01-03T00:00:00.000Z',
+        content: 'A concise reply',
+        read: true,
+        userTo: { _id: 'recipient-3' },
+      },
     ]);
     experiences.should.deepEqual([
       {
@@ -445,6 +459,12 @@ describe('Member data export controller', () => {
         createdAt: '2019-01-01T00:00:00.000Z',
         reactivateReminderSent: '2019-06-01T00:00:00.000Z',
       },
+      {
+        _id: 'offer-2',
+        type: 'host',
+        user: user._id,
+        location: [48.1, 11.5],
+      },
     ]);
     const find = sinon.stub(offerModel, 'find').returns(offerQuery.query);
 
@@ -462,6 +482,12 @@ describe('Member data export controller', () => {
         description: 'Guest bed',
         validUntil: '2020-01-01T00:00:00.000Z',
         createdAt: '2019-01-01T00:00:00.000Z',
+      },
+      {
+        _id: 'offer-2',
+        type: 'host',
+        user: user._id,
+        location: [48.1, 11.5],
       },
     ]);
   });
@@ -491,5 +517,37 @@ describe('Member data export controller', () => {
     await controller.download({ user: { ...user } }, mockResponse(), next);
 
     next.calledWith(error).should.be.true();
+  });
+
+  it('passes profile middleware response errors to the error handler', async () => {
+    const next = sinon.stub();
+    const controller = loadController({
+      profile: (_req, response) => {
+        response.status(404).send({ message: 'Profile unavailable' });
+      },
+      contacts: sinon.stub(),
+    });
+
+    await controller.download({ user: { ...user } }, mockResponse(), next);
+
+    const error = next.firstCall.args[0] as Error & { statusCode: number };
+    assert.equal(error.message, 'Profile unavailable');
+    assert.equal(error.statusCode, 404);
+  });
+
+  it('passes contact middleware response errors without a message to the error handler', async () => {
+    const next = sinon.stub();
+    const controller = loadController({
+      profile: (_req, _response, callback) => callback(),
+      contacts: (_req, response) => {
+        response.status(403).send({});
+      },
+    });
+
+    await controller.download({ user: { ...user } }, mockResponse(), next);
+
+    const error = next.firstCall.args[0] as Error & { statusCode: number };
+    assert.equal(error.message, '');
+    assert.equal(error.statusCode, 403);
   });
 });
