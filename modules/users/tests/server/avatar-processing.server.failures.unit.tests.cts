@@ -230,7 +230,7 @@ describe('Avatar processing failure handling', () => {
       uploadDir,
       uploadTmpDir,
       service: proxyquire<AvatarFailureService>(
-        require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
+        require.resolve('./../../server/services/avatar-processing.server.service.mts'),
         {
           './../../../../config/config.mjs': {
             ...serviceConfig,
@@ -406,7 +406,7 @@ describe('Avatar processing failure handling', () => {
     });
     const { inputPath } = await makeService();
     const publicCleanupService = proxyquire<AvatarFailureService>(
-      require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
+      require.resolve('./../../server/services/avatar-processing.server.service.mts'),
       {
         './../../../../config/config.mjs': {
           ...config,
@@ -448,7 +448,7 @@ describe('Avatar processing failure handling', () => {
       },
     });
     const privateCleanupService = proxyquire<AvatarFailureService>(
-      require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
+      require.resolve('./../../server/services/avatar-processing.server.service.mts'),
       {
         './../../../../config/config.mjs': {
           ...config,
@@ -491,7 +491,7 @@ describe('Avatar processing failure handling', () => {
     };
     const { inputPath } = await makeService();
     const service = proxyquire<AvatarFailureService>(
-      require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
+      require.resolve('./../../server/services/avatar-processing.server.service.mts'),
       {
         './../../../../config/config.mjs': {
           ...config,
@@ -573,7 +573,7 @@ describe('Avatar processing failure handling', () => {
 
   it('forwards queue processing failures to each callback and rejects a full queue', async () => {
     const service = proxyquire<AvatarFailureService>(
-      require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
+      require.resolve('./../../server/services/avatar-processing.server.service.mts'),
       {
         './../../../../config/config.mjs': config,
         gm: require('gm'),
@@ -612,7 +612,7 @@ describe('Avatar processing failure handling', () => {
   it('rejects uploads when the pending queue reaches its configured limit', () => {
     const pending: AvatarJob[] = [];
     const service = proxyquire<AvatarFailureService>(
-      require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
+      require.resolve('./../../server/services/avatar-processing.server.service.mts'),
       {
         async: {
           queue: () => ({
@@ -636,7 +636,7 @@ describe('Avatar processing failure handling', () => {
     const inputPath = path.join(temporaryRoot, 'queue-input.png');
     await fs.writeFile(inputPath, 'anonymous source bytes');
     const service = proxyquire<AvatarFailureService>(
-      require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
+      require.resolve('./../../server/services/avatar-processing.server.service.mts'),
       {
         './../../../../config/config.mjs': {
           ...config,

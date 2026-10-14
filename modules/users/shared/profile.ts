@@ -91,6 +91,21 @@ export interface OwnProfile<
   usernameUpdateAllowed?: boolean;
 }
 
+/** Fields the profile response selector reads from a sanitised projection. */
+export type ProfileResponseSource<Id = string, Timestamp = string> = Omit<
+  Partial<OwnProfile<Id, Timestamp>>,
+  'displayName' | 'member'
+> & {
+  _id: Id;
+  username: string;
+  displayName?: string;
+  member?: Array<
+    Omit<ProfileMembership<Id, Timestamp>, 'tribe'> & {
+      tribe: ProfileTribe<Id> | Id | null;
+    }
+  >;
+};
+
 /** Restricted identity shown beside messages, contacts, and experiences. */
 export interface MiniProfile<Id = string, Timestamp = string> {
   _id: Id;

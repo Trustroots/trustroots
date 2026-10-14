@@ -135,11 +135,19 @@ declare module 'html-to-text' {
 
 declare module 'validator' {
   export function isEmail(text: string): boolean;
+  export function isLength(
+    value: unknown,
+    options: { min?: number; max?: number } | number,
+  ): boolean;
   export function isURL(
     text: string,
     options?: Record<string, unknown>,
   ): boolean;
-  const validator: { isEmail: typeof isEmail; isURL: typeof isURL };
+  const validator: {
+    isEmail: typeof isEmail;
+    isLength: typeof isLength;
+    isURL: typeof isURL;
+  };
   export default validator;
 }
 
@@ -294,4 +302,46 @@ declare module 'express-session' {
     };
     store: object;
   }): import('express').RequestHandler;
+}
+
+declare module 'gm' {
+  import type { EventEmitter } from 'node:events';
+
+  export interface Command {
+    options(options: { timeout: number }): this;
+    addDisposer(emitter: EventEmitter, events: string[]): this;
+    command(name: string): this;
+    in(...args: Array<string | number>): this;
+    toBuffer(
+      callback: (error: Error | null, output: Buffer | null) => void,
+    ): this;
+    identify(
+      options: { format: string },
+      callback: (error: Error | null, output: string) => void,
+    ): this;
+    autoOrient(): this;
+    noProfile(): this;
+    colorspace(value: string): this;
+    interlace(value: string): this;
+    filter(value: string): this;
+    resize(width: number, height: string): this;
+    gravity(value: string): this;
+    extent(width: number, height: number): this;
+    unsharp(
+      radius: number,
+      sigma: number,
+      amount: number,
+      threshold: number,
+    ): this;
+    quality(value: number): this;
+    write(path: string, callback: (error?: Error | null) => void): this;
+  }
+
+  interface GraphicsMagick {
+    (source: string | null): Command;
+    subClass(options: { imageMagick: boolean }): GraphicsMagick;
+  }
+
+  const gm: GraphicsMagick;
+  export default gm;
 }

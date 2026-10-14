@@ -1,12 +1,39 @@
 import type {
   MiniProfile,
   OwnProfile,
+  ProfileResponseSource,
   PublicProfile,
+  ProfileMembership,
+  ProfileTribe,
   UpdateProfileRequest,
 } from '../../shared/profile.js';
 
-type PublicProfileResponse<Id, Timestamp> = PublicProfile<Id, Timestamp> &
-  Pick<OwnProfile<Id, Timestamp>, 'public'>;
+export type ServerProfileMembership<Id, Timestamp> = Omit<
+  ProfileMembership<Id, Timestamp>,
+  'tribe'
+> & { tribe: ProfileTribe<Id> | Id | null };
+
+type ServerProfileResponse<Id, Timestamp> = Omit<
+  OwnProfile<Id, Timestamp>,
+  'displayName' | 'member'
+> & {
+  displayName?: string;
+  member?: ServerProfileMembership<Id, Timestamp>[];
+};
+
+export type ProfileResponseDto<Id, Timestamp> = ServerProfileResponse<
+  Id,
+  Timestamp
+>;
+
+export type ServerPublicProfileResponse<Id, Timestamp> = Omit<
+  PublicProfile<Id, Timestamp>,
+  'displayName' | 'member'
+> &
+  Pick<OwnProfile<Id, Timestamp>, 'public'> & {
+    displayName?: string;
+    member?: ServerProfileMembership<Id, Timestamp>[];
+  };
 
 export const profileQueryFields = [
   'id',
@@ -45,8 +72,8 @@ export const profileQueryFields = [
  * Email is handled separately by its confirmation flow.
  */
 export function selectProfileUpdateFields(
-  body: UpdateProfileRequest,
-): Omit<UpdateProfileRequest, 'email'> {
+  body: Partial<UpdateProfileRequest> | Record<string, unknown>,
+): Partial<Record<Exclude<keyof UpdateProfileRequest, 'email'>, unknown>> {
   return {
     ...(Object.hasOwn(body, 'firstName') ? { firstName: body.firstName } : {}),
     ...(Object.hasOwn(body, 'lastName') ? { lastName: body.lastName } : {}),
@@ -96,22 +123,26 @@ export function selectProfileUpdateFields(
  * lodash pick implementation.
  */
 export function selectProfileResponse<Id, Timestamp>(
-  profile: OwnProfile<Id, Timestamp>,
+  profile: ProfileResponseSource<Id, Timestamp>,
   isOwnProfile: true,
-): OwnProfile<Id, Timestamp>;
+): ServerProfileResponse<Id, Timestamp>;
 export function selectProfileResponse<Id, Timestamp>(
-  profile: OwnProfile<Id, Timestamp>,
+  profile: ProfileResponseSource<Id, Timestamp>,
   isOwnProfile: false,
-): PublicProfileResponse<Id, Timestamp>;
+): ServerPublicProfileResponse<Id, Timestamp>;
 export function selectProfileResponse<Id, Timestamp>(
-  profile: OwnProfile<Id, Timestamp>,
+  profile: ProfileResponseSource<Id, Timestamp>,
   isOwnProfile: boolean,
-): OwnProfile<Id, Timestamp> | PublicProfileResponse<Id, Timestamp>;
+):
+  | ServerProfileResponse<Id, Timestamp>
+  | ServerPublicProfileResponse<Id, Timestamp>;
 export function selectProfileResponse<Id, Timestamp>(
-  profile: OwnProfile<Id, Timestamp>,
+  profile: ProfileResponseSource<Id, Timestamp>,
   isOwnProfile: boolean,
-): OwnProfile<Id, Timestamp> | PublicProfileResponse<Id, Timestamp> {
-  const publicProfile: PublicProfileResponse<Id, Timestamp> = {
+):
+  | ServerProfileResponse<Id, Timestamp>
+  | ServerPublicProfileResponse<Id, Timestamp> {
+  const publicProfile: ServerPublicProfileResponse<Id, Timestamp> = {
     _id: profile._id,
     id: profile.id,
     displayName: profile.displayName,

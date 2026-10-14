@@ -99,7 +99,7 @@ describe('Avatar processing service', () => {
         },
       });
       const service = proxyquire<ImageMagickProcessingService>(
-        require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
+        require.resolve('./../../server/services/avatar-processing.server.service.mts'),
         {
           './../../../../config/config.mjs': imageMagickConfig,
           gm: imageMagick,
@@ -190,7 +190,7 @@ describe('Avatar processing service', () => {
       await fs.mkdir(tempDir);
       await fs.writeFile(inputPath, 'anonymous image bytes');
       const service = proxyquire<AvatarProcessingService>(
-        require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
+        require.resolve('./../../server/services/avatar-processing.server.service.mts'),
         {
           './../../../../config/config.mjs': {
             ...config,
@@ -368,7 +368,7 @@ describe('Avatar processing service', () => {
         return command;
       };
       const service = proxyquire<AvatarProcessingService>(
-        require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
+        require.resolve('./../../server/services/avatar-processing.server.service.mts'),
         {
           './../../../../config/config.mjs': {
             ...config,

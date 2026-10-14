@@ -1,6 +1,5 @@
-let service = {};
 // These codes remain valid for existing profiles but cannot be newly selected.
-service = new Set([
+const service = new Set([
   'ang',
   // Old English
   'dum',
