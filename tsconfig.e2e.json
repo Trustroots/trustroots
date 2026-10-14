@@ -15,6 +15,7 @@
     "checkJs": false
   },
   "include": [
+    "config/untyped-modules.d.mts",
     "tests/e2e/**/*.ts",
     "tests/e2e/**/*.mts",
     "scripts/e2e/**/*.mts",

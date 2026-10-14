@@ -39,8 +39,20 @@ declare module 'async' {
     ) => void,
     callback: (error?: Error | null) => void,
   ): void;
+  export function mapValuesSeries<T, R>(
+    values: Record<string, T>,
+    iteratee: (
+      value: T,
+      key: string,
+      callback: (error: Error | null, result: R) => void,
+    ) => void,
+    callback: (error: Error | null, result: Record<string, R>) => void,
+  ): void;
+  export function nextTick(callback: () => void): void;
   const async: {
     map: typeof map;
+    mapValuesSeries: typeof mapValuesSeries;
+    nextTick: typeof nextTick;
     waterfall: typeof waterfall;
     parallel: typeof parallel;
     eachSeries: typeof eachSeries;
@@ -79,9 +91,23 @@ declare module 'speakingurl' {
 }
 
 declare module 'sanitize-html' {
+  export interface SanitizeFrame {
+    tag: string;
+    text: string;
+    attribs: Record<string, string>;
+  }
+  export interface SanitizeOptions {
+    allowedTags?: string[];
+    allowedAttributes?: Record<string, string[]>;
+    transformTags?: Record<string, string>;
+    exclusiveFilter?: (frame: SanitizeFrame) => boolean;
+    selfClosing?: string[];
+    allowProtocolRelative?: boolean;
+    allowedSchemesByTag?: Record<string, string[]>;
+  }
   export default function sanitizeHtml(
-    text: string,
-    options?: Record<string, unknown>,
+    content: string,
+    options?: SanitizeOptions,
   ): string;
 }
 
@@ -108,4 +134,14 @@ declare module 'validator' {
   ): boolean;
   const validator: { isEmail: typeof isEmail; isURL: typeof isURL };
   export default validator;
+}
+
+
+declare module 'he' {
+  const he: { decode(content: string): string };
+  export default he;
+}
+
+declare module 'juice' {
+  export default function juice(html: string): string;
 }
