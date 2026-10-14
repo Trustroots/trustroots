@@ -2,6 +2,7 @@
 import get from 'lodash/get';
 import { formatRoleLabel } from '../utils/role-label';
 import { getAdminUserHref } from '../utils/member-url';
+import { formatAdminUtcDate } from '../utils/admin-date';
 import PropTypes from 'prop-types';
 import React, { Component, type ChangeEvent, type FormEvent } from 'react';
 import { Modal } from 'react-bootstrap';
@@ -166,19 +167,6 @@ interface AdminUserState {
 
 interface InfoTableProps {
   rows: Array<[string, React.ReactNode | null | undefined]>;
-}
-
-function formatDate(value?: string | number | null) {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return date.toISOString().slice(0, 10);
 }
 
 function formatLocation(location?: string[] | null) {
@@ -638,8 +626,8 @@ export default class AdminUser extends Component<
               : null,
           ],
           ['Profile visible', user.profile.public ? 'Yes' : 'No'],
-          ['Signed up', formatDate(user.profile.created)],
-          ['Last seen', formatDate(user.profile.seen)],
+          ['Signed up', formatAdminUtcDate(user.profile.created)],
+          ['Last seen', formatAdminUtcDate(user.profile.seen)],
           [
             'Last IP address',
             user.profile.lastIpAddress && (
@@ -1135,8 +1123,8 @@ export default class AdminUser extends Component<
                               ['Status', offer.status],
                               ['Description', offer.description],
                               ['Location', formattedLocation],
-                              ['Created', formatDate(offer.created)],
-                              ['Updated', formatDate(offer.updated)],
+                              ['Created', formatAdminUtcDate(offer.created)],
+                              ['Updated', formatAdminUtcDate(offer.updated)],
                             ]}
                           />
                           <p>
@@ -1215,7 +1203,7 @@ export default class AdminUser extends Component<
                                     contactName
                                   )}
                                 </td>
-                                <td>{formatDate(contact.created)}</td>
+                                <td>{formatAdminUtcDate(contact.created)}</td>
                               </tr>
                             );
                           })}
