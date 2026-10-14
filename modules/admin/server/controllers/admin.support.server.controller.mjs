@@ -68,6 +68,7 @@ async function requestById(req) {
 }
 function memberPayload(member) {
   const { removeProfileToken, ...safe } = member;
+  delete safe.score;
   return { ...safe, pendingDeletion: Boolean(removeProfileToken) };
 }
 

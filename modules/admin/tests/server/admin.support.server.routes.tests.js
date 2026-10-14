@@ -142,15 +142,19 @@ describe('Support team access and investigation', () => {
     ).body
       .map(member => member.username)
       .should.containEql(users[1].username);
-    (
+    const namedMembers = (
       await agent
         .get(
           `/api/admin/support-members?search=${encodeURIComponent(users[1].displayName)}`,
         )
         .expect(200)
-    ).body
+    ).body;
+    namedMembers
       .map(member => member.username)
       .should.containEql(users[1].username);
+    namedMembers.forEach(member =>
+      Object.hasOwn(member, 'score').should.equal(false),
+    );
     const originalFind = User.find;
     sinon.stub(User, 'find').callsFake(function (...args) {
       if (args[0]?.$text) {
