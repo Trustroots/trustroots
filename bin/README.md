@@ -1,6 +1,6 @@
 # bin
 
-db-drop.mjs - probably drops the database
+db-drop.mts - probably drops the database
 ensure-config-exists.mts - ?
 ensure-uploads-dir-exists.mts - ?
 install-deps.mts - ?
@@ -20,7 +20,7 @@ See also admin/README.md
 
 ## db-maintenance
 
-archive-done-agenda-jobs.js
+archive-done-agenda-jobs.mts
 
 ## fillTestData
 

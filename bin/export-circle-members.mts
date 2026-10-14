@@ -4,7 +4,7 @@
  * A script to create csv files for importing circle members to a newsletter tool
  *
  * Usage:
- * NODE_ENV=production node bin/export-circle-members.js circle-ID ~/circle_emails_2021-01-01.csv
+ * NODE_ENV=production node bin/export-circle-members.mts circle-ID ~/circle_emails_2021-01-01.csv
  */
 import fs from 'fs';
 import mongoose, { type Document } from 'mongoose';
@@ -30,7 +30,7 @@ interface CircleMemberRecord extends Document {
   console.log('Trustroots Circle members CSV export');
   function showExampleAndExit() {
     console.log('Example:');
-    console.log('node export-circle-members.js circle-ID ~/emails.csv');
+    console.log('node export-circle-members.mts circle-ID ~/emails.csv');
     process.exit(0);
   }
 

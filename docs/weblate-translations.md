@@ -23,7 +23,7 @@ Merged in [#2746](https://github.com/Trustroots/trustroots/pull/2746) (June 2026
 - Weblate translation batch (58 locale files: Tamil, Esperanto, Czech, Spanish, Finnish, and others)
 - Placeholder fixes: `{{var}}}` typos that leaked a literal `}` in the UI (ta, pt, pt_BR, it)
 - Markup fixes: broken React Trans tags in he, es, cs, it, ta
-- QA tooling: [bin/check-i18n-placeholders.js](../bin/check-i18n-placeholders.js), `npm run i18n:check-placeholders`
+- QA tooling: [bin/check-i18n-placeholders.mts](../bin/check-i18n-placeholders.mts), `npm run i18n:check-placeholders`
 
 ## Open follow-up (Weblate / maintainers)
 
@@ -74,7 +74,7 @@ npm run i18n:check-placeholders
 Scan specific locales only:
 
 ```bash
-node bin/check-i18n-placeholders.js ta pt pt_BR it
+node bin/check-i18n-placeholders.mts ta pt pt_BR it
 ```
 
 Exit code 1 means issues were found.

@@ -36,8 +36,8 @@ Run the maintenance tool with the verifying administrator's member ID. It defaul
 to a dry run; add `--apply` to store and audit the links:
 
 ```sh
-NODE_ENV=production node bin/db-maintenance/link-support-reports.mjs mappings.json ADMIN_MEMBER_ID
-NODE_ENV=production node bin/db-maintenance/link-support-reports.mjs mappings.json ADMIN_MEMBER_ID --apply
+NODE_ENV=production node bin/db-maintenance/link-support-reports.mts mappings.json ADMIN_MEMBER_ID
+NODE_ENV=production node bin/db-maintenance/link-support-reports.mts mappings.json ADMIN_MEMBER_ID --apply
 ```
 
 The tool refuses signed-out reports, missing members, self-pairs, targets created

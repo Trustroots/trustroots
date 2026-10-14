@@ -4,7 +4,7 @@
  * Scan locale JSON files for placeholder/tag mismatches vs English source.
  * Reports: triple braces, missing/extra {{...}} placeholders, mismatched <N>...</N> tags.
  *
- * Usage: node bin/check-i18n-placeholders.js [localeDir...]
+ * Usage: node bin/check-i18n-placeholders.mts [localeDir...]
  * Default: all dirs under public/locales/ except en/
  */
 import dependency0 from 'fs';

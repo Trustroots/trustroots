@@ -12,10 +12,10 @@ Password reset still updates the verifier, consumes the reset token and advances
 
 After rolling out the new application and workers, run the maintenance script against the configured database. It defaults to a read-only dry run:
 
-`node bin/db-maintenance/hash-account-action-tokens.mjs`
+`node bin/db-maintenance/hash-account-action-tokens.mts`
 
 Review the aggregate candidate count, then convert with:
 
-`node bin/db-maintenance/hash-account-action-tokens.mjs --apply`
+`node bin/db-maintenance/hash-account-action-tokens.mts --apply`
 
 The script never prints tokens, member identifiers or database credentials. It hashes each field with a conditional update so consumed or concurrently replaced tokens are not restored. It preserves expiry dates and existing email links, skips already hashed tokens, and can be rerun safely. Do not roll back to code that only understands plaintext token lookup after conversion. A normal protected backup remains subject to existing access and retention policies.

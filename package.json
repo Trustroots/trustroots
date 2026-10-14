@@ -40,7 +40,7 @@
     "i18n:check-placeholders": "node ./bin/check-i18n-placeholders.mts",
     "i18n": "pnpm run i18n:extract && pnpm run i18n:fix-weblate",
     "install-dependencies": "node ./bin/install-deps.mts",
-    "lint:watch": "nodemon --watch modules --watch config --watch bin --watch migrations --watch eslint.config.cjs --ext js,mjs,cjs,ts,tsx --exec 'pnpm run lint --cache --quiet'",
+    "lint:watch": "nodemon --watch modules --watch config --watch bin --watch migrations --watch eslint.config.cjs --ext js,mjs,mts,cjs,cts,ts,tsx --exec 'pnpm run lint --cache --quiet'",
     "lint:modules": "node ./scripts/ci/check-module-graph.mts",
     "lint:modules:test": "node --test ./scripts/ci/check-module-graph.test.mts",
     "modules:update-baseline": "node ./scripts/ci/check-module-graph.mts --update",
