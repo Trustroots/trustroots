@@ -1,20 +1,58 @@
-const _ = require('lodash');
-const MongoClient = require('mongodb').MongoClient;
-const sinon = require('sinon');
+const _: typeof import('lodash') = require('lodash');
+const MongoClient: typeof import('mongodb').MongoClient =
+  require('mongodb').MongoClient;
+const sinon: typeof import('sinon') = require('sinon');
 require('should');
 
 describe('Worker tests', function () {
-  const agenda = require('./../../../../config/lib/agenda.mjs');
-  const worker = require('./../../../../config/lib/worker.mjs');
+  interface AgendaDouble {
+    start(): Promise<void>;
+    stop(): Promise<void>;
+    on(name: string, fn: (...args: never[]) => void): unknown;
+    define(name: string, options: object, fn: unknown): unknown;
+    every(repeat: string, name: string): Promise<void>;
+  }
+  interface WorkerDouble {
+    start(
+      options: typeof workerOptions,
+      callback?: (error?: Error) => void,
+    ): Promise<void>;
+    unlockAgendaJobs(callback: (error?: Error) => void): void;
+    removeExitListeners(): void;
+  }
+  const agenda: AgendaDouble = require('../../../../config/lib/agenda.mjs');
+  const worker: WorkerDouble = require('../../../../config/lib/worker.mjs');
+
+  interface WorkerJob {
+    attrs: {
+      _id: string;
+      name: string;
+      failCount: number;
+      nextRunAt?: Date;
+    };
+    save(): void | Promise<void>;
+  }
+  type JobFailureHandler = (error: Error, job: WorkerJob) => void;
+  interface DefinedJob {
+    name: string;
+    options: object;
+    fn: unknown;
+  }
+  interface ScheduledJob {
+    repeat: string;
+    name: string;
+  }
 
   const workerOptions = {
     maxAttempts: 3,
     retryDelaySeconds: 3,
   };
 
-  let failHandler;
-  const definedJobs = [];
-  const scheduledJobs = [];
+  let failHandler: JobFailureHandler;
+  let startStub: import('sinon').SinonStub;
+  let everyStub: import('sinon').SinonStub;
+  const definedJobs: DefinedJob[] = [];
+  const scheduledJobs: ScheduledJob[] = [];
 
   beforeEach(function () {
     // Reset
@@ -24,14 +62,14 @@ describe('Worker tests', function () {
 
     // Stub out all of agendas functionality as we are not testing agenda
 
-    sinon.stub(agenda, 'start').resolves();
+    startStub = sinon.stub(agenda, 'start').resolves();
     sinon.stub(agenda, 'stop').resolves();
 
     // Save handler for agenda.on('fail')
 
     sinon.stub(agenda, 'on').callsFake(function (name, fn) {
       if (name === 'fail') {
-        failHandler = fn;
+        failHandler = fn as JobFailureHandler;
       }
     });
 
@@ -41,7 +79,7 @@ describe('Worker tests', function () {
       definedJobs.push({ name, options, fn });
     });
 
-    sinon.stub(agenda, 'every').callsFake(function (repeat, name) {
+    everyStub = sinon.stub(agenda, 'every').callsFake(function (repeat, name) {
       scheduledJobs.push({ repeat, name });
       return Promise.resolve();
     });
@@ -61,7 +99,7 @@ describe('Worker tests', function () {
   });
 
   it('will not retry with a non-network error', function () {
-    const job = {
+    const job: WorkerJob = {
       attrs: {
         _id: 'jobid',
         name: 'jobname',
@@ -76,7 +114,7 @@ describe('Worker tests', function () {
   });
 
   it('will retry on ECONNREFUSED', function () {
-    const job = {
+    const job: WorkerJob = {
       attrs: {
         _id: 'jobid',
         name: 'jobname',
@@ -87,15 +125,15 @@ describe('Worker tests', function () {
     const err = new Error('ECONNREFUSED');
     const mock = sinon.mock(job).expects('save').once();
     failHandler(err, job);
-    job.attrs.nextRunAt.should.be.instanceof(Date);
-    job.attrs.nextRunAt
-      .getTime()
+    job.attrs.nextRunAt!.should.be.instanceof(Date);
+    job.attrs
+      .nextRunAt!.getTime()
       .should.equal(workerOptions.retryDelaySeconds * 1000);
     mock.verify();
   });
 
   it('will retry on ECONNRESET', function () {
-    const job = {
+    const job: WorkerJob = {
       attrs: {
         _id: 'jobid',
         name: 'jobname',
@@ -106,9 +144,9 @@ describe('Worker tests', function () {
     const err = new Error('ECONNRESET');
     const mock = sinon.mock(job).expects('save').once();
     failHandler(err, job);
-    job.attrs.nextRunAt.should.be.instanceof(Date);
-    job.attrs.nextRunAt
-      .getTime()
+    job.attrs.nextRunAt!.should.be.instanceof(Date);
+    job.attrs
+      .nextRunAt!.getTime()
       .should.equal(workerOptions.retryDelaySeconds * 1000);
     mock.verify();
   });
@@ -116,7 +154,7 @@ describe('Worker tests', function () {
   it('logs a failed retry save without rejecting the worker', async function () {
     const saveError = new Error('save failed');
     const log = sinon.stub(console, 'error');
-    const job = {
+    const job: WorkerJob = {
       attrs: {
         _id: 'jobid',
         name: 'jobname',
@@ -134,7 +172,7 @@ describe('Worker tests', function () {
   });
 
   it('will not retry when max retries is reached', function () {
-    const job = {
+    const job: WorkerJob = {
       attrs: {
         _id: 'jobid',
         name: 'jobname',
@@ -198,16 +236,16 @@ describe('Worker tests', function () {
   });
 
   it('starts Agenda before scheduling recurring jobs', function () {
-    agenda.start.calledBefore(agenda.every).should.equal(true);
+    startStub.calledBefore(everyStub).should.equal(true);
   });
 
   it('reports recurring scheduling failures during worker startup', async function () {
     const scheduleError = new Error('Recurring job could not be scheduled');
-    agenda.every.rejects(scheduleError);
+    everyStub.rejects(scheduleError);
 
     try {
-      await new Promise(function (resolve, reject) {
-        worker.start(workerOptions, function (err) {
+      await new Promise<void>(function (resolve, reject) {
+        worker.start(workerOptions, function (err?: Error) {
           if (err !== scheduleError) {
             reject(err || new Error('Expected the scheduling failure'));
           } else {
@@ -215,7 +253,7 @@ describe('Worker tests', function () {
           }
         });
       });
-      agenda.start.calledTwice.should.equal(true);
+      startStub.calledTwice.should.equal(true);
     } finally {
       worker.removeExitListeners();
     }
@@ -229,7 +267,13 @@ describe('Worker tests', function () {
   });
 
   it('unlocks unfinished Agenda jobs through the direct MongoDB connection', function (done) {
-    const updateMany = sinon.stub().callsFake(function (filter, update) {
+    const updateMany = sinon.stub().callsFake(function (
+      filter: {
+        lockedAt: { $exists: boolean };
+        lastFinishedAt: { $exists: boolean };
+      },
+      update: { $unset: Record<string, string>; $set: { nextRunAt: Date } },
+    ) {
       filter.should.deepEqual({
         lockedAt: { $exists: true },
         lastFinishedAt: { $exists: false },
@@ -248,7 +292,7 @@ describe('Worker tests', function () {
       close,
       db() {
         return {
-          collection(name) {
+          collection(name: string) {
             name.should.equal('agendaJobs');
             return { updateMany };
           },
@@ -256,7 +300,7 @@ describe('Worker tests', function () {
       },
     });
 
-    worker.unlockAgendaJobs(function (err) {
+    worker.unlockAgendaJobs(function (err?: Error) {
       if (err) return done(err);
       updateMany.calledOnce.should.equal(true);
       close.calledOnce.should.equal(true);
@@ -269,7 +313,8 @@ describe('Worker tests', function () {
     sinon.stub(console, 'error');
     sinon.stub(MongoClient, 'connect').rejects(connectionError);
 
-    worker.unlockAgendaJobs(function (err) {
+    worker.unlockAgendaJobs(function (err?: Error) {
+      if (!err) return done(new Error('Expected the connection error'));
       err.should.equal(connectionError);
       done();
     });
@@ -294,7 +339,8 @@ describe('Worker tests', function () {
       },
     });
 
-    worker.unlockAgendaJobs(function (err) {
+    worker.unlockAgendaJobs(function (err?: Error) {
+      if (!err) return done(new Error('Expected the update error'));
       err.should.equal(updateError);
       close.calledOnce.should.equal(true);
       done();

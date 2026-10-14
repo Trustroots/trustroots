@@ -1,47 +1,101 @@
-const mongoose = require('mongoose');
-const request = require('supertest');
-const sinon = require('sinon');
-const express = require('../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const controller = require('../../server/controllers/admin.location-corrections.server.controller.mjs');
+import type {
+  TestAgent,
+  TestExpressApp,
+  UserDocument,
+  UserModel,
+  UserRecord,
+  OfferRecord,
+  MessageRecord,
+  MessageStatRecord,
+  ThreadRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+import type { Types } from 'mongoose';
+
+type LocationUser = UserRecord & {
+  _id: Types.ObjectId | string;
+  removeProfileToken?: string;
+  removeProfileExpires?: Date | string | number;
+};
+interface UserWithId {
+  _id: Types.ObjectId | string;
+}
+interface Candidate {
+  userId: string;
+  key: string;
+  match: 'exact' | 'nearby';
+  username: string;
+  offers: Array<{ match: 'exact' | 'nearby' }>;
+}
+
+const mongoose: typeof import('mongoose') = require('mongoose');
+const request: typeof import('supertest') = require('supertest');
+const sinon: typeof import('sinon') = require('sinon');
+const express: typeof import('../../../../config/lib/express.mjs') & {
+  init(connection: import('mongoose').Connection): Promise<TestExpressApp>;
+} = require('../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
+const controller: typeof import('../../server/controllers/admin.location-corrections.server.controller.mjs') & {
+  _test: {
+    classifyLocation(location: unknown): 'exact' | 'nearby' | null;
+    candidateKey(userId: unknown, offers: unknown[]): string;
+    compareCandidates(
+      a: { match: string; username: string },
+      b: { match: string; username: string },
+    ): number;
+    isEligibleRecipient(
+      user: LocationUser | null,
+      senderId: Types.ObjectId | string,
+    ): boolean;
+  };
+  send(
+    req: { body?: unknown },
+    res: { status(code: number): unknown; send(body: unknown): unknown },
+  ): Promise<unknown>;
+} = require('../../server/controllers/admin.location-corrections.server.controller.mjs');
 require('should');
 
-const Offer = mongoose.model('Offer');
-const Message = mongoose.model('Message');
-const MessageStat = mongoose.model('MessageStat');
-const Thread = mongoose.model('Thread');
-const User = mongoose.model('User');
+const Offer = mongoose.model<OfferRecord>('Offer');
+const Message = mongoose.model<MessageRecord>('Message');
+const MessageStat = mongoose.model<MessageStatRecord>('MessageStat');
+const Thread = mongoose.model<ThreadRecord>('Thread');
+const User = mongoose.model<UserRecord, UserModel>('User');
 
 const exact = [48.6908333333, 9.14055555556];
 const nearby = [48.691, 9.141];
 
 describe('Welcome team location corrections', () => {
-  let team;
-  let secondTeam;
-  let member;
-  let teamAgent;
-  let secondAgent;
-  let app;
+  let team: UserDocument;
+  let secondTeam: UserDocument;
+  let member: UserDocument;
+  let teamAgent: TestAgent;
+  let secondAgent: TestAgent;
+  let app: TestExpressApp;
 
   beforeEach(async () => {
     app = await express.init(mongoose.connection);
-    const users = utils.generateUsers(5);
+    const users = utils.generateUsers(5).map(user =>
+      Object.assign(user, {
+        description: '',
+        removeProfileToken: undefined as string | undefined,
+        removeProfileExpires: undefined as Date | string | number | undefined,
+      }),
+    );
     users.forEach(user => {
       user.public = true;
       user.description =
         'I help members find each other and keep their offers accurate. I enjoy welcoming travellers, sharing local knowledge, and building thoughtful conversations across the community.';
     });
-    users[0].roles = ['user', 'welcome-team'];
-    users[1].roles = ['user', 'welcome-team'];
+    users[0]!.roles = ['user', 'welcome-team'];
+    users[1]!.roles = ['user', 'welcome-team'];
     [team, secondTeam, member] = await utils.saveUsers(users);
     teamAgent = request.agent(app);
     secondAgent = request.agent(app);
     await utils.signIn(
-      { username: team.username, password: users[0].password },
+      { username: team.username, password: users[0]!.password },
       teamAgent,
     );
     await utils.signIn(
-      { username: secondTeam.username, password: users[1].password },
+      { username: secondTeam.username, password: users[1]!.password },
       secondAgent,
     );
   });
@@ -63,8 +117,8 @@ describe('Welcome team location corrections', () => {
       { match: 'nearby', username: 'b' },
       { match: 'exact', username: 'a' },
     ).should.equal(1);
-    classifyLocation(exact).should.equal('exact');
-    classifyLocation(nearby).should.equal('nearby');
+    classifyLocation(exact)!.should.equal('exact');
+    classifyLocation(nearby)!.should.equal('nearby');
     for (const location of [
       null,
       [48],
@@ -122,7 +176,11 @@ describe('Welcome team location corrections', () => {
     ).should.be.true();
   });
 
-  async function addOffer(user, location, overrides = {}) {
+  async function addOffer(
+    user: UserWithId,
+    location: number[],
+    overrides: Partial<OfferRecord> = {},
+  ) {
     return new Offer({
       user: user._id,
       type: 'host',
@@ -146,6 +204,7 @@ describe('Welcome team location corrections', () => {
     const privateMember = await User.findOne({
       _id: { $nin: [team._id, secondTeam._id, member._id] },
     });
+    if (!privateMember) throw new Error('Expected a private member fixture');
     privateMember.public = false;
     await privateMember.save();
     await addOffer(privateMember, exact);
@@ -159,7 +218,9 @@ describe('Welcome team location corrections', () => {
     body[0].userId.should.equal(String(member._id));
     body[0].match.should.equal('exact');
     body[0].offers.should.have.length(2);
-    body[0].offers.some(offer => offer.match === 'nearby').should.be.true();
+    body[0].offers
+      .some((offer: Candidate['offers'][number]) => offer.match === 'nearby')
+      .should.be.true();
   });
 
   it('orders exact members before nearby members and sorts each group by username', async () => {
@@ -176,7 +237,7 @@ describe('Welcome team location corrections', () => {
       .get('/api/admin/location-corrections')
       .expect(200);
     body
-      .map(candidate => candidate.username)
+      .map((candidate: Candidate) => candidate.username)
       .should.deepEqual(['a_exact', 'z_exact', 'a_nearby']);
   });
 
@@ -196,12 +257,13 @@ describe('Welcome team location corrections', () => {
       .expect(200);
     sent.sent.should.be.true();
     const message = await Message.findById(sent.messageId);
+    if (!message) throw new Error('Expected the correction message');
     String(message.userFrom).should.equal(String(team._id));
     String(message.userTo).should.equal(String(member._id));
-    message.locationCorrectionOffers.should.have.length(1);
-    Array.from(message.locationCorrectionOffers[0].location).should.deepEqual(
-      exact,
-    );
+    message.locationCorrectionOffers!.should.have.length(1);
+    Array.from(
+      message.locationCorrectionOffers![0]!.location!,
+    ).should.deepEqual(exact);
     (await Thread.countDocuments({ message: message._id })).should.equal(1);
     (
       await MessageStat.countDocuments({
@@ -262,7 +324,7 @@ describe('Welcome team location corrections', () => {
     const sent = await Message.findOne({
       locationCorrectionKey: candidate.key,
     });
-    sent.content.should.containEql('<br><br>');
+    sent!.content!.should.containEql('<br><br>');
 
     meeting.validUntil = new Date(Date.now() - 86400000);
     await meeting.save();
@@ -322,6 +384,7 @@ describe('Welcome team location corrections', () => {
     const message = await Message.findOne({
       locationCorrectionKey: candidate.key,
     });
+    if (!message) throw new Error('Expected the correction message');
     (await Thread.countDocuments({ message: message._id })).should.equal(1);
   });
 
@@ -336,17 +399,20 @@ describe('Welcome team location corrections', () => {
       content: 'Please check your location.',
     };
     const originalMessageUpdate = Message.findOneAndUpdate;
-    const messageStub = sinon
-      .stub(Message, 'findOneAndUpdate')
-      .callsFake((...args) => ({
-        exec: async () => {
-          messageStub.restore();
-          await originalMessageUpdate.apply(Message, args).exec();
-          const error = new Error('concurrent message insert');
-          error.code = 11000;
-          throw error;
-        },
-      }));
+    const messageStub = sinon.stub(Message, 'findOneAndUpdate').callsFake(
+      (...args) =>
+        ({
+          exec: async () => {
+            messageStub.restore();
+            await originalMessageUpdate.apply(Message, args).exec();
+            const error = Object.assign(
+              new Error('concurrent message insert'),
+              { code: 11000 },
+            );
+            throw error;
+          },
+        }) as unknown as ReturnType<typeof Message.findOneAndUpdate>,
+    );
     const originalThreadUpdate = Thread.updateOne;
     let firstThreadUpdate = true;
     const threadStub = sinon.stub(Thread, 'updateOne').callsFake((...args) => {
@@ -354,11 +420,12 @@ describe('Welcome team location corrections', () => {
         firstThreadUpdate = false;
         return {
           exec: async () => {
-            const error = new Error('concurrent thread insert');
-            error.code = 11000;
+            const error = Object.assign(new Error('concurrent thread insert'), {
+              code: 11000,
+            });
             throw error;
           },
-        };
+        } as unknown as ReturnType<typeof Thread.updateOne>;
       }
       return originalThreadUpdate.apply(Thread, args);
     });
@@ -481,9 +548,14 @@ describe('Welcome team location corrections', () => {
   });
 
   it('validates a missing request body', async () => {
-    const result = {
+    interface MissingBodyResponse {
+      statusCode: number | null;
+      status(code: number): this;
+      send(body: unknown): this;
+    }
+    const result: MissingBodyResponse = {
       statusCode: null,
-      status(code) {
+      status(code: number) {
         this.statusCode = code;
         return this;
       },
@@ -492,7 +564,7 @@ describe('Welcome team location corrections', () => {
       },
     };
     await controller.send({ body: null }, result);
-    result.statusCode.should.equal(400);
+    result.statusCode!.should.equal(400);
   });
 
   it('limits the queue and send endpoint to the welcome team', async () => {
