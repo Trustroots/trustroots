@@ -391,6 +391,61 @@ describe('Reference thread controller unit tests', () => {
       res.statusCode.should.equal(403);
     });
 
+    it('rejects references when the message lookup fails', async () => {
+      const [author, other] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(2, { public: true }),
+      );
+      await createThreadWithMessage(author, other, false);
+      const messageModelWithPromiseFindOne = Message as unknown as {
+        findOne(query: object): { exec(): Promise<MessageDocument | null> };
+      };
+      sinon.stub(messageModelWithPromiseFindOne, 'findOne').returns({
+        exec: () => Promise.reject(new Error('message lookup failed')),
+      });
+
+      const res = deferredResponse();
+      controller.createReferenceThread(
+        {
+          user: author,
+          body: { userTo: other._id.toString(), reference: 'yes' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(403);
+      responseBody(res).message!.should.equal(
+        'Referenced person has not sent messages to to you.',
+      );
+    });
+
+    it('rejects references when the referenced user disappears after lookup', async () => {
+      const [author, other] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(2, { public: true }),
+      );
+      await createThreadWithMessage(author, other, false);
+      const userModelWithQuery = User as unknown as {
+        findById(id: unknown): {
+          select(fields: string): { exec(): Promise<UserDocument | null> };
+        };
+      };
+      sinon.stub(userModelWithQuery, 'findById').returns({
+        select: () => ({ exec: async () => null }),
+      });
+
+      const res = deferredResponse();
+      controller.createReferenceThread(
+        {
+          user: author,
+          body: { userTo: other._id.toString(), reference: 'yes' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      responseBody(res).message!.should.be.a.String();
+    });
+
     it('creates a reference thread when messaging rules allow it', async () => {
       sinon
         .stub(statService, 'stat')

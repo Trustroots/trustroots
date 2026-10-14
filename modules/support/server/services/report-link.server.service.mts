@@ -22,7 +22,7 @@ interface AuditLogRecord {
 /** Historical usernames are not evidence. Only accept an administrator's verified mapping. */
 export async function linkHistoricalReport(
   { requestId, reportedUserId, evidence }: HistoricalReportMapping,
-  actorId: Types.ObjectId,
+  actorId: Types.ObjectId | string,
   apply: boolean = false,
 ) {
   const User = mongoose.model<HistoricalUserRecord>('User');

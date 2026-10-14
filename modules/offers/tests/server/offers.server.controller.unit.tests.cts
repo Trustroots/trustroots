@@ -238,6 +238,17 @@ describe('Offers controller unit tests', () => {
       res.body.message.should.equal('Offer saved.');
     });
 
+    it('rejects coordinates that cannot be converted to numbers', async () => {
+      const { res } = await runHandler(res =>
+        offersController.create(
+          { user: owner, body: { type: 'host', location: [10, {}] } },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(400);
+    });
+
     it('creates a meet offer with a valid validUntil', async () => {
       const validUntil = require('moment')().add(5, 'days').toISOString();
       const { res } = await runHandler(res =>
@@ -409,6 +420,51 @@ describe('Offers controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       res.body.message.should.equal('Offer updated.');
+    });
+
+    it('updates the optional offer fields accepted by the endpoint', async () => {
+      const validUntil = require('moment')().add(5, 'days').toISOString();
+      const { res } = await runHandler(res =>
+        offersController.update(
+          {
+            user: owner,
+            offer: offerReq,
+            body: {
+              location: [1, 2],
+              status: 'yes',
+              description: 'A fictional offer.',
+              noOfferDescription: 'A fictional note.',
+              maxGuests: 3,
+              validUntil,
+              showOnlyInMyCircles: true,
+            },
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      const updated = required(await Offer.findById(offerReq._id));
+      required(updated.status).should.equal('yes');
+      required(updated.description).should.equal('A fictional offer.');
+      required(updated.noOfferDescription).should.equal('A fictional note.');
+      required(updated.maxGuests).should.equal(3);
+      required(updated.showOnlyInMyCircles).should.be.true();
+    });
+
+    it('preserves model validation for an unsupported status value', async () => {
+      const { res } = await runHandler(res =>
+        offersController.update(
+          {
+            user: owner,
+            offer: offerReq,
+            body: { location: [1, 2], status: 'invalid' },
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(400);
     });
 
     it('defaults validUntil when updating a meet offer with invalid input', async () => {
@@ -678,6 +734,23 @@ describe('Offers controller unit tests', () => {
                 languages: ['eng'],
                 seen: { days: 30 },
               }),
+            },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      res.body.type.should.equal('FeatureCollection');
+    });
+
+    it('keeps legacy array handling for object filters', async () => {
+      const { res } = await runHandler(res =>
+        offersController.list(
+          {
+            user: owner,
+            query: {
+              ...validCoords,
+              filters: JSON.stringify({ seen: [] }),
             },
           },
           res,
@@ -1087,21 +1160,28 @@ describe('Offers controller unit tests', () => {
       nextCalled.should.be.true();
     });
 
-    it('returns an offer with a nullable owner without rejecting the result', async () => {
-      const ownerlessOffer = new Offer({ type: 'host', location: [10, 20] });
-      const findOffers = sinon.stub(Offer, 'find');
-      findOffers.callsArgWith(1, null, [ownerlessOffer]);
+    it('ignores requested types when schema enum values are unavailable', async () => {
+      await createOffer(owner._id, { type: 'host' });
+      const ownerDoc = required(await User.findById(owner._id));
+      const typePath = Offer.schema.path(
+        'type',
+      ) as import('mongoose').SchemaType & { enumValues?: string[] };
+      const enumValues = typePath.enumValues;
+      typePath.enumValues = undefined;
 
-      const { nextCalled } = await runHandler((res, next) =>
-        offersController.offersByUserId(
-          { user: owner },
-          res,
-          next,
-          owner._id.toString(),
-        ),
-      );
-
-      nextCalled.should.be.true();
+      try {
+        const { nextCalled } = await runHandler((res, next) =>
+          offersController.offersByUserId(
+            { user: ownerDoc, query: { types: 'host' } },
+            res,
+            next,
+            owner._id.toString(),
+          ),
+        );
+        nextCalled.should.be.true();
+      } finally {
+        typePath.enumValues = enumValues;
+      }
     });
 
     it('ignores invalid requested types', async () => {

@@ -277,6 +277,27 @@ describe('Contacts controller unit tests', () => {
       });
       contacts.length.should.equal(0);
     });
+
+    it('preserves the email failure when contact cleanup also fails', async () => {
+      sinon
+        .stub(emailService, 'sendConfirmContact')
+        .callsArgWith(5, new Error('mail failed'));
+      sinon.stub(Contact.prototype, 'remove').returns(
+        Promise.resolve().then(() => {
+          throw new Error('cleanup failed');
+        }) as ReturnType<typeof Contact.prototype.remove>,
+      );
+
+      const { res } = await runHandler(res =>
+        contactsController.add(
+          { user: user1, body: { friendUserId: user2._id.toString() } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+      const contacts = await Contact.find({ userFrom: user1._id });
+      contacts.length.should.equal(1);
+    });
   });
 
   describe('confirm', () => {
@@ -343,6 +364,20 @@ describe('Contacts controller unit tests', () => {
       res.statusCode.should.equal(200);
       res.body.confirmed!.should.be.true();
     });
+
+    it('confirms an unpopulated contact using its ObjectId fields', async () => {
+      const contact = await new Contact({
+        userFrom: user1._id,
+        userTo: user2._id,
+        confirmed: false,
+      }).save();
+
+      const { res } = await runHandler(res =>
+        contactsController.confirm({ user: user2, contact }, res),
+      );
+      res.statusCode.should.equal(200);
+      res.body.confirmed!.should.be.true();
+    });
   });
 
   describe('remove', () => {
@@ -405,6 +440,25 @@ describe('Contacts controller unit tests', () => {
       contactsController.removeAllByUserId(user1._id);
 
       deleteMany.calledOnce.should.be.true();
+    });
+
+    it('passes delete errors to the callback', done => {
+      type DeleteManyQuery = Pick<
+        ReturnType<typeof Contact.deleteMany>,
+        'exec'
+      >;
+      const model = Contact as unknown as {
+        deleteMany: () => DeleteManyQuery;
+      };
+      sinon.stub(model, 'deleteMany').returns({
+        exec: () => Promise.reject(new Error('delete failed')),
+      });
+
+      contactsController.removeAllByUserId(user1._id, (error: unknown) => {
+        if (!(error instanceof Error)) throw new Error('Expected delete error');
+        error.message.should.equal('delete failed');
+        done();
+      });
     });
   });
 
@@ -633,6 +687,13 @@ describe('Contacts controller unit tests', () => {
   });
 
   describe('filterByCommon', () => {
+    it('calls next when contacts have not been attached', async () => {
+      const { nextCalled } = await runHandler((res, next) =>
+        contactsController.filterByCommon({ user: user1 }, res, next),
+      );
+      nextCalled.should.be.true();
+    });
+
     it('calls next when there are no contacts to filter', async () => {
       const req: { user: UserDocument; contacts: ContactRequestEntry[] } = {
         user: user1,

@@ -744,7 +744,7 @@ service.experienceById = async function experienceById(req, res, next, id) {
       userFromId &&
       (experience.public ||
         userFromId.equals(selfId) ||
-        userToId?.equals(selfId));
+        userToId!.equals(selfId));
     if (!isExistentPublicOrFromToSelf) {
       throw new ResponseError({
         status: 404,
@@ -756,8 +756,6 @@ service.experienceById = async function experienceById(req, res, next, id) {
         },
       });
     }
-
-    if (!userFromId || !userToId) return next();
 
     const response = await Experience.findOne({
       userFrom: userToId,
@@ -823,12 +821,11 @@ service.readMine = async function readMine(req, res) {
   if (experience === null) {
     [experience, otherExperience] = [otherExperience, experience];
   }
-  if (!experience) return errorService.sendNotFound(res);
   const experienceWithResponse = prepareSendingToClient<
     Types.ObjectId,
     Date,
     Types.ObjectId
-  >(experience, otherExperience, selfId);
+  >(experience!, otherExperience, selfId);
 
   return res.status(200).json(experienceWithResponse);
 };

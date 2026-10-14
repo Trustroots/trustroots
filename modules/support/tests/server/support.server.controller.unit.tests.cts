@@ -109,7 +109,11 @@ type SupportController = Pick<
   'supportRequest'
 >;
 async function loadController(
-  options: { saveError?: Error; emailError?: Error } = {},
+  options: {
+    saveError?: Error;
+    saveReject?: boolean;
+    emailError?: Error;
+  } = {},
 ) {
   const User = mongoose.model<UserRecord>('User');
   sinon.stub(User, 'findOne').returns({
@@ -139,10 +143,13 @@ async function loadController(
       ),
     );
     const callback = args[0];
-    if (typeof callback !== 'function') {
-      throw new Error('Expected a save callback in the support test double');
+    if (typeof callback === 'function') {
+      (callback as (error: Error | null) => void)(options.saveError || null);
+      return;
     }
-    (callback as (error: Error | null) => void)(options.saveError || null);
+    return options.saveReject || options.saveError
+      ? Promise.reject(options.saveError)
+      : Promise.resolve();
   });
   const sendSupportRequest = sinon
     .stub(emailService, 'sendSupportRequest')
@@ -373,6 +380,24 @@ describe('Support controller unit tests', () => {
     harness.log
       .calledWith('error', 'Failed storing support request to the DB. #39ghsa')
       .should.be.true();
+  });
+
+  it('continues without logging when the save rejects without a value', async () => {
+    const harness = await loadController({ saveReject: true });
+    const res = mockResponse();
+    harness.controller.supportRequest(
+      {
+        body: { message: 'Need help', email: 'guest@example.com' },
+        headers: {},
+      },
+      res,
+    );
+
+    const response = await res.waitForResponse();
+    response.body.message.should.equal('Support request sent.');
+    harness.log
+      .calledWith('error', 'Failed storing support request to the DB. #39ghsa')
+      .should.be.false();
   });
 
   for (const category of [

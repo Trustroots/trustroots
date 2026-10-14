@@ -17,8 +17,7 @@ import mongoose, {
 import type {
   OfferType,
   OfferSearchAggregationFeature,
-  CreateOfferRequest,
-  UpdateOfferRequest,
+  OfferPayload,
 } from '../../shared/offer.js';
 import type {
   AuthenticatedOfferUser,
@@ -29,14 +28,15 @@ import type {
   PopulatedOfferUser,
   OfferNext,
   OfferRequest,
-  OfferRequestDocument,
   OfferResponse,
   OfferSanitiseDocument,
   OfferReadDocument,
 } from './offers.server.contracts.mts';
 import normaliseOfferExpiry from './../services/offer-expiry.server.service.mjs';
 import {
-  prepareNewOffer,
+  prepareNewOfferInput,
+  prepareOfferPayload,
+  prepareOfferUpdateInput,
   prepareOfferMutationResponse,
   prepareOfferSearchResults,
 } from './../services/offer-payload.server.service.mts';
@@ -70,9 +70,7 @@ function addOfferFilterHelpers(filters: object): OfferFilters {
       const value = Reflect.get(filters, filterType);
       return (
         Object.hasOwn(filters, filterType) &&
-        value !== null &&
-        typeof value === 'object' &&
-        !Array.isArray(value) &&
+        _.isObject(value) &&
         Object.keys(value).length > 0
       );
     },
@@ -83,52 +81,12 @@ function isUnknownArray(value: unknown): value is unknown[] {
   return Array.isArray(value);
 }
 
-function requestOfferUserId(
-  user: unknown,
-): Types.ObjectId | string | undefined {
-  if (user instanceof mongoose.Types.ObjectId) return user;
-  if (typeof user === 'string') return user;
-  if (
-    typeof user === 'object' &&
-    user !== null &&
-    '_id' in user &&
-    user._id instanceof mongoose.Types.ObjectId
-  ) {
-    return user._id;
-  }
-  return undefined;
-}
-
-function isOfferEndpointDocument(
-  value: OfferRequestDocument,
-): value is OfferEndpointDocument {
-  // `offerById` assigns a hydrated Offer document; check only the methods this
-  // mutation actually invokes, without imposing new persistence validation.
-  return (
-    typeof value.set === 'function' &&
-    typeof value.save === 'function' &&
-    typeof value.toObject === 'function'
-  );
-}
-
-function isOfferReadDocument(
-  value: OfferRequestDocument,
-): value is OfferReadDocument {
-  // Preserve getOffer's original truthiness guard. The route middleware
-  // supplies a hydrated Offer document for the schema-backed fields below.
-  return (
-    Boolean(value.user) &&
-    Boolean(value.location) &&
-    typeof value.toObject === 'function'
-  );
-}
-
 function normaliseEndpointExpiry(
   type: OfferType | undefined,
   validUntil: unknown,
 ): Date | undefined {
   return normaliseOfferExpiry(
-    type ?? '',
+    type as OfferType,
     validUntil,
     config.limits.maxOfferValidFromNow,
     moment().toDate(),
@@ -177,7 +135,7 @@ function parseFiltersString(
  */
 function sanitizeOffer(
   offerDocument: OfferSanitiseDocument,
-  authenticatedUser?: AuthenticatedOfferUser,
+  authenticatedUser?: AuthenticatedOfferUser | null,
   alwaysFuzzyLocation = false,
 ): OfferSanitisedPayload {
   // offer is a Mongo document, turn it into regular JS object
@@ -185,12 +143,12 @@ function sanitizeOffer(
   const offer: OfferSanitiseRecord = offerDocument.toObject();
   let responseLocation: OfferSanitiseRecord['location'] | undefined =
     offer.location;
-  const ownerId = requestOfferUserId(offer.user);
-  const isOwnOffer = Boolean(
+  const ownerId = (offer.user as PopulatedOfferUser)._id || offer.user;
+  const isOwnOffer =
     authenticatedUser &&
-    ownerId &&
-    authenticatedUser._id.toString() === ownerId.toString(),
-  );
+    authenticatedUser._id.equals(
+      ownerId as Parameters<typeof authenticatedUser._id.equals>[0],
+    );
   const authenticatedRoles = authenticatedUser?.roles || [];
   const hideContactDetails =
     !isOwnOffer &&
@@ -229,25 +187,10 @@ function sanitizeOffer(
   }
 
   // Pick fields to send out, leaves out e.g. `locationFuzzy` and `reactivateReminderSent`
-  return {
-    _id: offer._id,
-    type: offer.type,
-    ...(offer.user === undefined ? {} : { user: offer.user }),
-    ...(responseLocation === undefined ? {} : { location: responseLocation }),
-    ...(offer.status === undefined ? {} : { status: offer.status }),
-    ...(offer.description === undefined
-      ? {}
-      : { description: offer.description }),
-    ...(offer.noOfferDescription === undefined
-      ? {}
-      : { noOfferDescription: offer.noOfferDescription }),
-    ...(offer.maxGuests === undefined ? {} : { maxGuests: offer.maxGuests }),
-    ...(offer.updated === undefined ? {} : { updated: offer.updated }),
-    ...(offer.validUntil === undefined ? {} : { validUntil: offer.validUntil }),
-    ...(offer.showOnlyInMyCircles === undefined
-      ? {}
-      : { showOnlyInMyCircles: offer.showOnlyInMyCircles }),
-  };
+  return prepareOfferPayload({
+    ...offer,
+    location: responseLocation,
+  } as unknown as OfferPayload<Types.ObjectId | string, Date>);
 }
 
 /**
@@ -289,29 +232,10 @@ function isValidCoordinate(coordinate: unknown): boolean {
 function isValidOfferType(type: unknown): type is OfferType {
   // Get list of valid offer types directly from Mongoose Schema
   const typePath = Offer.schema.path('type');
-  const enumValues = 'enumValues' in typePath ? typePath.enumValues : undefined;
-  return Array.isArray(enumValues) && enumValues.some(value => value === type);
-}
-
-function parseOfferLocation(value: unknown): [number, number] | undefined {
-  if (!Array.isArray(value) || value.length !== 2) return undefined;
-  const coordinates = value.map(coordinate => {
-    if (typeof coordinate !== 'number' && typeof coordinate !== 'string')
-      return undefined;
-    const parsed = Number(coordinate);
-    return Number.isFinite(parsed) ? parsed : undefined;
-  });
-  if (
-    typeof coordinates[0] !== 'number' ||
-    typeof coordinates[1] !== 'number'
-  ) {
-    return undefined;
-  }
-  return [coordinates[0], coordinates[1]];
-}
-
-function hasOwnField(body: Record<string, unknown>, field: string): boolean {
-  return Object.hasOwn(body, field);
+  const enumValues =
+    (typePath as typeof typePath & { enumValues?: OfferType[] }).enumValues ||
+    [];
+  return enumValues.includes(type as OfferType);
 }
 
 /**
@@ -325,7 +249,7 @@ function create(
     return errorService.sendForbidden(res);
   }
 
-  const body = req.body ?? {};
+  const body = req.body!;
   // Validate type
   if (!body.type || !isValidOfferType(body.type)) {
     return res.status(400).send({
@@ -345,10 +269,6 @@ function create(
     });
   }
 
-  const createRequest: CreateOfferRequest = {
-    type: body.type,
-    location: parseOfferLocation(body.location) ?? [0, 0],
-  };
   const validUntil = normaliseEndpointExpiry(body.type, body.validUntil);
   if (validUntil === undefined) {
     delete body.validUntil;
@@ -358,18 +278,11 @@ function create(
 
   // Create new offer by filtering out what users can modify
   // When creating an offer, we allow type field
-  const offer = new Offer(prepareNewOffer(createRequest));
-  for (const field of [
-    'status',
-    'description',
-    'noOfferDescription',
-    'maxGuests',
-    'showOnlyInMyCircles',
-  ]) {
-    if (hasOwnField(body, field)) offer.set(field, body[field]);
-  }
-  if (!parseOfferLocation(body.location)) offer.set('location', body.location);
-  if (validUntil !== undefined) offer.set('validUntil', validUntil);
+  // Preserve the original raw request boundary: Mongoose casts and validates
+  // selected writable fields when constructing the document.
+  const offer = new Offer(
+    prepareNewOfferInput(body) as Partial<OfferEndpointRecord>,
+  );
   offer.user = req.user._id;
 
   // Update timestamp
@@ -391,15 +304,10 @@ function update(
   req: OfferRequest<Record<string, unknown>>,
   res: OfferResponse,
 ) {
-  const offer = req.offer;
-  const ownerId = offer ? requestOfferUserId(offer.user) : undefined;
-  const body = req.body ?? {};
-  if (
-    !req.user ||
-    !offer ||
-    !ownerId ||
-    ownerId.toString() !== req.user._id.toString()
-  ) {
+  const offer = req.offer! as OfferEndpointDocument;
+  const owner = offer.user as PopulatedOfferUser;
+  const body = req.body!;
+  if (!req.user || !owner._id.equals(req.user._id)) {
     return errorService.sendForbidden(res);
   }
   async.waterfall(
@@ -431,9 +339,6 @@ function update(
       function (
         done: (error: Error | null, result?: OfferEndpointDocument) => void,
       ) {
-        if (!isOfferEndpointDocument(offer)) {
-          return done(new Error('Offer document is not available for update.'));
-        }
         const validUntil = normaliseEndpointExpiry(offer.type, body.validUntil);
         if (validUntil === undefined) {
           delete body.validUntil;
@@ -442,42 +347,8 @@ function update(
         }
 
         // Pick only fields user is allowed to modify
-        const offerModifications: UpdateOfferRequest = {};
-        const parsedLocation = parseOfferLocation(body.location);
-        if (body.location !== undefined && parsedLocation)
-          offerModifications.location = parsedLocation;
-        if (
-          body.status === 'yes' ||
-          body.status === 'maybe' ||
-          body.status === 'no'
-        )
-          offerModifications.status = body.status;
-        if (typeof body.description === 'string')
-          offerModifications.description = body.description;
-        if (typeof body.noOfferDescription === 'string')
-          offerModifications.noOfferDescription = body.noOfferDescription;
-        if (typeof body.maxGuests === 'number')
-          offerModifications.maxGuests = body.maxGuests;
-        if (validUntil !== undefined)
-          offerModifications.validUntil = validUntil;
-        if (typeof body.showOnlyInMyCircles === 'boolean')
-          offerModifications.showOnlyInMyCircles = body.showOnlyInMyCircles;
-
         // Extend offer in request (picked by `offerById` middleware earlier)
-        const updatedOffer = _.extend(offer, offerModifications);
-        const typedFields = new Set(Object.keys(offerModifications));
-        for (const field of [
-          'status',
-          'description',
-          'noOfferDescription',
-          'maxGuests',
-          'location',
-          'showOnlyInMyCircles',
-        ]) {
-          if (hasOwnField(body, field) && !typedFields.has(field)) {
-            updatedOffer.set(field, body[field]);
-          }
-        }
+        const updatedOffer = _.extend(offer, prepareOfferUpdateInput(body));
 
         // Update timestamp
         updatedOffer.updated = new Date();
@@ -513,15 +384,10 @@ function update(
  * Delete an Offer
  */
 function deleteOffer(req: OfferRequest, res: OfferResponse) {
-  const offer = req.offer;
-  const ownerId = offer ? requestOfferUserId(offer.user) : undefined;
+  const offer = req.offer! as OfferEndpointDocument;
+  const owner = offer.user as PopulatedOfferUser;
   // User can remove only their own offers
-  if (
-    !req.user ||
-    !offer ||
-    !ownerId ||
-    ownerId.toString() !== req.user._id.toString()
-  ) {
+  if (!req.user || !owner._id.equals(req.user._id)) {
     return errorService.sendForbidden(res);
   }
   Offer.findOneAndRemove(
@@ -556,7 +422,7 @@ function list(req: OfferRequest, res: OfferResponse) {
   const isCoordinatesValid = _.every(coordinateKeys, function (coordinateKey) {
     // Get query string from query
     // If there is no query string (`req.query`), it is the empty object, `{}`.
-    let coordinate = _.get(req.query ?? {}, coordinateKey, false);
+    let coordinate = _.get(req.query!, coordinateKey, false);
 
     // Trim string coordinates
     // This is because when using `+` in front of a coordinate,
@@ -583,7 +449,7 @@ function list(req: OfferRequest, res: OfferResponse) {
 
   // Parse filters
   let filters: OfferFilters = addOfferFilterHelpers({});
-  const requestQuery = req.query ?? {};
+  const requestQuery = req.query!;
   if (requestQuery.filters) {
     const parsedFilters = parseFiltersString(String(requestQuery.filters));
 
@@ -714,10 +580,10 @@ function list(req: OfferRequest, res: OfferResponse) {
   if (filters.hasObjectFilter('seen')) {
     const seenFilter = Reflect.get(filters, 'seen');
     const seenDuration: Record<string, number> = {};
-    if (seenFilter !== null && typeof seenFilter === 'object') {
-      for (const [unit, amount] of Object.entries(seenFilter)) {
-        seenDuration[unit] = Number(amount);
-      }
+    for (const [unit, amount] of Object.entries(
+      seenFilter as Record<string, unknown>,
+    )) {
+      seenDuration[unit] = Number(amount);
     }
     query.push({
       $match: {
@@ -878,29 +744,20 @@ function getOffer(req: OfferRequest, res: OfferResponse) {
         done: (error?: Error | null, result?: OfferReadDocument) => void,
       ) {
         // Don't proceed if offer doesn't have user
-        if (
-          !req.offer ||
-          !req.offer.user ||
-          !req.offer.location ||
-          !isOfferReadDocument(req.offer)
-        ) {
+        const loadedOffer = req.offer as OfferReadDocument | null | undefined;
+        if (!loadedOffer || !loadedOffer.user || !loadedOffer.location) {
           return errorService.sendNotFound(res);
         }
-        done(null, req.offer);
+        done(null, loadedOffer);
       },
       // Populate `tribe` fields from objects at `offer.user.member` array
       function (
         offer: OfferReadDocument,
         done: (error?: Error | null, result?: OfferReadDocument) => void,
       ) {
-        if (!offer.user) return errorService.sendNotFound(res);
         // Nothing to populate
-        if (
-          offer.user instanceof mongoose.Types.ObjectId ||
-          typeof offer.user === 'string' ||
-          !offer.user.member ||
-          offer.user.member.length === 0
-        ) {
+        const offerUser = offer.user as PopulatedOfferUser;
+        if (!offerUser.member || offerUser.member.length === 0) {
           return done(null, offer);
         }
         User.populate(offer.user, tribes.tribePopulateOptions()).then(
@@ -911,7 +768,7 @@ function getOffer(req: OfferRequest, res: OfferResponse) {
             done(null, offer);
           },
           function (error: unknown) {
-            done(error instanceof Error ? error : new Error(String(error)));
+            done(error as Error);
           },
         );
       },
@@ -969,16 +826,14 @@ function offersByUserId(
   };
 
   // Validate optional type parameter
-  const requestQuery = req.query ?? {};
+  const requestQuery = req.query!;
   if (_.has(requestQuery, 'types')) {
     // Get list of valid offer types directly from Mongoose Schema
     const typePath = Offer.schema.path('type');
-    const enumValues =
-      'enumValues' in typePath && Array.isArray(typePath.enumValues)
-        ? typePath.enumValues
-        : [];
-    const validOfferTypes = enumValues.filter((value): value is OfferType =>
-      isValidOfferType(value),
+    const enumValues = (typePath as typeof typePath & { enumValues?: string[] })
+      .enumValues;
+    const validOfferTypes = (enumValues || []).filter(
+      (value): value is OfferType => isValidOfferType(value),
     );
 
     // Ensure we have array of type(s)
@@ -1027,7 +882,7 @@ function offersByUserId(
 
       // Sanitize offers
       req.offers = _.map(offers, function (offer) {
-        return sanitizeOffer(offer, req.user ?? undefined);
+        return sanitizeOffer(offer, req.user);
       });
       next();
     },
