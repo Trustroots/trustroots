@@ -315,7 +315,7 @@ describe('ProfilePage', () => {
     async (role, visible) => {
       renderPage({ ...authUser, roles: [role] });
       await screen.findByText('About Bob Example');
-      const link = screen.queryByRole('link', { name: 'Admin', exact: true });
+      const link = screen.queryByRole('link', { name: 'Admin' });
       if (visible) {
         expect(link).toHaveAttribute('href', '/admin/user/bob');
       } else {
@@ -326,9 +326,10 @@ describe('ProfilePage', () => {
 
   it('shows an Admin action on an administrator’s own profile without member actions', async () => {
     renderPage({ ...authUser, _id: profile._id, roles: ['admin'] });
-    expect(
-      await screen.findByRole('link', { name: 'Admin', exact: true }),
-    ).toHaveAttribute('href', '/admin/user/bob');
+    expect(await screen.findByRole('link', { name: 'Admin' })).toHaveAttribute(
+      'href',
+      '/admin/user/bob',
+    );
     expect(
       screen.queryByRole('link', { name: 'Send a message' }),
     ).not.toBeInTheDocument();

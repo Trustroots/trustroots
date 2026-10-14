@@ -25,7 +25,7 @@ const user: AvatarUser = {
 describe('<Avatar />', () => {
   it('uses the default avatar when no source has been selected', () => {
     render(<Avatar user={{ username: 'fictional-member' }} link={false} />);
-    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveAttribute(
       'src',
       '/img/avatar.png?none',
     );
@@ -37,7 +37,7 @@ describe('<Avatar />', () => {
     expect(
       screen.getByRole('link', { name: 'Open user profile for Alice' }),
     ).toHaveAttribute('href', '/profile/alice');
-    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveAttribute(
       'src',
       '/img/avatar.png?none',
     );
@@ -54,7 +54,7 @@ describe('<Avatar />', () => {
   it('uses the next generated local avatar size with a cache buster', () => {
     render(<Avatar user={user} source="local" size={36} link={false} />);
 
-    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveAttribute(
       'src',
       '/uploads-profile/user-1/avatar/64.jpg?1767323045000',
     );
@@ -68,7 +68,7 @@ describe('<Avatar />', () => {
       <Avatar user={userWithoutUpdate} source="local" size={64} link={false} />,
     );
 
-    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveAttribute(
       'src',
       '/uploads-profile/user-1/avatar/64.jpg?',
     );
@@ -84,7 +84,7 @@ describe('<Avatar />', () => {
       />,
     );
 
-    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveAttribute(
       'src',
       '/uploads-profile/user-1/avatar/0123456789abcdef0123456789abcdef/64.jpg?1767323045000',
     );
@@ -100,7 +100,7 @@ describe('<Avatar />', () => {
       />,
     );
 
-    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveAttribute(
       'src',
       '/uploads-profile/user-1/avatar/64.jpg?1767323045000',
     );
@@ -109,7 +109,7 @@ describe('<Avatar />', () => {
   it('falls back to the largest generated local avatar size', () => {
     render(<Avatar user={user} source="local" size={4096} link={false} />);
 
-    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveAttribute(
       'src',
       '/uploads-profile/user-1/avatar/2048.jpg?1767323045000',
     );
@@ -124,7 +124,7 @@ describe('<Avatar />', () => {
       />,
     );
 
-    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveAttribute(
       'src',
       '/img/avatar.png?none',
     );
@@ -133,7 +133,7 @@ describe('<Avatar />', () => {
   it('uses gravatar with an encoded fallback image', () => {
     render(<Avatar user={user} source="gravatar" size={128} link={false} />);
 
-    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveAttribute(
       'src',
       'https://gravatar.com/avatar/abc123?s=128&d=https%3A%2F%2Ftrustroots.org%2Fimg%2Favatar.png',
     );
@@ -142,18 +142,18 @@ describe('<Avatar />', () => {
   it('uses the default avatar for retired Facebook sources even with an id', () => {
     render(<Avatar user={user} source="facebook" size={64} link={false} />);
 
-    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveAttribute(
       'src',
       '/img/avatar.png?none',
     );
-    expect(screen.getByRole('img', { hidden: true })).toHaveClass(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveClass(
       'avatar-none',
     );
   });
 
   it('uses the default avatar for a stored Facebook selection', () => {
     render(<Avatar user={{ ...user, avatarSource: 'facebook' }} />);
-    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveAttribute(
       'src',
       '/img/avatar.png?none',
     );
@@ -170,14 +170,14 @@ describe('<Avatar />', () => {
       <Avatar user={remoteUser} source="facebook" link={false} />,
     );
 
-    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveAttribute(
       'src',
       '/img/avatar.png?none',
     );
 
     rerender(<Avatar user={remoteUser} source="gravatar" link={false} />);
 
-    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveAttribute(
       'src',
       '/img/avatar.png?none',
     );

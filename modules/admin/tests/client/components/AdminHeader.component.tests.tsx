@@ -24,9 +24,10 @@ describe('<AdminHeader />', () => {
   it('shows support navigation without administrator tools', () => {
     window.user = { roles: ['support-team'] };
     render(<AdminHeader />);
-    expect(
-      screen.getByRole('link', { name: 'Support', exact: true }),
-    ).toHaveAttribute('href', '/admin/support');
+    expect(screen.getByRole('link', { name: 'Support' })).toHaveAttribute(
+      'href',
+      '/admin/support',
+    );
     expect(
       screen.getByRole('link', { name: 'Support inbox' }),
     ).toBeInTheDocument();

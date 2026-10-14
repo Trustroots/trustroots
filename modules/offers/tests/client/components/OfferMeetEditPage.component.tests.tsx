@@ -69,7 +69,7 @@ describe('OfferMeetEditPage', () => {
 
   it('keeps an empty expiry editable and prevents saving until it is valid', async () => {
     offersApiMock.createOffer.mockResolvedValue({ message: 'Offer saved.' });
-    render(<OfferMeetEditPage user={{ _id: 'member-1' }} />);
+    render(<OfferMeetEditPage />);
     const expiry = await screen.findByLabelText(
       'How long should this be visible?',
     );
@@ -99,7 +99,7 @@ describe('OfferMeetEditPage', () => {
   });
 
   it('renders a new meet offer form', async () => {
-    render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+    render(<OfferMeetEditPage />);
 
     expect(await screen.findByText('What is this about?')).toBeVisible();
     expect(screen.getByText('Meets explanation')).toBeInTheDocument();
@@ -109,7 +109,7 @@ describe('OfferMeetEditPage', () => {
   });
 
   it('keeps the active tab when selection is cleared', async () => {
-    render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+    render(<OfferMeetEditPage />);
 
     expect(await screen.findByText('What is this about?')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Clear selected tab' }));
@@ -122,7 +122,7 @@ describe('OfferMeetEditPage', () => {
 
   it('creates a new meet offer after filling details', async () => {
     offersApiMock.createOffer.mockResolvedValue({ message: 'Offer saved.' });
-    render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+    render(<OfferMeetEditPage />);
 
     fireEvent.change(await screen.findByPlaceholderText('Write here...'), {
       target: { value: 'Coffee in the park.' },
@@ -164,7 +164,7 @@ describe('OfferMeetEditPage', () => {
     });
     offersApiMock.updateOffer.mockResolvedValue({ message: 'Offer updated.' });
 
-    render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+    render(<OfferMeetEditPage />);
 
     fireEvent.change(await screen.findByPlaceholderText('Write here...'), {
       target: { value: 'Updated meet description.' },
@@ -191,7 +191,7 @@ describe('OfferMeetEditPage', () => {
       validUntil: new Date(Date.now() + 86400000).toISOString(),
     });
 
-    render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+    render(<OfferMeetEditPage />);
 
     expect(await screen.findByPlaceholderText('Write here...')).toHaveValue('');
     fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
@@ -213,7 +213,7 @@ describe('OfferMeetEditPage', () => {
       [legacyOffer],
     );
 
-    render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+    render(<OfferMeetEditPage />);
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Location' }));
     expect(await screen.findByTestId('location-editor')).toHaveAttribute(
@@ -238,7 +238,7 @@ describe('OfferMeetEditPage', () => {
     );
     offersApiMock.updateOffer.mockResolvedValue({ message: 'Offer updated.' });
 
-    render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+    render(<OfferMeetEditPage />);
     await screen.findByPlaceholderText('Write here...');
     fireEvent.submit(document.querySelector('form')!);
 
@@ -254,14 +254,14 @@ describe('OfferMeetEditPage', () => {
     getCurrentRouteParamsMock.mockReturnValue({ offerId: 'missing-offer' });
     offersApiMock.getOffer.mockRejectedValue(new Error('not found'));
 
-    render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+    render(<OfferMeetEditPage />);
 
     expect(await screen.findByText('Wait a moment…')).toBeInTheDocument();
   });
 
   it('stays on the form when saving a new meet offer fails', async () => {
     offersApiMock.createOffer.mockRejectedValue(new Error('save failed'));
-    render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+    render(<OfferMeetEditPage />);
 
     fireEvent.change(await screen.findByPlaceholderText('Write here...'), {
       target: { value: 'Coffee in the park.' },
@@ -288,7 +288,7 @@ describe('OfferMeetEditPage', () => {
       }),
     );
 
-    const { unmount } = render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+    const { unmount } = render(<OfferMeetEditPage />);
     unmount();
     resolveOffer({
       _id: 'offer-1',
@@ -313,7 +313,7 @@ describe('OfferMeetEditPage', () => {
       location: [51.5, -0.12],
     });
 
-    render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+    render(<OfferMeetEditPage />);
 
     expect(
       (
@@ -334,14 +334,14 @@ describe('OfferMeetEditPage', () => {
       }),
     );
 
-    const { unmount } = render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+    const { unmount } = render(<OfferMeetEditPage />);
     unmount();
     rejectOffer(new Error('late failure'));
     await new Promise(resolve => setTimeout(resolve, 20));
   });
 
   it('does not submit an empty meet offer', async () => {
-    render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+    render(<OfferMeetEditPage />);
 
     expect(await screen.findByText('What is this about?')).toBeVisible();
     fireEvent.submit(document.querySelector('form')!);
@@ -350,7 +350,7 @@ describe('OfferMeetEditPage', () => {
   });
 
   it('edits the expiry date and navigates between sections', async () => {
-    render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+    render(<OfferMeetEditPage />);
 
     fireEvent.change(await screen.findByPlaceholderText('Write here...'), {
       target: { value: 'Coffee in the park.' },

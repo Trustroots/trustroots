@@ -1,7 +1,7 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Internal dependencies
 import LanguageSelect from '@/modules/core/client/components/LanguageSelect';

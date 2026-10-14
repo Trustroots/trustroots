@@ -119,7 +119,7 @@ export default function SearchSidebarResults({
     data?: Record<string, string>;
   };
   const languageNames = languageQuery.data || {};
-  const selectedResultId = useRef<string | undefined>();
+  const selectedResultId = useRef<string | undefined>(undefined);
   const showList = !offer && !isLoadingOffer && !communityNote;
 
   const renderResultButton = (

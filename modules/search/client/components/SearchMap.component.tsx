@@ -7,6 +7,7 @@ import ReactMapGL, {
   Source,
   WebMercatorViewport,
 } from 'react-map-gl';
+import { reactMapGLDefaultProps } from '@/modules/core/client/components/Map/reactMapGLDefaultProps';
 import type { Event as NostrEvent } from 'nostr-tools';
 import type { Map as MapboxMap, MapboxGeoJSONFeature } from 'mapbox-gl';
 import type { SearchFilters } from '../utils/search-filters';
@@ -387,7 +388,6 @@ export default function SearchMap({
   // If no mapbox token, and we're in production, don't show the style switcher
   const showMapStyles =
     webGLSupported && (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
-  const sourceRef = createRef<React.ComponentRef<typeof Source>>();
   const mapRef = createRef<React.ComponentRef<typeof ReactMapGL>>();
 
   // Get the Mapbox object for direct map manipulation
@@ -635,8 +635,8 @@ export default function SearchMap({
     };
 
     // react-map-gl v5's <Source> is a plain function component and does not
-    // forward refs, so `sourceRef.current` is always null. Read the clustered
-    // source straight from the live map instead.
+    // forward refs (React 19 would pass `ref` into the source options), so read
+    // the clustered source straight from the live map.
     const source = getMapRef()?.getSource(SOURCE_OFFERS);
 
     if (!source) {
@@ -1088,6 +1088,7 @@ export default function SearchMap({
   return (
     <div data-map-zoom={viewport.zoom} ref={gestureSurfaceRef}>
       <TypedReactMapGL
+        {...reactMapGLDefaultProps}
         reuseMaps
         controller={mapController}
         className="search-map"
@@ -1143,7 +1144,6 @@ export default function SearchMap({
           data={offers as GeoJSON.FeatureCollection}
           id={SOURCE_OFFERS}
           promoteId="id" // Use feature.properties.id as feature ID; used e.g. for hover effect with `setFeatureState()`
-          ref={sourceRef}
           type="geojson"
         >
           <TypedLayer {...clusterLayer} />

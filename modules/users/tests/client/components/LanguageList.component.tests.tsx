@@ -18,42 +18,39 @@ function queryResult(
     errorUpdatedAt: 0,
     failureCount: 0,
     errorUpdateCount: 0,
+    failureReason: null,
     isError: false,
     isFetched: false,
     isFetchedAfterMount: false,
     isFetching: false,
-    isIdle: false,
+    isInitialLoading: false,
+    isLoadingError: false,
+    isPaused: false,
     isPlaceholderData: false,
-    isPreviousData: false,
+    isRefetchError: false,
     isRefetching: false,
     isStale: false,
+    fetchStatus: 'idle',
     refetch: async () => queryResult(data, isLoading),
-    remove: () => {},
   };
-  if (isLoading) {
-    return {
-      ...base,
-      data: undefined,
-      isError: false,
-      isIdle: false,
-      isLoading: true,
-      isLoadingError: false,
-      isRefetchError: false,
-      isSuccess: false,
-      status: 'loading',
-    };
-  }
-  return {
-    ...base,
-    data: data ?? {},
-    isError: false,
-    isIdle: false,
-    isLoading: false,
-    isLoadingError: false,
-    isRefetchError: false,
-    isSuccess: true,
-    status: 'success',
-  };
+  const result = isLoading
+    ? {
+        ...base,
+        data: undefined,
+        isLoading: true,
+        isPending: true,
+        isSuccess: false,
+        status: 'pending',
+      }
+    : {
+        ...base,
+        data: data ?? {},
+        isLoading: false,
+        isPending: false,
+        isSuccess: true,
+        status: 'success',
+      };
+  return result as unknown as ReturnType<typeof useLanguagesQuery>;
 }
 
 jest.mock('@/modules/core/client/api/languages.api');

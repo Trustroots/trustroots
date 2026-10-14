@@ -83,7 +83,7 @@ import ContactConfirmPage from '@/modules/contacts/client/components/ContactConf
 import TribesPage from '@/modules/tribes/client/components/TribesPage.component';
 import TribeDetailPage from '@/modules/tribes/client/components/TribeDetailPage.component';
 import { useAuth, type AuthUser } from './auth';
-import { useAppConfig, useSettings } from './AppProviders';
+import { useSettings } from './AppProviders';
 import ReactAppShell from './ReactAppShell';
 import { signout } from './shell-helpers';
 
@@ -139,11 +139,8 @@ function renderOfferPage(Component: React.ElementType) {
 }
 
 function NavigationRoute({ user }: RouteContext) {
-  const { isNativeMobileApp } = useAppConfig();
-
   return (
     <Navigation
-      isNativeMobileApp={isNativeMobileApp}
       onSignout={signout}
       user={user as React.ComponentProps<typeof Navigation>['user']}
     />

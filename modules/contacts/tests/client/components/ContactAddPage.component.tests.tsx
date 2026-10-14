@@ -1,7 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import '@/config/client/i18n';
 import ContactAddPage from '@/modules/contacts/client/components/ContactAddPage.component';

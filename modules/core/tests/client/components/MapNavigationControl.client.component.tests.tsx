@@ -1,14 +1,9 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { MapContext, WebMercatorViewport } from 'react-map-gl';
 import '@testing-library/jest-dom';
 
 import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
-
-type MockNavigationProps = {
-  showCompass?: boolean;
-  zoomInLabel?: string;
-  zoomOutLabel?: string;
-};
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -16,35 +11,43 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('react-map-gl', () => {
-  function MockNavigationControl({
-    showCompass,
-    zoomInLabel,
-    zoomOutLabel,
-  }: MockNavigationProps) {
-    return (
-      <div
-        data-testid="navigation-control"
-        data-show-compass={showCompass}
-        data-zoom-in-label={zoomInLabel}
-        data-zoom-out-label={zoomOutLabel}
-      />
-    );
-  }
-
-  return {
-    __esModule: true,
-    NavigationControl: MockNavigationControl,
-  };
-});
-
 describe('<MapNavigationControl />', () => {
-  it('passes translated labels to react-map-gl navigation control', () => {
+  it('renders translated zoom buttons without a compass in React 19', () => {
     render(<MapNavigationControl />);
-    const control = screen.getByTestId('navigation-control');
+    expect(screen.getByRole('button', { name: 'i18n:Zoom in' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'i18n:Zoom out' })).toBeVisible();
+    expect(screen.getAllByRole('button')).toHaveLength(2);
+  });
 
-    expect(control).toHaveAttribute('data-show-compass', 'false');
-    expect(control).toHaveAttribute('data-zoom-in-label', 'i18n:Zoom in');
-    expect(control).toHaveAttribute('data-zoom-out-label', 'i18n:Zoom out');
+  it('changes the map zoom when the real navigation buttons are clicked', () => {
+    const onViewportChange = jest.fn();
+    render(
+      <MapContext.Provider
+        value={{
+          viewport: new WebMercatorViewport({
+            width: 640,
+            height: 320,
+            latitude: 48,
+            longitude: 9,
+            zoom: 6,
+          }),
+          onViewportChange,
+          map: null,
+          container: null,
+          isDragging: false,
+          eventManager: null,
+        }}
+      >
+        <MapNavigationControl />
+      </MapContext.Provider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'i18n:Zoom in' }));
+    expect(onViewportChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ zoom: 7 }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'i18n:Zoom out' }));
+    expect(onViewportChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({ zoom: 5 }),
+    );
   });
 });

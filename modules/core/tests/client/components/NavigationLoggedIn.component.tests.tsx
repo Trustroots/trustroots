@@ -47,9 +47,7 @@ describe('<NavigationLoggedIn />', () => {
           user={{ _id: 'fictional-support', username: 'support', roles }}
         />,
       );
-      expect(
-        screen.getByRole('link', { name: 'Admin', exact: true }),
-      ).toHaveAttribute(
+      expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute(
         'href',
         roles.includes('admin') ? '/admin' : '/admin/support',
       );
@@ -125,7 +123,7 @@ describe('<NavigationLoggedIn />', () => {
         user={{ ...user, roles: ['user', 'admin'] }}
       />,
     );
-    const admin = screen.getByRole('link', { name: 'Admin', exact: true });
+    const admin = screen.getByRole('link', { name: 'Admin' });
     expect(admin).toHaveAttribute('href', '/admin');
     expect(admin.closest('li')).toHaveClass('active', 'hidden-xs');
     const adminListItem = requireElement(admin.closest('li'));
@@ -146,7 +144,7 @@ describe('<NavigationLoggedIn />', () => {
         />,
       );
       expect(
-        screen.queryByRole('link', { name: 'Admin', exact: true }),
+        screen.queryByRole('link', { name: 'Admin' }),
       ).not.toBeInTheDocument();
     },
   );
@@ -159,9 +157,10 @@ describe('<NavigationLoggedIn />', () => {
         user={{ ...user, roles: ['user', 'welcome-team'] }}
       />,
     );
-    expect(
-      screen.getByRole('link', { name: 'Admin', exact: true }),
-    ).toHaveAttribute('href', '/admin/acquisition-stories');
+    expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute(
+      'href',
+      '/admin/acquisition-stories',
+    );
     rerender(
       <NavigationLoggedIn
         currentPath="/admin"
@@ -169,9 +168,10 @@ describe('<NavigationLoggedIn />', () => {
         user={{ ...user, roles: ['user', 'admin'] }}
       />,
     );
-    expect(
-      screen.getByRole('link', { name: 'Admin', exact: true }),
-    ).toHaveAttribute('href', '/admin');
+    expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute(
+      'href',
+      '/admin',
+    );
   });
 
   it('forwards signout click to callback', () => {
@@ -221,9 +221,9 @@ describe('<NavigationLoggedIn />', () => {
         user={{ ...user, member }}
       />,
     );
-    await screen.findByRole('link', { name: 'Circle 11', exact: true });
+    await screen.findByRole('link', { name: 'Circle 11' });
     const item = requireElement(
-      screen.getByRole('link', { name: 'Circles', exact: true }).closest('li'),
+      screen.getByRole('link', { name: 'Circles' }).closest('li'),
     );
     expect(item).toHaveClass('dropdown', 'header-link-dropdown', 'active');
     const menu = requireElement(
@@ -247,7 +247,7 @@ describe('<NavigationLoggedIn />', () => {
       />,
     );
     const item = requireElement(
-      screen.getByRole('link', { name: 'Circles', exact: true }).closest('li'),
+      screen.getByRole('link', { name: 'Circles' }).closest('li'),
     );
     expect(item.querySelector('.dropdown-menu')).toBeNull();
     expect(item).not.toHaveClass('dropdown');
@@ -273,9 +273,9 @@ describe('<NavigationLoggedIn />', () => {
         user={{ ...user, member }}
       />,
     );
-    await screen.findByRole('link', { name: 'Hackers', exact: true });
+    await screen.findByRole('link', { name: 'Hackers' });
     const item = requireElement(
-      screen.getByRole('link', { name: 'Circles', exact: true }).closest('li'),
+      screen.getByRole('link', { name: 'Circles' }).closest('li'),
     );
     const menu = requireElement(
       item.querySelector<HTMLElement>('.dropdown-menu'),
@@ -299,9 +299,10 @@ describe('<NavigationLoggedIn />', () => {
         />,
       );
     });
-    expect(
-      screen.getByRole('link', { name: 'Circles', exact: true }),
-    ).toHaveAttribute('href', '/circles');
+    expect(screen.getByRole('link', { name: 'Circles' })).toHaveAttribute(
+      'href',
+      '/circles',
+    );
     expect(
       screen.getByRole('link', { name: 'Find member by name' }),
     ).toHaveAttribute('href', '/search/members');

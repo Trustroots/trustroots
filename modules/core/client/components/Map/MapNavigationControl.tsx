@@ -12,7 +12,11 @@ export default function MapNavigationControl() {
   return (
     <div className="map-navigation-control-container">
       <NavigationControl
+        captureClick
+        captureDoubleClick
+        captureDrag
         showCompass={false}
+        showZoom
         zoomInLabel={t<string>('Zoom in')}
         zoomOutLabel={t<string>('Zoom out')}
       />

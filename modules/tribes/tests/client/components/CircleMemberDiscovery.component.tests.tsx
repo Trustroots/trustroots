@@ -248,6 +248,8 @@ describe('<CircleMemberDiscovery />', () => {
 
   it('abandons a pending retry when the circle changes', async () => {
     jest.useFakeTimers();
+    const setTimeoutSpy = jest.spyOn(globalThis, 'setTimeout');
+    const clearTimeoutSpy = jest.spyOn(globalThis, 'clearTimeout');
     listMembersMock
       .mockRejectedValueOnce(
         Object.assign(new Error('network unavailable'), {
@@ -267,13 +269,18 @@ describe('<CircleMemberDiscovery />', () => {
       await act(async () => {
         await Promise.resolve();
       });
+      const retryTimerIndex = setTimeoutSpy.mock.calls.findIndex(
+        ([, delay]) => delay === 250,
+      );
+      expect(retryTimerIndex).toBeGreaterThanOrEqual(0);
+      const retryTimer = setTimeoutSpy.mock.results[retryTimerIndex]?.value;
       rerender(
         <CircleMemberDiscovery
           circle={{ ...circle, slug: 'cyclists' }}
           user={user}
         />,
       );
-      expect(jest.getTimerCount()).toBe(0);
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(retryTimer);
       await act(async () => {
         await Promise.resolve();
         await jest.advanceTimersByTimeAsync(250);
@@ -284,12 +291,16 @@ describe('<CircleMemberDiscovery />', () => {
       expect(listMembersMock).toHaveBeenCalledTimes(2);
       expect(await screen.findByText('Member known')).toBeInTheDocument();
     } finally {
+      setTimeoutSpy.mockRestore();
+      clearTimeoutSpy.mockRestore();
       jest.useRealTimers();
     }
   });
 
   it('abandons a pending retry when the component unmounts', async () => {
     jest.useFakeTimers();
+    const setTimeoutSpy = jest.spyOn(globalThis, 'setTimeout');
+    const clearTimeoutSpy = jest.spyOn(globalThis, 'clearTimeout');
     listMembersMock.mockRejectedValueOnce(
       Object.assign(new Error('network unavailable'), { code: 'ERR_NETWORK' }),
     );
@@ -301,14 +312,21 @@ describe('<CircleMemberDiscovery />', () => {
       await act(async () => {
         await Promise.resolve();
       });
+      const retryTimerIndex = setTimeoutSpy.mock.calls.findIndex(
+        ([, delay]) => delay === 250,
+      );
+      expect(retryTimerIndex).toBeGreaterThanOrEqual(0);
+      const retryTimer = setTimeoutSpy.mock.results[retryTimerIndex]?.value;
       unmount();
-      expect(jest.getTimerCount()).toBe(0);
+      expect(clearTimeoutSpy).toHaveBeenCalledWith(retryTimer);
       await act(async () => {
         await jest.advanceTimersByTimeAsync(250);
       });
 
       expect(listMembersMock).toHaveBeenCalledTimes(1);
     } finally {
+      setTimeoutSpy.mockRestore();
+      clearTimeoutSpy.mockRestore();
       jest.useRealTimers();
     }
   });
