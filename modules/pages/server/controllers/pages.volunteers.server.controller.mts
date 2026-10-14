@@ -44,22 +44,21 @@ export const list = (
     .select('username firstName roles')
     .sort('firstName username')
     .limit(500)
-    .exec((err, users) => {
-      if (err) {
+    .then(
+      users => {
+        // Put to two groups based on role
+        const volunteers = filterAndCleanVolunteers(users, 'volunteer');
+        const alumni = filterAndCleanVolunteers(users, 'volunteer-alumni');
+        res.send({
+          volunteers: _.shuffle(volunteers),
+          alumni: _.shuffle(alumni),
+        });
+      },
+      err =>
         res.status(400).send({
           message: errorService.getErrorMessage(err),
-        });
-        return;
-      }
-
-      // Put to two groups based on role
-      const volunteers = filterAndCleanVolunteers(users, 'volunteer');
-      const alumni = filterAndCleanVolunteers(users, 'volunteer-alumni');
-      res.send({
-        volunteers: _.shuffle(volunteers),
-        alumni: _.shuffle(alumni),
-      });
-    });
+        }),
+    );
 };
 
 const defaultInterop = {

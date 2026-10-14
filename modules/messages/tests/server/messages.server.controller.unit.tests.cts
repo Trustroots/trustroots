@@ -38,7 +38,7 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 const User = mongoose.model('User') as UserModel;
-const Thread: ThreadModel = mongoose.model('Thread');
+const Thread = mongoose.model('Thread') as ThreadModel;
 type MessagePaginationResult = {
   docs: MessageDocument[];
   pages: number;
@@ -595,7 +595,7 @@ describe('Messages controller unit tests', () => {
       it(`rejects invalid message identifiers ${JSON.stringify(
         messageIds,
       )}`, async () => {
-        const update = sinon.spy(Message, 'update');
+        const update = sinon.spy(Message, 'updateMany');
         const res = deferredResponse();
         messagesController.markRead(
           {

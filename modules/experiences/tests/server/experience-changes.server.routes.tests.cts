@@ -159,7 +159,8 @@ describe('Experience change requests', () => {
     const link = await ExperienceChangeLink.findOne({
       experience: experience._id,
       member: author._id,
-    }).lean();
+    }).lean<{ tokenHash: string }>();
+    if (!link) throw new Error('Expected an experience change link');
     link.tokenHash.should.equal(
       crypto.createHash('sha256').update(secret).digest('hex'),
     );

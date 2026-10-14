@@ -31,7 +31,10 @@ describe('Volunteers page route tests', function () {
       provider: 'local',
       roles,
     });
-    user.save(done);
+    user
+      .save()
+      .then(() => done())
+      .catch(done);
   }
   it('should group users by volunteer and volunteer-alumni roles', function (done) {
     createUser('activevolunteer', ['user', 'volunteer'], function (err1) {
@@ -89,7 +92,6 @@ describe('Volunteers page route tests', function () {
         });
     });
   });
-
   it('returns only public current greeters with public fields in name order', async function () {
     await User.create([
       {
@@ -145,9 +147,7 @@ describe('Volunteers page route tests', function () {
         roles: ['user', 'welcome-team'],
       },
     ]);
-
     const response = await agent.get('/api/greeters').expect(200);
-
     response.body.greeters
       .map(({ displayName }: { displayName: string }) => displayName)
       .should.deepEqual(['Ada Greeter', 'Zed Greeter']);
@@ -157,7 +157,6 @@ describe('Volunteers page route tests', function () {
         .should.deepEqual(['_id', 'displayName', 'username']);
     });
   });
-
   it('returns an empty public greeter roster when no current greeters exist', async function () {
     const response = await agent.get('/api/greeters').expect(200);
     response.body.should.deepEqual({ greeters: [] });

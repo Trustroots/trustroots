@@ -6,27 +6,21 @@ import type {
   UserModelDocument,
   UserRecord,
 } from '../../../../../testutils/server/model-contracts.mts';
-
 const sinon: typeof import('sinon') = require('sinon');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const moment: typeof import('moment') = require('moment');
-
 const emailService: typeof import('../../../../core/server/services/email.server.service.mjs').default = require('./../../../../core/server/services/email.server.service.mjs');
 const userFinishSignupJobHandler: typeof import('../../../server/jobs/user-finish-signup.server.job.mjs').default = require('./../../../server/jobs/user-finish-signup.server.job.mjs');
 const testutils: typeof import('../../../../../testutils/server/server.testutil.mts') = require('../../../../../testutils/server/server.testutil');
 require('should');
-
 const User = mongoose.model<UserRecord, UserModel>('User');
-
 function assertPresent<T>(value: T | null | undefined): asserts value is T {
   if (value === null || value === undefined)
     throw new Error('Expected an error');
 }
-
 describe('Job: user finish signup unit tests', () => {
   const jobs = testutils.catchJobs();
   let unConfirmedUser: UserModelDocument;
-
   beforeEach(function (done) {
     unConfirmedUser = new User({
       public: false,
@@ -43,15 +37,18 @@ describe('Job: user finish signup unit tests', () => {
       provider: 'local',
       created: moment().subtract(moment.duration({ hours: 4 })),
     });
-
-    unConfirmedUser.save(done);
+    unConfirmedUser
+      .save()
+      .then(() => done())
+      .catch(done);
   });
-
   afterEach(function (done) {
     sinon.restore();
-    User.deleteMany().exec(done);
+    User.deleteMany()
+      .exec()
+      .then(() => done())
+      .catch(done);
   });
-
   it('passes lookup errors to agenda', function (done) {
     const fakeQuery = {
       and() {
@@ -67,7 +64,6 @@ describe('Job: user finish signup unit tests', () => {
     sinon
       .stub(User, 'find')
       .returns(fakeQuery as unknown as ReturnType<typeof User.find>);
-
     userFinishSignupJobHandler(
       { attrs: { _id: new mongoose.Types.ObjectId() } },
       function (err?: Error | null) {
@@ -78,16 +74,10 @@ describe('Job: user finish signup unit tests', () => {
       },
     );
   });
-
   it('does not send a reminder when persisting its fresh token fails', function (done) {
     sinon
       .stub(User, 'updateOne')
-      .callsFake((_query, _update, options, callback) => {
-        const completion = typeof options === 'function' ? options : callback;
-        if (!completion) throw new Error('Expected an update callback');
-        completion(new Error('token persistence failed'), null);
-        return {} as unknown as ReturnType<typeof User.updateOne>;
-      });
+      .rejects(new Error('token persistence failed'));
     const send = sinon.spy(emailService, 'sendSignupEmailReminder');
     userFinishSignupJobHandler(
       { attrs: { _id: new mongoose.Types.ObjectId() } },
@@ -100,7 +90,6 @@ describe('Job: user finish signup unit tests', () => {
       },
     );
   });
-
   for (const change of [
     { public: true },
     { emailToken: 'newer-confirmation-token' },
@@ -111,24 +100,25 @@ describe('Job: user finish signup unit tests', () => {
         Object.keys(change)[0],
       function (done) {
         const originalUpdate = User.updateOne.bind(User);
-        sinon
-          .stub(User, 'updateOne')
-          .callsFake((query, update, options, callback) => {
-            const completion =
-              typeof options === 'function' ? options : callback;
-            if (!completion) throw new Error('Expected an update callback');
-            const replacementQuery = originalUpdate(
-              { _id: unConfirmedUser._id },
-              { $set: change },
-            );
-            void replacementQuery
-              .then(() => originalUpdate(query, update))
-              .then(
-                result => completion(null, result),
-                error => completion(error, null),
-              );
-            return replacementQuery as ReturnType<typeof User.updateOne>;
-          });
+        const updateStub = sinon.stub(
+          User,
+          'updateOne',
+        ) as unknown as import('sinon').SinonStub<
+          Parameters<
+            import('../../../../../testutils/server/model-contracts.mts').UserUpdateOne
+          >,
+          ReturnType<
+            import('../../../../../testutils/server/model-contracts.mts').UserUpdateOne
+          >
+        >;
+        updateStub.callsFake((query, update) => {
+          return originalUpdate(
+            { _id: unConfirmedUser._id },
+            { $set: change },
+          ).then(() => originalUpdate(query, update)) as unknown as ReturnType<
+            typeof User.updateOne
+          >;
+        });
         const send = sinon.spy(emailService, 'sendSignupEmailReminder');
         userFinishSignupJobHandler(
           { attrs: { _id: new mongoose.Types.ObjectId() } },
@@ -142,12 +132,10 @@ describe('Job: user finish signup unit tests', () => {
       },
     );
   }
-
   it('passes email send errors to agenda', function (done) {
     sinon
       .stub(emailService, 'sendSignupEmailReminder')
       .callsFake((user, cb) => cb(new Error('mail failed')));
-
     userFinishSignupJobHandler(
       { attrs: { _id: new mongoose.Types.ObjectId() } },
       function (err?: Error | null) {

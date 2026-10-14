@@ -50,22 +50,21 @@ type FinishedCallback = (error?: Error | null) => void;
 describe('Search users: GET /users?search=string', function () {
   let agent: import('supertest').Agent;
   const limit = 9;
-
   // initialize the testing environment
   before(async function () {
     // Stub the limit value
     sinon.stub(config.limits, 'paginationLimit').value(limit);
-
     // the limit is used in this config, so we needed to stub limit before importing this
     const express = require('./../../../../config/lib/express.mjs');
     // Get application
     const app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
-
   // rebuild indexes before tests
   before(function (done) {
-    User.ensureIndexes(done);
+    User.ensureIndexes()
+      .then(() => done())
+      .catch(done);
   });
   afterEach(utils.clearDatabase);
   after(function () {
@@ -107,7 +106,10 @@ describe('Search users: GET /users?search=string', function () {
           roles: user.roles || ['user'],
         });
         createdUsers.push(createdUser);
-        createdUser.save(cb);
+        createdUser
+          .save()
+          .then(() => cb())
+          .catch(cb);
       },
       function (err: Error | null | undefined) {
         callback(err, createdUsers);
@@ -121,7 +123,6 @@ describe('Search users: GET /users?search=string', function () {
   });
   context('logged in', function () {
     let loggedUser: SearchUserDocument;
-
     // create logged user
     beforeEach(function (done) {
       createUsers(
@@ -137,7 +138,6 @@ describe('Search users: GET /users?search=string', function () {
         },
       );
     });
-
     // sign in
     beforeEach(function (done) {
       agent
@@ -149,7 +149,6 @@ describe('Search users: GET /users?search=string', function () {
         .expect(200)
         .end(done);
     });
-
     // sign out
     afterEach(function (done) {
       agent
@@ -174,8 +173,8 @@ describe('Search users: GET /users?search=string', function () {
             public: true,
             roles: ['user'],
           })),
-          function (err) {
-            if (err) return done(err);
+        )
+          .then(() => {
             agent
               .get('/api/users?search=Capped&limit=100')
               .expect(200)
@@ -184,8 +183,8 @@ describe('Search users: GET /users?search=string', function () {
                 (response.body as SearchResponse).should.have.length(50);
                 done();
               });
-          },
-        );
+          })
+          .catch(done);
       });
       it('excludes members blocked in either direction from location results', function (done) {
         createUsers(
@@ -542,7 +541,6 @@ describe('Search users: GET /users?search=string', function () {
             // check that we found the users
             function (foundUsers: SearchResponse, cb: FinishedCallback) {
               should(foundUsers).length(1);
-
               // _id is not specified in userSearchProfileFields, but gets included anyways
               // that's just how mongo works
               const expectedFields = userHandler.userSearchProfileFields

@@ -3,7 +3,6 @@
  */
 import type { HydratedDocument } from 'mongoose';
 import type { UserRecord } from '../../../../../testutils/server/model-contracts.mts';
-
 const testutils: typeof import('../../../../../testutils/server/server.testutil.mts') = require('../../../../../testutils/server/server.testutil');
 const config: typeof import('../../../../../config/config.mts').default = require('./../../../../../config/config.mts');
 const moment: typeof import('moment') = require('moment');
@@ -23,7 +22,13 @@ type WelcomeSequenceJob = (
 ) => void;
 interface WelcomeEmailJob {
   type: string;
-  data: { from: { name: string }; subject: string; html: string };
+  data: {
+    from: {
+      name: string;
+    };
+    subject: string;
+    html: string;
+  };
 }
 const User = mongoose.model<WelcomeSequenceUser>('User');
 function saveWithCallback(
@@ -36,7 +41,6 @@ function saveWithCallback(
       callback(error instanceof Error ? error : new Error(String(error))),
   );
 }
-
 /**
  * Globals
  */
@@ -50,30 +54,24 @@ let userWelcomeSequenceThirdJobHandler: WelcomeSequenceJob;
 let timeLimit: moment.Moment;
 let timeFuture: moment.Moment;
 let timePast: moment.Moment;
-
 describe.skip('Job: welcome sequence, third email', function () {
   const jobs = testutils.catchJobs() as WelcomeEmailJob[];
-
   before(function () {
     userWelcomeSequenceFirstJobHandler = require('./../../../server/jobs/user-welcome-sequence-first.server.job.mjs');
     userWelcomeSequenceSecondJobHandler = require('./../../../server/jobs/user-welcome-sequence-second.server.job.mjs');
     userWelcomeSequenceThirdJobHandler = require('./../../../server/jobs/user-welcome-sequence-third.server.job.mjs');
   });
-
   // Create time points to test that welcome sequence is sent in correct time
   beforeEach(function (done) {
     // Take limit from config and set timer to past
     timeLimit = moment().subtract(
       moment.duration(config.limits.welcomeSequence.third),
     );
-
     // Move timer 15 minutes to past and future for testing
     timePast = moment(timeLimit).subtract(moment.duration({ minutes: 1 }));
     timeFuture = moment(timeLimit).add(moment.duration({ minutes: 15 }));
-
     done();
   });
-
   // Create an unconfirmed user
   beforeEach(function (done) {
     // Create a new user
@@ -91,13 +89,10 @@ describe.skip('Job: welcome sequence, third email', function () {
       welcomeSequenceStep: 0,
       created: moment().subtract(moment.duration({ minutes: 3 })),
     };
-
     unConfirmedUser = new User(_unConfirmedUser);
-
     // Save a user to the test db
     saveWithCallback(unConfirmedUser, done);
   });
-
   // Create a confirmed user
   beforeEach(function (done) {
     _confirmedUser = {
@@ -113,13 +108,10 @@ describe.skip('Job: welcome sequence, third email', function () {
       welcomeSequenceSent: timePast,
       created: timePast,
     };
-
     confirmedUser = new User(_confirmedUser);
-
     // Save a user to the test db
     saveWithCallback(confirmedUser, done);
   });
-
   it('Send third welcome sequence email to confirmed users only', function (done) {
     userWelcomeSequenceThirdJobHandler({}, function (err) {
       if (err) return done(err);
@@ -135,7 +127,6 @@ describe.skip('Job: welcome sequence, third email', function () {
       done();
     });
   });
-
   it('Do not send first and second welcome sequence email when everyone is on step 3', function (done) {
     // Run first welcome sequence email job
     userWelcomeSequenceFirstJobHandler({}, function (err) {
@@ -143,19 +134,16 @@ describe.skip('Job: welcome sequence, third email', function () {
       // Run second welcome sequence email job
       userWelcomeSequenceSecondJobHandler({}, function (err) {
         if (err) return done(err);
-
         // Nobody shouldn't received email
         jobs.length.should.equal(0);
         done();
       });
     });
   });
-
   it('Do not send third welcome sequence email to suspended users', function (done) {
     confirmedUser.roles = ['suspended'];
     saveWithCallback(confirmedUser, function (err) {
       if (err) return done(err);
-
       userWelcomeSequenceThirdJobHandler({}, function (err) {
         if (err) return done(err);
         // Confirmed who is suspended, did not receive welcome email
@@ -165,12 +153,10 @@ describe.skip('Job: welcome sequence, third email', function () {
       });
     });
   });
-
   it('Do not send third welcome sequence email too early', function (done) {
     confirmedUser.welcomeSequenceSent = timeFuture;
     saveWithCallback(confirmedUser, function (err) {
       if (err) return done(err);
-
       userWelcomeSequenceThirdJobHandler({}, function (err) {
         if (err) return done(err);
         jobs.length.should.equal(0);
@@ -178,8 +164,10 @@ describe.skip('Job: welcome sequence, third email', function () {
       });
     });
   });
-
   afterEach(function (done) {
-    User.deleteMany().exec(done);
+    User.deleteMany()
+      .exec()
+      .then(() => done())
+      .catch(done);
   });
 });

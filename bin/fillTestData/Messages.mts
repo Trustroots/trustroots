@@ -234,12 +234,9 @@ function seedThreads(numThreads: number, maxMessages: number) {
                 message.notificationCount = 0;
 
                 // save the newly created message
-                message.save(err => {
-                  if (err != null) {
-                    console.log(err);
-                  } else {
-                    // Message was saved successfully
-
+                message
+                  .save()
+                  .then(() => {
                     // Add thread for the most recent message
                     if (depth === 1) {
                       const messageThread = new Thread();
@@ -248,10 +245,9 @@ function seedThreads(numThreads: number, maxMessages: number) {
                       seedThread(messageThread, message);
 
                       // save the message thread
-                      messageThread.save(err => {
-                        if (err != null) {
-                          console.log(err);
-                        } else {
+                      messageThread
+                        .save()
+                        .then(() => {
                           // Thread was saved successfully
                           process.stdout.write('.');
                           threadsSaved += 1;
@@ -279,13 +275,16 @@ function seedThreads(numThreads: number, maxMessages: number) {
                                 ' message threads.',
                             );
                             resolve();
-                            return;
                           }
-                        }
-                      }); // messageThread.save
+                        })
+                        .catch(err => {
+                          console.log(err);
+                        });
                     }
-                  }
-                }); // message.save
+                  })
+                  .catch(err => {
+                    console.log(err);
+                  });
               } // addNextMessage
 
               if (messageIndex === messageCount) {

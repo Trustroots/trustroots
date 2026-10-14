@@ -15,16 +15,13 @@ const validator: {
 } = require('validator');
 const config: TestConfigModule = require('./../../../../config/config.mts');
 const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-
 const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
-
 /**
  * Globals
  */
 let tribe1: TribeRecord;
 // let tribe2;
 let tribe3: TribeRecord;
-
 /**
  * Unit tests
  */
@@ -34,17 +31,15 @@ describe('Tribe Model Unit Tests:', function () {
       label: 'Tribe label',
     };
     /*
-    tribe2 = new Tribe({
-      label: 'Tribe label',
-    });
-    */
+        tribe2 = new Tribe({
+          label: 'Tribe label',
+        });
+        */
     tribe3 = {
       label: 'Different tribe label',
     };
   });
-
   afterEach(utils.clearDatabase);
-
   it('accepts whole member counts and rejects fractional or negative counts', async () => {
     for (const count of [0, 1, 100]) {
       await new Tribe({ label: 'Fictional circle', count }).validate();
@@ -65,18 +60,15 @@ describe('Tribe Model Unit Tests:', function () {
       );
     }
   });
-
   it('should give new circles varied dark colours readable with white text', function () {
     const random = sinon.stub(Math, 'random');
     const colours = new Set();
-
     try {
       for (let index = 0; index < 100; index += 1) {
         random.returns(index / 100);
         const colour = new Tribe({ label: `Circle ${index}` }).color;
         colour!.should.match(/^[0-9a-f]{6}$/);
         colours.add(colour);
-
         const channels = [0, 2, 4].map(offset => {
           const value = parseInt(colour!.slice(offset, offset + 2), 16) / 255;
           return value <= 0.04045
@@ -91,233 +83,299 @@ describe('Tribe Model Unit Tests:', function () {
     } finally {
       random.restore();
     }
-
     colours.size.should.be.above(7);
   });
-
   it('should preserve an explicitly supplied circle colour', function (done) {
     const tribe = new Tribe({ label: 'Existing circle', color: 'abcdef' });
-    tribe.save(function (err) {
-      should.not.exist(err);
-      Tribe.findById(
-        tribe._id,
-        function (err: unknown, savedTribe: TribeDocument | null) {
-          should.not.exist(err);
-          savedTribe!.color!.should.equal('abcdef');
-          done();
-        },
-      );
-    });
+    tribe
+      .save()
+      .then(() => {
+        should.not.exist(null);
+        Tribe.findById(tribe._id)
+          .then((savedTribe: TribeDocument | null) => {
+            should.not.exist(null);
+            savedTribe!.color!.should.equal('abcdef');
+            done();
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
-
   describe('Method Save', function () {
     it('should begin with no tribes', function (done) {
-      Tribe.find({}, function (err: unknown, tribes: TribeDocument[]) {
-        tribes.should.have.length(0);
-        done();
-      });
+      Tribe.find({})
+        .then((tribes: TribeDocument[]) => {
+          tribes.should.have.length(0);
+          done();
+        })
+        .catch(done);
     });
-
     it('should be able to save without problems', function (done) {
       const _tribe = new Tribe(tribe1);
-
-      _tribe.save(function (err) {
-        should.not.exist(err);
-        _tribe.remove(function (err) {
-          should.not.exist(err);
-          done();
-        });
-      });
+      _tribe
+        .save()
+        .then(() => {
+          should.not.exist(null);
+          _tribe
+            .deleteOne()
+            .then(() => {
+              should.not.exist(null);
+              done();
+            })
+            .catch(done);
+        })
+        .catch(done);
     });
-
     it('should be able to save without problems and have correct default values', function (done) {
       const _tribe = new Tribe(tribe1);
-      _tribe.save(function (err) {
-        should.not.exist(err);
-        _tribe.synonyms!.should.be.an.Array();
-        _tribe.synonyms!.length.should.eql(0);
-        _tribe.labelHistory!.should.be.an.Array();
-        _tribe.labelHistory!.length.should.eql(0);
-        _tribe.slugHistory!.should.be.an.Array();
-        _tribe.slugHistory!.length.should.eql(0);
-        _tribe.slug!.should.equal('tribe-label');
-        _tribe.count!.should.eql(0);
-        should.exist(_tribe.color);
-        _tribe.color!.should.not.containEql('#');
-        validator.isHexadecimal(_tribe.color!).should.equal(true);
-        should.exist(_tribe.created);
-
-        done();
-      });
-    });
-
-    /*
-    // Disabled reason: flaky test
-    it('should fail to save an existing tribe again', function (done) {
-      const _tribe = new Tribe(tribe1);
-      const _tribe2 = new Tribe(tribe2);
-
-      _tribe.save(function () {
-        _tribe2.save(function (err) {
-          should.exist(err);
+      _tribe
+        .save()
+        .then(() => {
+          should.not.exist(null);
+          _tribe.synonyms!.should.be.an.Array();
+          _tribe.synonyms!.length.should.eql(0);
+          _tribe.labelHistory!.should.be.an.Array();
+          _tribe.labelHistory!.length.should.eql(0);
+          _tribe.slugHistory!.should.be.an.Array();
+          _tribe.slugHistory!.length.should.eql(0);
+          _tribe.slug!.should.equal('tribe-label');
+          _tribe.count!.should.eql(0);
+          should.exist(_tribe.color);
+          _tribe.color!.should.not.containEql('#');
+          validator.isHexadecimal(_tribe.color!).should.equal(true);
+          should.exist(_tribe.created);
           done();
-        });
-      });
+        })
+        .catch(done);
     });
-    */
+    /*
+        // Disabled reason: flaky test
+        it('should fail to save an existing tribe again', function (done) {
+          const _tribe = new Tribe(tribe1);
+          const _tribe2 = new Tribe(tribe2);
 
+          _tribe.save(function () {
+            _tribe2.save(function (err) {
+              should.exist(err);
+              done();
+            });
+          });
+        });
+        */
     it('should confirm that saving tribe model doesnt change the color', function (done) {
       const _tribe = new Tribe(tribe1);
-
-      _tribe.save(function (err) {
-        should.not.exist(err);
-        const colorBefore = _tribe.color!;
-        _tribe.label = 'test';
-        _tribe.save(function (err) {
-          should.not.exist(err);
-          const colorAfter = _tribe.color!;
-          colorBefore.should.equal(colorAfter);
-          done();
-        });
-      });
+      _tribe
+        .save()
+        .then(() => {
+          should.not.exist(null);
+          const colorBefore = _tribe.color!;
+          _tribe.label = 'test';
+          _tribe
+            .save()
+            .then(() => {
+              should.not.exist(null);
+              const colorAfter = _tribe.color!;
+              colorBefore.should.equal(colorAfter);
+              done();
+            })
+            .catch(done);
+        })
+        .catch(done);
     });
-
     it('should be able to save 2 different tribes', function (done) {
       const _tribe = new Tribe(tribe1);
       const _tribe3 = new Tribe(tribe3);
-
-      _tribe.save(function (err) {
-        should.not.exist(err);
-        _tribe3.save(function (err) {
-          should.not.exist(err);
-          done();
-        });
-      });
+      _tribe
+        .save()
+        .then(() => {
+          should.not.exist(null);
+          _tribe3
+            .save()
+            .then(() => {
+              should.not.exist(null);
+              done();
+            })
+            .catch(done);
+        })
+        .catch(done);
     });
-
     it('should show error when trying to save tribe with invalid attribution URL', function (done) {
       const _tribe = new Tribe(tribe1);
-
       _tribe.attribution_url = 'this-is-not-URL';
-      _tribe.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      _tribe
+        .save()
+        .then(
+          () => {
+            throw new Error('Expected the operation to reject');
+          },
+          err => {
+            should.exist(err);
+            done();
+          },
+        )
+        .catch(done);
     });
   });
-
   describe('Slug generator', function () {
     it('should generate slug for label with accents and special symbols', function (done) {
       const _tribe = new Tribe(tribe1);
-
       _tribe.label = 'Hyvää päivää, herra Hüü!';
-      _tribe.save(function (err) {
-        should.not.exist(err);
-        _tribe.slug!.should.equal('hyvaa-paivaa-herra-huu');
-        done();
-      });
+      _tribe
+        .save()
+        .then(() => {
+          should.not.exist(null);
+          _tribe.slug!.should.equal('hyvaa-paivaa-herra-huu');
+          done();
+        })
+        .catch(done);
     });
-
     it('should generate slug from unicode label', function (done) {
       const _tribe = new Tribe(tribe1);
-
       _tribe.label = 'unicode ♥';
-      _tribe.save(function (err) {
-        should.not.exist(err);
-        _tribe.slug!.should.equal('unicode-love');
-        done();
-      });
+      _tribe
+        .save()
+        .then(() => {
+          should.not.exist(null);
+          _tribe.slug!.should.equal('unicode-love');
+          done();
+        })
+        .catch(done);
     });
   });
   describe('Label Validation', function () {
     it('should be able to show an error when try to save without label', function (done) {
       const _tribe = new Tribe(tribe1);
-
       _tribe.label = '';
-      _tribe.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      _tribe
+        .save()
+        .then(
+          () => {
+            throw new Error('Expected the operation to reject');
+          },
+          err => {
+            should.exist(err);
+            done();
+          },
+        )
+        .catch(done);
     });
-
     it('should be able to show an error when try to save with not allowed label', function (done) {
       const _tribe = new Tribe(tribe1);
-
       _tribe.label = config.illegalStrings[0];
-      _tribe.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      _tribe
+        .save()
+        .then(
+          () => {
+            throw new Error('Expected the operation to reject');
+          },
+          err => {
+            should.exist(err);
+            done();
+          },
+        )
+        .catch(done);
     });
-
     it('should be able to show an error when trying to save tribe label beginning with .', function (done) {
       const _tribe = new Tribe(tribe1);
-
       _tribe.label = '.label';
-      _tribe.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      _tribe
+        .save()
+        .then(
+          () => {
+            throw new Error('Expected the operation to reject');
+          },
+          err => {
+            should.exist(err);
+            done();
+          },
+        )
+        .catch(done);
     });
-
     it('should be able to show an error when trying to save tribe label end with .', function (done) {
       const _tribe = new Tribe(tribe1);
-
       _tribe.label = 'label.';
-      _tribe.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      _tribe
+        .save()
+        .then(
+          () => {
+            throw new Error('Expected the operation to reject');
+          },
+          err => {
+            should.exist(err);
+            done();
+          },
+        )
+        .catch(done);
     });
-
     it('should save label with dot', function (done) {
       const _tribe = new Tribe(tribe1);
-
       _tribe.label = 'lab.el';
-      _tribe.save(function (err) {
-        should.not.exist(err);
-        done();
-      });
+      _tribe
+        .save()
+        .then(() => {
+          should.not.exist(null);
+          done();
+        })
+        .catch(done);
     });
-
     it('should be able to show an error when trying to save label shorter than 2 character', function (done) {
       const _tribe = new Tribe(tribe1);
-
       _tribe.label = 's';
-      _tribe.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      _tribe
+        .save()
+        .then(
+          () => {
+            throw new Error('Expected the operation to reject');
+          },
+          err => {
+            should.exist(err);
+            done();
+          },
+        )
+        .catch(done);
     });
-
     it('should save label with all capital letters', function (done) {
       const _tribe = new Tribe(tribe1);
-
       _tribe.label = 'LABEL';
-      _tribe.save(function (err) {
-        should.not.exist(err);
-        done();
-      });
+      _tribe
+        .save()
+        .then(() => {
+          should.not.exist(null);
+          done();
+        })
+        .catch(done);
     });
-
     it('should be able to show an error when trying to save a label without at least one alpha character', function (done) {
       const _tribe = new Tribe(tribe1);
-
       _tribe.label = '1234567890';
-      _tribe.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      _tribe
+        .save()
+        .then(
+          () => {
+            throw new Error('Expected the operation to reject');
+          },
+          err => {
+            should.exist(err);
+            done();
+          },
+        )
+        .catch(done);
     });
-
     it('should be able to show an error when trying to save a label longer than 255 characters', function (done) {
       const _tribe = new Tribe(tribe1);
-
       _tribe.label = 'l'.repeat(256);
-      _tribe.save(function (err) {
-        should.exist(err);
-        done();
-      });
+      _tribe
+        .save()
+        .then(
+          () => {
+            throw new Error('Expected the operation to reject');
+          },
+          err => {
+            should.exist(err);
+            done();
+          },
+        )
+        .catch(done);
     });
   });
 });

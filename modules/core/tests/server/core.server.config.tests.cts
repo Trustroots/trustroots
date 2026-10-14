@@ -12,14 +12,18 @@ type ExpressTestApi = {
   init(connection: typeof mongoose.connection): Promise<ExpressApp>;
   initModulesClientRoutes(app: { use(...handlers: unknown[]): unknown }): void;
   denyAvatarStagingRequests(
-    req: { path: string },
-    res: { statusCode?: number; sendStatus(status: number): unknown },
+    req: {
+      path: string;
+    },
+    res: {
+      statusCode?: number;
+      sendStatus(status: number): unknown;
+    },
     next: () => void,
   ): unknown;
 };
 const express: ExpressTestApi = require('./../../../../config/lib/express.mjs');
 const Tribe = mongoose.model<TribeRecord>('Tribe');
-
 /**
  * Globals
  */
@@ -27,7 +31,10 @@ let app: ExpressApp;
 let agent: ReturnType<typeof request.agent>;
 let user: ReturnType<typeof utils.createTestUser>;
 let userId: string | import('mongoose').Types.ObjectId;
-let credentials: { username: string; password: string };
+let credentials: {
+  username: string;
+  password: string;
+};
 describe('Configuration Tests:', function () {
   describe('avatar staging static-file guard', function () {
     it('denies staging paths before public static middleware', function () {
@@ -90,7 +97,6 @@ describe('Configuration Tests:', function () {
         username: 'helloworld',
         password: 'M3@n.jsI$Aw3$0m3',
       };
-
       // Create a new user
       user = utils.createTestUser({
         lastName: 'Name A',
@@ -99,16 +105,14 @@ describe('Configuration Tests:', function () {
         username: credentials.username,
         password: credentials.password,
       });
-
       // Save a user to the test db
-      user.save(function (saveErr, saveRes) {
-        // Handle save error
-        if (saveErr) {
-          return done(saveErr);
-        }
-        userId = saveRes._id;
-        return done();
-      });
+      user
+        .save()
+        .then(saveRes => {
+          userId = saveRes._id;
+          return done();
+        })
+        .catch(done);
     });
     afterEach(utils.clearDatabase);
     it('should have user set to "null" if not authenticated and loading index page', function (done) {
@@ -137,7 +141,6 @@ describe('Configuration Tests:', function () {
           if (signinErr) {
             return done(signinErr);
           }
-
           // Get rendered layout
           agent
             .get('/')
@@ -148,7 +151,6 @@ describe('Configuration Tests:', function () {
               if (err) {
                 return done(err);
               }
-
               // The user we just created should be exposed
               res.text.should.match(
                 new RegExp('user = \\{.*"_id":"' + userId + '"'),
@@ -165,44 +167,42 @@ describe('Configuration Tests:', function () {
         tribe: true,
       };
       const tribe = new Tribe(_tribe);
-
       // Save a user to the test db
-      tribe.save(function (saveErr) {
-        // Handle save error
-        if (saveErr) {
-          return done(saveErr);
-        }
-
-        // Authenticate user
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            // Handle signin error
-            if (signinErr) {
-              return done(signinErr);
-            }
-
-            // Get rendered layout
-            agent
-              .get('/circles/naturists')
-              .expect('Content-Type', 'text/html; charset=utf-8')
-              .expect(200)
-              .end(function (err, res) {
-                // Handle errors
-                if (err) {
-                  return done(err);
-                }
-
-                // The user we just created should be exposed
-                res.text.should.match(
-                  new RegExp('user = \\{.*"_id":"' + userId + '"'),
-                );
-                Tribe.deleteMany().exec(done);
-              });
-          });
-      });
+      tribe
+        .save()
+        .then(() => {
+          // Authenticate user
+          agent
+            .post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function (signinErr) {
+              // Handle signin error
+              if (signinErr) {
+                return done(signinErr);
+              }
+              // Get rendered layout
+              agent
+                .get('/circles/naturists')
+                .expect('Content-Type', 'text/html; charset=utf-8')
+                .expect(200)
+                .end(function (err, res) {
+                  // Handle errors
+                  if (err) {
+                    return done(err);
+                  }
+                  // The user we just created should be exposed
+                  res.text.should.match(
+                    new RegExp('user = \\{.*"_id":"' + userId + '"'),
+                  );
+                  Tribe.deleteMany()
+                    .exec()
+                    .then(() => done())
+                    .catch(done);
+                });
+            });
+        })
+        .catch(done);
     });
   });
   describe('Exposing environment as a variable to layout', function () {
@@ -211,11 +211,9 @@ describe('Configuration Tests:', function () {
         (async () => {
           // Set env to development for this test
           process.env.NODE_ENV = env;
-
           // Get application
           app = await express.init(mongoose.connection);
           agent = request.agent(app);
-
           // Get rendered layout
           agent
             .get('/')

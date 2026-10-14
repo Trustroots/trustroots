@@ -24,22 +24,21 @@ export const list = (
     .select('username displayName')
     .sort('displayName username')
     .limit(500)
-    .exec((err, users) => {
-      if (err) {
+    .then(
+      users => {
+        res.send({
+          greeters: users.map(({ _id, username, displayName }) => ({
+            _id,
+            username,
+            displayName,
+          })),
+        });
+      },
+      err =>
         res.status(500).send({
           message: errorService.getErrorMessage(err),
-        });
-        return;
-      }
-
-      res.send({
-        greeters: users.map(({ _id, username, displayName }) => ({
-          _id,
-          username,
-          displayName,
-        })),
-      });
-    });
+        }),
+    );
 };
 
 const defaultInterop = { list };

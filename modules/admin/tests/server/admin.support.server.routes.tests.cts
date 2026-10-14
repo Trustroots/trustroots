@@ -188,8 +188,16 @@ describe('Support team access and investigation', () => {
     namedMembers.forEach((member: object) =>
       Object.hasOwn(member, 'score').should.equal(false),
     );
-    const originalFind = User.find;
-    sinon.stub(User, 'find').callsFake(function (this: typeof User, ...args) {
+    type FindUsers = (
+      filter?: import('mongoose').FilterQuery<
+        import('../../../../testutils/server/model-contracts.mts').UserRecord
+      >,
+    ) => ReturnType<typeof User.find>;
+    const originalFind: FindUsers = User.find;
+    sinon.stub(User, 'find').callsFake(function (
+      this: typeof User,
+      ...args: Parameters<FindUsers>
+    ) {
       const criteria = args[0];
       if (
         typeof criteria === 'object' &&
@@ -226,7 +234,10 @@ describe('Support team access and investigation', () => {
       username: `fictional-page-${index}`,
     }));
     let lookups = 0;
-    sinon.stub(User, 'find').callsFake(function (this: typeof User, ...args) {
+    sinon.stub(User, 'find').callsFake(function (
+      this: typeof User,
+      ...args: Parameters<FindUsers>
+    ) {
       lookups += 1;
       const criteria = args[0];
       if (

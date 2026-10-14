@@ -572,34 +572,34 @@ export const getUser = async (
       });
     }
 
-    const messageFromCount = await Message.find({ userFrom: userId }).count();
+    const messageFromCount = await Message.countDocuments({ userFrom: userId });
 
-    const messageToCount = await Message.find({ userTo: userId }).count();
+    const messageToCount = await Message.countDocuments({ userTo: userId });
 
-    const threadCount = await Thread.find({
+    const threadCount = await Thread.countDocuments({
       $or: [{ userFrom: userId }, { userTo: userId }],
-    }).count();
+    });
 
     // @TODO these could be compiled using aggregate grouping
-    const threadReferencesSentNo = await ReferenceThread.find({
+    const threadReferencesSentNo = await ReferenceThread.countDocuments({
       userFrom: userId,
       reference: 'no',
-    }).count();
+    });
 
-    const threadReferencesReceivedNo = await ReferenceThread.find({
+    const threadReferencesReceivedNo = await ReferenceThread.countDocuments({
       userTo: userId,
       reference: 'no',
-    }).count();
+    });
 
-    const threadReferencesReceivedYes = await ReferenceThread.find({
+    const threadReferencesReceivedYes = await ReferenceThread.countDocuments({
       userTo: userId,
       reference: 'yes',
-    }).count();
+    });
 
-    const threadReferencesSentYes = await ReferenceThread.find({
+    const threadReferencesSentYes = await ReferenceThread.countDocuments({
       userFrom: userId,
       reference: 'yes',
-    }).count();
+    });
 
     const threadReferences = await ReferenceThread.find({
       $or: [{ userFrom: userId }, { userTo: userId }],

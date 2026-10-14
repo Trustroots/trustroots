@@ -426,7 +426,7 @@ export async function send(
           upsert: true,
           new: true,
           setDefaultsOnInsert: true,
-          rawResult: true,
+          includeResultMetadata: true,
         },
       ).exec();
       message = result.value;

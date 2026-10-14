@@ -9,7 +9,7 @@ import type { PublicProviderIdentities } from '../../modules/users/shared/profil
 
 const { defaultsDeep, range, sample, sampleSize } = lodash;
 
-export type FixtureId = string | ObjectId;
+export type FixtureId = string | Pick<ObjectId, 'toString' | 'toHexString'>;
 
 /** The common identity fields shared by generated server and client users. */
 export interface UserFixture {

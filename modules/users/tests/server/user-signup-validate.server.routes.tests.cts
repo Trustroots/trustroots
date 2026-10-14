@@ -2,7 +2,6 @@ import type {
   UserModel,
   UserRecord,
 } from '../../../../testutils/server/model-contracts.mts';
-
 const should: typeof import('should') = require('should');
 const request: typeof import('supertest') = require('supertest');
 const mongoose: typeof import('mongoose') = require('mongoose');
@@ -12,7 +11,6 @@ const config: typeof import('../../../../config/config.mts').default & {
 } = require('./../../../../config/config.mts');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 const User = mongoose.model<UserRecord, UserModel>('User');
-
 /**
  * Globals
  */
@@ -25,7 +23,11 @@ interface ValidationInput {
   username?: unknown;
 }
 interface ValidationResult {
-  body: { valid: boolean; error?: string; message?: string };
+  body: {
+    valid: boolean;
+    error?: string;
+    message?: string;
+  };
 }
 function validationFailure(
   object: ValidationInput,
@@ -64,7 +66,6 @@ function validationSuccess(object: ValidationInput, done: Mocha.Done): void {
       done();
     });
 }
-
 /**
  * User routes tests
  */
@@ -100,16 +101,19 @@ describe('User signup validation CRUD tests', function () {
         password: 'TR-I$Aw3$0m4',
         provider: 'local',
       });
-      user.save(function () {
-        validationFailure(
-          {
-            username: 'takenusername',
-          },
-          'username-not-available',
-          'Username is not available.',
-          done,
-        );
-      });
+      user
+        .save()
+        .then(function () {
+          validationFailure(
+            {
+              username: 'takenusername',
+            },
+            'username-not-available',
+            'Username is not available.',
+            done,
+          );
+        })
+        .catch(done);
     });
     it('should validate taken username case-insensitively', function (done) {
       user = new User({
@@ -123,16 +127,19 @@ describe('User signup validation CRUD tests', function () {
         password: 'TR-I$Aw3$0m4',
         provider: 'local',
       });
-      user.save(function () {
-        validationFailure(
-          {
-            username: 'TAKENCASEUSERNAME',
-          },
-          'username-not-available',
-          'Username is not available.',
-          done,
-        );
-      });
+      user
+        .save()
+        .then(function () {
+          validationFailure(
+            {
+              username: 'TAKENCASEUSERNAME',
+            },
+            'username-not-available',
+            'Username is not available.',
+            done,
+          );
+        })
+        .catch(done);
     });
     it('should show an error when try to validate with not allowed username', function (done) {
       validationFailure(

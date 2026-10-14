@@ -71,6 +71,12 @@ export interface UserStatics {
 export type UserModel = Model<UserRecord, Record<string, never>, UserMethods> &
   UserStatics;
 export type UserModelDocument = HydratedDocument<UserRecord, UserMethods>;
+/** The filter/update overload used by controller and job update stubs. */
+export type UserUpdateOne = (
+  filter: import('mongoose').FilterQuery<UserRecord>,
+  update: import('mongoose').UpdateQuery<UserRecord>,
+  options?: import('mongoose').QueryOptions<UserRecord>,
+) => ReturnType<UserModel['updateOne']>;
 export type UserDocument =
   import('./data.server.testutil.mts').UserFixtureDocument;
 export type ContactDocument = HydratedDocument<ContactRecord>;
