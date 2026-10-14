@@ -22,7 +22,9 @@ public/uploads-profile/
 public/uploads-circle/
 modules/users/client/img/profile/uploads
 
-bin/admin
+bin/admin/*
+!bin/admin/*.mts
+!bin/admin/*.cts
 deploy
 migrations/archived
 public
