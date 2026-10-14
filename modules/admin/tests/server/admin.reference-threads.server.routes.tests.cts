@@ -8,13 +8,13 @@ const ReferenceThread =
     import('../../../../testutils/server/model-contracts.mts').ReferenceThreadRecord
   >('ReferenceThread');
 describe('Admin Reference thread CRUD tests', () => {
+  let app: import('../../../../testutils/server/model-contracts.mts').TestExpressApp;
+  let agent: import('../../../../testutils/server/model-contracts.mts').TestAgent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
   // Get application
-  let app: import('../../../../testutils/server/model-contracts.mts').TestExpressApp;
-  let agent: import('../../../../testutils/server/model-contracts.mts').TestAgent;
   let users: Awaited<ReturnType<typeof utils.saveUsers>>;
   let userRegular1Id: NonNullable<(typeof users)[number]['_id']>;
   let userRegular2Id: NonNullable<(typeof users)[number]['_id']>;

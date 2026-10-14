@@ -87,8 +87,9 @@ function runHandler(
         return res;
       },
     };
-    const finish = () =>
+    function finish() {
       resolve({ res, nextCalled: res._next === true, nextArg: res._nextArg });
+    }
     const next = (arg?: unknown) => {
       res._next = true;
       res._nextArg = arg;

@@ -72,12 +72,12 @@ function assertStats(stats: PublicStatistics) {
  * Statistics routes tests
  */
 describe('Statistics CRUD tests', () => {
+  let app: import('../../../../testutils/server/model-contracts.mts').TestExpressApp;
+  let agent: import('../../../../testutils/server/model-contracts.mts').TestAgent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
-  let app: import('../../../../testutils/server/model-contracts.mts').TestExpressApp;
-  let agent: import('../../../../testutils/server/model-contracts.mts').TestAgent;
   describe('Reading statistics', async () => {
     let users;
 
