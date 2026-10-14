@@ -50,8 +50,8 @@ const influxService = {
   _getClient: getClient,
 } as {
   _getClient: typeof getClient;
-  _writeMeasurement?: typeof writeMeasurement;
-  stat?: typeof stat;
+  _writeMeasurement: typeof writeMeasurement;
+  stat: typeof stat;
 };
 
 /**

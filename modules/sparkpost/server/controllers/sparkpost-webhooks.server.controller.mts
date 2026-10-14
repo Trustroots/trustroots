@@ -1,12 +1,30 @@
+import type { NextFunction, Request, Response } from 'express';
 import _ from 'lodash';
 import async from 'async';
 import basicAuth from 'basic-auth';
 import speakingurl from 'speakingurl';
 import log from './../../../../config/lib/logger.mjs';
 import errorService from './../../../core/server/services/error.server.service.mjs';
-import statService from './../../../stats/server/services/stats.server.service.mjs';
 import config from './../../../../config/config.mjs';
-const service = {};
+import statService, {
+  type StatObject,
+} from './../../../stats/server/services/stats.server.service.mts';
+
+type EventCallback = (error?: Error | null) => void;
+type SparkpostEvent = { msys?: Record<string, Record<string, unknown>> };
+
+const service = {} as {
+  receiveBatch: (req: Request, res: Response) => unknown;
+  processAndSendMetrics: (
+    event: SparkpostEvent,
+    callback: EventCallback,
+  ) => void;
+  basicAuthenticate: (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ) => unknown;
+};
 
 /**
  * This module is used to receive incoming SparkPost events
@@ -14,10 +32,6 @@ const service = {};
  * Note that `bodyParser.json()` has a default limit of 100kb.
  * If you need to process larger requets, you need to change that.
  * @link https://github.com/expressjs/body-parser#bodyparserjsonoptions
- */
-
-/**
- * Module dependencies.
  */
 
 /**
@@ -43,8 +57,7 @@ service.receiveBatch = function (req, res) {
     });
   }
 
-  // eslint-disable-next-line no-unused-vars
-  async.map(req.body, service.processAndSendMetrics, function (err) {
+  async.map(req.body, service.processAndSendMetrics, function () {
     // @TODO what should happen when writing to stats api errors?
     res.status(200).end();
   });
@@ -65,7 +78,7 @@ service.processAndSendMetrics = function (event, callback) {
     country: '',
     campaignId: '',
   };
-  const tags = {};
+  const tags: { category?: string; type?: string } = {};
 
   // Validate against these event categories
   // E.g. `{ msys: message_event: { } }`
@@ -148,7 +161,7 @@ service.processAndSendMetrics = function (event, callback) {
   if (_.isString(country) && country.length > 0 && country.length <= 3) {
     meta.country = country.replace(/\W/g, '').toUpperCase();
   }
-  const statObj = {
+  const statObj: StatObject = {
     namespace: 'transactionalEmailEvent',
     counts: {
       count: 1,

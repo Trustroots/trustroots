@@ -11,7 +11,7 @@ import errorService from '../../../core/server/services/error.server.service.mjs
 import textService from '../../../core/server/services/text.server.service.mjs';
 import spamService from '../../../core/server/services/spam.server.service.mjs';
 import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
-import statService from '../../../stats/server/services/stats.server.service.mjs';
+import statService from '../../../stats/server/services/stats.server.service.mts';
 import paginationService from '../../../core/server/services/pagination.server.service.mjs';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
 import {

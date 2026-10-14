@@ -1,10 +1,7 @@
-import sparkpost from './../controllers/sparkpost-webhooks.server.controller.mjs';
+import type { Express } from 'express';
+import sparkpost from './../controllers/sparkpost-webhooks.server.controller.mts';
 
-/**
- * Module dependencies.
- */
-
-const defaultExport = function (app) {
+const defaultExport = function (app: Express) {
   app
     .route('/api/sparkpost/webhook')
     .post(sparkpost.basicAuthenticate, sparkpost.receiveBatch);

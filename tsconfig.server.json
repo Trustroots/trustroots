@@ -14,5 +14,5 @@
     "resolveJsonModule": true,
     "types": ["node"]
   },
-  "include": ["modules/*/server/**/*.mts"]
+  "include": ["modules/*/server/**/*.mts", "config/untyped-modules.d.mts"]
 }

@@ -3,7 +3,7 @@ var _ = require('lodash'),
     moment = require('moment'),
     mongooseService = require('./../../config/lib/mongoose.mjs'),
     mongoose = require('mongoose'),
-    statsService = require('./../../modules/stats/server/services/stats.server.service.mjs');
+    statsService = require('./../../modules/stats/server/services/stats.server.service.mts');
 
 require('./../../modules/users/server/models/user.server.model.mjs');
 var User = mongoose.model('User');

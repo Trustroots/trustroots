@@ -3,7 +3,7 @@
  */
 import textService from './../../../core/server/services/text.server.service.mjs';
 import emailService from './../../../core/server/services/email.server.service.mjs';
-import statService from './../../../stats/server/services/stats.server.service.mjs';
+import statService from './../../../stats/server/services/stats.server.service.mts';
 import log from './../../../../config/lib/logger.mjs';
 import config from './../../../../config/config.mjs';
 import mongoose from 'mongoose';

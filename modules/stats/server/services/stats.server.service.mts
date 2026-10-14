@@ -22,122 +22,106 @@
  */
 
 import _ from 'lodash';
-// Use the adapter while NYC instruments native ESM through require hooks.
 import influxService from './influx.server.service.mts';
 
 /**
- * The object which stats api .stat method expects as parameter
- * @typedef {Object} StatObject
- * @property {string} namespace - the name, identifier of the stat point
- * @property {Object} [counts] - object of a shape { <count1>: number, ... }
- * We care about a sum of the numbers in statistics. At least one of counts or values must be provided.
- * @property {Object} [values] - object of a shape { <value1>: number, ... }
- * We care about an average of the numbers in statistics. At least one of counts or values must be provided.
- * @property {Object} [tags] - object of a shape { <tag1>: string|number, ... }
- * Tags separate stat points into subsets based on a limited amount of tag values
- * There should be limited amount of tags with limited amount of possible values
- * @property {Object} [meta] - object of a shape { <meta1>: string| number, ... }
- * Meta contains non-essential data, which will be saved only to some stat services
- * All string values which are not tags should go to meta.
- * @property {Date} [time] - time of the point if it is specified
+ * The object which stats api .stat method expects as parameter.
+ *
+ * At least one of counts or values must be provided. Counts are summed and
+ * values are averaged. Tags separate stat points into subsets and should have
+ * a limited amount of possible values. Meta is non-essential data that only
+ * some stat services save.
  *
  * {
  *   namespace: 'testStat',
- *   counts: {
- *     count1: 1,
- *     count2: 3
- *   },
- *   values: {
- *     value1: 3.51,
- *     value2: 7.24
- *   },
- *   tags: {
- *     tag1: 'value1',
- *     tag2: 'value2'
- *   },
- *   meta: {
- *     meta1: 'value1',
- *     meta2: 12.5
- *   },
+ *   counts: { count1: 1, count2: 3 },
+ *   values: { value1: 3.51, value2: 7.24 },
+ *   tags: { tag1: 'value1', tag2: 'value2' },
+ *   meta: { meta1: 'value1', meta2: 12.5 },
  *   time: new Date('1999-09-09 9:09:09.999')
  * }
  */
+export type StatObject = {
+  namespace: string;
+  counts?: Record<string, number>;
+  values?: Record<string, number>;
+  tags?: Record<string, string | number | undefined>;
+  meta?: Record<string, unknown>;
+  time?: Date;
+};
 
-/**
- * @callback statCallback
- * @param {Error} error
- */
+type StatCallback = (error?: Error | null) => void;
 
 /**
  * Record a simple "count" stat
- * @param {string} name - stat name
- * @param {number} [count] - stat value, default 1
- * @param {Date} [time]
- * @param {statCallback} callback - last argument (2nd, 3rd or 4th)
+ * The callback is the last argument (2nd, 3rd or 4th). Count defaults to 1.
  */
-function count(name, count, time, callback) {
+function count(
+  name: string,
+  countOrCallback?: number | StatCallback,
+  timeOrCallback?: Date | StatCallback,
+  callback?: StatCallback,
+) {
+  let count = countOrCallback;
+  let time = timeOrCallback;
+
   // make the count optional and callback as the last argument
-  if (arguments.length === 2 && _.isFunction(count)) {
+  if (arguments.length === 2 && typeof count === 'function') {
     callback = count;
     count = undefined;
   }
 
   // make the time optional and callback as the last argument
-  if (arguments.length === 3 && _.isFunction(time)) {
+  if (arguments.length === 3 && typeof time === 'function') {
     callback = time;
     time = undefined;
   }
 
-  // set the defaults
-  count = count || 1;
-  callback = callback || function () {};
-  const statObject = {
+  const statObject: StatObject = {
     namespace: name,
     counts: {
-      count,
+      count: (count as number | undefined) || 1,
     },
   };
   if (time) {
-    statObject.time = time;
+    statObject.time = time as Date;
   }
-  stat(statObject, callback);
+  stat(statObject, callback || function () {});
 }
 
 /**
  * Record a simple "value" stat
- * @param {string} name - stat name
- * @param {number} value - stat value
- * @param {Date} [time]
- * @param {statCallback} callback - last argument (3rd or 4th)
+ * The callback is the last argument (3rd or 4th).
  */
-function value(name, value, time, callback) {
+function value(
+  name: string,
+  value: number,
+  timeOrCallback?: Date | StatCallback,
+  callback?: StatCallback,
+) {
+  let time = timeOrCallback;
+
   // make the time optional
-  if (arguments.length === 3 && _.isFunction(time)) {
+  if (arguments.length === 3 && typeof time === 'function') {
     callback = time;
     time = undefined;
   }
 
-  // set default callback
-  callback = callback || function () {};
-
-  // construct and send the stat
-  const statObject = {
+  const statObject: StatObject = {
     namespace: name,
     values: {
       value,
     },
   };
-  if (time) statObject.time = time;
-  stat(statObject, callback);
+  if (time) statObject.time = time as Date;
+  stat(statObject, callback || function () {});
 }
 
 /**
  * Ensure that `stat` matches the required schema
  * An error will be thrown if stat object is invalid
- * @param {StatObject} stat - the stat object
- * @returns {void}
  */
-function validateStat(stat) {
+function validateStat(stat: StatObject) {
   // We must have a value called namespace and it must be a string
   if (!_.isString(stat.namespace)) {
     // error
@@ -159,17 +143,17 @@ function validateStat(stat) {
   // Every key in `counts`, `values`, `meta`, and `tags` must be unique
   // We fetch all the keys and then compare length of their union with
   // the sum of their lengths. If the lengths are equal, all keys are unique.
-  function areKeysUnique() {
+  function areKeysUnique(...objects: unknown[]) {
     // keys is an array of arrays of keys of all objects passed as arguments
     // to the function
-    const keys = [];
+    const keys: string[][] = [];
     let keyLength = 0;
-    for (let i = 0, len = arguments.length; i < len; i++) {
-      const currentKeys = _.keys(arguments[i]);
+    for (const object of objects) {
+      const currentKeys = _.keys(object);
       keys.push(currentKeys);
       keyLength += currentKeys.length;
     }
-    const unionKeys = _.union.apply(this, keys);
+    const unionKeys = _.union(...keys);
     return keyLength === unionKeys.length;
   }
   if (!areKeysUnique(stat.counts, stat.values, stat.meta, stat.tags)) {
@@ -246,15 +230,13 @@ stats.stat({
  * only be used one in any of the properties (`counts`, `values`, `tags`,
  * `meta`).
  *
- * @param {StatObject} stat
- * @param {statCallback} callback
  */
-function deliver(stat, callback) {
+function deliver(stat: StatObject, callback: StatCallback) {
   // validateStat will throw an error if invalid
   try {
     validateStat(stat); // Wrap in if() or make it throw depend on implementation
   } catch (err) {
-    return callback(err);
+    return callback(err as Error);
   }
 
   // You can add other stats services here
@@ -264,11 +246,11 @@ function deliver(stat, callback) {
 // Request telemetry is best effort. Background jobs can use deliver() when
 // acknowledgement matters. Cap outstanding writes during a backend outage.
 let outstandingWrites = 0;
-function stat(point, callback = function () {}) {
+function stat(point: StatObject, callback: StatCallback = function () {}) {
   try {
     validateStat(point);
   } catch (err) {
-    return callback(err);
+    return callback(err as Error);
   }
   if (outstandingWrites < 32) {
     outstandingWrites += 1;
@@ -277,7 +259,7 @@ function stat(point, callback = function () {}) {
     });
     try {
       influxService.stat(point, release);
-    } catch (err) {
+    } catch {
       release();
     }
   }

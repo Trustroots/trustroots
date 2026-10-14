@@ -87,7 +87,7 @@ function loadController({
         sendResetPassword: (profile, cb) => cb(),
         sendResetPasswordConfirm: (profile, cb) => cb(confirmEmailError),
       },
-      '../../../stats/server/services/stats.server.service': {
+      '../../../stats/server/services/stats.server.service.mts': {
         stat: (payload, cb) => {
           onStat(payload);
           cb();

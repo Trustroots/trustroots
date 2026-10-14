@@ -453,7 +453,7 @@ describe('Authentication controller OAuth unit tests', () => {
             done(overload);
           },
         },
-        '../../../stats/server/services/stats.server.service.mjs': {
+        '../../../stats/server/services/stats.server.service.mts': {
           stat: (statsObject, callback) => callback(),
         },
       });
@@ -563,7 +563,7 @@ describe('Authentication controller OAuth unit tests', () => {
             done(null);
           },
         },
-        './../../../stats/server/services/stats.server.service.mjs': {
+        './../../../stats/server/services/stats.server.service.mts': {
           stat: (statsObject, callback) => callback(),
         },
       });
@@ -605,7 +605,7 @@ describe('Authentication controller OAuth unit tests', () => {
             done({ errors: {} });
           },
         },
-        './../../../stats/server/services/stats.server.service.mjs': {
+        './../../../stats/server/services/stats.server.service.mts': {
           stat: (statsObject, callback) => {
             stats = statsObject;
             callback();

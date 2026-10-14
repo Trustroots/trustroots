@@ -7,7 +7,7 @@ const sinon = require('sinon');
 const config = require('./../../../../../config/config.mjs');
 require('./../../../../offers/server/models/offer.server.model.mjs');
 require('./../../../../users/server/models/user.server.model.mjs');
-const statsService = require('./../../../../stats/server/services/stats.server.service.mjs');
+const statsService = require('./../../../../stats/server/services/stats.server.service.mts');
 const statsJob = require('./../../../server/jobs/daily-statistics.server.job.mjs');
 
 describe('Daily Statistics Job - Unit Test', function () {

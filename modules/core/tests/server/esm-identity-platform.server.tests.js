@@ -32,8 +32,8 @@ const modules = [
   'modules/core/server/jobs/send-email.server.job.mjs',
   'modules/core/server/routes/core.server.routes.mjs',
   'modules/core/server/services/email.server.service.mjs',
-  'modules/sparkpost/server/controllers/sparkpost-webhooks.server.controller.mjs',
-  'modules/sparkpost/server/routes/sparkpost.server.routes.mjs',
+  'modules/sparkpost/server/controllers/sparkpost-webhooks.server.controller.mts',
+  'modules/sparkpost/server/routes/sparkpost.server.routes.mts',
 ];
 
 describe('ESM interoperability: identity-platform', () => {
