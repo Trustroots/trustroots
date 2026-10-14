@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { readTimings, renderTimings } = require('./ci-timings');
 
 const root = path.resolve(__dirname, '../..');
 const outputDir = path.join(root, 'coverage-report');
@@ -712,7 +713,7 @@ function formatMetadataTimestamp(isoString) {
   )} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
 }
 
-function renderReportShell(metadata, initialLanes) {
+function renderReportShell(metadata, initialLanes, timings = null) {
   const teamLinks = readJson(teamLinksConfigPath);
   const repositoryHref = teamLinks.repository.href;
   const runLink = metadata.runUrl
@@ -875,6 +876,14 @@ ${renderAnalyticsScript()}
       }
       .section-body {
         padding: 20px;
+      }
+      .ci-timings summary {
+        padding: 8px 0;
+        cursor: pointer;
+      }
+      .ci-timings td:first-child {
+        white-space: normal;
+        overflow-wrap: anywhere;
       }
       table {
         width: 100%;
@@ -1195,6 +1204,10 @@ ${renderTeamHeaderLinks(teamLinks.header)}
             <tbody id="suite-body"></tbody>
           </table>
         </div>
+      </section>
+
+      <section class="section-body ci-timings">
+        ${renderTimings(timings)}
       </section>
 
       <section id="e2e-area-section" hidden>
@@ -1984,7 +1997,10 @@ function writeReport() {
   }, {});
 
   fs.mkdirSync(outputDir, { recursive: true });
-  fs.writeFileSync(outputPath, renderReportShell(metadata, initialLanes));
+  fs.writeFileSync(
+    outputPath,
+    renderReportShell(metadata, initialLanes, readTimings(root)),
+  );
 
   for (const suiteName of selectedSuites) {
     fs.writeFileSync(

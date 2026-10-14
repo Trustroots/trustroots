@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { collectLineChanges, renderLineChanges } = require('./line-changes');
 const { renderProductionInventory } = require('./dependency-changes');
+const { readTimings, renderTimings } = require('./ci-timings');
 
 const root = path.resolve(__dirname, '../..');
 const reportDir = path.join(root, 'coverage-report');
@@ -300,6 +301,8 @@ function buildMarkdown(lanes, options = {}) {
       renderLineChanges(options.lineChanges),
       '',
       renderProductionInventory(options.productionInventory),
+      '',
+      renderTimings(options.timings),
     ].join('\n')}\n`;
   }
   const runUrl = options.runUrl || process.env.GITHUB_RUN_URL;
@@ -318,6 +321,7 @@ function buildMarkdown(lanes, options = {}) {
     details.push('', renderLineChanges(options.lineChanges));
   }
   details.push('', renderProductionInventory(options.productionInventory));
+  details.push('', renderTimings(options.timings));
 
   if (areaTable) {
     details.push('', areaTable);
@@ -326,8 +330,8 @@ function buildMarkdown(lanes, options = {}) {
   details.push(
     '',
     runUrl
-      ? `Full HTML overview: download the \`coverage-pr-summary\` artifact from [this workflow run](${runUrl}).`
-      : 'Full HTML overview: download the `coverage-pr-summary` workflow artifact.',
+      ? `Full HTML overview: download the \`coverage-report\` artifact from [this workflow run](${runUrl}).`
+      : 'Full HTML overview: download the `coverage-report` workflow artifact.',
   );
 
   return `${details.join('\n')}\n`;
@@ -337,6 +341,7 @@ function run() {
   const lanes = readLanes();
   process.stdout.write(
     buildMarkdown(lanes, {
+      timings: readTimings(root),
       includeCoverage: process.env.TRUSTROOTS_PR_INCLUDE_COVERAGE !== 'false',
       productionInventory: fs.existsSync(
         path.join(root, 'coverage/production/dependencies.json'),
