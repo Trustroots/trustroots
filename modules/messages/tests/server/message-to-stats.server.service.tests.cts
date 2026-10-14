@@ -144,7 +144,7 @@ describe('Message to stats server service Unit Tests:', function () {
     });
   });
 
-  describe('Testing statsService.process(message)', function () {
+  describe('Testing messageToStatsService.process(message)', function () {
     // here we create some example messages
     let message1to2: MessageDocument;
     let message2to1: MessageDocument;
