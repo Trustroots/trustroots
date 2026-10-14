@@ -1,9 +1,53 @@
-const assert = require('assert');
-const proxyquire = require('./../../../../testutils/server/mock-module');
+const assert: typeof import('node:assert') = require('assert');
+const proxyquire: typeof import('./../../../../testutils/server/mock-module') = require('./../../../../testutils/server/mock-module');
+type RedactionApi = {
+  redactMetadata(value: unknown): unknown;
+  safeError(error: Error): unknown;
+};
 const {
   redactMetadata,
   safeError,
-} = require('./../../../../config/lib/log-redaction.mjs');
+}: RedactionApi = require('./../../../../config/lib/log-redaction.mjs');
+
+type SafeValue =
+  | undefined
+  | null
+  | boolean
+  | number
+  | string
+  | SafeValue[]
+  | { [key: string]: SafeValue };
+type SafeRecord = { [key: string]: SafeValue };
+
+function safeValue(value: unknown): SafeValue {
+  if (value === null || value === undefined) return value;
+  if (
+    typeof value === 'boolean' ||
+    typeof value === 'number' ||
+    typeof value === 'string'
+  )
+    return value;
+  if (Array.isArray(value)) return value.map(safeValue);
+  if (typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, child]) => [key, safeValue(child)]),
+    );
+  }
+  throw new Error('Expected redacted output to contain only safe values');
+}
+
+function safeRecord(value: SafeValue): SafeRecord {
+  if (value === null || Array.isArray(value) || typeof value !== 'object') {
+    throw new Error('Expected redacted output to be an object');
+  }
+  return value;
+}
+
+function safeArray(value: SafeValue): SafeValue[] {
+  if (!Array.isArray(value))
+    throw new Error('Expected redacted output to be an array');
+  return value;
+}
 
 describe('diagnostic log redaction', () => {
   it('redacts sensitive nested fields without changing event metadata or input', () => {
@@ -21,7 +65,7 @@ describe('diagnostic log redaction', () => {
       report: '{"blocked-uri":"https://example.test/?token=private-token"}',
     };
 
-    const redacted = redactMetadata(metadata);
+    const redacted: SafeValue = safeValue(redactMetadata(metadata));
 
     assert.deepStrictEqual(redacted, {
       event: 'password-reset',
@@ -41,31 +85,37 @@ describe('diagnostic log redaction', () => {
   });
 
   it('replaces circular and over-deep metadata with safe bounded values', () => {
-    const cyclic = { event: 'cycle' };
+    const cyclic: Record<string, unknown> = { event: 'cycle' };
     cyclic.self = cyclic;
 
-    let nested = { secret: 'nested secret' };
+    let nested: Record<string, unknown> = { secret: 'nested secret' };
     for (let index = 0; index < 10; index += 1) nested = { nested };
 
-    const redacted = redactMetadata({ cyclic, nested });
-    assert.strictEqual(redacted.cyclic.self, '[Circular]');
-    let deepest = redacted.nested;
-    while (deepest && typeof deepest === 'object' && deepest.nested) {
+    const redacted = safeRecord(safeValue(redactMetadata({ cyclic, nested })));
+    assert.strictEqual(safeRecord(redacted.cyclic).self, '[Circular]');
+    let deepest: SafeValue = redacted.nested;
+    while (
+      deepest &&
+      typeof deepest === 'object' &&
+      !Array.isArray(deepest) &&
+      deepest.nested
+    ) {
       deepest = deepest.nested;
     }
     assert.strictEqual(deepest, '[Omitted: metadata depth limit]');
   });
 
   it('bounds wide objects and arrays without exposing the omitted values', () => {
-    const wideObject = {};
-    const wideArray = [];
+    const wideObject: Record<string, unknown> = {};
+    const wideArray: unknown[] = [];
     for (let index = 0; index < 1005; index += 1) {
       wideObject[`field${index}`] = `private-${index}`;
       wideArray.push(`private-${index}`);
     }
 
-    const redactedObject = redactMetadata(wideObject);
-    const redactedArray = redactMetadata(wideArray);
+    const redactedObject = safeRecord(safeValue(redactMetadata(wideObject)));
+    const redactedArray = safeValue(redactMetadata(wideArray));
+    assert(Array.isArray(redactedArray));
     assert.strictEqual(
       redactedObject['[omitted]'],
       '[Omitted: metadata entry limit]',
@@ -78,9 +128,10 @@ describe('diagnostic log redaction', () => {
   });
 
   it('omits Error messages and stacks while retaining safe classification', () => {
-    const error = new Error('recovery token: private-token');
-    error.code = 'ETIMEDOUT';
-    error.status = 503;
+    const error = Object.assign(new Error('recovery token: private-token'), {
+      code: 'ETIMEDOUT',
+      status: 503,
+    });
 
     assert.deepStrictEqual(redactMetadata({ error }), {
       error: { name: 'Error', code: 'ETIMEDOUT', status: 503 },
@@ -140,9 +191,10 @@ describe('diagnostic log redaction', () => {
       },
     );
 
-    const redacted = redactMetadata({ metadata, proxy });
-    assert.strictEqual(redacted.metadata.token, '[REDACTED]');
-    assert.strictEqual(redacted.metadata.diagnostic, '[Accessor omitted]');
+    const redacted = safeRecord(safeValue(redactMetadata({ metadata, proxy })));
+    const redactedMetadata = safeRecord(redacted.metadata);
+    assert.strictEqual(redactedMetadata.token, '[REDACTED]');
+    assert.strictEqual(redactedMetadata.diagnostic, '[Accessor omitted]');
     assert.strictEqual(redacted.proxy, '[Uninspectable]');
     assert.strictEqual(getterCalls, 0);
   });
@@ -153,7 +205,7 @@ describe('diagnostic log redaction', () => {
     const hostileLength = new Proxy([], {
       get(target, key) {
         if (key === 'length') throw new Error('hidden length');
-        return target[key];
+        return Reflect.get(target, key);
       },
     });
     const hostileIndex = new Proxy(['private'], {
@@ -169,7 +221,8 @@ describe('diagnostic log redaction', () => {
 
   it('contains failures from the binary-value classifier', () => {
     const isBuffer = Buffer.isBuffer;
-    Buffer.isBuffer = () => {
+    Buffer.isBuffer = (_value: unknown): _value is Buffer => {
+      void _value;
       throw new Error('binary classification failed');
     };
 
@@ -196,12 +249,13 @@ describe('diagnostic log redaction', () => {
       sparse,
     };
 
-    const redacted = redactMetadata(metadata);
+    const redacted = safeRecord(safeValue(redactMetadata(metadata)));
     assert.strictEqual(redacted.validDate, '2025-01-01T00:00:00.000Z');
     assert.strictEqual(redacted.invalidDate, '[Invalid Date]');
-    assert.strictEqual(redacted.sparse[0], '[Accessor omitted]');
-    assert.strictEqual(redacted.sparse[1], '[Function]');
-    assert.strictEqual(redacted.sparse[2], undefined);
+    const redactedSparse = safeArray(redacted.sparse);
+    assert.strictEqual(redactedSparse[0], '[Accessor omitted]');
+    assert.strictEqual(redactedSparse[1], '[Function]');
+    assert.strictEqual(redactedSparse[2], undefined);
   });
 
   it('copies an own __proto__ field without changing the output prototype', () => {
@@ -211,7 +265,7 @@ describe('diagnostic log redaction', () => {
       value: { password: 'private-password' },
     });
 
-    const redacted = redactMetadata(metadata);
+    const redacted = safeRecord(safeValue(redactMetadata(metadata)));
     assert.strictEqual(Object.getPrototypeOf(redacted), Object.prototype);
     assert.strictEqual(
       Object.prototype.hasOwnProperty.call(redacted, '__proto__'),
@@ -221,12 +275,12 @@ describe('diagnostic log redaction', () => {
   });
 
   it('wraps Winston without changing event strings, callbacks or return values', () => {
-    const calls = [];
-    const addCalls = [];
+    const calls: Array<{ args: unknown[]; thisValue: unknown }> = [];
+    const addCalls: unknown[][] = [];
     const papertrailConfig = { host: 'logs.example.test', port: 1234 };
     const returnValue = { accepted: true };
-    const transportConfigs = [];
-    function PapertrailTransport(options) {
+    const transportConfigs: (typeof papertrailConfig)[] = [];
+    function PapertrailTransport(options: typeof papertrailConfig) {
       transportConfigs.push(options);
     }
     const winston = {
@@ -237,15 +291,15 @@ describe('diagnostic log redaction', () => {
         simple: () => ({}),
       },
       configure() {},
-      add() {
-        addCalls.push(Array.from(arguments));
+      add(...args: unknown[]) {
+        addCalls.push(args);
       },
-      log() {
-        calls.push({ args: Array.from(arguments), thisValue: this });
+      log(this: unknown, ...args: unknown[]) {
+        calls.push({ args, thisValue: this });
         return returnValue;
       },
     };
-    const logger = proxyquire(
+    const logger: (...args: unknown[]) => unknown = proxyquire(
       require.resolve('./../../../../config/lib/logger.mjs'),
       {
         winston,
@@ -275,13 +329,14 @@ describe('diagnostic log redaction', () => {
     assert.strictEqual(result, returnValue);
     assert.strictEqual(calls.length, 1);
     assert.strictEqual(calls[0].thisValue, winston);
-    assert.strictEqual(calls[0].args[0], 'error');
-    assert.strictEqual(calls[0].args[1], 'Recovery event token=not-inspected');
-    assert.deepStrictEqual(calls[0].args[2], {
+    const loggedArgs = calls[0].args;
+    assert.strictEqual(loggedArgs[0], 'error');
+    assert.strictEqual(loggedArgs[1], 'Recovery event token=not-inspected');
+    assert.deepStrictEqual(loggedArgs[2], {
       event: 'recovery-failed',
       reset_token: '[REDACTED]',
       error: { name: 'Error', code: 'EFAIL' },
     });
-    assert.strictEqual(calls[0].args[3], callback);
+    assert.strictEqual(loggedArgs[3], callback);
   });
 });

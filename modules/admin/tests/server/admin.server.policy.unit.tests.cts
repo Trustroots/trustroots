@@ -1,27 +1,49 @@
-const sinon = require('sinon');
+const sinon: typeof import('sinon') = require('sinon');
 require('should');
+
+type PolicyModule =
+  typeof import('../../server/policies/admin.server.policy.mts');
+type AdminRequest = Parameters<PolicyModule['isAllowed']>[0];
+type MockPolicyResponse = {
+  statusCode: number;
+  body: { message: string } | null;
+  status(code: number): MockPolicyResponse;
+  send(body: { message: string }): MockPolicyResponse;
+  json(body: { message: string }): MockPolicyResponse;
+};
 
 async function loadPolicy() {
   const policy = await import('../../server/policies/admin.server.policy.mts');
   const mockAcl = policy._acl;
-  sinon.stub(mockAcl, 'allow');
-  sinon.stub(mockAcl, 'areAnyRolesAllowed');
-  return { policy, mockAcl };
+  const allow = sinon.stub(mockAcl, 'allow');
+  const areAnyRolesAllowed = sinon.stub(mockAcl, 'areAnyRolesAllowed');
+  return { policy, mockAcl, allow, areAnyRolesAllowed };
 }
 
-function mockResponse() {
-  const res = { statusCode: 200, body: null };
-  res.status = code => {
-    res.statusCode = code;
-    return res;
+function policyRequest(roles?: string[]): AdminRequest {
+  return {
+    ...(roles && { user: { roles, _id: { valueOf: () => 'test-user-id' } } }),
+    route: { path: '/api/admin/users' },
+    method: 'POST',
   };
-  res.send = body => {
-    res.body = body;
-    return res;
-  };
-  res.json = body => {
-    res.body = body;
-    return res;
+}
+
+function mockResponse(): MockPolicyResponse {
+  const res: MockPolicyResponse = {
+    statusCode: 200,
+    body: null,
+    status(code) {
+      res.statusCode = code;
+      return res;
+    },
+    send(body) {
+      res.body = body;
+      return res;
+    },
+    json(body) {
+      res.body = body;
+      return res;
+    },
   };
   return res;
 }
@@ -29,19 +51,21 @@ function mockResponse() {
 describe('Admin policy unit tests', () => {
   afterEach(() => sinon.restore());
   it('registers separate support, greeter and administrator policies', async () => {
-    const { policy, mockAcl } = await loadPolicy();
+    const { policy, allow } = await loadPolicy();
 
     policy.invokeRolesPolicies();
 
-    mockAcl.allow.calledOnce.should.be.true();
-    const policies = mockAcl.allow.firstCall.args[0];
+    allow.calledOnce.should.be.true();
+    const policies = allow.firstCall.args[0];
     policies.length.should.equal(3);
     const support = policies.shift();
+    if (!support) throw new Error('Expected the support policy');
     support.roles.should.deepEqual(['admin', 'support-team']);
     support.allows
       .map(allow => allow.resources)
       .should.containEql('/api/admin/support/:requestId/:kind');
     const welcome = policies.shift();
+    if (!welcome) throw new Error('Expected the welcome policy');
     welcome.roles.should.deepEqual(['welcome-team', 'support-team']);
     welcome.allows
       .sort((a, b) => a.resources.localeCompare(b.resources))
@@ -82,77 +106,46 @@ describe('Admin policy unit tests', () => {
   });
 
   it('calls next when ACL allows the admin request', async () => {
-    const { policy, mockAcl } = await loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, true);
+    const { policy, areAnyRolesAllowed } = await loadPolicy();
+    areAnyRolesAllowed.yields(null, true);
     const next = sinon.stub();
 
-    policy.isAllowed(
-      {
-        user: { roles: ['admin'] },
-        route: { path: '/api/admin/users' },
-        method: 'POST',
-      },
-      mockResponse(),
-      next,
-    );
+    policy.isAllowed(policyRequest(['admin']), mockResponse(), next);
 
-    mockAcl.areAnyRolesAllowed
+    areAnyRolesAllowed
       .calledWith(['admin'], '/api/admin/users', 'post')
       .should.be.true();
     next.calledOnce.should.be.true();
   });
 
   it('checks guest permissions when no user roles are present', async () => {
-    const { policy, mockAcl } = await loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, false);
+    const { policy, areAnyRolesAllowed } = await loadPolicy();
+    areAnyRolesAllowed.yields(null, false);
 
-    policy.isAllowed(
-      {
-        route: { path: '/api/admin/users' },
-        method: 'POST',
-      },
-      mockResponse(),
-      () => {},
-    );
+    policy.isAllowed(policyRequest(), mockResponse(), () => {});
 
-    mockAcl.areAnyRolesAllowed.firstCall.args[0].should.deepEqual(['guest']);
+    areAnyRolesAllowed.firstCall.args[0].should.deepEqual(['guest']);
   });
 
   it('returns 500 when authorization fails unexpectedly', async () => {
-    const { policy, mockAcl } = await loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(new Error('acl down'));
+    const { policy, areAnyRolesAllowed } = await loadPolicy();
+    areAnyRolesAllowed.yields(new Error('acl down'));
     const res = mockResponse();
 
-    policy.isAllowed(
-      {
-        user: { roles: ['admin'] },
-        route: { path: '/api/admin/users' },
-        method: 'POST',
-      },
-      res,
-      () => {},
-    );
+    policy.isAllowed(policyRequest(['admin']), res, () => {});
 
     res.statusCode.should.equal(500);
-    res.body.message.should.equal('Unexpected authorization error');
+    res.body!.message.should.equal('Unexpected authorization error');
   });
 
   it('returns 403 JSON when the user is not allowed', async () => {
-    const { policy, mockAcl } = await loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, false);
+    const { policy, areAnyRolesAllowed } = await loadPolicy();
+    areAnyRolesAllowed.yields(null, false);
     const res = mockResponse();
 
-    policy.isAllowed(
-      {
-        user: { roles: ['user'] },
-        route: { path: '/api/admin/users' },
-        method: 'POST',
-      },
-      res,
-      () => {},
-    );
+    policy.isAllowed(policyRequest(['user']), res, () => {});
 
     res.statusCode.should.equal(403);
-    res.body.message.should.equal('Forbidden.');
+    res.body!.message.should.equal('Forbidden.');
   });
 });

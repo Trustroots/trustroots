@@ -1,6 +1,5 @@
-const {
-  isProfileDeletionPending,
-} = require('../../server/services/profile-deletion.server.service.mts');
+const profileDeletion: typeof import('../../server/services/profile-deletion.server.service.mts') = require('../../server/services/profile-deletion.server.service.mts');
+const { isProfileDeletionPending } = profileDeletion;
 require('should');
 
 describe('Admin profile deletion service', () => {

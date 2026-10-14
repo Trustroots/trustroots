@@ -1,31 +1,49 @@
 /**
  * Module dependencies.
  */
-const mongoose = require('mongoose');
-const request = require('supertest');
-const express = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-require('should');
-const Tribe = mongoose.model('Tribe');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const request: typeof import('supertest') = require('supertest');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
+const should: typeof import('should') = require('should');
+type TribeRecord =
+  import('../../../../testutils/server/model-contracts.mts').TribeRecord;
+type ExpressApp = import('express').Express;
+type ExpressTestApi = {
+  init(connection: typeof mongoose.connection): Promise<ExpressApp>;
+  initModulesClientRoutes(app: { use(...handlers: unknown[]): unknown }): void;
+  denyAvatarStagingRequests(
+    req: { path: string },
+    res: { statusCode?: number; sendStatus(status: number): unknown },
+    next: () => void,
+  ): unknown;
+};
+const express: ExpressTestApi = require('./../../../../config/lib/express.mjs');
+const Tribe = mongoose.model<TribeRecord>('Tribe');
 
 /**
  * Globals
  */
-let app;
-let agent;
-let user;
-let userId;
-let credentials;
+let app: ExpressApp;
+let agent: ReturnType<typeof request.agent>;
+let user: ReturnType<typeof utils.createTestUser>;
+let userId: string | import('mongoose').Types.ObjectId;
+let credentials: { username: string; password: string };
 describe('Configuration Tests:', function () {
   describe('avatar staging static-file guard', function () {
     it('denies staging paths before public static middleware', function () {
-      const middleware = [];
+      const middleware: unknown[][] = [];
       express.initModulesClientRoutes({
         use: (...args) => middleware.push(args),
       });
-      middleware[0][0].should.equal(express.denyAvatarStagingRequests);
-      const res = {
-        sendStatus: status => {
+      should(middleware[0]?.[0]).equal(express.denyAvatarStagingRequests);
+      const res: {
+        statusCode?: number;
+        sendStatus(status: number): {
+          statusCode?: number;
+          sendStatus(status: number): unknown;
+        };
+      } = {
+        sendStatus(status: number) {
           res.statusCode = status;
           return res;
         },
@@ -40,7 +58,7 @@ describe('Configuration Tests:', function () {
           nextCalled = true;
         },
       );
-      res.statusCode.should.equal(404);
+      should(res.statusCode).equal(404);
       nextCalled.should.be.false();
     });
     it('allows ordinary static paths through the staging guard', function () {
