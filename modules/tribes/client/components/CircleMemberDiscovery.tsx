@@ -87,6 +87,8 @@ export default function CircleMemberDiscovery({ circle, user }: Props) {
 
   useEffect(() => {
     let isMounted = true;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    let finishRetryWait = () => {};
     setIsLoading(true);
     setHasError(false);
     setSections(EMPTY_SECTIONS);
@@ -97,10 +99,11 @@ export default function CircleMemberDiscovery({ circle, user }: Props) {
         try {
           groups = await tribesApi.listMembers(circle.slug);
         } catch (error) {
-          if (!isTransientError(error)) throw error;
-          await new Promise(resolve =>
-            setTimeout(resolve, TRANSIENT_RETRY_DELAY_MS),
-          );
+          if (!isMounted || !isTransientError(error)) throw error;
+          await new Promise<void>(resolve => {
+            finishRetryWait = resolve;
+            retryTimer = setTimeout(resolve, TRANSIENT_RETRY_DELAY_MS);
+          });
           if (!isMounted) return;
           groups = await tribesApi.listMembers(circle.slug);
         }
@@ -115,6 +118,8 @@ export default function CircleMemberDiscovery({ circle, user }: Props) {
     void loadMembers();
     return () => {
       isMounted = false;
+      clearTimeout(retryTimer);
+      finishRetryWait();
     };
   }, [circle.slug, user._id, attempt]);
 

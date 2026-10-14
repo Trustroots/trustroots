@@ -28,10 +28,17 @@ export default function NavigationMenuItem({
       })}
       {...rest}
       onClick={event => {
-        // Pointer navigation can retain link focus after the route changes.
-        // Release it so moving away closes the menu; preserve keyboard focus.
+        // Pointer navigation can retain focus inside the menu after the route
+        // changes. Release it so moving away closes the menu, including when
+        // the click lands on padding rather than a link. Preserve keyboard focus.
         if (submenu && event.detail > 0) {
-          (event.target as Element).closest<HTMLAnchorElement>('a')?.blur();
+          const focused = document.activeElement;
+          if (
+            focused instanceof HTMLElement &&
+            event.currentTarget.contains(focused)
+          ) {
+            focused.blur();
+          }
         }
         onClick?.(event);
       }}

@@ -273,6 +273,7 @@ describe('<CircleMemberDiscovery />', () => {
           user={user}
         />,
       );
+      expect(jest.getTimerCount()).toBe(0);
       await act(async () => {
         await Promise.resolve();
         await jest.advanceTimersByTimeAsync(250);
@@ -301,6 +302,7 @@ describe('<CircleMemberDiscovery />', () => {
         await Promise.resolve();
       });
       unmount();
+      expect(jest.getTimerCount()).toBe(0);
       await act(async () => {
         await jest.advanceTimersByTimeAsync(250);
       });

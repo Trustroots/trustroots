@@ -32,7 +32,7 @@ describe('navigation menu helpers', () => {
     },
   );
 
-  it('preserves keyboard focus in a dropdown and handles clicks outside its links', () => {
+  it('preserves keyboard focus and releases pointer focus anywhere in a dropdown', () => {
     const { container } = render(
       <NavigationMenuItem
         currentPath="/"
@@ -47,7 +47,7 @@ describe('navigation menu helpers', () => {
     fireEvent.click(link, { detail: 0 });
     expect(link).toHaveFocus();
     fireEvent.click(container.firstChild as Element, { detail: 1 });
-    expect(link).toHaveFocus();
+    expect(link).not.toHaveFocus();
   });
 
   it('preserves pointer focus for navigation items without a submenu', () => {
