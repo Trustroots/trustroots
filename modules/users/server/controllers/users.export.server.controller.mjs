@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import contacts from './../../../contacts/server/controllers/contacts.server.controller.mjs';
-import { prepareOfferPayload } from './../../../offers/server/services/offer-payload.server.service.mjs';
+import { prepareOfferPayload } from './../../../offers/server/services/offer-payload.server.service.mts';
 import profiles from './users.profile.server.controller.mjs';
 const service = {};
 const EXPORT_USERNAME = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/;
@@ -179,6 +179,12 @@ service.writtenExperiences = writtenExperiences;
 service.memberOffers = memberOffers;
 const defaultExport = service;
 export default defaultExport;
-export { buildExportFilename };
+export {
+  buildExportFilename,
+  circlesFromProfile,
+  writtenMessages,
+  writtenExperiences,
+  memberOffers,
+};
 export const download = defaultExport.download;
 export { defaultExport as 'module.exports' };

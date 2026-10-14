@@ -1,4 +1,5 @@
 const sinon: typeof import('sinon') = require('sinon');
+const assert: typeof import('node:assert/strict') = require('node:assert/strict');
 require('should');
 
 const path: typeof import('node:path') = require('node:path');
@@ -84,28 +85,31 @@ function loadController({
   messages = [],
   experiences = [],
   offers = [],
+  offersError,
 }: {
   profile: Middleware;
   contacts: Middleware;
   messages?: ExportRecord[];
   experiences?: ExportRecord[];
   offers?: ExportRecord[];
+  offersError?: Error;
 }): typeof controller {
   sinon.stub(profilesService, 'userByUsername').callsFake(profile);
   sinon.stub(contactsService, 'contactListByUser').callsFake(contacts);
   sinon.stub(controller, 'writtenMessages').resolves(messages);
   sinon.stub(controller, 'writtenExperiences').resolves(experiences);
-  sinon.stub(controller, 'memberOffers').resolves(offers);
+  const offersStub = sinon.stub(controller, 'memberOffers').resolves(offers);
+  if (offersError) offersStub.rejects(offersError);
   return controller;
 }
 
 interface TestQuery {
-  query: ReturnType<ReturnType<typeof mongoose.model>['find']>;
+  query: ReturnType<import('mongoose').Model<ExportRecord>['find']>;
   sort: import('sinon').SinonStub;
   populate: import('sinon').SinonStub;
 }
 function resolvableQuery(
-  model: ReturnType<typeof mongoose.model>,
+  model: import('mongoose').Model<ExportRecord>,
   result: ExportRecord[],
 ): TestQuery {
   const query = model.find({});
@@ -162,7 +166,7 @@ describe('Member data export controller', () => {
   it('returns the current member’s sanitised profile, contacts, and offers', async () => {
     sinon.useFakeTimers(exportedAt);
     const profile: Middleware = (req, _res, next, username) => {
-      username.should.equal(user.username);
+      assert.equal(username, user.username);
       req.profile = {
         username,
         displayName: 'Member Example',
@@ -177,7 +181,7 @@ describe('Member data export controller', () => {
       next();
     };
     const contacts: Middleware = (req, _res, next, userId) => {
-      userId.should.equal(user._id);
+      assert.equal(userId, user._id);
       req.contacts = [{ displayName: 'Contact Example' }];
       next();
     };
@@ -199,7 +203,9 @@ describe('Member data export controller', () => {
     await controller.download({ user: { ...user } }, response, sinon.stub());
 
     response.contentType!.should.equal('application/json');
-    response.filename!.should.equal('trustroots-data-member-20261014-0931.json');
+    response.filename!.should.equal(
+      'trustroots-data-member-20261014-0931.json',
+    );
     responseBody(response).should.containEql({
       format: 'trustroots-data-export',
       version: 1,
@@ -278,7 +284,9 @@ describe('Member data export controller', () => {
       sinon.stub(),
     );
 
-    missingUsername.filename!.should.equal('trustroots-data-20261014-0931.json');
+    missingUsername.filename!.should.equal(
+      'trustroots-data-20261014-0931.json',
+    );
   });
 
   it('returns empty lists when the member has no extra records', async () => {
@@ -322,7 +330,7 @@ describe('Member data export controller', () => {
   });
 
   it('exports messages and experiences the member wrote', async () => {
-    const messageModel = mongoose.model('Message');
+    const messageModel = mongoose.model<ExportRecord>('Message');
     const messageQuery = resolvableQuery(messageModel, [
       {
         _id: 'message-1',
@@ -345,7 +353,7 @@ describe('Member data export controller', () => {
         userTo: 'recipient-2',
       },
     ]);
-    const experienceModel = mongoose.model('Experience');
+    const experienceModel = mongoose.model<ExportRecord>('Experience');
     const experienceQuery = resolvableQuery(experienceModel, [
       {
         _id: 'experience-1',
@@ -375,8 +383,8 @@ describe('Member data export controller', () => {
     const messages = await controller.writtenMessages(user._id);
     const experiences = await controller.writtenExperiences(user._id);
 
-    findMessages.calledWith({ userFrom: user._id }).should.be.true();
-    findExperiences.calledWith({ userFrom: user._id }).should.be.true();
+    assert.deepEqual(findMessages.firstCall.args[0], { userFrom: user._id });
+    assert.deepEqual(findExperiences.firstCall.args[0], { userFrom: user._id });
     messageQuery.sort.calledWith({ created: 1 }).should.be.true();
     messageQuery.populate
       .calledWith('userTo', 'username displayName')
@@ -424,7 +432,7 @@ describe('Member data export controller', () => {
   });
 
   it('exports every stored offer, including expired ones', async () => {
-    const offerModel = mongoose.model('Offer');
+    const offerModel = mongoose.model<ExportRecord>('Offer');
     const offerQuery = resolvableQuery(offerModel, [
       {
         _id: 'offer-1',
@@ -477,9 +485,8 @@ describe('Member data export controller', () => {
     const controller = loadController({
       profile: (req, res, callback) => callback(),
       contacts: (req, res, callback) => callback(),
+      offersError: error,
     });
-    sinon.stub(controller, 'memberOffers').restore();
-    sinon.stub(controller, 'memberOffers').rejects(error);
 
     await controller.download({ user: { ...user } }, mockResponse(), next);
 

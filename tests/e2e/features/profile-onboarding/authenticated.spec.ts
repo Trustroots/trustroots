@@ -137,6 +137,9 @@ test.describe('authenticated member flows', () => {
       'The export has format and version metadata plus profile, circles, contacts, hosting offer, message, and experience sections.',
     ]);
 
+    if (!authenticatedMember)
+      throw new Error('Expected authenticated member fixture');
+
     const response = await page.request.get('/api/users/export');
 
     expect(response.ok()).toBe(true);
