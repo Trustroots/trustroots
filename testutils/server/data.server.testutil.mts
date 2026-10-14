@@ -60,18 +60,25 @@ type UserFixtureData = Omit<ServerUserFixture, 'roles' | 'languages'> &
   UserFixtureExtraFields;
 type CachedUserFixtureData = ServerUserFixture &
   UserFixtureExtraFields & { salt?: string };
-type ExperienceFixtureDocument = HydratedDocument<ExperienceFixture> &
-  Pick<ExperienceFixture, 'interactions'> & {
-    _id: mongoose.Types.ObjectId;
-  };
+type ExperienceFixtureDocument = Omit<
+  HydratedDocument<ExperienceFixture>,
+  '_id'
+> &
+  Pick<ExperienceFixture, 'interactions'> & { _id: mongoose.Types.ObjectId };
+function asSavedExperienceDocument(
+  document: HydratedDocument<ExperienceFixture>,
+): ExperienceFixtureDocument {
+  // The Experience schema persists ObjectId IDs and keeps fixture interactions on the document.
+  return document as unknown as ExperienceFixtureDocument;
+}
 export type UserFixtureDocument = HydratedDocument<
   CachedUserFixtureData,
-  UserFixtureMethods
+  UserFixtureMethods & { _id: mongoose.Types.ObjectId }
 >;
 type UserFixtureModel = Model<
   CachedUserFixtureData,
   Record<string, never>,
-  UserFixtureMethods
+  UserFixtureMethods & { _id: mongoose.Types.ObjectId }
 > &
   UserFixtureStatics;
 
@@ -245,7 +252,7 @@ export async function saveExperiences(
       'Experience',
       documents,
     );
-    const experiences = savedDocuments as ExperienceFixtureDocument[];
+    const experiences = savedDocuments.map(asSavedExperienceDocument);
     callback(null, experiences);
     return experiences;
   } catch (error: unknown) {

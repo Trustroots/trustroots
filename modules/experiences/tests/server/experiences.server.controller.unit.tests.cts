@@ -82,6 +82,8 @@ describe('Experiences controller unit tests', () => {
             userTo: target._id.toString(),
             recommend: 'yes',
           },
+          query: {},
+          params: {},
         },
         res,
         () => {},
@@ -108,7 +110,12 @@ describe('Experiences controller unit tests', () => {
 
       const res = deferredResponse<{ count: number }>();
       experiencesController.getCount(
-        { user: viewer, query: { userTo: target._id.toString() } },
+        {
+          user: viewer,
+          body: {},
+          query: { userTo: target._id.toString() },
+          params: {},
+        },
         res,
         () => {},
       );
@@ -133,7 +140,7 @@ describe('Experiences controller unit tests', () => {
 
       const res = deferredResponse<{ count: number; hasPending: boolean }>();
       experiencesController.getCount(
-        { user, query: { userTo: user._id.toString() } },
+        { user, body: {}, query: { userTo: user._id.toString() }, params: {} },
         res,
         () => {},
       );
@@ -153,11 +160,19 @@ describe('Experiences controller unit tests', () => {
         },
       } as unknown as ReturnType<typeof Experience.aggregate>);
 
-      const nextArg = await new Promise<Error>(resolve => {
+      const nextArg = await new Promise<Error>((resolve, reject) => {
         experiencesController.getCount(
-          { user, query: { userTo: user._id.toString() } },
+          {
+            user,
+            body: {},
+            query: { userTo: user._id.toString() },
+            params: {},
+          },
           deferredResponse(),
-          (err: Error) => resolve(err),
+          (err: unknown) => {
+            if (err instanceof Error) resolve(err);
+            else reject(new Error('Expected an Error from next'));
+          },
         );
       });
 
@@ -178,7 +193,7 @@ describe('Experiences controller unit tests', () => {
       const res = deferredResponse();
 
       await experiencesController.getSuggestion(
-        { user: { _id: selfId } },
+        { user: { _id: selfId }, body: {}, query: {}, params: {} },
         res,
         () => {},
       );
@@ -200,11 +215,14 @@ describe('Experiences controller unit tests', () => {
         exec: () => Promise.reject(error),
       } as unknown as ReturnType<typeof Experience.distinct>);
 
-      const nextArg = await new Promise<Error>(resolve => {
+      const nextArg = await new Promise<Error>((resolve, reject) => {
         experiencesController.getSuggestion(
-          { user },
+          { user, body: {}, query: {}, params: {} },
           deferredResponse(),
-          (err: Error) => resolve(err),
+          (err: unknown) => {
+            if (err instanceof Error) resolve(err);
+            else reject(new Error('Expected an Error from next'));
+          },
         );
       });
 

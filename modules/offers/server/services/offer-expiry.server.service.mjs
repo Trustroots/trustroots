@@ -4,7 +4,7 @@ import moment from 'moment';
  * Normalise an offer expiry using the rules shared by offer creation and updates.
  *
  * @param {String} type - Offer type ("host" or "meet")
- * @param {Date|String} validUntil - Date object or date string supplied by the user
+ * @param {unknown} validUntil - Date input supplied by the request and interpreted by moment
  * @param {Object|Number} maxValidFromNow - Maximum age accepted for an expiry
  * @param {Date|String|Number} now - Current time used for range checks and fallback
  * @returns {Date|undefined} The normalised expiry, or undefined for host offers

@@ -23,7 +23,7 @@ const emailService: typeof import('./../../../core/server/services/email.server.
 interface ControllerResponseBody extends Record<string, unknown> {
   confirmed?: boolean;
   message?: string;
-  _id?: string;
+  _id?: string | import('mongoose').Types.ObjectId;
 }
 
 interface MockControllerResponse {
@@ -40,7 +40,9 @@ type ContactRequestEntry = { user: { _id: UserDocument['_id'] } };
 
 type TestCallbackQuery = {
   populate(...args: string[]): TestCallbackQuery;
-  exec(callback: (error: unknown, result?: unknown) => void): TestCallbackQuery;
+  exec(
+    callback?: (error: unknown, result?: unknown) => void,
+  ): TestCallbackQuery | Promise<unknown>;
 };
 
 function callbackQuery(error: unknown, result?: unknown): TestCallbackQuery {
@@ -49,8 +51,11 @@ function callbackQuery(error: unknown, result?: unknown): TestCallbackQuery {
       return query;
     },
     exec(callback) {
-      callback(error, result);
-      return query;
+      if (callback) {
+        callback(error, result);
+        return query;
+      }
+      return error ? Promise.reject(error) : Promise.resolve(result);
     },
   };
   return query;
@@ -272,6 +277,27 @@ describe('Contacts controller unit tests', () => {
       });
       contacts.length.should.equal(0);
     });
+
+    it('preserves the email failure when contact cleanup also fails', async () => {
+      sinon
+        .stub(emailService, 'sendConfirmContact')
+        .callsArgWith(5, new Error('mail failed'));
+      sinon.stub(Contact.prototype, 'remove').returns(
+        Promise.resolve().then(() => {
+          throw new Error('cleanup failed');
+        }) as ReturnType<typeof Contact.prototype.remove>,
+      );
+
+      const { res } = await runHandler(res =>
+        contactsController.add(
+          { user: user1, body: { friendUserId: user2._id.toString() } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+      const contacts = await Contact.find({ userFrom: user1._id });
+      contacts.length.should.equal(1);
+    });
   });
 
   describe('confirm', () => {
@@ -309,8 +335,8 @@ describe('Contacts controller unit tests', () => {
         'userTo userFrom',
       );
 
-      const failSave = (callback: (error: Error) => void) => {
-        callback(new Error('save failed'));
+      const failSave = () => {
+        return Promise.reject(new Error('save failed'));
       };
       sinon
         .stub(Contact.prototype, 'save')
@@ -334,6 +360,20 @@ describe('Contacts controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         contactsController.confirm({ user: user2, contact: populated }, res),
+      );
+      res.statusCode.should.equal(200);
+      res.body.confirmed!.should.be.true();
+    });
+
+    it('confirms an unpopulated contact using its ObjectId fields', async () => {
+      const contact = await new Contact({
+        userFrom: user1._id,
+        userTo: user2._id,
+        confirmed: false,
+      }).save();
+
+      const { res } = await runHandler(res =>
+        contactsController.confirm({ user: user2, contact }, res),
       );
       res.statusCode.should.equal(200);
       res.body.confirmed!.should.be.true();
@@ -385,21 +425,50 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('allows callers to omit the callback', () => {
-      const deleteMany = sinon.stub(Contact, 'deleteMany');
-      deleteMany.yields();
+      type DeleteManyQuery = Pick<
+        ReturnType<typeof Contact.deleteMany>,
+        'exec'
+      >;
+      const model = Contact as unknown as {
+        deleteMany: () => DeleteManyQuery;
+      };
+      const deleteMany = sinon.stub(model, 'deleteMany');
+      deleteMany.returns({
+        exec: () => Promise.resolve({ acknowledged: true, deletedCount: 0 }),
+      });
 
       contactsController.removeAllByUserId(user1._id);
 
       deleteMany.calledOnce.should.be.true();
     });
+
+    it('passes delete errors to the callback', done => {
+      type DeleteManyQuery = Pick<
+        ReturnType<typeof Contact.deleteMany>,
+        'exec'
+      >;
+      const model = Contact as unknown as {
+        deleteMany: () => DeleteManyQuery;
+      };
+      sinon.stub(model, 'deleteMany').returns({
+        exec: () => Promise.reject(new Error('delete failed')),
+      });
+
+      contactsController.removeAllByUserId(user1._id, (error: unknown) => {
+        if (!(error instanceof Error)) throw new Error('Expected delete error');
+        error.message.should.equal('delete failed');
+        done();
+      });
+    });
   });
 
   describe('list and get', () => {
     it('returns the contacts list', async () => {
+      const contacts = [{ user: { _id: new mongoose.Types.ObjectId() } }];
       const { res } = await runHandler(res =>
-        contactsController.list({ contacts: [{ a: 1 }] }, res),
+        contactsController.list({ contacts }, res),
       );
-      res.body.should.deepEqual([{ a: 1 }]);
+      res.body.should.deepEqual(contacts);
     });
 
     it('returns an empty object when no contacts list was loaded', async () => {
@@ -408,10 +477,14 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('returns a single contact', async () => {
+      const contact = new Contact({
+        userFrom: user1._id,
+        userTo: user2._id,
+      });
       const { res } = await runHandler(res =>
-        contactsController.get({ contact: { _id: 'x' } }, res),
+        contactsController.get({ contact }, res),
       );
-      res.body._id!.should.equal('x');
+      res.body._id!.should.equal(contact._id);
     });
 
     it('returns an empty object when no single contact was loaded', async () => {
@@ -614,6 +687,13 @@ describe('Contacts controller unit tests', () => {
   });
 
   describe('filterByCommon', () => {
+    it('calls next when contacts have not been attached', async () => {
+      const { nextCalled } = await runHandler((res, next) =>
+        contactsController.filterByCommon({ user: user1 }, res, next),
+      );
+      nextCalled.should.be.true();
+    });
+
     it('calls next when there are no contacts to filter', async () => {
       const req: { user: UserDocument; contacts: ContactRequestEntry[] } = {
         user: user1,

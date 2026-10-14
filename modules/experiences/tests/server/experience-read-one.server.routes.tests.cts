@@ -112,10 +112,14 @@ describe('Read a single experience by experience id', () => {
         .split(' ')
         .slice(2)
         .filter(field => field !== 'avatarVersion');
-      const userFromExp = _.pick(users[1], userFields);
-      userFromExp._id = users[1]._id.toString();
-      const userToExp = _.pick(users[2], userFields);
-      userToExp._id = users[2]._id.toString();
+      const userFromExp = {
+        ..._.pick(users[1], userFields),
+        _id: users[1]._id.toString(),
+      };
+      const userToExp = {
+        ..._.pick(users[2], userFields),
+        _id: users[2]._id.toString(),
+      };
       should(body).eql({
         public: true,
         userFrom: userFromExp,

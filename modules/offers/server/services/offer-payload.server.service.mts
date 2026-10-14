@@ -7,6 +7,20 @@ import type {
   UpdateOfferRequest,
 } from '../../shared/offer.js';
 
+const offerUpdateFields = [
+  'status',
+  'description',
+  'noOfferDescription',
+  'maxGuests',
+  'location',
+  'validUntil',
+  'showOnlyInMyCircles',
+] as const;
+
+export type OfferUpdateInput = Partial<
+  Record<(typeof offerUpdateFields)[number], unknown>
+>;
+
 /** Pick only the fields exposed by the offer read endpoints. */
 export function prepareOfferPayload<Id, Timestamp>(
   offer: OfferPayload<Id, Timestamp>,
@@ -51,6 +65,24 @@ export function prepareOfferUpdate(
       ? {}
       : { showOnlyInMyCircles: body.showOnlyInMyCircles }),
   };
+}
+
+/** Pick writable fields from an unvalidated HTTP body for Mongoose casting. */
+export function prepareOfferUpdateInput(
+  body: Record<string, unknown>,
+): OfferUpdateInput {
+  const update: OfferUpdateInput = {};
+  for (const field of offerUpdateFields) {
+    if (body[field] !== undefined) update[field] = body[field];
+  }
+  return update;
+}
+
+/** Preserve the legacy create path, passing raw writable values to Mongoose. */
+export function prepareNewOfferInput(
+  body: Record<string, unknown>,
+): OfferUpdateInput & { type?: unknown } {
+  return { ...prepareOfferUpdateInput(body), type: body.type };
 }
 
 /** Select writable fields from a create request, including its required type. */

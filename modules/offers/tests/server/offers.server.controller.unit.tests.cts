@@ -7,6 +7,7 @@ import type {
   UserModel,
   UserRecord,
 } from '../../../../testutils/server/model-contracts.mts';
+import type { OfferPayload } from '../../shared/offer.js';
 /**
  * Unit tests for the offers controller guard, validation, middleware and error
  * branches that the route tests do not exercise. Handlers are invoked directly
@@ -237,6 +238,17 @@ describe('Offers controller unit tests', () => {
       res.body.message.should.equal('Offer saved.');
     });
 
+    it('rejects coordinates that cannot be converted to numbers', async () => {
+      const { res } = await runHandler(res =>
+        offersController.create(
+          { user: owner, body: { type: 'host', location: [10, {}] } },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(400);
+    });
+
     it('creates a meet offer with a valid validUntil', async () => {
       const validUntil = require('moment')().add(5, 'days').toISOString();
       const { res } = await runHandler(res =>
@@ -249,6 +261,23 @@ describe('Offers controller unit tests', () => {
         ),
       );
       res.statusCode.should.equal(200);
+    });
+
+    it('preserves numeric moment-compatible expiry input', async () => {
+      const validUntil = Date.now() + 5 * 24 * 60 * 60 * 1000;
+      const { res } = await runHandler(res =>
+        offersController.create(
+          {
+            user: owner,
+            body: { type: 'meet', location: [10, 20], validUntil },
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      const offer = required(await Offer.findOne({ user: owner._id }));
+      required(offer.validUntil).getTime().should.equal(validUntil);
     });
 
     it('defaults meet offer expiry when max validity config is absent', async () => {
@@ -391,6 +420,51 @@ describe('Offers controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       res.body.message.should.equal('Offer updated.');
+    });
+
+    it('updates the optional offer fields accepted by the endpoint', async () => {
+      const validUntil = require('moment')().add(5, 'days').toISOString();
+      const { res } = await runHandler(res =>
+        offersController.update(
+          {
+            user: owner,
+            offer: offerReq,
+            body: {
+              location: [1, 2],
+              status: 'yes',
+              description: 'A fictional offer.',
+              noOfferDescription: 'A fictional note.',
+              maxGuests: 3,
+              validUntil,
+              showOnlyInMyCircles: true,
+            },
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      const updated = required(await Offer.findById(offerReq._id));
+      required(updated.status).should.equal('yes');
+      required(updated.description).should.equal('A fictional offer.');
+      required(updated.noOfferDescription).should.equal('A fictional note.');
+      required(updated.maxGuests).should.equal(3);
+      required(updated.showOnlyInMyCircles).should.be.true();
+    });
+
+    it('preserves model validation for an unsupported status value', async () => {
+      const { res } = await runHandler(res =>
+        offersController.update(
+          {
+            user: owner,
+            offer: offerReq,
+            body: { location: [1, 2], status: 'invalid' },
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(400);
     });
 
     it('defaults validUntil when updating a meet offer with invalid input', async () => {
@@ -597,6 +671,18 @@ describe('Offers controller unit tests', () => {
       res.body.message.should.equal('Could not parse filters.');
     });
 
+    it('accepts a JSON array as an empty filter object', async () => {
+      const { res } = await runHandler(res =>
+        offersController.list(
+          { user: owner, query: { ...validCoords, filters: '[]' } },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      res.body.should.deepEqual({ type: 'FeatureCollection', features: [] });
+    });
+
     it('rejects invalid tribe ids in filters', async () => {
       const { res } = await runHandler(res =>
         offersController.list(
@@ -648,6 +734,23 @@ describe('Offers controller unit tests', () => {
                 languages: ['eng'],
                 seen: { days: 30 },
               }),
+            },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      res.body.type.should.equal('FeatureCollection');
+    });
+
+    it('keeps legacy array handling for object filters', async () => {
+      const { res } = await runHandler(res =>
+        offersController.list(
+          {
+            user: owner,
+            query: {
+              ...validCoords,
+              filters: JSON.stringify({ seen: [] }),
             },
           },
           res,
@@ -927,16 +1030,8 @@ describe('Offers controller unit tests', () => {
       );
       offerReq.user.member = [{ tribe: new mongoose.Types.ObjectId() }];
 
-      const populate = sinon.stub(
-        User,
-        'populate',
-      ) as unknown as import('sinon').SinonStub<
-        [UserRecord, unknown, (error: Error | null, user?: UserRecord) => void],
-        void
-      >;
-      populate.callsFake((_doc, _options, cb) =>
-        cb(new Error('populate failed')),
-      );
+      const populate = sinon.stub(User, 'populate');
+      populate.rejects(new Error('populate failed'));
 
       const { res } = await runHandler(res =>
         offersController.getOffer({ user: owner, offer: offerReq }, res),
@@ -1000,10 +1095,19 @@ describe('Offers controller unit tests', () => {
 
   describe('listOffersByUser', () => {
     it('returns the offers attached to the request', async () => {
+      const attachedOffer: OfferPayload<
+        import('mongoose').Types.ObjectId,
+        Date
+      > = {
+        _id: new mongoose.Types.ObjectId(),
+        type: 'host',
+        user: owner._id,
+        location: [1, 2],
+      };
       const { res } = await runHandler(res =>
-        offersController.listOffersByUser({ offers: [{ a: 1 }] }, res),
+        offersController.listOffersByUser({ offers: [attachedOffer] }, res),
       );
-      res.body.should.deepEqual([{ a: 1 }]);
+      res.body.should.deepEqual([attachedOffer]);
     });
 
     it('returns an empty list when no offers are attached to the request', async () => {
@@ -1054,6 +1158,30 @@ describe('Offers controller unit tests', () => {
         ),
       );
       nextCalled.should.be.true();
+    });
+
+    it('ignores requested types when schema enum values are unavailable', async () => {
+      await createOffer(owner._id, { type: 'host' });
+      const ownerDoc = required(await User.findById(owner._id));
+      const typePath = Offer.schema.path(
+        'type',
+      ) as import('mongoose').SchemaType & { enumValues?: string[] };
+      const enumValues = typePath.enumValues;
+      typePath.enumValues = undefined;
+
+      try {
+        const { nextCalled } = await runHandler((res, next) =>
+          offersController.offersByUserId(
+            { user: ownerDoc, query: { types: 'host' } },
+            res,
+            next,
+            owner._id.toString(),
+          ),
+        );
+        nextCalled.should.be.true();
+      } finally {
+        typePath.enumValues = enumValues;
+      }
     });
 
     it('ignores invalid requested types', async () => {
@@ -1203,7 +1331,7 @@ describe('Offers controller unit tests', () => {
     it('removes offers without error', done => {
       offersController.removeAllByUserId(
         new mongoose.Types.ObjectId(),
-        (err: Error | null) => {
+        (err?: Error | null) => {
           (err === null || err === undefined).should.be.true();
           done();
         },
