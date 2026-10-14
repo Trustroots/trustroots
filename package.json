@@ -21,7 +21,7 @@
     "check:links": "node scripts/ci/check-internal-links.mjs",
     "test:links": "node --test scripts/ci/check-internal-links.test.mjs",
     "agenda-maintenance": "node ./bin/db-maintenance/archive-done-agenda-jobs.mjs",
-    "build": "pnpm run clean:public && pnpm run build:generate-circle-images && pnpm run build:webpack",
+    "build": "pnpm run clean:public && pnpm run build:generate-circle-images && pnpm run build:vite",
     "build:generate-circle-images": "NODE_ENV=production pnpm run generate-circle-images",
     "build:webpack": "NODE_ENV=production pnpm run webpack",
     "cleanup:historical-spam": "node ./bin/db-maintenance/purge-historical-spam-accounts.mjs",

@@ -12,7 +12,6 @@ every day is not the path CI verifies.
   development server and set `TRUSTROOTS_VITE_DEV_SERVER` so Express renders
   the Vite client.
 - `pnpm start:webpack` keeps the previous Webpack development server.
-- `pnpm build` and production images keep Webpack.
 - The Vite development server listens on the same `config.host` value Webpack
   uses.
 
@@ -24,5 +23,5 @@ every day is not the path CI verifies.
 
 ## Compatibility and deployment
 
-No member-facing behaviour, stored data, or API changes. Production deployment
-is unchanged because `pnpm build` still runs Webpack. No data migration.
+No member-facing behaviour, stored data, or API changes. This change does not
+by itself switch the production image. No data migration.

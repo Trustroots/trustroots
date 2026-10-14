@@ -34,7 +34,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
   pnpm install --frozen-lockfile
 
 # Copy code into the container
-COPY .prettierrc.json .prettierignore eslint.config.cjs babel.config.* server.js server.mjs worker.js worker.mjs ./
+COPY .prettierrc.json .prettierignore eslint.config.cjs babel.config.* tsconfig.json vite.config.mjs server.js server.mjs worker.js worker.mjs ./
 COPY bin bin
 COPY config config
 COPY migrations migrations
@@ -46,7 +46,7 @@ COPY testutils testutils
 RUN pnpm run build
 
 # The builder needs the full toolchain, but the published image only needs
-# runtime dependencies. Prune after the build so Webpack and other build tools
+# runtime dependencies. Prune after the build so Vite and other build tools
 # remain available while assets are generated.
 RUN pnpm prune --prod --ignore-scripts
 

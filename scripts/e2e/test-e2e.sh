@@ -41,12 +41,10 @@ if [ "${CI:-}" = "true" ]; then
   mkdir -p "$HOME" "$npm_config_cache" "$XDG_CACHE_HOME" "$PLAYWRIGHT_BROWSERS_PATH"
 fi
 
+# Local and CI runs build the Vite client once. Set this to true to serve the
+# Webpack development server instead.
 if [ -z "${TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER:-}" ]; then
-  if [ "${CI:-}" = "true" ]; then
-    export TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=false
-  else
-    export TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=true
-  fi
+  export TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=false
 fi
 
 write_status() {

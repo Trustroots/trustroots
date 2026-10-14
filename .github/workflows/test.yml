@@ -212,7 +212,7 @@ jobs:
             -e CI=true \
             -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
             dev pnpm run test:vite:rtl
-      - name: Build opt-in Vite assets
+      - name: Build Vite client assets
         working-directory: deploy/docker
         run: |
           docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \

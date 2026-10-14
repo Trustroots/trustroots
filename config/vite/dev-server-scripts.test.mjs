@@ -14,9 +14,10 @@ test('the default development server is Vite', () => {
   assert.equal(scripts['start:vite'], 'pnpm run start');
 });
 
-test('Webpack remains the production build and an explicit development server', () => {
+test('Webpack remains an explicit development server and production fallback', () => {
   assert.match(scripts['start:webpack'], /pnpm:webpack:server/);
   assert.doesNotMatch(scripts['start:webpack'], /VITE/);
-  assert.match(scripts.build, /build:webpack/);
+  assert.match(scripts.build, /build:vite/);
+  assert.doesNotMatch(scripts.build, /build:webpack/);
   assert.match(scripts['build:webpack'], /pnpm run webpack/);
 });

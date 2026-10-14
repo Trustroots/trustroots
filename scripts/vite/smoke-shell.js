@@ -6,6 +6,41 @@ const { chromium } = require('@playwright/test');
 const express = require('express');
 const expressConfig = require('../../config/lib/express.mjs');
 
+const routes = [
+  ['/', 'heading', /How does it work/],
+  ['/about', 'heading', /How does it work/],
+  ['/contact', 'heading', /Trustroots Support/],
+  ['/contribute', 'heading', /Support Trustroots/],
+  ['/faq', 'heading', /Frequently Asked Questions/],
+  ['/faq/bugs-and-features', 'heading', /Frequently Asked Questions/],
+  ['/faq/circles', 'heading', /Frequently Asked Questions/],
+  ['/faq/foundation', 'heading', /Frequently Asked Questions/],
+  ['/faq/technology', 'heading', /Frequently Asked Questions/],
+  ['/foundation', 'heading', /Trustroots Foundation/],
+  ['/guide', 'heading', /Trustroots Guide/],
+  ['/media', 'exact', 'in Media'],
+  ['/rules', 'heading', /^Rules$/],
+  ['/statistics', 'heading', /Trustroots Statistics/],
+  ['/support', 'heading', /Trustroots Support/],
+  ['/team', 'heading', /Trustroots Team/],
+  ['/team/greeters', 'heading', /Trustroots greeters/],
+  ['/volunteering', 'heading', /^Volunteering$/],
+  ['/circles', 'heading', /Discover circles/],
+  ['/privacy', 'heading', /^Privacy$/],
+  ['/safety', 'heading', /Safety Tips for Trustroots/],
+  ['/not-found', 'heading', /This page cannot be found/],
+  ['/signin', 'button', /^Login$/],
+  ['/signup', 'heading', /Join Trustroots/],
+  ['/password/forgot', 'heading', /Restore your password/],
+  ['/password/reset/invalid', 'heading', /Password reset is invalid/],
+  ['/password/reset/success', 'heading', /Password successfully reset/],
+  [
+    '/confirm-email-invalid',
+    'text',
+    /Email confirm token is invalid or has expired/,
+  ],
+];
+
 async function main() {
   const development = process.env.NODE_ENV === 'development';
   assert.ok(development || process.env.NODE_ENV === 'production');
@@ -22,18 +57,14 @@ async function main() {
   app.get('/api/volunteers', (_req, res) => {
     res.json({ alumni: [], volunteers: [] });
   });
+  app.get('/api/greeters', (_req, res) => {
+    res.json({ greeters: [] });
+  });
+  app.get('/api/statistics', (_req, res) => {
+    res.json({});
+  });
   app.get(
-    [
-      '/signin',
-      '/signup',
-      '/password/forgot',
-      '/safety',
-      '/faq',
-      '/support',
-      '/circles',
-      '/privacy',
-      '/team',
-    ],
+    routes.map(([route]) => route),
     (_req, res) => {
       res.render('react-index.server.view.html', {
         user: null,
@@ -41,6 +72,17 @@ async function main() {
       });
     },
   );
+  // Client redirects such as /offer -> /offer/host request a new document.
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || req.path.startsWith('/api/')) {
+      next();
+      return;
+    }
+    res.render('react-index.server.view.html', {
+      user: null,
+      nonce: 'vite-smoke',
+    });
+  });
 
   const server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');
@@ -71,24 +113,20 @@ async function main() {
       ? '/assets/config/vite/react-main.tsx'
       : '/assets/react-main.js';
 
-    for (const [route, role, name] of [
-      ['/signin', 'button', /^Login$/],
-      ['/signup', 'heading', /Join Trustroots/],
-      ['/password/forgot', 'heading', /Restore your password/],
-      ['/safety', 'heading', /Safety Tips for Trustroots/],
-      ['/faq', 'heading', /Frequently Asked Questions/],
-      ['/support', 'heading', /Trustroots Support/],
-      ['/circles', 'heading', /Discover circles/],
-      ['/privacy', 'heading', /^Privacy$/],
-      ['/team', 'heading', /Trustroots Team/],
-    ]) {
+    for (const [route, role, name] of routes) {
       const script = page.waitForResponse(
         response => new URL(response.url()).pathname === scriptPath,
       );
       await page.goto(baseURL + route);
       assert.ok([200, 304].includes((await script).status()));
+      const locator =
+        role === 'exact'
+          ? page.getByText(name, { exact: true })
+          : role === 'text'
+            ? page.getByText(name)
+            : page.getByRole(role, { name });
       try {
-        await page.getByRole(role, { name }).waitFor({ timeout: 10000 });
+        await locator.waitFor({ timeout: 10000 });
       } catch (error) {
         console.error({
           route,
