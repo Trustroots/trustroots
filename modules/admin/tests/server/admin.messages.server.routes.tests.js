@@ -152,39 +152,28 @@ describe('Admin Message CRUD tests', () => {
             });
         });
     });
-    it('admin users should be allowed to read messages', done => {
-      agent
-        .post('/api/auth/signin')
-        .send(credentialsAdmin)
-        .expect(200)
-        .end(signinErr => {
-          if (signinErr) {
-            return done(signinErr);
-          }
-          agent
-            .post('/api/admin/messages')
-            .send({
-              user1: userRegular1Id,
-              user2: userRegular2Id,
-            })
-            .expect(200)
-            .end((err, res) => {
-              res.body.messages.length.should.equal(2);
-              res.body.messages[0].userFrom.username.should.equal(
-                'userregular1',
-              );
-              res.body.messages[0].userTo.username.should.equal('userregular2');
-              res.body.referenceThreads.length.should.equal(1);
-              res.body.referenceThreads[0].reference.should.equal('yes');
-              res.body.referenceThreads[0].userFrom.username.should.equal(
-                'userregular1',
-              );
-              res.body.referenceThreads[0].userTo.username.should.equal(
-                'userregular2',
-              );
-              return done(err);
-            });
-        });
+    it('admin users should be allowed to read messages', async () => {
+      await utils.signIn(credentialsAdmin, agent);
+      await new Message({
+        content: 'unrelated conversation',
+        created: new Date('2026-06-01T09:00:00.000Z'),
+        userFrom: userAdmin._id,
+        userTo: userRegular1Id,
+      }).save();
+      const { body } = await agent
+        .post('/api/admin/messages')
+        .send({
+          user1: userRegular1Id,
+          user2: userRegular2Id,
+        })
+        .expect(200);
+      body.messages.length.should.equal(2);
+      body.messages[0].userFrom.username.should.equal('userregular1');
+      body.messages[0].userTo.username.should.equal('userregular2');
+      body.referenceThreads.length.should.equal(1);
+      body.referenceThreads[0].reference.should.equal('yes');
+      body.referenceThreads[0].userFrom.username.should.equal('userregular1');
+      body.referenceThreads[0].userTo.username.should.equal('userregular2');
     });
   });
   describe('Warn scammer recipients', () => {

@@ -145,7 +145,9 @@ test('triages a report and reads its whole conversation and unpublished experien
   await waitFor(() =>
     expect(load).toHaveBeenCalledWith('/api/admin/support?status=open&page=2'),
   );
-  fireEvent.click(screen.getAllByRole('button', { name: 'Previous' })[0]);
+  fireEvent.click(
+    (await screen.findAllByRole('button', { name: 'Previous' }))[0],
+  );
   fireEvent.change(screen.getByLabelText('Status'), {
     target: { value: 'resolved' },
   });

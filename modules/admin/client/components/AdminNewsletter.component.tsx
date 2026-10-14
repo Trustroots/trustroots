@@ -18,6 +18,7 @@ import {
   type NewsletterAudienceCriteria,
 } from '../api/newsletter.api';
 import AdminHeader from './AdminHeader.component';
+import { getErrorMessage } from '@/modules/core/client/api/http-client';
 import { newsletterAudienceFilename } from '../utils/newsletter-audience-filename';
 import { read as readCircles } from '@/modules/tribes/client/api/tribes.api';
 
@@ -104,15 +105,6 @@ function isAudienceCriteriaReady(criteria: NewsletterAudienceCriteria) {
   return true;
 }
 
-function audienceError(error: unknown, fallback: string) {
-  if (typeof error === 'object' && error !== null && 'response' in error) {
-    const response = error.response as
-      { data?: { message?: string } } | undefined;
-    return response?.data?.message || fallback;
-  }
-  return fallback;
-}
-
 export default function AdminNewsletter() {
   const [audienceCount, setAudienceCount] = useState<number | null>(null);
   const [audienceErrorMessage, setAudienceErrorMessage] = useState<
@@ -183,7 +175,10 @@ export default function AdminNewsletter() {
         if (audiencePreviewRequestId.current === requestId) {
           setAudienceCount(null);
           setAudienceErrorMessage(
-            audienceError(error, 'Could not preview this newsletter audience.'),
+            getErrorMessage(
+              error,
+              'Could not preview this newsletter audience.',
+            ),
           );
         }
       } finally {
@@ -255,7 +250,7 @@ export default function AdminNewsletter() {
       );
     } catch (error) {
       setAudienceErrorMessage(
-        audienceError(error, 'Could not export this newsletter audience.'),
+        getErrorMessage(error, 'Could not export this newsletter audience.'),
       );
     }
   }
@@ -276,7 +271,7 @@ export default function AdminNewsletter() {
         await splitNewsletterSubscribers(selectedFile);
       setResult(splitResult);
     } catch (error) {
-      const message = audienceError(
+      const message = getErrorMessage(
         error,
         'Could not split newsletter subscribers from this recipient file.',
       );
@@ -303,7 +298,7 @@ export default function AdminNewsletter() {
       triggerCsvDownload(ALL_SUBSCRIBERS_FILE_NAME, csv);
     } catch (error) {
       setExportErrorMessage(
-        audienceError(error, 'Could not export newsletter subscribers.'),
+        getErrorMessage(error, 'Could not export newsletter subscribers.'),
       );
     } finally {
       setIsExportingAll(false);
@@ -330,7 +325,7 @@ export default function AdminNewsletter() {
       );
     } catch (error) {
       setExportErrorMessage(
-        audienceError(
+        getErrorMessage(
           error,
           'Could not export newsletter subscribers for this circle.',
         ),

@@ -1,6 +1,7 @@
 import { AxiosHeaders, type AxiosAdapter } from 'axios';
 
 import httpClient, {
+  getErrorMessage,
   getErrorResponse,
 } from '@/modules/core/client/api/http-client';
 
@@ -129,5 +130,27 @@ describe('shared module HTTP client', () => {
 
     expect(getErrorResponse(error)).toBe(response);
     expect(getErrorResponse(new Error('No response'))).toBeUndefined();
+  });
+
+  it('uses an API response message or the caller fallback', () => {
+    expect(
+      getErrorMessage(
+        { response: { data: { message: 'Request rejected.' } } },
+        'Request failed.',
+      ),
+    ).toBe('Request rejected.');
+    expect(getErrorMessage({}, 'Request failed.')).toBe('Request failed.');
+    expect(getErrorMessage({ response: {} }, 'Request failed.')).toBe(
+      'Request failed.',
+    );
+    expect(
+      getErrorMessage(
+        { response: { data: { message: '' } } },
+        'Request failed.',
+      ),
+    ).toBe('Request failed.');
+    expect(getErrorMessage(new Error('Network issue'), 'Request failed.')).toBe(
+      'Request failed.',
+    );
   });
 });

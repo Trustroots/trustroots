@@ -576,6 +576,30 @@ describe('Admin users controller unit tests', () => {
   });
 
   describe('findPotentialMatches', () => {
+    it('normalises usernames and email local parts in label order', async () => {
+      const { getAdminIdentityIdentifiers, getUniqueAdminIdentityIdentifiers } =
+        await import('../../server/services/admin-identity.server.service.mts');
+
+      getAdminIdentityIdentifiers({
+        email: 'Case.Name+tag@example.test',
+        emailTemporary: 'Other-Name@example.test',
+        username: 'Case.Name',
+      }).should.deepEqual([
+        { label: 'Username identifier', value: 'casename' },
+        { label: 'Email identifier', value: 'casenametag' },
+        { label: 'Temporary email identifier', value: 'othername' },
+      ]);
+
+      getUniqueAdminIdentityIdentifiers(
+        {
+          email: 'case-name@example.test',
+          emailTemporary: 'Other@example.test',
+          username: 'Case.Name',
+        },
+        8,
+      ).should.deepEqual([{ label: 'Username identifier', value: 'casename' }]);
+    });
+
     it('returns no leads when every available identifier is too short', async () => {
       const matches = await adminUsers.findPotentialMatches({
         _id: new mongoose.Types.ObjectId(),

@@ -6,18 +6,7 @@ import {
   type LocationCorrectionOffer,
 } from '../api/location-corrections.api';
 import AdminHeader from './AdminHeader.component';
-
-interface SendErrorResponse {
-  status?: number;
-  data?: { message?: string };
-}
-
-function getErrorResponse(error: unknown): SendErrorResponse | undefined {
-  if (typeof error !== 'object' || error === null || !('response' in error)) {
-    return undefined;
-  }
-  return error.response as SendErrorResponse | undefined;
-}
+import { getErrorResponse } from '@/modules/core/client/api/http-client';
 
 function offerEditUrl(offer: LocationCorrectionOffer): string {
   return offer.type === 'host' ? '/offer/host' : `/offer/meet/${offer._id}`;

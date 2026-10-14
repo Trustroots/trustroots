@@ -13,6 +13,7 @@ import {
   getScammerRecipients,
   sendScammerWarning,
 } from '../api/messages.api';
+import { getErrorMessage } from '@/modules/core/client/api/http-client';
 import { searchUsers } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
 import AdminReferenceVoteItem from './AdminReferenceVoteItem.component';
@@ -57,15 +58,6 @@ interface WarningAttempt {
 interface MessagesResponse {
   messages: AdminMessage[];
   referenceThreads?: ReferenceThread[];
-}
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  if (typeof error === 'object' && error !== null && 'response' in error) {
-    const response = error.response as
-      { data?: { message?: string } } | undefined;
-    return response?.data?.message || fallback;
-  }
-  return fallback;
 }
 
 export default function AdminMessages() {

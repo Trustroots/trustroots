@@ -22,4 +22,9 @@ export function getErrorResponse(error: unknown): AxiosResponse | undefined {
   return (error as { response?: AxiosResponse }).response;
 }
 
+export function getErrorMessage(error: unknown, fallback: string): string {
+  const response = getErrorResponse(error);
+  return response?.data?.message || fallback;
+}
+
 export default httpClient;
