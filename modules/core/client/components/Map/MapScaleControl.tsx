@@ -8,7 +8,13 @@ import './map-scale-control.less';
 export default function MapScaleControl() {
   return (
     <div className="map-scale-control-container">
-      <ScaleControl />
+      <ScaleControl
+        captureClick
+        captureDoubleClick
+        captureDrag
+        maxWidth={100}
+        unit="metric"
+      />
     </div>
   );
 }
