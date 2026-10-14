@@ -17,6 +17,10 @@ This repository uses pnpm (the version is pinned in `packageManager`) and Node 2
 This project is under active development again (no longer in maintenance mode),
 so improvements, refactors, and cleanups are welcome where they add value.
 
+Use tables for overviews when they make information easier to compare, with
+coloured status dots where useful. Include text labels so meaning does not
+depend on colour alone.
+
 Use OpenSpec for new functionality, breaking behaviour changes, and material
 architectural changes. Create and validate a proposal in `openspec/changes/`
 before implementation, then archive it and update the relevant living specs in
