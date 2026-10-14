@@ -22,24 +22,61 @@ const localeDirs = process.argv.slice(2).length
   : readdirSync(LOCALES_ROOT).filter(
       d => d !== 'en' && statSync(join(LOCALES_ROOT, d)).isDirectory(),
     );
-function extractPlaceholders(str) {
+interface PlaceholderIssue {
+  locale: string;
+  component: string;
+  type: 'placeholder-mismatch' | 'tag-mismatch';
+  key: string;
+  expected: string;
+  got: string;
+  value: string;
+}
+
+interface TripleBraceIssue {
+  locale: string;
+  component: string;
+  type: 'triple-brace';
+  key: string;
+  value: string;
+}
+
+type PlaceholderCheckIssue = PlaceholderIssue | TripleBraceIssue;
+
+function extractPlaceholders(str: string): string {
   const matches = str.match(/\{\{[^}]+\}\}/g);
   return matches ? [...matches].sort().join(',') : '';
 }
-function extractTags(str) {
+function extractTags(str: string): string {
   const matches = str.match(/<\/?\d+>/g);
   return matches ? [...matches].sort().join(',') : '';
 }
-function loadJson(path) {
-  return JSON.parse(readFileSync(path, 'utf8'));
+function loadJson(filePath: string): Record<string, unknown> {
+  const parsed: unknown = JSON.parse(readFileSync(filePath, 'utf8'));
+  if (parsed === null) {
+    throw new TypeError('Cannot convert undefined or null to object');
+  }
+  return Object(parsed);
 }
-function checkFile(locale, component, enData, localeData) {
-  const issues = [];
+function checkFile(
+  locale: string,
+  component: string,
+  enData: Record<string, unknown>,
+  localeData: Record<string, unknown>,
+): PlaceholderCheckIssue[] {
+  const issues: Array<
+    | Omit<PlaceholderIssue, 'locale' | 'component'>
+    | Omit<TripleBraceIssue, 'locale' | 'component'>
+  > = [];
   for (const key of Object.keys(localeData)) {
     const value = localeData[key];
     if (typeof value !== 'string' || value === '') continue;
     const enValue = enData[key];
     if (enValue === undefined) continue;
+    if (typeof enValue !== 'string') {
+      throw new TypeError(
+        `Expected an English string for translation key ${key}`,
+      );
+    }
     if (/\}\}\}/.test(value) || /\{\{\{/.test(value)) {
       issues.push({
         type: 'triple-brace',
@@ -77,7 +114,7 @@ function checkFile(locale, component, enData, localeData) {
     ...i,
   }));
 }
-let allIssues = [];
+let allIssues: PlaceholderCheckIssue[] = [];
 for (const locale of localeDirs) {
   const localePath = join(LOCALES_ROOT, locale);
   let files;

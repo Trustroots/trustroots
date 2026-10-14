@@ -11,7 +11,7 @@ if (!fs.existsSync(config.uploadDir)) {
     {
       recursive: true,
     },
-    err => {
+    (err: NodeJS.ErrnoException | null) => {
       if (err) {
         console.error(err);
       }

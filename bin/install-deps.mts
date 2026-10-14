@@ -26,10 +26,12 @@ if (!fs.existsSync('node_modules')) {
    */
   const needsInstall = () => {
     try {
-      const lockfileTime = fs.statSync('pnpm-lock.yaml').mtime;
-      const nodeModulesTime = fs.statSync('node_modules/.modules.yaml').mtime;
+      const lockfileTime = fs.statSync('pnpm-lock.yaml').mtime.getTime();
+      const nodeModulesTime = fs
+        .statSync('node_modules/.modules.yaml')
+        .mtime.getTime();
       return lockfileTime - nodeModulesTime > 1000; // In Windows, directory mtime has less precision than file mtime
-    } catch (e) {
+    } catch {
       return true;
     }
   };
