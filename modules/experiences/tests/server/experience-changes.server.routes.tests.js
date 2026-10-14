@@ -144,6 +144,8 @@ describe('Experience change requests', () => {
       .expect(200);
     queue.body.should.have.length(1);
     queue.body[0].proposed.feedbackPublic.should.equal(proposed.feedbackPublic);
+    queue.body[0].experience.userFrom.username.should.equal(author.username);
+    queue.body[0].experience.userTo.username.should.equal(recipient.username);
 
     await adminAgent
       .post(
@@ -151,6 +153,33 @@ describe('Experience change requests', () => {
       )
       .send({ decision: 'approve' })
       .expect(200);
+
+    const reviewed = await adminAgent
+      .get('/api/admin/experience-change-requests')
+      .expect(200);
+    reviewed.body.should.have.length(1);
+    reviewed.body[0].status.should.equal('approved');
+    reviewed.body[0].experience.userFrom.username.should.equal(author.username);
+    reviewed.body[0].experience.userTo.username.should.equal(
+      recipient.username,
+    );
+
+    await ExperienceChangeRequest.updateOne(
+      { _id: submitted.body._id },
+      {
+        $set: {
+          reviewedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+        },
+      },
+    );
+    const agedOut = await adminAgent
+      .get('/api/admin/experience-change-requests')
+      .expect(200);
+    agedOut.body.should.deepEqual([]);
+    await ExperienceChangeRequest.updateOne(
+      { _id: submitted.body._id },
+      { $set: { reviewedAt: new Date() } },
+    );
 
     const approved = await Experience.findById(experience._id).lean();
     approved.feedbackPublic.should.equal(proposed.feedbackPublic);

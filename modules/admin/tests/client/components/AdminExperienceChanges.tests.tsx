@@ -37,7 +37,7 @@ function editRequest(
   return {
     _id: 'request-1',
     requester: { _id: 'author-1', displayName: 'Fictional Author' },
-    experience: { ...experience, userFrom: 'author-1', userTo: 'recipient-1' },
+    experience,
     status: 'pending',
     kind: 'edit',
     proposed: {
@@ -80,7 +80,25 @@ it('finds an Experience and creates a link for the selected member', async () =>
 it('shows a pending request and records an admin decision', async () => {
   apiMock.listRequests
     .mockResolvedValueOnce([editRequest()])
-    .mockResolvedValueOnce([]);
+    .mockResolvedValueOnce([
+      editRequest({
+        status: 'approved',
+        experience: {
+          ...experience,
+          userFrom: {
+            _id: 'author-1',
+            displayName: 'Fictional Author',
+            username: 'fictional-author',
+          },
+          userTo: {
+            _id: 'recipient-1',
+            displayName: 'Fictional Recipient',
+            username: 'fictional-recipient',
+          },
+          feedbackPublic: 'Revised Experience',
+        },
+      }),
+    ]);
   apiMock.decide.mockResolvedValueOnce({
     _id: 'request-1',
     status: 'approved',
@@ -88,6 +106,14 @@ it('shows a pending request and records an admin decision', async () => {
   render(<AdminExperienceChanges />);
 
   expect(await screen.findByText(/Revised Experience/)).toBeInTheDocument();
+  expect(
+    screen.getByText(
+      (_, element) =>
+        element?.tagName === 'P' &&
+        element.textContent ===
+          'Fictional Author wrote about Fictional Recipient (public).',
+    ),
+  ).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
   await waitFor(() =>
     expect(apiMock.decide).toHaveBeenCalledWith('request-1', 'approve'),
@@ -95,6 +121,16 @@ it('shows a pending request and records an admin decision', async () => {
   expect(
     await screen.findByText('No requests awaiting review.'),
   ).toBeInTheDocument();
+  expect(screen.getByText('Approved')).toBeInTheDocument();
+  expect(
+    screen.getByRole('link', { name: 'Fictional Author' }),
+  ).toHaveAttribute('href', '/profile/fictional-author/experiences');
+  expect(
+    screen.getByRole('link', { name: 'Fictional Recipient' }),
+  ).toHaveAttribute('href', '/profile/fictional-recipient/experiences');
+  expect(
+    screen.queryByRole('button', { name: 'Approve' }),
+  ).not.toBeInTheDocument();
 });
 
 it('shows unpublished Experiences and creates a link for the profile owner', async () => {
@@ -211,6 +247,11 @@ it('copies an issued link and shows empty proposed feedback', async () => {
   });
   apiMock.listRequests.mockResolvedValue([
     editRequest({
+      experience: {
+        ...experience,
+        userFrom: 'author-1',
+        userTo: 'recipient-1',
+      },
       proposed: {
         recommend: 'unknown',
         interactions: { met: false, guest: false, host: false },

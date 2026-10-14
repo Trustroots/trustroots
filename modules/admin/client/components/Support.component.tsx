@@ -290,19 +290,23 @@ function MemberSearch() {
   const [members, setMembers] = useState<SupportMember[]>([]);
   const [failed, setFailed] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [pending, setPending] = useState(false);
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setFailed(false);
+    setSearched(false);
     setMembers([]);
+    setPending(true);
     try {
-      setMembers(
-        await api.load<SupportMember[]>(
-          `/api/admin/support-members?search=${encodeURIComponent(search)}`,
-        ),
+      const results = await api.load<SupportMember[]>(
+        `/api/admin/support-members?search=${encodeURIComponent(search)}`,
       );
+      setMembers(Array.isArray(results) ? results : []);
       setSearched(true);
     } catch {
       setFailed(true);
+    } finally {
+      setPending(false);
     }
   }
   return (
@@ -322,10 +326,11 @@ function MemberSearch() {
           required
           onChange={event => setSearch(event.target.value)}
         />
-        <button className="btn btn-default" type="submit">
+        <button className="btn btn-default" type="submit" disabled={pending}>
           Search members
         </button>
       </form>
+      {pending && <p role="status">Searching…</p>}
       {failed && <ResourceState failed />}
       {searched && members.length === 0 && !failed && <p>No members found.</p>}
       <ul>
@@ -399,6 +404,7 @@ export default function SupportInbox() {
             system.
           </p>
         </header>
+        <MemberSearch />
         <div className="support-inbox__layout">
           <div className="support-inbox__sidebar">
             <section
@@ -497,7 +503,6 @@ export default function SupportInbox() {
                 </>
               )}
             </section>
-            <MemberSearch />
           </div>
           <div className="support-inbox__detail">
             {selected ? (

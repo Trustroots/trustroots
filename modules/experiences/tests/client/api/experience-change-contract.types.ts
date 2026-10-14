@@ -75,8 +75,8 @@ function checkExperienceChangeContracts(id: Types.ObjectId) {
       created: new Date(),
       public: true,
       recommend: 'yes',
-      // @ts-expect-error Queue member references remain unpopulated ObjectIds.
-      userFrom: { _id: id },
+      // @ts-expect-error Populated queue members retain native ObjectIds.
+      userFrom: { _id: 'not-an-object-id' },
       userTo: id,
     },
     status: 'pending',

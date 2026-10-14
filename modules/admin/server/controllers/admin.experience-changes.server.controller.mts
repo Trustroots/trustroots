@@ -70,17 +70,14 @@ type ChangeRequestRecord =
     })
   | (ChangeRequestBase & { kind: 'remove'; proposed?: never });
 
-interface ExperienceWithQueuedReferences extends ExperienceRecord {
-  userFrom: Types.ObjectId;
-  userTo: Types.ObjectId;
-}
+type ExperienceWithQueuedReferences = ExperienceWithPopulatedMembers;
 
-/** Active requests are pending or processing; only edit requests have proposals. */
+/** The queue includes active requests and recently approved edits. */
 type PopulatedChangeRequestRecord =
   | (Omit<ChangeRequestBase, 'experience' | 'requester' | 'status'> & {
       kind: 'edit';
-      status: 'pending' | 'processing';
-      active: true;
+      status: 'pending' | 'processing' | 'approved';
+      active: boolean;
       proposed: AdminExperienceChangeProposal;
       experience: ExperienceWithQueuedReferences | null;
       requester: UserRecord | null;
@@ -128,6 +125,7 @@ const ExperienceChangeRequest = mongoose.model<ChangeRequestRecord>(
 );
 const User = mongoose.model<UserRecord>('User');
 const active = { removedAt: { $exists: false } };
+const APPROVED_EDIT_VISIBILITY_MS = 7 * 24 * 60 * 60 * 1000;
 
 function isId(value: unknown): value is IdInput {
   return mongoose.Types.ObjectId.isValid(
@@ -250,12 +248,27 @@ const listRequests: Handler<
   AdminExperienceChangeRequest<Types.ObjectId, Date>[]
 > = async (_request, response, next) => {
   try {
-    const requests = await ExperienceChangeRequest.find({ active: true })
-      .sort({ createdAt: 1 })
+    const requests = await ExperienceChangeRequest.find({
+      $or: [
+        { active: true },
+        {
+          kind: 'edit',
+          status: 'approved',
+          reviewedAt: {
+            $gte: new Date(Date.now() - APPROVED_EDIT_VISIBILITY_MS),
+          },
+        },
+      ],
+    })
+      .sort({ reviewedAt: -1, createdAt: 1 })
       .limit(100)
-      .populate<{ experience: ExperienceWithQueuedReferences | null }>(
-        'experience',
-      )
+      .populate<{ experience: ExperienceWithQueuedReferences | null }>({
+        path: 'experience',
+        populate: [
+          { path: 'userFrom', select: 'username displayName' },
+          { path: 'userTo', select: 'username displayName' },
+        ],
+      })
       .populate<{ requester: UserRecord | null }>(
         'requester',
         'username displayName',
