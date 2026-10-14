@@ -62,6 +62,31 @@ describe('navigation menu helpers', () => {
     expect(link).toHaveFocus();
   });
 
+  it('does not blur an element outside a dropdown after a pointer click', () => {
+    render(
+      <>
+        <input aria-label="Outside navigation" />
+        <NavigationMenuItem
+          currentPath="/"
+          path="/search"
+          submenu={<a href="/search/members">Find member</a>}
+        >
+          Search
+        </NavigationMenuItem>
+      </>,
+    );
+    const outsideInput = screen.getByRole('textbox', {
+      name: 'Outside navigation',
+    });
+    outsideInput.focus();
+
+    fireEvent.click(screen.getByRole('link', { name: 'Search', exact: true }), {
+      detail: 1,
+    });
+
+    expect(outsideInput).toHaveFocus();
+  });
+
   it('marks the current navigation item as active and forwards link attributes', () => {
     const { container } = render(
       <NavigationMenuItem
