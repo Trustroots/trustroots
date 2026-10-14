@@ -7,7 +7,7 @@ const {
   preparePreviewMessageResponse,
   prepareThreadSummary,
   prepareUnreadMessageCount,
-} = require('../../server/services/messages-payload.server.service.mjs');
+} = require('../../server/services/messages-payload.server.service.mts');
 
 describe('Message API payload construction', () => {
   it('selects only validated send fields and the authenticated sender', () => {

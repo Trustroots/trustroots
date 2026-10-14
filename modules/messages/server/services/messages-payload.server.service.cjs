@@ -1,5 +1,5 @@
-// Load through CommonJS so NYC instruments the native ESM implementation.
-const implementation = require('./messages-payload.server.service.mjs');
+// Keep synchronous CommonJS access to the native TypeScript implementation.
+const implementation = require('./messages-payload.server.service.mts');
 exports.prepareNewMessageFields = implementation.prepareNewMessageFields;
 exports.prepareMessageForClient = implementation.prepareMessageForClient;
 exports.prepareThreadSummary = implementation.prepareThreadSummary;

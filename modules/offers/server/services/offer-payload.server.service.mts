@@ -1,12 +1,16 @@
-/**
- * Pick only the fields exposed by the offer read endpoints.
- * Sanitisation and owner-versus-viewer location selection happen before this
- * projection in the controller.
- * @template Id, Timestamp
- * @param {import('../../shared/offer.js').OfferPayload<Id, Timestamp>} offer
- * @returns {import('../../shared/offer.js').OfferPayload<Id, Timestamp>}
- */
-export function prepareOfferPayload(offer) {
+import type {
+  CreateOfferRequest,
+  OfferMutationResponse,
+  OfferPayload,
+  OfferSearchAggregationFeature,
+  OfferSearchFeatureCollection,
+  UpdateOfferRequest,
+} from '../../shared/offer.js';
+
+/** Pick only the fields exposed by the offer read endpoints. */
+export function prepareOfferPayload<Id, Timestamp>(
+  offer: OfferPayload<Id, Timestamp>,
+): OfferPayload<Id, Timestamp> {
   return {
     _id: offer._id,
     type: offer.type,
@@ -28,12 +32,10 @@ export function prepareOfferPayload(offer) {
   };
 }
 
-/**
- * Select writable fields from an update request.
- * @param {import('../../shared/offer.js').UpdateOfferRequest} body
- * @returns {import('../../shared/offer.js').UpdateOfferRequest}
- */
-export function prepareOfferUpdate(body) {
+/** Select writable fields from an update request. */
+export function prepareOfferUpdate(
+  body: UpdateOfferRequest,
+): UpdateOfferRequest {
   return {
     ...(body.status === undefined ? {} : { status: body.status }),
     ...(body.description === undefined
@@ -51,12 +53,8 @@ export function prepareOfferUpdate(body) {
   };
 }
 
-/**
- * Select writable fields from a create request, including its required type.
- * @param {import('../../shared/offer.js').CreateOfferRequest} body
- * @returns {import('../../shared/offer.js').CreateOfferRequest}
- */
-export function prepareNewOffer(body) {
+/** Select writable fields from a create request, including its required type. */
+export function prepareNewOffer(body: CreateOfferRequest): CreateOfferRequest {
   return {
     ...prepareOfferUpdate(body),
     location: body.location,
@@ -64,22 +62,16 @@ export function prepareNewOffer(body) {
   };
 }
 
-/**
- * @param {import('../../shared/offer.js').OfferMutationResponse['message']} message
- * @returns {import('../../shared/offer.js').OfferMutationResponse}
- */
-export function prepareOfferMutationResponse(message) {
+export function prepareOfferMutationResponse(
+  message: OfferMutationResponse['message'],
+): OfferMutationResponse {
   return { message };
 }
 
-/**
- * Build the public GeoJSON response and convert Mongo [lat, lng] points to
- * GeoJSON [lng, lat] points.
- * @template {{ toString: () => string }} Id
- * @param {import('../../shared/offer.js').OfferSearchAggregationFeature<Id>[]} features
- * @returns {import('../../shared/offer.js').OfferSearchFeatureCollection}
- */
-export function prepareOfferSearchResults(features) {
+/** Build public GeoJSON and convert Mongo [lat, lng] to GeoJSON [lng, lat]. */
+export function prepareOfferSearchResults<Id extends { toString(): string }>(
+  features: OfferSearchAggregationFeature<Id>[],
+): OfferSearchFeatureCollection {
   return {
     features: features.map(feature => ({
       type: 'Feature',

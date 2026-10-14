@@ -1,5 +1,5 @@
 import config from '../../../../config/config.mjs';
-import { getClientIpAddress as defaultGetClientIpAddress } from '../services/client-ip.server.service.mjs';
+import { getClientIpAddress as defaultGetClientIpAddress } from '../services/client-ip.server.service.mts';
 import defaultRequestLimitService from '../services/targeted-request-limits.server.service.mjs';
 
 function getRequestIdentity(req, source) {

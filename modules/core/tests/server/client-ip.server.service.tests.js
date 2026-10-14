@@ -1,4 +1,4 @@
-const clientIpService = require('../../server/services/client-ip.server.service.mjs');
+const clientIpService = require('../../server/services/client-ip.server.service.mts');
 require('should');
 
 describe('Trusted client IP service', function () {
@@ -23,11 +23,29 @@ describe('Trusted client IP service', function () {
       .should.equal('198.51.100.13');
   });
 
+  it('falls back to Express req.ip when the secure address is empty', function () {
+    clientIpService
+      .getClientIpAddress({
+        get: () => '',
+        ip: '198.51.100.14',
+        headers: { 'x-forwarded-for': '203.0.113.53' },
+      })
+      .should.equal('198.51.100.14');
+  });
+
   it('rejects invalid trusted-address values', function () {
     const result = clientIpService.getClientIpAddress({
       get: () => 'not-an-ip',
       ip: undefined,
       headers: { 'x-forwarded-for': '203.0.113.52' },
+    });
+    (result === undefined).should.be.true();
+  });
+
+  it('returns undefined when neither address is available', function () {
+    const result = clientIpService.getClientIpAddress({
+      get: () => undefined,
+      ip: undefined,
     });
     (result === undefined).should.be.true();
   });
