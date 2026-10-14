@@ -146,25 +146,25 @@ describe('Reference Thread CRUD tests', function () {
       [
         // Create userNonPublic
         function (stepDone) {
-          userNonPublic.save(function (err, res) {
+          utils.saveUserWithCachedPassword(userNonPublic).then(function (res) {
             referenceUserNonPublicId = res._id;
-            stepDone(err);
-          });
+            stepDone();
+          }, stepDone);
         },
         // Create userFrom
         function (stepDone) {
-          userFrom.save(function (err, res) {
+          utils.saveUserWithCachedPassword(userFrom).then(function (res) {
             referenceUserFromId = res._id;
-            stepDone(err);
-          });
+            stepDone();
+          }, stepDone);
         },
         // Create userTo
         function (stepDone) {
-          userTo.save(function (err, res) {
+          utils.saveUserWithCachedPassword(userTo).then(function (res) {
             referenceUserToId = res._id;
             referenceThread.userTo = referenceUserToId;
-            stepDone(err);
-          });
+            stepDone();
+          }, stepDone);
         },
         // Create message+thread between referenceUserTo and referenceUserFrom
         function (stepDone) {

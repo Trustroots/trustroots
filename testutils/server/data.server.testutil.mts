@@ -117,24 +117,39 @@ async function saveCachedUserDocuments(
   const savedDocuments = documents.map(document => new User(document));
 
   for (const document of savedDocuments) {
-    const password = document.password;
-    if (typeof password === 'string' && password.length >= 8) {
-      // Validate plaintext before substituting a hash. Keep all other save hooks,
-      // including display-name and email-hash generation, running normally.
-      await document.validate();
-      let hash = fixturePasswordHashes.get(password);
-      if (hash === undefined) {
-        hash = await User.hashPassword(password);
-        fixturePasswordHashes.set(password, hash);
-      }
-      document.password = hash;
-      document.salt = undefined;
-      document.unmarkModified('password');
-    }
-    await document.save();
+    await saveUserWithCachedPassword(document);
   }
 
   return savedDocuments;
+}
+
+/** Save an existing unrelated fixture, reusing a real hash for its password. */
+export async function saveUserWithCachedPassword<
+  T extends {
+    password?: string;
+    salt?: string;
+    validate(): Promise<unknown>;
+    unmarkModified(path: string): void;
+    save(): Promise<unknown>;
+  },
+>(document: T): Promise<T> {
+  const User = mongoose.model<CachedUserFixtureData, UserFixtureModel>('User');
+  const password = document.password;
+  if (typeof password === 'string' && password.length >= 8) {
+    // Validate plaintext before substituting a hash. Keep all other save hooks,
+    // including display-name and email-hash generation, running normally.
+    await document.validate();
+    let hash = fixturePasswordHashes.get(password);
+    if (hash === undefined) {
+      hash = await User.hashPassword(password);
+      fixturePasswordHashes.set(password, hash);
+    }
+    document.password = hash;
+    document.salt = undefined;
+    document.unmarkModified('password');
+  }
+  await document.save();
+  return document;
 }
 
 /**
