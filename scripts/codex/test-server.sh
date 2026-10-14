@@ -172,8 +172,8 @@ if [ "${TRUSTROOTS_CODEX_ISOLATED_SERVER_TESTS:-false}" != "true" ]; then
 else
   TEST_FILE_LIST="$(mktemp "${TMPDIR:-/tmp}/trustroots-server-tests.XXXXXX")"
 
-  find modules -path '*/tests/server/*.js' \
-    ! -path 'modules/core/tests/server/worker.tests.js' \
+  find modules \( -path '*/tests/server/*.js' -o -path '*/tests/server/*.cts' -o -path '*/tests/server/*.mts' \) \
+    ! -path 'modules/core/tests/server/worker.tests.*' \
     -print | sort >"$TEST_FILE_LIST"
 
   TEST_COUNT="$(wc -l <"$TEST_FILE_LIST" | tr -d ' ')"

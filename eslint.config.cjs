@@ -256,6 +256,7 @@ const legacyConfig = {
         'modules/*/server/**/*.mts',
         'config/**/*.d.mts',
         'modules/*/tests/client/**/*.{ts,tsx,mts}',
+        'modules/*/tests/server/**/*.{cts,mts}',
         'testutils/client/**/*.{ts,tsx}',
         'testutils/common/**/*.{mts,ts}',
         'testutils/server/**/*.mts',
@@ -285,8 +286,8 @@ const legacyConfig = {
      */
     {
       files: [
-        'modules/*/tests/server/*.js',
-        'modules/*/tests/server/**/*.js',
+        'modules/*/tests/server/*.{js,cts,mts}',
+        'modules/*/tests/server/**/*.{js,cts,mts}',
         'testutils/server/*.js',
       ],
       env: {
@@ -337,7 +338,7 @@ module.exports = defineConfig([
     extends: fixupConfigRules(compat.config(legacyConfig)),
   },
   {
-    files: ['playwright.config.cts'],
+    files: ['playwright.config.cts', 'modules/*/tests/server/**/*.cts'],
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {

@@ -21,7 +21,7 @@ function createPlan(
   }
   const relativeFiles = files.map(file => {
     const relative = path.relative(root, path.resolve(root, file));
-    if (!/^modules\/[^/]+\/tests\/server\/.+\.js$/.test(relative)) {
+    if (!/^modules\/[^/]+\/tests\/server\/.+\.(?:js|cts|mts)$/.test(relative)) {
       throw new Error(`Not a server test file: ${file}`);
     }
     return relative;
@@ -152,7 +152,7 @@ async function main() {
     ? files
     : process.env.SERVER_TEST_FILES
     ? process.env.SERVER_TEST_FILES.split(',').filter(Boolean)
-    : globSync('modules/*/tests/server/**/*.js', { cwd: root }).sort();
+    : globSync('modules/*/tests/server/**/*.{js,cts,mts}', { cwd: root }).sort();
   const plan = createPlan(selected, process.env.SERVER_TEST_WORKERS ?? '2');
   process.exitCode = await runWorkers(plan);
 }
