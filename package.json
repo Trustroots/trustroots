@@ -102,7 +102,7 @@
     "vite:server": "NODE_ENV=development vite --config vite.config.mjs",
     "build:vite": "NODE_ENV=production vite build --config vite.config.mjs",
     "start:vite": "pnpm run start",
-    "test:vite:rtl": "node --test config/vite/rtl-stylesheet.test.mts config/vite/dev-server-scripts.test.mts",
+    "test:vite:rtl": "node --test config/vite/rtl-stylesheet.test.mts config/vite/dev-server-scripts.test.mts config/client/import-resolution.test.mjs",
     "test:vite:production": "NODE_ENV=production TRUSTROOTS_SKIP_LOCAL_CONFIG=true node ./scripts/vite/smoke-shell.cts",
     "test:vite:development": "NODE_ENV=development TRUSTROOTS_SKIP_LOCAL_CONFIG=true node ./scripts/vite/smoke-shell.cts"
   },
@@ -227,7 +227,7 @@
     "css-loader": "7.1.5",
     "eslint": "9.39.5",
     "eslint-config-prettier": "10.1.8",
-    "eslint-import-resolver-webpack": "0.13.11",
+    "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-jest-dom": "5.10.1",
     "eslint-plugin-prettier": "5.5.5",

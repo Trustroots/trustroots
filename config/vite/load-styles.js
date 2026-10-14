@@ -1,5 +1,5 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
-import '../webpack/entries/main.less';
+import '../client/styles/main.less';
 
 // Vite turns import.meta.glob into static imports and prepends them. Keeping
 // that glob in its own module, imported after Bootstrap, preserves Webpack's

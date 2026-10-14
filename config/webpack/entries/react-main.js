@@ -10,7 +10,7 @@ import { enable as enableVisibilityWatching } from '@/modules/messages/client/se
 import { enable as enableFaviconUpdater } from '@/modules/messages/client/services/messages-count-favicon-updater.client.service';
 
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './main.less';
+import '../../client/styles/main.less';
 
 // main.less already includes the site-owned Bootstrap compatibility styles.
 importAll(require.context('../../../modules/', true, /\.less$/));

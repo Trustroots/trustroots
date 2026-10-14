@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { defineConfig } = require('eslint/config');
 const semver = require('semver');
+const { aliases } = require('./config/client/aliases.cjs');
 
 // Converts semver range `~16.6.0` to strict version `16.6.0`
 const reactVersion = semver.coerce(
@@ -67,8 +68,13 @@ const legacyConfig = {
   settings: {
     'import/resolver': {
       node: true,
-      webpack: {
-        config: __dirname + '/config/webpack/webpack.config.js',
+      typescript: {
+        project: path.join(__dirname, 'tsconfig.json'),
+        alias: Object.fromEntries(
+          Object.entries(aliases).map(([name, filename]) => [name, [filename]]),
+        ),
+        // Explicit .js imports may point at migrated TypeScript sources.
+        extensionAlias: { '.js': ['.js', '.ts', '.tsx'] },
       },
     },
   },

@@ -8,6 +8,10 @@ requests have to go through Vite. Set `PORT` for Vite's browser port and
 `TRUSTROOTS_API_URL` for the Express target when using different ports. The
 Vite server listens on the same host as Webpack.
 
+Both builds share client aliases from `config/client/aliases.cjs` and the
+main stylesheet from `config/client/styles/main.less`. ESLint resolves source
+imports with the TypeScript resolver, independently of either bundler.
+
 Vite uses Less 4 through its `less` peer dependency. The default Webpack
 configuration explicitly uses `less-webpack`, pinned to the existing Less
 3.13.1 compiler, so this prototype does not upgrade Webpack's stylesheet
