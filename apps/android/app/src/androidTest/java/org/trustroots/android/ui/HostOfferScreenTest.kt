@@ -58,6 +58,6 @@ class HostOfferScreenTest {
         }
         compose.onNodeWithText("Host").assertIsDisplayed()
         compose.onNodeWithText("Spare sofa").assertIsDisplayed()
-        compose.onNodeWithText("Save and exit").assertIsDisplayed()
+        compose.onNodeWithText("Save changes").assertIsDisplayed()
     }
 }

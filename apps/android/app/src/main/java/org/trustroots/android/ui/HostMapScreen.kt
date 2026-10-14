@@ -1,7 +1,6 @@
 package org.trustroots.android.ui
 
 import androidx.activity.compose.BackHandler
-import android.text.Html
 import android.location.Geocoder
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -12,6 +11,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,28 +23,39 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MultiChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Close
+import org.trustroots.android.api.MemberProfile
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -83,8 +94,11 @@ internal fun HostMapScreen(
     session: MemberSession,
     onSessionInvalidated: () -> Unit,
     onProfileOpenChange: (Boolean) -> Unit = {},
+    searchMode: @Composable () -> Unit = {},
 ) {
     val context = LocalContext.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
     val scope = rememberCoroutineScope()
     var offers by remember { mutableStateOf<List<MapOffer>>(emptyList()) }
     var host by remember { mutableStateOf<HostOffer?>(null) }
@@ -106,14 +120,35 @@ internal fun HostMapScreen(
     var languageMenuOpen by remember { mutableStateOf(false) }
     var circles by remember { mutableStateOf<List<TrustrootsCircle>>(emptyList()) }
     var circleMenuOpen by remember { mutableStateOf(false) }
-    var mapOverlay by remember { mutableStateOf(MapOverlay.None) }
+    var showFilters by remember { mutableStateOf(false) }
+    var showSuggestions by remember { mutableStateOf(false) }
+    var suggestions by remember { mutableStateOf<List<android.location.Address>>(emptyList()) }
+    var selectedProfile by remember { mutableStateOf<MemberProfile?>(null) }
+    var memberships by remember { mutableStateOf<Set<String>>(emptySet()) }
+    LaunchedEffect(host?.id) {
+        selectedProfile = null
+        host?.user?.username?.let { username ->
+            api.profile(session, username).onSuccess { selectedProfile = it }
+            api.circleMemberships(session).onSuccess { memberships = it }
+        }
+    }
+    LaunchedEffect(locationQuery, showSuggestions) {
+        suggestions = emptyList()
+        if (showSuggestions && locationQuery.trim().length >= 3) {
+            delay(400)
+            suggestions = withContext(Dispatchers.IO) {
+                runCatching { Geocoder(context, Locale.getDefault()).getFromLocationName(locationQuery.trim(), 3).orEmpty() }.getOrDefault(emptyList())
+            }
+        }
+    }
     var mapRevision by remember { mutableIntStateOf(0) }
     BackHandler(
         enabled = profileUsername == null &&
-            (mapOverlay != MapOverlay.None || host != null || selectedNotes.isNotEmpty()),
+            (showFilters || showSuggestions || host != null || selectedNotes.isNotEmpty()),
     ) {
         when {
-            mapOverlay != MapOverlay.None -> mapOverlay = MapOverlay.None
+            showSuggestions -> { showSuggestions = false; suggestions = emptyList() }
+            showFilters -> showFilters = false
             host != null -> host = null
             selectedNotes.isNotEmpty() -> selectedNotes = emptyList()
         }
@@ -216,6 +251,9 @@ internal fun HostMapScreen(
     val findLocation: () -> Unit = find@{
         val query = locationQuery.trim()
         if (query.isEmpty()) return@find
+        showSuggestions = false
+        keyboard?.hide()
+        focusManager.clearFocus()
         scope.launch {
             error = null
             val result = runCatching {
@@ -257,7 +295,8 @@ internal fun HostMapScreen(
         MemberProfileScreen(api, session, username, onSessionInvalidated) { profileUsername = null }
         return
     }
-    Box(Modifier.fillMaxSize()) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val resultCardMaxHeight = maxHeight * 0.5f
         AndroidView(
             factory = { map },
             update = { view ->
@@ -323,72 +362,52 @@ internal fun HostMapScreen(
             modifier = Modifier.fillMaxSize(),
         )
         Column(
-            modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = 48.dp)
-                .testTag("map-controls")
-                .background(TrustrootsPaleGreen.copy(alpha = 0.97f)),
+            modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()
+                .testTag("map-controls").background(TrustrootsPaleGreen.copy(alpha = 0.97f)),
         ) {
-            when (mapOverlay) {
-                MapOverlay.None -> {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Button(
-                            onClick = { mapOverlay = MapOverlay.PlaceSearch },
-                            modifier = Modifier.weight(1f).testTag("searchPlaces"),
-                        ) { Text("Search places") }
-                        Button(
-                            onClick = {
-                                mapOverlay = MapOverlay.Filters
-                                if (circles.isEmpty()) {
-                                    scope.launch { api.circles(session).onSuccess { circles = it } }
-                                }
-                            },
-                            modifier = Modifier.weight(1f).testTag("openFilters"),
-                        ) { Text("Filters") }
-                    }
-                    Text(
-                        if (loading) "Searching this area…" else "${offers.size} offers · ${communityNotes.size} Nostroots notes",
-                        modifier = Modifier.padding(start = 12.dp, bottom = 8.dp),
-                    )
-                    if (noteError && includeMeet) {
-                        Text(
-                            "Nostroots notes are temporarily unavailable.",
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 8.dp),
-                        )
-                    }
+            Row(Modifier.fillMaxWidth().padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                searchMode()
+                OutlinedTextField(
+                    locationQuery, { locationQuery = it; showSuggestions = true },
+                    placeholder = { Text("Search places") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                    keyboardActions = KeyboardActions(onSearch = { findLocation() }),
+                    trailingIcon = {
+                        IconButton(onClick = findLocation, enabled = locationQuery.isNotBlank()) { Icon(Icons.Default.Search, "Search places") }
+                    },
+                    modifier = Modifier.weight(1f).testTag("placeSearchField"),
+                )
+                IconButton(onClick = {
+                    showSuggestions = false
+                    keyboard?.hide()
+                    focusManager.clearFocus()
+                    showFilters = !showFilters
+                    if (showFilters && circles.isEmpty()) scope.launch { api.circles(session).onSuccess { circles = it } }
+                }, modifier = Modifier.testTag("openFilters")) {
+                    Icon(Icons.Default.FilterList, if (showFilters) "Hide filters" else "Show filters", tint = if (showFilters) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                MapOverlay.PlaceSearch -> {
-                    OutlinedTextField(
-                        locationQuery, { locationQuery = it },
-                        placeholder = { Text("Search place") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = { findLocation() }),
-                        trailingIcon = {
-                            TextButton(onClick = findLocation, enabled = locationQuery.isNotBlank()) { Text("Go") }
-                        },
-                        modifier = Modifier.fillMaxWidth().height(52.dp).testTag("placeSearchField"),
-                    )
-                    Button(
-                        onClick = { mapOverlay = MapOverlay.None },
-                        modifier = Modifier.fillMaxWidth().padding(8.dp).testTag("backToMapFromPlace"),
-                    ) { Text("Back to map") }
-                }
-                MapOverlay.Filters -> {
-                    Text(
-                        "Filters",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                    )
+            }
+            if (showSuggestions) suggestions.forEach { address ->
+                TextButton(onClick = {
+                    locationQuery = address.getAddressLine(0).orEmpty()
+                    showSuggestions = false
+                    keyboard?.hide()
+                    focusManager.clearFocus()
+                    map.controller.setZoom(9.0)
+                    map.controller.animateTo(GeoPoint(address.latitude, address.longitude))
+                    searchVisibleArea()
+                }, modifier = Modifier.fillMaxWidth()) { Text(address.getAddressLine(0).orEmpty()) }
+            }
+            if (showFilters) {
                     Row(
                         Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        FilterChip(includeHosts, onClick = { includeHosts = !includeHosts }, label = { Text("Hosting") })
-                        Spacer(Modifier.width(6.dp))
-                        FilterChip(includeMeet, onClick = { includeMeet = !includeMeet }, label = { Text("Meet") })
+                        MultiChoiceSegmentedButtonRow {
+                            SegmentedButton(checked = includeHosts, onCheckedChange = { includeHosts = it }, shape = SegmentedButtonDefaults.itemShape(0, 2), label = { Text("Hosting") })
+                            SegmentedButton(checked = includeMeet, onCheckedChange = { includeMeet = it }, shape = SegmentedButtonDefaults.itemShape(1, 2), label = { Text("Meet") })
+                        }
                         Spacer(Modifier.width(6.dp))
                         FilterChip(
                             selected = seenMonths != null,
@@ -404,6 +423,7 @@ internal fun HostMapScreen(
                             FilterChip(
                                 selectedCircleIDs.isNotEmpty(),
                                 onClick = { circleMenuOpen = true },
+                                trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) },
                                 label = {
                                     Text(
                                         when (selectedCircleIDs.size) {
@@ -438,6 +458,7 @@ internal fun HostMapScreen(
                             FilterChip(
                                 selectedLanguages.isNotEmpty(),
                                 onClick = { languageMenuOpen = true },
+                                trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) },
                                 label = {
                                     Text(
                                         if (selectedLanguages.isEmpty()) "Spoken languages"
@@ -467,60 +488,31 @@ internal fun HostMapScreen(
                             }
                         }
                     }
-                    Text(
-                        if (loading) "Searching this area…" else "${offers.size} offers · ${communityNotes.size} Nostroots notes",
-                        modifier = Modifier.padding(start = 12.dp, top = 8.dp),
-                    )
-                    if (noteError && includeMeet) {
-                        Text(
-                            "Nostroots notes are temporarily unavailable.",
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(horizontal = 12.dp),
-                        )
-                    }
-                    Button(
-                        onClick = { mapOverlay = MapOverlay.None },
-                        modifier = Modifier.fillMaxWidth().padding(8.dp).testTag("backToMapFromFilters"),
-                    ) { Text("Back to map") }
-                }
             }
         }
-        Text(
-            if (org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN.isBlank())
-                "© OpenStreetMap contributors" else "© Mapbox · © OpenStreetMap contributors",
-            style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = if (host == null) 8.dp else 220.dp, end = 10.dp)
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)).padding(5.dp),
-        )
         error?.let {
             Text(
                 it, color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.align(Alignment.Center).background(MaterialTheme.colorScheme.surface).padding(12.dp),
             )
         }
+        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
         host?.let { selected ->
-            Column(
-                Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                    .background(TrustrootsPaleGreen).padding(16.dp),
-            ) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("${if (selectedOfferType == "meet") "Meet" else "Potential host"}: ${selected.user.label}", style = MaterialTheme.typography.titleMedium)
-                    TextButton(onClick = { host = null }) { Text("Close") }
-                }
-                selected.status?.let { Text("Hosting: $it") }
-                selected.maxGuests?.let { Text("Up to $it guests") }
-                selected.description?.let {
-                    Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(), maxLines = 4)
-                }
-                selected.user.username?.let { username ->
-                    Button(onClick = { profileUsername = username }) { Text("View profile") }
-                }
-            }
+            HostResultCard(
+                offer = selected,
+                profile = selectedProfile,
+                sharedCircleIDs = memberships,
+                isMeet = selectedOfferType == "meet",
+                api = api,
+                session = session,
+                maxHeight = resultCardMaxHeight,
+                onClose = { host = null },
+                onOpenProfile = { selected.user.username?.let { profileUsername = it } },
+            )
         }
         if (selectedNotes.isNotEmpty()) {
             Column(
-                Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface).padding(16.dp),
+                Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(16.dp),
             ) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Community notes via Nostroots", style = MaterialTheme.typography.titleMedium)
@@ -532,13 +524,20 @@ internal fun HostMapScreen(
                 }
             }
         }
+        if (noteError && includeMeet) Text("Nostroots notes are temporarily unavailable.", color = MaterialTheme.colorScheme.error, modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(4.dp))
+        Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)).padding(5.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                if (loading) "Searching this area…" else "${offers.size} offers · ${communityNotes.count { map.boundingBox.contains(GeoPoint(it.latitude, it.longitude)) }} Nostroots notes in this area",
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.weight(1f).testTag("mapStatistics"),
+            )
+            Text(
+                if (org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN.isBlank()) "© OpenStreetMap contributors" else "© Mapbox · © OpenStreetMap contributors",
+                style = MaterialTheme.typography.labelSmall,
+            )
+        }
+        }
     }
-}
-
-private enum class MapOverlay {
-    None,
-    PlaceSearch,
-    Filters,
 }
 
 private val mapFilterLanguages = listOf(

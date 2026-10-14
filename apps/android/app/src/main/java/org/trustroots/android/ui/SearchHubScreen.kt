@@ -2,27 +2,53 @@ package org.trustroots.android.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.PersonSearch
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
-import org.trustroots.android.ui.theme.TrustrootsDarkGreen
-import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.zIndex
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Modifier
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.ui.theme.TrustrootsPaleGreen
+
+@Composable
+internal fun SearchModeMenu(tab: Int, onSelect: (Int) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { expanded = true }) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(if (tab == 0) Icons.Default.Place else Icons.Default.PersonSearch, "Search mode")
+                Icon(Icons.Default.ArrowDropDown, null)
+            }
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            listOf("Hosts map", "Members").forEachIndexed { index, label ->
+                DropdownMenuItem(
+                    text = { Text(label) },
+                    leadingIcon = { Icon(if (index == 0) Icons.Default.Place else Icons.Default.PersonSearch, null) },
+                    onClick = { expanded = false; onSelect(index) },
+                )
+            }
+        }
+    }
+}
 
 @Composable
 internal fun SearchHubScreen(
@@ -32,23 +58,24 @@ internal fun SearchHubScreen(
     initialTab: Int = 0,
 ) {
     var tab by remember(initialTab) { mutableIntStateOf(initialTab) }
-    var profileOpen by remember { androidx.compose.runtime.mutableStateOf(false) }
+    var profileOpen by remember { mutableStateOf(false) }
     BackHandler(enabled = tab == 1 && initialTab == 0 && !profileOpen) { tab = 0 }
-    Box(Modifier.fillMaxSize()) {
-        when (tab) {
-            0 -> HostMapScreen(api, session, onSessionInvalidated, onProfileOpenChange = { profileOpen = it })
-            else -> Box(Modifier.fillMaxSize().padding(top = if (profileOpen) 0.dp else 48.dp)) {
-                MemberSearchScreen(api, session, onSessionInvalidated, onProfileOpenChange = { profileOpen = it })
+    val selectMode: (Int) -> Unit = { profileOpen = false; tab = it }
+    when (tab) {
+        0 -> HostMapScreen(
+            api, session, onSessionInvalidated,
+            onProfileOpenChange = { profileOpen = it },
+            searchMode = { SearchModeMenu(tab, selectMode) },
+        )
+        else -> Column(Modifier.fillMaxSize()) {
+            if (!profileOpen) Surface(color = TrustrootsPaleGreen, modifier = Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    SearchModeMenu(tab, selectMode)
+                    Text("Member search")
+                }
             }
-        }
-        if (!profileOpen) Surface(
-            modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().zIndex(10f).testTag("map-tabs"),
-            shadowElevation = 8.dp,
-            color = TrustrootsPaleGreen,
-        ) {
-            TabRow(selectedTabIndex = tab, containerColor = TrustrootsPaleGreen, contentColor = TrustrootsDarkGreen) {
-                Tab(selected = tab == 0, onClick = { profileOpen = false; tab = 0 }, text = { Text("Hosts map") })
-                Tab(selected = tab == 1, onClick = { profileOpen = false; tab = 1 }, text = { Text("Members") })
+            Box(Modifier.weight(1f)) {
+                MemberSearchScreen(api, session, onSessionInvalidated, onProfileOpenChange = { profileOpen = it })
             }
         }
     }

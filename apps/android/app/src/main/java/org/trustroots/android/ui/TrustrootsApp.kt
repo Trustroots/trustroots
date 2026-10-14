@@ -11,6 +11,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -22,7 +23,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
@@ -48,26 +48,33 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material.icons.filled.BubbleChart
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -81,7 +88,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -94,7 +100,6 @@ import org.trustroots.android.analytics.AndroidUsageAnalytics
 import org.trustroots.android.analytics.UsageAnalytics
 import org.trustroots.android.analytics.UsageScreen
 import org.trustroots.android.api.MobileApiClient
-import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
@@ -353,11 +358,11 @@ private fun SignInScreen(
     }
 }
 
-private enum class Destination(val label: String) {
+internal enum class Destination(val label: String) {
     Circles("Circles"),
     Search("Search"),
     Messages("Messages"),
-    Menu("Menu"),
+    Menu("Profile"),
 }
 
 private enum class MenuPage {
@@ -398,7 +403,6 @@ private fun MemberShell(
         else -> UsageScreen.Messages
     }
     UsageScreenTracking(analytics, analyticsScreen)
-    var hasUnreadMessages by remember { mutableStateOf(false) }
     var unreadMessageCount by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var messagesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var circlesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
@@ -410,6 +414,8 @@ private fun MemberShell(
     val offlineSavedAt by api.offlineSavedAt.collectAsState()
     val alertDestination by MessageAlerts.destination.collectAsState()
     var initialMessageSender by remember { mutableStateOf<String?>(null) }
+    var ownAvatarID by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(api) { api.profile(session, session.member.username).onSuccess { ownAvatarID = it.id } }
     val navigateTo: (Destination) -> Unit = { next ->
         if (next != destination) {
             destinationHistory = destinationHistory + destination
@@ -418,15 +424,19 @@ private fun MemberShell(
         menuPage = MenuPage.Menu
         browserRoute = null
     }
+    val leaveGuard = remember { mutableStateOf<LeaveGuard?>(null) }
     LaunchedEffect(session.member.username, alertDestination) {
         val requested = alertDestination ?: return@LaunchedEffect
         if (requested.account != session.member.username) {
             MessageAlerts.clearDestination()
             return@LaunchedEffect
         }
-        initialMessageSender = requested.senderId
-        messagesNavigationID++
-        navigateTo(Destination.Messages)
+        val openConversation = {
+            initialMessageSender = requested.senderId
+            messagesNavigationID++
+            navigateTo(Destination.Messages)
+        }
+        leaveGuard.value?.invoke(openConversation) ?: openConversation()
         MessageAlerts.clearDestination()
     }
     LaunchedEffect(session.member.username) {
@@ -451,63 +461,35 @@ private fun MemberShell(
         while (true) {
             api.inbox(session).onSuccess { threads ->
                 unreadMessageCount = threads.count { !it.read }
-                hasUnreadMessages = unreadMessageCount > 0
             }
             delay(60_000)
         }
     }
+    CompositionLocalProvider(LocalLeaveGuard provides leaveGuard) {
     Scaffold(
-        topBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(TrustrootsGreen)
-                    .statusBarsPadding()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-            ) {
-                Destination.entries.forEach { item ->
-                    IconButton(
-                        onClick = {
-                            if (item == Destination.Messages) messagesNavigationID++
-                            if (item == Destination.Circles) circlesNavigationID++
-                            if (item == Destination.Search) {
-                                searchInitialTab = 0
-                                searchNavigationID++
-                            }
-                            navigateTo(item)
-                        },
-                    ) {
-                        Box {
-                        Icon(
-                            imageVector = when (item) {
-                                Destination.Circles -> Icons.Default.Groups
-                                Destination.Search -> Icons.Default.Search
-                                Destination.Messages -> Icons.AutoMirrored.Filled.Chat
-                                Destination.Menu -> Icons.Default.Menu
-                            },
-                            contentDescription = item.label,
-                            tint = Color.White,
-                            modifier = Modifier.size(32.dp),
-                        )
-                        if (item == Destination.Messages && hasUnreadMessages) {
-                            Badge(
-                                modifier = Modifier.align(Alignment.TopEnd),
-                                containerColor = Color.Red,
-                                contentColor = Color.White,
-                            ) {
-                                Text(
-                                    if (unreadMessageCount > 99) "99+" else unreadMessageCount.toString(),
-                                )
-                            }
+        bottomBar = {
+            MemberNavigationBar(
+                destination = destination,
+                unreadMessageCount = unreadMessageCount,
+                avatarURL = ownAvatarID?.let { api.avatarURL(it, 64) },
+                sessionCookie = session.cookieHeader,
+                memberLabel = session.member.displayName,
+                onNavigate = { item ->
+                    val action = {
+                        if (item == Destination.Messages) messagesNavigationID++
+                        if (item == Destination.Circles) circlesNavigationID++
+                        if (item == Destination.Search) {
+                            searchInitialTab = 0
+                            searchNavigationID++
                         }
-                        }
+                        navigateTo(item)
                     }
-                }
-            }
+                    leaveGuard.value?.invoke(action) ?: action()
+                },
+            )
         },
     ) { insets ->
-        Column(Modifier.fillMaxSize().padding(insets)) {
+        Column(Modifier.fillMaxSize().padding(insets).consumeWindowInsets(insets)) {
             offlineSavedAt?.let { savedAt ->
                 Text(
                     "Offline · Showing saved data from " +
@@ -620,6 +602,55 @@ private fun MemberShell(
                 }
             }
             }
+        }
+    }
+}
+
+}
+
+@Composable
+internal fun MemberNavigationBar(
+    destination: Destination,
+    unreadMessageCount: Int,
+    avatarURL: java.net.URL?,
+    sessionCookie: String?,
+    memberLabel: String,
+    onNavigate: (Destination) -> Unit,
+) {
+    NavigationBar(containerColor = TrustrootsPaleGreen) {
+        Destination.entries.forEach { item ->
+            NavigationBarItem(
+                selected = destination == item,
+                label = { Text(item.label) },
+                onClick = { onNavigate(item) },
+                modifier = Modifier.testTag("navigation-${item.name.lowercase()}").semantics {
+                    if (item == Destination.Messages) {
+                        stateDescription = if (unreadMessageCount == 0) "No unread conversations" else "$unreadMessageCount unread conversations"
+                    }
+                },
+                icon = {
+                    BadgedBox(badge = {
+                        if (item == Destination.Messages && unreadMessageCount > 0) Badge {
+                            Text(if (unreadMessageCount > 99) "99+" else unreadMessageCount.toString())
+                        }
+                    }) {
+                        if (item == Destination.Menu) RemoteArtwork(
+                            url = avatarURL,
+                            sessionCookie = sessionCookie,
+                            label = memberLabel,
+                            size = 24.dp,
+                        ) else Icon(
+                            imageVector = when (item) {
+                                Destination.Circles -> Icons.Default.BubbleChart
+                                Destination.Search -> Icons.Default.Search
+                                Destination.Messages -> Icons.AutoMirrored.Filled.Chat
+                                Destination.Menu -> Icons.Default.AccountCircle
+                            },
+                            contentDescription = null,
+                        )
+                    }
+                },
+            )
         }
     }
 }
@@ -751,7 +782,7 @@ private fun ProfileScreen(session: MemberSession, onBack: () -> Unit) {
             .fillMaxSize()
             .padding(20.dp),
     ) {
-        TextButton(onClick = onBack) { Text("‹ Back") }
+        NativeBackButton(onBack)
         Card(
             colors = CardDefaults.cardColors(containerColor = TrustrootsPaleGreen),
             modifier = Modifier
@@ -826,7 +857,7 @@ internal fun AccountScreen(
             .verticalScroll(rememberScrollState())
             .padding(20.dp),
     ) {
-        TextButton(onClick = onBack) { Text("‹ Back") }
+        NativeBackButton(onBack)
         Text("Account", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Text(
             "Signed in as ${session.member.displayName} (@${session.member.username}).",

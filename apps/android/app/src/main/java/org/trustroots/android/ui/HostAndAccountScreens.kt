@@ -26,15 +26,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -75,6 +75,8 @@ internal fun HostOfferScreen(
     var latitude by remember { mutableStateOf(defaultHostLatitude) }
     var longitude by remember { mutableStateOf(defaultHostLongitude) }
     val scope = rememberCoroutineScope()
+    var original by remember { mutableStateOf<HostOfferUpdate?>(null) }
+    val currentOffer = HostOfferUpdate(offerId, status, description, noOfferDescription, maxGuests, showOnlyInMyCircles, latitude, longitude)
     LaunchedEffect(session.member.username) {
         loading = true
         error = null
@@ -100,6 +102,7 @@ internal fun HostOfferScreen(
                     latitude = offer.latitude ?: defaultHostLatitude
                     longitude = offer.longitude ?: defaultHostLongitude
                 }
+                original = HostOfferUpdate(offerId, status, description, noOfferDescription, maxGuests, showOnlyInMyCircles, latitude, longitude)
                 loading = false
             }.onFailure {
                 if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
@@ -117,81 +120,8 @@ internal fun HostOfferScreen(
         }
     }
     val descriptionTooShort = status != "no" && description.trim().length < 5
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp)
-            .testTag("hostOfferScreen"),
-    ) {
-        TextButton(onClick = onBack) { Text("‹ Back") }
-        Text("Host", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        Text(
-            "Tell travellers whether you can host.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
-        )
-        when {
-            loading -> CircularProgressIndicator()
-            else -> {
-        Text("Availability", style = MaterialTheme.typography.titleMedium)
-        Row(Modifier.padding(vertical = 8.dp)) {
-            listOf("yes" to "Yes", "maybe" to "Maybe", "no" to "No").forEach { (value, label) ->
-                FilterChip(
-                    selected = status == value,
-                    onClick = { status = value },
-                    label = { Text(label) },
-                    modifier = Modifier.padding(end = 8.dp),
-                )
-            }
-        }
-        if (status != "no") {
-            OutlinedTextField(
-                description,
-                { description = it },
-                label = { Text("Hosting description") },
-                minLines = 4,
-                maxLines = 10,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                maxGuests.toString(),
-                {
-                    maxGuests = it.filter(Char::isDigit).toIntOrNull()?.coerceIn(1, 20) ?: maxGuests
-                },
-                label = { Text("Maximum guests") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            )
-        } else {
-            OutlinedTextField(
-                noOfferDescription,
-                { noOfferDescription = it },
-                label = { Text("Why you are not hosting") },
-                minLines = 3,
-                maxLines = 8,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
-            Checkbox(checked = showOnlyInMyCircles, onCheckedChange = { showOnlyInMyCircles = it })
-            Text("Show only to members in my circles")
-        }
-        error?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
-        }
-        savedMessage?.let {
-            Text(it, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))
-        }
-        if (descriptionTooShort) {
-            Text(
-                "Write a longer hosting description first.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp),
-            )
-        }
-        Button(
-            onClick = {
+    val cancel = rememberFormCancel(!loading && original != null && currentOffer != original, saving, onBack)
+    val save: () -> Unit = {
                 scope.launch {
                     saving = true
                     error = null
@@ -210,6 +140,7 @@ internal fun HostOfferScreen(
                         ),
                     ).onSuccess { saved ->
                         offerId = saved.id
+                        original = currentOffer.copy(id = saved.id)
                         savedMessage = "Hosting offer saved."
                     }.onFailure {
                         if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
@@ -217,13 +148,80 @@ internal fun HostOfferScreen(
                     }
                     saving = false
                 }
-            },
-            enabled = !saving && !descriptionTooShort,
-            modifier = Modifier.padding(top = 16.dp).testTag("saveHostOffer"),
-        ) { Text(if (saving) "Saving…" else "Save and exit") }
+            }
+    Column(Modifier.fillMaxSize()) {
+        FormActionBar("Host", saving, !loading && !descriptionTooShort, cancel, save)
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp).testTag("hostOfferScreen")) {
+        Text(
+            "Tell travellers whether you can host.",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
+        )
+        when {
+            loading -> CircularProgressIndicator()
+            else -> {
+        Text("Availability", style = MaterialTheme.typography.titleMedium)
+        Row(Modifier.padding(vertical = 8.dp)) {
+            listOf("yes" to "Yes", "maybe" to "Maybe", "no" to "No").forEach { (value, label) ->
+                FilterChip(
+                    enabled = !saving,
+                    selected = status == value,
+                    onClick = { status = value },
+                    label = { Text(label) },
+                    modifier = Modifier.padding(end = 8.dp),
+                )
+            }
+        }
+        if (status != "no") {
+            OutlinedTextField(
+                description,
+                { description = it },
+                enabled = !saving, label = { Text("Hosting description") },
+                minLines = 4,
+                maxLines = 10,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                maxGuests.toString(),
+                {
+                    maxGuests = it.filter(Char::isDigit).toIntOrNull()?.coerceIn(1, 20) ?: maxGuests
+                },
+                enabled = !saving, label = { Text("Maximum guests") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
+        } else {
+            OutlinedTextField(
+                noOfferDescription,
+                { noOfferDescription = it },
+                enabled = !saving, label = { Text("Why you are not hosting") },
+                minLines = 3,
+                maxLines = 8,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+            Checkbox(enabled = !saving, checked = showOnlyInMyCircles, onCheckedChange = { showOnlyInMyCircles = it })
+            Text("Show only to members in my circles")
+        }
+        error?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+        }
+        savedMessage?.let {
+            Text(it, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))
+        }
+        if (descriptionTooShort) {
+            Text(
+                "Write a longer hosting description first.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+        }
+
         if (saving) CircularProgressIndicator(modifier = Modifier.padding(top = 12.dp))
             }
         }
+    }
     }
 }
 
@@ -246,56 +244,8 @@ internal fun CreateExperienceScreen(
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val canSave = met || hosted || wasGuest
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(20.dp)
-            .testTag("createExperienceScreen"),
-    ) {
-        TextButton(onClick = onBack) { Text("‹ Back") }
-        Text(
-            "Experience with $memberLabel",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-        )
-        Text("What happened?", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = met, onCheckedChange = { met = it })
-            Text("We met in person")
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = hosted, onCheckedChange = { hosted = it })
-            Text("I hosted them")
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = wasGuest, onCheckedChange = { wasGuest = it })
-            Text("I was their guest")
-        }
-        Text("Would you recommend them?", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
-        Row {
-            listOf("yes" to "Yes", "unknown" to "Not sure", "no" to "No").forEach { (value, label) ->
-                FilterChip(
-                    selected = recommendation == value,
-                    onClick = { recommendation = value },
-                    label = { Text(label) },
-                    modifier = Modifier.padding(end = 8.dp),
-                )
-            }
-        }
-        OutlinedTextField(
-            feedback,
-            { feedback = it },
-            label = { Text("Public experience (optional)") },
-            minLines = 4,
-            maxLines = 10,
-            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-        )
-        error?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
-        }
-        Button(
-            onClick = {
+    val cancel = rememberFormCancel(!met || hosted || wasGuest || recommendation != "yes" || feedback.isNotEmpty(), saving, onBack)
+    val save: () -> Unit = {
                 scope.launch {
                     saving = true
                     error = null
@@ -316,10 +266,48 @@ internal fun CreateExperienceScreen(
                         }
                     saving = false
                 }
-            },
-            enabled = !saving && canSave,
-            modifier = Modifier.padding(top = 16.dp).testTag("shareExperience"),
-        ) { Text(if (saving) "Sharing…" else "Share") }
+            }
+    Column(Modifier.fillMaxSize()) {
+        FormActionBar("Experience with $memberLabel", saving, canSave, cancel, save)
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp).testTag("createExperienceScreen")) {
+        Text("What happened?", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(enabled = !saving, checked = met, onCheckedChange = { met = it })
+            Text("We met in person")
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(enabled = !saving, checked = hosted, onCheckedChange = { hosted = it })
+            Text("I hosted them")
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(enabled = !saving, checked = wasGuest, onCheckedChange = { wasGuest = it })
+            Text("I was their guest")
+        }
+        Text("Would you recommend them?", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
+        Row {
+            listOf("yes" to "Yes", "unknown" to "Not sure", "no" to "No").forEach { (value, label) ->
+                FilterChip(
+                    enabled = !saving,
+                    selected = recommendation == value,
+                    onClick = { recommendation = value },
+                    label = { Text(label) },
+                    modifier = Modifier.padding(end = 8.dp),
+                )
+            }
+        }
+        OutlinedTextField(
+            feedback,
+            { feedback = it },
+            enabled = !saving, label = { Text("Public experience (optional)") },
+            minLines = 4,
+            maxLines = 10,
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+        )
+        error?.let {
+            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+        }
+
+    }
     }
 }
 
@@ -377,6 +365,12 @@ internal fun AccountSettingsScreen(
             }
         }
     }
+    val leave = rememberFormLeave(
+        details?.let { email != it.email || newsletter != it.newsletter } == true ||
+            currentPassword.isNotEmpty() || newPassword.isNotEmpty() || verifyPassword.isNotEmpty(),
+        savingAccount || changingPassword,
+        onBack,
+    )
     Column(
         Modifier
             .fillMaxSize()
@@ -384,7 +378,7 @@ internal fun AccountSettingsScreen(
             .padding(20.dp)
             .testTag("accountSettingsScreen"),
     ) {
-        TextButton(onClick = onBack) { Text("‹ Back") }
+        NativeBackButton({ leave(onBack) })
         Text("Account", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         UsageAnalyticsSettings()
         Text(
@@ -486,7 +480,7 @@ internal fun AccountSettingsScreen(
                 newPassword == verifyPassword,
             modifier = Modifier.padding(top = 8.dp),
         ) { Text(if (changingPassword) "Changing…" else "Change password") }
-        TextButton(onClick = onResetPassword) { Text("Forgot your password?") }
+        TextButton(onClick = { leave(onResetPassword) }) { Text("Forgot your password?") }
         HorizontalDivider(Modifier.padding(vertical = 20.dp))
         Text("Message alerts", style = MaterialTheme.typography.titleMedium)
         Text("Receive an alert for an unread conversation after ten minutes. This requires an installed UnifiedPush distributor, such as ntfy.")
@@ -511,7 +505,7 @@ internal fun AccountSettingsScreen(
             Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 10.dp))
         }
         HorizontalDivider(Modifier.padding(vertical = 20.dp))
-        Button(onClick = onSignedOut) { Text("Sign out") }
+        Button(onClick = { leave(onSignedOut) }) { Text("Sign out") }
         Spacer(Modifier.height(24.dp))
             }
         }

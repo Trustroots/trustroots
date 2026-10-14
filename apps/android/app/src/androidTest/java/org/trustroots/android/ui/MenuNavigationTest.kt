@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -38,9 +39,9 @@ class MenuNavigationTest {
         compose.onNodeWithText("Circles").assertIsDisplayed()
         compose.onNodeWithText("Edit profile").assertIsDisplayed()
         compose.onNodeWithText("Account").assertIsDisplayed()
-        compose.onNodeWithText("Safety").assertIsDisplayed()
-        compose.onNodeWithText("Contact and support").assertIsDisplayed()
-        compose.onNodeWithText("View your profile").assertIsDisplayed()
+        compose.onNodeWithText("Safety").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Contact and support").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("View your profile").performScrollTo().assertIsDisplayed()
         assertTrue(compose.onAllNodesWithText("Sign out").fetchSemanticsNodes().isEmpty())
     }
 }

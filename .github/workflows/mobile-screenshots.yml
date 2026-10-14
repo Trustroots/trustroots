@@ -96,7 +96,7 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Build, launch and capture Android app
+      - name: Run Android journeys and capture screenshots
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 36
@@ -105,20 +105,38 @@ jobs:
           profile: pixel_6
           script: |
             test -f apps/android/gradlew
-            bash apps/android/gradlew -p apps/android assembleDebug
+            bash apps/android/gradlew -p apps/android assembleDebug assembleDebugAndroidTest
             adb install -r apps/android/app/build/outputs/apk/debug/app-debug.apk
+            adb install -r apps/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+            mkdir -p tmp/mobile-screenshots
+            if adb shell am instrument -w org.trustroots.android.debug.test/androidx.test.runner.AndroidJUnitRunner > tmp/android-instrumentation.txt 2>&1; then
+              instrumentation_status=0
+            else
+              instrumentation_status=$?
+            fi
+            cat tmp/android-instrumentation.txt
+            test "$instrumentation_status" -eq 0
+            grep -Eq '^OK \([0-9]+ tests?\)' tmp/android-instrumentation.txt
             adb shell am force-stop org.trustroots.android.debug
             adb shell am start -W -n org.trustroots.android.debug/org.trustroots.android.MainActivity
             # Compose can render a blank first frame while Android restores the
             # activity. Capture only after the launched activity has settled.
             sleep 8
-            mkdir -p tmp/mobile-screenshots
             adb exec-out screencap -p > tmp/mobile-screenshots/android_sign_in.png
             test -s tmp/mobile-screenshots/android_sign_in.png
+            adb pull /sdcard/Android/data/org.trustroots.android.debug/files/usability-screenshots/. tmp/mobile-screenshots/
+            test -s tmp/mobile-screenshots/android_host_map.png
+            test -s tmp/mobile-screenshots/android_circles.png
+            test -s tmp/mobile-screenshots/android_profile.png
+            test -s tmp/mobile-screenshots/android_edit_profile.png
+            test -s tmp/mobile-screenshots/android_conversation.png
+            test -s tmp/mobile-screenshots/android_host_result.png
+            test -s tmp/mobile-screenshots/android_discard_changes.png
+            test -s tmp/mobile-screenshots/android_navigation.png
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: mobile-screenshot-android
-          path: tmp/mobile-screenshots/android_sign_in.png
+          path: tmp/mobile-screenshots/android_*.png
           retention-days: 1
 
   publish:
@@ -146,6 +164,14 @@ jobs:
           screenshots="$GITHUB_WORKSPACE/tmp/mobile-screenshots"
           test -s "$screenshots/ios_sign_in.png"
           test -s "$screenshots/android_sign_in.png"
+          test -s "$screenshots/android_host_map.png"
+          test -s "$screenshots/android_circles.png"
+          test -s "$screenshots/android_profile.png"
+          test -s "$screenshots/android_edit_profile.png"
+          test -s "$screenshots/android_conversation.png"
+          test -s "$screenshots/android_host_result.png"
+          test -s "$screenshots/android_discard_changes.png"
+          test -s "$screenshots/android_navigation.png"
 
           pushdir="$(mktemp -d)"
           cd "$pushdir"
@@ -188,6 +214,38 @@ jobs:
               '### Android sign in',
               '',
               `![Android sign in](${baseUrl}/android_sign_in.png)`,
+              '',
+              '### Android host map',
+              '',
+              `![Android host map](${baseUrl}/android_host_map.png)`,
+              '',
+              '### Android circles',
+              '',
+              `![Android circles](${baseUrl}/android_circles.png)`,
+              '',
+              '### Android profile',
+              '',
+              `![Android profile](${baseUrl}/android_profile.png)`,
+              '',
+              '### Android profile editor',
+              '',
+              `![Android profile editor](${baseUrl}/android_edit_profile.png)`,
+              '',
+              '### Android conversation',
+              '',
+              `![Android conversation](${baseUrl}/android_conversation.png)`,
+              '',
+              '### Android host result card',
+              '',
+              `![Android host result card](${baseUrl}/android_host_result.png)`,
+              '',
+              '### Android discard changes',
+              '',
+              `![Android discard changes](${baseUrl}/android_discard_changes.png)`,
+              '',
+              '### Android navigation',
+              '',
+              `![Android navigation](${baseUrl}/android_navigation.png)`,
               '',
             ].join('\n');
             const { data: comments } = await github.rest.issues.listComments({

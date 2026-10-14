@@ -2,6 +2,7 @@ package org.trustroots.android.ui
 
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.assertIsDisplayed
@@ -52,19 +53,12 @@ class HostMapJourneyTest {
             )
         }
         compose.waitUntil(15_000) {
-            compose.onAllNodesWithText("1 offers · 0 Nostroots notes").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText("1 offers · 0 Nostroots notes in this area").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Hosts map").assertIsDisplayed()
-        compose.onNodeWithText("Members").assertIsDisplayed()
-        val tabsBottom = compose.onNodeWithTag("map-tabs").fetchSemanticsNode().boundsInRoot.bottom
-        val controlsTop = compose.onNodeWithTag("map-controls").fetchSemanticsNode().boundsInRoot.top
-        org.junit.Assert.assertEquals(tabsBottom, controlsTop, 1f)
-        compose.onNodeWithText("Search places").assertIsDisplayed()
-        compose.onNodeWithText("Filters").assertIsDisplayed()
-        assertTrue(compose.onAllNodesWithText("Hosting").fetchSemanticsNodes().isEmpty())
-        compose.onNodeWithTag("searchPlaces").performClick()
         compose.onNodeWithTag("placeSearchField").assertIsDisplayed()
-        compose.onNodeWithText("Back to map").performClick()
+        compose.onNodeWithTag("mapStatistics").assertIsDisplayed()
+        captureUsabilityScreenshot(compose, "android_host_map")
+        assertTrue(compose.onAllNodesWithText("Hosting").fetchSemanticsNodes().isEmpty())
         compose.onNodeWithTag("openFilters").performClick()
         compose.onNodeWithText("Hosting").assertIsDisplayed()
         compose.onNodeWithText("Meet").assertIsDisplayed()
@@ -73,10 +67,12 @@ class HostMapJourneyTest {
         compose.onNodeWithText("Last active: any time").performClick()
         compose.onNodeWithText("Last active: 1 month").assertIsDisplayed()
         compose.onNodeWithText("Spoken languages").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Back to map").performClick()
-        compose.onNodeWithText("Search places").assertIsDisplayed()
+        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("placeSearchField").assertIsDisplayed()
+        assertTrue(compose.onAllNodesWithText("Back to map").fetchSemanticsNodes().isEmpty())
+        compose.onNodeWithContentDescription("Search mode").performClick()
         compose.onNodeWithText("Members").performClick()
-        compose.onNodeWithText("Find members").assertIsDisplayed()
+        compose.onNodeWithText("Find a member").assertIsDisplayed()
         responder.join(1_000)
     }
 

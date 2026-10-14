@@ -2,7 +2,7 @@ package org.trustroots.android.ui
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -78,18 +78,18 @@ class ProfileEditingJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Old line").fetchSemanticsNodes().isNotEmpty()
         }
+        captureUsabilityScreenshot(compose, "android_profile")
         compose.onNodeWithText("Edit your profile").performClick()
         compose.onNodeWithText("Tagline").performTextReplacement("New line")
-        compose.onNodeWithText("Save profile").performClick()
+        compose.onNodeWithText("Save changes").performClick()
         compose.waitUntil(10_000) { savedBody.get().isNotBlank() }
         assertTrue(savedBody.get().contains("\"tagline\":\"New line\""))
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("New line").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("New line").assertIsDisplayed()
-        compose.onNodeWithText("Overview").assertIsDisplayed()
+        compose.onNodeWithText("Experiences").assertIsDisplayed()
         compose.onNodeWithText("About").assertIsDisplayed()
-        compose.onNodeWithText("Hosting").assertIsDisplayed()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         assertTrue(returnedToMap.get())
     }

@@ -1,5 +1,6 @@
 package org.trustroots.android.ui
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -23,18 +24,20 @@ class ApkUpdateSettingsJourneyTest {
         var releaseUrl by mutableStateOf<String?>(null)
         var openedUrl: String? = null
         compose.setContent {
-            ApkUpdateSettings(
-                enabled = enabled,
-                checking = false,
-                status = status,
-                releaseUrl = releaseUrl,
-                onToggle = { enabled = !enabled },
-                onCheck = {
-                    status = "Android preview 0.1-2 is available."
-                    releaseUrl = "https://github.com/Trustroots/trustroots/releases/tag/android-preview-2"
-                },
-                onOpenRelease = { openedUrl = it },
-            )
+            Column {
+                ApkUpdateSettings(
+                    enabled = enabled,
+                    checking = false,
+                    status = status,
+                    releaseUrl = releaseUrl,
+                    onToggle = { enabled = !enabled },
+                    onCheck = {
+                        status = "Android preview 0.1-2 is available."
+                        releaseUrl = "https://github.com/Trustroots/trustroots/releases/tag/android-preview-2"
+                    },
+                    onOpenRelease = { openedUrl = it },
+                )
+            }
         }
 
         compose.onNodeWithText("Turn on update alerts").performClick()

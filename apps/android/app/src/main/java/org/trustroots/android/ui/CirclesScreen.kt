@@ -15,20 +15,24 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
@@ -95,9 +99,7 @@ internal fun CirclesScreen(
                 blurBackground = false,
                 testTag = "circleHero",
             )
-            TextButton(onClick = { selected = null }, modifier = Modifier.align(Alignment.TopStart).padding(8.dp)) {
-                Text("‹ Back", color = Color.White)
-            }
+            NativeBackButton(onBack = { selected = null }, modifier = Modifier.align(Alignment.TopStart).padding(8.dp), tint = Color.White)
             }
             Column(Modifier.padding(20.dp)) {
             circle.description?.let {
@@ -112,7 +114,8 @@ internal fun CirclesScreen(
         return
     }
     Column(Modifier.fillMaxSize().padding(20.dp)) {
-        Text("Circles", style = MaterialTheme.typography.headlineMedium)
+        Text("Discover circles", style = MaterialTheme.typography.headlineMedium)
+        Text("Joining circles helps you find likeminded Trustroots members.", modifier = Modifier.padding(vertical = 8.dp))
         OutlinedTextField(filter, { filter = it }, label = { Text("Filter circles") }, modifier = Modifier.fillMaxWidth())
         if (loading) CircularProgressIndicator()
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -139,8 +142,16 @@ internal fun CirclesScreen(
                         Text(circle.label, fontWeight = FontWeight.Bold)
                         Text("${circle.count} members")
                     }
-                    TextButton(onClick = { toggle(circle) }, enabled = updating == null) {
-                        Text(if (circle.id in memberships) "Joined" else "Join")
+                    if (circle.id in memberships) {
+                        OutlinedButton(onClick = { toggle(circle) }, enabled = updating == null) {
+                            Icon(Icons.Default.Check, contentDescription = null)
+                            Text("Joined")
+                        }
+                    } else {
+                        Button(onClick = { toggle(circle) }, enabled = updating == null) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Text("Join")
+                        }
                     }
                 }
                 HorizontalDivider()

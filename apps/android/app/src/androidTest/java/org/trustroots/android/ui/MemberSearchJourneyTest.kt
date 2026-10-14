@@ -11,6 +11,9 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
 import java.io.ByteArrayOutputStream
@@ -75,7 +78,7 @@ class MemberSearchJourneyTest {
                 initialTab = 1,
             )
         }
-        compose.onNodeWithText("Members").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Search mode").assertIsDisplayed()
         compose.onNodeWithText("Name or username").performTextInput("quiet fox")
         compose.onNodeWithText("Search").performClick()
         compose.waitUntil(10_000) {
@@ -102,19 +105,16 @@ class MemberSearchJourneyTest {
             compose.onAllNodesWithText("Add contact").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Add contact").assertIsDisplayed()
-        compose.onNodeWithText("References").assertIsDisplayed()
-        compose.onNodeWithText("A thoughtful guest").assertIsDisplayed()
-        compose.onNodeWithText("About").performClick()
-        compose.onNodeWithText("Languages: English, Portuguese").assertIsDisplayed()
-        compose.onNodeWithText("Hosting").performClick()
-        compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Spare room").fetchSemanticsNodes().isNotEmpty()
-        }
-        compose.onNodeWithText("Spare room").assertIsDisplayed()
-        compose.onNodeWithText("Contacts").performClick()
-        compose.onNodeWithText("Calm Lynx").assertIsDisplayed()
-        compose.onNodeWithText("‹ Back").performClick()
-        compose.onNodeWithText("Members").assertIsDisplayed()
+        assertTrue(compose.onAllNodesWithText("A thoughtful guest").fetchSemanticsNodes().isEmpty())
+        compose.onNodeWithText("Languages: English, Portuguese").performScrollTo().assertIsDisplayed()
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Spare room").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Spare room").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profileSection-contacts").performScrollTo().performClick()
+        compose.onNodeWithTag("profileContact-contact-one").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profilePager").performTouchInput { swipeLeft() }
+        compose.onNodeWithText("A thoughtful guest").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithContentDescription("Search mode").assertIsDisplayed()
         responder.join(1_000)
     }
 }

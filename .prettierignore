@@ -13,6 +13,8 @@ log/
 *.log
 eslint_report.json
 build/
+apps/android/build/
+apps/android/app/build/
 public/lib/
 public/dist/
 public/assets/

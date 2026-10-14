@@ -73,7 +73,7 @@ class CreateExperienceScreenTest {
             )
         }
         compose.onNodeWithText("Experience with Calm Lynx").assertIsDisplayed()
-        compose.onNodeWithText("Share").performClick()
+        compose.onNodeWithText("Save changes").performClick()
         compose.waitUntil(5_000) { created.get() }
         assertTrue(posted.get().contains("\"userTo\":\"member-two\""))
         assertTrue(posted.get().contains("\"met\":true"))

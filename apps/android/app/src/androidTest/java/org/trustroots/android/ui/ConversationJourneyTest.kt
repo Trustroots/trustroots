@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -72,8 +73,9 @@ class ConversationJourneyTest {
             )
         }
         compose.onNodeWithTag("messageComposer").performTextInput("Hello there")
-        compose.onNodeWithText("Send").assertIsDisplayed()
-        compose.onNodeWithText("Send").performClick()
+        compose.onNodeWithContentDescription("Send").assertIsDisplayed()
+        captureUsabilityScreenshot(compose, "android_conversation")
+        compose.onNodeWithContentDescription("Send").performClick()
         compose.waitUntil(10_000) {
             posted.get() && compose.onAllNodesWithText("Hello there").fetchSemanticsNodes().isNotEmpty()
         }
