@@ -2,7 +2,6 @@
 import { fileURLToPath } from 'node:url';
 
 import fs from 'fs';
-import { mergeRawCoverage } from './merge-js-coverage.mts';
 import type {
   Report,
   ReportSuite,
@@ -249,6 +248,7 @@ export async function run() {
   let exitCode = Number(process.env.EXIT_CODE || 0);
   const message = process.env.MESSAGE || 'No status message was recorded.';
 
+  const { mergeRawCoverage } = await import('./merge-js-coverage.mts');
   await mergeRawCoverage();
 
   if (!fs.existsSync(resultsPath)) {
