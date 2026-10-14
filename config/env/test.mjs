@@ -135,7 +135,6 @@ service = {
     title: 'Trustroots test environment.',
     description: 'Trustroots test environment.',
   },
-  emailConfirmationLegacyDeadline: '2099-01-01T00:00:00.000Z',
   umami: {
     scriptSrc: 'https://1p.trustroots.org/script.js',
     websiteId: '6c518160-cd10-4233-a3e4-4491ee387a01',
