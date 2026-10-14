@@ -8,8 +8,9 @@
  * This is safe to run more than once. It never drops or synchronises indexes.
  */
 import mongooseService from './../../config/lib/mongoose.mjs';
+import type { Connection } from 'mongoose';
 
-mongooseService.connect(async connection => {
+mongooseService.connect(async (connection: Connection) => {
   try {
     await Promise.all([
       connection.db

@@ -2,6 +2,8 @@
   "compilerOptions": {
     "strict": true,
     "noEmit": true,
+    "allowJs": true,
+    "checkJs": false,
     "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
