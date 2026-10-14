@@ -10,16 +10,13 @@ const EventEmitter: typeof import('events') = require('events');
 const influx: typeof import('influx') = require('influx');
 const messageController: typeof import('./../../server/controllers/messages.server.controller.mjs') = require('./../../server/controllers/messages.server.controller.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-
 describe('Message to Stats API server service Integration Test', function () {
   let reachEventEmitter: import('node:events').EventEmitter;
-
   before(function () {
     // this emitter will emit event 'reachedInfluxdb' with variables measurement,
     // fields, tags when the influxdb stub is reached
     reachEventEmitter = new EventEmitter();
   });
-
   beforeEach(function () {
     // it will emit an event 'reachedInfluxdb' which should be caught in the tests
     sinon
@@ -31,15 +28,12 @@ describe('Message to Stats API server service Integration Test', function () {
         });
       });
   });
-
   // back to the original
   afterEach(function () {
     sinon.restore();
   });
-
   let user1: UserDocument;
   let user2: UserDocument;
-
   // here we create the users before each test
   beforeEach(function (done) {
     user1 = utils.createTestUser({
@@ -48,25 +42,25 @@ describe('Message to Stats API server service Integration Test', function () {
       password: 'password123',
       description: _.repeat('.', config.profileMinimumLength),
     });
-
     user2 = utils.createTestUser({
       email: 'user2@test.com',
       username: 'username2',
       password: 'password123',
     });
-
     // save those users to mongoDB
-    user1.save(function (err) {
-      if (err) return done(err);
-      user2.save(function (err) {
-        if (err) return done(err);
-        done();
-      });
-    });
+    user1
+      .save()
+      .then(() => {
+        user2
+          .save()
+          .then(() => {
+            done();
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
-
   afterEach(utils.clearDatabase);
-
   context('when a new message is sent', function () {
     // send the new message, do it synchronously
     // otherwise the event may be too early and miss the tests
@@ -80,16 +74,13 @@ describe('Message to Stats API server service Integration Test', function () {
           void _statusCode;
           return this;
         }
-
         send(_response: unknown): void {
           void _response;
         }
-
         json(response: unknown): void {
           this.send(response);
         }
       }
-
       const req = {
         user: {
           _id: user1._id,
@@ -101,11 +92,9 @@ describe('Message to Stats API server service Integration Test', function () {
         },
       };
       const res = new Res();
-
       // sending the message via controller
       messageController.send(req, res);
     });
-
     context('when influxdb is enabled', function () {
       // stubbing the influxdb config
       beforeEach(function () {
@@ -117,17 +106,14 @@ describe('Message to Stats API server service Integration Test', function () {
           database: 'will-never-be-reached',
         });
       });
-
       it('the data should reach the database', function (done) {
         // we want to call the listener when the influxdb is reached
         // that means the test passed
         reachEventEmitter.once('reachedInfluxdb', function () {
           return done();
         });
-
         // otherwise the test will fail with timeout
       });
-
       it('the data should have a proper format', function (done) {
         // we want to call the listener only once
         reachEventEmitter.once(
@@ -155,7 +141,6 @@ describe('Message to Stats API server service Integration Test', function () {
         );
       });
     });
-
     context('when influxdb is disabled', function () {
       // @TODO possibly test with sinon
       // we don't see any way to test this

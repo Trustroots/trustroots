@@ -274,7 +274,12 @@ describe('Admin messages controller unit tests', () => {
     };
     const findUsers = sinon
       .stub(User, 'find')
-      .returns(recipientQuery as unknown as ReturnType<typeof User.find>);
+      .returns(
+        recipientQuery as unknown as ReturnType<typeof User.find>,
+      ) as import('sinon').SinonStub<
+      [filter?: import('mongoose').FilterQuery<UserRecord>],
+      ReturnType<typeof User.find>
+    >;
 
     const res = mockResponse();
     await adminMessages.getScammerRecipients(

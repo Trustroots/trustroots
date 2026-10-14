@@ -184,10 +184,9 @@ function seedCircles(max: number) {
             seedCircle(circle, initialCircleCount + index);
 
             // save the newly created circle
-            circle.save(err => {
-              if (err != null) {
-                console.log(err);
-              } else {
+            circle
+              .save()
+              .then(() => {
                 // Circle was saved successfully
                 process.stdout.write('.');
                 savedCircles += 1;
@@ -210,8 +209,10 @@ function seedCircles(max: number) {
                   );
                   resolve();
                 }
-              }
-            });
+              })
+              .catch(err => {
+                console.log(err);
+              });
             index += 1;
           }
         }); // Promise

@@ -159,7 +159,10 @@ describe('Message server services unit tests', function () {
         function (err: Error | null, stat: MessageStatsPoint) {
           try {
             should.not.exist(err);
-            required(required(findOne.firstCall.args[0]).$or?.[0]).should.eql({
+            const query = required(findOne.firstCall.args[0]);
+            if (!('$or' in query))
+              throw new Error('Expected a message pair filter');
+            required(query.$or?.[0]).should.eql({
               userTo: 'to-id',
               userFrom: 'from-id',
             });

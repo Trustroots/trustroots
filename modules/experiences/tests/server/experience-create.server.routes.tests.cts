@@ -525,7 +525,9 @@ describe('Create an experience', () => {
         });
       });
       it('keeps authentication when MongoDB removes sessions expired by real time', async () => {
-        await mongoose.connection.db
+        const db = mongoose.connection.db;
+        if (!db) throw new Error('Expected the test database connection');
+        await db
           .collection(config.sessionCollection)
           .deleteMany({ expires: { $lte: new Date(realNow) } });
         await agent

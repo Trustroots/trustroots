@@ -25,7 +25,6 @@ const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
 const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
   'Experience',
 );
-
 /**
  * Globals
  */
@@ -38,7 +37,6 @@ let tribe: TribeDocument;
 let _tribe: TribeRecord;
 let tribeNonPublic: TribeDocument;
 let _tribeNonPublic: TribeRecord;
-
 /**
  * User routes tests
  */
@@ -57,7 +55,6 @@ describe('Tribe CRUD tests', function () {
       username: 'trusername',
       password: 'M3@n.jsI$Aw3$0m3',
     };
-
     // Create a new user
     _user = {
       firstName: 'Full',
@@ -69,7 +66,6 @@ describe('Tribe CRUD tests', function () {
       provider: 'local',
       public: true,
     };
-
     // Create a new tribe
     _tribe = {
       label: 'Awesome Tribe',
@@ -79,7 +75,6 @@ describe('Tribe CRUD tests', function () {
       tribe: true,
       description: 'Lorem ipsum.',
     };
-
     // Create a new non-public tribe
     _tribeNonPublic = {
       label: 'Non-public Tribe',
@@ -89,18 +84,26 @@ describe('Tribe CRUD tests', function () {
     user = new User(_user);
     tribe = new Tribe(_tribe);
     tribeNonPublic = new Tribe(_tribeNonPublic);
-
     // Save a user to the test db
-    user.save(function (err) {
-      should.not.exist(err);
-      tribe.save(function (err) {
-        should.not.exist(err);
-        tribeNonPublic.save(function (err) {
-          should.not.exist(err);
-          done(err);
-        });
-      });
-    });
+    user
+      .save()
+      .then(() => {
+        should.not.exist(null);
+        tribe
+          .save()
+          .then(() => {
+            should.not.exist(null);
+            tribeNonPublic
+              .save()
+              .then(() => {
+                should.not.exist(null);
+                done(null);
+              })
+              .catch(done);
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
   afterEach(utils.clearDatabase);
   it('formats stored descriptions consistently in catalogue and detail responses', async () => {
@@ -136,7 +139,6 @@ describe('Tribe CRUD tests', function () {
   it('lists only recent, visible members of circles the viewer joined', async () => {
     user.member!.push({ tribe: tribe._id });
     await user.save();
-
     const createCandidate = (
       username: string,
       attributes: Partial<UserRecord> = {},
@@ -194,7 +196,6 @@ describe('Tribe CRUD tests', function () {
       },
     ]);
     await agent.post('/api/auth/signin').send(credentials).expect(200);
-
     const response = await agent
       .get(`/api/tribes/${tribe.slug}/members`)
       .expect(200);
@@ -217,7 +218,6 @@ describe('Tribe CRUD tests', function () {
   it('filters contacts before applying the result limit and deduplicates pairs', async () => {
     user.member!.push({ tribe: tribe._id });
     await user.save();
-
     const candidates = Array.from({ length: 21 }, (_, index) => {
       const username = `unrelated${index.toString().padStart(2, '0')}`;
       return {
@@ -262,7 +262,6 @@ describe('Tribe CRUD tests', function () {
       },
     ]);
     await agent.post('/api/auth/signin').send(credentials).expect(200);
-
     const response = await agent
       .get(`/api/tribes/${tribe.slug}/members`)
       .expect(200);
@@ -292,16 +291,13 @@ describe('Tribe CRUD tests', function () {
         tribesReadRes.body[0].new.should.equal(true); // Virtual field
         should.exist(tribesReadRes.body[0].created);
         should.exist(tribesReadRes.body[0]._id);
-
         // `color` and `image` are published only for tribes
         should.exist(tribesReadRes.body[0].color);
         tribesReadRes.body[0].image.should.equal(_tribe.image);
-
         // These are at the model, but aren't exposed
         should.not.exist(tribesReadRes.body[0].synonyms);
         should.not.exist(tribesReadRes.body[0].labelHistory);
         should.not.exist(tribesReadRes.body[0].slugHistory);
-
         // Call the assertion callback
         return done(tribesReadErr);
       });
@@ -314,7 +310,6 @@ describe('Tribe CRUD tests', function () {
       .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
-
         // Read tribes
         agent
           .get('/api/tribes')
@@ -332,16 +327,13 @@ describe('Tribe CRUD tests', function () {
             tribesReadRes.body[0].count.should.eql(0);
             should.exist(tribesReadRes.body[0].created);
             should.exist(tribesReadRes.body[0]._id);
-
             // `color` and `image` are published only for tribes
             should.exist(tribesReadRes.body[0].color);
             tribesReadRes.body[0].image.should.equal(_tribe.image);
-
             // These are at the model, but aren't exposed
             should.not.exist(tribesReadRes.body[0].synonyms);
             should.not.exist(tribesReadRes.body[0].labelHistory);
             should.not.exist(tribesReadRes.body[0].slugHistory);
-
             // Call the assertion callback
             return done(tribesReadErr);
           });
@@ -352,79 +344,99 @@ describe('Tribe CRUD tests', function () {
     const tribe1 = new Tribe(_tribe);
     tribe1.label = 'Tribe 1';
     tribe1.count = 50;
-    tribe1.save(function (err) {
-      should.not.exist(err);
-      const tribe2 = new Tribe(_tribe);
-      tribe2.label = 'Tribe 2';
-      tribe2.count = 40;
-      tribe2.save(function (err) {
-        should.not.exist(err);
-        const tribe3 = new Tribe(_tribe);
-        tribe3.label = 'Tribe 3';
-        tribe3.count = 30;
-        tribe3.save(function (err) {
-          should.not.exist(err);
-          const tribe4 = new Tribe(_tribe);
-          tribe4.label = 'Tribe 4';
-          tribe4.count = 20;
-          tribe4.save(function (err) {
-            should.not.exist(err);
-
-            // Read tribes
-            agent
-              .get('/api/tribes?limit=2') // defaults to `&page=1`
-              .expect(200)
-              .end(function (tribesReadErr, tribesReadRes) {
-                tribesReadRes.body.should.have.length(2);
-                tribesReadRes.body[0].label.should.equal('Tribe 1');
-                tribesReadRes.body[1].label.should.equal('Tribe 2');
-
-                // Call the assertion callback
-                return done(tribesReadErr);
-              });
-          });
-        });
-      });
-    });
+    tribe1
+      .save()
+      .then(() => {
+        should.not.exist(null);
+        const tribe2 = new Tribe(_tribe);
+        tribe2.label = 'Tribe 2';
+        tribe2.count = 40;
+        tribe2
+          .save()
+          .then(() => {
+            should.not.exist(null);
+            const tribe3 = new Tribe(_tribe);
+            tribe3.label = 'Tribe 3';
+            tribe3.count = 30;
+            tribe3
+              .save()
+              .then(() => {
+                should.not.exist(null);
+                const tribe4 = new Tribe(_tribe);
+                tribe4.label = 'Tribe 4';
+                tribe4.count = 20;
+                tribe4
+                  .save()
+                  .then(() => {
+                    should.not.exist(null);
+                    // Read tribes
+                    agent
+                      .get('/api/tribes?limit=2') // defaults to `&page=1`
+                      .expect(200)
+                      .end(function (tribesReadErr, tribesReadRes) {
+                        tribesReadRes.body.should.have.length(2);
+                        tribesReadRes.body[0].label.should.equal('Tribe 1');
+                        tribesReadRes.body[1].label.should.equal('Tribe 2');
+                        // Call the assertion callback
+                        return done(tribesReadErr);
+                      });
+                  })
+                  .catch(done);
+              })
+              .catch(done);
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
   it('should be able to read most popular tribes from page 2', function (done) {
     // Create more tribes
     const tribe1 = new Tribe(_tribe);
     tribe1.label = 'Tribe 1';
     tribe1.count = 50;
-    tribe1.save(function (err) {
-      should.not.exist(err);
-      const tribe2 = new Tribe(_tribe);
-      tribe2.label = 'Tribe 2';
-      tribe2.count = 40;
-      tribe2.save(function (err) {
-        should.not.exist(err);
-        const tribe3 = new Tribe(_tribe);
-        tribe3.label = 'Tribe 3';
-        tribe3.count = 30;
-        tribe3.save(function (err) {
-          should.not.exist(err);
-          const tribe4 = new Tribe(_tribe);
-          tribe4.label = 'Tribe 4';
-          tribe4.count = 20;
-          tribe4.save(function (err) {
-            should.not.exist(err);
-
-            // Read tribes
-            agent
-              .get('/api/tribes?limit=2&page=2')
-              .expect(200)
-              .end(function (tribesReadErr, tribesReadRes) {
-                tribesReadRes.body.should.have.length(2);
-                tribesReadRes.body[0].label.should.equal('Tribe 3');
-                tribesReadRes.body[1].label.should.equal('Tribe 4');
-
-                // Call the assertion callback
-                return done(tribesReadErr);
-              });
-          });
-        });
-      });
-    });
+    tribe1
+      .save()
+      .then(() => {
+        should.not.exist(null);
+        const tribe2 = new Tribe(_tribe);
+        tribe2.label = 'Tribe 2';
+        tribe2.count = 40;
+        tribe2
+          .save()
+          .then(() => {
+            should.not.exist(null);
+            const tribe3 = new Tribe(_tribe);
+            tribe3.label = 'Tribe 3';
+            tribe3.count = 30;
+            tribe3
+              .save()
+              .then(() => {
+                should.not.exist(null);
+                const tribe4 = new Tribe(_tribe);
+                tribe4.label = 'Tribe 4';
+                tribe4.count = 20;
+                tribe4
+                  .save()
+                  .then(() => {
+                    should.not.exist(null);
+                    // Read tribes
+                    agent
+                      .get('/api/tribes?limit=2&page=2')
+                      .expect(200)
+                      .end(function (tribesReadErr, tribesReadRes) {
+                        tribesReadRes.body.should.have.length(2);
+                        tribesReadRes.body[0].label.should.equal('Tribe 3');
+                        tribesReadRes.body[1].label.should.equal('Tribe 4');
+                        // Call the assertion callback
+                        return done(tribesReadErr);
+                      });
+                  })
+                  .catch(done);
+              })
+              .catch(done);
+          })
+          .catch(done);
+      })
+      .catch(done);
   });
 });

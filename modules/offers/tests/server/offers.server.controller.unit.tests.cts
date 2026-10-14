@@ -605,19 +605,7 @@ describe('Offers controller unit tests', () => {
       const offerReq = populatedOffer(
         await Offer.findById(offer._id).populate('user', '_id'),
       );
-      const findOneAndRemove = sinon.stub(
-        Offer,
-        'findOneAndRemove',
-      ) as unknown as import('sinon').SinonStub<
-        [
-          import('mongoose').FilterQuery<OfferRecord>,
-          (error: Error | null) => void,
-        ],
-        void
-      >;
-      findOneAndRemove.callsFake((_query, cb) =>
-        cb(new Error('remove failed')),
-      );
+      sinon.stub(Offer, 'findOneAndDelete').rejects(new Error('remove failed'));
 
       const { res } = await runHandler(res =>
         offersController.delete({ user: owner, offer: offerReq }, res),

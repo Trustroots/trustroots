@@ -14,20 +14,17 @@ import type {
 const should: typeof import('should') = require('should');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-
 const User = mongoose.model<UserRecord, UserModel>('User');
 const Message = mongoose.model<MessageRecord, MessageModel>('Message');
 const MessageStat = mongoose.model<MessageStatRecord, MessageStatModel>(
   'MessageStat',
 );
-
 /**
  * Globals
  */
 let user0: UserModelDocument;
 let user1: UserModelDocument;
 let message: MessageDocument;
-
 /**
  * Unit tests
  */
@@ -42,7 +39,6 @@ describe('MessageStats Model', function () {
       password: 'password123',
       provider: 'local',
     });
-
     user1 = new User({
       firstName: 'Full',
       lastName: 'Name',
@@ -52,7 +48,6 @@ describe('MessageStats Model', function () {
       password: 'password123',
       provider: 'local',
     });
-
     message = new Message({
       content: 'Message content',
       userFrom: user0._id,
@@ -60,9 +55,7 @@ describe('MessageStats Model', function () {
       read: false,
     });
   });
-
   afterEach(utils.clearDatabase);
-
   it('new MessageStat should have specific fields', function () {
     const messageStat = new MessageStat({
       firstMessageUserFrom: user0._id,
@@ -70,7 +63,6 @@ describe('MessageStats Model', function () {
       firstMessageCreated: message.created,
       firstMessageLength: message.content!.length,
     });
-
     messageStat.should.have.property('_id');
     messageStat.should.have.property('firstMessageUserFrom');
     messageStat.should.have.property('firstMessageUserTo');
@@ -96,10 +88,12 @@ describe('MessageStats Model', function () {
       firstMessageCreated: message.created,
       firstMessageLength: message.content!.length,
     });
-
-    messageStat.save(function (err) {
-      should.not.exist(err);
-      return done();
-    });
+    messageStat
+      .save()
+      .then(() => {
+        should.not.exist(null);
+        return done();
+      })
+      .catch(done);
   });
 });

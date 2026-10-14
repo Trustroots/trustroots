@@ -1320,7 +1320,7 @@ describe('Profile controller unit tests', () => {
       const userDoc = await findUser(saved._id);
       userDoc.member = [{ tribe: tribe._id, since: new Date() }];
       await userDoc.save();
-      await Tribe.findByIdAndRemove(tribe._id);
+      await Tribe.findByIdAndDelete(tribe._id);
 
       const { res } = await runHandler(res =>
         profileController.leaveTribe(
