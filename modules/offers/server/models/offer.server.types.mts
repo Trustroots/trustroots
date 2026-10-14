@@ -13,7 +13,7 @@ export interface OfferServerRecord {
   noOfferDescription?: string;
   maxGuests?: number;
   location: OfferLocation;
-  locationFuzzy: OfferLocation;
+  locationFuzzy?: OfferLocation;
   updated?: Date;
   createdAt?: Date;
   validUntil?: Date;

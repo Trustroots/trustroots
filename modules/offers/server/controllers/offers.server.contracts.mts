@@ -34,21 +34,32 @@ export type OfferEndpointRecord = Omit<
 
 export type OfferSanitiseRecord = Omit<
   OfferPayload<Types.ObjectId, Date>,
-  'user' | 'type' | 'location'
+  'user' | 'location'
 > & {
-  user?: Types.ObjectId | PopulatedOfferUser | string;
-  type?: OfferServerRecord['type'];
-  location: number[];
-  locationFuzzy: number[];
+  user?: Types.ObjectId | PopulatedOfferUser | string | null;
+  location: OfferServerRecord['location'];
+  locationFuzzy?: OfferServerRecord['locationFuzzy'];
 };
+
+export type OfferSanitisedPayload = Omit<
+  OfferPayload<Types.ObjectId | string, Date>,
+  'user' | 'location'
+> & {
+  user?: Types.ObjectId | PopulatedOfferUser | string | null;
+  location?: OfferServerRecord['location'];
+};
+
+export interface OfferSanitiseDocument {
+  toObject(): OfferSanitiseRecord;
+}
 
 export interface OfferEndpointDocument {
   _id: Types.ObjectId;
   type?: OfferType;
   status?: OfferStatus;
-  user?: Types.ObjectId | PopulatedOfferUser | string;
+  user?: Types.ObjectId | PopulatedOfferUser | string | null;
   location: number[];
-  locationFuzzy: number[];
+  locationFuzzy?: number[];
   description?: string;
   noOfferDescription?: string;
   maxGuests?: number;
@@ -104,9 +115,9 @@ export type OfferErrorResponse = { message: string };
 export type OfferResponseBody =
   | OfferErrorResponse
   | OfferMutationResponse
-  | OfferPayload<Types.ObjectId | string, Date>
+  | OfferSanitisedPayload
   | OfferSearchFeatureCollection
-  | Array<OfferPayload<Types.ObjectId | string, Date>>;
+  | Array<OfferSanitisedPayload>;
 
 export type OfferResponse = Pick<
   Response<OfferResponseBody>,
@@ -119,7 +130,7 @@ export interface OfferRequest<Body = Record<string, unknown>> {
   query?: OfferQuery;
   user?: AuthenticatedOfferUser | null;
   offer?: OfferRequestDocument | null;
-  offers?: Array<OfferPayload<Types.ObjectId | string, Date>>;
+  offers?: Array<OfferSanitisedPayload>;
 }
 
 export type OfferNext = NextFunction;

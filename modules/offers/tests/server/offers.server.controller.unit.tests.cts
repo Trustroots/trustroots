@@ -252,6 +252,23 @@ describe('Offers controller unit tests', () => {
       res.statusCode.should.equal(200);
     });
 
+    it('preserves numeric moment-compatible expiry input', async () => {
+      const validUntil = Date.now() + 5 * 24 * 60 * 60 * 1000;
+      const { res } = await runHandler(res =>
+        offersController.create(
+          {
+            user: owner,
+            body: { type: 'meet', location: [10, 20], validUntil },
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      const offer = required(await Offer.findOne({ user: owner._id }));
+      required(offer.validUntil).getTime().should.equal(validUntil);
+    });
+
     it('defaults meet offer expiry when max validity config is absent', async () => {
       sinon.stub(config, 'limits').value({});
       const controller = offersController;
@@ -596,6 +613,18 @@ describe('Offers controller unit tests', () => {
 
       res.statusCode.should.equal(400);
       res.body.message.should.equal('Could not parse filters.');
+    });
+
+    it('accepts a JSON array as an empty filter object', async () => {
+      const { res } = await runHandler(res =>
+        offersController.list(
+          { user: owner, query: { ...validCoords, filters: '[]' } },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      res.body.should.deepEqual({ type: 'FeatureCollection', features: [] });
     });
 
     it('rejects invalid tribe ids in filters', async () => {
@@ -1055,6 +1084,23 @@ describe('Offers controller unit tests', () => {
           owner._id.toString(),
         ),
       );
+      nextCalled.should.be.true();
+    });
+
+    it('returns an offer with a nullable owner without rejecting the result', async () => {
+      const ownerlessOffer = new Offer({ type: 'host', location: [10, 20] });
+      const findOffers = sinon.stub(Offer, 'find');
+      findOffers.callsArgWith(1, null, [ownerlessOffer]);
+
+      const { nextCalled } = await runHandler((res, next) =>
+        offersController.offersByUserId(
+          { user: owner },
+          res,
+          next,
+          owner._id.toString(),
+        ),
+      );
+
       nextCalled.should.be.true();
     });
 

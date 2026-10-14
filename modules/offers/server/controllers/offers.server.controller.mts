@@ -16,7 +16,6 @@ import mongoose, {
 } from 'mongoose';
 import type {
   OfferType,
-  OfferPayload,
   OfferSearchAggregationFeature,
   CreateOfferRequest,
   UpdateOfferRequest,
@@ -26,19 +25,19 @@ import type {
   OfferEndpointDocument,
   OfferEndpointRecord,
   OfferSanitiseRecord,
+  OfferSanitisedPayload,
   PopulatedOfferUser,
   OfferNext,
   OfferRequest,
   OfferRequestDocument,
   OfferResponse,
+  OfferSanitiseDocument,
   OfferReadDocument,
-  ValidOfferEndpointDocument,
 } from './offers.server.contracts.mts';
 import normaliseOfferExpiry from './../services/offer-expiry.server.service.mjs';
 import {
   prepareNewOffer,
   prepareOfferMutationResponse,
-  prepareOfferPayload,
   prepareOfferSearchResults,
 } from './../services/offer-payload.server.service.mts';
 function getUserProfile() {
@@ -52,15 +51,15 @@ const Offer = mongoose.model<OfferEndpointRecord>('Offer');
 const User = mongoose.model<PopulatedOfferUser>('User');
 const DEFAULT_MAP_LOCATION = [48.6908333333, 9.14055555556];
 
-interface OfferFilters extends Record<string, unknown> {
+interface OfferFilters {
   hasArrayFilter(filterType: string): boolean;
   hasObjectFilter(filterType: string): boolean;
 }
 
-function addOfferFilterHelpers(filters: Record<string, unknown>): OfferFilters {
+function addOfferFilterHelpers(filters: object): OfferFilters {
   return Object.assign(filters, {
     hasArrayFilter(filterType: string): boolean {
-      const value = filters[filterType];
+      const value = Reflect.get(filters, filterType);
       return (
         Object.hasOwn(filters, filterType) &&
         Array.isArray(value) &&
@@ -68,7 +67,7 @@ function addOfferFilterHelpers(filters: Record<string, unknown>): OfferFilters {
       );
     },
     hasObjectFilter(filterType: string): boolean {
-      const value = filters[filterType];
+      const value = Reflect.get(filters, filterType);
       return (
         Object.hasOwn(filters, filterType) &&
         value !== null &&
@@ -102,17 +101,21 @@ function requestOfferUserId(
 
 function isOfferEndpointDocument(
   value: OfferRequestDocument,
-): value is ValidOfferEndpointDocument {
+): value is OfferEndpointDocument {
+  // `offerById` assigns a hydrated Offer document; check only the methods this
+  // mutation actually invokes, without imposing new persistence validation.
   return (
     typeof value.set === 'function' &&
     typeof value.save === 'function' &&
-    isOfferReadDocument(value)
+    typeof value.toObject === 'function'
   );
 }
 
 function isOfferReadDocument(
   value: OfferRequestDocument,
 ): value is OfferReadDocument {
+  // Preserve getOffer's original truthiness guard. The route middleware
+  // supplies a hydrated Offer document for the schema-backed fields below.
   return (
     Boolean(value.user) &&
     Boolean(value.location) &&
@@ -121,18 +124,12 @@ function isOfferReadDocument(
 }
 
 function normaliseEndpointExpiry(
-  type: OfferType,
-  validUntil: string | number | Date | undefined,
+  type: OfferType | undefined,
+  validUntil: unknown,
 ): Date | undefined {
-  const expiry =
-    validUntil === undefined
-      ? undefined
-      : validUntil instanceof Date
-        ? validUntil
-        : String(validUntil);
   return normaliseOfferExpiry(
-    type,
-    expiry ?? '',
+    type ?? '',
+    validUntil,
     config.limits.maxOfferValidFromNow,
     moment().toDate(),
   );
@@ -152,7 +149,7 @@ function isDefaultMapLocation(location: unknown): boolean {
  */
 function parseFiltersString(
   filtersString: string,
-): Record<string, unknown> | false {
+): Record<string, unknown> | unknown[] | false {
   try {
     const filtersObject = JSON.parse(filtersString);
 
@@ -161,12 +158,9 @@ function parseFiltersString(
     // but... JSON.parse(null) returns null, and typeof null === "object",
     // so we must check for that, too. Thankfully, null is falsey, so this suffices.
     // @link http://stackoverflow.com/a/20392392/1984644
-    if (
-      filtersObject !== null &&
-      typeof filtersObject === 'object' &&
-      !Array.isArray(filtersObject)
-    ) {
-      const filters: Record<string, unknown> = {};
+    if (filtersObject !== null && typeof filtersObject === 'object') {
+      if (Array.isArray(filtersObject)) return filtersObject;
+      const filters: Record<string, unknown> = Object.create(null);
       for (const [key, value] of Object.entries(filtersObject)) {
         filters[key] = value;
       }
@@ -182,13 +176,15 @@ function parseFiltersString(
  * Sanitize offer fields
  */
 function sanitizeOffer(
-  offerDocument: OfferReadDocument,
+  offerDocument: OfferSanitiseDocument,
   authenticatedUser?: AuthenticatedOfferUser,
   alwaysFuzzyLocation = false,
-): OfferPayload<Types.ObjectId | string, Date> {
+): OfferSanitisedPayload {
   // offer is a Mongo document, turn it into regular JS object
   // so that we can modify it on the fly
   const offer: OfferSanitiseRecord = offerDocument.toObject();
+  let responseLocation: OfferSanitiseRecord['location'] | undefined =
+    offer.location;
   const ownerId = requestOfferUserId(offer.user);
   const isOwnOffer = Boolean(
     authenticatedUser &&
@@ -229,26 +225,29 @@ function sanitizeOffer(
   // Make sure we return accurate location only for offer owner,
   // others will see pre generated fuzzy location
   if (alwaysFuzzyLocation || !isOwnOffer) {
-    offer.location = offer.locationFuzzy;
+    responseLocation = offer.locationFuzzy;
   }
 
   // Pick fields to send out, leaves out e.g. `locationFuzzy` and `reactivateReminderSent`
-  if (!offer.type || !offer.user || !isOfferLocation(offer.location)) {
-    throw new Error('Offer is missing required response fields.');
-  }
-  if (
-    !(offer.user instanceof mongoose.Types.ObjectId) &&
-    typeof offer.user !== 'string' &&
-    typeof offer.user.username !== 'string'
-  ) {
-    throw new Error('Offer owner is missing required response fields.');
-  }
-  return prepareOfferPayload({
-    ...offer,
+  return {
+    _id: offer._id,
     type: offer.type,
-    user: offer.user,
-    location: offer.location,
-  });
+    ...(offer.user === undefined ? {} : { user: offer.user }),
+    ...(responseLocation === undefined ? {} : { location: responseLocation }),
+    ...(offer.status === undefined ? {} : { status: offer.status }),
+    ...(offer.description === undefined
+      ? {}
+      : { description: offer.description }),
+    ...(offer.noOfferDescription === undefined
+      ? {}
+      : { noOfferDescription: offer.noOfferDescription }),
+    ...(offer.maxGuests === undefined ? {} : { maxGuests: offer.maxGuests }),
+    ...(offer.updated === undefined ? {} : { updated: offer.updated }),
+    ...(offer.validUntil === undefined ? {} : { validUntil: offer.validUntil }),
+    ...(offer.showOnlyInMyCircles === undefined
+      ? {}
+      : { showOnlyInMyCircles: offer.showOnlyInMyCircles }),
+  };
 }
 
 /**
@@ -294,15 +293,6 @@ function isValidOfferType(type: unknown): type is OfferType {
   return Array.isArray(enumValues) && enumValues.some(value => value === type);
 }
 
-function isOfferLocation(value: unknown): value is [number, number] {
-  return (
-    Array.isArray(value) &&
-    value.length === 2 &&
-    typeof value[0] === 'number' &&
-    typeof value[1] === 'number'
-  );
-}
-
 function parseOfferLocation(value: unknown): [number, number] | undefined {
   if (!Array.isArray(value) || value.length !== 2) return undefined;
   const coordinates = value.map(coordinate => {
@@ -322,14 +312,6 @@ function parseOfferLocation(value: unknown): [number, number] | undefined {
 
 function hasOwnField(body: Record<string, unknown>, field: string): boolean {
   return Object.hasOwn(body, field);
-}
-
-function isOfferExpiry(value: unknown): value is string | number | Date {
-  return (
-    typeof value === 'string' ||
-    typeof value === 'number' ||
-    value instanceof Date
-  );
 }
 
 /**
@@ -367,10 +349,7 @@ function create(
     type: body.type,
     location: parseOfferLocation(body.location) ?? [0, 0],
   };
-  const validUntil = normaliseEndpointExpiry(
-    body.type,
-    isOfferExpiry(body.validUntil) ? body.validUntil : undefined,
-  );
+  const validUntil = normaliseEndpointExpiry(body.type, body.validUntil);
   if (validUntil === undefined) {
     delete body.validUntil;
   } else {
@@ -455,14 +434,7 @@ function update(
         if (!isOfferEndpointDocument(offer)) {
           return done(new Error('Offer document is not available for update.'));
         }
-        const offerType = offer.type;
-        if (!isValidOfferType(offerType)) {
-          return done(new Error('Offer type is not available for update.'));
-        }
-        const validUntil = normaliseEndpointExpiry(
-          offerType,
-          isOfferExpiry(body.validUntil) ? body.validUntil : undefined,
-        );
+        const validUntil = normaliseEndpointExpiry(offer.type, body.validUntil);
         if (validUntil === undefined) {
           delete body.validUntil;
         } else {
@@ -688,10 +660,11 @@ function list(req: OfferRequest, res: OfferResponse) {
   });
 
   // Types filter
-  if (filters.hasArrayFilter('types') && isUnknownArray(filters.types)) {
+  const typesFilter = Reflect.get(filters, 'types');
+  if (filters.hasArrayFilter('types') && isUnknownArray(typesFilter)) {
     // Accept only valid values, ignore the rest
     // @link https://lodash.com/docs/#filter
-    const filterTypes = _.filter(filters.types, function (type: unknown) {
+    const filterTypes = _.filter(typesFilter, function (type: unknown) {
       return isValidOfferType(type);
     });
 
@@ -739,16 +712,13 @@ function list(req: OfferRequest, res: OfferResponse) {
 
   // Last seen filter
   if (filters.hasObjectFilter('seen')) {
-    const seenFilter = filters.seen;
-    const seenDuration =
-      seenFilter !== null && typeof seenFilter === 'object'
-        ? Object.fromEntries(
-            Object.entries(seenFilter).filter(
-              (entry): entry is [string, number] =>
-                typeof entry[1] === 'number',
-            ),
-          )
-        : String(seenFilter);
+    const seenFilter = Reflect.get(filters, 'seen');
+    const seenDuration: Record<string, number> = {};
+    if (seenFilter !== null && typeof seenFilter === 'object') {
+      for (const [unit, amount] of Object.entries(seenFilter)) {
+        seenDuration[unit] = Number(amount);
+      }
+    }
     query.push({
       $match: {
         'user.seen': {
@@ -761,8 +731,9 @@ function list(req: OfferRequest, res: OfferResponse) {
   // Languages filter
   if (
     filters.hasArrayFilter('languages') &&
-    isUnknownArray(filters.languages)
+    isUnknownArray(Reflect.get(filters, 'languages'))
   ) {
+    const languageFilter = Reflect.get(filters, 'languages');
     let languages = JSON.parse(
       readFileSync(
         new URL('../../../../config/languages/languages.json', import.meta.url),
@@ -776,7 +747,7 @@ function list(req: OfferRequest, res: OfferResponse) {
     // Accept only valid language codes, ignore the rest
     // @link https://lodash.com/docs/#filter
     const filterLanguages = _.filter(
-      filters.languages,
+      languageFilter,
       function (language: unknown) {
         return (
           typeof language === 'string' && _.indexOf(languages, language) > -1
@@ -797,11 +768,13 @@ function list(req: OfferRequest, res: OfferResponse) {
   }
 
   // Tribes filter
-  if (filters.hasArrayFilter('tribes') && isUnknownArray(filters.tribes)) {
+  if (
+    filters.hasArrayFilter('tribes') &&
+    isUnknownArray(Reflect.get(filters, 'tribes'))
+  ) {
+    const tribeFilter = Reflect.get(filters, 'tribes');
     const tribeQueries: Array<Record<string, Types.ObjectId>> = [];
-    const isTribeFilterValid = filters.tribes.every(function (
-      tribeId: unknown,
-    ) {
+    const isTribeFilterValid = tribeFilter.every(function (tribeId: unknown) {
       // Return failure if tribe id is invalid, otherwise add id to query array
       return (
         typeof tribeId === 'string' &&
@@ -1054,11 +1027,6 @@ function offersByUserId(
 
       // Sanitize offers
       req.offers = _.map(offers, function (offer) {
-        if (!isOfferReadDocument(offer)) {
-          throw new Error(
-            'Offer document is missing required response fields.',
-          );
-        }
         return sanitizeOffer(offer, req.user ?? undefined);
       });
       next();
