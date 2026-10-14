@@ -76,3 +76,8 @@ export interface ExperienceCount {
   count: number;
   hasPending?: boolean;
 }
+
+/** Query accepted by GET /api/experiences/count after input validation. */
+export interface ExperienceCountRequest {
+  userTo: string;
+}
