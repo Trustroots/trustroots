@@ -7,6 +7,9 @@ import inject from '@rollup/plugin-inject';
 import react from '@vitejs/plugin-react';
 import { defineConfig, transformWithOxc } from 'vite';
 
+import config from './config/config.mjs';
+import { rtlStylesheetPlugin } from './config/vite/rtl-stylesheet.mjs';
+
 const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL('.', import.meta.url));
 const apiTarget = process.env.TRUSTROOTS_API_URL || 'http://localhost:3001';
@@ -63,7 +66,7 @@ const legacyCssImports = {
   transform(code, id) {
     if (!id.endsWith('.less')) return null;
 
-    return code.replace(
+    const transformed = code.replace(
       /@import ['"]~([^/'"]+)\/([^'"]+\.css)['"];/g,
       (_, alias, path) => {
         const base = alias === 'modules' ? root : resolve(root, 'node_modules');
@@ -71,6 +74,12 @@ const legacyCssImports = {
         return `@import (inline) '${filename}';`;
       },
     );
+    if (transformed === code) return null;
+
+    return {
+      code: transformed,
+      map: { mappings: '' },
+    };
   },
 };
 
@@ -82,6 +91,7 @@ export default defineConfig({
   plugins: [
     legacyJsx,
     legacyCssImports,
+    rtlStylesheetPlugin(),
     react(),
     inject({
       include:
@@ -134,7 +144,8 @@ export default defineConfig({
     },
   },
   server: {
-    host: '0.0.0.0',
+    // Same bind address as the Webpack development server, including local.js.
+    host: config.host,
     port,
     strictPort: true,
     proxy: {
@@ -149,6 +160,9 @@ export default defineConfig({
     outDir: resolve(root, 'public/assets'),
     assetsDir: '.',
     emptyOutDir: false,
+    // Match Webpack's asset module inline limit.
+    assetsInlineLimit: 10000,
+    sourcemap: true,
     manifest: 'vite-manifest.json',
     cssCodeSplit: false,
     rollupOptions: {
