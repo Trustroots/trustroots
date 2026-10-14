@@ -1,14 +1,67 @@
 require('should');
 
-let createTargetedRequestLimits;
-let getRequestIdentity;
+type Operation =
+  | 'signup'
+  | 'support'
+  | 'signin'
+  | 'forgotPassword'
+  | 'resetPassword'
+  | 'resendConfirmation'
+  | 'avatarUpload';
+type Policy = {
+  enabled?: boolean;
+  windowMs: number;
+  ipLimit: number;
+  identityLimit: number;
+};
+type Config = { targetedRequestLimits: Record<Operation, Policy> };
+type Request = {
+  ip?: string;
+  user?: { id?: string };
+  body?: { email?: unknown; username?: unknown };
+  params?: { token?: unknown };
+  get?: (name: string) => string | undefined;
+};
+type Dimension = { name: string; value: string; limit: number };
+type ConsumeOptions = {
+  operation: Operation;
+  dimensions: Dimension[];
+  windowMs: number;
+};
+type Response = {
+  statusCode: number;
+  headers: Record<string, string>;
+  body: unknown;
+  set(name: string, value: string): Response;
+  status(code: number): Response;
+  send(body: unknown): Response;
+};
+type Next = () => void;
+type Middleware = (req: Request, res: Response, next: Next) => Promise<unknown>;
+type MiddlewareSet = Record<Operation, Middleware> & {
+  getRequestIdentity(req: Request, source: string): string | undefined;
+};
+type MiddlewareFactory = (dependencies: {
+  config: Config;
+  getClientIpAddress: (req: Request) => string | undefined;
+  consume: (
+    options: ConsumeOptions,
+  ) => Promise<{ allowed: boolean; retryAfterSeconds?: number }>;
+}) => MiddlewareSet;
+type IdentityGetter = MiddlewareSet['getRequestIdentity'];
+
+let createTargetedRequestLimits: MiddlewareFactory;
+let getRequestIdentity: IdentityGetter;
 
 function loadMiddleware(
-  consume,
-  getClientIpAddress = () => '198.51.100.20',
-  policyOverrides = {},
-) {
-  const config = {
+  consume: (
+    options: ConsumeOptions,
+  ) => Promise<{ allowed: boolean; retryAfterSeconds?: number }>,
+  getClientIpAddress: (req: Request) => string | undefined = () =>
+    '198.51.100.20',
+  policyOverrides: Partial<Record<Operation, Partial<Policy> | null>> = {},
+): MiddlewareSet {
+  const config: Config = {
     targetedRequestLimits: {
       signup: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       support: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
@@ -19,7 +72,9 @@ function loadMiddleware(
       avatarUpload: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
     },
   };
-  Object.entries(policyOverrides).forEach(([name, policy]) => {
+  (
+    Object.entries(policyOverrides) as [Operation, Partial<Policy> | null][]
+  ).forEach(([name, policy]) => {
     if (policy === null) {
       delete config.targetedRequestLimits[name];
     } else {
@@ -33,19 +88,23 @@ function loadMiddleware(
   });
 }
 
-function response() {
-  const res = { statusCode: 200, headers: {}, body: null };
-  res.set = (name, value) => {
-    res.headers[name] = value;
-    return res;
-  };
-  res.status = code => {
-    res.statusCode = code;
-    return res;
-  };
-  res.send = body => {
-    res.body = body;
-    return res;
+function response(): Response {
+  const res: Response = {
+    statusCode: 200,
+    headers: {},
+    body: null,
+    set(name, value) {
+      res.headers[name] = value;
+      return res;
+    },
+    status(code) {
+      res.statusCode = code;
+      return res;
+    },
+    send(body) {
+      res.body = body;
+      return res;
+    },
   };
   return res;
 }
@@ -57,7 +116,7 @@ describe('Targeted request limit middleware', function () {
   });
 
   it('counts signup by normalised recipient independently of client address', async function () {
-    const calls = [];
+    const calls: ConsumeOptions[] = [];
     const middleware = loadMiddleware(
       async options => {
         calls.push(options);
@@ -84,7 +143,7 @@ describe('Targeted request limit middleware', function () {
   });
 
   it('limits anonymous support by client address and signed-in support by member', async function () {
-    const calls = [];
+    const calls: ConsumeOptions[] = [];
     const middleware = loadMiddleware(async options => {
       calls.push(options);
       return { allowed: true };
@@ -114,7 +173,7 @@ describe('Targeted request limit middleware', function () {
   });
 
   it('combines trusted IP and normalised account identity', async function () {
-    let options;
+    let options: ConsumeOptions | undefined;
     const middleware = loadMiddleware(async value => {
       options = value;
       return { allowed: true, retryAfterSeconds: 3 };
@@ -133,8 +192,8 @@ describe('Targeted request limit middleware', function () {
     );
 
     proceeded.should.be.true();
-    options.operation.should.equal('signin');
-    options.dimensions
+    options!.operation.should.equal('signin');
+    options!.dimensions
       .map(value => value.value)
       .should.deepEqual([
         '198.51.100.20',
@@ -244,7 +303,7 @@ describe('Targeted request limit middleware', function () {
   });
 
   it('limits member actions without an IP dimension when IP limiting is disabled', async function () {
-    let options;
+    let options: ConsumeOptions | undefined;
     const middleware = loadMiddleware(
       async value => {
         options = value;
@@ -258,7 +317,7 @@ describe('Targeted request limit middleware', function () {
       response(),
       () => {},
     );
-    options.dimensions.should.deepEqual([
+    options!.dimensions.should.deepEqual([
       { name: 'member', value: 'fictional-member', limit: 2 },
     ]);
   });
