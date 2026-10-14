@@ -5,6 +5,7 @@ import textService from '../../../core/server/services/text.server.service.mjs';
 import messageToStatsService from '../../../messages/server/services/message-to-stats.server.service.mjs';
 import messageStatService from '../../../messages/server/services/message-stat.server.service.mjs';
 import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
+import { isProfileDeletionPending } from '../services/profile-deletion.server.service.mts';
 
 const service = {};
 
@@ -21,20 +22,13 @@ const HISTORIC_AREA = {
   east: 9.1519975662,
 };
 
-function isDeletionPending(user) {
-  if (!user.removeProfileToken) return false;
-  if (!user.removeProfileExpires) return true;
-  const expiry = new Date(user.removeProfileExpires).getTime();
-  return !Number.isFinite(expiry) || expiry > Date.now();
-}
-
 function isEligibleRecipient(user, senderId) {
   return (
     user &&
     user.public === true &&
     String(user._id) !== String(senderId) &&
     !userRolesService.hasRestrictedMessagingRole(user) &&
-    !isDeletionPending(user)
+    !isProfileDeletionPending(user)
   );
 }
 

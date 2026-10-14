@@ -7,6 +7,7 @@ import path from 'path';
 import config from './../../../../config/config.mjs';
 import errorService from './../../../core/server/services/error.server.service.mjs';
 import userRolesService from './../../../users/server/services/user-roles.server.service.mjs';
+import { isProfileDeletionPending } from '../services/profile-deletion.server.service.mts';
 const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
 const EARTH_RADIUS_KM = 6378.1;
@@ -63,19 +64,6 @@ function isNewsletterSubscriber(user) {
     return false;
   }
   return true;
-}
-function isProfileDeletionPending(user) {
-  if (!user || !user.removeProfileToken) {
-    return false;
-  }
-  if (!user.removeProfileExpires) {
-    return true;
-  }
-  const expiresAt = new Date(user.removeProfileExpires);
-  if (Number.isNaN(expiresAt.getTime())) {
-    return true;
-  }
-  return expiresAt.getTime() > Date.now();
 }
 function buildEligibleSubscribersQuery(query = {}) {
   return {
