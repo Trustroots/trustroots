@@ -12,7 +12,7 @@ const {
   readLanes,
   renderE2eAreaTable,
   renderOverviewTable,
-} = require('../../../../../scripts/coverage/generate-pr-summary');
+} = require('../../../../../scripts/coverage/generate-pr-summary.cts');
 
 describe('Coverage PR summary unit tests', () => {
   const clientLane = {

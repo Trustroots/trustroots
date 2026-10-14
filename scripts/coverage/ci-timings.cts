@@ -1,16 +1,49 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('fs') as typeof import('node:fs');
+const path = require('path') as typeof import('node:path');
 
-function readTimings(root) {
+interface WorkflowStep {
+  number: number;
+  name: string;
+  status: string;
+  conclusion: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
+}
+
+interface WorkflowJob {
+  name: string;
+  status: string;
+  conclusion?: string | null;
+  started_at?: string | null;
+  completed_at?: string | null;
+  html_url: string;
+  steps: WorkflowStep[];
+}
+
+interface WorkflowTiming {
+  name: string;
+  url: string;
+  startedAt: string | null;
+  completedAt: string | null;
+  jobs: WorkflowJob[];
+}
+
+interface CiTimings {
+  collectedAt: string;
+  workflows: WorkflowTiming[];
+  unavailable?: string[];
+}
+
+function readTimings(root: string): CiTimings | null {
   const file = path.join(root, 'coverage/ci-timings.json');
   try {
-    return JSON.parse(fs.readFileSync(file, 'utf8'));
+    return JSON.parse(fs.readFileSync(file, 'utf8')) as CiTimings;
   } catch {
     return null;
   }
 }
 
-function escapeHtml(value) {
+function escapeHtml(value: string | null | undefined): string {
   return String(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -19,18 +52,22 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-function duration(start, end) {
+function duration(
+  start: string | null | undefined,
+  end: string | null | undefined,
+): number | null {
+  if (!start || !end) return null;
   const elapsed = Date.parse(end) - Date.parse(start);
   return Number.isFinite(elapsed) && elapsed >= 0 ? elapsed : null;
 }
 
-function formatDuration(ms) {
+function formatDuration(ms: number | null): string {
   if (ms === null) return 'n/a';
   const seconds = Math.round(ms / 1000);
   return `${Math.floor(seconds / 60)}m ${String(seconds % 60).padStart(2, '0')}s`;
 }
 
-function renderTimings(timings) {
+function renderTimings(timings: CiTimings | null | undefined): string {
   if (!timings || !timings.workflows.length) {
     return '<h3>CI timings</h3><p>CI timings unavailable.</p>';
   }
@@ -54,7 +91,9 @@ function renderTimings(timings) {
         })),
     );
     const slowest = completedSteps
-      .filter(step => step.ms !== null)
+      .filter(
+        (step): step is typeof step & { ms: number } => step.ms !== null,
+      )
       .sort((a, b) => b.ms - a.ms)[0];
     const rows = workflow.jobs.map(job => {
       const steps = job.steps.map(step => {

@@ -10,14 +10,14 @@ const {
   renderLineChanges,
   summariseNumstat,
   updateLineChangesComment,
-} = require('../../../../../scripts/coverage/line-changes');
+} = require('../../../../../scripts/coverage/line-changes.cts');
 const {
   buildMarkdown,
   marker,
-} = require('../../../../../scripts/coverage/generate-pr-summary');
+} = require('../../../../../scripts/coverage/generate-pr-summary.cts');
 const {
   backfill,
-} = require('../../../../../scripts/coverage/backfill-pr-line-changes');
+} = require('../../../../../scripts/coverage/backfill-pr-line-changes.cts');
 
 interface SummaryGroup {
   id: string;
@@ -243,10 +243,10 @@ describe('PR line-change summaries', () => {
       const root = path.resolve(__dirname, '../../../../..');
       fs.mkdirSync(path.join(dir, 'scripts/coverage'), { recursive: true });
       for (const name of [
-        'generate-pr-summary.js',
-        'ci-timings.js',
-        'line-changes.js',
-        'dependency-changes.js',
+        'generate-pr-summary.cts',
+        'ci-timings.cts',
+        'line-changes.cts',
+        'dependency-changes.cts',
       ]) {
         fs.copyFileSync(
           path.join(root, 'scripts/coverage', name),
@@ -255,7 +255,7 @@ describe('PR line-change summaries', () => {
       }
       const output = execFileSync(
         process.execPath,
-        ['scripts/coverage/generate-pr-summary.js'],
+        ['scripts/coverage/generate-pr-summary.cts'],
         {
           cwd: dir,
           env: {

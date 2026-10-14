@@ -1,10 +1,90 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
-const { collectLineChanges, renderLineChanges } = require('./line-changes');
-const { renderProductionInventory } = require('./dependency-changes');
-const { readTimings, renderTimings } = require('./ci-timings');
+const fs = require('node:fs') as typeof import('node:fs');
+const path = require('node:path') as typeof import('node:path');
+const lineChanges = require('./line-changes.cts') as {
+  collectLineChanges: (baseSha: string, headSha: string, cwd: string) => LineChanges;
+  renderLineChanges: (summary: LineChanges) => string;
+};
+const { collectLineChanges, renderLineChanges } = lineChanges;
+const { renderProductionInventory } = require('./dependency-changes.cts') as {
+  renderProductionInventory: (inventory?: ProductionInventory) => string;
+};
+const { readTimings, renderTimings } = require('./ci-timings.cts') as {
+  readTimings: (root: string) => CiTimings | null;
+  renderTimings: (timings: CiTimings | null | undefined) => string;
+};
+
+interface LineChanges {
+  groups: Array<{ id: string; label: string; added: number; removed: number; net: number }>;
+  binaryFiles: number;
+  dependencies?: Array<{
+    label: string;
+    added: number;
+    removed: number;
+    changed: number;
+    net: number;
+    changes: Array<{ name: string; before: string | undefined; after: string | undefined }>;
+  }>;
+}
+
+interface ProductionInventory {
+  packages: Array<{ name: string; version: string; path: string }>;
+}
+
+interface CiTimings {
+  collectedAt: string;
+  workflows: Array<{
+    name: string;
+    url: string;
+    startedAt: string | null;
+    completedAt: string | null;
+    jobs: Array<unknown>;
+  }>;
+  unavailable?: string[];
+}
+
+interface MetricValue {
+  current?: number | null;
+}
+
+interface AreaResult {
+  passed: number;
+  failed: number;
+  total: number;
+}
+
+interface Lane {
+  name?: string;
+  label?: string;
+  status?: string;
+  kind?: string;
+  message?: string;
+  artifactName?: string;
+  generatedAt?: string;
+  durationMs?: number;
+  metrics?: Record<string, MetricValue | undefined>;
+  e2eMetrics?: {
+    durationMs?: number;
+    testValues?: Record<string, MetricValue | undefined>;
+    featureValues?: Record<string, MetricValue | undefined>;
+    byArea?: Record<string, AreaResult>;
+    definedAreaCount?: number;
+    greenAreaCount?: number;
+    activeFeatureCount?: number;
+    coveredFeatureCount?: number;
+    requiredScenarioCount?: number;
+    coveredScenarioCount?: number;
+  };
+}
+
+interface BuildOptions {
+  includeCoverage?: boolean;
+  lineChanges?: LineChanges;
+  productionInventory?: ProductionInventory;
+  timings?: CiTimings | null;
+  runUrl?: string | null;
+}
 
 const root = path.resolve(__dirname, '../..');
 const reportDir = path.join(root, 'coverage-report');
@@ -12,26 +92,26 @@ const marker = '<!-- trustroots-coverage-report -->';
 const suiteOrder = ['client', 'server', 'e2e'];
 const coverageMetrics = ['statements', 'branches', 'functions', 'lines'];
 
-function readJson(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+function readJson<T>(filePath: string): T {
+  return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
 }
 
-function formatStatus(status) {
-  const labels = {
+function formatStatus(status: string | undefined): string {
+  const labels: Record<string, string> = {
     blocked: '✗ BLOCKED',
     failed: '✗ FAILED',
     passed: '✓',
     skipped: 'SKIPPED',
     unknown: 'UNKNOWN',
   };
-  return labels[status] || String(status || 'unknown').toUpperCase();
+  return labels[status ?? ''] || String(status || 'unknown').toUpperCase();
 }
 
-function formatPercent(value) {
+function formatPercent(value: number | null | undefined): string {
   return typeof value === 'number' ? `${value.toFixed(2)}%` : 'n/a';
 }
 
-function formatDate(isoString) {
+function formatDate(isoString: string | null | undefined): string {
   if (!isoString) {
     return 'n/a';
   }
@@ -41,13 +121,13 @@ function formatDate(isoString) {
     return String(isoString);
   }
 
-  const pad = value => String(value).padStart(2, '0');
+  const pad = (value: number): string => String(value).padStart(2, '0');
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(
     date.getUTCDate(),
   )} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
 }
 
-function formatDuration(ms) {
+function formatDuration(ms: number | null | undefined): string {
   const seconds = Math.round((ms || 0) / 1000);
   const minutes = Math.floor(seconds / 60);
   const remainder = seconds % 60;
@@ -59,11 +139,11 @@ function formatDuration(ms) {
   return `${minutes}m ${String(remainder).padStart(2, '0')}s`;
 }
 
-function escapeMarkdown(value) {
+function escapeMarkdown(value: unknown): string {
   return String(value == null ? '' : value).replace(/\|/g, '\\|');
 }
 
-function escapeHtml(value) {
+function escapeHtml(value: unknown): string {
   return String(value == null ? '' : value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -72,7 +152,7 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-function isPerfectValue(value) {
+function isPerfectValue(value: string): boolean {
   if (value === '100.00%') {
     return true;
   }
@@ -81,7 +161,7 @@ function isPerfectValue(value) {
   return Boolean(ratio && ratio[1] === ratio[2]);
 }
 
-function resultSymbol(value) {
+function resultSymbol(value: string): string {
   if (isPerfectValue(value)) {
     return '🟢';
   }
@@ -89,7 +169,7 @@ function resultSymbol(value) {
   return value === 'n/a' ? '⚪' : '🟡';
 }
 
-function resultRowsTable(rows) {
+function resultRowsTable(rows: Array<[string, string]>): string {
   const labelWidth = rows.reduce(
     (width, [label]) => Math.max(width, String(label).length),
     0,
@@ -104,7 +184,7 @@ function resultRowsTable(rows) {
   return `<pre>${escapeHtml(body)}</pre>`;
 }
 
-function coverageResultRows(lane) {
+function coverageResultRows(lane: Lane): Array<[string, string]> {
   const metrics = lane.metrics || {};
   return coverageMetrics.map(metric => {
     const value = metrics[metric] || {};
@@ -113,11 +193,14 @@ function coverageResultRows(lane) {
   });
 }
 
-function metricCurrent(values, metric) {
+function metricCurrent(
+  values: Record<string, MetricValue | undefined> | undefined,
+  metric: string,
+): number | null | undefined {
   return values && values[metric] ? values[metric].current : null;
 }
 
-function e2eResultRows(lane) {
+function e2eResultRows(lane: Lane): Array<[string, string]> | null {
   const metrics = lane.e2eMetrics;
   if (!metrics) {
     return null;
@@ -152,7 +235,7 @@ function e2eResultRows(lane) {
   ];
 }
 
-function laneResult(lane) {
+function laneResult(lane: Lane): string {
   const rows =
     lane.kind === 'coverage' ? coverageResultRows(lane) : e2eResultRows(lane);
 
@@ -163,13 +246,13 @@ function laneResult(lane) {
   return resultRowsTable(rows);
 }
 
-function reportName(lane) {
+function reportName(lane: Lane): string {
   return lane.artifactName
     ? `<code>${escapeHtml(lane.artifactName)}</code>`
     : 'n/a';
 }
 
-function recordedValue(lane) {
+function recordedValue(lane: Lane): string {
   const durationMs = lane.e2eMetrics
     ? lane.e2eMetrics.durationMs || lane.durationMs
     : lane.durationMs;
@@ -182,20 +265,20 @@ function recordedValue(lane) {
   return lines.join('<br>');
 }
 
-function readLanes(inputDir = reportDir) {
+function readLanes(inputDir: string = reportDir): Lane[] {
   return suiteOrder
     .map(suiteName => {
       const filePath = path.join(inputDir, `${suiteName}.json`);
-      return fs.existsSync(filePath) ? readJson(filePath) : null;
+      return fs.existsSync(filePath) ? readJson<Lane>(filePath) : null;
     })
-    .filter(Boolean);
+    .filter((lane): lane is Lane => Boolean(lane));
 }
 
-function areaLabel(area) {
+function areaLabel(area: string): string {
   return area === 'Other' ? 'Other (unmapped specs)' : area;
 }
 
-function areaStatus(result) {
+function areaStatus(result: AreaResult): string {
   if (result.failed > 0) {
     return '✗ Failing';
   }
@@ -207,7 +290,7 @@ function areaStatus(result) {
   return 'Skipped';
 }
 
-function renderOverviewTable(lanes) {
+function renderOverviewTable(lanes: Lane[]): string {
   const rows = lanes
     .map(lane => {
       return (
@@ -240,7 +323,7 @@ function renderOverviewTable(lanes) {
   ].join('\n');
 }
 
-function renderE2eAreaTable(lane) {
+function renderE2eAreaTable(lane: Lane | undefined): string {
   if (!lane || !lane.e2eMetrics || !lane.e2eMetrics.byArea) {
     return '';
   }
@@ -278,9 +361,9 @@ function renderE2eAreaTable(lane) {
   ].join('\n');
 }
 
-function overallStatus(lanes) {
+function overallStatus(lanes: Lane[]): string {
   if (
-    lanes.some(lane => ['failed', 'blocked', 'unknown'].includes(lane.status))
+    lanes.some(lane => ['failed', 'blocked', 'unknown'].includes(lane.status!))
   ) {
     return 'Needs attention';
   }
@@ -292,13 +375,13 @@ function overallStatus(lanes) {
   return 'Passing';
 }
 
-function buildMarkdown(lanes, options = {}) {
+function buildMarkdown(lanes: Lane[], options: BuildOptions = {}): string {
   if (options.includeCoverage === false) {
     return `${[
       marker,
       '## Pull request overview',
       '',
-      renderLineChanges(options.lineChanges),
+      renderLineChanges(options.lineChanges!),
       '',
       renderProductionInventory(options.productionInventory),
       '',
@@ -337,7 +420,7 @@ function buildMarkdown(lanes, options = {}) {
   return `${details.join('\n')}\n`;
 }
 
-function run() {
+function run(): void {
   const lanes = readLanes();
   process.stdout.write(
     buildMarkdown(lanes, {

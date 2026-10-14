@@ -1,7 +1,7 @@
 /* eslint-disable no-console, no-process-exit */
 
-const fs = require('fs');
-const os = require('os');
+const fs = require('node:fs') as typeof import('node:fs');
+const os = require('node:os') as typeof import('node:os');
 
 if (fs.existsSync('/.dockerenv')) {
   console.error(

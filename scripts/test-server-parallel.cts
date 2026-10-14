@@ -1,18 +1,30 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
-const { spawn } = require('node:child_process');
-const { randomBytes } = require('node:crypto');
-const { globSync, statSync } = require('node:fs');
-const path = require('node:path');
-const { MongoClient } = require('mongodb');
+const { spawn } = require('node:child_process') as typeof import('node:child_process');
+const { randomBytes } = require('node:crypto') as typeof import('node:crypto');
+const { globSync, statSync } = require('node:fs') as typeof import('node:fs');
+const path = require('node:path') as typeof import('node:path');
+const { MongoClient } = require('mongodb') as typeof import('mongodb');
 
 const root = path.resolve(__dirname, '..');
 
+type Worker = { database: string; files: string[]; size: number };
+type FileWeight = { file: string; size: number };
+type WorkerChild = Pick<import('node:child_process').ChildProcess, 'kill' | 'once'>;
+type SignalSource = Pick<NodeJS.Process, 'once' | 'removeListener'>;
+interface RunWorkerOptions {
+  env?: NodeJS.ProcessEnv;
+  spawnProcess?: typeof spawn;
+  cleanup?: typeof cleanupDatabases;
+  signals?: SignalSource;
+  log?: (message: string) => void;
+}
+
 function createPlan(
-  files,
-  workerCount = '2',
-  token = randomBytes(6).toString('hex'),
-) {
+  files: string[],
+  workerCount: string | number = '2',
+  token: string = randomBytes(6).toString('hex'),
+): Worker[] {
   if (!/^[1-8]$/.test(String(workerCount))) {
     throw new Error('SERVER_TEST_WORKERS must be an integer between 1 and 8.');
   }
@@ -26,12 +38,12 @@ function createPlan(
     }
     return relative;
   });
-  const uniqueFiles = [...new Set(relativeFiles)].map(file => ({
+  const uniqueFiles: FileWeight[] = [...new Set(relativeFiles)].map(file => ({
     file,
     size: statSync(path.join(root, file)).size,
   }));
   if (!uniqueFiles.length) throw new Error('No server test files selected.');
-  const workers = Array.from(
+  const workers: Worker[] = Array.from(
     { length: Math.min(Number(workerCount), uniqueFiles.length) },
     (_, index) => ({
       database: `trustroots-test-worker-${token}-${index + 1}`,
@@ -51,7 +63,7 @@ function createPlan(
   return workers;
 }
 
-async function cleanupDatabases(plan, env) {
+async function cleanupDatabases(plan: Worker[], env: NodeJS.ProcessEnv = process.env): Promise<void> {
   const host = env.DB_1_PORT_27017_TCP_ADDR || 'localhost';
   const client = new MongoClient(`mongodb://${host}`, {
     serverSelectionTimeoutMS: 5000,
@@ -65,18 +77,18 @@ async function cleanupDatabases(plan, env) {
 }
 
 async function runWorkers(
-  plan,
+  plan: Worker[],
   {
     env = process.env,
     spawnProcess = spawn,
     cleanup = cleanupDatabases,
     signals = process,
     log = console.log,
-  } = {},
-) {
-  const children = [];
-  let interrupted;
-  const stop = signal => {
+  }: RunWorkerOptions = {},
+): Promise<number> {
+  const children: WorkerChild[] = [];
+  let interrupted: NodeJS.Signals | undefined;
+  const stop = (signal: NodeJS.Signals): void => {
     interrupted = signal;
     for (const child of children) child.kill(signal);
   };
@@ -88,7 +100,7 @@ async function runWorkers(
     const results = await Promise.all(
       plan.map(
         (worker, index) =>
-          new Promise(resolve => {
+          new Promise<number>(resolve => {
             log(
               `Server worker ${index + 1}: ${
                 worker.files.length
@@ -97,7 +109,7 @@ async function runWorkers(
             try {
               const child = spawnProcess(
                 process.execPath,
-                [path.join(root, 'scripts/test-server.js')],
+                [path.join(root, 'scripts/test-server.cts')],
                 {
                   cwd: root,
                   stdio: 'inherit',
@@ -111,21 +123,20 @@ async function runWorkers(
                 },
               );
               children.push(child);
-              child.once('error', error => {
+              child.once('error', (error: Error) => {
                 log(
-                  `Server worker ${index + 1} could not start: ${
-                    error.message
-                  }`,
+                  `Server worker ${index + 1} could not start: ${error.message}`,
                 );
                 resolve(1);
               });
-              child.once('exit', (code, signal) => {
+              child.once('exit', (code: number | null, signal: NodeJS.Signals | null) => {
                 log(`Server worker ${index + 1} finished: ${signal || code}`);
                 resolve(code === 0 && !signal ? 0 : 1);
               });
             } catch (error) {
+              const message = error instanceof Error ? error.message : String(error);
               log(
-                `Server worker ${index + 1} could not start: ${error.message}`,
+                `Server worker ${index + 1} could not start: ${message}`,
               );
               resolve(1);
             }
@@ -146,8 +157,8 @@ async function runWorkers(
   }
 }
 
-async function main() {
-  const files = process.argv.slice(2);
+async function main(): Promise<void> {
+  const files: string[] = process.argv.slice(2);
   const selected = files.length
     ? files
     : process.env.SERVER_TEST_FILES
@@ -158,8 +169,8 @@ async function main() {
 }
 
 if (require.main === module) {
-  main().catch(error => {
-    console.error(error.message);
+  main().catch((error: unknown) => {
+    console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   });
 }

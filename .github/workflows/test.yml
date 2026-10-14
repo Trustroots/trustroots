@@ -592,7 +592,7 @@ jobs:
         with:
           script: |
             const fs = require('node:fs');
-            const { collectTimings } = require('./scripts/coverage/collect-ci-timings');
+            const { collectTimings } = require('./scripts/coverage/collect-ci-timings.cts');
             const timings = await collectTimings(github, context, Number(process.env.GITHUB_RUN_ATTEMPT));
             fs.mkdirSync('coverage', { recursive: true });
             fs.writeFileSync('coverage/ci-timings.json', JSON.stringify(timings, null, 2));
@@ -780,7 +780,7 @@ jobs:
         with:
           script: |
             const fs = require('node:fs');
-            const { collectTimings } = require('./scripts/coverage/collect-ci-timings');
+            const { collectTimings } = require('./scripts/coverage/collect-ci-timings.cts');
             const timings = await collectTimings(github, context, Number(process.env.GITHUB_RUN_ATTEMPT));
             fs.mkdirSync('coverage', { recursive: true });
             fs.writeFileSync('coverage/ci-timings.json', JSON.stringify(timings, null, 2));

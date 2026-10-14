@@ -7,13 +7,13 @@ const {
   formatDuration,
   readTimings,
   renderTimings,
-} = require('../../../../../scripts/coverage/ci-timings');
+} = require('../../../../../scripts/coverage/ci-timings.cts');
 const {
   collectTimings,
-} = require('../../../../../scripts/coverage/collect-ci-timings');
+} = require('../../../../../scripts/coverage/collect-ci-timings.cts');
 const {
   buildMarkdown,
-} = require('../../../../../scripts/coverage/generate-pr-summary');
+} = require('../../../../../scripts/coverage/generate-pr-summary.cts');
 
 describe('CI timing overview', () => {
   const startedAt = '2026-01-01T00:00:00Z';

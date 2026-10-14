@@ -1,8 +1,186 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
-const { readTimings, renderTimings } = require('./ci-timings');
+const fs = require('node:fs') as typeof import('node:fs');
+const path = require('node:path') as typeof import('node:path');
+const { readTimings, renderTimings } = require('./ci-timings.cts') as {
+  readTimings: (root: string) => CiTimings | null;
+  renderTimings: (timings: CiTimings | null | undefined) => string;
+};
+
+interface CiTimings {
+  collectedAt: string;
+  workflows: Array<{
+    name: string;
+    url: string;
+    startedAt: string | null;
+    completedAt: string | null;
+    jobs: Array<unknown>;
+  }>;
+  unavailable?: string[];
+}
+
+type SuiteName = 'client' | 'server' | 'e2e';
+type CoverageSuiteName = Exclude<SuiteName, 'e2e'>;
+type CoverageMetric = 'statements' | 'branches' | 'functions' | 'lines';
+type E2eMetric = 'total' | 'passed' | 'failed' | 'passRate';
+type LaneStatus = 'passed' | 'failed' | 'skipped' | 'blocked' | 'unknown';
+
+interface SuiteConfig {
+  name: SuiteName;
+  label: string;
+  kind: 'coverage' | 'test';
+  description?: string;
+  summaryPath?: string;
+  statusPath: string;
+  htmlPath: string;
+  artifactName: string;
+  command: string;
+}
+
+interface ReportMetadata {
+  branch: string;
+  branchUrl: string | null;
+  commit: string;
+  commitUrl: string | null;
+  generatedAt: string;
+  generatedAtDisplay: string;
+  isGitHubActions: boolean;
+  repositoryUrl: string | null;
+  runUrl: string | null;
+}
+
+interface CoverageBaseline {
+  client?: Partial<Record<CoverageMetric, number>>;
+  server?: Partial<Record<CoverageMetric, number>>;
+  e2e?: E2eBaseline;
+}
+
+interface E2eBaseline {
+  tests?: number;
+  passRate?: number;
+  areaCoverage?: number;
+  areaPassCoverage?: number;
+  featureCoverage?: number;
+  featurePassCoverage?: number;
+  scenarioCoverage?: number;
+  code?: Partial<Record<CoverageMetric, number>>;
+}
+
+interface CoverageSummaryFile {
+  total: Record<CoverageMetric, { pct: number }>;
+}
+
+interface CoverageStatus {
+  status: string;
+  message?: string;
+  command?: string;
+  generatedAt?: string;
+  durationMs?: number;
+  metrics?: E2eStatusMetrics;
+}
+
+interface AreaResult {
+  total: number;
+  passed: number;
+  failed: number;
+}
+
+interface E2eStatusMetrics {
+  total?: number;
+  passed?: number;
+  failed?: number;
+  passRate?: number;
+  areaCoverage?: number;
+  areaPassCoverage?: number;
+  featureCoverage?: number;
+  featurePassCoverage?: number;
+  scenarioCoverage?: number;
+  codeCoverage?: Partial<Record<CoverageMetric, number | null>>;
+  durationMs?: number;
+  areas?: string[];
+  byArea?: Record<string, AreaResult>;
+  definedAreaCount?: number;
+  exercisedAreaCount?: number;
+  greenAreaCount?: number;
+  activeFeatureCount?: number;
+  coveredFeatureCount?: number;
+  missingFeatureCount?: number;
+  excludedFeatureCount?: number;
+  touchedFeatureCount?: number;
+  greenFeatureCount?: number;
+  requiredScenarioCount?: number;
+  coveredScenarioCount?: number;
+  missingScenarioCount?: number;
+  missingByArea?: Record<string, number>;
+  featureDetails?: unknown[];
+  excludedFeatures?: unknown[];
+}
+
+interface MetricComparison {
+  current: number | null | undefined;
+  baseline: number | undefined;
+  delta: number | null | undefined;
+  passed: boolean;
+}
+
+interface E2eMetrics {
+  testValues: Record<E2eMetric, MetricComparison>;
+  areaValues: Record<'areaCoverage' | 'areaPassCoverage', MetricComparison>;
+  featureValues: Record<
+    'featureCoverage' | 'featurePassCoverage' | 'scenarioCoverage',
+    MetricComparison
+  >;
+  codeCoverage: Record<CoverageMetric, MetricComparison> | null;
+  durationMs: number;
+  areas: string[];
+  byArea: Record<string, AreaResult>;
+  definedAreaCount: number;
+  exercisedAreaCount: number;
+  greenAreaCount: number;
+  activeFeatureCount: number;
+  coveredFeatureCount: number;
+  missingFeatureCount: number;
+  excludedFeatureCount: number;
+  touchedFeatureCount: number;
+  greenFeatureCount: number;
+  requiredScenarioCount: number;
+  coveredScenarioCount: number;
+  missingScenarioCount: number;
+  missingByArea: Record<string, number>;
+  featureDetails: unknown[];
+  excludedFeatures: unknown[];
+  passed: boolean;
+}
+
+interface ReportLane {
+  name: SuiteName;
+  label: string;
+  kind: 'coverage' | 'test';
+  status: LaneStatus;
+  message: string;
+  generatedAt: string;
+  reportGeneratedAt: string;
+  command: string;
+  artifactName: string;
+  localReportHref: string | null;
+  durationMs?: number;
+  previousStatus?: LaneStatus;
+  stale?: boolean;
+  metrics?: Partial<Record<CoverageMetric, MetricComparison>>;
+  e2eMetrics?: E2eMetrics | null;
+  [key: string]: unknown;
+}
+
+interface AnalyticsConfig {
+  scriptSrc: string;
+  websiteId: string;
+}
+
+interface TeamLinksConfig {
+  header: Array<{ href: string; label: string }>;
+  footer: Array<{ href: string; label: string }>;
+  repository: { href: string; label: string };
+}
 
 const root = path.resolve(__dirname, '../..');
 const outputDir = path.join(root, 'coverage-report');
@@ -10,15 +188,15 @@ const outputPath = path.join(outputDir, 'index.html');
 const baselinePath = path.join(root, 'coverage-baseline.json');
 const analyticsConfigPath = path.join(root, 'docs/_data/analytics.json');
 const teamLinksConfigPath = path.join(root, 'docs/_data/team_links.json');
-const metrics = ['statements', 'branches', 'functions', 'lines'];
-const e2eTestMetrics = ['total', 'passed', 'failed', 'passRate'];
-const e2eTestMetricLabels = {
+const metrics: CoverageMetric[] = ['statements', 'branches', 'functions', 'lines'];
+const e2eTestMetrics: E2eMetric[] = ['total', 'passed', 'failed', 'passRate'];
+const e2eTestMetricLabels: Record<E2eMetric, string> = {
   total: 'Tests',
   passed: 'Passed',
   failed: 'Failed',
   passRate: 'Pass rate',
 };
-const metricHelp = {
+const metricHelp: Record<string, string> = {
   suite: 'The test suite these coverage numbers came from.',
   statements: 'Executable JavaScript statements that were run by tests.',
   branches:
@@ -26,19 +204,19 @@ const metricHelp = {
   functions: 'Functions and methods called by tests.',
   lines: 'Source lines executed by tests.',
 };
-const e2eTestMetricHelp = {
+const e2eTestMetricHelp: Record<E2eMetric, string> = {
   total: 'Number of Playwright tests executed in the latest end-to-end run.',
   passed: 'Tests that completed successfully.',
   failed: 'Tests that failed, timed out, or were interrupted.',
   passRate: 'Percentage of executed tests that passed.',
 };
-const e2eAreaMetricHelp = {
+const e2eAreaMetricHelp: Record<string, string> = {
   areaCoverage:
     'Percentage of defined product areas that ran at least one Playwright test.',
   areaPassCoverage:
     'Percentage of defined product areas with no failing Playwright tests.',
 };
-const coverageSuites = {
+const coverageSuites: Record<CoverageSuiteName, SuiteConfig> = {
   client: {
     name: 'client',
     label: 'Client',
@@ -60,7 +238,7 @@ const coverageSuites = {
     command: 'pnpm run test:coverage:server',
   },
 };
-const testSuites = {
+const testSuites: Record<'e2e', SuiteConfig> = {
   e2e: {
     name: 'e2e',
     label: 'End-to-end',
@@ -73,26 +251,31 @@ const testSuites = {
     command: 'pnpm run test:e2e',
   },
 };
-const reportSuites = {
+const reportSuites: Record<SuiteName, SuiteConfig> = {
   ...coverageSuites,
   ...testSuites,
 };
-const suiteOrder = ['client', 'server', 'e2e'];
-const statusValues = ['passed', 'failed', 'skipped', 'blocked', 'unknown'];
-const args = process.argv.slice(2);
+const suiteOrder: SuiteName[] = ['client', 'server', 'e2e'];
+const statusValues: LaneStatus[] = ['passed', 'failed', 'skipped', 'blocked', 'unknown'];
+const args: string[] = process.argv.slice(2);
 const scopeArg = args.find(arg => arg.startsWith('--scope='));
-const scope = scopeArg ? scopeArg.split('=')[1] : null;
+const scopeValue = scopeArg ? scopeArg.split('=')[1] : null;
 
-if (scope && !reportSuites[scope]) {
-  console.error(`Unknown report scope "${scope}".`);
+function isSuiteName(value: string): value is SuiteName {
+  return Object.hasOwn(reportSuites, value);
+}
+
+if (scopeValue && !isSuiteName(scopeValue)) {
+  console.error(`Unknown report scope "${scopeValue}".`);
   process.exit(1);
 }
+const scope = scopeValue as SuiteName | null;
 
-function readJson(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+function readJson<T>(filePath: string): T {
+  return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;
 }
 
-function escapeHtml(value) {
+function escapeHtml(value: unknown): string {
   return String(value)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -101,8 +284,8 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
-function renderAnalyticsScript() {
-  const analytics = readJson(analyticsConfigPath);
+function renderAnalyticsScript(): string {
+  const analytics = readJson<AnalyticsConfig>(analyticsConfigPath);
 
   return `    <script
       defer
@@ -111,7 +294,7 @@ function renderAnalyticsScript() {
     ></script>`;
 }
 
-function renderTeamHeaderLinks(links) {
+function renderTeamHeaderLinks(links: TeamLinksConfig['header']): string {
   return links
     .map(
       link =>
@@ -122,7 +305,7 @@ function renderTeamHeaderLinks(links) {
     .join('\n');
 }
 
-function renderTeamFooterLinks(links) {
+function renderTeamFooterLinks(links: TeamLinksConfig['footer']): string {
   return links
     .map(
       link =>
@@ -133,25 +316,25 @@ function renderTeamFooterLinks(links) {
     .join('\n');
 }
 
-function relativeHref(filePath) {
+function relativeHref(filePath: string): string {
   return path.relative(outputDir, filePath).replace(/\\/g, '/');
 }
 
-function readStatus(suite) {
+function readStatus(suite: SuiteConfig): CoverageStatus | null {
   if (!fs.existsSync(suite.statusPath)) {
     return null;
   }
 
-  return readJson(suite.statusPath);
+  return readJson<CoverageStatus>(suite.statusPath);
 }
 
-function statusDurationMs(status) {
+function statusDurationMs(status: CoverageStatus | null): number {
   return status && typeof status.durationMs === 'number'
     ? status.durationMs
     : 0;
 }
 
-function getRunUrl() {
+function getRunUrl(): string | null {
   const serverUrl = process.env.GITHUB_SERVER_URL || 'https://github.com';
   const repository = process.env.GITHUB_REPOSITORY;
   const runId = process.env.GITHUB_RUN_ID;
@@ -163,11 +346,11 @@ function getRunUrl() {
   return `${serverUrl}/${repository}/actions/runs/${runId}`;
 }
 
-function encodeGitRef(refName) {
+function encodeGitRef(refName: string): string {
   return String(refName).split('/').map(encodeURIComponent).join('/');
 }
 
-function getRepositoryUrl() {
+function getRepositoryUrl(): string | null {
   const serverUrl = process.env.GITHUB_SERVER_URL || 'https://github.com';
   const repository = process.env.GITHUB_REPOSITORY;
 
@@ -178,7 +361,7 @@ function getRepositoryUrl() {
   return `${serverUrl}/${repository}`;
 }
 
-function formatDatetime(isoString) {
+function formatDatetime(isoString: string | null | undefined): string {
   if (!isoString) {
     return 'n/a';
   }
@@ -188,13 +371,13 @@ function formatDatetime(isoString) {
     return String(isoString);
   }
 
-  const pad = value => String(value).padStart(2, '0');
+  const pad = (value: number): string => String(value).padStart(2, '0');
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(
     date.getUTCDate(),
   )} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
 }
 
-function fileGeneratedAt(filePath) {
+function fileGeneratedAt(filePath: string): string | null {
   if (!fs.existsSync(filePath)) {
     return null;
   }
@@ -202,7 +385,7 @@ function fileGeneratedAt(filePath) {
   return new Date(fs.statSync(filePath).mtimeMs).toISOString();
 }
 
-function getMetadata() {
+function getMetadata(): ReportMetadata {
   const runUrl = getRunUrl();
   const repositoryUrl = getRepositoryUrl();
   const branch =
@@ -228,11 +411,11 @@ function getMetadata() {
   };
 }
 
-function normalizeStatus(status) {
-  return statusValues.includes(status) ? status : 'unknown';
+function normalizeStatus(status: string): LaneStatus {
+  return statusValues.find(value => value === status) || 'unknown';
 }
 
-function copyDirectoryRecursive(sourceDir, targetDir) {
+function copyDirectoryRecursive(sourceDir: string, targetDir: string): boolean {
   if (!fs.existsSync(sourceDir)) {
     return false;
   }
@@ -253,7 +436,7 @@ function copyDirectoryRecursive(sourceDir, targetDir) {
   return true;
 }
 
-function syncBundledPlaywrightReport() {
+function syncBundledPlaywrightReport(): string | null {
   const sourceDir = path.join(root, 'playwright-report');
   const targetDir = path.join(outputDir, 'playwright-report');
 
@@ -265,7 +448,7 @@ function syncBundledPlaywrightReport() {
   return path.join(targetDir, 'index.html');
 }
 
-function syncBundledCoverageReport(suite) {
+function syncBundledCoverageReport(suite: SuiteConfig): string | null {
   if (!fs.existsSync(suite.htmlPath)) {
     return null;
   }
@@ -277,13 +460,13 @@ function syncBundledCoverageReport(suite) {
   return path.join(targetDir, 'index.html');
 }
 
-function syncBundledCoverageReports() {
+function syncBundledCoverageReports(): void {
   for (const suite of Object.values(coverageSuites)) {
     syncBundledCoverageReport(suite);
   }
 }
 
-function localReportHref(suite) {
+function localReportHref(suite: SuiteConfig): string | null {
   if (suite.name === 'e2e') {
     const bundledReport = path.join(
       outputDir,
@@ -305,7 +488,10 @@ function localReportHref(suite) {
   return fs.existsSync(suite.htmlPath) ? relativeHref(suite.htmlPath) : null;
 }
 
-function shouldSkipMissingCoverage(suiteName, metadata) {
+function shouldSkipMissingCoverage(
+  suiteName: CoverageSuiteName,
+  metadata: ReportMetadata,
+): boolean {
   if (metadata.isGitHubActions) {
     return false;
   }
@@ -317,11 +503,11 @@ function shouldSkipMissingCoverage(suiteName, metadata) {
   return suiteName !== 'client';
 }
 
-function shouldSkipMissingTest(suiteName) {
+function shouldSkipMissingTest(suiteName: SuiteName): boolean {
   return scope !== suiteName;
 }
 
-function baseLane(suite, metadata) {
+function baseLane(suite: SuiteConfig, metadata: ReportMetadata): ReportLane {
   return {
     name: suite.name,
     label: suite.label,
@@ -336,7 +522,10 @@ function baseLane(suite, metadata) {
   };
 }
 
-function coverageMissingLane(suiteName, metadata) {
+function coverageMissingLane(
+  suiteName: CoverageSuiteName,
+  metadata: ReportMetadata,
+): ReportLane {
   const suite = coverageSuites[suiteName];
   const status = readStatus(suite);
   const lane = {
@@ -369,27 +558,31 @@ function coverageMissingLane(suiteName, metadata) {
   };
 }
 
-function readCoverageLane(suiteName, baseline, metadata) {
+function readCoverageLane(
+  suiteName: CoverageSuiteName,
+  baseline: CoverageBaseline,
+  metadata: ReportMetadata,
+): ReportLane {
   const suite = coverageSuites[suiteName];
 
-  if (!fs.existsSync(suite.summaryPath)) {
+  if (!fs.existsSync(suite.summaryPath!)) {
     return coverageMissingLane(suiteName, metadata);
   }
 
-  const summary = readJson(suite.summaryPath);
+  const summary = readJson<CoverageSummaryFile>(suite.summaryPath!);
   const status = readStatus(suite);
-  const metricValues = metrics.reduce((result, metric) => {
+  const metricValues: Partial<Record<CoverageMetric, MetricComparison>> = {};
+  for (const metric of metrics) {
     const current = summary.total[metric].pct;
-    const expected = baseline[suiteName] && baseline[suiteName][metric];
-    result[metric] = {
+    const expected = baseline[suiteName]?.[metric];
+    metricValues[metric] = {
       current,
       baseline: expected,
       delta: typeof expected === 'number' ? current - expected : null,
       passed: typeof expected === 'number' ? current >= expected : true,
     };
-    return result;
-  }, {});
-  const metricsPassed = metrics.every(metric => metricValues[metric].passed);
+  }
+  const metricsPassed = metrics.every(metric => metricValues[metric]!.passed);
   const statusValue = status ? normalizeStatus(status.status) : null;
   const laneStatus =
     statusValue && statusValue !== 'passed'
@@ -399,7 +592,7 @@ function readCoverageLane(suiteName, baseline, metadata) {
         : 'failed';
   const generatedAt =
     (status && status.generatedAt) ||
-    fileGeneratedAt(suite.summaryPath) ||
+    fileGeneratedAt(suite.summaryPath!) ||
     metadata.generatedAt;
 
   return {
@@ -407,7 +600,7 @@ function readCoverageLane(suiteName, baseline, metadata) {
     status: laneStatus,
     message:
       statusValue && statusValue !== 'passed'
-        ? status.message || `${suite.label} coverage failed.`
+        ? status?.message || `${suite.label} coverage failed.`
         : metricsPassed
           ? `${suite.label} coverage meets the checked-in minimum.`
           : `${suite.label} coverage is below the checked-in minimum.`,
@@ -417,7 +610,10 @@ function readCoverageLane(suiteName, baseline, metadata) {
   };
 }
 
-function buildMetricComparison(current, expected) {
+function buildMetricComparison(
+  current: number | null | undefined,
+  expected: number | undefined,
+): MetricComparison {
   if (typeof current !== 'number') {
     return {
       current: null,
@@ -435,20 +631,27 @@ function buildMetricComparison(current, expected) {
   };
 }
 
-function buildE2eCodeCoverage(statusMetrics, baseline = {}) {
+function buildE2eCodeCoverage(
+  statusMetrics: E2eStatusMetrics,
+  baseline: E2eBaseline = {},
+): Record<CoverageMetric, MetricComparison> | null {
   const code = statusMetrics.codeCoverage;
   if (!code) {
     return null;
   }
 
-  return metrics.reduce((result, metric) => {
-    const expected = baseline.code && baseline.code[metric];
-    result[metric] = buildMetricComparison(code[metric], expected);
-    return result;
-  }, {});
+  return {
+    statements: buildMetricComparison(code.statements, baseline.code?.statements),
+    branches: buildMetricComparison(code.branches, baseline.code?.branches),
+    functions: buildMetricComparison(code.functions, baseline.code?.functions),
+    lines: buildMetricComparison(code.lines, baseline.code?.lines),
+  };
 }
 
-function buildE2eMetrics(statusMetrics, baseline = {}) {
+function buildE2eMetrics(
+  statusMetrics: E2eStatusMetrics | null | undefined,
+  baseline: E2eBaseline = {},
+): E2eMetrics | null {
   if (!statusMetrics) {
     return null;
   }
@@ -522,15 +725,16 @@ function buildE2eMetrics(statusMetrics, baseline = {}) {
     excludedFeatures: statusMetrics.excludedFeatures || [],
     passed:
       e2eTestMetrics.every(metric => testValues[metric].passed) &&
-      Object.keys(areaValues).every(metric => areaValues[metric].passed) &&
-      Object.keys(featureValues).every(
-        metric => featureValues[metric].passed,
-      ) &&
+      Object.values(areaValues).every(metric => metric.passed) &&
+      Object.values(featureValues).every(metric => metric.passed) &&
       codePassed,
   };
 }
 
-function resolveE2eLaneStatus(statusValue, e2eMetrics) {
+function resolveE2eLaneStatus(
+  statusValue: LaneStatus | null,
+  e2eMetrics: E2eMetrics | null,
+): LaneStatus {
   if (statusValue && statusValue !== 'passed') {
     return statusValue;
   }
@@ -542,7 +746,11 @@ function resolveE2eLaneStatus(statusValue, e2eMetrics) {
   return statusValue || 'unknown';
 }
 
-function resolveE2eLaneMessage(statusValue, e2eMetrics, fallbackMessage) {
+function resolveE2eLaneMessage(
+  statusValue: LaneStatus,
+  e2eMetrics: E2eMetrics | null,
+  fallbackMessage: string | undefined,
+): string {
   if (
     statusValue === 'passed' &&
     e2eMetrics &&
@@ -558,7 +766,11 @@ function resolveE2eLaneMessage(statusValue, e2eMetrics, fallbackMessage) {
   return fallbackMessage || 'No status message was recorded.';
 }
 
-function readTestLane(suiteName, metadata, baseline) {
+function readTestLane(
+  suiteName: 'e2e',
+  metadata: ReportMetadata,
+  baseline: CoverageBaseline,
+): ReportLane {
   const suite = testSuites[suiteName];
   const lane = baseLane(suite, metadata);
   const status = readStatus(suite);
@@ -596,19 +808,26 @@ function readTestLane(suiteName, metadata, baseline) {
   };
 }
 
-function readReportLane(suiteName, baseline, metadata) {
-  if (coverageSuites[suiteName]) {
+function readReportLane(
+  suiteName: SuiteName,
+  baseline: CoverageBaseline,
+  metadata: ReportMetadata,
+): ReportLane {
+  if (suiteName !== 'e2e') {
     return readCoverageLane(suiteName, baseline, metadata);
   }
 
   return readTestLane(suiteName, metadata, baseline);
 }
 
-function outputJsonPath(suiteName) {
+function outputJsonPath(suiteName: SuiteName): string {
   return path.join(outputDir, `${suiteName}.json`);
 }
 
-function skippedLaneFromConfig(suiteName, metadata) {
+function skippedLaneFromConfig(
+  suiteName: SuiteName,
+  metadata: ReportMetadata,
+): ReportLane {
   const suite = reportSuites[suiteName];
   return {
     ...baseLane(suite, metadata),
@@ -618,21 +837,30 @@ function skippedLaneFromConfig(suiteName, metadata) {
   };
 }
 
-function laneWithConfig(suiteName, lane) {
+function laneWithConfig(suiteName: SuiteName, lane: ReportLane): ReportLane {
   const suite = reportSuites[suiteName];
-  return {
-    name: suite.name,
-    label: suite.label,
-    kind: suite.kind,
-    description: suite.description || '',
-    command: suite.command,
-    artifactName: suite.artifactName,
-    ...lane,
-    localReportHref: localReportHref(suite) || lane.localReportHref || null,
-  };
+  const configured: ReportLane = Object.assign(
+    {
+      name: suite.name,
+      label: suite.label,
+      kind: suite.kind,
+      description: suite.description || '',
+      command: suite.command,
+      artifactName: suite.artifactName,
+      localReportHref: lane.localReportHref,
+    },
+    lane,
+  );
+  configured.localReportHref =
+    localReportHref(suite) || lane.localReportHref || null;
+  return configured;
 }
 
-function staleLaneFromExisting(suiteName, lane, metadata) {
+function staleLaneFromExisting(
+  suiteName: SuiteName,
+  lane: ReportLane,
+  metadata: ReportMetadata,
+): ReportLane {
   const suite = reportSuites[suiteName];
   const previousStatus = normalizeStatus(lane.status);
   return {
@@ -645,7 +873,12 @@ function staleLaneFromExisting(suiteName, lane, metadata) {
   };
 }
 
-function readInitialLane(suiteName, selectedSuites, baseline, metadata) {
+function readInitialLane(
+  suiteName: SuiteName,
+  selectedSuites: SuiteName[],
+  baseline: CoverageBaseline,
+  metadata: ReportMetadata,
+): ReportLane {
   if (selectedSuites.includes(suiteName)) {
     return readReportLane(suiteName, baseline, metadata);
   }
@@ -655,10 +888,14 @@ function readInitialLane(suiteName, selectedSuites, baseline, metadata) {
     return skippedLaneFromConfig(suiteName, metadata);
   }
 
-  return staleLaneFromExisting(suiteName, readJson(jsonPath), metadata);
+  return staleLaneFromExisting(
+    suiteName,
+    readJson<ReportLane>(jsonPath),
+    metadata,
+  );
 }
 
-function renderHelpLabel(label, helpText) {
+function renderHelpLabel(label: string, helpText: string): string {
   const text = escapeHtml(helpText);
   return `
     <span
@@ -673,11 +910,11 @@ function renderHelpLabel(label, helpText) {
   `;
 }
 
-function capitalizeMetric(metric) {
+function capitalizeMetric(metric: string): string {
   return metric.charAt(0).toUpperCase() + metric.slice(1);
 }
 
-function renderSuiteTableHead() {
+function renderSuiteTableHead(): string {
   return `
     <tr>
       <th>${renderHelpLabel('Suite', metricHelp.suite)}</th>
@@ -695,7 +932,7 @@ function renderSuiteTableHead() {
   `;
 }
 
-function formatMetadataTimestamp(isoString) {
+function formatMetadataTimestamp(isoString: string | null | undefined): string {
   if (!isoString) {
     return 'n/a';
   }
@@ -706,15 +943,19 @@ function formatMetadataTimestamp(isoString) {
     return String(isoString);
   }
 
-  const pad = value => String(value).padStart(2, "0");
+  const pad = (value: number): string => String(value).padStart(2, '0');
 
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(
     date.getUTCDate(),
   )} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
 }
 
-function renderReportShell(metadata, initialLanes, timings = null) {
-  const teamLinks = readJson(teamLinksConfigPath);
+function renderReportShell(
+  metadata: ReportMetadata,
+  initialLanes: Partial<Record<SuiteName, ReportLane>>,
+  timings: CiTimings | null = null,
+): string {
+  const teamLinks = readJson<TeamLinksConfig>(teamLinksConfigPath);
   const repositoryHref = teamLinks.repository.href;
   const runLink = metadata.runUrl
     ? `<a href="${escapeHtml(metadata.runUrl)}">GitHub Actions run</a>`
@@ -738,7 +979,7 @@ function renderReportShell(metadata, initialLanes, timings = null) {
       : `${formatMetadataTimestamp(metadata.generatedAtDisplay)} UTC (${shortSha})`;
   const buildHref = metadata.commitUrl || repositoryHref;
   const workflowHref = `${repositoryHref}/actions/workflows/test.yml`;
-  const generatorEditHref = `${repositoryHref}/edit/main/scripts/coverage/generate-report.js`;
+const generatorEditHref = `${repositoryHref}/edit/main/scripts/coverage/generate-report.cts`;
   const githubIconLink = `
     <a
       class="github-icon-link"
@@ -1980,21 +2221,19 @@ ${renderTeamFooterLinks(teamLinks.header)}
 `;
 }
 
-function writeReport() {
+function writeReport(): void {
   syncBundledPlaywrightReport();
   syncBundledCoverageReports();
-  const baseline = fs.existsSync(baselinePath) ? readJson(baselinePath) : {};
+  const baseline = fs.existsSync(baselinePath)
+    ? readJson<CoverageBaseline>(baselinePath)
+    : {};
   const metadata = getMetadata();
-  const selectedSuites = scope ? [scope] : suiteOrder;
-  const initialLanes = suiteOrder.reduce((result, suiteName) => {
-    result[suiteName] = readInitialLane(
-      suiteName,
-      selectedSuites,
-      baseline,
-      metadata,
-    );
-    return result;
-  }, {});
+  const selectedSuites: SuiteName[] = scope ? [scope] : suiteOrder;
+  const initialLanes: Record<SuiteName, ReportLane> = {
+    client: readInitialLane('client', selectedSuites, baseline, metadata),
+    server: readInitialLane('server', selectedSuites, baseline, metadata),
+    e2e: readInitialLane('e2e', selectedSuites, baseline, metadata),
+  };
 
   fs.mkdirSync(outputDir, { recursive: true });
   fs.writeFileSync(

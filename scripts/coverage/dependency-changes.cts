@@ -1,6 +1,52 @@
-const { execFileSync } = require('child_process');
+const { execFileSync } = require('node:child_process') as typeof import('node:child_process');
 
-function compareEntries(before, after) {
+interface Manifest {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+}
+
+interface LockEntry {
+  version?: string;
+}
+
+interface Lockfile {
+  packages?: Record<string, LockEntry>;
+}
+
+interface DependencySnapshot {
+  manifest: Manifest;
+  lock: Lockfile;
+}
+
+interface DependencyChange {
+  name: string;
+  before: string | undefined;
+  after: string | undefined;
+}
+
+interface DependencyGroup {
+  label: string;
+  added: number;
+  removed: number;
+  changed: number;
+  net: number;
+  changes: DependencyChange[];
+}
+
+interface InstalledPackage {
+  name: string;
+  version: string;
+  path: string;
+}
+
+interface ProductionInventory {
+  packages: InstalledPackage[];
+}
+
+function compareEntries(
+  before: Record<string, string>,
+  after: Record<string, string>,
+): Omit<DependencyGroup, 'label'> {
   const changes = [...new Set([...Object.keys(before), ...Object.keys(after)])]
     .sort()
     .filter(name => before[name] !== after[name])
@@ -16,14 +62,22 @@ function compareEntries(before, after) {
   };
 }
 
-function summariseDependencies(before, after) {
-  const resolved = lock =>
+function summariseDependencies(
+  before: DependencySnapshot,
+  after: DependencySnapshot,
+): DependencyGroup[] {
+  const resolved = (lock: Lockfile): Record<string, string> =>
     Object.fromEntries(
       Object.entries(lock.packages || {})
-        .filter(([name, entry]) => name && entry.version)
+        .filter(
+          (item): item is [string, LockEntry & { version: string }] =>
+            Boolean(item[0] && item[1].version),
+        )
         .map(([name, entry]) => [name, entry.version]),
     );
-  return [
+  const comparisons: Array<
+    [string, Record<string, string> | undefined, Record<string, string> | undefined]
+  > = [
     [
       'Direct runtime dependencies',
       before.manifest.dependencies,
@@ -35,14 +89,15 @@ function summariseDependencies(before, after) {
       after.manifest.devDependencies,
     ],
     ['Resolved lockfile entries', resolved(before.lock), resolved(after.lock)],
-  ].map(([label, previous = {}, current = {}]) => ({
+  ];
+  return comparisons.map(([label, previous = {}, current = {}]) => ({
     label,
     ...compareEntries(previous, current),
   }));
 }
 
-function pnpmLockfile(source) {
-  const versions = {};
+function pnpmLockfile(source: string): Lockfile {
+  const versions: Record<string, string[]> = {};
   let inPackages = false;
   for (const line of source.split('\n')) {
     if (/^\S/.test(line)) inPackages = line === 'packages:';
@@ -59,18 +114,22 @@ function pnpmLockfile(source) {
   };
 }
 
-function collectDependencyChanges(baseSha, headSha, cwd) {
+function collectDependencyChanges(
+  baseSha: string,
+  headSha: string,
+  cwd: string,
+): DependencyGroup[] {
   if (![baseSha, headSha].every(sha => /^[a-f0-9]{40,64}$/i.test(sha || ''))) {
     throw new Error('PR base and head commit SHAs are required');
   }
-  const git = args =>
+  const git = (args: string[]): string =>
     execFileSync('git', args, {
       cwd,
       encoding: 'utf8',
       maxBuffer: 32 * 1024 * 1024,
     }).trim();
   const mergeBase = git(['merge-base', baseSha, headSha]);
-  const read = sha => {
+  const read = (sha: string): DependencySnapshot => {
     const files = git([
       'ls-tree',
       '--name-only',
@@ -80,8 +139,10 @@ function collectDependencyChanges(baseSha, headSha, cwd) {
       'package-lock.json',
       'pnpm-lock.yaml',
     ]).split('\n');
-    const json = file =>
-      files.includes(file) ? JSON.parse(git(['show', `${sha}:${file}`])) : {};
+    const json = (file: string): Manifest & Lockfile =>
+      files.includes(file)
+        ? (JSON.parse(git(['show', `${sha}:${file}`])) as Manifest & Lockfile)
+        : {};
     const lock = files.includes('pnpm-lock.yaml')
       ? pnpmLockfile(git(['show', `${sha}:pnpm-lock.yaml`]))
       : json('package-lock.json');
@@ -90,12 +151,13 @@ function collectDependencyChanges(baseSha, headSha, cwd) {
   return summariseDependencies(read(mergeBase), read(headSha));
 }
 
-function renderDependencyChanges(groups) {
-  const signed = value =>
+function renderDependencyChanges(groups: DependencyGroup[]): string {
+  const signed = (value: number): string =>
     value > 0 ? `+${value}` : value < 0 ? `−${Math.abs(value)}` : '0';
-  const count = (value, colour) => `${value ? colour : '⚪'} ${signed(value)}`;
-  const net = value => count(value, value > 0 ? '🔵' : '🟢');
-  const escape = value =>
+  const count = (value: number, colour: string): string =>
+    `${value ? colour : '⚪'} ${signed(value)}`;
+  const net = (value: number): string => count(value, value > 0 ? '🔵' : '🟢');
+  const escape = (value: string): string =>
     String(value).replace(
       /[&<>|`\r\n]/g,
       character => `&#${character.charCodeAt(0)};`,
@@ -148,7 +210,9 @@ function renderDependencyChanges(groups) {
   ].join('\n');
 }
 
-function renderProductionInventory(inventory) {
+function renderProductionInventory(
+  inventory: ProductionInventory | null | undefined,
+): string {
   if (!inventory) {
     return '### Production image dependencies\n\nInstalled inventory unavailable: the image was not built or its inventory was not collected.';
   }

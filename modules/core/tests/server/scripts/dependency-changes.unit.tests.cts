@@ -11,7 +11,7 @@ const {
   collectDependencyChanges,
   renderDependencyChanges,
   renderProductionInventory,
-} = require('../../../../../scripts/coverage/dependency-changes');
+} = require('../../../../../scripts/coverage/dependency-changes.cts');
 const {
   collectInstalledPackages,
 } = require('../../../../../scripts/ci/production-dependencies.cts');
@@ -19,10 +19,10 @@ const {
   renderLineChanges,
   summariseNumstat,
   updateLineChangesComment,
-} = require('../../../../../scripts/coverage/line-changes');
+} = require('../../../../../scripts/coverage/line-changes.cts');
 const {
   buildMarkdown,
-} = require('../../../../../scripts/coverage/generate-pr-summary');
+} = require('../../../../../scripts/coverage/generate-pr-summary.cts');
 
 interface DependencyChange {
   name: string;

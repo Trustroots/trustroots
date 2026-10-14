@@ -1,8 +1,32 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 
-const nodemon = require('nodemon');
-const assets = require('./../config/assets/default.mjs').server;
+interface NodemonOptions {
+  script: string;
+  nodeArgs: string[];
+  ext: string;
+  ignore: string[];
+  watch: string[];
+}
+
+interface NodemonProcess {
+  on(event: 'crash' | 'exit', listener: () => void): NodemonProcess;
+}
+
+interface ServerAssets {
+  fontelloConfig: string;
+  workerJS: string[];
+  allJS: string[];
+  views: string;
+  config: string;
+}
+
+const nodemon = require('nodemon') as (
+  options: NodemonOptions,
+) => NodemonProcess;
+const assets = (require('./../config/assets/default.mjs') as {
+  server: ServerAssets;
+}).server;
 
 const worker = process.argv[2] === 'worker';
 const name = worker ? 'Worker' : 'Server';

@@ -37,7 +37,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
-            const { backfill } = require('./scripts/coverage/backfill-pr-line-changes');
+            const { backfill } = require('./scripts/coverage/backfill-pr-line-changes.cts');
             await backfill({
               github,
               ...context.repo,
@@ -59,7 +59,7 @@ jobs:
           BEFORE_PR: ${{ inputs.before_pr }}
         with:
           script: |
-            const { backfill } = require('./scripts/coverage/backfill-pr-line-changes');
+            const { backfill } = require('./scripts/coverage/backfill-pr-line-changes.cts');
             const updated = await backfill({
               github,
               ...context.repo,
@@ -80,7 +80,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
-            const { backfill } = require('./scripts/coverage/backfill-pr-line-changes');
+            const { backfill } = require('./scripts/coverage/backfill-pr-line-changes.cts');
             for (const pull of context.payload.workflow_run.pull_requests) {
               await backfill({
                 github,

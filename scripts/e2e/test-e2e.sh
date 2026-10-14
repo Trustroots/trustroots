@@ -63,7 +63,7 @@ generate_coverage_report() {
     return 0
   fi
 
-  node ./scripts/coverage/generate-report.js >/dev/null 2>&1 || true
+  node ./scripts/coverage/generate-report.cts >/dev/null 2>&1 || true
 }
 
 exit_with_status() {

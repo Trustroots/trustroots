@@ -1,10 +1,24 @@
-const { execFileSync } = require('child_process');
+const { execFileSync } = require('node:child_process') as typeof import('node:child_process');
 const {
   collectDependencyChanges,
   renderDependencyChanges,
-} = require('./dependency-changes');
+} = require('./dependency-changes.cts');
 const startMarker = '<!-- trustroots-line-changes:start -->';
 const endMarker = '<!-- trustroots-line-changes:end -->';
+
+interface ChangeCategory {
+  id: string;
+  label: string;
+  added: number;
+  removed: number;
+  net: number;
+}
+
+interface LineChangesSummary {
+  groups: ChangeCategory[];
+  binaryFiles: number;
+  dependencies?: ReturnType<typeof collectDependencyChanges>;
+}
 
 const categories = [
   ['code', '🧩 Application code'],
@@ -13,7 +27,7 @@ const categories = [
   ['generated', '⚙️ Generated files and lockfiles'],
 ];
 
-function categoryForPath(filePath) {
+function categoryForPath(filePath: string): string {
   if (
     /(^|\/)(package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|Cargo\.lock|Gemfile\.lock)$/.test(
       filePath,
@@ -42,7 +56,7 @@ function categoryForPath(filePath) {
     : 'other';
 }
 
-function summariseNumstat(output) {
+function summariseNumstat(output: string): Pick<LineChangesSummary, 'groups' | 'binaryFiles'> {
   const groups = categories.map(([id, label]) => ({
     id,
     label,
@@ -67,7 +81,7 @@ function summariseNumstat(output) {
       binaryFiles += 1;
       continue;
     }
-    const group = groups.find(item => item.id === categoryForPath(filePath));
+    const group = groups.find(item => item.id === categoryForPath(filePath))!;
     group.added += Number(match[1]);
     group.removed += Number(match[2]);
     group.net = group.added - group.removed;
@@ -75,7 +89,11 @@ function summariseNumstat(output) {
   return { groups, binaryFiles };
 }
 
-function collectLineChanges(baseSha, headSha, cwd) {
+function collectLineChanges(
+  baseSha: string,
+  headSha: string,
+  cwd: string,
+): LineChangesSummary {
   if (![baseSha, headSha].every(sha => /^[a-f0-9]{40,64}$/i.test(sha || ''))) {
     throw new Error('PR base and head commit SHAs are required');
   }
@@ -97,11 +115,11 @@ function collectLineChanges(baseSha, headSha, cwd) {
   };
 }
 
-function signed(value) {
+function signed(value: number): string {
   return value > 0 ? `+${value}` : value < 0 ? `−${Math.abs(value)}` : '0';
 }
 
-function renderLineChanges(summary) {
+function renderLineChanges(summary: LineChangesSummary): string {
   const rows = summary.groups.map(({ id, label, added, removed, net }) => {
     const preferred = (id === 'code' && net < 0) || (id === 'tests' && net > 0);
     const symbol =
@@ -143,7 +161,10 @@ function renderLineChanges(summary) {
   ].join('\n');
 }
 
-function updateLineChangesComment(body, summary) {
+function updateLineChangesComment(
+  body: string,
+  summary: LineChangesSummary,
+): string {
   // Keep this section outside the line markers so older main-branch refreshers
   // cannot erase it while this reporting change is still under review.
   if (summary.dependencies) {

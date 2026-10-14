@@ -15,11 +15,19 @@ if (!webpackCssPath || !viteCssPath || !webpackRtlPath || !viteRtlPath) {
   process.exit(1);
 }
 
-function summarise(css) {
+interface CssSummary {
+  bytes: number;
+  rules: number;
+  marginLeft: number;
+  marginRight: number;
+  urls: Record<string, number>;
+}
+
+function summarise(css: string): CssSummary {
   const urls = [...css.matchAll(/url\(([^)]+)\)/g)].map(match =>
     match[1].replace(/^['"]|['"]$/g, ''),
   );
-  const prefixes = new Map();
+  const prefixes = new Map<string, number>();
   for (const url of urls) {
     const kind = url.startsWith('data:')
       ? 'data'
@@ -35,8 +43,8 @@ function summarise(css) {
   };
 }
 
-function report(label, path) {
-  const summary = summarise(readFileSync(path, 'utf8'));
+function report(label: string, filePath: string): CssSummary {
+  const summary = summarise(readFileSync(filePath, 'utf8'));
   console.log(label, JSON.stringify(summary));
   return summary;
 }
