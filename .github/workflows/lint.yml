@@ -68,7 +68,7 @@ jobs:
           reporter: github-check
           filter_mode: file # annotate all issues in changed files (mirrors old only-pr-files)
           fail_level: error # fail the check on ESLint errors (warnings still reported)
-          eslint_flags: '--ext .js,.mjs,.mts,.ts,.tsx .'
+          eslint_flags: '--ext .js,.mjs,.mts,.cts,.ts,.tsx .'
       - name: Enforce lint
         run: pnpm run lint
       - name: Check API input boundaries
