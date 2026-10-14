@@ -1,15 +1,25 @@
-const request = require('supertest');
-const mongoose = require('mongoose');
-const express = require('./../../../../config/lib/express.mjs');
-const config = require('./../../../../config/config.mjs');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const express: typeof import('../../../../config/lib/express.mjs').default = require('./../../../../config/lib/express.mjs');
+const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
 require('should');
+
+type SparkPostEvent = {
+  msys: {
+    message_event: {
+      type: string;
+      campaign_id: string;
+      timestamp: string;
+    };
+  };
+};
 
 /**
  * Globals
  */
-let app;
-let agent;
-let events;
+let app: import('express').Express;
+let agent: ReturnType<typeof request.agent>;
+let events: SparkPostEvent[];
 
 /**
  * Sparkpost routes tests

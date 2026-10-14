@@ -1,12 +1,22 @@
 // Testing that when we send general proper data points to stats api,
 // the correct data will arrive to the InfluxDB endpoint
 
-const should = require('should');
-const influx = require('influx');
-const sinon = require('sinon');
+const should: typeof import('should') = require('should');
+const influx: typeof import('influx') = require('influx');
+const sinon: typeof import('sinon') = require('sinon');
 
-const statsService = require('./../../server/services/stats.server.service.mts');
-const config = require('./../../../../config/config.mjs');
+type StatObject =
+  import('../../server/services/stats.server.service.mts').StatObject;
+type WriteMeasurementArgs = Parameters<
+  typeof influx.InfluxDB.prototype.writeMeasurement
+>;
+type WriteMeasurementStub = import('sinon').SinonStub<
+  WriteMeasurementArgs,
+  ReturnType<typeof influx.InfluxDB.prototype.writeMeasurement>
+>;
+const statsService: typeof import('../../server/services/stats.server.service.mts').default = require('./../../server/services/stats.server.service.mts');
+const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+let writeMeasurement: WriteMeasurementStub;
 
 describe('Stat API integration tests', function () {
   // restoring stubs
@@ -18,12 +28,15 @@ describe('Stat API integration tests', function () {
   // stub the influx endpoint
   beforeEach(function () {
     // stub the influx endpoint(s)
-    sinon.stub(influx.InfluxDB.prototype, 'writeMeasurement');
+    writeMeasurement = sinon.stub(
+      influx.InfluxDB.prototype,
+      'writeMeasurement',
+    ) as unknown as WriteMeasurementStub;
 
     // and writeMeasurement returns a Promise
-    influx.InfluxDB.prototype.writeMeasurement.returns(
-      new Promise(function (resolve) {
-        process.nextTick(resolve());
+    writeMeasurement.returns(
+      new Promise<void>(function (resolve) {
+        process.nextTick(resolve);
       }),
     );
 
@@ -63,11 +76,9 @@ describe('Stat API integration tests', function () {
 
           try {
             // test influx endpoint
-            sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
-            const measurement =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            const points =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            sinon.assert.calledOnce(writeMeasurement);
+            const measurement = writeMeasurement.getCall(0).args[0];
+            const points = writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
             const point = points[0];
 
@@ -106,11 +117,9 @@ describe('Stat API integration tests', function () {
 
           try {
             // test influx endpoint
-            sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
-            const measurement =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            const points =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            sinon.assert.calledOnce(writeMeasurement);
+            const measurement = writeMeasurement.getCall(0).args[0];
+            const points = writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
             const point = points[0];
 
@@ -151,11 +160,9 @@ describe('Stat API integration tests', function () {
 
           try {
             // test influx endpoint
-            sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
-            const measurement =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            const points =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            sinon.assert.calledOnce(writeMeasurement);
+            const measurement = writeMeasurement.getCall(0).args[0];
+            const points = writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
             const point = points[0];
 
@@ -193,11 +200,9 @@ describe('Stat API integration tests', function () {
 
           try {
             // test influx endpoint
-            sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
-            const measurement =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            const points =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            sinon.assert.calledOnce(writeMeasurement);
+            const measurement = writeMeasurement.getCall(0).args[0];
+            const points = writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
             const point = points[0];
 
@@ -224,11 +229,9 @@ describe('Stat API integration tests', function () {
 
           try {
             // test influx endpoint
-            sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
-            const measurement =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            const points =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            sinon.assert.calledOnce(writeMeasurement);
+            const measurement = writeMeasurement.getCall(0).args[0];
+            const points = writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
             const point = points[0];
 
@@ -253,11 +256,9 @@ describe('Stat API integration tests', function () {
 
           try {
             // test influx endpoint
-            sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
-            const measurement =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            const points =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            sinon.assert.calledOnce(writeMeasurement);
+            const measurement = writeMeasurement.getCall(0).args[0];
+            const points = writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
             const point = points[0];
 
@@ -281,11 +282,9 @@ describe('Stat API integration tests', function () {
 
           try {
             // test influx endpoint
-            sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
-            const measurement =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            const points =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            sinon.assert.calledOnce(writeMeasurement);
+            const measurement = writeMeasurement.getCall(0).args[0];
+            const points = writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
             const point = points[0];
 
@@ -309,11 +308,9 @@ describe('Stat API integration tests', function () {
 
           try {
             // test influx endpoint
-            sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
-            const measurement =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            const points =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            sinon.assert.calledOnce(writeMeasurement);
+            const measurement = writeMeasurement.getCall(0).args[0];
+            const points = writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
             const point = points[0];
 
@@ -352,10 +349,7 @@ describe('Stat API integration tests', function () {
               'Every key of stat counts, values, meta and tags must be unique',
             );
 
-            sinon.assert.callCount(
-              influx.InfluxDB.prototype.writeMeasurement,
-              0,
-            );
+            sinon.assert.callCount(writeMeasurement, 0);
 
             return done();
           } catch (e) {
@@ -382,10 +376,7 @@ describe('Stat API integration tests', function () {
               'The stat should contain counts or values',
             );
 
-            sinon.assert.callCount(
-              influx.InfluxDB.prototype.writeMeasurement,
-              0,
-            );
+            sinon.assert.callCount(writeMeasurement, 0);
 
             return done();
           } catch (e) {
@@ -403,7 +394,7 @@ describe('Stat API integration tests', function () {
         };
 
         // call the stat api with the testing data
-        statsService.stat(invalidData, function (e) {
+        statsService.stat(invalidData as unknown as StatObject, function (e) {
           try {
             should(e).be.Error();
             should(e).have.property(
@@ -411,10 +402,7 @@ describe('Stat API integration tests', function () {
               'Each of counts and values should be a number',
             );
 
-            sinon.assert.callCount(
-              influx.InfluxDB.prototype.writeMeasurement,
-              0,
-            );
+            sinon.assert.callCount(writeMeasurement, 0);
 
             return done();
           } catch (e) {
@@ -432,7 +420,7 @@ describe('Stat API integration tests', function () {
           time: 123456,
         };
         // call the stat api with the testing data
-        statsService.stat(data, function (e) {
+        statsService.stat(data as unknown as StatObject, function (e) {
           try {
             should(e).be.Error();
             should(e).have.property(
@@ -440,10 +428,7 @@ describe('Stat API integration tests', function () {
               'Time must be a Date object or not provided',
             );
 
-            sinon.assert.callCount(
-              influx.InfluxDB.prototype.writeMeasurement,
-              0,
-            );
+            sinon.assert.callCount(writeMeasurement, 0);
 
             return done();
           } catch (e) {
@@ -471,10 +456,7 @@ describe('Stat API integration tests', function () {
         function (e) {
           if (e) return done(e);
           try {
-            sinon.assert.callCount(
-              influx.InfluxDB.prototype.writeMeasurement,
-              0,
-            );
+            sinon.assert.callCount(writeMeasurement, 0);
 
             return done();
           } catch (e) {
