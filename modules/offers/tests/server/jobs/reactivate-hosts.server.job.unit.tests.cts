@@ -77,7 +77,8 @@ describe('Job: reactivate hosts unit tests', () => {
       }),
     } as unknown as ReturnType<typeof Offer.find>);
 
-    reactivateHostsJobHandler({}, function (err: Error) {
+    reactivateHostsJobHandler({}, function (err?: Error | null) {
+      if (!err) return done(new Error('Expected lookup failure'));
       err.message.should.equal('lookup failed');
       jobs.length.should.equal(0);
       done();
@@ -89,7 +90,8 @@ describe('Job: reactivate hosts unit tests', () => {
       .stub(emailService, 'sendReactivateHosts')
       .callsFake((offerUser, cb) => cb(new Error('mail failed')));
 
-    reactivateHostsJobHandler({}, function (err: Error) {
+    reactivateHostsJobHandler({}, function (err?: Error | null) {
+      if (!err) return done(new Error('Expected email failure'));
       err.message.should.equal('mail failed');
       jobs.length.should.equal(0);
       done();
