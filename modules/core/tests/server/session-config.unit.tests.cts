@@ -72,7 +72,7 @@ describe('Session configuration', function () {
   function createApp(): import('express').Application {
     app = express();
     const expressConfig: ExpressConfig = proxyquire(
-      require.resolve('./../../../../config/lib/express.mjs'),
+      require.resolve('./../../../../config/lib/express.mts'),
       {
         'connect-mongo': { create: () => store },
       },

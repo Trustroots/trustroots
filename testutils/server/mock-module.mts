@@ -1,4 +1,8 @@
-import { createRequire, registerHooks } from 'node:module';
+import {
+  createRequire,
+  registerHooks,
+  stripTypeScriptTypes,
+} from 'node:module';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -35,7 +39,7 @@ const resolve: ResolveHook = (specifier, context, nextResolve) => {
       value.startsWith('.')
         ? path
             .resolve(path.dirname(parentMock.filename), value)
-            .replace(/\.(?:mjs|js)$/, '')
+            .replace(/\.(?:mjs|mts|js|ts)$/, '')
         : value;
     const key = Object.keys(parentMock.stubs).find(
       candidate => normalise(candidate) === normalise(specifier),
@@ -58,7 +62,15 @@ const load: LoadHook = (url, context, nextLoad) => {
   const mock = [...mocks.values()].find(item => item.url === url);
   if (mock) {
     const loaded = nextLoad(pathToFileURL(mock.filename).href, context);
-    return { format: 'module', source: loaded.source, shortCircuit: true };
+    const source = mock.filename.endsWith('.mts')
+      ? stripTypeScriptTypes(
+          typeof loaded.source === 'string'
+            ? loaded.source
+            : new TextDecoder().decode(loaded.source as ArrayBuffer),
+          { mode: 'strip', sourceUrl: mock.filename },
+        )
+      : loaded.source;
+    return { format: 'module', source, shortCircuit: true };
   }
   if (url.startsWith('trustroots-mock:')) {
     const id = url.slice('trustroots-mock:'.length);

@@ -497,16 +497,14 @@ describe('Contact CRUD tests', function () {
         });
     });
     context('with email sending error', function () {
-      type TestAgenda = typeof agenda & {
-        now: (type: string, data: unknown) => Promise<unknown>;
-      };
-      const agendaWithNow = agenda as TestAgenda;
+      type TestAgenda = typeof agenda;
+      const agendaWithNow = agenda;
       let originalNow: TestAgenda['now'];
       beforeEach(function () {
         // Set the agenda.now() function to fail
         originalNow = agendaWithNow.now;
         agendaWithNow.now = function () {
-          return Promise.reject(new Error('fail!'));
+          return Promise.reject<never>(new Error('fail!'));
         };
       });
       afterEach(function () {

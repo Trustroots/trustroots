@@ -8,6 +8,11 @@ declare module 'async' {
     tasks: Array<(...args: never[]) => void>,
     callback?: (error?: Error | null, ...results: unknown[]) => void,
   ): void;
+  export function each<T>(
+    items: T[],
+    iteratee: (item: T, callback: (error?: Error | null) => void) => void,
+    callback?: (error?: Error | null) => void,
+  ): void;
   export function parallel<Result extends Record<string, unknown>>(
     tasks: {
       [Key in keyof Result]: (
@@ -51,6 +56,7 @@ declare module 'async' {
   export function nextTick(callback: () => void): void;
   const async: {
     map: typeof map;
+    each: typeof each;
     mapValuesSeries: typeof mapValuesSeries;
     nextTick: typeof nextTick;
     waterfall: typeof waterfall;
@@ -112,8 +118,9 @@ declare module 'sanitize-html' {
 }
 
 declare module 'semver' {
+  export function valid(version: string): string | null;
   export function satisfies(version: string, range: string): boolean;
-  const semver: { satisfies: typeof satisfies };
+  const semver: { satisfies: typeof satisfies; valid: typeof valid };
   export default semver;
 }
 
@@ -146,7 +153,10 @@ declare module 'juice' {
 }
 
 declare module 'qs' {
-  const qs: { stringify(values: Record<string, unknown>): string };
+  const qs: {
+    stringify(values: Record<string, unknown>): string;
+    parse(value: string): Record<string, unknown>;
+  };
   export default qs;
 }
 
@@ -215,9 +225,73 @@ declare module 'nunjucks' {
   const nunjucks: {
     configure(
       path: string,
-      options: { watch: boolean; noCache: boolean },
+      options: {
+        watch: boolean;
+        noCache: boolean;
+        express?: import('express').Express;
+      },
     ): Environment;
     render: Renderer;
   };
   export default nunjucks;
+}
+
+declare module 'winston-papertrail-transport' {
+  const transport: {
+    PapertrailTransport: new (options: {
+      host: string;
+      port: number;
+    }) => import('winston-transport');
+  };
+  export default transport;
+}
+
+declare module 'morgan' {
+  export default function morgan(
+    format: string,
+  ): import('express').RequestHandler;
+}
+
+declare module 'serve-favicon' {
+  export default function favicon(
+    path: string,
+  ): import('express').RequestHandler;
+}
+
+declare module 'cookie-parser' {
+  export default function cookieParser(): import('express').RequestHandler;
+}
+
+declare module 'compression' {
+  export default function compression(options: {
+    filter(
+      req: import('express').Request,
+      res: import('express').Response,
+    ): boolean;
+    level: number;
+  }): import('express').RequestHandler;
+}
+
+declare module 'expect-ct' {
+  export default function expectCt(options: {
+    enforce: boolean;
+    maxAge: number;
+    reportUri: string;
+  }): import('express').RequestHandler;
+}
+
+declare module 'express-session' {
+  export default function session(options: {
+    saveUninitialized: boolean;
+    resave: boolean;
+    secret: string;
+    proxy: boolean;
+    cookie: {
+      secure: boolean;
+      httpOnly: boolean;
+      sameSite: 'lax';
+      maxAge: number;
+    };
+    store: object;
+  }): import('express').RequestHandler;
 }

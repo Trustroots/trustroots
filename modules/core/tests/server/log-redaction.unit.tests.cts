@@ -298,7 +298,7 @@ describe('diagnostic log redaction', () => {
       },
     };
     const logger: (...args: unknown[]) => unknown = proxyquire(
-      require.resolve('./../../../../config/lib/logger.mjs'),
+      require.resolve('./../../../../config/lib/logger.mts'),
       {
         winston,
         '../config': { log: { papertrail: papertrailConfig } },

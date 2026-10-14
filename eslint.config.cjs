@@ -162,6 +162,7 @@ const legacyConfig = {
       files: [
         '*.js',
         '*.mjs',
+        '*.mts',
         '*.cjs',
         'config/**',
         'scripts/**/*.{mts,cts}',
@@ -266,6 +267,7 @@ const legacyConfig = {
     {
       files: [
         'config/vite/**/*.{ts,tsx,mts}',
+        'worker.mts',
         'jest/**/*.cts',
         'bin/**/*.mts',
         'scripts/**/*.{mts,cts}',
