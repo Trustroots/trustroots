@@ -1,10 +1,12 @@
-const assert = require('assert');
+const assert: typeof import('node:assert') = require('assert');
 const { spawnSync } = require('child_process');
-const fs = require('fs');
+const fs: typeof import('node:fs') = require('fs');
 const os = require('os');
-const path = require('path');
+const path: typeof import('node:path') = require('path');
 require('should');
 
+const should: typeof import('should') = require('should');
+void should;
 const {
   AREA_BY_SPEC,
   DEFINED_AREAS,
@@ -28,7 +30,19 @@ const {
   resolveE2eLaneStatus,
 } = require('../../../../../scripts/coverage/generate-report');
 
-function reportWithSpecs(specs) {
+type TestAnnotation = { type: string; description?: string };
+type TestCase = {
+  annotations: TestAnnotation[];
+  results: Array<{ status: string; annotations: TestAnnotation[] }>;
+};
+type TestSpec = {
+  file: string;
+  title: string;
+  annotations?: TestAnnotation[];
+  tests: TestCase[];
+};
+
+function reportWithSpecs(specs: TestSpec[]) {
   return {
     suites: [
       {
@@ -39,14 +53,17 @@ function reportWithSpecs(specs) {
   };
 }
 
-function testCase(status, annotations = []) {
+function testCase(
+  status: string,
+  annotations: TestAnnotation[] = [],
+): TestCase {
   return {
     annotations,
     results: [{ status, annotations: [] }],
   };
 }
 
-function spec(file, title, tests) {
+function spec(file: string, title: string, tests: TestCase[]): TestSpec {
   return {
     file,
     title,
@@ -55,7 +72,7 @@ function spec(file, title, tests) {
   };
 }
 
-function manifest(features) {
+function manifest(features: unknown[]) {
   return {
     statuses: {
       active: 'active',
@@ -75,7 +92,9 @@ function manifest(features) {
 
 describe('E2E coverage reporter unit tests', () => {
   describe('areaForSpec', () => {
-    function featureSpecFiles(dir = path.resolve('tests/e2e/features')) {
+    function featureSpecFiles(
+      dir = path.resolve('tests/e2e/features'),
+    ): string[] {
       return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
         const entryPath = path.join(dir, entry.name);
 
@@ -89,7 +108,7 @@ describe('E2E coverage reporter unit tests', () => {
 
     it('maps every current feature spec to a named area', () => {
       const unmappedSpecs = featureSpecFiles().filter(
-        specPath => !AREA_BY_SPEC[path.basename(specPath)],
+        (specPath: string) => !AREA_BY_SPEC[path.basename(specPath)],
       );
 
       unmappedSpecs.should.deepEqual([]);
