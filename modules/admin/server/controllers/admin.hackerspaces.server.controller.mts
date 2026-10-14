@@ -1,4 +1,4 @@
-import { fetchSpaceApiCollector } from '../services/hackerspaces.server.service.mjs';
+import { fetchSpaceApiCollector } from '../services/hackerspaces.server.service.mts';
 
 interface JsonResponse {
   status(code: number): JsonResponse;

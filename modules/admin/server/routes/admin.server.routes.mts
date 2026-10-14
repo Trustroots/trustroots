@@ -13,11 +13,24 @@ import adminHackerspaces from './../controllers/admin.hackerspaces.server.contro
 import adminLocationCorrections from '../controllers/admin.location-corrections.server.controller.mts';
 import adminExperienceChanges from '../controllers/admin.experience-changes.server.controller.mjs';
 
+type RouteHandler = (...args: never[]) => unknown;
+
+interface RouteChain {
+  all(...handlers: RouteHandler[]): RouteChain;
+  get(...handlers: RouteHandler[]): RouteChain;
+  patch(...handlers: RouteHandler[]): RouteChain;
+  post(...handlers: RouteHandler[]): RouteChain;
+}
+
+interface RouteApp {
+  route(path: string): RouteChain;
+}
+
 /**
  * Module dependencies.
  */
 
-const registerRoutes = app => {
+const registerRoutes = (app: RouteApp): void => {
   app.route('/api/admin/support').all(adminPolicy.isAllowed).get(support.list);
   app
     .route('/api/admin/support/:requestId')
