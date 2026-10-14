@@ -3,41 +3,116 @@
  * branches that the higher-level route tests do not reach. Handlers are
  * called directly with mock req/res objects against the test database.
  */
-const mongoose = require('mongoose');
-const sinon = require('sinon');
+import type { FilterQuery, UpdateQuery } from 'mongoose';
+import type {
+  MessageDocument,
+  MessageModel,
+  MessageRecord,
+  ThreadModel,
+  ThreadRecord,
+  UserDocument,
+  UserModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
 
-const messagesController = require('./../../server/controllers/messages.server.controller.mjs');
-const config = require('./../../../../config/config.mjs');
+type LegacyCallback<T = unknown> = (error: Error | null, result?: T) => void;
+type PaginationPayload = {
+  docs: object[] | null;
+  pages?: number;
+  total?: number;
+};
+
+const mongoose: typeof import('mongoose') = require('mongoose');
+const sinon: typeof import('sinon') = require('sinon');
+
+const messagesController: typeof import('../../server/controllers/messages.server.controller.mjs').default = require('./../../server/controllers/messages.server.controller.mjs');
+interface ControllerTestConfig {
+  limits: { messagesToIndividualsThrottle: { count: number } };
+  https: boolean;
+  akismet: { enabled: boolean };
+}
+const config: ControllerTestConfig = require('./../../../../config/config.mjs');
 const spamService = require('./../../../core/server/services/spam.server.service.mjs');
 const messageStatService = require('./../../server/services/message-stat.server.service.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
-const User = mongoose.model('User');
-const Thread = mongoose.model('Thread');
-const Message = mongoose.model('Message');
+const User = mongoose.model('User') as UserModel;
+const Thread: ThreadModel = mongoose.model('Thread');
+type MessagePaginationResult = {
+  docs: MessageDocument[];
+  pages: number;
+  total: number;
+};
+type MessageTestModel = MessageModel & {
+  paginate(
+    query: FilterQuery<MessageRecord>,
+    options: { page: number; limit: number; sort?: Record<string, 1 | -1> },
+  ): Promise<MessagePaginationResult>;
+};
+const Message = mongoose.model('Message') as MessageTestModel;
+
+function typedStub<TArgs extends readonly unknown[]>(
+  target: object,
+  method: string,
+): import('sinon').SinonStub<TArgs, unknown> {
+  const methods = target as Record<string, (...args: TArgs) => unknown>;
+  return sinon.stub(methods, method) as unknown as import('sinon').SinonStub<
+    TArgs,
+    unknown
+  >;
+}
 
 /**
  * Response mock that resolves a promise when the controller responds, so both
  * synchronous guards and async waterfalls can be awaited.
  */
-function deferredResponse() {
-  let resolveResponse;
-  const promise = new Promise(resolve => {
+interface DeferredResponse {
+  statusCode: number;
+  body: object;
+  locals?: { paginate?: { href(input: { page: number }): string } };
+  linkHeader?: { next?: string };
+  links(links?: { next?: string }): DeferredResponse;
+  status(code: number): DeferredResponse;
+  send(body: object): DeferredResponse;
+  json(body: object): DeferredResponse;
+  waitForResponse(): Promise<DeferredResponse>;
+}
+
+function bodyField<T>(body: object, field: string): T {
+  return (body as Record<string, unknown>)[field] as T;
+}
+
+function bodyArray<T>(body: object): T[] {
+  return body as T[];
+}
+
+function required<T>(value: T): NonNullable<T> {
+  if (value === null || value === undefined) throw new Error('Expected value');
+  return value as NonNullable<T>;
+}
+
+function deferredResponse(): DeferredResponse {
+  let resolveResponse: (response: DeferredResponse) => void;
+  const promise = new Promise<DeferredResponse>(resolve => {
     resolveResponse = resolve;
   });
 
-  const res = { statusCode: 200, body: null, links: () => res };
+  const res = {
+    statusCode: 200,
+    body: {},
+    links: () => res,
+  } as DeferredResponse;
   res.status = function (code) {
     res.statusCode = code;
     return res;
   };
-  res.send = function (body) {
+  res.send = function (body: object) {
     res.body = body;
     resolveResponse(res);
     return res;
   };
-  res.json = function (body) {
+  res.json = function (body: object) {
     res.body = body;
     resolveResponse(res);
     return res;
@@ -77,10 +152,16 @@ describe('Messages controller unit tests', () => {
       const threadBefore = await Thread.find({}).lean();
       const statsBefore = await mongoose.model('MessageStat').find({}).lean();
       messagesController.preview({ user: {}, body: { content } }, res);
-      res.body.content.should.equal(textService.html(content));
-      res.body.content.should.containEql('<b>Fictional draft</b>');
-      res.body.content.should.not.containEql('<script');
-      res.body.content.should.not.containEql('javascript:');
+      bodyField<string>(res.body, 'content').should.equal(
+        textService.html(content),
+      );
+      bodyField<string>(res.body, 'content').should.containEql(
+        '<b>Fictional draft</b>',
+      );
+      bodyField<string>(res.body, 'content').should.not.containEql('<script');
+      bodyField<string>(res.body, 'content').should.not.containEql(
+        'javascript:',
+      );
       (await Message.find({}).lean()).should.deepEqual(messageBefore);
       (await Thread.find({}).lean()).should.deepEqual(threadBefore);
       (await mongoose.model('MessageStat').find({}).lean()).should.deepEqual(
@@ -114,7 +195,7 @@ describe('Messages controller unit tests', () => {
     page.total.should.equal(3);
     page.pages.should.equal(3);
     page.docs.length.should.equal(1);
-    page.docs[0].content.should.equal('Anonymous message 2');
+    page.docs[0].content!.should.equal('Anonymous message 2');
   });
 
   describe('guards require an authenticated user', () => {
@@ -162,7 +243,7 @@ describe('Messages controller unit tests', () => {
   });
 
   describe('send validation', () => {
-    let sender;
+    let sender: UserDocument;
 
     beforeEach(async () => {
       [sender] = await utils.saveUsers(
@@ -176,7 +257,9 @@ describe('Messages controller unit tests', () => {
       messagesController.send({ user: sender, body: {} }, res);
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('Missing `userTo` field.');
+      bodyField<string>(res.body, 'message').should.equal(
+        'Missing `userTo` field.',
+      );
     });
 
     it('rejects an invalid userTo id', async () => {
@@ -210,7 +293,9 @@ describe('Messages controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('Please write a message.');
+      bodyField<string>(res.body, 'message').should.equal(
+        'Please write a message.',
+      );
     });
 
     it('returns 404 when the recipient does not exist', async () => {
@@ -246,7 +331,7 @@ describe('Messages controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.error.should.equal('empty-profile');
+      bodyField<string>(res.body, 'error').should.equal('empty-profile');
     });
 
     it('throttles users who message too many people', async () => {
@@ -317,7 +402,7 @@ describe('Messages controller unit tests', () => {
     }
 
     it('sends a message successfully', async () => {
-      const senderDoc = await User.findById(sender._id);
+      const senderDoc = required(await User.findById(sender._id));
       senderDoc.description =
         'I am a long-time member of this community and I love to travel and host people from all over the world. ' +
         'I enjoy cooking, cycling, hiking and sharing stories with travellers passing through my town.';
@@ -341,7 +426,7 @@ describe('Messages controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(200);
-      res.body.content.should.containEql('Hello there');
+      bodyField<string>(res.body, 'content').should.containEql('Hello there');
     });
   });
 
@@ -363,7 +448,9 @@ describe('Messages controller unit tests', () => {
         res,
       );
       res.body.should.be.an.Array();
-      res.body[0].content.should.equal('<b>hi</b>');
+      bodyArray<{ content: string }>(res.body)[0].content.should.equal(
+        '<b>hi</b>',
+      );
     });
 
     it('returns an empty array without messages', () => {
@@ -374,7 +461,7 @@ describe('Messages controller unit tests', () => {
   });
 
   describe('sync date validation', () => {
-    let user;
+    let user: UserDocument;
 
     beforeEach(async () => {
       [user] = await utils.saveUsers(utils.generateUsers(1));
@@ -385,7 +472,9 @@ describe('Messages controller unit tests', () => {
       messagesController.sync({ user, query: { dateFrom: 'nonsense' } }, res);
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('Invalid `dateFrom`.');
+      bodyField<string>(res.body, 'message').should.equal(
+        'Invalid `dateFrom`.',
+      );
     });
 
     it('rejects an invalid dateTo', async () => {
@@ -396,7 +485,7 @@ describe('Messages controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('Invalid `dateTo`.');
+      bodyField<string>(res.body, 'message').should.equal('Invalid `dateTo`.');
     });
 
     it('rejects dateFrom later than dateTo', async () => {
@@ -407,7 +496,9 @@ describe('Messages controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.message.should.containEql('cannot be later');
+      bodyField<string>(res.body, 'message').should.containEql(
+        'cannot be later',
+      );
     });
 
     it('returns data for a valid date range', async () => {
@@ -425,8 +516,8 @@ describe('Messages controller unit tests', () => {
   describe('markAllMessagesToUserNotified', () => {
     it('updates without error for a user with no messages', done => {
       messagesController.markAllMessagesToUserNotified(
-        new mongoose.Types.ObjectId(),
-        err => {
+        new mongoose.Types.ObjectId().toString(),
+        (err: Error | null) => {
           (err === null || err === undefined).should.be.true();
           done();
         },
@@ -455,18 +546,19 @@ describe('Messages controller unit tests', () => {
         },
       ]);
 
-      await new Promise((resolve, reject) => {
-        messagesController.markAllMessagesToUserNotified(recipient._id, err =>
-          err ? reject(err) : resolve(),
+      await new Promise<void>((resolve, reject) => {
+        messagesController.markAllMessagesToUserNotified(
+          recipient._id.toString(),
+          (err: Error | null) => (err ? reject(err) : resolve()),
         );
       });
 
       const messages = await Message.find().sort('content');
       const recipientMessages = messages.filter(message =>
-        message.userTo.equals(recipient._id),
+        required(message.userTo).equals(recipient._id),
       );
       const otherMessages = messages.filter(message =>
-        message.userTo.equals(otherRecipient._id),
+        required(message.userTo).equals(otherRecipient._id),
       );
       recipientMessages.length.should.equal(2);
       recipientMessages
@@ -480,8 +572,11 @@ describe('Messages controller unit tests', () => {
 
   describe('sanitizeMessages', () => {
     it('returns an empty array for missing input', () => {
-      messagesController.sanitizeMessages(null).should.deepEqual([]);
-      messagesController.sanitizeMessages([]).should.deepEqual([]);
+      const sanitizeMessages = messagesController.sanitizeMessages as (
+        input: MessageRecord[] | null,
+      ) => MessageRecord[];
+      sanitizeMessages(null).should.deepEqual([]);
+      sanitizeMessages([]).should.deepEqual([]);
     });
   });
 
@@ -558,7 +653,7 @@ describe('Messages controller unit tests', () => {
           read: false,
         },
       ]);
-      const acknowledge = async ids => {
+      const acknowledge = async (ids: import('mongoose').Types.ObjectId[]) => {
         const res = deferredResponse();
         messagesController.markRead(
           {
@@ -571,15 +666,21 @@ describe('Messages controller unit tests', () => {
         res.statusCode.should.equal(200);
       };
       await acknowledge([messages[0]._id]);
-      (await Thread.findById(threads[0]._id)).read.should.be.false();
+      required(await Thread.findById(threads[0]._id)).read!.should.be.false();
       await acknowledge([messages[1]._id, messages[2]._id]);
-      (await Thread.findById(threads[0]._id)).read.should.be.true();
-      (await Thread.findById(threads[1]._id)).read.should.be.false();
-      (await Message.findById(messages[2]._id)).read.should.be.false();
+      required(await Thread.findById(threads[0]._id)).read!.should.be.true();
+      required(await Thread.findById(threads[1]._id)).read!.should.be.false();
+      required(await Message.findById(messages[2]._id)).read!.should.be.false();
     });
 
     it('returns 400 when thread acknowledgement fails', async () => {
-      sinon.stub(Thread, 'updateMany').callsFake((query, update, callback) => {
+      typedStub<
+        [
+          query: FilterQuery<ThreadRecord>,
+          update: UpdateQuery<ThreadRecord>,
+          callback: LegacyCallback,
+        ]
+      >(Thread, 'updateMany').callsFake((query, update, callback) => {
         callback(new Error('Thread update failed'));
       });
       const [receiver] = await utils.saveUsers(utils.generateUsers(1));
@@ -617,7 +718,7 @@ describe('Messages controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
 
-      const reloaded = await Message.findById(message._id);
+      const reloaded = required(await Message.findById(message._id));
       reloaded.read.should.be.true();
     });
 
@@ -644,7 +745,7 @@ describe('Messages controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
 
-      const reloaded = await Message.findById(message._id);
+      const reloaded = required(await Message.findById(message._id));
       reloaded.read.should.be.false();
     });
   });
@@ -655,7 +756,7 @@ describe('Messages controller unit tests', () => {
       const res = deferredResponse();
       messagesController.messagesCount({ user: { _id: user._id } }, res);
       await res.waitForResponse();
-      res.body.unread.should.equal(0);
+      bodyField<number>(res.body, 'unread').should.equal(0);
     });
   });
 
@@ -693,7 +794,9 @@ describe('Messages controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       res.body.should.be.an.Array().with.lengthOf(1);
-      res.body[0].message.excerpt.should.containEql('Hello');
+      bodyArray<{ message: { excerpt: string } }>(
+        res.body,
+      )[0].message.excerpt.should.containEql('Hello');
     });
 
     it('marks threads read when the latest message was sent by the viewer', async () => {
@@ -718,7 +821,7 @@ describe('Messages controller unit tests', () => {
       const res = deferredResponse();
       messagesController.inbox({ user: { _id: sender._id }, query: {} }, res);
       await res.waitForResponse();
-      res.body[0].read.should.be.true();
+      bodyArray<{ read: boolean }>(res.body)[0].read.should.be.true();
     });
 
     it('shows exactly the threads counted as unread', async () => {
@@ -774,27 +877,43 @@ describe('Messages controller unit tests', () => {
       );
       await inbox.waitForResponse();
 
-      count.body.unread.should.equal(1);
+      bodyField<number>(count.body, 'unread').should.equal(1);
       inbox.body.should.be.an.Array().with.lengthOf(1);
-      inbox.body[0].message.excerpt.should.equal('Unread conversation');
+      bodyArray<{ message: { excerpt: string } }>(
+        inbox.body,
+      )[0].message.excerpt.should.equal('Unread conversation');
     });
   });
 
   describe('threadByUser middleware', () => {
-    function runThreadByUser(req, userId) {
-      return new Promise(resolve => {
-        const res = { statusCode: 200, body: null, links: () => res };
-        const finish = nextCalled => resolve({ res, nextCalled, req });
-        res.status = code => {
+    interface ThreadByUserRequest {
+      user?: UserDocument;
+      query: Record<string, unknown>;
+      messages?: object[];
+    }
+    interface ThreadByUserResult {
+      res: DeferredResponse;
+      nextCalled: boolean;
+      req: ThreadByUserRequest;
+    }
+    function runThreadByUser(
+      req: ThreadByUserRequest,
+      userId: string,
+    ): Promise<ThreadByUserResult> {
+      return new Promise<ThreadByUserResult>(resolve => {
+        const res = deferredResponse();
+        const finish = (nextCalled: boolean) =>
+          resolve({ res, nextCalled, req });
+        res.status = (code: number) => {
           res.statusCode = code;
           return res;
         };
-        res.send = body => {
+        res.send = (body: object) => {
           res.body = body;
           finish(false);
           return res;
         };
-        res.json = body => {
+        res.json = (body: object) => {
           res.body = body;
           finish(false);
           return res;
@@ -828,13 +947,15 @@ describe('Messages controller unit tests', () => {
         sender._id.toString(),
       );
       nextCalled.should.be.true();
-      req.messages.should.be.an.Array().with.lengthOf(1);
-      const thread = await Thread.findOne({
-        userFrom: sender._id,
-        userTo: receiver._id,
-      });
+      req.messages!.should.be.an.Array().with.lengthOf(1);
+      const thread = required(
+        await Thread.findOne({
+          userFrom: sender._id,
+          userTo: receiver._id,
+        }),
+      );
       thread.read.should.be.false();
-      (await Message.findById(message._id)).read.should.be.false();
+      required(await Message.findById(message._id)).read.should.be.false();
     });
 
     it('skips marking read when the latest message was sent by the viewer', async () => {
@@ -873,7 +994,7 @@ describe('Messages controller unit tests', () => {
       const [sender, receiver] = await utils.saveUsers(
         utils.generateUsers(2, { public: true }),
       );
-      const senderDoc = await User.findById(sender._id);
+      const senderDoc = required(await User.findById(sender._id));
       senderDoc.description = longDescription;
       senderDoc.roles = ['user'];
       await senderDoc.save();
@@ -911,14 +1032,14 @@ describe('Messages controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(200);
-      res.body.content.should.containEql('Second hello');
+      bodyField<string>(res.body, 'content').should.containEql('Second hello');
     });
 
     it('rejects a profile that is too short but not empty', async () => {
       const [sender, receiver] = await utils.saveUsers(
         utils.generateUsers(2, { public: true }),
       );
-      const senderDoc = await User.findById(sender._id);
+      const senderDoc = required(await User.findById(sender._id));
       senderDoc.description = 'Too short.';
       await senderDoc.save();
 
@@ -936,12 +1057,14 @@ describe('Messages controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.message.should.containEql('longer profile description');
+      bodyField<string>(res.body, 'message').should.containEql(
+        'longer profile description',
+      );
     });
 
     it('does not let regular users message suspended members', async () => {
       const { sender, receiver } = await prepareSender();
-      const receiverDoc = await User.findById(receiver._id);
+      const receiverDoc = required(await User.findById(receiver._id));
       receiverDoc.roles = ['user', 'suspended'];
       await receiverDoc.save();
 
@@ -965,7 +1088,7 @@ describe('Messages controller unit tests', () => {
       const { sender, receiver } = await prepareSender();
       sender.roles = ['user', 'admin'];
       await sender.save();
-      const receiverDoc = await User.findById(receiver._id);
+      const receiverDoc = required(await User.findById(receiver._id));
       receiverDoc.roles = ['user', 'suspended'];
       await receiverDoc.save();
 
@@ -983,13 +1106,15 @@ describe('Messages controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(200);
-      res.body.content.should.containEql('Hello suspended member');
+      bodyField<string>(res.body, 'content').should.containEql(
+        'Hello suspended member',
+      );
     });
 
     it('returns 404 when recipient lookup errors', async () => {
       const { sender, receiver } = await prepareSender();
-      sinon.stub(User, 'findOne').returns({
-        exec: cb => cb(new Error('recipient lookup failed')),
+      typedStub<[query?: FilterQuery<UserRecord>]>(User, 'findOne').returns({
+        exec: (cb: LegacyCallback) => cb(new Error('recipient lookup failed')),
       });
 
       const res = deferredResponse();
@@ -1010,7 +1135,14 @@ describe('Messages controller unit tests', () => {
 
     it('returns 400 when thread upsert fails', async () => {
       const { sender, receiver } = await prepareSender();
-      sinon.stub(Thread, 'updateOne').callsFake((query, data, options, cb) => {
+      typedStub<
+        [
+          query: FilterQuery<ThreadRecord>,
+          update: UpdateQuery<ThreadRecord>,
+          options: Record<string, unknown>,
+          callback: LegacyCallback,
+        ]
+      >(Thread, 'updateOne').callsFake((query, data, options, cb) => {
         cb(new Error('thread upsert failed'));
       });
 
@@ -1055,9 +1187,11 @@ describe('Messages controller unit tests', () => {
       res.statusCode.should.equal(200);
 
       const Message = mongoose.model('Message');
-      const saved = await Message.findOne({ userFrom: sender._id }).sort({
-        created: -1,
-      });
+      const saved = required(
+        await Message.findOne({ userFrom: sender._id }).sort({
+          created: -1,
+        }),
+      );
       saved.shadowHidden.should.be.true();
       saved.read.should.be.true();
       sinon.assert.notCalled(updateMessageStat);
@@ -1079,8 +1213,15 @@ describe('Messages controller unit tests', () => {
       const res = deferredResponse();
       messagesController.sync({ user: receiver, query: {} }, res);
       await res.waitForResponse();
-      res.body.users.should.be.an.Array().with.lengthOf(2);
-      Object.keys(res.body.messages).length.should.be.aboveOrEqual(1);
+      bodyField<object[]>(res.body, 'users')
+        .should.be.an.Array()
+        .with.lengthOf(2);
+      Object.keys(
+        bodyField<Record<string, Array<{ content?: string }>>>(
+          res.body,
+          'messages',
+        ),
+      ).length.should.be.aboveOrEqual(1);
     });
   });
 
@@ -1107,7 +1248,7 @@ describe('Messages controller unit tests', () => {
       const res = deferredResponse();
       messagesController.messagesCount({ user: { _id: receiver._id } }, res);
       await res.waitForResponse();
-      res.body.unread.should.equal(1);
+      bodyField<number>(res.body, 'unread').should.equal(1);
     });
   });
 
@@ -1122,7 +1263,13 @@ describe('Messages controller unit tests', () => {
 
   describe('error paths', () => {
     it('returns 400 when inbox pagination fails', async () => {
-      sinon.stub(Thread, 'paginate').callsFake((query, options, cb) => {
+      typedStub<
+        [
+          query: FilterQuery<ThreadRecord>,
+          options: Record<string, unknown>,
+          callback: LegacyCallback<PaginationPayload>,
+        ]
+      >(Thread, 'paginate').callsFake((query, options, cb) => {
         cb(new Error('paginate failed'));
       });
       const [user] = await utils.saveUsers(utils.generateUsers(1));
@@ -1153,12 +1300,21 @@ describe('Messages controller unit tests', () => {
       const res = deferredResponse();
       messagesController.inbox({ user: { _id: receiver._id }, query: {} }, res);
       await res.waitForResponse();
-      res.body[0].message.excerpt.should.equal('…');
+      bodyArray<{ message: { excerpt: string } }>(
+        res.body,
+      )[0].message.excerpt.should.equal('…');
       thread._id.should.be.ok();
     });
 
     it('returns 400 when markRead update fails', async () => {
-      sinon.stub(Message, 'update').callsFake((query, update, options, cb) => {
+      typedStub<
+        [
+          query: FilterQuery<MessageRecord>,
+          update: UpdateQuery<MessageRecord>,
+          options: Record<string, unknown>,
+          callback: LegacyCallback,
+        ]
+      >(Message, 'update').callsFake((query, update, options, cb) => {
         cb(new Error('update failed'));
       });
       const [user] = await utils.saveUsers(utils.generateUsers(1));
@@ -1175,7 +1331,9 @@ describe('Messages controller unit tests', () => {
     });
 
     it('returns 400 when messagesCount lookup fails', async () => {
-      sinon.stub(Thread, 'countDocuments').callsFake((query, cb) => {
+      typedStub<
+        [query: FilterQuery<ThreadRecord>, callback: LegacyCallback<number>]
+      >(Thread, 'countDocuments').callsFake((query, cb) => {
         cb(new Error('count failed'));
       });
       const [user] = await utils.saveUsers(utils.generateUsers(1));
@@ -1186,10 +1344,10 @@ describe('Messages controller unit tests', () => {
     });
 
     it('returns 400 when sync message lookup fails', async () => {
-      sinon.stub(Message, 'find').returns({
+      typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
         sort: () => ({
           select: () => ({
-            exec: cb => cb(new Error('find failed')),
+            exec: (cb: LegacyCallback) => cb(new Error('find failed')),
           }),
         }),
       });
@@ -1204,7 +1362,13 @@ describe('Messages controller unit tests', () => {
       const [sender, receiver] = await utils.saveUsers(
         utils.generateUsers(2, { public: true }),
       );
-      sinon.stub(Message, 'paginate').callsFake((query, options, cb) => {
+      typedStub<
+        [
+          query: FilterQuery<MessageRecord>,
+          options: Record<string, unknown>,
+          callback: LegacyCallback<PaginationPayload>,
+        ]
+      >(Message, 'paginate').callsFake((query, options, cb) => {
         cb(new Error('paginate failed'));
       });
 
@@ -1229,7 +1393,7 @@ describe('Messages controller unit tests', () => {
       const [sender, receiver] = await utils.saveUsers(
         utils.generateUsers(2, { public: true }),
       );
-      const senderDoc = await User.findById(sender._id);
+      const senderDoc = required(await User.findById(sender._id));
       senderDoc.description = longDescription;
       senderDoc.roles = ['user'];
       await senderDoc.save();
@@ -1259,7 +1423,9 @@ describe('Messages controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       res.body.should.be.an.Array().with.lengthOf(1);
-      res.body[0].userFrom._id.toString().should.equal(sender._id.toString());
+      bodyArray<{ userFrom: { _id: { toString(): string } } }>(res.body)[0]
+        .userFrom._id.toString()
+        .should.equal(sender._id.toString());
     });
 
     it('backfills deleted recipient ids in inbox threads', async () => {
@@ -1285,7 +1451,9 @@ describe('Messages controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       res.body.should.be.an.Array().with.lengthOf(1);
-      res.body[0].userTo._id.toString().should.equal(receiver._id.toString());
+      bodyArray<{ userTo: { _id: { toString(): string } } }>(res.body)[0]
+        .userTo._id.toString()
+        .should.equal(receiver._id.toString());
     });
 
     it('adds a next page link and excerpt fallback for empty thread messages', async () => {
@@ -1294,7 +1462,13 @@ describe('Messages controller unit tests', () => {
       const viewerId = new mongoose.Types.ObjectId();
       const otherId = new mongoose.Types.ObjectId();
       const threadId = new mongoose.Types.ObjectId();
-      sinon.stub(Thread, 'paginate').callsFake((query, options, cb) => {
+      typedStub<
+        [
+          query: FilterQuery<ThreadRecord>,
+          options: Record<string, unknown>,
+          callback: LegacyCallback<PaginationPayload>,
+        ]
+      >(Thread, 'paginate').callsFake((query, options, cb) => {
         cb(null, {
           docs: [
             {
@@ -1336,9 +1510,11 @@ describe('Messages controller unit tests', () => {
         );
         await res.waitForResponse();
         res.statusCode.should.equal(200);
-        res.linkHeader.next.should.containEql('https://');
-        res.linkHeader.next.should.containEql('page=2');
-        res.body[0].message.excerpt.should.equal('…');
+        res.linkHeader!.next!.should.containEql('https://');
+        res.linkHeader!.next!.should.containEql('page=2');
+        bodyArray<{ message: { excerpt: string } }>(
+          res.body,
+        )[0].message.excerpt.should.equal('…');
       } finally {
         config.https = originalHttps;
       }
@@ -1347,7 +1523,13 @@ describe('Messages controller unit tests', () => {
     it('keeps deleted profile fields empty when backfill lookup errors', async () => {
       const viewerId = new mongoose.Types.ObjectId();
       const threadId = new mongoose.Types.ObjectId();
-      sinon.stub(Thread, 'paginate').callsFake((query, options, cb) => {
+      typedStub<
+        [
+          query: FilterQuery<ThreadRecord>,
+          options: Record<string, unknown>,
+          callback: LegacyCallback<PaginationPayload>,
+        ]
+      >(Thread, 'paginate').callsFake((query, options, cb) => {
         cb(null, {
           docs: [
             {
@@ -1370,7 +1552,13 @@ describe('Messages controller unit tests', () => {
           pages: 1,
         });
       });
-      sinon.stub(Thread, 'findById').callsFake((id, field, cb) => {
+      typedStub<
+        [
+          id: import('mongoose').Types.ObjectId,
+          field: string,
+          callback: LegacyCallback,
+        ]
+      >(Thread, 'findById').callsFake((id, field, cb) => {
         cb(new Error('backfill failed'));
       });
 
@@ -1380,14 +1568,21 @@ describe('Messages controller unit tests', () => {
 
       res.statusCode.should.equal(200);
       (
-        res.body[0].userTo === null || res.body[0].userTo === undefined
+        bodyArray<{ userTo?: object | null }>(res.body)[0].userTo === null ||
+        bodyArray<{ userTo?: object | null }>(res.body)[0].userTo === undefined
       ).should.be.true();
     });
 
     it('keeps deleted profile fields empty when backfill finds no thread', async () => {
       const viewerId = new mongoose.Types.ObjectId();
       const threadId = new mongoose.Types.ObjectId();
-      sinon.stub(Thread, 'paginate').callsFake((query, options, cb) => {
+      typedStub<
+        [
+          query: FilterQuery<ThreadRecord>,
+          options: Record<string, unknown>,
+          callback: LegacyCallback<PaginationPayload>,
+        ]
+      >(Thread, 'paginate').callsFake((query, options, cb) => {
         cb(null, {
           docs: [
             {
@@ -1410,7 +1605,13 @@ describe('Messages controller unit tests', () => {
           pages: 1,
         });
       });
-      sinon.stub(Thread, 'findById').callsFake((id, field, cb) => {
+      typedStub<
+        [
+          id: import('mongoose').Types.ObjectId,
+          field: string,
+          callback: LegacyCallback,
+        ]
+      >(Thread, 'findById').callsFake((id, field, cb) => {
         cb(null, null);
       });
 
@@ -1420,7 +1621,10 @@ describe('Messages controller unit tests', () => {
 
       res.statusCode.should.equal(200);
       (
-        res.body[0].userFrom === null || res.body[0].userFrom === undefined
+        bodyArray<{ userFrom?: object | null }>(res.body)[0].userFrom ===
+          null ||
+        bodyArray<{ userFrom?: object | null }>(res.body)[0].userFrom ===
+          undefined
       ).should.be.true();
     });
 
@@ -1448,10 +1652,12 @@ describe('Messages controller unit tests', () => {
         await res.waitForResponse();
         res.statusCode.should.equal(200);
 
-        const saved = await Message.findOne({ userFrom: sender._id }).sort({
-          created: -1,
-        });
-        saved.spam.should.be.true();
+        const saved = required(
+          await Message.findOne({ userFrom: sender._id }).sort({
+            created: -1,
+          }),
+        );
+        saved.spam!.should.be.true();
       } finally {
         process.env.NODE_ENV = originalEnv;
         config.akismet.enabled = originalAkismetEnabled;
@@ -1482,10 +1688,12 @@ describe('Messages controller unit tests', () => {
         await res.waitForResponse();
         res.statusCode.should.equal(200);
 
-        const saved = await Message.findOne({ userFrom: sender._id }).sort({
-          created: -1,
-        });
-        saved.spam.should.be.false();
+        const saved = required(
+          await Message.findOne({ userFrom: sender._id }).sort({
+            created: -1,
+          }),
+        );
+        saved.spam!.should.be.false();
       } finally {
         process.env.NODE_ENV = originalEnv;
         config.akismet.enabled = originalAkismetEnabled;
@@ -1517,7 +1725,9 @@ describe('Messages controller unit tests', () => {
         );
         await res.waitForResponse();
         res.statusCode.should.equal(200);
-        res.body.content.should.containEql('Hello despite akismet failure');
+        bodyField<string>(res.body, 'content').should.containEql(
+          'Hello despite akismet failure',
+        );
       } finally {
         process.env.NODE_ENV = originalEnv;
         config.akismet.enabled = originalAkismetEnabled;
@@ -1624,8 +1834,11 @@ describe('Messages controller unit tests', () => {
 
     it('returns 400 when first-message profile lookup fails', async () => {
       const { sender, receiver } = await prepareSender();
-      sinon.stub(User, 'findById').returns({
-        exec: cb => cb(new Error('profile lookup failed')),
+      typedStub<[id: import('mongoose').Types.ObjectId]>(
+        User,
+        'findById',
+      ).returns({
+        exec: (cb: LegacyCallback) => cb(new Error('profile lookup failed')),
       });
 
       const res = deferredResponse();
@@ -1645,7 +1858,10 @@ describe('Messages controller unit tests', () => {
     });
 
     it('returns 400 when send populate fails', async () => {
-      sinon.stub(Message.prototype, 'save').callsFake(function (cb) {
+      typedStub<[callback: LegacyCallback]>(
+        Message.prototype,
+        'save',
+      ).callsFake(function (cb) {
         const fakeMessage = {
           populate: sinon.stub().callsFake((opts, populateCb) => {
             populateCb(new Error('populate failed'));
@@ -1672,7 +1888,10 @@ describe('Messages controller unit tests', () => {
     });
 
     it('returns 400 when message save fails', async () => {
-      sinon.stub(Message.prototype, 'save').callsFake(cb => {
+      typedStub<[callback: LegacyCallback]>(
+        Message.prototype,
+        'save',
+      ).callsFake(cb => {
         cb(new Error('save failed'));
       });
       const { sender, receiver } = await prepareSender();
@@ -1697,7 +1916,13 @@ describe('Messages controller unit tests', () => {
       const [sender, receiver] = await utils.saveUsers(
         utils.generateUsers(2, { public: true }),
       );
-      sinon.stub(Message, 'paginate').callsFake((query, options, cb) => {
+      typedStub<
+        [
+          query: FilterQuery<MessageRecord>,
+          options: Record<string, unknown>,
+          callback: LegacyCallback<PaginationPayload>,
+        ]
+      >(Message, 'paginate').callsFake((query, options, cb) => {
         cb(null, { docs: null });
       });
 
@@ -1723,10 +1948,10 @@ describe('Messages controller unit tests', () => {
         userTo: viewerId,
         created: new Date(),
       };
-      sinon.stub(Message, 'find').returns({
+      typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
         sort: () => ({
           select: () => ({
-            exec: cb => cb(null, [incoming]),
+            exec: (cb: LegacyCallback<object[]>) => cb(null, [incoming]),
           }),
         }),
       });
@@ -1736,11 +1961,20 @@ describe('Messages controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       const senderKey = sender._id.toString();
-      res.body.messages.should.have.property(senderKey);
-      res.body.messages[senderKey].should.be.an.Array().with.lengthOf(1);
-      res.body.messages[senderKey][0].content.should.containEql(
-        'Incoming sync message',
-      );
+      bodyField<Record<string, Array<{ content?: string }>>>(
+        res.body,
+        'messages',
+      ).should.have.property(senderKey);
+      bodyField<Record<string, Array<{ content?: string }>>>(
+        res.body,
+        'messages',
+      )
+        [senderKey].should.be.an.Array()
+        .with.lengthOf(1);
+      bodyField<Record<string, Array<{ content?: string }>>>(
+        res.body,
+        'messages',
+      )[senderKey][0].content!.should.containEql('Incoming sync message');
     });
 
     it('groups outgoing sync messages by recipient id', async () => {
@@ -1754,10 +1988,10 @@ describe('Messages controller unit tests', () => {
         userTo: receiver._id,
         created: new Date(),
       };
-      sinon.stub(Message, 'find').returns({
+      typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
         sort: () => ({
           select: () => ({
-            exec: cb => cb(null, [outgoing]),
+            exec: (cb: LegacyCallback<object[]>) => cb(null, [outgoing]),
           }),
         }),
       });
@@ -1767,11 +2001,20 @@ describe('Messages controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       const receiverKey = receiver._id.toString();
-      res.body.messages.should.have.property(receiverKey);
-      res.body.messages[receiverKey].should.be.an.Array().with.lengthOf(1);
-      res.body.messages[receiverKey][0].content.should.containEql(
-        'Outgoing sync message',
-      );
+      bodyField<Record<string, Array<{ content?: string }>>>(
+        res.body,
+        'messages',
+      ).should.have.property(receiverKey);
+      bodyField<Record<string, Array<{ content?: string }>>>(
+        res.body,
+        'messages',
+      )
+        [receiverKey].should.be.an.Array()
+        .with.lengthOf(1);
+      bodyField<Record<string, Array<{ content?: string }>>>(
+        res.body,
+        'messages',
+      )[receiverKey][0].content!.should.containEql('Outgoing sync message');
     });
 
     it('returns 400 when sync user lookup fails', async () => {
@@ -1779,10 +2022,10 @@ describe('Messages controller unit tests', () => {
         utils.generateUsers(2, { public: true }),
       );
       const viewerId = receiver._id;
-      sinon.stub(Message, 'find').returns({
+      typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
         sort: () => ({
           select: () => ({
-            exec: cb =>
+            exec: (cb: LegacyCallback<object[]>) =>
               cb(null, [
                 {
                   content: 'Sync test message',
@@ -1794,9 +2037,9 @@ describe('Messages controller unit tests', () => {
           }),
         }),
       });
-      sinon.stub(User, 'find').returns({
+      typedStub<[query?: FilterQuery<UserRecord>]>(User, 'find').returns({
         select: () => ({
-          exec: cb => cb(new Error('user lookup failed')),
+          exec: (cb: LegacyCallback) => cb(new Error('user lookup failed')),
         }),
       });
 
@@ -1808,16 +2051,16 @@ describe('Messages controller unit tests', () => {
     });
 
     it('returns 400 when sync user lookup fails', async () => {
-      sinon.stub(Message, 'find').returns({
+      typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
         sort: () => ({
           select: () => ({
-            exec: cb => cb(null, []),
+            exec: (cb: LegacyCallback<object[]>) => cb(null, []),
           }),
         }),
       });
-      sinon.stub(User, 'find').returns({
+      typedStub<[query?: FilterQuery<UserRecord>]>(User, 'find').returns({
         select: () => ({
-          exec: cb => cb(new Error('user lookup failed')),
+          exec: (cb: LegacyCallback) => cb(new Error('user lookup failed')),
         }),
       });
       const [user] = await utils.saveUsers(utils.generateUsers(1));
