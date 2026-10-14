@@ -44,6 +44,8 @@ jobs:
   debug-apk:
     name: Build debug APK
     needs: changes
+    outputs:
+      artifact-url: ${{ steps.apk.outputs.artifact-url }}
     if: >
       (github.event.action != 'labeled' || github.event.label.name == 'build-apk') &&
       (github.event_name != 'pull_request' ||
@@ -80,3 +82,49 @@ jobs:
           ARTIFACT_URL: ${{ steps.apk.outputs.artifact-url }}
         run: |
           echo "[Download debug APK and checksum]($ARTIFACT_URL)" >> "$GITHUB_STEP_SUMMARY"
+
+  link-pr-apk:
+    name: Link APK from PR
+    needs: debug-apk
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Update APK download comment
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          ARTIFACT_URL: ${{ needs.debug-apk.outputs.artifact-url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const { data: pull } = await github.rest.pulls.get({ owner, repo, pull_number: issue_number });
+            if (pull.head.sha !== process.env.HEAD_SHA) {
+              core.notice('A newer commit is awaiting its APK build.');
+              return;
+            }
+            const marker = '<!-- trustroots-pr-apk -->';
+            const body = [
+              marker,
+              '## Android APK',
+              '',
+              `**[Download APK (ZIP)](${process.env.ARTIFACT_URL})**`,
+              '',
+              'Extract the ZIP and install `app-debug.apk`. It also contains the SHA-256 checksum.',
+              '',
+              `Built from \`${process.env.HEAD_SHA.slice(0, 7)}\` after Android unit tests and lint passed. The download is retained for 30 days.`,
+              '',
+              `[Build details](${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId})`,
+            ].join('\n');
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const existing = comments.find(comment => comment.user?.login === 'github-actions[bot]' && comment.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
