@@ -1,25 +1,37 @@
+import type {
+  OfferDocument,
+  OfferModel,
+  OfferRecord,
+  TestConfigModule,
+  UserModelDocument,
+  UserModel,
+  UserRecord,
+} from '../../../../../testutils/server/model-contracts.mts';
 /**
  * Module dependencies.
  */
-const should = require('should');
-const testutils = require('../../../../../testutils/server/server.testutil');
-const config = require('./../../../../../config/config.mjs');
-const moment = require('moment');
-const mongoose = require('mongoose');
-const User = mongoose.model('User');
-const Offer = mongoose.model('Offer');
+const should: typeof import('should') = require('should');
+const testutils: typeof import('../../../../../testutils/server/server.testutil') = require('../../../../../testutils/server/server.testutil');
+const config: TestConfigModule = require('./../../../../../config/config.mjs');
+const moment: typeof import('moment') = require('moment');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const User = mongoose.model<UserRecord, UserModel>('User');
+const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
 
 /**
  * Globals
  */
-let user;
-let _user;
-let offerHost;
-let _offerHost;
-let reactivateHostsJobHandler;
+let user: UserModelDocument;
+let _user: UserRecord;
+let offerHost: OfferDocument;
+let _offerHost: OfferRecord;
+let reactivateHostsJobHandler: typeof import('./../../../server/jobs/reactivate-hosts.server.job.mjs').run;
 
 describe('Job: reactivate members with hosting offer status set to "no"', function () {
-  const jobs = testutils.catchJobs();
+  const jobs = testutils.catchJobs<{
+    subject: string;
+    to: { address: string };
+  }>();
 
   before(function () {
     reactivateHostsJobHandler = require('./../../../server/jobs/reactivate-hosts.server.job.mjs');
@@ -54,9 +66,9 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
       description: '<p>I can host! :)</p>',
       noOfferDescription: '<p>I cannot host... :(</p>',
       maxGuests: 1,
-      updated: moment().subtract(
-        moment.duration(config.limits.timeToReactivateHosts),
-      ),
+      updated: moment()
+        .subtract(moment.duration(config.limits.timeToReactivateHosts))
+        .toDate(),
       location: [52.498981209298776, 13.418329954147339],
       locationFuzzy: [52.50155039101136, 13.42255019882177],
     };
@@ -71,7 +83,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
     // This should not be there before notifications are sent
     should.not.exist(offerHost.reactivateReminderSent);
 
-    reactivateHostsJobHandler({}, function (err) {
+    reactivateHostsJobHandler({}, function (err: Error | null) {
       if (err) return done(err);
 
       jobs.length.should.equal(1);
@@ -81,11 +93,14 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
       );
       jobs[0].data.to.address.should.equal(_user.email);
 
-      Offer.findOne({ user: user._id }, function (err, offerRes) {
-        if (err) return done(err);
-        should.exist(offerRes.reactivateReminderSent);
-        done();
-      });
+      Offer.findOne(
+        { user: user._id },
+        function (err: Error | null, offerRes: OfferDocument | null) {
+          if (err) return done(err);
+          should.exist(offerRes?.reactivateReminderSent);
+          done();
+        },
+      );
     });
   });
 
@@ -94,10 +109,10 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
     should.not.exist(offerHost.reactivateReminderSent);
 
     user.public = false;
-    user.save(function (err) {
+    user.save(function (err: Error | null) {
       if (err) return done(err);
 
-      reactivateHostsJobHandler({}, function (err) {
+      reactivateHostsJobHandler({}, function (err: Error | null) {
         if (err) return done(err);
 
         jobs.length.should.equal(1);
@@ -107,20 +122,23 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
         );
         jobs[0].data.to.address.should.equal(_user.email);
 
-        Offer.findOne({ user: user._id }, function (err, offerRes) {
-          if (err) return done(err);
-          should.exist(offerRes.reactivateReminderSent);
-          done();
-        });
+        Offer.findOne(
+          { user: user._id },
+          function (err: Error | null, offerRes: OfferDocument | null) {
+            if (err) return done(err);
+            should.exist(offerRes?.reactivateReminderSent);
+            done();
+          },
+        );
       });
     });
   });
 
   it('Do not send reactivation email for offers modified less than configured limit ago', function (done) {
     offerHost.updated = new Date();
-    offerHost.save(function (err) {
+    offerHost.save(function (err: Error | null) {
       if (err) return done(err);
-      reactivateHostsJobHandler({}, function (err) {
+      reactivateHostsJobHandler({}, function (err: Error | null) {
         if (err) return done(err);
         jobs.length.should.equal(0);
         done();
@@ -130,9 +148,9 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
 
   it('Do not send reactivation email for "yes" hosting offers', function (done) {
     offerHost.status = 'yes';
-    offerHost.save(function (err) {
+    offerHost.save(function (err: Error | null) {
       if (err) return done(err);
-      reactivateHostsJobHandler({}, function (err) {
+      reactivateHostsJobHandler({}, function (err: Error | null) {
         if (err) return done(err);
         jobs.length.should.equal(0);
         done();
@@ -142,9 +160,9 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
 
   it('Do not send reactivation email for "maybe" hosting offers', function (done) {
     offerHost.status = 'maybe';
-    offerHost.save(function (err) {
+    offerHost.save(function (err: Error | null) {
       if (err) return done(err);
-      reactivateHostsJobHandler({}, function (err) {
+      reactivateHostsJobHandler({}, function (err: Error | null) {
         if (err) return done(err);
         jobs.length.should.equal(0);
         done();
@@ -154,9 +172,9 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
 
   it('Do not send reactivation email for hosting offers without status', function (done) {
     offerHost.status = undefined;
-    offerHost.save(function (err) {
+    offerHost.save(function (err: Error | null) {
       if (err) return done(err);
-      reactivateHostsJobHandler({}, function (err) {
+      reactivateHostsJobHandler({}, function (err: Error | null) {
         if (err) return done(err);
         jobs.length.should.equal(0);
         done();
@@ -168,9 +186,9 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
     const _offerMeet = {
       type: 'meet',
       user: user._id,
-      updated: moment().subtract(
-        moment.duration(config.limits.timeToReactivateHosts),
-      ),
+      updated: moment()
+        .subtract(moment.duration(config.limits.timeToReactivateHosts))
+        .toDate(),
       location: [52.498981209298776, 13.418329954147339],
       locationFuzzy: [52.50155039101136, 13.42255019882177],
     };
@@ -178,14 +196,14 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
     const offerMeet = new Offer(_offerMeet);
 
     // Save meet offer to db
-    offerMeet.save(function (err) {
+    offerMeet.save(function (err: Error | null) {
       if (err) return done(err);
 
       // Remove host offer as we don't want it to interfer with this test
-      offerHost.remove(function (err) {
+      offerHost.remove(function (err: Error | null) {
         if (err) return done(err);
 
-        reactivateHostsJobHandler({}, function (err) {
+        reactivateHostsJobHandler({}, function (err: Error | null) {
           if (err) return done(err);
           jobs.length.should.equal(0);
           done();
