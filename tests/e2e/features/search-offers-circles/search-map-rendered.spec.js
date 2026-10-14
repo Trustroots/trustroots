@@ -1076,6 +1076,67 @@ test.describe('rendered search map feature coverage', () => {
     await expect(result.getByText(/Berlin Host/i)).toBeVisible();
   });
 
+  test('trackpad zoom out preserves the searched place', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Trackpad pinch zoom preserves the centre selected by place search.',
+    ]);
+    // A fictional destination far from the seeded initial viewport makes a
+    // reset distinguishable from the small camera movement caused by zooming.
+    await page.route('**/geocoding/v5/mapbox.places/**', route =>
+      route.fulfill({
+        json: {
+          type: 'FeatureCollection',
+          features: [
+            {
+              id: 'place.test-destination',
+              type: 'Feature',
+              place_type: ['place'],
+              text: 'Test Harbour',
+              place_name: 'Test Harbour',
+              center: [-60, 20],
+              bbox: [-60.2, 19.8, -59.8, 20.2],
+            },
+          ],
+        },
+      }),
+    );
+    await page.goto('/search');
+    await waitForSearchMap(page);
+    const input = page.getByRole('textbox', { name: 'Search places' });
+    await input.fill('Test Harbour');
+    await page
+      .getByRole('option', { name: 'Test Harbour', exact: true })
+      .click();
+    await expect(page.getByRole('listbox')).toBeHidden();
+    // Reading the live zoom avoids waiting for debounced localStorage, which
+    // would hide a reset occurring immediately after selecting the result.
+    await expect.poll(() => readMapZoom(page)).toBeGreaterThan(7);
+    const searchedZoom = await readMapZoom(page);
+    await page
+      .locator('.search-map-container .overlays')
+      .dispatchEvent('wheel', {
+        ctrlKey: true,
+        deltaY: 100,
+        deltaMode: 0,
+      });
+    await expect.poll(() => readMapZoom(page)).toBeCloseTo(searchedZoom - 1, 5);
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const raw = window.localStorage.getItem('search-map-location');
+          if (!raw) return null;
+          const { latitude, longitude } = JSON.parse(raw);
+          return {
+            latitude: Math.round(latitude),
+            longitude: Math.round(longitude),
+          };
+        }),
+      )
+      .toEqual({ latitude: 20, longitude: -60 });
+  });
+
   test('location search accepts a place with Enter', async ({
     page,
   }, testInfo) => {

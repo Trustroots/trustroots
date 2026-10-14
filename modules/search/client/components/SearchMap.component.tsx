@@ -339,6 +339,10 @@ export default function SearchMap({
 
   const [viewport, setViewport] = useState<MapViewport>(persistentMapLocation);
   const viewportRef = useRef<MapViewport>(persistentMapLocation);
+  // Place searches, offer links and cluster clicks also update the viewport
+  // directly. Pinch input must start from that displayed camera, not just the
+  // last viewport reported by a map interaction.
+  viewportRef.current = viewport;
   const gestureSurfaceRef = useRef<HTMLDivElement | null>(null);
   const viewportChangeRef = useRef<((next: MapViewport) => void) | null>(null);
   const [webGLSupported] = useState(isWebGLSupported);
