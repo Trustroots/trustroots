@@ -1,31 +1,63 @@
-const mongoose = require('mongoose');
-const request = require('supertest');
-const sinon = require('sinon');
+import type { HydratedDocument, Types } from 'mongoose';
+import type {
+  ExperienceRecord,
+  MessageRecord,
+  TestAgent,
+  TestExpressApp,
+  UserModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+
+const mongoose: typeof import('mongoose') = require('mongoose');
+const request: typeof import('supertest') = require('supertest');
+const sinon: typeof import('sinon') = require('sinon');
 require('should');
-const express = require('../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const controller = require('../../server/controllers/admin.support.server.controller.mjs');
-const supportController = require('../../../support/server/controllers/support.server.controller.mjs');
+const express: typeof import('../../../../config/lib/express.mjs') & {
+  init(connection: import('mongoose').Connection): Promise<TestExpressApp>;
+} = require('../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
+const controller: typeof import('../../server/controllers/admin.support.server.controller.mjs') = require('../../server/controllers/admin.support.server.controller.mjs');
+const supportController: typeof import('../../../support/server/controllers/support.server.controller.mjs') = require('../../../support/server/controllers/support.server.controller.mjs');
 const {
   linkHistoricalReport,
 } = require('../../../support/server/services/report-link.server.service.mjs');
-const User = mongoose.model('User');
-const SupportRequest = mongoose.model('SupportRequest');
-const Message = mongoose.model('Message');
-const Experience = mongoose.model('Experience');
-const AuditLog = mongoose.model('AuditLog');
+interface SupportRequestRecord {
+  category?: string;
+  user?: Types.ObjectId;
+  reportedUser?: Types.ObjectId;
+  reportMember?: string;
+  message?: string;
+  username?: string;
+  email?: string;
+  status?: string;
+  resolvedAt?: Date | null;
+}
+interface AuditLogRecord {
+  user?: Types.ObjectId;
+}
+type SupportUserFixture = ReturnType<
+  typeof utils.generateUsersWithSharedPassword
+>[number] & {
+  removeProfileToken?: string;
+  emailToken?: string;
+};
+const User = mongoose.model<UserRecord, UserModel>('User');
+const SupportRequest = mongoose.model<SupportRequestRecord>('SupportRequest');
+const Message = mongoose.model<MessageRecord>('Message');
+const Experience = mongoose.model<ExperienceRecord>('Experience');
+const AuditLog = mongoose.model<AuditLogRecord>('AuditLog');
 
 describe('Support team access and investigation', () => {
-  let app;
-  let users;
-  let raw;
-  let agent;
-  let report;
+  let app: TestExpressApp;
+  let users: Awaited<ReturnType<typeof utils.saveUsers>>;
+  let raw: SupportUserFixture[];
+  let agent: TestAgent;
+  let report: HydratedDocument<SupportRequestRecord>;
   before(async () => {
     app = await express.init(mongoose.connection);
   });
   beforeEach(async () => {
-    raw = utils.generateUsers(5);
+    raw = utils.generateUsersWithSharedPassword(5);
     raw[0].roles = ['user', 'support-team'];
     raw[1].roles = ['user', 'suspended', 'shadowban'];
     raw[1].removeProfileToken = 'secret-deletion-token';
@@ -49,8 +81,8 @@ describe('Support team access and investigation', () => {
     sinon.restore();
     await utils.clearDatabase();
   });
-  const endpoint = id => `/api/admin/support/${id}`;
-  async function status(value) {
+  const endpoint = (id: Types.ObjectId | string) => `/api/admin/support/${id}`;
+  async function status(value: string) {
     return agent
       .patch(endpoint(report._id))
       .set('X-Trustroots-Request', '1')
@@ -112,6 +144,7 @@ describe('Support team access and investigation', () => {
     (await AuditLog.countDocuments({ user: users[0]._id })).should.be.above(5);
     (await status('open')).status.should.equal(200);
     const reopened = await SupportRequest.findById(report._id);
+    if (!reopened) throw new Error('Expected the support request');
     (reopened.resolvedAt === null).should.equal(true);
   });
   it('returns only safe member fields and permits notes and current greeter tools', async () => {
@@ -140,24 +173,29 @@ describe('Support team access and investigation', () => {
         )
         .expect(200)
     ).body
-      .map(member => member.username)
+      .map((member: { username: string }) => member.username)
       .should.containEql(users[1].username);
     const namedMembers = (
       await agent
         .get(
-          `/api/admin/support-members?search=${encodeURIComponent(users[1].displayName)}`,
+          `/api/admin/support-members?search=${encodeURIComponent(users[1].displayName!)}`,
         )
         .expect(200)
     ).body;
     namedMembers
-      .map(member => member.username)
+      .map((member: { username: string }) => member.username)
       .should.containEql(users[1].username);
-    namedMembers.forEach(member =>
+    namedMembers.forEach((member: object) =>
       Object.hasOwn(member, 'score').should.equal(false),
     );
     const originalFind = User.find;
-    sinon.stub(User, 'find').callsFake(function (...args) {
-      if (args[0]?.$text) {
+    sinon.stub(User, 'find').callsFake(function (this: typeof User, ...args) {
+      const criteria = args[0];
+      if (
+        typeof criteria === 'object' &&
+        criteria !== null &&
+        '$text' in criteria
+      ) {
         return {
           select() {
             return this;
@@ -169,18 +207,18 @@ describe('Support team access and investigation', () => {
             return this;
           },
           lean: () => Promise.reject(new Error('text index unavailable')),
-        };
+        } as unknown as ReturnType<typeof User.find>;
       }
       return originalFind.apply(this, args);
     });
     (
       await agent
         .get(
-          `/api/admin/support-members?search=${encodeURIComponent(users[1].displayName)}`,
+          `/api/admin/support-members?search=${encodeURIComponent(users[1].displayName!)}`,
         )
         .expect(200)
     ).body
-      .map(member => member.username)
+      .map((member: { username: string }) => member.username)
       .should.containEql(users[1].username);
     sinon.restore();
     const page = Array.from({ length: 50 }, (_, index) => ({
@@ -188,9 +226,14 @@ describe('Support team access and investigation', () => {
       username: `fictional-page-${index}`,
     }));
     let lookups = 0;
-    sinon.stub(User, 'find').callsFake(function (criteria) {
+    sinon.stub(User, 'find').callsFake(function (this: typeof User, ...args) {
       lookups += 1;
-      if (criteria?.$text) {
+      const criteria = args[0];
+      if (
+        typeof criteria === 'object' &&
+        criteria !== null &&
+        '$text' in criteria
+      ) {
         throw new Error('text search should not run for a full indexed page');
       }
       return {
@@ -204,7 +247,7 @@ describe('Support team access and investigation', () => {
           return this;
         },
         lean: async () => page,
-      };
+      } as unknown as ReturnType<typeof User.find>;
     });
     (
       await agent
@@ -363,12 +406,12 @@ describe('Support team access and investigation', () => {
       evidence: 'Verified immutable ID in archived support correspondence.',
     };
     await linkHistoricalReport(mapping, users[3]._id);
-    (
-      (await SupportRequest.findById(report._id)).reportedUser === undefined
-    ).should.equal(true);
+    const unlinked = await SupportRequest.findById(report._id);
+    if (!unlinked) throw new Error('Expected the support request');
+    (unlinked.reportedUser === undefined).should.equal(true);
     await linkHistoricalReport(mapping, users[3]._id, true);
-    (await SupportRequest.findById(report._id)).reportedUser
-      .toString()
+    (await SupportRequest.findById(report._id))!
+      .reportedUser!.toString()
       .should.equal(mapping.reportedUserId);
     for (const data of [
       {},
@@ -392,8 +435,8 @@ describe('Support team access and investigation', () => {
         .set('X-Trustroots-Request', '1')
         .send({ id: users[4]._id, role: 'support-team', action })
         .expect(200);
-      (await User.findById(users[4]._id)).roles
-        .includes('support-team')
+      (await User.findById(users[4]._id))!
+        .roles!.includes('support-team')
         .should.equal(action === 'add');
     }
   });
@@ -418,7 +461,7 @@ describe('Support team access and investigation', () => {
       select: async () => {
         throw new Error('Lookup unavailable');
       },
-    });
+    } as unknown as ReturnType<typeof User.findOne>);
     const response = { status: sinon.stub().returnsThis(), send: sinon.spy() };
     await supportController.supportRequest(
       {

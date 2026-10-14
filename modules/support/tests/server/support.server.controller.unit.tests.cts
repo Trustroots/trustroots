@@ -1,44 +1,130 @@
-const mongoose = require('mongoose');
-const emailService = require('./../../../core/server/services/email.server.service.mjs');
-const statsService = require('./../../../stats/server/services/stats.server.service.mts');
-const config = require('./../../../../config/config.mjs');
-const winston = require('winston');
+import type { Request, Response } from 'express';
+import type { Types } from 'mongoose';
+import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
+
+const mongoose: typeof import('mongoose') = require('mongoose');
+interface BuildMetadata {
+  committedAt: string;
+  commitUrl: string;
+  shortCommit: string;
+}
+interface SupportEmailData {
+  category: string;
+  message: string;
+  username: string;
+  email: string;
+  emailTemp: string | boolean;
+  displayName: string;
+  userId: string;
+  userAgent: string;
+  authenticated: 'yes' | 'no';
+  profilePublic: 'yes' | 'no';
+  signupDate: string;
+  reportMember: string | false;
+  build: BuildMetadata | false;
+}
+interface SupportStatPoint {
+  namespace: 'supportRequest';
+  counts: { count: number };
+  tags: { authenticated: 'yes' | 'no'; category: string; type: string };
+}
+interface EmailServiceModule {
+  sendSupportRequest(
+    replyTo: { address: string; name?: string },
+    data: SupportEmailData,
+    callback: (error?: Error | null) => void,
+  ): void;
+}
+interface StatsServiceModule {
+  stat(point: SupportStatPoint, callback: () => void): void;
+}
+interface StoredSupportRequest {
+  category?: string;
+  email?: string;
+  message?: string;
+  reportMember?: string;
+  user?: Types.ObjectId;
+  userAgent?: string;
+  username?: string;
+}
+const emailService: EmailServiceModule = require('../../../core/server/services/email.server.service.mjs');
+const statsService: StatsServiceModule = require('../../../stats/server/services/stats.server.service.mts');
+const config: typeof import('../../../../config/config.mjs') & {
+  supportEmail: string;
+} = require('../../../../config/config.mjs');
+const winston: typeof import('winston') = require('winston');
 require('./../../server/models/support.server.model.mjs');
-const sinon = require('sinon');
+const sinon: typeof import('sinon') = require('sinon');
 
 require('should');
 
-function mockResponse() {
-  let resolveResponse;
-  const promise = new Promise(resolve => {
+interface SupportResponseBody {
+  message: string;
+}
+interface MockResponse {
+  statusCode: number;
+  body: SupportResponseBody;
+  status(code: number): this;
+  json(body: SupportResponseBody): this;
+  send(body: SupportResponseBody): this;
+  waitForResponse(): Promise<MockResponse>;
+}
+interface TestSupportRequest {
+  body?: Record<string, unknown>;
+  headers?: { 'user-agent'?: string };
+  app?: { locals?: { appSettings?: { build?: BuildMetadata } } };
+  user?: UserRecord & { _id: Types.ObjectId; created: Date };
+}
+function mockResponse(): MockResponse {
+  let resolveResponse!: (response: MockResponse) => void;
+  const promise = new Promise<MockResponse>(resolve => {
     resolveResponse = resolve;
   });
-  const res = { statusCode: 200, body: null };
-  res.status = code => {
-    res.statusCode = code;
-    return res;
+  const res: MockResponse = {
+    statusCode: 200,
+    body: { message: '' },
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    json(body: SupportResponseBody) {
+      this.body = body;
+      resolveResponse(this);
+      return this;
+    },
+    send(body: SupportResponseBody) {
+      this.body = body;
+      resolveResponse(this);
+      return this;
+    },
+    waitForResponse() {
+      return promise;
+    },
   };
-  res.json = body => {
-    res.body = body;
-    resolveResponse(res);
-    return res;
-  };
-  res.send = body => {
-    res.body = body;
-    resolveResponse(res);
-    return res;
-  };
-  res.waitForResponse = () => promise;
   return res;
 }
 
-async function loadController(options = {}) {
-  sinon
-    .stub(mongoose.model('User'), 'findOne')
-    .returns({ select: async () => ({ _id: new mongoose.Types.ObjectId() }) });
-  const savedSupportRequests = [];
-  const SupportRequest = mongoose.model('SupportRequest');
-  sinon.stub(SupportRequest.prototype, 'save').callsFake(function (callback) {
+type SupportController = Pick<
+  typeof import('../../server/controllers/support.server.controller.mjs'),
+  'supportRequest'
+>;
+async function loadController(
+  options: { saveError?: Error; emailError?: Error } = {},
+) {
+  const User = mongoose.model<UserRecord>('User');
+  sinon.stub(User, 'findOne').returns({
+    select: async () => ({ _id: new mongoose.Types.ObjectId() }),
+  } as unknown as ReturnType<typeof User.findOne>);
+  const savedSupportRequests: StoredSupportRequest[] = [];
+  interface SupportRequestDocument extends StoredSupportRequest {
+    save(callback: (error?: Error | null) => void): void;
+  }
+  const SupportRequest =
+    mongoose.model<SupportRequestDocument>('SupportRequest');
+  sinon.stub(SupportRequest.prototype, 'save').callsFake(function (
+    this: SupportRequestDocument,
+    ...args: unknown[]
+  ) {
     savedSupportRequests.push(
       Object.fromEntries(
         Object.entries({
@@ -52,7 +138,11 @@ async function loadController(options = {}) {
         }).filter(([, value]) => value !== undefined),
       ),
     );
-    callback(options.saveError || null);
+    const callback = args[0];
+    if (typeof callback !== 'function') {
+      throw new Error('Expected a save callback in the support test double');
+    }
+    (callback as (error: Error | null) => void)(options.saveError || null);
   });
   const sendSupportRequest = sinon
     .stub(emailService, 'sendSupportRequest')
@@ -64,8 +154,21 @@ async function loadController(options = {}) {
     .callsFake((statsObject, callback) => callback());
   const log = sinon.stub(winston.Logger.prototype, 'log');
   sinon.stub(config, 'supportEmail').value('support@example.test');
-  const controller =
+  const importedController =
     await import('../../server/controllers/support.server.controller.mjs');
+  const controller: SupportController & {
+    supportRequest(
+      request: TestSupportRequest,
+      response: MockResponse,
+    ): Promise<unknown>;
+  } = {
+    ...importedController,
+    supportRequest: (request, response) =>
+      importedController.supportRequest(
+        request as unknown as Request,
+        response as unknown as Response,
+      ),
+  };
 
   return {
     controller,
@@ -295,7 +398,7 @@ describe('Support controller unit tests', () => {
         res,
       );
       await res.waitForResponse();
-      harness.savedSupportRequests[0].category.should.equal(category);
+      harness.savedSupportRequests[0]!.category!.should.equal(category);
       const data = harness.sendSupportRequest.firstCall.args[1];
       data.category.should.equal(category);
       harness.stat.firstCall.args[0].tags.should.containEql({
@@ -304,13 +407,13 @@ describe('Support controller unit tests', () => {
       });
       if (category === 'reportMember') {
         data.reportMember.should.equal('example-member');
-        harness.savedSupportRequests[0].reportMember.should.equal(
+        harness.savedSupportRequests[0]!.reportMember!.should.equal(
           'example-member',
         );
       } else {
         data.reportMember.should.equal(false);
         require('should').not.exist(
-          harness.savedSupportRequests[0].reportMember,
+          harness.savedSupportRequests[0]!.reportMember,
         );
       }
     });
