@@ -110,10 +110,10 @@ export interface TestQuery<T> {
 
 /** Contact relationship fields persisted by the Contact schema. */
 export interface ContactRecord {
-  created?: Date;
-  confirmed?: boolean;
-  userFrom: Types.ObjectId | string;
-  userTo: Types.ObjectId | string;
+  created: Date;
+  confirmed: boolean;
+  userFrom: Types.ObjectId;
+  userTo: Types.ObjectId;
 }
 
 /** Experience feedback fields persisted by the Experience schema. */

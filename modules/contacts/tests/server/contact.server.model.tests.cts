@@ -81,7 +81,7 @@ describe('Contact Model Unit Tests:', function () {
     });
 
     it('should be able to show an error when try to save without `userFrom`', function (done) {
-      contact.userFrom = '';
+      contact.set('userFrom', '');
 
       contact.save(function (err) {
         should.exist(err);
@@ -90,7 +90,7 @@ describe('Contact Model Unit Tests:', function () {
     });
 
     it('should be able to show an error when try to save without `userTo`', function (done) {
-      contact.userTo = '';
+      contact.set('userTo', '');
 
       contact.save(function (err) {
         should.exist(err);

@@ -234,7 +234,9 @@ describe('Reference thread controller unit tests', () => {
       );
       type CallbackQuery<T> = {
         sort(order: string): CallbackQuery<T>;
-        exec(callback: (error: Error | null, document: T | null) => void): void;
+        exec(
+          callback?: (error: Error | null, document: T | null) => void,
+        ): void | Promise<T | null>;
       };
       const referenceThreadQueries = ReferenceThread as unknown as {
         findOne(query: object): CallbackQuery<ReferenceThreadDocument>;
@@ -244,24 +246,17 @@ describe('Reference thread controller unit tests', () => {
           return this;
         },
         exec(callback) {
-          callback(null, null);
+          if (callback) callback(null, null);
+          return Promise.resolve(null);
         },
       };
       sinon.stub(referenceThreadQueries, 'findOne').returns(noReferenceQuery);
-      const messageModelWithCallbackFindOne = Message as unknown as {
-        findOne(
-          query: object,
-          callback: (
-            error: Error | null,
-            document: MessageDocument | null,
-          ) => void,
-        ): void;
+      const messageModelWithPromiseFindOne = Message as unknown as {
+        findOne(query: object): { exec(): Promise<MessageDocument | null> };
       };
-      sinon
-        .stub(messageModelWithCallbackFindOne, 'findOne')
-        .callsFake((_query, callback) =>
-          callback(new Error('message lookup failed'), null),
-        );
+      sinon.stub(messageModelWithPromiseFindOne, 'findOne').returns({
+        exec: () => Promise.reject(new Error('message lookup failed')),
+      });
 
       let nextArg: unknown;
       await new Promise<void>(resolve => {
@@ -298,7 +293,11 @@ describe('Reference thread controller unit tests', () => {
           return this;
         },
         exec(callback) {
-          callback(new Error('lookup failed'), null);
+          if (callback) {
+            callback(new Error('lookup failed'), null);
+            return;
+          }
+          return Promise.reject(new Error('lookup failed'));
         },
       };
       sinon.stub(referenceThreadQueries, 'findOne').returns(failedQuery);
@@ -436,10 +435,9 @@ describe('Reference thread controller unit tests', () => {
         utils.generateUsersWithSharedPassword(2, { public: true }),
       );
       await createThreadWithMessage(author, other, false);
-      sinon.stub(ReferenceThread.prototype, 'save').callsFake((...args) => {
-        const callback = args.at(-1);
-        if (typeof callback === 'function') callback(new Error('save failed'));
-      });
+      sinon
+        .stub(ReferenceThread.prototype, 'save')
+        .callsFake(() => Promise.reject(new Error('save failed')));
 
       const res = deferredResponse();
       controller.createReferenceThread(
@@ -465,17 +463,15 @@ describe('Reference thread controller unit tests', () => {
       );
       await createThreadWithMessage(author, other, false);
       const userModelWithCallbackFindById = User as unknown as {
-        findById(
-          id: import('mongoose').Types.ObjectId,
-          fields: string,
-          callback: (error: Error | null, user: UserDocument | null) => void,
-        ): void;
+        findById(id: import('mongoose').Types.ObjectId): {
+          select(fields: string): { exec(): Promise<UserDocument | null> };
+        };
       };
-      sinon
-        .stub(userModelWithCallbackFindById, 'findById')
-        .callsFake((_id, _fields, callback) =>
-          callback(new Error('user lookup failed'), null),
-        );
+      sinon.stub(userModelWithCallbackFindById, 'findById').returns({
+        select: () => ({
+          exec: () => Promise.reject(new Error('user lookup failed')),
+        }),
+      });
 
       const res = deferredResponse();
       controller.createReferenceThread(
@@ -501,25 +497,22 @@ describe('Reference thread controller unit tests', () => {
         findOne(
           query: object,
           fields: string,
-          callback: (
-            error: Error | null,
-            thread: {
-              _id: import('mongoose').Types.ObjectId;
-              userFrom: import('mongoose').Types.ObjectId;
-              userTo: import('mongoose').Types.ObjectId;
-            } | null,
-          ) => void,
-        ): void;
+        ): {
+          exec(): Promise<{
+            _id: import('mongoose').Types.ObjectId;
+            userFrom: import('mongoose').Types.ObjectId;
+            userTo: import('mongoose').Types.ObjectId;
+          } | null>;
+        };
       };
-      sinon
-        .stub(threadModelWithCallbackFindOne, 'findOne')
-        .callsFake((_query, _fields, callback) => {
-          callback(null, {
+      sinon.stub(threadModelWithCallbackFindOne, 'findOne').returns({
+        exec: () =>
+          Promise.resolve({
             _id: new mongoose.Types.ObjectId(),
             userFrom: new mongoose.Types.ObjectId(author._id.toString()),
             userTo: new mongoose.Types.ObjectId(other._id.toString()),
-          });
-        });
+          }),
+      });
 
       const res = deferredResponse();
       controller.createReferenceThread(

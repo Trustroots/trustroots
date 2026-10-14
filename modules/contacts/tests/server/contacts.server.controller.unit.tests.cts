@@ -23,7 +23,7 @@ const emailService: typeof import('./../../../core/server/services/email.server.
 interface ControllerResponseBody extends Record<string, unknown> {
   confirmed?: boolean;
   message?: string;
-  _id?: string;
+  _id?: string | import('mongoose').Types.ObjectId;
 }
 
 interface MockControllerResponse {
@@ -40,7 +40,9 @@ type ContactRequestEntry = { user: { _id: UserDocument['_id'] } };
 
 type TestCallbackQuery = {
   populate(...args: string[]): TestCallbackQuery;
-  exec(callback: (error: unknown, result?: unknown) => void): TestCallbackQuery;
+  exec(
+    callback?: (error: unknown, result?: unknown) => void,
+  ): TestCallbackQuery | Promise<unknown>;
 };
 
 function callbackQuery(error: unknown, result?: unknown): TestCallbackQuery {
@@ -49,8 +51,11 @@ function callbackQuery(error: unknown, result?: unknown): TestCallbackQuery {
       return query;
     },
     exec(callback) {
-      callback(error, result);
-      return query;
+      if (callback) {
+        callback(error, result);
+        return query;
+      }
+      return error ? Promise.reject(error) : Promise.resolve(result);
     },
   };
   return query;
@@ -309,8 +314,8 @@ describe('Contacts controller unit tests', () => {
         'userTo userFrom',
       );
 
-      const failSave = (callback: (error: Error) => void) => {
-        callback(new Error('save failed'));
+      const failSave = () => {
+        return Promise.reject(new Error('save failed'));
       };
       sinon
         .stub(Contact.prototype, 'save')
@@ -385,8 +390,17 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('allows callers to omit the callback', () => {
-      const deleteMany = sinon.stub(Contact, 'deleteMany');
-      deleteMany.yields();
+      type DeleteManyQuery = Pick<
+        ReturnType<typeof Contact.deleteMany>,
+        'exec'
+      >;
+      const model = Contact as unknown as {
+        deleteMany: () => DeleteManyQuery;
+      };
+      const deleteMany = sinon.stub(model, 'deleteMany');
+      deleteMany.returns({
+        exec: () => Promise.resolve({ acknowledged: true, deletedCount: 0 }),
+      });
 
       contactsController.removeAllByUserId(user1._id);
 
@@ -396,10 +410,11 @@ describe('Contacts controller unit tests', () => {
 
   describe('list and get', () => {
     it('returns the contacts list', async () => {
+      const contacts = [{ user: { _id: new mongoose.Types.ObjectId() } }];
       const { res } = await runHandler(res =>
-        contactsController.list({ contacts: [{ a: 1 }] }, res),
+        contactsController.list({ contacts }, res),
       );
-      res.body.should.deepEqual([{ a: 1 }]);
+      res.body.should.deepEqual(contacts);
     });
 
     it('returns an empty object when no contacts list was loaded', async () => {
@@ -408,10 +423,14 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('returns a single contact', async () => {
+      const contact = new Contact({
+        userFrom: user1._id,
+        userTo: user2._id,
+      });
       const { res } = await runHandler(res =>
-        contactsController.get({ contact: { _id: 'x' } }, res),
+        contactsController.get({ contact }, res),
       );
-      res.body._id!.should.equal('x');
+      res.body._id!.should.equal(contact._id);
     });
 
     it('returns an empty object when no single contact was loaded', async () => {
