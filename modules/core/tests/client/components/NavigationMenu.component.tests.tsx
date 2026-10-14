@@ -24,7 +24,7 @@ describe('navigation menu helpers', () => {
           Search
         </NavigationMenuItem>,
       );
-      const link = screen.getByRole('link', { name, exact: true });
+      const link = screen.getByRole('link', { name });
       link.focus();
       fireEvent.click(link, { detail: 1 });
       expect(link).not.toHaveFocus();
@@ -42,7 +42,7 @@ describe('navigation menu helpers', () => {
         Search
       </NavigationMenuItem>,
     );
-    const link = screen.getByRole('link', { name: 'Search', exact: true });
+    const link = screen.getByRole('link', { name: 'Search' });
     link.focus();
     fireEvent.click(link, { detail: 0 });
     expect(link).toHaveFocus();
@@ -80,7 +80,7 @@ describe('navigation menu helpers', () => {
     });
     outsideInput.focus();
 
-    fireEvent.click(screen.getByRole('link', { name: 'Search', exact: true }), {
+    fireEvent.click(screen.getByRole('link', { name: 'Search' }), {
       detail: 1,
     });
 
