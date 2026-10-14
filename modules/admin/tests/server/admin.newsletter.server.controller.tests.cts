@@ -3,40 +3,99 @@
  *
  * These handlers are exercised directly against the test database.
  */
-const mongoose = require('mongoose');
+import type { OfferRecord } from '../../../../testutils/server/model-contracts.mts';
 
-const adminNewsletter = require('./../../server/controllers/admin.newsletter.server.controller.mjs');
-const errorService = require('./../../../core/server/services/error.server.service.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+import type { Types } from 'mongoose';
+import type {
+  GenerateUserOptions,
+  ServerUserFixture,
+} from '../../../../testutils/common/data.common.testutil.mts';
+
+const mongoose: typeof import('mongoose') = require('mongoose');
+interface NewsletterRequest {
+  query?: Record<string, unknown>;
+  body?: unknown;
+  file?: { buffer: Buffer; mimetype?: string; originalname?: string };
+}
+interface NewsletterPayload {
+  message?: string;
+  count?: number;
+  outputFormat?: 'csv' | 'jsonl';
+  totalEmailCount?: number;
+  subscribedCount?: number;
+  unsubscribedCount?: number;
+  subscribedContent?: string;
+  unsubscribedContent?: string;
+}
+type NewsletterBody = string | NewsletterPayload;
+type NewsletterUserFixture = ServerUserFixture & {
+  member?: Array<{ tribe: Types.ObjectId; since: Date }>;
+  locationLiving?: string;
+  locationFrom?: string;
+  removeProfileToken?: string;
+  removeProfileExpires?: Date;
+};
+interface MockResponse {
+  statusCode: number;
+  body: NewsletterBody;
+  headers: Record<string, string>;
+  status(code: number): this;
+  set(name: string, value: string): this;
+  send(body: NewsletterBody): this;
+}
+type Handler = (req: NewsletterRequest, res: MockResponse) => Promise<unknown>;
+interface NewsletterController {
+  list: Handler;
+  listCircleMembers: Handler;
+  audience: Handler;
+  splitSubscribers: Handler;
+}
+const adminNewsletter: NewsletterController = require('../../server/controllers/admin.newsletter.server.controller.mjs');
+const errorService: typeof import('../../../core/server/services/error.server.service.mjs') = require('../../../core/server/services/error.server.service.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
 require('should');
 
-const Offer = mongoose.model('Offer');
+function generateNewsletterUsers(
+  count: number,
+  options?: GenerateUserOptions,
+): NewsletterUserFixture[] {
+  return utils.generateUsers(count, options, 'server');
+}
+
+const Offer = mongoose.model<OfferRecord>('Offer');
 
 /**
  * Minimal Express-like response mock that records what the controller sends
  * back without needing the full HTTP stack.
  */
-function mockResponse() {
-  const res = {
+function mockResponse(): MockResponse {
+  const res: MockResponse = {
     statusCode: 200,
-    body: null,
+    body: '',
     headers: {},
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    set(name: string, value: string) {
+      this.headers[name] = value;
+      return this;
+    },
+    send(body: NewsletterBody) {
+      this.body = body;
+      return this;
+    },
   };
-
-  res.status = function (code) {
-    res.statusCode = code;
-    return res;
-  };
-  res.set = function (key, value) {
-    res.headers[key] = value;
-    return res;
-  };
-  res.send = function (body) {
-    res.body = body;
-    return res;
-  };
-
   return res;
+}
+function responseText(res: MockResponse): string {
+  if (typeof res.body !== 'string') throw new Error('Expected a text response');
+  return res.body;
+}
+function responseData(res: MockResponse): NewsletterPayload {
+  if (typeof res.body !== 'object' || res.body === null)
+    throw new Error('Expected a data response');
+  return res.body;
 }
 
 describe('Admin newsletter controller unit tests', () => {
@@ -44,7 +103,10 @@ describe('Admin newsletter controller unit tests', () => {
 
   describe('list', () => {
     it('returns CSV with only email-eligible newsletter subscribers', async () => {
-      const _users = utils.generateUsers(5, { public: true, newsletter: true });
+      const _users = generateNewsletterUsers(5, {
+        public: true,
+        newsletter: true,
+      });
       // Public, but not subscribed to the newsletter
       _users[1].newsletter = false;
       // Subscribed, but not a public (confirmed) profile
@@ -53,7 +115,7 @@ describe('Admin newsletter controller unit tests', () => {
       _users[3].roles = ['user', 'suspended'];
       // Subscribed, but pending profile deletion
       _users[4].removeProfileToken = 'remove-token';
-      _users[4].removeProfileExpires = Date.now() + 3600 * 1000;
+      _users[4].removeProfileExpires = new Date(Date.now() + 3600 * 1000);
 
       _users[0].email = 'subscriber@example.com';
       _users[0].firstName = 'Alice';
@@ -66,7 +128,7 @@ describe('Admin newsletter controller unit tests', () => {
 
       res.headers['Content-Type'].should.equal('text/csv');
 
-      const lines = res.body.split('\n');
+      const lines = responseText(res).split('\n');
       lines[0].should.equal('Email Address,First Name,Last Name');
       // Only the single eligible user should be present
       lines.length.should.equal(2);
@@ -74,7 +136,10 @@ describe('Admin newsletter controller unit tests', () => {
     });
 
     it('strips characters that would break CSV files', async () => {
-      const _users = utils.generateUsers(1, { public: true, newsletter: true });
+      const _users = generateNewsletterUsers(1, {
+        public: true,
+        newsletter: true,
+      });
       _users[0].email = 'comma@example.com';
       _users[0].firstName = "Bob's";
       _users[0].lastName = 'Smith, "Jr"';
@@ -84,7 +149,7 @@ describe('Admin newsletter controller unit tests', () => {
       const res = mockResponse();
       await adminNewsletter.list({}, res);
 
-      const lines = res.body.split('\n');
+      const lines = responseText(res).split('\n');
       lines[1].should.equal('comma@example.com,Bobs,Smith Jr');
     });
 
@@ -93,7 +158,7 @@ describe('Admin newsletter controller unit tests', () => {
       await adminNewsletter.list({}, res);
 
       res.headers['Content-Type'].should.equal('text/csv');
-      res.body.should.equal('Email Address,First Name,Last Name');
+      responseText(res).should.equal('Email Address,First Name,Last Name');
     });
   });
 
@@ -105,7 +170,7 @@ describe('Admin newsletter controller unit tests', () => {
       await adminNewsletter.listCircleMembers({ query: {} }, res);
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      responseData(res).message!.should.equal(
         errorService.getErrorMessageByKey('invalid-id'),
       );
     });
@@ -118,7 +183,7 @@ describe('Admin newsletter controller unit tests', () => {
       );
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      responseData(res).message!.should.equal(
         errorService.getErrorMessageByKey('invalid-id'),
       );
     });
@@ -131,7 +196,7 @@ describe('Admin newsletter controller unit tests', () => {
         },
       ];
 
-      const _users = utils.generateUsers(4, { public: true });
+      const _users = generateNewsletterUsers(4, { public: true });
       // Circle member, subscribed
       _users[0].newsletter = true;
       _users[0].member = member;
@@ -149,7 +214,7 @@ describe('Admin newsletter controller unit tests', () => {
       _users[3].newsletter = true;
       _users[3].member = member;
       _users[3].removeProfileToken = 'remove-token';
-      _users[3].removeProfileExpires = Date.now() + 3600 * 1000;
+      _users[3].removeProfileExpires = new Date(Date.now() + 3600 * 1000);
 
       await utils.saveUsers(_users);
 
@@ -158,7 +223,7 @@ describe('Admin newsletter controller unit tests', () => {
 
       res.headers['Content-Type'].should.equal('text/csv');
 
-      const lines = res.body.split('\n');
+      const lines = responseText(res).split('\n');
       lines.length.should.equal(2);
       lines[0].should.equal('Email Address,First Name,Last Name');
       lines[1].should.equal('circle-subscriber@example.com,Carol,Clark');
@@ -172,7 +237,7 @@ describe('Admin newsletter controller unit tests', () => {
         },
       ];
 
-      const _users = utils.generateUsers(2, { public: true });
+      const _users = generateNewsletterUsers(2, { public: true });
       _users[0].newsletter = true;
       _users[0].member = member;
       _users[1].newsletter = false;
@@ -186,7 +251,7 @@ describe('Admin newsletter controller unit tests', () => {
         res,
       );
 
-      const lines = res.body.split('\n');
+      const lines = responseText(res).split('\n');
       // Header + both circle members regardless of newsletter subscription
       lines.length.should.equal(3);
     });
@@ -200,7 +265,7 @@ describe('Admin newsletter controller unit tests', () => {
     };
 
     it('matches living and origin text and escapes regular expressions', async () => {
-      const _users = utils.generateUsers(4, {
+      const _users = generateNewsletterUsers(4, {
         public: true,
         newsletter: true,
       });
@@ -228,16 +293,16 @@ describe('Admin newsletter controller unit tests', () => {
       );
 
       res.headers['Content-Type'].should.equal('text/csv');
-      res.body.should.match(/living@example.com/);
-      res.body.should.match(/origin@example.com/);
-      res.body.should.not.match(/other@example.com/);
-      res.body.should.not.match(/restricted@example.com/);
+      responseText(res).should.match(/living@example.com/);
+      responseText(res).should.match(/origin@example.com/);
+      responseText(res).should.not.match(/other@example.com/);
+      responseText(res).should.not.match(/restricted@example.com/);
     });
 
     it('combines any selected circle with a location match', async () => {
       const matchingCircle = new mongoose.Types.ObjectId();
       const otherCircle = new mongoose.Types.ObjectId();
-      const _users = utils.generateUsers(3, {
+      const _users = generateNewsletterUsers(3, {
         public: true,
         newsletter: true,
       });
@@ -261,12 +326,12 @@ describe('Admin newsletter controller unit tests', () => {
         res,
       );
 
-      res.body.should.deepEqual({ count: 1 });
+      responseData(res).should.deepEqual({ count: 1 });
     });
 
     it('builds an audience from circles without location criteria', async () => {
       const matchingCircle = new mongoose.Types.ObjectId();
-      const _users = utils.generateUsers(2, {
+      const _users = generateNewsletterUsers(2, {
         public: true,
         newsletter: true,
       });
@@ -283,12 +348,12 @@ describe('Admin newsletter controller unit tests', () => {
         res,
       );
 
-      res.body.should.deepEqual({ count: 1 });
+      responseData(res).should.deepEqual({ count: 1 });
     });
 
     it('matches current hosting offers inside the requested radius', async () => {
       const _users = await utils.saveUsers(
-        utils.generateUsers(4, {
+        generateNewsletterUsers(4, {
           public: true,
           newsletter: true,
         }),
@@ -331,7 +396,7 @@ describe('Admin newsletter controller unit tests', () => {
         res,
       );
 
-      res.body.should.deepEqual({ count: 2 });
+      responseData(res).should.deepEqual({ count: 2 });
     });
 
     [
@@ -378,7 +443,7 @@ describe('Admin newsletter controller unit tests', () => {
         await adminNewsletter.audience({ body }, res);
 
         res.statusCode.should.equal(400);
-        res.body.message.should.equal(message);
+        responseData(res).message!.should.equal(message);
       });
     });
 
@@ -387,7 +452,7 @@ describe('Admin newsletter controller unit tests', () => {
       await adminNewsletter.audience({}, res);
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      responseData(res).message!.should.equal(
         'Choose at least one location source or circle.',
       );
     });
@@ -400,7 +465,7 @@ describe('Admin newsletter controller unit tests', () => {
       await adminNewsletter.splitSubscribers({}, res);
 
       res.statusCode.should.equal(422);
-      res.body.message.should.equal(
+      responseData(res).message!.should.equal(
         errorService.getErrorMessageByKey('unprocessable-entity'),
       );
     });
@@ -420,13 +485,13 @@ describe('Admin newsletter controller unit tests', () => {
       );
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      responseData(res).message!.should.equal(
         'Could not find any email addresses in the uploaded file.',
       );
     });
 
     it('extracts unique emails from JSONL strings and supported object fields', async () => {
-      const _users = utils.generateUsers(1, {
+      const _users = generateNewsletterUsers(1, {
         public: true,
         newsletter: true,
       });
@@ -459,19 +524,27 @@ describe('Admin newsletter controller unit tests', () => {
       );
 
       res.statusCode.should.equal(200);
-      res.body.outputFormat.should.equal('jsonl');
-      res.body.totalEmailCount.should.equal(4);
-      res.body.subscribedCount.should.equal(1);
-      res.body.unsubscribedCount.should.equal(3);
-      JSON.parse(res.body.subscribedContent).should.containDeep({
+      responseData(res).outputFormat!.should.equal('jsonl');
+      responseData(res).totalEmailCount!.should.equal(4);
+      responseData(res).subscribedCount!.should.equal(1);
+      responseData(res).unsubscribedCount!.should.equal(3);
+      JSON.parse(responseData(res).subscribedContent!).should.containDeep({
         displayName: 'Eligible Member',
         email: 'eligible@example.com',
         username: 'eligiblemember',
       });
-      res.body.unsubscribedContent.should.match(/missing-one@example.com/);
-      res.body.unsubscribedContent.should.match(/missing-two@example.com/);
-      res.body.unsubscribedContent.should.match(/missing-three@example.com/);
-      res.body.unsubscribedContent.should.match(/"reason":"Email not found"/);
+      responseData(res).unsubscribedContent!.should.match(
+        /missing-one@example.com/,
+      );
+      responseData(res).unsubscribedContent!.should.match(
+        /missing-two@example.com/,
+      );
+      responseData(res).unsubscribedContent!.should.match(
+        /missing-three@example.com/,
+      );
+      responseData(res).unsubscribedContent!.should.match(
+        /"reason":"Email not found"/,
+      );
     });
 
     it('rejects malformed NDJSON without returning partial results', async () => {
@@ -491,11 +564,13 @@ describe('Admin newsletter controller unit tests', () => {
       );
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('Could not parse JSON on line 2.');
+      responseData(res).message!.should.equal(
+        'Could not parse JSON on line 2.',
+      );
     });
 
     it('splits uploaded recipients into subscribed and unsubscribed CSV files', async () => {
-      const _users = utils.generateUsers(5, {
+      const _users = generateNewsletterUsers(5, {
         public: true,
         newsletter: false,
       });
@@ -527,7 +602,7 @@ describe('Admin newsletter controller unit tests', () => {
       _users[4].lastName = 'Deletion';
       _users[4].newsletter = true;
       _users[4].removeProfileToken = 'remove-token';
-      _users[4].removeProfileExpires = Date.now() + 3600 * 1000;
+      _users[4].removeProfileExpires = new Date(Date.now() + 3600 * 1000);
 
       await utils.saveUsers(_users);
 
@@ -553,14 +628,14 @@ describe('Admin newsletter controller unit tests', () => {
       );
 
       res.statusCode.should.equal(200);
-      res.body.totalEmailCount.should.equal(6);
-      res.body.outputFormat.should.equal('csv');
-      res.body.subscribedCount.should.equal(1);
-      res.body.unsubscribedCount.should.equal(5);
-      res.body.subscribedContent.should.equal(
+      responseData(res).totalEmailCount!.should.equal(6);
+      responseData(res).outputFormat!.should.equal('csv');
+      responseData(res).subscribedCount!.should.equal(1);
+      responseData(res).unsubscribedCount!.should.equal(5);
+      responseData(res).subscribedContent!.should.equal(
         'Email Address,First Name,Last Name\nsubscribed@example.com,Subscribed,Member',
       );
-      res.body.unsubscribedContent.should.equal(
+      responseData(res).unsubscribedContent!.should.equal(
         [
           'Email Address,First Name,Last Name,Reason',
           'unsubscribed@example.com,Unsubscribed,Member,Newsletter disabled',

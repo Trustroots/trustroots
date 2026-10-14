@@ -1,20 +1,57 @@
+import type { SinonStub } from 'sinon';
+
 /**
  * Unit tests for the file upload service.
  */
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-const sinon = require('sinon');
-const multer = require('multer');
-const config = require('./../../../../../config/config.mjs');
-const uploadService = require('./../../../server/services/file-upload.service.mjs');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const sinon = require('sinon') as typeof import('sinon');
+type UploadedFile = { path: string; size?: number; mimetype?: string };
+type UploadRequest = { file?: UploadedFile; [key: string]: unknown };
+type MockResponse = {
+  statusCode: number;
+  body: { message?: string; size?: number } | null;
+  status(code: number): MockResponse;
+  send(body?: { message?: string; size?: number }): MockResponse | void;
+};
+type UploadError = Error | { code?: string };
+type UploadCallback = (error?: UploadError | null) => void;
+type UploadMiddleware = (
+  req: UploadRequest,
+  res: MockResponse,
+  callback: UploadCallback,
+) => void;
+type MulterOptions = {
+  fileFilter: (
+    req: UploadRequest,
+    file: UploadedFile,
+    callback: (error?: Error | null, accept?: boolean) => void,
+  ) => void;
+  storage: {
+    getDestination: (
+      req: unknown,
+      file: unknown,
+      callback: (error: Error | null, destination: string) => void,
+    ) => void;
+  };
+  limits: { fileSize: number; files: number; fields: number; parts: number };
+};
+const multer = require('multer') as {
+  (): { single(field: string): UploadMiddleware };
+  prototype: object;
+};
+const config =
+  require('./../../../../../config/config.mjs') as typeof import('../../../../../config/config.mjs').default;
+const uploadService =
+  require('./../../../server/services/file-upload.service.mjs') as typeof import('../../../server/services/file-upload.service.mjs');
 const multerPrototype = Object.getPrototypeOf(multer());
-let singleStub;
+let singleStub: SinonStub;
 
 const errorService = require('./../../../server/services/error.server.service.mjs');
 require('should');
 
-function writeTempFile(buffer) {
+function writeTempFile(buffer: Buffer): string {
   const filePath = path.join(
     os.tmpdir(),
     `trustroots-upload-test-${Date.now()}-${Math.random()
@@ -25,43 +62,65 @@ function writeTempFile(buffer) {
   return filePath;
 }
 
-function mockResponse(done) {
-  const res = { statusCode: 200, body: null };
-  res.status = function (code) {
-    res.statusCode = code;
-    return res;
-  };
-  res.send = function (body) {
-    res.body = body;
-    if (done) {
-      done();
-    }
-    return res;
+function mockResponse(done?: () => void): MockResponse {
+  const res: MockResponse = {
+    statusCode: 200,
+    body: null,
+    status(code: number) {
+      res.statusCode = code;
+      return res;
+    },
+    send(body?: { message?: string; size?: number }) {
+      res.body = body ?? null;
+      if (done) {
+        done();
+      }
+      return res;
+    },
   };
   return res;
 }
 
-function loadUploadFileWithStubbedMulter(reqFile, multerError) {
-  singleStub.callsFake(() => (req, res, callback) => {
-    if (multerError) return callback(multerError);
-    req.file = reqFile;
-    callback(null);
-  });
+function loadUploadFileWithStubbedMulter(
+  reqFile: UploadedFile | null,
+  multerError?: UploadError,
+): typeof uploadService.uploadFile {
+  singleStub.callsFake(
+    () =>
+      ((req: UploadRequest, _res: MockResponse, callback: UploadCallback) => {
+        if (multerError) return callback(multerError);
+        if (reqFile) req.file = reqFile;
+        callback(null);
+      }) as UploadMiddleware,
+  );
   return uploadService.uploadFile;
 }
 
-function loadUploadFileWithFileFilter(file, reqFile, configOverrides) {
-  let capturedMulterOptions;
+function loadUploadFileWithFileFilter(
+  file: Partial<UploadedFile>,
+  reqFile: UploadedFile,
+  configOverrides: Partial<typeof config> = {},
+) {
+  let capturedMulterOptions: MulterOptions | undefined;
   Object.assign(config, configOverrides);
-  singleStub.callsFake(function () {
-    capturedMulterOptions = this;
-    return (req, res, callback) => {
-      this.fileFilter(req, file, err => {
-        if (err) return callback(err);
-        req.file = reqFile;
-        callback(null);
-      });
-    };
+  singleStub.callsFake(function (this: MulterOptions) {
+    capturedMulterOptions = this as MulterOptions;
+    const options = this as MulterOptions;
+    return ((
+      req: UploadRequest,
+      _res: MockResponse,
+      callback: UploadCallback,
+    ) => {
+      options.fileFilter(
+        req,
+        file as UploadedFile,
+        (err?: UploadError | null) => {
+          if (err) return callback(err);
+          req.file = reqFile;
+          callback(null);
+        },
+      );
+    }) as UploadMiddleware;
   });
   return {
     getMulterOptions: () => capturedMulterOptions,
@@ -78,8 +137,8 @@ describe('file-upload.service unit tests', () => {
   ];
   const uploadField = 'avatar';
 
-  let originalFallback;
-  let originalConfig;
+  let originalFallback: string | undefined;
+  let originalConfig: Record<string, unknown>;
 
   beforeEach(() => {
     singleStub = sinon.stub(multerPrototype, 'single');
@@ -117,7 +176,7 @@ describe('file-upload.service unit tests', () => {
     });
     const res = mockResponse(() => {
       res.statusCode.should.equal(415);
-      res.body.message.should.equal(
+      res.body!.message!.should.equal(
         errorService.getErrorMessageByKey('unsupported-media-type'),
       );
       done();
@@ -132,7 +191,7 @@ describe('file-upload.service unit tests', () => {
     });
     const res = mockResponse(() => {
       res.statusCode.should.equal(413);
-      res.body.message.should.containEql('Image too big');
+      res.body!.message!.should.containEql('Image too big');
       done();
     });
 
@@ -153,7 +212,7 @@ describe('file-upload.service unit tests', () => {
       20 * 1024 * 1024,
     );
     res.statusCode.should.equal(413);
-    res.body.message.should.containEql('20.00');
+    res.body!.message!.should.containEql('20.00');
   });
 
   it('accepts a file above the general limit using the larger avatar limit', async () => {
@@ -164,20 +223,26 @@ describe('file-upload.service unit tests', () => {
     const photo = Buffer.alloc(11 * 1024 * 1024);
     Buffer.from([0xff, 0xd8, 0xff]).copy(photo);
     config.maxUploadSize = 10 * 1024 * 1024;
-    app.post('/photo', (req, res) => {
-      uploadService.uploadFile(
-        validMimeTypes,
-        'avatar',
-        req,
-        res,
-        () => {
-          const size = req.file.size;
-          fs.unlinkSync(req.file.path);
-          res.send({ size });
-        },
-        20 * 1024 * 1024,
-      );
-    });
+    app.post(
+      '/photo',
+      (
+        req: { file: UploadedFile },
+        res: { send(body: { size: number }): unknown },
+      ) => {
+        uploadService.uploadFile(
+          validMimeTypes,
+          'avatar',
+          req,
+          res,
+          () => {
+            const size = req.file.size!;
+            fs.unlinkSync(req.file.path);
+            res.send({ size });
+          },
+          20 * 1024 * 1024,
+        );
+      },
+    );
     const response = await request(app)
       .post('/photo')
       .attach('avatar', photo, {
@@ -194,7 +259,7 @@ describe('file-upload.service unit tests', () => {
     });
     const res = mockResponse(() => {
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      res.body!.message!.should.equal(
         errorService.getErrorMessageByKey('default'),
       );
       done();
@@ -209,7 +274,7 @@ describe('file-upload.service unit tests', () => {
     });
     const res = mockResponse(() => {
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      res.body!.message!.should.equal(
         'Missing "avatar" field from the API call.',
       );
       done();
@@ -225,7 +290,7 @@ describe('file-upload.service unit tests', () => {
     );
     const res = mockResponse(() => {
       res.statusCode.should.equal(415);
-      res.body.message.should.equal(
+      res.body!.message!.should.equal(
         errorService.getErrorMessageByKey('unsupported-media-type'),
       );
       done();
@@ -241,7 +306,7 @@ describe('file-upload.service unit tests', () => {
     );
     const res = mockResponse(() => {
       res.statusCode.should.equal(415);
-      res.body.message.should.equal(
+      res.body!.message!.should.equal(
         errorService.getErrorMessageByKey('unsupported-media-type'),
       );
       done();
@@ -262,7 +327,7 @@ describe('file-upload.service unit tests', () => {
 
     uploadFile(validMimeTypes, uploadField, {}, mockResponse(), () => {
       try {
-        const options = getMulterOptions();
+        const options = getMulterOptions()!;
         options.storage.getDestination({}, {}, (err, destination) => {
           if (err) throw err;
           destination.should.equal(os.tmpdir());
@@ -280,10 +345,11 @@ describe('file-upload.service unit tests', () => {
     });
   });
 
-  for (const [description, bytes, expectedStatus] of [
+  const validationCases: Array<[string, Buffer, number]> = [
     ['a valid image', Buffer.from([0xff, 0xd8, 0xff, 0x00]), 200],
     ['disguised non-image content', Buffer.from('not an image'), 415],
-  ]) {
+  ];
+  for (const [description, bytes, expectedStatus] of validationCases) {
     it(`validates ${description} by its bytes when the browser omits the MIME type`, done => {
       const filePath = writeTempFile(bytes);
       const { uploadFile } = loadUploadFileWithFileFilter(
@@ -323,7 +389,7 @@ describe('file-upload.service unit tests', () => {
     const uploadFile = loadUploadFileWithStubbedMulter(null);
     const res = mockResponse(() => {
       res.statusCode.should.equal(422);
-      res.body.message.should.equal(
+      res.body!.message!.should.equal(
         errorService.getErrorMessageByKey('unprocessable-entity'),
       );
       done();
@@ -338,7 +404,7 @@ describe('file-upload.service unit tests', () => {
     const res = mockResponse(() => {
       try {
         res.statusCode.should.equal(415);
-        res.body.message.should.equal(
+        res.body!.message!.should.equal(
           errorService.getErrorMessageByKey('unsupported-media-type'),
         );
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
