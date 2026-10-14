@@ -464,9 +464,12 @@ describe('Job: message unread', function () {
     }
 
     beforeEach(function () {
-      // set the fake time with sinon
-      // http://sinonjs.org/releases/v1.17.7/fake-timers/
-      sinon.useFakeTimers(1500000000000);
+      // Keep the system clock fixed. Only Date is faked so the job's
+      // asynchronous queue can still finish.
+      sinon.useFakeTimers({
+        now: 1500000000000,
+        toFake: ['Date'],
+      });
     });
 
     // restore the original state
