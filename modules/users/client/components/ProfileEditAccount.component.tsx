@@ -331,7 +331,18 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
       </div>
 
       <div className="panel panel-default">
+        <div className="panel-heading">{t('Your data')}</div>
         <div className="panel-body">
+          <p>
+            {t(
+              'This downloads a JSON file of your profile, your contacts (including requests that are still waiting), and your current hosting and meet offers. The filename includes your username and the UTC time of the download, for example trustroots-data-username-20261014-0931.json.',
+            )}
+          </p>
+          <p>
+            {t(
+              'It does not include messages, experiences, your password, your profile photo file, or offers that have already expired.',
+            )}
+          </p>
           <a className="btn btn-default" href="/api/users/export">
             {t('Download your data')}
           </a>

@@ -140,8 +140,10 @@ test.describe('authenticated member flows', () => {
     const response = await page.request.get('/api/users/export');
 
     expect(response.ok()).toBe(true);
-    expect(response.headers()['content-disposition']).toContain(
-      'attachment; filename="trustroots-data.json"',
+    expect(response.headers()['content-disposition']).toMatch(
+      new RegExp(
+        `attachment; filename="trustroots-data-${authenticatedMember.username}-\\d{8}-\\d{4}\\.json"`,
+      ),
     );
     const data = await response.json();
     expect(data).toMatchObject({

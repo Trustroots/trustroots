@@ -1206,6 +1206,7 @@ const features = [
     },
     requiredScenarios: [
       'The combined export is an attachment with the documented filename.',
+      'Account settings explains which data the download includes and leaves out.',
       'The export has format and version metadata plus profile, contacts, and hosting offer sections.',
     ],
     relatedSpecs: [

@@ -111,10 +111,12 @@ function responseBody(response: MockResponse): ExportBody {
 
 describe('Member data export controller', () => {
   const user = { _id: 'member-id', username: 'member' };
+  const exportedAt = new Date('2026-10-14T09:31:00.000Z');
 
   afterEach(() => sinon.restore());
 
   it('returns the current member’s sanitised profile, contacts, and offers', async () => {
+    sinon.useFakeTimers(exportedAt);
     const profile = sinon.stub().callsFake((req, res, next, username) => {
       username.should.equal(user.username);
       req.profile = { username, displayName: 'Member Example' };
@@ -136,16 +138,64 @@ describe('Member data export controller', () => {
     await controller.download({ user: { ...user } }, response, sinon.stub());
 
     response.contentType!.should.equal('application/json');
-    response.filename!.should.equal(controller.EXPORT_FILENAME);
+    response.filename!.should.equal('trustroots-data-member-20261014-0931.json');
     const body = responseBody(response);
     body.should.containEql({
       format: 'trustroots-data-export',
       version: 1,
+      exportedAt: '2026-10-14T09:31:00.000Z',
       profile: { username: user.username, displayName: 'Member Example' },
       contacts: [{ displayName: 'Contact Example' }],
       hostingOffers: [{ title: 'Guest bed' }],
     });
     new Date(body.exportedAt).toISOString().should.equal(body.exportedAt);
+  });
+
+  it('names the file with a lowercase username and UTC time', async () => {
+    sinon.useFakeTimers(exportedAt);
+    const controller = loadController({
+      profile: (req, res, next) => next(),
+      contacts: (req, res, next) => next(),
+      offers: (req, res, next) => next(),
+    });
+    const response = mockResponse();
+
+    await controller.download(
+      { user: { ...user, username: 'Good.Name-1' } },
+      response,
+      sinon.stub(),
+    );
+
+    response.filename!.should.equal(
+      'trustroots-data-good.name-1-20261014-0931.json',
+    );
+  });
+
+  it('omits a username that is not safe in a filename', async () => {
+    sinon.useFakeTimers(exportedAt);
+    const controller = loadController({
+      profile: (req, res, next) => next(),
+      contacts: (req, res, next) => next(),
+      offers: (req, res, next) => next(),
+    });
+    const response = mockResponse();
+
+    await controller.download(
+      { user: { ...user, username: '../etc' } },
+      response,
+      sinon.stub(),
+    );
+
+    response.filename!.should.equal('trustroots-data-20261014-0931.json');
+
+    const missingUsername = mockResponse();
+    await controller.download(
+      { user: { ...user, username: '' } },
+      missingUsername,
+      sinon.stub(),
+    );
+
+    missingUsername.filename!.should.equal('trustroots-data-20261014-0931.json');
   });
 
   it('returns an empty hosting offer list when the member has no offers', async () => {

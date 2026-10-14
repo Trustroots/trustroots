@@ -2,7 +2,26 @@ import contacts from './../../../contacts/server/controllers/contacts.server.con
 import offers from './../../../offers/server/controllers/offers.server.controller.mjs';
 import profiles from './users.profile.server.controller.mjs';
 const service = {};
-const EXPORT_FILENAME = 'trustroots-data.json';
+const EXPORT_USERNAME = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/;
+
+function formatExportStamp(date) {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const hours = String(date.getUTCHours()).padStart(2, '0');
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  return `${year}${month}${day}-${hours}${minutes}`;
+}
+
+function buildExportFilename(username, exportedAt) {
+  const stamp = formatExportStamp(exportedAt);
+  const safeUsername = String(username || '').toLowerCase();
+  if (EXPORT_USERNAME.test(safeUsername)) {
+    return `trustroots-data-${safeUsername}-${stamp}.json`;
+  }
+  return `trustroots-data-${stamp}.json`;
+}
+
 function invokeMiddleware(middleware, req, value) {
   return new Promise((resolve, reject) => {
     const response = {
@@ -43,13 +62,14 @@ service.download = async function (req, res, next) {
         throw error;
       }
     }
+    const exportedAt = new Date();
     res
       .type('application/json')
-      .attachment(EXPORT_FILENAME)
+      .attachment(buildExportFilename(req.user.username, exportedAt))
       .send({
         format: 'trustroots-data-export',
         version: 1,
-        exportedAt: new Date().toISOString(),
+        exportedAt: exportedAt.toISOString(),
         profile: req.profile || {},
         contacts: req.contacts || [],
         hostingOffers,
@@ -58,9 +78,9 @@ service.download = async function (req, res, next) {
     next(error);
   }
 };
-service.EXPORT_FILENAME = EXPORT_FILENAME;
+service.buildExportFilename = buildExportFilename;
 const defaultExport = service;
 export default defaultExport;
-export { EXPORT_FILENAME };
+export { buildExportFilename };
 export const download = defaultExport.download;
 export { defaultExport as 'module.exports' };
