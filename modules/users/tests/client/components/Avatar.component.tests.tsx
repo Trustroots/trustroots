@@ -25,7 +25,7 @@ const user: AvatarUser = {
 describe('<Avatar />', () => {
   it('uses the default avatar when no source has been selected', () => {
     render(<Avatar user={{ username: 'fictional-member' }} link={false} />);
-    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveAttribute(
       'src',
       '/img/avatar.png?none',
     );
@@ -146,14 +146,14 @@ describe('<Avatar />', () => {
       'src',
       '/img/avatar.png?none',
     );
-    expect(screen.getByRole('img', { hidden: true })).toHaveClass(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveClass(
       'avatar-none',
     );
   });
 
   it('uses the default avatar for a stored Facebook selection', () => {
     render(<Avatar user={{ ...user, avatarSource: 'facebook' }} />);
-    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+    expect(screen.getByRole('presentation', { hidden: true })).toHaveAttribute(
       'src',
       '/img/avatar.png?none',
     );

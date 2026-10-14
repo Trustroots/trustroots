@@ -47,9 +47,7 @@ describe('<NavigationLoggedIn />', () => {
           user={{ _id: 'fictional-support', username: 'support', roles }}
         />,
       );
-      expect(
-        screen.getByRole('link', { name: 'Admin', exact: true }),
-      ).toHaveAttribute(
+      expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute(
         'href',
         roles.includes('admin') ? '/admin' : '/admin/support',
       );
@@ -223,9 +221,9 @@ describe('<NavigationLoggedIn />', () => {
         user={{ ...user, member }}
       />,
     );
-    await screen.findByRole('link', { name: 'Circle 11', exact: true });
+    await screen.findByRole('link', { name: 'Circle 11' });
     const item = requireElement(
-      screen.getByRole('link', { name: 'Circles', exact: true }).closest('li'),
+      screen.getByRole('link', { name: 'Circles' }).closest('li'),
     );
     expect(item).toHaveClass('dropdown', 'header-link-dropdown', 'active');
     const menu = requireElement(
@@ -249,7 +247,7 @@ describe('<NavigationLoggedIn />', () => {
       />,
     );
     const item = requireElement(
-      screen.getByRole('link', { name: 'Circles', exact: true }).closest('li'),
+      screen.getByRole('link', { name: 'Circles' }).closest('li'),
     );
     expect(item.querySelector('.dropdown-menu')).toBeNull();
     expect(item).not.toHaveClass('dropdown');
@@ -275,9 +273,9 @@ describe('<NavigationLoggedIn />', () => {
         user={{ ...user, member }}
       />,
     );
-    await screen.findByRole('link', { name: 'Hackers', exact: true });
+    await screen.findByRole('link', { name: 'Hackers' });
     const item = requireElement(
-      screen.getByRole('link', { name: 'Circles', exact: true }).closest('li'),
+      screen.getByRole('link', { name: 'Circles' }).closest('li'),
     );
     const menu = requireElement(
       item.querySelector<HTMLElement>('.dropdown-menu'),
@@ -301,9 +299,10 @@ describe('<NavigationLoggedIn />', () => {
         />,
       );
     });
-    expect(
-      screen.getByRole('link', { name: 'Circles', exact: true }),
-    ).toHaveAttribute('href', '/circles');
+    expect(screen.getByRole('link', { name: 'Circles' })).toHaveAttribute(
+      'href',
+      '/circles',
+    );
     expect(
       screen.getByRole('link', { name: 'Find member by name' }),
     ).toHaveAttribute('href', '/search/members');
