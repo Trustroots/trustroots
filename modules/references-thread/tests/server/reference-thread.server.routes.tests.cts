@@ -1,33 +1,69 @@
-const should = require('should');
-const async = require('async');
-const request = require('supertest');
-const moment = require('moment');
-const mongoose = require('mongoose');
-const express = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User');
-const Message = mongoose.model('Message');
-const Thread = mongoose.model('Thread');
-const ReferenceThread = mongoose.model('ReferenceThread');
+import type {
+  Credentials,
+  MessageModel,
+  MessageRecord,
+  ReferenceThreadModel,
+  ReferenceThreadRecord,
+  TestAgent,
+  TestExpressApp,
+  TestExpressModule,
+  ThreadModel,
+  ThreadRecord,
+  UserModel,
+  UserModelDocument,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+const should: typeof import('should') = require('should');
+type WaterfallDone = (error?: Error | null) => void;
+const async: {
+  waterfall(
+    tasks: Array<(done: WaterfallDone) => void>,
+    callback: WaterfallDone,
+  ): void;
+} = require('async');
+const request: typeof import('supertest') = require('supertest');
+const moment: typeof import('moment') = require('moment');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+const User = mongoose.model<UserRecord, UserModel>('User');
+const Message = mongoose.model<MessageRecord, MessageModel>('Message');
+const Thread = mongoose.model<ThreadRecord, ThreadModel>('Thread');
+const ReferenceThread = mongoose.model<
+  ReferenceThreadRecord,
+  ReferenceThreadModel
+>('ReferenceThread');
 
 /**
  * Globals
  */
-let app;
-let agent;
-let userFrom;
-let referenceUserFromId;
-let referenceUserFromCredentials;
-let userTo;
-let referenceUserToId;
-let userNonPublic;
-let referenceUserNonPublicId;
-let referenceUserNonpublicCredentials;
-let referenceThread;
-let message;
-let thread;
-let threadId;
-let threadNonpublicId;
+let app: TestExpressApp;
+let agent: TestAgent;
+let userFrom: UserModelDocument;
+let referenceUserFromId: UserModelDocument['_id'];
+let referenceUserFromCredentials: Credentials;
+let userTo: UserModelDocument;
+let referenceUserToId: UserModelDocument['_id'];
+let userNonPublic: UserModelDocument;
+let referenceUserNonPublicId: UserModelDocument['_id'];
+let referenceUserNonpublicCredentials: Credentials;
+let referenceThread: Omit<
+  ReferenceThreadRecord,
+  'thread' | 'userFrom' | 'userTo'
+> &
+  Partial<Pick<ReferenceThreadRecord, 'thread' | 'userFrom' | 'userTo'>>;
+let message: Omit<MessageRecord, 'userFrom' | 'userTo'> & {
+  userFrom: MessageRecord['userFrom'] | null;
+  userTo: MessageRecord['userTo'] | null;
+  notified: boolean;
+};
+let thread: Omit<ThreadRecord, 'message' | 'userFrom' | 'userTo'> & {
+  message: ThreadRecord['message'] | null;
+  userFrom: ThreadRecord['userFrom'] | null;
+  userTo: ThreadRecord['userTo'] | null;
+};
+let threadId: import('mongoose').Types.ObjectId;
+let threadNonpublicId: import('mongoose').Types.ObjectId;
 
 /**
  * Message routes tests
