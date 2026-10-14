@@ -153,7 +153,7 @@ run_server_tests() {
     SERVER_TEST_FILES="$1" \
     TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
     TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
-    node ./scripts/test-server.js
+    node ./scripts/test-server.cts
 }
 
 run_server_tests_with_retry() {

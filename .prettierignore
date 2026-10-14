@@ -22,17 +22,16 @@ public/uploads-profile/
 public/uploads-circle/
 modules/users/client/img/profile/uploads
 
-bin/admin
+bin/admin/*
+!bin/admin/*.mts
+!bin/admin/*.cts
 deploy
 migrations/archived
 public
-scripts/*
-!scripts/e2e/
-scripts/e2e/*
-!scripts/e2e/*.mts
-!scripts/ci/
-scripts/ci/*
-!scripts/ci/*.mts
+scripts/**
+!scripts/**/
+!scripts/**/*.mts
+!scripts/**/*.cts
 modules/core/server/views/email-templates/
 modules/core/server/views/email-templates-text/
 .github/**/*.md

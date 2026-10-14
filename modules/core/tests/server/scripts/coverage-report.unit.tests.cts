@@ -5,7 +5,7 @@ require('should');
 
 const {
   renderReportShell,
-} = require('../../../../../scripts/coverage/generate-report');
+} = require('../../../../../scripts/coverage/generate-report.cts');
 
 const analytics = JSON.parse(
   fs.readFileSync(

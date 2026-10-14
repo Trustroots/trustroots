@@ -11,18 +11,18 @@ const {
   collectDependencyChanges,
   renderDependencyChanges,
   renderProductionInventory,
-} = require('../../../../../scripts/coverage/dependency-changes');
+} = require('../../../../../scripts/coverage/dependency-changes.cts');
 const {
   collectInstalledPackages,
-} = require('../../../../../scripts/ci/production-dependencies');
+} = require('../../../../../scripts/ci/production-dependencies.cts');
 const {
   renderLineChanges,
   summariseNumstat,
   updateLineChangesComment,
-} = require('../../../../../scripts/coverage/line-changes');
+} = require('../../../../../scripts/coverage/line-changes.cts');
 const {
   buildMarkdown,
-} = require('../../../../../scripts/coverage/generate-pr-summary');
+} = require('../../../../../scripts/coverage/generate-pr-summary.cts');
 
 interface DependencyChange {
   name: string;
@@ -268,9 +268,12 @@ describe('PR dependency summaries', () => {
     );
     assert.match(
       inventoryStep.run,
-      /< scripts\/ci\/production-dependencies.js > coverage\/production\/dependencies.json/,
+      /< scripts\/ci\/production-dependencies.cts > coverage\/production\/dependencies.json/,
     );
-    assert.match(inventoryStep.run, /- --inventory-stdin </);
+    assert.match(
+      inventoryStep.run,
+      /--input-type=commonjs-typescript - --inventory-stdin </,
+    );
     assert.ok(
       image.steps.find(
         (step: WorkflowStep) =>
@@ -429,7 +432,7 @@ describe('PR dependency summaries', () => {
       assert.match(output, /No previous-image comparison/);
       const script = path.resolve(
         __dirname,
-        '../../../../../scripts/ci/production-dependencies.js',
+        '../../../../../scripts/ci/production-dependencies.cts',
       );
       assert.deepStrictEqual(
         JSON.parse(
@@ -447,6 +450,20 @@ describe('PR dependency summaries', () => {
             input: fs.readFileSync(script, 'utf8'),
             encoding: 'utf8',
           }),
+        ),
+        inventory,
+      );
+      assert.deepStrictEqual(
+        JSON.parse(
+          execFileSync(
+            process.execPath,
+            ['--input-type=commonjs-typescript', '-', '--inventory-stdin'],
+            {
+              cwd: root,
+              input: fs.readFileSync(script, 'utf8'),
+              encoding: 'utf8',
+            },
+          ),
         ),
         inventory,
       );

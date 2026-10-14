@@ -144,8 +144,7 @@ const legacyConfig = {
         '*.mjs',
         '*.cjs',
         'config/**',
-        'scripts/ci/**/*.mts',
-        'scripts/e2e/**/*.mts',
+        'scripts/**/*.{mts,cts}',
         'tests/e2e/**/*.{ts,mts}',
         'playwright.config.cts',
         'migrations/**',
@@ -248,8 +247,8 @@ const legacyConfig = {
       files: [
         'config/vite/**/*.{ts,tsx,mts}',
         'jest/**/*.cts',
-        'scripts/ci/**/*.mts',
-        'scripts/e2e/**/*.mts',
+        'bin/**/*.mts',
+        'scripts/**/*.{mts,cts}',
         'tests/e2e/**/*.{ts,mts}',
         'playwright.config.cts',
         'modules/*/client/**/*.{ts,tsx}',
@@ -301,13 +300,7 @@ const legacyConfig = {
      * Overrides for CLI scripts and application config
      */
     {
-      files: [
-        'bin/**',
-        'config/**',
-        'migrations/**',
-        'scripts/ci/**/*.mts',
-        'scripts/e2e/**/*.mts',
-      ],
+      files: ['bin/**', 'config/**', 'migrations/**', 'scripts/**/*.{mts,cts}'],
       env: {
         node: true,
       },
@@ -339,7 +332,11 @@ module.exports = defineConfig([
     extends: fixupConfigRules(compat.config(legacyConfig)),
   },
   {
-    files: ['playwright.config.cts', 'modules/*/tests/server/**/*.cts'],
+    files: [
+      'playwright.config.cts',
+      'modules/*/tests/server/**/*.cts',
+      'scripts/**/*.cts',
+    ],
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {

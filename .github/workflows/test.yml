@@ -60,7 +60,7 @@ jobs:
         run: |
           mkdir -p coverage/production
           docker run --rm -i --network none --entrypoint node trustroots:pr \
-            - --inventory-stdin < scripts/ci/production-dependencies.js > coverage/production/dependencies.json
+            --input-type=commonjs-typescript - --inventory-stdin < scripts/ci/production-dependencies.cts > coverage/production/dependencies.json
           test -s coverage/production/dependencies.json
       - name: Upload production dependency inventory
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -273,7 +273,7 @@ jobs:
           cache-to: type=gha,ignore-error=true,mode=max
           load: true
       - name: Prepare compose local config
-        run: node ./scripts/ci/ensure-compose-local.js
+        run: node ./scripts/ci/ensure-compose-local.cts
       - name: Start MongoDB
         working-directory: deploy/docker
         run: |
@@ -433,7 +433,7 @@ jobs:
           name: e2e-assets
           path: public/assets
       - name: Prepare compose local config
-        run: node ./scripts/ci/ensure-compose-local.js
+        run: node ./scripts/ci/ensure-compose-local.cts
       - name: Start MongoDB
         working-directory: deploy/docker
         run: |
@@ -592,7 +592,7 @@ jobs:
         with:
           script: |
             const fs = require('node:fs');
-            const { collectTimings } = require('./scripts/coverage/collect-ci-timings');
+            const { collectTimings } = require('./scripts/coverage/collect-ci-timings.cts');
             const timings = await collectTimings(github, context, Number(process.env.GITHUB_RUN_ATTEMPT));
             fs.mkdirSync('coverage', { recursive: true });
             fs.writeFileSync('coverage/ci-timings.json', JSON.stringify(timings, null, 2));
@@ -780,7 +780,7 @@ jobs:
         with:
           script: |
             const fs = require('node:fs');
-            const { collectTimings } = require('./scripts/coverage/collect-ci-timings');
+            const { collectTimings } = require('./scripts/coverage/collect-ci-timings.cts');
             const timings = await collectTimings(github, context, Number(process.env.GITHUB_RUN_ATTEMPT));
             fs.mkdirSync('coverage', { recursive: true });
             fs.writeFileSync('coverage/ci-timings.json', JSON.stringify(timings, null, 2));

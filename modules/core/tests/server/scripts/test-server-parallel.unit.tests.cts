@@ -8,7 +8,7 @@ const {
   createPlan,
   runWorkers,
   cleanupDatabases,
-} = require('../../../../../scripts/test-server-parallel');
+} = require('../../../../../scripts/test-server-parallel.cts');
 const { MongoClient }: typeof import('mongodb') = require('mongodb');
 
 type Worker = { database: string; files: string[]; size: number };

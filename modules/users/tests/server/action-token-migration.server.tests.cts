@@ -1,29 +1,23 @@
-import type {
-  Collection,
-  Document,
-  Filter,
-  FindOptions,
-  FindCursor,
-  UpdateFilter,
-  UpdateResult,
-  WithId,
-} from 'mongodb';
+import type { Collection, Filter, FindOptions } from 'mongodb';
+import type { UserTokenRecord } from '../../../../bin/db-maintenance/hash-account-action-tokens.mts';
 
 const assert: typeof import('node:assert/strict') = require('node:assert/strict');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const {
   hashToken,
 }: typeof import('../../server/services/action-token.server.service.mjs') = require('../../server/services/action-token.server.service.mjs');
-let hashLegacyTokens: typeof import('../../../../bin/db-maintenance/hash-account-action-tokens.mjs').hashLegacyTokens;
+let hashLegacyTokens: typeof import('../../../../bin/db-maintenance/hash-account-action-tokens.mts').hashLegacyTokens;
 
 describe('Legacy account action token migration', function () {
-  let collection: Collection<Document>;
+  let collection: Collection<UserTokenRecord>;
   before(async () => {
     ({ hashLegacyTokens } =
-      await import('../../../../bin/db-maintenance/hash-account-action-tokens.mjs'));
+      await import('../../../../bin/db-maintenance/hash-account-action-tokens.mts'));
     const db = mongoose.connection.db;
     assert.ok(db);
-    collection = db.collection('action_token_migration_fixtures');
+    collection = db.collection<UserTokenRecord>(
+      'action_token_migration_fixtures',
+    );
   });
   afterEach(async () => {
     await collection.deleteMany({});
@@ -69,6 +63,7 @@ describe('Legacy account action token migration', function () {
     assert.equal(user.emailToken, hashToken('fictional-confirmation'));
     assert.equal(user.resetPasswordToken, hashToken('fictional-reset'));
     assert.equal(user.removeProfileToken, hashToken('fictional-removal'));
+    assert.ok(user.resetPasswordExpires);
     assert.equal(user.resetPasswordExpires.getTime(), expires.getTime());
     assert.deepEqual(await hashLegacyTokens(collection, { apply: true }), {
       candidates: 0,
@@ -80,17 +75,11 @@ describe('Legacy account action token migration', function () {
     const { insertedId } = await collection.insertOne({
       emailToken: 'soon-consumed',
     });
-    const wrapper: {
+    const wrapper: Pick<Collection<UserTokenRecord>, 'find' | 'updateOne'> = {
       find: (
-        filter: Filter<Document>,
-        options?: FindOptions<Document>,
-      ) => FindCursor<WithId<Document>>;
-      updateOne: (
-        filter: Filter<Document>,
-        update: UpdateFilter<Document>,
-      ) => Promise<UpdateResult>;
-    } = {
-      find: (filter, options) => collection.find(filter, options),
+        filter: Filter<UserTokenRecord> = {},
+        options?: FindOptions<UserTokenRecord>,
+      ) => collection.find(filter, options),
       async updateOne(filter, update) {
         await collection.updateOne(
           { _id: insertedId },

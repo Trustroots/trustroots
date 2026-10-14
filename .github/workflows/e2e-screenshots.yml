@@ -109,7 +109,7 @@ jobs:
 
       - name: Prepare compose local config
         if: steps.changed.outputs.has_specs == 'true'
-        run: node ./scripts/ci/ensure-compose-local.js
+        run: node ./scripts/ci/ensure-compose-local.cts
 
       - name: Start MongoDB
         if: steps.changed.outputs.has_specs == 'true'

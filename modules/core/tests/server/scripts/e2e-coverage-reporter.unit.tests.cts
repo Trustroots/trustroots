@@ -28,7 +28,7 @@ const {
   buildE2eMetrics,
   resolveE2eLaneMessage,
   resolveE2eLaneStatus,
-} = require('../../../../../scripts/coverage/generate-report');
+} = require('../../../../../scripts/coverage/generate-report.cts');
 
 type TestAnnotation = { type: string; description?: string };
 type TestCase = {

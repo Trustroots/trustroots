@@ -60,7 +60,7 @@ Both production stylesheets reference five `/assets/images/` files and four
 `/modules/core/fonts/fontello/font/tricons.svg`, which Vite emits as a hashed
 file under `/assets/images/`. RTL output from both tools flips `margin-left`
 rules to `margin-right`. Repeat the check with
-`node scripts/vite/compare-css.mjs` after copying each build aside, because
+`node scripts/vite/compare-css.mts` after copying each build aside, because
 Vite overwrites `public/assets/react-main.css`.
 
 Measured on 14 October 2026, with Webpack's ESLint plugin skipped, Vite built

@@ -2,7 +2,7 @@
   "name": "trustroots-mass-email",
   "version": "0.0.1",
   "description": "Scripts to send mass emails.",
-  "main": "mergeAndInline.js",
+  "main": "mergeAndInline.cts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
