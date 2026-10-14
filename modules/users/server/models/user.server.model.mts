@@ -53,7 +53,7 @@ const validateLocalStrategyEmail = function (
 /**
  * A Validation function for password
  */
-const validatePassword = function (password: string | undefined): boolean {
+const validatePassword = function (password: unknown): password is string {
   return Boolean(password && validator.isLength(password, passwordMinLength));
 };
 
@@ -581,10 +581,7 @@ UserSchema.methods.authenticate = async function (
 /**
  * Convert duplicate unique values into field validation errors.
  */
-const uniqueValidationPlugin = uniqueValidation as (
-  schema: typeof UserSchema,
-) => void;
-UserSchema.plugin(uniqueValidationPlugin);
+UserSchema.plugin(uniqueValidation);
 
 UserSchema.index(
   { nostrNpub: 1 },

@@ -1,4 +1,10 @@
 const sinon = require('sinon');
+const mongoose: typeof import('mongoose') = require('mongoose');
+type UserServerModel =
+  import('../../../users/server/models/user.server.types.mts').UserServerModel;
+type UserServerRecord =
+  import('../../../users/server/models/user.server.types.mts').UserServerRecord;
+const User = mongoose.model<UserServerRecord, UserServerModel>('User');
 const winston: typeof import('winston') = require('winston');
 const userProfile: typeof import('../../../users/server/controllers/users.profile.server.controller.mjs') = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
 const languagesObject: Record<
@@ -191,10 +197,15 @@ describe('Controller: core', function () {
 
     it('exposes a sanitized user profile when signed in', function () {
       const res = mockResponse();
-      coreController.renderIndex(
-        { path: '/', user: { username: 'alice', email: 'alice@example.com' } },
-        res,
-      );
+      const user = new User({
+        username: 'alice',
+        email: 'alice@example.com',
+        firstName: 'Alice',
+        lastName: 'Example',
+        provider: 'local',
+      });
+      user.set('roles', undefined);
+      coreController.renderIndex({ path: '/', user }, res);
       should(renderVars(res).user).deepEqual({
         sanitized: true,
         username: 'alice',

@@ -15,7 +15,7 @@ export interface UserPushRegistrationRecord {
 export interface UserProviderData {
   facebook?: { id?: string };
   twitter?: { screen_name?: string };
-  github?: { login?: string };
+  github?: { id?: string; login?: string };
   [provider: string]: unknown;
 }
 
@@ -67,7 +67,7 @@ export interface UserServerRecord {
   welcomeSequenceSent?: Date;
   welcomeSequenceStep?: number;
   resetPasswordToken?: string;
-  resetPasswordExpires?: Date;
+  resetPasswordExpires?: Date | number;
   removeProfileToken?: string;
   removeProfileExpires?: Date;
   member: UserMemberRecord[];
@@ -77,13 +77,13 @@ export interface UserServerRecord {
 }
 
 export interface UserServerMethods {
-  authenticate(password: string): Promise<boolean>;
+  authenticate(password: unknown): Promise<boolean>;
   hashPassword(password: string): Promise<string>;
 }
 
 export interface UserServerStatics {
   hashPassword(password: string): Promise<string>;
-  isValidPassword(password: string): boolean;
+  isValidPassword(password: unknown): password is string;
 }
 
 export type UserServerModel = Model<

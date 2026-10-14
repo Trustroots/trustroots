@@ -12,31 +12,16 @@ const authController: typeof import('../../server/controllers/users.authenticati
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
-type AuthenticationUserRecord = Omit<
-  import('../../../../testutils/server/model-contracts.mts').UserRecord,
-  'additionalProvidersData'
-> & {
-  additionalProvidersData?: Record<
-    string,
-    { id?: string; login?: string; screen_name?: string }
-  >;
-};
-type AuthenticationUserMethods =
-  import('../../../../testutils/server/model-contracts.mts').UserMethods;
-type AuthenticationUserModel = import('mongoose').Model<
-  AuthenticationUserRecord,
-  Record<string, never>,
-  AuthenticationUserMethods
-> &
-  import('../../../../testutils/server/model-contracts.mts').UserStatics;
+type AuthenticationUserRecord =
+  import('../../server/models/user.server.types.mts').UserServerRecord;
+type AuthenticationUserModel =
+  import('../../server/models/user.server.types.mts').UserServerModel;
 const User = mongoose.model<AuthenticationUserRecord, AuthenticationUserModel>(
   'User',
 );
-type AuthenticationUserDocument = import('mongoose').HydratedDocument<
-  AuthenticationUserRecord,
-  AuthenticationUserMethods
->;
-type AuthCallback = (error?: Error) => void;
+type AuthenticationUserDocument =
+  import('../../server/models/user.server.types.mts').UserServerDocument;
+type AuthCallback = (error?: Error | null) => void;
 type LegacyUserSave = (callback: (error?: Error) => void) => void;
 type LegacyRandomBytes = (
   size: number,
@@ -65,7 +50,7 @@ async function findUser(id: unknown): Promise<AuthenticationUserDocument> {
   return user;
 }
 const controllerPath =
-  '../../server/controllers/users.authentication.server.controller.mjs';
+  '../../server/controllers/users.authentication.server.controller.mts';
 
 function stubControllerDependencies(
   dependencyStubs: Record<string, Record<string, unknown>>,
@@ -199,7 +184,7 @@ describe('Authentication controller OAuth unit tests', () => {
     it('responds with 400 for an unknown provider', async () => {
       const res = deferredResponse();
       authController.removeOAuthProvider(
-        { user: {}, params: { provider: 'myspace' } },
+        { user: new User({}), params: { provider: 'myspace' } },
         res,
       );
       await res.waitForResponse();
@@ -347,7 +332,7 @@ describe('Authentication controller OAuth unit tests', () => {
 
       authController.signout(
         { logout: (callback: AuthCallback) => callback(error) },
-        {},
+        deferredResponse(),
         next,
       );
 
@@ -365,7 +350,10 @@ describe('Authentication controller OAuth unit tests', () => {
 
     it('responds with 400 when the user is already confirmed', async () => {
       const res = deferredResponse();
-      authController.resendConfirmation({ user: { email: 'a@b.com' } }, res);
+      authController.resendConfirmation(
+        { user: new User({ email: 'a@b.com' }) },
+        res,
+      );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
       responseField(res, 'message').should.equal('Already confirmed.');

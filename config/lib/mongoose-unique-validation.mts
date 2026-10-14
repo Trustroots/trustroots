@@ -1,7 +1,23 @@
 import mongoose, { type Schema } from 'mongoose';
 
 /** Convert duplicate-key errors into the validation errors used by our models. */
-const service = function uniqueValidation(schema: Schema) {
+const service = function uniqueValidation<
+  DocType,
+  M,
+  TInstanceMethods,
+  TQueryHelpers,
+  TVirtuals,
+  TStaticMethods,
+>(
+  schema: Schema<
+    DocType,
+    M,
+    TInstanceMethods,
+    TQueryHelpers,
+    TVirtuals,
+    TStaticMethods
+  >,
+) {
   // Mongoose exposes this schema definition map at runtime.
   const schemaWithTree = schema as typeof schema & {
     tree: Record<string, { unique?: boolean } | undefined>;

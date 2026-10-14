@@ -24,7 +24,7 @@ declare module 'async' {
   export function eachSeries<Item>(
     items: Item[],
     iteratee: (item: Item, callback: (error?: Error | null) => void) => void,
-    callback: (error?: Error | null) => void,
+    callback?: (error?: Error | null) => void,
   ): void;
   export function eachOfSeries<Items extends object>(
     items: Items extends readonly unknown[] ? never : Items,
@@ -54,6 +54,10 @@ declare module 'async' {
     callback: (error: Error | null, result: Record<string, R>) => void,
   ): void;
   export function nextTick(callback: () => void): void;
+  export function queue<T>(
+    worker: (task: T, callback: (error?: Error | null) => void) => void,
+    concurrency: number,
+  ): { length(): number; push(task: T): void };
   const async: {
     map: typeof map;
     each: typeof each;
@@ -63,8 +67,30 @@ declare module 'async' {
     parallel: typeof parallel;
     eachSeries: typeof eachSeries;
     eachOfSeries: typeof eachOfSeries;
+    each: typeof each;
+    queue: typeof queue;
   };
   export default async;
+}
+
+declare module 'passport' {
+  interface AuthenticationInfo {
+    message?: string;
+  }
+
+  interface PassportAuthenticator {
+    authenticate<User>(
+      strategy: string,
+      callback: (
+        error: Error | null,
+        user: User | null | false,
+        info?: AuthenticationInfo,
+      ) => void,
+    ): (req: unknown, res: unknown, next: (error?: Error) => void) => unknown;
+  }
+
+  const passport: PassportAuthenticator;
+  export default passport;
 }
 
 declare module 'basic-auth' {
@@ -302,6 +328,29 @@ declare module 'express-session' {
     };
     store: object;
   }): import('express').RequestHandler;
+}
+
+declare module 'web-push' {
+  interface PushSubscription {
+    endpoint: string;
+    keys: { p256dh: string; auth: string };
+  }
+  interface SendOptions {
+    TTL?: number;
+  }
+  const webPush: {
+    setVapidDetails(
+      subject: string,
+      publicKey: string,
+      privateKey: string,
+    ): void;
+    sendNotification(
+      subscription: PushSubscription,
+      payload: string,
+      options?: SendOptions,
+    ): Promise<unknown>;
+  };
+  export default webPush;
 }
 
 declare module 'gm' {

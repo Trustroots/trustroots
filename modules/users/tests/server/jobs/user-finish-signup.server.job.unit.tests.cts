@@ -70,7 +70,7 @@ describe('Job: user finish signup unit tests', () => {
 
     userFinishSignupJobHandler(
       { attrs: { _id: new mongoose.Types.ObjectId() } },
-      function (err: Error | null) {
+      function (err?: Error | null) {
         assertPresent(err);
         err.message.should.equal('lookup failed');
         jobs.length.should.equal(0);
@@ -91,7 +91,7 @@ describe('Job: user finish signup unit tests', () => {
     const send = sinon.spy(emailService, 'sendSignupEmailReminder');
     userFinishSignupJobHandler(
       { attrs: { _id: new mongoose.Types.ObjectId() } },
-      function (err: Error | null) {
+      function (err?: Error | null) {
         assertPresent(err);
         err.message.should.equal('token persistence failed');
         send.called.should.be.false();
@@ -132,7 +132,7 @@ describe('Job: user finish signup unit tests', () => {
         const send = sinon.spy(emailService, 'sendSignupEmailReminder');
         userFinishSignupJobHandler(
           { attrs: { _id: new mongoose.Types.ObjectId() } },
-          function (err: Error | null) {
+          function (err?: Error | null) {
             if (err) return done(err);
             send.called.should.be.false();
             jobs.length.should.equal(0);
@@ -150,7 +150,7 @@ describe('Job: user finish signup unit tests', () => {
 
     userFinishSignupJobHandler(
       { attrs: { _id: new mongoose.Types.ObjectId() } },
-      function (err: Error | null) {
+      function (err?: Error | null) {
         assertPresent(err);
         err.message.should.equal('mail failed');
         jobs.length.should.equal(0);
