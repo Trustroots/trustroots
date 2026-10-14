@@ -1,14 +1,18 @@
-const should = require('should');
-const _ = require('lodash');
-const sinon = require('sinon');
-const config = require('./../../../../config/config.mjs');
-const EventEmitter = require('events');
-const influx = require('influx');
-const messageController = require('./../../server/controllers/messages.server.controller.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+import type {
+  TestConfigModule,
+  UserDocument,
+} from '../../../../testutils/server/model-contracts.mts';
+const should: typeof import('should') = require('should');
+const _: typeof import('lodash') = require('lodash');
+const sinon: typeof import('sinon') = require('sinon');
+const config: TestConfigModule = require('./../../../../config/config.mjs');
+const EventEmitter: typeof import('events') = require('events');
+const influx: typeof import('influx') = require('influx');
+const messageController: typeof import('./../../server/controllers/messages.server.controller.mjs') = require('./../../server/controllers/messages.server.controller.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 
 describe('Message to Stats API server service Integration Test', function () {
-  let reachEventEmitter;
+  let reachEventEmitter: import('node:events').EventEmitter;
 
   before(function () {
     // this emitter will emit event 'reachedInfluxdb' with variables measurement,
@@ -33,8 +37,8 @@ describe('Message to Stats API server service Integration Test', function () {
     sinon.restore();
   });
 
-  let user1;
-  let user2;
+  let user1: UserDocument;
+  let user2: UserDocument;
 
   // here we create the users before each test
   beforeEach(function (done) {
@@ -71,18 +75,20 @@ describe('Message to Stats API server service Integration Test', function () {
     beforeEach(function () {
       // we're stubbing the express.response here
       // (not sure if i use the mocking/stubbing terminology right)
-      function Res() {}
-      // eslint-disable-next-line no-unused-vars
-      Res.prototype.status = function (statusCode) {
-        // this.statusCode = statusCode; // use for debug
-        return this;
-      };
-      // we could do something on response, but we don't care
-      // eslint-disable-next-line no-unused-vars
-      Res.prototype.send = function (response) {
-        // console.log(this.statusCode, response); // use for debug
-      };
-      Res.prototype.json = Res.prototype.send;
+      class Res {
+        status(_statusCode: number): this {
+          void _statusCode;
+          return this;
+        }
+
+        send(_response: unknown): void {
+          void _response;
+        }
+
+        json(response: unknown): void {
+          this.send(response);
+        }
+      }
 
       const req = {
         user: {
@@ -126,7 +132,13 @@ describe('Message to Stats API server service Integration Test', function () {
         // we want to call the listener only once
         reachEventEmitter.once(
           'reachedInfluxdb',
-          function (measurement, points) {
+          function (
+            measurement: string,
+            points: Array<{
+              fields: Record<string, string | number>;
+              tags: Record<string, string | number>;
+            }>,
+          ) {
             try {
               measurement.should.equal('messageSent');
               points.length.should.equal(1);
