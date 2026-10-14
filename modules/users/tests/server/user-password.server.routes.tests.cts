@@ -1,36 +1,61 @@
-const should = require('should');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const express = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User');
-const testutils = require('../../../../testutils/server/server.testutil');
-let jobs;
+const should: typeof import('should') = require('should');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const express: import('../../../../testutils/server/model-contracts.mts').TestExpressModule = require('./../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+type UserRecord =
+  import('../../../../testutils/server/model-contracts.mts').UserRecord;
+interface PasswordUserRecord extends UserRecord {
+  resetPasswordExpires?: Date;
+}
+type PasswordUser = import('mongoose').HydratedDocument<PasswordUserRecord>;
+const User = mongoose.model<PasswordUserRecord>('User');
+const testutils: typeof import('../../../../testutils/server/server.testutil.mts') = require('../../../../testutils/server/server.testutil');
+type RecoveryJob =
+  import('../../../../testutils/server/server.testutil.mts').CapturedJob<{
+    to?: { address?: string };
+    text?: string;
+  }>;
+let jobs: RecoveryJob[];
+type LegacyFindOne = (
+  query: import('mongoose').FilterQuery<PasswordUserRecord>,
+  callback: (error: Error | null, foundUser: PasswordUser | null) => void,
+) => void;
+function findOneWithCallback(
+  query: import('mongoose').FilterQuery<PasswordUserRecord>,
+  callback: (error: Error | null, foundUser: PasswordUser | null) => void,
+): void {
+  (User.findOne as unknown as LegacyFindOne)(query, callback);
+}
 
 /**
  * Globals
  */
-let app;
-let agent;
-let credentials;
-let user;
-let _user;
+let app: import('../../../../testutils/server/model-contracts.mts').TestExpressApp;
+let agent: import('supertest').Agent;
+let credentials: { username: string; password: string };
+let user: PasswordUser;
+let _user: PasswordUserRecord;
 
-function findUserWithResetToken(query, callback) {
+function findUserWithResetToken(
+  query: import('mongoose').FilterQuery<PasswordUserRecord>,
+  callback: (error: Error | null, foundUser?: PasswordUser | null) => void,
+): void {
   const timeout = Date.now() + 3000;
   const check = () => {
-    User.findOne(query, (err, foundUser) => {
+    findOneWithCallback(query, (err, foundUser) => {
       if (err) return callback(err);
       const mail = jobs.find(
-        job =>
+        (job: RecoveryJob) =>
           job.data.to?.address === foundUser?.email &&
           job.data.text?.includes('/api/auth/reset/'),
       );
       if (foundUser?.resetPasswordToken && mail) {
         foundUser.resetPasswordToken.should.startWith('sha256:');
-        const token = mail.data.text.match(
+        const token = mail.data.text?.match(
           /\/api\/auth\/reset\/([a-f0-9]+)/,
-        )[1];
+        )?.[1];
+        if (!token) return setTimeout(check, 10);
         foundUser.resetPasswordToken = token;
         return callback(null, foundUser);
       }
@@ -96,7 +121,7 @@ describe('User password CRUD tests', function () {
       await agent.post('/api/auth/forgot').send({ username }).expect(400);
     }
     const stored = await User.findById(user._id);
-    should.not.exist(stored.resetPasswordToken);
+    should.not.exist(stored!.resetPasswordToken);
   });
 
   it('forgot password acknowledges non-existent usernames consistently', function (done) {
@@ -167,8 +192,8 @@ describe('User password CRUD tests', function () {
           findUserWithResetToken(
             { username: user.username.toLowerCase() },
             function (err, userRes) {
-              userRes.resetPasswordToken.should.not.be.empty();
-              should.exist(userRes.resetPasswordExpires);
+              userRes!.resetPasswordToken!.should.not.be.empty();
+              should.exist(userRes!.resetPasswordExpires);
               return done();
             },
           );
@@ -197,8 +222,8 @@ describe('User password CRUD tests', function () {
           findUserWithResetToken(
             { username: user.username.toLowerCase() },
             function (err, userRes) {
-              userRes.resetPasswordToken.should.not.be.empty();
-              should.exist(userRes.resetPasswordExpires);
+              userRes!.resetPasswordToken!.should.not.be.empty();
+              should.exist(userRes!.resetPasswordExpires);
               return done();
             },
           );
@@ -227,8 +252,8 @@ describe('User password CRUD tests', function () {
           findUserWithResetToken(
             { email: user.email.toLowerCase() },
             function (err, userRes) {
-              userRes.resetPasswordToken.should.not.be.empty();
-              should.exist(userRes.resetPasswordExpires);
+              userRes!.resetPasswordToken!.should.not.be.empty();
+              should.exist(userRes!.resetPasswordExpires);
               return done();
             },
           );
@@ -257,8 +282,8 @@ describe('User password CRUD tests', function () {
           findUserWithResetToken(
             { email: user.email.toLowerCase() },
             function (err, userRes) {
-              userRes.resetPasswordToken.should.not.be.empty();
-              should.exist(userRes.resetPasswordExpires);
+              userRes!.resetPasswordToken!.should.not.be.empty();
+              should.exist(userRes!.resetPasswordExpires);
               return done();
             },
           );
@@ -284,10 +309,10 @@ describe('User password CRUD tests', function () {
           findUserWithResetToken(
             { username: user.username.toLowerCase() },
             function (err, userRes) {
-              userRes.resetPasswordToken.should.not.be.empty();
-              should.exist(userRes.resetPasswordExpires);
+              userRes!.resetPasswordToken!.should.not.be.empty();
+              should.exist(userRes!.resetPasswordExpires);
               agent
-                .get('/api/auth/reset/' + userRes.resetPasswordToken)
+                .get('/api/auth/reset/' + userRes!.resetPasswordToken)
                 .expect(302)
                 .end(function (err, res) {
                   // Handle error
@@ -295,7 +320,7 @@ describe('User password CRUD tests', function () {
                     return done(err);
                   }
                   res.headers.location.should.be.equal(
-                    '/password/reset/' + userRes.resetPasswordToken,
+                    '/password/reset/' + userRes!.resetPasswordToken,
                   );
                   return done();
                 });
@@ -356,7 +381,7 @@ describe('User password CRUD tests', function () {
               agent
                 .get(
                   '/api/auth/reset/' +
-                    userRes.resetPasswordToken +
+                    userRes!.resetPasswordToken +
                     '?utm_source=transactional_email&utm_medium=email&utm_campaign=reset',
                 )
                 .expect(302)
@@ -365,7 +390,7 @@ describe('User password CRUD tests', function () {
                     return done(err);
                   }
                   res.headers.location.should.containEql(
-                    '/password/reset/' + userRes.resetPasswordToken,
+                    '/password/reset/' + userRes!.resetPasswordToken,
                   );
                   res.headers.location.should.containEql(
                     'utm_source=transactional_email',
@@ -397,7 +422,7 @@ describe('User password CRUD tests', function () {
             function (findErr, userRes) {
               should.not.exist(findErr);
               agent
-                .post('/api/auth/reset/' + userRes.resetPasswordToken)
+                .post('/api/auth/reset/' + userRes!.resetPasswordToken)
                 .send({
                   newPassword: '1234567890Aa$',
                   verifyPassword: '1234567890Aa$',
@@ -410,14 +435,14 @@ describe('User password CRUD tests', function () {
                   res.body.username.should.equal(user.username.toLowerCase());
 
                   // The reset token should be cleared after a successful reset
-                  User.findOne(
+                  findOneWithCallback(
                     {
                       username: user.username.toLowerCase(),
                     },
                     function (err2, updated) {
                       should.not.exist(err2);
-                      should.not.exist(updated.resetPasswordToken);
-                      should.not.exist(updated.resetPasswordExpires);
+                      should.not.exist(updated!.resetPasswordToken);
+                      should.not.exist(updated!.resetPasswordExpires);
                       return done();
                     },
                   );
@@ -441,14 +466,14 @@ describe('User password CRUD tests', function () {
           if (forgotErr) {
             return done(forgotErr);
           }
-          User.findOne(
+          findOneWithCallback(
             {
               username: user.username.toLowerCase(),
             },
             function (findErr, userRes) {
               should.not.exist(findErr);
               agent
-                .post('/api/auth/reset/' + userRes.resetPasswordToken)
+                .post('/api/auth/reset/' + userRes!.resetPasswordToken)
                 .send({
                   newPassword: '1234567890Aa$',
                   verifyPassword: 'something-else-Aa$1',

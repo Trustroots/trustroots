@@ -1,15 +1,54 @@
-const request = require('supertest');
-const async = require('async');
-const _ = require('lodash');
-const sinon = require('sinon');
-const mongoose = require('mongoose');
-const should = require('should');
-const config = require('./../../../../config/config.mjs');
-const userHandler = require('./../../server/controllers/users.profile.server.controller.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User');
+const request: typeof import('supertest') = require('supertest');
+interface AsyncTestApi {
+  eachOfSeries<T>(
+    items: T[],
+    iteratee: (
+      item: T,
+      index: number,
+      callback: (error?: Error | null) => void,
+    ) => void,
+    callback: (error?: Error | null) => void,
+  ): void;
+  waterfall(
+    tasks: Array<(...args: never[]) => void>,
+    callback: (error?: Error | null, result?: unknown) => void,
+  ): void;
+}
+const async = require('async') as AsyncTestApi;
+const _: typeof import('lodash') = require('lodash');
+const sinon: typeof import('sinon') = require('sinon');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const should: typeof import('should') = require('should');
+const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const userHandler =
+  require('./../../server/controllers/users.profile.server.controller.mjs') as typeof import('../../server/controllers/users.profile.server.controller.mjs').default;
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+type UserRecord =
+  import('../../../../testutils/server/model-contracts.mts').UserRecord;
+interface SearchUserRecord extends UserRecord {
+  gender?: string;
+}
+type SearchUserDocument = import('mongoose').HydratedDocument<SearchUserRecord>;
+const User = mongoose.model<SearchUserRecord>('User');
+type NewSearchUser = Partial<SearchUserRecord>;
+type SearchResponseUser = Pick<SearchUserRecord, 'username'> &
+  Partial<SearchUserRecord>;
+type SearchResponse = SearchResponseUser[];
+type UserCreationCallback = (
+  error: Error | null | undefined,
+  users: SearchUserDocument[],
+) => void;
+type SearchCallback = (
+  error: Error | null | undefined,
+  result?: SearchResponse,
+) => void;
+type CreateCallback = (
+  error: Error | null | undefined,
+  users: SearchUserDocument[],
+) => void;
+type FinishedCallback = (error?: Error | null) => void;
 describe('Search users: GET /users?search=string', function () {
-  let agent;
+  let agent: import('supertest').Agent;
   const limit = 9;
 
   // initialize the testing environment
@@ -32,11 +71,18 @@ describe('Search users: GET /users?search=string', function () {
   after(function () {
     sinon.restore();
   });
-  function createUsers(users, callback) {
-    const createdUsers = [];
+  function createUsers(
+    users: NewSearchUser[],
+    callback: UserCreationCallback,
+  ): void {
+    const createdUsers: SearchUserDocument[] = [];
     async.eachOfSeries(
       users,
-      function (user, index, cb) {
+      function (
+        user: NewSearchUser,
+        index: number,
+        cb: (error?: Error | null) => void,
+      ) {
         const createdUser = new User({
           username: user.username || 'user' + index,
           firstName: user.firstName || 'firstName' + index,
@@ -63,7 +109,7 @@ describe('Search users: GET /users?search=string', function () {
         createdUsers.push(createdUser);
         createdUser.save(cb);
       },
-      function (err) {
+      function (err: Error | null | undefined) {
         callback(err, createdUsers);
       },
     );
@@ -74,7 +120,7 @@ describe('Search users: GET /users?search=string', function () {
     });
   });
   context('logged in', function () {
-    let loggedUser;
+    let loggedUser: SearchUserDocument;
 
     // create logged user
     beforeEach(function (done) {
@@ -135,7 +181,7 @@ describe('Search users: GET /users?search=string', function () {
               .expect(200)
               .end(function (error, response) {
                 if (error) return done(error);
-                response.body.should.have.length(50);
+                (response.body as SearchResponse).should.have.length(50);
                 done();
               });
           },
@@ -166,7 +212,7 @@ describe('Search users: GET /users?search=string', function () {
                   .expect(200)
                   .end(function (error, response) {
                     if (error) return done(error);
-                    response.body
+                    (response.body as SearchResponse)
                       .map(member => member.username)
                       .should.eql(['visiblemember']);
                     done();
@@ -209,7 +255,7 @@ describe('Search users: GET /users?search=string', function () {
               .expect(200)
               .end(function (error, response) {
                 if (error) return done(error);
-                response.body
+                (response.body as SearchResponse)
                   .map(member => member.username)
                   .should.eql([
                     'riverside',
@@ -217,7 +263,7 @@ describe('Search users: GET /users?search=string', function () {
                     'originmatch',
                     'taglinematch',
                   ]);
-                response.body[3].tagline.should.eql(
+                (response.body as SearchResponse)[3]!.tagline!.should.eql(
                   'Riverside pottery enthusiast',
                 );
                 done();
@@ -229,7 +275,7 @@ describe('Search users: GET /users?search=string', function () {
         async.waterfall(
           [
             // create some users
-            function (cb) {
+            function (cb: CreateCallback) {
               createUsers(
                 [
                   {
@@ -249,16 +295,16 @@ describe('Search users: GET /users?search=string', function () {
               );
             },
             // search
-            function (users, cb) {
+            function (users: SearchUserDocument[], cb: SearchCallback) {
               agent
                 .get('/api/users?search=asdia')
                 .expect(200)
                 .end(function (err, response) {
-                  cb(err, response.body);
+                  cb(err, response.body as SearchResponse);
                 });
             },
             // check that we found the users
-            function (foundUsers, cb) {
+            function (foundUsers: SearchResponse, cb: FinishedCallback) {
               should(foundUsers).length(1);
               cb();
             },
@@ -270,7 +316,7 @@ describe('Search users: GET /users?search=string', function () {
         async.waterfall(
           [
             // create some users
-            function (cb) {
+            function (cb: CreateCallback) {
               createUsers(
                 [
                   {
@@ -296,16 +342,16 @@ describe('Search users: GET /users?search=string', function () {
               );
             },
             // search
-            function (users, cb) {
+            function (users: SearchUserDocument[], cb: SearchCallback) {
               agent
                 .get('/api/users?search=qwer')
                 .expect(200)
                 .end(function (err, response) {
-                  cb(err, response.body);
+                  cb(err, response.body as SearchResponse);
                 });
             },
             // check that we found the users
-            function (foundUsers, cb) {
+            function (foundUsers: SearchResponse, cb: FinishedCallback) {
               should(foundUsers).length(2);
               cb();
             },
@@ -317,7 +363,7 @@ describe('Search users: GET /users?search=string', function () {
         async.waterfall(
           [
             // create some users
-            function (cb) {
+            function (cb: CreateCallback) {
               createUsers(
                 [
                   {
@@ -352,16 +398,16 @@ describe('Search users: GET /users?search=string', function () {
               );
             },
             // search
-            function (users, cb) {
+            function (users: SearchUserDocument[], cb: SearchCallback) {
               agent
                 .get('/api/users?search=zxcvb')
                 .expect(200)
                 .end(function (err, response) {
-                  cb(err, response.body);
+                  cb(err, response.body as SearchResponse);
                 });
             },
             // check that we found the users
-            function (foundUsers, cb) {
+            function (foundUsers: SearchResponse, cb: FinishedCallback) {
               should(foundUsers).length(2);
               cb();
             },
@@ -373,7 +419,7 @@ describe('Search users: GET /users?search=string', function () {
         async.waterfall(
           [
             // create some users
-            function (cb) {
+            function (cb: CreateCallback) {
               createUsers(
                 [
                   {
@@ -409,16 +455,16 @@ describe('Search users: GET /users?search=string', function () {
               );
             },
             // search
-            function (users, cb) {
+            function (users: SearchUserDocument[], cb: SearchCallback) {
               agent
                 .get('/api/users?search=jacob+aLia')
                 .expect(200)
                 .end(function (err, response) {
-                  cb(err, response.body);
+                  cb(err, response.body as SearchResponse);
                 });
             },
             // check that we found the users
-            function (foundUsers, cb) {
+            function (foundUsers: SearchResponse, cb: FinishedCallback) {
               should(foundUsers).length(6);
               cb();
             },
@@ -430,7 +476,7 @@ describe('Search users: GET /users?search=string', function () {
         async.waterfall(
           [
             // create some users
-            function (cb) {
+            function (cb: CreateCallback) {
               createUsers(
                 [
                   {
@@ -453,16 +499,16 @@ describe('Search users: GET /users?search=string', function () {
               );
             },
             // search
-            function (users, cb) {
+            function (users: SearchUserDocument[], cb: SearchCallback) {
               agent
                 .get('/api/users?search=aeiou')
                 .expect(200)
                 .end(function (err, response) {
-                  cb(err, response.body);
+                  cb(err, response.body as SearchResponse);
                 });
             },
             // check that we found the users
-            function (foundUsers, cb) {
+            function (foundUsers: SearchResponse, cb: FinishedCallback) {
               should(foundUsers).length(0);
               cb();
             },
@@ -474,7 +520,7 @@ describe('Search users: GET /users?search=string', function () {
         async.waterfall(
           [
             // create some users
-            function (cb) {
+            function (cb: CreateCallback) {
               createUsers(
                 [
                   {
@@ -485,16 +531,16 @@ describe('Search users: GET /users?search=string', function () {
               );
             },
             // search
-            function (users, cb) {
+            function (users: SearchUserDocument[], cb: SearchCallback) {
               agent
                 .get('/api/users?search=aaa')
                 .expect(200)
                 .end(function (err, response) {
-                  cb(err, response.body);
+                  cb(err, response.body as SearchResponse);
                 });
             },
             // check that we found the users
-            function (foundUsers, cb) {
+            function (foundUsers: SearchResponse, cb: FinishedCallback) {
               should(foundUsers).length(1);
 
               // _id is not specified in userSearchProfileFields, but gets included anyways
@@ -596,16 +642,16 @@ describe('Search users: GET /users?search=string', function () {
               async.waterfall(
                 [
                   // search
-                  function (cb) {
+                  function (cb: SearchCallback) {
                     agent
                       .get('/api/users?search=aaaaaa' + test.params)
                       .expect(200)
                       .end(function (err, response) {
-                        cb(err, response.body);
+                        cb(err, response.body as SearchResponse);
                       });
                   },
                   // check that we found the users
-                  function (foundUsers, cb) {
+                  function (foundUsers: SearchResponse, cb: FinishedCallback) {
                     should(foundUsers).length(test.expected);
                     cb();
                   },
@@ -620,7 +666,7 @@ describe('Search users: GET /users?search=string', function () {
         async.waterfall(
           [
             // create some users
-            function (cb) {
+            function (cb: CreateCallback) {
               createUsers(
                 [
                   {
@@ -640,16 +686,16 @@ describe('Search users: GET /users?search=string', function () {
               );
             },
             // search
-            function (users, cb) {
+            function (users: SearchUserDocument[], cb: SearchCallback) {
               agent
                 .get('/api/users?search=abcdEf')
                 .expect(200)
                 .end(function (err, response) {
-                  cb(err, response.body);
+                  cb(err, response.body as SearchResponse);
                 });
             },
             // check that we found the users
-            function (foundUsers, cb) {
+            function (foundUsers: SearchResponse, cb: FinishedCallback) {
               should(foundUsers).length(3);
               cb();
             },
@@ -661,7 +707,7 @@ describe('Search users: GET /users?search=string', function () {
         async.waterfall(
           [
             // create some users
-            function (cb) {
+            function (cb: CreateCallback) {
               createUsers(
                 [
                   {
@@ -691,16 +737,16 @@ describe('Search users: GET /users?search=string', function () {
               );
             },
             // search
-            function (users, cb) {
+            function (users: SearchUserDocument[], cb: SearchCallback) {
               agent
                 .get('/api/users?search=aabcdef')
                 .expect(200)
                 .end(function (err, response) {
-                  cb(err, response.body);
+                  cb(err, response.body as SearchResponse);
                 });
             },
             // check that we found the users
-            function (foundUsers, cb) {
+            function (foundUsers: SearchResponse, cb: FinishedCallback) {
               should(foundUsers).length(2);
               cb();
             },
