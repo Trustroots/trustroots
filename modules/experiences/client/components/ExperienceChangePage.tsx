@@ -1,29 +1,60 @@
-import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
 
 import * as api from '../api/experience-changes.api';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import { getErrorResponse } from '@/modules/core/client/api/http-client';
+import type {
+  ExperienceChangeAccess,
+  ExperienceChangeRequestSummary,
+} from '../../shared/experience-change';
+import type {
+  ExperienceInteractions,
+  ExperienceRecommendation,
+} from '../../shared/experience';
 
-function errorMessage(error) {
-  return error.response?.data?.message || 'Could not submit your request.';
+const emptyInteractions = (): ExperienceInteractions => ({
+  met: false,
+  guest: false,
+  host: false,
+});
+
+function errorMessage(error: unknown): string {
+  const responseData: unknown = getErrorResponse(error)?.data;
+  if (
+    typeof responseData === 'object' &&
+    responseData !== null &&
+    'message' in responseData &&
+    typeof responseData.message === 'string'
+  ) {
+    return responseData.message || 'Could not submit your request.';
+  }
+  return 'Could not submit your request.';
 }
 
-export default function ExperienceChangePage({ id }) {
+interface ExperienceChangePageProps {
+  id: string;
+}
+
+export default function ExperienceChangePage({
+  id,
+}: ExperienceChangePageProps): React.JSX.Element {
   const secret =
     new URLSearchParams(window.location.search).get('secret') || '';
-  const [experience, setExperience] = useState(null);
-  const [request, setRequest] = useState(null);
+  const [experience, setExperience] = useState<ExperienceChangeAccess | null>(
+    null,
+  );
+  const [request, setRequest] = useState<ExperienceChangeRequestSummary | null>(
+    null,
+  );
   const [accessError, setAccessError] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [feedbackPublic, setFeedbackPublic] = useState('');
-  const [recommend, setRecommend] = useState('unknown');
-  const [interactions, setInteractions] = useState({
-    met: false,
-    guest: false,
-    host: false,
-  });
+  const [recommend, setRecommend] =
+    useState<ExperienceRecommendation>('unknown');
+  const [interactions, setInteractions] =
+    useState<ExperienceInteractions>(emptyInteractions);
 
   useEffect(() => {
     let mounted = true;
@@ -34,13 +65,7 @@ export default function ExperienceChangePage({ id }) {
           setExperience(access.value);
           setFeedbackPublic(access.value.feedbackPublic || '');
           setRecommend(access.value.recommend || 'unknown');
-          setInteractions(
-            access.value.interactions || {
-              met: false,
-              guest: false,
-              host: false,
-            },
-          );
+          setInteractions(access.value.interactions || emptyInteractions());
         } else {
           setAccessError(
             'This link is invalid or has expired. Ask support for a new link.',
@@ -55,7 +80,7 @@ export default function ExperienceChangePage({ id }) {
     };
   }, [id, secret]);
 
-  const submit = async kind => {
+  const submit = async (kind: 'edit' | 'remove'): Promise<void> => {
     setSubmitError('');
     setSubmitting(true);
     try {
@@ -64,7 +89,7 @@ export default function ExperienceChangePage({ id }) {
           ? { kind, proposed: { feedbackPublic, recommend, interactions } }
           : { kind };
       setRequest(await api.submit(id, secret, payload));
-    } catch (error) {
+    } catch (error: unknown) {
       setSubmitError(errorMessage(error));
     } finally {
       setSubmitting(false);
@@ -92,7 +117,7 @@ export default function ExperienceChangePage({ id }) {
             <form
               onSubmit={event => {
                 event.preventDefault();
-                submit('edit');
+                void submit('edit');
               }}
             >
               <h2>Propose an edit</h2>
@@ -120,7 +145,9 @@ export default function ExperienceChangePage({ id }) {
                   className="form-control"
                   id="experience-change-recommend"
                   value={recommend}
-                  onChange={event => setRecommend(event.target.value)}
+                  onChange={event =>
+                    setRecommend(event.target.value as ExperienceRecommendation)
+                  }
                 >
                   <option value="yes">Yes</option>
                   <option value="no">No</option>
@@ -129,11 +156,13 @@ export default function ExperienceChangePage({ id }) {
               </div>
               <fieldset>
                 <legend>How do you know them?</legend>
-                {[
-                  ['met', 'Met in person'],
-                  ['host', 'I hosted them'],
-                  ['guest', 'They hosted me'],
-                ].map(([key, label]) => (
+                {(
+                  [
+                    ['met', 'Met in person'],
+                    ['host', 'I hosted them'],
+                    ['guest', 'They hosted me'],
+                  ] as const
+                ).map(([key, label]) => (
                   <div className="checkbox" key={key}>
                     <label>
                       <input
@@ -172,7 +201,7 @@ export default function ExperienceChangePage({ id }) {
             className="btn btn-default"
             type="button"
             disabled={submitting}
-            onClick={() => submit('remove')}
+            onClick={() => void submit('remove')}
           >
             Request removal
           </button>
@@ -186,7 +215,3 @@ export default function ExperienceChangePage({ id }) {
     </div>
   );
 }
-
-ExperienceChangePage.propTypes = {
-  id: PropTypes.string.isRequired,
-};

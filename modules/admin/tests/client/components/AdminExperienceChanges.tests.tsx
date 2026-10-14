@@ -4,6 +4,10 @@ import '@testing-library/jest-dom';
 
 import AdminExperienceChanges from '@/modules/admin/client/components/AdminExperienceChanges';
 import * as api from '@/modules/admin/client/api/admin-experience-changes.api';
+import type {
+  AdminExperienceChangeRequest,
+  AdminExperienceChangeSearchExperience,
+} from '@/modules/admin/shared/admin-experience-change';
 
 jest.mock('@/modules/admin/client/api/admin-experience-changes.api');
 jest.mock('@/modules/admin/client/components/AdminHeader.component', () => {
@@ -12,7 +16,9 @@ jest.mock('@/modules/admin/client/components/AdminHeader.component', () => {
   };
 });
 
-const experience = {
+const apiMock = jest.mocked(api);
+
+const experience: AdminExperienceChangeSearchExperience = {
   _id: 'experience-1',
   public: true,
   userFrom: { _id: 'author-1', displayName: 'Fictional Author' },
@@ -22,13 +28,34 @@ const experience = {
   feedbackPublic: 'Original Experience',
 };
 
+function editRequest(
+  overrides: Partial<
+    Extract<AdminExperienceChangeRequest, { kind: 'edit' }>
+  > = {},
+): Extract<AdminExperienceChangeRequest, { kind: 'edit' }> {
+  return {
+    _id: 'request-1',
+    requester: { _id: 'author-1', displayName: 'Fictional Author' },
+    experience: { ...experience, userFrom: 'author-1', userTo: 'recipient-1' },
+    status: 'pending',
+    kind: 'edit',
+    proposed: {
+      feedbackPublic: 'Revised Experience',
+      recommend: 'no',
+      interactions: { met: true, guest: true, host: false },
+    },
+    ...overrides,
+  };
+}
+
 afterEach(() => jest.clearAllMocks());
 
 it('finds an Experience and creates a link for the selected member', async () => {
-  api.listRequests.mockResolvedValueOnce([]);
-  api.findExperiences.mockResolvedValueOnce([experience]);
-  api.issueLink.mockResolvedValueOnce({
+  apiMock.listRequests.mockResolvedValueOnce([]);
+  apiMock.findExperiences.mockResolvedValueOnce([experience]);
+  apiMock.issueLink.mockResolvedValueOnce({
     path: '/experiences/experience-1/change?secret=example',
+    expiresAt: '2026-10-20T00:00:00.000Z',
   });
   render(<AdminExperienceChanges />);
 
@@ -40,7 +67,7 @@ it('finds an Experience and creates a link for the selected member', async () =>
   fireEvent.click(screen.getByRole('button', { name: 'Copy link for author' }));
 
   await waitFor(() =>
-    expect(api.issueLink).toHaveBeenCalledWith('experience-1', 'author-1'),
+    expect(apiMock.issueLink).toHaveBeenCalledWith('experience-1', 'author-1'),
   );
   await waitFor(() =>
     expect(screen.getByLabelText(/Support link/)).toHaveValue(
@@ -50,28 +77,19 @@ it('finds an Experience and creates a link for the selected member', async () =>
 });
 
 it('shows a pending request and records an admin decision', async () => {
-  api.listRequests
-    .mockResolvedValueOnce([
-      {
-        _id: 'request-1',
-        requester: { displayName: 'Fictional Author' },
-        kind: 'edit',
-        experience,
-        proposed: {
-          feedbackPublic: 'Revised Experience',
-          recommend: 'no',
-          interactions: { met: true, guest: true, host: false },
-        },
-      },
-    ])
+  apiMock.listRequests
+    .mockResolvedValueOnce([editRequest()])
     .mockResolvedValueOnce([]);
-  api.decide.mockResolvedValueOnce({ status: 'approved' });
+  apiMock.decide.mockResolvedValueOnce({
+    _id: 'request-1',
+    status: 'approved',
+  });
   render(<AdminExperienceChanges />);
 
   expect(await screen.findByText(/Revised Experience/)).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
   await waitFor(() =>
-    expect(api.decide).toHaveBeenCalledWith('request-1', 'approve'),
+    expect(apiMock.decide).toHaveBeenCalledWith('request-1', 'approve'),
   );
   expect(
     await screen.findByText('No requests awaiting review.'),
@@ -79,8 +97,8 @@ it('shows a pending request and records an admin decision', async () => {
 });
 
 it('shows unpublished Experiences and creates a link for the profile owner', async () => {
-  api.listRequests.mockResolvedValue([]);
-  api.findExperiences.mockResolvedValue([
+  apiMock.listRequests.mockResolvedValue([]);
+  apiMock.findExperiences.mockResolvedValue([
     {
       ...experience,
       public: false,
@@ -90,7 +108,10 @@ it('shows unpublished Experiences and creates a link for the profile owner', asy
       feedbackPublic: '',
     },
   ]);
-  api.issueLink.mockResolvedValue({ path: '/change?secret=example' });
+  apiMock.issueLink.mockResolvedValue({
+    path: '/change?secret=example',
+    expiresAt: '2026-10-20T00:00:00.000Z',
+  });
   render(<AdminExperienceChanges />);
 
   fireEvent.change(screen.getByLabelText('Member username'), {
@@ -104,27 +125,49 @@ it('shows unpublished Experiences and creates a link for the profile owner', asy
     screen.getByRole('button', { name: 'Copy link for profile owner' }),
   );
   await waitFor(() =>
-    expect(api.issueLink).toHaveBeenCalledWith('experience-1', 'recipient-1'),
+    expect(apiMock.issueLink).toHaveBeenCalledWith(
+      'experience-1',
+      'recipient-1',
+    ),
   );
   const input = await screen.findByLabelText(/Support link/);
   fireEvent.focus(input);
   expect(input).toHaveValue('http://localhost/change?secret=example');
 });
 
-it('shows an error when search, link issuance, or review fails', async () => {
-  api.listRequests.mockResolvedValueOnce([
-    {
-      _id: 'request-1',
-      requester: null,
-      kind: 'remove',
-      experience: null,
-    },
+it('reports when a populated member is unavailable for link issuance', async () => {
+  apiMock.listRequests.mockResolvedValue([]);
+  apiMock.findExperiences.mockResolvedValue([
+    { ...experience, userFrom: null },
   ]);
-  api.findExperiences
+  render(<AdminExperienceChanges />);
+
+  fireEvent.change(screen.getByLabelText('Member username'), {
+    target: { value: 'fictional-author' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Find Experiences' }));
+  expect(await screen.findByText('Unknown member')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Copy link for author' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Could not create the link',
+  );
+  expect(apiMock.issueLink).not.toHaveBeenCalled();
+});
+
+it('shows an error when search, link issuance, or review fails', async () => {
+  const removalRequest: AdminExperienceChangeRequest = {
+    _id: 'request-1',
+    requester: { _id: 'member-1' },
+    kind: 'remove',
+    experience: null,
+    status: 'pending',
+  };
+  apiMock.listRequests.mockResolvedValueOnce([removalRequest]);
+  apiMock.findExperiences
     .mockRejectedValueOnce(new Error('search failed'))
     .mockResolvedValueOnce([experience]);
-  api.issueLink.mockRejectedValueOnce(new Error('link failed'));
-  api.decide.mockRejectedValueOnce(new Error('review failed'));
+  apiMock.issueLink.mockRejectedValueOnce(new Error('link failed'));
+  apiMock.decide.mockRejectedValueOnce(new Error('review failed'));
   render(<AdminExperienceChanges />);
 
   expect(await screen.findByText('Unknown member')).toBeInTheDocument();
@@ -152,7 +195,7 @@ it('shows an error when search, link issuance, or review fails', async () => {
 });
 
 it('shows a load error when the review queue is unavailable', async () => {
-  api.listRequests.mockRejectedValueOnce(new Error('unavailable'));
+  apiMock.listRequests.mockRejectedValueOnce(new Error('unavailable'));
   render(<AdminExperienceChanges />);
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'Could not load change requests',
@@ -165,17 +208,20 @@ it('copies an issued link and shows empty proposed feedback', async () => {
     configurable: true,
     value: { writeText },
   });
-  api.listRequests.mockResolvedValue([
-    {
-      _id: 'request-1',
-      requester: { username: 'fictional-author' },
-      kind: 'edit',
-      experience,
-      proposed: { recommend: 'unknown', interactions: {}, feedbackPublic: '' },
-    },
+  apiMock.listRequests.mockResolvedValue([
+    editRequest({
+      proposed: {
+        recommend: 'unknown',
+        interactions: { met: false, guest: false, host: false },
+        feedbackPublic: '',
+      },
+    }),
   ]);
-  api.findExperiences.mockResolvedValue([experience]);
-  api.issueLink.mockResolvedValue({ path: '/change?secret=example' });
+  apiMock.findExperiences.mockResolvedValue([experience]);
+  apiMock.issueLink.mockResolvedValue({
+    path: '/change?secret=example',
+    expiresAt: '2026-10-20T00:00:00.000Z',
+  });
   render(<AdminExperienceChanges />);
 
   expect(await screen.findByText('Feedback: (none)')).toBeInTheDocument();
@@ -190,5 +236,8 @@ it('copies an issued link and shows empty proposed feedback', async () => {
   expect(await screen.findByLabelText(/Support link/)).toHaveValue(
     'http://localhost/change?secret=example',
   );
-  delete navigator.clipboard;
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: undefined,
+  });
 });

@@ -1,14 +1,32 @@
-import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
 
 import * as api from '../api/admin-experience-changes.api';
+import type {
+  AdminExperienceChangeDecision,
+  AdminExperienceChangeQueuedExperience,
+  AdminExperienceChangeParticipant,
+  AdminExperienceChangeRequest,
+  AdminExperienceChangeSearchExperience,
+} from '../../shared/admin-experience-change';
 import AdminHeader from './AdminHeader.component';
 
-function memberLabel(member) {
-  return member?.displayName || member?.username || 'Unknown member';
+function memberLabel(member: AdminExperienceChangeParticipant): string {
+  if (typeof member === 'object' && member !== null) {
+    return member.displayName || member.username || 'Unknown member';
+  }
+  return 'Unknown member';
 }
 
-function ExperienceDetails({ experience }) {
+interface ExperienceDetailsProps {
+  experience:
+    | AdminExperienceChangeQueuedExperience
+    | AdminExperienceChangeSearchExperience
+    | null;
+}
+
+function ExperienceDetails({
+  experience,
+}: ExperienceDetailsProps): React.JSX.Element {
   if (!experience) return <p>Experience no longer available.</p>;
   return (
     <div>
@@ -20,7 +38,7 @@ function ExperienceDetails({ experience }) {
       <p>Recommendation: {experience.recommend}</p>
       <p>
         Interactions:{' '}
-        {['met', 'host', 'guest']
+        {(['met', 'host', 'guest'] as const)
           .filter(key => experience.interactions?.[key])
           .join(', ')}
       </p>
@@ -29,19 +47,17 @@ function ExperienceDetails({ experience }) {
   );
 }
 
-ExperienceDetails.propTypes = {
-  experience: PropTypes.object,
-};
-
-export default function AdminExperienceChanges() {
+export default function AdminExperienceChanges(): React.JSX.Element {
   const [username, setUsername] = useState('');
-  const [experiences, setExperiences] = useState([]);
-  const [requests, setRequests] = useState([]);
+  const [experiences, setExperiences] = useState<
+    AdminExperienceChangeSearchExperience[]
+  >([]);
+  const [requests, setRequests] = useState<AdminExperienceChangeRequest[]>([]);
   const [link, setLink] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
-  async function refreshRequests() {
+  async function refreshRequests(): Promise<void> {
     setRequests(await api.listRequests());
   }
 
@@ -49,7 +65,9 @@ export default function AdminExperienceChanges() {
     refreshRequests().catch(() => setError('Could not load change requests.'));
   }, []);
 
-  async function search(event) {
+  async function search(
+    event: React.FormEvent<HTMLFormElement>,
+  ): Promise<void> {
     event.preventDefault();
     setError('');
     try {
@@ -59,10 +77,14 @@ export default function AdminExperienceChanges() {
     }
   }
 
-  async function createLink(experience, member) {
+  async function createLink(
+    experience: AdminExperienceChangeSearchExperience,
+    member: AdminExperienceChangeSearchExperience['userFrom'],
+  ): Promise<void> {
     setError('');
     setBusy(true);
     try {
+      if (!member) throw new Error('Member is unavailable.');
       const { path } = await api.issueLink(experience._id, member._id);
       const url = new URL(path, window.location.origin).href;
       setLink(url);
@@ -76,7 +98,10 @@ export default function AdminExperienceChanges() {
     }
   }
 
-  async function decide(request, decision) {
+  async function decide(
+    request: AdminExperienceChangeRequest,
+    decision: AdminExperienceChangeDecision,
+  ): Promise<void> {
     setError('');
     setBusy(true);
     try {
@@ -101,7 +126,7 @@ export default function AdminExperienceChanges() {
         )}
         <section>
           <h2>Create a support link</h2>
-          <form className="form-inline" onSubmit={search}>
+          <form className="form-inline" onSubmit={event => void search(event)}>
             <label htmlFor="experience-member-username">Member username</label>{' '}
             <input
               className="form-control"
@@ -121,7 +146,9 @@ export default function AdminExperienceChanges() {
                   className="btn btn-default"
                   type="button"
                   disabled={busy}
-                  onClick={() => createLink(experience, experience.userFrom)}
+                  onClick={() =>
+                    void createLink(experience, experience.userFrom)
+                  }
                 >
                   Copy link for author
                 </button>{' '}
@@ -129,7 +156,7 @@ export default function AdminExperienceChanges() {
                   className="btn btn-default"
                   type="button"
                   disabled={busy}
-                  onClick={() => createLink(experience, experience.userTo)}
+                  onClick={() => void createLink(experience, experience.userTo)}
                 >
                   Copy link for profile owner
                 </button>
@@ -168,8 +195,8 @@ export default function AdminExperienceChanges() {
                     <p>Recommendation: {request.proposed.recommend}</p>
                     <p>
                       Interactions:{' '}
-                      {['met', 'host', 'guest']
-                        .filter(key => request.proposed.interactions?.[key])
+                      {(['met', 'host', 'guest'] as const)
+                        .filter(key => request.proposed.interactions[key])
                         .join(', ')}
                     </p>
                     <p>
@@ -181,7 +208,7 @@ export default function AdminExperienceChanges() {
                   className="btn btn-primary"
                   type="button"
                   disabled={busy}
-                  onClick={() => decide(request, 'approve')}
+                  onClick={() => void decide(request, 'approve')}
                 >
                   Approve
                 </button>{' '}
@@ -189,7 +216,7 @@ export default function AdminExperienceChanges() {
                   className="btn btn-default"
                   type="button"
                   disabled={busy}
-                  onClick={() => decide(request, 'reject')}
+                  onClick={() => void decide(request, 'reject')}
                 >
                   Reject
                 </button>
