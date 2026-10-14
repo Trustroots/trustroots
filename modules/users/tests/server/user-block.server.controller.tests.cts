@@ -6,29 +6,47 @@
  * guards, the "nothing updated" responses, and the catch blocks that are hard
  * to reach through the HTTP routes.
  */
-const mongoose = require('mongoose');
+const mongoose: typeof import('mongoose') = require('mongoose');
 
 const blockController = require('./../../server/controllers/users.block.server.controller.mjs');
-const errorService = require('./../../../core/server/services/error.server.service.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+const errorService: typeof import('../../../core/server/services/error.server.service.mjs').default = require('./../../../core/server/services/error.server.service.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
-function mockResponse() {
-  const res = {
+interface MockResponse {
+  statusCode: number;
+  body: unknown;
+  status(code: number): this;
+  send(body: unknown): this;
+}
+
+function mockResponse(): MockResponse {
+  const res: MockResponse = {
     statusCode: 200,
     body: null,
-  };
-
-  res.status = function (code) {
-    res.statusCode = code;
-    return res;
-  };
-  res.send = function (body) {
-    res.body = body;
-    return res;
+    status(code: number) {
+      res.statusCode = code;
+      return res;
+    },
+    send(body: unknown) {
+      res.body = body;
+      return res;
+    },
   };
 
   return res;
+}
+
+function messageBody(res: MockResponse): string {
+  if (
+    typeof res.body !== 'object' ||
+    res.body === null ||
+    !('message' in res.body) ||
+    typeof res.body.message !== 'string'
+  ) {
+    throw new Error('Expected a message response');
+  }
+  return res.body.message;
 }
 
 describe('User block controller unit tests', () => {
@@ -42,7 +60,8 @@ describe('User block controller unit tests', () => {
       await blockController.getBlockedUsers({ user: { _id: user._id } }, res);
 
       res.statusCode.should.equal(200);
-      res.body.should.be.an.Array();
+      if (!Array.isArray(res.body))
+        throw new Error('Expected an array response');
       res.body.length.should.equal(0);
     });
 
@@ -56,7 +75,7 @@ describe('User block controller unit tests', () => {
       );
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      messageBody(res).should.equal(
         errorService.getErrorMessageByKey('default'),
       );
     });
@@ -71,7 +90,7 @@ describe('User block controller unit tests', () => {
       );
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      messageBody(res).should.equal(
         errorService.getErrorMessageByKey('invalid-id'),
       );
     });
@@ -85,7 +104,7 @@ describe('User block controller unit tests', () => {
       );
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      messageBody(res).should.equal(
         errorService.getErrorMessageByKey('invalid-id'),
       );
     });
@@ -104,7 +123,7 @@ describe('User block controller unit tests', () => {
       );
 
       res.statusCode.should.equal(404);
-      res.body.message.should.equal(
+      messageBody(res).should.equal(
         errorService.getErrorMessageByKey('not-found'),
       );
     });
@@ -123,7 +142,7 @@ describe('User block controller unit tests', () => {
       );
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      messageBody(res).should.equal(
         errorService.getErrorMessageByKey('default'),
       );
     });
@@ -138,7 +157,7 @@ describe('User block controller unit tests', () => {
       );
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      messageBody(res).should.equal(
         errorService.getErrorMessageByKey('invalid-id'),
       );
     });
@@ -158,7 +177,7 @@ describe('User block controller unit tests', () => {
       );
 
       res.statusCode.should.equal(404);
-      res.body.message.should.equal(
+      messageBody(res).should.equal(
         errorService.getErrorMessageByKey('not-found'),
       );
     });
@@ -178,7 +197,7 @@ describe('User block controller unit tests', () => {
       );
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      messageBody(res).should.equal(
         errorService.getErrorMessageByKey('default'),
       );
     });

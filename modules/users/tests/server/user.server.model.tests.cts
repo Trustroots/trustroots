@@ -1,21 +1,50 @@
 /**
  * Module dependencies.
  */
-const should = require('should');
-const crypto = require('node:crypto');
-const mongoose = require('mongoose');
-const sinon = require('sinon');
-const config = require('../../../../config/config.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+import type {
+  UserModel,
+  UserModelDocument,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
 
-const User = mongoose.model('User');
+const should: typeof import('should') = require('should');
+const crypto: typeof import('node:crypto') = require('node:crypto');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const sinon: typeof import('sinon') = require('sinon');
+const config: typeof import('../../../../config/config.mjs').default = require('../../../../config/config.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+
+const User = mongoose.model<UserRecord, UserModel>('User');
+type TestUserDocument = UserModelDocument;
+
+function assertPresent<T>(value: T | null | undefined): asserts value is T {
+  should.exist(value);
+  if (value === null || value === undefined) {
+    throw new Error('Expected a value to be present');
+  }
+}
+
+function present<T>(value: T | null | undefined): T {
+  assertPresent(value);
+  return value;
+}
 
 /**
  * Globals
  */
-let user;
-let user2;
-let user3;
+let user: TestUserDocument;
+let user2: TestUserDocument;
+let user3: Partial<UserRecord> &
+  Pick<
+    UserRecord,
+    | 'firstName'
+    | 'lastName'
+    | 'displayName'
+    | 'email'
+    | 'username'
+    | 'password'
+    | 'provider'
+  >;
 
 /**
  * Unit tests
@@ -58,9 +87,9 @@ describe('User Model Unit Tests:', function () {
   describe('Default profile image source', function () {
     it('defaults new accounts to no photo and allows explicit Gravatar selection', function () {
       const member = new User();
-      member.avatarSource.should.equal('none');
+      present(member.avatarSource).should.equal('none');
       member.avatarSource = 'gravatar';
-      member.avatarSource.should.equal('gravatar');
+      present(member.avatarSource).should.equal('gravatar');
     });
   });
 
@@ -72,25 +101,29 @@ describe('User Model Unit Tests:', function () {
         { $set: { avatarSource: 'facebook' } },
       );
       const legacy = await User.findById(saved._id);
-      legacy.avatarSource.should.equal('none');
+      assertPresent(legacy);
+      present(legacy.avatarSource).should.equal('none');
       legacy.tagline = 'A fictional member updates their profile';
       await legacy.save();
       const reloaded = await User.findById(saved._id);
+      assertPresent(reloaded);
+      assertPresent(reloaded.tagline);
       reloaded.tagline.should.equal(legacy.tagline);
-      reloaded.avatarSource.should.equal('none');
+      present(reloaded.avatarSource).should.equal('none');
     });
 
     it('rejects new Facebook avatar selections', async function () {
       const member = new User(utils.generateUsers(1)[0]);
       member.avatarSource = 'facebook';
       const error = member.validateSync();
+      assertPresent(error);
       error.errors.avatarSource.kind.should.equal('enum');
     });
   });
 
   describe('Method Save', function () {
     it('should begin with no users', function (done) {
-      User.find({}, function (err, users) {
+      User.find({}, function (err: Error | null, users: TestUserDocument[]) {
         users.should.have.length(0);
         done();
       });
@@ -126,7 +159,7 @@ describe('User Model Unit Tests:', function () {
 
         savedUser.firstName.should.equal('Test');
         savedUser.lastName.should.equal('Name');
-        savedUser.displayName.should.equal('Test Name');
+        present(savedUser.displayName).should.equal('Test Name');
 
         done();
       });
@@ -146,7 +179,7 @@ describe('User Model Unit Tests:', function () {
 
           savedUser2.firstName.should.equal('Test');
           savedUser2.lastName.should.equal('Name');
-          savedUser2.displayName.should.equal('Test Name');
+          present(savedUser2.displayName).should.equal('Test Name');
 
           done();
         });
@@ -178,7 +211,7 @@ describe('User Model Unit Tests:', function () {
 
       _user.save(function (err) {
         should.not.exist(err);
-        const passwordBefore = _user.password;
+        const passwordBefore = present(_user.password);
         _user.firstName = 'test';
         _user.save(function (err) {
           should.not.exist(err);
@@ -214,6 +247,8 @@ describe('User Model Unit Tests:', function () {
           _user3.email = _user.email;
           _user3.save(function (err) {
             should.exist(err);
+            assertPresent(err);
+            if (!(err instanceof mongoose.Error.ValidationError)) throw err;
             err.errors.email.message.should.equal(
               'Account with this email exists already.',
             );
@@ -237,6 +272,8 @@ describe('User Model Unit Tests:', function () {
           _user3.username = _user.username;
           _user3.save(function (err) {
             should.exist(err);
+            assertPresent(err);
+            if (!(err instanceof mongoose.Error.ValidationError)) throw err;
             err.errors.username.message.should.equal(
               'Username exists already.',
             );
@@ -261,13 +298,15 @@ describe('User Model Unit Tests:', function () {
         );
         throw new Error('Expected the unique email index to reject the update');
       } catch (err) {
-        err.should.be.instanceof(mongoose.Error.ValidationError);
-        err.errors.email.message.should.equal(
+        should(err).be.instanceof(mongoose.Error.ValidationError);
+        if (!(err instanceof mongoose.Error.ValidationError)) throw err;
+        err.errors.email?.message.should.equal(
           'Account with this email exists already.',
         );
       }
 
       const stored = await User.findById(second._id);
+      assertPresent(stored);
       stored.email.should.equal(user3.email);
     });
 
@@ -285,11 +324,13 @@ describe('User Model Unit Tests:', function () {
           'Expected the unique username index to reject the update',
         );
       } catch (err) {
-        err.should.be.instanceof(mongoose.Error.ValidationError);
-        err.errors.username.message.should.equal('Username exists already.');
+        should(err).be.instanceof(mongoose.Error.ValidationError);
+        if (!(err instanceof mongoose.Error.ValidationError)) throw err;
+        err.errors.username?.message.should.equal('Username exists already.');
       }
 
       const stored = await User.findById(second._id);
+      assertPresent(stored);
       stored.username.should.equal(user3.username);
     });
 
@@ -517,7 +558,7 @@ describe('User Model Unit Tests:', function () {
       const candidate = new User({ ...baseUser, password: 'new-password-123' });
       await candidate.save();
 
-      candidate.password.should.match(/^\$scrypt\$v=1\$/);
+      present(candidate.password).should.match(/^\$scrypt\$v=1\$/);
       should(candidate.salt).be.undefined();
       (await candidate.authenticate('new-password-123')).should.be.true();
       (await candidate.authenticate('wrong-password')).should.be.false();
@@ -528,7 +569,7 @@ describe('User Model Unit Tests:', function () {
       const candidate = new User({ ...baseUser, password: supplied });
       await candidate.save();
 
-      candidate.password.should.not.equal(supplied);
+      present(candidate.password).should.not.equal(supplied);
       (await candidate.authenticate(supplied)).should.be.true();
     });
 
@@ -545,21 +586,32 @@ describe('User Model Unit Tests:', function () {
       const update = sinon
         .stub(User, 'updateOne')
         .callsFake((filter, changes) => {
+          if (!filter || !changes || '$set' in changes === false) {
+            throw new Error('Expected a password upgrade update');
+          }
           filter.password.should.equal(legacyPassword);
           filter.salt.should.equal(legacySalt.toString('base64'));
-          filter.$or.should.deepEqual([
+          present(filter.$or).should.deepEqual([
             { authVersion: { $exists: false } },
             { authVersion: 0 },
           ]);
-          changes.$unset.should.deepEqual({ salt: 1 });
-          changes.$set.password.should.match(/^\$scrypt\$v=1\$/);
-          changes.$set.should.not.have.property('authVersion');
-          return { exec: async () => ({ matchedCount: 1 }) };
+          present(changes.$unset).should.deepEqual({ salt: 1 });
+          present(changes.$set).password.should.match(/^\$scrypt\$v=1\$/);
+          present(changes.$set).should.not.have.property('authVersion');
+          return {
+            exec: async () => ({
+              acknowledged: true,
+              matchedCount: 1,
+              modifiedCount: 0,
+              upsertedCount: 0,
+              upsertedId: null,
+            }),
+          } as unknown as ReturnType<typeof User.updateOne>;
         });
 
       try {
         (await candidate.authenticate('legacy-password')).should.be.true();
-        candidate.password.should.match(/^\$scrypt\$v=1\$/);
+        present(candidate.password).should.match(/^\$scrypt\$v=1\$/);
         should(candidate.salt).be.undefined();
         update.calledOnce.should.be.true();
       } finally {
@@ -579,8 +631,14 @@ describe('User Model Unit Tests:', function () {
       });
       const resetHash = await User.hashPassword('other-password');
       const update = sinon.stub(User, 'updateOne').returns({
-        exec: async () => ({ matchedCount: 0 }),
-      });
+        exec: async () => ({
+          acknowledged: true,
+          matchedCount: 0,
+          modifiedCount: 0,
+          upsertedCount: 0,
+          upsertedId: null,
+        }),
+      } as unknown as ReturnType<typeof User.updateOne>);
       const findById = sinon.stub(User, 'findById').returns({
         select() {
           return this;
@@ -589,12 +647,12 @@ describe('User Model Unit Tests:', function () {
           return this;
         },
         exec: async () => ({ password: resetHash, salt: undefined }),
-      });
+      } as unknown as ReturnType<typeof User.findById>);
 
       try {
         (await candidate.authenticate('legacy-password')).should.be.false();
-        candidate.password.should.equal(legacyPassword);
-        candidate.salt.should.equal(legacySalt.toString('base64'));
+        present(candidate.password).should.equal(legacyPassword);
+        should(candidate.salt).equal(legacySalt.toString('base64'));
         update.calledOnce.should.be.true();
         findById.calledOnce.should.be.true();
       } finally {
@@ -615,8 +673,14 @@ describe('User Model Unit Tests:', function () {
       });
       const upgraded = await User.hashPassword('legacy-password');
       const update = sinon.stub(User, 'updateOne').returns({
-        exec: async () => ({ matchedCount: 0 }),
-      });
+        exec: async () => ({
+          acknowledged: true,
+          matchedCount: 0,
+          modifiedCount: 0,
+          upsertedCount: 0,
+          upsertedId: null,
+        }),
+      } as unknown as ReturnType<typeof User.updateOne>);
       const findById = sinon.stub(User, 'findById').returns({
         select() {
           return this;
@@ -625,11 +689,11 @@ describe('User Model Unit Tests:', function () {
           return this;
         },
         exec: async () => ({ password: upgraded, salt: undefined }),
-      });
+      } as unknown as ReturnType<typeof User.findById>);
 
       try {
         (await candidate.authenticate('legacy-password')).should.be.true();
-        candidate.password.should.equal(upgraded);
+        present(candidate.password).should.equal(upgraded);
         should(candidate.salt).be.undefined();
         update.calledOnce.should.be.true();
         findById.calledOnce.should.be.true();

@@ -1,4 +1,4 @@
-const sinon = require('sinon');
+const sinon: typeof import('sinon') = require('sinon');
 require('should');
 
 const suspendedController = require('./../../server/controllers/users.suspended.server.controller.mjs');
@@ -14,7 +14,7 @@ describe('Suspended user controller', () => {
     const next = sinon.spy();
     const req = {
       user: { roles: ['user', 'suspended'] },
-      logout: callback => callback(error),
+      logout: (callback: (logoutError?: Error) => void) => callback(error),
       session: { destroy },
     };
 

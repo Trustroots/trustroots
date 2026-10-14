@@ -1,35 +1,78 @@
-let policyModule;
+import type {
+  PolicyResponse,
+  PolicyRule,
+} from '../../../../modules/core/server/services/policy-types.server.mts';
+
+let policyModule: typeof import('../../server/policies/users.server.policy.mts');
 before(async function () {
   policyModule =
     await import('./../../server/policies/users.server.policy.mts');
 });
-const sinon = require('sinon');
+const sinon: typeof import('sinon') = require('sinon');
 require('should');
 
 function loadPolicy() {
   const mockAcl = {
-    allow: sinon.stub(),
-    areAnyRolesAllowed: sinon.stub(),
+    allow: sinon.stub<[PolicyRule[]], void>(),
+    areAnyRolesAllowed: sinon.stub<
+      [
+        string[],
+        string,
+        string,
+        (error: Error | null, allowed: boolean) => void,
+      ],
+      void
+    >(),
   };
-  const policy = require('./../../server/policies/users.server.policy.mts');
+  const policy: typeof import('../../server/policies/users.server.policy.mts') = require('./../../server/policies/users.server.policy.mts');
   const { _acl } = policyModule;
   sinon.stub(_acl, 'allow').callsFake(mockAcl.allow);
-  sinon.stub(_acl, 'areAnyRolesAllowed').callsFake(mockAcl.areAnyRolesAllowed);
+  sinon
+    .stub(_acl, 'areAnyRolesAllowed')
+    .callsFake(
+      mockAcl.areAnyRolesAllowed as unknown as typeof _acl.areAnyRolesAllowed,
+    );
   return { policy, mockAcl };
 }
 
-function mockResponse() {
-  const res = { statusCode: 200, body: null };
-  res.status = code => {
-    res.statusCode = code;
-    return res;
-  };
-  res.json = body => {
-    res.body = body;
-    return res;
+interface MockPolicyResponse extends PolicyResponse {
+  statusCode: number;
+  body: unknown;
+}
+
+function mockResponse(): MockPolicyResponse {
+  const res: MockPolicyResponse = {
+    statusCode: 200,
+    body: null,
+    status(code: number) {
+      res.statusCode = code;
+      return res;
+    },
+    json(body: { message: string }) {
+      res.body = body;
+      return res;
+    },
+    send(body: { message: string }) {
+      res.body = body;
+      return res;
+    },
   };
   return res;
 }
+
+function messageBody(response: MockPolicyResponse): string {
+  if (
+    typeof response.body !== 'object' ||
+    response.body === null ||
+    !('message' in response.body) ||
+    typeof response.body.message !== 'string'
+  ) {
+    throw new Error('Expected a policy message');
+  }
+  return response.body.message;
+}
+
+const noProfileUserId = { valueOf: () => 'anonymous-test-user' };
 
 describe('Users policy unit tests', () => {
   afterEach(() => sinon.restore());
@@ -61,7 +104,7 @@ describe('Users policy unit tests', () => {
 
     policy.isAllowed(
       {
-        user: { public: true, roles: ['user'] },
+        user: { _id: noProfileUserId, public: true, roles: ['user'] },
         route: { path: '/api/users/:username' },
         method: 'GET',
       },
@@ -106,7 +149,7 @@ describe('Users policy unit tests', () => {
     );
 
     response.statusCode.should.equal(403);
-    response.body.message.should.equal('Forbidden.');
+    messageBody(response).should.equal('Forbidden.');
   });
 
   it('allows profile owners past public-profile prechecks', () => {
@@ -136,7 +179,7 @@ describe('Users policy unit tests', () => {
 
     policy.isAllowed(
       {
-        user: { public: true, roles: ['user'] },
+        user: { _id: noProfileUserId, public: true, roles: ['user'] },
         route: { path: '/api/users/:username' },
         method: 'GET',
       },
@@ -145,7 +188,7 @@ describe('Users policy unit tests', () => {
     );
 
     res.statusCode.should.equal(500);
-    res.body.message.should.equal('Unexpected authorization error');
+    messageBody(res).should.equal('Unexpected authorization error');
     done();
   });
 
@@ -166,7 +209,7 @@ describe('Users policy unit tests', () => {
     );
 
     res.statusCode.should.equal(404);
-    res.body.message.should.equal('Not found.');
+    messageBody(res).should.equal('Not found.');
     done();
   });
 
@@ -187,7 +230,7 @@ describe('Users policy unit tests', () => {
     );
 
     res.statusCode.should.equal(403);
-    res.body.message.should.equal('Forbidden.');
+    messageBody(res).should.equal('Forbidden.');
     done();
   });
 
@@ -198,7 +241,7 @@ describe('Users policy unit tests', () => {
 
     policy.isAllowed(
       {
-        user: { public: true, roles: ['guest'] },
+        user: { _id: noProfileUserId, public: true, roles: ['guest'] },
         route: { path: '/api/users/:username' },
         method: 'PUT',
       },
@@ -207,7 +250,7 @@ describe('Users policy unit tests', () => {
     );
 
     res.statusCode.should.equal(403);
-    res.body.message.should.equal('Forbidden.');
+    messageBody(res).should.equal('Forbidden.');
     done();
   });
 });

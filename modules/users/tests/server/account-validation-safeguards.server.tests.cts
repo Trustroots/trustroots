@@ -1,12 +1,30 @@
-const should = require('should');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const express = require('./../../../../config/lib/express.mjs');
-const config = require('./../../../../config/config.mjs');
-const defaults = require('./../../../../config/env/default.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const testutils = require('../../../../testutils/server/server.testutil');
-const User = mongoose.model('User');
+import type {
+  UserModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+
+const should: typeof import('should') = require('should');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const express: typeof import('../../../../config/lib/express.mjs').default = require('../../../../config/lib/express.mjs');
+const config: typeof import('../../../../config/config.mjs').default & {
+  illegalStrings: string[];
+} = require('../../../../config/config.mjs');
+const defaults: typeof import('../../../../config/env/default.mjs').default & {
+  illegalStrings: string[];
+} = require('../../../../config/env/default.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+const testutils: typeof import('../../../../testutils/server/server.testutil.mts') = require('../../../../testutils/server/server.testutil');
+const User = mongoose.model<UserRecord, UserModel>('User');
+function assertPresent<T>(value: T | null | undefined): asserts value is T {
+  should.exist(value);
+  if (value === null || value === undefined)
+    throw new Error('Expected a value');
+}
+function present<T>(value: T | null | undefined): T {
+  assertPresent(value);
+  return value;
+}
 const reservedNames = [
   'about',
   'abuse',
@@ -37,7 +55,9 @@ const reservedNames = [
   'team',
   'volunteering',
 ];
-function member() {
+function member(): import('../../../../testutils/common/data.common.testutil.mts').ServerUserFixture & {
+  provider: string;
+} {
   return {
     firstName: 'Amina',
     lastName: 'Vale',
@@ -46,10 +66,12 @@ function member() {
     password: 'M3@n.jsI$Aw3$0m3',
     provider: 'local',
     public: true,
+    languages: [],
+    roles: ['user'],
   };
 }
 describe('Account validation safeguards', function () {
-  let app;
+  let app: Awaited<ReturnType<typeof express.init>>;
   const jobs = testutils.catchJobs();
   before(async function () {
     app = await express.init(mongoose.connection);
@@ -115,6 +137,7 @@ describe('Account validation safeguards', function () {
     ]) {
       await agent.put('/api/users').send(body).expect(200);
       const saved = await User.findById(user._id);
+      assertPresent(saved);
       saved.username.should.equal('nostr');
       saved.lastName.should.equal('River');
     }
@@ -123,7 +146,8 @@ describe('Account validation safeguards', function () {
     const [user] = await utils.saveUsers([member()]);
     user.username = 'nostr';
     const error = user.validateSync();
-    should.exist(error.errors.username);
+    assertPresent(error);
+    assertPresent(error.errors.username);
   });
   for (const email of [
     'member@example.org extra',
@@ -135,11 +159,12 @@ describe('Account validation safeguards', function () {
         ...member(),
         emailTemporary: email,
       });
-      user
-        .validateSync()
-        .errors.emailTemporary.message.should.equal(
-          'Please enter a valid email address.',
-        );
+      const validationError = user.validateSync();
+      assertPresent(validationError);
+      assertPresent(validationError.errors.emailTemporary);
+      validationError.errors.emailTemporary.message.should.equal(
+        'Please enter a valid email address.',
+      );
     });
   }
   for (const emailTemporary of ['', 'member+confirmation@example.org']) {
@@ -151,7 +176,7 @@ describe('Account validation safeguards', function () {
           emailTemporary,
         });
         await user.save();
-        user.emailTemporary.should.equal(emailTemporary);
+        present(user.emailTemporary).should.equal(emailTemporary);
       },
     );
   }
@@ -180,8 +205,9 @@ describe('Account validation safeguards', function () {
           'Please enter a valid email address.',
         );
         const saved = await User.findById(user._id);
+        assertPresent(saved);
         saved.email.should.equal(member().email);
-        saved.emailTemporary.should.equal('');
+        present(saved.emailTemporary).should.equal('');
       },
     );
   }
@@ -195,7 +221,9 @@ describe('Account validation safeguards', function () {
         email: '',
       })
       .expect(200);
-    (await User.findById(user._id)).email.should.equal(member().email);
+    const saved = await User.findById(user._id);
+    assertPresent(saved);
+    saved.email.should.equal(member().email);
   });
   for (const step of ['first', 'second', 'third']) {
     it(
@@ -208,7 +236,7 @@ describe('Account validation safeguards', function () {
         );
         let calls = 0;
         const jobCount = jobs.length;
-        handler({}, function (err) {
+        handler({}, function (err: Error | null) {
           should.not.exist(err);
           calls += 1;
         });

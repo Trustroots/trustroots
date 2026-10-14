@@ -1,29 +1,53 @@
-const should = require('should');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const express = require('../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const testutils = require('../../../../testutils/server/server.testutil');
-const User = mongoose.model('User');
+import type {
+  UserModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+
+const should: typeof import('should') = require('should');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const express: typeof import('../../../../config/lib/express.mjs').default = require('../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+const testutils: typeof import('../../../../testutils/server/server.testutil.mts') = require('../../../../testutils/server/server.testutil');
+const User = mongoose.model<UserRecord, UserModel>('User');
+function assertPresent<T>(value: T | null | undefined): asserts value is T {
+  should.exist(value);
+  if (value === null || value === undefined) throw new Error('Expected a user');
+}
+
+async function findUser(
+  id: import('mongoose').Types.ObjectId | string,
+): Promise<
+  import('../../../../testutils/server/model-contracts.mts').UserModelDocument
+> {
+  const user = await User.findById(id);
+  assertPresent(user);
+  return user;
+}
 const formatMessage =
   'Use 3–34 letters and numbers, including at least one letter.';
 const npub = 'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
 
-function member() {
+function member(): import('../../../../testutils/common/data.common.testutil.mts').ServerUserFixture & {
+  provider: string;
+  nostrNpub: string;
+} {
   return {
     firstName: 'Amina',
     lastName: 'Vale',
     username: 'samplemember',
     email: 'sample@example.org',
     password: 'Password123!',
-    provider: 'local',
     public: true,
     nostrNpub: npub,
+    languages: [],
+    roles: ['user'],
+    provider: 'local',
   };
 }
 
 describe('Username selection and existing identities', function () {
-  let app;
+  let app: Awaited<ReturnType<typeof express.init>>;
   testutils.catchJobs();
   before(async function () {
     app = await express.init(mongoose.connection);
@@ -59,7 +83,7 @@ describe('Username selection and existing identities', function () {
         .send({ username })
         .expect(400);
       response.body.message.should.equal(formatMessage);
-      const saved = await User.findById(user._id);
+      const saved = await findUser(user._id);
       saved.username.should.equal(member().username);
       should.not.exist(saved.usernameUpdated);
     });
@@ -82,7 +106,7 @@ describe('Username selection and existing identities', function () {
         const agent = request.agent(app);
         await utils.signIn(member(), agent);
         await agent.put('/api/users').send({ username }).expect(400);
-        const saved = await User.findById(user._id);
+        const saved = await findUser(user._id);
         saved.username.should.equal(member().username);
         should.not.exist(saved.usernameUpdated);
       },
@@ -115,16 +139,17 @@ describe('Username selection and existing identities', function () {
         { username: ' ' + username.toUpperCase() + ' ', lastName: 'River' },
       ]) {
         await agent.put('/api/users').send(body).expect(200);
-        const saved = await User.findById(user._id);
+        const saved = await findUser(user._id);
         saved.username.should.equal(username);
         saved.lastName.should.equal('River');
         should.not.exist(saved.usernameUpdated);
       }
-      const saved = await User.findById(user._id);
+      const saved = await findUser(user._id);
       saved.firstName = 'Mira';
       await saved.save();
       saved.username = 'another_member';
-      should.exist(saved.validateSync().errors.username);
+      const usernameError = saved.validateSync()?.errors.username;
+      assertPresent(usernameError);
       await User.collection.updateOne(
         { _id: user._id },
         { $set: { public: false } },
@@ -148,8 +173,8 @@ describe('Username selection and existing identities', function () {
       .send({ username: ' NewMember42 ' })
       .expect(200);
     changed.body.username.should.equal('newmember42');
-    const first = await User.findById(user._id);
-    should.exist(first.usernameUpdated);
+    const first = await findUser(user._id);
+    assertPresent(first.usernameUpdated);
     await agent
       .put('/api/users')
       .send({ username: ' NEWMEMBER42 ', lastName: 'River' })
@@ -158,11 +183,13 @@ describe('Username selection and existing identities', function () {
       .put('/api/users')
       .send({ username: 'anothermember42' })
       .expect(403);
-    const saved = await User.findById(user._id);
+    const saved = await findUser(user._id);
     saved.username.should.equal(first.username);
-    saved.usernameUpdated
-      .getTime()
-      .should.equal(first.usernameUpdated.getTime());
+    const savedUsernameUpdated = saved.usernameUpdated;
+    const firstUsernameUpdated = first.usernameUpdated;
+    assertPresent(savedUsernameUpdated);
+    assertPresent(firstUsernameUpdated);
+    savedUsernameUpdated.getTime().should.equal(firstUsernameUpdated.getTime());
   });
 
   it('rejects reserved username changes before changing the timestamp', async function () {
@@ -174,6 +201,6 @@ describe('Username selection and existing identities', function () {
       .send({ username: 'nostr' })
       .expect(400);
     response.body.message.should.equal('Username is not available.');
-    should.not.exist((await User.findById(user._id)).usernameUpdated);
+    should.not.exist((await findUser(user._id)).usernameUpdated);
   });
 });

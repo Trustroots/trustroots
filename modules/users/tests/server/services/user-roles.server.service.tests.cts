@@ -1,4 +1,11 @@
-const userRoles = require('./../../../server/services/user-roles.server.service.mjs');
+interface UserRoles {
+  restrictedMessagingRoles: string[];
+  hasRole(user: { roles?: string[] }, role: string): boolean;
+  hasAnyRole(user: { roles?: string[] }, roles: string[]): boolean;
+  hasRestrictedMessagingRole(user: { roles?: string[] }): boolean;
+}
+
+const userRoles: UserRoles = require('./../../../server/services/user-roles.server.service.mjs');
 
 require('should');
 
@@ -11,7 +18,7 @@ describe('Service: user-roles', function () {
       'hasRole',
       'hasAnyRole',
       'hasRestrictedMessagingRole',
-    ]) {
+    ] as const) {
       esmService[name].should.equal(userRoles[name]);
     }
   });

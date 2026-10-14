@@ -1,25 +1,28 @@
-before(async function () {
-  app = await express.init(mongoose.connection);
-  agent = request.agent(app);
+import type {
+  UserModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+
+const mongoose: typeof import('mongoose') = require('mongoose');
+const request: typeof import('supertest') = require('supertest');
+const should: typeof import('should') = require('should');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+const express: typeof import('../../../../config/lib/express.mjs').default = require('../../../../config/lib/express.mjs');
+const User = mongoose.model<UserRecord, UserModel>('User');
+const publicUsers = utils.generateUsers(1, { public: true });
+const nonpublicUsers = utils.generateUsers(1, {
+  public: false,
 });
-const mongoose = require('mongoose');
-const request = require('supertest');
-const should = require('should');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const express = require('./../../../../config/lib/express.mjs');
-const User = mongoose.model('User');
-let app;
-let agent;
+nonpublicUsers[0].username = 'nonpublic';
+nonpublicUsers[0].email = 'nonpublic@example.com';
+const appPromise = express.init(mongoose.connection);
+let agent: ReturnType<typeof request.agent>;
+
+before(async function () {
+  agent = request.agent(await appPromise);
+});
 describe('User account: change locale', () => {
-  const publicUsers = utils.generateUsers(1, {
-    public: true,
-  });
-  const nonpublicUsers = utils.generateUsers(1, {
-    public: false,
-    username: 'nonpublic',
-    email: 'nonpublic@example.com',
-  });
-  let users;
+  let users: Awaited<ReturnType<typeof utils.saveUsers>>;
 
   // save users
   beforeEach(async () => {

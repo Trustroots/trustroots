@@ -1,39 +1,59 @@
-const should = require('should');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const express = require('./../../../../config/lib/express.mjs');
-const config = require('./../../../../config/config.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User');
+import type {
+  UserModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+
+const should: typeof import('should') = require('should');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const express: typeof import('../../../../config/lib/express.mjs').default = require('./../../../../config/lib/express.mjs');
+const config: typeof import('../../../../config/config.mjs').default & {
+  illegalStrings: string[];
+} = require('./../../../../config/config.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+const User = mongoose.model<UserRecord, UserModel>('User');
 
 /**
  * Globals
  */
-let app;
-let agent;
-let user;
-function validationFailure(object, error, message, done) {
+let app: Awaited<ReturnType<typeof express.init>>;
+let agent: ReturnType<typeof request.agent>;
+let user:
+  | import('../../../../testutils/server/model-contracts.mts').UserModelDocument
+  | undefined;
+interface ValidationInput {
+  username?: unknown;
+}
+interface ValidationResult {
+  body: { valid: boolean; error?: string; message?: string };
+}
+function validationFailure(
+  object: ValidationInput,
+  error: string,
+  message: string,
+  done: Mocha.Done,
+): void {
   agent
     .post('/api/auth/signup/validate')
     .send(object)
     .expect(200)
-    .end(function (validateErr, validateRes) {
+    .end(function (validateErr: Error | null, validateRes: ValidationResult) {
       // Handle error
       if (validateErr) {
         return done(validateErr);
       }
       validateRes.body.valid.should.be.false();
-      validateRes.body.error.should.equal(error);
-      validateRes.body.message.should.equal(message);
+      should(validateRes.body.error).equal(error);
+      should(validateRes.body.message).equal(message);
       done();
     });
 }
-function validationSuccess(object, done) {
+function validationSuccess(object: ValidationInput, done: Mocha.Done): void {
   agent
     .post('/api/auth/signup/validate')
     .send(object)
     .expect(200)
-    .end(function (validateErr, validateRes) {
+    .end(function (validateErr: Error | null, validateRes: ValidationResult) {
       // Handle error
       if (validateErr) {
         return done(validateErr);

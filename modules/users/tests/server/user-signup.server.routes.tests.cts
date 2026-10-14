@@ -1,22 +1,126 @@
-const should = require('should');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const express = require('./../../../../config/lib/express.mjs');
-const testutils = require('../../../../testutils/server/server.testutil');
-const dataUtils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User');
+import type { CapturedJob } from '../../../../testutils/server/server.testutil.mts';
+import type {
+  UserModel,
+  UserModelDocument,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+
+const should: typeof import('should') = require('should');
+const mongoose: typeof import('mongoose') = require('mongoose');
+interface ApiResponseBody {
+  _id?: string;
+  username?: string;
+  email?: string;
+  emailTemporary?: string;
+  provider?: string;
+  public?: boolean;
+  created?: string;
+  updated?: string;
+  acquisitionStory?: string;
+  emailToken?: string;
+  password?: string;
+  salt?: string;
+  roles?: string[];
+  message?: string;
+  profileMadePublic?: boolean;
+  user?: {
+    email: string;
+    username: string;
+    public: boolean;
+    emailTemporary: string;
+    emailToken?: string;
+    password?: string;
+    salt?: string;
+  };
+}
+
+interface TestResponse {
+  body: ApiResponseBody;
+  text: string;
+  redirect: boolean;
+}
+
+interface TestRequest extends PromiseLike<TestResponse> {
+  send(body: unknown): TestRequest;
+  set(name: string, value: string): TestRequest;
+  expect(status: number | string, expected?: string | RegExp): TestRequest;
+  end(callback: (error: Error | null, response: TestResponse) => void): void;
+}
+
+interface TestAgent {
+  get(path: string): TestRequest;
+  post(path: string): TestRequest;
+}
+
+const request: { agent(app: unknown): TestAgent } = require('supertest');
+const express: typeof import('../../../../config/lib/express.mjs').default = require('./../../../../config/lib/express.mjs');
+const testutils: typeof import('../../../../testutils/server/server.testutil.mts') = require('../../../../testutils/server/server.testutil');
+const dataUtils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+
+type UserDocument = UserModelDocument;
+const User = mongoose.model<UserRecord, UserModel>('User');
 
 /**
  * Globals
  */
-let app;
-let agent;
-let confirmedCredentials;
-let confirmedUser;
-let _confirmedUser;
-let unConfirmedCredentials;
-let unConfirmedUser;
-let _unConfirmedUser;
+let app: Awaited<ReturnType<typeof express.init>>;
+let agent: ReturnType<typeof request.agent>;
+let confirmedCredentials: { username: string; password: string };
+let confirmedUser: UserDocument;
+let _confirmedUser: Partial<UserRecord> &
+  Pick<
+    UserRecord,
+    'firstName' | 'lastName' | 'email' | 'username' | 'password' | 'provider'
+  >;
+let unConfirmedCredentials: { username: string; password: string };
+let unConfirmedUser: UserDocument;
+let _unConfirmedUser: Partial<UserRecord> &
+  Pick<
+    UserRecord,
+    'firstName' | 'lastName' | 'email' | 'username' | 'password' | 'provider'
+  >;
+
+interface EmailJobData {
+  subject: string;
+  text: string;
+  to: { address: string };
+}
+
+function emailJobData(job: CapturedJob): EmailJobData {
+  const { data } = job;
+  if (
+    typeof data !== 'object' ||
+    data === null ||
+    !('subject' in data) ||
+    typeof data.subject !== 'string' ||
+    !('text' in data) ||
+    typeof data.text !== 'string' ||
+    !('to' in data) ||
+    typeof data.to !== 'object' ||
+    data.to === null ||
+    !('address' in data.to) ||
+    typeof data.to.address !== 'string'
+  ) {
+    throw new Error('Expected a captured email job');
+  }
+  return {
+    subject: data.subject,
+    text: data.text,
+    to: { address: data.to.address },
+  };
+}
+
+function assertPresent<T>(value: T | null | undefined): asserts value is T {
+  should.exist(value);
+  if (value === null || value === undefined) {
+    throw new Error('Expected a value to be present');
+  }
+}
+
+function present<T>(value: T | null | undefined): T {
+  assertPresent(value);
+  return value;
+}
 
 /**
  * User routes tests
@@ -95,7 +199,7 @@ describe('User signup and authentication CRUD tests', function () {
         password: 'password123',
       })
       .expect(400);
-    response.body.message.should.equal(
+    present(response.body.message).should.equal(
       'Use 3–34 letters and numbers, including at least one letter.',
     );
     should.not.exist(
@@ -116,7 +220,7 @@ describe('User signup and authentication CRUD tests', function () {
           password: 'password123',
         })
         .expect(200);
-      response.body.username.should.equal(username.toLowerCase());
+      present(response.body.username).should.equal(username.toLowerCase());
     });
   }
   it('initialises only the supported signup fields', async function () {
@@ -142,17 +246,18 @@ describe('User signup and authentication CRUD tests', function () {
       .send(payload)
       .expect(200);
     const stored = await User.findOne({ username: payload.username });
-    stored.authVersion.should.equal(0);
-    stored.roles.should.deepEqual(['user']);
-    stored.newsletter.should.equal(true);
-    stored.locale.should.equal('en');
-    stored.acquisitionStory.should.equal(payload.acquisitionStory);
-    stored.avatarUploaded.should.equal(false);
-    stored.blocked.should.have.length(0);
+    assertPresent(stored);
+    present(stored.authVersion).should.equal(0);
+    present(stored.roles).should.deepEqual(['user']);
+    present(stored.newsletter).should.equal(true);
+    present(stored.locale).should.equal('en');
+    present(stored.acquisitionStory).should.equal(payload.acquisitionStory);
+    present(stored.avatarUploaded).should.equal(false);
+    present(stored.blocked).should.have.length(0);
     should.not.exist(stored.avatarVersion);
     should.not.exist(stored.resetPasswordToken);
     should.not.exist(stored.additionalProvidersData?.github);
-    response.body.username.should.equal(payload.username);
+    present(response.body.username).should.equal(payload.username);
   });
 
   it('rejects structured required fields and malformed signup preferences', async function () {
@@ -174,14 +279,16 @@ describe('User signup and authentication CRUD tests', function () {
         .post('/api/auth/signup')
         .send({ ...payload, [field]: { value: null } })
         .expect(400);
-      response.body.message.should.equal('Please provide required fields.');
+      present(response.body.message).should.equal(
+        'Please provide required fields.',
+      );
     }
     for (const field of ['locale', 'acquisitionStory', 'newsletter']) {
       const response = await agent
         .post('/api/auth/signup')
         .send({ ...payload, [field]: { value: null } })
         .expect(400);
-      response.body.message.should.equal(
+      present(response.body.message).should.equal(
         'Please provide valid signup preferences.',
       );
     }
@@ -200,15 +307,19 @@ describe('User signup and authentication CRUD tests', function () {
         if (signupErr) {
           return done(signupErr);
         }
-        signupRes.body.username.should.equal(
+        present(signupRes.body.username).should.equal(
           _unConfirmedUser.username.toLowerCase(),
         );
-        signupRes.body.username.should.not.equal(_unConfirmedUser.username);
-        signupRes.body.email.should.equal(_unConfirmedUser.email);
-        signupRes.body.emailTemporary.should.equal(_unConfirmedUser.email);
-        signupRes.body.provider.should.equal('local');
-        signupRes.body.public.should.equal(false);
-        signupRes.body.created.should.not.be.empty();
+        present(signupRes.body.username).should.not.equal(
+          _unConfirmedUser.username,
+        );
+        present(signupRes.body.email).should.equal(_unConfirmedUser.email);
+        present(signupRes.body.emailTemporary).should.equal(
+          _unConfirmedUser.email,
+        );
+        present(signupRes.body.provider).should.equal('local');
+        present(signupRes.body.public).should.equal(false);
+        present(signupRes.body.created).should.not.be.empty();
         should.not.exist(signupRes.body.acquisitionStory);
         should.not.exist(signupRes.body.updated);
         // Sensitive information should be not sent to the client
@@ -218,15 +329,19 @@ describe('User signup and authentication CRUD tests', function () {
         should.not.exist(signupRes.body.roles);
         jobs.length.should.equal(1);
         jobs[0].type.should.equal('send email');
-        jobs[0].data.subject.should.equal('Confirm Email');
-        jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
-        User.findById(signupRes.body._id, function (err, savedUser) {
-          if (err) return done(err);
-          savedUser.acquisitionStory.should.equal(
-            _unConfirmedUser.acquisitionStory,
-          );
-          done();
-        });
+        emailJobData(jobs[0]).subject.should.equal('Confirm Email');
+        emailJobData(jobs[0]).to.address.should.equal(_unConfirmedUser.email);
+        User.findById(
+          present(signupRes.body._id),
+          function (err: Error | null, savedUser: UserDocument | null) {
+            if (err) return done(err);
+            assertPresent(savedUser);
+            present(savedUser.acquisitionStory).should.equal(
+              _unConfirmedUser.acquisitionStory,
+            );
+            done();
+          },
+        );
       });
   });
   it('should be able to register a new user but not inject additional roles', function (done) {
@@ -240,12 +355,18 @@ describe('User signup and authentication CRUD tests', function () {
       .end(function (err, signupRes) {
         should.not.exist(err);
         should.not.exist(signupRes.body.roles);
-        User.findById(signupRes.body._id, function (err, userFindRes) {
-          should.not.exist(err);
-          userFindRes.roles.should.be.instanceof(Array).and.have.lengthOf(1);
-          userFindRes.roles.indexOf('user').should.equal(0);
-          done();
-        });
+        User.findById(
+          present(signupRes.body._id),
+          function (err: Error | null, userFindRes: UserDocument | null) {
+            should.not.exist(err);
+            assertPresent(userFindRes);
+            present(userFindRes.roles)
+              .should.be.instanceof(Array)
+              .and.have.lengthOf(1);
+            present(userFindRes.roles).indexOf('user').should.equal(0);
+            done();
+          },
+        );
       });
   });
   it('should be able to register a new user and confirm email with token and user should become public', function (done) {
@@ -260,31 +381,36 @@ describe('User signup and authentication CRUD tests', function () {
         if (signupErr) {
           return done(signupErr);
         }
-        signupRes.body.public.should.equal(false);
+        present(signupRes.body.public).should.equal(false);
         should.not.exist(signupRes.body.emailToken);
         should.not.exist(signupRes.body.password);
         should.not.exist(signupRes.body.salt);
-        signupRes.body.emailTemporary.should.equal(_unConfirmedUser.email);
+        present(signupRes.body.emailTemporary).should.equal(
+          _unConfirmedUser.email,
+        );
         jobs.length.should.equal(1);
         jobs[0].type.should.equal('send email');
-        jobs[0].data.subject.should.equal('Confirm Email');
-        jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
+        emailJobData(jobs[0]).subject.should.equal('Confirm Email');
+        emailJobData(jobs[0]).to.address.should.equal(_unConfirmedUser.email);
         User.findOne(
           {
             username: _unConfirmedUser.username.toLowerCase(),
           },
-          function (err, userRes1) {
+          function (err: Error | null, userRes1: UserDocument | null) {
             if (err) {
               return done(err);
             }
-            userRes1.public.should.equal(false);
+            assertPresent(userRes1);
+            present(userRes1.public).should.equal(false);
             userRes1.email.should.not.be.empty();
-            userRes1.emailToken.should.not.be.empty();
+            present(userRes1.emailToken).should.not.be.empty();
 
-            userRes1.emailToken.should.startWith('sha256:');
-            const rawToken = jobs[0].data.text.match(
+            present(userRes1.emailToken).should.startWith('sha256:');
+            const tokenMatch = emailJobData(jobs[0]).text.match(
               /\/confirm-email\/([a-f0-9]+)/,
-            )[1];
+            );
+            if (!tokenMatch) throw new Error('Expected a confirmation token');
+            const rawToken = tokenMatch[1];
             userRes1.emailToken = rawToken;
             // GET should give us redirect
             agent
@@ -311,16 +437,17 @@ describe('User signup and authentication CRUD tests', function () {
                     jobs[0].type.should.equal('send email');
 
                     // User should now be public
-                    confirmEmailPostRes.body.profileMadePublic.should.equal(
-                      true,
-                    );
-                    confirmEmailPostRes.body.user.public.should.equal(true);
-                    confirmEmailPostRes.body.user.emailTemporary.should.be.empty();
+                    present(
+                      confirmEmailPostRes.body.profileMadePublic,
+                    ).should.equal(true);
+                    const responseUser = present(confirmEmailPostRes.body.user);
+                    present(responseUser.public).should.equal(true);
+                    present(responseUser.emailTemporary).should.be.empty();
 
                     // Sensitive information should be not sent to the client
-                    should.not.exist(confirmEmailPostRes.body.user.emailToken);
-                    should.not.exist(confirmEmailPostRes.body.user.password);
-                    should.not.exist(confirmEmailPostRes.body.user.salt);
+                    should.not.exist(responseUser.emailToken);
+                    should.not.exist(responseUser.password);
+                    should.not.exist(responseUser.salt);
                     return done();
                   });
               });
@@ -340,22 +467,25 @@ describe('User signup and authentication CRUD tests', function () {
         if (signupErr) {
           return done(signupErr);
         }
-        signupRes.body.public.should.equal(false);
+        present(signupRes.body.public).should.equal(false);
         should.not.exist(signupRes.body.emailToken);
         should.not.exist(signupRes.body.password);
         should.not.exist(signupRes.body.salt);
-        signupRes.body.emailTemporary.should.equal(_unConfirmedUser.email);
+        present(signupRes.body.emailTemporary).should.equal(
+          _unConfirmedUser.email,
+        );
         User.findOne(
           {
             username: _unConfirmedUser.username.toLowerCase(),
           },
-          function (err, userRes1) {
+          function (err: Error | null, userRes1: UserDocument | null) {
             if (err) {
               return done(err);
             }
-            userRes1.public.should.equal(false);
+            assertPresent(userRes1);
+            present(userRes1.public).should.equal(false);
             userRes1.email.should.not.be.empty();
-            userRes1.emailToken.should.not.be.empty();
+            present(userRes1.emailToken).should.not.be.empty();
 
             // GET should give us redirect
             agent
@@ -378,7 +508,7 @@ describe('User signup and authentication CRUD tests', function () {
                     if (confirmEmailPostErr) {
                       return done(confirmEmailPostErr);
                     }
-                    confirmEmailPostRes.body.message.should.equal(
+                    present(confirmEmailPostRes.body.message).should.equal(
                       'Email confirm token is invalid or has expired.',
                     );
                     return done();
@@ -460,7 +590,9 @@ describe('User signup and authentication CRUD tests', function () {
         if (signinErr) {
           return done(signinErr);
         }
-        signinRes.body.message.should.equal('Unknown user or invalid password');
+        present(signinRes.body.message).should.equal(
+          'Unknown user or invalid password',
+        );
         done();
       });
   });
@@ -476,7 +608,9 @@ describe('User signup and authentication CRUD tests', function () {
         if (signinErr) {
           return done(signinErr);
         }
-        signinRes.body.message.should.equal('Unknown user or invalid password');
+        present(signinRes.body.message).should.equal(
+          'Unknown user or invalid password',
+        );
         done();
       });
   });
@@ -493,7 +627,7 @@ describe('User signup and authentication CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-          signinRes.body.message.should.equal(
+          present(signinRes.body.message).should.equal(
             'Your account has been suspended.',
           );
           return done();
@@ -529,7 +663,9 @@ describe('User signup and authentication CRUD tests', function () {
               if (err) {
                 return done(err);
               }
-              res.body.message.should.equal('Your account has been suspended.');
+              present(res.body.message).should.equal(
+                'Your account has been suspended.',
+              );
 
               // Load some json from API again,
               // get normal 403 forbidden error since session is now destroyed
@@ -541,7 +677,7 @@ describe('User signup and authentication CRUD tests', function () {
                   if (err) {
                     return done(err);
                   }
-                  res.body.message.should.equal('Forbidden.');
+                  present(res.body.message).should.equal('Forbidden.');
                   return done();
                 });
             });
@@ -607,7 +743,7 @@ describe('User signup and authentication CRUD tests', function () {
         .end(function (err, signinRes) {
           if (err) return done(err);
           // Sanity check they are confirmed
-          signinRes.body.public.should.equal(true);
+          present(signinRes.body.public).should.equal(true);
           done();
         });
     });
@@ -618,7 +754,7 @@ describe('User signup and authentication CRUD tests', function () {
         .expect(400)
         .end(function (err, resendRes) {
           if (err) return done(err);
-          resendRes.body.message.should.equal('Already confirmed.');
+          present(resendRes.body.message).should.equal('Already confirmed.');
           done();
         });
     });
@@ -634,11 +770,13 @@ describe('User signup and authentication CRUD tests', function () {
           .expect(200)
           .end(function (err, resendRes) {
             if (err) return done(err);
-            resendRes.body.message.should.equal('Sent confirmation email.');
+            present(resendRes.body.message).should.equal(
+              'Sent confirmation email.',
+            );
             jobs.length.should.equal(1);
             jobs[0].type.should.equal('send email');
-            jobs[0].data.subject.should.equal('Confirm email change');
-            jobs[0].data.to.address.should.equal(
+            emailJobData(jobs[0]).subject.should.equal('Confirm email change');
+            emailJobData(jobs[0]).to.address.should.equal(
               'confirmed-test-changed@example.org',
             );
             done();
@@ -655,7 +793,7 @@ describe('User signup and authentication CRUD tests', function () {
         .end(function (err, signinRes) {
           if (err) return done(err);
           // Sanity check they are unconfirmed
-          signinRes.body.public.should.equal(false);
+          present(signinRes.body.public).should.equal(false);
           done();
         });
     });
@@ -666,22 +804,24 @@ describe('User signup and authentication CRUD tests', function () {
         .expect(200)
         .end(function (err, resendRes) {
           if (err) return done(err);
-          resendRes.body.message.should.equal('Sent confirmation email.');
+          present(resendRes.body.message).should.equal(
+            'Sent confirmation email.',
+          );
           User.findOne(
             {
               username: _unConfirmedUser.username.toLowerCase(),
             },
             'emailToken',
-            function (err, userRes) {
+            function (err: Error | null, userRes: UserDocument | null) {
               if (err) return done(err);
-              should.exist(userRes);
-              should.exist(userRes.emailToken);
+              assertPresent(userRes);
+              assertPresent(userRes.emailToken);
               // Make sure it has changed from the original value
               userRes.emailToken.should.not.equal(_unConfirmedUser.emailToken);
               jobs.length.should.equal(1);
               jobs[0].type.should.equal('send email');
-              jobs[0].data.subject.should.equal('Confirm Email');
-              jobs[0].data.to.address.should.equal(
+              emailJobData(jobs[0]).subject.should.equal('Confirm Email');
+              emailJobData(jobs[0]).to.address.should.equal(
                 _unConfirmedUser.emailTemporary,
               );
               done();

@@ -1,15 +1,20 @@
-const should = require('should');
-const sinon = require('sinon');
-const influxService = require('../../../stats/server/services/influx.server.service.mts');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const express = require('../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+import type {
+  UserModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
 
-const User = mongoose.model('User');
+const should: typeof import('should') = require('should');
+const sinon: typeof import('sinon') = require('sinon');
+const influxService: typeof import('../../../stats/server/services/influx.server.service.mts') = require('../../../stats/server/services/influx.server.service.mts');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const express: typeof import('../../../../config/lib/express.mjs').default = require('../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+
+const User = mongoose.model<UserRecord, UserModel>('User');
 
 describe('Sign-in session confirmation', function () {
-  let app;
+  let app: Awaited<ReturnType<typeof express.init>>;
 
   before(async function () {
     app = await express.init(mongoose.connection);
