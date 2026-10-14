@@ -9,8 +9,10 @@ requests have to go through Vite. Set `PORT` for Vite's browser port and
 Vite server listens on the same host as Webpack.
 
 Both builds share client aliases from `config/client/aliases.cjs` and the
-main stylesheet from `config/client/styles/main.less`. ESLint resolves source
-imports with the TypeScript resolver, independently of either bundler.
+main stylesheet from `config/client/styles/main.less`. Webpack and ESLint
+share that module's `.js` extension order. ESLint also keeps the TypeScript
+resolver's other extension mappings. Vite resolves an explicit `.js` import
+to the `.js` file, then `.ts`, then `.tsx`.
 
 Vite uses Less 4 through its `less` peer dependency. The default Webpack
 configuration explicitly uses `less-webpack`, pinned to the existing Less
@@ -48,8 +50,10 @@ styles from the Vite browser origin. Both smoke commands run in CI. Dependency
 scanning treats legacy `.js` components as JSX and injects the browser
 `process` shim into pre-bundled dependencies such as `parse-link-header`.
 
-`pnpm test:vite:rtl` checks the RTL asset plugin without a browser. Vite
-development does not emit the RTL stylesheet; Webpack does not either.
+`pnpm test:vite:rtl` checks the RTL asset plugin without a browser and includes
+the `pnpm test:client:resolution` checks for source aliases, package exports
+and `.js` imports of TypeScript files. Vite development does not emit the RTL
+stylesheet; Webpack does not either.
 
 Local and CI end-to-end runs build this Vite client with `pnpm run build:e2e`.
 Set `TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=true` to use the Webpack development

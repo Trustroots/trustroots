@@ -102,6 +102,7 @@
     "vite:server": "NODE_ENV=development vite --config vite.config.mjs",
     "build:vite": "NODE_ENV=production vite build --config vite.config.mjs",
     "start:vite": "pnpm run start",
+    "test:client:resolution": "node --test config/client/import-resolution.test.mjs",
     "test:vite:rtl": "node --test config/vite/rtl-stylesheet.test.mts config/vite/dev-server-scripts.test.mts config/client/import-resolution.test.mjs",
     "test:vite:production": "NODE_ENV=production TRUSTROOTS_SKIP_LOCAL_CONFIG=true node ./scripts/vite/smoke-shell.cts",
     "test:vite:development": "NODE_ENV=development TRUSTROOTS_SKIP_LOCAL_CONFIG=true node ./scripts/vite/smoke-shell.cts"

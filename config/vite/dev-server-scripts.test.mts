@@ -19,6 +19,17 @@ test('the default development server is Vite', () => {
   assert.equal(scripts['start:vite'], 'pnpm run start');
 });
 
+test('client import resolution stays in the Vite configuration check', () => {
+  assert.match(
+    scripts['test:client:resolution'],
+    /config\/client\/import-resolution\.test\.mjs/,
+  );
+  assert.match(
+    scripts['test:vite:rtl'],
+    /config\/client\/import-resolution\.test\.mjs/,
+  );
+});
+
 test('Webpack remains an explicit development server and production fallback', () => {
   assert.match(scripts['start:webpack'], /pnpm:webpack:server/);
   assert.doesNotMatch(scripts['start:webpack'], /VITE/);

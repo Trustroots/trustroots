@@ -21,6 +21,7 @@ const {
   aliases,
   commonJsAliases,
   browserFallbacks,
+  jsExtensionAlias,
 } = require('../client/aliases.cjs');
 
 const config = require('./../config.mjs');
@@ -89,7 +90,7 @@ module.exports = webpackMerge.merge(shims, {
     // Preserve TypeScript resolution for the Webpack fallback.
     extensions: ['.ts', '.tsx', '.js', '.json', '.wasm'],
     // Preserve explicit JavaScript imports while client modules move to TypeScript.
-    extensionAlias: { '.js': ['.js', '.ts', '.tsx'] },
+    extensionAlias: { '.js': jsExtensionAlias },
     fallback: browserFallbacks,
     alias: {
       ...aliases,

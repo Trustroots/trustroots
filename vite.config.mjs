@@ -47,6 +47,9 @@ const legacyLessImports = {
           bootstrap: resolve(root, 'node_modules/bootstrap'),
           'mapbox-gl': resolve(root, 'node_modules/mapbox-gl'),
         }[alias];
+        if (!base) {
+          throw new Error(`No stylesheet directory for "~${alias}/".`);
+        }
         const resolved = this.tryAppendExtension(
           resolve(base, path),
           options.ext,
@@ -71,7 +74,13 @@ const legacyCssImports = {
     const transformed = code.replace(
       /@import ['"]~([^/'"]+)\/([^'"]+\.css)['"];/g,
       (_, alias, path) => {
-        const base = aliases[alias] || resolve(root, 'node_modules', alias);
+        // `modules` is the source tree. Other `~name/*.css` imports are npm
+        // packages. `less` is both a source alias and a package, so it must
+        // not be taken from the shared alias map here.
+        const base =
+          alias === 'modules'
+            ? aliases.modules
+            : resolve(root, 'node_modules', alias);
         const filename = resolve(base, path);
         return `@import (inline) '${filename}';`;
       },
