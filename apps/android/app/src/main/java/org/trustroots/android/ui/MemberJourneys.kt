@@ -157,7 +157,7 @@ internal fun MemberSearchScreen(
             ) {
                 Icon(Icons.Default.People, null, modifier = Modifier.size(72.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
                 Text("Find a member", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
-                Text("Search using at least 3 letters of their name or username.", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
+                Text("Search name or username", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
                 if (onSwitchToMap != null) {
                     HorizontalDivider(Modifier.padding(vertical = 24.dp))
                     TextButton(onClick = onSwitchToMap) {

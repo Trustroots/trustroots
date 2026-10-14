@@ -1,6 +1,5 @@
 package org.trustroots.android.ui
 
-import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,13 +30,10 @@ class MemberNavigationBarJourneyTest {
                 destination = destination,
                 unreadMessageCount = 2,
                 onNavigate = { destination = it },
-            ) {
-                Text("Community navigation")
-            }
+            ) {}
         }
 
         compose.onNodeWithTag("navigation-circles").assertIsSelected()
-        captureUsabilityScreenshot(compose, "android_navigation")
         compose.onNodeWithTag("navigation-messages").assertIsDisplayed()
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "2 unread conversations"))
         compose.onNodeWithText("Profile").assertIsDisplayed()

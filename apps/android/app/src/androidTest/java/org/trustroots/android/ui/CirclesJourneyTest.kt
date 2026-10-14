@@ -63,7 +63,7 @@ class CirclesJourneyTest {
             }
         }
         compose.setContent {
-            NativeTestAppFrame(Destination.Circles) {
+            NativeTestAppFrame(Destination.Circles, unreadMessageCount = 2) {
                 CirclesScreen(
                     api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
                     session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
@@ -95,6 +95,7 @@ class CirclesJourneyTest {
         }
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithText("Discover circles").assertIsDisplayed()
+        captureUsabilityScreenshot(compose, "android_navigation")
         responder.join(1_000)
     }
 }
