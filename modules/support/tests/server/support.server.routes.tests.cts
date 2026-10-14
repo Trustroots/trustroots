@@ -1,17 +1,42 @@
-const mongoose = require('mongoose');
-const request = require('supertest');
+import type { Application } from 'express';
+import type { UserDocument } from '../../../../testutils/server/model-contracts.mts';
+import type { CapturedJob } from '../../../../testutils/server/server.testutil.mts';
+
+const mongoose: typeof import('mongoose') = require('mongoose');
+const request: typeof import('supertest') = require('supertest');
 const should = require('should');
-const config = require('./../../../../config/config.mjs');
-const express = require('./../../../../config/lib/express.mjs');
-const testutils = require('../../../../testutils/server/server.testutil');
-const utils = require('../../../../testutils/server/data.server.testutil');
+const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const express: typeof import('../../../../config/lib/express.mjs').default = require('./../../../../config/lib/express.mjs');
+const testutils: typeof import('../../../../testutils/server/server.testutil.mts') = require('../../../../testutils/server/server.testutil');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+
+interface EmailJob extends CapturedJob {
+  type: 'send email';
+  data: {
+    to: { address: string };
+    subject: string;
+    text: string;
+  };
+}
+
+function isEmailJob(job: CapturedJob): job is EmailJob {
+  if (job.type !== 'send email' || typeof job.data !== 'object' || !job.data) {
+    return false;
+  }
+  const data = job.data as Partial<EmailJob['data']>;
+  return (
+    typeof data.to?.address === 'string' &&
+    typeof data.subject === 'string' &&
+    typeof data.text === 'string'
+  );
+}
 
 /**
  * Support routes tests
  */
 describe('Support CRUD tests', () => {
-  let app;
-  let agent;
+  let app: Application;
+  let agent: ReturnType<typeof request.agent>;
 
   before(async function () {
     app = await express.init(mongoose.connection);
@@ -27,8 +52,10 @@ describe('Support CRUD tests', () => {
     public: false,
   });
   const _users = [..._usersPublic, ..._usersNonPublic];
-  let users;
-  const assertSendingSupportMessage = async (supportRequest = {}) => {
+  let users: UserDocument[];
+  const assertSendingSupportMessage = async (
+    supportRequest: Record<string, unknown> = {},
+  ): Promise<EmailJob> => {
     const { body } = await agent
       .post('/api/support')
       .send({
@@ -39,8 +66,9 @@ describe('Support CRUD tests', () => {
       })
       .expect(200);
     body.message.should.equal('Support request sent.');
-    const emailJobs = jobs.filter(job => job.type === 'send email');
+    const emailJobs = jobs.filter(isEmailJob);
     const [job] = emailJobs;
+    if (!job) throw new Error('Expected a captured support message email job');
     should(emailJobs.length).equal(1);
     should(job.data.to.address).equal(config.supportEmail);
     should(job.data.text).containEql('Trustroots rocks!');
@@ -71,7 +99,7 @@ describe('Support CRUD tests', () => {
         })
         .expect(400);
       (await mongoose.model('SupportRequest').countDocuments()).should.equal(0);
-      jobs.filter(job => job.type === 'send email').length.should.equal(0);
+      jobs.filter(isEmailJob).length.should.equal(0);
     });
     it('should be able to send support message', async () => {
       const job = await assertSendingSupportMessage();

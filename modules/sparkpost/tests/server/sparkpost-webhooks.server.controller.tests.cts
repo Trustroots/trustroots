@@ -1,12 +1,60 @@
 // test whether the daily statistics job reaches influxdb via Stats api
 
-const should = require('should');
-const influx = require('influx');
-const sinon = require('sinon');
-const config = require('./../../../../config/config.mjs');
-const sparkpostWebhooks = require('./../../server/controllers/sparkpost-webhooks.server.controller.mts');
+import type { NextFunction, Request, Response } from 'express';
+import type { SinonStub } from 'sinon';
+
+const should: typeof import('should') = require('should');
+const influx: typeof import('influx') = require('influx');
+const sinon: typeof import('sinon') = require('sinon');
+const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const sparkpostWebhooks: typeof import('../../server/controllers/sparkpost-webhooks.server.controller.mts').default = require('./../../server/controllers/sparkpost-webhooks.server.controller.mts');
+
+interface SparkpostEvent {
+  msys?: Record<string, Record<string, unknown>>;
+}
+
+interface MockResponse {
+  statusCode: number;
+  headers: Record<string, string>;
+  body: Record<string, unknown> | unknown[];
+  ended: boolean;
+  set(key: string, value: string): MockResponse;
+  status(code: number): MockResponse;
+  send(body: Record<string, unknown> | unknown[]): MockResponse;
+  end(): MockResponse;
+}
+
+interface SuccessfulBatchResponse {
+  statusCode: number;
+  status(code: number): SuccessfulBatchResponse;
+  end(): void;
+}
+
+function receiveBatch(
+  body: unknown,
+  response: MockResponse | SuccessfulBatchResponse,
+): void {
+  sparkpostWebhooks.receiveBatch(
+    { body } as unknown as Request,
+    response as unknown as Response,
+  );
+}
+
+function basicAuthenticate(
+  headers: Request['headers'],
+  response: MockResponse,
+  next: NextFunction,
+): void {
+  sparkpostWebhooks.basicAuthenticate(
+    { headers } as Request,
+    response as unknown as Response,
+    next,
+  );
+}
 
 describe('Sparkpost Webhooks - Integration Test', function () {
+  let writeMeasurementStub: SinonStub;
+
   // restoring the stubs
   afterEach(function () {
     // restore the stubbed services
@@ -16,13 +64,16 @@ describe('Sparkpost Webhooks - Integration Test', function () {
   // stub the influx endpoint
   beforeEach(function () {
     // stub the influx endpoint(s)
-    sinon.stub(influx.InfluxDB.prototype, 'writeMeasurement');
+    writeMeasurementStub = sinon.stub(
+      influx.InfluxDB.prototype,
+      'writeMeasurement',
+    );
 
     // and writeMeasurement returns a Promise
-    influx.InfluxDB.prototype.writeMeasurement.returns(
-      new Promise(function (resolve) {
-        process.nextTick(resolve());
-      }),
+    writeMeasurementStub.returns(
+      new Promise<void>((resolve: () => void) =>
+        process.nextTick(resolve() as unknown as () => void),
+      ),
     );
 
     // provide config options for influxdb
@@ -34,7 +85,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
     });
   });
 
-  const testEvent = {
+  const testEvent: SparkpostEvent = {
     msys: {
       message_event: {
         type: 'click',
@@ -47,11 +98,11 @@ describe('Sparkpost Webhooks - Integration Test', function () {
     },
   };
 
-  function createResponse() {
+  function createResponse(): MockResponse {
     return {
       statusCode: 200,
       headers: {},
-      body: null,
+      body: {},
       ended: false,
       set(key, value) {
         this.headers[key] = value;
@@ -67,11 +118,12 @@ describe('Sparkpost Webhooks - Integration Test', function () {
       },
       end() {
         this.ended = true;
+        return this;
       },
     };
   }
 
-  function basicAuthHeader(username, password) {
+  function basicAuthHeader(username: string, password: string) {
     return `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
   }
 
@@ -84,14 +136,14 @@ describe('Sparkpost Webhooks - Integration Test', function () {
     it('receiveBatch rejects non-array payloads', function () {
       const res = createResponse();
 
-      sparkpostWebhooks.receiveBatch({ body: {} }, res);
+      receiveBatch({}, res);
       res.statusCode.should.equal(400);
     });
 
     it('receiveBatch rejects empty batches', function () {
       const res = createResponse();
 
-      sparkpostWebhooks.receiveBatch({ body: [] }, res);
+      receiveBatch([], res);
       res.statusCode.should.equal(400);
       res.body.should.have.property('message');
     });
@@ -99,10 +151,13 @@ describe('Sparkpost Webhooks - Integration Test', function () {
     it('receiveBatch accepts a valid batch', function (done) {
       const processStub = sinon
         .stub(sparkpostWebhooks, 'processAndSendMetrics')
-        .callsFake((event, cb) => cb());
+        .callsFake(
+          (_event: SparkpostEvent, callback: (error?: Error | null) => void) =>
+            callback(),
+        );
       const res = {
         statusCode: 200,
-        status(code) {
+        status(code: number) {
           this.statusCode = code;
           return this;
         },
@@ -113,31 +168,37 @@ describe('Sparkpost Webhooks - Integration Test', function () {
         },
       };
 
-      sparkpostWebhooks.receiveBatch({ body: [testEvent] }, res);
+      receiveBatch([testEvent], res);
     });
 
     it('processAndSendMetrics skips empty msys payloads', function (done) {
-      sparkpostWebhooks.processAndSendMetrics({ msys: {} }, function (err) {
-        should.not.exist(err);
-        sinon.assert.notCalled(influx.InfluxDB.prototype.writeMeasurement);
-        done();
-      });
+      sparkpostWebhooks.processAndSendMetrics(
+        { msys: {} },
+        function (err: Error | null | undefined) {
+          should.not.exist(err);
+          sinon.assert.notCalled(writeMeasurementStub);
+          done();
+        },
+      );
     });
 
     it('processAndSendMetrics skips events without msys payloads', function (done) {
-      sparkpostWebhooks.processAndSendMetrics({}, function (err) {
-        should.not.exist(err);
-        sinon.assert.notCalled(influx.InfluxDB.prototype.writeMeasurement);
-        done();
-      });
+      sparkpostWebhooks.processAndSendMetrics(
+        {},
+        function (err: Error | null | undefined) {
+          should.not.exist(err);
+          sinon.assert.notCalled(writeMeasurementStub);
+          done();
+        },
+      );
     });
 
     it('processAndSendMetrics skips invalid event categories', function (done) {
       sparkpostWebhooks.processAndSendMetrics(
         { msys: { unknown: { type: 'click' } } },
-        function (err) {
+        function (err: Error | null | undefined) {
           should.not.exist(err);
-          sinon.assert.notCalled(influx.InfluxDB.prototype.writeMeasurement);
+          sinon.assert.notCalled(writeMeasurementStub);
           done();
         },
       );
@@ -146,9 +207,9 @@ describe('Sparkpost Webhooks - Integration Test', function () {
     it('processAndSendMetrics skips invalid event types', function (done) {
       sparkpostWebhooks.processAndSendMetrics(
         { msys: { message_event: { type: 'unknown' } } },
-        function (err) {
+        function (err: Error | null | undefined) {
           should.not.exist(err);
-          sinon.assert.notCalled(influx.InfluxDB.prototype.writeMeasurement);
+          sinon.assert.notCalled(writeMeasurementStub);
           done();
         },
       );
@@ -167,17 +228,13 @@ describe('Sparkpost Webhooks - Integration Test', function () {
             },
           },
         },
-        function (e) {
+        function (e: Error | null | undefined) {
           if (e) return done(e);
 
           try {
-            sinon.assert.callCount(
-              influx.InfluxDB.prototype.writeMeasurement,
-              1,
-            );
+            sinon.assert.callCount(writeMeasurementStub, 1);
 
-            const point =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1][0];
+            const point = writeMeasurementStub.getCall(0).args[1][0];
 
             should(point).have.propertyByPath('fields', 'country').eql('');
             should(point).have.propertyByPath('fields', 'campaignId').eql('');
@@ -201,7 +258,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
       const res = createResponse();
       let nextCalled = false;
 
-      sparkpostWebhooks.basicAuthenticate({ headers: {} }, res, () => {
+      basicAuthenticate({}, res, () => {
         nextCalled = true;
       });
 
@@ -224,7 +281,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
         },
       };
 
-      sparkpostWebhooks.basicAuthenticate(req, res, () => {
+      basicAuthenticate(req.headers, res, () => {
         nextCalled = true;
       });
 
@@ -251,7 +308,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
         },
       };
 
-      sparkpostWebhooks.basicAuthenticate(req, res, () => {
+      basicAuthenticate(req.headers, res, () => {
         nextCalled = true;
       });
 
@@ -274,7 +331,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
         },
       };
 
-      sparkpostWebhooks.basicAuthenticate(req, res, () => {
+      basicAuthenticate(req.headers, res, () => {
         nextCalled = true;
       });
 
@@ -284,38 +341,39 @@ describe('Sparkpost Webhooks - Integration Test', function () {
     });
 
     it('should reach the influxdb with data in correct format', function (done) {
-      sparkpostWebhooks.processAndSendMetrics(testEvent, function (e) {
-        if (e) return done(e);
+      sparkpostWebhooks.processAndSendMetrics(
+        testEvent,
+        function (e: Error | null | undefined) {
+          if (e) return done(e);
 
-        try {
-          // test influx endpoint
-          sinon.assert.callCount(influx.InfluxDB.prototype.writeMeasurement, 1);
+          try {
+            // test influx endpoint
+            sinon.assert.callCount(writeMeasurementStub, 1);
 
-          const measurement =
-            influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-          const points =
-            influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
-          should(points.length).eql(1);
-          const point = points[0];
+            const measurement = writeMeasurementStub.getCall(0).args[0];
+            const points = writeMeasurementStub.getCall(0).args[1];
+            should(points.length).eql(1);
+            const point = points[0];
 
-          should(measurement).eql('transactionalEmailEvent');
-          should(point).have.propertyByPath('fields', 'count').eql(1);
-          should(point).have.propertyByPath('fields', 'country').eql('ABC');
-          should(point)
-            .have.propertyByPath('fields', 'campaignId')
-            .eql('this-is-a-campaign-id');
-          should(point)
-            .have.propertyByPath('tags', 'category')
-            .eql('message_event');
-          should(point).have.propertyByPath('tags', 'type').eql('click');
+            should(measurement).eql('transactionalEmailEvent');
+            should(point).have.propertyByPath('fields', 'count').eql(1);
+            should(point).have.propertyByPath('fields', 'country').eql('ABC');
+            should(point)
+              .have.propertyByPath('fields', 'campaignId')
+              .eql('this-is-a-campaign-id');
+            should(point)
+              .have.propertyByPath('tags', 'category')
+              .eql('message_event');
+            should(point).have.propertyByPath('tags', 'type').eql('click');
 
-          should(point).have.property('timestamp', new Date(1234567890000));
+            should(point).have.property('timestamp', new Date(1234567890000));
 
-          return done();
-        } catch (e) {
-          return done(e);
-        }
-      });
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        },
+      );
     });
   });
 });

@@ -1,17 +1,28 @@
-const request = require('supertest');
-const mongoose = require('mongoose');
-const express = require('./../../../../config/lib/express.mjs');
-const errorService = require('./../../../core/server/services/error.server.service.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+import type { Application } from 'express';
+import type { ServerUserFixture } from '../../../../testutils/common/data.common.testutil.mts';
+
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const express: typeof import('../../../../config/lib/express.mjs').default = require('./../../../../config/lib/express.mjs');
+const errorService: typeof import('../../../core/server/services/error.server.service.mjs').default = require('./../../../core/server/services/error.server.service.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+
+type NewsletterUserFixture = ServerUserFixture & {
+  member?: Array<{ tribe: import('mongoose').Types.ObjectId; since: Date }>;
+  locationLiving?: string;
+  removeProfileToken?: string;
+  removeProfileExpires?: number;
+};
 require('should');
 describe('Admin Newsletter subscribers API tests', () => {
+  let app: Application;
+  let agent: ReturnType<typeof request.agent>;
+
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
   // Get application
-  let app;
-  let agent;
   const circleId = new mongoose.Types.ObjectId('5fbab4f7fed63c7ed73276d3');
   const circleMembership = [
     {
@@ -22,7 +33,7 @@ describe('Admin Newsletter subscribers API tests', () => {
   const _users = utils.generateUsers(6, {
     newsletter: false,
     public: true,
-  });
+  }) as NewsletterUserFixture[];
   _users[0].roles = ['user', 'admin'];
   _users[2].email = 'active@example.com';
   _users[2].firstName = 'Active';
