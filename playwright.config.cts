@@ -1,10 +1,12 @@
-import path from 'node:path';
-import { selectProjects } from './scripts/e2e/groups.mts';
-import {
+import type { PlaywrightTestConfig } from '@playwright/test';
+const path: typeof import('node:path') = require('node:path');
+const {
+  selectProjects,
+}: typeof import('./scripts/e2e/groups.mts') = require('./scripts/e2e/groups.mts');
+const {
   defineConfig,
   devices,
-  type PlaywrightTestConfig,
-} from '@playwright/test';
+}: typeof import('@playwright/test') = require('@playwright/test');
 
 const apiPort = process.env.TRUSTROOTS_E2E_API_PORT || 4301;
 const webPort = process.env.TRUSTROOTS_E2E_WEB_PORT || 4300;
@@ -23,13 +25,10 @@ const baseURL =
     : `http://${applicationUrlHost}:${apiPort}`);
 const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 const seededMemberStorageState = path.join(
-  import.meta.dirname,
+  __dirname,
   'tests/e2e/.auth/seeded-member.json',
 );
-const adminStorageState = path.join(
-  import.meta.dirname,
-  'tests/e2e/.auth/admin.json',
-);
+const adminStorageState = path.join(__dirname, 'tests/e2e/.auth/admin.json');
 const configuredWorkers = Number.parseInt(
   process.env.TRUSTROOTS_E2E_WORKERS || '1',
   10,
@@ -85,14 +84,8 @@ const webServers = useWebpackDevServer
 const config: PlaywrightTestConfig = defineConfig({
   testDir: './tests/e2e',
   testIgnore: ['**/support/**'],
-  globalSetup: path.join(
-    import.meta.dirname,
-    'tests/e2e/setup/global-setup.mts',
-  ),
-  globalTeardown: path.join(
-    import.meta.dirname,
-    'tests/e2e/setup/global-teardown.mts',
-  ),
+  globalSetup: path.join(__dirname, 'tests/e2e/setup/global-setup.mts'),
+  globalTeardown: path.join(__dirname, 'tests/e2e/setup/global-teardown.mts'),
   timeout: 60 * 1000,
   expect: {
     timeout: 10 * 1000,
@@ -381,4 +374,4 @@ config.projects = selectProjects(
   serializeProjects,
 );
 
-export default config;
+module.exports = config;

@@ -1,1 +1,1 @@
-module.exports = require('./playwright.config.ts').default;
+module.exports = require('./playwright.config.cts');

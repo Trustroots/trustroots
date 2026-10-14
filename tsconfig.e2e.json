@@ -18,6 +18,6 @@
     "tests/e2e/**/*.ts",
     "tests/e2e/**/*.mts",
     "scripts/e2e/**/*.mts",
-    "playwright.config.ts"
+    "playwright.config.cts"
   ]
 }

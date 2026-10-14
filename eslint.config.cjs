@@ -147,7 +147,7 @@ const legacyConfig = {
         'scripts/ci/**/*.mts',
         'scripts/e2e/**/*.mts',
         'tests/e2e/**/*.{ts,mts}',
-        'playwright.config.ts',
+        'playwright.config.cts',
         'migrations/**',
         'modules/*/shared/**/*.{js,ts,mts}',
         'modules/*/server/*.{js,mjs}',
@@ -250,7 +250,7 @@ const legacyConfig = {
         'scripts/ci/**/*.mts',
         'scripts/e2e/**/*.mts',
         'tests/e2e/**/*.{ts,mts}',
-        'playwright.config.ts',
+        'playwright.config.cts',
         'modules/*/client/**/*.{ts,tsx}',
         'modules/*/shared/**/*.{ts,tsx,mts}',
         'modules/*/server/**/*.mts',
@@ -326,11 +326,15 @@ module.exports = defineConfig([
   // ESLint 8 ignored dotfiles and hidden directories by default.
   { ignores: [...ignores, '**/.*'] },
   {
-    files: ['**/*.{js,mjs,cjs,ts,tsx,mts}'],
+    files: ['**/*.{js,mjs,cjs,ts,tsx,mts,cts}'],
     extends: fixupConfigRules(compat.config(legacyConfig)),
   },
   {
-    files: ['**/*.cjs'],
+    files: ['playwright.config.cts'],
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  {
+    files: ['**/*.{cjs,cts}'],
     languageOptions: { sourceType: 'commonjs' },
   },
 ]);
