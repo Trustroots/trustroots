@@ -102,6 +102,14 @@ CI and review steps.
 See [Google Play release preparation](../../distribution/android/google-play.md)
 for account setup, signing, AAB builds, listing requirements and testing.
 
+## Pull request APKs
+
+For a pull request, add the `build-apk` label to request a downloadable debug
+APK. The **Android debug APK** workflow runs unit tests and lint before building,
+then links the APK artifact in its job summary. Download and extract the artifact
+to obtain `app-debug.apk` and its SHA-256 checksum. New commits to a labelled PR
+trigger a fresh build. Android changes also build automatically without the label.
+
 ## Build and verify locally
 
 The app deliberately uses the light Trustroots colour scheme regardless of the

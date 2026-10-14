@@ -3,9 +3,7 @@ name: Android debug APK
 on:
   pull_request:
     branches: [main]
-    paths:
-      - 'apps/android/**'
-      - '.github/workflows/android-debug-apk.yml'
+    types: [opened, synchronize, reopened, labeled]
   push:
     branches: [main]
     paths:
@@ -13,12 +11,44 @@ on:
       - '.github/workflows/android-debug-apk.yml'
   workflow_dispatch:
 
+concurrency:
+  group: android-debug-apk-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Check APK build request
+    runs-on: ubuntu-latest
+    outputs:
+      android: ${{ steps.changes.outputs.android }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Check Android changes
+        id: changes
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git diff --name-only "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/apk-changed-files"
+          if grep -Eq '^(apps/android/|\.github/workflows/android-debug-apk\.yml$)' "$RUNNER_TEMP/apk-changed-files"; then
+            echo 'android=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'android=false' >> "$GITHUB_OUTPUT"
+          fi
   debug-apk:
     name: Build debug APK
+    needs: changes
+    if: >
+      (github.event.action != 'labeled' || github.event.label.name == 'build-apk') &&
+      (github.event_name != 'pull_request' ||
+       contains(github.event.pull_request.labels.*.name, 'build-apk') ||
+       needs.changes.outputs.android == 'true')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -35,6 +65,7 @@ jobs:
       - name: Record APK checksum
         run: sha256sum apps/android/app/build/outputs/apk/debug/app-debug.apk > apps/android/app/build/outputs/apk/debug/app-debug.apk.sha256
       - name: Upload debug APK
+        id: apk
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: trustroots-android-debug-${{ github.sha }}
@@ -44,3 +75,8 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           compression-level: 0
+      - name: Link downloadable APK
+        env:
+          ARTIFACT_URL: ${{ steps.apk.outputs.artifact-url }}
+        run: |
+          echo "[Download debug APK and checksum]($ARTIFACT_URL)" >> "$GITHUB_STEP_SUMMARY"
