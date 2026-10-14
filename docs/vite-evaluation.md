@@ -47,5 +47,5 @@ Lightning CSS minifies it, while Webpack leaves the stylesheet pretty-printed.
 Measured on 14 October 2026, with Webpack's ESLint plugin skipped, Vite built
 in about 1.1 seconds: a 2.41 MiB script (706 KiB gzipped) and a 509 KiB
 stylesheet (124 KiB gzipped). Webpack built in 17.5 seconds: a 3.27 MiB script
-(879 KiB gzipped) and a 656 KiB stylesheet (141 KiB gzipped). Running the
-end-to-end suite on Vite remains before a default switch.
+(879 KiB gzipped) and a 656 KiB stylesheet (141 KiB gzipped). CI end-to-end tests build that Vite bundle. `pnpm start` and `pnpm build` still
+use Webpack. A default switch remains after that suite is green on Vite.
