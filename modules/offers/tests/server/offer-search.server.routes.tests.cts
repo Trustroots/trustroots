@@ -1,36 +1,50 @@
-const _ = require('lodash');
-const should = require('should');
-const request = require('supertest');
-const async = require('async');
-const moment = require('moment');
-const mongoose = require('mongoose');
-const express = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User');
-const Offer = mongoose.model('Offer');
-const Tribe = mongoose.model('Tribe');
+import type {
+  Credentials,
+  OfferDocument,
+  OfferModel,
+  OfferRecord,
+  TestAgent,
+  TestExpressApp,
+  TestExpressModule,
+  TribeDocument,
+  TribeModel,
+  TribeRecord,
+  UserModel,
+  UserModelDocument,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+const _: typeof import('lodash') = require('lodash');
+const should: typeof import('should') = require('should');
+const request: typeof import('supertest') = require('supertest');
+const moment: typeof import('moment') = require('moment');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+const User = mongoose.model<UserRecord, UserModel>('User');
+const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
+const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
 /**
  * Globals
  */
-let app;
-let agent;
-let credentials;
-let credentials2;
-let user1;
-let user2;
-let user3;
-let user2Id;
-let user3Id;
-let offer1;
-let offer2;
-let offer2Id;
-let offer3;
-let offer3Id;
-let offerMeet;
-let tribe1;
-let tribe2;
-let tribe1Id;
-let tribe2Id;
+let app: TestExpressApp;
+let agent: TestAgent;
+let credentials: Credentials;
+let credentials2: Credentials;
+let user1: UserModelDocument;
+let user2: UserModelDocument;
+let user3: UserModelDocument;
+let user2Id: UserModelDocument['_id'];
+let user3Id: UserModelDocument['_id'];
+let offer1: OfferRecord;
+let offer2: OfferDocument;
+let offer2Id: OfferDocument['_id'];
+let offer3: OfferDocument;
+let offer3Id: OfferDocument['_id'];
+let offerMeet: OfferDocument;
+let tribe1: TribeDocument;
+let tribe2: TribeDocument;
+let tribe1Id: TribeDocument['_id'];
+let tribe2Id: TribeDocument['_id'];
 const testLocations = {
   Europe: {
     queryBoundingBox:
@@ -66,6 +80,33 @@ const testLocations = {
   },
 };
 
+interface OfferFeature {
+  properties: {
+    id: string;
+    status: string;
+    type: string;
+  };
+  geometry: { coordinates: number[] };
+}
+
+function assertPresent<T>(value: T | null | undefined): asserts value is T {
+  should.exist(value);
+}
+
+function requestResult(
+  test: import('supertest').Test,
+): Promise<import('supertest').Response> {
+  return new Promise((resolve, reject) => {
+    test.end((error, response) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(response);
+      }
+    });
+  });
+}
+
 /**
  * Offer routes tests
  */
@@ -78,7 +119,7 @@ describe('Offer search tests', function () {
       done();
     })().catch(done);
   });
-  beforeEach(function (doneBeforeEach) {
+  beforeEach(async function () {
     // Create user credentials
     credentials = {
       username: 'loremipsum',
@@ -184,80 +225,26 @@ describe('Offer search tests', function () {
       public: true,
     });
 
-    // Save data to the test db
-    async.waterfall(
-      [
-        // Save tribe 1
-        function (done) {
-          tribe1.save(function (err, tribe1) {
-            tribe1Id = tribe1._id;
-            done(err);
-          });
-        },
-        // Save tribe 2
-        function (done) {
-          tribe2.save(function (err, tribe2) {
-            tribe2Id = tribe2._id;
-            done(err);
-          });
-        },
-        // Save user 1 (without tribe membership)
-        function (done) {
-          user1.save(function (err) {
-            done(err);
-          });
-        },
-        // Save user 2 (with tribe membership)
-        function (done) {
-          user2.member = [
-            {
-              tribe: tribe2Id,
-              since: new Date(),
-            },
-          ];
-          user2.save(function (err, user2res) {
-            user2Id = user2res._id;
-            done(err);
-          });
-        },
-        // Save user 3 (with tribe membership)
-        function (done) {
-          user3.member = [
-            {
-              tribe: tribe1Id,
-              since: new Date(),
-            },
-          ];
-          user3.save(function (err, user3res) {
-            user3Id = user3res._id;
-            return done(err);
-          });
-        },
-        // Save hosting offer 2
-        function (done) {
-          offer2.user = user2Id;
-          offer2.save(function (err, offer2) {
-            offer2Id = offer2._id;
-            done(err);
-          });
-        },
-        // Save hosting offer 3
-        function (done) {
-          offer3.user = user3Id;
-          offer3.save(function (err, offer3) {
-            offer3Id = offer3._id;
-            done(err);
-          });
-        },
-      ],
-      function (err) {
-        // assign users to unsaved offers
-        offerMeet.user = user2Id;
-        offer1.user = user3Id;
-        should.not.exist(err);
-        doneBeforeEach(err);
-      },
-    );
+    // Save data to the test db in the same order as the legacy waterfall.
+    await tribe1.save();
+    tribe1Id = tribe1._id;
+    await tribe2.save();
+    tribe2Id = tribe2._id;
+    await user1.save();
+    user2.member = [{ tribe: tribe2Id, since: new Date() }];
+    await user2.save();
+    user2Id = user2._id;
+    user3.member = [{ tribe: tribe1Id, since: new Date() }];
+    await user3.save();
+    user3Id = user3._id;
+    offer2.user = user2Id;
+    await offer2.save();
+    offer2Id = offer2._id;
+    offer3.user = user3Id;
+    await offer3.save();
+    offer3Id = offer3._id;
+    offerMeet.user = user2Id;
+    offer1.user = user3Id;
   });
   afterEach(utils.clearDatabase);
   it('should be able to get empty list from an area where there are no offers', function (done) {
@@ -438,6 +425,7 @@ describe('Offer search tests', function () {
             const offerB = offersGetRes.body.features[user3Order];
             offerA.properties.status.should.equal(offer2.status);
             offerA.geometry.coordinates.should.have.lengthOf(2);
+            assertPresent(offer2.locationFuzzy);
             offerA.geometry.coordinates[0].should.be.approximately(
               offer2.locationFuzzy[1],
               0.0000000000001,
@@ -449,6 +437,7 @@ describe('Offer search tests', function () {
             offerA.properties.id.should.equal(offer2Id.toString());
             offerB.properties.status.should.equal(offer3.status);
             offerB.geometry.coordinates.should.have.lengthOf(2);
+            assertPresent(offer3.locationFuzzy);
             offerB.geometry.coordinates[0].should.be.approximately(
               offer3.locationFuzzy[1],
               0.0000000000001,
@@ -857,6 +846,7 @@ describe('Offer search tests', function () {
               offerA.properties.status.should.equal(offer2.status);
               offerA.properties.type.should.equal(offer2.type);
               offerA.geometry.coordinates.should.have.lengthOf(2);
+              assertPresent(offer2.locationFuzzy);
               offerA.geometry.coordinates[0].should.be.approximately(
                 offer2.locationFuzzy[1],
                 0.0000000000001,
@@ -875,6 +865,7 @@ describe('Offer search tests', function () {
       user3.member = [];
       user3.save(function (err, user3res) {
         should.not.exist(err);
+        assertPresent(user3res.member);
         user3res.member.length.should.equal(0);
         agent
           .post('/api/auth/signin')
@@ -906,6 +897,7 @@ describe('Offer search tests', function () {
                 offerA.properties.status.should.equal(offer2.status);
                 offerA.properties.type.should.equal(offer2.type);
                 offerA.geometry.coordinates.should.have.lengthOf(2);
+                assertPresent(offer2.locationFuzzy);
                 offerA.geometry.coordinates[0].should.be.approximately(
                   offer2.locationFuzzy[1],
                   0.0000000000001,
@@ -967,6 +959,7 @@ describe('Offer search tests', function () {
               offerA.properties.status.should.equal(offer2.status);
               offerA.properties.type.should.equal(offer2.type);
               offerA.geometry.coordinates.should.have.lengthOf(2);
+              assertPresent(offer2.locationFuzzy);
               offerA.geometry.coordinates[0].should.be.approximately(
                 offer2.locationFuzzy[1],
                 0.0000000000001,
@@ -981,6 +974,7 @@ describe('Offer search tests', function () {
               offerB.properties.status.should.equal(offer3.status);
               offerB.properties.type.should.equal(offer2.type);
               offerB.geometry.coordinates.should.have.lengthOf(2);
+              assertPresent(offer3.locationFuzzy);
               offerB.geometry.coordinates[0].should.be.approximately(
                 offer3.locationFuzzy[1],
                 0.0000000000001,
@@ -1134,7 +1128,7 @@ describe('Offer search tests', function () {
     });
   });
   */
-  it('should be able to get offers from users with circles in common and have "showOnlyInMyCircles" set', function (done) {
+  it('should be able to get offers from users with circles in common and have "showOnlyInMyCircles" set', async function () {
     // Verify that offers where showOnlyInMyCircles is true are only appearing
     // in searches where the authenticated user (user1) has at least one circle
     // in common with the user that owns the offer.
@@ -1150,128 +1144,69 @@ describe('Offer search tests', function () {
     //     do not overlap with the ones of user3 while showOnlyInMyCircles is true.
     //   - offer3 is owned by user3 and should appear despite user1's circles not
     //     overlapping with the ones of user3 since showOnlyInMyCircles is false.
-    let tribe3Id;
-    let offer1Id;
-    async.waterfall(
-      [
-        // Save tribe 3.
-        function (done) {
-          const tribe3 = new Tribe({
-            slug: 'tribe3',
-            label: 'tribe3',
-            color: '333333',
-            count: 1,
-            public: true,
-          });
-          tribe3.save(function (err, tribe3) {
-            tribe3Id = tribe3._id;
-            done(err);
-          });
-        },
-        // Set the users' memberships.
-        function (done) {
-          user1.member = [
-            {
-              tribe: tribe1Id,
-              since: new Date(),
-            },
-            {
-              tribe: tribe2Id,
-              since: new Date(),
-            },
-          ];
-          user1.save(done);
-        },
-        function (user1, done) {
-          user2.member = [
-            {
-              tribe: tribe2Id,
-              since: new Date(),
-            },
-            {
-              tribe: tribe3Id,
-              since: new Date(),
-            },
-          ];
-          user2.save(done);
-        },
-        function (user2, done) {
-          user3.member = {
-            tribe: tribe3Id,
-            since: new Date(),
-          };
-          user3.save(done);
-        },
-        // Update the hosting offers.
-        function (user3, done) {
-          // Save hosting offer 1 (user2, showOnlyInMyCircles=true).
-          const o1 = new Offer({
-            ...offer1,
-            user: user2Id,
-            location: testLocations.Europe.location,
-            showOnlyInMyCircles: true,
-          });
-          o1.save(function (err, offer1) {
-            offer1Id = offer1._id;
-            done(err);
-          });
-        },
-        function (done) {
-          // Save hosting offer 2 (user3, showOnlyInMyCircles=true).
-          offer2.user = user3Id;
-          offer2.location = testLocations.Europe.location;
-          offer2.showOnlyInMyCircles = true;
-          offer2.save(done);
-        },
-        function (offer2, done) {
-          // Save hosting offer 3 (user3, showOnlyInMyCircles=false).
-          offer3.user = user3Id;
-          offer3.location = testLocations.Europe.location;
-          offer3.showOnlyInMyCircles = false;
-          offer3.save(done);
-        },
-        // The actual test.
-        function (offer3, done) {
-          // Sign in.
-          agent
-            .post('/api/auth/signin')
-            .send(credentials)
-            .expect(200)
-            .end(done);
-        },
-        function (res, done) {
-          // Fetch the offers.
-          agent
-            .get('/api/offers' + testLocations.Europe.queryBoundingBox)
-            .expect(200)
-            .end(done);
-        },
-        function (offersGetRes, done) {
-          // Verify the offers.
+    // Save tribe 3, then update the users' memberships in waterfall order.
+    const tribe3 = await new Tribe({
+      slug: 'tribe3',
+      label: 'tribe3',
+      color: '333333',
+      count: 1,
+      public: true,
+    }).save();
+    const tribe3Id = tribe3._id;
+    user1.member = [
+      { tribe: tribe1Id, since: new Date() },
+      { tribe: tribe2Id, since: new Date() },
+    ];
+    await user1.save();
+    user2.member = [
+      { tribe: tribe2Id, since: new Date() },
+      { tribe: tribe3Id, since: new Date() },
+    ];
+    await user2.save();
+    user3.member = [{ tribe: tribe3Id, since: new Date() }];
+    await user3.save();
 
-          // Offer 1 and 3 should match. See the test description above for why.
-          const features = offersGetRes.body.features;
-          features.should.have.lengthOf(2);
+    // Update the hosting offers.
+    const o1 = await new Offer({
+      ...offer1,
+      user: user2Id,
+      location: testLocations.Europe.location,
+      showOnlyInMyCircles: true,
+    }).save();
+    const offer1Id = o1._id;
+    offer2.user = user3Id;
+    offer2.location = testLocations.Europe.location;
+    offer2.showOnlyInMyCircles = true;
+    await offer2.save();
+    offer3.user = user3Id;
+    offer3.location = testLocations.Europe.location;
+    offer3.showOnlyInMyCircles = false;
+    await offer3.save();
 
-          // The offers are returned in any order.
-          let offerRes1;
-          let offerRes3;
-          if (features[0].properties.id === offer1Id.toString()) {
-            offerRes1 = features[0];
-            offerRes3 = features[1];
-          } else {
-            offerRes1 = features[1];
-            offerRes3 = features[0];
-          }
-          offerRes1.properties.id.should.equal(offer1Id.toString());
-          offerRes3.properties.id.should.equal(offer3Id.toString());
-          return done();
-        },
-      ],
-      function (err) {
-        should.not.exist(err);
-        done(err);
-      },
+    await requestResult(
+      agent.post('/api/auth/signin').send(credentials).expect(200),
     );
+    const offersGetRes = await requestResult(
+      agent
+        .get('/api/offers' + testLocations.Europe.queryBoundingBox)
+        .expect(200),
+    );
+
+    // Verify the offers.
+    const features = offersGetRes.body.features as OfferFeature[];
+    features.should.have.lengthOf(2);
+
+    // The offers are returned in any order.
+    let offerRes1: OfferFeature;
+    let offerRes3: OfferFeature;
+    if (features[0].properties.id === offer1Id.toString()) {
+      offerRes1 = features[0];
+      offerRes3 = features[1];
+    } else {
+      offerRes1 = features[1];
+      offerRes3 = features[0];
+    }
+    offerRes1.properties.id.should.equal(offer1Id.toString());
+    offerRes3.properties.id.should.equal(offer3Id.toString());
   });
 });
