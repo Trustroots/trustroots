@@ -17,16 +17,13 @@ type LoadHook = NonNullable<Parameters<typeof registerHooks>[0]['load']>;
 const mocks = new Map<string, MockModule>();
 const values = new Map<string, unknown>();
 const registryKey = Symbol.for('trustroots.test.moduleMocks');
-const globalWithRegistry = globalThis as typeof globalThis & {
-  [key: symbol]: Map<string, unknown>;
-};
 const require = createRequire(import.meta.url);
-globalWithRegistry[registryKey] = values;
+Reflect.set(globalThis, registryKey, values);
 let sequence = 0;
 
 const resolve: ResolveHook = (specifier, context, nextResolve) => {
-  if (mocks.has(specifier)) {
-    const mock = mocks.get(specifier)!;
+  const mock = mocks.get(specifier);
+  if (mock) {
     return { url: mock.url, format: 'module', shortCircuit: true };
   }
 

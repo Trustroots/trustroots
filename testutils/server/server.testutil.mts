@@ -1,4 +1,4 @@
-import type { Agenda } from 'agenda';
+import type { MailMessage } from 'nodemailer';
 import agenda from '../../config/lib/agenda.mjs';
 import config from '../../config/config.mjs';
 
@@ -7,8 +7,18 @@ export type CapturedJob = {
   data: unknown;
 };
 
-type AgendaTestService = Pick<Agenda, 'now'>;
-type AgendaJob = Awaited<ReturnType<Agenda['now']>>;
+type AgendaJobDouble = {
+  attrs: {
+    name: string;
+    data: unknown;
+  };
+};
+type AgendaNow = (
+  this: unknown,
+  type: string,
+  data: unknown,
+) => Promise<AgendaJobDouble>;
+type AgendaTestService = { now: AgendaNow };
 type TestConfig = {
   mailer: { options: unknown };
 };
@@ -38,9 +48,9 @@ export function catchJobs(): CapturedJob[] {
       jobs.push(JSON.parse(JSON.stringify({ type, data })) as CapturedJob);
 
       // Resolve asynchronously, matching Agenda's promise-based API.
-      return new Promise<AgendaJob>(resolve => {
+      return new Promise<AgendaJobDouble>(resolve => {
         process.nextTick(() => {
-          resolve({ attrs: { name: type, data } } as AgendaJob);
+          resolve({ attrs: { name: type, data } });
         });
       });
     };
@@ -58,18 +68,20 @@ type CapturedMailerTransport = {
   name: string;
   version: string;
   send(
-    data: unknown,
+    mail: MailMessage,
     callback: (error?: Error | null, info?: unknown) => void,
   ): void;
   logger: false;
 };
 
+export type CapturedEmail = MailMessage;
+
 /**
  * Helper for testing sending emails
  * This helper just catches them up without sending them anywhere.
  */
-export function catchEmails(): unknown[] {
-  const sentEmails: unknown[] = [];
+export function catchEmails(): CapturedEmail[] {
+  const sentEmails: CapturedEmail[] = [];
   let originalMailerOptions: unknown;
 
   mochaHooks.beforeEach(() => {
@@ -80,8 +92,8 @@ export function catchEmails(): unknown[] {
     testConfig.mailer.options = {
       name: 'testsend',
       version: '1',
-      send(data, callback) {
-        sentEmails.push(data);
+      send(mail, callback) {
+        sentEmails.push(mail);
         callback();
       },
       logger: false,
