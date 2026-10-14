@@ -120,26 +120,17 @@ function objectId(value: unknown): string {
   return value;
 }
 
-function errorMessage(error: unknown): string | undefined {
-  if (typeof error === 'object' && error !== null && 'message' in error) {
-    const { message } = error;
-    return typeof message === 'string' ? message : undefined;
-  }
-  return undefined;
-}
-
 function errorResponse(error: unknown): {
   status: number;
-  message: string | undefined;
+  message: unknown;
 } {
-  if (typeof error === 'object' && error !== null && 'status' in error) {
-    const { status } = error;
-    if (status) {
-      return {
-        status: typeof status === 'number' ? status : 500,
-        message: errorMessage(error),
-      };
-    }
+  const legacyError = error as { status?: number; message?: unknown };
+  const status = legacyError.status;
+  if (status) {
+    return {
+      status,
+      message: legacyError.message,
+    };
   }
   return {
     status: 500,

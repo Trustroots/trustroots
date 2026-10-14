@@ -376,6 +376,15 @@ describe('Support team access and investigation', () => {
       .expect(500);
     Object.hasOwn(response.body, 'items').should.equal(false);
   });
+  it('preserves non-string error messages from legacy audit failures', async () => {
+    sinon
+      .stub(AuditLog.prototype, 'save')
+      .rejects({ status: 422, message: 42 });
+    const response = await agent
+      .get(`${endpoint(report._id)}/messages`)
+      .expect(422);
+    response.body.message.should.equal(42);
+  });
   it('covers controller defaults and request-list pagination', async () => {
     await SupportRequest.insertMany(
       Array.from({ length: 51 }, () => ({ message: 'Fictional request' })),

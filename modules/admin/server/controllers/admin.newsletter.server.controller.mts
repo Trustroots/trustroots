@@ -67,9 +67,10 @@ interface NewsletterResponse {
   send(body: unknown): unknown;
 }
 
-interface CodedError extends Error {
+interface CodedError {
   code?: string;
   statusCode?: number;
+  message?: unknown;
 }
 
 const Offer = mongoose.model<{ user: Types.ObjectId }>('Offer');
@@ -110,7 +111,9 @@ const newsletterRecipientUpload = multer({
   fileFilter: (_req, file, callback) => {
     const extension = path.extname(file.originalname).toLowerCase();
     if (!RECIPIENT_UPLOAD_EXTENSIONS.includes(extension)) {
-      const err: CodedError = new Error('Unsupported recipient file type.');
+      const err: Error & CodedError = new Error(
+        'Unsupported recipient file type.',
+      );
       err.code = 'UNSUPPORTED_MEDIA_TYPE';
       return callback(err);
     }
@@ -170,8 +173,8 @@ function buildEligibleSubscribersQuery(
 function escapeRegularExpression(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-function invalidAudienceCriteria(message: string): CodedError {
-  const error: CodedError = new Error(message);
+function invalidAudienceCriteria(message: string): Error & CodedError {
+  const error: Error & CodedError = new Error(message);
   error.statusCode = 400;
   return error;
 }
@@ -226,10 +229,7 @@ function isObjectIdInput(value: unknown): value is ObjectIdInput {
 function parseAudienceCriteria(
   input: Record<string, unknown> | null = {},
 ): AudienceCriteria {
-  if (input === null) {
-    throw new TypeError("Cannot read properties of null (reading 'format')");
-  }
-  const body = input;
+  const body = input!;
   const format = body.format || 'preview';
   if (!isNewsletterAudienceFormat(format)) {
     throw invalidAudienceCriteria('Choose preview or CSV audience output.');
@@ -650,14 +650,14 @@ export const audience = async (
   return res.set('Content-Type', 'text/csv').send(rowsToCSV(users));
 };
 function toCodedError(error: unknown): CodedError {
-  if (error instanceof Error) {
-    const statusCode =
-      'statusCode' in error && typeof error.statusCode === 'number'
-        ? error.statusCode
-        : undefined;
-    return Object.assign(error, { statusCode });
-  }
-  return new Error(String(error));
+  const legacyError = error as {
+    statusCode?: number;
+    message?: unknown;
+  };
+  return {
+    statusCode: legacyError.statusCode,
+    message: legacyError.message,
+  };
 }
 
 export const uploadSubscribersCsv = (

@@ -127,19 +127,39 @@ describe('Admin messages controller unit tests', () => {
   });
 
   it('rejects invalid user ids', async () => {
+    for (const user1 of ['bad-id', {}]) {
+      const res = mockResponse();
+      adminMessages.getMessages(
+        {
+          body: {
+            user1,
+            user2: new mongoose.Types.ObjectId().toString(),
+          },
+        },
+        res,
+      );
+      const response = await res.waitForResponse();
+      response.statusCode.should.equal(400);
+      should(responseBody(response).message).equal('Cannot interpret id.');
+    }
+  });
+
+  it('accepts ObjectId-like query ids supported by Mongoose', async () => {
+    sinon.stub(Message, 'find').returns(messageFindQuery(cb => cb(null, [])));
+    sinon
+      .stub(ReferenceThread, 'find')
+      .returns(referenceThreadFindQuery(cb => cb(null, [])));
+    const id = new mongoose.Types.ObjectId();
     const res = mockResponse();
     adminMessages.getMessages(
       {
         body: {
-          user1: 'bad-id',
-          user2: new mongoose.Types.ObjectId().toString(),
+          user1: { id: id.id, toHexString: () => id.toHexString() },
         },
       },
       res,
     );
-    const response = await res.waitForResponse();
-    response.statusCode.should.equal(400);
-    should(responseBody(response).message).equal('Cannot interpret id.');
+    (await res.waitForResponse()).statusCode.should.equal(200);
   });
 
   it('returns 400 when message lookup fails', async () => {
@@ -267,6 +287,24 @@ describe('Admin messages controller unit tests', () => {
     const response = await res.waitForResponse();
 
     response.statusCode.should.equal(400);
+  });
+
+  it('preserves a coded lookup error that has no message', async () => {
+    sinon
+      .stub(User, 'findOne')
+      .returns(
+        promiseQuery(() =>
+          Promise.reject({ statusCode: 422 }),
+        ) as unknown as ReturnType<typeof User.findOne>,
+      );
+    const res = mockResponse();
+    await adminMessages.getScammerRecipients(
+      { body: { username: 'scammer' }, user: { _id: 'admin-id' } },
+      res,
+    );
+    const response = await res.waitForResponse();
+    response.statusCode.should.equal(422);
+    should(Object.hasOwn(responseBody(response), 'message')).equal(true);
   });
 
   it('rejects missing warning content', async () => {

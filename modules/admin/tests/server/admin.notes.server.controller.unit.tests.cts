@@ -84,19 +84,21 @@ describe('Admin notes controller unit tests', () => {
     });
 
     it('rejects invalid user ids', async () => {
-      const res = mockResponse();
-      await adminNotes.addNote(
-        {
-          body: { userId: 'not-an-object-id', note: 'test' },
-          user: { _id: 'admin' },
-        },
-        res,
-      );
+      for (const userId of ['not-an-object-id', {}]) {
+        const res = mockResponse();
+        await adminNotes.addNote(
+          {
+            body: { userId, note: 'test' },
+            user: { _id: 'admin' },
+          },
+          res,
+        );
 
-      res.statusCode.should.equal(400);
-      should(queryBody(res).message).equal(
-        errorService.getErrorMessageByKey('invalid-id'),
-      );
+        res.statusCode.should.equal(400);
+        should(queryBody(res).message).equal(
+          errorService.getErrorMessageByKey('invalid-id'),
+        );
+      }
     });
 
     it('saves a sanitized note', async () => {
@@ -122,6 +124,26 @@ describe('Admin notes controller unit tests', () => {
       if (!saved) throw new Error('Expected saved admin note');
       saved.note.should.not.containEql('script');
       saved.admin.toString().should.equal(admin._id.toString());
+    });
+
+    it('accepts ObjectId-like values supported by Mongoose', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(2));
+      const targetId = new mongoose.Types.ObjectId(users[1]._id.toString());
+      const res = mockResponse();
+      await adminNotes.addNote(
+        {
+          body: {
+            userId: {
+              id: targetId.id,
+              toHexString: () => targetId.toHexString(),
+            },
+            note: 'Fictional note',
+          },
+          user: users[0],
+        },
+        res,
+      );
+      res.statusCode.should.equal(400);
     });
 
     it('returns 400 when saving the note fails', async () => {

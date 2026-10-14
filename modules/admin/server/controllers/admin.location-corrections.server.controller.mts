@@ -459,23 +459,19 @@ export async function send(
         },
       ).exec();
       message = result.value;
-      if (!result.lastErrorObject) {
-        throw new TypeError('Missing message upsert result metadata.');
-      }
-      inserted = !result.lastErrorObject.updatedExisting;
+      inserted = !result.lastErrorObject!.updatedExisting;
     } catch (error) {
       if (!isDuplicateKeyError(error)) throw error;
       message = await Message.findById(messageId).exec();
     }
-    if (!message) throw new Error('Could not load the correction message.');
-    await updateThread(message);
+    await updateThread(message!);
     if (inserted) {
-      messageToStatsService.save(message, () => {});
+      messageToStatsService.save(message!, () => {});
       await new Promise<void>(resolve =>
-        messageStatService.updateMessageStat(message, () => resolve()),
+        messageStatService.updateMessageStat(message!, () => resolve()),
       );
     }
-    return res.send({ sent: inserted, messageId: message._id });
+    return res.send({ sent: inserted, messageId: message!._id });
   } catch {
     return res
       .status(500)

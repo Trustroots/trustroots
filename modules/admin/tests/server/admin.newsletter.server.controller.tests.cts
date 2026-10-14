@@ -456,6 +456,25 @@ describe('Admin newsletter controller unit tests', () => {
         'Choose at least one location source or circle.',
       );
     });
+
+    it('accepts ObjectId-like circle identifiers supported by Mongoose', async () => {
+      const circleId = new mongoose.Types.ObjectId();
+      const res = mockResponse();
+      await adminNewsletter.audience(
+        {
+          body: {
+            circleIds: [
+              {
+                id: circleId.id,
+                toHexString: () => circleId.toHexString(),
+              },
+            ],
+          },
+        },
+        res,
+      );
+      responseData(res).count!.should.equal(0);
+    });
   });
 
   describe('splitSubscribers', () => {

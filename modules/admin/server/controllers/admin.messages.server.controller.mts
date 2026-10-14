@@ -189,12 +189,7 @@ export const sendScammerWarning = async (
     // Keep each recipient's original content, timestamp and read state on retry.
     const savedMessages = await Promise.all(
       recipients.map(recipient => {
-        const requestUser = req.user;
-        if (!requestUser) {
-          throw new TypeError(
-            "Cannot read properties of undefined (reading '_id')",
-          );
-        }
+        const requestUser = req.user!;
         const id = crypto
           .createHash('sha256')
           .update(
