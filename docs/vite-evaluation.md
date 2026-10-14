@@ -13,7 +13,10 @@ configuration explicitly uses `less-webpack`, pinned to the existing Less
 3.13.1 compiler, so this prototype does not upgrade Webpack's stylesheet
 compiler.
 Vite enables legacy Less arithmetic so existing unparenthesised divisions
-compile with the same behaviour as Less 3.
+compile with the same behaviour as Less 3. Module styles are imported after
+Bootstrap. Vite prepends `import.meta.glob` imports, so that glob lives in its
+own module; otherwise Bootstrap's later focus rules override app styles of
+equal specificity.
 
 `pnpm build:vite` emits a single IIFE `public/assets/react-main.js`,
 extracted `react-main.css`, and `react-main.rtl.css`. The RTL file is produced

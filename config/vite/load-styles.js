@@ -1,12 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../webpack/entries/main.less';
 
-// main.less already includes legacy-classes.less. Skip it here so it is not
-// compiled twice, matching the Webpack entry.
-import.meta.glob(
-  [
-    '../../modules/**/*.less',
-    '!../../modules/core/client/less/bootstrap/legacy-classes.less',
-  ],
-  { eager: true },
-);
+// Vite turns import.meta.glob into static imports and prepends them. Keeping
+// that glob in its own module, imported after Bootstrap, preserves Webpack's
+// cascade: later app rules win when specificity ties.
+import './load-module-styles';
