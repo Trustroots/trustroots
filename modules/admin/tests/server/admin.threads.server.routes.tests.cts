@@ -1,20 +1,28 @@
-const request = require('supertest');
-const mongoose = require('mongoose');
-const Thread = mongoose.model('Thread');
-const express = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+import type { Application } from 'express';
+import type {
+  ThreadModel,
+  ThreadRecord,
+  UserDocument,
+} from '../../../../testutils/server/model-contracts.mts';
+
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const Thread = mongoose.model<ThreadRecord, ThreadModel>('Thread');
+const express: typeof import('../../../../config/lib/express.mjs').default = require('./../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 require('should');
 describe('Admin Thread CRUD tests', () => {
+  let app: Application;
+  let agent: ReturnType<typeof request.agent>;
+  let users: UserDocument[];
+  let userRegular1Id: UserDocument['_id'];
+  let userRegular2Id: UserDocument['_id'];
+
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
   // Get application
-  let app;
-  let agent;
-  let _users;
-  let userRegular1Id;
-  let userRegular2Id;
   const _usersRaw = utils.generateUsers(3);
   _usersRaw[0].roles = ['user', 'admin'];
   const credentialsAdmin = {
@@ -26,9 +34,9 @@ describe('Admin Thread CRUD tests', () => {
     password: _usersRaw[1].password,
   };
   beforeEach(async () => {
-    _users = await utils.saveUsers(_usersRaw);
-    userRegular1Id = _users[1]._id;
-    userRegular2Id = _users[2]._id;
+    users = await utils.saveUsers(_usersRaw);
+    userRegular1Id = users[1]._id;
+    userRegular2Id = users[2]._id;
   });
   afterEach(utils.clearDatabase);
   beforeEach(async () => {
@@ -48,14 +56,14 @@ describe('Admin Thread CRUD tests', () => {
     await message2.save();
   });
   describe("Read user's threads", () => {
-    it('non-authenticated users should not be allowed to read threads', done => {
+    it('non-authenticated users should not be allowed to read threads', (done: Mocha.Done) => {
       agent
         .post('/api/admin/threads')
         .send({
           userId: userRegular1Id,
         })
         .expect(403)
-        .end((err, res) => {
+        .end((err: Error | null, res: import('supertest').Response) => {
           res.body.message.should.equal('Forbidden.');
           return done(err);
         });
@@ -84,8 +92,8 @@ describe('Admin Thread CRUD tests', () => {
           .expect(200);
         body.length.should.equal(2);
         body[0].userToProfile[0]._id.should.equalOneOf([
-          _users[1]._id.toString(),
-          _users[2]._id.toString(),
+          users[1]._id.toString(),
+          users[2]._id.toString(),
         ]);
       });
       it('admin users should get an error for an invalid user ID', async () => {
@@ -116,8 +124,8 @@ describe('Admin Thread CRUD tests', () => {
           .expect(200);
         body.length.should.equal(2);
         body[0].userToProfile[0].username.should.equalOneOf([
-          _users[1].username,
-          _users[2].username,
+          users[1].username,
+          users[2].username,
         ]);
       });
     });

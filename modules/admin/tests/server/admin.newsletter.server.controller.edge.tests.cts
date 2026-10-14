@@ -1,3 +1,7 @@
+import type { Readable as ReadableStream } from 'node:stream';
+
+const { Readable }: typeof import('node:stream') = require('stream');
+
 const sinon = require('sinon');
 const mongoose = require('mongoose');
 const config = require('./../../../../config/config.mjs');
@@ -8,36 +12,62 @@ require('./../../../offers/server/models/offer.server.model.mjs');
 const errorService = require('./../../../core/server/services/error.server.service.mjs');
 require('should');
 
-function mockResponse() {
-  let resolveResponse;
-  const done = new Promise(resolve => {
+interface NewsletterResponseBody {
+  message?: string;
+  totalEmailCount?: number;
+  subscribedCount?: number;
+  unsubscribedCount?: number;
+  outputFormat?: string;
+  unsubscribedContent?: string;
+}
+
+interface NewsletterMockResponse {
+  statusCode: number;
+  body: NewsletterResponseBody;
+  status(code: number): NewsletterMockResponse;
+  send(body: NewsletterResponseBody): NewsletterMockResponse;
+  done: Promise<NewsletterMockResponse>;
+}
+
+interface NewsletterUser {
+  email: string | null;
+  firstName: string;
+  lastName: string;
+  public: boolean;
+  newsletter: boolean;
+  roles?: string[];
+  removeProfileToken?: string;
+  removeProfileExpires?: string;
+}
+
+function mockResponse(): NewsletterMockResponse {
+  let resolveResponse!: (response: NewsletterMockResponse) => void;
+  const done = new Promise<NewsletterMockResponse>(resolve => {
     resolveResponse = resolve;
   });
-  const res = {
+  const res: NewsletterMockResponse = {
     statusCode: 200,
-    body: null,
+    body: {},
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    send(body) {
+      this.body = body;
+      resolveResponse(this);
+      return this;
+    },
+    done,
   };
-
-  res.status = code => {
-    res.statusCode = code;
-    return res;
-  };
-  res.send = body => {
-    res.body = body;
-    resolveResponse(res);
-    return res;
-  };
-  res.done = done;
-
   return res;
 }
 
-let roleReset;
+let roleReset: { roles: string[]; rolesLength: number } | undefined;
 
 async function loadController({
   findResults = [],
   maxUploadSize = 2 * 1024 * 1024,
-} = {}) {
+}: { findResults?: NewsletterUser[]; maxUploadSize?: number } = {}) {
   const User = mongoose.model('User');
   const findStub = sinon.stub(User, 'find').returns({
     exec: async () => findResults,
@@ -52,8 +82,7 @@ async function loadController({
   return { controller, findStub };
 }
 
-function multipartRequest(field, filename, content) {
-  const { Readable } = require('stream');
+function multipartRequest(field: string, filename: string, content: string) {
   const boundary = '----trustroots-boundary';
   const body = [
     `--${boundary}`,
@@ -64,7 +93,10 @@ function multipartRequest(field, filename, content) {
     `--${boundary}--`,
     '',
   ].join('\r\n');
-  const request = Readable.from([body]);
+  const request = Readable.from([body]) as ReadableStream & {
+    method: string;
+    headers: Record<string, string>;
+  };
   request.method = 'POST';
   request.headers = {
     'content-type': `multipart/form-data; boundary=${boundary}`,
@@ -99,7 +131,7 @@ describe('Admin newsletter controller edge-case unit tests', () => {
       await res.done;
 
       res.statusCode.should.equal(413);
-      res.body.message.should.equal(
+      res.body.message!.should.equal(
         'File too big. Please maximum 2.00 Mb files.',
       );
     });
@@ -120,7 +152,7 @@ describe('Admin newsletter controller edge-case unit tests', () => {
       await res.done;
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      res.body.message!.should.equal(
         'Missing "newsletterCsv" field from the API call.',
       );
     });
@@ -129,8 +161,12 @@ describe('Admin newsletter controller edge-case unit tests', () => {
       const { controller } = await loadController();
       const res = mockResponse();
 
-      const { Readable } = require('stream');
-      const malformedRequest = Readable.from(['not a multipart body']);
+      const malformedRequest = Readable.from([
+        'not a multipart body',
+      ]) as ReadableStream & {
+        method: string;
+        headers: Record<string, string>;
+      };
       malformedRequest.method = 'POST';
       malformedRequest.headers = {
         'content-type': 'multipart/form-data; boundary=broken-boundary',
@@ -140,7 +176,7 @@ describe('Admin newsletter controller edge-case unit tests', () => {
       await res.done;
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      res.body.message!.should.equal(
         errorService.getErrorMessageByKey('default'),
       );
     });
@@ -161,7 +197,7 @@ describe('Admin newsletter controller edge-case unit tests', () => {
       );
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      res.body.message!.should.equal(
         'Could not find any email addresses in the uploaded file.',
       );
     });
@@ -194,9 +230,9 @@ describe('Admin newsletter controller edge-case unit tests', () => {
 
       findStub.calledOnce.should.equal(true);
       res.statusCode.should.equal(200);
-      res.body.totalEmailCount.should.equal(1);
-      res.body.subscribedCount.should.equal(1);
-      res.body.unsubscribedCount.should.equal(0);
+      res.body.totalEmailCount!.should.equal(1);
+      res.body.subscribedCount!.should.equal(1);
+      res.body.unsubscribedCount!.should.equal(0);
     });
 
     it('covers quoted CSV parsing and reason fallbacks', async () => {
@@ -267,10 +303,10 @@ describe('Admin newsletter controller edge-case unit tests', () => {
 
       findStub.calledOnce.should.equal(true);
       res.statusCode.should.equal(200);
-      res.body.subscribedCount.should.equal(0);
-      res.body.unsubscribedCount.should.equal(5);
-      res.body.outputFormat.should.equal('csv');
-      res.body.unsubscribedContent.should.equal(
+      res.body.subscribedCount!.should.equal(0);
+      res.body.unsubscribedCount!.should.equal(5);
+      res.body.outputFormat!.should.equal('csv');
+      res.body.unsubscribedContent!.should.equal(
         [
           'Email Address,First Name,Last Name,Reason',
           'shadow@example.com,Shadow,User,Account shadowbanned',

@@ -1,4 +1,6 @@
-const assert = require('assert');
+import type {} from 'node:assert';
+
+const assert: typeof import('node:assert') = require('assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -21,6 +23,31 @@ const {
 const {
   buildMarkdown,
 } = require('../../../../../scripts/coverage/generate-pr-summary');
+
+interface DependencyChange {
+  name: string;
+  before: string | undefined;
+  after: string | undefined;
+}
+
+interface DependencyGroup {
+  added: number;
+  removed: number;
+  changed: number;
+  net: number;
+  changes: DependencyChange[];
+}
+
+interface WorkflowStep {
+  name?: string;
+  run?: string;
+  with?: Record<string, string>;
+}
+
+interface WorkflowJob {
+  needs: string[];
+  steps: WorkflowStep[];
+}
 
 describe('PR dependency summaries', () => {
   it('loads JSON and YAML NYC configuration with the shared YAML 4 dependency', async () => {
@@ -72,7 +99,7 @@ describe('PR dependency summaries', () => {
     },
   };
   it('separates additions, removals and updates without counting the project root', () => {
-    const groups = summariseDependencies(before, after);
+    const groups = summariseDependencies(before, after) as DependencyGroup[];
     assert.deepStrictEqual(
       groups.map(({ added, removed, changed, net }) => [
         added,
@@ -167,7 +194,7 @@ describe('PR dependency summaries', () => {
     const directory = fs.mkdtempSync(
       path.join(os.tmpdir(), 'fictional-dependency-git-'),
     );
-    const git = args =>
+    const git = (args: string[]) =>
       execFileSync('git', args, {
         cwd: directory,
         encoding: 'utf8',
@@ -226,13 +253,15 @@ describe('PR dependency summaries', () => {
     const root = path.resolve(__dirname, '../../../../..');
     const workflow = require('js-yaml').load(
       fs.readFileSync(path.join(root, '.github/workflows/test.yml'), 'utf8'),
-    );
+    ) as { jobs: Record<string, WorkflowJob> };
     const image = workflow.jobs['build-production-image'];
     const summary = workflow.jobs['coverage-summary'];
     assert.ok(summary.needs.includes('build-production-image'));
     const inventoryStep = image.steps.find(
-      step => step.name === 'Inventory installed production dependencies',
+      (step: WorkflowStep) =>
+        step.name === 'Inventory installed production dependencies',
     );
+    assert.ok(inventoryStep?.run);
     assert.match(
       inventoryStep.run,
       /docker run --rm -i --network none --entrypoint node trustroots:pr/,
@@ -244,12 +273,13 @@ describe('PR dependency summaries', () => {
     assert.match(inventoryStep.run, /- --inventory-stdin </);
     assert.ok(
       image.steps.find(
-        step => step.with && step.with.name === 'production-dependencies',
+        (step: WorkflowStep) =>
+          step.with && step.with.name === 'production-dependencies',
       ),
     );
     assert.ok(
       summary.steps.find(
-        step =>
+        (step: WorkflowStep) =>
           step.with &&
           step.with.name === 'production-dependencies' &&
           step.with.path === 'coverage/production',
@@ -260,7 +290,7 @@ describe('PR dependency summaries', () => {
     const directory = fs.mkdtempSync(
       path.join(os.tmpdir(), 'fictional-pnpm-git-'),
     );
-    const git = args =>
+    const git = (args: string[]) =>
       execFileSync('git', args, {
         cwd: directory,
         encoding: 'utf8',
@@ -279,7 +309,7 @@ describe('PR dependency summaries', () => {
       ]);
       return git(['rev-parse', 'HEAD']);
     };
-    const lockfile = packages =>
+    const lockfile = (packages: string) =>
       `lockfileVersion: '9.0'\n\nimporters:\n\n  .:\n    dependencies:\n      fictional:\n        specifier: 1.0.0\n        version: 1.0.0\n\npackages:\n\n${packages}\nsnapshots:\n\n  fictional@1.0.0: {}\n`;
     try {
       git(['init', '-b', 'main']);
@@ -300,7 +330,7 @@ describe('PR dependency summaries', () => {
         base,
         commit(),
         directory,
-      );
+      ) as DependencyGroup[];
       assert.deepStrictEqual(
         resolved.changes.map(({ name, before, after }) => [
           name,
@@ -331,7 +361,7 @@ describe('PR dependency summaries', () => {
           '@example/scoped',
           '2.0.0',
         ],
-      ]) {
+      ] as [string, string, string][]) {
         fs.mkdirSync(path.join(root, location), { recursive: true });
         fs.writeFileSync(
           path.join(root, location, 'package.json'),
@@ -350,10 +380,12 @@ describe('PR dependency summaries', () => {
         ),
       );
       assert.deepStrictEqual(
-        collectInstalledPackages(root).map(({ name, version }) => [
-          name,
-          version,
-        ]),
+        collectInstalledPackages(root).map(
+          ({ name, version }: { name: string; version: string }) => [
+            name,
+            version,
+          ],
+        ),
         [
           ['@example/scoped', '2.0.0'],
           ['fictional', '1.0.0'],
@@ -376,7 +408,7 @@ describe('PR dependency summaries', () => {
           'fictional',
           '1',
         ],
-      ]) {
+      ] as [string, string, string][]) {
         fs.mkdirSync(path.join(root, location), { recursive: true });
         fs.writeFileSync(
           path.join(root, location, 'package.json'),

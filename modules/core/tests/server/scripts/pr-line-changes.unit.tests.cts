@@ -19,6 +19,33 @@ const {
   backfill,
 } = require('../../../../../scripts/coverage/backfill-pr-line-changes');
 
+interface SummaryGroup {
+  id: string;
+  added: number;
+  removed: number;
+  net: number;
+}
+
+interface GitHubCommentCall {
+  body?: string;
+  comment_id?: number;
+  issue_number?: number;
+}
+
+interface WorkflowStep {
+  with?: Record<string, unknown>;
+  uses?: string;
+  if?: string;
+}
+
+interface WorkflowFile {
+  on: Record<string, unknown>;
+  jobs: Record<
+    string,
+    { if?: string; needs?: string[]; steps: WorkflowStep[] }
+  >;
+}
+
 describe('PR line-change summaries', () => {
   it('separates code, tests, configuration, generated files and lockfiles', () => {
     const examples = {
@@ -54,8 +81,14 @@ describe('PR line-change summaries', () => {
     const { groups } = summariseNumstat(
       '0\t10\tscripts/report.js\0' + '10\t0\tscripts/report.mts\0',
     );
-    assert.equal(groups.find(group => group.id === 'code').net, 0);
-    assert.equal(groups.find(group => group.id === 'other').added, 0);
+    assert.equal(
+      groups.find((group: SummaryGroup) => group.id === 'code')!.net,
+      0,
+    );
+    assert.equal(
+      groups.find((group: SummaryGroup) => group.id === 'other')!.added,
+      0,
+    );
   });
 
   it('handles NUL records, renames, binary files and unusual paths', () => {
@@ -66,7 +99,7 @@ describe('PR line-change summaries', () => {
         '100\t20\tpackage-lock.json\0',
     );
     assert.deepEqual(
-      summary.groups.map(group => [
+      summary.groups.map((group: SummaryGroup) => [
         group.id,
         group.added,
         group.removed,
@@ -139,13 +172,13 @@ describe('PR line-change summaries', () => {
 
   it('uses the merge base in a real Git diff rather than counting new base-branch work', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fictional-pr-lines-'));
-    const git = args =>
+    const git = (args: string[]) =>
       execFileSync('git', args, {
         cwd: dir,
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe'],
       }).trim();
-    const commit = message =>
+    const commit = (message: string) =>
       git([
         '-c',
         'user.name=Fixture Member',
@@ -243,8 +276,8 @@ describe('PR line-change summaries', () => {
   });
 
   it('backfills only older open PRs and keeps existing coverage', async () => {
-    const calls = [];
-    const pr = number => ({
+    const calls: GitHubCommentCall[] = [];
+    const pr = (number: number) => ({
       number,
       state: 'open',
       base: { sha: 'a'.repeat(40) },
@@ -252,22 +285,22 @@ describe('PR line-change summaries', () => {
     });
     const issues = {
       listComments() {},
-      async updateComment(value) {
+      async updateComment(value: GitHubCommentCall) {
         calls.push(value);
       },
-      async createComment(value) {
+      async createComment(value: GitHubCommentCall) {
         calls.push(value);
       },
     };
     const pulls = {
       list() {},
-      async get({ pull_number }) {
+      async get({ pull_number }: { pull_number: number }) {
         return { data: pr(pull_number) };
       },
     };
     const github = {
       rest: { pulls, issues },
-      async paginate(method, options) {
+      async paginate(method: unknown, options: { issue_number?: number }) {
         return method === pulls.list
           ? [pr(2998), pr(2999), pr(3000), pr(3001)]
           : options.issue_number === 2998
@@ -281,13 +314,13 @@ describe('PR line-change summaries', () => {
             : [{ id: 8, user: { type: 'User' }, body: marker }];
       },
     };
-    const fetched = [];
+    const fetched: number[] = [];
     const updated = await backfill({
       github,
       owner: 'fictional-org',
       repo: 'fictional-repo',
       before: 3000,
-      fetch: number => fetched.push(number),
+      fetch: (number: number) => fetched.push(number),
       collect: () => summariseNumstat(''),
     });
     assert.deepEqual(updated, [2998, 2999]);
@@ -320,16 +353,20 @@ describe('PR line-change summaries', () => {
         path.join(root, '.github/workflows/pr-line-changes-backfill.yml'),
         'utf8',
       ),
-    );
+    ) as WorkflowFile;
     assert.ok(workflow.on.pull_request_target);
     assert.ok(workflow.on.workflow_run);
     for (const job of Object.values(workflow.jobs)) {
-      assert.equal(job.steps[0].with.ref, 'main');
-      assert.equal(job.steps[0].with['fetch-depth'], 0);
+      const checkout = job.steps[0];
+      const checkoutWith = checkout?.with;
+      if (!checkoutWith)
+        throw new Error('Checkout action configuration is missing');
+      assert.equal(checkoutWith.ref, 'main');
+      assert.equal(checkoutWith['fetch-depth'], 0);
       assert.ok(
         job.steps
           .slice(1)
-          .every(step => step.uses.startsWith('actions/github-script@')),
+          .every(step => step.uses?.startsWith('actions/github-script@')),
       );
     }
     assert.match(
@@ -338,9 +375,9 @@ describe('PR line-change summaries', () => {
     );
     const tests = yaml.load(
       fs.readFileSync(path.join(root, '.github/workflows/test.yml'), 'utf8'),
-    );
+    ) as WorkflowFile;
     assert.doesNotMatch(tests.jobs['coverage-summary'].if, /run-code/);
-    assert.match(tests.jobs['coverage-summary'].steps.at(-1).if, /run-code/);
+    assert.match(tests.jobs['coverage-summary'].steps.at(-1)!.if!, /run-code/);
   });
 
   it('skips closed PRs and heads changed during backfill', async () => {
@@ -349,7 +386,7 @@ describe('PR line-change summaries', () => {
       rest: {
         pulls: {
           list() {},
-          async get({ pull_number }) {
+          async get({ pull_number }: { pull_number: number }) {
             reads += 1;
             return {
               data: {
@@ -368,7 +405,7 @@ describe('PR line-change summaries', () => {
           },
         },
       },
-      async paginate(method) {
+      async paginate(method: unknown) {
         return method === this.rest.pulls.list
           ? [{ number: 1 }, { number: 2 }]
           : [];
