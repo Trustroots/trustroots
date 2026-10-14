@@ -1,7 +1,7 @@
-const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
+const assert: typeof import('node:assert/strict') = require('node:assert/strict');
+const fs: typeof import('node:fs') = require('node:fs');
+const os: typeof import('node:os') = require('node:os');
+const path: typeof import('node:path') = require('node:path');
 const {
   duration,
   formatDuration,
@@ -157,13 +157,28 @@ describe('CI timing overview', () => {
     assert.ok(!html.includes('Elapsed to snapshot'));
   });
 
+  type WorkflowRun = {
+    id: number;
+    run_attempt: number;
+    status: string;
+    updated_at: string;
+    run_started_at: string;
+    html_url: string;
+    pull_requests: Array<{ number: number }>;
+  };
+
   function api({
     failRun = false,
     failJobs = false,
     failLint = false,
     runs = [],
+  }: {
+    failRun?: boolean;
+    failJobs?: boolean;
+    failLint?: boolean;
+    runs?: WorkflowRun[];
   } = {}) {
-    const calls = [];
+    const calls: Array<{ method: string; args: Record<string, unknown> }> = [];
     const actions = {
       getWorkflowRun: async () => {
         if (failRun) throw new Error('API unavailable');
@@ -182,7 +197,7 @@ describe('CI timing overview', () => {
     return {
       calls,
       rest: { actions },
-      paginate: async (method, args) => {
+      paginate: async (method: string, args: Record<string, unknown>) => {
         calls.push({ method, args });
         if (method === 'jobs') {
           if (failJobs) throw new Error('Jobs unavailable');
@@ -222,7 +237,7 @@ describe('CI timing overview', () => {
     });
     const result = await collectTimings(github, prContext, 2);
     assert.deepEqual(
-      result.workflows.map(workflow => workflow.name),
+      result.workflows.map((workflow: { name: string }) => workflow.name),
       ['Tests', 'Linter'],
     );
     assert.deepEqual(result.unavailable, []);
