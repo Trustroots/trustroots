@@ -15,7 +15,7 @@ import config from './../../../../config/config.mjs';
 import logModule from './../../../../config/lib/logger.mjs';
 import userRolesService from './../../../users/server/services/user-roles.server.service.mjs';
 import categories from '../../../support/shared/categories.ts';
-export type MailCallback<Result = unknown> = (
+export type MailCallback<Result = import('agenda').Job> = (
   error?: Error | null,
   result?: Result,
 ) => void;
@@ -45,7 +45,7 @@ export interface EmailTemplateParams extends Record<string, unknown> {
   name?: string;
   email?: string;
   from?: string | { name?: string; address?: string };
-  replyTo?: string;
+  replyTo?: string | { name?: string; address?: string };
   subject?: string;
   skipHtmlTemplate?: unknown;
   sparkpostCampaign?: string;
@@ -64,7 +64,7 @@ export interface RenderedEmail {
   subject?: string;
   text: string;
   html?: string;
-  replyTo?: string;
+  replyTo?: string | { name?: string; address?: string };
   headers?: Record<string, string>;
 }
 const render = renderModule as (
@@ -377,7 +377,7 @@ function sendFlaggedSignupAlert(
   service.renderEmailAndSend('flagged-signup-alert', params, callback);
 }
 function sendSupportRequest(
-  replyTo: string,
+  replyTo: NonNullable<EmailTemplateParams['replyTo']>,
   supportRequest: SupportMailRequest,
   callback: MailCallback,
 ) {

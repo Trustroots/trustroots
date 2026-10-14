@@ -1,4 +1,8 @@
 import type { Done, Result } from './legacy-cli-contracts.d.cts';
+import type {
+  EmailTemplateParams,
+  RenderedEmail,
+} from '../modules/core/server/services/email.server.service.mts';
 type TemplateName =
   | 'messages-unread'
   | 'confirm-contact'
@@ -9,22 +13,7 @@ type TemplateName =
   | 'support-request'
   | 'signup-reminder'
   | 'reactivate-hosts';
-type TemplateParams = Record<string, unknown>;
-interface RenderedEmail {
-  from: string;
-  to: string;
-  subject: string;
-  html?: string;
-  text?: string;
-}
-interface EmailRenderer {
-  renderEmail(
-    template: TemplateName,
-    params: TemplateParams,
-    callback: Result<RenderedEmail>,
-  ): void;
-  addEmailBaseTemplateParams(params: TemplateParams): TemplateParams;
-}
+type TemplateParams = EmailTemplateParams;
 interface StreamMailer {
   createTransport(options: { streamTransport: true; buffer: true }): {
     sendMail(email: RenderedEmail, callback: Result<{ message: Buffer }>): void;
@@ -55,7 +44,7 @@ const async = require('async') as TemplateAsync;
 const nodemailer = require('nodemailer') as StreamMailer;
 const config = require('./../config/config.mjs') as { supportEmail: string };
 const emailService =
-  require('./../modules/core/server/services/email.server.service.mjs') as EmailRenderer;
+  require('./../modules/core/server/services/email.server.service.mjs') as typeof import('../modules/core/server/services/email.server.service.mts').default;
 
 // Default temp folder
 const tempFolder =
@@ -88,7 +77,7 @@ function writeEml(
       return callback(err);
     }
     console.log(' -> Rendered');
-    transport.sendMail(email, function (err, info) {
+    transport.sendMail(email!, function (err, info) {
       if (err) {
         console.error(' -> Failed sending email to stub transport:');
         console.error(err);
