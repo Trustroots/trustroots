@@ -3,14 +3,11 @@
 New signup, resend, reminder and email-change links expire 24 hours after
 issuance. Each issued link replaces the previous link for that pending address.
 
-Before deploying this behaviour, configure
-`TRUSTROOTS_EMAIL_CONFIRMATION_LEGACY_DEADLINE` on every application instance
-with the same absolute ISO-8601 timestamp, set to seven days after rollout.
-Existing links without expiry metadata remain valid until that timestamp. The
-deadline is read from deployment configuration so restarts and multiple
-instances use the same transition boundary. If the setting is absent or
-invalid, links without expiry metadata are rejected; members can request a new
-confirmation email.
+Links issued before expiry metadata existed remain valid until 1 November 2026
+at 00:00 UTC. That cut-off is fixed in the application, so there is no
+deployment setting to configure. From that instant, a link without expiry
+metadata is rejected. The member can sign in and request a new confirmation
+email.
 
-After the deadline, remove the setting from deployment configuration. Newly
-issued links carry expiry metadata and continue to work without it.
+Newly issued links carry expiry metadata and continue to work after the
+cut-off.

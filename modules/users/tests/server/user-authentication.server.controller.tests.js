@@ -5,7 +5,6 @@ const mockModule = require('../../../../testutils/server/mock-module');
 const sinon = require('sinon');
 const winston = require('winston');
 const should = require('should');
-const config = require('../../../../config/config.mjs');
 
 const testutils = require('../../../../testutils/server/server.testutil');
 require('./../../server/models/user.server.model.mjs');
@@ -725,6 +724,8 @@ describe('Authentication controller OAuth unit tests', () => {
       const userDoc = await User.findById(saved._id);
       userDoc.emailTemporary = userDoc.email;
       userDoc.emailToken = 'valid-token';
+      userDoc.emailTokenIssuedAt = new Date();
+      userDoc.emailTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
       await userDoc.save();
 
       const res = deferredResponse();
@@ -743,6 +744,8 @@ describe('Authentication controller OAuth unit tests', () => {
       userDoc.public = false;
       userDoc.emailTemporary = userDoc.email;
       userDoc.emailToken = 'confirm-token';
+      userDoc.emailTokenIssuedAt = new Date();
+      userDoc.emailTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
       await userDoc.save();
 
       const res = deferredResponse();
@@ -799,7 +802,7 @@ describe('Authentication controller OAuth unit tests', () => {
       unchanged.emailTemporary.should.equal(saved.email);
     });
 
-    it('rejects legacy tokens after the shared transition deadline', async () => {
+    it('rejects legacy tokens on 1 November 2026', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       await User.updateOne(
         { _id: saved._id },
@@ -809,12 +812,16 @@ describe('Authentication controller OAuth unit tests', () => {
             emailTemporary: saved.email,
             emailToken: 'legacy-confirm-token',
           },
+          $unset: {
+            emailTokenIssuedAt: 1,
+            emailTokenExpires: 1,
+          },
         },
       );
-      const previousDeadline = config.emailConfirmationLegacyDeadline;
-      config.emailConfirmationLegacyDeadline = new Date(
-        Date.now() - 1,
-      ).toISOString();
+      const clock = sinon.useFakeTimers({
+        now: new Date('2026-11-01T00:00:00.000Z').getTime(),
+        toFake: ['Date'],
+      });
 
       try {
         const res = deferredResponse();
@@ -827,7 +834,7 @@ describe('Authentication controller OAuth unit tests', () => {
         const unchanged = await User.findById(saved._id);
         unchanged.public.should.be.false();
       } finally {
-        config.emailConfirmationLegacyDeadline = previousDeadline;
+        clock.restore();
       }
     });
 
@@ -967,6 +974,8 @@ describe('Authentication controller OAuth unit tests', () => {
       userDoc.public = false;
       userDoc.emailTemporary = userDoc.email;
       userDoc.emailToken = 'confirm-token';
+      userDoc.emailTokenIssuedAt = new Date();
+      userDoc.emailTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
       await userDoc.save();
 
       sinon.stub(User, 'findOneAndUpdate').yields(new Error('update failed'));

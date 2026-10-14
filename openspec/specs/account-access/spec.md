@@ -659,7 +659,7 @@ policy is exceeded.
 
 ### Requirement: Bounded email confirmation lifetime
 
-The system SHALL issue email confirmation credentials with a 24-hour lifetime and SHALL store only their digests. Legacy credentials lacking expiry metadata SHALL be accepted only before a configured, deployment-wide deadline that is set seven days after rollout.
+The system SHALL issue email confirmation credentials with a 24-hour lifetime and SHALL store only their digests. Legacy credentials lacking expiry metadata SHALL be accepted only before 1 November 2026 at 00:00 UTC.
 
 #### Scenario: Link reaches its expiry boundary
 
@@ -668,7 +668,7 @@ The system SHALL issue email confirmation credentials with a 24-hour lifetime an
 
 #### Scenario: Legacy transition deadline passes
 
-- **WHEN** a legacy confirmation without expiry metadata is submitted at or after the configured deadline
+- **WHEN** a legacy confirmation without expiry metadata is submitted at or after 1 November 2026 at 00:00 UTC
 - **THEN** the system rejects it and offers the existing resend flow
 
 #### Scenario: Member requests a replacement

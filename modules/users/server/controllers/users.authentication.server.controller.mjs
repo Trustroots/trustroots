@@ -10,7 +10,6 @@ import passport from 'passport';
 import async from 'async';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
-import config from '../../../../config/config.mjs';
 import {
   emailConfirmationTokenQuery,
   setEmailConfirmationToken,
@@ -470,11 +469,7 @@ service.removeOAuthProvider = function (req, res) {
 service.validateEmailToken = function (req, res) {
   const now = new Date();
   User.findOne(
-    emailConfirmationTokenQuery(
-      req.params.token,
-      now,
-      config.emailConfirmationLegacyDeadline,
-    ),
+    emailConfirmationTokenQuery(req.params.token, now),
     function (err, user) {
       if (!user) {
         return res.redirect('/confirm-email-invalid');
@@ -489,11 +484,7 @@ service.validateEmailToken = function (req, res) {
  */
 service.confirmEmail = function (req, res) {
   const now = new Date();
-  const tokenQuery = emailConfirmationTokenQuery(
-    req.params.token,
-    now,
-    config.emailConfirmationLegacyDeadline,
-  );
+  const tokenQuery = emailConfirmationTokenQuery(req.params.token, now);
   async.waterfall(
     [
       function (done) {

@@ -3,6 +3,7 @@ const {
   hashToken,
 } = require('../../server/services/action-token.server.service.mjs');
 const {
+  EMAIL_CONFIRMATION_LEGACY_DEADLINE,
   EMAIL_CONFIRMATION_LIFETIME_MS,
   emailConfirmationTokenQuery,
   setEmailConfirmationToken,
@@ -31,28 +32,43 @@ describe('Email confirmation token lifecycle', function () {
     const query = emailConfirmationTokenQuery(
       'fictional-confirmation-token',
       now,
-      '2026-10-20T00:00:00.000Z',
     );
 
     assert.deepEqual(query.$or[0], { emailTokenExpires: { $gt: now } });
     assert.deepEqual(query.$or[1], { emailTokenExpires: { $exists: false } });
   });
 
-  it('stops accepting legacy tokens at the deployment deadline', function () {
-    const now = new Date('2026-10-20T00:00:00.000Z');
+  it('accepts legacy tokens until 1 November 2026', function () {
+    const now = new Date(EMAIL_CONFIRMATION_LEGACY_DEADLINE.getTime() - 1);
     const query = emailConfirmationTokenQuery(
       'fictional-confirmation-token',
       now,
-      '2026-10-20T00:00:00.000Z',
+    );
+
+    assert.equal(
+      EMAIL_CONFIRMATION_LEGACY_DEADLINE.toISOString(),
+      '2026-11-01T00:00:00.000Z',
+    );
+    assert.deepEqual(query.$or[1], { emailTokenExpires: { $exists: false } });
+  });
+
+  it('stops accepting legacy tokens on 1 November 2026', function () {
+    const now = new Date(EMAIL_CONFIRMATION_LEGACY_DEADLINE);
+    const query = emailConfirmationTokenQuery(
+      'fictional-confirmation-token',
+      now,
     );
 
     assert.deepEqual(query.$or, [{ emailTokenExpires: { $gt: now } }]);
   });
 
   it('uses a current timestamp when no validation time is supplied', function () {
+    const before = Date.now();
     const query = emailConfirmationTokenQuery('fictional-confirmation-token');
+    const after = Date.now();
+    const now = query.$or[0].emailTokenExpires.$gt;
 
-    assert.ok(query.$or[0].emailTokenExpires.$gt instanceof Date);
-    assert.equal(query.$or.length, 1);
+    assert.ok(now instanceof Date);
+    assert.ok(now.getTime() >= before && now.getTime() <= after);
   });
 });
