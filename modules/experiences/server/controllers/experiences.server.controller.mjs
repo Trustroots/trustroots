@@ -9,10 +9,10 @@ import userProfile from '../../../users/server/controllers/users.profile.server.
 import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
 import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
 import {
-  prepareExperienceCount,
   prepareNewExperience,
   prepareSendingToClient,
 } from '../services/experience-payload.server.service.mjs';
+import { getExperienceCount } from './experience-count.server.controller.mts';
 
 const service = {};
 
@@ -661,47 +661,8 @@ service.readMine = async function readMine(req, res) {
   return res.status(200).json(experienceWithResponse);
 };
 
-service.getCount = async function getCount(req, res, next) {
-  const { userTo } = req.query;
-
-  if (!mongoose.Types.ObjectId.isValid(userTo)) {
-    return res
-      .status(400)
-      .send({ message: 'Missing or invalid `userTo` request param' });
-  }
-
-  try {
-    const isSelf = req.user._id.equals(userTo);
-
-    const query = {
-      userTo: new mongoose.Types.ObjectId(userTo),
-      removedAt: { $exists: false },
-    };
-
-    const counts = await Experience.aggregate([
-      { $match: { ...query, ...(isSelf ? {} : { public: true }) } },
-      // Drop counts authored by members with restricted roles
-      // (suspended, shadowbanned)
-      ...userMiniService.visibleUserLookupStages({
-        localField: 'userFrom',
-        as: 'author',
-      }),
-      { $group: { _id: '$public', count: { $sum: 1 } } },
-    ]).exec();
-    const { publicCount, privateCount } = counts.reduce(
-      (result, group) => {
-        result[group._id ? 'publicCount' : 'privateCount'] = group.count;
-        return result;
-      },
-      { publicCount: 0, privateCount: 0 },
-    );
-
-    return res
-      .status(200)
-      .json(prepareExperienceCount(publicCount, privateCount, isSelf));
-  } catch (error) {
-    processResponses(res, next, error);
-  }
+service.getCount = function getCount(req, res, next) {
+  return getExperienceCount(req, res, next, processResponses);
 };
 
 const create = service.create;

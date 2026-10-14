@@ -86,6 +86,7 @@
     "test:e2e:ui": "./scripts/e2e/test-e2e.sh --ui",
     "test:server:codex": "TRUSTROOTS_SKIP_LOCAL_CONFIG=true ./scripts/codex/test-server.sh",
     "test:server:files": "node ./scripts/test-server-files.js",
+    "test:record-access": "node ./scripts/ci/test-record-access.mts",
     "test:server:watch": "pnpm run check-environment && NODE_ENV=test nodemon --watch modules --watch config --watch migrations --watch server.js --ext js,mjs,mts --ignore 'modules/*/client/**' --ignore 'modules/*/tests/client/**' --exec 'node ./scripts/test-server.js'",
     "test:server:parallel": "NODE_ENV=test node ./scripts/test-server-parallel.js",
     "test:coverage:server:parallel": "NODE_OPTIONS='--import ./scripts/coverage/native-esm.mjs' nyc --nycrc-path .nycrc-server pnpm run test:server:parallel",

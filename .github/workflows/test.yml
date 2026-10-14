@@ -328,6 +328,17 @@ jobs:
             docker tag mongo:4.4 public.ecr.aws/docker/library/mongo:4.4
           fi
           docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --pull never mongodb
+      - name: Check record access boundaries
+        working-directory: deploy/docker
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
+            -e CI=true \
+            -e NODE_ENV=test \
+            -e DB_1_PORT_27017_TCP_ADDR=mongodb \
+            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
+            -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
+            -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
+            dev pnpm run test:record-access
       - name: Test server with coverage
         working-directory: deploy/docker
         run: |
