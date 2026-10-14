@@ -14,6 +14,9 @@ async function createPublicUser(
   request: APIRequestContext,
 ): Promise<ReturnType<typeof createUser>> {
   const user = createUser();
+  // Retained reviews and retries need distinct anonymous display names.
+  user.firstName = 'Anonymous';
+  user.lastName = user.username;
   await registerViaApi(request, user);
   await updateUserByUsername(user.username, {
     $set: {
@@ -47,6 +50,21 @@ test('support link lets an author request an edit and removal for admin review',
   try {
     const author = await createPublicUser(memberContext.request);
     const recipient = await createPublicUser(memberContext.request);
+    const authorLabel = `${author.firstName} ${author.lastName}`;
+    const recipientLabel = `${recipient.firstName} ${recipient.lastName}`;
+    const supportSearch = page.locator('section').filter({
+      has: page.getByRole('heading', { name: 'Create a support link' }),
+    });
+    const pendingRequest = page
+      .locator('section')
+      .filter({ has: page.getByRole('heading', { name: 'Pending requests' }) })
+      .locator('.panel')
+      .filter({ hasText: authorLabel });
+    const approvedEdit = page
+      .locator('section')
+      .filter({ has: page.getByRole('heading', { name: 'Recently approved' }) })
+      .locator('.panel')
+      .filter({ hasText: authorLabel });
     const authorId = await fetchUserIdByUsername(
       memberContext.request,
       author.username,
@@ -84,9 +102,9 @@ test('support link lets an author request an edit and removal for admin review',
     await page.getByLabel('Member username').fill(author.username);
     await page.getByRole('button', { name: 'Find Experiences' }).click();
     await expect(
-      page.getByText('An anonymous original Experience.'),
+      supportSearch.getByText('An anonymous original Experience.'),
     ).toBeVisible();
-    await page
+    await supportSearch
       .locator('.panel')
       .filter({ hasText: 'An anonymous original Experience.' })
       .getByRole('button', { name: 'Copy link for author' })
@@ -118,13 +136,14 @@ test('support link lets an author request an edit and removal for admin review',
     );
 
     await page.reload();
+    await expect(pendingRequest).toHaveCount(1);
     await expect(
-      page.getByText(/Eddie Endtoend wrote about Eddie Endtoend/),
+      pendingRequest.getByText(`${authorLabel} wrote about ${recipientLabel}`),
     ).toBeVisible();
     await expect(
-      page.getByText('An anonymous revised Experience.'),
+      pendingRequest.getByText('An anonymous revised Experience.'),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Approve' }).first().click();
+    await pendingRequest.getByRole('button', { name: 'Approve' }).click();
     await memberPage.reload();
     await expect(memberPage.getByRole('status')).toContainText('approved');
 
@@ -154,18 +173,22 @@ test('support link lets an author request an edit and removal for admin review',
       memberPage.getByText('An anonymous reciprocal Experience.'),
     ).toBeVisible();
 
-    await expect(page.getByText('No requests awaiting review.')).toBeVisible();
-    await expect(page.getByText('Approved', { exact: true })).toBeVisible();
+    await expect(pendingRequest).toHaveCount(0);
     await expect(
-      page.locator(`a[href="/profile/${author.username}/experiences"]`),
+      approvedEdit.getByText('Approved', { exact: true }),
     ).toBeVisible();
     await expect(
-      page.locator(`a[href="/profile/${recipient.username}/experiences"]`),
+      approvedEdit.locator(`a[href="/profile/${author.username}/experiences"]`),
+    ).toBeVisible();
+    await expect(
+      approvedEdit.locator(
+        `a[href="/profile/${recipient.username}/experiences"]`,
+      ),
     ).toBeVisible();
     await page.getByLabel('Member username').fill(author.username);
     await page.getByRole('button', { name: 'Find Experiences' }).click();
     await expect(
-      page.getByText('Feedback: An anonymous revised Experience.'),
+      supportSearch.getByText('Feedback: An anonymous revised Experience.'),
     ).toBeVisible();
 
     await memberPage.goto(link);
@@ -174,7 +197,9 @@ test('support link lets an author request an edit and removal for admin review',
       'awaiting admin review',
     );
     await page.reload();
-    await page.getByRole('button', { name: 'Approve' }).first().click();
+    await expect(pendingRequest).toHaveCount(1);
+    await expect(pendingRequest.getByText('requests removal.')).toBeVisible();
+    await pendingRequest.getByRole('button', { name: 'Approve' }).click();
     await memberPage.reload();
     await expect(memberPage.getByRole('status')).toContainText('approved');
     expect(
@@ -197,9 +222,6 @@ test('support link lets an author request an edit and removal for admin review',
       memberPage.getByText('An anonymous revised Experience.'),
     ).toHaveCount(0);
 
-    const supportSearch = page.locator('section').filter({
-      has: page.getByRole('heading', { name: 'Create a support link' }),
-    });
     await page.getByLabel('Member username').fill(author.username);
     await page.getByRole('button', { name: 'Find Experiences' }).click();
     await expect(
@@ -208,7 +230,9 @@ test('support link lets an author request an edit and removal for admin review',
     await expect(
       supportSearch.getByText('An anonymous revised Experience.'),
     ).toHaveCount(0);
-    await expect(page.getByText('Approved', { exact: true })).toBeVisible();
+    await expect(
+      approvedEdit.getByText('Approved', { exact: true }),
+    ).toBeVisible();
   } finally {
     await memberContext.close();
   }

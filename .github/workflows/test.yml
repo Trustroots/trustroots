@@ -152,103 +152,51 @@ jobs:
           push: true
 
   client:
-    needs: [changes, build-dev-image]
+    needs: changes
     if: >
       always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
-      (github.event_name != 'workflow_dispatch' || inputs.run_client) &&
-      (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
+      (github.event_name != 'workflow_dispatch' || inputs.run_client)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
-      packages: read
+    env:
+      CI: true
+      TRUSTROOTS_SKIP_LOCAL_CONFIG: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up Docker Buildx
-        if: needs.build-dev-image.result == 'skipped'
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
-      - name: Log in to GHCR
-        if: needs.build-dev-image.result == 'success'
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Use Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Pull dev image
-        if: needs.build-dev-image.result == 'success'
-        run: |
-          docker pull "${{ needs.build-dev-image.outputs.image-ref }}"
-          docker tag "${{ needs.build-dev-image.outputs.image-ref }}" trustroots-dev:ci
-      - name: Build dev image
-        if: needs.build-dev-image.result == 'skipped'
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
-        with:
-          context: .
-          file: deploy/docker/dev.Dockerfile
-          tags: trustroots-dev:ci
-          cache-from: type=gha
-          # Cache availability must not fail a successful build or image push.
-          cache-to: type=gha,ignore-error=true,mode=max
-          load: true
-      - name: Prepare compose local config
-        run: node ./scripts/ci/ensure-compose-local.js
+          node-version-file: '.nvmrc'
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
       - name: Check internal client links
-        working-directory: deploy/docker
-        run: |
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
-            dev sh -c 'npm run test:links && npm run check:links'
+        run: pnpm run test:links && pnpm run check:links
       - name: Type-check client TypeScript
-        working-directory: deploy/docker
-        run: |
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
-            -e CI=true \
-            -e NODE_ENV=test \
-            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
-            dev pnpm run typecheck
+        run: pnpm run typecheck
       - name: Test Vite RTL stylesheet and development scripts
-        working-directory: deploy/docker
-        run: |
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
-            -e CI=true \
-            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
-            dev pnpm run test:vite:rtl
+        run: pnpm run test:vite:rtl
       - name: Build Vite client assets
-        working-directory: deploy/docker
-        run: |
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
-            -e CI=true \
-            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
-            dev pnpm run build:vite
+        run: pnpm run build:vite
+      - name: Install Chromium for Vite smoke tests
+        run: pnpm exec playwright install --with-deps chromium
       - name: Smoke-test Vite production script loading
-        working-directory: deploy/docker
-        run: |
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
-            -e CI=true \
-            dev pnpm run test:vite:production
+        run: pnpm run test:vite:production
       - name: Smoke-test Vite development proxy and module loading
-        working-directory: deploy/docker
-        run: |
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
-            -e CI=true \
-            dev pnpm run test:vite:development
+        run: pnpm run test:vite:development
       - name: Test client with coverage
-        working-directory: deploy/docker
         run: |
-          mkdir -p ../../coverage/client
+          mkdir -p coverage/client
           started_at="$(date +%s%3N)"
           exit_code=0
           set +e
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
-            -e CI=true \
-            -e NODE_ENV=test \
-            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
-            dev pnpm run test:coverage:client
+          NODE_ENV=test pnpm run test:coverage:client:ci
           exit_code="$?"
           if [ "$exit_code" -eq 0 ]; then
-            docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
-              -e CI=true \
-              -e NODE_ENV=test \
-              dev pnpm run coverage:check --scope=client
+            pnpm run coverage:check --scope=client
             exit_code="$?"
           fi
           set -e
@@ -261,7 +209,7 @@ jobs:
             message="Client coverage failed."
           fi
           STATUS="$status" EXIT_CODE="$exit_code" DURATION_MS="$duration_ms" MESSAGE="$message" \
-          COMMAND="pnpm run test:coverage:client && pnpm run coverage:check --scope=client" \
+          COMMAND="pnpm run test:coverage:client:ci && pnpm run coverage:check --scope=client" \
           node - <<'NODE'
           const fs = require('fs');
           const status = {
@@ -272,7 +220,7 @@ jobs:
             command: process.env.COMMAND,
             durationMs: Number(process.env.DURATION_MS),
           };
-          fs.writeFileSync('../../coverage/client/coverage-status.json', `${JSON.stringify(status, null, 2)}\n`);
+          fs.writeFileSync('coverage/client/coverage-status.json', `${JSON.stringify(status, null, 2)}\n`);
           NODE
           exit "$exit_code"
       - name: Upload client coverage report
@@ -402,10 +350,40 @@ jobs:
           path: coverage/server
           if-no-files-found: ignore
 
-  e2e-groups:
-    needs: [changes, build-dev-image]
+  build-e2e-assets:
+    needs: changes
     if: >
       always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_e2e)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CI: true
+      TRUSTROOTS_SKIP_LOCAL_CONFIG: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Use Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+      - name: Build shared end-to-end assets
+        run: pnpm run build:e2e
+      - name: Upload end-to-end assets
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: e2e-assets
+          path: public/assets
+          if-no-files-found: error
+
+  e2e-groups:
+    needs: [changes, build-dev-image, build-e2e-assets]
+    if: >
+      always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
+      needs.build-e2e-assets.result == 'success' &&
       (
         (github.event_name == 'workflow_dispatch' && inputs.run_e2e) ||
         (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
@@ -449,6 +427,11 @@ jobs:
           # Cache availability must not fail a successful build or image push.
           cache-to: type=gha,ignore-error=true,mode=max
           load: true
+      - name: Download shared end-to-end assets
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: e2e-assets
+          path: public/assets
       - name: Prepare compose local config
         run: node ./scripts/ci/ensure-compose-local.js
       - name: Start MongoDB
@@ -475,6 +458,7 @@ jobs:
             -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
             -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
             -e TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test \
+            -e TRUSTROOTS_E2E_SKIP_WEB_BUILD=true \
             -e TRUSTROOTS_E2E_GROUP=${{ matrix.group }} \
             -e TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE=true \
             -e TRUSTROOTS_E2E_WORKERS=2 \
@@ -507,8 +491,10 @@ jobs:
           if-no-files-found: ignore
 
   e2e:
-    needs: [changes, e2e-groups]
-    if: always() && !cancelled() && needs.e2e-groups.result != 'skipped'
+    needs: [changes, build-e2e-assets, e2e-groups]
+    if: >
+      always() && !cancelled() &&
+      (needs.e2e-groups.result != 'skipped' || needs.build-e2e-assets.result == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -600,6 +586,16 @@ jobs:
         run: |
           mkdir -p coverage/e2e
           node -e "const fs = require('fs'); const status = { status: 'skipped', exitCode: 0, message: 'End-to-end tests were not requested for this pull request run.', generatedAt: new Date().toISOString(), command: 'pnpm run test:e2e', reportPath: 'playwright-report/index.html', metrics: null }; fs.writeFileSync('coverage/e2e/status.json', JSON.stringify(status, null, 2) + '\n');"
+      - name: Collect CI timing snapshot
+        continue-on-error: true
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const fs = require('node:fs');
+            const { collectTimings } = require('./scripts/coverage/collect-ci-timings');
+            const timings = await collectTimings(github, context, Number(process.env.GITHUB_RUN_ATTEMPT));
+            fs.mkdirSync('coverage', { recursive: true });
+            fs.writeFileSync('coverage/ci-timings.json', JSON.stringify(timings, null, 2));
       - name: Generate coverage overview
         if: needs.changes.outputs.run-code != 'false'
         run: pnpm run coverage:report
@@ -743,6 +739,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
+      actions: read
       contents: read
       pages: write
       id-token: write
@@ -777,6 +774,16 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report
+      - name: Collect CI timing snapshot
+        continue-on-error: true
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const fs = require('node:fs');
+            const { collectTimings } = require('./scripts/coverage/collect-ci-timings');
+            const timings = await collectTimings(github, context, Number(process.env.GITHUB_RUN_ATTEMPT));
+            fs.mkdirSync('coverage', { recursive: true });
+            fs.writeFileSync('coverage/ci-timings.json', JSON.stringify(timings, null, 2));
       - name: Generate coverage report page
         run: pnpm run coverage:report
       - name: Configure GitHub Pages

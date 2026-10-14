@@ -69,4 +69,24 @@ describe('Coverage report HTML', () => {
       script.should.be.ok();
     });
   });
+
+  it('includes the CI timing snapshot in the HTML overview', () => {
+    const html = renderReportShell(
+      metadata,
+      {},
+      {
+        collectedAt: '2026-01-01T00:01:00Z',
+        workflows: [
+          {
+            name: 'Tests',
+            url: 'https://github.com/example/project/actions/runs/1',
+            startedAt: '2026-01-01T00:00:00Z',
+            jobs: [],
+          },
+        ],
+      },
+    );
+    html.should.containEql('<h3>CI timings</h3>');
+    html.should.containEql('Elapsed to snapshot: 1m 00s');
+  });
 });

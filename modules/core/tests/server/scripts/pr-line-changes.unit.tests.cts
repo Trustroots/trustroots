@@ -244,6 +244,7 @@ describe('PR line-change summaries', () => {
       fs.mkdirSync(path.join(dir, 'scripts/coverage'), { recursive: true });
       for (const name of [
         'generate-pr-summary.js',
+        'ci-timings.js',
         'line-changes.js',
         'dependency-changes.js',
       ]) {

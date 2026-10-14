@@ -54,23 +54,38 @@ jobs:
             sleep 30
           done
       - name: Lint
+        id: lint
         # See https://eslint.org/docs/user-guide/command-line-interface#options
         run: pnpm run lint:report
         # Continue to the next step even if this fails
         continue-on-error: true
-      - name: Run ESLint with reviewdog
+      - name: Set up reviewdog
         if: github.event.pull_request.head.repo.full_name == github.repository
-        uses: reviewdog/action-eslint@3ee2a450da17e060b9dfa4bffd53976906c6b2b0 # v1.36.1
-        # Keep lint enforcement independent of reviewdog's binary download.
+        uses: reviewdog/action-setup@18c694f622bf52d60f95ecf838462ed7971c0add # v1
         continue-on-error: true
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          reporter: github-check
-          filter_mode: file # annotate all issues in changed files (mirrors old only-pr-files)
-          fail_level: error # fail the check on ESLint errors (warnings still reported)
-          eslint_flags: '--ext .js,.mjs,.mts,.cts,.ts,.tsx .'
+          reviewdog_version: v0.21.2
+      - name: Annotate existing ESLint results
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node - <<'NODE' > eslint_report.txt
+          const fs = require('node:fs');
+          const { ESLint } = require('eslint');
+          (async () => {
+            const formatter = await new ESLint().loadFormatter('stylish');
+            process.stdout.write(formatter.format(JSON.parse(fs.readFileSync('eslint_report.json', 'utf8'))));
+          })().catch(error => { console.error(error); process.exitCode = 1; });
+          NODE
+          reviewdog -f=eslint -name=eslint -reporter=github-check \
+            -filter-mode=file -fail-level=none < eslint_report.txt
       - name: Enforce lint
-        run: pnpm run lint
+        if: always()
+        env:
+          LINT_OUTCOME: ${{ steps.lint.outcome }}
+        run: test "$LINT_OUTCOME" = success
       - name: Check API input boundaries
         run: pnpm run test:boundaries
       - name: Upload ESLint report
