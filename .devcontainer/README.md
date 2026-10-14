@@ -87,7 +87,7 @@ pnpm run test:e2e
 pnpm run coverage:report
 ```
 
-For CI-parity E2E (prebuilt Vite client, 2 workers):
+`pnpm run test:e2e` builds the Vite client first. For the Webpack development server instead, set `TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=true`. For two workers:
 
 ```sh
 CI=true pnpm run test:e2e

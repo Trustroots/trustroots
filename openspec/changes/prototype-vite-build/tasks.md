@@ -4,6 +4,6 @@
 - [x] Make the Vite production build pass with the current JavaScript files containing JSX and the Less pipeline.
 - [x] Verify the production bundle executes with the backend's classic script tag.
 - [x] Smoke-test the Vite development proxy, module entry and styles on sign-in, recovery and safety routes.
-- [ ] Compare production CSS, including RTL output, and static asset paths with Webpack.
-- [ ] Smoke-test the backend template connection and all remaining hybrid routes.
+- [x] Compare production CSS, including RTL output, and static asset paths with Webpack.
+- [x] Smoke-test the backend template connection and all remaining hybrid routes.
 - [x] Record development and production build measurements before proposing a default switch.
