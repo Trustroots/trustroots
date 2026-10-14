@@ -20,3 +20,25 @@ declare module 'speakingurl' {
     options?: Record<string, unknown>,
   ): string;
 }
+
+declare module 'sanitize-html' {
+  export default function sanitizeHtml(
+    text: string,
+    options?: Record<string, unknown>,
+  ): string;
+}
+
+declare module 'html-to-text' {
+  export function htmlToText(
+    text: string,
+    options?: { wordwrap?: number },
+  ): string;
+  const htmlToTextModule: { htmlToText: typeof htmlToText };
+  export default htmlToTextModule;
+}
+
+declare module 'validator' {
+  export function isEmail(text: string): boolean;
+  const validator: { isEmail: typeof isEmail };
+  export default validator;
+}

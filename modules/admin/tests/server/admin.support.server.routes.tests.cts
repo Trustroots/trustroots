@@ -462,7 +462,11 @@ describe('Support team access and investigation', () => {
         throw new Error('Lookup unavailable');
       },
     } as unknown as ReturnType<typeof User.findOne>);
-    const response = { status: sinon.stub().returnsThis(), send: sinon.spy() };
+    const response = {
+      status: sinon.stub().returnsThis(),
+      send: sinon.spy(),
+      json: sinon.spy(),
+    };
     await supportController.supportRequest(
       {
         body: {
