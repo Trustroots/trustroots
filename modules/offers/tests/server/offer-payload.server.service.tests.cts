@@ -1,4 +1,4 @@
-const assert = require('assert/strict');
+const assert: typeof import('assert/strict') = require('assert/strict');
 const { ObjectId } = require('mongoose').Types;
 const {
   prepareNewOffer,

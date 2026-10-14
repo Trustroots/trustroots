@@ -1,23 +1,32 @@
+import type {
+  OfferDocument,
+  OfferModel,
+  OfferRecord,
+  TestConfigModule,
+  UserModelDocument,
+  UserModel,
+  UserRecord,
+} from '../../../../../testutils/server/model-contracts.mts';
 /**
  * Unit tests for uncovered reactivate-hosts job error paths.
  */
-const sinon = require('sinon');
-const mongoose = require('mongoose');
+const sinon: typeof import('sinon') = require('sinon');
+const mongoose: typeof import('mongoose') = require('mongoose');
 
-const emailService = require('./../../../../core/server/services/email.server.service.mjs');
-const reactivateHostsJobHandler = require('./../../../server/jobs/reactivate-hosts.server.job.mjs');
-const testutils = require('../../../../../testutils/server/server.testutil');
-const config = require('./../../../../../config/config.mjs');
-const moment = require('moment');
+const emailService: typeof import('./../../../../core/server/services/email.server.service.mjs') = require('./../../../../core/server/services/email.server.service.mjs');
+const reactivateHostsJobHandler: typeof import('./../../../server/jobs/reactivate-hosts.server.job.mjs').default = require('./../../../server/jobs/reactivate-hosts.server.job.mjs');
+const testutils: typeof import('../../../../../testutils/server/server.testutil') = require('../../../../../testutils/server/server.testutil');
+const config: TestConfigModule = require('./../../../../../config/config.mjs');
+const moment: typeof import('moment') = require('moment');
 require('should');
 
-const User = mongoose.model('User');
-const Offer = mongoose.model('Offer');
+const User = mongoose.model<UserRecord, UserModel>('User');
+const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
 
 describe('Job: reactivate hosts unit tests', () => {
   const jobs = testutils.catchJobs();
-  let user;
-  let offerHost;
+  let user: UserModelDocument;
+  let offerHost: OfferDocument;
 
   beforeEach(function (done) {
     user = new User({
@@ -64,11 +73,11 @@ describe('Job: reactivate hosts unit tests', () => {
   it('passes lookup errors to agenda', function (done) {
     sinon.stub(Offer, 'find').returns({
       populate: () => ({
-        exec: cb => cb(new Error('lookup failed')),
+        exec: (cb: (error: Error) => void) => cb(new Error('lookup failed')),
       }),
-    });
+    } as unknown as ReturnType<typeof Offer.find>);
 
-    reactivateHostsJobHandler({}, function (err) {
+    reactivateHostsJobHandler({}, function (err: Error) {
       err.message.should.equal('lookup failed');
       jobs.length.should.equal(0);
       done();
@@ -80,7 +89,7 @@ describe('Job: reactivate hosts unit tests', () => {
       .stub(emailService, 'sendReactivateHosts')
       .callsFake((offerUser, cb) => cb(new Error('mail failed')));
 
-    reactivateHostsJobHandler({}, function (err) {
+    reactivateHostsJobHandler({}, function (err: Error) {
       err.message.should.equal('mail failed');
       jobs.length.should.equal(0);
       done();

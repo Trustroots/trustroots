@@ -1,27 +1,63 @@
-const should = require('should');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const User = mongoose.model('User');
-const express = require('./../../../../config/lib/express.mjs');
-const log = require('./../../../../config/lib/logger.mjs');
+import type { HydratedDocument } from 'mongoose';
+import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
+
+const should: typeof import('should') = require('should');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const User = mongoose.model<UserRecord>('User');
+const express: {
+  init(
+    connection: import('mongoose').Connection,
+  ): Promise<import('express').Express>;
+} = require('./../../../../config/lib/express.mjs');
+const log: (
+  ...args: unknown[]
+) => void = require('./../../../../config/lib/logger.mjs');
+
+interface Credentials {
+  username: string;
+  password: string;
+}
+type TestUserDocument = HydratedDocument<UserRecord>;
+interface UserFixture {
+  credentials: Credentials;
+  user: TestUserDocument;
+  profile: UserRecord;
+}
+interface ApiProfile {
+  displayName?: string;
+  username?: string;
+}
+interface SearchResult {
+  username: string;
+}
+
+function requireResponse(
+  response: import('supertest').Response | void,
+): import('supertest').Response {
+  if (!response) throw new Error('expected the request to return a response');
+  return response;
+}
 
 /**
  * Globals
  */
-let app;
-let agent;
+let app: import('express').Express;
+let agent: ReturnType<typeof request.agent>;
 
 /* users of the test */
-let alice;
-let bob;
-function checkError(message, done) {
-  return err => {
+let alice: UserFixture;
+let bob: UserFixture;
+function checkError(message: string, done: Mocha.Done) {
+  return (err: Error) => {
     log('error', `Error while >> ${message}`);
     log('error', err);
     done(err);
   };
 }
-const login = credentials =>
+const login = (
+  credentials: Credentials,
+): Promise<import('supertest').Response> =>
   new Promise((resolve, reject) => {
     agent = request.agent(app);
     agent
@@ -42,7 +78,7 @@ const login = credentials =>
 /**
  * Requests reused during tests
  */
-const block = username =>
+const block = (username: string): Promise<import('supertest').Response> =>
   new Promise((resolve, reject) =>
     agent
       .put(`/api/blocked-users/${username}`)
@@ -58,7 +94,7 @@ const block = username =>
         resolve(resp);
       }),
   );
-const unblock = username =>
+const unblock = (username: string): Promise<import('supertest').Response> =>
   new Promise((resolve, reject) =>
     agent
       .delete(`/api/blocked-users/${username}`)
@@ -74,7 +110,7 @@ const unblock = username =>
         resolve(resp);
       }),
   );
-const getUser = username =>
+const getUser = (username: string): Promise<import('supertest').Response> =>
   new Promise((resolve, reject) =>
     agent
       .get(`/api/users/${username}`)
@@ -89,7 +125,10 @@ const getUser = username =>
         resolve(resp);
       }),
   );
-const searchUser = (searchStr, expectedStatus = 200) =>
+const searchUser = (
+  searchStr: string,
+  expectedStatus = 200,
+): Promise<SearchResult[]> =>
   new Promise((resolve, reject) =>
     agent
       .get(`/api/users/?search=${searchStr}`)
@@ -101,7 +140,7 @@ const searchUser = (searchStr, expectedStatus = 200) =>
           reject(err);
         }
         log('info', `searched for ${searchStr}`);
-        resolve(resp.body);
+        resolve(resp.body as SearchResult[]);
       }),
   );
 
@@ -179,7 +218,7 @@ describe('User block - user', function () {
       .then(() => getUser(alice.credentials.username) /* bob can see alice */)
       .catch(checkError('bob sees alice: get', done))
       .then(resp => {
-        const response = resp.body;
+        const response = requireResponse(resp).body as ApiProfile;
         log('info', `bob sees ${response.displayName}`);
         should(response).have.property('displayName');
         should(response.displayName).equal('Alice Doe');
@@ -194,7 +233,10 @@ describe('User block - user', function () {
       .catch(checkError('alice list blocked users: block bob', done))
       .then(resp => {
         /* alice see bob in blocked list */
-        log('info', `block response ${JSON.stringify(resp.body)}`);
+        log(
+          'info',
+          `block response ${JSON.stringify(requireResponse(resp).body)}`,
+        );
         agent
           .get('/api/blocked-users')
           .expect(200)

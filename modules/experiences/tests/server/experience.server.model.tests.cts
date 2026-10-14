@@ -1,14 +1,23 @@
-const should = require('should');
-const mongoose = require('mongoose');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User');
-const Experience = mongoose.model('Experience');
+import type {
+  ExperienceModel,
+  ExperienceRecord,
+  UserModelDocument,
+  UserModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+const should: typeof import('should') = require('should');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+const User = mongoose.model<UserRecord, UserModel>('User');
+const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
+  'Experience',
+);
 
 describe('Experience Model Unit Tests', () => {
   describe('Method Save', () => {
-    let user1;
-    let user2;
-    let user3;
+    let user1: UserModelDocument;
+    let user2: UserModelDocument;
+    let user3: UserModelDocument;
 
     beforeEach(async () => {
       [user1, user2, user3] = utils

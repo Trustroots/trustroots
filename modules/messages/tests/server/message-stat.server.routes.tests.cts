@@ -1,18 +1,28 @@
-const should = require('should');
-const async = require('async');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const express = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+import type {
+  MessageStatDocument,
+  MessageStatModel,
+  MessageStatRecord,
+  TestAgent,
+  TestExpressModule,
+  UserModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+const should: typeof import('should') = require('should');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 
-const User = mongoose.model('User');
-const MessageStat = mongoose.model('MessageStat');
+const User = mongoose.model<UserRecord, UserModel>('User');
+const MessageStat = mongoose.model<MessageStatRecord, MessageStatModel>(
+  'MessageStat',
+);
 describe('Display Message Statistics in User Route', function () {
-  let agent;
+  let agent: TestAgent;
   const NOW = Date.now(); // a current timestamp
   const DAY = 24 * 3600 * 1000; // a length of a day in milliseconds
-  const messageStats = [];
-  const users = [];
+  const messageStats: MessageStatDocument[] = [];
+  const users: Array<ReturnType<typeof utils.createTestUser>> = [];
   const password = 'password123';
   before(function (done) {
     (async () => {
@@ -61,11 +71,11 @@ describe('Display Message Statistics in User Route', function () {
      * @param {timeNow} number - minimum timestamp of the firstMessageCreated
      */
     function generateMessageStats(
-      userTo,
-      count,
-      repliedCount,
-      replyTime,
-      timeNow,
+      userTo: number,
+      count: number,
+      repliedCount: number,
+      replyTime: number,
+      timeNow: number,
     ) {
       for (let i = 0; i < count; ++i) {
         const firstCreated = timeNow - replyTime - (i + 1) * DAY;
@@ -96,13 +106,9 @@ describe('Display Message Statistics in User Route', function () {
     generateMessageStats(2, 0, 0, 0, NOW);
 
     // Save the messageStats to database
-    async.each(
-      messageStats,
-      function (messageStat, callback) {
-        messageStat.save(callback);
-      },
-      done,
-    );
+    Promise.all(messageStats.map(messageStat => messageStat.save()))
+      .then(() => done())
+      .catch(done);
   });
   after(utils.clearDatabase);
 

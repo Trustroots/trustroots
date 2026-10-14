@@ -3,8 +3,11 @@
  * profile controller. These are exercised directly with mock req/res objects
  * against the test database.
  */
-const mongoose = require('mongoose');
-const sinon = require('sinon');
+import type { Types } from 'mongoose';
+import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
+
+const mongoose: typeof import('mongoose') = require('mongoose');
+const sinon: typeof import('sinon') = require('sinon');
 
 require('./../../server/models/user.server.model.mjs');
 require('./../../../contacts/server/models/contacts.server.model.mjs');
@@ -14,11 +17,33 @@ require('./../../../messages/server/models/thread.server.model.mjs');
 require('./../../../offers/server/models/offer.server.model.mjs');
 require('./../../../tribes/server/models/tribe.server.model.mjs');
 
-const profileController = require('./../../server/controllers/users.profile.server.controller.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+interface ProfilePushRecord extends UserRecord {
+  pushRegistration?: Array<{ platform: string; token: string }>;
+}
+interface PushRequest {
+  user?: { _id: string | Types.ObjectId };
+  params?: { token?: string };
+  body?: { token?: string; platform?: string };
+}
+interface TestResponse {
+  statusCode: number;
+  body: unknown;
+  status(code: number): this;
+  send(body: unknown): this;
+  json(body: unknown): this;
+  waitForResponse(): Promise<TestResponse>;
+}
+type Handler = (request: PushRequest, response: TestResponse) => void;
+interface ProfileController {
+  getUserMemberships: Handler;
+  removePushRegistration: Handler;
+  addPushRegistration: Handler;
+}
+const profileController: ProfileController = require('./../../server/controllers/users.profile.server.controller.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
-const User = mongoose.model('User');
+const User = mongoose.model<ProfilePushRecord>('User');
 
 const errorServicePath =
   './../../../core/server/services/error.server.service.mjs';
@@ -28,29 +53,61 @@ function loadControllerWithEmptyErrorMessage() {
   return profileController;
 }
 
-function deferredResponse() {
-  let resolveResponse;
-  const promise = new Promise(resolve => {
+function deferredResponse(): TestResponse {
+  let resolveResponse: (response: TestResponse) => void = () => {};
+  const promise = new Promise<TestResponse>(resolve => {
     resolveResponse = resolve;
   });
 
-  const res = { statusCode: 200, body: null };
-  res.status = function (code) {
-    res.statusCode = code;
-    return res;
+  const res: TestResponse = {
+    statusCode: 200,
+    body: null,
+    status(code) {
+      res.statusCode = code;
+      return res;
+    },
+    send(body) {
+      res.body = body;
+      resolveResponse(res);
+      return res;
+    },
+    json(body) {
+      res.body = body;
+      resolveResponse(res);
+      return res;
+    },
+    waitForResponse() {
+      return promise;
+    },
   };
-  res.send = function (body) {
-    res.body = body;
-    resolveResponse(res);
-    return res;
-  };
-  res.json = function (body) {
-    res.body = body;
-    resolveResponse(res);
-    return res;
-  };
-  res.waitForResponse = () => promise;
   return res;
+}
+
+function responseBody(response: TestResponse): unknown {
+  if (!response.body) throw new Error('expected response body');
+  return response.body;
+}
+function responseMessage(response: TestResponse): string {
+  const body = responseBody(response);
+  if (
+    typeof body !== 'object' ||
+    body === null ||
+    !('message' in body) ||
+    typeof body.message !== 'string'
+  ) {
+    throw new Error('expected response message');
+  }
+  return body.message;
+}
+function responseArray(response: TestResponse): unknown[] {
+  const body = responseBody(response);
+  if (!Array.isArray(body)) throw new Error('expected a response array');
+  return body;
+}
+function failedQuery(error: unknown): {
+  exec(callback: (error: unknown) => void): void;
+} {
+  return { exec: callback => callback(error) };
 }
 
 describe('Profile controller push/membership unit tests', () => {
@@ -73,26 +130,32 @@ describe('Profile controller push/membership unit tests', () => {
       profileController.getUserMemberships({ user: { _id: saved._id } }, res);
       await res.waitForResponse();
       res.statusCode.should.equal(200);
-      res.body.should.be.an.Array();
-      res.body.length.should.equal(0);
+      const memberships = responseArray(res);
+      memberships.should.be.an.Array();
+      memberships.length.should.equal(0);
     });
 
     it('returns 400 when loading memberships fails', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      sinon.stub(User, 'findById').returns({
+      const failedMembershipQuery = {
         populate() {
-          return this;
+          return failedMembershipQuery;
         },
-        exec(cb) {
-          cb(new Error('db error'));
+        exec(callback: (error: unknown) => void) {
+          callback(new Error('db error'));
         },
-      });
+      };
+      sinon
+        .stub(User, 'findById')
+        .returns(
+          failedMembershipQuery as unknown as ReturnType<typeof User.findById>,
+        );
 
       const res = deferredResponse();
       profileController.getUserMemberships({ user: { _id: saved._id } }, res);
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('Failed to get list of tribes.');
+      responseMessage(res).should.equal('Failed to get list of tribes.');
     });
   });
 
@@ -106,9 +169,13 @@ describe('Profile controller push/membership unit tests', () => {
 
     it('returns 400 when removing a registration fails', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      sinon.stub(User, 'findByIdAndUpdate').returns({
-        exec: cb => cb(new Error('remove failed')),
-      });
+      sinon
+        .stub(User, 'findByIdAndUpdate')
+        .returns(
+          failedQuery(new Error('remove failed')) as unknown as ReturnType<
+            typeof User.findByIdAndUpdate
+          >,
+        );
 
       const res = deferredResponse();
       profileController.removePushRegistration(
@@ -122,9 +189,13 @@ describe('Profile controller push/membership unit tests', () => {
     it('uses the default message when removing a registration fails without details', async () => {
       const controller = loadControllerWithEmptyErrorMessage();
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      sinon.stub(User, 'findByIdAndUpdate').returns({
-        exec: cb => cb({}),
-      });
+      sinon
+        .stub(User, 'findByIdAndUpdate')
+        .returns(
+          failedQuery({}) as unknown as ReturnType<
+            typeof User.findByIdAndUpdate
+          >,
+        );
 
       const res = deferredResponse();
       controller.removePushRegistration(
@@ -133,7 +204,7 @@ describe('Profile controller push/membership unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      responseMessage(res).should.equal(
         'Failed to remove registration, please try again.',
       );
     });
@@ -141,6 +212,7 @@ describe('Profile controller push/membership unit tests', () => {
     it('removes a historical registration by token', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
+      if (!userDoc) throw new Error('expected saved user');
       userDoc.pushRegistration = [{ platform: 'web', token: 'token-1' }];
       await userDoc.save();
 
@@ -152,10 +224,11 @@ describe('Profile controller push/membership unit tests', () => {
       await res.waitForResponse();
 
       res.statusCode.should.equal(200);
-      res.body.message.should.equal('Removed registration.');
+      responseMessage(res).should.equal('Removed registration.');
 
       const reloaded = await User.findById(saved._id);
-      reloaded.pushRegistration.length.should.equal(0);
+      if (!reloaded) throw new Error('expected reloaded user');
+      reloaded.pushRegistration!.length.should.equal(0);
     });
   });
 
@@ -179,12 +252,13 @@ describe('Profile controller push/membership unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      responseMessage(res).should.equal(
         'Push notifications are no longer available.',
       );
 
       const reloaded = await User.findById(saved._id);
-      reloaded.pushRegistration.length.should.equal(0);
+      if (!reloaded) throw new Error('expected reloaded user');
+      reloaded.pushRegistration!.length.should.equal(0);
     });
   });
 });

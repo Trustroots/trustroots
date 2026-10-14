@@ -1,6 +1,7 @@
-const assert = require('node:assert/strict');
-const path = require('node:path');
-const { pathToFileURL } = require('node:url');
+const assert: typeof import('node:assert/strict') = require('node:assert/strict');
+const path: typeof import('node:path') = require('node:path');
+const pathToFileURL: typeof import('node:url').pathToFileURL =
+  require('node:url').pathToFileURL;
 
 const root = path.resolve(__dirname, '../../../..');
 const modules = [
@@ -41,10 +42,10 @@ describe('ESM interoperability: member-interactions', () => {
   for (const relativePath of modules) {
     it(`preserves the CommonJS API for ${relativePath}`, async () => {
       const legacyPath = path.join(root, relativePath);
-      const legacy = require(legacyPath);
-      const implementation = await import(
+      const legacy: Record<string, unknown> = require(legacyPath);
+      const implementation = (await import(
         pathToFileURL(legacyPath.replace(/\.js$/, '.mjs')).href
-      );
+      )) as Record<string, unknown>;
       assert.strictEqual(implementation.default, legacy);
       for (const [name, value] of Object.entries(legacy)) {
         if (typeof value === 'function') {
