@@ -1,8 +1,12 @@
-import memoryPolicy from './../../../core/server/services/memory-policy.server.service.mjs';
+import memoryPolicy from './../../../core/server/services/memory-policy.server.service.mts';
 import errorService from './../../../core/server/services/error.server.service.mjs';
-const service = {};
+import type {
+  PolicyNext,
+  PolicyRequest,
+  PolicyResponse,
+} from '../../../core/server/services/policy-types.server.mts';
 const acl = memoryPolicy();
-service.invokeRolesPolicies = function () {
+function invokeRolesPolicies() {
   acl.allow([
     {
       roles: ['user', 'admin'],
@@ -42,8 +46,12 @@ service.invokeRolesPolicies = function () {
       ],
     },
   ]);
-};
-service.isAllowed = async function (req, res, next) {
+}
+async function isAllowed(
+  req: PolicyRequest,
+  res: PolicyResponse,
+  next: PolicyNext,
+) {
   try {
     const roles = req.user && req.user.roles ? req.user.roles : ['guest'];
     const isAllowed = await acl.areAnyRolesAllowed(
@@ -51,7 +59,7 @@ service.isAllowed = async function (req, res, next) {
       req.route.path,
       req.method.toLowerCase(),
     );
-    if (isAllowed && req.user.public) {
+    if (isAllowed && req.user!.public) {
       // Access granted! Invoke next middleware
       return next();
     }
@@ -61,9 +69,13 @@ service.isAllowed = async function (req, res, next) {
   } catch (e) {
     return next(e);
   }
-};
+}
 
-service.isAllowedChange = async function (req, res, next) {
+async function isAllowedChange(
+  req: PolicyRequest,
+  res: PolicyResponse,
+  next: PolicyNext,
+) {
   try {
     const roles = req.user && req.user.roles ? req.user.roles : ['guest'];
     if (
@@ -82,11 +94,13 @@ service.isAllowedChange = async function (req, res, next) {
   } catch (error) {
     return next(error);
   }
-};
+}
 
-const invokeRolesPolicies = service.invokeRolesPolicies;
-const isAllowed = service.isAllowed;
-const isAllowedChange = service.isAllowedChange;
+const service = {
+  invokeRolesPolicies,
+  isAllowed,
+  isAllowedChange,
+};
 export { invokeRolesPolicies, isAllowed, isAllowedChange };
 export default service;
 

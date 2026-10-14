@@ -1,6 +1,6 @@
 let policyModule;
 before(async function () {
-  policyModule = await import('../../server/policies/tribes.server.policy.mjs');
+  policyModule = await import('../../server/policies/tribes.server.policy.mts');
 });
 const sinon = require('sinon');
 require('should');

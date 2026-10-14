@@ -2,7 +2,7 @@ const sinon = require('sinon');
 require('should');
 
 async function loadPolicy() {
-  const policy = await import('../../server/policies/admin.server.policy.mjs');
+  const policy = await import('../../server/policies/admin.server.policy.mts');
   const mockAcl = policy._acl;
   sinon.stub(mockAcl, 'allow');
   sinon.stub(mockAcl, 'areAnyRolesAllowed');

@@ -1,4 +1,4 @@
-const createMemoryPolicy = require('./../../server/services/memory-policy.server.service.mjs');
+const createMemoryPolicy = require('./../../server/services/memory-policy.server.service.mts');
 require('should');
 
 describe('In-memory route permissions', function () {
@@ -6,7 +6,7 @@ describe('In-memory route permissions', function () {
 
   it('exposes the same factory through ESM', async function () {
     const { createMemoryPolicy: esmFactory } =
-      await import('../../../core/server/services/memory-policy.server.service.mjs');
+      await import('../../../core/server/services/memory-policy.server.service.mts');
     esmFactory.should.equal(createMemoryPolicy);
   });
 
@@ -91,7 +91,7 @@ describe('In-memory route permissions', function () {
     );
   });
   it('enforces a real admin route declaration', function () {
-    const adminPolicy = require('./../../../admin/server/policies/admin.server.policy.mjs');
+    const adminPolicy = require('./../../../admin/server/policies/admin.server.policy.mts');
     adminPolicy.invokeRolesPolicies();
     const request = {
       user: { roles: ['admin'] },

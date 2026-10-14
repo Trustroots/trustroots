@@ -84,7 +84,21 @@ function register(modulePath, stubs) {
     const dependencyRequire = createRequire(file);
     try {
       for (const [specifier, replacements] of Object.entries(stubs)) {
-        const dependency = dependencyRequire(specifier + '.mjs');
+        let dependencyPath;
+        for (const extension of ['.mjs', '.mts']) {
+          try {
+            dependencyPath = dependencyRequire.resolve(specifier + extension);
+            break;
+          } catch (error) {
+            if (error.code !== 'MODULE_NOT_FOUND') {
+              throw error;
+            }
+          }
+        }
+        if (!dependencyPath) {
+          throw new Error(`Could not resolve route dependency: ${specifier}`);
+        }
+        const dependency = dependencyRequire(dependencyPath);
         for (const [name, value] of Object.entries(replacements)) {
           if (typeof value === 'function') {
             const replacement = sandbox.stub(dependency, name).callsFake(value);

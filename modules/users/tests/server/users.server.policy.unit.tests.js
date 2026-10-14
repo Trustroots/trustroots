@@ -1,7 +1,7 @@
 let policyModule;
 before(async function () {
   policyModule =
-    await import('./../../server/policies/users.server.policy.mjs');
+    await import('./../../server/policies/users.server.policy.mts');
 });
 const sinon = require('sinon');
 require('should');
@@ -11,7 +11,7 @@ function loadPolicy() {
     allow: sinon.stub(),
     areAnyRolesAllowed: sinon.stub(),
   };
-  const policy = require('./../../server/policies/users.server.policy.mjs');
+  const policy = require('./../../server/policies/users.server.policy.mts');
   const { _acl } = policyModule;
   sinon.stub(_acl, 'allow').callsFake(mockAcl.allow);
   sinon.stub(_acl, 'areAnyRolesAllowed').callsFake(mockAcl.areAnyRolesAllowed);

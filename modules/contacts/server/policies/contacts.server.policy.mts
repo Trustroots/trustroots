@@ -1,7 +1,17 @@
-import memoryPolicy from './../../../core/server/services/memory-policy.server.service.mjs';
+import memoryPolicy from './../../../core/server/services/memory-policy.server.service.mts';
 import errorService from './../../../core/server/services/error.server.service.mjs';
-import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mjs';
-const service = {};
+import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mts';
+import type {
+  PolicyNext,
+  PolicyRequest,
+  PolicyResponse,
+} from '../../../core/server/services/policy-types.server.mts';
+type ContactsRequest = PolicyRequest & {
+  contact?: {
+    userFrom: { _id: { equals(id: unknown): boolean } };
+    userTo: { _id: { equals(id: unknown): boolean } };
+  };
+};
 
 /**
  * Module dependencies.
@@ -11,7 +21,7 @@ const authoriseRoute = createRouteAuthorisation(acl);
 /**
  * Invoke Contacts Permissions
  */
-service.invokeRolesPolicies = function () {
+function invokeRolesPolicies() {
   acl.allow([
     {
       roles: ['admin'],
@@ -64,12 +74,16 @@ service.invokeRolesPolicies = function () {
       ],
     },
   ]);
-};
+}
 
 /**
  * Check If Contacts Policy Allows
  */
-service.isAllowed = function (req, res, next) {
+function isAllowed(
+  req: ContactsRequest,
+  res: PolicyResponse,
+  next: PolicyNext,
+) {
   // No contacts for un-published users
   if (req.user && req.user.public !== true) {
     return res.status(403).json({
@@ -89,9 +103,11 @@ service.isAllowed = function (req, res, next) {
     return next();
   }
   return authoriseRoute(req, res, next);
+}
+const service = {
+  invokeRolesPolicies,
+  isAllowed,
 };
-const invokeRolesPolicies = service.invokeRolesPolicies;
-const isAllowed = service.isAllowed;
 export { invokeRolesPolicies, isAllowed };
 export default service;
 

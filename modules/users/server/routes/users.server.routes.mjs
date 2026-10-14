@@ -1,4 +1,4 @@
-import usersPolicy from './../policies/users.server.policy.mjs';
+import usersPolicy from './../policies/users.server.policy.mts';
 import userProfile from './../controllers/users.profile.server.controller.mjs';
 import userAvatar from './../controllers/users.avatar.server.controller.mjs';
 import userPassword from './../controllers/users.password.server.controller.mjs';

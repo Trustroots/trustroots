@@ -1,4 +1,4 @@
-import offersPolicy from './../policies/offers.server.policy.mjs';
+import offersPolicy from './../policies/offers.server.policy.mts';
 import offers from './../controllers/offers.server.controller.mjs';
 
 /**

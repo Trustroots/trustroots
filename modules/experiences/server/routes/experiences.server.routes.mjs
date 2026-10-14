@@ -1,5 +1,5 @@
 import config from '../../../../config/config.mjs';
-import experiencesPolicy from '../policies/experiences.server.policy.mjs';
+import experiencesPolicy from '../policies/experiences.server.policy.mts';
 import experiences from '../controllers/experiences.server.controller.mjs';
 import changes from '../controllers/experience-changes.server.controller.mjs';
 

@@ -1,4 +1,4 @@
-import referenceThreadPolicy from './../policies/reference-thread.server.policy.mjs';
+import referenceThreadPolicy from './../policies/reference-thread.server.policy.mts';
 import referenceThread from './../controllers/reference-thread.server.controller.mjs';
 
 /**

@@ -1,4 +1,4 @@
-import tribesPolicy from './../policies/tribes.server.policy.mjs';
+import tribesPolicy from './../policies/tribes.server.policy.mts';
 import tribes from './../controllers/tribes.server.controller.mjs';
 
 /**
