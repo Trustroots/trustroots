@@ -1,5 +1,1 @@
-const { mergeRawCoverage } = require('../../../scripts/e2e/merge-js-coverage');
-
-module.exports = async () => {
-  await mergeRawCoverage();
-};
+module.exports = require('./global-teardown.mts').default;

@@ -145,6 +145,9 @@ const legacyConfig = {
         '*.cjs',
         'config/**',
         'scripts/ci/**/*.mts',
+        'scripts/e2e/**/*.mts',
+        'tests/e2e/**/*.{ts,mts}',
+        'playwright.config.ts',
         'migrations/**',
         'modules/*/shared/**/*.{js,ts,mts}',
         'modules/*/server/*.{js,mjs}',
@@ -245,6 +248,9 @@ const legacyConfig = {
       files: [
         'config/vite/**/*.{ts,tsx}',
         'scripts/ci/**/*.mts',
+        'scripts/e2e/**/*.mts',
+        'tests/e2e/**/*.{ts,mts}',
+        'playwright.config.ts',
         'modules/*/client/**/*.{ts,tsx}',
         'modules/*/shared/**/*.{ts,tsx,mts}',
         'modules/*/server/**/*.mts',
@@ -286,7 +292,13 @@ const legacyConfig = {
      * Overrides for CLI scripts and application config
      */
     {
-      files: ['bin/**', 'config/**', 'migrations/**', 'scripts/ci/**/*.mts'],
+      files: [
+        'bin/**',
+        'config/**',
+        'migrations/**',
+        'scripts/ci/**/*.mts',
+        'scripts/e2e/**/*.mts',
+      ],
       env: {
         node: true,
       },

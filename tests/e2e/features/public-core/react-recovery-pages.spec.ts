@@ -1,0 +1,40 @@
+import { annotateFeature, expect, test } from '../../support/fixtures.mts';
+import { SEEDED_MEMBERS } from '../../support/helpers.mts';
+
+test('recovery prefill submits through the existing API', async ({ page }) => {
+  await page.goto(`/password/forgot?userhandle=${SEEDED_MEMBERS[0].username}`);
+  await expect(page.locator('#tr-react-root')).toBeVisible();
+  await expect(page.getByLabel('Email or username')).toHaveValue(
+    SEEDED_MEMBERS[0].username,
+  );
+  await page.getByRole('button', { name: 'Restore' }).click();
+  await expect(
+    page.getByText(
+      'If an account matches that username or email, we will send recovery instructions.',
+    ),
+  ).toBeVisible();
+});
+
+test('outcome pages retain their onward links', async ({ page }) => {
+  annotateFeature(test.info(), 'auth.password-reset', [
+    'Success page is shown after reset.',
+  ]);
+  const pageErrors: string[] = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+  await page.goto('/password/reset/invalid');
+  await expect(page.locator('#tr-react-root')).toBeVisible();
+  await page
+    .getByRole('link', { name: /ask for a new password reset/i })
+    .click();
+  await expect(page).toHaveURL(/\/password\/forgot$/);
+  await page.goto('/password/reset/success');
+  await expect(page.getByText('Password successfully reset')).toBeVisible();
+  await page.goto('/confirm-email-invalid');
+  await expect(page.locator('#tr-react-root')).toBeVisible();
+  await page.getByRole('link', { name: /login first/i }).click();
+  await expect(page).toHaveURL(/\/signin$/);
+  await expect(page.locator('#tr-react-root')).toBeVisible();
+  await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(0);
+  await expect(page.locator('#username')).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
