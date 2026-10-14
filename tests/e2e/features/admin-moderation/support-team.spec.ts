@@ -1,6 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { annotateFeature, expect, test } from '../../support/fixtures.mts';
+import {
+  annotateFeature,
+  expect,
+  expectPresent,
+  test,
+} from '../../support/fixtures.mts';
 import {
   createUser,
   createIsolatedContext,
@@ -113,6 +118,8 @@ test('support can triage a report and investigate only its verified member pair'
     const requestQueue = page.getByRole('region', { name: 'Request queue' });
     const searchBox = await memberSearch.boundingBox();
     const requestQueueBox = await requestQueue.boundingBox();
+    expectPresent(searchBox);
+    expectPresent(requestQueueBox);
     expect(searchBox.y + searchBox.height).toBeLessThanOrEqual(
       requestQueueBox.y,
     );
