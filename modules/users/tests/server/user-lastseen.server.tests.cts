@@ -1,21 +1,66 @@
-const request = require('supertest');
-const moment = require('moment');
-const mongoose = require('mongoose');
-const should = require('should');
-const sinon = require('sinon');
-const config = require('./../../../../config/config.mjs');
-const express = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const lastSeen = require('./../../server/controllers/users.lastseen.server.controller.mjs');
-const User = mongoose.model('User');
+import type { FilterQuery, HydratedDocument } from 'mongoose';
+import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
+
+const request: typeof import('supertest') = require('supertest');
+const moment: typeof import('moment') = require('moment');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const should: typeof import('should') = require('should');
+const sinon: typeof import('sinon') = require('sinon');
+const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const express: {
+  init(
+    connection: import('mongoose').Connection,
+  ): Promise<import('express').Express>;
+} = require('./../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+interface LastSeenUserRecord extends UserRecord {
+  seen?: Date;
+  lastIpAddress?: string;
+}
+interface LastSeenRequest {
+  get(name: string): string | undefined;
+  ip: string;
+  user?: { id: string; lastIpAddress?: string; seen?: Date };
+}
+const lastSeen: {
+  (
+    req: LastSeenRequest,
+    res: import('express').Response,
+    next: (error?: unknown) => void,
+  ): void;
+  getClientIpAddress(
+    req: Pick<LastSeenRequest, 'get' | 'ip'>,
+  ): string | undefined;
+} = require('./../../server/controllers/users.lastseen.server.controller.mjs');
+const User = mongoose.model<LastSeenUserRecord>('User');
+type LastSeenDocument = HydratedDocument<LastSeenUserRecord>;
+type CallbackUpdate = (
+  id: string,
+  update: Partial<LastSeenUserRecord>,
+  callback: (error?: unknown) => void,
+) => void;
+function findUser(
+  filter: FilterQuery<LastSeenUserRecord>,
+  callback: (error: unknown | null, user: LastSeenDocument | null) => void,
+): void {
+  void User.findOne(filter).then(
+    user => callback(null, user),
+    error => callback(error, null),
+  );
+}
+function assertUser(
+  user: LastSeenDocument | null,
+): asserts user is LastSeenDocument {
+  if (!user) throw new Error('expected the user fixture to exist');
+}
 describe('User last seen CRUD tests', function () {
   /**
    * Globals
    */
-  let app;
-  let agent;
-  let _confirmedUser;
-  let confirmedUser;
+  let app: import('express').Express;
+  let agent: ReturnType<typeof request.agent>;
+  let _confirmedUser: LastSeenUserRecord;
+  let confirmedUser: LastSeenDocument;
   before(function (done) {
     (async () => {
       // Get application
@@ -37,7 +82,7 @@ describe('User last seen CRUD tests', function () {
 
   // Create a confirmed user
 
-  beforeEach(function (done) {
+  beforeEach(async function () {
     _confirmedUser = {
       public: true,
       firstName: 'Full',
@@ -51,15 +96,15 @@ describe('User last seen CRUD tests', function () {
     confirmedUser = new User(_confirmedUser);
 
     // Save a user to the test db
-    confirmedUser.save(done);
+    await confirmedUser.save();
   });
   afterEach(utils.clearDatabase);
   context('logged in', function () {
     // Sign in
     beforeEach(async () => {
       const credentials = {
-        username: _confirmedUser.username,
-        password: _confirmedUser.password,
+        username: _confirmedUser.username!,
+        password: _confirmedUser.password!,
       };
       await utils.signIn(credentials, agent);
     });
@@ -79,14 +124,16 @@ describe('User last seen CRUD tests', function () {
           if (err) return done(err);
 
           // read user from database
-          User.findOne(
+          findUser(
             {
               username: _confirmedUser.username,
             },
             function (err, user) {
               try {
+                if (err) throw err;
+                assertUser(user);
                 should(user.seen).eql(new Date());
-                user.lastIpAddress.should.be.String();
+                user.lastIpAddress!.should.be.String();
                 return done();
               } catch (err) {
                 return done(err);
@@ -97,18 +144,18 @@ describe('User last seen CRUD tests', function () {
     });
     it('prefers the trusted Passenger client address', () => {
       const req = {
-        get: header =>
+        get: (header: string) =>
           header === '!~Passenger-Client-Address' ? '203.0.113.24' : undefined,
         ip: '198.51.100.24',
       };
-      lastSeen.getClientIpAddress(req).should.equal('203.0.113.24');
+      lastSeen.getClientIpAddress(req)!.should.equal('203.0.113.24');
     });
     it('uses the socket-derived request address when Passenger is unavailable', () => {
       const req = {
         get: () => undefined,
         ip: '2001:db8::1',
       };
-      lastSeen.getClientIpAddress(req).should.equal('2001:db8::1');
+      lastSeen.getClientIpAddress(req)!.should.equal('2001:db8::1');
     });
     it('does not store an invalid client address', () => {
       const req = {
@@ -118,10 +165,12 @@ describe('User last seen CRUD tests', function () {
       should(lastSeen.getClientIpAddress(req)).be.undefined();
     });
     it('updates a changed IP address without advancing the last-seen timestamp', async () => {
-      const findByIdAndUpdate = sinon
-        .stub(User, 'findByIdAndUpdate')
-        .callsFake((id, update, callback) => callback());
-      const req = {
+      const findByIdAndUpdate = sinon.stub(
+        User,
+        'findByIdAndUpdate',
+      ) as unknown as sinon.SinonStub<Parameters<CallbackUpdate>, void>;
+      findByIdAndUpdate.callsFake((id, update, callback) => callback());
+      const req: LastSeenRequest = {
         get: () => '203.0.113.24',
         ip: '198.51.100.24',
         user: {
@@ -130,8 +179,10 @@ describe('User last seen CRUD tests', function () {
           seen: new Date(),
         },
       };
-      await new Promise((resolve, reject) => {
-        lastSeen(req, {}, err => (err ? reject(err) : resolve()));
+      await new Promise<void>((resolve, reject) => {
+        lastSeen(req, {} as unknown as import('express').Response, err =>
+          err ? reject(err) : resolve(),
+        );
       });
       sinon.assert.calledOnce(findByIdAndUpdate);
       findByIdAndUpdate.firstCall.args[0].should.equal('user-id');
@@ -159,12 +210,14 @@ describe('User last seen CRUD tests', function () {
         .expect(200)
         .end(function () {
           // read user from database
-          User.findOne(
+          findUser(
             {
               username,
             },
             function (err, user) {
               try {
+                if (err) throw err;
+                assertUser(user);
                 should(user.seen).eql(originalTime);
 
                 // now wait almost for the time to update
@@ -174,12 +227,14 @@ describe('User last seen CRUD tests', function () {
                   .expect(200)
                   .end(function () {
                     // and the User.seen should not be updated (too early)
-                    User.findOne(
+                    findUser(
                       {
                         username,
                       },
                       function (err, user) {
                         try {
+                          if (err) throw err;
+                          assertUser(user);
                           should(user.seen).eql(originalTime);
 
                           // now wait for another 2 milliseconds
@@ -189,13 +244,19 @@ describe('User last seen CRUD tests', function () {
                             .expect(200)
                             .end(function () {
                               // and the User.seen should be updated now
-                              User.findOne(
+                              findUser(
                                 {
                                   username,
                                 },
                                 function (err, user) {
-                                  should(user.seen).eql(new Date());
-                                  return done();
+                                  if (err) return done(err);
+                                  try {
+                                    assertUser(user);
+                                    should(user.seen).eql(new Date());
+                                    return done();
+                                  } catch (error) {
+                                    return done(error);
+                                  }
                                 },
                               );
                             });
