@@ -1,37 +1,48 @@
-const request = require('supertest');
-const mongoose = require('mongoose');
-const express = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+type TestExpressModule =
+  import('../../../../testutils/server/model-contracts.mts').TestExpressModule;
+type TestAgent =
+  import('../../../../testutils/server/model-contracts.mts').TestAgent;
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
 require('should');
-const AdminNote = mongoose.model('AdminNote');
+type FixtureUserId = import('mongoose').Types.ObjectId | string;
+type AdminNoteRecord = {
+  admin: FixtureUserId;
+  user: FixtureUserId;
+  note: string;
+  date?: Date;
+};
+const AdminNote = mongoose.model<AdminNoteRecord>('AdminNote');
+let app: import('../../../../testutils/server/model-contracts.mts').TestExpressApp;
+let agent: TestAgent;
+let adminUserId: FixtureUserId;
+let notesUserId: FixtureUserId;
+const noteInputHtml =
+  '<p>test https://trustroots.org <script>alert()</script></p>';
+const noteOutputHtml =
+  '<p>test <a href="https://trustroots.org">trustroots.org</a> </p>';
+const usersRaw = utils.generateUsers(3);
+usersRaw[0].roles = ['user', 'admin'];
+const credentialsAdmin = {
+  username: usersRaw[0].username,
+  password: usersRaw[0].password,
+};
+const credentialsRegular = {
+  username: usersRaw[1].username,
+  password: usersRaw[1].password,
+};
 describe('Admin Notes Log CRUD tests', () => {
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
   // Get application
-  let app;
-  let agent;
-  let adminUserId;
-  let notesUserId;
-  const noteInputHtml =
-    '<p>test https://trustroots.org <script>alert()</script></p>';
-  const noteOutputHtml =
-    '<p>test <a href="https://trustroots.org">trustroots.org</a> </p>';
-  const _usersRaw = utils.generateUsers(3);
-  _usersRaw[0].roles = ['user', 'admin'];
-  const credentialsAdmin = {
-    username: _usersRaw[0].username,
-    password: _usersRaw[0].password,
-  };
-  const credentialsRegular = {
-    username: _usersRaw[1].username,
-    password: _usersRaw[1].password,
-  };
   beforeEach(async () => {
-    const _users = await utils.saveUsers(_usersRaw);
-    adminUserId = _users[0]._id;
-    notesUserId = _users[2]._id;
+    const users = await utils.saveUsers(usersRaw);
+    adminUserId = users[0]._id;
+    notesUserId = users[2]._id;
     const note = new AdminNote({
       date: new Date(),
       note: noteInputHtml,

@@ -1,26 +1,41 @@
 const sinon = require('sinon');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const Message = mongoose.model('Message');
-const ReferenceThread = mongoose.model('ReferenceThread');
-const Thread = mongoose.model('Thread');
-const User = mongoose.model('User');
-const express = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const should = require('should');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+type TestExpressModule =
+  import('../../../../testutils/server/model-contracts.mts').TestExpressModule;
+type TestAgent =
+  import('../../../../testutils/server/model-contracts.mts').TestAgent;
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
+const should: typeof import('should') = require('should');
+type UserRecord =
+  import('../../../../testutils/server/model-contracts.mts').UserRecord;
+type MessageRecord =
+  import('../../../../testutils/server/model-contracts.mts').MessageRecord;
+type ReferenceThreadRecord =
+  import('../../../../testutils/server/model-contracts.mts').ReferenceThreadRecord;
+type ThreadRecord =
+  import('../../../../testutils/server/model-contracts.mts').ThreadRecord;
+const Message = mongoose.model<MessageRecord>('Message');
+const ReferenceThread =
+  mongoose.model<ReferenceThreadRecord>('ReferenceThread');
+const Thread = mongoose.model<ThreadRecord>('Thread');
+const User = mongoose.model<UserRecord>('User');
+type ThreadBulkOperations = Parameters<typeof Thread.bulkWrite>[0];
+type ThreadBulkOptions = Parameters<typeof Thread.bulkWrite>[1];
 
 /**
  * Globals
  */
-let app;
-let agent;
-let credentialsAdmin;
-let credentialsRegular;
-let userAdmin;
-let userRegular1;
-let userRegular2;
-let userRegular1Id;
-let userRegular2Id;
+let app: import('../../../../testutils/server/model-contracts.mts').TestExpressApp;
+let agent: TestAgent;
+let credentialsAdmin: { username: string; password: string };
+let credentialsRegular: { username: string; password: string };
+let userAdmin: InstanceType<typeof User>;
+let userRegular1: InstanceType<typeof User>;
+let userRegular2: InstanceType<typeof User>;
+let userRegular1Id: import('mongoose').Types.ObjectId | string;
+let userRegular2Id: import('mongoose').Types.ObjectId | string;
 describe('Admin Message CRUD tests', () => {
   before(done => {
     (async () => {
@@ -214,13 +229,15 @@ describe('Admin Message CRUD tests', () => {
         userFrom: userAdmin._id,
         userTo: userRegular2Id,
       }).exec();
-      warning.content.should.equal('<p>Ignore this scam.</p>');
+      if (!warning) throw new Error('Expected saved warning message');
+      should(warning.content).equal('<p>Ignore this scam.</p>');
       const thread = await Thread.findOne({
         message: warning._id,
       }).exec();
-      thread.userFrom.toString().should.equal(userAdmin._id.toString());
-      thread.userTo.toString().should.equal(userRegular2Id.toString());
-      thread.read.should.equal(false);
+      if (!thread) throw new Error('Expected warning thread');
+      String(thread.userFrom).should.equal(String(userAdmin._id));
+      String(thread.userTo).should.equal(String(userRegular2Id));
+      should(thread.read).equal(false);
     });
     it('repairs a partial delivery without duplicating messages or resetting read state', async () => {
       await utils.signIn(credentialsAdmin, agent);
@@ -250,11 +267,13 @@ describe('Admin Message CRUD tests', () => {
         .send(payload)
         .expect(200);
       const message = await Message.findOne(filter);
+      if (!message) throw new Error('Expected retry warning message');
       (await Message.countDocuments(filter)).should.equal(1);
       const thread = await Thread.findOne({
         message: message._id,
       });
       should.exist(thread);
+      if (!thread) throw new Error('Expected retry warning thread');
       await Message.updateOne(
         {
           _id: message._id,
@@ -279,8 +298,8 @@ describe('Admin Message CRUD tests', () => {
         .post('/api/admin/messages/scammer-warning')
         .send(payload)
         .expect(200);
-      (await Message.findById(message._id)).read.should.equal(true);
-      (await Thread.findById(thread._id)).read.should.equal(true);
+      should((await Message.findById(message._id))?.read).equal(true);
+      should((await Thread.findById(thread._id))?.read).equal(true);
       (await Message.countDocuments(filter)).should.equal(1);
       await agent
         .post('/api/admin/messages/scammer-warning')
@@ -327,17 +346,21 @@ describe('Admin Message CRUD tests', () => {
       const originalBulkWrite = Thread.bulkWrite;
       const retries = 20;
       let waiting = 0;
-      let release;
-      const barrier = new Promise(resolve => {
+      let release: () => void = () => {
+        throw new Error('Retry barrier has not been initialised');
+      };
+      const barrier = new Promise<void>(resolve => {
         release = resolve;
       });
       const bulkWrite = sinon
         .stub(Thread, 'bulkWrite')
-        .callsFake(async function (...args) {
-          if (++waiting === retries) release();
-          await barrier;
-          return originalBulkWrite.apply(this, args);
-        });
+        .callsFake(
+          async (writes: ThreadBulkOperations, options?: ThreadBulkOptions) => {
+            if (++waiting === retries) release();
+            await barrier;
+            return originalBulkWrite.call(Thread, writes, options);
+          },
+        );
       try {
         await Promise.all(
           Array.from(
@@ -366,9 +389,13 @@ describe('Admin Message CRUD tests', () => {
           code: 11000,
         }),
       );
-      bulkWrite.onSecondCall().callsFake(function (...args) {
-        return originalBulkWrite.apply(this, args);
-      });
+      bulkWrite
+        .onSecondCall()
+        .callsFake(
+          (writes: ThreadBulkOperations, options?: ThreadBulkOptions) => {
+            return originalBulkWrite.call(Thread, writes, options);
+          },
+        );
       try {
         await agent
           .post('/api/admin/messages/scammer-warning')
@@ -406,9 +433,14 @@ describe('Admin Message CRUD tests', () => {
       const warning = await Message.findOne({
         userFrom: userAdmin._id,
       });
+      if (!warning) throw new Error('Expected saved warning message');
+      if (!(warning.created instanceof Date)) {
+        throw new Error('Expected warning creation timestamp');
+      }
       const updatedThread = await Thread.findById(oldThread._id);
-      updatedThread.message.toString().should.equal(warning._id.toString());
-      updatedThread.read.should.equal(false);
+      if (!updatedThread) throw new Error('Expected updated thread');
+      String(updatedThread.message).should.equal(warning._id.toString());
+      should(updatedThread.read).equal(false);
       const reply = await Message.create({
         userFrom: userRegular2Id,
         userTo: userAdmin._id,
@@ -431,9 +463,10 @@ describe('Admin Message CRUD tests', () => {
       );
       await send();
       const finalThread = await Thread.findById(oldThread._id);
-      finalThread.message.toString().should.equal(reply._id.toString());
-      finalThread.userFrom.toString().should.equal(userRegular2Id.toString());
-      finalThread.read.should.equal(true);
+      if (!finalThread) throw new Error('Expected final thread');
+      String(finalThread.message).should.equal(reply._id.toString());
+      String(finalThread.userFrom).should.equal(String(userRegular2Id));
+      should(finalThread.read).equal(true);
       (await Thread.countDocuments({})).should.equal(1);
       (
         await Message.countDocuments({

@@ -1,7 +1,44 @@
 const assert = require('node:assert/strict');
 
+type CollectorResponse = {
+  ok: boolean;
+  status?: number;
+  json?(): Promise<unknown>;
+};
+type CollectorOptions = { headers: { accept: string }; signal: AbortSignal };
+type CollectorFetcher = (
+  url: string,
+  options: CollectorOptions,
+) => Promise<CollectorResponse>;
+type CollectorEntry = {
+  endpoint: string;
+  valid: boolean;
+  eligible: boolean;
+  name?: string;
+  latitude: number | null;
+  longitude: number | null;
+  address: string;
+  addressParts: string[];
+  open: string;
+  fetchedAt: string;
+  spaceType?: string;
+  description?: string;
+  website: string;
+};
+type SpaceApiService = {
+  normaliseCollectorEntry(entry: unknown, fetchedAt: string): CollectorEntry;
+  fetchSpaceApiCollector(fetcher?: CollectorFetcher): Promise<CollectorEntry[]>;
+  SPACEAPI_COLLECTOR_URL: string;
+};
+type PreviewResponse = {
+  statusCode: number;
+  body: unknown;
+  status(code: number): PreviewResponse;
+  json(body: unknown): void;
+};
+
 describe('SpaceAPI Collector import service', () => {
-  let service;
+  let service: SpaceApiService;
   before(async () => {
     service =
       await import('../../server/services/hackerspaces.server.service.mjs');
@@ -102,7 +139,10 @@ describe('SpaceAPI Collector import service', () => {
   });
 
   it('strips URL credentials and parameters and excludes malformed links', () => {
-    const normalise = (url, website) =>
+    const normalise = (
+      url: string | undefined,
+      website: string | null | undefined,
+    ) =>
       service.normaliseCollectorEntry({ url, data: { url: website } }, 'now');
     assert.equal(
       normalise(
@@ -184,12 +224,12 @@ describe('SpaceAPI Collector import service', () => {
   it('accepts supported Collector envelopes and the default fetch transport', async () => {
     const original = global.fetch;
     try {
-      global.fetch = async (url, options) => {
+      global.fetch = (async (url: string, options: CollectorOptions) => {
         assert.equal(url, service.SPACEAPI_COLLECTOR_URL);
         assert.equal(options.headers.accept, 'application/json');
         assert.ok(options.signal);
         return { ok: true, json: async () => ({ spaces: [{ valid: false }] }) };
-      };
+      }) as typeof global.fetch;
       assert.equal((await service.fetchSpaceApiCollector()).length, 1);
       assert.equal(
         (
@@ -222,7 +262,7 @@ describe('SpaceAPI Collector import service', () => {
         'EAI_AGAIN',
       ].map(code => new TypeError('fetch failed', { cause: { code } })),
     ]) {
-      const signals = [];
+      const signals: AbortSignal[] = [];
       const entries = await service.fetchSpaceApiCollector(
         async (url, options) => {
           assert.equal(url, service.SPACEAPI_COLLECTOR_URL);
@@ -280,7 +320,11 @@ describe('SpaceAPI Collector import service', () => {
 });
 
 describe('SpaceAPI import preview controller', () => {
-  let controller;
+  type PreviewController = Pick<
+    typeof import('../../server/controllers/admin.hackerspaces.server.controller.mjs'),
+    'preview'
+  >;
+  let controller: PreviewController;
   const originalFetch = global.fetch;
   before(async () => {
     controller =
@@ -289,21 +333,25 @@ describe('SpaceAPI import preview controller', () => {
   afterEach(() => {
     global.fetch = originalFetch;
   });
-  function response() {
-    return {
+  function response(): PreviewResponse {
+    const res: PreviewResponse = {
       statusCode: 200,
       body: undefined,
       status(code) {
-        this.statusCode = code;
-        return this;
+        res.statusCode = code;
+        return res;
       },
       json(body) {
-        this.body = body;
+        res.body = body;
       },
     };
+    return res;
   }
   it('returns a reviewable preview without signing or publishing', async () => {
-    global.fetch = async () => ({ ok: true, json: async () => [] });
+    global.fetch = (async () => ({
+      ok: true,
+      json: async () => [],
+    })) as unknown as typeof global.fetch;
     const res = response();
     await controller.preview({}, res);
     assert.equal(res.statusCode, 200);
@@ -311,14 +359,25 @@ describe('SpaceAPI import preview controller', () => {
   });
   it('reports upstream failures and handles missing error messages', async () => {
     for (const error of [new Error('Collector unavailable'), null]) {
-      global.fetch = () => Promise.reject(error);
+      global.fetch = (() => Promise.reject(error)) as typeof global.fetch;
       const res = response();
       await controller.preview({}, res);
       assert.equal(res.statusCode, 502);
       assert.equal(
-        res.body.message,
+        previewErrorMessage(res),
         error?.message || 'Could not fetch the SpaceAPI Collector.',
       );
     }
   });
 });
+
+function previewErrorMessage(res: PreviewResponse): string | undefined {
+  if (
+    typeof res.body !== 'object' ||
+    res.body === null ||
+    !('message' in res.body)
+  ) {
+    return undefined;
+  }
+  return typeof res.body.message === 'string' ? res.body.message : undefined;
+}

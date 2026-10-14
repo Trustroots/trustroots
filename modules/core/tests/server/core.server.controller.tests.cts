@@ -1,32 +1,116 @@
 const sinon = require('sinon');
-const winston = require('winston');
-const userProfile = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
-const languagesObject = require('../../../../config/languages/languages.json');
-const languagesArray = require('../../../../config/languages/languages-array.json');
-const deprecatedLanguages = require('./../../../../config/languages/deprecated.mjs');
+const winston: typeof import('winston') = require('winston');
+const userProfile: typeof import('../../../users/server/controllers/users.profile.server.controller.mjs') = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
+const languagesObject: Record<
+  string,
+  string
+> = require('../../../../config/languages/languages.json');
+const languagesArray: Array<{
+  value: string;
+  label: string;
+}> = require('../../../../config/languages/languages-array.json');
+const deprecatedLanguages: Set<string> = require('./../../../../config/languages/deprecated.mjs');
 
 require('should');
+const should: typeof import('should') = require('should');
 
-const sanitizeOwnProfile = user => ({
+const sanitizeOwnProfile = (user: { username: string }) => ({
   sanitized: true,
   username: user.username,
 });
-const coreController = require('./../../server/controllers/core.server.controller.mjs');
+type CoreController =
+  typeof import('../../server/controllers/core.server.controller.mjs');
+const coreController: Pick<
+  CoreController,
+  | 'renderIndex'
+  | 'renderNotFound'
+  | 'receiveCSPViolationReport'
+  | 'receiveExpectCTViolationReport'
+  | 'getLanguages'
+> = require('./../../server/controllers/core.server.controller.mjs');
+type MockResponse = {
+  statusCode: number;
+  body: unknown;
+  rendered: string;
+  renderVars: Record<string, unknown> | undefined;
+  headers: Record<string, string>;
+  redirected: string;
+  status?: (code: number) => MockResponse;
+  format?: (
+    handlers: Record<string, () => void> & { default: () => void },
+  ) => MockResponse;
+  json?: (value: unknown) => MockResponse;
+  send?: (value: unknown) => MockResponse;
+  render?: (view: string, vars?: Record<string, unknown>) => MockResponse;
+  set?: (key: string, value: string) => MockResponse;
+  redirect?: (url: string) => MockResponse;
+};
+type Language = { value: string; label: string; deprecated: boolean };
+
+function languageArray(response: MockResponse): Language[] {
+  if (!Array.isArray(response.body) || !response.body.every(isLanguage)) {
+    throw new Error('Expected language array');
+  }
+  return response.body;
+}
+
+function languageObject(response: MockResponse): Record<string, string> {
+  if (typeof response.body !== 'object' || response.body === null) {
+    throw new Error('Expected language object');
+  }
+  return Object.fromEntries(Object.entries(response.body));
+}
+
+function findLanguage(response: MockResponse, value: string): Language {
+  const language = languageArray(response).find(item => item.value === value);
+  if (!language) throw new Error(`Expected language ${value}`);
+  return language;
+}
+
+function isLanguage(value: unknown): value is Language {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'value' in value &&
+    typeof value.value === 'string' &&
+    'label' in value &&
+    typeof value.label === 'string' &&
+    'deprecated' in value &&
+    typeof value.deprecated === 'boolean'
+  );
+}
+
+function renderVars(response: MockResponse): Record<string, unknown> {
+  if (!response.renderVars) throw new Error('Expected render variables');
+  return response.renderVars;
+}
+
+function responseMessage(response: MockResponse): unknown {
+  if (
+    typeof response.body !== 'object' ||
+    response.body === null ||
+    !('message' in response.body)
+  ) {
+    return undefined;
+  }
+  return response.body.message;
+}
 
 /**
  * Minimal Express-like response mock for unit-testing controller actions
  * without spinning up the full HTTP stack.
  */
-function mockResponse(acceptType) {
-  const res = {
-    statusCode: null,
+function mockResponse(acceptType?: string): MockResponse {
+  const res: MockResponse = {
+    statusCode: 200,
     body: null,
-    rendered: null,
-    renderVars: null,
+    rendered: '',
+    renderVars: undefined,
     headers: {},
+    redirected: '',
   };
 
-  res.status = function (code) {
+  res.status = function (code: number) {
     res.statusCode = code;
     return res;
   };
@@ -38,12 +122,12 @@ function mockResponse(acceptType) {
     }
     return res;
   };
-  res.json = function (obj) {
-    res.body = obj === undefined ? null : obj;
+  res.json = function (value) {
+    res.body = value === undefined ? null : value;
     return res;
   };
-  res.send = function (str) {
-    res.body = str;
+  res.send = function (value) {
+    res.body = value;
     return res;
   };
   res.render = function (view, vars) {
@@ -76,13 +160,13 @@ describe('Controller: core', function () {
       const res = mockResponse();
       coreController.renderIndex({ path: '/signup' }, res);
       res.rendered.should.equal('react-index.server.view.html');
-      res.renderVars.invite.should.be.true();
+      should(renderVars(res).invite).be.true();
     });
 
     it('does not mark other pages as invites', function () {
       const res = mockResponse();
       coreController.renderIndex({ path: '/' }, res);
-      (res.renderVars.invite === undefined).should.be.true();
+      should(renderVars(res).invite === undefined).be.true();
     });
 
     it('renders the React index for React-owned paths', function () {
@@ -112,7 +196,7 @@ describe('Controller: core', function () {
         { path: '/', user: { username: 'alice', email: 'alice@example.com' } },
         res,
       );
-      res.renderVars.user.should.deepEqual({
+      should(renderVars(res).user).deepEqual({
         sanitized: true,
         username: 'alice',
       });
@@ -122,7 +206,7 @@ describe('Controller: core', function () {
       const tribe = { slug: 'test-tribe', label: 'Test Tribe' };
       const res = mockResponse();
       coreController.renderIndex({ path: '/tribes/test-tribe', tribe }, res);
-      res.renderVars.tribe.should.equal(tribe);
+      should(renderVars(res).tribe).equal(tribe);
     });
   });
 
@@ -131,7 +215,7 @@ describe('Controller: core', function () {
       const res = mockResponse('application/json');
       coreController.renderNotFound({}, res);
       res.statusCode.should.equal(404);
-      res.body.message.should.equal('Not found.');
+      should(responseMessage(res)).equal('Not found.');
     });
 
     it('renders an HTML view for text/html requests', function () {
@@ -143,12 +227,12 @@ describe('Controller: core', function () {
     it('sends a plain message for other content types', function () {
       const res = mockResponse();
       coreController.renderNotFound({}, res);
-      res.body.should.equal('Not found.');
+      should(res.body).equal('Not found.');
     });
   });
 
   describe('receiveCSPViolationReport', function () {
-    let originalEnv;
+    let originalEnv: string | undefined;
 
     beforeEach(function () {
       originalEnv = process.env.NODE_ENV;
@@ -167,10 +251,11 @@ describe('Controller: core', function () {
 
     it('redacts report URLs before logging security reports', function () {
       const originalLog = winston.log;
-      const calls = [];
-      winston.log = function () {
-        calls.push(Array.from(arguments));
-      };
+      const calls: unknown[][] = [];
+      winston.log = ((...args: unknown[]) => {
+        calls.push(args);
+        return winston;
+      }) as unknown as typeof winston.log;
 
       try {
         const res = mockResponse();
@@ -187,7 +272,7 @@ describe('Controller: core', function () {
           ([level, event]) =>
             level === 'warn' && event === 'CSP violation report #ljeanw',
         );
-        report[2].should.deepEqual({ report: '[REDACTED]' });
+        should(report?.[2]).deepEqual({ report: '[REDACTED]' });
       } finally {
         winston.log = originalLog;
       }
@@ -209,7 +294,7 @@ describe('Controller: core', function () {
   });
 
   describe('receiveExpectCTViolationReport', function () {
-    let originalEnv;
+    let originalEnv: string | undefined;
 
     beforeEach(function () {
       originalEnv = process.env.NODE_ENV;
@@ -231,10 +316,11 @@ describe('Controller: core', function () {
 
     it('redacts report URLs before logging security reports', function () {
       const originalLog = winston.log;
-      const calls = [];
-      winston.log = function () {
-        calls.push(Array.from(arguments));
-      };
+      const calls: unknown[][] = [];
+      winston.log = ((...args: unknown[]) => {
+        calls.push(args);
+        return winston;
+      }) as unknown as typeof winston.log;
 
       try {
         const res = mockResponse();
@@ -251,7 +337,7 @@ describe('Controller: core', function () {
           ([level, event]) =>
             level === 'warn' && event === 'Expect-CT violation report #3hg8ha',
         );
-        report[2].should.deepEqual({ report: '[REDACTED]' });
+        should(report?.[2]).deepEqual({ report: '[REDACTED]' });
       } finally {
         winston.log = originalLog;
       }
@@ -279,36 +365,28 @@ describe('Controller: core', function () {
     it('returns the languages array when format=array', function () {
       const res = mockResponse();
       coreController.getLanguages({ query: { format: 'array' } }, res);
-      res.body.should.deepEqual(
+      languageArray(res).should.deepEqual(
         languagesArray.map(language => ({
           ...language,
           deprecated: deprecatedLanguages.has(language.value),
         })),
       );
-      res.body.filter(language => language.deprecated).length.should.equal(20);
-      res.body
-        .find(language => language.value === 'enm')
-        .deprecated.should.be.true();
-      res.body
-        .find(language => language.value === 'iso_639_3-lfn')
-        .deprecated.should.be.true();
-      res.body
-        .find(language => language.value === 'grc')
-        .deprecated.should.be.false();
-      res.body
-        .find(language => language.value === 'lat')
-        .deprecated.should.be.false();
-      res.body
-        .find(language => language.value === 'lim')
-        .label.should.equal('Limburgish');
+      languageArray(res)
+        .filter(language => language.deprecated)
+        .length.should.equal(20);
+      should(findLanguage(res, 'enm').deprecated).be.true();
+      should(findLanguage(res, 'iso_639_3-lfn').deprecated).be.true();
+      should(findLanguage(res, 'grc').deprecated).be.false();
+      should(findLanguage(res, 'lat').deprecated).be.false();
+      should(findLanguage(res, 'lim').label).equal('Limburgish');
     });
 
     it('returns the languages object by default', function () {
       const res = mockResponse();
       coreController.getLanguages({ query: {} }, res);
-      res.body.should.deepEqual(languagesObject);
-      res.body.lim.should.equal('Limburgish');
-      res.body.enm.should.equal('Middle English (1100-1500)');
+      languageObject(res).should.deepEqual(languagesObject);
+      languageObject(res).lim.should.equal('Limburgish');
+      languageObject(res).enm.should.equal('Middle English (1100-1500)');
     });
   });
 });

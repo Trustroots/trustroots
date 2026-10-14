@@ -1,25 +1,174 @@
 /**
  * Unit tests for the admin acquisition stories controller.
  */
-const should = require('should');
-const mongoose = require('mongoose');
+const should: typeof import('should') = require('should');
+const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon = require('sinon');
 
-const adminAcquisitionStories = require('./../../server/controllers/admin.acquisition-stories.server.controller.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const Offer = mongoose.model('Offer');
-const User = mongoose.model('User');
-const Message = mongoose.model('Message');
-
-function mockResponse() {
-  const res = { statusCode: 200, body: null };
-  res.status = function (code) {
-    res.statusCode = code;
-    return res;
+type AcquisitionController =
+  typeof import('../../server/controllers/admin.acquisition-stories.server.controller.mjs');
+const adminAcquisitionStories: Pick<
+  AcquisitionController,
+  'list'
+> = require('./../../server/controllers/admin.acquisition-stories.server.controller.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
+type OfferRecord =
+  import('../../../../testutils/server/model-contracts.mts').OfferRecord;
+type UserRecord =
+  import('../../../../testutils/server/model-contracts.mts').UserRecord;
+type MessageRecord =
+  import('../../../../testutils/server/model-contracts.mts').MessageRecord;
+type StoryFixture =
+  import('../../../../testutils/common/data.common.testutil.mts').ServerUserFixture & {
+    acquisitionStory?: string;
+    emailTemporary?: string;
+    locationFrom?: string;
+    locationLiving?: string;
+    member?: UserRecord['member'];
   };
-  res.send = function (body) {
-    res.body = body;
-    return res;
+type RestrictedMatch = {
+  _id: import('mongoose').Types.ObjectId;
+  displayName?: string;
+  matchReasons: string[];
+  restrictionStatuses: string[];
+  username: string;
+};
+type Welcomer = {
+  _id: import('mongoose').Types.ObjectId;
+  username: string;
+  displayName?: string;
+  created: Date;
+};
+type AcquisitionStory = {
+  _id: import('mongoose').Types.ObjectId | string;
+  acquisitionStory: string;
+  circleCount: number;
+  created?: Date;
+  displayName?: string;
+  hostingLocation: number[] | null;
+  languages: string[];
+  locationFrom?: string;
+  locationLiving?: string;
+  welcomer: Welcomer | null;
+  public: boolean;
+  restrictionStatuses: string[];
+  restrictedMatches: RestrictedMatch[];
+  username: string;
+};
+type MockResponse = { body: unknown; send(body: unknown): MockResponse };
+const Offer = mongoose.model<OfferRecord>('Offer');
+const User = mongoose.model<UserRecord>('User');
+const Message = mongoose.model<MessageRecord>('Message');
+
+function generateStoryUsers(count: number): StoryFixture[] {
+  return utils.generateUsers(count).map(user => {
+    if (!user || !('password' in user))
+      throw new Error('Expected server user fixtures');
+    return {
+      ...user,
+      acquisitionStory: undefined,
+      emailTemporary: undefined,
+      locationFrom: undefined,
+      locationLiving: undefined,
+      member: undefined,
+    };
+  });
+}
+
+function storyList(res: MockResponse): AcquisitionStory[] {
+  if (!Array.isArray(res.body) || !res.body.every(isAcquisitionStory)) {
+    throw new Error('Expected acquisition story results');
+  }
+  return res.body;
+}
+
+function findStory(
+  res: MockResponse,
+  predicate: (story: AcquisitionStory) => boolean,
+): AcquisitionStory {
+  const story = storyList(res).find(predicate);
+  if (!story) throw new Error('Expected matching acquisition story');
+  return story;
+}
+
+function findMatch(
+  matches: RestrictedMatch[],
+  predicate: (match: RestrictedMatch) => boolean,
+): RestrictedMatch {
+  const match = matches.find(predicate);
+  if (!match) throw new Error('Expected matching restricted user');
+  return match;
+}
+
+function isAcquisitionStory(value: unknown): value is AcquisitionStory {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    '_id' in value &&
+    (typeof value._id === 'string' ||
+      value._id instanceof mongoose.Types.ObjectId) &&
+    'acquisitionStory' in value &&
+    typeof value.acquisitionStory === 'string' &&
+    'circleCount' in value &&
+    typeof value.circleCount === 'number' &&
+    'created' in value &&
+    (value.created === undefined || value.created instanceof Date) &&
+    'hostingLocation' in value &&
+    (value.hostingLocation === null || Array.isArray(value.hostingLocation)) &&
+    'languages' in value &&
+    Array.isArray(value.languages) &&
+    value.languages.every(language => typeof language === 'string') &&
+    'welcomer' in value &&
+    (value.welcomer === null || isWelcomer(value.welcomer)) &&
+    'public' in value &&
+    typeof value.public === 'boolean' &&
+    'restrictionStatuses' in value &&
+    Array.isArray(value.restrictionStatuses) &&
+    'restrictedMatches' in value &&
+    Array.isArray(value.restrictedMatches) &&
+    value.restrictedMatches.every(isRestrictedMatch) &&
+    'username' in value &&
+    typeof value.username === 'string'
+  );
+}
+
+function isWelcomer(value: unknown): value is Welcomer {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    '_id' in value &&
+    value._id instanceof mongoose.Types.ObjectId &&
+    'username' in value &&
+    typeof value.username === 'string' &&
+    'created' in value &&
+    value.created instanceof Date
+  );
+}
+
+function isRestrictedMatch(value: unknown): value is RestrictedMatch {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    '_id' in value &&
+    value._id instanceof mongoose.Types.ObjectId &&
+    'username' in value &&
+    typeof value.username === 'string' &&
+    'matchReasons' in value &&
+    Array.isArray(value.matchReasons) &&
+    value.matchReasons.every(reason => typeof reason === 'string') &&
+    'restrictionStatuses' in value &&
+    Array.isArray(value.restrictionStatuses) &&
+    value.restrictionStatuses.every(status => typeof status === 'string')
+  );
+}
+
+function mockResponse(): MockResponse {
+  const res: MockResponse = {
+    body: null,
+    send(body) {
+      res.body = body;
+      return res;
+    },
   };
   return res;
 }
@@ -32,7 +181,7 @@ describe('Admin acquisition stories controller unit tests', () => {
 
   describe('list', () => {
     it('uses the first visible current-team message and returns only welcome metadata', async () => {
-      const users = utils.generateUsers(5);
+      const users = generateStoryUsers(5);
       users[0].acquisitionStory = 'A fictional recommendation.';
       users[0].languages = ['fre', 'eng'];
       users[0].roles = ['user', 'welcome-team'];
@@ -101,31 +250,31 @@ describe('Admin acquisition stories controller unit tests', () => {
         saved[1]._id,
         saved[2]._id,
       ]);
-      res.body[0].languages.should.deepEqual(['fre', 'eng']);
-      res.body[0].welcomer.should.deepEqual({
+      storyList(res)[0].languages.should.deepEqual(['fre', 'eng']);
+      should(storyList(res)[0].welcomer).deepEqual({
         _id: saved[1]._id,
         username: saved[1].username,
         displayName: saved[1].displayName,
         created: firstDate,
       });
-      res.body[0].welcomer.should.not.have.property('content');
+      should(storyList(res)[0].welcomer).not.have.property('content');
       // Revoking the first sender's role exposes the next eligible contact.
       await User.updateOne(
         { _id: saved[1]._id },
         { $pull: { roles: 'welcome-team' } },
       );
       await adminAcquisitionStories.list({}, res);
-      res.body[0].welcomer._id.should.eql(saved[2]._id);
+      should(storyList(res)[0].welcomer?._id).eql(saved[2]._id);
       await User.updateOne(
         { _id: saved[2]._id },
         { $pull: { roles: 'welcome-team' } },
       );
       await adminAcquisitionStories.list({}, res);
-      should(res.body[0].welcomer).equal(null);
+      should(storyList(res)[0].welcomer).equal(null);
     });
 
     it('breaks equal contact timestamps by message ID and ignores deleted senders', async () => {
-      const users = utils.generateUsers(3);
+      const users = generateStoryUsers(3);
       users[0].acquisitionStory = 'Another fictional recommendation.';
       users[1].roles = users[2].roles = ['user', 'welcome-team'];
       const saved = await utils.saveUsers(users);
@@ -154,7 +303,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       ]);
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
-      res.body[0].welcomer._id.should.eql(saved[1]._id);
+      should(storyList(res)[0].welcomer?._id).eql(saved[1]._id);
     });
 
     it('yields to I/O while comparing the bounded data sources', async function () {
@@ -209,14 +358,14 @@ describe('Admin acquisition stories controller unit tests', () => {
       }
       sinon.assert.calledOnceWithExactly(storyLimit, 500);
       ioTurns.should.be.aboveOrEqual(5000);
-      res.body.should.have.length(500);
-      res.body
+      storyList(res).should.have.length(500);
+      storyList(res)
         .every(story => story.restrictedMatches.length === 0)
         .should.be.true();
     });
 
     it('keeps the first ten identifier matches in source order', async () => {
-      const users = utils.generateUsers(12);
+      const users = generateStoryUsers(12);
       users[0].username = 'abcdefghijklmn';
       users[0].acquisitionStory = 'An active member story.';
       users.slice(1).forEach((user, index) => {
@@ -231,7 +380,7 @@ describe('Admin acquisition stories controller unit tests', () => {
         created: -1,
         _id: 1,
       });
-      const story = res.body.find(user => user.username === users[0].username);
+      const story = findStory(res, user => user.username === users[0].username);
       story.restrictedMatches
         .map(user => user._id.toString())
         .should.deepEqual(
@@ -240,7 +389,7 @@ describe('Admin acquisition stories controller unit tests', () => {
     });
 
     it('returns acquisition stories for users who have one', async () => {
-      const users = utils.generateUsers(3);
+      const users = generateStoryUsers(3);
       users[0].acquisitionStory = 'Found via couch surfing';
       users[0].member = [{ tribe: new mongoose.Types.ObjectId() }];
       users[0].locationFrom = 'Fictional origin';
@@ -255,28 +404,30 @@ describe('Admin acquisition stories controller unit tests', () => {
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
 
-      res.body.length.should.equal(2);
-      const visibleStory = res.body.find(
+      storyList(res).length.should.equal(2);
+      const visibleStory = findStory(
+        res,
         story => story.username === visibleUser.username,
       );
-      const hiddenStory = res.body.find(
+      const hiddenStory = findStory(
+        res,
         story => story.username === hiddenUser.username,
       );
-      visibleStory.acquisitionStory.should.equal('Found via couch surfing');
+      should(visibleStory.acquisitionStory).equal('Found via couch surfing');
       visibleStory.circleCount.should.equal(1);
-      visibleStory.locationFrom.should.equal('Fictional origin');
-      visibleStory.locationLiving.should.equal('Fictional home');
+      should(visibleStory.locationFrom).equal('Fictional origin');
+      should(visibleStory.locationLiving).equal('Fictional home');
       visibleStory.public.should.equal(true);
       hiddenStory.public.should.equal(false);
       should(visibleStory.hostingLocation).equal(null);
-      should(visibleStory.member).be.undefined();
+      should(visibleStory).not.have.property('member');
       visibleStory.restrictedMatches.should.deepEqual([]);
-      should(visibleStory.email).be.undefined();
-      should(visibleStory.emailTemporary).be.undefined();
+      should(visibleStory).not.have.property('email');
+      should(visibleStory).not.have.property('emailTemporary');
     });
 
     it('returns identifier matches but ignores exact and similar stories', async () => {
-      const users = utils.generateUsers(6);
+      const users = generateStoryUsers(6);
       users[0].username = 'identifiercluecopy';
       users[0].email = 'email-clue-copy@example.test';
       users[0].emailTemporary = 'temporary-clue-copy@example.test';
@@ -316,23 +467,28 @@ describe('Admin acquisition stories controller unit tests', () => {
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
 
-      const story = res.body.find(
+      const story = findStory(
+        res,
         user => user.username === 'identifiercluecopy',
       );
       story.restrictedMatches.should.have.length(3);
       story.restrictionStatuses.should.deepEqual([]);
-      res.body
-        .find(user => user.username === 'identifierclue')
-        .restrictionStatuses.should.deepEqual(['shadowban']);
-      res.body
-        .find(user => user.username === 'emailmatchuser')
-        .restrictionStatuses.should.deepEqual(['suspended']);
-      res.body
-        .find(user => user.username === 'temporarymatchuser')
-        .restrictionStatuses.should.deepEqual(['suspended', 'shadowban']);
-      story.restrictedMatches
-        .find(user => user.username === 'temporarymatchuser')
-        .restrictionStatuses.should.deepEqual(['suspended', 'shadowban']);
+      findStory(
+        res,
+        user => user.username === 'identifierclue',
+      ).restrictionStatuses.should.deepEqual(['shadowban']);
+      findStory(
+        res,
+        user => user.username === 'emailmatchuser',
+      ).restrictionStatuses.should.deepEqual(['suspended']);
+      findStory(
+        res,
+        user => user.username === 'temporarymatchuser',
+      ).restrictionStatuses.should.deepEqual(['suspended', 'shadowban']);
+      findMatch(
+        story.restrictedMatches,
+        user => user.username === 'temporarymatchuser',
+      ).restrictionStatuses.should.deepEqual(['suspended', 'shadowban']);
       should(
         story.restrictedMatches.find(
           user => user.username === 'exactstoryuser',
@@ -343,18 +499,21 @@ describe('Admin acquisition stories controller unit tests', () => {
           user => user.username === 'fuzzystoryuser',
         ),
       ).be.undefined();
-      story.restrictedMatches
-        .find(user => user.username === 'identifierclue')
-        .matchReasons.should.deepEqual(['Username identifier']);
-      story.restrictedMatches
-        .find(user => user.username === 'emailmatchuser')
-        .matchReasons.should.deepEqual(['Email identifier']);
-      story.restrictedMatches
-        .find(user => user.username === 'temporarymatchuser')
-        .matchReasons.should.deepEqual(['Temporary email identifier']);
+      findMatch(
+        story.restrictedMatches,
+        user => user.username === 'identifierclue',
+      ).matchReasons.should.deepEqual(['Username identifier']);
+      findMatch(
+        story.restrictedMatches,
+        user => user.username === 'emailmatchuser',
+      ).matchReasons.should.deepEqual(['Email identifier']);
+      findMatch(
+        story.restrictedMatches,
+        user => user.username === 'temporarymatchuser',
+      ).matchReasons.should.deepEqual(['Temporary email identifier']);
       story.restrictedMatches.forEach(match => {
-        should(match.email).be.undefined();
-        should(match.roles).be.undefined();
+        should(match).not.have.property('email');
+        should(match).not.have.property('roles');
         ['shadowban', 'suspended']
           .some(role => match.restrictionStatuses.includes(role))
           .should.equal(true);
@@ -362,7 +521,7 @@ describe('Admin acquisition stories controller unit tests', () => {
     });
 
     it('returns the latest hosting location with acquisition stories', async () => {
-      const users = utils.generateUsers(1);
+      const users = generateStoryUsers(1);
       users[0].acquisitionStory = 'Found through friends';
       const [savedUser] = await utils.saveUsers(users);
       sinon.stub(Offer, 'find').returns({
@@ -388,11 +547,11 @@ describe('Admin acquisition stories controller unit tests', () => {
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
 
-      res.body[0].hostingLocation.should.deepEqual([10.1, 20.1]);
+      should(storyList(res)[0].hostingLocation).deepEqual([10.1, 20.1]);
     });
 
     it('falls back to a precise hosting location when no fuzzy value exists', async () => {
-      const users = utils.generateUsers(1);
+      const users = generateStoryUsers(1);
       users[0].acquisitionStory = 'Found through a gathering';
       const [savedUser] = await utils.saveUsers(users);
       sinon.stub(Offer, 'find').returns({
@@ -413,11 +572,11 @@ describe('Admin acquisition stories controller unit tests', () => {
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
 
-      res.body[0].hostingLocation.should.deepEqual([30, 40]);
+      should(storyList(res)[0].hostingLocation).deepEqual([30, 40]);
     });
 
     it('handles a missing hosting-offer result', async () => {
-      const users = utils.generateUsers(1);
+      const users = generateStoryUsers(1);
       users[0].acquisitionStory = 'Found through a cyclist';
       await utils.saveUsers(users);
       sinon.stub(Offer, 'find').returns({
@@ -431,14 +590,14 @@ describe('Admin acquisition stories controller unit tests', () => {
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
 
-      should(res.body[0].hostingLocation).equal(null);
+      should(storyList(res)[0].hostingLocation).equal(null);
     });
 
     it('returns an empty array when no stories exist', async () => {
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
 
-      res.body.should.eql([]);
+      should(storyList(res)).eql([]);
     });
 
     it('returns an empty array when story lookup returns null', async () => {
@@ -453,7 +612,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
 
-      res.body.should.eql([]);
+      should(storyList(res)).eql([]);
     });
   });
 });
