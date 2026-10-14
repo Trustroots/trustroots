@@ -1,9 +1,33 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs') as typeof import('node:fs');
+const path = require('node:path') as typeof import('node:path');
 
-function collectInstalledPackages(root) {
-  const packages = [];
-  function scan(directory) {
+interface PackageManifest {
+  name: string;
+  version: string;
+}
+
+interface InstalledPackage extends PackageManifest {
+  path: string;
+}
+
+function readPackageManifest(filename: string): PackageManifest {
+  const value: unknown = JSON.parse(fs.readFileSync(filename, 'utf8'));
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    !('name' in value) ||
+    typeof value.name !== 'string' ||
+    !('version' in value) ||
+    typeof value.version !== 'string'
+  ) {
+    throw new Error(`Invalid package manifest: ${filename}`);
+  }
+  return { name: value.name, version: value.version };
+}
+
+function collectInstalledPackages(root: string): InstalledPackage[] {
+  const packages: InstalledPackage[] = [];
+  function scan(directory: string): void {
     if (!fs.existsSync(directory)) return;
     for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
       if (entry.name.startsWith('.') || !entry.isDirectory()) continue;
@@ -12,8 +36,8 @@ function collectInstalledPackages(root) {
         scan(location);
         continue;
       }
-      const manifest = JSON.parse(
-        fs.readFileSync(path.join(location, 'package.json'), 'utf8'),
+      const manifest = readPackageManifest(
+        path.join(location, 'package.json'),
       );
       packages.push({
         name: manifest.name,

@@ -7,27 +7,42 @@ import { getReactRoutePolicy } from '../../modules/core/shared/react-route-owner
 const root = process.argv[2]
   ? path.resolve(process.argv[2])
   : path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const records = new Map();
+interface LinkRecord {
+  href: string;
+  line: number;
+}
 
-function resolveSource(from, specifier) {
+interface SourceRecord {
+  source: ts.SourceFile;
+  ids: Set<string>;
+  links: LinkRecord[];
+  imports: Map<string, string>;
+  declarations: Map<string, ts.Declaration>;
+}
+
+const records = new Map<string, SourceRecord>();
+
+function resolveSource(from: string, specifier: string): string | null {
   const base = specifier.startsWith('@/')
     ? path.join(root, specifier.slice(2))
     : specifier.startsWith('.')
-    ? path.resolve(path.dirname(from), specifier)
-    : null;
+      ? path.resolve(path.dirname(from), specifier)
+      : null;
   if (!base) return null;
   const stem = base.replace(/\.[cm]?[jt]sx?$/, '');
-  return [
-    base,
-    ...['.tsx', '.ts', '.mts', '.js', '/index.tsx', '/index.ts'].map(
-      ext => stem + ext,
-    ),
-  ].find(
-    candidate => fs.existsSync(candidate) && fs.statSync(candidate).isFile(),
+  return (
+    [
+      base,
+      ...['.tsx', '.ts', '.mts', '.js', '/index.tsx', '/index.ts'].map(
+        ext => stem + ext,
+      ),
+    ].find(
+      candidate => fs.existsSync(candidate) && fs.statSync(candidate).isFile(),
+    ) ?? null
   );
 }
 
-function literal(node) {
+function literal(node: ts.Node | undefined): string | null {
   if (node && ts.isJsxExpression(node)) return literal(node.expression);
   return node &&
     (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node))
@@ -35,8 +50,8 @@ function literal(node) {
     : null;
 }
 
-function readSource(file) {
-  if (records.has(file)) return records.get(file);
+function readSource(file: string): SourceRecord {
+  if (records.has(file)) return records.get(file)!;
   const source = ts.createSourceFile(
     file,
     fs.readFileSync(file, 'utf8'),
@@ -45,13 +60,13 @@ function readSource(file) {
   );
   const record = {
     source,
-    ids: new Set(),
-    links: [],
-    imports: new Map(),
-    declarations: new Map(),
+    ids: new Set<string>(),
+    links: [] as LinkRecord[],
+    imports: new Map<string, string>(),
+    declarations: new Map<string, ts.Declaration>(),
   };
   records.set(file, record);
-  function visit(node) {
+  function visit(node: ts.Node): void {
     // Some sections are generated from objects with literal id fields.
     if (ts.isPropertyAssignment(node) && node.name.getText(source) === 'id') {
       const value = literal(node.initializer);
@@ -59,8 +74,9 @@ function readSource(file) {
     }
     if (ts.isJsxAttribute(node)) {
       const value = literal(node.initializer);
-      if (value !== null && node.name.text === 'id') record.ids.add(value);
-      if (value !== null && node.name.text === 'href') {
+      const attributeName = node.name.getText(source);
+      if (value !== null && attributeName === 'id') record.ids.add(value);
+      if (value !== null && attributeName === 'href') {
         record.links.push({
           href: value,
           line: source.getLineAndCharacterOfPosition(node.getStart()).line + 1,
@@ -98,15 +114,19 @@ function readSource(file) {
   return record;
 }
 
-function importedFiles(record, node, seen = new Set()) {
-  const files = new Set();
-  function visit(child) {
+function importedFiles(
+  record: SourceRecord,
+  node: ts.Node,
+  seen = new Set<string>(),
+): Set<string> {
+  const files = new Set<string>();
+  function visit(child: ts.Node): void {
     if (ts.isIdentifier(child)) {
       const name = child.text;
-      if (record.imports.has(name)) files.add(record.imports.get(name));
+      if (record.imports.has(name)) files.add(record.imports.get(name)!);
       if (!seen.has(name) && record.declarations.has(name)) {
         seen.add(name);
-        visit(record.declarations.get(name));
+        visit(record.declarations.get(name)!);
       }
     }
     ts.forEachChild(child, visit);
@@ -115,8 +135,11 @@ function importedFiles(record, node, seen = new Set()) {
   return files;
 }
 
-function collectIds(files, seen = new Set()) {
-  const ids = new Set();
+function collectIds(
+  files: Iterable<string>,
+  seen = new Set<string>(),
+): Set<string> {
+  const ids = new Set<string>();
   for (const file of files) {
     if (seen.has(file)) continue;
     seen.add(file);
@@ -127,22 +150,22 @@ function collectIds(files, seen = new Set()) {
   return ids;
 }
 
-function clientFiles(directory) {
+function clientFiles(directory: string): string[] {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
     const file = path.join(directory, entry.name);
     return entry.isDirectory()
       ? clientFiles(file)
       : /\.[jt]sx?$/.test(file)
-      ? [file]
-      : [];
+        ? [file]
+        : [];
   });
 }
 
 const routesFile = readSource(
   path.join(root, 'modules/core/client/react-app/routes.tsx'),
 );
-const routeIds = new Map();
-function findRoutes(node) {
+const routeIds = new Map<string, Set<string>>();
+function findRoutes(node: ts.Node): void {
   if (
     ts.isPropertyAssignment(node) &&
     ts.isStringLiteral(node.name) &&
@@ -157,7 +180,7 @@ function findRoutes(node) {
 }
 findRoutes(routesFile.source);
 
-const errors = [];
+const errors: string[] = [];
 const shellFile = path.join(
   root,
   'modules/core/client/react-app/ReactAppShell.tsx',

@@ -11,5 +11,13 @@
     "moduleResolution": "NodeNext",
     "types": ["node"]
   },
-  "include": ["scripts/ci/**/*.mts", "config/vite/**/*.test.mts"]
+  "include": [
+    "bin/**/*.cts",
+    "bin/**/*.mts",
+    "config/vite/**/*.test.mts",
+    "scripts/**/*.cts",
+    "scripts/**/*.mts",
+    "scripts/ci/**/*.test.mts"
+  ],
+  "exclude": ["node_modules", "scripts/e2e/**/*.mts"]
 }

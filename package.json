@@ -18,7 +18,7 @@
     "extends @wordpress/browserslist-config"
   ],
   "scripts": {
-    "check:links": "node scripts/ci/check-internal-links.mjs",
+    "check:links": "node scripts/ci/check-internal-links.mts",
     "test:links": "node --test scripts/ci/check-internal-links.test.mts",
     "agenda-maintenance": "node ./bin/db-maintenance/archive-done-agenda-jobs.mjs",
     "build": "pnpm run clean:public && pnpm run build:generate-circle-images && pnpm run build:vite",

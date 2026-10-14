@@ -38,7 +38,7 @@ function check(t: TestContext, source: string): SpawnSyncReturns<string> {
   return spawnSync(
     process.execPath,
     [
-      fileURLToPath(new URL('./check-internal-links.mjs', import.meta.url)),
+      fileURLToPath(new URL('./check-internal-links.mts', import.meta.url)),
       root,
     ],
     { encoding: 'utf8' },
