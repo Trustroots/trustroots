@@ -575,3 +575,41 @@ describe('E2E coverage reporter unit tests', () => {
     });
   });
 });
+
+describe('raw E2E coverage summary', () => {
+  it('summarises file coverage before combining its totals', () => {
+    const { createCoverageMap } = require('istanbul-lib-coverage');
+    const {
+      summarizeMap,
+    } = require('../../../../../scripts/e2e/merge-js-coverage');
+    const location = {
+      start: { line: 1, column: 0 },
+      end: { line: 1, column: 1 },
+    };
+    const map = createCoverageMap({
+      '/anonymous/function.ts': {
+        path: '/anonymous/function.ts',
+        statementMap: { 0: location },
+        fnMap: {
+          0: { name: 'handler', decl: location, loc: location, line: 1 },
+        },
+        branchMap: {
+          0: {
+            type: 'if',
+            loc: location,
+            locations: [location, location],
+            line: 1,
+          },
+        },
+        s: { 0: 1 },
+        f: { 0: 1 },
+        b: { 0: [1, 0] },
+      },
+    });
+    const { total } = summarizeMap(map);
+    assert.strictEqual(total.statements.pct, 100);
+    assert.strictEqual(total.functions.pct, 100);
+    assert.strictEqual(total.lines.pct, 100);
+    assert.strictEqual(total.branches.pct, 50);
+  });
+});

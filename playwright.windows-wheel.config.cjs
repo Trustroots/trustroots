@@ -10,7 +10,7 @@ if (!process.env.BRAVE_EXECUTABLE_PATH) {
 }
 
 const wheelSpec =
-  /features\/search-offers-circles\/search-map-rendered\.spec\.js/;
+  /features\/search-offers-circles\/search-map-rendered\.spec\.ts/;
 const memberState = path.join(__dirname, 'tests/e2e/.auth/seeded-member.json');
 const chromiumOptions = {
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'],

@@ -145,6 +145,9 @@ const legacyConfig = {
         '*.cjs',
         'config/**',
         'scripts/ci/**/*.mts',
+        'scripts/e2e/**/*.mts',
+        'tests/e2e/**/*.{ts,mts}',
+        'playwright.config.cts',
         'migrations/**',
         'modules/*/shared/**/*.{js,ts,mts}',
         'modules/*/server/*.{js,mjs}',
@@ -245,6 +248,9 @@ const legacyConfig = {
       files: [
         'config/vite/**/*.{ts,tsx}',
         'scripts/ci/**/*.mts',
+        'scripts/e2e/**/*.mts',
+        'tests/e2e/**/*.{ts,mts}',
+        'playwright.config.cts',
         'modules/*/client/**/*.{ts,tsx}',
         'modules/*/shared/**/*.{ts,tsx,mts}',
         'modules/*/server/**/*.mts',
@@ -267,6 +273,13 @@ const legacyConfig = {
       },
     },
 
+    {
+      files: ['tests/e2e/**/*.{ts,mts}'],
+      // The strict E2E compiler checks named exports. ESLint cannot follow
+      // Playwright's CommonJS re-exports consistently across platforms.
+      rules: { 'import/named': 0 },
+    },
+
     /**
      * Overrides for server side test files
      */
@@ -286,7 +299,13 @@ const legacyConfig = {
      * Overrides for CLI scripts and application config
      */
     {
-      files: ['bin/**', 'config/**', 'migrations/**', 'scripts/ci/**/*.mts'],
+      files: [
+        'bin/**',
+        'config/**',
+        'migrations/**',
+        'scripts/ci/**/*.mts',
+        'scripts/e2e/**/*.mts',
+      ],
       env: {
         node: true,
       },
@@ -314,11 +333,15 @@ module.exports = defineConfig([
   // ESLint 8 ignored dotfiles and hidden directories by default.
   { ignores: [...ignores, '**/.*'] },
   {
-    files: ['**/*.{js,mjs,cjs,ts,tsx,mts}'],
+    files: ['**/*.{js,mjs,cjs,ts,tsx,mts,cts}'],
     extends: fixupConfigRules(compat.config(legacyConfig)),
   },
   {
-    files: ['**/*.cjs'],
+    files: ['playwright.config.cts'],
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  {
+    files: ['**/*.{cjs,cts}'],
     languageOptions: { sourceType: 'commonjs' },
   },
 ]);

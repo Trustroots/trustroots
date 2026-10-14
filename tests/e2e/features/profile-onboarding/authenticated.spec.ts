@@ -1,0 +1,871 @@
+import path from 'node:path';
+import type { Request } from '@playwright/test';
+import { annotateFeature, test, expect } from '../../support/fixtures.mts';
+
+import {
+  SEEDED_MEMBERS,
+  SEEDED_RELATIONSHIP_MEMBERS,
+  SEEDED_SHADOW,
+  createIsolatedContext,
+  createUser,
+  registerViaApi,
+  signInViaApi,
+  signOut,
+  waitForTribesList,
+} from '../../support/helpers.mts';
+import { stubStatisticsImages } from '../../support/statistics.mts';
+
+test.describe('authenticated member flows', () => {
+  let authenticatedMember: ReturnType<typeof createUser> | undefined;
+
+  test.beforeEach(async ({ page, request }) => {
+    // Authenticate in the test's own browser context. A storage state created
+    // by an earlier project can outlive its server-side session in CI.
+    if (!authenticatedMember) {
+      authenticatedMember = createUser();
+      await registerViaApi(request, authenticatedMember);
+    }
+    await signInViaApi(page, request, authenticatedMember);
+  });
+
+  test('search page loads for a signed in member', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Search map loads for a signed-in member.',
+      'Location bounding-box query returns seeded offers.',
+      'Offer deep-link query resolves the selected offer.',
+      'Circle filter query resolves the selected circle.',
+      'Search map renders with deterministic offline style.',
+      'Route fixture offers populate the rendered map source.',
+      'Empty map-offers fixture leaves the search map usable.',
+      'Rendered map offer deep-link opens deterministic sidebar data.',
+    ]);
+
+    await page.goto('/search');
+
+    await expect(page).toHaveURL(/\/search/);
+    await expect(page).toHaveTitle(/Search - Trustroots/);
+  });
+
+  test('welcome onboarding page links to profile completion', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.welcome-onboarding', [
+      'Welcome page loads for a newly authenticated member.',
+      'Welcome/onboarding links guide the member to profile completion.',
+    ]);
+
+    await page.goto('/welcome');
+
+    await expect(page.getByRole('heading', { name: /welcome/i })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /fill your profile/i }),
+    ).toHaveAttribute('href', '/profile/edit');
+  });
+
+  test('search members page loads', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'search.members', [
+      'Search members page loads.',
+      'Search returns seeded hosts.',
+      'Search handles empty or no-result states.',
+    ]);
+
+    await page.goto('/search/members');
+
+    await expect(page).toHaveURL(/\/search\/members/);
+    await expect(page).toHaveTitle(/Search members - Trustroots/);
+  });
+
+  test('search members page finds seeded hosts', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'search.members', [
+      'Search members page loads.',
+      'Search returns seeded hosts.',
+      'Search handles empty or no-result states.',
+    ]);
+
+    await page.goto('/search/members');
+
+    await page
+      .locator('#search-users-form input')
+      .fill(SEEDED_MEMBERS[0].username);
+    const searchResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/users?search=') &&
+        response.request().method() === 'GET' &&
+        response.ok(),
+    );
+    await page.locator('#search-users-form button[type="submit"]').click();
+    await searchResponse;
+    await expect(
+      page.locator(
+        `.member-search-card[href="/profile/${SEEDED_MEMBERS[0].username}"]`,
+      ),
+    ).toBeVisible();
+  });
+
+  test('search members hides shadowbanned profiles', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'safety.shadowban-hiding', [
+      'Shadowbanned members are hidden from public member search.',
+    ]);
+
+    await page.goto('/search/members');
+    // MongoDB text search treats hyphens as negation operators, so use the
+    // unique display name rather than the fixture's hyphenated username.
+    await page
+      .locator('#search-users-form input')
+      .fill(SEEDED_SHADOW.firstName);
+    const searchResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/users?search=') &&
+        response.request().method() === 'GET' &&
+        response.ok(),
+    );
+    await page.locator('#search-users-form button[type="submit"]').click();
+    await searchResponse;
+
+    await expect(page.getByText('No members found.')).toBeVisible();
+  });
+
+  test('member can download their combined data export', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.data-export', [
+      'The combined export is an attachment with the documented filename.',
+      'The export has format and version metadata plus profile, contacts, and hosting offer sections.',
+    ]);
+
+    const response = await page.request.get('/api/users/export');
+
+    expect(response.ok()).toBe(true);
+    expect(response.headers()['content-disposition']).toContain(
+      'attachment; filename="trustroots-data.json"',
+    );
+    const data = await response.json();
+    expect(data).toMatchObject({
+      format: 'trustroots-data-export',
+      version: 1,
+      profile: expect.any(Object),
+      contacts: expect.any(Array),
+      hostingOffers: expect.any(Array),
+    });
+    expect(new Date(data.exportedAt).toISOString()).toBe(data.exportedAt);
+  });
+
+  test('member profile API publishes place labels without precise coordinates', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.view-about', [
+      'Profile API returns public profile data.',
+    ]);
+
+    const context = await createIsolatedContext(browser, baseURL);
+    const page = await context.newPage();
+    try {
+      await signInViaApi(page, context.request, SEEDED_MEMBERS[0]);
+      await page.goto(`/profile/${SEEDED_RELATIONSHIP_MEMBERS.alice.username}`);
+      const response = await page.evaluate(async username => {
+        const result = await fetch(`/api/users/${username}`);
+        return {
+          status: result.status,
+          cacheControl: result.headers.get('cache-control') || '',
+          profile: await result.json(),
+        };
+      }, SEEDED_RELATIONSHIP_MEMBERS.alice.username);
+      expect(response.status).toBe(200);
+      expect(response.cacheControl).not.toMatch(/public/i);
+
+      const profile = response.profile;
+      expect(profile.locationLiving).toBe('Fictional home');
+      expect(profile.locationFrom).toBe('Fictional origin');
+      for (const privateField of [
+        'email',
+        'blocked',
+        'roles',
+        'locationCoordinates',
+        'coordinates',
+        'latitude',
+        'longitude',
+        'exactAddress',
+      ]) {
+        expect(profile).not.toHaveProperty(privateField);
+      }
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('anonymous visitors cannot download a member data export', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.data-export', [
+      'Unauthenticated visitors are refused access to the member data export.',
+    ]);
+
+    const context = await browser.newContext({ baseURL });
+    try {
+      const response = await context.request.get('/api/users/export');
+      expect(response.status()).toBe(403);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('inbox prompts an unconfirmed member to activate their profile', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.unconfirmed-restrictions', [
+      'Unconfirmed member opening inbox is prompted to activate profile.',
+      'Restricted message actions are unavailable until confirmation.',
+    ]);
+
+    const context = await createIsolatedContext(browser, baseURL);
+    const page = await context.newPage();
+
+    try {
+      const unconfirmed = createUser();
+      await registerViaApi(context.request, unconfirmed);
+      await signInViaApi(page, context.request, unconfirmed);
+      await page.goto('/messages');
+
+      await expect(page).toHaveURL(/\/messages/);
+      await expect(
+        page.getByText(/activate your profile by confirming your email/i),
+      ).toBeVisible();
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('profile edit "about" form is reachable', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-about', [
+      'About edit form is reachable.',
+      'Valid profile changes persist and are visible on profile view.',
+      'Validation errors are visible for invalid content.',
+    ]);
+
+    await page.goto('/profile/edit');
+
+    await expect(page).toHaveURL(/\/profile\/edit/);
+    await expect(page.getByText(/describe yourself/i)).toBeVisible();
+  });
+
+  test('deprecated languages cannot be added to a profile', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-about', [
+      'Deprecated languages cannot be added to a profile.',
+    ]);
+
+    const response = await page.request.get('/api/languages?format=array');
+    expect(response.ok()).toBeTruthy();
+    const languages: Array<{
+      value: string;
+      deprecated: boolean;
+      label: string;
+    }> = await response.json();
+    expect(languages.find(({ value }) => value === 'enm')!.deprecated).toBe(
+      true,
+    );
+    expect(
+      languages.find(({ value }) => value === 'iso_639_3-lfn')!.deprecated,
+    ).toBe(true);
+    expect(languages.find(({ value }) => value === 'grc')!.deprecated).toBe(
+      false,
+    );
+    expect(languages.find(({ value }) => value === 'lim')!.label).toBe(
+      'Limburgish',
+    );
+
+    await page.goto('/profile/edit');
+    const languageInput = page.locator(
+      'input[aria-label="Add languages you speak."]',
+    );
+    await languageInput.fill('Middle English');
+    await expect(
+      page.getByText('No languages found; try typing something else.'),
+    ).toBeVisible();
+    await languageInput.fill('English');
+    await expect(
+      page.getByText('English', { exact: true }).last(),
+    ).toBeVisible();
+
+    const rejected = await page.request.put('/api/users', {
+      data: { languages: ['enm'] },
+    });
+    expect(rejected.status()).toBe(400);
+  });
+
+  test('profile edit account page is reachable', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'account.details-update', [
+      'Account edit page is reachable.',
+      'Valid account details update persists.',
+      'Invalid account details show validation errors.',
+    ]);
+
+    await page.goto('/profile/edit/account');
+
+    await expect(page).toHaveURL(/\/profile\/edit\/account/);
+    await expect(page).toHaveTitle(/Account - Trustroots/);
+  });
+
+  test('member can view their own profile', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.view-about', [
+      'Own profile about tab loads.',
+      'Other member profile about tab loads.',
+      'Profile API returns public profile data.',
+    ]);
+
+    // Own profile is tied to the session user. Use an isolated context so the
+    // viewed username always matches the signed-in member, even when other
+    // specs mutate the shared authenticated storage state.
+    const context = await createIsolatedContext(browser, baseURL);
+    const page = await context.newPage();
+
+    try {
+      const member = createUser();
+      await registerViaApi(context.request, member);
+      await signInViaApi(page, context.request, member);
+
+      const profileResponse = page.waitForResponse(
+        response =>
+          response.url().includes(`/api/users/${member.username}`) &&
+          response.ok(),
+      );
+
+      await page.goto(`/profile/${member.username}`);
+      await profileResponse;
+
+      await expect(page).toHaveURL(new RegExp(`/profile/${member.username}`));
+      await expect(page).toHaveTitle(/Profile - Trustroots/);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('member can open photo editing from their placeholder avatar', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-photo', [
+      'Own placeholder avatar links to photo editing.',
+    ]);
+
+    const context = await createIsolatedContext(browser, baseURL);
+    const page = await context.newPage();
+
+    try {
+      const member = createUser();
+      await registerViaApi(context.request, member);
+      await signInViaApi(page, context.request, member);
+
+      await page.goto(`/profile/${member.username}`);
+      await page
+        .locator('.profile-overview')
+        .getByRole('link', { name: 'Edit profile photo' })
+        .click();
+      await expect(page).toHaveURL(/\/profile\/edit\/photo/);
+
+      await page.setViewportSize({ width: 375, height: 700 });
+      await page.goto(`/profile/${member.username}`);
+      await page.getByRole('link', { name: 'Edit profile photo' }).click();
+      await expect(page).toHaveURL(/\/profile\/edit\/photo/);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('member can view a seeded host profile', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.view-about', [
+      'Own profile about tab loads.',
+      'Other member profile about tab loads.',
+      'Profile API returns public profile data.',
+    ]);
+
+    const host = SEEDED_MEMBERS[1];
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+    await page.goto(`/profile/${host.username}`);
+
+    await expect(page).toHaveURL(new RegExp(`/profile/${host.username}`));
+    await expect(page.locator('.row.hidden-xs h4.profile-username')).toHaveText(
+      `@${host.username}`,
+    );
+  });
+
+  test('profile edit locations page is reachable', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-locations', [
+      'Locations edit form is reachable.',
+      'Geocoding/map interactions are stubbed deterministically.',
+      'Valid location changes persist.',
+    ]);
+
+    await page.goto('/profile/edit/locations');
+
+    await expect(page).toHaveURL(/\/profile\/edit\/locations/);
+    await expect(page.getByText(/where do you live/i)).toBeVisible();
+  });
+
+  test('statistics page loads for a signed in member', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'public.statistics', [
+      'Statistics page loads for visitors.',
+      'Statistics page loads for signed-in members.',
+      'Public statistics API returns deterministic data.',
+      'Signed-in members without an eligible contact see a general experience-writing encouragement.',
+    ]);
+
+    const context = await browser.newContext({ baseURL });
+    const page = await context.newPage();
+
+    try {
+      await stubStatisticsImages(context);
+      await signInViaApi(page, context.request, SEEDED_MEMBERS[2]);
+      await page.goto('/statistics');
+
+      await expect(page).toHaveURL(/\/statistics/);
+      await expect(page).toHaveTitle(/Statistics - Trustroots/);
+      await expect(
+        page.getByText(
+          "Help make this picture more complete by sharing an experience from a member's profile.",
+        ),
+      ).toBeVisible();
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('statistics suggests an eligible contact and opens their experience form', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'public.statistics', [
+      'Signed-in members can be encouraged to write an experience for an eligible confirmed contact.',
+      'The personalised encouragement opens the suggested contact experience form.',
+    ]);
+
+    const context = await browser.newContext({ baseURL });
+    const page = await context.newPage();
+
+    try {
+      await stubStatisticsImages(context);
+      await signInViaApi(page, context.request, SEEDED_MEMBERS[1]);
+      await page.goto('/statistics');
+
+      const contact = SEEDED_RELATIONSHIP_MEMBERS.alice;
+      const suggestion = page.getByRole('link', {
+        name: `Why not write some nice words about ${contact.firstName} ${contact.lastName}?`,
+      });
+      await expect(suggestion).toHaveAttribute(
+        'href',
+        `/profile/${contact.username}/experiences/new`,
+      );
+
+      await suggestion.click();
+      await expect(page).toHaveURL(
+        new RegExp(`/profile/${contact.username}/experiences/new`),
+      );
+      await expect(
+        page.getByRole('heading', { name: 'How do you know them?' }),
+      ).toBeVisible();
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('profile edit networks page is reachable', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Networks edit form is reachable.',
+      'Invalid Nostr secret key is rejected.',
+      'Valid npub is saved and shown on profile view.',
+    ]);
+
+    await page.goto('/profile/edit/networks');
+
+    await expect(page).toHaveURL(/\/profile\/edit\/networks/);
+    await expect(page.locator('#nostrNpub')).toBeVisible();
+  });
+
+  test('logged in member can browse circles while unconfirmed', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'circles.list', [
+      'Circles list loads for signed-in members.',
+    ]);
+
+    await page.goto('/circles');
+    await waitForTribesList(page);
+
+    await expect(
+      page.locator('h3.tribe-label', { hasText: 'Hitchhikers' }),
+    ).toBeVisible();
+  });
+
+  test('regular members are turned away from admin tools', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.dashboard', [
+      'Regular member is denied access to admin tools.',
+    ]);
+
+    page.once('dialog', dialog => dialog.accept());
+
+    await page.goto('/admin/search-users');
+
+    await expect(page).toHaveURL(/\/volunteering/);
+  });
+
+  test('profile edit photo page is reachable', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-photo', [
+      'Photo edit page is reachable.',
+    ]);
+
+    await page.goto('/profile/edit/photo');
+
+    await expect(page).toHaveURL(/\/profile\/edit\/photo/);
+    await expect(page).toHaveTitle(/Edit profile photo - Trustroots/);
+    await expect(page.getByText(/profile photo/i).first()).toBeVisible();
+  });
+
+  test('photo upload explains its limit before selection and rejects oversized files', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-photo', [
+      'Photo upload guidance shows the configured limit before selection.',
+      'Oversized photo selections are rejected before upload.',
+    ]);
+    await page.goto('/profile/edit/photo');
+    const limit = await page.locator('input[type="file"]').evaluate(input => {
+      const view = input.ownerDocument.defaultView;
+      if (!view || !('settings' in view)) {
+        throw new Error('Application settings are unavailable.');
+      }
+      const settings: unknown = view.settings;
+      if (
+        typeof settings !== 'object' ||
+        settings === null ||
+        !('maxUploadSize' in settings) ||
+        typeof settings.maxUploadSize !== 'number'
+      ) {
+        throw new Error('The configured photo upload limit is missing.');
+      }
+      return settings.maxUploadSize;
+    });
+    const help = page.locator('#profile-photo-upload-help');
+    await expect(help).toContainText('JPG, PNG or GIF. Maximum file size:');
+    await expect(help).toContainText('Photos are automatically resized.');
+    await expect(
+      page.getByRole('button', { name: 'Upload photo' }),
+    ).toHaveAttribute('aria-describedby', 'profile-photo-upload-help');
+    const uploadRequests: Request[] = [];
+    page.on('request', request => {
+      if (request.url().includes('/api/users-avatar'))
+        uploadRequests.push(request);
+    });
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'oversized-photo.png',
+      mimeType: 'image/png',
+      buffer: Buffer.alloc(limit + 1),
+    });
+    const displayedSize = (await help.textContent())!.match(
+      /Maximum file size: (.+?)\./,
+    )![1]!;
+    await expect(page.getByRole('status')).toHaveText(
+      `Whoops, your file is too big. Please keep it up to ${displayedSize}.`,
+    );
+    expect(uploadRequests).toHaveLength(0);
+  });
+
+  test('member can upload a valid profile photo', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-photo', [
+      'Valid upload succeeds through deterministic file processing.',
+      'Photo upload controls show keyboard focus.',
+      'Visible photo control opens the file chooser.',
+      'Valid images upload when the browser omits their MIME type.',
+    ]);
+
+    const validAvatarPath = path.join(
+      import.meta.dirname,
+      '../../../../modules/users/tests/server/img/avatar.png',
+    );
+    const context = await createIsolatedContext(browser, baseURL);
+    const page = await context.newPage();
+
+    try {
+      const member = createUser();
+      await registerViaApi(context.request, member);
+      await signInViaApi(page, context.request, member);
+
+      await page.goto('/profile/edit/photo');
+      const uploadButton = page.getByRole('button', { name: /upload photo/i });
+      await expect(uploadButton).toBeVisible();
+
+      await uploadButton.focus();
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('Shift+Tab');
+      await expect(uploadButton).toBeFocused();
+      await expect(uploadButton).toHaveCSS('outline-style', 'solid');
+      await expect(uploadButton).toHaveCSS('outline-width', '3px');
+
+      const uploadResponse = page.waitForResponse(
+        response =>
+          response.url().includes('/api/users-avatar') && response.ok(),
+      );
+      const [fileChooser] = await Promise.all([
+        page.waitForEvent('filechooser'),
+        uploadButton.click(),
+      ]);
+      await fileChooser.setFiles(validAvatarPath);
+      await uploadResponse;
+
+      await expect(page.getByRole('status')).toContainText(
+        'Profile photo updated.',
+      );
+      const untypedUploadResponse = page.waitForResponse(response =>
+        response.url().includes('/api/users-avatar'),
+      );
+      await page.locator('input[type="file"]').evaluate(input => {
+        const fileInput = input as HTMLInputElement;
+        const view = fileInput.ownerDocument.defaultView!;
+        const { File, DataTransfer } = view;
+        const file = new File([fileInput.files![0]!], 'browser-photo.png', {
+          type: '',
+        });
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        fileInput.files = transfer.files;
+        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      expect((await untypedUploadResponse).status()).toBe(200);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('invalid profile photo upload shows an error', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-photo', [
+      'Invalid upload shows an error.',
+    ]);
+
+    const invalidAvatarPath = path.join(
+      import.meta.dirname,
+      '../../../../modules/users/tests/server/img/test-actually-pdf-looks-like-jpg.jpg',
+    );
+    const context = await createIsolatedContext(browser, baseURL);
+    const page = await context.newPage();
+
+    try {
+      const member = createUser();
+      await registerViaApi(context.request, member);
+      await signInViaApi(page, context.request, member);
+
+      await page.goto('/profile/edit/photo');
+      const uploadButton = page.getByRole('button', { name: /upload photo/i });
+      await expect(uploadButton).toBeVisible();
+      const [fileChooser] = await Promise.all([
+        page.waitForEvent('filechooser'),
+        uploadButton.click(),
+      ]);
+      await fileChooser.setFiles(invalidAvatarPath);
+
+      await expect(page.getByRole('status')).toContainText(
+        'Sorry, we do not support this type of file.',
+      );
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('avatar endpoint returns uploaded or fallback image', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-photo', [
+      'Avatar endpoint returns uploaded or fallback image.',
+    ]);
+
+    const validAvatarPath = path.join(
+      import.meta.dirname,
+      '../../../../modules/users/tests/server/img/avatar.png',
+    );
+    const context = await createIsolatedContext(browser, baseURL);
+    const page = await context.newPage();
+
+    try {
+      const member = createUser();
+      const registered = await registerViaApi(context.request, member);
+      await signInViaApi(page, context.request, member);
+
+      const fallbackResponse = await page.request.get(
+        `/api/users/${registered._id}/avatar?source=none`,
+        { maxRedirects: 0 },
+      );
+      expect(fallbackResponse.status()).toBe(302);
+      expect(fallbackResponse.headers().location).toContain('/img/avatar-');
+
+      await page.goto('/profile/edit/photo');
+      const uploadButton = page.getByRole('button', { name: /upload photo/i });
+      const uploadResponse = page.waitForResponse(
+        response =>
+          response.url().includes('/api/users-avatar') && response.ok(),
+      );
+      const [fileChooser] = await Promise.all([
+        page.waitForEvent('filechooser'),
+        uploadButton.click(),
+      ]);
+      await fileChooser.setFiles(validAvatarPath);
+      await uploadResponse;
+      await expect(page.getByRole('status')).toContainText(
+        'Profile photo updated.',
+      );
+
+      const savedProfileResponse = await page.request.get(
+        `/api/users/${member.username}`,
+      );
+      expect(savedProfileResponse.ok()).toBeTruthy();
+      const savedProfile = await savedProfileResponse.json();
+      expect(savedProfile.avatarVersion).toMatch(/^[a-f0-9]{32}$/);
+
+      const uploadedResponse = await page.request.get(
+        `/api/users/${registered._id}/avatar?source=local`,
+        { maxRedirects: 0 },
+      );
+      expect(uploadedResponse.status()).toBe(302);
+      expect(uploadedResponse.headers().location).toContain(
+        `/uploads-profile/${registered._id}/avatar/${savedProfile.avatarVersion}/`,
+      );
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('navigation page lists member shortcuts', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'public.navigation', [
+      'Member navigation page loads.',
+      'Navigation lists the expected member shortcuts.',
+      'Navigation links to public statistics.',
+      'Navigation links to safety guidance.',
+      'Sign out action clears the session.',
+    ]);
+
+    await page.goto('/navigation');
+
+    await expect(page).toHaveURL(/\/navigation/);
+    await expect(page).toHaveTitle(/Navigation - Trustroots/);
+    const shortcutLinks = page.locator('.list-group.container-spacer');
+
+    await expect(
+      shortcutLinks.locator('.page-navigation-profile', {
+        hasText: /view your profile/i,
+      }),
+    ).toBeVisible();
+    await expect(
+      shortcutLinks.locator('a[href="/profile/edit"]', {
+        hasText: /edit profile/i,
+      }),
+    ).toBeVisible();
+    await expect(
+      shortcutLinks.locator('a[href="/search/members"]', {
+        hasText: /find people/i,
+      }),
+    ).toBeVisible();
+    await expect(page.locator('.list-group a[href="/statistics"]')).toHaveText(
+      'Statistics',
+    );
+    await expect(page.locator('.list-group a[href="/safety"]')).toHaveText(
+      'Safety',
+    );
+  });
+
+  test('member can sign out', async ({ browser, baseURL }, testInfo) => {
+    annotateFeature(testInfo, 'public.navigation', [
+      'Member navigation page loads.',
+      'Navigation lists the expected member shortcuts.',
+      'Navigation links to public statistics.',
+      'Navigation links to safety guidance.',
+      'Sign out action clears the session.',
+    ]);
+
+    annotateFeature(testInfo, 'auth.signout', [
+      'Sign out endpoint clears the session.',
+      'Browser lands on the homepage after sign out.',
+    ]);
+
+    // Sign out tears down the session, so run it against a throwaway account in
+    // an isolated context. That keeps the shared authenticated session intact
+    // for the other tests in this file when they run in parallel.
+    const context = await createIsolatedContext(browser, baseURL);
+    const page = await context.newPage();
+
+    try {
+      const throwaway = createUser();
+      await registerViaApi(context.request, throwaway);
+      await page.goto('/');
+      const sameOriginSigninStatus = await page.evaluate(
+        async ({ username, password }) => {
+          const response = await fetch('/api/auth/signin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+          });
+          return response.status;
+        },
+        { username: throwaway.username, password: throwaway.password },
+      );
+      expect(sameOriginSigninStatus).toBe(200);
+
+      const crossOriginSignout = await context.request.post(
+        '/api/auth/signout',
+        {
+          headers: {
+            Origin: 'https://attacker.example',
+            'Content-Type': 'application/json',
+          },
+          data: {},
+        },
+      );
+      expect(crossOriginSignout.status()).toBe(403);
+
+      const originlessFormSignout = await context.request.post(
+        '/api/auth/signout',
+        { form: {} },
+      );
+      expect(originlessFormSignout.status()).toBe(403);
+
+      const getSignout = await context.request.get('/api/auth/signout');
+      expect(getSignout.status()).toBe(405);
+
+      await page.goto('/profile/edit/account');
+      await expect(page).toHaveURL(/\/profile\/edit\/account/);
+
+      await signOut(page);
+
+      await page.goto('/messages');
+      await expect(page).toHaveURL(/\/signin/);
+    } finally {
+      await context.close();
+    }
+  });
+});

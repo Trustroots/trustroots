@@ -434,3 +434,30 @@ describe('E2E report aggregation', () => {
     );
   });
 });
+
+describe('dependency-free E2E aggregation', () => {
+  it('loads and combines reports without optional browser coverage libraries', () => {
+    const { execFileSync } = require('node:child_process');
+    const aggregatePath =
+      require.resolve('../../../../../scripts/e2e/aggregate-results');
+    const source = `
+      const assert = require('node:assert/strict');
+      const { registerHooks } = require('node:module');
+      registerHooks({
+        resolve(specifier, context, nextResolve) {
+          if (!specifier.startsWith('.') && !specifier.startsWith('/') &&
+              !specifier.startsWith('node:') && !['fs', 'path', 'url'].includes(specifier)) {
+            throw new Error('Unexpected installed dependency: ' + specifier);
+          }
+          return nextResolve(specifier, context);
+        }
+      });
+      const { aggregateReports } = require(${JSON.stringify(aggregatePath)});
+      assert.equal(aggregateReports({}).status.exitCode, 1);
+    `;
+    execFileSync(process.execPath, ['--input-type=commonjs', '-e', source], {
+      env: { ...process.env, NODE_OPTIONS: '' },
+      encoding: 'utf8',
+    });
+  });
+});

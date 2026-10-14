@@ -27,6 +27,9 @@ deploy
 migrations/archived
 public
 scripts/*
+!scripts/e2e/
+scripts/e2e/*
+!scripts/e2e/*.mts
 !scripts/ci/
 scripts/ci/*
 !scripts/ci/*.mts
