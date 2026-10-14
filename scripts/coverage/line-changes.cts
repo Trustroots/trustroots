@@ -1,4 +1,5 @@
-const { execFileSync } = require('node:child_process') as typeof import('node:child_process');
+const { execFileSync } =
+  require('node:child_process') as typeof import('node:child_process');
 const {
   collectDependencyChanges,
   renderDependencyChanges,
@@ -56,7 +57,9 @@ function categoryForPath(filePath: string): string {
     : 'other';
 }
 
-function summariseNumstat(output: string): Pick<LineChangesSummary, 'groups' | 'binaryFiles'> {
+function summariseNumstat(
+  output: string,
+): Pick<LineChangesSummary, 'groups' | 'binaryFiles'> {
   const groups = categories.map(([id, label]) => ({
     id,
     label,
@@ -126,8 +129,8 @@ function renderLineChanges(summary: LineChangesSummary): string {
       net === 0 || !['code', 'tests'].includes(id)
         ? '⚪'
         : preferred
-        ? '🟢'
-        : '🟡';
+          ? '🟢'
+          : '🟡';
     return `| ${label} | ${signed(added)} | ${signed(
       -removed,
     )} | ${symbol} **${signed(net)}** |`;

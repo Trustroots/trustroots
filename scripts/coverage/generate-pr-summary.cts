@@ -3,7 +3,11 @@
 const fs = require('node:fs') as typeof import('node:fs');
 const path = require('node:path') as typeof import('node:path');
 const lineChanges = require('./line-changes.cts') as {
-  collectLineChanges: (baseSha: string, headSha: string, cwd: string) => LineChanges;
+  collectLineChanges: (
+    baseSha: string,
+    headSha: string,
+    cwd: string,
+  ) => LineChanges;
   renderLineChanges: (summary: LineChanges) => string;
 };
 const { collectLineChanges, renderLineChanges } = lineChanges;
@@ -16,7 +20,13 @@ const { readTimings, renderTimings } = require('./ci-timings.cts') as {
 };
 
 interface LineChanges {
-  groups: Array<{ id: string; label: string; added: number; removed: number; net: number }>;
+  groups: Array<{
+    id: string;
+    label: string;
+    added: number;
+    removed: number;
+    net: number;
+  }>;
   binaryFiles: number;
   dependencies?: Array<{
     label: string;
@@ -24,7 +34,11 @@ interface LineChanges {
     removed: number;
     changed: number;
     net: number;
-    changes: Array<{ name: string; before: string | undefined; after: string | undefined }>;
+    changes: Array<{
+      name: string;
+      before: string | undefined;
+      after: string | undefined;
+    }>;
   }>;
 }
 

@@ -1,0 +1,163 @@
+import type {
+  SignupAsync,
+  ConnectionHelper,
+  CountUsers,
+  LegacyMongoose,
+} from '../legacy-cli-contracts.d.cts';
+/**
+ * A script that goes trough all past user signups and pushes them as an event to InfluxDB
+ *
+ * Run:
+ * ```
+ * NODE_ENV=production node ./scripts/influxdb/fill-signups-to-influx.cts
+ * ```
+ *
+ * Dry run by passing `--dry` argument:
+ *
+ * ```
+ * NODE_ENV=production node ./scripts/influxdb/fill-signups-to-influx.cts --dry
+ * ```
+ */
+
+/**
+ * Script dependencies
+ */
+const async = require('async') as SignupAsync;
+const mongoose = require('mongoose') as LegacyMongoose;
+const argv = require('yargs').argv as { dry?: unknown };
+const mongooseHelper =
+  require('./../../config/lib/mongoose.mjs') as ConnectionHelper;
+const statService =
+  require('./../../modules/stats/server/services/stats.server.service.mts') as typeof import('../../modules/stats/server/services/stats.server.service.mts').default;
+
+require('./../../modules/users/server/models/user.server.model.mjs');
+
+const User = mongoose.model<CountUsers>('User');
+
+// Dry run?
+if (argv.dry) {
+  console.log('---');
+  console.warn("Dry run, this won't save anything to Influx!");
+  console.log('---');
+}
+
+// Query to fetch documents from the DB
+const query = {
+  created: {
+    // The date when feature was pushed to production
+    $lt: new Date('2017-03-21T21:28:00'),
+  },
+};
+
+async.waterfall(
+  [
+    function connectMongo(done) {
+      // Connect to MongoDB
+      mongooseHelper.connect(function () {
+        done();
+      });
+    },
+
+    // count all docs to be able to show progress
+    function countAll(done) {
+      User.count(query).exec(function (err, count) {
+        done(err, count);
+      });
+    },
+
+    function findAndProcess(count, done) {
+      // Nothing found
+      if (count === 0) {
+        console.log('---');
+        console.warn('No documents to process!');
+        console.log('---');
+        return done(null, 0, 0);
+      }
+
+      console.log('Found ' + count + ' documents\n');
+      console.log('Processing and adding the records to Influx now\n');
+
+      // settings how often the progress will be printed to console
+      // every PROGRESS_INTERVAL %
+      const PROGRESS_INTERVAL = 0.1; // percent
+      let progress = 0; // progress counter
+
+      const q = async.queue<CountUsers>(function (doc, callback) {
+        // showing a progress
+        if (progress % Math.ceil((count / 100) * PROGRESS_INTERVAL) === 0) {
+          // update the progress instead of logging to newline
+          const progressPercent = ((progress / count) * 100).toFixed(1);
+          process.stdout.clearLine(0);
+          process.stdout.cursorTo(0);
+          process.stdout.write(
+            progressPercent + '% (' + progress + '/' + count + ')',
+          );
+        }
+        ++progress;
+
+        // processing and saving the point to stats
+        if (argv.dry) {
+          // Don't push to stats (dry run)
+          callback();
+        } else {
+          // Push to stats for real
+          statService.stat(
+            {
+              namespace: 'signup',
+              time: new Date(doc.created.getTime()),
+              counts: {
+                count: 1,
+              },
+              tags: {
+                status: 'success',
+              },
+            },
+            callback,
+          );
+        }
+      }, 5); // How many docs to process at once?
+
+      // Get docs and start processing them
+      User.find(query).exec(function (err, docs) {
+        q.push(docs);
+      });
+
+      // Done with all docs
+      q.drain = function () {
+        if (progress === count) {
+          return done(null, progress, count);
+        }
+      };
+    },
+  ],
+  function (err, processedCount, totalCount) {
+    // finish writing the progress bar
+    process.stdout.clearLine(0);
+    process.stdout.cursorTo(0);
+    process.stdout.write(
+      (Math.floor((Number(processedCount) / Number(totalCount)) * 100) || 100) +
+        '% (' +
+        processedCount +
+        '/' +
+        totalCount +
+        ') (done)\n\n',
+    );
+
+    if (err) {
+      console.log('Error:');
+      console.error(err);
+      return;
+    }
+
+    // Disconnect DB
+    mongooseHelper.disconnect(function (disconnectErr) {
+      if (disconnectErr) {
+        console.log('Could not disconnect MongoDB.');
+        console.error(disconnectErr);
+      }
+
+      console.log('All done!');
+      process.exit(1);
+    });
+  },
+);

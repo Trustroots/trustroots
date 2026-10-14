@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-/* eslint-disable no-console */
-const { spawn } = require('node:child_process') as typeof import('node:child_process');
+
+const { spawn } =
+  require('node:child_process') as typeof import('node:child_process');
 const { randomBytes } = require('node:crypto') as typeof import('node:crypto');
 const { globSync, statSync } = require('node:fs') as typeof import('node:fs');
 const path = require('node:path') as typeof import('node:path');
@@ -10,7 +11,10 @@ const root = path.resolve(__dirname, '..');
 
 type Worker = { database: string; files: string[]; size: number };
 type FileWeight = { file: string; size: number };
-type WorkerChild = Pick<import('node:child_process').ChildProcess, 'kill' | 'once'>;
+type WorkerChild = Pick<
+  import('node:child_process').ChildProcess,
+  'kill' | 'once'
+>;
 type SignalSource = Pick<NodeJS.Process, 'once' | 'removeListener'>;
 interface RunWorkerOptions {
   env?: NodeJS.ProcessEnv;
@@ -63,7 +67,10 @@ function createPlan(
   return workers;
 }
 
-async function cleanupDatabases(plan: Worker[], env: NodeJS.ProcessEnv = process.env): Promise<void> {
+async function cleanupDatabases(
+  plan: Worker[],
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<void> {
   const host = env.DB_1_PORT_27017_TCP_ADDR || 'localhost';
   const client = new MongoClient(`mongodb://${host}`, {
     serverSelectionTimeoutMS: 5000,
@@ -129,15 +136,17 @@ async function runWorkers(
                 );
                 resolve(1);
               });
-              child.once('exit', (code: number | null, signal: NodeJS.Signals | null) => {
-                log(`Server worker ${index + 1} finished: ${signal || code}`);
-                resolve(code === 0 && !signal ? 0 : 1);
-              });
-            } catch (error) {
-              const message = error instanceof Error ? error.message : String(error);
-              log(
-                `Server worker ${index + 1} could not start: ${message}`,
+              child.once(
+                'exit',
+                (code: number | null, signal: NodeJS.Signals | null) => {
+                  log(`Server worker ${index + 1} finished: ${signal || code}`);
+                  resolve(code === 0 && !signal ? 0 : 1);
+                },
               );
+            } catch (error) {
+              const message =
+                error instanceof Error ? error.message : String(error);
+              log(`Server worker ${index + 1} could not start: ${message}`);
               resolve(1);
             }
           }),
@@ -148,8 +157,8 @@ async function runWorkers(
         ? 130
         : 143
       : results.some(Boolean)
-      ? 1
-      : 0;
+        ? 1
+        : 0;
   } finally {
     signals.removeListener('SIGINT', onInterrupt);
     signals.removeListener('SIGTERM', onTerminate);
@@ -162,8 +171,10 @@ async function main(): Promise<void> {
   const selected = files.length
     ? files
     : process.env.SERVER_TEST_FILES
-    ? process.env.SERVER_TEST_FILES.split(',').filter(Boolean)
-    : globSync('modules/*/tests/server/**/*.{js,cts,mts}', { cwd: root }).sort();
+      ? process.env.SERVER_TEST_FILES.split(',').filter(Boolean)
+      : globSync('modules/*/tests/server/**/*.{js,cts,mts}', {
+          cwd: root,
+        }).sort();
   const plan = createPlan(selected, process.env.SERVER_TEST_WORKERS ?? '2');
   process.exitCode = await runWorkers(plan);
 }

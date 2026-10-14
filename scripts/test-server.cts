@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-disable no-console */
 
 const { globSync } = require('node:fs') as typeof import('node:fs');
 const Mocha: typeof import('mocha') = require('mocha');
@@ -20,7 +19,8 @@ interface AgendaService {
   close(): Promise<void>;
 }
 
-const mongooseService = require('./../config/lib/mongoose.mjs') as MongooseService;
+const mongooseService =
+  require('./../config/lib/mongoose.mjs') as MongooseService;
 const agenda = require('./../config/lib/agenda.mjs') as AgendaService;
 const configuredTestFiles = process.env.SERVER_TEST_FILES
   ? process.env.SERVER_TEST_FILES.split(',').filter(Boolean)
@@ -47,9 +47,9 @@ async function finish(error: unknown): Promise<void> {
 mongooseService.connect((db: import('mongoose').Connection) => {
   mongooseService.dropDatabase(db, () => {
     mongooseService.loadModels(async () => {
-            const modelNames = (
-              require('mongoose') as typeof import('mongoose')
-            ).connection.modelNames();
+      const modelNames = (
+        require('mongoose') as typeof import('mongoose')
+      ).connection.modelNames();
 
       mongooseService
         .ensureIndexes(modelNames)

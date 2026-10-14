@@ -14,7 +14,7 @@ merged into the `mass-email-template.html` file.
 
 Generate a combined HTML file like so
 
-    node mergeAndInline.js > message.html
+    node mergeAndInline.cts > message.html
 
 ## Optionally minify the HTML
 
@@ -25,7 +25,7 @@ minifier](https://kangax.github.io/html-minifier/) if you like.
 
 Create a plain text version of the message.
 
-    node generatePlainText.js > message.txt
+    node generatePlainText.cts > message.txt
 
 Then you need to add the plain text footer before sending it.
 
@@ -76,10 +76,10 @@ Dump users on the production server like:
 Grab that `users.json` file and drop it into a local `data/` directory in this
 directory on your machine.
 
-Run the `loadData.js` script to read that file and build a list of users to
+Run the `loadData.cts` script to read that file and build a list of users to
 email into an `nedb` file.
 
-    node loadData.js
+    node loadData.cts
 
 ## Send the emails
 

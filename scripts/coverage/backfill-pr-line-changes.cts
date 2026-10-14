@@ -1,13 +1,27 @@
-const { execFileSync } = require('node:child_process') as typeof import('node:child_process');
+const { execFileSync } =
+  require('node:child_process') as typeof import('node:child_process');
 const lineChanges = require('./line-changes.cts') as {
-  collectLineChanges: (baseSha: string, headSha: string, cwd: string) => LineChangesSummary;
-  updateLineChangesComment: (body: string, summary: LineChangesSummary) => string;
+  collectLineChanges: (
+    baseSha: string,
+    headSha: string,
+    cwd: string,
+  ) => LineChangesSummary;
+  updateLineChangesComment: (
+    body: string,
+    summary: LineChangesSummary,
+  ) => string;
 };
 const { collectLineChanges, updateLineChangesComment } = lineChanges;
 const { marker } = require('./generate-pr-summary.cts') as { marker: string };
 
 interface LineChangesSummary {
-  groups: Array<{ id: string; label: string; added: number; removed: number; net: number }>;
+  groups: Array<{
+    id: string;
+    label: string;
+    added: number;
+    removed: number;
+    net: number;
+  }>;
   binaryFiles: number;
   dependencies?: Array<{
     label: string;
@@ -15,7 +29,11 @@ interface LineChangesSummary {
     removed: number;
     changed: number;
     net: number;
-    changes: Array<{ name: string; before: string | undefined; after: string | undefined }>;
+    changes: Array<{
+      name: string;
+      before: string | undefined;
+      after: string | undefined;
+    }>;
   }>;
 }
 
@@ -123,10 +141,10 @@ async function backfill({
     const comments = await github.paginate<PullRequestComment>(
       github.rest.issues.listComments,
       {
-      owner,
-      repo,
-      issue_number: current.number,
-      per_page: 100,
+        owner,
+        repo,
+        issue_number: current.number,
+        per_page: 100,
       },
     );
     const existing = comments.find(

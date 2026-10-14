@@ -1,4 +1,5 @@
-const { execFileSync } = require('node:child_process') as typeof import('node:child_process');
+const { execFileSync } =
+  require('node:child_process') as typeof import('node:child_process');
 
 interface Manifest {
   dependencies?: Record<string, string>;
@@ -69,14 +70,17 @@ function summariseDependencies(
   const resolved = (lock: Lockfile): Record<string, string> =>
     Object.fromEntries(
       Object.entries(lock.packages || {})
-        .filter(
-          (item): item is [string, LockEntry & { version: string }] =>
-            Boolean(item[0] && item[1].version),
+        .filter((item): item is [string, LockEntry & { version: string }] =>
+          Boolean(item[0] && item[1].version),
         )
         .map(([name, entry]) => [name, entry.version]),
     );
   const comparisons: Array<
-    [string, Record<string, string> | undefined, Record<string, string> | undefined]
+    [
+      string,
+      Record<string, string> | undefined,
+      Record<string, string> | undefined,
+    ]
   > = [
     [
       'Direct runtime dependencies',

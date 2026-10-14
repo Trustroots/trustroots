@@ -1,4 +1,8 @@
-import { registerHooks, createRequire, stripTypeScriptTypes } from 'node:module';
+import {
+  registerHooks,
+  createRequire,
+  stripTypeScriptTypes,
+} from 'node:module';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { globSync, readFileSync } from 'node:fs';
@@ -13,9 +17,7 @@ interface Instrumenter {
 }
 
 const require = createRequire(import.meta.url);
-const { createInstrumenter } = require(
-  'istanbul-lib-instrument',
-) as {
+const { createInstrumenter } = require('istanbul-lib-instrument') as {
   createInstrumenter(options: { esModules: boolean }): Instrumenter;
 };
 const config = JSON.parse(
@@ -49,10 +51,7 @@ for (const pattern of config.include) {
     if (config.exclude.some(excluded => path.matchesGlob(relative, excluded)))
       continue;
     const filename = path.join(root, relative);
-    const source = instrumenter.instrumentSync(
-      readSource(filename),
-      filename,
-    );
+    const source = instrumenter.instrumentSync(readSource(filename), filename);
     sources.set(filename, source);
     const coverage = instrumenter.lastFileCoverage();
     if (coverage) globalThis.__coverage__[filename] = coverage;

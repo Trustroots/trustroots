@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-/* eslint-disable no-console */
 
 interface NodemonOptions {
   script: string;
@@ -24,9 +23,11 @@ interface ServerAssets {
 const nodemon = require('nodemon') as (
   options: NodemonOptions,
 ) => NodemonProcess;
-const assets = (require('./../config/assets/default.mjs') as {
-  server: ServerAssets;
-}).server;
+const assets = (
+  require('./../config/assets/default.mjs') as {
+    server: ServerAssets;
+  }
+).server;
 
 const worker = process.argv[2] === 'worker';
 const name = worker ? 'Worker' : 'Server';

@@ -188,7 +188,12 @@ const outputPath = path.join(outputDir, 'index.html');
 const baselinePath = path.join(root, 'coverage-baseline.json');
 const analyticsConfigPath = path.join(root, 'docs/_data/analytics.json');
 const teamLinksConfigPath = path.join(root, 'docs/_data/team_links.json');
-const metrics: CoverageMetric[] = ['statements', 'branches', 'functions', 'lines'];
+const metrics: CoverageMetric[] = [
+  'statements',
+  'branches',
+  'functions',
+  'lines',
+];
 const e2eTestMetrics: E2eMetric[] = ['total', 'passed', 'failed', 'passRate'];
 const e2eTestMetricLabels: Record<E2eMetric, string> = {
   total: 'Tests',
@@ -203,18 +208,6 @@ const metricHelp: Record<string, string> = {
     'Conditional code paths run by tests, such as if/else, ternaries, and switches.',
   functions: 'Functions and methods called by tests.',
   lines: 'Source lines executed by tests.',
-};
-const e2eTestMetricHelp: Record<E2eMetric, string> = {
-  total: 'Number of Playwright tests executed in the latest end-to-end run.',
-  passed: 'Tests that completed successfully.',
-  failed: 'Tests that failed, timed out, or were interrupted.',
-  passRate: 'Percentage of executed tests that passed.',
-};
-const e2eAreaMetricHelp: Record<string, string> = {
-  areaCoverage:
-    'Percentage of defined product areas that ran at least one Playwright test.',
-  areaPassCoverage:
-    'Percentage of defined product areas with no failing Playwright tests.',
 };
 const coverageSuites: Record<CoverageSuiteName, SuiteConfig> = {
   client: {
@@ -256,7 +249,13 @@ const reportSuites: Record<SuiteName, SuiteConfig> = {
   ...testSuites,
 };
 const suiteOrder: SuiteName[] = ['client', 'server', 'e2e'];
-const statusValues: LaneStatus[] = ['passed', 'failed', 'skipped', 'blocked', 'unknown'];
+const statusValues: LaneStatus[] = [
+  'passed',
+  'failed',
+  'skipped',
+  'blocked',
+  'unknown',
+];
 const args: string[] = process.argv.slice(2);
 const scopeArg = args.find(arg => arg.startsWith('--scope='));
 const scopeValue = scopeArg ? scopeArg.split('=')[1] : null;
@@ -641,7 +640,10 @@ function buildE2eCodeCoverage(
   }
 
   return {
-    statements: buildMetricComparison(code.statements, baseline.code?.statements),
+    statements: buildMetricComparison(
+      code.statements,
+      baseline.code?.statements,
+    ),
     branches: buildMetricComparison(code.branches, baseline.code?.branches),
     functions: buildMetricComparison(code.functions, baseline.code?.functions),
     lines: buildMetricComparison(code.lines, baseline.code?.lines),
@@ -751,11 +753,7 @@ function resolveE2eLaneMessage(
   e2eMetrics: E2eMetrics | null,
   fallbackMessage: string | undefined,
 ): string {
-  if (
-    statusValue === 'passed' &&
-    e2eMetrics &&
-    e2eMetrics.passed === false
-  ) {
+  if (statusValue === 'passed' && e2eMetrics && e2eMetrics.passed === false) {
     if (e2eMetrics.missingScenarioCount > 0) {
       return `End-to-end feature coverage is below 100%: ${e2eMetrics.coveredScenarioCount}/${e2eMetrics.requiredScenarioCount} scenarios covered.`;
     }
@@ -910,10 +908,6 @@ function renderHelpLabel(label: string, helpText: string): string {
   `;
 }
 
-function capitalizeMetric(metric: string): string {
-  return metric.charAt(0).toUpperCase() + metric.slice(1);
-}
-
 function renderSuiteTableHead(): string {
   return `
     <tr>
@@ -979,7 +973,7 @@ function renderReportShell(
       : `${formatMetadataTimestamp(metadata.generatedAtDisplay)} UTC (${shortSha})`;
   const buildHref = metadata.commitUrl || repositoryHref;
   const workflowHref = `${repositoryHref}/actions/workflows/test.yml`;
-const generatorEditHref = `${repositoryHref}/edit/main/scripts/coverage/generate-report.cts`;
+  const generatorEditHref = `${repositoryHref}/edit/main/scripts/coverage/generate-report.cts`;
   const githubIconLink = `
     <a
       class="github-icon-link"

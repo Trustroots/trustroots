@@ -32,7 +32,8 @@ if (scope && !isSuite(scope)) {
   console.error(`Unknown coverage scope "${scope}".`);
   process.exit(1);
 }
-const suiteNames: Suite[] = scope && isSuite(scope) ? [scope] : ['client', 'server'];
+const suiteNames: Suite[] =
+  scope && isSuite(scope) ? [scope] : ['client', 'server'];
 
 function readJson<T>(filePath: string): T {
   return JSON.parse(fs.readFileSync(filePath, 'utf8')) as T;

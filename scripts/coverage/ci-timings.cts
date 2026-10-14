@@ -91,9 +91,7 @@ function renderTimings(timings: CiTimings | null | undefined): string {
         })),
     );
     const slowest = completedSteps
-      .filter(
-        (step): step is typeof step & { ms: number } => step.ms !== null,
-      )
+      .filter((step): step is typeof step & { ms: number } => step.ms !== null)
       .sort((a, b) => b.ms - a.ms)[0];
     const rows = workflow.jobs.map(job => {
       const steps = job.steps.map(step => {

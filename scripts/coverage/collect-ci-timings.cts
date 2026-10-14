@@ -127,14 +127,17 @@ async function collectTimings(
   const pr = context.payload.pull_request;
   if (pr) {
     try {
-      const runs = await github.paginate<WorkflowRunSummary>(github.rest.actions.listWorkflowRuns, {
-        owner,
-        repo,
-        workflow_id: 'lint.yml',
-        event: 'pull_request',
-        head_sha: pr.head.sha,
-        per_page: 100,
-      });
+      const runs = await github.paginate<WorkflowRunSummary>(
+        github.rest.actions.listWorkflowRuns,
+        {
+          owner,
+          repo,
+          workflow_id: 'lint.yml',
+          event: 'pull_request',
+          head_sha: pr.head.sha,
+          per_page: 100,
+        },
+      );
       const run = runs
         .filter(run =>
           run.pull_requests.some(item => item.number === pr.number),

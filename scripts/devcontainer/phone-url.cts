@@ -1,5 +1,3 @@
-/* eslint-disable no-console, no-process-exit */
-
 const fs = require('node:fs') as typeof import('node:fs');
 const os = require('node:os') as typeof import('node:os');
 

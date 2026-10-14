@@ -36,9 +36,7 @@ function collectInstalledPackages(root: string): InstalledPackage[] {
         scan(location);
         continue;
       }
-      const manifest = readPackageManifest(
-        path.join(location, 'package.json'),
-      );
+      const manifest = readPackageManifest(path.join(location, 'package.json'));
       packages.push({
         name: manifest.name,
         version: manifest.version,

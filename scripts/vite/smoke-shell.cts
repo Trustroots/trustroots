@@ -2,7 +2,8 @@
 
 const assert: typeof import('node:assert/strict') = require('node:assert/strict');
 const { once } = require('node:events') as typeof import('node:events');
-const { chromium } = require('@playwright/test') as typeof import('@playwright/test');
+const { chromium } =
+  require('@playwright/test') as typeof import('@playwright/test');
 const express = require('express') as typeof import('express');
 const expressConfig = require('../../config/lib/express.mjs') as {
   initLocalVariables(app: import('express').Express): void;
@@ -21,10 +22,22 @@ const routes: SmokeRoute[] = [
   { path: '/contact', role: 'heading', name: /Trustroots Support/ },
   { path: '/contribute', role: 'heading', name: /Support Trustroots/ },
   { path: '/faq', role: 'heading', name: /Frequently Asked Questions/ },
-  { path: '/faq/bugs-and-features', role: 'heading', name: /Frequently Asked Questions/ },
+  {
+    path: '/faq/bugs-and-features',
+    role: 'heading',
+    name: /Frequently Asked Questions/,
+  },
   { path: '/faq/circles', role: 'heading', name: /Frequently Asked Questions/ },
-  { path: '/faq/foundation', role: 'heading', name: /Frequently Asked Questions/ },
-  { path: '/faq/technology', role: 'heading', name: /Frequently Asked Questions/ },
+  {
+    path: '/faq/foundation',
+    role: 'heading',
+    name: /Frequently Asked Questions/,
+  },
+  {
+    path: '/faq/technology',
+    role: 'heading',
+    name: /Frequently Asked Questions/,
+  },
   { path: '/foundation', role: 'heading', name: /Trustroots Foundation/ },
   { path: '/guide', role: 'heading', name: /Trustroots Guide/ },
   { path: '/media', role: 'exact', name: 'in Media' },
@@ -41,8 +54,16 @@ const routes: SmokeRoute[] = [
   { path: '/signin', role: 'button', name: /^Login$/ },
   { path: '/signup', role: 'heading', name: /Join Trustroots/ },
   { path: '/password/forgot', role: 'heading', name: /Restore your password/ },
-  { path: '/password/reset/invalid', role: 'heading', name: /Password reset is invalid/ },
-  { path: '/password/reset/success', role: 'heading', name: /Password successfully reset/ },
+  {
+    path: '/password/reset/invalid',
+    role: 'heading',
+    name: /Password reset is invalid/,
+  },
+  {
+    path: '/password/reset/success',
+    role: 'heading',
+    name: /Password successfully reset/,
+  },
   {
     path: '/confirm-email-invalid',
     role: 'text',
@@ -73,7 +94,7 @@ async function main() {
     res.json({});
   });
   app.get(
-      routes.map(({ path }) => path),
+    routes.map(({ path }) => path),
     (_req, res) => {
       res.render('react-index.server.view.html', {
         user: null,
@@ -193,9 +214,9 @@ async function main() {
       );
     }
     if (!development) {
-      await page.context().addCookies([
-        { name: 'i18n', value: 'ar', url: baseURL },
-      ]);
+      await page
+        .context()
+        .addCookies([{ name: 'i18n', value: 'ar', url: baseURL }]);
       const stylesheet = page.waitForResponse(
         response =>
           new URL(response.url()).pathname === '/assets/react-main.rtl.css',
