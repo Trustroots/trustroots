@@ -16,10 +16,35 @@ declare module 'async' {
     },
     callback: (error: Error | null, results: Result) => void,
   ): void;
+  export function eachSeries<Item>(
+    items: Item[],
+    iteratee: (item: Item, callback: (error?: Error | null) => void) => void,
+    callback: (error?: Error | null) => void,
+  ): void;
+  export function eachOfSeries<Items extends object>(
+    items: Items extends readonly unknown[] ? never : Items,
+    iteratee: (
+      value: Items[keyof Items],
+      key: Extract<keyof Items, string>,
+      callback: (error?: Error | null) => void,
+    ) => void,
+    callback: (error?: Error | null) => void,
+  ): void;
+  export function eachOfSeries<Value>(
+    items: Value[],
+    iteratee: (
+      value: Value,
+      key: number,
+      callback: (error?: Error | null) => void,
+    ) => void,
+    callback: (error?: Error | null) => void,
+  ): void;
   const async: {
     map: typeof map;
     waterfall: typeof waterfall;
     parallel: typeof parallel;
+    eachSeries: typeof eachSeries;
+    eachOfSeries: typeof eachOfSeries;
   };
   export default async;
 }
