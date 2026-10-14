@@ -256,6 +256,34 @@ describe('Tribes controller unit tests', () => {
     });
   });
 
+  describe('updateCount', () => {
+    it('updates the cached member count and returns the updated tribe', async () => {
+      const tribe = await new Tribe({
+        label: 'Counted circle',
+        count: 1,
+      }).save();
+      await new Promise<void>((resolve, reject) => {
+        tribesController.updateCount(
+          tribe._id.toString(),
+          2,
+          true,
+          (error, updatedTribe) => {
+            if (error) {
+              reject(error);
+              return;
+            }
+            if (!updatedTribe) {
+              reject(new Error('Expected the updated tribe document'));
+              return;
+            }
+            updatedTribe.count!.should.equal(3);
+            resolve();
+          },
+        );
+      });
+    });
+  });
+
   describe('tribeBySlug', () => {
     it('refuses member-only circle details to anonymous visitors', async () => {
       const res = deferredResponse();
@@ -317,7 +345,7 @@ describe('Tribes controller unit tests', () => {
             nextCalled = true;
             resolve();
           },
-          tribe.slug,
+          tribe.slug!,
         );
       });
       nextCalled.should.be.true();
