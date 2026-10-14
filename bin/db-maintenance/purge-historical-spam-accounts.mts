@@ -4,8 +4,8 @@
  * Remove inactive accounts from the two investigated historical spam campaigns.
  *
  * Usage:
- *   node bin/db-maintenance/purge-historical-spam-accounts.js
- *   node bin/db-maintenance/purge-historical-spam-accounts.js --delete
+ *   node bin/db-maintenance/purge-historical-spam-accounts.mts
+ *   node bin/db-maintenance/purge-historical-spam-accounts.mts --delete
  */
 import mongooseService from './../../config/lib/mongoose.mjs';
 import cleanup from './../../modules/users/server/services/historical-spam-cleanup.server.service.mjs';
@@ -16,6 +16,24 @@ if (unknownArguments.length) {
   console.error(`Unknown argument(s): ${unknownArguments.join(', ')}`);
   process.exit(1);
 }
+
+interface CleanupBatch {
+  candidates: number;
+  eligible: number;
+  protected: number;
+  deleted: number;
+}
+
+type CleanupResult = CleanupBatch;
+
+interface CleanupOptions {
+  deleteAccounts: boolean;
+  onBatch: (batch: CleanupBatch) => void;
+}
+
+const runCleanup: (options: CleanupOptions) => Promise<CleanupResult> =
+  cleanup.run;
+
 mongooseService.connect(async () => {
   try {
     console.log(
@@ -23,7 +41,7 @@ mongooseService.connect(async () => {
         ? 'Deleting eligible historical spam accounts...'
         : 'Dry run: no accounts will be deleted.',
     );
-    const result = await cleanup.run({
+    const result = await runCleanup({
       deleteAccounts,
       onBatch: batch => {
         console.log(

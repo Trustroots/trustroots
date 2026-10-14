@@ -15,7 +15,8 @@
  *  pnpm run ensure-indexes User
  */
 import mongooseService from './../../config/lib/mongoose.mjs';
-let predefinedModel;
+import type { Connection } from 'mongoose';
+let predefinedModel: string | undefined;
 if (process.argv[2]) {
   console.log(
     `Ensuring indexes only for Mongo collection "${process.argv[2]}"`,
@@ -24,7 +25,7 @@ if (process.argv[2]) {
 } else {
   console.log('Ensuring indexes for all Mongo collections');
 }
-mongooseService.connect(async connection => {
+mongooseService.connect(async (connection: Connection) => {
   await mongooseService.loadModels();
   const modelNames = connection.modelNames();
 

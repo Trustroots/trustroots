@@ -1,13 +1,35 @@
 #!/usr/bin/env node
 import { pathToFileURL } from 'node:url';
-import { MongoClient } from 'mongodb';
+import {
+  MongoClient,
+  type Collection,
+  type Document,
+  type Filter,
+  type ObjectId,
+} from 'mongodb';
 import config from '../../config/config.mjs';
 import { hashToken } from '../../modules/users/server/services/action-token.server.service.mjs';
 
-const fields = ['emailToken', 'resetPasswordToken', 'removeProfileToken'];
-export async function hashLegacyTokens(collection, { apply = false } = {}) {
+export interface UserTokenRecord extends Document {
+  _id?: ObjectId;
+  emailToken?: unknown;
+  resetPasswordToken?: unknown;
+  removeProfileToken?: unknown;
+  resetPasswordExpires?: Date;
+}
+
+const fields = [
+  'emailToken',
+  'resetPasswordToken',
+  'removeProfileToken',
+] as const;
+
+export async function hashLegacyTokens(
+  collection: Pick<Collection<UserTokenRecord>, 'find' | 'updateOne'>,
+  { apply = false }: { apply?: boolean } = {},
+) {
   const counts = { candidates: 0, converted: 0, changedConcurrently: 0 };
-  const query = {
+  const query: Filter<UserTokenRecord> = {
     $or: fields.map(field => ({
       [field]: { $type: 'string', $ne: '', $not: /^sha256:/ },
     })),
