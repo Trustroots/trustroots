@@ -1,19 +1,71 @@
-const should = require('should');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const express = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User');
-const Tribe = mongoose.model('Tribe');
+import type { HydratedDocument } from 'mongoose';
+import type {
+  Credentials,
+  TribeRecord,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+
+const should: typeof import('should') = require('should');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const express: {
+  init(
+    connection: import('mongoose').Connection,
+  ): Promise<import('express').Express>;
+} = require('./../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+const User = mongoose.model<UserRecord>('User');
+const Tribe = mongoose.model<TribeRecord>('Tribe');
+type UserDocument = HydratedDocument<UserRecord>;
+type TribeDocument = HydratedDocument<TribeRecord>;
+interface MembershipApiResponse {
+  message: string;
+  tribe: {
+    _id: string;
+    count: number;
+    label: string;
+    slug: string;
+    color?: string;
+  };
+  user: {
+    username: string;
+    memberIds: string[];
+    member: Array<{ tribe: string; since?: string }>;
+  };
+}
+interface ErrorApiResponse {
+  message: string;
+}
+
+function membershipResponse(
+  response: import('supertest').Response,
+): MembershipApiResponse {
+  return response.body as MembershipApiResponse;
+}
+function errorResponse(
+  response: import('supertest').Response,
+): ErrorApiResponse {
+  return response.body as ErrorApiResponse;
+}
+
+function saveTribe(
+  tribe: TribeDocument,
+  callback: (error: unknown | null, savedTribe: TribeDocument) => void,
+): void {
+  void tribe.save().then(
+    savedTribe => callback(null, savedTribe),
+    error => callback(error, tribe),
+  );
+}
 
 /**
  * Globals
  */
-let app;
-let agent;
-let credentials;
-let user;
-let _user;
+let app: import('express').Express;
+let agent: ReturnType<typeof request.agent>;
+let credentials: Credentials;
+let user: UserDocument;
+let _user: UserRecord;
 
 /**
  * User routes tests
@@ -49,7 +101,7 @@ describe('User tribe memberships CRUD tests', function () {
     user = new User(_user);
 
     // Save a user to the test db
-    user.save(done);
+    void user.save().then(() => done(), done);
   });
   afterEach(utils.clearDatabase);
   it('should be able to join a tribe', function (done) {
@@ -69,7 +121,7 @@ describe('User tribe memberships CRUD tests', function () {
         });
 
         // Add tribe to test DB
-        tribe.save(function (err, tribe) {
+        saveTribe(tribe, function (err, tribe) {
           should.not.exist(err);
           agent
             .post('/api/users/memberships/' + tribe._id)
@@ -83,26 +135,36 @@ describe('User tribe memberships CRUD tests', function () {
               }
 
               // Confirmation message
-              userTribeRes.body.message.should.be.equal('Joined tribe.');
+              membershipResponse(userTribeRes).message.should.be.equal(
+                'Joined tribe.',
+              );
 
               // It should return correct tribe with new count
-              userTribeRes.body.tribe._id.should.be.equal(tribe._id.toString());
-              userTribeRes.body.tribe.count.should.be.equal(1);
-              userTribeRes.body.tribe.label.should.be.equal('Awesome Tribe');
-              userTribeRes.body.tribe.slug.should.be.equal('awesome-tribe');
-              should.exist(userTribeRes.body.tribe.color);
+              membershipResponse(userTribeRes).tribe._id.should.be.equal(
+                tribe._id.toString(),
+              );
+              membershipResponse(userTribeRes).tribe.count.should.be.equal(1);
+              membershipResponse(userTribeRes).tribe.label.should.be.equal(
+                'Awesome Tribe',
+              );
+              membershipResponse(userTribeRes).tribe.slug.should.be.equal(
+                'awesome-tribe',
+              );
+              should.exist(membershipResponse(userTribeRes).tribe.color);
 
               // It should return updated user
-              userTribeRes.body.user.username.should.be.equal(
+              membershipResponse(userTribeRes).user.username.should.be.equal(
                 credentials.username.toLowerCase(),
               );
-              userTribeRes.body.user.memberIds[0].should.be.equal(
-                tribe._id.toString(),
+              membershipResponse(
+                userTribeRes,
+              ).user.memberIds[0].should.be.equal(tribe._id.toString());
+              membershipResponse(
+                userTribeRes,
+              ).user.member[0].tribe.should.be.equal(tribe._id.toString());
+              should.exist(
+                membershipResponse(userTribeRes).user.member[0].since,
               );
-              userTribeRes.body.user.member[0].tribe.should.be.equal(
-                tribe._id.toString(),
-              );
-              should.exist(userTribeRes.body.user.member[0].since);
               return done();
             });
         });
@@ -125,7 +187,7 @@ describe('User tribe memberships CRUD tests', function () {
         });
 
         // Add tribe to test DB
-        tribe.save(function (err, tribe) {
+        saveTribe(tribe, function (err, tribe) {
           should.not.exist(err);
 
           // Join tribe
@@ -141,11 +203,17 @@ describe('User tribe memberships CRUD tests', function () {
               }
 
               // Count +1
-              userTribeJoinRes.body.tribe.count.should.be.equal(1);
+              membershipResponse(userTribeJoinRes).tribe.count.should.be.equal(
+                1,
+              );
 
               // User is now member of tribe
-              userTribeJoinRes.body.user.memberIds.length.should.be.equal(1);
-              userTribeJoinRes.body.user.member.length.should.be.equal(1);
+              membershipResponse(
+                userTribeJoinRes,
+              ).user.memberIds.length.should.be.equal(1);
+              membershipResponse(
+                userTribeJoinRes,
+              ).user.member.length.should.be.equal(1);
 
               // Leave tribe
               agent
@@ -160,11 +228,17 @@ describe('User tribe memberships CRUD tests', function () {
                   }
 
                   // Count -1
-                  userTagLeaveRes.body.tribe.count.should.be.equal(0);
+                  membershipResponse(
+                    userTagLeaveRes,
+                  ).tribe.count.should.be.equal(0);
 
                   // No more tribes left on user's array
-                  userTagLeaveRes.body.user.memberIds.length.should.be.equal(0);
-                  userTagLeaveRes.body.user.member.length.should.be.equal(0);
+                  membershipResponse(
+                    userTagLeaveRes,
+                  ).user.memberIds.length.should.be.equal(0);
+                  membershipResponse(
+                    userTagLeaveRes,
+                  ).user.member.length.should.be.equal(0);
                   return done();
                 });
             });
@@ -188,7 +262,7 @@ describe('User tribe memberships CRUD tests', function () {
         });
 
         // Add tribe to test DB
-        tribe.save(function (err, tribe) {
+        saveTribe(tribe, function (err, tribe) {
           should.not.exist(err);
 
           // Join tribe
@@ -204,11 +278,17 @@ describe('User tribe memberships CRUD tests', function () {
               }
 
               // Count +1
-              userTribeJoinRes.body.tribe.count.should.be.equal(1);
+              membershipResponse(userTribeJoinRes).tribe.count.should.be.equal(
+                1,
+              );
 
               // User is now member of tribe
-              userTribeJoinRes.body.user.memberIds.length.should.be.equal(1);
-              userTribeJoinRes.body.user.member.length.should.be.equal(1);
+              membershipResponse(
+                userTribeJoinRes,
+              ).user.memberIds.length.should.be.equal(1);
+              membershipResponse(
+                userTribeJoinRes,
+              ).user.member.length.should.be.equal(1);
 
               // Join tribe again
               agent
@@ -221,7 +301,7 @@ describe('User tribe memberships CRUD tests', function () {
                   if (userTagJoin2Err) {
                     return done(userTagJoin2Err);
                   }
-                  userTagJoin2Res.body.message.should.be.equal(
+                  errorResponse(userTagJoin2Res).message.should.be.equal(
                     'You are already a member of this tribe.',
                   );
                   return done();
@@ -247,7 +327,7 @@ describe('User tribe memberships CRUD tests', function () {
         });
 
         // Add tribe to test DB
-        tribe.save(function (err, tribe) {
+        saveTribe(tribe, function (err, tribe) {
           should.not.exist(err);
 
           // Leave tribe
@@ -261,7 +341,7 @@ describe('User tribe memberships CRUD tests', function () {
               if (userTribeJoinErr) {
                 return done(userTribeJoinErr);
               }
-              userTribeJoinRes.body.message.should.be.equal(
+              errorResponse(userTribeJoinRes).message.should.be.equal(
                 'You are not a member of this tribe.',
               );
               return done();
@@ -291,7 +371,9 @@ describe('User tribe memberships CRUD tests', function () {
             if (userTribeJoinErr) {
               return done(userTribeJoinErr);
             }
-            userTribeJoinRes.body.message.should.be.equal('Bad request.');
+            errorResponse(userTribeJoinRes).message.should.be.equal(
+              'Bad request.',
+            );
             return done();
           });
       });
@@ -318,7 +400,7 @@ describe('User tribe memberships CRUD tests', function () {
             if (userTribeJoinErr) {
               return done(userTribeJoinErr);
             }
-            userTribeJoinRes.body.message.should.be.equal(
+            errorResponse(userTribeJoinRes).message.should.be.equal(
               'Cannot interpret id.',
             );
             return done();

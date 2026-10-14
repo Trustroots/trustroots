@@ -1,25 +1,73 @@
 /**
  * Module dependencies.
  */
-const _ = require('lodash');
+import type { HydratedDocument } from 'mongoose';
+import type { UserRecord } from '../../../../../testutils/server/model-contracts.mts';
+
+const _: typeof import('lodash') = require('lodash');
 const should = require('should');
-const testutils = require('../../../../../testutils/server/server.testutil');
-const config = require('./../../../../../config/config.mjs');
-const moment = require('moment');
-const mongoose = require('mongoose');
-const User = mongoose.model('User');
+const testutils: typeof import('../../../../../testutils/server/server.testutil.mts') = require('../../../../../testutils/server/server.testutil');
+const config: typeof import('../../../../../config/config.mjs').default = require('./../../../../../config/config.mjs');
+const moment: typeof import('moment') = require('moment');
+const mongoose: typeof import('mongoose') = require('mongoose');
+interface SignupReminderUser extends Omit<UserRecord, 'created'> {
+  created?: moment.Moment;
+  publicReminderCount?: number;
+  publicReminderSent?: moment.Moment;
+  emailTokenIssuedAt?: moment.Moment;
+  emailTokenExpires?: moment.Moment;
+}
+type SignupReminderDocument = HydratedDocument<SignupReminderUser>;
+interface SignupReminderMail {
+  type: 'send email';
+  data: {
+    subject: string;
+    to: { address: string };
+    html: string;
+    text: string;
+  };
+}
+const User = mongoose.model<SignupReminderUser>('User');
 
 /**
  * Globals
  */
-let unConfirmedUser;
-let _unConfirmedUser;
-let confirmedUser;
-let _confirmedUser;
-let userFinishSignupJobHandler;
+let unConfirmedUser: SignupReminderDocument;
+let _unConfirmedUser: SignupReminderUser;
+let confirmedUser: SignupReminderDocument;
+let _confirmedUser: SignupReminderUser;
+let userFinishSignupJobHandler: typeof import('./../../../server/jobs/user-finish-signup.server.job.mjs').default;
+
+function saveWithCallback(
+  document: SignupReminderDocument,
+  callback: (error?: Error | null) => void,
+): void {
+  void document.save().then(
+    () => callback(),
+    error =>
+      callback(error instanceof Error ? error : new Error(String(error))),
+  );
+}
+
+function findUserByEmail(
+  email: string,
+  callback: (error: Error | null, user?: SignupReminderDocument) => void,
+): void {
+  void User.findOne({ email })
+    .exec()
+    .then(user => {
+      if (!user) {
+        throw new Error(`Expected test user ${email} to exist`);
+      }
+      callback(null, user);
+    })
+    .catch(error =>
+      callback(error instanceof Error ? error : new Error(String(error))),
+    );
+}
 
 describe('Job: user finish signup', function () {
-  const jobs = testutils.catchJobs();
+  const jobs = testutils.catchJobs() as SignupReminderMail[];
 
   before(function () {
     userFinishSignupJobHandler = require('./../../../server/jobs/user-finish-signup.server.job.mjs');
@@ -45,7 +93,7 @@ describe('Job: user finish signup', function () {
     unConfirmedUser = new User(_unConfirmedUser);
 
     // Save a user to the test db
-    unConfirmedUser.save(done);
+    saveWithCallback(unConfirmedUser, done);
   });
 
   // Create a confirmed user
@@ -65,17 +113,17 @@ describe('Job: user finish signup', function () {
     confirmedUser = new User(_confirmedUser);
 
     // Save a user to the test db
-    confirmedUser.save(done);
+    saveWithCallback(confirmedUser, done);
   });
 
   it('Do not remind unconfirmed users <4 hours after their signup', function (done) {
     unConfirmedUser.created = moment().subtract(
       moment.duration({ hours: 3, minutes: 58 }),
     );
-    unConfirmedUser.save(function (err) {
+    saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
 
-      userFinishSignupJobHandler({}, function (err) {
+      userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
         if (err) return done(err);
         jobs.length.should.equal(0);
         done();
@@ -84,23 +132,24 @@ describe('Job: user finish signup', function () {
   });
 
   it('Remind unconfirmed users >4 hours after their signup', function (done) {
-    userFinishSignupJobHandler({}, function (err) {
+    userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
       if (err) return done(err);
 
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
       jobs[0].data.subject.should.equal('Complete your signup to Trustroots');
       jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
-      ['html', 'text'].forEach(function (format) {
+      (['html', 'text'] as const).forEach(function (format) {
         jobs[0].data[format].should.containEql(
           'This is a reminder 1/3, after which we will stop sending you emails.',
         );
         jobs[0].data[format].should.containEql('4 hours ago');
       });
 
-      User.findOne({ email: _unConfirmedUser.email }, function (err, user) {
+      findUserByEmail(_unConfirmedUser.email, function (err, user) {
         if (err) return done(err);
-        user.publicReminderCount.should.equal(1);
+        if (!user) return done(new Error('Expected reminder user'));
+        user.publicReminderCount!.should.equal(1);
         should.exist(user.publicReminderSent);
         done();
       });
@@ -112,25 +161,26 @@ describe('Job: user finish signup', function () {
     unConfirmedUser.publicReminderSent = moment().subtract(
       moment.duration({ days: 2, hours: 1 }),
     );
-    unConfirmedUser.save(function (err) {
+    saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
-      userFinishSignupJobHandler({}, function (err) {
+      userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
         if (err) return done(err);
 
         jobs.length.should.equal(1);
         jobs[0].type.should.equal('send email');
         jobs[0].data.subject.should.equal('Complete your signup to Trustroots');
         jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
-        ['html', 'text'].forEach(function (format) {
+        (['html', 'text'] as const).forEach(function (format) {
           jobs[0].data[format].should.containEql(
             'This is a reminder 2/3, after which we will stop sending you emails.',
           );
           jobs[0].data[format].should.containEql('4 hours ago');
         });
 
-        User.findOne({ email: _unConfirmedUser.email }, function (err, user) {
+        findUserByEmail(_unConfirmedUser.email, function (err, user) {
           if (err) return done(err);
-          user.publicReminderCount.should.equal(2);
+          if (!user) return done(new Error('Expected reminder user'));
+          user.publicReminderCount!.should.equal(2);
           should.exist(user.publicReminderSent);
           done();
         });
@@ -143,9 +193,9 @@ describe('Job: user finish signup', function () {
     unConfirmedUser.publicReminderSent = moment().subtract(
       moment.duration({ days: 2, hours: 1 }),
     );
-    unConfirmedUser.save(function (err) {
+    saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
-      userFinishSignupJobHandler({}, function (err) {
+      userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
         if (err) return done(err);
 
         jobs.length.should.equal(1);
@@ -154,16 +204,17 @@ describe('Job: user finish signup', function () {
           'Last chance to complete your signup to Trustroots!',
         );
         jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
-        ['html', 'text'].forEach(function (format) {
+        (['html', 'text'] as const).forEach(function (format) {
           jobs[0].data[format].should.containEql(
             'This is our last reminder, after which we will stop sending you emails.',
           );
           jobs[0].data[format].should.containEql('4 hours ago');
         });
 
-        User.findOne({ email: _unConfirmedUser.email }, function (err, user) {
+        findUserByEmail(_unConfirmedUser.email, function (err, user) {
           if (err) return done(err);
-          user.publicReminderCount.should.equal(3);
+          if (!user) return done(new Error('Expected reminder user'));
+          user.publicReminderCount!.should.equal(3);
           should.exist(user.publicReminderSent);
           done();
         });
@@ -173,12 +224,12 @@ describe('Job: user finish signup', function () {
 
   it('Reminder emails should tell how long ago user signed up.', function (done) {
     unConfirmedUser.created = moment().subtract(moment.duration({ days: 8 }));
-    unConfirmedUser.save(function (err) {
+    saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
-      userFinishSignupJobHandler({}, function (err) {
+      userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
         if (err) return done(err);
 
-        ['html', 'text'].forEach(function (format) {
+        (['html', 'text'] as const).forEach(function (format) {
           jobs[0].data[format].should.containEql('8 days ago');
         });
         done();
@@ -188,20 +239,21 @@ describe('Job: user finish signup', function () {
 
   it('Do not remind unconfirmed users >4 hours after their signup again before >2 days has passed', function (done) {
     // Run the job 1st time, sends notification
-    userFinishSignupJobHandler({}, function (err) {
+    userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
       if (err) return done(err);
 
       // Run the same job 2nd time, should not send notification
-      userFinishSignupJobHandler({}, function (err) {
+      userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
         if (err) return done(err);
 
         jobs.length.should.equal(1);
         jobs[0].type.should.equal('send email');
         jobs[0].data.subject.should.equal('Complete your signup to Trustroots');
 
-        User.findOne({ email: _unConfirmedUser.email }, function (err, user) {
+        findUserByEmail(_unConfirmedUser.email, function (err, user) {
           if (err) return done(err);
-          user.publicReminderCount.should.equal(1);
+          if (!user) return done(new Error('Expected reminder user'));
+          user.publicReminderCount!.should.equal(1);
           done();
         });
       });
@@ -213,29 +265,33 @@ describe('Job: user finish signup', function () {
     unConfirmedUser.publicReminderSent = moment().subtract(
       moment.duration({ days: 2, hours: 1 }),
     );
-    unConfirmedUser.save(function (err) {
+    saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
 
       // Run the job 1st time, sends notification
-      userFinishSignupJobHandler({}, function (err) {
+      userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
         if (err) return done(err);
 
         // Run the same job 2nd time, should not send notification
-        userFinishSignupJobHandler({}, function (err) {
-          if (err) return done(err);
-
-          jobs.length.should.equal(1);
-          jobs[0].type.should.equal('send email');
-          jobs[0].data.subject.should.equal(
-            'Complete your signup to Trustroots',
-          );
-
-          User.findOne({ email: _unConfirmedUser.email }, function (err, user) {
+        userFinishSignupJobHandler(
+          {},
+          function (err: Error | null | undefined) {
             if (err) return done(err);
-            user.publicReminderCount.should.equal(2);
-            done();
-          });
-        });
+
+            jobs.length.should.equal(1);
+            jobs[0].type.should.equal('send email');
+            jobs[0].data.subject.should.equal(
+              'Complete your signup to Trustroots',
+            );
+
+            findUserByEmail(_unConfirmedUser.email, function (err, user) {
+              if (err) return done(err);
+              if (!user) return done(new Error('Expected reminder user'));
+              user.publicReminderCount!.should.equal(2);
+              done();
+            });
+          },
+        );
       });
     });
   });
@@ -245,14 +301,15 @@ describe('Job: user finish signup', function () {
     unConfirmedUser.publicReminderSent = moment().subtract(
       moment.duration({ days: 2 }),
     );
-    unConfirmedUser.save(function (err) {
+    saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
-      userFinishSignupJobHandler({}, function (err) {
+      userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
         if (err) return done(err);
         jobs.length.should.equal(0);
-        User.findOne({ email: _unConfirmedUser.email }, function (err, user) {
+        findUserByEmail(_unConfirmedUser.email, function (err, user) {
           if (err) return done(err);
-          user.publicReminderCount.should.equal(3);
+          if (!user) return done(new Error('Expected reminder user'));
+          user.publicReminderCount!.should.equal(3);
           should.exist(user.publicReminderSent);
           done();
         });
@@ -278,10 +335,10 @@ describe('Job: user finish signup', function () {
     }
 
     // Save all users to the test db
-    User.insertMany(_users, function (err) {
+    User.insertMany(_users, function (err: Error | null | undefined) {
       if (err) return done(err);
 
-      userFinishSignupJobHandler({}, function (err) {
+      userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
         if (err) return done(err);
 
         jobs.length.should.equal(config.limits.maxProcessSignupReminders);
@@ -294,15 +351,21 @@ describe('Job: user finish signup', function () {
     it(`Do not remind users with "${role}" role`, function (done) {
       unConfirmedUser.roles = [role];
       unConfirmedUser.created = moment().subtract(moment.duration({ days: 8 }));
-      unConfirmedUser.save(function (err) {
-        if (err) return done(err);
-
-        userFinishSignupJobHandler({}, function (err) {
+      saveWithCallback(
+        unConfirmedUser,
+        function (err: Error | null | undefined) {
           if (err) return done(err);
-          jobs.length.should.equal(0);
-          done();
-        });
-      });
+
+          userFinishSignupJobHandler(
+            {},
+            function (err: Error | null | undefined) {
+              if (err) return done(err);
+              jobs.length.should.equal(0);
+              done();
+            },
+          );
+        },
+      );
     });
   });
 
