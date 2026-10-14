@@ -1,7 +1,3 @@
-import {
-  matchToken,
-  setToken,
-} from '../services/action-token.server.service.mjs';
 import _ from 'lodash';
 import errorService from '../../../core/server/services/error.server.service.mjs';
 import emailService from '../../../core/server/services/email.server.service.mjs';
@@ -14,6 +10,11 @@ import passport from 'passport';
 import async from 'async';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
+import config from '../../../../config/config.mjs';
+import {
+  emailConfirmationTokenQuery,
+  setEmailConfirmationToken,
+} from '../services/email-confirmation.server.service.mjs';
 const service = {};
 /**
  * Module dependencies.
@@ -125,9 +126,8 @@ service.signup = function (req, res) {
         // (from where it's then again moved to email field)
         user.emailTemporary = user.email;
 
-        setToken(
+        setEmailConfirmationToken(
           user,
-          'emailToken',
           authenticationService.generateEmailToken(user, salt),
         );
 
@@ -468,10 +468,13 @@ service.removeOAuthProvider = function (req, res) {
  * Confirm email GET from email token
  */
 service.validateEmailToken = function (req, res) {
+  const now = new Date();
   User.findOne(
-    {
-      emailToken: matchToken(req.params.token),
-    },
+    emailConfirmationTokenQuery(
+      req.params.token,
+      now,
+      config.emailConfirmationLegacyDeadline,
+    ),
     function (err, user) {
       if (!user) {
         return res.redirect('/confirm-email-invalid');
@@ -485,42 +488,58 @@ service.validateEmailToken = function (req, res) {
  * Confirm email POST from email token
  */
 service.confirmEmail = function (req, res) {
+  const now = new Date();
+  const tokenQuery = emailConfirmationTokenQuery(
+    req.params.token,
+    now,
+    config.emailConfirmationLegacyDeadline,
+  );
   async.waterfall(
     [
       function (done) {
         // Check if user exists with this token
-        User.findOne(
-          {
-            emailToken: matchToken(req.params.token),
-          },
-          function (err, user) {
-            if (!err && user) {
-              // Will be the returned object when no errors
-              const result = {};
+        User.findOne(tokenQuery, function (err, user) {
+          if (!err && user) {
+            // Will be the returned object when no errors
+            const result = {};
 
-              // If users profile was hidden, it means it was first confirmation email after registration.
-              result.profileMadePublic = !user.public;
+            // If users profile was hidden, it means it was first confirmation email after registration.
+            result.profileMadePublic = !user.public;
 
-              done(null, result, user);
-            } else {
-              return res.status(400).send({
-                message: 'Email confirm token is invalid or has expired.',
-              });
-            }
-          },
-        );
+            done(null, result, user);
+          } else {
+            return res.status(400).send({
+              message: 'Email confirm token is invalid or has expired.',
+            });
+          }
+        });
       },
 
       // Update user
       // We can't do regular `user.save()` here because we've got user document with password and we'd just override it:
       // Instead we'll do normal Mongoose update with previously fetched user ID
       function (result, user, done) {
+        const authVersion = user.authVersion || 0;
+        const authVersionQuery =
+          authVersion === 0
+            ? {
+                $or: [{ authVersion: { $exists: false } }, { authVersion: 0 }],
+              }
+            : { authVersion };
         User.findOneAndUpdate(
-          { _id: user._id },
+          {
+            _id: user._id,
+            emailTemporary: user.emailTemporary,
+            // The token query already contains an $or for legacy expiry
+            // handling, so combine both conditions without overwriting it.
+            $and: [tokenQuery, authVersionQuery],
+          },
           {
             $unset: {
               emailTemporary: 1,
               emailToken: 1,
+              emailTokenIssuedAt: 1,
+              emailTokenExpires: 1,
               // Note that `publicReminderCount` and `publicReminderSent` get reset now each
               // time user confirms any email change, even if they didn't confirm their profile yet.
               // That's fine: we'll just start sending 'finish signup' notifications from scratch
@@ -546,6 +565,11 @@ service.confirmEmail = function (req, res) {
             new: true,
           },
           function (err, modifiedUser) {
+            if (!err && !modifiedUser) {
+              return res.status(400).send({
+                message: 'Email confirm token is invalid or has expired.',
+              });
+            }
             done(err, result, modifiedUser);
           },
         );
@@ -614,9 +638,8 @@ service.resendConfirmation = function (req, res) {
       function (salt, done) {
         const user = req.user;
         user.updated = Date.now();
-        setToken(
+        setEmailConfirmationToken(
           user,
-          'emailToken',
           authenticationService.generateEmailToken(user, salt),
         );
         user.save(function (err) {

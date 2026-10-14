@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { setToken } from '../services/action-token.server.service.mjs';
+import { setEmailConfirmationToken } from '../services/email-confirmation.server.service.mjs';
 import _ from 'lodash';
 import emailService from './../../../core/server/services/email.server.service.mjs';
 import config from './../../../../config/config.mjs';
@@ -96,21 +96,38 @@ const defaultExport = function (job, agendaDone) {
           users,
           function (user, callback) {
             const previousToken = user.emailToken;
-            setToken(
+            const previousEmail = user.emailTemporary;
+            const previousIssuedAt = user.emailTokenIssuedAt;
+            const previousExpires = user.emailTokenExpires;
+            setEmailConfirmationToken(
               user,
-              'emailToken',
               crypto.randomBytes(32).toString('hex'),
             );
             User.updateOne(
               {
                 _id: user._id,
                 public: false,
+                emailTemporary: previousEmail,
                 emailToken:
                   previousToken === undefined
                     ? { $exists: false }
                     : previousToken,
+                emailTokenIssuedAt:
+                  previousIssuedAt === undefined
+                    ? { $exists: false }
+                    : previousIssuedAt,
+                emailTokenExpires:
+                  previousExpires === undefined
+                    ? { $exists: false }
+                    : previousExpires,
               },
-              { $set: { emailToken: user.emailToken } },
+              {
+                $set: {
+                  emailToken: user.emailToken,
+                  emailTokenIssuedAt: user.emailTokenIssuedAt,
+                  emailTokenExpires: user.emailTokenExpires,
+                },
+              },
               function (saveErr, result) {
                 if (saveErr) return callback(saveErr);
                 if (result.matchedCount !== 1) return callback();

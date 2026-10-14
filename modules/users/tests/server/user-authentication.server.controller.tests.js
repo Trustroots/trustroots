@@ -5,6 +5,7 @@ const mockModule = require('../../../../testutils/server/mock-module');
 const sinon = require('sinon');
 const winston = require('winston');
 const should = require('should');
+const config = require('../../../../config/config.mjs');
 
 const testutils = require('../../../../testutils/server/server.testutil');
 require('./../../server/models/user.server.model.mjs');
@@ -722,6 +723,7 @@ describe('Authentication controller OAuth unit tests', () => {
     it('redirects valid email tokens to the confirmation page', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
+      userDoc.emailTemporary = userDoc.email;
       userDoc.emailToken = 'valid-token';
       await userDoc.save();
 
@@ -757,6 +759,198 @@ describe('Authentication controller OAuth unit tests', () => {
 
       const reloaded = await User.findById(saved._id);
       reloaded.public.should.be.true();
+      should.not.exist(reloaded.emailToken);
+    });
+
+    it('rejects an expired confirmation on both validation and consumption', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const expiredAt = new Date(Date.now() - 1);
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            public: false,
+            emailTemporary: saved.email,
+            emailToken: 'expired-confirm-token',
+            emailTokenIssuedAt: new Date(expiredAt.getTime() - 86400000),
+            emailTokenExpires: expiredAt,
+          },
+        },
+      );
+
+      const validation = deferredResponse();
+      authController.validateEmailToken(
+        { params: { token: 'expired-confirm-token' } },
+        validation,
+      );
+      await validation.waitForResponse();
+      validation.redirectUrl.should.equal('/confirm-email-invalid');
+
+      const confirmation = deferredResponse();
+      authController.confirmEmail(
+        { params: { token: 'expired-confirm-token' } },
+        confirmation,
+      );
+      await confirmation.waitForResponse();
+      confirmation.statusCode.should.equal(400);
+
+      const unchanged = await User.findById(saved._id);
+      unchanged.public.should.be.false();
+      unchanged.emailTemporary.should.equal(saved.email);
+    });
+
+    it('rejects legacy tokens after the shared transition deadline', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            public: false,
+            emailTemporary: saved.email,
+            emailToken: 'legacy-confirm-token',
+          },
+        },
+      );
+      const previousDeadline = config.emailConfirmationLegacyDeadline;
+      config.emailConfirmationLegacyDeadline = new Date(
+        Date.now() - 1,
+      ).toISOString();
+
+      try {
+        const res = deferredResponse();
+        authController.confirmEmail(
+          { params: { token: 'legacy-confirm-token' } },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+        const unchanged = await User.findById(saved._id);
+        unchanged.public.should.be.false();
+      } finally {
+        config.emailConfirmationLegacyDeadline = previousDeadline;
+      }
+    });
+
+    it('consumes a confirmation only once when requests race', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const token = 'single-use-confirm-token';
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            public: false,
+            emailTemporary: saved.email,
+            emailToken: token,
+            emailTokenIssuedAt: new Date(),
+            emailTokenExpires: new Date(Date.now() + 86400000),
+          },
+        },
+      );
+
+      const submit = async () => {
+        const res = deferredResponse();
+        authController.confirmEmail(
+          {
+            params: { token },
+            login: (_user, callback) => callback(),
+          },
+          res,
+        );
+        await res.waitForResponse();
+        return res;
+      };
+      const responses = await Promise.all([submit(), submit()]);
+      responses
+        .map(res => res.statusCode)
+        .sort()
+        .should.deepEqual([200, 400]);
+
+      const confirmed = await User.findById(saved._id);
+      confirmed.public.should.be.true();
+      should.not.exist(confirmed.emailToken);
+      should.not.exist(confirmed.emailTokenExpires);
+    });
+
+    it('does not authenticate from a confirmation when authVersion changes mid-request', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const token = 'stale-confirm-token';
+      const pendingEmail = 'pending@example.test';
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            public: false,
+            emailTemporary: pendingEmail,
+            emailToken: token,
+            emailTokenIssuedAt: new Date(),
+            emailTokenExpires: new Date(Date.now() + 86400000),
+          },
+        },
+      );
+
+      const originalFindOneAndUpdate = User.findOneAndUpdate;
+      sinon
+        .stub(User, 'findOneAndUpdate')
+        .callsFake((filter, update, options, callback) => {
+          User.updateOne({ _id: saved._id }, { $inc: { authVersion: 1 } }).then(
+            () => {
+              originalFindOneAndUpdate.call(
+                User,
+                filter,
+                update,
+                options,
+                callback,
+              );
+            },
+            callback,
+          );
+        });
+
+      const login = sinon.spy((_user, callback) => callback());
+      const res = deferredResponse();
+      authController.confirmEmail({ params: { token }, login }, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(400);
+      login.called.should.be.false();
+      const unchanged = await User.findById(saved._id);
+      unchanged.authVersion.should.equal(1);
+      unchanged.public.should.be.false();
+      unchanged.emailTemporary.should.equal(pendingEmail);
+      unchanged.emailToken.should.equal(token);
+    });
+
+    it('confirms an email when the account already has an auth version', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const token = 'versioned-confirm-token';
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            public: false,
+            emailTemporary: saved.email,
+            emailToken: token,
+            emailTokenIssuedAt: new Date(),
+            emailTokenExpires: new Date(Date.now() + 86400000),
+            authVersion: 2,
+          },
+        },
+      );
+
+      const res = deferredResponse();
+      authController.confirmEmail(
+        {
+          params: { token },
+          login: (_user, cb) => cb(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+
+      const reloaded = await User.findById(saved._id);
+      reloaded.public.should.be.true();
+      reloaded.authVersion.should.equal(2);
       should.not.exist(reloaded.emailToken);
     });
 

@@ -78,6 +78,19 @@ describe('Job: user finish signup direct unit tests', function () {
           user,
           sinon.match.func,
         );
+        user.emailToken.should.match(/^sha256:[a-f0-9]{64}$/);
+        user.emailTokenExpires
+          .getTime()
+          .should.equal(
+            user.emailTokenIssuedAt.getTime() + 24 * 60 * 60 * 1000,
+          );
+        User.updateOne.firstCall.args[0].public.should.be.false();
+        User.updateOne.firstCall.args[0].emailToken.should.eql({
+          $exists: false,
+        });
+        User.updateOne.firstCall.args[1].$set.emailTokenExpires
+          .getTime()
+          .should.equal(user.emailTokenExpires.getTime());
         sinon.assert.calledOnce(User.findByIdAndUpdate);
         User.findByIdAndUpdate.firstCall.args[0].should.equal('user-id');
         User.findByIdAndUpdate.firstCall.args[1].$inc.should.eql({
