@@ -1,51 +1,94 @@
-const config = require('./../../../../config/config.mjs');
-const winston = require('winston');
-const statService = require('./../../../stats/server/services/stats.server.service.mts');
-const controller = require('./../../server/controllers/sparkpost-webhooks.server.controller.mts');
-const sinon = require('sinon');
-const should = require('should');
+type WebhookEvent = { msys?: Record<string, Record<string, unknown>> };
+type StatPoint = import('../../../stats/server/services/stats.server.service.mts').StatObject;
+type WebhookController = typeof import('../../server/controllers/sparkpost-webhooks.server.controller.mts').default;
+type MockResponse = {
+  body: unknown;
+  headers: Record<string, string>;
+  statusCode: number;
+  status(code: number): MockResponse;
+  send(body?: unknown): MockResponse;
+  end(): MockResponse;
+  set(key: string, value: string): MockResponse;
+  waitForResponse(): Promise<MockResponse>;
+};
+type WebhookConfig = typeof import('../../../../config/config.mjs').default & {
+  sparkpostWebhook: { enabled: boolean; username: string; password: string };
+};
+const config: WebhookConfig = require('./../../../../config/config.mjs');
+const winston: typeof import('winston') = require('winston');
+const statService: typeof import('../../../stats/server/services/stats.server.service.mts').default = require('./../../../stats/server/services/stats.server.service.mts');
+const controller: WebhookController = require('./../../server/controllers/sparkpost-webhooks.server.controller.mts');
+const sinon: typeof import('sinon') = require('sinon');
+const should: typeof import('should') = require('should');
+void should;
 
-function mockResponse() {
-  let resolveResponse;
-  const promise = new Promise(resolve => {
+function mockResponse(): MockResponse {
+  let resolveResponse!: (response: MockResponse) => void;
+  const promise = new Promise<MockResponse>(resolve => {
     resolveResponse = resolve;
   });
-  const res = {
+  const res: MockResponse = {
     body: null,
     headers: {},
     statusCode: 200,
+    status(code) {
+      res.statusCode = code;
+      return res;
+    },
+    send(body) {
+      res.body = body;
+      resolveResponse(res);
+      return res;
+    },
+    end() {
+      resolveResponse(res);
+      return res;
+    },
+    set(key, value) {
+      res.headers[key] = value;
+      return res;
+    },
+    waitForResponse: () => promise,
   };
-  res.status = code => {
-    res.statusCode = code;
-    return res;
-  };
-  res.send = body => {
-    res.body = body;
-    resolveResponse(res);
-    return res;
-  };
-  res.end = () => {
-    resolveResponse(res);
-    return res;
-  };
-  res.set = (key, value) => {
-    res.headers[key] = value;
-    return res;
-  };
-  res.waitForResponse = () => promise;
   return res;
 }
 
-function authHeader(username, password) {
+function authHeader(username: string, password: string) {
   return `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
 }
 
-function loadController(options = {}) {
-  const stat = sinon
-    .stub(statService, 'stat')
-    .callsFake((statsObject, callback) => {
-      callback(options.statError || null);
-    });
+function receiveBatch(body: unknown, res: MockResponse) {
+  controller.receiveBatch(
+    { body } as unknown as Parameters<typeof controller.receiveBatch>[0],
+    res as unknown as Parameters<typeof controller.receiveBatch>[1],
+  );
+}
+
+function authenticate(
+  headers: Record<string, string>,
+  res: MockResponse,
+  next: () => void = () => {},
+) {
+  controller.basicAuthenticate(
+    { headers } as unknown as Parameters<typeof controller.basicAuthenticate>[0],
+    res as unknown as Parameters<typeof controller.basicAuthenticate>[1],
+    next,
+  );
+}
+
+function loadController(
+  options: { statError?: Error; enabled?: boolean } = {},
+) {
+  const stat = sinon.stub(
+    statService,
+    'stat',
+  ) as unknown as import('sinon').SinonStub<
+    [point: StatPoint, callback: (error?: Error | null) => void],
+    void
+  >;
+  stat.callsFake((_statsObject, callback) => {
+    callback(options.statError || null);
+  });
   const log = sinon.stub(winston.Logger.prototype, 'log');
   sinon.stub(config, 'sparkpostWebhook').value({
     enabled: options.enabled !== false,
@@ -56,8 +99,8 @@ function loadController(options = {}) {
   return { controller, log, stat };
 }
 
-function processEvent(controller, event) {
-  return new Promise(resolve => {
+function processEvent(controller: WebhookController, event: WebhookEvent) {
+  return new Promise<Error | null | undefined>(resolve => {
     controller.processAndSendMetrics(event, err => resolve(err));
   });
 }
@@ -68,7 +111,7 @@ describe('SparkPost webhook controller unit tests', () => {
     const { controller } = loadController();
     const res = mockResponse();
 
-    controller.receiveBatch({ body: {} }, res);
+    receiveBatch({}, res);
     await res.waitForResponse();
 
     res.statusCode.should.equal(400);
@@ -78,7 +121,7 @@ describe('SparkPost webhook controller unit tests', () => {
     const { controller } = loadController();
     const res = mockResponse();
 
-    controller.receiveBatch({ body: [] }, res);
+    receiveBatch([], res);
     await res.waitForResponse();
 
     res.statusCode.should.equal(400);
@@ -93,7 +136,7 @@ describe('SparkPost webhook controller unit tests', () => {
         callback(new Error('metric write failed'));
       });
 
-    controller.receiveBatch({ body: [{ msys: { message_event: {} } }] }, res);
+    receiveBatch([{ msys: { message_event: {} } }], res);
     await res.waitForResponse();
 
     res.statusCode.should.equal(200);
@@ -161,7 +204,7 @@ describe('SparkPost webhook controller unit tests', () => {
       campaignId: 'my-campaign-2026',
       country: 'NL',
     });
-    statsObject.time.toISOString().should.equal('2016-02-02T19:50:00.000Z');
+    statsObject.time!.toISOString().should.equal('2016-02-02T19:50:00.000Z');
   });
 
   it('leaves optional metadata empty when campaign and country are invalid', async () => {
@@ -190,7 +233,7 @@ describe('SparkPost webhook controller unit tests', () => {
     const { controller } = loadController();
     const res = mockResponse();
 
-    controller.basicAuthenticate({ headers: {} }, res, () => {});
+    authenticate({}, res);
 
     res.statusCode.should.equal(401);
     res.headers['WWW-Authenticate'].should.equal('Basic realm="Knock Knock"');
@@ -200,15 +243,7 @@ describe('SparkPost webhook controller unit tests', () => {
     const { controller } = loadController({ enabled: false });
     const res = mockResponse();
 
-    controller.basicAuthenticate(
-      {
-        headers: {
-          authorization: authHeader('sparkpost', 'secret'),
-        },
-      },
-      res,
-      () => {},
-    );
+    authenticate({ authorization: authHeader('sparkpost', 'secret') }, res);
 
     res.statusCode.should.equal(401);
   });
@@ -217,15 +252,7 @@ describe('SparkPost webhook controller unit tests', () => {
     const { controller } = loadController();
     const res = mockResponse();
 
-    controller.basicAuthenticate(
-      {
-        headers: {
-          authorization: authHeader('wrong', 'secret'),
-        },
-      },
-      res,
-      () => {},
-    );
+    authenticate({ authorization: authHeader('wrong', 'secret') }, res);
 
     res.statusCode.should.equal(401);
   });
@@ -234,15 +261,7 @@ describe('SparkPost webhook controller unit tests', () => {
     const { controller } = loadController();
     const res = mockResponse();
 
-    controller.basicAuthenticate(
-      {
-        headers: {
-          authorization: authHeader('sparkpost', 'wrong'),
-        },
-      },
-      res,
-      () => {},
-    );
+    authenticate({ authorization: authHeader('sparkpost', 'wrong') }, res);
 
     res.statusCode.should.equal(401);
   });
@@ -252,12 +271,8 @@ describe('SparkPost webhook controller unit tests', () => {
     const res = mockResponse();
     let nextCalled = false;
 
-    controller.basicAuthenticate(
-      {
-        headers: {
-          authorization: authHeader('sparkpost', 'secret'),
-        },
-      },
+    authenticate(
+      { authorization: authHeader('sparkpost', 'secret') },
       res,
       () => {
         nextCalled = true;
