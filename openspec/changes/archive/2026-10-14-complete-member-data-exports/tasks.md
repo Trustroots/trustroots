@@ -5,5 +5,5 @@
 - [x] Preserve ESM/CommonJS controller API parity.
 - [x] Rebase and retain strictly typed server tests and current E2E metadata.
 - [x] Run lint, typechecks, client and focused server tests and E2E export journeys.
-- [ ] Pass full required CI with 100% coverage.
-- [ ] Archive the proposal and retain the updated living specification.
+- [x] Pass full required CI with 100% coverage.
+- [x] Archive the proposal and retain the updated living specification.
