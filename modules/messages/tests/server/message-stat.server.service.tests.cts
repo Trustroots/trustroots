@@ -156,6 +156,8 @@ describe('Count Message Statistics of User', function () {
           NOW,
           (err, result) => {
             if (err) return reject(err);
+            if (!result)
+              return reject(new Error('Expected message statistics'));
             resolve(result);
           },
         );
@@ -193,6 +195,8 @@ describe('Count Message Statistics of User', function () {
             NOW,
             (err, stats) => {
               if (err) return reject(err);
+              if (!stats)
+                return reject(new Error('Expected message statistics'));
               resolve(stats);
             },
           );
@@ -245,6 +249,7 @@ describe('Count Message Statistics of User', function () {
         NOW,
         (err, result) => {
           if (err) return reject(err);
+          if (!result) return reject(new Error('Expected message statistics'));
           resolve(result);
         },
       );
@@ -261,6 +266,7 @@ describe('Count Message Statistics of User', function () {
       NOW - 60 * DAY,
       function (err, stats) {
         if (err) return done(err);
+        if (!stats) return done(new Error('Expected message statistics'));
         try {
           should(stats).have.property('replyRate', 3 / 8);
           should(stats).have.property('replyTime', 3 * DAY);
@@ -323,6 +329,7 @@ describe('Count Message Statistics of User', function () {
       NOW - 120 * DAY,
       function (err, stats) {
         if (err) return done(err);
+        if (!stats) return done(new Error('Expected message statistics'));
         try {
           should(stats).have.property('replyRate', null);
           should(stats).have.property('replyTime', null);
@@ -357,6 +364,7 @@ describe('Count Message Statistics of User', function () {
       NOW - 30 * DAY,
       function (err, stats) {
         if (err) return done(err);
+        if (!stats) return done(new Error('Expected message statistics'));
         try {
           should(stats).have.property('replyRate');
           should(stats).have.property('replyTime');
