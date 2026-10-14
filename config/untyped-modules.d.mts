@@ -8,7 +8,19 @@ declare module 'async' {
     tasks: Array<(...args: never[]) => void>,
     callback?: (error?: Error | null, ...results: unknown[]) => void,
   ): void;
-  const async: { map: typeof map; waterfall: typeof waterfall };
+  export function parallel<Result extends Record<string, unknown>>(
+    tasks: {
+      [Key in keyof Result]: (
+        callback: (error?: Error | null, result?: Result[Key]) => void,
+      ) => void;
+    },
+    callback: (error: Error | null, results: Result) => void,
+  ): void;
+  const async: {
+    map: typeof map;
+    waterfall: typeof waterfall;
+    parallel: typeof parallel;
+  };
   export default async;
 }
 
@@ -46,6 +58,12 @@ declare module 'sanitize-html' {
     text: string,
     options?: Record<string, unknown>,
   ): string;
+}
+
+declare module 'semver' {
+  export function satisfies(version: string, range: string): boolean;
+  const semver: { satisfies: typeof satisfies };
+  export default semver;
 }
 
 declare module 'html-to-text' {
