@@ -1,11 +1,47 @@
-const assert = require('assert');
-const EventEmitter = require('events');
-const fs = require('fs').promises;
-const path = require('path');
-const proxyquire = require('./../../../../testutils/server/mock-module');
+const assert: typeof import('assert') = require('assert');
+const EventEmitter: typeof import('node:events').EventEmitter = require('events');
+const fs: typeof import('node:fs/promises') = require('fs').promises;
+const path: typeof import('node:path') = require('path');
+const proxyquire: typeof import('../../../../testutils/server/mock-module.mts').default = require('./../../../../testutils/server/mock-module');
 
-const config = require('./../../../../config/config.mjs');
-const avatarProcessing = require('./../../server/services/avatar-processing.server.service.mjs');
+const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+interface ProcessorCommand {
+  args(): string[];
+}
+interface AvatarResult {
+  version: string;
+  versionDirectory: string;
+}
+interface AvatarProcessingService {
+  createLimitedCommand(
+    sourcePath: string,
+    cancellationEmitter?: InstanceType<typeof EventEmitter>,
+  ): ProcessorCommand;
+  validateDimensions(output: string): void;
+  validateResourceList(output: string | Buffer): void;
+  processAvatar(options: {
+    sourcePath: string;
+    userId: string;
+  }): Promise<AvatarResult>;
+  removeAvatarVersion(avatarDirectory: string, version: string): Promise<void>;
+}
+interface ImageMagickCommand {
+  args: string[];
+  commandOptions: { timeout: number };
+  options(options: { timeout: number }): this;
+  in(...args: string[]): this;
+  addDisposer(): this;
+}
+interface ImageMagickProcessingService extends Omit<
+  AvatarProcessingService,
+  'createLimitedCommand'
+> {
+  createLimitedCommand(
+    sourcePath: string,
+    cancellationEmitter?: InstanceType<typeof EventEmitter>,
+  ): ImageMagickCommand;
+}
+const avatarProcessing: AvatarProcessingService = require('./../../server/services/avatar-processing.server.service.mjs');
 require('should');
 
 describe('Avatar processing service', () => {
@@ -41,13 +77,14 @@ describe('Avatar processing service', () => {
         ...config,
         imageProcessor: 'imagemagic',
       };
-      const imageMagickCommand = () => ({
-        args: [],
-        options(options) {
+      const imageMagickCommand = (): ImageMagickCommand => ({
+        args: [] as string[],
+        commandOptions: { timeout: 0 },
+        options(options: { timeout: number }) {
           this.commandOptions = options;
           return this;
         },
-        in(...args) {
+        in(...args: string[]) {
           this.args.push(...args);
           return this;
         },
@@ -56,12 +93,12 @@ describe('Avatar processing service', () => {
         },
       });
       const imageMagick = Object.assign(() => imageMagickCommand(), {
-        subClass: options => {
+        subClass: (options: { imageMagick: boolean }) => {
           options.should.deepEqual({ imageMagick: true });
           return () => imageMagickCommand();
         },
       });
-      const service = proxyquire(
+      const service = proxyquire<ImageMagickProcessingService>(
         require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
         {
           './../../../../config/config.mjs': imageMagickConfig,
@@ -116,9 +153,9 @@ describe('Avatar processing service', () => {
   });
 
   describe('private staging and publication', () => {
-    let temporaryRoot;
-    let previousNodeEnv;
-    let previousFallback;
+    let temporaryRoot: string;
+    let previousNodeEnv: string | undefined;
+    let previousFallback: string | undefined;
 
     beforeEach(async () => {
       const testTempRoot = path.resolve('.tmp');
@@ -152,7 +189,7 @@ describe('Avatar processing service', () => {
       const tempDir = path.join(temporaryRoot, 'temp');
       await fs.mkdir(tempDir);
       await fs.writeFile(inputPath, 'anonymous image bytes');
-      const service = proxyquire(
+      const service = proxyquire<AvatarProcessingService>(
         require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
         {
           './../../../../config/config.mjs': {
@@ -203,9 +240,9 @@ describe('Avatar processing service', () => {
   });
 
   describe('native processor orchestration with a mocked backend', () => {
-    let temporaryRoot;
-    let previousNodeEnv;
-    let previousFallback;
+    let temporaryRoot: string;
+    let previousNodeEnv: string | undefined;
+    let previousFallback: string | undefined;
 
     beforeEach(async () => {
       temporaryRoot = await fs.mkdtemp(
@@ -237,11 +274,12 @@ describe('Avatar processing service', () => {
       const tempDir = path.join(temporaryRoot, 'temp');
       await fs.mkdir(tempDir);
       await fs.writeFile(inputPath, 'anonymous source');
-      const observedInputs = [];
-      const imageProcessor = sourcePath => {
+      const observedInputs: Array<{ sourcePath: string; arguments: string[] }> =
+        [];
+      const imageProcessor = (sourcePath: string) => {
         const command = {
-          arguments: [],
-          in(...args) {
+          arguments: [] as string[],
+          in(...args: string[]) {
             this.arguments.push(...args);
             return this;
           },
@@ -254,7 +292,7 @@ describe('Avatar processing service', () => {
           command() {
             return this;
           },
-          toBuffer(callback) {
+          toBuffer(callback: (error: Error | null, output: Buffer) => void) {
             callback(
               null,
               Buffer.from(
@@ -306,7 +344,10 @@ describe('Avatar processing service', () => {
           quality() {
             return this;
           },
-          identify(_options, callback) {
+          identify(
+            _options: { format: string },
+            callback: (error: Error | null, output: string) => void,
+          ) {
             observedInputs.push({
               sourcePath,
               arguments: this.arguments.slice(),
@@ -314,7 +355,7 @@ describe('Avatar processing service', () => {
             const match = sourcePath.match(/\/(\d+)\.jpg$/);
             callback(null, match ? `${match[1]} ${match[1]}` : '600 600');
           },
-          write(outputPath, callback) {
+          write(outputPath: string, callback: (error?: Error | null) => void) {
             observedInputs.push({
               sourcePath,
               arguments: this.arguments.slice(),
@@ -326,7 +367,7 @@ describe('Avatar processing service', () => {
         };
         return command;
       };
-      const service = proxyquire(
+      const service = proxyquire<AvatarProcessingService>(
         require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
         {
           './../../../../config/config.mjs': {

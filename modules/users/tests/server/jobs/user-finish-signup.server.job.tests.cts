@@ -10,7 +10,10 @@ const testutils: typeof import('../../../../../testutils/server/server.testutil.
 const config: typeof import('../../../../../config/config.mjs').default = require('./../../../../../config/config.mjs');
 const moment: typeof import('moment') = require('moment');
 const mongoose: typeof import('mongoose') = require('mongoose');
-interface SignupReminderUser extends Omit<UserRecord, 'created'> {
+interface SignupReminderUser extends Omit<
+  UserRecord,
+  'created' | 'emailTokenIssuedAt' | 'emailTokenExpires'
+> {
   created?: moment.Moment;
   publicReminderCount?: number;
   publicReminderSent?: moment.Moment;
