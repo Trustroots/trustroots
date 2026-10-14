@@ -1,3 +1,4 @@
+import { AxiosHeaders } from 'axios';
 import axios from '@/modules/core/client/api/http-client.js';
 import {
   getGreeters,
@@ -6,16 +7,28 @@ import {
 
 jest.mock('@/modules/core/client/api/http-client.js');
 
-const getMock = jest.mocked(axios.get);
+const mockedGet = jest.mocked(axios.get);
 
 describe('greeters api', () => {
   it('fetches the public greeter roster', async () => {
     const data: { greeters: Greeter[] } = {
-      greeters: [{ _id: 'g1', username: 'river', displayName: 'River Host' }],
+      greeters: [
+        {
+          _id: 'g1',
+          username: 'river',
+          displayName: 'River Host',
+        },
+      ],
     };
-    getMock.mockResolvedValueOnce({ data });
+    mockedGet.mockResolvedValueOnce({
+      data,
+      status: 200,
+      statusText: 'OK',
+      headers: new AxiosHeaders(),
+      config: { headers: new AxiosHeaders() },
+    });
 
     await expect(getGreeters()).resolves.toBe(data);
-    expect(getMock).toHaveBeenCalledWith('/api/greeters');
+    expect(mockedGet).toHaveBeenCalledWith('/api/greeters');
   });
 });

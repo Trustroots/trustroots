@@ -8,31 +8,38 @@ import {
   type Greeter,
 } from '@/modules/pages/client/api/greeters.api';
 
-jest.mock('@/modules/pages/client/api/greeters.api');
+type GreeterUser = React.ComponentProps<typeof Greeters>['user'];
+type GreeterRoster = Awaited<ReturnType<typeof getGreeters>>;
 
-const getGreetersMock = jest.mocked(getGreeters);
-type GreeterRoster = { greeters: Greeter[] };
+jest.mock('@/modules/pages/client/api/greeters.api');
+const mockedGetGreeters = jest.mocked(getGreeters);
 
 afterEach(() => jest.clearAllMocks());
 
+const greeter: Greeter = {
+  _id: 'greeter-1',
+  username: 'greeter-one',
+  displayName: 'Greeter One',
+};
+const roster: GreeterRoster = { greeters: [greeter] };
+const signedInUser: GreeterUser = {
+  _id: 'member-1',
+  username: 'member-one',
+  displayName: 'Member One',
+};
+
 describe('<Greeters />', () => {
   it('renders the current public roster and member avatars', async () => {
-    getGreetersMock.mockResolvedValueOnce({
-      greeters: [{ _id: 'g1', username: 'river', displayName: 'River Host' }],
-    });
+    mockedGetGreeters.mockResolvedValueOnce(roster);
 
-    render(
-      <Greeters
-        user={{ _id: 'me', username: 'member', displayName: 'Member' }}
-      />,
-    );
+    render(<Greeters user={signedInUser} />);
 
     expect(
-      await screen.findByRole('link', { name: /River Host/ }),
-    ).toHaveAttribute('href', '/profile/river');
-    expect(screen.getByRole('img', { name: 'River Host' })).toHaveAttribute(
+      await screen.findByRole('link', { name: /Greeter One/ }),
+    ).toHaveAttribute('href', '/profile/greeter-one');
+    expect(screen.getByRole('img', { name: 'Greeter One' })).toHaveAttribute(
       'src',
-      '/api/users/g1/avatar?size=256',
+      '/api/users/greeter-1/avatar?size=256',
     );
     expect(screen.getByRole('link', { name: 'Want to join?' })).toHaveAttribute(
       'href',
@@ -41,34 +48,33 @@ describe('<Greeters />', () => {
   });
 
   it('uses the fallback avatar when the visitor is signed out', async () => {
-    getGreetersMock.mockResolvedValueOnce({
-      greeters: [{ _id: 'g1', username: 'river', displayName: 'River Host' }],
+    mockedGetGreeters.mockResolvedValueOnce(roster);
+
+    render(<Greeters user={null} />);
+
+    expect(
+      await screen.findByRole('img', { name: 'Greeter One' }),
+    ).toHaveAttribute('src', '/img/avatar.png');
+  });
+
+  it('falls back to the username when a greeter has no display name', async () => {
+    mockedGetGreeters.mockResolvedValueOnce({
+      greeters: [{ ...greeter, displayName: '' }],
     });
 
     render(<Greeters user={null} />);
 
     expect(
-      await screen.findByRole('img', { name: 'River Host' }),
+      await screen.findByRole('img', { name: 'greeter-one' }),
     ).toHaveAttribute('src', '/img/avatar.png');
-  });
-
-  it('falls back to the username when a greeter has no display name', async () => {
-    getGreetersMock.mockResolvedValueOnce({
-      greeters: [{ _id: 'g1', username: 'river', displayName: '' }],
-    });
-
-    render(<Greeters user={null} />);
-
-    expect(await screen.findByRole('img', { name: 'river' })).toHaveAttribute(
-      'src',
-      '/img/avatar.png',
-    );
-    expect(screen.getByRole('heading', { name: 'river' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'greeter-one' }),
+    ).toBeInTheDocument();
   });
 
   it('shows a loading state, then an empty state', async () => {
-    let resolveRoster!: (roster: GreeterRoster) => void;
-    getGreetersMock.mockReturnValueOnce(
+    let resolveRoster!: (value: GreeterRoster) => void;
+    mockedGetGreeters.mockReturnValueOnce(
       new Promise<GreeterRoster>(resolve => {
         resolveRoster = resolve;
       }),
@@ -84,7 +90,7 @@ describe('<Greeters />', () => {
   });
 
   it('shows an error state when the roster cannot be loaded', async () => {
-    getGreetersMock.mockRejectedValueOnce(new Error('request failed'));
+    mockedGetGreeters.mockRejectedValueOnce(new Error('request failed'));
 
     render(<Greeters user={null} />);
 
@@ -94,8 +100,8 @@ describe('<Greeters />', () => {
   });
 
   it('does not update state when a pending roster resolves after unmount', async () => {
-    let resolveRoster!: (roster: GreeterRoster) => void;
-    getGreetersMock.mockReturnValueOnce(
+    let resolveRoster!: (value: GreeterRoster) => void;
+    mockedGetGreeters.mockReturnValueOnce(
       new Promise<GreeterRoster>(resolve => {
         resolveRoster = resolve;
       }),
@@ -112,9 +118,9 @@ describe('<Greeters />', () => {
   });
 
   it('does not update state when a pending roster rejects after unmount', async () => {
-    let rejectRoster!: (error: Error) => void;
-    getGreetersMock.mockReturnValueOnce(
-      new Promise<GreeterRoster>((_resolve, reject) => {
+    let rejectRoster!: (reason: unknown) => void;
+    mockedGetGreeters.mockReturnValueOnce(
+      new Promise<GreeterRoster>((resolve, reject) => {
         rejectRoster = reject;
       }),
     );
