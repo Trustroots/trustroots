@@ -168,11 +168,11 @@ export const supportRequest: SupportService['supportRequest'] = async function (
     }
     storedSupportRequestData.reportedUser = target._id;
   }
-  if (
-    supportRequestData.reportMember &&
-    typeof supportRequestData.reportMember === 'string'
-  ) {
-    storedSupportRequestData.reportMember = supportRequestData.reportMember;
+  if (supportRequestData.reportMember) {
+    // The value is produced by plainText above; the cast records that
+    // sanitised string after preserving the legacy truthy guard.
+    storedSupportRequestData.reportMember =
+      supportRequestData.reportMember as string;
   }
   const supportRequest = new SupportRequest(storedSupportRequestData);
 
