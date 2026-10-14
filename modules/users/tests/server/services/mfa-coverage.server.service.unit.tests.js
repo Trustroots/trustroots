@@ -89,6 +89,7 @@ describe('Service: authenticator MFA security branches', function () {
     });
 
     it('atomically activates only the pending secret and unused TOTP counter', async function () {
+      sinon.stub(Date, 'now').returns(TEST_TIME);
       const encrypted = mfaService.encryptSecret(RFC_TOTP_SECRET);
       sinon.stub(User, 'findById').returns(
         queryReturning({
@@ -104,7 +105,6 @@ describe('Service: authenticator MFA security branches', function () {
       const result = await mfaService.activateEnrollment(
         'fictional-user-id',
         RFC_TOTP_CODE,
-        TEST_TIME,
       );
 
       const [selector, changes, options] = update.firstCall.args;
@@ -220,6 +220,34 @@ describe('Service: authenticator MFA security branches', function () {
       selector.authVersion.should.equal(8);
       selector.mfaLastTotpCounter.$lt.should.equal(1);
       changes.$set.mfaLastTotpCounter.should.equal(1);
+      result.should.deepEqual({
+        user: updated,
+        recovery: false,
+        secret: encrypted,
+      });
+    });
+
+    it('uses a zero expected auth version for legacy accounts without one stored', async function () {
+      const encrypted = mfaService.encryptSecret(RFC_TOTP_SECRET);
+      sinon.stub(User, 'findById').returns(
+        queryReturning({
+          mfaEnabled: true,
+          mfaSecretEncrypted: encrypted,
+        }),
+      );
+      const updated = { _id: 'fictional-user-id' };
+      const update = sinon
+        .stub(User, 'findOneAndUpdate')
+        .returns(queryReturning(updated));
+
+      const result = await mfaService.verifyAndConsume(
+        'fictional-user-id',
+        RFC_TOTP_CODE,
+        TEST_TIME,
+        0,
+      );
+
+      update.firstCall.args[0].authVersion.should.equal(0);
       result.should.deepEqual({
         user: updated,
         recovery: false,

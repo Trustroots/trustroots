@@ -144,6 +144,9 @@ describe('Service: authenticator MFA', function () {
     });
     mfaService.challengeIsValid(challenge).should.be.true();
     mfaService
+      .createChallenge({ _id: 'legacy-fictional-user-id' })
+      .authVersion.should.equal(0);
+    mfaService
       .challengeIsValid({ ...challenge, expiresAt: Date.now() - 1 })
       .should.be.false();
   });
