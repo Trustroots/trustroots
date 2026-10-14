@@ -1,35 +1,74 @@
 /**
  * Unit tests for uncovered local passport strategy branches.
  */
-const mockModule = require('../../../../../testutils/server/mock-module');
-const sinon = require('sinon');
+import type { SinonStub } from 'sinon';
+
+const mockModule: typeof import('../../../../../testutils/server/mock-module.mts').default = require('../../../../../testutils/server/mock-module');
+const sinon: typeof import('sinon') = require('sinon');
 
 const should = require('should');
 
 describe('Local passport strategy unit tests', () => {
-  let User;
-  let verify;
-  let strategyOptions;
-  let passwordHashing;
+  interface AuthenticatedUser {
+    authenticate(password: string): Promise<boolean>;
+  }
+  type VerifyCallback = (
+    error: Error | null,
+    user?: AuthenticatedUser | false | null,
+    info?: { message: string },
+  ) => void;
+  type Verify = (
+    username: unknown,
+    password: unknown,
+    callback: VerifyCallback,
+  ) => void;
+  type FindOneCallback = (
+    error: Error | null,
+    user?: AuthenticatedUser | null,
+  ) => void;
+  type UserQuery = {
+    $or: Array<{ username?: string; email?: string }>;
+  };
+  type UserDouble = {
+    findOne: SinonStub<[query: UserQuery, callback: FindOneCallback], void>;
+  };
+  type PasswordHashingDouble = {
+    verifyPassword: SinonStub<
+      [password: string, storedHash: null, legacySalt: null],
+      Promise<{ valid: boolean; needsRehash: boolean }>
+    >;
+  };
+  let User: UserDouble;
+  let verify: Verify;
+  let strategyOptions: { usernameField: string; passwordField: string };
+  let passwordHashing: PasswordHashingDouble;
 
   beforeEach(() => {
     User = {
-      findOne: sinon.stub(),
+      findOne: sinon.stub<[UserQuery, FindOneCallback], void>(),
     };
     passwordHashing = {
-      verifyPassword: sinon.stub().resolves({
-        valid: false,
-        needsRehash: false,
-      }),
+      verifyPassword: sinon
+        .stub<
+          [password: string, storedHash: null, legacySalt: null],
+          Promise<{ valid: boolean; needsRehash: boolean }>
+        >()
+        .resolves({
+          valid: false,
+          needsRehash: false,
+        }),
     };
 
-    function FakeLocalStrategy(options, strategyVerify) {
+    function FakeLocalStrategy(
+      options: { usernameField: string; passwordField: string },
+      strategyVerify: Verify,
+    ) {
       strategyOptions = options;
       verify = strategyVerify;
     }
 
     const passportUse = sinon.spy();
-    const configureStrategy = mockModule(
+    const configureStrategy = mockModule<() => void>(
       require.resolve('../../../server/config/strategies/local.mjs'),
       {
         mongoose: {
@@ -55,14 +94,19 @@ describe('Local passport strategy unit tests', () => {
   });
 
   it('rejects structured credentials before looking up an account', async () => {
-    for (const [username, password, expectedDummyPassword] of [
+    const invalidCredentials: Array<[unknown, unknown, string]> = [
       [{ $ne: null }, 'example-password', 'example-password'],
       [['sample-member'], 'example-password', 'example-password'],
       [null, 'example-password', 'example-password'],
       ['sample-member', { $ne: null }, ''],
       ['sample-member', ['example-password'], ''],
       ['a'.repeat(321), 'example-password', 'example-password'],
-    ]) {
+    ];
+    for (const [
+      username,
+      password,
+      expectedDummyPassword,
+    ] of invalidCredentials) {
       passwordHashing.verifyPassword.resetHistory();
       const done = sinon.spy();
       verify(username, password, done);
@@ -90,6 +134,7 @@ describe('Local passport strategy unit tests', () => {
     });
 
     verify('testuser', 'password', (err, user, info) => {
+      if (!err) return done(new Error('expected database error'));
       err.message.should.equal('db down');
       should(user).be.undefined();
       should(info).be.undefined();
@@ -104,7 +149,10 @@ describe('Local passport strategy unit tests', () => {
 
     verify('missinguser', 'password', (err, user, info) => {
       should(err).be.null();
+      if (user !== false)
+        return done(new Error('expected authentication failure'));
       user.should.equal(false);
+      if (!info) return done(new Error('expected unknown-user message'));
       info.message.should.equal('Unknown user or invalid password');
       done();
     });
@@ -121,7 +169,10 @@ describe('Local passport strategy unit tests', () => {
 
     verify('localstrategy', 'wrong-password', (err, foundUser, info) => {
       should(err).be.null();
+      if (foundUser !== false)
+        return done(new Error('expected authentication failure'));
       foundUser.should.equal(false);
+      if (!info) return done(new Error('expected unknown-user message'));
       info.message.should.equal('Unknown user or invalid password');
       done();
     });
@@ -147,6 +198,9 @@ describe('Local passport strategy unit tests', () => {
       'right-password',
       (err, foundUser, info) => {
         should(err).be.null();
+        if (!foundUser || typeof foundUser === 'boolean') {
+          return done(new Error('expected authenticated user'));
+        }
         foundUser.should.equal(user);
         should(info).be.undefined();
         user.authenticate
@@ -162,7 +216,10 @@ describe('Local passport strategy unit tests', () => {
 
     verify('missinguser', 'candidate-password', (err, user, info) => {
       should(err).be.null();
+      if (user !== false)
+        return done(new Error('expected authentication failure'));
       user.should.equal(false);
+      if (!info) return done(new Error('expected unknown-user message'));
       info.message.should.equal('Unknown user or invalid password');
       passwordHashing.verifyPassword
         .calledOnceWithExactly('candidate-password', null, null)
@@ -173,11 +230,12 @@ describe('Local passport strategy unit tests', () => {
 
   it('passes KDF errors to Passport for retryable handling', done => {
     const error = new Error('capacity full');
-    error.code = 'KDF_OVERLOADED';
+    Object.assign(error, { code: 'KDF_OVERLOADED' });
     const user = { authenticate: sinon.stub().rejects(error) };
     User.findOne.callsFake((query, cb) => cb(null, user));
 
     verify('localstrategy', 'candidate-password', (err, foundUser) => {
+      if (!err) return done(new Error('expected KDF error'));
       err.should.equal(error);
       should(foundUser).be.undefined();
       done();
