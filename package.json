@@ -31,7 +31,7 @@
     "clean:public": "rm -fr ./public/dist ./public/assets",
     "dashboard:jobs": "agendash --db=mongodb://localhost/trustroots-dev --collection=agendaJobs --port=1081",
     "distclean": "rm -fr ./node_modules && rm -fr trustroots.tar.gz && pnpm run clean:public",
-    "dropdb": "node ./bin/db-drop.mjs",
+    "dropdb": "node ./bin/db-drop.mts",
     "ensure-config-exists": "node ./bin/ensure-config-exists.mts",
     "ensure-uploads-dir-exists": "node ./bin/ensure-uploads-dir-exists.mts",
     "generate-circle-images": "node ./bin/generate-circle-images.mts",
