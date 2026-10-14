@@ -1,11 +1,28 @@
-const express = require('express');
-const session = require('express-session');
-const proxyquire = require('./../../../../testutils/server/mock-module');
-const request = require('supertest');
-const should = require('should');
-const config = require('./../../../../config/config.mjs');
+const express: typeof import('express') = require('express');
+const session: {
+  Store: new () => import('node:events').EventEmitter;
+} = require('express-session');
+const proxyquire: typeof import('./../../../../testutils/server/mock-module') = require('./../../../../testutils/server/mock-module');
+const request: typeof import('supertest') = require('supertest');
+const should: typeof import('should') = require('should');
+type SessionConfig = { https: boolean; sessionProxy: boolean };
+const config: SessionConfig = require('./../../../../config/config.mjs');
+
+type ExpressConfig = {
+  initSession(app: import('express').Application, options: object): void;
+};
+type SessionData = Record<string, unknown>;
+type SessionCallback = (error?: Error | null) => void;
+type SessionGetCallback = (
+  error: Error | null,
+  value?: SessionData | null,
+) => void;
 
 class TestStore extends session.Store {
+  sessions: Map<string, SessionData>;
+  setCalls: number;
+  touchCalls: number;
+
   constructor() {
     super();
     this.sessions = new Map();
@@ -13,33 +30,33 @@ class TestStore extends session.Store {
     this.touchCalls = 0;
   }
 
-  get(id, callback) {
+  get(id: string, callback: SessionGetCallback): void {
     callback(null, this.sessions.get(id));
   }
 
-  set(id, value, callback) {
+  set(id: string, value: SessionData, callback: SessionCallback): void {
     this.setCalls += 1;
     this.sessions.set(id, value);
     callback(null);
   }
 
-  touch(id, value, callback) {
+  touch(id: string, value: SessionData, callback: SessionCallback): void {
     this.touchCalls += 1;
     this.sessions.set(id, value);
     callback(null);
   }
 
-  destroy(id, callback) {
+  destroy(id: string, callback: SessionCallback): void {
     this.sessions.delete(id);
     callback(null);
   }
 }
 
 describe('Session configuration', function () {
-  let store;
-  let app;
-  let originalHttps;
-  let originalSessionProxy;
+  let store: TestStore;
+  let app: import('express').Application;
+  let originalHttps: boolean;
+  let originalSessionProxy: boolean;
 
   beforeEach(function () {
     originalHttps = config.https;
@@ -52,9 +69,9 @@ describe('Session configuration', function () {
     config.sessionProxy = originalSessionProxy;
   });
 
-  function createApp() {
+  function createApp(): import('express').Application {
     app = express();
-    const expressConfig = proxyquire(
+    const expressConfig: ExpressConfig = proxyquire(
       require.resolve('./../../../../config/lib/express.mjs'),
       {
         'connect-mongo': { create: () => store },
@@ -64,7 +81,10 @@ describe('Session configuration', function () {
     expressConfig.initSession(app, {});
     app.get('/visit', (req, res) => res.send('visited'));
     app.get('/change', (req, res) => {
-      req.session.value = 'saved';
+      const sessionRequest = req as import('express').Request & {
+        session: SessionData;
+      };
+      sessionRequest.session.value = 'saved';
       res.send('changed');
     });
     return app;
