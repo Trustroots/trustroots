@@ -1,11 +1,95 @@
-import mongoose from 'mongoose';
+import mongoose, { type FilterQuery, type Types } from 'mongoose';
 import { SUPPORT_CATEGORIES } from '../../../support/shared/categories.ts';
 
-const SupportRequest = mongoose.model('SupportRequest');
-const User = mongoose.model('User');
-const Message = mongoose.model('Message');
-const Experience = mongoose.model('Experience');
-const AuditLog = mongoose.model('AuditLog');
+interface SupportRequestRecord {
+  _id: Types.ObjectId;
+  category: string;
+  user?: Types.ObjectId;
+  reportedUser?: Types.ObjectId;
+  sent?: Date;
+  email?: string;
+  username?: string;
+  reportMember?: string;
+  message?: string;
+  status?: string;
+  resolvedAt?: Date | null;
+  resolvedBy?: Types.ObjectId | string | null;
+}
+
+interface UserRecord {
+  _id: Types.ObjectId;
+  username: string;
+  displayName?: string;
+  email: string;
+  emailTemporary?: string;
+  public?: boolean;
+  roles?: string[];
+  created?: Date;
+  description?: string;
+  tagline?: string;
+  locationLiving?: string;
+  locationFrom?: string;
+  languages?: string[];
+  removeProfileToken?: string;
+  firstName?: string;
+  lastName?: string;
+  score?: number;
+}
+
+interface AuditLogRecord {
+  user: Types.ObjectId | string;
+  route: string;
+  params: Record<string, string>;
+  query: Record<string, unknown>;
+  body: Record<string, unknown>;
+}
+
+interface InvestigationRecord {
+  _id: Types.ObjectId;
+  created: Date;
+  content?: string;
+  userFrom: Types.ObjectId;
+  userTo: Types.ObjectId;
+  shadowHidden?: boolean;
+  public?: boolean;
+  recommend?: string;
+  interactions?: Record<string, boolean>;
+  feedbackPublic?: string;
+}
+
+type SupportQuery = Record<string, unknown>;
+type SupportParams = Record<string, string>;
+interface SupportRequest {
+  params: SupportParams;
+  query: SupportQuery;
+  body: { status?: unknown };
+  route: { path: string };
+  user: { _id: Types.ObjectId | string };
+}
+
+interface SupportResponse {
+  status(code: number): SupportResponse;
+  send(body: unknown): unknown;
+}
+
+type Action = (req: SupportRequest, res: SupportResponse) => Promise<unknown>;
+type SupportError = Error & { status: number };
+const LIST_STATUSES = ['all', 'open', 'resolved'] as const;
+const WRITE_STATUSES = ['open', 'resolved'] as const;
+
+function isOneOf<const Values extends readonly unknown[]>(
+  values: Values,
+  value: unknown,
+): value is Values[number] {
+  return values.includes(value);
+}
+
+const SupportRequestModel =
+  mongoose.model<SupportRequestRecord>('SupportRequest');
+const User = mongoose.model<UserRecord>('User');
+const Message = mongoose.model<InvestigationRecord>('Message');
+const Experience = mongoose.model<InvestigationRecord>('Experience');
+const AuditLog = mongoose.model<AuditLogRecord>('AuditLog');
 const PAGE_SIZE = 50;
 const LIST_FIELDS =
   '_id category user reportedUser sent email username reportMember status resolvedAt resolvedBy';
@@ -13,10 +97,11 @@ const REQUEST_FIELDS = `${LIST_FIELDS} message`;
 const MEMBER_FIELDS =
   '_id username displayName email emailTemporary public roles created description tagline locationLiving locationFrom languages removeProfileToken';
 
-function invalid(message) {
+function invalid(message: string): SupportError {
   return Object.assign(new Error(message), { status: 400 });
 }
-function pageNumber(query) {
+
+function pageNumber(query: SupportQuery): number {
   const value = query.page === undefined ? '1' : query.page;
   // The shared pagination middleware normalises HTTP query values to numbers.
   if (
@@ -27,26 +112,58 @@ function pageNumber(query) {
   }
   return Number(value);
 }
-function objectId(value) {
+
+function objectId(value: unknown): string {
   if (typeof value !== 'string' || !/^[a-f\d]{24}$/i.test(value)) {
     throw invalid('Invalid ID.');
   }
   return value;
 }
-function handler(action) {
-  return async (req, res) => {
+
+function errorMessage(error: unknown): string | undefined {
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const { message } = error;
+    return typeof message === 'string' ? message : undefined;
+  }
+  return undefined;
+}
+
+function errorResponse(error: unknown): {
+  status: number;
+  message: string | undefined;
+} {
+  if (typeof error === 'object' && error !== null && 'status' in error) {
+    const { status } = error;
+    if (status) {
+      return {
+        status: typeof status === 'number' ? status : 500,
+        message: errorMessage(error),
+      };
+    }
+  }
+  return {
+    status: 500,
+    message: 'Unable to load support information.',
+  };
+}
+
+function handler(action: Action) {
+  return async (
+    req: SupportRequest,
+    res: SupportResponse,
+  ): Promise<unknown> => {
     try {
       return await action(req, res);
     } catch (error) {
-      return res.status(error.status || 500).send({
-        message: error.status
-          ? error.message
-          : 'Unable to load support information.',
+      const response = errorResponse(error);
+      return res.status(response.status).send({
+        message: response.message,
       });
     }
   };
 }
-async function audit(req) {
+
+async function audit(req: SupportRequest): Promise<void> {
   // Never log report text, note text or private messages. Fail closed on storage errors.
   await new AuditLog({
     user: req.user._id,
@@ -56,17 +173,24 @@ async function audit(req) {
     body: req.body?.status ? { status: req.body.status } : {},
   }).save();
 }
-async function requestById(req) {
-  const report = await SupportRequest.findById(objectId(req.params.requestId))
+
+async function requestById(req: SupportRequest) {
+  const report = await SupportRequestModel.findById(
+    objectId(req.params.requestId),
+  )
     .select(REQUEST_FIELDS)
     .lean();
-  if (!report)
+  if (!report) {
     throw Object.assign(new Error('Support request not found.'), {
       status: 404,
     });
+  }
   return report;
 }
-function memberPayload(member) {
+
+function memberPayload(member: UserRecord): UserRecord & {
+  pendingDeletion: boolean;
+} {
   const { removeProfileToken, ...safe } = member;
   delete safe.score;
   return { ...safe, pendingDeletion: Boolean(removeProfileToken) };
@@ -76,18 +200,21 @@ export const list = handler(async (req, res) => {
   const page = pageNumber(req.query);
   const { category, status = 'open' } = req.query;
   if (
-    !['all', 'open', 'resolved'].includes(status) ||
+    !isOneOf(LIST_STATUSES, status) ||
     (category !== undefined &&
       (typeof category !== 'string' ||
         !Object.hasOwn(SUPPORT_CATEGORIES, category)))
   ) {
     throw invalid('Invalid support filters.');
   }
-  const criteria = category ? { category } : {};
-  if (status === 'open')
+  const criteria: FilterQuery<SupportRequestRecord> = category
+    ? { category: String(category) }
+    : {};
+  if (status === 'open') {
     criteria.$or = [{ status: 'open' }, { status: { $exists: false } }];
+  }
   if (status === 'resolved') criteria.status = 'resolved';
-  const items = await SupportRequest.find(criteria)
+  const items = await SupportRequestModel.find(criteria)
     .select(LIST_FIELDS)
     .sort({ sent: -1, _id: -1 })
     .skip((page - 1) * PAGE_SIZE)
@@ -108,21 +235,23 @@ export const detail = handler(async (req, res) => {
 });
 
 export const setStatus = handler(async (req, res) => {
-  if (!['open', 'resolved'].includes(req.body.status))
+  const status = req.body.status;
+  if (!isOneOf(WRITE_STATUSES, status)) {
     throw invalid('Invalid status.');
+  }
   const report = await requestById(req);
   await audit(req);
-  await SupportRequest.updateOne(
+  await SupportRequestModel.updateOne(
     { _id: report._id },
     {
       $set: {
-        status: req.body.status,
-        resolvedAt: req.body.status === 'resolved' ? new Date() : null,
-        resolvedBy: req.body.status === 'resolved' ? req.user._id : null,
+        status,
+        resolvedAt: status === 'resolved' ? new Date() : null,
+        resolvedBy: status === 'resolved' ? req.user._id : null,
       },
     },
   );
-  return res.send({ status: req.body.status });
+  return res.send({ status });
 });
 
 export const investigation = handler(async (req, res) => {
@@ -139,9 +268,10 @@ export const investigation = handler(async (req, res) => {
     });
   }
   const { kind } = req.params;
-  if (!['messages', 'experiences'].includes(kind))
+  if (!isOneOf(['messages', 'experiences'] as const, kind)) {
     throw invalid('Invalid investigation type.');
-  const criteria = {
+  }
+  const criteria: FilterQuery<InvestigationRecord> = {
     $or: [
       { userFrom: report.user, userTo: report.reportedUser },
       { userFrom: report.reportedUser, userTo: report.user },
@@ -167,11 +297,11 @@ export const investigation = handler(async (req, res) => {
   });
 });
 
-function escapeRegex(value) {
+function escapeRegex(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-async function findMembers(search) {
+async function findMembers(search: string) {
   const trimmed = search.trim();
   const lowered = trimmed.toLowerCase();
   const escaped = escapeRegex(lowered);
@@ -202,7 +332,7 @@ async function findMembers(search) {
       .join('\\s*'),
     'i',
   );
-  let named = [];
+  let named: UserRecord[] = [];
   try {
     named = await User.find(
       { $text: { $search: trimmed } },
@@ -250,8 +380,9 @@ export const member = handler(async (req, res) => {
   const result = await User.findById(objectId(req.params.memberId))
     .select(MEMBER_FIELDS)
     .lean();
-  if (!result)
+  if (!result) {
     throw Object.assign(new Error('Member not found.'), { status: 404 });
+  }
   await audit(req);
   return res.send(memberPayload(result));
 });

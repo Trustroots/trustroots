@@ -16,7 +16,7 @@ const express: typeof import('../../../../config/lib/express.mjs') & {
   init(connection: import('mongoose').Connection): Promise<TestExpressApp>;
 } = require('../../../../config/lib/express.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
-const controller: typeof import('../../server/controllers/admin.support.server.controller.mjs') = require('../../server/controllers/admin.support.server.controller.mjs');
+const controller: typeof import('../../server/controllers/admin.support.server.controller.mts') = require('../../server/controllers/admin.support.server.controller.mts');
 const supportController: typeof import('../../../support/server/controllers/support.server.controller.mjs') = require('../../../support/server/controllers/support.server.controller.mjs');
 const {
   linkHistoricalReport,
@@ -386,6 +386,7 @@ describe('Support team access and investigation', () => {
         user: users[0],
         query: {},
         params: {},
+        body: {},
         route: { path: '/api/admin/support' },
       },
       res,

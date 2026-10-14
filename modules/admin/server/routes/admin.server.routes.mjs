@@ -5,8 +5,8 @@ import adminNewsletter from './../controllers/admin.newsletter.server.controller
 import adminPolicy from './../policies/admin.server.policy.mts';
 import adminThreads from './../controllers/admin.threads.server.controller.mjs';
 import adminUsers from './../controllers/admin.users.server.controller.mjs';
-import adminDashboard from './../controllers/admin.dashboard.server.controller.mjs';
-import support from '../controllers/admin.support.server.controller.mjs';
+import adminDashboard from './../controllers/admin.dashboard.server.controller.mts';
+import support from '../controllers/admin.support.server.controller.mts';
 import adminNotes from './../controllers/admin.notes.server.controller.mjs';
 import adminReferenceThreads from './../controllers/admin.reference-threads.server.controller.mjs';
 import adminHackerspaces from './../controllers/admin.hackerspaces.server.controller.mjs';
