@@ -12,7 +12,7 @@ module.exports = {
     '^nostr-tools/nip19$':
       '<rootDir>/node_modules/nostr-tools/lib/cjs/nip19.js',
     '^.+\\.(css|jpg|png|gif|webp|svg|less|html)$':
-      '<rootDir>/jest/jest.empty-module.js',
+      '<rootDir>/jest/jest.empty-module.cts',
   },
   testMatch: ['<rootDir>/modules/*/tests/client/**/*.tests.[jt]s?(x)'],
   testEnvironment: 'jsdom',
@@ -27,9 +27,9 @@ module.exports = {
   ],
   coverageDirectory: '<rootDir>/coverage/client',
   coverageReporters: ['text-summary', 'html', 'json-summary', 'lcov'],
-  setupFilesAfterEnv: ['<rootDir>/jest/jest.setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/jest/jest.setup.cts'],
   transform: {
-    '^.+\\.m?[jt]sx?$': 'babel-jest',
+    '^.+\\.[cm]?[jt]sx?$': 'babel-jest',
   },
   // Transform Faker and nostr-tools, including nested ESM-only @noble and @scure packages.
   transformIgnorePatterns: [

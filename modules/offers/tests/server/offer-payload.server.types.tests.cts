@@ -17,7 +17,7 @@ describe('Offer API contract compiler regressions', function () {
       [
         path.join(
           root,
-          'modules/admin/tests/fixtures/shared-api-contract-diagnostics.js',
+          'modules/admin/tests/fixtures/shared-api-contract-diagnostics.mts',
         ),
         JSON.stringify({
           root,

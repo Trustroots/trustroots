@@ -246,7 +246,8 @@ const legacyConfig = {
      */
     {
       files: [
-        'config/vite/**/*.{ts,tsx}',
+        'config/vite/**/*.{ts,tsx,mts}',
+        'jest/**/*.cts',
         'scripts/ci/**/*.mts',
         'scripts/e2e/**/*.mts',
         'tests/e2e/**/*.{ts,mts}',
@@ -339,6 +340,10 @@ module.exports = defineConfig([
   },
   {
     files: ['playwright.config.cts', 'modules/*/tests/server/**/*.cts'],
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  {
+    files: ['jest/**/*.cts'],
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {
