@@ -1,3 +1,5 @@
+import type { DecodedResult } from 'nostr-tools/nip19';
+import type { Application } from 'express';
 import _ from 'lodash';
 import core from './../controllers/core.server.controller.mjs';
 import tribes from './../../../tribes/server/controllers/tribes.server.controller.mjs';
@@ -9,8 +11,14 @@ import mongoose from 'mongoose';
  * Module dependencies.
  */
 
-const defaultExport = function (app) {
-  const redirect = function (src, dst) {
+type NostrUserRecord = {
+  nostrNpub?: string;
+  public?: boolean;
+  email?: string;
+  roles: string[];
+};
+const defaultExport = function (app: Application) {
+  const redirect = function (src: string, dst: string) {
     app.route(src).get(function (req, res) {
       res.redirect(301, dst);
     });
@@ -56,7 +64,7 @@ const defaultExport = function (app) {
     .post(core.receiveExpectCTViolationReport);
   app.route('/api/languages').get(core.getLanguages);
   app.route('/api/nostr/author-visibility').get(function (req, res) {
-    const User = mongoose.model('User');
+    const User = mongoose.model<NostrUserRecord>('User');
     const rawPubkeys = req.query.pubkey;
     const pubkeys = Array.isArray(rawPubkeys) ? rawPubkeys : [rawPubkeys];
     if (
@@ -70,7 +78,7 @@ const defaultExport = function (app) {
       });
     }
     const normalizedPubkeys = [
-      ...new Set(pubkeys.map(pubkey => pubkey.toLowerCase())),
+      ...new Set((pubkeys as string[]).map(pubkey => pubkey.toLowerCase())),
     ];
     const npubs = normalizedPubkeys.map(pubkey => nip19.npubEncode(pubkey));
     User.find(
@@ -79,7 +87,7 @@ const defaultExport = function (app) {
           $in: npubs,
         },
       },
-      function (err, users) {
+      function (err: Error | null, users: NostrUserRecord[]) {
         if (err) {
           return res.status(500).send({
             error: 'Internal server error',
@@ -116,7 +124,7 @@ const defaultExport = function (app) {
   // Protect direct page loads before the client-side route guard is ready.
   // Signed-in members continue to the generic circle route below.
   app.route('/circles/naturists').get(function (req, res, next) {
-    if (!req.user) {
+    if (!(req as typeof req & { user?: unknown }).user) {
       return res.redirect('/signin');
     }
     return next();
@@ -127,7 +135,7 @@ const defaultExport = function (app) {
   app.route('/circles/:tribe').get(core.renderIndex);
   app.route('/.well-known/nostr.json').get(function (req, res) {
     // NIP05 work in progress, https://github.com/Trustroots/trustroots/issues/2692
-    const User = mongoose.model('User');
+    const User = mongoose.model<NostrUserRecord>('User');
     res.set('Access-Control-Allow-Origin', '*');
     const rawName = req.query.name;
     if (!authenticationService.isLegacyUsernameLookupValid(rawName)) {
@@ -135,7 +143,7 @@ const defaultExport = function (app) {
         error: 'Valid username required.',
       });
     }
-    const name = rawName.toLowerCase();
+    const name = (rawName as string).toLowerCase();
     User.findOne(
       {
         username: name,
@@ -148,14 +156,14 @@ const defaultExport = function (app) {
           $nin: ['suspended', 'shadowban'],
         },
       },
-      function (err, user) {
+      function (err: Error | null, user: NostrUserRecord | null) {
         if (err) {
           res.status(500).send({
             error: 'Internal server error',
           });
           return;
         }
-        const obj = {
+        const obj: { names: Record<string, string> } = {
           names: {},
         };
         if (!user) {
@@ -165,7 +173,8 @@ const defaultExport = function (app) {
         const nostrNpub = user.nostrNpub;
         try {
           if (nostrNpub) {
-            const result = nip19.decode(nostrNpub);
+            const decode: (code: string) => DecodedResult = nip19.decode;
+            const result = decode(nostrNpub);
             if (result.type === 'npub' && /^[0-9a-f]{64}$/i.test(result.data)) {
               obj.names[name] = result.data.toLowerCase();
             }

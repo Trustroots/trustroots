@@ -30,7 +30,7 @@ const modules = [
   'modules/core/server/controllers/analytics.server.controller.mjs',
   'modules/core/server/controllers/core.server.controller.mjs',
   'modules/core/server/jobs/send-email.server.job.mjs',
-  'modules/core/server/routes/core.server.routes.mjs',
+  'modules/core/server/routes/core.server.routes.mts',
   'modules/core/server/services/email.server.service.mjs',
   'modules/sparkpost/server/controllers/sparkpost-webhooks.server.controller.mts',
   'modules/sparkpost/server/routes/sparkpost.server.routes.mts',

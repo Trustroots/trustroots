@@ -35,15 +35,15 @@ type MockResponse = {
   renderVars: Record<string, unknown> | undefined;
   headers: Record<string, string>;
   redirected: string;
-  status?: (code: number) => MockResponse;
-  format?: (
+  status: (code: number) => MockResponse;
+  format: (
     handlers: Record<string, () => void> & { default: () => void },
   ) => MockResponse;
-  json?: (value: unknown) => MockResponse;
-  send?: (value: unknown) => MockResponse;
-  render?: (view: string, vars?: Record<string, unknown>) => MockResponse;
-  set?: (key: string, value: string) => MockResponse;
-  redirect?: (url: string) => MockResponse;
+  json: (value?: unknown) => MockResponse;
+  send: (value: unknown) => MockResponse;
+  render: (view: string, vars?: Record<string, unknown>) => MockResponse;
+  set: (key: string, value: string) => MockResponse;
+  redirect: (url: string) => MockResponse;
 };
 type Language = { value: string; label: string; deprecated: boolean };
 
@@ -108,42 +108,41 @@ function mockResponse(acceptType?: string): MockResponse {
     renderVars: undefined,
     headers: {},
     redirected: '',
-  };
 
-  res.status = function (code: number) {
-    res.statusCode = code;
-    return res;
+    status(code: number) {
+      res.statusCode = code;
+      return res;
+    },
+    format(handlers) {
+      if (acceptType && handlers[acceptType]) {
+        handlers[acceptType]();
+      } else {
+        handlers.default();
+      }
+      return res;
+    },
+    json(value) {
+      res.body = value === undefined ? null : value;
+      return res;
+    },
+    send(value) {
+      res.body = value;
+      return res;
+    },
+    render(view, vars) {
+      res.rendered = view;
+      res.renderVars = vars;
+      return res;
+    },
+    set(key, value) {
+      res.headers[key] = value;
+      return res;
+    },
+    redirect(url) {
+      res.redirected = url;
+      return res;
+    },
   };
-  res.format = function (handlers) {
-    if (acceptType && handlers[acceptType]) {
-      handlers[acceptType]();
-    } else {
-      handlers.default();
-    }
-    return res;
-  };
-  res.json = function (value) {
-    res.body = value === undefined ? null : value;
-    return res;
-  };
-  res.send = function (value) {
-    res.body = value;
-    return res;
-  };
-  res.render = function (view, vars) {
-    res.rendered = view;
-    res.renderVars = vars;
-    return res;
-  };
-  res.set = function (key, value) {
-    res.headers[key] = value;
-    return res;
-  };
-  res.redirect = function (url) {
-    res.redirected = url;
-    return res;
-  };
-
   return res;
 }
 
