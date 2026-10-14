@@ -13,7 +13,7 @@ const configuredTestFiles = process.env.SERVER_TEST_FILES
 const testFiles =
   configuredTestFiles.length > 0
     ? configuredTestFiles
-    : globSync('modules/*/tests/server/**/*.js').sort();
+    : globSync('modules/*/tests/server/**/*.{js,cts,mts}').sort();
 
 async function finish(error) {
   try {

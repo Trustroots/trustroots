@@ -7,12 +7,14 @@ import {
   type ExperienceFixture,
   type GenerateUserOptions,
   type ServerUserFixture,
+  type PushRegistrationFixture,
 } from '../common/data.common.testutil.mts';
 
 /** Error-first callback retained for legacy server tests. */
 export type FixtureCallback<T> = (error: unknown | null, value?: T) => void;
 
 interface UserFixtureMethods {
+  authenticate(password: string): Promise<boolean>;
   hashPassword(password: string): Promise<string>;
 }
 
@@ -27,13 +29,29 @@ interface UserFixtureExtraFields {
     twitter?: { screen_name?: string };
   };
   blocked?: mongoose.Types.ObjectId[];
+  avatarSource?: string;
+  avatarUploaded?: boolean;
+  avatarVersion?: string;
+  created?: Date | string;
+  emailHash?: string;
+  provider?: string;
+  emailTemporary?: string;
+  pushRegistration?: PushRegistrationFixture[];
   description?: string;
   displayName?: string;
   nostrNpub?: string;
+  member?: Array<{ tribe: mongoose.Types.ObjectId; since?: Date }>;
 }
 
-type UserFixtureData = ServerUserFixture & UserFixtureExtraFields;
-type CachedUserFixtureData = UserFixtureData & { salt?: string };
+type UserFixtureData = Omit<ServerUserFixture, 'roles' | 'languages'> &
+  Partial<Pick<ServerUserFixture, 'roles' | 'languages'>> &
+  UserFixtureExtraFields;
+type CachedUserFixtureData = ServerUserFixture &
+  UserFixtureExtraFields & { salt?: string };
+type ExperienceFixtureDocument = HydratedDocument<ExperienceFixture> &
+  Pick<ExperienceFixture, 'interactions'> & {
+    _id: mongoose.Types.ObjectId;
+  };
 type UserFixtureDocument = HydratedDocument<
   CachedUserFixtureData,
   UserFixtureMethods
@@ -208,17 +226,16 @@ export function createTestUser(
 /** Save experiences to the database, preserving the legacy callback. */
 export async function saveExperiences(
   documents: ExperienceFixture[],
-  callback: FixtureCallback<
-    Array<HydratedDocument<ExperienceFixture>>
-  > = () => {},
-): Promise<Array<HydratedDocument<ExperienceFixture>>> {
+  callback: FixtureCallback<ExperienceFixtureDocument[]> = () => {},
+): Promise<ExperienceFixtureDocument[]> {
   try {
     const savedDocuments = await saveDocumentsToCollection(
       'Experience',
       documents,
     );
-    callback(null, savedDocuments);
-    return savedDocuments;
+    const experiences = savedDocuments as ExperienceFixtureDocument[];
+    callback(null, experiences);
+    return experiences;
   } catch (error: unknown) {
     callback(error);
     throw error;

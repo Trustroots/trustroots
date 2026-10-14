@@ -1,0 +1,34 @@
+const signupSafety: typeof import('../../../server/services/signup-safety.server.service.mjs').default = require('./../../../server/services/signup-safety.server.service.mjs');
+require('should');
+
+describe('Signup safety service', () => {
+  it('exposes the same matching function and keywords through ESM', async () => {
+    const esmService =
+      await import('../../../server/services/signup-safety.server.service.mjs');
+    esmService.matchSignupProfile.should.equal(signupSafety.matchSignupProfile);
+    esmService.KEYWORDS.should.equal(signupSafety.KEYWORDS);
+  });
+
+  it('matches each configured keyword case-insensitively', () => {
+    signupSafety
+      .matchSignupProfile({
+        firstName: 'TrustRoots',
+        lastName: 'System',
+        displayName: 'Support volunteer',
+        username: 'ordinary-member',
+      })
+      .should.deepEqual(['support', 'system', 'trustroots']);
+  });
+
+  it('does not inspect passwords or flag unrelated identifying text', () => {
+    signupSafety
+      .matchSignupProfile({
+        firstName: 'Mira',
+        lastName: 'Example',
+        displayName: 'Mira Example',
+        username: 'mira-example',
+        password: 'trustroots',
+      })
+      .should.deepEqual([]);
+  });
+});

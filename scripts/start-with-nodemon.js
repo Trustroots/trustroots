@@ -18,7 +18,7 @@ nodemon({
     'migrations/**',
     'modules/*/client/**',
     'modules/*/tests/client/**/*.js',
-    'modules/*/tests/server/**/*.js',
+    'modules/*/tests/server/**/*.{js,cts,mts}',
     'node_modules/**',
     'public/**',
     'scripts/**',

@@ -265,7 +265,7 @@ describe('<ThreadReply>', () => {
     expect(window.localStorage.getItem('preview-draft')).toBe(draft);
     fireEvent.click(getByRole('button', { name: /Send/ }));
     await waitFor(() => expect(getByRole('textbox')).toHaveValue(''));
-    expect(getByRole('textbox')).toHaveFocus();
+    await waitFor(() => expect(getByRole('textbox')).toHaveFocus());
     expect(window.localStorage.getItem('preview-draft')).toBeNull();
     expect(getByRole('separator')).not.toHaveAttribute('aria-valuenow');
   });

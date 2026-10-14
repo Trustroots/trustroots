@@ -1,0 +1,222 @@
+import type {
+  TestAgent,
+  TestExpressApp,
+  TestExpressModule,
+  UserDocument,
+} from '../../../../testutils/server/model-contracts.mts';
+const _: typeof import('lodash') = require('lodash');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const request: typeof import('supertest') = require('supertest');
+const should: typeof import('should') = require('should');
+const sinon: typeof import('sinon') = require('sinon');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+const userProfile: typeof import('./../../../users/server/controllers/users.profile.server.controller.mjs') = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
+describe('Read a single experience by experience id', () => {
+  let app: TestExpressApp;
+  let agent: TestAgent;
+  before(async function () {
+    app = await express.init(mongoose.connection);
+    agent = request.agent(app);
+  });
+  // GET /experiences/:experienceId
+  // logged in public user can read a single public experience by id
+  // .....                 can read a single private experience if it is from self
+  // logged in public user can not read other private experiences
+  const _usersPublic = utils.generateUsersWithSharedPassword(4, {
+    public: true,
+  });
+  const _usersPrivate = utils.generateUsersWithSharedPassword(1, {
+    public: false,
+    username: 'private',
+    email: 'non@example.com',
+  });
+  const _users = [..._usersPublic, ..._usersPrivate];
+  let users: UserDocument[];
+  let experiences: Awaited<ReturnType<typeof utils.saveExperiences>>;
+  beforeEach(() => {
+    sinon.useFakeTimers({
+      // MongoDB uses real time to expire authentication sessions.
+      now: Date.now(),
+      toFake: ['Date'],
+    });
+  });
+  afterEach(() => {
+    sinon.restore();
+  });
+  beforeEach(async () => {
+    users = await utils.saveUsersWithCachedPasswords(_users);
+  });
+
+  /**
+   * array of [userFrom, userTo, values]
+   *
+   * Overview of the experienceData
+   * - row: userFrom - index of user within array of users provided to utils.generateExperiences()
+   * - column: userTo - same as row
+   * - T: experience exists and is public
+   * - F: experience exists and is not public
+   * - .: experience doesn't exist
+   *
+   *   0 1 2 3
+   * 0 . . F T
+   * 1 F . T .
+   * 2 . T . .
+   * 3 . F . .
+   */
+  const experienceData: Parameters<typeof utils.generateExperiences>[1] = [
+    [0, 3],
+    [
+      0,
+      2,
+      {
+        public: false,
+      },
+    ],
+    [
+      1,
+      0,
+      {
+        public: false,
+      },
+    ],
+    [1, 2],
+    [2, 1],
+    [
+      3,
+      1,
+      {
+        public: false,
+      },
+    ],
+  ];
+  beforeEach(async () => {
+    const _experiences = utils.generateExperiences(users, experienceData);
+    experiences = await utils.saveExperiences(_experiences);
+  });
+  afterEach(utils.clearDatabase);
+  context('logged in as public user', () => {
+    beforeEach(function () {
+      return utils.signIn.call(this, _usersPublic[0], agent);
+    });
+    afterEach(function () {
+      return utils.signOut.call(this, agent);
+    });
+    it('read a single public experience by id that has response', async () => {
+      const { body } = await agent
+        .get(`/api/experiences/${experiences[3]._id}`)
+        .expect(200);
+
+      // pre-collect expected values of users
+      const userFields = userProfile.userMiniProfileFields
+        .split(' ')
+        .slice(2)
+        .filter(field => field !== 'avatarVersion');
+      const userFromExp = _.pick(users[1], userFields);
+      userFromExp._id = users[1]._id.toString();
+      const userToExp = _.pick(users[2], userFields);
+      userToExp._id = users[2]._id.toString();
+      should(body).eql({
+        public: true,
+        userFrom: userFromExp,
+        userTo: userToExp,
+        created: new Date().toISOString(),
+        _id: String(experiences[3]._id),
+        recommend: experiences[3].recommend,
+        interactions: {
+          met: experiences[3].interactions.met,
+          guest: experiences[3].interactions.guest,
+          host: experiences[3].interactions.host,
+        },
+        response: {
+          _id: String(experiences[4]._id),
+          created: new Date().toISOString(),
+          recommend: experiences[4].recommend,
+          interactions: {
+            met: experiences[4].interactions.met,
+            guest: experiences[4].interactions.guest,
+            host: experiences[4].interactions.host,
+          },
+        },
+      });
+      should(body.userFrom).not.have.property('avatarVersion');
+      should(body.userTo).not.have.property('avatarVersion');
+    });
+    it('read a single private experience if it is from self', async () => {
+      const { body } = await agent
+        .get(`/api/experiences/${experiences[1]._id}`)
+        .expect(200);
+      should(body).match({
+        public: false,
+        _id: String(experiences[1]._id),
+        response: null,
+      });
+    });
+    it('[private experience to self] display in limited form', async () => {
+      const { body } = await agent
+        .get(`/api/experiences/${experiences[2]._id}`)
+        .expect(200);
+      should(body).match({
+        public: false,
+        _id: String(experiences[2]._id),
+        created: new Date().toISOString(),
+        response: null,
+      });
+      should(body).have.only.keys(
+        'userFrom',
+        'userTo',
+        '_id',
+        'public',
+        'created',
+        'response',
+      );
+    });
+    it('[private experiences not from self] 404', async () => {
+      const { body } = await agent
+        .get(`/api/experiences/${experiences[5]._id}`)
+        .expect(404);
+      should(body).eql({
+        message: 'Not found.',
+        details: {
+          experience: 'not found',
+        },
+      });
+    });
+    it("[experience doesn't exist] 404", async () => {
+      const { body } = await agent
+        .get(`/api/experiences/${'a'.repeat(24)}`)
+        .expect(404);
+      should(body).eql({
+        message: 'Not found.',
+        details: {
+          experience: 'not found',
+        },
+      });
+    });
+    it('[invalid experienceId] 400', async () => {
+      const { body } = await agent.get('/api/experiences/foo').expect(400);
+      should(body).eql({
+        message: 'Bad request.',
+        details: {
+          experienceId: 'invalid',
+        },
+      });
+    });
+  });
+  context('logged in as non-public user', () => {
+    beforeEach(function () {
+      return utils.signIn.call(this, _usersPrivate[0], agent);
+    });
+    afterEach(function () {
+      return utils.signOut.call(this, agent);
+    });
+    it('403', async () => {
+      await agent.get(`/api/experiences/${experiences[3]._id}`).expect(403);
+    });
+  });
+  context('not logged in', () => {
+    it('403', async () => {
+      await agent.get(`/api/experiences/${experiences[3]._id}`).expect(403);
+    });
+  });
+});
