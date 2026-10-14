@@ -69,6 +69,7 @@ export interface PushRegistrationFixture {
 /** Optional fields accepted when generating user fixture arrays. */
 export interface GenerateUserOptions {
   additionalProvidersData?: PublicProviderIdentities;
+  email?: string;
   extSitesCouchers?: string;
   extSitesBW?: string;
   extSitesCS?: string;
@@ -77,6 +78,7 @@ export interface GenerateUserOptions {
   newsletter?: boolean;
   public?: boolean;
   pushRegistration?: PushRegistrationFixture[];
+  username?: string;
 }
 
 /** Optional fields callers may override on one generated client fixture. */

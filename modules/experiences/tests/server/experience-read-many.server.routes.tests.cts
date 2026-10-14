@@ -1,14 +1,29 @@
-const mongoose = require('mongoose');
-const request = require('supertest');
-const should = require('should');
-const sinon = require('sinon');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const userProfile = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
-const express = require('./../../../../config/lib/express.mjs');
+import type {
+  TestAgent,
+  TestExpressApp,
+  TestExpressModule,
+  UserDocument,
+} from '../../../../testutils/server/model-contracts.mts';
+const mongoose: typeof import('mongoose') = require('mongoose');
+const request: typeof import('supertest') = require('supertest');
+const should: typeof import('should') = require('should');
+const sinon: typeof import('sinon') = require('sinon');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+const userProfile: typeof import('./../../../users/server/controllers/users.profile.server.controller.mjs') = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
+interface ExperienceListItem {
+  userFrom: { _id: string; avatarVersion?: string };
+  userTo: { _id: string };
+  response: {
+    created: string;
+    interactions: { met: boolean; guest: boolean; host: boolean };
+    recommend: 'no' | 'yes' | 'unknown';
+  } | null;
+}
 describe('Read experiences by userTo Id', () => {
-  let app;
-  let agent;
-  let users;
+  let app: TestExpressApp;
+  let agent: TestAgent;
+  let users: UserDocument[];
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
@@ -60,7 +75,7 @@ describe('Read experiences by userTo Id', () => {
    * 4 T T . . . .
    * 5 F F . . . .
    */
-  const experienceData = [
+  const experienceData: Parameters<typeof utils.generateExperiences>[1] = [
     [0, 1],
     [0, 2],
     [
@@ -149,9 +164,11 @@ describe('Read experiences by userTo Id', () => {
           .String()
           .match(/[0-9a-f]{24}/);
       }
-      const withResponse = body.find(ref => ref.userFrom._id === users[0].id);
+      const withResponse = body.find(
+        (ref: ExperienceListItem) => ref.userFrom._id === users[0].id,
+      );
       const withoutResponse = body.find(
-        ref => ref.userFrom._id === users[4].id,
+        (ref: ExperienceListItem) => ref.userFrom._id === users[4].id,
       );
       const response = withResponse.response;
       should(response).have.property('created', new Date().toISOString());
@@ -173,7 +190,8 @@ describe('Read experiences by userTo Id', () => {
         .get(`/api/experiences?userTo=${users[1]._id}`)
         .expect(200);
       const experience = body.find(
-        ref => String(ref.userFrom._id) === String(users[0]._id),
+        (ref: ExperienceListItem) =>
+          String(ref.userFrom._id) === String(users[0]._id),
       );
       should(experience).not.be.undefined();
       should(experience.userFrom.avatarVersion).eql(version);
@@ -190,8 +208,8 @@ describe('Read experiences by userTo Id', () => {
       const { body } = await agent
         .get(`/api/experiences?userTo=${users[0]._id}`)
         .expect(200);
-      const experiencesBySender = new Map(
-        body.map(ref => [String(ref.userFrom._id), ref]),
+      const experiencesBySender = new Map<string, ExperienceListItem>(
+        body.map((ref: ExperienceListItem) => [String(ref.userFrom._id), ref]),
       );
       const publicExperiences = [users[1], users[4]].map(user =>
         experiencesBySender.get(String(user._id)),
@@ -219,10 +237,14 @@ describe('Read experiences by userTo Id', () => {
         'created',
         'response',
       );
-      should(publicExperiences[0].response).not.eql(null);
-      should(publicExperiences[1].response).eql(null);
-      should(privateExperience.response).eql(null);
-      for (const experience of [...publicExperiences, privateExperience]) {
+      should(publicExperiences[0]!.response).not.eql(null);
+      should(publicExperiences[1]!.response).eql(null);
+      should(privateExperience!.response).eql(null);
+      for (const experience of [
+        publicExperiences[0]!,
+        publicExperiences[1]!,
+        privateExperience!,
+      ]) {
         should(experience.userTo._id).eql(users[0].id);
       }
     });

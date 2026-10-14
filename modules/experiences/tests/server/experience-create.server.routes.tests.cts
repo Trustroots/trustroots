@@ -1,16 +1,27 @@
-const should = require('should');
-const request = require('supertest');
-const sinon = require('sinon');
-const mongoose = require('mongoose');
+import type {
+  ExperienceModel,
+  ExperienceRecord,
+  TestAgent,
+  TestConfigModule,
+  TestExpressApp,
+  TestExpressModule,
+  UserDocument,
+} from '../../../../testutils/server/model-contracts.mts';
+const should: typeof import('should') = require('should');
+const request: typeof import('supertest') = require('supertest');
+const sinon: typeof import('sinon') = require('sinon');
+const mongoose: typeof import('mongoose') = require('mongoose');
 const { faker } = require('@faker-js/faker');
-const Experience = mongoose.model('Experience');
-const testutils = require('../../../../testutils/server/server.testutil');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const express = require('./../../../../config/lib/express.mjs');
-const config = require('./../../../../config/config.mjs');
+const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
+  'Experience',
+);
+const testutils: typeof import('../../../../testutils/server/server.testutil') = require('../../../../testutils/server/server.testutil');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
+const config: TestConfigModule = require('./../../../../config/config.mjs');
 describe('Create an experience', () => {
-  let app;
-  let agent;
+  let app: TestExpressApp;
+  let agent: TestAgent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
@@ -28,11 +39,17 @@ describe('Create an experience', () => {
   // after the given time or after both left experience, both experiences become public
 
   // we'll catch email notifications (push delivery is retired)
-  const jobs = testutils.catchJobs();
-  let realNow;
-  let user1;
-  let user2;
-  let user3Nonpublic;
+  interface ExperienceEmailJobData {
+    subject: string;
+    to: { address: string };
+    text: string;
+    html: string;
+  }
+  const jobs = testutils.catchJobs<ExperienceEmailJobData>();
+  let realNow: number;
+  let user1: UserDocument;
+  let user2: UserDocument;
+  let user3Nonpublic: UserDocument;
   const _usersPublic = utils.generateUsersWithSharedPassword(2, {
     public: true,
   });

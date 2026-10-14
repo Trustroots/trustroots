@@ -48,6 +48,10 @@ type UserFixtureData = Omit<ServerUserFixture, 'roles' | 'languages'> &
   UserFixtureExtraFields;
 type CachedUserFixtureData = ServerUserFixture &
   UserFixtureExtraFields & { salt?: string };
+type ExperienceFixtureDocument = HydratedDocument<ExperienceFixture> &
+  Pick<ExperienceFixture, 'interactions'> & {
+    _id: mongoose.Types.ObjectId;
+  };
 type UserFixtureDocument = HydratedDocument<
   CachedUserFixtureData,
   UserFixtureMethods
@@ -222,17 +226,16 @@ export function createTestUser(
 /** Save experiences to the database, preserving the legacy callback. */
 export async function saveExperiences(
   documents: ExperienceFixture[],
-  callback: FixtureCallback<
-    Array<HydratedDocument<ExperienceFixture>>
-  > = () => {},
-): Promise<Array<HydratedDocument<ExperienceFixture>>> {
+  callback: FixtureCallback<ExperienceFixtureDocument[]> = () => {},
+): Promise<ExperienceFixtureDocument[]> {
   try {
     const savedDocuments = await saveDocumentsToCollection(
       'Experience',
       documents,
     );
-    callback(null, savedDocuments);
-    return savedDocuments;
+    const experiences = savedDocuments as ExperienceFixtureDocument[];
+    callback(null, experiences);
+    return experiences;
   } catch (error: unknown) {
     callback(error);
     throw error;

@@ -1,14 +1,20 @@
-const _ = require('lodash');
-const mongoose = require('mongoose');
-const request = require('supertest');
-const should = require('should');
-const sinon = require('sinon');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const userProfile = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
-const express = require('./../../../../config/lib/express.mjs');
+import type {
+  TestAgent,
+  TestExpressApp,
+  TestExpressModule,
+  UserDocument,
+} from '../../../../testutils/server/model-contracts.mts';
+const _: typeof import('lodash') = require('lodash');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const request: typeof import('supertest') = require('supertest');
+const should: typeof import('should') = require('should');
+const sinon: typeof import('sinon') = require('sinon');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+const userProfile: typeof import('./../../../users/server/controllers/users.profile.server.controller.mjs') = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
 describe('Read a single experience by experience id', () => {
-  let app;
-  let agent;
+  let app: TestExpressApp;
+  let agent: TestAgent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
@@ -26,8 +32,8 @@ describe('Read a single experience by experience id', () => {
     email: 'non@example.com',
   });
   const _users = [..._usersPublic, ..._usersPrivate];
-  let users;
-  let experiences;
+  let users: UserDocument[];
+  let experiences: Awaited<ReturnType<typeof utils.saveExperiences>>;
   beforeEach(() => {
     sinon.useFakeTimers({
       // MongoDB uses real time to expire authentication sessions.
@@ -58,7 +64,7 @@ describe('Read a single experience by experience id', () => {
    * 2 . T . .
    * 3 . F . .
    */
-  const experienceData = [
+  const experienceData: Parameters<typeof utils.generateExperiences>[1] = [
     [0, 3],
     [
       0,
@@ -115,7 +121,7 @@ describe('Read a single experience by experience id', () => {
         userFrom: userFromExp,
         userTo: userToExp,
         created: new Date().toISOString(),
-        _id: experiences[3]._id.toString(),
+        _id: String(experiences[3]._id),
         recommend: experiences[3].recommend,
         interactions: {
           met: experiences[3].interactions.met,
@@ -123,7 +129,7 @@ describe('Read a single experience by experience id', () => {
           host: experiences[3].interactions.host,
         },
         response: {
-          _id: experiences[4]._id.toString(),
+          _id: String(experiences[4]._id),
           created: new Date().toISOString(),
           recommend: experiences[4].recommend,
           interactions: {
@@ -142,7 +148,7 @@ describe('Read a single experience by experience id', () => {
         .expect(200);
       should(body).match({
         public: false,
-        _id: experiences[1]._id.toString(),
+        _id: String(experiences[1]._id),
         response: null,
       });
     });
@@ -152,7 +158,7 @@ describe('Read a single experience by experience id', () => {
         .expect(200);
       should(body).match({
         public: false,
-        _id: experiences[2]._id.toString(),
+        _id: String(experiences[2]._id),
         created: new Date().toISOString(),
         response: null,
       });
