@@ -1,9 +1,23 @@
-const mongoose = require('mongoose');
-const should = require('should');
-const sinon = require('sinon');
-const utils = require('../../../../../testutils/server/data.server.testutil');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const should: typeof import('should') = require('should');
+const sinon: typeof import('sinon') = require('sinon');
+const utils: typeof import('../../../../../testutils/server/data.server.testutil.mts') = require('../../../../../testutils/server/data.server.testutil');
 
-const cleanup = require('./../../../server/services/historical-spam-cleanup.server.service.mjs');
+interface CleanupBatch {
+  candidates: number;
+  deleted: number;
+  eligible: number;
+  protected: number;
+}
+type CleanupResult = CleanupBatch;
+interface CleanupService {
+  run(options?: {
+    deleteAccounts?: boolean;
+    batchSize?: number;
+    onBatch?: (batch: CleanupBatch) => void;
+  }): Promise<CleanupResult>;
+}
+const cleanup: CleanupService = require('./../../../server/services/historical-spam-cleanup.server.service.mjs');
 
 const AdminNote = mongoose.model('AdminNote');
 const Contact = mongoose.model('Contact');
@@ -15,10 +29,24 @@ const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
 
 const campaignDate = new Date('2021-07-04T12:00:00.000Z');
-let createdUserIds;
-let sequence;
+let createdUserIds: import('mongoose').Types.ObjectId[];
+let sequence: number;
 
-async function createCandidate(overrides = {}) {
+type CandidateOverrides = Record<string, unknown> & {
+  created?: Date;
+  member?: Array<{ tribe: import('mongoose').Types.ObjectId }>;
+  blocked?: import('mongoose').Types.ObjectId[];
+  pushRegistration?: Array<{ platform: string; token: string; created: Date }>;
+  avatarUploaded?: boolean;
+};
+
+function objectId(value: unknown): import('mongoose').Types.ObjectId {
+  if (value instanceof mongoose.Types.ObjectId) return value;
+  if (typeof value !== 'string') throw new Error('Expected a saved user id');
+  return new mongoose.Types.ObjectId(value);
+}
+
+async function createCandidate(overrides: CandidateOverrides = {}) {
   sequence += 1;
   const [user] = await utils.saveUsersWithCachedPasswords([
     {
@@ -35,7 +63,7 @@ async function createCandidate(overrides = {}) {
       ...overrides,
     },
   ]);
-  createdUserIds.push(user._id);
+  createdUserIds.push(objectId(user._id));
   return user;
 }
 
@@ -87,7 +115,9 @@ describe('Service: historical spam cleanup', () => {
 
   it('retains an account protected immediately before deletion', async () => {
     const candidate = await createCandidate();
-    const query = result => ({
+    const query = (
+      result: Array<{ user: import('mongoose').Types.ObjectId }>,
+    ) => ({
       select() {
         return this;
       },
@@ -96,8 +126,16 @@ describe('Service: historical spam cleanup', () => {
       },
     });
     const find = sinon.stub(AdminNote, 'find');
-    find.onFirstCall().returns(query([]));
-    find.onSecondCall().returns(query([{ user: candidate._id }]));
+    find
+      .onFirstCall()
+      .returns(query([]) as unknown as ReturnType<typeof AdminNote.find>);
+    find
+      .onSecondCall()
+      .returns(
+        query([{ user: objectId(candidate._id) }]) as unknown as ReturnType<
+          typeof AdminNote.find
+        >,
+      );
 
     const result = await cleanup.run({ deleteAccounts: true });
 
@@ -113,8 +151,14 @@ describe('Service: historical spam cleanup', () => {
   it('supports legacy and empty deletion results', async () => {
     await createCandidate();
     const deleteMany = sinon.stub(User, 'deleteMany');
-    deleteMany.onFirstCall().resolves({ n: 1 });
-    deleteMany.onSecondCall().resolves({});
+    deleteMany
+      .onFirstCall()
+      .resolves({ n: 1 } as unknown as Awaited<
+        ReturnType<typeof User.deleteMany>
+      >);
+    deleteMany
+      .onSecondCall()
+      .resolves({} as unknown as Awaited<ReturnType<typeof User.deleteMany>>);
 
     const legacyResult = await cleanup.run({ deleteAccounts: true });
     const emptyResult = await cleanup.run({ deleteAccounts: true });
@@ -204,10 +248,10 @@ describe('Service: historical spam cleanup', () => {
       }).save(),
     ]);
 
-    const batches = [];
+    const batches: CleanupBatch[] = [];
     const dryRun = await cleanup.run({
       batchSize: 2,
-      onBatch: batch => batches.push(batch),
+      onBatch: (batch: CleanupBatch) => batches.push(batch),
     });
 
     dryRun.should.containEql({
@@ -250,18 +294,23 @@ describe('Service: historical spam cleanup', () => {
 
   it('normalises legacy and missing deletion counts', async () => {
     await createCandidate();
-    const originalDeleteMany = User.deleteMany;
-
+    const deleteMany = sinon.stub(User, 'deleteMany');
     try {
-      User.deleteMany = async () => ({ n: 1 });
+      deleteMany
+        .onFirstCall()
+        .resolves({ n: 1 } as unknown as Awaited<
+          ReturnType<typeof User.deleteMany>
+        >);
       const legacyResult = await cleanup.run({ deleteAccounts: true });
       legacyResult.deleted.should.equal(1);
 
-      User.deleteMany = async () => ({});
+      deleteMany
+        .onSecondCall()
+        .resolves({} as unknown as Awaited<ReturnType<typeof User.deleteMany>>);
       const missingResult = await cleanup.run({ deleteAccounts: true });
       missingResult.deleted.should.equal(0);
     } finally {
-      User.deleteMany = originalDeleteMany;
+      deleteMany.restore();
     }
   });
 
@@ -270,18 +319,18 @@ describe('Service: historical spam cleanup', () => {
     const originalFind = AdminNote.find;
     let findCalls = 0;
 
-    AdminNote.find = (...args) => {
+    AdminNote.find = ((...args: Parameters<typeof originalFind>) => {
       findCalls += 1;
       if (findCalls === 2) {
         return {
           select() {
             return this;
           },
-          lean: async () => [{ user: candidate._id }],
-        };
+          lean: async () => [{ user: objectId(candidate._id) }],
+        } as unknown as ReturnType<typeof originalFind>;
       }
       return originalFind.apply(AdminNote, args);
-    };
+    }) as typeof originalFind;
 
     try {
       const result = await cleanup.run({ deleteAccounts: true });

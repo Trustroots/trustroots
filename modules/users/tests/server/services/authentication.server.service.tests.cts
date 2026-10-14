@@ -1,9 +1,9 @@
-const sinon = require('sinon');
-const config = require('./../../../../../config/config.mjs');
+const sinon: typeof import('sinon') = require('sinon');
+const config: typeof import('../../../../../config/config.mjs').default = require('./../../../../../config/config.mjs');
 
 require('should');
 
-const authenticationService = require('./../../../server/services/authentication.server.service.mjs');
+const authenticationService: typeof import('../../../server/services/authentication.server.service.mjs').default = require('./../../../server/services/authentication.server.service.mjs');
 
 describe('Service: authentication', function () {
   beforeEach(function () {

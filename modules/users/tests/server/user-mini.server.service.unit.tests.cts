@@ -1,7 +1,7 @@
-const userMiniService = require('../../server/services/user-mini.server.service.mjs');
-const userRolesService = require('../../server/services/user-roles.server.service.mjs');
+const userMiniService: typeof import('../../server/services/user-mini.server.service.mjs').default = require('../../server/services/user-mini.server.service.mjs');
+const userRolesService: typeof import('../../server/services/user-roles.server.service.mjs').default = require('../../server/services/user-roles.server.service.mjs');
 
-require('should');
+const should: typeof import('should') = require('should');
 
 describe('Service: user mini', function () {
   it('can be imported by ESM controllers', async function () {
@@ -86,7 +86,9 @@ describe('Service: user mini', function () {
       const populate = userMiniService.miniUserPopulate('userTo', {
         excludeRestrictedRoles: true,
       });
-      populate.match.should.eql({
+      if (!('match' in populate))
+        throw new Error('Expected restricted-role populate filter');
+      should(populate.match).eql({
         roles: { $nin: userRolesService.restrictedMessagingRoles },
       });
     });

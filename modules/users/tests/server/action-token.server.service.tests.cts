@@ -1,12 +1,13 @@
-const assert = require('assert/strict');
-const mongoose = require('mongoose');
-const {
-  hashToken,
-  matchToken,
-  setToken,
-  emailToken,
-} = require('../../server/services/action-token.server.service.mjs');
-const User = mongoose.model('User');
+import type {
+  UserModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+
+const assert: typeof import('node:assert/strict') = require('node:assert/strict');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const actionToken: typeof import('../../server/services/action-token.server.service.mjs') = require('../../server/services/action-token.server.service.mjs');
+const { hashToken, matchToken, setToken, emailToken } = actionToken;
+const User = mongoose.model<UserRecord, UserModel>('User');
 
 describe('Account action token digests', function () {
   it('stores a digest while keeping the raw value only in document locals', function () {
@@ -19,7 +20,10 @@ describe('Account action token digests', function () {
     );
   });
   it('supports plain reminder objects and legacy mail payloads', function () {
-    const user = {};
+    const user: {
+      emailToken?: string;
+      $locals?: { actionTokens?: Record<string, string> };
+    } = {};
     setToken(user, 'emailToken', 'reminder-token');
     assert.equal(emailToken(user, 'emailToken'), 'reminder-token');
     assert.equal(

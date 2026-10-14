@@ -1,4 +1,4 @@
-const signupSafety = require('./../../../server/services/signup-safety.server.service.mjs');
+const signupSafety: typeof import('../../../server/services/signup-safety.server.service.mjs').default = require('./../../../server/services/signup-safety.server.service.mjs');
 require('should');
 
 describe('Signup safety service', () => {
