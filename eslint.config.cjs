@@ -273,6 +273,13 @@ const legacyConfig = {
       },
     },
 
+    {
+      files: ['tests/e2e/**/*.{ts,mts}'],
+      // The strict E2E compiler checks named exports. ESLint cannot follow
+      // Playwright's CommonJS re-exports consistently across platforms.
+      rules: { 'import/named': 0 },
+    },
+
     /**
      * Overrides for server side test files
      */
