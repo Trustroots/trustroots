@@ -1,36 +1,93 @@
-const should = require('should');
-const request = require('supertest');
-const async = require('async');
-const moment = require('moment');
-const mongoose = require('mongoose');
-const express = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User');
-const Offer = mongoose.model('Offer');
-const Tribe = mongoose.model('Tribe');
+import type {
+  Credentials,
+  OfferDocument,
+  OfferModel,
+  OfferRecord,
+  TestAgent,
+  TestExpressApp,
+  TestExpressModule,
+  TribeDocument,
+  TribeModel,
+  TribeRecord,
+  UserModel,
+  UserModelDocument,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+const should: typeof import('should') = require('should');
+const request: typeof import('supertest') = require('supertest');
+type WaterfallDone = (error?: Error | null) => void;
+const async: {
+  waterfall(
+    tasks: Array<(done: WaterfallDone) => void>,
+    callback: WaterfallDone,
+  ): void;
+} = require('async');
+const moment: typeof import('moment') = require('moment');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+const User = mongoose.model<UserRecord, UserModel>('User');
+const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
+const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
+
+type OfferQueryFilter = import('mongoose').FilterQuery<OfferRecord>;
+type OfferQueryCallback = (
+  error: import('mongoose').CallbackError | null,
+  offer: OfferDocument | null,
+) => void;
+type OffersQueryCallback = (
+  error: import('mongoose').CallbackError | null,
+  offers: OfferDocument[],
+) => void;
+
+function findOneOffer(
+  filter: OfferQueryFilter,
+  callback: OfferQueryCallback,
+): void {
+  const findOne = Offer.findOne as unknown as (
+    query: OfferQueryFilter,
+    done: OfferQueryCallback,
+  ) => void;
+  findOne.call(Offer, filter, callback);
+}
+
+function findOffers(
+  filter: OfferQueryFilter,
+  callback: OffersQueryCallback,
+): void {
+  const find = Offer.find as unknown as (
+    query: OfferQueryFilter,
+    done: OffersQueryCallback,
+  ) => void;
+  find.call(Offer, filter, callback);
+}
+
+function assertPresent<T>(value: T | null | undefined): asserts value is T {
+  should.exist(value);
+}
 
 /**
  * Globals
  */
-let app;
-let agent;
-let credentials;
-let credentials2;
-let user1;
-let user2;
-let user3;
-let user1Id;
-let user2Id;
-let user3Id;
-let offer1;
-let offer2;
-let offer2Id;
-let offer3;
-let offerMeet;
-let tribe1;
-let tribe2;
-let tribe1Id;
-let tribe2Id;
+let app: TestExpressApp;
+let agent: TestAgent;
+let credentials: Credentials;
+let credentials2: Credentials;
+let user1: UserModelDocument;
+let user2: UserModelDocument;
+let user3: UserModelDocument;
+let user1Id: UserModelDocument['_id'];
+let user2Id: UserModelDocument['_id'];
+let user3Id: UserModelDocument['_id'];
+let offer1: OfferRecord;
+let offer2: OfferDocument;
+let offer2Id: OfferDocument['_id'];
+let offer3: OfferDocument;
+let offerMeet: OfferDocument;
+let tribe1: TribeDocument;
+let tribe2: TribeDocument;
+let tribe1Id: TribeDocument['_id'];
+let tribe2Id: TribeDocument['_id'];
 const testLocations = {
   Europe: {
     queryBoundingBox:
@@ -296,6 +353,7 @@ describe('Offer CRUD tests', function () {
               offerGetRes.body.location.should.be
                 .instanceof(Array)
                 .and.have.lengthOf(2);
+              assertPresent(offer2.locationFuzzy);
               offerGetRes.body.location[0].should.be.approximately(
                 offer2.locationFuzzy[0],
                 0.0000000000001,
@@ -398,6 +456,8 @@ describe('Offer CRUD tests', function () {
               offerGetRes.body[0].location.should.be
                 .instanceof(Array)
                 .and.have.lengthOf(2);
+              assertPresent(offer2.locationFuzzy);
+              assertPresent(offer2.user);
               offerGetRes.body[0].location[0].should.be.approximately(
                 offer2.locationFuzzy[0],
                 0.0000000000001,
@@ -447,7 +507,7 @@ describe('Offer CRUD tests', function () {
             .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
-              Offer.findOne(
+              findOneOffer(
                 {
                   _id: offer2Id,
                 },
@@ -477,7 +537,7 @@ describe('Offer CRUD tests', function () {
             .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
-              Offer.findOne(
+              findOneOffer(
                 {
                   _id: offer2Id,
                 },
@@ -657,7 +717,7 @@ describe('Offer CRUD tests', function () {
         .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
-          const offerWithoutLocation = offer1;
+          const offerWithoutLocation: Partial<OfferRecord> = offer1;
           delete offerWithoutLocation.location;
 
           // Save a new offer
@@ -830,13 +890,14 @@ describe('Offer CRUD tests', function () {
               if (offerSaveErr) return done(offerSaveErr);
 
               // Get id for offer we just saved
-              Offer.findOne(
+              findOneOffer(
                 {
                   user: user1Id,
                 },
                 function (offerFindErr, offer) {
                   // Handle error
                   if (offerFindErr) return done(offerFindErr);
+                  assertPresent(offer);
 
                   // Modify offer
                   offer.description = 'MODIFIED';
@@ -855,11 +916,16 @@ describe('Offer CRUD tests', function () {
                       // Handle offer put error
                       if (offerPutErr) return done(offerPutErr);
                       offerPutRes.body.message.should.equal('Offer updated.');
-                      Offer.findOne(
+                      findOneOffer(
                         {
                           _id: offer._id,
                         },
                         function (err, offerNew) {
+                          assertPresent(offerNew);
+                          assertPresent(offerNew.description);
+                          assertPresent(offerNew.noOfferDescription);
+                          assertPresent(offerNew.updated);
+                          assertPresent(offerNew.showOnlyInMyCircles);
                           offerNew.description.should.equal('MODIFIED');
                           offerNew.noOfferDescription.should.equal('MODIFIED');
                           offerNew.updated.should.not.equal(previousUpdated);
@@ -891,12 +957,14 @@ describe('Offer CRUD tests', function () {
             .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
-              Offer.findOne(
+              findOneOffer(
                 {
                   _id: offer2Id,
                 },
                 function (err, offer) {
                   should.not.exist(err);
+                  assertPresent(offer);
+                  assertPresent(offer.description);
                   offer.description.should.not.equal(offer2.description);
                   return done();
                 },
@@ -923,13 +991,14 @@ describe('Offer CRUD tests', function () {
               if (offerSaveErr) return done(offerSaveErr);
 
               // Get id for offer we just saved
-              Offer.findOne(
+              findOneOffer(
                 {
                   user: user1Id,
                 },
                 function (offerFindErr, offer) {
                   // Handle error
                   if (offerFindErr) return done(offerFindErr);
+                  assertPresent(offer);
 
                   // Modify offer
                   const modifiedOffer = offer1;
@@ -946,13 +1015,16 @@ describe('Offer CRUD tests', function () {
                       offerSaveRes.body.message.should.equal(
                         'You cannot update offer type.',
                       );
-                      Offer.find(
+                      findOffers(
                         {
                           user: user1Id,
                         },
                         function (err, offers) {
                           offers.length.should.equal(1);
-                          offers[0].type.should.equal('host');
+                          const [savedOffer] = offers;
+                          assertPresent(savedOffer);
+                          assertPresent(savedOffer.type);
+                          savedOffer.type.should.equal('host');
                           return done(err);
                         },
                       );
@@ -989,11 +1061,12 @@ describe('Offer CRUD tests', function () {
               .end(function (offerPutErr) {
                 // Handle offer put error
                 if (offerPutErr) return done(offerPutErr);
-                Offer.findOne(
+                findOneOffer(
                   {
                     _id: offerMeetSaved._id,
                   },
                   function (err, offerNew) {
+                    assertPresent(offerNew);
                     moment(offerNew.validUntil)
                       .diff(now, 'days')
                       .should.equal(30);
@@ -1007,7 +1080,7 @@ describe('Offer CRUD tests', function () {
     it.skip('should be keep `validUntil` value to previously saved when updating offer', function (done) {
       const now = moment();
       offerMeet.user = user1Id;
-      offerMeet.validUntil = moment().add(2, 'days');
+      offerMeet.validUntil = moment().add(2, 'days').toDate();
       offerMeet.save(function (offerMeetErr, offerMeetSaved) {
         // Handle save error
         if (offerMeetErr) return done(offerMeetErr);
@@ -1028,11 +1101,12 @@ describe('Offer CRUD tests', function () {
               .end(function (offerPutErr) {
                 // Handle offer put error
                 if (offerPutErr) return done(offerPutErr);
-                Offer.findOne(
+                findOneOffer(
                   {
                     _id: offerMeetSaved._id,
                   },
                   function (err, offerNew) {
+                    assertPresent(offerNew);
                     moment(offerNew.validUntil)
                       .diff(now, 'days')
                       .should.equal(2);
@@ -1070,11 +1144,12 @@ describe('Offer CRUD tests', function () {
               .end(function (offerPutErr) {
                 // Handle offer put error
                 if (offerPutErr) return done(offerPutErr);
-                Offer.findOne(
+                findOneOffer(
                   {
                     _id: offerMeetSaved._id,
                   },
                   function (err, offerNew) {
+                    assertPresent(offerNew);
                     // We set it to 32, but it should default to 30 days
                     moment(offerNew.validUntil)
                       .diff(now, 'days')
@@ -1113,11 +1188,12 @@ describe('Offer CRUD tests', function () {
               .end(function (offerPutErr) {
                 // Handle offer put error
                 if (offerPutErr) return done(offerPutErr);
-                Offer.findOne(
+                findOneOffer(
                   {
                     _id: offerMeetSaved._id,
                   },
                   function (err, offerNew) {
+                    assertPresent(offerNew);
                     // We set it to -2 days, but it should default to 30 days
                     moment(offerNew.validUntil)
                       .diff(now, 'days')
@@ -1152,11 +1228,12 @@ describe('Offer CRUD tests', function () {
               .end(function (offerSaveErr) {
                 // Handle offer save error
                 if (offerSaveErr) return done(offerSaveErr);
-                Offer.findOne(
+                findOneOffer(
                   {
                     user: user2Id,
                   },
                   function (err, offer) {
+                    assertPresent(offer);
                     should.not.exist(offer.reactivateReminderSent);
                     return done(err);
                   },
