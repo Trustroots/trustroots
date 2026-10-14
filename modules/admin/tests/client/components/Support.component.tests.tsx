@@ -201,6 +201,14 @@ test('handles missing linkage, empty results and search errors', async () => {
       name: 'fictional-target (Fictional Member)',
     }),
   ).toHaveAttribute('href', '/admin/support/member/target-1');
+  load.mockResolvedValueOnce({ unexpected: true });
+  fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
+  expect(await screen.findByText('No members found.')).toBeInTheDocument();
+  expect(
+    screen.queryByRole('link', {
+      name: 'fictional-target (Fictional Member)',
+    }),
+  ).not.toBeInTheDocument();
   load.mockResolvedValue([]);
   fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
   await screen.findByText('No members found.');

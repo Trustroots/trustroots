@@ -151,6 +151,64 @@ describe('Support team access and investigation', () => {
     ).body
       .map(member => member.username)
       .should.containEql(users[1].username);
+    const originalFind = User.find;
+    sinon.stub(User, 'find').callsFake(function (...args) {
+      if (args[0]?.$text) {
+        return {
+          select() {
+            return this;
+          },
+          sort() {
+            return this;
+          },
+          limit() {
+            return this;
+          },
+          lean: () => Promise.reject(new Error('text index unavailable')),
+        };
+      }
+      return originalFind.apply(this, args);
+    });
+    (
+      await agent
+        .get(
+          `/api/admin/support-members?search=${encodeURIComponent(users[1].displayName)}`,
+        )
+        .expect(200)
+    ).body
+      .map(member => member.username)
+      .should.containEql(users[1].username);
+    sinon.restore();
+    const page = Array.from({ length: 50 }, (_, index) => ({
+      _id: new mongoose.Types.ObjectId(),
+      username: `fictional-page-${index}`,
+    }));
+    let lookups = 0;
+    sinon.stub(User, 'find').callsFake(function (criteria) {
+      lookups += 1;
+      if (criteria?.$text) {
+        throw new Error('text search should not run for a full indexed page');
+      }
+      return {
+        select() {
+          return this;
+        },
+        sort() {
+          return this;
+        },
+        limit() {
+          return this;
+        },
+        lean: async () => page,
+      };
+    });
+    (
+      await agent
+        .get('/api/admin/support-members?search=fictional-page')
+        .expect(200)
+    ).body.length.should.equal(50);
+    lookups.should.equal(1);
+    sinon.restore();
     await agent
       .post('/api/admin/notes')
       .set('X-Trustroots-Request', '1')
