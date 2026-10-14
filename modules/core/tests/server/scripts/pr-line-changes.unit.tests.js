@@ -23,6 +23,10 @@ describe('PR line-change summaries', () => {
   it('separates code, tests, configuration, generated files and lockfiles', () => {
     const examples = {
       'src/view.tsx': 'code',
+      'scripts/report.mts': 'code',
+      'scripts/runner.cts': 'code',
+      'tests/e2e/support/fixtures.mts': 'tests',
+      'playwright.config.cts': 'other',
       'modules/widget/client/style.less': 'code',
       'modules/widget/tests/client/widget.tests.js': 'tests',
       'tests/e2e/fixtures/sample.json': 'tests',
@@ -44,6 +48,14 @@ describe('PR line-change summaries', () => {
     for (const [file, expected] of Object.entries(examples)) {
       assert.equal(categoryForPath(file), expected, file);
     }
+  });
+
+  it('keeps JavaScript-to-TypeScript migrations in the same code category', () => {
+    const { groups } = summariseNumstat(
+      '0\t10\tscripts/report.js\0' + '10\t0\tscripts/report.mts\0',
+    );
+    assert.equal(groups.find(group => group.id === 'code').net, 0);
+    assert.equal(groups.find(group => group.id === 'other').added, 0);
   });
 
   it('handles NUL records, renames, binary files and unusual paths', () => {

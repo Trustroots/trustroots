@@ -35,7 +35,7 @@ function categoryForPath(filePath) {
   ) {
     return 'other';
   }
-  return /\.(js|mjs|cjs|jsx|ts|tsx|css|less|scss|sass|html|vue|svelte|py|sh)$/.test(
+  return /\.(js|mjs|cjs|jsx|ts|tsx|mts|cts|css|less|scss|sass|html|vue|svelte|py|sh)$/.test(
     filePath,
   )
     ? 'code'
