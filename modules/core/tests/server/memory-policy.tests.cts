@@ -1,8 +1,11 @@
-const createMemoryPolicy = require('./../../server/services/memory-policy.server.service.mts');
-require('should');
+const createMemoryPolicy: typeof import('../../server/services/memory-policy.server.service.mts').default = require('./../../server/services/memory-policy.server.service.mts');
+const should: typeof import('should') = require('should');
+void should;
 
 describe('In-memory route permissions', function () {
-  let policy;
+  let policy: ReturnType<
+    typeof import('../../server/services/memory-policy.server.service.mts').createMemoryPolicy
+  >;
 
   it('exposes the same factory through ESM', async function () {
     const { createMemoryPolicy: esmFactory } =
@@ -91,19 +94,28 @@ describe('In-memory route permissions', function () {
     );
   });
   it('enforces a real admin route declaration', function () {
-    const adminPolicy = require('./../../../admin/server/policies/admin.server.policy.mts');
+    const adminPolicy: typeof import('../../../admin/server/policies/admin.server.policy.mts').default = require('./../../../admin/server/policies/admin.server.policy.mts');
     adminPolicy.invokeRolesPolicies();
-    const request = {
-      user: { roles: ['admin'] },
+    const request: import('../../server/services/policy-types.server.mts').PolicyRequest & {
+      user: import('../../server/services/policy-types.server.mts').PolicyUser;
+    } = {
+      user: { roles: ['admin'], _id: { valueOf: () => 'fixture-user' } },
       route: { path: '/api/admin/dashboard' },
       method: 'GET',
     };
-    const response = {
+    const response: import('../../server/services/policy-types.server.mts').PolicyResponse & {
+      statusCode?: number;
+      body?: { message: string };
+    } = {
       status(code) {
         this.statusCode = code;
         return this;
       },
       json(body) {
+        this.body = body;
+        return this;
+      },
+      send(body) {
         this.body = body;
         return this;
       },
@@ -119,6 +131,6 @@ describe('In-memory route permissions', function () {
     adminPolicy.isAllowed(request, response, function () {
       throw new Error('An ordinary member received admin access');
     });
-    response.statusCode.should.equal(403);
+    response.statusCode!.should.equal(403);
   });
 });
