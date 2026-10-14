@@ -1,32 +1,67 @@
 /**
  * Unit tests for the admin notes controller.
  */
-const mongoose = require('mongoose');
+const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon = require('sinon');
 
-const adminNotes = require('./../../server/controllers/admin.notes.server.controller.mjs');
-const errorService = require('./../../../core/server/services/error.server.service.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-require('should');
+type NotesController =
+  typeof import('../../server/controllers/admin.notes.server.controller.mjs');
+const adminNotes: Pick<
+  NotesController,
+  'addNote' | 'getNotes'
+> = require('./../../server/controllers/admin.notes.server.controller.mjs');
+const errorService: typeof import('../../../core/server/services/error.server.service.mjs') = require('./../../../core/server/services/error.server.service.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
+const should: typeof import('should') = require('should');
 
-const AdminNote = mongoose.model('AdminNote');
+type AdminNoteRecord = {
+  admin: import('mongoose').Types.ObjectId;
+  user: import('mongoose').Types.ObjectId;
+  note: string;
+  date?: Date;
+};
+const AdminNote = mongoose.model<AdminNoteRecord>('AdminNote');
+type MockResponse = {
+  statusCode: number;
+  body: unknown;
+  status(code: number): MockResponse;
+  send(body: unknown): MockResponse;
+  waitForResponse(): Promise<MockResponse>;
+};
+type CallbackQuery<T> = {
+  sort(...args: unknown[]): CallbackQuery<T>;
+  populate(...args: unknown[]): CallbackQuery<T>;
+  exec(callback: (error: Error | null, result: T | null) => void): void;
+};
 
-function mockResponse() {
-  let resolveResponse;
-  const promise = new Promise(resolve => {
+function queryBody(response: MockResponse): Record<string, unknown> {
+  if (typeof response.body !== 'object' || response.body === null) {
+    throw new Error('Expected an object response body');
+  }
+  return Object.fromEntries(Object.entries(response.body));
+}
+
+function mockResponse(): MockResponse {
+  let resolveResponse: (response: MockResponse) => void = () => {
+    throw new Error('Response completion has not been initialised');
+  };
+  const promise = new Promise<MockResponse>(resolve => {
     resolveResponse = resolve;
   });
-  const res = { statusCode: 200, body: null };
-  res.status = function (code) {
-    res.statusCode = code;
-    return res;
+  const res: MockResponse = {
+    statusCode: 200,
+    body: null,
+    status(code) {
+      res.statusCode = code;
+      return res;
+    },
+    send(body) {
+      res.body = body;
+      resolveResponse(res);
+      return res;
+    },
+    waitForResponse: () => promise,
   };
-  res.send = function (body) {
-    res.body = body;
-    resolveResponse(res);
-    return res;
-  };
-  res.waitForResponse = () => promise;
   return res;
 }
 
@@ -45,7 +80,7 @@ describe('Admin notes controller unit tests', () => {
       );
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('Empty note.');
+      should(queryBody(res).message).equal('Empty note.');
     });
 
     it('rejects invalid user ids', async () => {
@@ -59,7 +94,7 @@ describe('Admin notes controller unit tests', () => {
       );
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      should(queryBody(res).message).equal(
         errorService.getErrorMessageByKey('invalid-id'),
       );
     });
@@ -81,9 +116,10 @@ describe('Admin notes controller unit tests', () => {
         res,
       );
 
-      res.body.message.should.equal('Note saved.');
+      should(queryBody(res).message).equal('Note saved.');
 
       const saved = await AdminNote.findOne({ user: target._id }).exec();
+      if (!saved) throw new Error('Expected saved admin note');
       saved.note.should.not.containEql('script');
       saved.admin.toString().should.equal(admin._id.toString());
     });
@@ -113,7 +149,7 @@ describe('Admin notes controller unit tests', () => {
       await adminNotes.getNotes({ query: { userId: 'bad-id' } }, res);
 
       res.statusCode.should.equal(400);
-      res.body.message.should.equal(
+      should(queryBody(res).message).equal(
         errorService.getErrorMessageByKey('invalid-id'),
       );
     });
@@ -133,9 +169,10 @@ describe('Admin notes controller unit tests', () => {
       adminNotes.getNotes({ query: { userId: target._id.toString() } }, res);
       await res.waitForResponse();
 
+      if (!Array.isArray(res.body)) throw new Error('Expected notes array');
       res.body.length.should.equal(1);
-      res.body[0].note.should.equal('<p>saved note</p>');
-      res.body[0].admin.username.should.equal(admin.username);
+      should(res.body[0].note).equal('<p>saved note</p>');
+      should(res.body[0].admin.username).equal(admin.username);
     });
 
     it('returns an empty array when a user has no notes', async () => {
@@ -145,17 +182,18 @@ describe('Admin notes controller unit tests', () => {
       adminNotes.getNotes({ query: { userId: users[0]._id.toString() } }, res);
       await res.waitForResponse();
 
-      res.body.should.eql([]);
+      should(res.body).eql([]);
     });
 
     it('returns an empty array when note lookup returns null', async () => {
-      sinon.stub(AdminNote, 'find').returns({
-        sort: () => ({
-          populate: () => ({
-            exec: cb => cb(null, null),
-          }),
-        }),
-      });
+      const nullQuery: CallbackQuery<AdminNoteRecord[]> = {
+        sort: () => nullQuery,
+        populate: () => nullQuery,
+        exec: callback => callback(null, null),
+      };
+      sinon
+        .stub(AdminNote, 'find')
+        .returns(nullQuery as unknown as ReturnType<typeof AdminNote.find>);
 
       const res = mockResponse();
       adminNotes.getNotes(
@@ -164,17 +202,18 @@ describe('Admin notes controller unit tests', () => {
       );
       await res.waitForResponse();
 
-      res.body.should.eql([]);
+      should(res.body).eql([]);
     });
 
     it('returns 400 when note lookup fails', async () => {
-      sinon.stub(AdminNote, 'find').returns({
-        sort: () => ({
-          populate: () => ({
-            exec: cb => cb(new Error('lookup failed')),
-          }),
-        }),
-      });
+      const errorQuery: CallbackQuery<AdminNoteRecord[]> = {
+        sort: () => errorQuery,
+        populate: () => errorQuery,
+        exec: callback => callback(new Error('lookup failed'), null),
+      };
+      sinon
+        .stub(AdminNote, 'find')
+        .returns(errorQuery as unknown as ReturnType<typeof AdminNote.find>);
 
       const res = mockResponse();
       adminNotes.getNotes(
