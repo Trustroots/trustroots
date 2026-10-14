@@ -1,4 +1,4 @@
-import adminAcquisitionStories from './../controllers/admin.acquisition-stories.server.controller.mjs';
+import adminAcquisitionStories from './../controllers/admin.acquisition-stories.server.controller.mts';
 import adminAuditLog from './../controllers/admin.audit-log.server.controller.mjs';
 import adminMessages from './../controllers/admin.messages.server.controller.mjs';
 import adminNewsletter from './../controllers/admin.newsletter.server.controller.mjs';

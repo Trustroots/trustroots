@@ -4,7 +4,7 @@ const { pathToFileURL } = require('node:url');
 
 const root = path.resolve(__dirname, '../../../..');
 const modules = [
-  'modules/admin/server/controllers/admin.acquisition-stories.server.controller.mjs',
+  'modules/admin/server/controllers/admin.acquisition-stories.server.controller.mts',
   'modules/admin/server/controllers/admin.audit-log.server.controller.mjs',
   'modules/admin/server/controllers/admin.dashboard.server.controller.mjs',
   'modules/admin/server/controllers/admin.messages.server.controller.mjs',
