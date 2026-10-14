@@ -9,6 +9,10 @@ import {
 import '@testing-library/jest-dom';
 import AdminLocationCorrections from '@/modules/admin/client/components/AdminLocationCorrections.component';
 import * as api from '@/modules/admin/client/api/location-corrections.api';
+import type {
+  LocationCorrectionCandidate,
+  LocationCorrectionSendResult,
+} from '@/modules/admin/client/api/location-corrections.api';
 
 jest.mock('@/modules/admin/client/api/location-corrections.api');
 jest.mock(
@@ -19,7 +23,9 @@ jest.mock(
     },
 );
 
-const candidates = [
+const apiMock = jest.mocked(api);
+
+const candidates: LocationCorrectionCandidate[] = [
   {
     userId: 'member-1',
     username: 'alex',
@@ -47,8 +53,8 @@ const candidates = [
 describe('AdminLocationCorrections', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    api.getLocationCorrections.mockResolvedValue(candidates);
-    api.sendLocationCorrection.mockResolvedValue({ sent: true });
+    apiMock.getLocationCorrections.mockResolvedValue(candidates);
+    apiMock.sendLocationCorrection.mockResolvedValue({ sent: true });
   });
 
   it('reviews exact and nearby candidates and sends an edited message', async () => {
@@ -57,7 +63,7 @@ describe('AdminLocationCorrections', () => {
       await screen.findByText('Exact default location'),
     ).toBeInTheDocument();
     expect(screen.getByText('Nearby for review')).toBeInTheDocument();
-    expect(api.sendLocationCorrection).not.toHaveBeenCalled();
+    expect(apiMock.sendLocationCorrection).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Review alex' }));
     expect(
@@ -75,7 +81,7 @@ describe('AdminLocationCorrections', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
 
     await waitFor(() =>
-      expect(api.sendLocationCorrection).toHaveBeenCalledWith(
+      expect(apiMock.sendLocationCorrection).toHaveBeenCalledWith(
         'member-1',
         'exact-key',
         'Please check your hosting location.',
@@ -93,7 +99,7 @@ describe('AdminLocationCorrections', () => {
   });
 
   it('keeps a candidate available after a failed send', async () => {
-    api.sendLocationCorrection.mockRejectedValue({
+    apiMock.sendLocationCorrection.mockRejectedValue({
       response: { data: { message: 'Candidate changed.' } },
     });
     render(<AdminLocationCorrections />);
@@ -113,11 +119,11 @@ describe('AdminLocationCorrections', () => {
   });
 
   it('refreshes the queue when a candidate changes before sending', async () => {
-    api.sendLocationCorrection.mockRejectedValue({
+    apiMock.sendLocationCorrection.mockRejectedValue({
       response: { status: 409, data: { message: 'Candidate changed.' } },
     });
-    api.getLocationCorrections.mockResolvedValueOnce(candidates);
-    api.getLocationCorrections.mockResolvedValueOnce([candidates[1]]);
+    apiMock.getLocationCorrections.mockResolvedValueOnce(candidates);
+    apiMock.getLocationCorrections.mockResolvedValueOnce([candidates[1]]);
     render(<AdminLocationCorrections />);
     fireEvent.click(await screen.findByRole('button', { name: 'Review alex' }));
     fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
@@ -130,16 +136,18 @@ describe('AdminLocationCorrections', () => {
         screen.queryByRole('button', { name: 'Review alex' }),
       ).not.toBeInTheDocument(),
     );
-    expect(api.getLocationCorrections).toHaveBeenCalledTimes(2);
+    expect(apiMock.getLocationCorrections).toHaveBeenCalledTimes(2);
     expect(
       screen.getByRole('button', { name: 'Review sam' }),
     ).toBeInTheDocument();
   });
 
   it('reports when a stale queue cannot be refreshed', async () => {
-    api.sendLocationCorrection.mockRejectedValue({ response: { status: 409 } });
-    api.getLocationCorrections.mockResolvedValueOnce(candidates);
-    api.getLocationCorrections.mockRejectedValueOnce(new Error('offline'));
+    apiMock.sendLocationCorrection.mockRejectedValue({
+      response: { status: 409 },
+    });
+    apiMock.getLocationCorrections.mockResolvedValueOnce(candidates);
+    apiMock.getLocationCorrections.mockRejectedValueOnce(new Error('offline'));
     render(<AdminLocationCorrections />);
     fireEvent.click(await screen.findByRole('button', { name: 'Review alex' }));
     fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
@@ -150,14 +158,14 @@ describe('AdminLocationCorrections', () => {
   });
 
   it('shows loading failures and an empty queue', async () => {
-    api.getLocationCorrections.mockRejectedValueOnce(new Error('offline'));
+    apiMock.getLocationCorrections.mockRejectedValueOnce(new Error('offline'));
     const first = render(<AdminLocationCorrections />);
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Could not load location corrections.',
     );
     first.unmount();
 
-    api.getLocationCorrections.mockResolvedValueOnce([]);
+    apiMock.getLocationCorrections.mockResolvedValueOnce([]);
     render(<AdminLocationCorrections />);
     expect(
       await screen.findByText('No uncontacted candidates found.'),
@@ -165,7 +173,7 @@ describe('AdminLocationCorrections', () => {
   });
 
   it('shows a shared contact result and supports members without a display name', async () => {
-    api.getLocationCorrections.mockResolvedValueOnce([
+    apiMock.getLocationCorrections.mockResolvedValueOnce([
       {
         ...candidates[1],
         displayName: '',
@@ -175,16 +183,15 @@ describe('AdminLocationCorrections', () => {
         ],
       },
     ]);
-    api.sendLocationCorrection.mockResolvedValueOnce({ sent: false });
+    apiMock.sendLocationCorrection.mockResolvedValueOnce({ sent: false });
     render(<AdminLocationCorrections />);
     fireEvent.click(await screen.findByRole('button', { name: 'Review sam' }));
     expect(screen.getByText('2 offers', { exact: false })).toBeInTheDocument();
-    expect(screen.getByLabelText('Message from your account').value).toContain(
-      '/offer/meet/offer-2',
-    );
-    expect(screen.getByLabelText('Message from your account').value).toContain(
-      '/offer/host',
-    );
+    const message = screen.getByLabelText(
+      'Message from your account',
+    ) as HTMLTextAreaElement;
+    expect(message.value).toContain('/offer/meet/offer-2');
+    expect(message.value).toContain('/offer/host');
     fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
     expect(await screen.findByRole('status')).toHaveTextContent(
       'sam has already been contacted.',
@@ -192,7 +199,7 @@ describe('AdminLocationCorrections', () => {
   });
 
   it('uses the username in a sent confirmation when no display name exists', async () => {
-    api.getLocationCorrections.mockResolvedValueOnce([
+    apiMock.getLocationCorrections.mockResolvedValueOnce([
       { ...candidates[0], displayName: '' },
     ]);
     render(<AdminLocationCorrections />);
@@ -204,10 +211,10 @@ describe('AdminLocationCorrections', () => {
   });
 
   it('prevents blank and duplicate submissions and reports unlabelled failures', async () => {
-    let finishSend;
-    api.sendLocationCorrection.mockImplementationOnce(
+    let finishSend!: (error: Error) => void;
+    apiMock.sendLocationCorrection.mockImplementationOnce(
       () =>
-        new Promise((resolve, reject) => {
+        new Promise<LocationCorrectionSendResult>((_resolve, reject) => {
           finishSend = reject;
         }),
     );
@@ -216,19 +223,15 @@ describe('AdminLocationCorrections', () => {
     fireEvent.change(screen.getByLabelText('Message from your account'), {
       target: { value: '   ' },
     });
-    fireEvent.submit(
-      screen.getByLabelText('Message from your account').closest('form'),
-    );
-    expect(api.sendLocationCorrection).not.toHaveBeenCalled();
+    fireEvent.submit(getMessageForm());
+    expect(apiMock.sendLocationCorrection).not.toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText('Message from your account'), {
       target: { value: 'A useful correction.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
     expect(screen.getByRole('button', { name: 'Send message' })).toBeDisabled();
-    fireEvent.submit(
-      screen.getByLabelText('Message from your account').closest('form'),
-    );
-    expect(api.sendLocationCorrection).toHaveBeenCalledTimes(1);
+    fireEvent.submit(getMessageForm());
+    expect(apiMock.sendLocationCorrection).toHaveBeenCalledTimes(1);
     finishSend(new Error('offline'));
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Could not send the message.',
@@ -236,10 +239,10 @@ describe('AdminLocationCorrections', () => {
   });
 
   it('ignores a late queue response after unmounting', async () => {
-    let finishLoad;
-    api.getLocationCorrections.mockImplementationOnce(
+    let finishLoad!: (candidates: LocationCorrectionCandidate[]) => void;
+    apiMock.getLocationCorrections.mockImplementationOnce(
       () =>
-        new Promise(resolve => {
+        new Promise<LocationCorrectionCandidate[]>(resolve => {
           finishLoad = resolve;
         }),
     );
@@ -248,9 +251,19 @@ describe('AdminLocationCorrections', () => {
     finishLoad(candidates);
     await Promise.resolve();
 
-    api.getLocationCorrections.mockRejectedValueOnce(new Error('offline'));
+    apiMock.getLocationCorrections.mockRejectedValueOnce(new Error('offline'));
     const second = render(<AdminLocationCorrections />);
     second.unmount();
     await Promise.resolve();
   });
 });
+
+function getMessageForm(): HTMLFormElement {
+  const form = screen
+    .getByLabelText('Message from your account')
+    .closest('form');
+  if (!form) {
+    throw new Error('Expected the message editor to be inside a form.');
+  }
+  return form;
+}
