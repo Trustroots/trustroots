@@ -1,11 +1,73 @@
-const assert = require('assert');
+const assert: typeof import('assert') = require('assert');
 require('should');
-const fs = require('fs').promises;
-const path = require('path');
-const proxyquire = require('./../../../../testutils/server/mock-module');
+const fs: typeof import('node:fs/promises') = require('fs').promises;
+const path: typeof import('node:path') = require('path');
+const proxyquire: typeof import('../../../../testutils/server/mock-module.mts').default = require('./../../../../testutils/server/mock-module');
 
-const config = require('./../../../../config/config.mjs');
-const actualFs = require('fs').promises;
+const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const actualFs: typeof import('node:fs/promises') = require('fs').promises;
+interface AvatarFailureOptions {
+  probeError?: Error;
+  resourceList?: string;
+  inputPath?: string;
+  identifyError?: Error;
+  outputDimensions?: string;
+  writeError?: Error;
+  thumbnailBytes?: string;
+  fallback?: boolean;
+}
+interface AvatarServiceResult {
+  version: string;
+  versionDirectory: string;
+}
+interface AvatarFailureService {
+  processAvatar(options: {
+    sourcePath: string;
+    userId: string;
+  }): Promise<AvatarServiceResult>;
+  validateNativeResourceLimits(): Promise<void>;
+  maxQueuedUploads: number;
+  enqueueAvatarProcessing(job: AvatarJob): boolean;
+}
+interface AvatarJob {
+  sourcePath?: string;
+  userId?: string;
+  callback(error?: Error | null, result?: AvatarServiceResult): void;
+}
+interface ProcessorCommand {
+  in(...args: string[]): this;
+  options(options: { timeout: number }): this;
+  addDisposer(...args: unknown[]): this;
+  command(name: string): this;
+  toBuffer(
+    callback: (error: Error | undefined | null, output: Buffer) => void,
+  ): void;
+  autoOrient(): this;
+  noProfile(): this;
+  colorspace(value: string): this;
+  interlace(value: string): this;
+  filter(value: string): this;
+  resize(width: number, height: string): this;
+  gravity(value: string): this;
+  extent(width: number, height: number): this;
+  unsharp(...values: number[]): this;
+  quality(value: number): this;
+  identify(
+    format: { format: string },
+    callback: (error: Error | undefined | null, output?: string) => void,
+  ): void;
+  write(outputPath: string, callback: (error?: Error | null) => void): void;
+}
+interface BackendFactory {
+  (sourcePath: string | null): ProcessorCommand;
+}
+interface FsHooks {
+  stat?: (path: string) => Promise<{ size: number }>;
+  rename?: (oldPath: string, newPath: string) => Promise<void>;
+  copyFile?: (source: string, destination: string) => Promise<void>;
+  chmod?: (path: string, mode: number) => Promise<void>;
+  rm?: (path: string, options?: import('node:fs').RmOptions) => Promise<void>;
+}
 const validUserId = '0123456789abcdef01234567';
 const resourceList = [
   'Memory: 192M',
@@ -18,8 +80,8 @@ const resourceList = [
   'Read: 40M',
 ].join('\n');
 
-function createBackend(options = {}) {
-  const imageProcessor = sourcePath => ({
+function createBackend(options: AvatarFailureOptions = {}): BackendFactory {
+  const imageProcessor: BackendFactory = (sourcePath: string | null) => ({
     in() {
       return this;
     },
@@ -32,7 +94,9 @@ function createBackend(options = {}) {
     command() {
       return this;
     },
-    toBuffer(callback) {
+    toBuffer(
+      callback: (error: Error | undefined | null, output: Buffer) => void,
+    ) {
       callback(
         options.probeError,
         Buffer.from(options.resourceList || resourceList),
@@ -68,12 +132,15 @@ function createBackend(options = {}) {
     quality() {
       return this;
     },
-    identify(_format, callback) {
+    identify(
+      _format: { format: string },
+      callback: (error: Error | undefined | null, output: string) => void,
+    ) {
       if (options.identifyError && sourcePath === options.inputPath) {
-        callback(options.identifyError);
+        callback(options.identifyError, '');
         return;
       }
-      const match = sourcePath.match(/\/(\d+)\.jpg$/);
+      const match = sourcePath?.match(/\/(\d+)\.jpg$/);
       callback(
         null,
         match
@@ -81,7 +148,7 @@ function createBackend(options = {}) {
           : '600 600',
       );
     },
-    write(outputPath, callback) {
+    write(outputPath: string, callback: (error?: Error | null) => void) {
       if (options.writeError) {
         callback(options.writeError);
         return;
@@ -96,21 +163,22 @@ function createBackend(options = {}) {
   return imageProcessor;
 }
 
-function createFsProxy(hooks = {}) {
+function createFsProxy(hooks: FsHooks = {}): typeof actualFs {
   return new Proxy(actualFs, {
     get(target, property) {
-      if (hooks[property]) {
-        return hooks[property];
+      if (typeof property === 'string' && property in hooks) {
+        return hooks[property as keyof FsHooks];
       }
-      return target[property].bind(target);
+      const method = Reflect.get(target, property, target);
+      return typeof method === 'function' ? method.bind(target) : method;
     },
   });
 }
 
 describe('Avatar processing failure handling', () => {
-  let temporaryRoot;
-  let previousNodeEnv;
-  let previousFallback;
+  let temporaryRoot: string;
+  let previousNodeEnv: string | undefined;
+  let previousFallback: string | undefined;
 
   beforeEach(async () => {
     const testTempRoot = path.resolve('.tmp');
@@ -139,8 +207,8 @@ describe('Avatar processing failure handling', () => {
   });
 
   async function makeService(
-    options = {},
-    fsHooks = {},
+    options: AvatarFailureOptions = {},
+    fsHooks: FsHooks = {},
     useDefaultTempDir = false,
   ) {
     const inputPath = path.join(temporaryRoot, 'input.png');
@@ -148,7 +216,7 @@ describe('Avatar processing failure handling', () => {
     const uploadTmpDir = path.join(temporaryRoot, 'private');
     await fs.mkdir(uploadTmpDir, { recursive: true });
     await fs.writeFile(inputPath, 'anonymous source bytes');
-    const serviceConfig = {
+    const serviceConfig: Record<string, unknown> = {
       ...config,
       uploadDir,
     };
@@ -161,7 +229,7 @@ describe('Avatar processing failure handling', () => {
       inputPath,
       uploadDir,
       uploadTmpDir,
-      service: proxyquire(
+      service: proxyquire<AvatarFailureService>(
         require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
         {
           './../../../../config/config.mjs': {
@@ -175,7 +243,11 @@ describe('Avatar processing failure handling', () => {
     };
   }
 
-  async function expectProcessingFailure(options, pattern, fsHooks) {
+  async function expectProcessingFailure(
+    options: AvatarFailureOptions,
+    pattern: RegExp,
+    fsHooks?: FsHooks,
+  ): Promise<void> {
     const { inputPath, service } = await makeService(options, fsHooks);
     await assert.rejects(
       service.processAvatar({ sourcePath: inputPath, userId: validUserId }),
@@ -279,7 +351,7 @@ describe('Avatar processing failure handling', () => {
   });
 
   it('removes an incomplete public stage when copying a thumbnail fails', async () => {
-    const copyFile = async (source, destination) => {
+    const copyFile = async (source: string, destination: string) => {
       if (destination.includes('.staging-')) {
         throw new Error('public copy failed');
       }
@@ -299,7 +371,7 @@ describe('Avatar processing failure handling', () => {
 
   it('removes an unpublished version if final permissions cannot be applied', async () => {
     let failedPublicPermission = false;
-    const chmod = async (filePath, mode) => {
+    const chmod = async (filePath: string, mode: number) => {
       if (mode === 0o755 && !failedPublicPermission) {
         failedPublicPermission = true;
         throw new Error('chmod failed');
@@ -319,7 +391,7 @@ describe('Avatar processing failure handling', () => {
   });
 
   it('logs cleanup failures for both public and private staging', async () => {
-    const logged = [];
+    const logged: Array<[unknown, string, ...unknown[]]> = [];
     const renameFailure = new Error('rename failed');
     const publicCleanupFs = createFsProxy({
       rename: async () => {
@@ -333,7 +405,7 @@ describe('Avatar processing failure handling', () => {
       },
     });
     const { inputPath } = await makeService();
-    const publicCleanupService = proxyquire(
+    const publicCleanupService = proxyquire<AvatarFailureService>(
       require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
       {
         './../../../../config/config.mjs': {
@@ -345,7 +417,9 @@ describe('Avatar processing failure handling', () => {
         gm: () => {
           throw new Error('not used');
         },
-        './../../../../config/lib/logger.mjs': (...args) => logged.push(args),
+        './../../../../config/lib/logger.mjs': (
+          ...args: [unknown, string, ...unknown[]]
+        ) => logged.push(args),
       },
     );
     process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
@@ -373,7 +447,7 @@ describe('Avatar processing failure handling', () => {
         return actualFs.rm(filePath, options);
       },
     });
-    const privateCleanupService = proxyquire(
+    const privateCleanupService = proxyquire<AvatarFailureService>(
       require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
       {
         './../../../../config/config.mjs': {
@@ -383,7 +457,9 @@ describe('Avatar processing failure handling', () => {
         },
         fs: { promises: privateCleanupFs },
         gm: createBackend({ inputPath }),
-        './../../../../config/lib/logger.mjs': (...args) => logged.push(args),
+        './../../../../config/lib/logger.mjs': (
+          ...args: [unknown, string, ...unknown[]]
+        ) => logged.push(args),
       },
     );
     await assert.rejects(
@@ -397,21 +473,24 @@ describe('Avatar processing failure handling', () => {
   });
 
   it('logs a cleanup failure for a version that could not be published', async () => {
-    const logged = [];
-    const chmod = async (filePath, mode) => {
+    const logged: Array<[unknown, string, ...unknown[]]> = [];
+    const chmod = async (filePath: string, mode: number) => {
       if (mode === 0o755) {
         throw new Error('chmod failed');
       }
       return actualFs.chmod(filePath, mode);
     };
-    const rm = async (filePath, options) => {
+    const rm = async (
+      filePath: string,
+      options?: import('node:fs').RmOptions,
+    ) => {
       if (filePath.match(/\/avatar\/[a-f0-9]{32}$/)) {
         throw new Error('version cleanup failed');
       }
       return actualFs.rm(filePath, options);
     };
     const { inputPath } = await makeService();
-    const service = proxyquire(
+    const service = proxyquire<AvatarFailureService>(
       require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
       {
         './../../../../config/config.mjs': {
@@ -423,7 +502,9 @@ describe('Avatar processing failure handling', () => {
         gm: () => {
           throw new Error('native processor should not be used');
         },
-        './../../../../config/lib/logger.mjs': (...args) => logged.push(args),
+        './../../../../config/lib/logger.mjs': (
+          ...args: [unknown, string, ...unknown[]]
+        ) => logged.push(args),
       },
     );
     process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
@@ -442,22 +523,25 @@ describe('Avatar processing failure handling', () => {
     try {
       for (const deadlineStage of deadlines) {
         process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
-        let expire;
-        global.setTimeout = (callback, delay) => {
+        let expire: (() => void) | undefined;
+        global.setTimeout = ((callback: () => void, delay?: number) => {
           if (delay === 60000) {
             expire = callback;
-            return { deadline: true };
+            return { deadline: true } as unknown as NodeJS.Timeout;
           }
           return originalSetTimeout(callback, delay);
-        };
-        global.clearTimeout = timer => {
-          if (!timer || !timer.deadline) {
+        }) as typeof global.setTimeout;
+        global.clearTimeout = ((timer?: NodeJS.Timeout) => {
+          if (!timer || !('deadline' in timer)) {
             return originalClearTimeout(timer);
           }
           return undefined;
+        }) as typeof global.clearTimeout;
+        const fireDeadline = () => {
+          if (!expire) throw new Error('Expected test deadline timer');
+          expire();
         };
-        const fireDeadline = () => expire();
-        const copyFile = async (source, destination) => {
+        const copyFile = async (source: string, destination: string) => {
           if (
             (deadlineStage === 'private' && destination.endsWith('/32.jpg')) ||
             (deadlineStage === 'public' && destination.includes('.staging-'))
@@ -466,7 +550,7 @@ describe('Avatar processing failure handling', () => {
           }
           return actualFs.copyFile(source, destination);
         };
-        const chmod = async (filePath, mode) => {
+        const chmod = async (filePath: string, mode: number) => {
           if (deadlineStage === 'published' && mode === 0o755) {
             fireDeadline();
           }
@@ -488,18 +572,18 @@ describe('Avatar processing failure handling', () => {
   });
 
   it('forwards queue processing failures to each callback and rejects a full queue', async () => {
-    const service = proxyquire(
+    const service = proxyquire<AvatarFailureService>(
       require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
       {
         './../../../../config/config.mjs': config,
         gm: require('gm'),
       },
     );
-    const callbacks = [];
-    const jobs = Array.from(
+    const callbacks: Array<Error | null | undefined> = [];
+    const jobs = Array.from<unknown, Promise<Error | null | undefined>>(
       { length: 2 },
       (_, index) =>
-        new Promise(resolve => {
+        new Promise<Error | null | undefined>(resolve => {
           const accepted = service.enqueueAvatarProcessing({
             userId: `invalid-${index}`,
             callback: error => {
@@ -514,21 +598,26 @@ describe('Avatar processing failure handling', () => {
     service
       .enqueueAvatarProcessing({ userId: 'invalid-extra', callback() {} })
       .should.be.false();
-    (await Promise.all(jobs)).forEach(error =>
-      error.message.should.match(/Invalid avatar owner id/),
-    );
+    (await Promise.all(jobs)).forEach(error => {
+      if (!(error instanceof Error)) {
+        throw new Error(
+          'Expected queued upload to report its validation error',
+        );
+      }
+      error.message.should.match(/Invalid avatar owner id/);
+    });
     callbacks.should.have.length(2);
   });
 
   it('rejects uploads when the pending queue reaches its configured limit', () => {
-    const pending = [];
-    const service = proxyquire(
+    const pending: AvatarJob[] = [];
+    const service = proxyquire<AvatarFailureService>(
       require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
       {
         async: {
           queue: () => ({
             length: () => pending.length,
-            push: job => pending.push(job),
+            push: (job: AvatarJob) => pending.push(job),
           }),
         },
         './../../../../config/config.mjs': config,
@@ -546,7 +635,7 @@ describe('Avatar processing failure handling', () => {
     process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
     const inputPath = path.join(temporaryRoot, 'queue-input.png');
     await fs.writeFile(inputPath, 'anonymous source bytes');
-    const service = proxyquire(
+    const service = proxyquire<AvatarFailureService>(
       require.resolve('./../../server/services/avatar-processing.server.service.mjs'),
       {
         './../../../../config/config.mjs': {
@@ -557,12 +646,20 @@ describe('Avatar processing failure handling', () => {
         gm: require('gm'),
       },
     );
-    const result = await new Promise((resolve, reject) => {
+    const result = await new Promise<AvatarServiceResult>((resolve, reject) => {
       service
         .enqueueAvatarProcessing({
           sourcePath: inputPath,
           userId: validUserId,
-          callback: (error, value) => (error ? reject(error) : resolve(value)),
+          callback: (error, value) => {
+            if (error) {
+              reject(error);
+            } else if (!value) {
+              reject(new Error('Expected queued upload result'));
+            } else {
+              resolve(value);
+            }
+          },
         })
         .should.be.true();
     });
