@@ -315,7 +315,7 @@ describe('<ThreadReply>', () => {
       expect(onSend).toHaveBeenCalledWith('<p>Can I stay?</p>'),
     );
     await waitFor(() => expect(getByRole('textbox')).toHaveValue(''));
-    expect(getByRole('textbox')).toHaveFocus();
+    await waitFor(() => expect(getByRole('textbox')).toHaveFocus());
     expect(window.localStorage.getItem('messages-draft-user')).toBeNull();
   });
 

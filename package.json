@@ -65,7 +65,7 @@
     "start": "TRUSTROOTS_VITE_DEV_SERVER=true concurrently --raw --kill-others --kill-others-on-fail 'pnpm:lint:watch' 'pnpm:start:develop' 'pnpm:vite:server' 'pnpm:start:worker'",
     "start:webpack": "concurrently --raw --kill-others --kill-others-on-fail 'pnpm:lint:watch' 'pnpm:start:develop' 'pnpm:webpack:server' 'pnpm:start:worker'",
     "test:client:watch": "NODE_OPTIONS='--require ./jest/jest.hide-canvas.cts' jest --watch --no-watchman",
-    "test:boundaries": "mocha 'modules/core/tests/server/{api-input,csrf-protection}.server.tests.{js,cts}'",
+    "test:boundaries": "mocha modules/core/tests/server/api-input.server.tests.cts modules/core/tests/server/csrf-protection.server.tests.cts",
     "test:client": "BROWSERSLIST_IGNORE_OLD_DATA=1 NODE_OPTIONS='--require ./jest/jest.hide-canvas.cts' jest --no-watchman --silent --maxWorkers=50%",
     "test:coverage:client": "NODE_OPTIONS='--require ./jest/jest.hide-canvas.cts' jest --coverage --runInBand --no-watchman",
     "test:coverage:client:ci": "NODE_OPTIONS='--require ./jest/jest.hide-canvas.cts' jest --coverage --maxWorkers=50% --no-watchman",
