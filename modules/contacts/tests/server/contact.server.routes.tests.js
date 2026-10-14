@@ -541,4 +541,28 @@ describe('Contact CRUD tests', function () {
       });
     });
   });
+  it('does not allow an unrelated user to confirm or delete a contact by id', async () => {
+    await agent
+      .post('/api/auth/signin')
+      .send({
+        username: credentials.username + '3',
+        password: credentials.password,
+      })
+      .expect(200);
+
+    await agent
+      .put('/api/contact/' + contact1Id)
+      .set('X-Trustroots-Request', '1')
+      .expect(404);
+    await agent
+      .delete('/api/contact/' + contact1Id)
+      .set('X-Trustroots-Request', '1')
+      .expect(404);
+
+    const contact = await Contact.findById(contact1Id).exec();
+    should.exist(contact);
+    contact.confirmed.should.equal(false);
+    contact.userFrom.toString().should.equal(user2Id.toString());
+    contact.userTo.toString().should.equal(user1Id.toString());
+  });
 });

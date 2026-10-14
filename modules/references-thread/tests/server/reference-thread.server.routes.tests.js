@@ -264,6 +264,33 @@ describe('Reference Thread CRUD tests', function () {
         );
       });
   });
+  it("does not expose another member's reference thread", async () => {
+    referenceThread.userFrom = referenceUserNonPublicId;
+    referenceThread.thread = threadNonpublicId;
+    await new ReferenceThread(referenceThread).save();
+
+    await agent
+      .post('/api/auth/signin')
+      .send(referenceUserFromCredentials)
+      .expect(200);
+    const response = await agent
+      .get('/api/references-thread/' + referenceUserToId)
+      .expect(404);
+    response.body.message.should.equal('Not found.');
+    response.body.allowCreatingReference.should.equal(true);
+
+    await agent
+      .post('/api/auth/signin')
+      .send(referenceUserNonpublicCredentials)
+      .expect(200);
+    const participantResponse = await agent
+      .get('/api/references-thread/' + referenceUserToId)
+      .expect(200);
+    participantResponse.body.userFrom.should.equal(
+      referenceUserNonPublicId.toString(),
+    );
+    participantResponse.body.thread.should.equal(threadNonpublicId.toString());
+  });
   it('should be able to attempt reading non-existing reference and told she can create a reference', function (done) {
     agent
       .post('/api/auth/signin')

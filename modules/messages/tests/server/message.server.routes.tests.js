@@ -178,6 +178,41 @@ describe('Message CRUD tests', function () {
           });
       });
   });
+  it('does not expose a message thread to an unrelated authenticated user', async () => {
+    const outsiderCredentials = {
+      username: 'outsider',
+      password: 'password123',
+    };
+    const outsider = new User({
+      firstName: 'Outside',
+      lastName: 'Member',
+      displayName: 'Outside Member',
+      email: 'outsider@example.test',
+      username: outsiderCredentials.username,
+      password: outsiderCredentials.password,
+      provider: 'local',
+      roles: ['user'],
+      description: _.repeat('.', config.profileMinimumLength),
+      public: true,
+    });
+    await outsider.save();
+
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    await agent.post('/api/messages').send(message).expect(200);
+
+    await agent.post('/api/auth/signin').send(outsiderCredentials).expect(200);
+    const unrelatedThread = await agent
+      .get('/api/messages/' + userToId)
+      .expect(200);
+    unrelatedThread.body.should.be.empty();
+
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const participantThread = await agent
+      .get('/api/messages/' + userToId)
+      .expect(200);
+    participantThread.body.length.should.equal(1);
+    participantThread.body[0].content.should.equal('Message content');
+  });
   it('should hide all messages from a blocked member', async function () {
     await agent.post('/api/auth/signin').send(credentials).expect(200);
     await agent.post('/api/messages').send(message).expect(200);
