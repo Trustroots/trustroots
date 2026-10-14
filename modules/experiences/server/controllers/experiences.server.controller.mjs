@@ -11,7 +11,7 @@ import userRolesService from '../../../users/server/services/user-roles.server.s
 import {
   prepareNewExperience,
   prepareSendingToClient,
-} from '../services/experience-payload.server.service.mjs';
+} from '../services/experience-payload.server.service.mts';
 import { getExperienceCount } from './experience-count.server.controller.mts';
 
 const service = {};

@@ -4,7 +4,7 @@
 import _ from 'lodash';
 import mongoose from 'mongoose';
 import net from 'net';
-import { prepareStaffBlockers } from '../services/staff-blockers-payload.server.service.mjs';
+import { prepareStaffBlockers } from '../services/staff-blockers-payload.server.service.mts';
 
 import errorService from '../../../core/server/services/error.server.service.mjs';
 import log from '../../../../config/lib/logger.mjs';

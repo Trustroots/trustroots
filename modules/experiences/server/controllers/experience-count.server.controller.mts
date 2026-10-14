@@ -1,7 +1,7 @@
 import mongoose, { type PipelineStage } from 'mongoose';
 import type { ExperienceCountRequest } from '../../shared/experience.js';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
-import { prepareExperienceCount } from '../services/experience-payload.server.service.mjs';
+import { prepareExperienceCount } from '../services/experience-payload.server.service.mts';
 import {
   isValidExperienceCountUserTo,
   type ExperienceCountAggregateGroup,

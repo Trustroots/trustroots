@@ -32,7 +32,7 @@ import {
   selectMiniProfileResponse,
   selectProfileResponse,
   selectProfileUpdateFields,
-} from '../services/profile-response.server.service.mjs';
+} from '../services/profile-response.server.service.mts';
 import userMiniService from '../services/user-mini.server.service.mjs';
 
 const locales = JSON.parse(

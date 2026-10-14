@@ -1,4 +1,14 @@
-const profileQueryFields = [
+import type {
+  MiniProfile,
+  OwnProfile,
+  PublicProfile,
+  UpdateProfileRequest,
+} from '../../shared/profile.js';
+
+type PublicProfileResponse<Id, Timestamp> = PublicProfile<Id, Timestamp> &
+  Pick<OwnProfile<Id, Timestamp>, 'public'>;
+
+export const profileQueryFields = [
   'id',
   'displayName',
   'username',
@@ -33,10 +43,10 @@ const profileQueryFields = [
 /**
  * Select the fields that the profile update controller persists directly.
  * Email is handled separately by its confirmation flow.
- * @param {import('../../shared/profile.js').UpdateProfileRequest} body
- * @returns {Omit<import('../../shared/profile.js').UpdateProfileRequest, 'email'>}
  */
-function selectProfileUpdateFields(body) {
+export function selectProfileUpdateFields(
+  body: UpdateProfileRequest,
+): Omit<UpdateProfileRequest, 'email'> {
   return {
     ...(Object.hasOwn(body, 'firstName') ? { firstName: body.firstName } : {}),
     ...(Object.hasOwn(body, 'lastName') ? { lastName: body.lastName } : {}),
@@ -84,14 +94,24 @@ function selectProfileUpdateFields(body) {
  * Explicitly construct the approved profile projection. Undefined optional
  * properties are omitted by Express JSON serialisation, as with the former
  * lodash pick implementation.
- *
- * @template Id, Timestamp
- * @param {import('../../shared/profile.js').OwnProfile<Id, Timestamp>} profile
- * @param {boolean} isOwnProfile
- * @returns {import('../../shared/profile.js').PublicProfile<Id, Timestamp> | import('../../shared/profile.js').OwnProfile<Id, Timestamp>}
  */
-function selectProfileResponse(profile, isOwnProfile) {
-  const publicProfile = {
+export function selectProfileResponse<Id, Timestamp>(
+  profile: OwnProfile<Id, Timestamp>,
+  isOwnProfile: true,
+): OwnProfile<Id, Timestamp>;
+export function selectProfileResponse<Id, Timestamp>(
+  profile: OwnProfile<Id, Timestamp>,
+  isOwnProfile: false,
+): PublicProfileResponse<Id, Timestamp>;
+export function selectProfileResponse<Id, Timestamp>(
+  profile: OwnProfile<Id, Timestamp>,
+  isOwnProfile: boolean,
+): OwnProfile<Id, Timestamp> | PublicProfileResponse<Id, Timestamp>;
+export function selectProfileResponse<Id, Timestamp>(
+  profile: OwnProfile<Id, Timestamp>,
+  isOwnProfile: boolean,
+): OwnProfile<Id, Timestamp> | PublicProfileResponse<Id, Timestamp> {
+  const publicProfile: PublicProfileResponse<Id, Timestamp> = {
     _id: profile._id,
     id: profile.id,
     displayName: profile.displayName,
@@ -163,13 +183,10 @@ function selectProfileResponse(profile, isOwnProfile) {
   };
 }
 
-/**
- * Construct the restricted identity used beside messages, contacts and experiences.
- * @template Id, Timestamp
- * @param {import('../../shared/profile.js').MiniProfile<Id, Timestamp>} profile
- * @returns {import('../../shared/profile.js').MiniProfile<Id, Timestamp>}
- */
-function selectMiniProfileResponse(profile) {
+/** Construct the restricted identity used beside messages, contacts and experiences. */
+export function selectMiniProfileResponse<Id, Timestamp>(
+  profile: MiniProfile<Id, Timestamp>,
+): MiniProfile<Id, Timestamp> {
   return {
     _id: profile._id,
     id: profile.id,
@@ -198,10 +215,4 @@ const service = {
   selectMiniProfileResponse,
 };
 
-export {
-  profileQueryFields,
-  selectProfileUpdateFields,
-  selectProfileResponse,
-  selectMiniProfileResponse,
-};
 export default service;

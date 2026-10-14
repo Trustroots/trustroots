@@ -25,7 +25,7 @@ describe('Shared API contract compiler regressions', function () {
 
   it('rejects a missing staff-blocker response field in the actual implementation', () => {
     const errors = diagnostics(
-      'modules/admin/server/services/staff-blockers-payload.server.service.mjs',
+      'modules/admin/server/services/staff-blockers-payload.server.service.mts',
       'blockedBy: blockers',
       'blockers: blockers',
     );
@@ -34,7 +34,7 @@ describe('Shared API contract compiler regressions', function () {
 
   it('rejects an invalid recommendation in the actual experience response builder', () => {
     const errors = diagnostics(
-      'modules/experiences/server/services/experience-payload.server.service.mjs',
+      'modules/experiences/server/services/experience-payload.server.service.mts',
       'recommend: experience.recommend',
       "recommend: 'sometimes'",
     );
@@ -43,7 +43,7 @@ describe('Shared API contract compiler regressions', function () {
 
   it('rejects an invalid field in the actual create-request builder', () => {
     const errors = diagnostics(
-      'modules/experiences/server/services/experience-payload.server.service.mjs',
+      'modules/experiences/server/services/experience-payload.server.service.mts',
       'return { ...body, userFrom, public: isPublic };',
       'return { ...body, userTo: 123, userFrom, public: isPublic };',
     );
@@ -52,7 +52,7 @@ describe('Shared API contract compiler regressions', function () {
 
   it('rejects a formatted string in the actual experience count response', () => {
     const errors = diagnostics(
-      'modules/experiences/server/services/experience-payload.server.service.mjs',
+      'modules/experiences/server/services/experience-payload.server.service.mts',
       'count: privateCount + publicCount',
       'count: String(privateCount + publicCount)',
     );
