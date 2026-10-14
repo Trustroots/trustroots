@@ -1,19 +1,27 @@
+import type {
+  OfferDocument,
+  OfferModel,
+  OfferRecord,
+  UserModel,
+  UserModelDocument,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
 /**
  * Module dependencies.
  */
-const should = require('should');
-const mongoose = require('mongoose');
-const utils = require('../../../../testutils/server/data.server.testutil');
+const should: typeof import('should') = require('should');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 
-const User = mongoose.model('User');
-const Offer = mongoose.model('Offer');
+const User = mongoose.model<UserRecord, UserModel>('User');
+const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
 
 /**
  * Globals
  */
-let user;
-let offerHost;
-let offerMeet;
+let user: UserModelDocument;
+let offerHost: OfferDocument;
+let offerMeet: OfferDocument;
 
 /**
  * Unit tests
@@ -94,8 +102,8 @@ describe('Offer Model Unit Tests:', function () {
 
       offerHost.save(function (err, updatedofferHost) {
         should.not.exist(err);
-        updatedofferHost.description.should.equal(html);
-        updatedofferHost.noOfferDescription.should.equal(html);
+        updatedofferHost.description!.should.equal(html);
+        updatedofferHost.noOfferDescription!.should.equal(html);
         return done();
       });
     });
@@ -109,8 +117,8 @@ describe('Offer Model Unit Tests:', function () {
 
       offerHost.save(function (err, updatedofferHost) {
         should.not.exist(err);
-        updatedofferHost.description.should.equal(htmlClean);
-        updatedofferHost.noOfferDescription.should.equal(htmlClean);
+        updatedofferHost.description!.should.equal(htmlClean);
+        updatedofferHost.noOfferDescription!.should.equal(htmlClean);
         return done();
       });
     });
@@ -122,14 +130,14 @@ describe('Offer Model Unit Tests:', function () {
 
       offerHost.save(function (err, updatedofferHost) {
         should.not.exist(err);
-        updatedofferHost.description.should.equal('');
-        updatedofferHost.noOfferDescription.should.equal('');
+        updatedofferHost.description!.should.equal('');
+        updatedofferHost.noOfferDescription!.should.equal('');
         return done();
       });
     });
 
     it('should be able to show an error when try to save without status', function (done) {
-      offerHost.status = '';
+      offerHost.set('status', '');
 
       offerHost.save(function (err) {
         should.exist(err);
@@ -138,7 +146,7 @@ describe('Offer Model Unit Tests:', function () {
     });
 
     it('should be able to show an error when try to save without type', function (done) {
-      offerHost.type = '';
+      offerHost.set('type', '');
 
       offerHost.save(function (err) {
         should.exist(err);
