@@ -619,6 +619,32 @@ describe('Search', () => {
     expect(mockMapProps.zoom).toBe(2.9);
   });
 
+  it('pinches from the viewport selected by a place search', () => {
+    renderSearchMap({
+      locationBounds: {
+        northEast: { lat: 20.2, lng: -59.8 },
+        southWest: { lat: 19.8, lng: -60.2 },
+      },
+    });
+    const { latitude, longitude, zoom } = mockMapProps;
+    expect(mockFitBounds).toHaveBeenCalled();
+
+    act(() =>
+      screen.getByTestId('react-map-gl').dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          cancelable: true,
+          ctrlKey: true,
+          deltaY: 100,
+        }),
+      ),
+    );
+
+    expect(mockMapProps.latitude).toBe(latitude);
+    expect(mockMapProps.longitude).toBe(longitude);
+    expect(mockMapProps.zoom).toBe(zoom - 1);
+  });
+
   it('leaves ordinary wheel input to the map and clamps pinch zoom', () => {
     renderSearchMap();
     const map = screen.getByTestId('react-map-gl');
