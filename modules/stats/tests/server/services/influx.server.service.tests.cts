@@ -1,12 +1,53 @@
-const should = require('should');
-const sinon = require('sinon');
-const influx = require('influx');
-const winston = require('winston');
+const should: typeof import('should') = require('should');
+const sinon: typeof import('sinon') = require('sinon');
+const influx: typeof import('influx') = require('influx');
+const winston: typeof import('winston') = require('winston');
 // influx = require('influx'),
-const influxService = require('./../../../server/services/influx.server.service.mts');
-const config = require('./../../../../../config/config.mjs');
+type InfluxService =
+  typeof import('../../../server/services/influx.server.service.mts').default;
+type InfluxCallback = (error?: Error | null) => void;
+type TestInfluxService = Omit<InfluxService, '_writeMeasurement'> & {
+  _writeMeasurement(
+    measurementName: string | null,
+    fields: Record<string, unknown> | null,
+    tags: Record<string, unknown> | null,
+    callback?: InfluxCallback,
+  ): void;
+};
+const influxService =
+  require('./../../../server/services/influx.server.service.mts') as TestInfluxService;
+const config =
+  require('./../../../../../config/config.mjs') as typeof import('../../../../../config/config.mjs').default;
+type WriteMeasurementArgs = [
+  string,
+  import('influx').IPoint[],
+  import('influx').IWriteOptions?,
+];
+type WriteMeasurementStub = import('sinon').SinonStub<
+  WriteMeasurementArgs,
+  Promise<void>
+>;
 
-function loadInfluxServiceWithLogger(logger) {
+function writeMeasurementStub(): WriteMeasurementStub {
+  return (
+    influx.InfluxDB.prototype as unknown as {
+      writeMeasurement: WriteMeasurementStub;
+    }
+  ).writeMeasurement;
+}
+
+function stubWriteMeasurement(): WriteMeasurementStub {
+  return sinon.stub(
+    influx.InfluxDB.prototype,
+    'writeMeasurement',
+  ) as unknown as WriteMeasurementStub;
+}
+
+function loadInfluxServiceWithLogger(
+  logger: (
+    ...args: Parameters<typeof winston.Logger.prototype.log>
+  ) => ReturnType<typeof winston.Logger.prototype.log>,
+): TestInfluxService {
   sinon.stub(winston.Logger.prototype, 'log').callsFake(logger);
   return influxService;
 }
@@ -22,9 +63,11 @@ describe('Service: influx', function () {
       await import('../../../server/services/influx.server.service.mts');
 
     esmService.default.should.equal(influxService);
-    ['stat', '_getClient', '_writeMeasurement'].forEach(function (name) {
-      esmService.default[name].should.equal(esmService[name]);
-    });
+    (['stat', '_getClient', '_writeMeasurement'] as const).forEach(
+      function (name) {
+        esmService.default[name].should.equal(esmService[name]);
+      },
+    );
   });
 
   context('InfluxDB disabled', function () {
@@ -36,7 +79,7 @@ describe('Service: influx', function () {
     it('Getting client returns error if no InfluxDB configured', function (done) {
       influxService._getClient(function (err) {
         try {
-          err.message.should.equal('No InfluxDB configured.');
+          err!.message.should.equal('No InfluxDB configured.');
           return done();
         } catch (e) {
           return done(e);
@@ -74,11 +117,11 @@ describe('Service: influx', function () {
       });
 
       // stub the influx.writeMeasurement method
-      sinon.stub(influx.InfluxDB.prototype, 'writeMeasurement');
+      stubWriteMeasurement();
 
       // and it returns a Promise
-      influx.InfluxDB.prototype.writeMeasurement.returns(
-        new Promise(function (resolve) {
+      writeMeasurementStub().returns(
+        new Promise<void>(function (resolve) {
           process.nextTick(resolve);
         }),
       );
@@ -105,7 +148,7 @@ describe('Service: influx', function () {
           { tag: 'tag' },
           function (err) {
             try {
-              err.message.should.equal(
+              err!.message.should.equal(
                 'InfluxDB Service: no `measurementName` defined. #ghi3kH',
               );
               return done();
@@ -123,7 +166,7 @@ describe('Service: influx', function () {
           { tag: 'tag' },
           function (err) {
             try {
-              err.message.should.equal(
+              err!.message.should.equal(
                 'InfluxDB Service: no `fields` defined. #ghugGJ',
               );
               return done();
@@ -141,7 +184,7 @@ describe('Service: influx', function () {
           null,
           function (err) {
             try {
-              err.message.should.equal(
+              err!.message.should.equal(
                 'InfluxDB Service: no `tags` defined. #ghj3ig',
               );
               return done();
@@ -159,7 +202,7 @@ describe('Service: influx', function () {
           { tag: 'tag' },
           function (err) {
             try {
-              err.message.should.equal(
+              err!.message.should.equal(
                 'InfluxDB Service: expected `fields.time` to be `Date` object. #f93jkh',
               );
               return done();
@@ -177,7 +220,7 @@ describe('Service: influx', function () {
           { tag: 'tag' },
           function (err) {
             try {
-              err.message.should.equal(
+              err!.message.should.equal(
                 'InfluxDB Service: expected `fields.time` to be `Date` object. #f93jkh',
               );
               return done();
@@ -195,7 +238,7 @@ describe('Service: influx', function () {
           { tag: 'tag' },
           function (err) {
             try {
-              err.message.should.equal(
+              err!.message.should.equal(
                 'InfluxDB Service: expected `fields.time` to be `Date` object. #f93jkh',
               );
               return done();
@@ -235,12 +278,12 @@ describe('Service: influx', function () {
                         process.env.NODE_ENV = originalEnv;
 
                         try {
-                          measurementErr.message.should.containEql(
+                          measurementErr!.message.should.containEql(
                             'no `measurementName`',
                           );
-                          fieldsErr.message.should.containEql('no `fields`');
-                          tagsErr.message.should.containEql('no `tags`');
-                          timeErr.message.should.containEql(
+                          fieldsErr!.message.should.containEql('no `fields`');
+                          tagsErr!.message.should.containEql('no `tags`');
+                          timeErr!.message.should.containEql(
                             'expected `fields.time`',
                           );
                           sinon.assert.callCount(logger, 4);
@@ -267,8 +310,8 @@ describe('Service: influx', function () {
           process.env.NODE_ENV = originalEnv;
 
           try {
-            err.message.should.containEql('no `fields`');
-            process.env.NODE_ENV.should.equal(originalEnv);
+            err!.message.should.containEql('no `fields`');
+            process.env.NODE_ENV!.should.equal(originalEnv);
             return done();
           } catch (e) {
             return done(e);
@@ -290,7 +333,7 @@ describe('Service: influx', function () {
             process.env.NODE_ENV = originalEnv;
 
             try {
-              err.message.should.containEql('no `measurementName`');
+              err!.message.should.containEql('no `measurementName`');
               sinon.assert.calledOnce(logger);
               logger.firstCall.args[1].should.equal(
                 'InfluxDB Service: no `measurementName` defined. #ghi3kH',
@@ -322,8 +365,8 @@ describe('Service: influx', function () {
                 process.env.NODE_ENV = originalEnv;
 
                 try {
-                  fieldsErr.message.should.containEql('no `fields`');
-                  tagsErr.message.should.containEql('no `tags`');
+                  fieldsErr!.message.should.containEql('no `fields`');
+                  tagsErr!.message.should.containEql('no `tags`');
                   sinon.assert.calledTwice(logger);
                   logger.firstCall.args[2].measurement.should.equal(
                     'testMeasurement',
@@ -355,7 +398,7 @@ describe('Service: influx', function () {
             process.env.NODE_ENV = originalEnv;
 
             try {
-              err.message.should.containEql('expected `fields.time`');
+              err!.message.should.containEql('expected `fields.time`');
               sinon.assert.calledOnce(logger);
               logger.firstCall.args[2].measurement.should.equal(
                 'testMeasurement',
@@ -379,7 +422,7 @@ describe('Service: influx', function () {
           { tag: 'tag' },
           function (err) {
             try {
-              err.message.should.containEql('no `measurementName`');
+              err!.message.should.containEql('no `measurementName`');
               sinon.assert.notCalled(logger);
               return done();
             } catch (e) {
@@ -399,7 +442,7 @@ describe('Service: influx', function () {
           { tag: 'tag' },
           function (err) {
             try {
-              err.message.should.containEql('no `fields`');
+              err!.message.should.containEql('no `fields`');
               sinon.assert.notCalled(logger);
               return done();
             } catch (e) {
@@ -419,7 +462,7 @@ describe('Service: influx', function () {
           null,
           function (err) {
             try {
-              err.message.should.containEql('no `tags`');
+              err!.message.should.containEql('no `tags`');
               sinon.assert.notCalled(logger);
               return done();
             } catch (e) {
@@ -439,7 +482,7 @@ describe('Service: influx', function () {
           { tag: 'tag' },
           function (err) {
             try {
-              err.message.should.containEql('expected `fields.time`');
+              err!.message.should.containEql('expected `fields.time`');
               sinon.assert.notCalled(logger);
               return done();
             } catch (e) {
@@ -468,8 +511,10 @@ describe('Service: influx', function () {
                 process.env.NODE_ENV = originalEnv;
 
                 try {
-                  testModeErr.message.should.containEql('no `measurementName`');
-                  devModeErr.message.should.containEql('no `measurementName`');
+                  testModeErr!.message.should.containEql(
+                    'no `measurementName`',
+                  );
+                  devModeErr!.message.should.containEql('no `measurementName`');
                   sinon.assert.calledOnce(logger);
                   return done();
                 } catch (e) {
@@ -505,12 +550,10 @@ describe('Service: influx', function () {
         influxService.stat(validData, function (e) {
           if (e) return done(e);
           try {
-            sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
+            sinon.assert.calledOnce(writeMeasurementStub());
 
-            const measurement =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            const points =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            const measurement = writeMeasurementStub().getCall(0).args[0];
+            const points = writeMeasurementStub().getCall(0).args[1];
             should(points.length).eql(1);
             const point = points[0];
 
@@ -557,12 +600,10 @@ describe('Service: influx', function () {
         influxService.stat(validData, function (e) {
           if (e) return done(e);
           try {
-            sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
+            sinon.assert.calledOnce(writeMeasurementStub());
 
-            const measurement =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-            const points =
-              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+            const measurement = writeMeasurementStub().getCall(0).args[0];
+            const points = writeMeasurementStub().getCall(0).args[1];
             should(points.length).eql(1);
             const point = points[0];
 
@@ -586,8 +627,7 @@ describe('Service: influx', function () {
           function (e) {
             if (e) return done(e);
             try {
-              const measurement =
-                influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+              const measurement = writeMeasurementStub().getCall(0).args[0];
               measurement.should.equal('supportRequest');
               done();
             } catch (err) {
@@ -602,7 +642,7 @@ describe('Service: influx', function () {
 
         process.nextTick(function () {
           try {
-            sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
+            sinon.assert.calledOnce(writeMeasurementStub());
             done();
           } catch (err) {
             done(err);
@@ -620,14 +660,14 @@ describe('Service: influx', function () {
           { value: 1 },
           { tag: 'tag' },
           function (err) {
-            err.message.should.equal('client fail');
+            err!.message.should.equal('client fail');
             done();
           },
         );
       });
 
       it('propagates writeMeasurement promise rejections', function (done) {
-        influx.InfluxDB.prototype.writeMeasurement.returns(
+        writeMeasurementStub().returns(
           Promise.reject(new Error('write failed')),
         );
 
@@ -636,7 +676,7 @@ describe('Service: influx', function () {
           { value: 1 },
           { tag: 'tag' },
           function (err) {
-            err.message.should.equal('write failed');
+            err!.message.should.equal('write failed');
             done();
           },
         );
@@ -647,7 +687,7 @@ describe('Service: influx', function () {
         process.env.NODE_ENV = 'development';
         const logger = sinon.stub();
         const service = loadInfluxServiceWithLogger(logger);
-        influx.InfluxDB.prototype.writeMeasurement.returns(
+        writeMeasurementStub().returns(
           Promise.reject(new Error('write failed')),
         );
 
@@ -659,7 +699,7 @@ describe('Service: influx', function () {
             process.env.NODE_ENV = originalEnv;
 
             try {
-              err.message.should.equal('write failed');
+              err!.message.should.equal('write failed');
               sinon.assert.calledOnce(logger);
               logger.firstCall.args[1].should.equal(
                 'InfluxDB Service: Error while writing to InfluxDB #fj38hh',

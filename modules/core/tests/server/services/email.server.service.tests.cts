@@ -1,17 +1,123 @@
-const should = require('should');
-const sinon = require('sinon');
-const agenda = require('./../../../../../config/lib/agenda.mjs');
-const nunjucks = require('nunjucks');
-const config = require('./../../../../../config/config.mjs');
+const should: typeof import('should') = require('should');
+const sinon: typeof import('sinon') = require('sinon');
+interface AgendaAdapter {
+  now(type: string, data: EmailPayload): Promise<unknown>;
+}
+const agenda =
+  require('./../../../../../config/lib/agenda.mjs') as AgendaAdapter;
+type RenderCallback = (error: Error | null, rendered?: string) => void;
+type RenderFunction = (
+  templatePath: string,
+  params: Record<string, unknown>,
+  callback: RenderCallback,
+) => void;
+const nunjucks = require('nunjucks') as {
+  Environment: { prototype: { render: RenderFunction } };
+};
+const path: typeof import('node:path') = require('node:path');
+const { pathToFileURL }: typeof import('node:url') = require('node:url');
+const config =
+  require('./../../../../../config/config.mjs') as typeof import('../../../../../config/config.mjs').default;
 
-let emailService;
+interface EmailAddress {
+  name?: string;
+  address: string;
+}
+interface EmailPayload {
+  to: EmailAddress;
+  from?: string;
+  subject: string;
+  text: string;
+  html?: string;
+  replyTo?: { name?: string; email: string };
+  headers?: Record<string, string>;
+}
+interface EmailJob {
+  type: string;
+  data: EmailPayload;
+}
+interface BaseParams extends Record<string, unknown> {
+  footerUrlPlainText?: string;
+  urlSupportPlainText?: string;
+  urlConfirmPlainText?: string;
+}
+type Done = (error?: Error | null) => void;
+interface EmailService {
+  addEmailBaseTemplateParams(params: Record<string, unknown>): BaseParams;
+  addEmailBaseTemplateParams(params: null): Record<string, never>;
+  renderEmail(
+    template: string,
+    params: BaseParams,
+    callback: (error: Error | null, email?: EmailPayload) => void,
+  ): void;
+  renderEmailAndSend(
+    template: string,
+    params: BaseParams,
+    callback: (error?: Error | null, job?: unknown) => void,
+  ): void;
+  sendSignupEmailConfirmation(user: object, callback: Done): void;
+  sendFlaggedSignupAlert(
+    user: object,
+    keywords: string[],
+    callback: Done,
+  ): void;
+  sendChangeEmailConfirmation(user: object, callback: Done): void;
+  sendResetPassword(user: object, callback: Done): void;
+  sendResetPasswordConfirm(user: object, callback: Done): void;
+  sendReactivateHosts(user: object, callback: Done): void;
+  sendMessagesUnread(
+    from: object,
+    to: object,
+    notification: object,
+    callback: Done,
+  ): void;
+  sendSupportRequest(replyTo: object, request: object, callback: Done): void;
+  sendSignupEmailReminder(user: object, callback: Done): void;
+  sendRemoveProfile(user: object, callback: Done): void;
+  sendRemoveProfileConfirmed(user: object, callback: Done): void;
+  sendWelcomeSequenceFirst(user: object, callback: Done): void;
+  sendWelcomeSequenceSecond(user: object, callback: Done): void;
+  sendWelcomeSequenceThird(user: object, callback: Done): void;
+  sendExperienceNotificationFirst(
+    from: object,
+    to: object,
+    callback: Done,
+  ): void;
+  sendExperienceNotificationSecond(
+    from: object,
+    to: object,
+    experience: object,
+    callback: Done,
+  ): void;
+  sendConfirmContact(
+    user: object,
+    friend: object,
+    contact: object,
+    html: string,
+    text: string,
+    callback: Done,
+  ): void;
+}
+type DependencyStubs = {
+  '../../../../config/lib/agenda'?: { now: typeof agenda.now };
+  '../../../../config/config'?: Partial<typeof config>;
+  '../../../../config/lib/render'?: RenderFunction;
+};
+
+let emailService: EmailService;
 
 describe('Service: email', function () {
-  let jobs;
+  let jobs: EmailJob[];
 
   const sandbox = sinon.createSandbox();
 
-  function loadEmailService(stubs = {}) {
+  function job(index: number): EmailJob {
+    const savedJob = jobs[index];
+    if (!savedJob) throw new Error(`Expected email job at index ${index}`);
+    return savedJob;
+  }
+
+  function loadEmailService(stubs: DependencyStubs = {}): EmailService {
     sandbox.restore();
     jobs = [];
     const enqueue = stubs['../../../../config/lib/agenda'];
@@ -25,7 +131,7 @@ describe('Service: email', function () {
     );
     const overrides = stubs['../../../../config/config'];
     if (overrides) {
-      for (const key of Object.keys(overrides)) {
+      for (const key of Object.keys(overrides) as Array<keyof typeof config>) {
         if (overrides[key] !== config[key])
           sandbox.stub(config, key).value(overrides[key]);
       }
@@ -33,7 +139,7 @@ describe('Service: email', function () {
     const render = stubs['../../../../config/lib/render'];
     if (render)
       sandbox.stub(nunjucks.Environment.prototype, 'render').callsFake(render);
-    return require('./../../../server/services/email.server.service.mjs');
+    return require('./../../../server/services/email.server.service.mjs') as EmailService;
   }
 
   afterEach(function () {
@@ -56,11 +162,15 @@ describe('Service: email', function () {
     sandbox
       .stub(emailService, 'renderEmail')
       .callsFake(function (templateName, params, callback) {
-        callback(null, { to: { address: 'member@example.test' } });
+        callback(null, {
+          to: { address: 'member@example.test' },
+          subject: 'test',
+          text: 'test',
+        });
       });
 
     emailService.renderEmailAndSend('example', {}, function (err, job) {
-      err.should.equal(enqueueError);
+      err!.should.equal(enqueueError);
       should.not.exist(job);
       done();
     });
@@ -76,20 +186,20 @@ describe('Service: email', function () {
     emailService.sendSignupEmailConfirmation(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].type.should.equal('send email');
-      jobs[0].data.subject.should.equal('Confirm Email');
-      jobs[0].data.to.name.should.equal(user.displayName);
-      jobs[0].data.to.address.should.equal(user.emailTemporary);
-      ['html', 'text'].forEach(function (format) {
-        jobs[0].data[format].should.containEql(
+      job(0).type.should.equal('send email');
+      job(0).data.subject.should.equal('Confirm Email');
+      job(0).data.to.name!.should.equal(user.displayName);
+      job(0).data.to.address.should.equal(user.emailTemporary);
+      (['html', 'text'] as const).forEach(function (format) {
+        job(0).data[format]!.should.containEql(
           'Thank you very much for signing up with us.',
         );
-        jobs[0].data[format].should.containEql(
+        job(0).data[format]!.should.containEql(
           'Confirm your email address (' +
             user.emailTemporary +
             ') to complete your Trustroots account.',
         );
-        jobs[0].data[format].should.containEql(
+        job(0).data[format]!.should.containEql(
           '/confirm-email/' + user.emailToken,
         );
       });
@@ -107,8 +217,8 @@ describe('Service: email', function () {
     emailService.sendSignupEmailConfirmation(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.to.address.should.equal(user.email);
-      jobs[0].data.text.should.containEql(user.email);
+      job(0).data.to.address.should.equal(user.email);
+      job(0).data.text.should.containEql(user.email);
       done();
     });
   });
@@ -126,16 +236,16 @@ describe('Service: email', function () {
       function (err) {
         if (err) return done(err);
         jobs.length.should.equal(1);
-        jobs[0].type.should.equal('send email');
-        jobs[0].data.to.address.should.equal(config.supportEmail);
-        jobs[0].data.subject.should.equal(
+        job(0).type.should.equal('send email');
+        job(0).data.to.address.should.equal(config.supportEmail);
+        job(0).data.subject.should.equal(
           'Signup matched safety-review keywords',
         );
-        jobs[0].data.text.should.containEql('support, trustroots');
-        jobs[0].data.text.should.containEql(user.displayName);
-        jobs[0].data.text.should.containEql('@' + user.username);
-        jobs[0].data.text.should.containEql('/admin/user?id=' + user._id);
-        should(jobs[0].data.html).equal(undefined);
+        job(0).data.text.should.containEql('support, trustroots');
+        job(0).data.text.should.containEql(user.displayName);
+        job(0).data.text.should.containEql('@' + user.username);
+        job(0).data.text.should.containEql('/admin/user?id=' + user._id);
+        should(job(0).data.html).equal(undefined);
         done();
       },
     );
@@ -151,15 +261,15 @@ describe('Service: email', function () {
     emailService.sendChangeEmailConfirmation(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].type.should.equal('send email');
-      jobs[0].data.subject.should.equal('Confirm email change');
-      jobs[0].data.to.name.should.equal(user.displayName);
-      jobs[0].data.to.address.should.equal(user.emailTemporary);
-      ['html', 'text'].forEach(function (format) {
-        jobs[0].data[format].should.containEql(
+      job(0).type.should.equal('send email');
+      job(0).data.subject.should.equal('Confirm email change');
+      job(0).data.to.name!.should.equal(user.displayName);
+      job(0).data.to.address.should.equal(user.emailTemporary);
+      (['html', 'text'] as const).forEach(function (format) {
+        job(0).data[format]!.should.containEql(
           'You initiated an email change at Trustroots.',
         );
-        jobs[0].data[format].should.containEql(
+        job(0).data[format]!.should.containEql(
           'Please click the confirmation link below to confirm your new email address: ' +
             user.emailTemporary,
         );
@@ -177,16 +287,16 @@ describe('Service: email', function () {
     emailService.sendResetPassword(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].type.should.equal('send email');
-      jobs[0].data.subject.should.equal('Password Reset');
-      ['html', 'text'].forEach(function (format) {
-        jobs[0].data[format].should.containEql(user.resetPasswordToken);
-        jobs[0].data[format].should.containEql(
+      job(0).type.should.equal('send email');
+      job(0).data.subject.should.equal('Password Reset');
+      (['html', 'text'] as const).forEach(function (format) {
+        job(0).data[format]!.should.containEql(user.resetPasswordToken);
+        job(0).data[format]!.should.containEql(
           '/api/auth/reset/' + user.resetPasswordToken,
         );
       });
-      jobs[0].data.to.name.should.equal(user.displayName);
-      jobs[0].data.to.address.should.equal(user.email);
+      job(0).data.to.name!.should.equal(user.displayName);
+      job(0).data.to.address.should.equal(user.email);
       done();
     });
   });
@@ -200,10 +310,10 @@ describe('Service: email', function () {
     emailService.sendResetPasswordConfirm(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].type.should.equal('send email');
-      jobs[0].data.subject.should.equal('Your password has been changed');
-      jobs[0].data.to.name.should.equal(user.displayName);
-      jobs[0].data.to.address.should.equal(user.email);
+      job(0).type.should.equal('send email');
+      job(0).data.subject.should.equal('Your password has been changed');
+      job(0).data.to.name!.should.equal(user.displayName);
+      job(0).data.to.address.should.equal(user.email);
       done();
     });
   });
@@ -220,16 +330,16 @@ describe('Service: email', function () {
     emailService.sendReactivateHosts(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].type.should.equal('send email');
-      jobs[0].data.subject.should.equal(
+      job(0).type.should.equal('send email');
+      job(0).data.subject.should.equal(
         user.firstName + ', start hosting on Trustroots again?',
       );
-      jobs[0].data.to.name.should.equal(user.displayName);
-      jobs[0].data.to.address.should.equal(user.email);
-      jobs[0].data.html.should.containEql('Hi ' + user.firstName + ',');
-      jobs[0].data.text.should.containEql('Hi ' + user.firstName + ',');
-      jobs[0].data.html.should.containEql(urlOffer);
-      jobs[0].data.text.should.containEql(urlOffer);
+      job(0).data.to.name!.should.equal(user.displayName);
+      job(0).data.to.address.should.equal(user.email);
+      job(0).data.html!.should.containEql('Hi ' + user.firstName + ',');
+      job(0).data.text.should.containEql('Hi ' + user.firstName + ',');
+      job(0).data.html!.should.containEql(urlOffer);
+      job(0).data.text.should.containEql(urlOffer);
       done();
     });
   });
@@ -249,8 +359,8 @@ describe('Service: email', function () {
       config.surveyReactivateHosts = originalSurveyUrl;
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.html.should.containEql(surveyUrl);
-      jobs[0].data.text.should.containEql(surveyUrl);
+      job(0).data.html!.should.containEql(surveyUrl);
+      job(0).data.text.should.containEql(surveyUrl);
       done();
     });
   });
@@ -272,8 +382,8 @@ describe('Service: email', function () {
     service.sendReactivateHosts(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.html.should.not.containEql('ideas.trustroots.org');
-      jobs[0].data.text.should.not.containEql('ideas.trustroots.org');
+      job(0).data.html!.should.not.containEql('ideas.trustroots.org');
+      job(0).data.text.should.not.containEql('ideas.trustroots.org');
       done();
     });
   });
@@ -306,29 +416,29 @@ describe('Service: email', function () {
       function (err) {
         if (err) return done(err);
         jobs.length.should.equal(1);
-        jobs[0].type.should.equal('send email');
-        jobs[0].data.subject.should.equal(
+        job(0).type.should.equal('send email');
+        job(0).data.subject.should.equal(
           userFrom.displayName + ' wrote you from Trustroots',
         );
-        jobs[0].data.text.should.containEql(
+        job(0).data.text.should.containEql(
           'You have one unread message from ' +
             userFrom.displayName +
             ' at Trustroots.',
         );
         notification.messages.forEach(function (notification) {
-          jobs[0].data.text.should.containEql(notification.content);
+          job(0).data.text.should.containEql(notification.content);
         });
-        jobs[0].data.text.should.containEql(
+        job(0).data.text.should.containEql(
           'Trustroots will never ask you for your ID, credit card details, or payment of any kind.',
         );
-        jobs[0].data.html.should.containEql(
+        job(0).data.html!.should.containEql(
           'Trustroots will never ask you for your ID, credit card details, or payment of any kind.',
         );
-        jobs[0].data.text.should.containEql('/messages/' + userFrom.username);
-        jobs[0].data.text.should.containEql('/profile/' + userFrom.username);
-        jobs[0].data.html.should.containEql('/messages/' + userFrom.username);
-        jobs[0].data.to.name.should.equal(userTo.displayName);
-        jobs[0].data.to.address.should.equal(userTo.email);
+        job(0).data.text.should.containEql('/messages/' + userFrom.username);
+        job(0).data.text.should.containEql('/profile/' + userFrom.username);
+        job(0).data.html!.should.containEql('/messages/' + userFrom.username);
+        job(0).data.to.name!.should.equal(userTo.displayName);
+        job(0).data.to.address.should.equal(userTo.email);
         done();
       },
     );
@@ -360,7 +470,7 @@ describe('Service: email', function () {
       function (err) {
         if (err) return done(err);
         jobs.length.should.equal(1);
-        jobs[0].data.from.should.equal(
+        job(0).data.from!.should.equal(
           'Trustroots Support <' + config.supportEmail + '>',
         );
         done();
@@ -398,7 +508,7 @@ describe('Service: email', function () {
       function (err) {
         if (err) return done(err);
         jobs.length.should.equal(1);
-        jobs[0].data.subject.should.equal(
+        job(0).data.subject.should.equal(
           userFrom.displayName + ' is still waiting for a reply on Trustroots',
         );
         done();
@@ -444,30 +554,30 @@ describe('Service: email', function () {
       function (err) {
         if (err) return done(err);
         jobs.length.should.equal(1);
-        jobs[0].data.html.should.containEql(
+        job(0).data.html!.should.containEql(
           'Visit https[:]//example[.]invalid/payment.',
         );
-        jobs[0].data.text.should.containEql(
+        job(0).data.text.should.containEql(
           'Visit https[:]//example[.]invalid/payment.',
         );
-        jobs[0].data.html.should.not.containEql('https://example.invalid');
-        jobs[0].data.text.should.not.containEql('https://example.invalid');
-        jobs[0].data.html.should.containEql(
+        job(0).data.html!.should.not.containEql('https://example.invalid');
+        job(0).data.text.should.not.containEql('https://example.invalid');
+        job(0).data.html!.should.containEql(
           'Or visit https[:]//scammetyscammetyscam[.]example[.]com/.',
         );
-        jobs[0].data.text.should.containEql(
+        job(0).data.text.should.containEql(
           'Or visit https[:]//scammetyscammetyscam[.]example[.]com/.',
         );
-        jobs[0].data.html.should.containEql(
+        job(0).data.html!.should.containEql(
           'The domain is scammetyscammetyscam[.]example[.]com.',
         );
-        jobs[0].data.text.should.containEql(
+        job(0).data.text.should.containEql(
           'The domain is scammetyscammetyscam[.]example[.]com.',
         );
-        jobs[0].data.html.should.not.containEql(
+        job(0).data.html!.should.not.containEql(
           'scammetyscammetyscam.example.com',
         );
-        jobs[0].data.text.should.not.containEql(
+        job(0).data.text.should.not.containEql(
           'scammetyscammetyscam.example.com',
         );
         done();
@@ -540,56 +650,56 @@ describe('Service: email', function () {
     emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].type.should.equal('send email');
-      jobs[0].data.subject.should.equal(
+      job(0).type.should.equal('send email');
+      job(0).data.subject.should.equal(
         'Support request [Report a member] from ' +
           supportRequest.username +
           ' (' +
           supportRequest.displayName +
           ')',
       );
-      jobs[0].data.replyTo.email.should.equal(replyTo.email);
-      should.not.exist(jobs[0].data.replyTo.name);
-      jobs[0].data.to.address.should.equal(config.supportEmail);
-      jobs[0].data.to.name.should.equal('Trustroots Support');
-      jobs[0].data.from.should.equal(
+      job(0).data.replyTo!.email.should.equal(replyTo.email);
+      should.not.exist(job(0).data.replyTo!.name!);
+      job(0).data.to.address.should.equal(config.supportEmail);
+      job(0).data.to.name!.should.equal('Trustroots Support');
+      job(0).data.from!.should.equal(
         'Trustroots Support <' + config.supportEmail + '>',
       );
-      should.not.exist(jobs[0].data.html);
-      should.exist(jobs[0].data.text);
-      jobs[0].data.text.should.containEql('test-support-message');
-      jobs[0].data.text.should.containEql('Category: Report a member');
-      jobs[0].data.text.should.containEql(
+      should.not.exist(job(0).data.html);
+      should.exist(job(0).data.text);
+      job(0).data.text.should.containEql('test-support-message');
+      job(0).data.text.should.containEql('Category: Report a member');
+      job(0).data.text.should.containEql(
         'Reported member: ' + supportRequest.reportMember,
       );
-      jobs[0].data.text.should.containEql(
+      job(0).data.text.should.containEql(
         'From username: ' + supportRequest.username,
       );
-      jobs[0].data.text.should.containEql('Email: ' + supportRequest.email);
-      jobs[0].data.text.should.containEql(
+      job(0).data.text.should.containEql('Email: ' + supportRequest.email);
+      job(0).data.text.should.containEql(
         'Authenticated: ' + supportRequest.authenticated,
       );
-      jobs[0].data.text.should.containEql(
+      job(0).data.text.should.containEql(
         'Browser: ' + supportRequest.userAgent,
       );
-      jobs[0].data.text.should.containEql(
+      job(0).data.text.should.containEql(
         'Code version: ' +
           supportRequest.build.committedAt +
           ' UTC (' +
           supportRequest.build.shortCommit +
           ')',
       );
-      jobs[0].data.text.should.containEql(
+      job(0).data.text.should.containEql(
         'Branch: ' + supportRequest.build.branch,
       );
-      jobs[0].data.text.should.containEql(
+      job(0).data.text.should.containEql(
         'Commit: <' + supportRequest.build.commitUrl + '>',
       );
-      jobs[0].data.text.should.containEql('ID: ' + supportRequest.userId);
-      jobs[0].data.text.should.containEql(
+      job(0).data.text.should.containEql('ID: ' + supportRequest.userId);
+      job(0).data.text.should.containEql(
         'Signup confirmed: ' + supportRequest.profilePublic,
       );
-      jobs[0].data.text.should.containEql(
+      job(0).data.text.should.containEql(
         'Signup date: ' + supportRequest.signupDate,
       );
       done();
@@ -609,7 +719,7 @@ describe('Service: email', function () {
     emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.subject.should.equal('Support request [Other]');
+      job(0).data.subject.should.equal('Support request [Other]');
       done();
     });
   });
@@ -626,7 +736,7 @@ describe('Service: email', function () {
     emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.subject.should.equal('Support request [Other] from joedoe');
+      job(0).data.subject.should.equal('Support request [Other] from joedoe');
       done();
     });
   });
@@ -643,7 +753,7 @@ describe('Service: email', function () {
     emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.subject.should.equal('Support request [Other] (Joe Doe)');
+      job(0).data.subject.should.equal('Support request [Other] (Joe Doe)');
       done();
     });
   });
@@ -660,18 +770,18 @@ describe('Service: email', function () {
     emailService.sendSignupEmailReminder(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].type.should.equal('send email');
-      jobs[0].data.subject.should.equal('Complete your signup to Trustroots');
-      jobs[0].data.text.should.containEql(
+      job(0).type.should.equal('send email');
+      job(0).data.subject.should.equal('Complete your signup to Trustroots');
+      job(0).data.text.should.containEql(
         "Your profile will not be visible to others if you don't confirm your email address (" +
           user.emailTemporary +
           ').',
       );
-      jobs[0].data.text.should.containEql(
+      job(0).data.text.should.containEql(
         '/confirm-email/' + user.emailToken + '?signup=true',
       );
-      jobs[0].data.to.name.should.equal(user.displayName);
-      jobs[0].data.to.address.should.equal(user.email);
+      job(0).data.to.name!.should.equal(user.displayName);
+      job(0).data.to.address.should.equal(user.email);
       done();
     });
   });
@@ -690,8 +800,8 @@ describe('Service: email', function () {
     emailService.sendSignupEmailReminder(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].type.should.equal('send email');
-      jobs[0].data.subject.should.equal(
+      job(0).type.should.equal('send email');
+      job(0).data.subject.should.equal(
         'Last chance to complete your signup to Trustroots!',
       );
       done();
@@ -710,8 +820,8 @@ describe('Service: email', function () {
     emailService.sendSignupEmailReminder(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.to.address.should.equal(user.email);
-      jobs[0].data.text.should.containEql(user.email);
+      job(0).data.to.address.should.equal(user.email);
+      job(0).data.text.should.containEql(user.email);
       done();
     });
   });
@@ -723,8 +833,10 @@ describe('Service: email', function () {
   it('builds HTTPS account links when loaded with production proxy settings', async function () {
     sandbox.stub(config, 'https').value(true);
     sandbox.stub(config, 'domain').value('secure.example.test');
-    const { default: secureService } =
-      await import('../../../server/services/email.server.service.mjs?production-https');
+    const secureModule = (await import(
+      `${pathToFileURL(path.resolve(__dirname, '../../../server/services/email.server.service.mjs')).href}?production-https`
+    )) as { default: EmailService };
+    const { default: secureService } = secureModule;
     const send = sandbox.stub(secureService, 'renderEmailAndSend');
     secureService.sendResetPassword(
       {
@@ -734,7 +846,7 @@ describe('Service: email', function () {
       },
       function () {},
     );
-    send.firstCall.args[1].urlConfirmPlainText.should.equal(
+    send.firstCall.args[1].urlConfirmPlainText!.should.equal(
       'https://secure.example.test/api/auth/reset/fictional-token',
     );
   });
@@ -755,8 +867,8 @@ describe('Service: email', function () {
       utmCampaign: 'test',
     });
 
-    params.footerUrlPlainText.should.equal('https://secure.trustroots.test');
-    params.urlSupportPlainText.should.equal(
+    params.footerUrlPlainText!.should.equal('https://secure.trustroots.test');
+    params.urlSupportPlainText!.should.equal(
       'https://secure.trustroots.test/support',
     );
   });
@@ -770,17 +882,17 @@ describe('Service: email', function () {
     emailService.sendRemoveProfile(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.subject.should.equal(
+      job(0).data.subject.should.equal(
         'Confirm removing your Trustroots profile',
       );
-      jobs[0].data.html.should.containEql('Review account deletion');
-      jobs[0].data.html.should.containEql(
+      job(0).data.html!.should.containEql('Review account deletion');
+      job(0).data.html!.should.containEql(
         'Your account will not be deleted unless you confirm there.',
       );
-      jobs[0].data.text.should.containEql(
+      job(0).data.text.should.containEql(
         'Your account will not be deleted unless you confirm there.',
       );
-      jobs[0].data.text.should.containEql('/remove/remove-token');
+      job(0).data.text.should.containEql('/remove/remove-token');
       done();
     });
   });
@@ -793,7 +905,7 @@ describe('Service: email', function () {
     emailService.sendRemoveProfileConfirmed(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.subject.should.equal(
+      job(0).data.subject.should.equal(
         'Your Trustroots profile has been removed',
       );
       done();
@@ -812,17 +924,17 @@ describe('Service: email', function () {
     emailService.sendWelcomeSequenceFirst(user, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.subject.should.containEql('Welcome to Trustroots');
+      job(0).data.subject.should.containEql('Welcome to Trustroots');
 
       emailService.sendWelcomeSequenceSecond(user, function (err2) {
         if (err2) return done(err2);
         jobs.length.should.equal(2);
-        jobs[1].data.subject.should.containEql('Meet new people');
+        job(1).data.subject.should.containEql('Meet new people');
 
         emailService.sendWelcomeSequenceThird(user, function (err3) {
           if (err3) return done(err3);
           jobs.length.should.equal(3);
-          jobs[2].data.subject.should.containEql('How is it going');
+          job(2).data.subject.should.containEql('How is it going');
           done();
         });
       });
@@ -840,7 +952,7 @@ describe('Service: email', function () {
 
     emailService.sendWelcomeSequenceThird(user, function (err) {
       if (err) return done(err);
-      const sparkpostHeader = JSON.parse(jobs[0].data.headers['X-MSYS-API']);
+      const sparkpostHeader = JSON.parse(job(0).data.headers!['X-MSYS-API']);
       sparkpostHeader.campaign_id.should.containEql('fill-profile');
       done();
     });
@@ -857,7 +969,7 @@ describe('Service: email', function () {
 
     emailService.sendWelcomeSequenceThird(user, function (err) {
       if (err) return done(err);
-      const sparkpostHeader = JSON.parse(jobs[0].data.headers['X-MSYS-API']);
+      const sparkpostHeader = JSON.parse(job(0).data.headers!['X-MSYS-API']);
       sparkpostHeader.campaign_id.should.containEql('feedback');
       done();
     });
@@ -911,7 +1023,7 @@ describe('Service: email', function () {
       function (err) {
         if (err) return done(err);
         jobs.length.should.equal(1);
-        jobs[0].data.subject.should.containEql('shared their experience');
+        job(0).data.subject.should.containEql('shared their experience');
 
         emailService.sendExperienceNotificationSecond(
           userFrom,
@@ -920,10 +1032,10 @@ describe('Service: email', function () {
           function (err2) {
             if (err2) return done(err2);
             jobs.length.should.equal(2);
-            jobs[1].data.subject.should.containEql(
+            job(1).data.subject.should.containEql(
               'shared also their experience',
             );
-            jobs[1].data.text.should.containEql('experience-id');
+            job(1).data.text.should.containEql('experience-id');
             done();
           },
         );
@@ -943,7 +1055,7 @@ describe('Service: email', function () {
 
     emailService.renderEmail('reset-password', params, function (err, email) {
       if (err) return done(err);
-      email.html.should.containEql('<body style=');
+      email!.html!.should.containEql('<body style=');
       done();
     });
   });
@@ -956,7 +1068,7 @@ describe('Service: email', function () {
     };
     emailService.sendResetPasswordConfirm(user, function (err) {
       if (err) return done(err);
-      jobs[0].data.headers.should.deepEqual({
+      job(0).data.headers!.should.deepEqual({
         'X-MSYS-API': JSON.stringify({
           options: { transactional: true },
           campaign_id: 'reset-password-confirm',
@@ -980,7 +1092,7 @@ describe('Service: email', function () {
 
     emailService.renderEmail('reset-password', params, function (err, email) {
       if (err) return done(err);
-      email.text.should.containEql(
+      email!.text!.should.containEql(
         'This is an automated email. Please don’t reply directly.',
       );
       done();
@@ -1001,7 +1113,7 @@ describe('Service: email', function () {
 
     emailService.renderEmail('reset-password', params, function (err, email) {
       if (err) return done(err);
-      email.text.should.not.containEql(
+      email!.text!.should.not.containEql(
         'This is an automated email. Please don’t reply directly.',
       );
       done();
@@ -1018,7 +1130,7 @@ describe('Service: email', function () {
       'reset-password',
       { subject: 'test', name: 'test', email: 'test@test.com' },
       function (err) {
-        err.message.should.equal('render failed');
+        err!.message.should.equal('render failed');
         done();
       },
     );
@@ -1034,7 +1146,7 @@ describe('Service: email', function () {
       'reset-password',
       { subject: 'test', name: 'test', email: 'test@test.com' },
       function (err) {
-        err.message.should.equal('render failed');
+        err!.message.should.equal('render failed');
         jobs.length.should.equal(0);
         done();
       },
@@ -1060,7 +1172,7 @@ describe('Service: email', function () {
         utmCampaign: 'test',
       },
       function (err) {
-        err.message.should.equal('agenda failed');
+        err!.message.should.equal('agenda failed');
         jobs.length.should.equal(1);
         done();
       },
@@ -1081,8 +1193,8 @@ describe('Service: email', function () {
 
       emailService.renderEmail('reset-password', params, function (err, email) {
         if (err) return done(err);
-        should.exist(email.text);
-        should.not.exist(email.html);
+        should.exist(email!.text);
+        should.not.exist(email!.html);
         done();
       });
     });
@@ -1102,8 +1214,8 @@ describe('Service: email', function () {
         function (err, email) {
           if (err) return done(err);
 
-          email.text.should.containEql('> Foo & foobar bar');
-          email.text.should.not.containEql('script');
+          email!.text!.should.containEql('> Foo & foobar bar');
+          email!.text!.should.not.containEql('script');
 
           done();
         },
@@ -1139,42 +1251,42 @@ describe('Service: email', function () {
 
     it('creates a [send email] job', function () {
       jobs.length.should.equal(1);
-      jobs[0].type.should.equal('send email');
+      job(0).type.should.equal('send email');
     });
 
     it('sends to the correct recipient', function () {
-      jobs[0].data.to.name.should.equal(friend.displayName);
-      jobs[0].data.to.address.should.equal(friend.email);
+      job(0).data.to.name!.should.equal(friend.displayName);
+      job(0).data.to.address.should.equal(friend.email);
     });
 
     it('sets the subject', function () {
-      jobs[0].data.subject.should.equal('Confirm contact');
+      job(0).data.subject.should.equal('Confirm contact');
     });
 
     it('contains the user and friends name', function () {
-      jobs[0].data.html.should.containEql(user.displayName);
-      jobs[0].data.html.should.containEql(friend.displayName);
-      jobs[0].data.text.should.containEql(user.displayName);
-      jobs[0].data.text.should.containEql(friend.displayName);
+      job(0).data.html!.should.containEql(user.displayName);
+      job(0).data.html!.should.containEql(friend.displayName);
+      job(0).data.text.should.containEql(user.displayName);
+      job(0).data.text.should.containEql(friend.displayName);
     });
 
     it('sets the custom message', function () {
-      jobs[0].data.html.should.containEql(messageHTML);
-      jobs[0].data.text.should.containEql(messageText);
+      job(0).data.html!.should.containEql(messageHTML);
+      job(0).data.text.should.containEql(messageText);
     });
 
     it('contains the correct message', function () {
-      jobs[0].data.html.should.containEql(
+      job(0).data.html!.should.containEql(
         user.displayName + '</a> would like to connect with you on Trustroots.',
       );
-      jobs[0].data.text.should.containEql(
+      job(0).data.text.should.containEql(
         user.displayName + ' would like to connect with you on Trustroots.',
       );
     });
 
     it('contains the contact confirm url', function () {
-      jobs[0].data.html.should.containEql('/contact-confirm/' + contact._id);
-      jobs[0].data.text.should.containEql('/contact-confirm/' + contact._id);
+      job(0).data.html!.should.containEql('/contact-confirm/' + contact._id);
+      job(0).data.text.should.containEql('/contact-confirm/' + contact._id);
     });
 
     it('suppresses confirm contact email for banned sender', function (done) {

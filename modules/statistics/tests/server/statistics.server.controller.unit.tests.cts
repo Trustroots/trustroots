@@ -1,54 +1,190 @@
+import type {
+  ExperienceModel,
+  MessageStatModel,
+  OfferModel,
+  ReferenceThreadModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+
+type Callback<T> = (error: Error | null, result?: T) => void;
+type CountResult = {
+  total: number;
+  recommended: number;
+  notRecommended: number;
+  recent: { total: number; recommended: number; notRecommended: number };
+  realLifeConnections: { total: number; recent: number };
+};
+type InteractionResult = {
+  total: number;
+  positive: number;
+  negative: number;
+  recent: { total: number; positive: number; negative: number };
+};
+type HostingResult = { yes: number; maybe: number; no: number };
+type LanguageResult = Array<{ _id: string; count: number }>;
+type MobileStats = {
+  namespace: 'mobileAppInit';
+  counts: { count: number };
+  tags: { version: string; deviceYearClass: string };
+  meta: { os: string; expoVersion: string };
+};
+interface StatsService {
+  stat(stats: MobileStats, callback: (error?: Error) => void): void;
+}
+interface StatisticsBody {
+  message: string;
+  total: number;
+  connections: Array<{ network: string; count: number; percentage: number }>;
+  hosting: { total: number; yes: number; maybe: number };
+  newsletter: { count: number; percentage: number };
+  experiences: CountResult;
+  messageInteractions: InteractionResult;
+}
+interface DeferredResponse {
+  body: StatisticsBody;
+  headers: Record<string, string>;
+  sendCount: number;
+  statusCode: number;
+  status(code: number): DeferredResponse;
+  send(body: object): DeferredResponse;
+  json(body: object): DeferredResponse;
+  header(name: string, value: string): DeferredResponse;
+  waitForResponse(): Promise<DeferredResponse>;
+}
+interface StatisticsController {
+  clearPublicStatisticsCache(): void;
+  getUsersCount(callback: Callback<number>): void;
+  getNewsletterSubscriptionsCount(callback: Callback<number>): void;
+  getLastSeenStatistic(
+    input: { days: number },
+    callback: Callback<number>,
+  ): void;
+  getExternalSiteCount(site: string, callback: Callback<number>): void;
+  getMeetOffersCount(callback: Callback<number>): void;
+  getHostOffersCount(callback: Callback<HostingResult>): void;
+  getUserLanguagesCount(
+    limit: number,
+    callback: Callback<LanguageResult>,
+  ): void;
+  getExperienceStatistics(since: Date, callback: Callback<CountResult>): void;
+  getMessageInteractionStatistics(
+    since: Date,
+    callback: Callback<InteractionResult>,
+  ): void;
+  getPublicStatistics(request: object, response: DeferredResponse): void;
+  collectStatistics(
+    request: { body?: object },
+    response: DeferredResponse,
+  ): void;
+}
+
+function required<T>(value: T | null | undefined): NonNullable<T> {
+  if (value === null || value === undefined)
+    throw new Error('Expected saved fixture');
+  return value as NonNullable<T>;
+}
+
 /**
  * Unit tests for statistics controller helpers and write endpoints.
  */
-const mongoose = require('mongoose');
-const sinon = require('sinon');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const sinon: typeof import('sinon') = require('sinon');
+
+function typedStub<TArgs extends readonly unknown[]>(
+  target: object,
+  method: string,
+): import('sinon').SinonStub<TArgs, unknown> {
+  const methods = target as Record<string, (...args: TArgs) => unknown>;
+  return sinon.stub(methods, method) as unknown as import('sinon').SinonStub<
+    TArgs,
+    unknown
+  >;
+}
 
 require('./../../../offers/server/models/offer.server.model.mjs');
 require('./../../../users/server/models/user.server.model.mjs');
 require('./../../../experiences/server/models/experiences.server.model.mjs');
 require('./../../../messages/server/models/message-stat.server.model.mjs');
 require('./../../../references-thread/server/models/reference-thread.server.model.mjs');
-const statistics = require('./../../server/controllers/statistics.server.controller.mjs');
-const parseStatisticsCount =
+const statistics =
+  require('./../../server/controllers/statistics.server.controller.mjs') as StatisticsController;
+const parseStatisticsCount: typeof import('../../server/controllers/parse-statistics-count.mts').default =
   require('../../server/controllers/parse-statistics-count.mts').default;
-const statService = require('./../../../stats/server/services/stats.server.service.mts');
+const statService =
+  require('./../../../stats/server/services/stats.server.service.mts') as StatsService;
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
-const User = mongoose.model('User');
-const Offer = mongoose.model('Offer');
-const Experience = mongoose.model('Experience');
-const MessageStat = mongoose.model('MessageStat');
-const ReferenceThread = mongoose.model('ReferenceThread');
+type StatisticsUser = Omit<UserRecord, 'additionalProvidersData'> & {
+  additionalProvidersData?: Record<
+    string,
+    { id?: string; login?: string; screen_name?: string }
+  >;
+};
+type StatisticsUserModel = import('mongoose').Model<StatisticsUser>;
+const User = mongoose.model('User') as unknown as StatisticsUserModel;
+const Offer = mongoose.model('Offer') as unknown as OfferModel;
+const Experience = mongoose.model('Experience') as unknown as ExperienceModel;
+const MessageStat = mongoose.model(
+  'MessageStat',
+) as unknown as MessageStatModel;
+const ReferenceThread = mongoose.model(
+  'ReferenceThread',
+) as unknown as ReferenceThreadModel;
 
-function deferredResponse() {
-  let resolveResponse;
-  const promise = new Promise(resolve => {
+function deferredResponse(): DeferredResponse {
+  let resolveResponse!: (response: DeferredResponse) => void;
+  const promise = new Promise<DeferredResponse>(resolve => {
     resolveResponse = resolve;
   });
-  const res = { body: null, headers: {}, sendCount: 0, statusCode: 200 };
-  res.status = code => {
-    res.statusCode = code;
-    return res;
+  const res: DeferredResponse = {
+    body: {
+      message: '',
+      total: 0,
+      connections: [],
+      hosting: { total: 0, yes: 0, maybe: 0 },
+      newsletter: { count: 0, percentage: 0 },
+      experiences: {
+        total: 0,
+        recommended: 0,
+        notRecommended: 0,
+        recent: { total: 0, recommended: 0, notRecommended: 0 },
+        realLifeConnections: { total: 0, recent: 0 },
+      },
+      messageInteractions: {
+        total: 0,
+        positive: 0,
+        negative: 0,
+        recent: { total: 0, positive: 0, negative: 0 },
+      },
+    },
+    headers: {},
+    sendCount: 0,
+    statusCode: 200,
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    send(body) {
+      this.sendCount += 1;
+      this.body = body as StatisticsBody;
+      resolveResponse(this);
+      return this;
+    },
+    json(body) {
+      this.sendCount += 1;
+      this.body = body as StatisticsBody;
+      resolveResponse(this);
+      return this;
+    },
+    header(name, value) {
+      this.headers[name.toLowerCase()] = value;
+      return this;
+    },
+    waitForResponse() {
+      return promise;
+    },
   };
-  res.send = body => {
-    res.sendCount += 1;
-    res.body = body;
-    resolveResponse(res);
-    return res;
-  };
-  res.json = body => {
-    res.sendCount += 1;
-    res.body = body;
-    resolveResponse(res);
-    return res;
-  };
-  res.header = (name, value) => {
-    res.headers[name.toLowerCase()] = value;
-    return res;
-  };
-  res.waitForResponse = () => promise;
   return res;
 }
 
@@ -76,77 +212,106 @@ describe('Statistics controller unit tests', () => {
     const dbError = new Error('db unavailable');
 
     it('getUsersCount propagates database errors', done => {
-      sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
+      typedStub<[unknown, (error: Error | null, count: number) => void]>(
+        User,
+        'countDocuments',
+      ).callsFake((query, cb) => cb(dbError, 0));
       statistics.getUsersCount(err => {
-        err.should.be.Error();
+        err!.should.be.Error();
         done();
       });
     });
 
     it('getNewsletterSubscriptionsCount propagates database errors', done => {
-      sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
+      typedStub<[unknown, (error: Error | null, count: number) => void]>(
+        User,
+        'countDocuments',
+      ).callsFake((query, cb) => cb(dbError, 0));
       statistics.getNewsletterSubscriptionsCount(err => {
-        err.should.be.Error();
+        err!.should.be.Error();
         done();
       });
     });
 
     it('getLastSeenStatistic propagates database errors', done => {
-      sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
+      typedStub<[unknown, (error: Error | null, count: number) => void]>(
+        User,
+        'countDocuments',
+      ).callsFake((query, cb) => cb(dbError, 0));
       statistics.getLastSeenStatistic({ days: 7 }, err => {
-        err.should.be.Error();
+        err!.should.be.Error();
         done();
       });
     });
 
     it('getExternalSiteCount propagates database errors', done => {
-      sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
+      typedStub<[unknown, (error: Error | null, count: number) => void]>(
+        User,
+        'countDocuments',
+      ).callsFake((query, cb) => cb(dbError, 0));
       statistics.getExternalSiteCount('github', err => {
-        err.should.be.Error();
+        err!.should.be.Error();
         done();
       });
     });
 
     it('getMeetOffersCount propagates database errors', done => {
-      sinon.stub(Offer, 'countDocuments').callsFake((query, cb) => cb(dbError));
+      typedStub<[unknown, (error: Error | null, count: number) => void]>(
+        Offer,
+        'countDocuments',
+      ).callsFake((query, cb) => cb(dbError, 0));
       statistics.getMeetOffersCount(err => {
-        err.should.be.Error();
+        err!.should.be.Error();
         done();
       });
     });
 
     it('getHostOffersCount propagates database errors', done => {
-      sinon.stub(Offer, 'aggregate').callsFake((pipeline, cb) => cb(dbError));
+      typedStub<[unknown, (error: Error | null, rows: unknown[]) => void]>(
+        Offer,
+        'aggregate',
+      ).callsFake((pipeline, cb) => cb(dbError, []));
       statistics.getHostOffersCount(err => {
-        err.should.be.Error();
+        err!.should.be.Error();
         done();
       });
     });
 
     it('getUserLanguagesCount propagates database errors', done => {
-      sinon.stub(User, 'aggregate').callsFake((pipeline, cb) => cb(dbError));
+      typedStub<[unknown, (error: Error | null, rows: unknown[]) => void]>(
+        User,
+        'aggregate',
+      ).callsFake((pipeline, cb) => cb(dbError, []));
       statistics.getUserLanguagesCount(5, err => {
-        err.should.be.Error();
+        err!.should.be.Error();
         done();
       });
     });
 
     it('getExperienceStatistics propagates database errors', done => {
-      sinon
-        .stub(Experience, 'aggregate')
-        .callsFake((pipeline, cb) => cb(dbError));
+      typedStub<[unknown, (error: Error | null, rows: unknown[]) => void]>(
+        Experience,
+        'aggregate',
+      ).callsFake((pipeline, cb) => {
+        cb(dbError, []);
+        return undefined;
+      });
       statistics.getExperienceStatistics(new Date(), err => {
-        err.should.be.Error();
+        err!.should.be.Error();
         done();
       });
     });
 
     it('getMessageInteractionStatistics propagates database errors', done => {
-      sinon
-        .stub(MessageStat, 'aggregate')
-        .callsFake((pipeline, cb) => cb(dbError));
+      typedStub<[unknown, (error: Error | null, rows: unknown[]) => void]>(
+        MessageStat,
+        'aggregate',
+      ).callsFake((pipeline, cb) => {
+        cb(dbError, []);
+        return undefined;
+      });
       statistics.getMessageInteractionStatistics(new Date(), err => {
-        err.should.be.Error();
+        err!.should.be.Error();
         done();
       });
     });
@@ -218,10 +383,10 @@ describe('Statistics controller unit tests', () => {
         },
       ]);
 
-      const result = await new Promise((resolve, reject) => {
+      const result = await new Promise<InteractionResult>((resolve, reject) => {
         statistics.getMessageInteractionStatistics(since, (err, counts) => {
           if (err) return reject(err);
-          resolve(counts);
+          resolve(counts!);
         });
       });
 
@@ -236,7 +401,7 @@ describe('Statistics controller unit tests', () => {
     it('returns zeroed counts when there are no message interactions', done => {
       statistics.getMessageInteractionStatistics(new Date(), (err, counts) => {
         if (err) return done(err);
-        counts.should.deepEqual({
+        counts!.should.deepEqual({
           total: 0,
           positive: 0,
           negative: 0,
@@ -250,23 +415,26 @@ describe('Statistics controller unit tests', () => {
   describe('getExternalSiteCount', () => {
     it('errors for an invalid site id', done => {
       statistics.getExternalSiteCount('invalid', err => {
-        err.should.be.Error();
-        err.message.should.equal('Missing external site id.');
+        err!.should.be.Error();
+        err!.message.should.equal('Missing external site id.');
         done();
       });
     });
 
     it('counts users connected to github', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await User.findById(saved._id);
+      const userDoc = required(
+        (await User.findById(saved._id)) as
+          import('mongoose').HydratedDocument<StatisticsUser> | null,
+      );
       userDoc.public = true;
       userDoc.additionalProvidersData = { github: { id: '123' } };
       await userDoc.save();
 
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         statistics.getExternalSiteCount('github', (err, count) => {
           if (err) return reject(err);
-          count.should.equal(1);
+          count!.should.equal(1);
           resolve();
         });
       });
@@ -283,7 +451,10 @@ describe('Statistics controller unit tests', () => {
     ].forEach(site => {
       it(`counts users connected to ${site}`, async () => {
         const [saved] = await utils.saveUsers(utils.generateUsers(1));
-        const userDoc = await User.findById(saved._id);
+        const userDoc = required(
+          (await User.findById(saved._id)) as
+            import('mongoose').HydratedDocument<StatisticsUser> | null,
+        );
         userDoc.public = true;
 
         switch (site) {
@@ -315,10 +486,10 @@ describe('Statistics controller unit tests', () => {
 
         await userDoc.save();
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
           statistics.getExternalSiteCount(site, (err, count) => {
             if (err) return reject(err);
-            count.should.equal(1);
+            count!.should.equal(1);
             resolve();
           });
         });
@@ -329,10 +500,10 @@ describe('Statistics controller unit tests', () => {
   describe('count helpers', () => {
     it('counts public users', async () => {
       await utils.saveUsers(utils.generateUsers(2, { public: true }));
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         statistics.getUsersCount((err, count) => {
           if (err) return reject(err);
-          count.should.be.aboveOrEqual(2);
+          count!.should.be.aboveOrEqual(2);
           resolve();
         });
       });
@@ -346,10 +517,10 @@ describe('Statistics controller unit tests', () => {
         user: saved._id,
       }).save();
 
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         statistics.getMeetOffersCount((err, count) => {
           if (err) return reject(err);
-          count.should.equal(1);
+          count!.should.equal(1);
           resolve();
         });
       });
@@ -357,14 +528,17 @@ describe('Statistics controller unit tests', () => {
 
     it('counts users seen recently', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await User.findById(saved._id);
+      const userDoc = required(
+        (await User.findById(saved._id)) as
+          import('mongoose').HydratedDocument<StatisticsUser> | null,
+      );
       userDoc.seen = new Date();
       await userDoc.save();
 
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         statistics.getLastSeenStatistic({ days: 7 }, (err, count) => {
           if (err) return reject(err);
-          count.should.be.aboveOrEqual(1);
+          count!.should.be.aboveOrEqual(1);
           resolve();
         });
       });
@@ -375,10 +549,10 @@ describe('Statistics controller unit tests', () => {
         utils.generateUsers(2, { public: true, newsletter: true }),
       );
 
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         statistics.getNewsletterSubscriptionsCount((err, count) => {
           if (err) return reject(err);
-          count.should.be.aboveOrEqual(2);
+          count!.should.be.aboveOrEqual(2);
           resolve();
         });
       });
@@ -386,14 +560,17 @@ describe('Statistics controller unit tests', () => {
 
     it('returns top spoken languages', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await User.findById(saved._id);
+      const userDoc = required(
+        (await User.findById(saved._id)) as
+          import('mongoose').HydratedDocument<StatisticsUser> | null,
+      );
       userDoc.languages = ['eng', 'fin'];
       await userDoc.save();
 
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         statistics.getUserLanguagesCount(5, (err, counts) => {
           if (err) return reject(err);
-          counts.length.should.be.aboveOrEqual(1);
+          counts!.length.should.be.aboveOrEqual(1);
           resolve();
         });
       });
@@ -443,12 +620,14 @@ describe('Statistics controller unit tests', () => {
         },
       ]);
 
-      const experienceStatistics = await new Promise((resolve, reject) => {
-        statistics.getExperienceStatistics(since, (err, result) => {
-          if (err) return reject(err);
-          resolve(result);
-        });
-      });
+      const experienceStatistics = await new Promise<CountResult>(
+        (resolve, reject) => {
+          statistics.getExperienceStatistics(since, (err, result) => {
+            if (err) return reject(err);
+            resolve(result!);
+          });
+        },
+      );
 
       experienceStatistics.should.deepEqual({
         total: 5,
@@ -464,7 +643,7 @@ describe('Statistics controller unit tests', () => {
     it('returns zeroed counters when there are no host offers', done => {
       statistics.getHostOffersCount((err, counters) => {
         if (err) return done(err);
-        counters.should.deepEqual({ yes: 0, maybe: 0, no: 0 });
+        counters!.should.deepEqual({ yes: 0, maybe: 0, no: 0 });
         done();
       });
     });
@@ -484,28 +663,37 @@ describe('Statistics controller unit tests', () => {
         user: saved._id,
       }).save();
 
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         statistics.getHostOffersCount((err, counters) => {
           if (err) return reject(err);
-          counters.yes.should.equal(1);
-          counters.maybe.should.equal(1);
+          counters!.yes.should.equal(1);
+          counters!.maybe.should.equal(1);
           resolve();
         });
       });
     });
 
     it('ignores unknown statuses and defaults invalid counts to zero', done => {
-      sinon.stub(Offer, 'aggregate').callsFake((pipeline, cb) => {
+      typedStub<
+        [
+          unknown,
+          (
+            error: Error | null,
+            rows: Array<{ _id: string; count: string }>,
+          ) => void,
+        ]
+      >(Offer, 'aggregate').callsFake((pipeline, cb) => {
         cb(null, [
           { _id: 'yes', count: '2' },
           { _id: 'maybe', count: 'not-a-number' },
           { _id: 'other', count: '9' },
         ]);
+        return undefined;
       });
 
       statistics.getHostOffersCount((err, counters) => {
         if (err) return done(err);
-        counters.should.deepEqual({ yes: 2, maybe: 0, no: 0 });
+        counters!.should.deepEqual({ yes: 2, maybe: 0, no: 0 });
         done();
       });
     });
