@@ -32,10 +32,13 @@ interface UserFixtureExtraFields {
   avatarSource?: string;
   avatarUploaded?: boolean;
   avatarVersion?: string;
-  created?: Date | string;
+  created?: Date;
   emailHash?: string;
+  emailTokenIssuedAt?: Date;
+  emailTokenExpires?: Date;
   provider?: string;
   emailTemporary?: string;
+  publicReminderCount?: number;
   pushRegistration?: PushRegistrationFixture[];
   description?: string;
   displayName?: string;
@@ -52,7 +55,7 @@ type ExperienceFixtureDocument = HydratedDocument<ExperienceFixture> &
   Pick<ExperienceFixture, 'interactions'> & {
     _id: mongoose.Types.ObjectId;
   };
-type UserFixtureDocument = HydratedDocument<
+export type UserFixtureDocument = HydratedDocument<
   CachedUserFixtureData,
   UserFixtureMethods
 >;

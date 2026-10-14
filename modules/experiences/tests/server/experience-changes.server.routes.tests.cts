@@ -1,28 +1,88 @@
-const crypto = require('crypto');
-const mongoose = require('mongoose');
-const request = require('supertest');
-const sinon = require('sinon');
+import type {
+  ExperienceDocument,
+  ExperienceModel,
+  ExperienceRecord,
+  TestAgent,
+  TestExpressModule,
+  UserDocument,
+  UserModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+const crypto: typeof import('crypto') = require('crypto');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const request: typeof import('supertest') = require('supertest');
+const sinon: typeof import('sinon') = require('sinon');
 require('should');
 
-const express = require('../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const statistics = require('../../../statistics/server/controllers/statistics.server.controller.mjs');
-const publishExperiences = require('../../server/jobs/experiences-publish.server.job.mjs');
-const adminChanges = require('../../../admin/server/controllers/admin.experience-changes.server.controller.mjs');
-const memberChanges = require('../../server/controllers/experience-changes.server.controller.mjs');
-const experiencePolicy = require('../../server/policies/experiences.server.policy.mts');
+const express: TestExpressModule = require('../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+const statistics: typeof import('../../../statistics/server/controllers/statistics.server.controller.mjs') = require('../../../statistics/server/controllers/statistics.server.controller.mjs');
+const publishExperiences: typeof import('../../server/jobs/experiences-publish.server.job.mjs') = require('../../server/jobs/experiences-publish.server.job.mjs');
+const adminChanges: typeof import('../../../admin/server/controllers/admin.experience-changes.server.controller.mjs') = require('../../../admin/server/controllers/admin.experience-changes.server.controller.mjs');
+const memberChanges: typeof import('../../server/controllers/experience-changes.server.controller.mjs') = require('../../server/controllers/experience-changes.server.controller.mjs');
+const experiencePolicy: typeof import('../../server/policies/experiences.server.policy.mts') = require('../../server/policies/experiences.server.policy.mts');
 
-const Experience = mongoose.model('Experience');
+const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
+  'Experience',
+);
 const ExperienceChangeLink = mongoose.model('ExperienceChangeLink');
 const ExperienceChangeRequest = mongoose.model('ExperienceChangeRequest');
 const AuditLog = mongoose.model('AuditLog');
-const User = mongoose.model('User');
+const User = mongoose.model<UserRecord, UserModel>('User');
+type ExperienceStatistics = {
+  total: number;
+  realLifeConnections: { total: number };
+};
+type StatisticsController = {
+  getExperienceStatistics(
+    since: Date,
+    callback: (error: Error | null, result: ExperienceStatistics) => void,
+  ): void;
+};
+const typedStatistics = statistics as unknown as StatisticsController;
+type PublishExperiencesJob = (
+  job: null,
+  done: (error: Error | null) => void,
+) => void;
+const typedPublishExperiences =
+  publishExperiences as unknown as PublishExperiencesJob;
+type MemberRequest = Parameters<typeof memberChanges.submit>[0];
+type AdminIssueRequest = Parameters<typeof adminChanges.issueLink>[0];
+type AdminFindRequest = Parameters<typeof adminChanges.findExperiences>[0];
+type AdminListRequest = Parameters<typeof adminChanges.listRequests>[0];
+type AdminDecisionRequest = Parameters<typeof adminChanges.decide>[0];
+type PolicyRequest = Parameters<typeof experiencePolicy.isAllowedChange>[0];
+interface TestResponse {
+  status(code: number): TestResponse;
+  json(body: unknown): TestResponse;
+  send(body: unknown): TestResponse;
+}
+const createTestResponse = () => {
+  const statusSpy = sinon.spy();
+  const jsonSpy = sinon.spy();
+  const sendSpy = sinon.spy();
+  const response: TestResponse = {
+    status(code) {
+      statusSpy(code);
+      return response;
+    },
+    json(body) {
+      jsonSpy(body);
+      return response;
+    },
+    send(body) {
+      sendSpy(body);
+      return response;
+    },
+  };
+  return { response, statusSpy, jsonSpy, sendSpy };
+};
 
 describe('Experience change requests', () => {
-  let adminAgent;
-  let authorAgent;
-  let recipientAgent;
-  let unrelatedAgent;
+  let adminAgent: TestAgent;
+  let authorAgent: TestAgent;
+  let recipientAgent: TestAgent;
+  let unrelatedAgent: TestAgent;
 
   before(async () => {
     const app = await express.init(mongoose.connection);
@@ -34,21 +94,29 @@ describe('Experience change requests', () => {
   const users = utils.generateUsers(4, { public: true });
   users[0].roles = ['user', 'admin'];
 
-  let author;
-  let recipient;
-  let experience;
+  let author: UserDocument;
+  let recipient: UserDocument;
+  let experience: ExperienceDocument;
 
-  async function issue(memberId) {
+  async function issue(memberId: string) {
     const response = await adminAgent
       .post(`/api/admin/experiences/${experience._id}/change-links`)
       .send({ memberId })
       .expect(201);
-    return new URL(response.body.path, 'https://example.test').searchParams.get(
-      'secret',
-    );
+    const secret = new URL(
+      response.body.path,
+      'https://example.test',
+    ).searchParams.get('secret');
+    if (secret === null) throw new Error('Expected an issued change secret');
+    return secret;
   }
 
-  const secretHeader = secret => ({ 'X-Experience-Change-Secret': secret });
+  const secretHeader = (secret: string) => ({
+    'X-Experience-Change-Secret': secret,
+  });
+  const authorIdentity = () => ({
+    _id: new mongoose.Types.ObjectId(author._id.toString()),
+  });
 
   beforeEach(async () => {
     [, author, recipient] = await utils.saveUsers(users);
@@ -82,9 +150,12 @@ describe('Experience change requests', () => {
       .get('/api/admin/experiences')
       .query({ username: users[1].username })
       .expect(200);
-    search.body.map(item => item._id).should.containEql(String(experience._id));
+    const searchResults = search.body as Array<{ _id: string }>;
+    searchResults
+      .map(item => item._id)
+      .should.containEql(String(experience._id));
 
-    const secret = await issue(author._id);
+    const secret = await issue(author._id.toString());
     const link = await ExperienceChangeLink.findOne({
       experience: experience._id,
       member: author._id,
@@ -130,8 +201,9 @@ describe('Experience change requests', () => {
     submitted.body.status.should.equal('pending');
 
     const unchanged = await Experience.findById(experience._id).lean();
-    unchanged.feedbackPublic.should.equal('An anonymous original Experience.');
-    unchanged.recommend.should.equal('yes');
+    if (!unchanged) throw new Error('Expected the original Experience');
+    unchanged.feedbackPublic!.should.equal('An anonymous original Experience.');
+    unchanged.recommend!.should.equal('yes');
 
     await authorAgent
       .post(`/api/experiences/${experience._id}/change-requests`)
@@ -182,12 +254,13 @@ describe('Experience change requests', () => {
     );
 
     const approved = await Experience.findById(experience._id).lean();
-    approved.feedbackPublic.should.equal(proposed.feedbackPublic);
-    approved.recommend.should.equal('no');
-    approved.public.should.equal(true);
-    approved.created
-      .toISOString()
-      .should.equal(experience.created.toISOString());
+    if (!approved) throw new Error('Expected the approved Experience');
+    approved.feedbackPublic!.should.equal(proposed.feedbackPublic);
+    approved.recommend!.should.equal('no');
+    approved.public!.should.equal(true);
+    approved
+      .created!.toISOString()
+      .should.equal(experience.created!.toISOString());
 
     const mine = await authorAgent
       .get(`/api/experiences/${experience._id}/change-requests/mine`)
@@ -225,8 +298,11 @@ describe('Experience change requests', () => {
       .get('/api/admin/experiences')
       .query({ username: users[2].username })
       .expect(200);
-    search.body.map(item => item._id).should.containEql(String(experience._id));
-    const secret = await issue(recipient._id);
+    const searchResults = search.body as Array<{ _id: string }>;
+    searchResults
+      .map(item => item._id)
+      .should.containEql(String(experience._id));
+    const secret = await issue(recipient._id.toString());
 
     const access = await recipientAgent
       .get(`/api/experiences/${experience._id}/change-access`)
@@ -258,9 +334,9 @@ describe('Experience change requests', () => {
       )
       .send({ decision: 'reject' })
       .expect(200);
-    (await Experience.findById(experience._id).lean()).should.not.have.property(
-      'removedAt',
-    );
+    const rejectedRemoval = await Experience.findById(experience._id).lean();
+    if (!rejectedRemoval) throw new Error('Expected the original Experience');
+    rejectedRemoval.should.not.have.property('removedAt');
     const second = await recipientAgent
       .post(`/api/experiences/${experience._id}/change-requests`)
       .set(secretHeader(secret))
@@ -272,17 +348,21 @@ describe('Experience change requests', () => {
       .expect(200);
 
     const removed = await Experience.findById(experience._id).lean();
-    removed.removedAt.should.be.instanceOf(Date);
-    (await Experience.findById(reciprocal._id).lean()).public.should.equal(
-      true,
-    );
+    if (!removed) throw new Error('Expected the removed Experience');
+    removed.removedAt!.should.be.instanceOf(Date);
+    const reciprocalAfterRemoval = await Experience.findById(
+      reciprocal._id,
+    ).lean();
+    if (!reciprocalAfterRemoval)
+      throw new Error('Expected the reciprocal Experience');
+    reciprocalAfterRemoval.public!.should.equal(true);
     await authorAgent.get(`/api/experiences/${experience._id}`).expect(404);
     await authorAgent.get(`/api/experiences/${reciprocal._id}`).expect(200);
     const listed = await recipientAgent
       .get('/api/experiences')
       .query({ userTo: recipient._id.toString() })
       .expect(200);
-    listed.body
+    (listed.body as Array<{ _id: string }>)
       .map(item => item._id)
       .should.not.containEql(String(experience._id));
     const count = await recipientAgent
@@ -290,23 +370,28 @@ describe('Experience change requests', () => {
       .query({ userTo: recipient._id.toString() })
       .expect(200);
     count.body.count.should.equal(0);
-    const counts = await new Promise((resolve, reject) => {
-      statistics.getExperienceStatistics(new Date(0), (error, result) => {
-        if (error) reject(error);
-        else resolve(result);
-      });
-    });
+    const counts = await new Promise<ExperienceStatistics>(
+      (resolve, reject) => {
+        typedStatistics.getExperienceStatistics(
+          new Date(0),
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          },
+        );
+      },
+    );
     counts.total.should.equal(1);
     counts.realLifeConnections.total.should.equal(1);
-    await new Promise((resolve, reject) => {
-      publishExperiences(null, error => {
+    await new Promise<void>((resolve, reject) => {
+      typedPublishExperiences(null, error => {
         if (error) reject(error);
         else resolve();
       });
     });
-    (await Experience.findById(experience._id).lean()).public.should.equal(
-      false,
-    );
+    const unpublished = await Experience.findById(experience._id).lean();
+    if (!unpublished) throw new Error('Expected the unpublished Experience');
+    unpublished.public!.should.equal(false);
     await authorAgent
       .post('/api/experiences')
       .send({
@@ -327,8 +412,8 @@ describe('Experience change requests', () => {
   });
 
   it('rejects expired, replaced, unrelated, and unauthorised links', async () => {
-    const first = await issue(author._id);
-    const second = await issue(author._id);
+    const first = await issue(author._id.toString());
+    const second = await issue(author._id.toString());
     first.should.not.equal(second);
     await authorAgent
       .get(`/api/experiences/${experience._id}/change-access`)
@@ -344,7 +429,7 @@ describe('Experience change requests', () => {
       .get(`/api/experiences/${experience._id}/change-access`)
       .set(secretHeader(second))
       .expect(200);
-    const recipientSecret = await issue(recipient._id);
+    const recipientSecret = await issue(recipient._id.toString());
     const recipientAccess = await recipientAgent
       .get(`/api/experiences/${experience._id}/change-access`)
       .set(secretHeader(recipientSecret))
@@ -427,7 +512,7 @@ describe('Experience change requests', () => {
       .send({ decision: 'invalid' })
       .expect(400);
 
-    const secret = await issue(author._id);
+    const secret = await issue(author._id.toString());
     await authorAgent
       .get('/api/experiences/invalid/change-access')
       .set(secretHeader(secret))
@@ -495,22 +580,15 @@ describe('Experience change requests', () => {
   });
 
   it('passes null and missing request bodies through the controller error path', async () => {
-    const secret = await issue(author._id);
+    const secret = await issue(author._id.toString());
     const next = sinon.spy();
-    const response = {
-      status() {
-        return this;
-      },
-      json() {
-        return this;
-      },
-    };
+    const { response } = createTestResponse();
 
     await memberChanges.submit(
       {
         params: { id: String(experience._id) },
         body: null,
-        user: author,
+        user: authorIdentity(),
         get: () => secret,
       },
       response,
@@ -521,7 +599,12 @@ describe('Experience change requests', () => {
 
     next.resetHistory();
     await adminChanges.issueLink(
-      { params: { id: String(experience._id) }, body: undefined, user: author },
+      {
+        params: { id: String(experience._id) },
+        body: undefined,
+        query: {},
+        user: authorIdentity(),
+      },
       response,
       next,
     );
@@ -531,38 +614,45 @@ describe('Experience change requests', () => {
 
   it('checks invalid admin IDs before reading null request bodies', async () => {
     const next = sinon.spy();
-    const response = {
-      status: sinon.stub().returnsThis(),
-      json: sinon.spy(),
-    };
+    const { response, statusSpy, jsonSpy } = createTestResponse();
 
     await adminChanges.issueLink(
-      { params: { id: 'invalid' }, body: null, user: author },
+      {
+        params: { id: 'invalid' },
+        query: {},
+        body: null,
+        user: authorIdentity(),
+      },
       response,
       next,
     );
-    response.status.calledWith(400).should.equal(true);
-    response.json
+    statusSpy.calledWith(400).should.equal(true);
+    jsonSpy
       .calledWith({ message: 'Invalid Experience or member.' })
       .should.equal(true);
     next.called.should.equal(false);
 
-    response.status.resetHistory();
-    response.json.resetHistory();
+    statusSpy.resetHistory();
+    jsonSpy.resetHistory();
     await adminChanges.decide(
-      { params: { id: 'invalid' }, body: null, user: author },
+      {
+        params: { id: 'invalid' },
+        query: {},
+        body: null,
+        user: authorIdentity(),
+      },
       response,
       next,
     );
-    response.status.calledWith(400).should.equal(true);
-    response.json
+    statusSpy.calledWith(400).should.equal(true);
+    jsonSpy
       .calledWith({ message: 'Invalid review decision.' })
       .should.equal(true);
     next.called.should.equal(false);
   });
 
   it('keeps a failed approval pending for retry and reports a processing request as pending', async () => {
-    const secret = await issue(author._id);
+    const secret = await issue(author._id.toString());
     const submitted = await authorAgent
       .post(`/api/experiences/${experience._id}/change-requests`)
       .set(secretHeader(secret))
@@ -591,11 +681,12 @@ describe('Experience change requests', () => {
       .send({ decision: 'approve' })
       .expect(500);
     const pending = await ExperienceChangeRequest.findById(submitted.body._id);
+    if (!pending) throw new Error('Expected the request to remain pending');
     pending.status.should.equal('pending');
   });
 
   it('returns a conflict when a concurrent request wins the unique index', async () => {
-    const secret = await issue(author._id);
+    const secret = await issue(author._id.toString());
     sinon.stub(ExperienceChangeRequest, 'create').rejects({ code: 11000 });
     await authorAgent
       .post(`/api/experiences/${experience._id}/change-requests`)
@@ -605,19 +696,12 @@ describe('Experience change requests', () => {
   });
 
   it('preserves the error path for nullish and primitive create rejections', async () => {
-    const secret = await issue(author._id);
-    const response = {
-      status() {
-        return this;
-      },
-      json() {
-        return this;
-      },
-    };
-    const request = {
+    const secret = await issue(author._id.toString());
+    const { response } = createTestResponse();
+    const request: MemberRequest = {
       params: { id: String(experience._id) },
       body: { kind: 'remove' },
-      user: author,
+      user: authorIdentity(),
       get: () => secret,
     };
 
@@ -625,11 +709,14 @@ describe('Experience change requests', () => {
       sinon
         .stub(ExperienceChangeRequest, 'create')
         .callsFake(() => Promise.reject(error));
-      let rejected;
+      let rejected: unknown;
       try {
         await memberChanges.submit(request, response, sinon.spy());
       } catch (caught) {
         rejected = caught;
+      }
+      if (!(rejected instanceof TypeError)) {
+        throw new Error('Expected the rejected handler to throw a TypeError');
       }
       rejected.should.be.instanceof(TypeError);
       sinon.restore();
@@ -649,21 +736,40 @@ describe('Experience change requests', () => {
     const error = new Error('Database unavailable');
     const next = sinon.spy();
     sinon.stub(Experience, 'findById').throws(error);
-    const memberRequest = {
+    const memberRequest: MemberRequest = {
       params: { id: String(experience._id) },
-      user: author,
+      body: undefined,
+      user: authorIdentity(),
+      get: () => undefined,
     };
-    await memberChanges.readAccess(memberRequest, {}, next);
-    await memberChanges.readMine(memberRequest, {}, next);
-    await memberChanges.submit(memberRequest, {}, next);
+    await memberChanges.readAccess(
+      memberRequest,
+      createTestResponse().response,
+      next,
+    );
+    await memberChanges.readMine(
+      memberRequest,
+      createTestResponse().response,
+      next,
+    );
+    await memberChanges.submit(
+      memberRequest,
+      createTestResponse().response,
+      next,
+    );
     next.callCount.should.equal(3);
     next.alwaysCalledWithExactly(error).should.equal(true);
     sinon.restore();
 
     sinon.stub(User, 'findOne').throws(error);
     await adminChanges.findExperiences(
-      { query: { username: 'fictional' } },
-      {},
+      {
+        params: {},
+        query: { username: 'fictional' },
+        body: undefined,
+        user: authorIdentity(),
+      } satisfies AdminFindRequest,
+      createTestResponse().response,
       next,
     );
     sinon.restore();
@@ -672,18 +778,34 @@ describe('Experience change requests', () => {
       {
         params: { id: String(experience._id) },
         body: { memberId: String(author._id) },
-      },
-      {},
+        query: {},
+        user: authorIdentity(),
+      } satisfies AdminIssueRequest,
+      createTestResponse().response,
       next,
     );
     sinon.restore();
     sinon.stub(ExperienceChangeRequest, 'find').throws(error);
-    await adminChanges.listRequests({}, {}, next);
+    await adminChanges.listRequests(
+      {
+        params: {},
+        query: {},
+        body: undefined,
+        user: authorIdentity(),
+      } satisfies AdminListRequest,
+      createTestResponse().response,
+      next,
+    );
     sinon.restore();
     sinon.stub(ExperienceChangeRequest, 'findOneAndUpdate').throws(error);
     await adminChanges.decide(
-      { params: { id: String(experience._id) }, body: { decision: 'approve' } },
-      {},
+      {
+        params: { id: String(experience._id) },
+        body: { decision: 'approve' },
+        query: {},
+        user: authorIdentity(),
+      } satisfies AdminDecisionRequest,
+      createTestResponse().response,
       next,
     );
     next.callCount.should.equal(7);
@@ -691,26 +813,26 @@ describe('Experience change requests', () => {
   });
 
   it('denies unauthenticated policy calls and passes policy errors onward', async () => {
-    const response = {
-      status: sinon.stub().returnsThis(),
-      json: sinon.spy(),
-    };
+    const { response, statusSpy } = createTestResponse();
     const next = sinon.spy();
     const route = { path: '/api/experiences/:id/change-access' };
     await experiencePolicy.isAllowedChange(
-      { user: null, route, method: 'GET' },
+      { user: null, route, method: 'GET' } as unknown as PolicyRequest,
       response,
       next,
     );
-    response.status.calledWith(403).should.equal(true);
+    statusSpy.calledWith(403).should.equal(true);
     await experiencePolicy.isAllowedChange(
-      { user: {}, route, method: 'GET' },
+      { user: { _id: { valueOf: () => '' } }, route, method: 'GET' },
       response,
       next,
     );
-    response.status.calledTwice.should.equal(true);
+    statusSpy.calledTwice.should.equal(true);
     await experiencePolicy.isAllowedChange(
-      { user: { roles: ['user'] }, method: 'GET' },
+      {
+        user: { roles: ['user'], _id: { valueOf: () => '' } },
+        method: 'GET',
+      } as unknown as PolicyRequest,
       response,
       next,
     );
