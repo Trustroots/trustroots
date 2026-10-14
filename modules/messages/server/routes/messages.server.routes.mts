@@ -1,10 +1,8 @@
-import messagesPolicy from './../policies/messages.server.policy.mts';
-import messages from './../controllers/messages.server.controller.mjs';
+import type { Application } from 'express';
+import messagesPolicy from '../policies/messages.server.policy.mts';
+import messages from '../controllers/messages.server.controller.mjs';
 
-/**
- * Module dependencies.
- */
-function register(app) {
+function register(app: Application): void {
   app
     .route('/api/messages')
     .all(messagesPolicy.isAllowed)
@@ -35,6 +33,7 @@ function register(app) {
   // Finish by binding the message middleware
   app.param('messageUserId', messages.threadByUser);
 }
+
 export { register };
 export default register;
 export { register as 'module.exports' };

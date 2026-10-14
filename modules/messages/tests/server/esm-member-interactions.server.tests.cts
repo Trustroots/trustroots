@@ -11,7 +11,7 @@ const modules = [
   'modules/messages/server/models/message.server.model.mjs',
   'modules/messages/server/models/thread.server.model.mjs',
   'modules/messages/server/policies/messages.server.policy.mts',
-  'modules/messages/server/routes/messages.server.routes.mjs',
+  'modules/messages/server/routes/messages.server.routes.mts',
   'modules/messages/server/services/message-stat.server.service.mjs',
   'modules/messages/server/services/message-to-stats.server.service.mjs',
   'modules/contacts/server/controllers/contacts.server.controller.mjs',

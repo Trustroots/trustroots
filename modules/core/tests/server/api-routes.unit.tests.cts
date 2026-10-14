@@ -244,7 +244,7 @@ describe('API route registrations', () => {
     );
 
     const { params, routes } = register(
-      './../../../messages/server/routes/messages.server.routes.mjs',
+      './../../../messages/server/routes/messages.server.routes.mts',
       {
         '../controllers/messages.server.controller': messages,
         '../policies/messages.server.policy': policy,
