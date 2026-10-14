@@ -7,6 +7,7 @@ import type {
   UserModel,
   UserRecord,
 } from '../../../../testutils/server/model-contracts.mts';
+import type { OfferPayload } from '../../shared/offer.js';
 /**
  * Unit tests for the offers controller guard, validation, middleware and error
  * branches that the route tests do not exercise. Handlers are invoked directly
@@ -927,16 +928,8 @@ describe('Offers controller unit tests', () => {
       );
       offerReq.user.member = [{ tribe: new mongoose.Types.ObjectId() }];
 
-      const populate = sinon.stub(
-        User,
-        'populate',
-      ) as unknown as import('sinon').SinonStub<
-        [UserRecord, unknown, (error: Error | null, user?: UserRecord) => void],
-        void
-      >;
-      populate.callsFake((_doc, _options, cb) =>
-        cb(new Error('populate failed')),
-      );
+      const populate = sinon.stub(User, 'populate');
+      populate.rejects(new Error('populate failed'));
 
       const { res } = await runHandler(res =>
         offersController.getOffer({ user: owner, offer: offerReq }, res),
@@ -1000,10 +993,19 @@ describe('Offers controller unit tests', () => {
 
   describe('listOffersByUser', () => {
     it('returns the offers attached to the request', async () => {
+      const attachedOffer: OfferPayload<
+        import('mongoose').Types.ObjectId,
+        Date
+      > = {
+        _id: new mongoose.Types.ObjectId(),
+        type: 'host',
+        user: owner._id,
+        location: [1, 2],
+      };
       const { res } = await runHandler(res =>
-        offersController.listOffersByUser({ offers: [{ a: 1 }] }, res),
+        offersController.listOffersByUser({ offers: [attachedOffer] }, res),
       );
-      res.body.should.deepEqual([{ a: 1 }]);
+      res.body.should.deepEqual([attachedOffer]);
     });
 
     it('returns an empty list when no offers are attached to the request', async () => {
@@ -1203,7 +1205,7 @@ describe('Offers controller unit tests', () => {
     it('removes offers without error', done => {
       offersController.removeAllByUserId(
         new mongoose.Types.ObjectId(),
-        (err: Error | null) => {
+        (err?: Error | null) => {
           (err === null || err === undefined).should.be.true();
           done();
         },
