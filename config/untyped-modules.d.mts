@@ -200,3 +200,25 @@ declare module 'multer' {
   }
   export default multer;
 }
+
+declare module 'nunjucks' {
+  interface Environment {
+    addFilter(name: string, filter: (value: unknown) => string): void;
+  }
+  interface Renderer {
+    (
+      template: string,
+      context: object,
+      callback: (error: Error | null, result?: string) => void,
+    ): void;
+    (template: string, context?: object): string;
+  }
+  const nunjucks: {
+    configure(
+      path: string,
+      options: { watch: boolean; noCache: boolean },
+    ): Environment;
+    render: Renderer;
+  };
+  export default nunjucks;
+}

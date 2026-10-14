@@ -183,7 +183,7 @@ const legacyConfig = {
     {
       files: [
         'modules/*/server/**/*.{mjs,mts}',
-        'config/lib/**/*.mjs',
+        'config/lib/**/*.{mjs,mts}',
         'bin/**/*.mjs',
       ],
       rules: {
@@ -275,6 +275,7 @@ const legacyConfig = {
         'modules/*/shared/**/*.{ts,tsx,mts}',
         'modules/*/server/**/*.mts',
         'config/**/*.d.mts',
+        'config/lib/**/*.mts',
         'modules/*/tests/client/**/*.{ts,tsx,mts}',
         'modules/*/tests/server/**/*.{cts,mts}',
         'testutils/client/**/*.{ts,tsx}',
