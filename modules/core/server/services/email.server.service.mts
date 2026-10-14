@@ -207,8 +207,8 @@ function sendConfirmContact(
   user: MailUser,
   friend: MailUser,
   contact: { _id?: unknown },
-  messageHTML: string,
-  messageText: string,
+  messageHTML: string | false,
+  messageText: string | false,
   callback: MailCallback,
 ) {
   if (

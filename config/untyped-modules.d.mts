@@ -136,7 +136,6 @@ declare module 'validator' {
   export default validator;
 }
 
-
 declare module 'he' {
   const he: { decode(content: string): string };
   export default he;

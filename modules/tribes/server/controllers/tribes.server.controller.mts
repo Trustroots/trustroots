@@ -69,6 +69,7 @@ type MemberRequest = TribeRequest & {
 };
 
 interface JsonResponse<Body> {
+  send(body: unknown): this;
   status(code: number): this;
   json(body: Body | { message?: string }): this;
 }

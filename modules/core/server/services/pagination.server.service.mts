@@ -56,7 +56,7 @@ export function middleware(limit: number, maxLimit: number) {
  * @param options.relative Boolean Keep the link relative to the current site
  */
 export function setLinkHeader(
-  req: Pick<PaginationRequest, 'query'>,
+  req: { query: { page?: unknown } },
   res: PaginationResponse,
   pageCount: number,
   { relative = false }: { relative?: boolean } = {},

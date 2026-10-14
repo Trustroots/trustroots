@@ -192,7 +192,7 @@ async function createContact(req: AddContactRequest, res: ContactResponse) {
         newContact,
         messageHTML,
         messagePlain,
-        (error: Error | null) => {
+        (error?: Error | null) => {
           if (error) return reject(error);
           res.send({ message: 'An email was sent to your contact.' });
           resolve();
