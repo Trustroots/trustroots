@@ -23,7 +23,8 @@ extracted `react-main.css`, and `react-main.rtl.css`. The RTL file is produced
 with `rtlcss`, the same compiler Webpack's RTL plugin uses, and the client
 loads it for right-to-left languages. Build Webpack's output first if comparing
 both tools: Vite overwrites those entry files. It keeps other files in
-`public/assets`. `pnpm build` and production images still run Webpack.
+`public/assets`. `pnpm build` runs that Vite build for production images.
+`pnpm build:webpack` remains available.
 
 After building Vite, run `pnpm test:vite:production`. This browser smoke test
 uses Express's real production template and locals to load the bundle and CSS
@@ -61,9 +62,10 @@ file under `/assets/images/`. RTL output from both tools flips `margin-left`
 rules to `margin-right`. Repeat the check with
 `node scripts/vite/compare-css.mjs` after copying each build aside, because
 Vite overwrites `public/assets/react-main.css`.
+
 Measured on 14 October 2026, with Webpack's ESLint plugin skipped, Vite built
 in about 1.1 seconds: a 2.41 MiB script (706 KiB gzipped) and a 509 KiB
 stylesheet (124 KiB gzipped). Webpack built in 17.5 seconds: a 3.27 MiB script
 (879 KiB gzipped) and a 656 KiB stylesheet (141 KiB gzipped). CI end-to-end
-tests build that Vite bundle and are green. `pnpm start` uses Vite. `pnpm build`
-still uses Webpack.
+tests build that Vite bundle and are green. `pnpm start` and `pnpm build` use
+Vite. `pnpm build:webpack` and `pnpm start:webpack` remain available.
