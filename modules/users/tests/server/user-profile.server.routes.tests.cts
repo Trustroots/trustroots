@@ -1,11 +1,20 @@
-const should = require('should');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const moment = require('moment');
-const config = require('./../../../../config/config.mjs');
-const express = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User');
+const should: typeof import('should') = require('should');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const moment: typeof import('moment') = require('moment');
+const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const express: import('../../../../testutils/server/model-contracts.mts').TestExpressModule = require('./../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+type UserRecord =
+  import('../../../../testutils/server/model-contracts.mts').UserRecord;
+type UserModel =
+  import('../../../../testutils/server/model-contracts.mts').UserModel;
+type UserDocument =
+  import('../../../../testutils/server/model-contracts.mts').UserModelDocument;
+type ProfileUserDocument = UserDocument & { usernameUpdateAllowed?: boolean };
+type Credentials =
+  import('../../../../testutils/server/model-contracts.mts').Credentials;
+const User = mongoose.model<UserRecord, UserModel>('User');
 const validNpub =
   'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
 const nsec = 'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqwkhnav';
@@ -13,16 +22,23 @@ const nsec = 'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqwkhnav';
 /**
  * Globals
  */
-let app;
-let agent;
-let credentials;
-let user;
-let _user;
-let user2;
-let _user2;
-let unConfirmedCredentials;
-let unConfirmedUser;
-let _unConfirmedUser;
+let app: import('../../../../testutils/server/model-contracts.mts').TestExpressApp;
+let agent: import('supertest').Agent;
+let credentials: Credentials;
+let user: UserDocument;
+let _user: UserRecord;
+let user2: UserDocument;
+let _user2: UserRecord;
+let unConfirmedCredentials: Credentials;
+let unConfirmedUser: UserDocument;
+let _unConfirmedUser: UserRecord;
+
+type ProfileUpdatePayload = Omit<UserRecord, 'email'> & { email?: string };
+type CookieHeader = string | string[] | undefined;
+function responseCookies(header: CookieHeader): string[] {
+  if (Array.isArray(header)) return header;
+  return header ? [header] : [];
+}
 
 /**
  * User routes tests
@@ -145,7 +161,7 @@ describe('User profile CRUD tests', function () {
   });
   it('should be able to get own user details successfully with role "shadowban"', function (done) {
     user.roles = ['user', 'shadowban'];
-    user.save(function (err) {
+    user.save(function (err: Error | null) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
@@ -164,7 +180,7 @@ describe('User profile CRUD tests', function () {
   });
   it('should be able to get other user details successfully when with role "shadowban"', function (done) {
     user.roles = ['user', 'shadowban'];
-    user.save(function (err) {
+    user.save(function (err: Error | null) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
@@ -183,7 +199,7 @@ describe('User profile CRUD tests', function () {
   });
   it('should not be able to get other users details successfully that have "shadowban" role', function (done) {
     user2.roles = ['user', 'shadowban'];
-    user2.save(function (err) {
+    user2.save(function (err: Error | null) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
@@ -203,9 +219,9 @@ describe('User profile CRUD tests', function () {
   it('should not be able to get other users details successfully that have "shadowban" role when with legacy role "moderator"', function (done) {
     user.roles = ['user', 'moderator'];
     user2.roles = ['user', 'shadowban'];
-    user.save(function (err) {
+    user.save(function (err: Error | null) {
       should.not.exist(err);
-      user2.save(function (err) {
+      user2.save(function (err: Error | null) {
         should.not.exist(err);
         agent
           .post('/api/auth/signin')
@@ -226,9 +242,9 @@ describe('User profile CRUD tests', function () {
   it('should be able to get other users details successfully that have "shadowban" role when with role "admin"', function (done) {
     user.roles = ['user', 'admin'];
     user2.roles = ['user', 'shadowban'];
-    user.save(function (err) {
+    user.save(function (err: Error | null) {
       should.not.exist(err);
-      user2.save(function (err) {
+      user2.save(function (err: Error | null) {
         should.not.exist(err);
         agent
           .post('/api/auth/signin')
@@ -248,7 +264,7 @@ describe('User profile CRUD tests', function () {
   });
   it('should be able to see that someone is volunteer when they have "volunteer" role', function (done) {
     user2.roles = ['user', 'volunteer'];
-    user2.save(function (err) {
+    user2.save(function (err: Error | null) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
@@ -284,7 +300,7 @@ describe('User profile CRUD tests', function () {
   });
   it('should be able to see that someone is volunteer-alumni when they have "volunteer-alumni" role', function (done) {
     user2.roles = ['user', 'volunteer-alumni'];
-    user2.save(function (err) {
+    user2.save(function (err: Error | null) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
@@ -346,7 +362,7 @@ describe('User profile CRUD tests', function () {
   });
   it('should be able to update own profile details', function (done) {
     user.roles = ['user'];
-    user.save(function (err) {
+    user.save(function (err: Error | null) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
@@ -422,11 +438,11 @@ describe('User profile CRUD tests', function () {
       })
       .expect(400);
     const stored = await User.findById(user._id);
-    Array.from(stored.languages).should.deepEqual(['eng']);
+    Array.from(stored!.languages!).should.deepEqual(['eng']);
   });
   it('should be able to update own nostr npub', function (done) {
     user.roles = ['user'];
-    user.save(function (err) {
+    user.save(function (err: Error | null) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
@@ -436,9 +452,9 @@ describe('User profile CRUD tests', function () {
           if (signinErr) {
             return done(signinErr);
           }
-          const signinSessionCookie = signinRes.headers['set-cookie'].find(
-            cookie => cookie.startsWith('connect.sid='),
-          );
+          const signinSessionCookie = responseCookies(
+            signinRes.headers['set-cookie'],
+          ).find(cookie => cookie.startsWith('connect.sid='));
           agent
             .put('/api/users')
             .send({
@@ -450,26 +466,32 @@ describe('User profile CRUD tests', function () {
                 return done(userInfoErr);
               }
               userInfoRes.body.nostrNpub.should.equal(validNpub);
-              const updateSessionCookie = (
-                userInfoRes.headers['set-cookie'] || []
+              const updateSessionCookie = responseCookies(
+                userInfoRes.headers['set-cookie'],
               ).find(cookie => cookie.startsWith('connect.sid='));
               if (updateSessionCookie) {
                 updateSessionCookie
                   .split(';')[0]
-                  .should.equal(signinSessionCookie.split(';')[0]);
+                  .should.equal(signinSessionCookie!.split(';')[0]);
               }
-              User.findById(user._id, function (findErr, userFindRes) {
-                should.not.exist(findErr);
-                userFindRes.nostrNpub.should.equal(validNpub);
-                return done();
-              });
+              User.findById(
+                user._id,
+                function (
+                  findErr: Error | null,
+                  userFindRes: UserDocument | null,
+                ) {
+                  should.not.exist(findErr);
+                  userFindRes!.nostrNpub!.should.equal(validNpub);
+                  return done();
+                },
+              );
             });
         });
     });
   });
   it('should trim and canonicalize nostr npub when updating own profile', function (done) {
     user.roles = ['user'];
-    user.save(function (err) {
+    user.save(function (err: Error | null) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
@@ -490,11 +512,17 @@ describe('User profile CRUD tests', function () {
                 return done(userInfoErr);
               }
               userInfoRes.body.nostrNpub.should.equal(validNpub);
-              User.findById(user._id, function (findErr, userFindRes) {
-                should.not.exist(findErr);
-                userFindRes.nostrNpub.should.equal(validNpub);
-                return done();
-              });
+              User.findById(
+                user._id,
+                function (
+                  findErr: Error | null,
+                  userFindRes: UserDocument | null,
+                ) {
+                  should.not.exist(findErr);
+                  userFindRes!.nostrNpub!.should.equal(validNpub);
+                  return done();
+                },
+              );
             });
         });
     });
@@ -502,7 +530,7 @@ describe('User profile CRUD tests', function () {
   it('should allow saving own existing nostr npub', function (done) {
     user.roles = ['user'];
     user.nostrNpub = validNpub;
-    user.save(function (err) {
+    user.save(function (err: Error | null) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
@@ -565,7 +593,7 @@ describe('User profile CRUD tests', function () {
   it('should be able to clear nostr npub when updating own profile', function (done) {
     user.roles = ['user'];
     user.nostrNpub = validNpub;
-    user.save(function (err) {
+    user.save(function (err: Error | null) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
@@ -586,18 +614,24 @@ describe('User profile CRUD tests', function () {
                 return done(userInfoErr);
               }
               userInfoRes.body.nostrNpub.should.equal('');
-              User.findById(user._id, function (findErr, userFindRes) {
-                should.not.exist(findErr);
-                userFindRes.nostrNpub.should.equal('');
-                return done();
-              });
+              User.findById(
+                user._id,
+                function (
+                  findErr: Error | null,
+                  userFindRes: UserDocument | null,
+                ) {
+                  should.not.exist(findErr);
+                  userFindRes!.nostrNpub!.should.equal('');
+                  return done();
+                },
+              );
             });
         });
     });
   });
   it('should reject malformed nostr npub when updating own profile', function (done) {
     user.roles = ['user'];
-    user.save(function (err) {
+    user.save(function (err: Error | null) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
@@ -627,7 +661,7 @@ describe('User profile CRUD tests', function () {
   });
   it('should reject nostr secret keys when updating own profile', function (done) {
     user.roles = ['user'];
-    user.save(function (err) {
+    user.save(function (err: Error | null) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
@@ -657,7 +691,7 @@ describe('User profile CRUD tests', function () {
   });
   it('should reject a non-string nostr npub when updating own profile', function (done) {
     user.roles = ['user'];
-    user.save(function (err) {
+    user.save(function (err: Error | null) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
@@ -687,7 +721,7 @@ describe('User profile CRUD tests', function () {
   });
   it('should not be able to add roles to own profile', function (done) {
     user.roles = ['user'];
-    user.save(function (err) {
+    user.save(function (err: Error | null) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
@@ -709,24 +743,29 @@ describe('User profile CRUD tests', function () {
             .expect(200)
             .end(function (userInfoErr) {
               should.not.exist(userInfoErr);
-              User.findById(user._id, function (err, userFindRes) {
-                should.not.exist(userInfoErr);
-                userFindRes.firstName.should.be.equal('user_update_first');
-                userFindRes.lastName.should.be.equal('user_update_last');
-                userFindRes._id.toString().should.be.equal(user._id.toString());
-                userFindRes.roles.should.be
-                  .instanceof(Array)
-                  .and.have.lengthOf(1);
-                userFindRes.roles.indexOf('user').should.equal(0);
-                return done();
-              });
+              User.findById(
+                user._id,
+                function (err: Error | null, userFindRes: UserDocument | null) {
+                  should.not.exist(userInfoErr);
+                  userFindRes!.firstName.should.be.equal('user_update_first');
+                  userFindRes!.lastName.should.be.equal('user_update_last');
+                  userFindRes!._id
+                    .toString()
+                    .should.be.equal(user._id.toString());
+                  userFindRes!
+                    .roles!.should.be.instanceof(Array)
+                    .and.have.lengthOf(1);
+                  userFindRes!.roles!.indexOf('user').should.equal(0);
+                  return done();
+                },
+              );
             });
         });
     });
   });
   it('should not be able to set the server-owned avatar version', function (done) {
     user.roles = ['user'];
-    user.save(function (err) {
+    user.save(function (err: Error | null) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
@@ -744,11 +783,17 @@ describe('User profile CRUD tests', function () {
             .expect(200)
             .end(function (userInfoErr) {
               should.not.exist(userInfoErr);
-              User.findById(user._id, function (lookupErr, savedUser) {
-                should.not.exist(lookupErr);
-                (savedUser.avatarVersion === undefined).should.be.true();
-                done();
-              });
+              User.findById(
+                user._id,
+                function (
+                  lookupErr: Error | null,
+                  savedUser: UserDocument | null,
+                ) {
+                  should.not.exist(lookupErr);
+                  (savedUser!.avatarVersion === undefined).should.be.true();
+                  done();
+                },
+              );
             });
         });
     });
@@ -765,7 +810,7 @@ describe('User profile CRUD tests', function () {
     _user2.username = credentials2.username;
     _user2.password = credentials2.password;
     const user2 = new User(_user2);
-    user2.save(function (err) {
+    user2.save(function (err: Error | null) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
@@ -801,7 +846,7 @@ describe('User profile CRUD tests', function () {
   });
   it('should not be able to update profile if not logged-in', function (done) {
     user.roles = ['user'];
-    user.save(function (err) {
+    user.save(function (err: Error | null) {
       should.not.exist(err);
       const userUpdate = {
         firstName: 'user_update_first',
@@ -1084,11 +1129,11 @@ describe('User profile CRUD tests', function () {
         .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (err) {
+        .end(function (err: Error | null) {
           if (err) {
             return done(err);
           }
-          const user2 = _user;
+          const user2: ProfileUpdatePayload = _user;
           user2.username = _user.username + '01';
           delete user2.email;
           agent
@@ -1110,23 +1155,23 @@ describe('User profile CRUD tests', function () {
       const threeMonthsAgo = moment(user.created)
         .subtract(3, 'months')
         .toDate();
-      user.update(
+      user!.update(
         {
           $set: {
             created: threeMonthsAgo,
           },
         },
-        function (err) {
+        function (err: Error | null) {
           should.not.exist(err);
           agent
             .post('/api/auth/signin')
             .send(credentials)
             .expect(200)
-            .end(function (err) {
+            .end(function (err: Error | null) {
               if (err) {
                 return done(err);
               }
-              const user2 = _user;
+              const user2: ProfileUpdatePayload = _user;
               user2.username = _user.username + '01';
               delete user2.email;
               agent
@@ -1148,23 +1193,23 @@ describe('User profile CRUD tests', function () {
       const threeMonthsAgo = moment(user.created)
         .subtract(3, 'months')
         .toDate();
-      user.update(
+      user!.update(
         {
           $set: {
             created: threeMonthsAgo,
           },
         },
-        function (err) {
+        function (err: Error | null) {
           should.not.exist(err);
           agent
             .post('/api/auth/signin')
             .send(credentials)
             .expect(200)
-            .end(function (err) {
+            .end(function (err: Error | null) {
               if (err) {
                 return done(err);
               }
-              const user2 = _user;
+              const user2: ProfileUpdatePayload = _user;
               user2.username = _user.username + '01';
               delete user2.email;
               // First username change
@@ -1204,24 +1249,24 @@ describe('User profile CRUD tests', function () {
       const threeMonthsAgo = moment(user.created)
         .subtract(3, 'months')
         .toDate();
-      user.update(
+      user!.update(
         {
           $set: {
             created: threeMonthsAgo,
           },
         },
-        function (err) {
+        function (err: Error | null) {
           should.not.exist(err);
           agent
             .post('/api/auth/signin')
             .send(credentials)
             .expect(200)
-            .end(function (err) {
+            .end(function (err: Error | null) {
               if (err) {
                 return done(err);
               }
               // First change
-              const user2 = _user;
+              const user2: ProfileUpdatePayload = _user;
               user2.username = _user.username + '01';
               delete user2.email;
               agent
@@ -1233,38 +1278,41 @@ describe('User profile CRUD tests', function () {
                     return done(err);
                   }
                   res.body.username.should.equal(user2.username);
-                  User.findById(user._id, function (err, user) {
-                    if (err) {
-                      return done(err);
-                    }
-                    const threeMonthsAgo = moment(user.usernameUpdated)
-                      .subtract(3, 'months')
-                      .toDate();
-                    user.update(
-                      {
-                        $set: {
-                          usernameUpdated: threeMonthsAgo,
+                  User.findById(
+                    user._id,
+                    function (err: Error | null, user: UserDocument | null) {
+                      if (err) {
+                        return done(err);
+                      }
+                      const threeMonthsAgo = moment(user!.usernameUpdated)
+                        .subtract(3, 'months')
+                        .toDate();
+                      user!.update(
+                        {
+                          $set: {
+                            usernameUpdated: threeMonthsAgo,
+                          },
                         },
-                      },
-                      function (err) {
-                        if (err) {
-                          return done(err);
-                        }
-                        // Second time changing it
-                        user2.username = _user.username + '02';
-                        agent
-                          .put('/api/users')
-                          .send(user2)
-                          .end(function (err, res) {
-                            if (err) {
-                              return done(err);
-                            }
-                            res.body.username.should.equal(user2.username);
-                            return done();
-                          });
-                      },
-                    );
-                  });
+                        function (err: Error | null) {
+                          if (err) {
+                            return done(err);
+                          }
+                          // Second time changing it
+                          user2.username = _user.username + '02';
+                          agent
+                            .put('/api/users')
+                            .send(user2)
+                            .end(function (err, res) {
+                              if (err) {
+                                return done(err);
+                              }
+                              res.body.username.should.equal(user2.username);
+                              return done();
+                            });
+                        },
+                      );
+                    },
+                  );
                 });
             });
         },
@@ -1275,7 +1323,7 @@ describe('User profile CRUD tests', function () {
         .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (err) {
+        .end(function (err: Error | null) {
           if (err) {
             return done(err);
           }
@@ -1294,8 +1342,11 @@ describe('User profile CRUD tests', function () {
                 {
                   username: credentials.username,
                 },
-                function (err, newUser) {
-                  should.not.exist(newUser.usernameUpdateAllowed);
+                function (
+                  err: Error | null,
+                  newUser: ProfileUserDocument | null,
+                ) {
+                  should.not.exist(newUser!.usernameUpdateAllowed);
                   done(err);
                 },
               );
@@ -1307,7 +1358,7 @@ describe('User profile CRUD tests', function () {
         .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (err) {
+        .end(function (err: Error | null) {
           if (err) {
             return done(err);
           }
@@ -1317,7 +1368,7 @@ describe('User profile CRUD tests', function () {
               usernameUpdated: moment().subtract(3, 'months').toDate(),
             })
             .expect(200)
-            .end(function (err) {
+            .end(function (err: Error | null) {
               if (err) {
                 return done(err);
               }
@@ -1325,8 +1376,8 @@ describe('User profile CRUD tests', function () {
                 {
                   username: credentials.username,
                 },
-                function (err, newUser) {
-                  should.not.exist(newUser.usernameUpdated);
+                function (err: Error | null, newUser: UserDocument | null) {
+                  should.not.exist(newUser!.usernameUpdated);
                   done(err);
                 },
               );
