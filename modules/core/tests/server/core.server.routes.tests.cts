@@ -1,17 +1,26 @@
-const _ = require('lodash');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const express = require('./../../../../config/lib/express.mjs');
-const config = require('./../../../../config/config.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const should = require('should');
-const User = mongoose.model('User');
+import type {
+  TestExpressApp,
+  TestExpressModule,
+  TestAgent,
+  TribeRecord,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+import type { ServerUserFixture } from '../../../../testutils/common/data.common.testutil.mts';
+
+const _: typeof import('lodash') = require('lodash');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
+const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
+const should: typeof import('should') = require('should');
+const User = mongoose.model<UserRecord>('User');
 
 /**
  * Globals
  */
-let app;
-let agent;
+let app: TestExpressApp;
+let agent: TestAgent;
 
 // Demo CSP Violation report
 // Doesn't matter what's in here,
@@ -25,6 +34,17 @@ const cspViolationReport = {
     'blocked-uri': 'http://evil.com',
   },
 };
+
+type NostrUserOverrides = Partial<ServerUserFixture> & {
+  firstName?: string;
+  lastName?: string;
+  emailTemporary?: string;
+  emailToken?: string;
+  nostrNpub?: string;
+  roles?: string[];
+};
+type ErrorFirstCallback<T> = (error: Error | null, value?: T) => void;
+type TestUser = ReturnType<typeof utils.createTestUser>;
 
 /**
  * Core routes tests
@@ -112,7 +132,7 @@ describe('Core CRUD tests', function () {
           }
 
           // Set assertion
-          res.body.should.be.empty;
+          void res.body.should.be.empty;
           return done();
         });
     });
@@ -129,7 +149,7 @@ describe('Core CRUD tests', function () {
           }
 
           // Set assertion
-          res.body.should.be.empty;
+          void res.body.should.be.empty;
           return done();
         });
     });
@@ -212,7 +232,7 @@ describe('Core CRUD tests', function () {
           }
 
           // Set assertion
-          res.body.should.be.empty;
+          void res.body.should.be.empty;
           return done();
         });
     });
@@ -235,7 +255,9 @@ describe('Core CRUD tests', function () {
   });
   describe('Frontend app root selection', function () {
     afterEach(utils.clearDatabase);
-    function createUser(overrides) {
+    function createUser(
+      overrides: Parameters<typeof utils.createTestUser>[0],
+    ): Promise<TestUser> {
       return utils
         .createTestUser({
           email: 'frontend-root-user@example.com',
@@ -422,23 +444,23 @@ describe('Core CRUD tests', function () {
       agent.get('/tribes').expect(301).expect('Location', '/circles').end(done);
     });
     it('redirects /tribes/:slug to /circles/:slug when tribe exists', function (done) {
-      const Tribe = mongoose.model('Tribe');
+      const Tribe = mongoose.model<TribeRecord>('Tribe');
       const tribe = new Tribe({
         slug: 'testcircle',
         label: 'Test Circle',
         description: 'A test circle',
         public: true,
       });
-      tribe.save(function (saveErr, savedTribe) {
-        if (saveErr) {
-          return done(saveErr);
-        }
-        agent
-          .get('/tribes/' + savedTribe.slug)
-          .expect(301)
-          .expect('Location', '/circles/' + savedTribe.slug)
-          .end(done);
-      });
+      tribe
+        .save()
+        .then(savedTribe => {
+          agent
+            .get('/tribes/' + savedTribe.slug)
+            .expect(301)
+            .expect('Location', '/circles/' + savedTribe.slug)
+            .end(done);
+        })
+        .catch(done);
     });
     it('redirects unknown tribe slugs to /circles', function (done) {
       agent
@@ -456,7 +478,10 @@ describe('Core CRUD tests', function () {
     const nsec =
       'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqwkhnav';
     afterEach(utils.clearDatabase);
-    function createNostrUser(overrides, done) {
+    function createNostrUser(
+      overrides: NostrUserOverrides,
+      done: ErrorFirstCallback<TestUser>,
+    ): void {
       const username = overrides.username || 'nostruser';
       const user = utils.createTestUser({
         firstName: 'Nostr',
@@ -468,9 +493,14 @@ describe('Core CRUD tests', function () {
         ...overrides,
       });
 
-      user.save(done);
+      void user
+        .save()
+        .then(saved => done(null, saved))
+        .catch(error => {
+          done(error instanceof Error ? error : new Error(String(error)));
+        });
     }
-    function expectEmptyNames(username, done) {
+    function expectEmptyNames(username: string, done: Mocha.Done): void {
       agent
         .get('/.well-known/nostr.json?name=' + username)
         .expect(200)
@@ -637,22 +667,10 @@ describe('Core CRUD tests', function () {
         if (saveErr) {
           return done(saveErr);
         }
-        User.updateOne(
-          {
-            _id: user._id,
-          },
-          {
-            $set: {
-              email: '',
-            },
-          },
-          function (updateErr) {
-            if (updateErr) {
-              return done(updateErr);
-            }
-            expectEmptyNames('nostruser', done);
-          },
-        );
+        void User.updateOne({ _id: user!._id }, { $set: { email: '' } })
+          .exec()
+          .then(() => expectEmptyNames('nostruser', done))
+          .catch(done);
       });
     });
     it('should return empty names for users without a nostr npub', function (done) {
@@ -701,7 +719,10 @@ describe('Core CRUD tests', function () {
     const validNpubHex =
       '0000000000000000000000000000000000000000000000000000000000000000';
     afterEach(utils.clearDatabase);
-    function createNostrUser(overrides, done) {
+    function createNostrUser(
+      overrides: NostrUserOverrides,
+      done: ErrorFirstCallback<TestUser>,
+    ): void {
       const user = utils.createTestUser({
         firstName: 'Nostr',
         lastName: 'User',
@@ -712,7 +733,12 @@ describe('Core CRUD tests', function () {
         ...overrides,
       });
 
-      user.save(done);
+      void user
+        .save()
+        .then(saved => done(null, saved))
+        .catch(error => {
+          done(error instanceof Error ? error : new Error(String(error)));
+        });
     }
     it('returns only eligible public author keys from a batch', function (done) {
       createNostrUser({}, function (saveErr) {
@@ -780,17 +806,9 @@ describe('Core CRUD tests', function () {
     it('identifies unconfirmed author keys without making them visible', function (done) {
       createNostrUser({}, function (saveErr, user) {
         if (saveErr) return done(saveErr);
-        User.updateOne(
-          {
-            _id: user._id,
-          },
-          {
-            $set: {
-              email: '',
-            },
-          },
-          function (updateErr) {
-            if (updateErr) return done(updateErr);
+        void User.updateOne({ _id: user!._id }, { $set: { email: '' } })
+          .exec()
+          .then(() => {
             agent
               .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
               .expect(200)
@@ -802,8 +820,8 @@ describe('Core CRUD tests', function () {
                 });
                 return done();
               });
-          },
-        );
+          })
+          .catch(done);
       });
     });
     it('rejects invalid author key batches', function (done) {
