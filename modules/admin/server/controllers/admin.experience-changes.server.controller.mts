@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import mongoose, { type Types } from 'mongoose';
+import mongoose, { type FilterQuery, type Types } from 'mongoose';
 import type {
   AdminExperienceChangeProposal,
   AdminExperienceChangeDecision,
@@ -244,13 +244,37 @@ const issueLink: Handler<AdminExperienceChangeLink<Date>> = async (
   }
 };
 
+function queuedRequests(
+  filter: FilterQuery<ChangeRequestRecord>,
+  sort: Record<string, 1 | -1>,
+) {
+  return ExperienceChangeRequest.find(filter)
+    .sort(sort)
+    .limit(100)
+    .populate<{ experience: ExperienceWithQueuedReferences | null }>({
+      path: 'experience',
+      populate: [
+        { path: 'userFrom', select: 'username displayName' },
+        { path: 'userTo', select: 'username displayName' },
+      ],
+    })
+    .populate<{ requester: UserRecord | null }>(
+      'requester',
+      'username displayName',
+    )
+    .lean<PopulatedChangeRequestRecord[]>()
+    .exec();
+}
+
 const listRequests: Handler<
   AdminExperienceChangeRequest<Types.ObjectId, Date>[]
 > = async (_request, response, next) => {
   try {
-    const requests = await ExperienceChangeRequest.find({
-      $or: [
-        { active: true },
+    // Keep pending reviews and recent approvals in separate limited queries so
+    // a full page of approvals cannot hide a review that is still waiting.
+    const [pending, approved] = await Promise.all([
+      queuedRequests({ active: true }, { createdAt: 1 }),
+      queuedRequests(
         {
           kind: 'edit',
           status: 'approved',
@@ -258,25 +282,13 @@ const listRequests: Handler<
             $gte: new Date(Date.now() - APPROVED_EDIT_VISIBILITY_MS),
           },
         },
-      ],
-    })
-      .sort({ reviewedAt: -1, createdAt: 1 })
-      .limit(100)
-      .populate<{ experience: ExperienceWithQueuedReferences | null }>({
-        path: 'experience',
-        populate: [
-          { path: 'userFrom', select: 'username displayName' },
-          { path: 'userTo', select: 'username displayName' },
-        ],
-      })
-      .populate<{ requester: UserRecord | null }>(
-        'requester',
-        'username displayName',
-      )
-      .lean<PopulatedChangeRequestRecord[]>()
-      .exec();
-    const result: AdminExperienceChangeRequest<Types.ObjectId, Date>[] =
-      requests;
+        { reviewedAt: -1 },
+      ),
+    ]);
+    const result: AdminExperienceChangeRequest<Types.ObjectId, Date>[] = [
+      ...pending,
+      ...approved,
+    ];
     return response.json(result);
   } catch (error) {
     return next(error);
