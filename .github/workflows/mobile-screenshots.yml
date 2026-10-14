@@ -109,13 +109,9 @@ jobs:
             adb install -r apps/android/app/build/outputs/apk/debug/app-debug.apk
             adb install -r apps/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
             mkdir -p tmp/mobile-screenshots
-            if adb shell am instrument -w org.trustroots.android.debug.test/androidx.test.runner.AndroidJUnitRunner > tmp/android-instrumentation.txt 2>&1; then
-              instrumentation_status=0
-            else
-              instrumentation_status=$?
-            fi
+            # The emulator action executes each line in a separate shell.
+            adb shell am instrument -w org.trustroots.android.debug.test/androidx.test.runner.AndroidJUnitRunner > tmp/android-instrumentation.txt 2>&1
             cat tmp/android-instrumentation.txt
-            test "$instrumentation_status" -eq 0
             grep -Eq '^OK \([0-9]+ tests?\)' tmp/android-instrumentation.txt
             adb shell am force-stop org.trustroots.android.debug
             adb shell am start -W -n org.trustroots.android.debug/org.trustroots.android.MainActivity
