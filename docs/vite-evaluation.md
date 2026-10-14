@@ -37,7 +37,15 @@ styles from the Vite browser origin. Both smoke commands run in CI. Dependency
 scanning treats legacy `.js` components as JSX and injects the browser
 `process` shim into pre-bundled dependencies such as `parse-link-header`.
 
-`pnpm test:vite:rtl` checks the RTL asset plugin without a browser. Stylesheet
-parity beyond the shared Less entry, and build measurements, remain required
-before proposing a default switch. Vite development does not emit the RTL
-stylesheet; Webpack does not either.
+`pnpm test:vite:rtl` checks the RTL asset plugin without a browser. Vite
+development does not emit the RTL stylesheet; Webpack does not either.
+
+Vite inlines assets up to 10 KB and writes source maps, matching Webpack.
+Unminified stylesheets contain the same site rules, including the Bootstrap
+theme in `legacy-classes.less`. Production Vite CSS is smaller because
+Lightning CSS minifies it, while Webpack leaves the stylesheet pretty-printed.
+Measured on 14 October 2026, with Webpack's ESLint plugin skipped, Vite built
+in about 1.1 seconds: a 2.41 MiB script (706 KiB gzipped) and a 509 KiB
+stylesheet (124 KiB gzipped). Webpack built in 17.5 seconds: a 3.27 MiB script
+(879 KiB gzipped) and a 656 KiB stylesheet (141 KiB gzipped). Running the
+end-to-end suite on Vite remains before a default switch.

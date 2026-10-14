@@ -65,7 +65,7 @@ const legacyCssImports = {
   transform(code, id) {
     if (!id.endsWith('.less')) return null;
 
-    return code.replace(
+    const transformed = code.replace(
       /@import ['"]~([^/'"]+)\/([^'"]+\.css)['"];/g,
       (_, alias, path) => {
         const base = alias === 'modules' ? root : resolve(root, 'node_modules');
@@ -73,6 +73,12 @@ const legacyCssImports = {
         return `@import (inline) '${filename}';`;
       },
     );
+    if (transformed === code) return null;
+
+    return {
+      code: transformed,
+      map: { mappings: '' },
+    };
   },
 };
 
@@ -152,6 +158,9 @@ export default defineConfig({
     outDir: resolve(root, 'public/assets'),
     assetsDir: '.',
     emptyOutDir: false,
+    // Match Webpack's asset module inline limit.
+    assetsInlineLimit: 10000,
+    sourcemap: true,
     manifest: 'vite-manifest.json',
     cssCodeSplit: false,
     rollupOptions: {
