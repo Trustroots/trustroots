@@ -8,19 +8,7 @@ import AdminHeader from './AdminHeader.component.js';
 import { AdminSearchUsersContent } from './AdminSearchUsers.component.js';
 import UserLink from './UserLink.component.js';
 import AdminNegativeExperiencePreview from './AdminNegativeExperiencePreview.component.js';
-
-function formatDate(value?: string) {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return date.toISOString().slice(0, 10);
-}
+import { formatAdminUtcDate } from '../utils/admin-date.js';
 
 function adminMessagesUrl(
   userFrom?: AdminUserSummary,
@@ -161,10 +149,10 @@ export default function Admin() {
                               <td className="text-right">
                                 {messagesUrl ? (
                                   <a href={messagesUrl}>
-                                    {formatDate(created) || thread}
+                                    {formatAdminUtcDate(created) || thread}
                                   </a>
                                 ) : (
-                                  formatDate(created) || thread
+                                  formatAdminUtcDate(created) || thread
                                 )}
                               </td>
                             </tr>
@@ -209,7 +197,8 @@ export default function Admin() {
                               <td className="text-right">
                                 <AdminNegativeExperiencePreview
                                   dateLabel={
-                                    formatDate(created) || 'Unknown date'
+                                    formatAdminUtcDate(created) ||
+                                    'Unknown date'
                                   }
                                   feedbackPublic={feedbackPublic}
                                 />

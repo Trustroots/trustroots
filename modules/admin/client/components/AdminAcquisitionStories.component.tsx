@@ -10,6 +10,7 @@ import UserLink from './UserLink.component';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import LanguageList from '@/modules/users/client/components/LanguageList';
 import HoverTooltip from '@/modules/core/client/components/Tooltip';
+import { formatAdminUtcDate } from '../utils/admin-date';
 
 type StorySortColumn =
   | 'acquisitionStory'
@@ -95,19 +96,6 @@ interface AccessibleTooltipProps {
 
 const AccessibleTooltip =
   HoverTooltip as unknown as React.ComponentType<AccessibleTooltipProps>;
-
-function formatDate(value?: string | number | null) {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return date.toISOString().slice(0, 10);
-}
 
 function formatCoordinates(value?: number[] | null) {
   if (!Array.isArray(value) || value.length < 2) {
@@ -385,7 +373,7 @@ export default function AdminAcquisitionStories() {
                   <td>
                     <a href={`#acquisition-story-${index + 1}`}>
                       <time className="text-muted">
-                        {formatDate(story.created)}
+                        {formatAdminUtcDate(story.created)}
                       </time>
                     </a>
                   </td>
@@ -455,7 +443,7 @@ export default function AdminAcquisitionStories() {
                         />
                         <div>
                           <time dateTime={story.welcomer.created}>
-                            {formatDate(story.welcomer.created)}
+                            {formatAdminUtcDate(story.welcomer.created)}
                           </time>
                         </div>
                       </>
