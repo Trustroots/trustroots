@@ -1,15 +1,27 @@
-const mongoose = require('mongoose');
-const request = require('supertest');
-const should = require('should');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const express = require('./../../../../config/lib/express.mjs');
+import type {
+  ContactModel,
+  ContactRecord,
+  ExperienceModel,
+  ExperienceRecord,
+  TestAgent,
+  TestExpressApp,
+  TestExpressModule,
+  UserDocument,
+} from '../../../../testutils/server/model-contracts.mts';
+const mongoose: typeof import('mongoose') = require('mongoose');
+const request: typeof import('supertest') = require('supertest');
+const should: typeof import('should') = require('should');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
 require('./../../../contacts/server/models/contacts.server.model.mjs');
 require('./../../server/models/experiences.server.model.mjs');
-const Contact = mongoose.model('Contact');
-const Experience = mongoose.model('Experience');
+const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
+const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
+  'Experience',
+);
 describe('Experience suggestion', () => {
-  let app;
-  let agent;
+  let app: TestExpressApp;
+  let agent: TestAgent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
@@ -17,14 +29,14 @@ describe('Experience suggestion', () => {
   const userData = utils.generateUsersWithSharedPassword(8, {
     public: true,
   });
-  let users;
+  let users: UserDocument[];
   beforeEach(async () => {
     users = await utils.saveUsersWithCachedPasswords(userData);
     users[4].public = false;
     users[5].roles = ['user', 'shadowban'];
     users[7].roles = ['user', 'suspended'];
-    users[0].blocked = [users[6]._id];
-    users[6].blocked = [users[0]._id];
+    users[0].blocked = [new mongoose.Types.ObjectId(users[6]._id.toString())];
+    users[6].blocked = [new mongoose.Types.ObjectId(users[0]._id.toString())];
     await Promise.all([
       users[4].save(),
       users[5].save(),

@@ -1,28 +1,45 @@
-let policyModule;
+let policyModule: typeof import('../../server/policies/messages.server.policy.mts');
 before(async function () {
   policyModule =
     await import('../../server/policies/messages.server.policy.mts');
 });
-const sinon = require('sinon');
+const sinon: typeof import('sinon') = require('sinon');
 require('should');
+interface PolicyResponseDouble {
+  statusCode: number;
+  body: { message: string } | null;
+  status(code: number): PolicyResponseDouble;
+  json(body: { message: string }): PolicyResponseDouble;
+  send(body: { message: string }): PolicyResponseDouble;
+}
 
 function loadPolicy() {
   const implementation = policyModule;
   const mockAcl = implementation._acl;
-  sinon.stub(mockAcl, 'allow');
-  sinon.stub(mockAcl, 'areAnyRolesAllowed');
-  return { policy: implementation.default, mockAcl };
+  const allow = sinon.stub(mockAcl, 'allow');
+  const areAnyRolesAllowed = sinon.stub(mockAcl, 'areAnyRolesAllowed');
+  return {
+    policy: implementation.default,
+    mockAcl: { allow, areAnyRolesAllowed },
+  };
 }
 
-function mockResponse() {
-  const res = { statusCode: 200, body: null };
-  res.status = code => {
-    res.statusCode = code;
-    return res;
-  };
-  res.json = body => {
-    res.body = body;
-    return res;
+function mockResponse(): PolicyResponseDouble {
+  const res: PolicyResponseDouble = {
+    statusCode: 200,
+    body: null,
+    status(code: number) {
+      res.statusCode = code;
+      return res;
+    },
+    json(body: { message: string }) {
+      res.body = body;
+      return res;
+    },
+    send(body: { message: string }) {
+      res.body = body;
+      return res;
+    },
   };
   return res;
 }
@@ -40,7 +57,7 @@ describe('Messages policy unit tests', () => {
     policies[0].roles.should.deepEqual(['admin']);
     policies[1].roles.should.deepEqual(['user']);
     policies[1].allows
-      .map(allow => allow.resources)
+      .map((allow: { resources: string }) => allow.resources)
       .should.containEql('/api/messages-sync');
   });
 
@@ -51,7 +68,11 @@ describe('Messages policy unit tests', () => {
 
     policy.isAllowed(
       {
-        user: { public: true, roles: ['user'] },
+        user: {
+          _id: { valueOf: () => 'user-id' },
+          public: true,
+          roles: ['user'],
+        },
         route: { path: '/api/messages' },
         method: 'POST',
       },
@@ -86,13 +107,21 @@ describe('Messages policy unit tests', () => {
     const res = mockResponse();
 
     policy.isAllowed(
-      { user: { public: false, roles: ['user'] }, route: {}, method: 'GET' },
+      {
+        user: {
+          _id: { valueOf: () => 'user-id' },
+          public: false,
+          roles: ['user'],
+        },
+        route: { path: '/api/messages' },
+        method: 'GET',
+      },
       res,
       () => {},
     );
 
     res.statusCode.should.equal(403);
-    res.body.message.should.equal('Forbidden.');
+    res.body!.message.should.equal('Forbidden.');
   });
 
   it('returns 500 when authorization fails unexpectedly', done => {
@@ -102,7 +131,11 @@ describe('Messages policy unit tests', () => {
 
     policy.isAllowed(
       {
-        user: { public: true, roles: ['user'] },
+        user: {
+          _id: { valueOf: () => 'user-id' },
+          public: true,
+          roles: ['user'],
+        },
         route: { path: '/api/messages' },
         method: 'GET',
       },
@@ -111,7 +144,7 @@ describe('Messages policy unit tests', () => {
     );
 
     res.statusCode.should.equal(500);
-    res.body.message.should.equal('Unexpected authorization error');
+    res.body!.message.should.equal('Unexpected authorization error');
     done();
   });
 
@@ -122,7 +155,11 @@ describe('Messages policy unit tests', () => {
 
     policy.isAllowed(
       {
-        user: { public: true, roles: ['user'] },
+        user: {
+          _id: { valueOf: () => 'user-id' },
+          public: true,
+          roles: ['user'],
+        },
         route: { path: '/api/messages-read' },
         method: 'DELETE',
       },
@@ -131,6 +168,6 @@ describe('Messages policy unit tests', () => {
     );
 
     res.statusCode.should.equal(403);
-    res.body.message.should.equal('Forbidden.');
+    res.body!.message.should.equal('Forbidden.');
   });
 });

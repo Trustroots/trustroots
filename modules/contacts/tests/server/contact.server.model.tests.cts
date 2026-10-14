@@ -1,21 +1,29 @@
+import type {
+  ContactDocument,
+  ContactModel,
+  ContactRecord,
+  UserModelDocument,
+  UserModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
 /**
  * Module dependencies.
  */
-const should = require('should');
-const mongoose = require('mongoose');
-const utils = require('../../../../testutils/server/data.server.testutil');
+const should: typeof import('should') = require('should');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 
-const User = mongoose.model('User');
-const Contact = mongoose.model('Contact');
+const User = mongoose.model<UserRecord, UserModel>('User');
+const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
 
 /**
  * Globals
  */
-let user1;
-let user2;
-let user1Id;
-let user2Id;
-let contact;
+let user1: UserModelDocument;
+let user2: UserModelDocument;
+let user1Id: UserModelDocument['_id'];
+let user2Id: UserModelDocument['_id'];
+let contact: ContactDocument;
 
 /**
  * Unit tests

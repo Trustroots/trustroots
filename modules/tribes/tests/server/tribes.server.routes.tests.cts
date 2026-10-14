@@ -1,25 +1,43 @@
-const should = require('should');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const express = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User');
-const Tribe = mongoose.model('Tribe');
-const Contact = mongoose.model('Contact');
-const Experience = mongoose.model('Experience');
+import type {
+  ContactModel,
+  ContactRecord,
+  Credentials,
+  ExperienceModel,
+  ExperienceRecord,
+  TestAgent,
+  TestExpressApp,
+  TestExpressModule,
+  TribeDocument,
+  TribeModel,
+  TribeRecord,
+  UserModelDocument,
+  UserModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+const should: typeof import('should') = require('should');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+const User = mongoose.model<UserRecord, UserModel>('User');
+const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
+const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
+const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
+  'Experience',
+);
 
 /**
  * Globals
  */
-let app;
-let agent;
-let credentials;
-let user;
-let _user;
-let tribe;
-let _tribe;
-let tribeNonPublic;
-let _tribeNonPublic;
+let app: TestExpressApp;
+let agent: TestAgent;
+let credentials: Credentials;
+let user: UserModelDocument;
+let _user: UserRecord;
+let tribe: TribeDocument;
+let _tribe: TribeRecord;
+let tribeNonPublic: TribeDocument;
+let _tribeNonPublic: TribeRecord;
 
 /**
  * User routes tests
@@ -116,10 +134,13 @@ describe('Tribe CRUD tests', function () {
     }
   });
   it('lists only recent, visible members of circles the viewer joined', async () => {
-    user.member.push({ tribe: tribe._id });
+    user.member!.push({ tribe: tribe._id });
     await user.save();
 
-    const createCandidate = (username, attributes = {}) =>
+    const createCandidate = (
+      username: string,
+      attributes: Partial<UserRecord> = {},
+    ) =>
       new User({
         ..._user,
         username,
@@ -178,13 +199,13 @@ describe('Tribe CRUD tests', function () {
       .get(`/api/tribes/${tribe.slug}/members`)
       .expect(200);
     response.body.contacts
-      .map(member => member.username)
+      .map((member: { username: string }) => member.username)
       .should.deepEqual(['circlecontact']);
     response.body.recommenders
-      .map(member => member.username)
+      .map((member: { username: string }) => member.username)
       .should.deepEqual(['circlerecommender']);
     response.body.active
-      .map(member => member.username)
+      .map((member: { username: string }) => member.username)
       .should.deepEqual(['activemember']);
     response.body.active[0].should.have.properties([
       '_id',
@@ -194,7 +215,7 @@ describe('Tribe CRUD tests', function () {
     should.not.exist(response.body.active[0].seen);
   });
   it('filters contacts before applying the result limit and deduplicates pairs', async () => {
-    user.member.push({ tribe: tribe._id });
+    user.member!.push({ tribe: tribe._id });
     await user.save();
 
     const candidates = Array.from({ length: 21 }, (_, index) => {
@@ -246,7 +267,7 @@ describe('Tribe CRUD tests', function () {
       .get(`/api/tribes/${tribe.slug}/members`)
       .expect(200);
     response.body.contacts
-      .map(member => member.username)
+      .map((member: { username: string }) => member.username)
       .should.deepEqual(['eligiblecontact']);
   });
   it('requires circle membership to list active members', async () => {

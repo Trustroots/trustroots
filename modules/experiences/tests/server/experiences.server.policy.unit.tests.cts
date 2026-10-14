@@ -1,28 +1,45 @@
-let policyModule;
+let policyModule: typeof import('../../server/policies/experiences.server.policy.mts');
 before(async function () {
   policyModule =
     await import('../../server/policies/experiences.server.policy.mts');
 });
-const sinon = require('sinon');
-require('should');
+const sinon: typeof import('sinon') = require('sinon');
+const should: typeof import('should') = require('should');
+interface PolicyResponseDouble {
+  statusCode: number;
+  body: { message: string } | null;
+  status(code: number): PolicyResponseDouble;
+  json(body: { message: string }): PolicyResponseDouble;
+  send(body: { message: string }): PolicyResponseDouble;
+}
 
 function loadPolicy() {
   const implementation = policyModule;
   const mockAcl = implementation._acl;
-  sinon.stub(mockAcl, 'allow');
-  sinon.stub(mockAcl, 'areAnyRolesAllowed');
-  return { policy: implementation.default, mockAcl };
+  const allow = sinon.stub(mockAcl, 'allow');
+  const areAnyRolesAllowed = sinon.stub(mockAcl, 'areAnyRolesAllowed');
+  return {
+    policy: implementation.default,
+    mockAcl: { allow, areAnyRolesAllowed },
+  };
 }
 
 function mockResponse() {
-  const res = { statusCode: 200, body: null };
-  res.status = code => {
-    res.statusCode = code;
-    return res;
-  };
-  res.json = body => {
-    res.body = body;
-    return res;
+  const res: PolicyResponseDouble = {
+    statusCode: 200,
+    body: null,
+    status(code: number) {
+      res.statusCode = code;
+      return res;
+    },
+    json(body: { message: string }) {
+      res.body = body;
+      return res;
+    },
+    send(body: { message: string }) {
+      res.body = body;
+      return res;
+    },
   };
   return res;
 }
@@ -40,10 +57,10 @@ describe('Experiences policy unit tests', () => {
     policies.length.should.equal(1);
     policies[0].roles.should.deepEqual(['user', 'admin']);
     policies[0].allows
-      .map(allow => allow.resources)
+      .map((allow: { resources: string }) => allow.resources)
       .should.containEql('/api/my-experience');
     policies[0].allows
-      .map(allow => allow.resources)
+      .map((allow: { resources: string }) => allow.resources)
       .should.containEql('/api/experiences/suggestion');
   });
 
@@ -54,7 +71,11 @@ describe('Experiences policy unit tests', () => {
 
     await policy.isAllowed(
       {
-        user: { public: true, roles: ['user'] },
+        user: {
+          _id: { valueOf: () => 'user-id' },
+          public: true,
+          roles: ['user'],
+        },
         route: { path: '/api/experiences' },
         method: 'POST',
       },
@@ -88,11 +109,15 @@ describe('Experiences policy unit tests', () => {
     const { policy, mockAcl } = loadPolicy();
     const aclError = new Error('acl down');
     mockAcl.areAnyRolesAllowed.rejects(aclError);
-    let nextArg;
+    let nextArg: unknown;
 
     await policy.isAllowed(
       {
-        user: { public: true, roles: ['user'] },
+        user: {
+          _id: { valueOf: () => 'user-id' },
+          public: true,
+          roles: ['user'],
+        },
         route: { path: '/api/experiences' },
         method: 'GET',
       },
@@ -102,7 +127,7 @@ describe('Experiences policy unit tests', () => {
       },
     );
 
-    nextArg.should.equal(aclError);
+    should(nextArg).equal(aclError);
   });
 
   it('returns 403 for non-public users', async () => {
@@ -111,7 +136,11 @@ describe('Experiences policy unit tests', () => {
 
     await policy.isAllowed(
       {
-        user: { public: false, roles: ['user'] },
+        user: {
+          _id: { valueOf: () => 'user-id' },
+          public: false,
+          roles: ['user'],
+        },
         route: { path: '/api/experiences' },
         method: 'GET',
       },
@@ -120,7 +149,7 @@ describe('Experiences policy unit tests', () => {
     );
 
     res.statusCode.should.equal(403);
-    res.body.message.should.equal('Forbidden.');
+    res.body!.message.should.equal('Forbidden.');
   });
 
   it('returns 403 when ACL denies access', async () => {
@@ -130,7 +159,11 @@ describe('Experiences policy unit tests', () => {
 
     await policy.isAllowed(
       {
-        user: { public: true, roles: ['guest'] },
+        user: {
+          _id: { valueOf: () => 'user-id' },
+          public: true,
+          roles: ['guest'],
+        },
         route: { path: '/api/experiences' },
         method: 'POST',
       },
@@ -139,7 +172,7 @@ describe('Experiences policy unit tests', () => {
     );
 
     res.statusCode.should.equal(403);
-    res.body.message.should.equal('Forbidden.');
+    res.body!.message.should.equal('Forbidden.');
   });
 
   it('allows signed-in users whose change-request route is permitted', async () => {
@@ -149,7 +182,7 @@ describe('Experiences policy unit tests', () => {
 
     await policy.isAllowedChange(
       {
-        user: { roles: ['user'] },
+        user: { _id: { valueOf: () => 'user-id' }, roles: ['user'] },
         route: { path: '/api/experiences/:id/change-requests/mine' },
         method: 'GET',
       },
@@ -182,7 +215,7 @@ describe('Experiences policy unit tests', () => {
 
     await policy.isAllowedChange(
       {
-        user: { roles: ['user'] },
+        user: { _id: { valueOf: () => 'user-id' }, roles: ['user'] },
         route: { path: '/api/experiences/:id/change-requests/mine' },
         method: 'GET',
       },
@@ -197,11 +230,11 @@ describe('Experiences policy unit tests', () => {
     const { policy, mockAcl } = loadPolicy();
     const aclError = new Error('acl down');
     mockAcl.areAnyRolesAllowed.rejects(aclError);
-    let nextArg;
+    let nextArg: unknown;
 
     await policy.isAllowedChange(
       {
-        user: { roles: ['user'] },
+        user: { _id: { valueOf: () => 'user-id' }, roles: ['user'] },
         route: { path: '/api/experiences/:id/change-requests/mine' },
         method: 'GET',
       },
@@ -211,6 +244,6 @@ describe('Experiences policy unit tests', () => {
       },
     );
 
-    nextArg.should.equal(aclError);
+    should(nextArg).equal(aclError);
   });
 });

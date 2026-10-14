@@ -1,25 +1,30 @@
-const mongoose = require('mongoose');
-const should = require('should');
-const request = require('supertest');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const express = require('./../../../../config/lib/express.mjs');
+import type { ExperienceDataEntry } from '../../../../testutils/common/data.common.testutil.mts';
+import type {
+  TestAgent,
+  TestExpressApp,
+  TestExpressModule,
+  UserDocument,
+} from '../../../../testutils/server/model-contracts.mts';
+const mongoose: typeof import('mongoose') = require('mongoose');
+const should: typeof import('should') = require('should');
+const request: typeof import('supertest') = require('supertest');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
 describe('Read count of experiences received by user', () => {
-  let app;
-  let agent;
+  let app: TestExpressApp;
+  let agent: TestAgent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
   // GET /experiences/count?userTo=:UserId
 
-  let users;
+  let users: UserDocument[];
   const _usersPublic = utils.generateUsersWithSharedPassword(6, {
     public: true,
   });
   const _usersPrivate = utils.generateUsersWithSharedPassword(3, {
     public: false,
-    username: 'nonpublic',
-    email: 'nonpublic@example.com',
   });
   const _users = [..._usersPublic, ..._usersPrivate];
 
@@ -41,7 +46,7 @@ describe('Read count of experiences received by user', () => {
    * 4 F . . . . .
    * 5 T . . . . .
    */
-  const experienceData = [
+  const experienceData: ExperienceDataEntry[] = [
     [0, 1],
     [0, 2],
     [

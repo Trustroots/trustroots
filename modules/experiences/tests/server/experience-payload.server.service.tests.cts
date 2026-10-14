@@ -1,4 +1,4 @@
-const assert = require('assert/strict');
+const assert: typeof import('assert/strict') = require('assert/strict');
 const { ObjectId } = require('mongoose').Types;
 const {
   prepareExperienceCount,
@@ -70,7 +70,7 @@ describe('Experience API payload construction', () => {
   });
 
   it('preserves an absent optional feedback field', () => {
-    const withoutFeedback = { ...experience };
+    const withoutFeedback: Partial<typeof experience> = { ...experience };
     delete withoutFeedback.feedbackPublic;
     const payload = prepareSendingToClient(
       withoutFeedback,

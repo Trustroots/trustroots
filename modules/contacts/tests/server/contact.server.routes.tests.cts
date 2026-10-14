@@ -1,38 +1,51 @@
-const should = require('should');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const express = require('./../../../../config/lib/express.mjs');
-const agenda = require('./../../../../config/lib/agenda.mjs');
-const testutils = require('../../../../testutils/server/server.testutil');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const errorService = require('../../../core/server/services/error.server.service.mjs');
+import type {
+  ContactDocument,
+  ContactModel,
+  ContactRecord,
+  Credentials,
+  TestAgent,
+  TestExpressApp,
+  TestExpressModule,
+  UserDocument,
+} from '../../../../testutils/server/model-contracts.mts';
+const should: typeof import('should') = require('should');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
+const agenda: typeof import('./../../../../config/lib/agenda.mjs').default = require('./../../../../config/lib/agenda.mjs');
+const testutils: typeof import('../../../../testutils/server/server.testutil') = require('../../../../testutils/server/server.testutil');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+const errorService: typeof import('../../../core/server/services/error.server.service.mjs') = require('../../../core/server/services/error.server.service.mjs');
 
-const Contact = mongoose.model('Contact');
+const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
 
 /**
  * Globals
  */
-let app;
-let agent;
-let credentials;
-let user1;
-let user2;
-let user3;
-let user4;
-let user1Id;
-let user2Id;
-let user3Id;
-let user4Id;
-let contact1;
-let contact2;
-let contact3;
-let contact1Id;
+let app: TestExpressApp;
+let agent: TestAgent;
+let credentials: Credentials;
+let user1: UserDocument;
+let user2: UserDocument;
+let user3: UserDocument;
+let user4: UserDocument;
+let user1Id: UserDocument['_id'];
+let user2Id: UserDocument['_id'];
+let user3Id: UserDocument['_id'];
+let user4Id: UserDocument['_id'];
+let contact1: ContactDocument;
+let contact2: ContactDocument;
+let contact3: ContactDocument;
+let contact1Id: ContactDocument['_id'];
 
 /**
  * Contact routes tests
  */
 describe('Contact CRUD tests', function () {
-  const jobs = testutils.catchJobs();
+  const jobs = testutils.catchJobs<{
+    subject: string;
+    to: { address: string };
+  }>();
   before(function (done) {
     (async () => {
       // Get application
@@ -214,7 +227,7 @@ describe('Contact CRUD tests', function () {
           contact._id.should.equal(contact1Id.toString());
 
           // Connection A: Users 1+2, un-confirmed
-          contact.confirmed.should.equal(false);
+          contact!.confirmed!.should.equal(false);
           contact.created.should.not.be.empty();
           contact.userFrom.username.should.equal(user2.username);
           contact.userTo.username.should.equal(user1.username);
@@ -438,7 +451,7 @@ describe('Contact CRUD tests', function () {
 
               // User4 should be an unconfirmed contact now
               should.exist(contact);
-              contact.confirmed.should.equal(false);
+              contact!.confirmed!.should.equal(false);
               contact.created.should.not.be.empty();
               contact.userFrom.username.should.equal(user1.username);
               contact.userTo.username.should.equal(user4.username);
@@ -506,16 +519,20 @@ describe('Contact CRUD tests', function () {
         });
     });
     context('with email sending error', function () {
-      let originalNow;
+      type TestAgenda = typeof agenda & {
+        now: (type: string, data: unknown) => Promise<unknown>;
+      };
+      const agendaWithNow = agenda as TestAgenda;
+      let originalNow: TestAgenda['now'];
       beforeEach(function () {
         // Set the agenda.now() function to fail
-        originalNow = agenda.now;
-        agenda.now = function () {
+        originalNow = agendaWithNow.now;
+        agendaWithNow.now = function () {
           return Promise.reject(new Error('fail!'));
         };
       });
       afterEach(function () {
-        agenda.now = originalNow;
+        agendaWithNow.now = originalNow;
       });
       it('should fail to create contact', function (done) {
         // Try and create a contact User1 -> User4
@@ -561,8 +578,8 @@ describe('Contact CRUD tests', function () {
 
     const contact = await Contact.findById(contact1Id).exec();
     should.exist(contact);
-    contact.confirmed.should.equal(false);
-    contact.userFrom.toString().should.equal(user2Id.toString());
-    contact.userTo.toString().should.equal(user1Id.toString());
+    contact!.confirmed!.should.equal(false);
+    contact!.userFrom.toString().should.equal(user2Id.toString());
+    contact!.userTo.toString().should.equal(user1Id.toString());
   });
 });

@@ -1,50 +1,106 @@
+import type {
+  ContactDocument,
+  ContactModel,
+  ContactRecord,
+  UserDocument,
+} from '../../../../testutils/server/model-contracts.mts';
 /**
  * Unit tests for the contacts controller middleware and error branches that
  * the route tests do not reach. Handlers are invoked directly with mock
  * req/res/next against the test database.
  */
-const mongoose = require('mongoose');
-const sinon = require('sinon');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const should: typeof import('should') = require('should');
+const sinon: typeof import('sinon') = require('sinon');
 
-const contactsController = require('./../../server/controllers/contacts.server.controller.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-require('should');
+const contactsController: typeof import('./../../server/controllers/contacts.server.controller.mjs') = require('./../../server/controllers/contacts.server.controller.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 
-const Contact = mongoose.model('Contact');
+const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
 
-const emailService = require('./../../../core/server/services/email.server.service.mjs');
+const emailService: typeof import('./../../../core/server/services/email.server.service.mjs') = require('./../../../core/server/services/email.server.service.mjs');
 
-function runHandler(invoke) {
+interface ControllerResponseBody extends Record<string, unknown> {
+  confirmed?: boolean;
+  message?: string;
+  _id?: string;
+}
+
+interface MockControllerResponse {
+  statusCode: number;
+  body: ControllerResponseBody;
+  _next?: boolean;
+  _nextArg?: unknown;
+  status(code: number): MockControllerResponse;
+  send(body: unknown): MockControllerResponse;
+  json(body: unknown): MockControllerResponse;
+}
+
+type ContactRequestEntry = { user: { _id: UserDocument['_id'] } };
+
+type TestCallbackQuery = {
+  populate(...args: string[]): TestCallbackQuery;
+  exec(callback: (error: unknown, result?: unknown) => void): TestCallbackQuery;
+};
+
+function callbackQuery(error: unknown, result?: unknown): TestCallbackQuery {
+  const query: TestCallbackQuery = {
+    populate() {
+      return query;
+    },
+    exec(callback) {
+      callback(error, result);
+      return query;
+    },
+  };
+  return query;
+}
+
+type HandlerResult = {
+  res: MockControllerResponse;
+  nextCalled: boolean;
+  nextArg: unknown;
+};
+
+function runHandler(
+  invoke: (
+    res: import('express').Response,
+    next: (arg?: unknown) => void,
+  ) => unknown,
+): Promise<HandlerResult> {
   return new Promise(resolve => {
-    const res = { statusCode: 200, body: null };
+    const res: MockControllerResponse = {
+      statusCode: 200,
+      body: {},
+      status(code: number) {
+        res.statusCode = code;
+        return res;
+      },
+      send(body: unknown) {
+        res.body = body as ControllerResponseBody;
+        finish();
+        return res;
+      },
+      json(body: unknown) {
+        res.body = body as ControllerResponseBody;
+        finish();
+        return res;
+      },
+    };
     const finish = () =>
-      resolve({ res, nextCalled: res._next, nextArg: res._nextArg });
-    res.status = function (code) {
-      res.statusCode = code;
-      return res;
-    };
-    res.send = function (body) {
-      res.body = body;
-      finish();
-      return res;
-    };
-    res.json = function (body) {
-      res.body = body;
-      finish();
-      return res;
-    };
-    const next = arg => {
+      resolve({ res, nextCalled: res._next === true, nextArg: res._nextArg });
+    const next = (arg?: unknown) => {
       res._next = true;
       res._nextArg = arg;
       finish();
     };
-    invoke(res, next);
+    invoke(res as unknown as import('express').Response, next);
   });
 }
 
 describe('Contacts controller unit tests', () => {
-  let user1;
-  let user2;
+  let user1: UserDocument;
+  let user2: UserDocument;
 
   beforeEach(async () => {
     [user1, user2] = await utils.saveUsersWithCachedPasswords(
@@ -61,7 +117,11 @@ describe('Contacts controller unit tests', () => {
     for (const blocker of ['sender', 'recipient']) {
       it(`does not create or email a request when the ${blocker} blocked the other member`, async () => {
         const blockedBy = blocker === 'sender' ? user1 : user2;
-        blockedBy.blocked = [blocker === 'sender' ? user2._id : user1._id];
+        blockedBy.blocked = [
+          new mongoose.Types.ObjectId(
+            (blocker === 'sender' ? user2._id : user1._id).toString(),
+          ),
+        ];
         await blockedBy.save();
         const email = sinon.spy(emailService, 'sendConfirmContact');
         const { res } = await runHandler(res =>
@@ -102,7 +162,7 @@ describe('Contacts controller unit tests', () => {
         ),
       );
       res.statusCode.should.equal(409);
-      res.body.confirmed.should.be.false();
+      res.body.confirmed!.should.be.false();
     });
 
     it('creates a contact and sends email', async () => {
@@ -119,7 +179,7 @@ describe('Contacts controller unit tests', () => {
         ),
       );
       res.statusCode.should.equal(200);
-      res.body.message.should.match(/email was sent/);
+      res.body.message!.should.match(/email was sent/);
     });
 
     it('hides requests from a shadowbanned sender without saving a contact', async () => {
@@ -161,9 +221,13 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('responds with 400 when the contact lookup fails before creation', async () => {
-      sinon.stub(Contact, 'findOne').returns({
-        exec: cb => cb(new Error('lookup failed')),
-      });
+      sinon
+        .stub(Contact, 'findOne')
+        .returns(
+          callbackQuery(new Error('lookup failed')) as unknown as ReturnType<
+            typeof Contact.findOne
+          >,
+        );
 
       const { res } = await runHandler(res =>
         contactsController.add(
@@ -244,9 +308,12 @@ describe('Contacts controller unit tests', () => {
         'userTo userFrom',
       );
 
-      sinon.stub(Contact.prototype, 'save').callsFake(function (cb) {
-        cb(new Error('save failed'));
-      });
+      const failSave = (callback: (error: Error) => void) => {
+        callback(new Error('save failed'));
+      };
+      sinon
+        .stub(Contact.prototype, 'save')
+        .callsFake(failSave as unknown as typeof Contact.prototype.save);
 
       const { res } = await runHandler(res =>
         contactsController.confirm({ user: user2, contact: populated }, res),
@@ -268,7 +335,7 @@ describe('Contacts controller unit tests', () => {
         contactsController.confirm({ user: user2, contact: populated }, res),
       );
       res.statusCode.should.equal(200);
-      res.body.confirmed.should.be.true();
+      res.body.confirmed!.should.be.true();
     });
   });
 
@@ -280,9 +347,12 @@ describe('Contacts controller unit tests', () => {
         confirmed: true,
       }).save();
 
-      sinon.stub(Contact.prototype, 'remove').callsFake(function (cb) {
-        cb(new Error('remove failed'));
-      });
+      const failRemove = (callback: (error: Error) => void) => {
+        callback(new Error('remove failed'));
+      };
+      sinon
+        .stub(Contact.prototype, 'remove')
+        .callsFake(failRemove as unknown as typeof Contact.prototype.remove);
 
       const { res } = await runHandler(res =>
         contactsController.remove({ contact }, res),
@@ -301,24 +371,25 @@ describe('Contacts controller unit tests', () => {
         contactsController.remove({ contact }, res),
       );
       res.statusCode.should.equal(200);
-      res.body.message.should.equal('Contact removed.');
+      res.body.message!.should.equal('Contact removed.');
     });
   });
 
   describe('removeAllByUserId', () => {
     it('invokes the callback without error', done => {
-      contactsController.removeAllByUserId(user1._id, err => {
+      contactsController.removeAllByUserId(user1._id, (err: unknown) => {
         (err === null || err === undefined).should.be.true();
         done();
       });
     });
 
     it('allows callers to omit the callback', () => {
-      sinon.stub(Contact, 'deleteMany').callsFake((query, cb) => cb());
+      const deleteMany = sinon.stub(Contact, 'deleteMany');
+      deleteMany.yields();
 
       contactsController.removeAllByUserId(user1._id);
 
-      Contact.deleteMany.calledOnce.should.be.true();
+      deleteMany.calledOnce.should.be.true();
     });
   });
 
@@ -339,7 +410,7 @@ describe('Contacts controller unit tests', () => {
       const { res } = await runHandler(res =>
         contactsController.get({ contact: { _id: 'x' } }, res),
       );
-      res.body._id.should.equal('x');
+      res.body._id!.should.equal('x');
     });
 
     it('returns an empty object when no single contact was loaded', async () => {
@@ -401,11 +472,13 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('passes contact lookup errors to next', async () => {
-      sinon.stub(Contact, 'findOne').returns({
-        populate: () => ({
-          exec: cb => cb(new Error('contact lookup failed')),
-        }),
-      });
+      sinon
+        .stub(Contact, 'findOne')
+        .returns(
+          callbackQuery(
+            new Error('contact lookup failed'),
+          ) as unknown as ReturnType<typeof Contact.findOne>,
+        );
 
       const { nextArg } = await runHandler((res, next) =>
         contactsController.contactByUserId(
@@ -415,8 +488,8 @@ describe('Contacts controller unit tests', () => {
           user2._id.toString(),
         ),
       );
-      nextArg.should.be.Error();
-      nextArg.message.should.equal('contact lookup failed');
+      should(nextArg).be.Error();
+      should(nextArg).have.property('message', 'contact lookup failed');
     });
 
     it('attaches the contact and calls next', async () => {
@@ -426,7 +499,9 @@ describe('Contacts controller unit tests', () => {
         confirmed: true,
       }).save();
 
-      const req = { user: user1 };
+      const req: { user: UserDocument; contact?: ContactDocument } = {
+        user: user1,
+      };
       const { nextCalled } = await runHandler((res, next) =>
         contactsController.contactByUserId(
           req,
@@ -436,7 +511,7 @@ describe('Contacts controller unit tests', () => {
         ),
       );
       nextCalled.should.be.true();
-      req.contact.should.be.an.Object();
+      req.contact!.should.be.an.Object();
     });
   });
 
@@ -499,11 +574,13 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('passes contact id lookup errors to next', async () => {
-      sinon.stub(Contact, 'findById').returns({
-        populate: () => ({
-          exec: cb => cb(new Error('contact id lookup failed')),
-        }),
-      });
+      sinon
+        .stub(Contact, 'findById')
+        .returns(
+          callbackQuery(
+            new Error('contact id lookup failed'),
+          ) as unknown as ReturnType<typeof Contact.findById>,
+        );
 
       const { nextArg } = await runHandler((res, next) =>
         contactsController.contactById(
@@ -513,8 +590,8 @@ describe('Contacts controller unit tests', () => {
           new mongoose.Types.ObjectId().toString(),
         ),
       );
-      nextArg.should.be.Error();
-      nextArg.message.should.equal('contact id lookup failed');
+      should(nextArg).be.Error();
+      should(nextArg).have.property('message', 'contact id lookup failed');
     });
 
     it('attaches the contact for a participant', async () => {
@@ -524,18 +601,23 @@ describe('Contacts controller unit tests', () => {
         confirmed: true,
       }).save();
 
-      const req = { user: user1 };
+      const req: { user: UserDocument; contact?: ContactDocument } = {
+        user: user1,
+      };
       const { nextCalled } = await runHandler((res, next) =>
         contactsController.contactById(req, res, next, contact._id.toString()),
       );
       nextCalled.should.be.true();
-      req.contact._id.toString().should.equal(contact._id.toString());
+      req.contact!._id.toString().should.equal(contact._id.toString());
     });
   });
 
   describe('filterByCommon', () => {
     it('calls next when there are no contacts to filter', async () => {
-      const req = { user: user1, contacts: [] };
+      const req: { user: UserDocument; contacts: ContactRequestEntry[] } = {
+        user: user1,
+        contacts: [],
+      };
       const { nextCalled } = await runHandler((res, next) =>
         contactsController.filterByCommon(req, res, next),
       );
@@ -543,7 +625,7 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('returns an empty list when the user has no confirmed contacts', async () => {
-      const req = {
+      const req: { user: UserDocument; contacts: ContactRequestEntry[] } = {
         user: user1,
         contacts: [{ user: { _id: user2._id } }],
       };
@@ -551,22 +633,26 @@ describe('Contacts controller unit tests', () => {
         contactsController.filterByCommon(req, res, next),
       );
       nextCalled.should.be.true();
-      req.contacts.length.should.equal(0);
+      req.contacts!.length.should.equal(0);
     });
 
     it('calls next with a database error', async () => {
-      sinon.stub(Contact, 'find').returns({
-        exec: cb => cb(new Error('find failed')),
-      });
+      sinon
+        .stub(Contact, 'find')
+        .returns(
+          callbackQuery(new Error('find failed')) as unknown as ReturnType<
+            typeof Contact.find
+          >,
+        );
 
-      const req = {
+      const req: { user: UserDocument; contacts: ContactRequestEntry[] } = {
         user: user1,
         contacts: [{ user: { _id: user2._id } }],
       };
       const { nextArg } = await runHandler((res, next) =>
         contactsController.filterByCommon(req, res, next),
       );
-      nextArg.should.be.Error();
+      should(nextArg).be.Error();
     });
 
     it('keeps only contacts shared with the authenticated user', async () => {
@@ -584,7 +670,7 @@ describe('Contacts controller unit tests', () => {
         confirmed: true,
       }).save();
 
-      const req = {
+      const req: { user: UserDocument; contacts: ContactRequestEntry[] } = {
         user: user1,
         contacts: [
           { user: { _id: user2._id } },
@@ -596,7 +682,7 @@ describe('Contacts controller unit tests', () => {
         contactsController.filterByCommon(req, res, next),
       );
       nextCalled.should.be.true();
-      req.contacts.length.should.equal(2);
+      req.contacts!.length.should.equal(2);
     });
 
     it('matches contacts when authenticated user is the receiving side', async () => {
@@ -606,7 +692,7 @@ describe('Contacts controller unit tests', () => {
         confirmed: true,
       }).save();
 
-      const req = {
+      const req: { user: UserDocument; contacts: ContactRequestEntry[] } = {
         user: user1,
         contacts: [{ user: { _id: user2._id } }],
       };
@@ -614,7 +700,7 @@ describe('Contacts controller unit tests', () => {
         contactsController.filterByCommon(req, res, next),
       );
       nextCalled.should.be.true();
-      req.contacts.length.should.equal(1);
+      req.contacts!.length.should.equal(1);
     });
   });
 
@@ -638,7 +724,9 @@ describe('Contacts controller unit tests', () => {
         confirmed: true,
       }).save();
 
-      const req = { user: user2 };
+      const req: { user: UserDocument; contacts?: ContactRequestEntry[] } = {
+        user: user2,
+      };
       const { nextCalled } = await runHandler((res, next) =>
         contactsController.contactListByUser(
           req,
@@ -648,7 +736,7 @@ describe('Contacts controller unit tests', () => {
         ),
       );
       nextCalled.should.be.true();
-      req.contacts.length.should.equal(1);
+      req.contacts!.length.should.equal(1);
     });
 
     it('omits existing contacts with restricted members', async () => {
@@ -670,7 +758,9 @@ describe('Contacts controller unit tests', () => {
         },
       ]);
 
-      const req = { user: user1 };
+      const req: { user: UserDocument; contacts?: ContactRequestEntry[] } = {
+        user: user1,
+      };
       const { nextCalled } = await runHandler((res, next) =>
         contactsController.contactListByUser(
           req,
@@ -681,14 +771,18 @@ describe('Contacts controller unit tests', () => {
       );
 
       nextCalled.should.be.true();
-      req.contacts.should.have.length(1);
-      req.contacts[0].user._id.toString().should.equal(user2._id.toString());
+      req.contacts!.should.have.length(1);
+      req.contacts![0].user._id.toString().should.equal(user2._id.toString());
     });
 
     it('passes aggregate errors to next', async () => {
-      sinon.stub(Contact, 'aggregate').returns({
-        exec: cb => cb(new Error('aggregate failed')),
-      });
+      sinon
+        .stub(Contact, 'aggregate')
+        .returns(
+          callbackQuery(new Error('aggregate failed')) as unknown as ReturnType<
+            typeof Contact.aggregate
+          >,
+        );
 
       const { nextArg } = await runHandler((res, next) =>
         contactsController.contactListByUser(
@@ -698,14 +792,18 @@ describe('Contacts controller unit tests', () => {
           user2._id.toString(),
         ),
       );
-      nextArg.should.be.Error();
-      nextArg.message.should.equal('aggregate failed');
+      should(nextArg).be.Error();
+      should(nextArg).have.property('message', 'aggregate failed');
     });
 
     it('passes missing aggregate results to next', async () => {
-      sinon.stub(Contact, 'aggregate').returns({
-        exec: cb => cb(null, null),
-      });
+      sinon
+        .stub(Contact, 'aggregate')
+        .returns(
+          callbackQuery(null, null) as unknown as ReturnType<
+            typeof Contact.aggregate
+          >,
+        );
 
       const { nextArg } = await runHandler((res, next) =>
         contactsController.contactListByUser(
@@ -715,8 +813,8 @@ describe('Contacts controller unit tests', () => {
           user2._id.toString(),
         ),
       );
-      nextArg.should.be.Error();
-      nextArg.message.should.equal('Failed to load contacts.');
+      should(nextArg).be.Error();
+      should(nextArg).have.property('message', 'Failed to load contacts.');
     });
   });
 });

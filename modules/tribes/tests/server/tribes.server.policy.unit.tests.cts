@@ -1,31 +1,44 @@
-let policyModule;
+let policyModule: typeof import('../../server/policies/tribes.server.policy.mts');
 before(async function () {
   policyModule = await import('../../server/policies/tribes.server.policy.mts');
 });
-const sinon = require('sinon');
+const sinon: typeof import('sinon') = require('sinon');
 require('should');
+interface PolicyResponseDouble {
+  statusCode: number;
+  body: { message: string } | null;
+  status(code: number): PolicyResponseDouble;
+  json(body: { message: string }): PolicyResponseDouble;
+  send(body: { message: string }): PolicyResponseDouble;
+}
 
 function loadPolicy() {
   const implementation = policyModule;
   const mockAcl = implementation._acl;
-  sinon.stub(mockAcl, 'allow');
-  sinon.stub(mockAcl, 'areAnyRolesAllowed');
-  return { policy: implementation.default, mockAcl };
+  const allow = sinon.stub(mockAcl, 'allow');
+  const areAnyRolesAllowed = sinon.stub(mockAcl, 'areAnyRolesAllowed');
+  return {
+    policy: implementation.default,
+    mockAcl: { allow, areAnyRolesAllowed },
+  };
 }
 
-function mockResponse() {
-  const res = { statusCode: 200, body: null };
-  res.status = code => {
-    res.statusCode = code;
-    return res;
-  };
-  res.send = body => {
-    res.body = body;
-    return res;
-  };
-  res.json = body => {
-    res.body = body;
-    return res;
+function mockResponse(): PolicyResponseDouble {
+  const res: PolicyResponseDouble = {
+    statusCode: 200,
+    body: null,
+    status(code: number) {
+      res.statusCode = code;
+      return res;
+    },
+    json(body: { message: string }) {
+      res.body = body;
+      return res;
+    },
+    send(body: { message: string }) {
+      res.body = body;
+      return res;
+    },
   };
   return res;
 }
@@ -44,7 +57,7 @@ describe('Tribes policy unit tests', () => {
       .map(entry => entry.roles[0])
       .should.deepEqual(['admin', 'user', 'guest']);
     policies[2].allows
-      .map(allow => allow.resources)
+      .map((allow: { resources: string }) => allow.resources)
       .should.deepEqual(['/api/tribes', '/api/tribes/:tribe']);
   });
 
@@ -55,7 +68,11 @@ describe('Tribes policy unit tests', () => {
 
     policy.isAllowed(
       {
-        user: { public: true, roles: ['user'] },
+        user: {
+          _id: { valueOf: () => 'user-id' },
+          public: true,
+          roles: ['user'],
+        },
         route: { path: '/api/tribes' },
         method: 'GET',
       },
@@ -64,7 +81,7 @@ describe('Tribes policy unit tests', () => {
     );
 
     res.statusCode.should.equal(500);
-    res.body.message.should.equal('Unexpected authorization error');
+    res.body!.message.should.equal('Unexpected authorization error');
     done();
   });
 
@@ -75,7 +92,11 @@ describe('Tribes policy unit tests', () => {
 
     policy.isAllowed(
       {
-        user: { public: true, roles: ['guest'] },
+        user: {
+          _id: { valueOf: () => 'user-id' },
+          public: true,
+          roles: ['guest'],
+        },
         route: { path: '/api/tribes' },
         method: 'DELETE',
       },
@@ -84,7 +105,7 @@ describe('Tribes policy unit tests', () => {
     );
 
     res.statusCode.should.equal(403);
-    res.body.message.should.equal('Forbidden.');
+    res.body!.message.should.equal('Forbidden.');
     done();
   });
 
@@ -115,7 +136,7 @@ describe('Tribes policy unit tests', () => {
 
     policy.isAllowed(
       {
-        user: { roles: ['admin'] },
+        user: { _id: { valueOf: () => 'user-id' }, roles: ['admin'] },
         route: { path: '/api/tribes/:tribe' },
         method: 'GET',
       },
@@ -135,13 +156,13 @@ describe('Tribes policy unit tests', () => {
 
     const policies = mockAcl.allow.firstCall.args[0];
     policies[0].allows
-      .map(allow => allow.resources)
+      .map((allow: { resources: string }) => allow.resources)
       .should.containEql('/api/tribes/:tribe/members');
     policies[1].allows
-      .map(allow => allow.resources)
+      .map((allow: { resources: string }) => allow.resources)
       .should.containEql('/api/tribes/:tribe/members');
     policies[2].allows
-      .map(allow => allow.resources)
+      .map((allow: { resources: string }) => allow.resources)
       .should.not.containEql('/api/tribes/:tribe/members');
   });
 });

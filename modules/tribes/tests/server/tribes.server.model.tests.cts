@@ -1,21 +1,29 @@
+import type {
+  TestConfigModule,
+  TribeDocument,
+  TribeModel,
+  TribeRecord,
+} from '../../../../testutils/server/model-contracts.mts';
 /**
  * Module dependencies.
  */
-const should = require('should');
-const sinon = require('sinon');
-const mongoose = require('mongoose');
-const validator = require('validator');
-const config = require('./../../../../config/config.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+const should: typeof import('should') = require('should');
+const sinon: typeof import('sinon') = require('sinon');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const validator: {
+  isHexadecimal(value: string): boolean;
+} = require('validator');
+const config: TestConfigModule = require('./../../../../config/config.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 
-const Tribe = mongoose.model('Tribe');
+const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
 
 /**
  * Globals
  */
-let tribe1;
+let tribe1: TribeRecord;
 // let tribe2;
-let tribe3;
+let tribe3: TribeRecord;
 
 /**
  * Unit tests
@@ -66,11 +74,11 @@ describe('Tribe Model Unit Tests:', function () {
       for (let index = 0; index < 100; index += 1) {
         random.returns(index / 100);
         const colour = new Tribe({ label: `Circle ${index}` }).color;
-        colour.should.match(/^[0-9a-f]{6}$/);
+        colour!.should.match(/^[0-9a-f]{6}$/);
         colours.add(colour);
 
         const channels = [0, 2, 4].map(offset => {
-          const value = parseInt(colour.slice(offset, offset + 2), 16) / 255;
+          const value = parseInt(colour!.slice(offset, offset + 2), 16) / 255;
           return value <= 0.04045
             ? value / 12.92
             : ((value + 0.055) / 1.055) ** 2.4;
@@ -91,17 +99,20 @@ describe('Tribe Model Unit Tests:', function () {
     const tribe = new Tribe({ label: 'Existing circle', color: 'abcdef' });
     tribe.save(function (err) {
       should.not.exist(err);
-      Tribe.findById(tribe._id, function (err, savedTribe) {
-        should.not.exist(err);
-        savedTribe.color.should.equal('abcdef');
-        done();
-      });
+      Tribe.findById(
+        tribe._id,
+        function (err: unknown, savedTribe: TribeDocument | null) {
+          should.not.exist(err);
+          savedTribe!.color!.should.equal('abcdef');
+          done();
+        },
+      );
     });
   });
 
   describe('Method Save', function () {
     it('should begin with no tribes', function (done) {
-      Tribe.find({}, function (err, tribes) {
+      Tribe.find({}, function (err: unknown, tribes: TribeDocument[]) {
         tribes.should.have.length(0);
         done();
       });
@@ -123,17 +134,17 @@ describe('Tribe Model Unit Tests:', function () {
       const _tribe = new Tribe(tribe1);
       _tribe.save(function (err) {
         should.not.exist(err);
-        _tribe.synonyms.should.be.an.Array();
-        _tribe.synonyms.length.should.eql(0);
-        _tribe.labelHistory.should.be.an.Array();
-        _tribe.labelHistory.length.should.eql(0);
-        _tribe.slugHistory.should.be.an.Array();
-        _tribe.slugHistory.length.should.eql(0);
-        _tribe.slug.should.equal('tribe-label');
-        _tribe.count.should.eql(0);
+        _tribe.synonyms!.should.be.an.Array();
+        _tribe.synonyms!.length.should.eql(0);
+        _tribe.labelHistory!.should.be.an.Array();
+        _tribe.labelHistory!.length.should.eql(0);
+        _tribe.slugHistory!.should.be.an.Array();
+        _tribe.slugHistory!.length.should.eql(0);
+        _tribe.slug!.should.equal('tribe-label');
+        _tribe.count!.should.eql(0);
         should.exist(_tribe.color);
-        _tribe.color.should.not.containEql('#');
-        validator.isHexadecimal(_tribe.color).should.equal(true);
+        _tribe.color!.should.not.containEql('#');
+        validator.isHexadecimal(_tribe.color!).should.equal(true);
         should.exist(_tribe.created);
 
         done();
@@ -160,11 +171,11 @@ describe('Tribe Model Unit Tests:', function () {
 
       _tribe.save(function (err) {
         should.not.exist(err);
-        const colorBefore = _tribe.color;
+        const colorBefore = _tribe.color!;
         _tribe.label = 'test';
         _tribe.save(function (err) {
           should.not.exist(err);
-          const colorAfter = _tribe.color;
+          const colorAfter = _tribe.color!;
           colorBefore.should.equal(colorAfter);
           done();
         });
@@ -202,7 +213,7 @@ describe('Tribe Model Unit Tests:', function () {
       _tribe.label = 'Hyvää päivää, herra Hüü!';
       _tribe.save(function (err) {
         should.not.exist(err);
-        _tribe.slug.should.equal('hyvaa-paivaa-herra-huu');
+        _tribe.slug!.should.equal('hyvaa-paivaa-herra-huu');
         done();
       });
     });
@@ -213,7 +224,7 @@ describe('Tribe Model Unit Tests:', function () {
       _tribe.label = 'unicode ♥';
       _tribe.save(function (err) {
         should.not.exist(err);
-        _tribe.slug.should.equal('unicode-love');
+        _tribe.slug!.should.equal('unicode-love');
         done();
       });
     });

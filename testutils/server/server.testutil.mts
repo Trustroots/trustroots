@@ -2,9 +2,9 @@ import type { MailMessage } from 'nodemailer';
 import agenda from '../../config/lib/agenda.mjs';
 import config from '../../config/config.mjs';
 
-export type CapturedJob = {
+export type CapturedJob<TData = unknown> = {
   type: string;
-  data: unknown;
+  data: TData;
 };
 
 type AgendaJobDouble = {
@@ -34,8 +34,8 @@ const mochaHooks = globalThis as typeof globalThis & {
 /**
  * Helper for testing Agenda jobs
  */
-export function catchJobs(): CapturedJob[] {
-  const jobs: CapturedJob[] = [];
+export function catchJobs<TData = unknown>(): CapturedJob<TData>[] {
+  const jobs: CapturedJob<TData>[] = [];
   let originalNow: AgendaTestService['now'];
 
   mochaHooks.beforeEach(() => {
@@ -45,7 +45,9 @@ export function catchJobs(): CapturedJob[] {
     originalNow = agendaService.now;
     agendaService.now = function (type: string, data: unknown) {
       // ensure it is plain data by serializing to json and back
-      jobs.push(JSON.parse(JSON.stringify({ type, data })) as CapturedJob);
+      jobs.push(
+        JSON.parse(JSON.stringify({ type, data })) as CapturedJob<TData>,
+      );
 
       // Resolve asynchronously, matching Agenda's promise-based API.
       return new Promise<AgendaJobDouble>(resolve => {
