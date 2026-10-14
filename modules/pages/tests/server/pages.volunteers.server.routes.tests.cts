@@ -1,18 +1,25 @@
-const request = require('supertest');
-const mongoose = require('mongoose');
-const should = require('should');
-const express = require('./../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const should: typeof import('should') = require('should');
+const express: import('../../../../testutils/server/model-contracts.mts').TestExpressModule = require('./../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mjs') = require('../../../../testutils/server/data.server.testutil');
+const User =
+  mongoose.model<
+    import('../../../../testutils/server/model-contracts.mts').UserRecord
+  >('User');
 describe('Volunteers page route tests', function () {
-  let app;
-  let agent;
+  let app: import('express').Express;
+  let agent: import('supertest').Agent;
   before(async function () {
     app = await express.init(mongoose.connection);
     agent = request.agent(app);
   });
   afterEach(utils.clearDatabase);
-  function createUser(username, roles, done) {
+  function createUser(
+    username: string,
+    roles: string[],
+    done: (error?: Error | null) => void,
+  ) {
     const user = new User({
       public: true,
       firstName: username,
@@ -42,7 +49,10 @@ describe('Volunteers page route tests', function () {
           agent
             .get('/api/volunteers')
             .expect(200)
-            .end(function (err, res) {
+            .end(function (
+              err: Error | null,
+              res: import('supertest').Response,
+            ) {
               if (err) {
                 return done(err);
               }
@@ -68,7 +78,7 @@ describe('Volunteers page route tests', function () {
       agent
         .get('/api/volunteers')
         .expect(200)
-        .end(function (err, res) {
+        .end(function (err: Error | null, res: import('supertest').Response) {
           if (err) {
             return done(err);
           }
@@ -139,9 +149,9 @@ describe('Volunteers page route tests', function () {
     const response = await agent.get('/api/greeters').expect(200);
 
     response.body.greeters
-      .map(({ displayName }) => displayName)
+      .map(({ displayName }: { displayName: string }) => displayName)
       .should.deepEqual(['Ada Greeter', 'Zed Greeter']);
-    response.body.greeters.forEach(greeter => {
+    response.body.greeters.forEach((greeter: Record<string, unknown>) => {
       Object.keys(greeter)
         .sort()
         .should.deepEqual(['_id', 'displayName', 'username']);
