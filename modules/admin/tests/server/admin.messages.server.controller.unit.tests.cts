@@ -2,11 +2,11 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon: typeof import('sinon') = require('sinon');
 
 type MessagesController =
-  typeof import('../../server/controllers/admin.messages.server.controller.mjs');
+  typeof import('../../server/controllers/admin.messages.server.controller.mts');
 const adminMessages: Pick<
   MessagesController,
   'getMessages' | 'getScammerRecipients' | 'sendScammerWarning'
-> = require('./../../server/controllers/admin.messages.server.controller.mjs');
+> = require('./../../server/controllers/admin.messages.server.controller.mts');
 const should: typeof import('should') = require('should');
 
 type MessageRecord =

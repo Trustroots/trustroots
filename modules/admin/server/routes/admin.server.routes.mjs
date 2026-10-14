@@ -1,6 +1,6 @@
 import adminAcquisitionStories from './../controllers/admin.acquisition-stories.server.controller.mts';
 import adminAuditLog from './../controllers/admin.audit-log.server.controller.mjs';
-import adminMessages from './../controllers/admin.messages.server.controller.mjs';
+import adminMessages from './../controllers/admin.messages.server.controller.mts';
 import adminNewsletter from './../controllers/admin.newsletter.server.controller.mjs';
 import adminPolicy from './../policies/admin.server.policy.mts';
 import adminThreads from './../controllers/admin.threads.server.controller.mjs';
@@ -10,7 +10,7 @@ import support from '../controllers/admin.support.server.controller.mts';
 import adminNotes from './../controllers/admin.notes.server.controller.mjs';
 import adminReferenceThreads from './../controllers/admin.reference-threads.server.controller.mjs';
 import adminHackerspaces from './../controllers/admin.hackerspaces.server.controller.mjs';
-import adminLocationCorrections from '../controllers/admin.location-corrections.server.controller.mjs';
+import adminLocationCorrections from '../controllers/admin.location-corrections.server.controller.mts';
 import adminExperienceChanges from '../controllers/admin.experience-changes.server.controller.mjs';
 
 /**
