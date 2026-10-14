@@ -87,6 +87,17 @@ describe('Reusable user fixture passwords', () => {
     );
   });
 
+  it('preserves an existing fixture document and its other save hooks', async () => {
+    const user = utils.createTestUser(
+      fixture('fixtureexisting', 'ExistingFixturePassword!'),
+    );
+    const saved = await utils.saveUserWithCachedPassword(user);
+    assert.equal(saved, user);
+    assert.equal(saved.displayName, 'Sample Member');
+    assert.match(saved.password ?? '', /^\$scrypt\$/);
+    assert.equal(await saved.authenticate('ExistingFixturePassword!'), true);
+  });
+
   it('keeps different passwords separate', async () => {
     const users = await utils.saveUsersWithCachedPasswords([
       fixture('fixturethird', 'SeparateFixturePasswordOne!'),

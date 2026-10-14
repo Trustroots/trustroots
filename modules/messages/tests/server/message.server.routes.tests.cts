@@ -50,7 +50,7 @@ describe('Message CRUD tests', function () {
       done();
     })().catch(done);
   });
-  beforeEach(function (done) {
+  beforeEach(async function () {
     // Create userFrom credentials
     credentials = {
       username: 'username1',
@@ -83,21 +83,14 @@ describe('Message CRUD tests', function () {
       public: true,
     });
 
-    // Save users to the test db and create new message
-    userFrom.save(function (userFromErr, userFromRes) {
-      should.not.exist(userFromErr);
-      userFromId = userFromRes._id;
-      userTo.save(function (userToErr, userToRes) {
-        should.not.exist(userToErr);
-        userToId = userToRes._id;
-        // Create message
-        message = {
-          content: 'Message content',
-          userTo: userToId,
-        };
-        return done();
-      });
-    });
+    await utils.saveUserWithCachedPassword(userFrom);
+    userFromId = userFrom._id;
+    await utils.saveUserWithCachedPassword(userTo);
+    userToId = userTo._id;
+    message = {
+      content: 'Message content',
+      userTo: userToId,
+    };
   });
   afterEach(utils.clearDatabase);
   it('denies a preview to visitors', async () => {

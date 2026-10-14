@@ -54,7 +54,7 @@ describe('Contact CRUD tests', function () {
       done();
     })().catch(done);
   });
-  beforeEach(function (done) {
+  beforeEach(async function () {
     // Create userFrom credentials
     credentials = {
       username: 'loremipsum',
@@ -123,50 +123,28 @@ describe('Contact CRUD tests', function () {
       confirmed: true,
     });
 
-    // Save user to the test db
-    user1.save(function (err, user1SaveRes) {
-      should.not.exist(err);
-      user1Id = user1SaveRes._id;
-      user1 = user1SaveRes;
-      user2.save(function (err, user2SaveRes) {
-        should.not.exist(err);
-        user2Id = user2SaveRes._id;
-        user2 = user2SaveRes;
-        user3.save(function (err, user3SaveRes) {
-          should.not.exist(err);
-          user3Id = user3SaveRes._id;
-          user3 = user3SaveRes;
-          user4.save(function (err, user4SaveRes) {
-            should.not.exist(err);
-            user4Id = user4SaveRes._id;
-            user4 = user4SaveRes;
+    await utils.saveUserWithCachedPassword(user1);
+    user1Id = user1._id;
+    await utils.saveUserWithCachedPassword(user2);
+    user2Id = user2._id;
+    await utils.saveUserWithCachedPassword(user3);
+    user3Id = user3._id;
+    await utils.saveUserWithCachedPassword(user4);
+    user4Id = user4._id;
 
-            // Connection A: Users 1+2, un-confirmed
-            contact1.userFrom = user2Id;
-            contact1.userTo = user1Id;
-
-            // Connection B: Users 2+3, confirmed
-            contact2.userFrom = user2Id;
-            contact2.userTo = user3Id;
-
-            // Connection C: Users 1+3, confirmed
-            contact3.userFrom = user1Id;
-            contact3.userTo = user3Id;
-            contact1.save(function (err, contact1SaveRes) {
-              should.not.exist(err);
-              contact1Id = contact1SaveRes._id;
-              contact2.save(function (err) {
-                should.not.exist(err);
-                contact3.save(function (err) {
-                  should.not.exist(err);
-                  return done();
-                });
-              });
-            });
-          });
-        });
-      });
-    });
+    // Connection A: Users 1+2, unconfirmed
+    contact1.userFrom = user2Id;
+    contact1.userTo = user1Id;
+    // Connection B: Users 2+3, confirmed
+    contact2.userFrom = user2Id;
+    contact2.userTo = user3Id;
+    // Connection C: Users 1+3, confirmed
+    contact3.userFrom = user1Id;
+    contact3.userTo = user3Id;
+    await contact1.save();
+    contact1Id = contact1._id;
+    await contact2.save();
+    await contact3.save();
   });
   afterEach(utils.clearDatabase);
   it('should not be able to read contact list if not logged in', function (done) {

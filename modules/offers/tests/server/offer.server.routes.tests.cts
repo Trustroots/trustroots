@@ -258,10 +258,10 @@ describe('Offer CRUD tests', function () {
         },
         // Save user 1 (without tribe membership)
         function (done) {
-          user1.save(function (err, user1res) {
+          utils.saveUserWithCachedPassword(user1).then(function (user1res) {
             user1Id = user1res._id;
-            done(err);
-          });
+            done();
+          }, done);
         },
         // Save user 2 (with tribe membership)
         function (done) {
@@ -271,10 +271,10 @@ describe('Offer CRUD tests', function () {
               since: new Date(),
             },
           ];
-          user2.save(function (err, user2res) {
+          utils.saveUserWithCachedPassword(user2).then(function (user2res) {
             user2Id = user2res._id;
-            done(err);
-          });
+            done();
+          }, done);
         },
         // Save user 3 (with tribe membership)
         function (done) {
@@ -284,10 +284,10 @@ describe('Offer CRUD tests', function () {
               since: new Date(),
             },
           ];
-          user3.save(function (err, user3res) {
+          utils.saveUserWithCachedPassword(user3).then(function (user3res) {
             user3Id = user3res._id;
-            return done(err);
-          });
+            return done();
+          }, done);
         },
         // Save hosting offer 2
         function (done) {
