@@ -50,7 +50,13 @@ it('lets the author propose an edit while retaining the current values initially
   apiMock.submit.mockResolvedValue(request('edit', 'pending'));
   render(<ExperienceChangePage id="experience-1" />);
 
-  expect(await screen.findByLabelText('Written feedback')).toHaveValue(
+  expect(
+    await screen.findByRole('heading', { name: 'Change an Experience' }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole('heading', { name: 'Change an Experience' }).parentElement,
+  ).toHaveClass('container-spacer');
+  expect(screen.getByLabelText('Written feedback')).toHaveValue(
     'Original feedback',
   );
   fireEvent.change(screen.getByLabelText('Written feedback'), {

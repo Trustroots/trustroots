@@ -2554,7 +2554,10 @@ const features = [
       'Admin generates a scoped support link.',
       'Author proposes an edit that stays pending until approval.',
       'Approved edit appears on the profile.',
+      'Approved edit remains in admin search.',
+      'Approved edit stays on the review page with profile links.',
       'Approved removal hides the Experience.',
+      'Approved removal leaves the reciprocal Experience.',
     ],
     relatedSpecs: [
       spec(
@@ -2854,6 +2857,7 @@ const features = [
     },
     requiredScenarios: [
       'Support can triage requests and inspect linked conversations and experiences without moderation authority.',
+      'Support can search for a member from the top of the inbox.',
     ],
     relatedSpecs: [],
   },

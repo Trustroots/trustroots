@@ -15,6 +15,7 @@ test('support can triage a report and investigate only its verified member pair'
 }, testInfo) => {
   annotateFeature(testInfo, 'admin.support-team', [
     'Support can triage requests and inspect linked conversations and experiences without moderation authority.',
+    'Support can search for a member from the top of the inbox.',
   ]);
   const context = await createIsolatedContext(browser, baseURL);
   const page = await context.newPage();
@@ -107,6 +108,20 @@ test('support can triage a report and investigate only its verified member pair'
     await page.goto('/admin/support');
     await expect(
       page.getByRole('heading', { name: 'Support inbox' }),
+    ).toBeVisible();
+    const memberSearch = page.getByRole('region', { name: 'Member search' });
+    const requestQueue = page.getByRole('region', { name: 'Request queue' });
+    const searchBox = await memberSearch.boundingBox();
+    const requestQueueBox = await requestQueue.boundingBox();
+    expect(searchBox.y + searchBox.height).toBeLessThanOrEqual(
+      requestQueueBox.y,
+    );
+    await page.getByLabel('Name, username or email').fill(target.username);
+    await page.getByRole('button', { name: 'Search members' }).click();
+    await expect(
+      page.getByRole('link', {
+        name: new RegExp(`${target.username} \\(Fictional Member\\)`),
+      }),
     ).toBeVisible();
     await page
       .getByRole('button', {

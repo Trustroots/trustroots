@@ -36,13 +36,13 @@ export interface AdminExperienceChangeSearchExperience<
   userTo: AdminExperienceChangeMember<Id> | null;
 }
 
-/** The queue populates the Experience, but leaves its member IDs unpopulated. */
+/** The queue populates the Experience and both members. */
 export interface AdminExperienceChangeQueuedExperience<
   Id = string,
   Timestamp = string,
 > extends AdminExperienceChangeExperienceFields<Id, Timestamp> {
-  userFrom: Id;
-  userTo: Id;
+  userFrom: AdminExperienceChangeParticipant<Id>;
+  userTo: AdminExperienceChangeParticipant<Id>;
 }
 
 export interface AdminExperienceChangeProposal {
@@ -55,7 +55,7 @@ interface AdminExperienceChangeRequestBase<Id = string, Timestamp = string> {
   _id: Id;
   requester: AdminExperienceChangeMember<Id> | null;
   experience: AdminExperienceChangeQueuedExperience<Id, Timestamp> | null;
-  status: 'pending' | 'processing';
+  status: 'pending' | 'processing' | 'approved';
 }
 
 export type AdminExperienceChangeRequest<Id = string, Timestamp = string> =

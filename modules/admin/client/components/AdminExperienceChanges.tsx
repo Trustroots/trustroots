@@ -17,6 +17,21 @@ function memberLabel(member: AdminExperienceChangeParticipant): string {
   return 'Unknown member';
 }
 
+function MemberName({
+  member,
+}: {
+  member: AdminExperienceChangeParticipant;
+}): React.JSX.Element {
+  const label = memberLabel(member);
+  if (typeof member !== 'object' || member === null || !member.username)
+    return <strong>{label}</strong>;
+  return (
+    <strong>
+      <a href={`/profile/${member.username}/experiences`}>{label}</a>
+    </strong>
+  );
+}
+
 interface ExperienceDetailsProps {
   experience:
     | AdminExperienceChangeQueuedExperience
@@ -31,8 +46,8 @@ function ExperienceDetails({
   return (
     <div>
       <p>
-        <strong>{memberLabel(experience.userFrom)}</strong> wrote about{' '}
-        <strong>{memberLabel(experience.userTo)}</strong>
+        <MemberName member={experience.userFrom} /> wrote about{' '}
+        <MemberName member={experience.userTo} />
         {experience.public ? ' (public)' : ' (not yet public)'}.
       </p>
       <p>Recommendation: {experience.recommend}</p>
@@ -180,50 +195,73 @@ export default function AdminExperienceChanges(): React.JSX.Element {
         </section>
         <section>
           <h2>Pending requests</h2>
-          {requests.length === 0 && <p>No requests awaiting review.</p>}
-          {requests.map(request => (
-            <div className="panel panel-default" key={request._id}>
-              <div className="panel-body">
-                <p>
-                  <strong>{memberLabel(request.requester)}</strong> requests{' '}
-                  {request.kind === 'edit' ? 'an edit' : 'removal'}.
-                </p>
-                <ExperienceDetails experience={request.experience} />
-                {request.kind === 'edit' && (
-                  <div>
-                    <h3>Proposed values</h3>
-                    <p>Recommendation: {request.proposed.recommend}</p>
-                    <p>
-                      Interactions:{' '}
-                      {(['met', 'host', 'guest'] as const)
-                        .filter(key => request.proposed.interactions[key])
-                        .join(', ')}
-                    </p>
-                    <p>
-                      Feedback: {request.proposed.feedbackPublic || '(none)'}
-                    </p>
-                  </div>
-                )}
-                <button
-                  className="btn btn-primary"
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void decide(request, 'approve')}
-                >
-                  Approve
-                </button>{' '}
-                <button
-                  className="btn btn-default"
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void decide(request, 'reject')}
-                >
-                  Reject
-                </button>
+          {requests.filter(request => request.status !== 'approved').length ===
+            0 && <p>No requests awaiting review.</p>}
+          {requests
+            .filter(request => request.status !== 'approved')
+            .map(request => (
+              <div className="panel panel-default" key={request._id}>
+                <div className="panel-body">
+                  <p>
+                    <strong>{memberLabel(request.requester)}</strong> requests{' '}
+                    {request.kind === 'edit' ? 'an edit' : 'removal'}.
+                  </p>
+                  <ExperienceDetails experience={request.experience} />
+                  {request.kind === 'edit' && (
+                    <div>
+                      <h3>Proposed values</h3>
+                      <p>Recommendation: {request.proposed.recommend}</p>
+                      <p>
+                        Interactions:{' '}
+                        {(['met', 'host', 'guest'] as const)
+                          .filter(key => request.proposed.interactions[key])
+                          .join(', ')}
+                      </p>
+                      <p>
+                        Feedback: {request.proposed.feedbackPublic || '(none)'}
+                      </p>
+                    </div>
+                  )}
+                  <button
+                    className="btn btn-primary"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void decide(request, 'approve')}
+                  >
+                    Approve
+                  </button>{' '}
+                  <button
+                    className="btn btn-default"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void decide(request, 'reject')}
+                  >
+                    Reject
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
         </section>
+        {requests.some(request => request.status === 'approved') && (
+          <section>
+            <h2>Recently approved</h2>
+            <p>Approved edits stay here for seven days.</p>
+            {requests
+              .filter(request => request.status === 'approved')
+              .map(request => (
+                <div className="panel panel-default" key={request._id}>
+                  <div className="panel-body">
+                    <p>
+                      <strong>Approved</strong>.{' '}
+                      <strong>{memberLabel(request.requester)}</strong> edited
+                      this Experience.
+                    </p>
+                    <ExperienceDetails experience={request.experience} />
+                  </div>
+                </div>
+              ))}
+          </section>
+        )}
       </div>
     </>
   );

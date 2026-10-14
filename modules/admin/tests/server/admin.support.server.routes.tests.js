@@ -133,6 +133,24 @@ describe('Support team access and investigation', () => {
         .get(`/api/admin/support-members?search=${users[1].username}`)
         .expect(200)
     ).body.length.should.equal(1);
+    (
+      await agent
+        .get(
+          `/api/admin/support-members?search=${encodeURIComponent(users[1].email)}`,
+        )
+        .expect(200)
+    ).body
+      .map(member => member.username)
+      .should.containEql(users[1].username);
+    (
+      await agent
+        .get(
+          `/api/admin/support-members?search=${encodeURIComponent(users[1].displayName)}`,
+        )
+        .expect(200)
+    ).body
+      .map(member => member.username)
+      .should.containEql(users[1].username);
     await agent
       .post('/api/admin/notes')
       .set('X-Trustroots-Request', '1')

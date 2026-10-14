@@ -176,6 +176,11 @@ test('handles missing linkage, empty results and search errors', async () => {
     };
   });
   render(<SupportInbox />);
+  const search = screen.getByRole('region', { name: 'Member search' });
+  const queue = screen.getByRole('region', { name: 'Request queue' });
+  expect(
+    search.compareDocumentPosition(queue) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
   fireEvent.click(
     await screen.findByRole('button', {
       name: /reporter@example.test · Report a member/,

@@ -166,6 +166,71 @@ export const investigation = handler(async (req, res) => {
   });
 });
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function findMembers(search) {
+  const trimmed = search.trim();
+  const lowered = trimmed.toLowerCase();
+  const escaped = escapeRegex(lowered);
+  // Usernames and emails are stored in lowercase, so these clauses can use
+  // their indexes. A fresh expression is required for each field.
+  const indexed = await User.find({
+    $or: [
+      { username: lowered },
+      { email: lowered },
+      { emailTemporary: lowered },
+      { username: new RegExp(`^${escaped}`) },
+      { email: new RegExp(`^${escaped}`) },
+      { emailTemporary: new RegExp(`^${escaped}`) },
+    ],
+  })
+    .select(MEMBER_FIELDS)
+    .sort({ username: 1 })
+    .limit(PAGE_SIZE)
+    .lean();
+
+  const seen = new Set(indexed.map(member => String(member._id)));
+  if (seen.size >= PAGE_SIZE) return indexed;
+
+  const namePattern = new RegExp(
+    trimmed
+      .split(/\s+/)
+      .map(part => escapeRegex(part))
+      .join('\\s*'),
+    'i',
+  );
+  let named = [];
+  try {
+    named = await User.find(
+      { $text: { $search: trimmed } },
+      { score: { $meta: 'textScore' } },
+    )
+      .select(MEMBER_FIELDS)
+      .sort({ score: { $meta: 'textScore' } })
+      .limit(PAGE_SIZE)
+      .lean();
+  } catch {
+    named = await User.find({
+      $or: [
+        { displayName: namePattern },
+        { firstName: namePattern },
+        { lastName: namePattern },
+      ],
+    })
+      .select(MEMBER_FIELDS)
+      .sort({ username: 1 })
+      .limit(PAGE_SIZE)
+      .maxTimeMS(2000)
+      .lean();
+  }
+
+  return indexed
+    .concat(named.filter(member => !seen.has(String(member._id))))
+    .slice(0, PAGE_SIZE);
+}
+
 export const searchMembers = handler(async (req, res) => {
   const { search } = req.query;
   if (
@@ -175,19 +240,7 @@ export const searchMembers = handler(async (req, res) => {
   ) {
     throw invalid('Enter at least three characters.');
   }
-  const pattern = new RegExp(
-    search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
-    'i',
-  );
-  const members = await User.find({
-    $or: ['username', 'displayName', 'email', 'emailTemporary'].map(field => ({
-      [field]: pattern,
-    })),
-  })
-    .select(MEMBER_FIELDS)
-    .sort({ username: 1 })
-    .limit(PAGE_SIZE)
-    .lean();
+  const members = await findMembers(search);
   await audit(req);
   return res.send(members.map(memberPayload));
 });
