@@ -132,6 +132,183 @@ describe('<CircleMemberDiscovery />', () => {
     expect(
       screen.queryByText('No members to show yet'),
     ).not.toBeInTheDocument();
+    expect(listMembersMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries a transient server failure once and shows the returned members', async () => {
+    jest.useFakeTimers();
+    listMembersMock
+      .mockRejectedValueOnce(
+        Object.assign(new Error('temporarily unavailable'), {
+          response: { status: 503 },
+        }),
+      )
+      .mockResolvedValueOnce({
+        contacts: [member('contact-1', 'known')],
+        recommenders: [],
+        active: [],
+      });
+
+    try {
+      render(<CircleMemberDiscovery circle={circle} user={user} />);
+      await act(async () => {
+        await Promise.resolve();
+        await jest.advanceTimersByTimeAsync(250);
+      });
+
+      expect(await screen.findByText('Member known')).toBeInTheDocument();
+      expect(listMembersMock).toHaveBeenCalledTimes(2);
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it.each([400, 401, 403, 404, 501, 505])(
+    'does not retry an HTTP %i response',
+    async status => {
+      listMembersMock.mockRejectedValue(
+        Object.assign(new Error('request rejected'), {
+          response: { status },
+        }),
+      );
+
+      render(<CircleMemberDiscovery circle={circle} user={user} />);
+
+      expect(
+        await screen.findByText(
+          'Could not load circle members. Please try again.',
+        ),
+      ).toBeInTheDocument();
+      expect(listMembersMock).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it.each([
+    [
+      'an unknown error code',
+      Object.assign(new Error('unknown'), { code: 'EOTHER' }),
+    ],
+    ['a non-object error', 'network unavailable'],
+  ])('does not retry %s', async (_description, error) => {
+    listMembersMock.mockRejectedValue(error);
+
+    render(<CircleMemberDiscovery circle={circle} user={user} />);
+
+    expect(
+      await screen.findByText(
+        'Could not load circle members. Please try again.',
+      ),
+    ).toBeInTheDocument();
+    expect(listMembersMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('allows a manual retry after the transient retry is exhausted', async () => {
+    jest.useFakeTimers();
+    listMembersMock
+      .mockRejectedValueOnce(
+        Object.assign(new Error('network unavailable'), {
+          code: 'ERR_NETWORK',
+        }),
+      )
+      .mockRejectedValueOnce(
+        Object.assign(new Error('network unavailable'), {
+          code: 'ERR_NETWORK',
+        }),
+      )
+      .mockResolvedValueOnce({
+        contacts: [member('contact-1', 'known')],
+        recommenders: [],
+        active: [],
+      });
+
+    try {
+      render(<CircleMemberDiscovery circle={circle} user={user} />);
+      await act(async () => {
+        await Promise.resolve();
+        await jest.advanceTimersByTimeAsync(250);
+      });
+
+      expect(
+        await screen.findByText(
+          'Could not load circle members. Please try again.',
+        ),
+      ).toBeInTheDocument();
+      expect(listMembersMock).toHaveBeenCalledTimes(2);
+      expect(
+        screen.getByRole('button', { name: 'Try again' }),
+      ).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+      expect(await screen.findByText('Member known')).toBeInTheDocument();
+      expect(listMembersMock).toHaveBeenCalledTimes(3);
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('abandons a pending retry when the circle changes', async () => {
+    jest.useFakeTimers();
+    listMembersMock
+      .mockRejectedValueOnce(
+        Object.assign(new Error('network unavailable'), {
+          code: 'ERR_NETWORK',
+        }),
+      )
+      .mockResolvedValueOnce({
+        contacts: [member('contact-1', 'known')],
+        recommenders: [],
+        active: [],
+      });
+
+    try {
+      const { rerender } = render(
+        <CircleMemberDiscovery circle={circle} user={user} />,
+      );
+      await act(async () => {
+        await Promise.resolve();
+      });
+      rerender(
+        <CircleMemberDiscovery
+          circle={{ ...circle, slug: 'cyclists' }}
+          user={user}
+        />,
+      );
+      await act(async () => {
+        await Promise.resolve();
+        await jest.advanceTimersByTimeAsync(250);
+      });
+
+      expect(listMembersMock).toHaveBeenNthCalledWith(1, 'hitchhikers');
+      expect(listMembersMock).toHaveBeenNthCalledWith(2, 'cyclists');
+      expect(listMembersMock).toHaveBeenCalledTimes(2);
+      expect(await screen.findByText('Member known')).toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('abandons a pending retry when the component unmounts', async () => {
+    jest.useFakeTimers();
+    listMembersMock.mockRejectedValueOnce(
+      Object.assign(new Error('network unavailable'), { code: 'ERR_NETWORK' }),
+    );
+
+    try {
+      const { unmount } = render(
+        <CircleMemberDiscovery circle={circle} user={user} />,
+      );
+      await act(async () => {
+        await Promise.resolve();
+      });
+      unmount();
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(250);
+      });
+
+      expect(listMembersMock).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('retries a failed request and shows the returned members', async () => {

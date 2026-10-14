@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { getErrorResponse } from '@/modules/core/client/api/http-client';
 import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 import type {
@@ -19,6 +20,20 @@ const EMPTY_SECTIONS: CircleMemberGroups = {
   recommenders: [],
   active: [],
 };
+
+const TRANSIENT_RETRY_DELAY_MS = 250;
+
+function isTransientError(error: unknown): boolean {
+  const { status } = getErrorResponse(error) ?? {};
+  if (status !== undefined) return [500, 502, 503, 504].includes(status);
+
+  if (typeof error !== 'object' || error === null || !('code' in error)) {
+    return false;
+  }
+  return ['ECONNABORTED', 'ECONNRESET', 'ETIMEDOUT', 'ERR_NETWORK'].includes(
+    String(error.code),
+  );
+}
 
 function withoutDuplicates(groups: CircleMemberGroups): CircleMemberGroups {
   const seen = new Set<string>();
@@ -75,17 +90,29 @@ export default function CircleMemberDiscovery({ circle, user }: Props) {
     setIsLoading(true);
     setHasError(false);
     setSections(EMPTY_SECTIONS);
-    tribesApi
-      .listMembers(circle.slug)
-      .then(groups => {
+
+    async function loadMembers() {
+      try {
+        let groups: CircleMemberGroups;
+        try {
+          groups = await tribesApi.listMembers(circle.slug);
+        } catch (error) {
+          if (!isTransientError(error)) throw error;
+          await new Promise(resolve =>
+            setTimeout(resolve, TRANSIENT_RETRY_DELAY_MS),
+          );
+          if (!isMounted) return;
+          groups = await tribesApi.listMembers(circle.slug);
+        }
         if (isMounted) setSections(withoutDuplicates(groups));
-      })
-      .catch(() => {
+      } catch {
         if (isMounted) setHasError(true);
-      })
-      .finally(() => {
+      } finally {
         if (isMounted) setIsLoading(false);
-      });
+      }
+    }
+
+    void loadMembers();
     return () => {
       isMounted = false;
     };
