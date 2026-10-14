@@ -24,11 +24,20 @@ interface LineChangesSummary {
 const categories = [
   ['code', '🧩 Application code'],
   ['tests', '🧪 Tests and fixtures'],
+  ['android-code', '🧩 Application code'],
+  ['android-tests', '🧪 Tests and fixtures'],
+  ['ios-code', '🧩 Application code'],
+  ['ios-tests', '🧪 Tests and fixtures'],
   ['other', '📄 Docs, configuration and other'],
   ['generated', '⚙️ Generated files and lockfiles'],
 ];
 
 function categoryForPath(filePath: string): string {
+  const platform = filePath.startsWith('apps/android/')
+    ? 'android-'
+    : filePath.startsWith('apps/ios/')
+      ? 'ios-'
+      : '';
   if (
     /(^|\/)(package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|Cargo\.lock|Gemfile\.lock)$/.test(
       filePath,
@@ -40,9 +49,12 @@ function categoryForPath(filePath: string): string {
   }
   if (
     /(^|\/)(tests?|__tests__|__mocks__|fixtures|jest)\//.test(filePath) ||
-    /\.(spec|tests?)\.[^/]+$/.test(filePath)
+    /\.(spec|tests?)\.[^/]+$/.test(filePath) ||
+    (platform &&
+      (/(^|\/)(androidTest|[^/]*Tests)\//.test(filePath) ||
+        /Tests\.(swift|m|mm)$/.test(filePath)))
   ) {
-    return 'tests';
+    return `${platform}tests`;
   }
   if (
     /(^|\/)(\.github|config)\//.test(filePath) ||
@@ -52,8 +64,9 @@ function categoryForPath(filePath: string): string {
   }
   return /\.(js|mjs|cjs|jsx|ts|tsx|mts|cts|css|less|scss|sass|html|vue|svelte|py|sh)$/.test(
     filePath,
-  )
-    ? 'code'
+  ) ||
+    (platform && /\.(kt|java|swift|m|mm|h|xml|storyboard|xib)$/.test(filePath))
+    ? `${platform}code`
     : 'other';
 }
 
@@ -123,25 +136,43 @@ function signed(value: number): string {
 }
 
 function renderLineChanges(summary: LineChangesSummary): string {
-  const rows = summary.groups.map(({ id, label, added, removed, net }) => {
-    const preferred = (id === 'code' && net < 0) || (id === 'tests' && net > 0);
+  const renderRow = ({ id, label, added, removed, net }: ChangeCategory) => {
+    const code = id === 'code' || id.endsWith('-code');
+    const tests = id === 'tests' || id.endsWith('-tests');
+    const preferred = (code && net < 0) || (tests && net > 0);
     const symbol =
-      net === 0 || !['code', 'tests'].includes(id)
-        ? '⚪'
-        : preferred
-          ? '🟢'
-          : '🟡';
+      net === 0 || (!code && !tests) ? '⚪' : preferred ? '🟢' : '🟡';
     return `| ${label} | ${signed(added)} | ${signed(
       -removed,
     )} | ${symbol} **${signed(net)}** |`;
+  };
+  const sections = (
+    [
+      ['Web and shared', ['code', 'tests']],
+      ['Android / APK', ['android-code', 'android-tests']],
+      ['iOS', ['ios-code', 'ios-tests']],
+      ['Docs, configuration and generated files', ['other', 'generated']],
+    ] as const
+  ).flatMap(([title, ids]) => {
+    const groups = summary.groups.filter(group =>
+      (ids as readonly string[]).includes(group.id),
+    );
+    if (!groups.some(group => group.added || group.removed)) return [];
+    return [
+      `#### ${title}`,
+      '',
+      '| Category | Added | Removed | Net |',
+      '| --- | ---: | ---: | ---: |',
+      ...groups.map(renderRow),
+      '',
+    ];
   });
   return [
     startMarker,
     '### Line changes',
     '',
-    '| Category | Added | Removed | Net |',
-    '| --- | ---: | ---: | ---: |',
-    ...rows,
+    ...sections,
+    ...(!sections.length ? ['No text line changes.', ''] : []),
     '',
     '🟢 Application code shrank or tests grew. 🟡 Application code grew or tests shrank; worth reviewing. ⚪ Unchanged or neutral.',
     '',

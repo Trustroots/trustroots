@@ -50,6 +50,19 @@ describe('PR line-change summaries', () => {
   it('separates code, tests, configuration, generated files and lockfiles', () => {
     const examples = {
       'src/view.tsx': 'code',
+      'apps/android/app/src/main/View.kt': 'android-code',
+      'apps/android/app/src/main/res/layout/view.xml': 'android-code',
+      'apps/android/app/src/androidTest/ViewTest.kt': 'android-tests',
+      'apps/android/app/src/test/ViewTest.kt': 'android-tests',
+      'apps/android/app/build.gradle.kts': 'other',
+      'apps/android/scripts/run.sh': 'android-code',
+      'apps/android/generated/View.kt': 'generated',
+      'apps/ios/Trustroots/View.swift': 'ios-code',
+      'apps/ios/Trustroots/Main.storyboard': 'ios-code',
+      'apps/ios/TrustrootsTests/View.swift': 'ios-tests',
+      'apps/ios/Trustroots/ViewTests.swift': 'ios-tests',
+      'apps/ios/Trustroots.xcodeproj/project.pbxproj': 'other',
+      'docs/schema.xml': 'other',
       'scripts/report.mts': 'code',
       'scripts/runner.cts': 'code',
       'tests/e2e/support/fixtures.mts': 'tests',
@@ -108,6 +121,10 @@ describe('PR line-change summaries', () => {
       [
         ['code', 2, 10, -8],
         ['tests', 8, 1, 7],
+        ['android-code', 0, 0, 0],
+        ['android-tests', 0, 0, 0],
+        ['ios-code', 0, 0, 0],
+        ['ios-tests', 0, 0, 0],
         ['other', 0, 0, 0],
         ['generated', 100, 20, 80],
       ],
@@ -131,16 +148,51 @@ describe('PR line-change summaries', () => {
       preferred,
       /Tests and fixtures \| \+9 \| −2 \| 🟢 \*\*\+7\*\*/,
     );
-    assert.match(
-      preferred,
-      /Docs, configuration and other \| 0 \| 0 \| ⚪ \*\*0\*\*/,
-    );
+    assert.doesNotMatch(preferred, /#### Android|#### iOS|#### Docs/);
     const opposite = renderLineChanges(
       summariseNumstat('5\t1\tsrc/app.js\0' + '2\t9\ttests/app.test.js\0'),
     );
     assert.match(opposite, /🟡 \*\*\+4\*\*/);
     assert.match(opposite, /🟡 \*\*−7\*\*/);
     assert.match(opposite, /do not affect CI success/);
+  });
+
+  it('shows independent web, Android and iOS sections with matching test indicators', () => {
+    const result = renderLineChanges(
+      summariseNumstat(
+        '1\t3\tmodules/widget/client/view.tsx\0' +
+          '8\t2\tapps/android/app/src/main/View.kt\0' +
+          '4\t1\tapps/android/app/src/androidTest/ViewTest.kt\0' +
+          '1\t5\tapps/ios/Trustroots/View.swift\0' +
+          '2\t4\tapps/ios/TrustrootsTests/View.swift\0' +
+          '3\t0\tREADME.md\0',
+      ),
+    );
+    assert.match(
+      result,
+      /#### Web and shared[\s\S]*?Application code \| \+1 \| −3 \| 🟢 \*\*−2\*\*/,
+    );
+    assert.match(
+      result,
+      /#### Android \/ APK[\s\S]*?Application code \| \+8 \| −2 \| 🟡 \*\*\+6\*\*/,
+    );
+    assert.match(
+      result,
+      /#### Android \/ APK[\s\S]*?Tests and fixtures \| \+4 \| −1 \| 🟢 \*\*\+3\*\*/,
+    );
+    assert.match(
+      result,
+      /#### iOS[\s\S]*?Application code \| \+1 \| −5 \| 🟢 \*\*−4\*\*/,
+    );
+    assert.match(
+      result,
+      /#### iOS[\s\S]*?Tests and fixtures \| \+2 \| −4 \| 🟡 \*\*−2\*\*/,
+    );
+    assert.match(result, /#### Docs, configuration and generated files/);
+    assert.match(
+      renderLineChanges(summariseNumstat('')),
+      /No text line changes/,
+    );
   });
 
   it('retains coverage content when inserting and refreshing a line table', () => {
