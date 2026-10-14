@@ -10,6 +10,8 @@ require('./../../../experiences/server/models/experiences.server.model.mjs');
 require('./../../../messages/server/models/message-stat.server.model.mjs');
 require('./../../../references-thread/server/models/reference-thread.server.model.mjs');
 const statistics = require('./../../server/controllers/statistics.server.controller.mjs');
+const parseStatisticsCount =
+  require('../../server/controllers/parse-statistics-count.mts').default;
 const statService = require('./../../../stats/server/services/stats.server.service.mts');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
@@ -58,6 +60,16 @@ describe('Statistics controller unit tests', () => {
       return undefined;
     }
     return utils.clearDatabase();
+  });
+
+  describe('parseStatisticsCount', () => {
+    it('preserves decimal-prefix parsing, truncation, negatives, and zero fallback', () => {
+      parseStatisticsCount('12.8tail').should.equal(12);
+      parseStatisticsCount(-4.8).should.equal(-4);
+      parseStatisticsCount('invalid').should.equal(0);
+      parseStatisticsCount(null).should.equal(0);
+      parseStatisticsCount(undefined).should.equal(0);
+    });
   });
 
   describe('count helper error callbacks', () => {

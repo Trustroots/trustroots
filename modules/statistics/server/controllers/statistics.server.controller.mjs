@@ -8,6 +8,7 @@ import statService from './../../../stats/server/services/stats.server.service.m
 import async from 'async';
 import semver from 'semver';
 import mongoose from 'mongoose';
+import parseStatisticsCount from './parse-statistics-count.mts';
 const statisticsService = {};
 const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
@@ -35,7 +36,7 @@ export const getUsersCount = function (callback) {
       if (err) {
         return callback(err);
       }
-      callback(null, parseInt(count, 10) || 0);
+      callback(null, parseStatisticsCount(count));
     },
   );
 };
@@ -115,7 +116,7 @@ export const getExternalSiteCount = function (site, callback) {
     if (err) {
       return callback(err);
     }
-    callback(null, parseInt(count, 10) || 0);
+    callback(null, parseStatisticsCount(count));
   });
 };
 
@@ -143,7 +144,7 @@ export const getMeetOffersCount = function (callback) {
       if (err) {
         return callback(err);
       }
-      callback(null, parseInt(count, 10) || 0);
+      callback(null, parseStatisticsCount(count));
     },
   );
 };
@@ -198,7 +199,7 @@ export const getHostOffersCount = function (callback) {
       if (counters && counters.length > 0) {
         counters.forEach(function (counter) {
           if (['yes', 'maybe', 'no'].indexOf(counter._id) !== -1) {
-            values[counter._id] = parseInt(counter.count, 10) || 0;
+            values[counter._id] = parseStatisticsCount(counter.count);
           }
         });
       }
@@ -220,7 +221,7 @@ export const getNewsletterSubscriptionsCount = function (callback) {
       if (err) {
         return callback(err);
       }
-      callback(null, parseInt(count, 10) || 0);
+      callback(null, parseStatisticsCount(count));
     },
   );
 };
@@ -241,7 +242,7 @@ export const getLastSeenStatistic = function (since, callback) {
     if (err) {
       return callback(err);
     }
-    callback(null, parseInt(count, 10) || 0);
+    callback(null, parseStatisticsCount(count));
   });
 };
 
@@ -447,18 +448,19 @@ export const getExperienceStatistics = function (since, callback) {
       const experienceCounts = results.experiences[0] || {};
       const connectionCounts = results.realLifeConnections[0] || {};
       return callback(null, {
-        total: parseInt(experienceCounts.total, 10) || 0,
-        recommended: parseInt(experienceCounts.recommended, 10) || 0,
-        notRecommended: parseInt(experienceCounts.notRecommended, 10) || 0,
+        total: parseStatisticsCount(experienceCounts.total),
+        recommended: parseStatisticsCount(experienceCounts.recommended),
+        notRecommended: parseStatisticsCount(experienceCounts.notRecommended),
         recent: {
-          total: parseInt(experienceCounts.recentTotal, 10) || 0,
-          recommended: parseInt(experienceCounts.recentRecommended, 10) || 0,
-          notRecommended:
-            parseInt(experienceCounts.recentNotRecommended, 10) || 0,
+          total: parseStatisticsCount(experienceCounts.recentTotal),
+          recommended: parseStatisticsCount(experienceCounts.recentRecommended),
+          notRecommended: parseStatisticsCount(
+            experienceCounts.recentNotRecommended,
+          ),
         },
         realLifeConnections: {
-          total: parseInt(connectionCounts.total, 10) || 0,
-          recent: parseInt(connectionCounts.recent, 10) || 0,
+          total: parseStatisticsCount(connectionCounts.total),
+          recent: parseStatisticsCount(connectionCounts.recent),
         },
       });
     },
@@ -675,13 +677,13 @@ export const getMessageInteractionStatistics = function (since, callback) {
       const threadCounts = results.repliedThreads[0] || {};
       const feedbackCounts = results.feedback[0] || {};
       return callback(null, {
-        total: parseInt(threadCounts.total, 10) || 0,
-        positive: parseInt(feedbackCounts.positive, 10) || 0,
-        negative: parseInt(feedbackCounts.negative, 10) || 0,
+        total: parseStatisticsCount(threadCounts.total),
+        positive: parseStatisticsCount(feedbackCounts.positive),
+        negative: parseStatisticsCount(feedbackCounts.negative),
         recent: {
-          total: parseInt(threadCounts.recentTotal, 10) || 0,
-          positive: parseInt(feedbackCounts.recentPositive, 10) || 0,
-          negative: parseInt(feedbackCounts.recentNegative, 10) || 0,
+          total: parseStatisticsCount(threadCounts.recentTotal),
+          positive: parseStatisticsCount(feedbackCounts.recentPositive),
+          negative: parseStatisticsCount(feedbackCounts.recentNegative),
         },
       });
     },
