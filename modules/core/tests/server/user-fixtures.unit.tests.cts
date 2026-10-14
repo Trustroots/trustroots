@@ -1,23 +1,42 @@
-const assert = require('node:assert/strict');
-const crypto = require('node:crypto');
-const mongoose = require('mongoose');
-const sinon = require('sinon');
+const assert: typeof import('node:assert/strict') = require('node:assert/strict');
+const crypto: typeof import('node:crypto') = require('node:crypto');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const sinon: typeof import('sinon') = require('sinon');
 require('../../../users/server/models/user.server.model.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mjs') = require('../../../../testutils/server/data.server.testutil');
 
-const User = mongoose.model('User');
+const User =
+  mongoose.model<
+    import('../../../../testutils/server/model-contracts.mts').UserRecord
+  >('User');
+
+type SaveHooks = {
+  hooks: {
+    execPre(
+      name: 'save',
+      context: object,
+      args: object[],
+      callback: (error?: Error | null) => void,
+    ): void;
+  };
+};
 
 // Exercise real validation and save middleware without a database connection.
-function runSaveMiddleware() {
-  return new Promise((resolve, reject) => {
-    User.schema.s.hooks.execPre('save', this, [{}], error => {
+function runSaveMiddleware(
+  this: import('../../../../testutils/server/model-contracts.mts').UserModelDocument,
+) {
+  return new Promise<
+    import('../../../../testutils/server/model-contracts.mts').UserModelDocument
+  >((resolve, reject) => {
+    const schemaInternals = User.schema as unknown as { s: SaveHooks };
+    schemaInternals.s.hooks.execPre('save', this, [{}], error => {
       if (error) reject(error);
       else resolve(this);
     });
   });
 }
 
-function fixture(username, password) {
+function fixture(username: string, password: string) {
   return {
     username,
     password,
@@ -120,6 +139,7 @@ describe('Reusable user fixture passwords', () => {
         callback,
       ),
       error => {
+        assert.ok(error instanceof mongoose.Error.ValidationError);
         assert.ok(error.errors.password);
         sinon.assert.calledOnceWithExactly(callback, error);
         return true;

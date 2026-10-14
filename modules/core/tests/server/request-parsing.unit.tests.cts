@@ -1,22 +1,34 @@
-const express = require('express');
-const request = require('supertest');
-const assert = require('node:assert/strict');
-const expressConfig = require('./../../../../config/lib/express.mjs');
+const express: typeof import('express') = require('express');
+const request: typeof import('supertest') = require('supertest');
+const assert: typeof import('node:assert/strict') = require('node:assert/strict');
+const expressConfig: typeof import('./../../../../config/lib/express.mjs').default & {
+  initMiddleware(app: import('express').Express): void;
+} = require('./../../../../config/lib/express.mjs');
 
 describe('Request parsing middleware', function () {
-  let app;
+  let app: import('express').Express;
 
   beforeEach(function () {
     app = express();
     expressConfig.initMiddleware(app);
-    app.all('/inspect', (req, res) => {
-      res.json({ body: req.body, method: req.method, cookies: req.cookies });
-    });
+    app.all(
+      '/inspect',
+      (req: import('express').Request, res: import('express').Response) => {
+        res.json({ body: req.body, method: req.method, cookies: req.cookies });
+      },
+    );
     // Express identifies error middleware by its four-argument signature.
-    // eslint-disable-next-line no-unused-vars
-    app.use((err, req, res, next) => {
-      res.status(err.status || 500).json({ type: err.type });
-    });
+    app.use(
+      (
+        err: Error & { status?: number; type?: string },
+        _req: import('express').Request,
+        res: import('express').Response,
+        next: import('express').NextFunction,
+      ) => {
+        void next;
+        res.status(err.status || 500).json({ type: err.type });
+      },
+    );
   });
 
   it('parses JSON and cookies', async function () {

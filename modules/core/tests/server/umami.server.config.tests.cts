@@ -1,7 +1,12 @@
-const developmentConfig = require('./../../../../config/env/development.mjs');
-const productionConfig = require('./../../../../config/env/production.mjs');
-const testConfig = require('./../../../../config/env/test.mjs');
-require('should');
+type ConfigWithUmami =
+  typeof import('../../../../config/env/development.mjs').default & {
+    umami: { scriptSrc: string; websiteId: string };
+  };
+const developmentConfig: ConfigWithUmami = require('./../../../../config/env/development.mjs');
+const productionConfig: ConfigWithUmami = require('./../../../../config/env/production.mjs');
+const testConfig: ConfigWithUmami = require('./../../../../config/env/test.mjs');
+const should: typeof import('should') = require('should');
+void should;
 
 describe('Umami configuration', function () {
   const scriptSrc = 'https://1p.trustroots.org/script.js';
