@@ -11,7 +11,7 @@ import type {
 } from '../../../../testutils/server/model-contracts.mts';
 import type { Types } from 'mongoose';
 
-type LocationUser = UserRecord & {
+type LocationUser = Omit<UserRecord, 'removeProfileExpires'> & {
   _id: Types.ObjectId | string;
   removeProfileToken?: string;
   removeProfileExpires?: Date | string | number;
@@ -77,7 +77,7 @@ describe('Welcome team location corrections', () => {
       Object.assign(user, {
         description: '',
         removeProfileToken: undefined as string | undefined,
-        removeProfileExpires: undefined as Date | string | number | undefined,
+        removeProfileExpires: undefined as Date | number | undefined,
       }),
     );
     users.forEach(user => {

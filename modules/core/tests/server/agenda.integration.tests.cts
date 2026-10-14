@@ -1,8 +1,34 @@
-const Agenda = require('agenda');
-const MongoClient = require('mongodb').MongoClient;
-const config = require('./../../../../config/config.mjs');
-const worker = require('./../../../../config/lib/worker.mjs');
+import type { Collection, MongoClient as MongoClientInstance } from 'mongodb';
+
+const Agenda: typeof import('agenda').default = require('agenda');
+const MongoClient: typeof import('mongodb').MongoClient =
+  require('mongodb').MongoClient;
+const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const worker: {
+  unlockAgendaJobs(callback: (error?: Error | null) => void): void;
+} = require('./../../../../config/lib/worker.mjs');
 require('should');
+
+interface StoredJob {
+  name: string;
+  type?: 'single';
+  data?: Record<string, unknown>;
+  priority?: number;
+  repeatInterval?: string;
+  repeatTimezone?: string | null;
+  lastModifiedBy?: string;
+  nextRunAt?: Date | null;
+  lastRunAt?: Date;
+  lastFinishedAt?: Date;
+  lockedAt?: Date | null;
+  disabled?: boolean;
+}
+
+function persistedDate(value: Date | null | undefined): Date {
+  if (!(value instanceof Date))
+    throw new Error('Expected a persisted job date');
+  return value;
+}
 
 describe('Agenda integration tests', function () {
   const collection = 'agendaIntegrationJobs';
@@ -21,25 +47,26 @@ describe('Agenda integration tests', function () {
   // Agenda schedules the first human-interval run as "now"; by the time the
   // document is persisted that timestamp can already be slightly in the past.
   const acceptablePastSkewMs = 10 * 1000;
-  let agenda;
-  let mongoClient;
-  let jobsCollection;
+  let agenda: import('agenda').Agenda;
+  let mongoClient: MongoClientInstance;
+  let jobsCollection: Collection<StoredJob>;
 
   before(async function () {
     mongoClient = await MongoClient.connect(config.db.uri);
-    jobsCollection = mongoClient.db().collection(collection);
+    jobsCollection = mongoClient.db().collection<StoredJob>(collection);
     agenda = new Agenda({
       db: {
         address: config.db.uri,
         collection,
       },
-      processEvery: 50,
+      // Agenda accepts milliseconds; its published config type only lists strings.
+      processEvery: 50 as unknown as string,
     });
     // Use the public `ready` event rather than Agenda's private `_ready`
     // promise. Attach immediately after construction so we do not miss the
     // event (connect is asynchronous).
-    await new Promise(function (resolve) {
-      agenda.once('ready', resolve);
+    await new Promise<void>(function (resolve) {
+      agenda.once('ready', () => resolve());
     });
   });
 
@@ -73,13 +100,15 @@ describe('Agenda integration tests', function () {
 
     jobs.length.should.equal(1);
     jobs[0].attrs.type.should.equal('single');
-    jobs[0].attrs.repeatInterval.should.equal('5 minutes');
-    jobs[0].attrs.nextRunAt.should.be.instanceof(Date);
+    (jobs[0].attrs.repeatInterval ?? '').should.equal('5 minutes');
+    persistedDate(jobs[0].attrs.nextRunAt).should.be.instanceof(Date);
     // Regression for #2420: must not land hours/days in the past.
-    jobs[0].attrs.nextRunAt
+    persistedDate(jobs[0].attrs.nextRunAt)
       .getTime()
       .should.be.above(beforeSchedule - acceptablePastSkewMs);
-    jobs[0].attrs.nextRunAt.getTime().should.be.below(Date.now() + 1000);
+    persistedDate(jobs[0].attrs.nextRunAt)
+      .getTime()
+      .should.be.below(Date.now() + 1000);
   });
 
   it('preserves a future nextRunAt when every() is repeated', async function () {
@@ -103,12 +132,15 @@ describe('Agenda integration tests', function () {
     const jobs = await agenda.jobs({ name: preserveJobName });
 
     jobs.length.should.equal(1);
-    jobs[0].attrs.nextRunAt.should.be.instanceof(Date);
+    persistedDate(jobs[0].attrs.nextRunAt).should.be.instanceof(Date);
     // Worker restarts call every() again; Agenda must not rewrite a healthy
     // future schedule into the past (#2415 / #2420).
-    jobs[0].attrs.nextRunAt.getTime().should.be.above(Date.now());
+    persistedDate(jobs[0].attrs.nextRunAt)
+      .getTime()
+      .should.be.above(Date.now());
     Math.abs(
-      jobs[0].attrs.nextRunAt.getTime() - futureNextRunAt.getTime(),
+      persistedDate(jobs[0].attrs.nextRunAt).getTime() -
+        futureNextRunAt.getTime(),
     ).should.be.below(1000);
   });
 
@@ -142,13 +174,17 @@ describe('Agenda integration tests', function () {
     const jobs = await agenda.jobs({ name: productionShapedJobName });
 
     jobs.length.should.equal(1);
-    jobs[0].attrs.repeatInterval.should.equal('5 minutes');
-    jobs[0].attrs.nextRunAt.getTime().should.be.above(Date.now());
+    (jobs[0].attrs.repeatInterval ?? '').should.equal('5 minutes');
+    persistedDate(jobs[0].attrs.nextRunAt)
+      .getTime()
+      .should.be.above(Date.now());
     Math.abs(
-      jobs[0].attrs.nextRunAt.getTime() - nextRunAt.getTime(),
+      persistedDate(jobs[0].attrs.nextRunAt).getTime() - nextRunAt.getTime(),
     ).should.be.below(1000);
-    jobs[0].attrs.lastRunAt.getTime().should.equal(lastRunAt.getTime());
-    jobs[0].attrs.lastFinishedAt
+    persistedDate(jobs[0].attrs.lastRunAt)
+      .getTime()
+      .should.equal(lastRunAt.getTime());
+    persistedDate(jobs[0].attrs.lastFinishedAt)
       .getTime()
       .should.equal(lastFinishedAt.getTime());
   });
@@ -167,15 +203,17 @@ describe('Agenda integration tests', function () {
       db: { address: config.db.uri, collection },
     });
     try {
-      await new Promise(function (resolve) {
-        restartedAgenda.once('ready', resolve);
+      await new Promise<void>(function (resolve) {
+        restartedAgenda.once('ready', () => resolve());
       });
       restartedAgenda.define(restartedJobName, function () {});
       await restartedAgenda.every('5 minutes', restartedJobName);
 
       const jobs = await restartedAgenda.jobs({ name: restartedJobName });
       jobs.length.should.equal(1);
-      jobs[0].attrs.nextRunAt.getTime().should.equal(nextRunAt.getTime());
+      persistedDate(jobs[0].attrs.nextRunAt)
+        .getTime()
+        .should.equal(nextRunAt.getTime());
     } finally {
       await restartedAgenda.close();
     }
@@ -183,18 +221,20 @@ describe('Agenda integration tests', function () {
 
   it('persists and executes an immediate job', async function () {
     const payload = { marker: 'anonymous-scheduling-test' };
-    let timeout;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
 
-    const completed = new Promise(function (resolve, reject) {
+    const completed = new Promise<void>(function (resolve, reject) {
       timeout = setTimeout(function () {
         reject(new Error('Agenda did not execute the immediate test job'));
       }, 5000);
 
-      agenda.once(`success:${immediateJobName}`, resolve);
+      agenda.once(`success:${immediateJobName}`, () => resolve());
       agenda.once(`fail:${immediateJobName}`, reject);
     });
 
-    agenda.define(immediateJobName, function (job) {
+    agenda.define(immediateJobName, function (job: import('agenda').Job) {
+      if (!job.attrs.data)
+        throw new Error('Expected the scheduled job payload');
       job.attrs.data.should.deepEqual(payload);
     });
 
@@ -206,11 +246,11 @@ describe('Agenda integration tests', function () {
     const jobs = await agenda.jobs({ _id: scheduledJob.attrs._id });
 
     jobs.length.should.equal(1);
-    jobs[0].attrs.lastFinishedAt.should.be.instanceof(Date);
+    persistedDate(jobs[0].attrs.lastFinishedAt).should.be.instanceof(Date);
   });
 
   it('unlocks only unfinished jobs after a worker restart', async function () {
-    const jobs = mongoClient.db().collection('agendaJobs');
+    const jobs = mongoClient.db().collection<StoredJob>('agendaJobs');
     const marker = 'anonymous-unlock-integration-test';
     const lockedAt = new Date(Date.now() - 60 * 1000);
     const futureRun = new Date(Date.now() + 60 * 60 * 1000);
@@ -236,7 +276,7 @@ describe('Agenda integration tests', function () {
     ]);
 
     try {
-      await new Promise(function (resolve, reject) {
+      await new Promise<void>(function (resolve, reject) {
         worker.unlockAgendaJobs(function (err) {
           if (err) reject(err);
           else resolve();
@@ -249,16 +289,29 @@ describe('Agenda integration tests', function () {
         jobs.findOne({ name: `${marker}-scheduled` }),
       ]);
 
+      if (!unfinished || !finished || !scheduled) {
+        throw new Error('Expected all three persisted scheduling fixtures');
+      }
       unfinished.should.not.have.property('lockedAt');
       unfinished.should.not.have.property('lastModifiedBy');
       unfinished.should.not.have.property('lastRunAt');
-      unfinished.nextRunAt.should.be.instanceof(Date);
-      unfinished.nextRunAt.getTime().should.be.above(lockedAt.getTime());
+      persistedDate(persistedDate(unfinished.nextRunAt)).should.be.instanceof(
+        Date,
+      );
+      persistedDate(persistedDate(unfinished.nextRunAt))
+        .getTime()
+        .should.be.above(lockedAt.getTime());
 
-      finished.lockedAt.getTime().should.equal(lockedAt.getTime());
-      finished.nextRunAt.getTime().should.equal(futureRun.getTime());
+      persistedDate(finished.lockedAt)
+        .getTime()
+        .should.equal(lockedAt.getTime());
+      persistedDate(finished.nextRunAt)
+        .getTime()
+        .should.equal(futureRun.getTime());
       scheduled.should.not.have.property('lockedAt');
-      scheduled.nextRunAt.getTime().should.equal(futureRun.getTime());
+      persistedDate(scheduled.nextRunAt)
+        .getTime()
+        .should.equal(futureRun.getTime());
     } finally {
       await jobs.deleteMany({ name: { $regex: `^${marker}-` } });
     }
