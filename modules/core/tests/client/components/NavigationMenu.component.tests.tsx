@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import NavigationMenuItem from '@/modules/core/client/components/NavigationMenuItem';
@@ -10,6 +10,58 @@ type NavigationSubMenu = React.ComponentProps<
 >['list'];
 
 describe('navigation menu helpers', () => {
+  it.each(['Search', 'Find member'])(
+    'releases pointer focus from %s in a dropdown',
+    name => {
+      const onClick = jest.fn();
+      render(
+        <NavigationMenuItem
+          currentPath="/"
+          path="/search"
+          onClick={onClick}
+          submenu={<a href="/search/members">Find member</a>}
+        >
+          Search
+        </NavigationMenuItem>,
+      );
+      const link = screen.getByRole('link', { name, exact: true });
+      link.focus();
+      fireEvent.click(link, { detail: 1 });
+      expect(link).not.toHaveFocus();
+      expect(onClick).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('preserves keyboard focus in a dropdown and handles clicks outside its links', () => {
+    const { container } = render(
+      <NavigationMenuItem
+        currentPath="/"
+        path="/search"
+        submenu={<a href="/search/members">Find member</a>}
+      >
+        Search
+      </NavigationMenuItem>,
+    );
+    const link = screen.getByRole('link', { name: 'Search', exact: true });
+    link.focus();
+    fireEvent.click(link, { detail: 0 });
+    expect(link).toHaveFocus();
+    fireEvent.click(container.firstChild as Element, { detail: 1 });
+    expect(link).toHaveFocus();
+  });
+
+  it('preserves pointer focus for navigation items without a submenu', () => {
+    render(
+      <NavigationMenuItem currentPath="/" path="/messages">
+        Messages
+      </NavigationMenuItem>,
+    );
+    const link = screen.getByRole('link', { name: 'Messages' });
+    link.focus();
+    fireEvent.click(link, { detail: 1 });
+    expect(link).toHaveFocus();
+  });
+
   it('marks the current navigation item as active and forwards link attributes', () => {
     const { container } = render(
       <NavigationMenuItem

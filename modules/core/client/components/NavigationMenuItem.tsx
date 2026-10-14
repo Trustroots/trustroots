@@ -18,6 +18,7 @@ export default function NavigationMenuItem({
   path,
   target,
   submenu,
+  onClick,
   ...rest
 }: NavigationMenuItemProps) {
   return (
@@ -26,6 +27,14 @@ export default function NavigationMenuItem({
         active: path === currentPath,
       })}
       {...rest}
+      onClick={event => {
+        // Pointer navigation can retain link focus after the route changes.
+        // Release it so moving away closes the menu; preserve keyboard focus.
+        if (submenu && event.detail > 0) {
+          (event.target as Element).closest<HTMLAnchorElement>('a')?.blur();
+        }
+        onClick?.(event);
+      }}
     >
       <a href={path} target={target}>
         {children}

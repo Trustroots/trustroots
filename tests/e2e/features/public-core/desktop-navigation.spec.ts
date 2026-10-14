@@ -17,12 +17,19 @@ test('desktop header offers own circles and member search on hover and focus', a
   await expect(nameSearch).toBeVisible();
   await header.locator('.navbar-brand').hover();
   await expect(nameSearch).toBeHidden();
+  await search.click();
+  await expect(page).toHaveURL(/\/search$/);
+  await header.locator('.navbar-brand').hover();
+  await expect(nameSearch).toBeHidden();
+  await page.keyboard.press('Tab');
   await search.focus();
   await page.keyboard.press('Tab');
   await expect(nameSearch).toBeFocused();
   await expect(nameSearch).toBeVisible();
   await nameSearch.click();
   await expect(page).toHaveURL(/\/search\/members$/);
+  await header.locator('.navbar-brand').hover();
+  await expect(nameSearch).toBeHidden();
 
   const circles = header.locator('a[href="/circles"]');
   const membershipResponse = await page.request.get('/api/users/memberships');
@@ -43,6 +50,18 @@ test('desktop header offers own circles and member search on hover and focus', a
   const menu = circles.locator('..').locator('.dropdown-menu');
   await expect(menu.locator('a')).toHaveCount(expected.length);
   await expect(menu).toBeHidden();
+  await circles.click();
+  await expect(page).toHaveURL(/\/circles$/);
+  await header.locator('.navbar-brand').hover();
+  await expect(menu).toBeHidden();
+  await page.keyboard.press('Tab');
+  await circles.focus();
+  await page.keyboard.press('Tab');
+  await expect(menu.locator('a').first()).toBeFocused();
+  await expect(menu).toBeVisible();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Shift+Tab');
+  await expect(menu).toBeHidden();
   await circles.hover();
   await expect(menu).toBeVisible();
   await expect(menu.locator('a')).toHaveText(expected);
@@ -50,6 +69,8 @@ test('desktop header offers own circles and member search on hover and focus', a
   await expect(menu).toBeVisible();
   await menu.locator('a').first().click();
   await expect(page).toHaveURL(/\/circles\//);
+  await header.locator('.navbar-brand').hover();
+  await expect(menu).toBeHidden();
 
   await page.setViewportSize({ width: 390, height: 844 });
   await circles.hover();
