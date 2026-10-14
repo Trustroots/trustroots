@@ -1,10 +1,35 @@
-const assert = require('assert');
-const { createRequire } = require('node:module');
-const sinon = require('sinon');
-const proxyquire = require('./../../../../testutils/server/mock-module');
+const assert: typeof import('node:assert') = require('assert');
+const { createRequire }: typeof import('node:module') = require('node:module');
+const sinon: typeof import('sinon') = require('sinon');
+const proxyquire: typeof import('../../../../testutils/server/mock-module.mts').default = require('./../../../../testutils/server/mock-module');
 
-function handler(name) {
-  const fn = (req, res, next) => {
+type NamedHandler = ((
+  req: unknown,
+  res: unknown,
+  next?: () => void,
+) => void) & {
+  routeTestName?: string;
+};
+type HttpMethod = 'all' | 'delete' | 'get' | 'post' | 'put' | 'patch';
+type RecordedRoute = { path: string } & Record<HttpMethod, NamedHandler[]>;
+type RouteChain = Record<
+  HttpMethod,
+  (...handlers: NamedHandler[]) => RouteChain
+>;
+interface RecorderApp {
+  route(path: string): RouteChain;
+  param(name: string, middleware: NamedHandler): void;
+}
+interface Recorder {
+  app: RecorderApp;
+  params: Array<{ name: string; middleware: NamedHandler }>;
+  routes: RecordedRoute[];
+}
+type RouteRegistrar = (app: RecorderApp) => void;
+type DependencyReplacements = Record<string, NamedHandler>;
+
+function handler(name: string): NamedHandler {
+  const fn: NamedHandler = (req, res, next) => {
     if (next) {
       next();
     }
@@ -13,21 +38,27 @@ function handler(name) {
   return fn;
 }
 
-function controller(methods, prefix) {
-  return methods.reduce((stubs, method) => {
-    stubs[method] = handler(`${prefix}.${method}`);
-    return stubs;
-  }, {});
+function controller<const T extends string>(
+  methods: readonly T[],
+  prefix: string,
+): Record<T, NamedHandler> {
+  return methods.reduce(
+    (stubs, method) => {
+      stubs[method] = handler(`${prefix}.${method}`);
+      return stubs;
+    },
+    {} as Record<T, NamedHandler>,
+  );
 }
 
-function createAppRecorder() {
-  const routes = [];
-  const params = [];
+function createAppRecorder(): Recorder {
+  const routes: RecordedRoute[] = [];
+  const params: Recorder['params'] = [];
 
   return {
     app: {
       route(path) {
-        const route = {
+        const route: RecordedRoute = {
           path,
           all: [],
           delete: [],
@@ -38,16 +69,15 @@ function createAppRecorder() {
         };
         routes.push(route);
 
-        return ['all', 'delete', 'get', 'post', 'put', 'patch'].reduce(
-          (chain, method) => {
-            chain[method] = (...handlers) => {
-              route[method].push(...handlers);
-              return chain;
-            };
+        return (
+          ['all', 'delete', 'get', 'post', 'put', 'patch'] as const
+        ).reduce((chain, method) => {
+          chain[method] = (...handlers) => {
+            route[method].push(...handlers);
             return chain;
-          },
-          {},
-        );
+          };
+          return chain;
+        }, {} as RouteChain);
       },
       param(name, middleware) {
         params.push({ name, middleware });
@@ -58,25 +88,37 @@ function createAppRecorder() {
   };
 }
 
-function routeByPath(routes, path) {
+function routeByPath(routes: RecordedRoute[], path: string): RecordedRoute {
   const route = routes.find(candidate => candidate.path === path);
   assert(route, `Expected route ${path} to be registered`);
   return route;
 }
 
-function assertHandlers(actual, expected, label) {
-  assert.deepStrictEqual(
-    actual.map(fn => fn.routeTestName),
-    expected.map(fn => fn.routeTestName),
-    label,
-  );
+function assertHandlers(
+  actual: NamedHandler[],
+  expected: NamedHandler[],
+  label?: string,
+) {
+  const actualNames = actual.map(fn => fn.routeTestName);
+  const expectedNames = expected.map(fn => fn.routeTestName);
+  if (label === undefined) {
+    assert.deepStrictEqual(actualNames, expectedNames);
+  } else {
+    assert.deepStrictEqual(actualNames, expectedNames, label);
+  }
 }
 
-function assertPolicy(route, policy) {
+function assertPolicy(
+  route: RecordedRoute,
+  policy: { isAllowed: NamedHandler },
+) {
   assertHandlers(route.all, [policy.isAllowed], `${route.path} policy`);
 }
 
-function register(modulePath, stubs) {
+function register(
+  modulePath: string,
+  stubs: Record<string, DependencyReplacements>,
+) {
   const { app, params, routes } = createAppRecorder();
   const file = require.resolve(modulePath);
   const esmExtension = ['.mjs', '.mts'].find(ext => file.endsWith(ext));
@@ -91,7 +133,12 @@ function register(modulePath, stubs) {
             dependencyPath = dependencyRequire.resolve(specifier + extension);
             break;
           } catch (error) {
-            if (error.code !== 'MODULE_NOT_FOUND') {
+            if (
+              typeof error !== 'object' ||
+              error === null ||
+              !('code' in error) ||
+              error.code !== 'MODULE_NOT_FOUND'
+            ) {
               throw error;
             }
           }
@@ -99,22 +146,27 @@ function register(modulePath, stubs) {
         if (!dependencyPath) {
           throw new Error(`Could not resolve route dependency: ${specifier}`);
         }
-        const dependency = dependencyRequire(dependencyPath);
+        const dependency: DependencyReplacements =
+          dependencyRequire(dependencyPath);
         for (const [name, value] of Object.entries(replacements)) {
           if (typeof value === 'function') {
-            const replacement = sandbox.stub(dependency, name).callsFake(value);
+            const replacement = sandbox
+              .stub(dependency, name)
+              .callsFake(value) as import('sinon').SinonStub &
+              Pick<NamedHandler, 'routeTestName'>;
             replacement.routeTestName = value.routeTestName;
           } else {
             sandbox.stub(dependency, name).value(value);
           }
         }
       }
-      require(file)(app);
+      const registerRoutes: RouteRegistrar = require(file);
+      registerRoutes(app);
     } finally {
       sandbox.restore();
     }
   } else {
-    proxyquire(modulePath, stubs)(app);
+    proxyquire<RouteRegistrar>(modulePath, stubs)(app);
   }
   return { params, routes };
 }
@@ -525,11 +577,11 @@ describe('API route registrations', () => {
       authentication.signin,
     ]);
     const signoutRoute = routeByPath(routes, '/api/auth/signout');
-    let getSignoutStatus;
+    let getSignoutStatus: number | undefined;
     signoutRoute.get[0](
       {},
       {
-        sendStatus(status) {
+        sendStatus(status: number) {
           getSignoutStatus = status;
         },
       },
