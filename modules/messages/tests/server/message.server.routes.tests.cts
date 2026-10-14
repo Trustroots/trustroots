@@ -1,27 +1,42 @@
+import type {
+  Credentials,
+  MessageModel,
+  TestAgent,
+  TestConfigModule,
+  TestExpressApp,
+  TestExpressModule,
+  ThreadModel,
+  UserModel,
+  UserModelDocument,
+} from '../../../../testutils/server/model-contracts.mts';
+
 const _ = require('lodash');
 const should = require('should');
 const async = require('async');
 const request = require('supertest');
 const moment = require('moment');
-const mongoose = require('mongoose');
-const config = require('./../../../../config/config.mjs');
-const express = require('./../../../../config/lib/express.mjs');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const config: TestConfigModule = require('./../../../../config/config.mjs');
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User');
-const Message = mongoose.model('Message');
-const Thread = mongoose.model('Thread');
+const User = mongoose.model('User') as UserModel;
+const Message = mongoose.model('Message') as MessageModel;
+const Thread: ThreadModel = mongoose.model('Thread');
 
 /**
  * Globals
  */
-let app;
-let agent;
-let credentials;
-let userFrom;
-let userTo;
-let userFromId;
-let userToId;
-let message;
+let app: TestExpressApp;
+let agent: TestAgent;
+let credentials: Credentials;
+let userFrom: UserModelDocument;
+let userTo: UserModelDocument;
+let userFromId: import('mongoose').Types.ObjectId;
+let userToId: import('mongoose').Types.ObjectId;
+let message: {
+  content: string;
+  userTo?: import('mongoose').Types.ObjectId | string;
+};
 
 /**
  * Message routes tests
@@ -506,7 +521,7 @@ describe('Message CRUD tests', function () {
           function () {
             return count < 25;
           },
-          function (callback) {
+          function (callback: (error: Error | null, result?: number) => void) {
             count++;
             const newMessage = message;
             newMessage.content = 'Message content ' + count;
@@ -523,7 +538,7 @@ describe('Message CRUD tests', function () {
               });
           },
           // All messages sent, continue.
-          function (err) {
+          function (err: Error | null) {
             if (err) return done(err);
 
             // Get a list of messages
@@ -735,7 +750,7 @@ describe('Message CRUD tests', function () {
         // Update my description to be very short
         userFrom.description = 'short';
         userFrom.save(function (err, userFromSaveRes) {
-          userFromSaveRes.description.should.equal('short');
+          userFromSaveRes.description!.should.equal('short');
 
           // Save a new message
           agent
@@ -793,7 +808,7 @@ describe('Message CRUD tests', function () {
             // Update my description to be very short
             userFrom.description = 'short';
             userFrom.save(function (err, userFromSaveRes) {
-              userFromSaveRes.description.should.equal('short');
+              userFromSaveRes.description!.should.equal('short');
 
               // Save a new message
               agent
@@ -992,10 +1007,11 @@ describe('Message CRUD tests', function () {
                   const users = syncReadRes.body.users;
                   users.length.should.equal(2);
                   const syncedUserFrom = users.find(
-                    user => user._id === userFromId.toString(),
+                    (user: { _id: string }) =>
+                      user._id === userFromId.toString(),
                   );
                   const syncedUserTo = users.find(
-                    user => user._id === userToId.toString(),
+                    (user: { _id: string }) => user._id === userToId.toString(),
                   );
                   should.exist(syncedUserFrom);
                   syncedUserFrom.username.should.equal(userFrom.username);
@@ -1155,7 +1171,7 @@ describe('Message CRUD tests', function () {
             .expect(200)
             .end(function (messageSaveErr) {
               should.not.exist(messageSaveErr);
-              const recipientAgent = request.agent(app);
+              const recipientAgent: TestAgent = request.agent(app);
               recipientAgent
                 .post('/api/auth/signin')
                 .send({
@@ -1194,7 +1210,7 @@ describe('Message CRUD tests', function () {
             .expect(200)
             .end(function (messageSaveErr) {
               should.not.exist(messageSaveErr);
-              const recipientAgent = request.agent(app);
+              const recipientAgent: TestAgent = request.agent(app);
               recipientAgent
                 .post('/api/auth/signin')
                 .send({
