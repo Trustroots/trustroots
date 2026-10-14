@@ -1,19 +1,29 @@
-const mongoose = require('mongoose');
-const request = require('supertest');
-const should = require('should');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const express = require('./../../../../config/lib/express.mjs');
-const testutils = require('../../../../testutils/server/server.testutil');
-const Experience = mongoose.model('Experience');
+import type {
+  ExperienceModel,
+  ExperienceRecord,
+  TestAgent,
+  TestExpressModule,
+  UserDocument,
+} from '../../../../testutils/server/model-contracts.mts';
+const mongoose: typeof import('mongoose') = require('mongoose');
+const request: typeof import('supertest') = require('supertest');
+const should: typeof import('should') = require('should');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
+const testutils: typeof import('../../../../testutils/server/server.testutil') = require('../../../../testutils/server/server.testutil');
+const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
+  'Experience',
+);
+type ExperienceListResponse = Array<{ userFrom: { _id: string } }>;
 describe('Experience author moderation visibility', () => {
-  let agent;
+  let agent: TestAgent;
   before(async function () {
     agent = request.agent(await express.init(mongoose.connection));
   });
   const jobs = testutils.catchJobs();
-  let users;
-  let credentials;
-  let experiences;
+  let users: UserDocument[];
+  let credentials: ReturnType<typeof utils.generateUsersWithSharedPassword>;
+  let experiences: Awaited<ReturnType<typeof utils.saveExperiences>>;
   beforeEach(async () => {
     credentials = utils.generateUsersWithSharedPassword(5, {
       public: true,
@@ -64,9 +74,11 @@ describe('Experience author moderation visibility', () => {
       const list = await agent
         .get(`/api/experiences?userTo=${users[1].id}`)
         .expect(200);
-      should(list.body.map(experience => experience.userFrom._id)).eql([
-        users[3].id,
-      ]);
+      should(
+        (list.body as ExperienceListResponse).map(
+          experience => experience.userFrom._id,
+        ),
+      ).eql([users[3].id]);
       const count = await agent
         .get(`/api/experiences/count?userTo=${users[1].id}`)
         .expect(200);
@@ -99,9 +111,11 @@ describe('Experience author moderation visibility', () => {
       const list = await agent
         .get(`/api/experiences?userTo=${users[1].id}`)
         .expect(200);
-      should(list.body.map(experience => experience.userFrom._id)).eql([
-        users[3].id,
-      ]);
+      should(
+        (list.body as ExperienceListResponse).map(
+          experience => experience.userFrom._id,
+        ),
+      ).eql([users[3].id]);
       const count = await agent
         .get(`/api/experiences/count?userTo=${users[1].id}`)
         .expect(200);
@@ -154,7 +168,7 @@ describe('Experience author moderation visibility', () => {
       should(created.body.response).be.null();
       should(jobs).have.length(0);
       if (opposite) {
-        should((await Experience.findById(opposite.id)).public).equal(
+        should((await Experience.findById(opposite.id))?.public).equal(
           oppositeVisibility,
         );
       }
@@ -164,7 +178,9 @@ describe('Experience author moderation visibility', () => {
         .get(`/api/experiences?userTo=${users[1].id}`)
         .expect(200);
       should(
-        received.body.some(experience => experience._id === created.body._id),
+        (received.body as Array<{ _id: string }>).some(
+          experience => experience._id === created.body._id,
+        ),
       ).be.false();
       await agent.get(`/api/experiences/${created.body._id}`).expect(404);
       const mine = await agent

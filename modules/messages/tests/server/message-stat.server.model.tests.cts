@@ -1,20 +1,32 @@
+import type {
+  MessageDocument,
+  MessageModel,
+  MessageRecord,
+  MessageStatModel,
+  MessageStatRecord,
+  UserModel,
+  UserModelDocument,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
 /**
  * Module dependencies.
  */
-const should = require('should');
-const mongoose = require('mongoose');
-const utils = require('../../../../testutils/server/data.server.testutil');
+const should: typeof import('should') = require('should');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 
-const User = mongoose.model('User');
-const Message = mongoose.model('Message');
-const MessageStat = mongoose.model('MessageStat');
+const User = mongoose.model<UserRecord, UserModel>('User');
+const Message = mongoose.model<MessageRecord, MessageModel>('Message');
+const MessageStat = mongoose.model<MessageStatRecord, MessageStatModel>(
+  'MessageStat',
+);
 
 /**
  * Globals
  */
-let user0;
-let user1;
-let message;
+let user0: UserModelDocument;
+let user1: UserModelDocument;
+let message: MessageDocument;
 
 /**
  * Unit tests
@@ -56,7 +68,7 @@ describe('MessageStats Model', function () {
       firstMessageUserFrom: user0._id,
       firstMessageUserTo: user1._id,
       firstMessageCreated: message.created,
-      firstMessageLength: message.content.length,
+      firstMessageLength: message.content!.length,
     });
 
     messageStat.should.have.property('_id');
@@ -82,7 +94,7 @@ describe('MessageStats Model', function () {
       firstMessageUserFrom: user0._id,
       firstMessageUserTo: user1._id,
       firstMessageCreated: message.created,
-      firstMessageLength: message.content.length,
+      firstMessageLength: message.content!.length,
     });
 
     messageStat.save(function (err) {

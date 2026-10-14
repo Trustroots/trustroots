@@ -1,7 +1,14 @@
-const moment = require('moment');
+const moment: typeof import('moment') = require('moment');
 require('should');
 
-const normaliseOfferExpiry = require('./../../server/services/offer-expiry.server.service.mjs');
+type NormaliseOfferExpiry = (
+  offerType: 'host' | 'meet',
+  validUntil: string | Date | undefined,
+  maximum: import('moment').DurationInputArg1 | undefined,
+  now: Date,
+) => Date | undefined;
+const normaliseOfferExpiry =
+  require('./../../server/services/offer-expiry.server.service.mjs') as unknown as NormaliseOfferExpiry;
 
 describe('Offer expiry service', () => {
   const now = new Date('2026-04-10T12:00:00.000Z');
@@ -27,7 +34,7 @@ describe('Offer expiry service', () => {
       now,
     );
 
-    expiry.should.deepEqual(new Date(validUntil));
+    expiry!.should.deepEqual(new Date(validUntil));
   });
 
   it('uses the configured maximum age for missing, invalid, and out-of-range dates', () => {
@@ -44,7 +51,7 @@ describe('Offer expiry service', () => {
         validUntil,
         maxValidFromNow,
         now,
-      ).should.deepEqual(fallback);
+      )!.should.deepEqual(fallback);
     });
   });
 
@@ -52,6 +59,6 @@ describe('Offer expiry service', () => {
     const validUntil = moment(now).add(30, 'days').toDate();
     const expiry = normaliseOfferExpiry('meet', validUntil, undefined, now);
 
-    expiry.should.deepEqual(validUntil);
+    expiry!.should.deepEqual(validUntil);
   });
 });

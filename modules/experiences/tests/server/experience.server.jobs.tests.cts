@@ -1,12 +1,20 @@
-const moment = require('moment');
-const mongoose = require('mongoose');
-const should = require('should');
-const sinon = require('sinon');
-const util = require('util');
-const config = require('./../../../../config/config.mjs');
-const jobPublishExperience = require('./../../server/jobs/experiences-publish.server.job.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const Experience = mongoose.model('Experience');
+import type {
+  ExperienceDocument,
+  ExperienceModel,
+  ExperienceRecord,
+  TestConfigModule,
+} from '../../../../testutils/server/model-contracts.mts';
+const moment: typeof import('moment') = require('moment');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const should: typeof import('should') = require('should');
+const sinon: typeof import('sinon') = require('sinon');
+const util: typeof import('util') = require('util');
+const config: TestConfigModule = require('./../../../../config/config.mjs');
+const jobPublishExperience: typeof import('./../../server/jobs/experiences-publish.server.job.mjs').default = require('./../../server/jobs/experiences-publish.server.job.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
+  'Experience',
+);
 
 describe('Job: Set experience to public after a given period of time', () => {
   // fake Date
@@ -40,8 +48,8 @@ describe('Job: Set experience to public after a given period of time', () => {
     };
   }
 
-  async function createExperiences(count) {
-    const experiences = [];
+  async function createExperiences(count: number): Promise<void> {
+    const experiences: ExperienceDocument[] = [];
 
     for (let i = 0; i < count; ++i) {
       experiences.push(new Experience(generateExperienceData()));
@@ -57,13 +65,21 @@ describe('Job: Set experience to public after a given period of time', () => {
     return experiences.length;
   }
 
-  function wait(duration) {
+  function wait(duration: import('moment').DurationInputArg1): void {
     sinon.clock.tick(moment.duration(duration).asMilliseconds());
   }
 
-  async function runJobAndExpectPublicExperiences(expectedCount) {
+  async function runJobAndExpectPublicExperiences(
+    expectedCount: number,
+  ): Promise<void> {
     // promisify job and run it
-    await util.promisify(jobPublishExperience)(null);
+    const runJob = util.promisify(
+      jobPublishExperience as unknown as (
+        job: null,
+        callback: (error: Error | null) => void,
+      ) => void,
+    );
+    await runJob(null);
     // count the experiences which are public
     const actualCount = await countPublicExperiences();
     // test

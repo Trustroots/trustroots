@@ -1,6 +1,6 @@
-const assert = require('assert/strict');
+const assert: typeof import('assert/strict') = require('assert/strict');
 const { execFileSync } = require('child_process');
-const path = require('path');
+const path: typeof import('path') = require('path');
 
 describe('Offer API contract compiler regressions', function () {
   this.timeout(30000);
@@ -8,7 +8,10 @@ describe('Offer API contract compiler regressions', function () {
   const implementation =
     'modules/offers/server/services/offer-payload.server.service.mts';
 
-  function diagnostics(before, after) {
+  function diagnostics(
+    before: string | undefined,
+    after: string | undefined,
+  ): Array<{ code: number; messageText: string }> {
     const output = execFileSync(
       process.execPath,
       [
@@ -25,7 +28,10 @@ describe('Offer API contract compiler regressions', function () {
       ],
       { env: { ...process.env, NODE_OPTIONS: '' }, encoding: 'utf8' },
     );
-    return JSON.parse(output);
+    return JSON.parse(output) as Array<{
+      code: number;
+      messageText: string;
+    }>;
   }
 
   it('checks the unmodified offer payload builders', () => {

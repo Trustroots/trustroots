@@ -1,12 +1,15 @@
-const assert = require('assert/strict');
+const assert: typeof import('assert/strict') = require('assert/strict');
 const { execFileSync } = require('child_process');
-const path = require('path');
+const path: typeof import('path') = require('path');
 
 describe('Message shared API contract compiler checks', function () {
   this.timeout(30000);
   const root = path.resolve(__dirname, '../../../..');
 
-  function diagnostics(before, after) {
+  function diagnostics(
+    before: string | undefined,
+    after: string | undefined,
+  ): Array<{ code: number; messageText: string }> {
     const output = execFileSync(
       process.execPath,
       [
@@ -26,7 +29,10 @@ describe('Message shared API contract compiler checks', function () {
       ],
       { env: { ...process.env, NODE_OPTIONS: '' }, encoding: 'utf8' },
     );
-    return JSON.parse(output);
+    return JSON.parse(output) as Array<{
+      code: number;
+      messageText: string;
+    }>;
   }
 
   it('checks the unmodified message payload implementation', () => {
