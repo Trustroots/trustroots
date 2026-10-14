@@ -58,6 +58,12 @@ key requires decrypting and re-encrypting every active and pending secret
 before switching all instances; do not replace the value without that
 migration. Test environments use a fixed test-only key.
 
+The production Compose configuration passes the key to both app services.
+For a separate production Compose file, add the variable to both `webapp` and
+`worker` before deploying the MFA image. Run the deployment preflight described
+in [PRODUCTION.md](../deploy/docker/PRODUCTION.md); it checks the desired key
+format and that both services receive the same value without displaying it.
+
 Authenticator MFA and passkeys are available only to administrators. Admin
 permissions require a session that has completed MFA. Existing administrators
 should enrol an authenticator before relying on those permissions.

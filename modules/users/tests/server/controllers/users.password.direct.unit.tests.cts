@@ -242,6 +242,18 @@ function responseMessage(response: MockResponse): string {
   return message;
 }
 
+function responseBody(response: MockResponse): ResponseBody {
+  if (!response.body) throw new Error('expected a response body');
+  return response.body;
+}
+
+function assertMfaVerification(user: TestUser, expected: boolean): void {
+  const mfaVerified = user.$locals?.mfaVerified;
+  if (typeof mfaVerified !== 'boolean')
+    throw new Error('expected MFA verification state');
+  mfaVerified.should.equal(expected);
+}
+
 function fakeUser(overrides: Partial<TestUser> = {}): TestUser {
   return {
     displayName: 'Direct User',
@@ -369,7 +381,7 @@ describe('Password controller direct unit tests', () => {
 
       await res.waitForResponse();
       loggedOut.should.be.true();
-      should(res.body).deepEqual({ mfaRequired: true });
+      responseBody(res).should.deepEqual({ mfaRequired: true });
     });
 
     it('completes the MFA recovery response when confirmation email succeeds', async () => {
@@ -389,7 +401,7 @@ describe('Password controller direct unit tests', () => {
       );
 
       await res.waitForResponse();
-      should(res.body).deepEqual({ mfaRequired: true });
+      responseBody(res).should.deepEqual({ mfaRequired: true });
     });
 
     it('returns a controlled error when logout fails for an MFA recovery', async () => {
@@ -531,7 +543,7 @@ describe('Password controller direct unit tests', () => {
             verifyPassword: 'newpassword123',
           },
           login: (authenticatedUser, callback) => {
-            should(authenticatedUser.$locals?.mfaVerified).be.true();
+            assertMfaVerification(authenticatedUser, true);
             callback();
           },
         },
@@ -559,7 +571,7 @@ describe('Password controller direct unit tests', () => {
             verifyPassword: 'newpassword123',
           },
           login: (authenticatedUser, callback) => {
-            should(authenticatedUser.$locals?.mfaVerified).be.false();
+            assertMfaVerification(authenticatedUser, false);
             callback();
           },
         },

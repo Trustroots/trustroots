@@ -1,5 +1,5 @@
 import controller from '../controllers/users.passkeys.server.controller.mjs';
-import usersPolicy from '../policies/users.server.policy.mjs';
+import usersPolicy from '../policies/users.server.policy.mts';
 import limits from '../../../core/server/middleware/targeted-request-limit.server.middleware.mjs';
 
 export default function routes(app) {

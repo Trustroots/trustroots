@@ -507,7 +507,7 @@ describe('API route registrations', () => {
       password.changePassword,
     ]);
     assertHandlers(routeByPath(routes, '/api/users/mfa').get, [mfa.settings]);
-    const limitedMfaRoutes: [string, NamedHandler][] = [
+    const limitedMfaRoutes: Array<[string, NamedHandler]> = [
       ['/api/users/mfa/enrol', mfa.beginEnrollment],
       ['/api/users/mfa/enrol/verify', mfa.verifyEnrollment],
       ['/api/users/mfa/recovery-codes', mfa.regenerateRecoveryCodes],

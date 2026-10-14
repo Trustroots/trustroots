@@ -6,10 +6,10 @@ type Operation =
   | 'signin'
   | 'forgotPassword'
   | 'resetPassword'
-  | 'mfaVerify'
-  | 'mfaManage'
   | 'resendConfirmation'
-  | 'avatarUpload';
+  | 'avatarUpload'
+  | 'mfaVerify'
+  | 'mfaManage';
 type Policy = {
   enabled?: boolean;
   windowMs: number;
@@ -22,7 +22,7 @@ type Request = {
   user?: { id?: string };
   body?: { email?: unknown; username?: unknown };
   params?: { token?: unknown };
-  session?: { mfaChallenge?: { userId?: string } };
+  session?: { mfaChallenge?: { userId?: unknown } };
   get?: (name: string) => string | undefined;
 };
 type Dimension = { name: string; value: string; limit: number };
@@ -289,6 +289,14 @@ describe('Targeted request limit middleware', function () {
       getRequestIdentity({ params: { token: 123 } }, 'token'),
       undefined,
     );
+    assert.equal(getRequestIdentity({}, 'mfaChallenge'), undefined);
+    assert.equal(
+      getRequestIdentity(
+        { session: { mfaChallenge: { userId: 123 } } },
+        'mfaChallenge',
+      ),
+      undefined,
+    );
     assert.equal(getRequestIdentity({}, 'unknown'), undefined);
   });
 
@@ -342,7 +350,8 @@ describe('Targeted request limit middleware', function () {
       () => {},
     );
 
-    should(options?.dimensions).deepEqual([
+    if (!options) throw new Error('Expected request limit options');
+    options.dimensions.should.deepEqual([
       {
         name: 'ip',
         value: '198.51.100.30',

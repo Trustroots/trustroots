@@ -17,7 +17,7 @@ interface LimitRequest {
   user?: { id?: string };
   body?: { username?: unknown; email?: unknown };
   params?: { token?: unknown };
-  session?: { mfaChallenge?: { userId?: string } };
+  session?: { mfaChallenge?: { userId?: unknown } };
 }
 interface LimitResponse {
   status(code: number): LimitResponse;
@@ -66,7 +66,8 @@ function getRequestIdentity(
     return typeof token === 'string' ? token : undefined;
   }
   if (source === 'mfaChallenge') {
-    return req.session?.mfaChallenge?.userId;
+    const userId = req.session?.mfaChallenge?.userId;
+    return typeof userId === 'string' ? userId : undefined;
   }
   return undefined;
 }

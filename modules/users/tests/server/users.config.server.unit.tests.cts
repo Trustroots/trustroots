@@ -122,7 +122,7 @@ describe('Users Passport session configuration', () => {
           ) => {
             should.not.exist(currentErr);
             should(restoredUser).equal(currentUser);
-            if (!restoredUser) {
+            if (restoredUser === null || restoredUser === false) {
               throw new Error('Expected the current session user');
             }
             should(restoredUser.$locals?.mfaVerified).equal(true);
