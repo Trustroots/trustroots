@@ -2,17 +2,81 @@
  * Module dependencies.
  */
 import multer from 'multer';
-import mongoose from 'mongoose';
+import mongoose, { type Types } from 'mongoose';
 import path from 'path';
 import config from './../../../../config/config.mjs';
 import errorService from './../../../core/server/services/error.server.service.mjs';
 import userRolesService from './../../../users/server/services/user-roles.server.service.mjs';
 import { isProfileDeletionPending } from '../services/profile-deletion.server.service.mts';
-const Offer = mongoose.model('Offer');
-const User = mongoose.model('User');
+interface NewsletterUser {
+  _id: Types.ObjectId;
+  email?: string | null;
+  firstName?: string;
+  lastName?: string;
+  displayName?: string;
+  username?: string;
+  newsletter?: boolean;
+  public?: boolean;
+  roles?: string[];
+  removeProfileToken?: string | null;
+  removeProfileExpires?: Date | string | null;
+  locationLiving?: string;
+  locationFrom?: string;
+  member?: Array<{ tribe: Types.ObjectId }>;
+}
+
+interface HostingCriteria {
+  latitude: number;
+  longitude: number;
+  radiusKm: number;
+}
+
+interface AudienceCriteria {
+  circleIds: Types.ObjectId[];
+  format: 'csv' | 'preview';
+  hosting: HostingCriteria | null;
+  locationText: string;
+  sources: NewsletterLocationSource[];
+}
+
+type NewsletterLocationSource = 'from' | 'hosting' | 'living';
+
+interface NewsletterRow {
+  email?: unknown;
+  firstName?: unknown;
+  lastName?: unknown;
+  displayName?: unknown;
+  username?: unknown;
+  reason?: unknown;
+}
+
+interface NewsletterFile {
+  buffer: Buffer;
+  originalname: string;
+}
+
+interface NewsletterRequest {
+  body?: Record<string, unknown> | null;
+  file?: NewsletterFile;
+  query?: Record<string, unknown>;
+}
+
+interface NewsletterResponse {
+  status(code: number | undefined): NewsletterResponse;
+  set(name: string, value: string): NewsletterResponse;
+  send(body: unknown): unknown;
+}
+
+interface CodedError extends Error {
+  code?: string;
+  statusCode?: number;
+}
+
+const Offer = mongoose.model<{ user: Types.ObjectId }>('Offer');
+const User = mongoose.model<NewsletterUser>('User');
 const EARTH_RADIUS_KM = 6378.1;
-const NEWSLETTER_AUDIENCE_FORMATS = ['csv', 'preview'];
-const NEWSLETTER_LOCATION_SOURCES = ['from', 'hosting', 'living'];
+const NEWSLETTER_AUDIENCE_FORMATS = ['csv', 'preview'] as const;
+const NEWSLETTER_LOCATION_SOURCES = ['from', 'hosting', 'living'] as const;
 const MAX_AUDIENCE_CIRCLES = 100;
 const MAX_HOSTING_RADIUS_KM = 500;
 const CSV_COLUMNS = [
@@ -28,14 +92,14 @@ const CSV_COLUMNS = [
     key: 'lastName',
     label: 'Last Name',
   },
-];
+] satisfies NewsletterCsvColumn[];
 const UNSUBSCRIBED_CSV_COLUMNS = [
   ...CSV_COLUMNS,
   {
     key: 'reason',
     label: 'Reason',
   },
-];
+] satisfies NewsletterCsvColumn[];
 const RECIPIENT_UPLOAD_EXTENSIONS = ['.csv', '.jsonl', '.ndjson'];
 const JSON_LINES_EXTENSIONS = ['.jsonl', '.ndjson'];
 const newsletterRecipientUpload = multer({
@@ -43,17 +107,19 @@ const newsletterRecipientUpload = multer({
     fileSize: config.maxUploadSize,
   },
   storage: multer.memoryStorage(),
-  fileFilter: (req, file, callback) => {
+  fileFilter: (_req, file, callback) => {
     const extension = path.extname(file.originalname).toLowerCase();
     if (!RECIPIENT_UPLOAD_EXTENSIONS.includes(extension)) {
-      const err = new Error('Unsupported recipient file type.');
+      const err: CodedError = new Error('Unsupported recipient file type.');
       err.code = 'UNSUPPORTED_MEDIA_TYPE';
       return callback(err);
     }
     return callback(null, true);
   },
 }).single('newsletterCsv');
-function isNewsletterSubscriber(user) {
+function isNewsletterSubscriber(
+  user: NewsletterUser | null | undefined,
+): boolean {
   if (!user || !user.public || !user.newsletter) {
     return false;
   }
@@ -65,7 +131,14 @@ function isNewsletterSubscriber(user) {
   }
   return true;
 }
-function buildEligibleSubscribersQuery(query = {}) {
+
+interface NewsletterCsvColumn {
+  key: 'email' | 'firstName' | 'lastName' | 'reason';
+  label: string;
+}
+function buildEligibleSubscribersQuery(
+  query: Record<string, unknown> = {},
+): Record<string, unknown> {
   return {
     ...query,
     newsletter: true,
@@ -94,26 +167,83 @@ function buildEligibleSubscribersQuery(query = {}) {
     ],
   };
 }
-function escapeRegularExpression(value) {
+function escapeRegularExpression(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
-function invalidAudienceCriteria(message) {
-  const error = new Error(message);
+function invalidAudienceCriteria(message: string): CodedError {
+  const error: CodedError = new Error(message);
   error.statusCode = 400;
   return error;
 }
-function parseAudienceCriteria(body = {}) {
+function isLocationSource(value: unknown): value is NewsletterLocationSource {
+  return NEWSLETTER_LOCATION_SOURCES.some(source => source === value);
+}
+
+function isNewsletterAudienceFormat(
+  value: unknown,
+): value is (typeof NEWSLETTER_AUDIENCE_FORMATS)[number] {
+  return NEWSLETTER_AUDIENCE_FORMATS.some(format => format === value);
+}
+
+type ObjectIdInput =
+  | string
+  | number
+  | Types.ObjectId
+  | { id: string | Buffer; toHexString(): string }
+  | Buffer
+  | Uint8Array;
+
+function isObjectIdLike(value: object): value is {
+  id: string | Buffer;
+  toHexString(): string;
+} {
+  return (
+    'id' in value &&
+    (typeof value.id === 'string' || Buffer.isBuffer(value.id)) &&
+    'toHexString' in value &&
+    typeof value.toHexString === 'function'
+  );
+}
+
+function isObjectIdInput(value: unknown): value is ObjectIdInput {
+  if (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    value instanceof mongoose.Types.ObjectId ||
+    Buffer.isBuffer(value) ||
+    value instanceof Uint8Array
+  ) {
+    return mongoose.Types.ObjectId.isValid(value);
+  }
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    isObjectIdLike(value) &&
+    mongoose.Types.ObjectId.isValid(value)
+  );
+}
+
+function parseAudienceCriteria(
+  input: Record<string, unknown> | null = {},
+): AudienceCriteria {
+  if (input === null) {
+    throw new TypeError("Cannot read properties of null (reading 'format')");
+  }
+  const body = input;
   const format = body.format || 'preview';
-  if (!NEWSLETTER_AUDIENCE_FORMATS.includes(format)) {
+  if (!isNewsletterAudienceFormat(format)) {
     throw invalidAudienceCriteria('Choose preview or CSV audience output.');
   }
-  const sources = Array.isArray(body.sources) ? [...new Set(body.sources)] : [];
+  const rawSources = Array.isArray(body.sources)
+    ? [...new Set<unknown>(body.sources)]
+    : [];
   if (
-    sources.length > NEWSLETTER_LOCATION_SOURCES.length ||
-    sources.some(source => !NEWSLETTER_LOCATION_SOURCES.includes(source))
+    rawSources.length > NEWSLETTER_LOCATION_SOURCES.length ||
+    rawSources.some(source => !isLocationSource(source))
   ) {
     throw invalidAudienceCriteria('Choose valid newsletter location sources.');
   }
+  const sources = rawSources.filter(isLocationSource);
   const locationText =
     typeof body.locationText === 'string' ? body.locationText.trim() : '';
   const usesTextLocation =
@@ -163,12 +293,13 @@ function parseAudienceCriteria(body = {}) {
       radiusKm,
     };
   }
-  const circleIds = Array.isArray(body.circleIds)
-    ? [...new Set(body.circleIds)]
+  const rawCircleIds = Array.isArray(body.circleIds)
+    ? [...new Set<unknown>(body.circleIds)]
     : [];
+  const circleIds = rawCircleIds.filter(isObjectIdInput);
   if (
-    circleIds.length > MAX_AUDIENCE_CIRCLES ||
-    circleIds.some(circleId => !mongoose.Types.ObjectId.isValid(circleId))
+    rawCircleIds.length > MAX_AUDIENCE_CIRCLES ||
+    circleIds.length !== rawCircleIds.length
   ) {
     throw invalidAudienceCriteria('Choose valid newsletter circles.');
   }
@@ -185,7 +316,7 @@ function parseAudienceCriteria(body = {}) {
     sources,
   };
 }
-function buildHostingQuery(hosting) {
+function buildHostingQuery(hosting: HostingCriteria): Record<string, unknown> {
   const { latitude, longitude, radiusKm } = hosting;
   return {
     type: 'host',
@@ -226,7 +357,10 @@ function buildHostingQuery(hosting) {
     ],
   };
 }
-function buildAudienceQuery(criteria, hostingUserIds) {
+function buildAudienceQuery(
+  criteria: AudienceCriteria,
+  hostingUserIds: Types.ObjectId[],
+): Record<string, unknown> {
   const conditions = [buildEligibleSubscribersQuery()];
   if (criteria.circleIds.length > 0) {
     conditions.push({
@@ -236,7 +370,7 @@ function buildAudienceQuery(criteria, hostingUserIds) {
     });
   }
   if (criteria.sources.length > 0) {
-    const locationMatches = [];
+    const locationMatches: Record<string, unknown>[] = [];
     if (criteria.sources.includes('living')) {
       locationMatches.push({
         locationLiving: new RegExp(
@@ -268,7 +402,7 @@ function buildAudienceQuery(criteria, hostingUserIds) {
     $and: conditions,
   };
 }
-function normaliseEmail(value) {
+function normaliseEmail(value: unknown): string | null {
   if (!value) {
     return null;
   }
@@ -278,12 +412,15 @@ function normaliseEmail(value) {
   }
   return normalised;
 }
-function csvCell(value) {
+function csvCell(value: unknown): string {
   return String(value || '')
     .trim()
     .replace(/[,'"]/g, '');
 }
-function rowsToCSV(rows, columns = CSV_COLUMNS) {
+function rowsToCSV(
+  rows: NewsletterRow[] | null | undefined,
+  columns: NewsletterCsvColumn[] = CSV_COLUMNS,
+): string {
   // First CSV line is the header
   let data = columns.map(({ label }) => csvCell(label)).join(',');
   if (rows && rows.length > 0) {
@@ -294,7 +431,7 @@ function rowsToCSV(rows, columns = CSV_COLUMNS) {
   }
   return data;
 }
-function getUnsubscribedReason(user) {
+function getUnsubscribedReason(user: NewsletterUser | undefined): string {
   if (!user) {
     return 'Email not found';
   }
@@ -315,7 +452,7 @@ function getUnsubscribedReason(user) {
   }
   return 'Not eligible for newsletter emails';
 }
-function parseFirstCsvField(line) {
+function parseFirstCsvField(line: string): string {
   let value = '';
   let inQuotes = false;
   for (let i = 0; i < line.length; i += 1) {
@@ -336,12 +473,12 @@ function parseFirstCsvField(line) {
   }
   return value.trim();
 }
-function extractEmailsFromCsv(csvText) {
+function extractEmailsFromCsv(csvText: string): string[] {
   const lines = String(csvText || '')
     .replace(/^\uFEFF/, '')
     .split(/\r?\n/);
-  const emails = [];
-  const seenEmails = new Set();
+  const emails: string[] = [];
+  const seenEmails = new Set<string>();
   lines.forEach((line, lineIndex) => {
     const trimmedLine = line.trim();
     if (!trimmedLine) {
@@ -360,21 +497,21 @@ function extractEmailsFromCsv(csvText) {
   });
   return emails;
 }
-function extractEmailsFromJsonLines(jsonLinesText) {
+function extractEmailsFromJsonLines(jsonLinesText: string): string[] {
   const lines = String(jsonLinesText)
     .replace(/^\uFEFF/, '')
     .split(/\r?\n/);
-  const emails = [];
-  const seenEmails = new Set();
+  const emails: string[] = [];
+  const seenEmails = new Set<string>();
   lines.forEach((line, lineIndex) => {
     const trimmedLine = line.trim();
     if (!trimmedLine) {
       return;
     }
-    let record;
+    let record: unknown;
     try {
       record = JSON.parse(trimmedLine);
-    } catch (error) {
+    } catch {
       throw invalidAudienceCriteria(
         `Could not parse JSON on line ${lineIndex + 1}.`,
       );
@@ -382,7 +519,11 @@ function extractEmailsFromJsonLines(jsonLinesText) {
     const value =
       typeof record === 'string'
         ? record
-        : record?.email || record?.emailAddress || record?.address;
+        : typeof record === 'object' && record !== null
+          ? ('email' in record && record.email) ||
+            ('emailAddress' in record && record.emailAddress) ||
+            ('address' in record && record.address)
+          : undefined;
     const email = normaliseEmail(value);
     if (!email || seenEmails.has(email)) {
       return;
@@ -392,11 +533,14 @@ function extractEmailsFromJsonLines(jsonLinesText) {
   });
   return emails;
 }
-function extractEmailsFromUpload(file) {
+function extractEmailsFromUpload(file: NewsletterFile): {
+  emails: string[];
+  outputFormat: 'csv' | 'jsonl' | 'ndjson';
+} {
   const extension = path.extname(file.originalname || '').toLowerCase();
-  let outputFormat = 'csv';
+  let outputFormat: 'csv' | 'jsonl' | 'ndjson' = 'csv';
   if (JSON_LINES_EXTENSIONS.includes(extension)) {
-    outputFormat = extension.replace('.', '');
+    outputFormat = extension === '.jsonl' ? 'jsonl' : 'ndjson';
   }
   const isJsonLines = outputFormat !== 'csv';
   const content = file.buffer.toString('utf8');
@@ -407,10 +551,10 @@ function extractEmailsFromUpload(file) {
     outputFormat,
   };
 }
-function rowsToJsonLines(rows, includeReason = false) {
+function rowsToJsonLines(rows: NewsletterRow[], includeReason = false): string {
   return rows
     .map(row => {
-      const record = {
+      const record: NewsletterRow = {
         displayName: row.displayName || '',
         email: row.email,
         firstName: row.firstName || '',
@@ -424,7 +568,10 @@ function rowsToJsonLines(rows, includeReason = false) {
     })
     .join('\n');
 }
-export const list = async (req, res) => {
+export const list = async (
+  _req: NewsletterRequest,
+  res: NewsletterResponse,
+): Promise<void> => {
   const users = await User.find(buildEligibleSubscribersQuery(), {
     email: 1,
     firstName: 1,
@@ -433,11 +580,13 @@ export const list = async (req, res) => {
   const csv = rowsToCSV(users);
   res.set('Content-Type', 'text/csv').send(csv);
 };
-export const listCircleMembers = async (req, res) => {
+export const listCircleMembers = async (
+  req: NewsletterRequest,
+  res: NewsletterResponse,
+): Promise<unknown> => {
   const circleId = req?.query?.circleId;
 
-  if (!circleId || !mongoose.Types.ObjectId.isValid(circleId))
-    return errorService.sendInvalidId(res);
+  if (!isObjectIdInput(circleId)) return errorService.sendInvalidId(res);
 
   const onlyNewsletterCircleMembers = !req?.query?.onlyNewsletterCircleMembers;
   const query = onlyNewsletterCircleMembers
@@ -466,13 +615,17 @@ export const listCircleMembers = async (req, res) => {
   );
   res.set('Content-Type', 'text/csv').send(csv);
 };
-export const audience = async (req, res) => {
+export const audience = async (
+  req: NewsletterRequest,
+  res: NewsletterResponse,
+): Promise<unknown> => {
   let criteria;
   try {
     criteria = parseAudienceCriteria(req.body);
-  } catch (error) {
-    return res.status(error.statusCode).send({
-      message: error.message,
+  } catch (error: unknown) {
+    const audienceError = toCodedError(error);
+    return res.status(audienceError.statusCode).send({
+      message: audienceError.message,
     });
   }
   const hostingUserIds = criteria.hosting
@@ -496,7 +649,22 @@ export const audience = async (req, res) => {
     .exec();
   return res.set('Content-Type', 'text/csv').send(rowsToCSV(users));
 };
-export const uploadSubscribersCsv = (req, res, next) => {
+function toCodedError(error: unknown): CodedError {
+  if (error instanceof Error) {
+    const statusCode =
+      'statusCode' in error && typeof error.statusCode === 'number'
+        ? error.statusCode
+        : undefined;
+    return Object.assign(error, { statusCode });
+  }
+  return new Error(String(error));
+}
+
+export const uploadSubscribersCsv = (
+  req: NewsletterRequest,
+  res: NewsletterResponse,
+  next: (error?: Error | null) => void,
+): void => {
   newsletterRecipientUpload(req, res, err => {
     if (!err && req.file && req.file.buffer) {
       return next();
@@ -527,7 +695,10 @@ export const uploadSubscribersCsv = (req, res, next) => {
     });
   });
 };
-export const splitSubscribers = async (req, res) => {
+export const splitSubscribers = async (
+  req: NewsletterRequest,
+  res: NewsletterResponse,
+): Promise<unknown> => {
   if (!req.file || !req.file.buffer) {
     return res.status(422).send({
       message: errorService.getErrorMessageByKey('unprocessable-entity'),
@@ -536,9 +707,10 @@ export const splitSubscribers = async (req, res) => {
   let upload;
   try {
     upload = extractEmailsFromUpload(req.file);
-  } catch (error) {
-    return res.status(error.statusCode).send({
-      message: error.message,
+  } catch (error: unknown) {
+    const audienceError = toCodedError(error);
+    return res.status(audienceError.statusCode).send({
+      message: audienceError.message,
     });
   }
   const { emails, outputFormat } = upload;
@@ -566,13 +738,16 @@ export const splitSubscribers = async (req, res) => {
       username: 1,
     },
   ).exec();
-  const usersByEmail = new Map(
+  const usersByEmail = new Map<string, NewsletterUser>(
     users
-      .map(user => [normaliseEmail(user.email), user])
-      .filter(([email]) => email),
+      .map((user): [string | null, NewsletterUser] => [
+        normaliseEmail(user.email),
+        user,
+      ])
+      .filter((entry): entry is [string, NewsletterUser] => entry[0] !== null),
   );
-  const subscribed = [];
-  const unsubscribed = [];
+  const subscribed: NewsletterRow[] = [];
+  const unsubscribed: NewsletterRow[] = [];
   emails.forEach(email => {
     const user = usersByEmail.get(email);
     const userForOutput = {

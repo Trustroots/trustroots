@@ -321,14 +321,14 @@ describe('SpaceAPI Collector import service', () => {
 
 describe('SpaceAPI import preview controller', () => {
   type PreviewController = Pick<
-    typeof import('../../server/controllers/admin.hackerspaces.server.controller.mjs'),
+    typeof import('../../server/controllers/admin.hackerspaces.server.controller.mts'),
     'preview'
   >;
   let controller: PreviewController;
   const originalFetch = global.fetch;
   before(async () => {
     controller =
-      await import('../../server/controllers/admin.hackerspaces.server.controller.mjs');
+      await import('../../server/controllers/admin.hackerspaces.server.controller.mts');
   });
   afterEach(() => {
     global.fetch = originalFetch;

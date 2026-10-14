@@ -5,11 +5,11 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon: typeof import('sinon') = require('sinon');
 
 type AuditLogController =
-  typeof import('../../server/controllers/admin.audit-log.server.controller.mjs');
+  typeof import('../../server/controllers/admin.audit-log.server.controller.mts');
 const adminAuditLog: Pick<
   AuditLogController,
   'record' | 'list'
-> = require('./../../server/controllers/admin.audit-log.server.controller.mjs');
+> = require('./../../server/controllers/admin.audit-log.server.controller.mts');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
 const should: typeof import('should') = require('should');
 
@@ -136,7 +136,7 @@ describe('Admin audit log controller unit tests', () => {
       };
 
       await new Promise<void>((resolve, reject) => {
-        adminAuditLog.record(req, {}, (err: Error | null) => {
+        adminAuditLog.record(req, {}, (err?: Error | null) => {
           if (err) {
             return reject(err);
           }
@@ -176,7 +176,7 @@ describe('Admin audit log controller unit tests', () => {
       };
 
       await new Promise<void>((resolve, reject) => {
-        adminAuditLog.record(req, {}, (err: Error | null) => {
+        adminAuditLog.record(req, {}, (err?: Error | null) => {
           if (err) {
             return reject(err);
           }

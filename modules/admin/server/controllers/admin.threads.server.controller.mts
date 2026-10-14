@@ -3,13 +3,52 @@
  */
 import _ from 'lodash';
 import errorService from './../../../core/server/services/error.server.service.mjs';
-import mongoose from 'mongoose';
-const Thread = mongoose.model('Thread');
+import mongoose, { type Types } from 'mongoose';
+
+interface ThreadRecord {
+  _id: Types.ObjectId;
+  userFrom: Types.ObjectId;
+  userTo: Types.ObjectId;
+  updated?: Date;
+  read?: boolean;
+}
+
+interface ThreadResult {
+  _id: Types.ObjectId;
+  read?: boolean;
+  updated?: Date;
+  userToProfile: Array<{
+    _id: Types.ObjectId;
+    username: string;
+    displayName?: string;
+    email?: string;
+  }>;
+  userFromProfile: Array<{
+    _id: Types.ObjectId;
+    username: string;
+    displayName?: string;
+  }>;
+}
+
+interface ThreadRequest {
+  userIdFromUsername?: unknown;
+  body?: unknown;
+}
+
+interface HttpResponse {
+  status(code: number): HttpResponse;
+  send(body: unknown): unknown;
+}
+
+const Thread = mongoose.model<ThreadRecord>('Thread');
 
 /*
  * This middleware sends response with an array of found users
  */
-export const getThreads = async (req, res) => {
+export const getThreads = async (
+  req: ThreadRequest,
+  res: HttpResponse,
+): Promise<unknown> => {
   // See `usernameToUserId` middleware from admin.users.server.controller.js
   // req.userId can get placed in request when `req.body.username` is set.
   const userId = req.userIdFromUsername || _.get(req, ['body', 'userId']);
@@ -18,7 +57,7 @@ export const getThreads = async (req, res) => {
   if (!userId || !mongoose.Types.ObjectId.isValid(userId))
     return errorService.sendInvalidId(res);
 
-  Thread.aggregate([
+  Thread.aggregate<ThreadResult>([
     {
       // Latest message in thread is either from, or to user
       $match: {
@@ -68,7 +107,7 @@ export const getThreads = async (req, res) => {
         updated: -1,
       },
     },
-  ]).exec((err, threads) => {
+  ]).exec((err: Error | null, threads: ThreadResult[]) => {
     if (err) {
       return errorService.sendBadRequest(res, err);
     }

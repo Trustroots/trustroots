@@ -2,11 +2,11 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon = require('sinon');
 
 type ReferenceThreadsController =
-  typeof import('../../server/controllers/admin.reference-threads.server.controller.mjs');
+  typeof import('../../server/controllers/admin.reference-threads.server.controller.mts');
 const adminReferenceThreads: Pick<
   ReferenceThreadsController,
   'list'
-> = require('./../../server/controllers/admin.reference-threads.server.controller.mjs');
+> = require('./../../server/controllers/admin.reference-threads.server.controller.mts');
 const should: typeof import('should') = require('should');
 
 type ReferenceThreadRecord =

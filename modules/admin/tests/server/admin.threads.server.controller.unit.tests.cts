@@ -1,7 +1,7 @@
 const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon: typeof import('sinon') = require('sinon');
 
-const adminThreads: typeof import('../../server/controllers/admin.threads.server.controller.mjs').default = require('./../../server/controllers/admin.threads.server.controller.mjs');
+const adminThreads: typeof import('../../server/controllers/admin.threads.server.controller.mts').default = require('./../../server/controllers/admin.threads.server.controller.mts');
 require('should');
 
 const Thread = mongoose.model('Thread');

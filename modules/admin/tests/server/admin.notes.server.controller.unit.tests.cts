@@ -5,11 +5,11 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon = require('sinon');
 
 type NotesController =
-  typeof import('../../server/controllers/admin.notes.server.controller.mjs');
+  typeof import('../../server/controllers/admin.notes.server.controller.mts');
 const adminNotes: Pick<
   NotesController,
   'addNote' | 'getNotes'
-> = require('./../../server/controllers/admin.notes.server.controller.mjs');
+> = require('./../../server/controllers/admin.notes.server.controller.mts');
 const errorService: typeof import('../../../core/server/services/error.server.service.mjs') = require('./../../../core/server/services/error.server.service.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
 const should: typeof import('should') = require('should');

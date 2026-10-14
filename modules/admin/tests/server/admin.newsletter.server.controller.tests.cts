@@ -50,7 +50,7 @@ interface NewsletterController {
   audience: Handler;
   splitSubscribers: Handler;
 }
-const adminNewsletter: NewsletterController = require('../../server/controllers/admin.newsletter.server.controller.mjs');
+const adminNewsletter: NewsletterController = require('../../server/controllers/admin.newsletter.server.controller.mts');
 const errorService: typeof import('../../../core/server/services/error.server.service.mjs') = require('../../../core/server/services/error.server.service.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
 require('should');

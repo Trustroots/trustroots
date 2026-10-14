@@ -2,11 +2,11 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon = require('sinon');
 const should: typeof import('should') = require('should');
 type AuditController =
-  typeof import('../../server/controllers/admin.audit-log.server.controller.mjs');
+  typeof import('../../server/controllers/admin.audit-log.server.controller.mts');
 const controller: Pick<
   AuditController,
   'list' | 'actors'
-> = require('../../server/controllers/admin.audit-log.server.controller.mjs');
+> = require('../../server/controllers/admin.audit-log.server.controller.mts');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
 type UserRecord =
   import('../../../../testutils/server/model-contracts.mts').UserRecord;
