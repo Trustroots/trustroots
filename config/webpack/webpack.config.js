@@ -17,6 +17,12 @@ const { join } = require('path');
 
 const shims = require('./webpack.shims');
 const basedir = join(__dirname, '../..');
+const {
+  aliases,
+  commonJsAliases,
+  browserFallbacks,
+  jsExtensionAlias,
+} = require('../client/aliases.cjs');
 
 const config = require('./../config.mjs');
 
@@ -81,32 +87,21 @@ module.exports = webpackMerge.merge(shims, {
     },
   },
   resolve: {
-    // Keep webpack's defaults explicit for eslint-import-resolver-webpack.
+    // Preserve TypeScript resolution for the Webpack fallback.
     extensions: ['.ts', '.tsx', '.js', '.json', '.wasm'],
     // Preserve explicit JavaScript imports while client modules move to TypeScript.
-    extensionAlias: { '.js': ['.js', '.ts', '.tsx'] },
-    fallback: {
-      querystring: require.resolve('querystring-es3'),
-      url: require.resolve('url/'),
-    },
+    extensionAlias: { '.js': jsExtensionAlias },
+    fallback: browserFallbacks,
     alias: {
-      '@': basedir,
-
-      // These are (mainly) to use within less/css files
-      img: join(basedir, 'public', 'img'),
-      less: join(basedir, 'modules', 'core', 'client', 'less'),
-      modules: join(basedir, 'modules'),
-
-      // Use the CommonJS targets selected by nostr-tools' public exports.
-      // Explicit aliases keep Webpack and ESLint's Webpack resolver aligned.
+      ...aliases,
+      ...Object.fromEntries(
+        Object.entries(commonJsAliases).map(([name, filename]) => [
+          `${name}$`,
+          filename,
+        ]),
+      ),
+      // The Webpack fallback also uses the package's CommonJS root entry.
       'nostr-tools$': require.resolve('nostr-tools'),
-      'nostr-tools/relay$': require.resolve('nostr-tools/relay'),
-      'nostr-tools/nip19$': require.resolve('nostr-tools/nip19'),
-
-      // TanStack Router's CommonJS build requires tiny-warning directly.
-      // Pin it to its CommonJS entry so Webpack does not select the package's
-      // ESM `module` field and turn the required function into a namespace.
-      'tiny-warning$': require.resolve('tiny-warning'),
     },
   },
   module: {

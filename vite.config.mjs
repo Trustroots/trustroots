@@ -8,9 +8,11 @@ import react from '@vitejs/plugin-react';
 import { defineConfig, transformWithOxc } from 'vite';
 
 import config from './config/config.mjs';
+import clientAliases from './config/client/aliases.cjs';
 import { rtlStylesheetPlugin } from './config/vite/rtl-stylesheet.mjs';
 
 const require = createRequire(import.meta.url);
+const { aliases, commonJsAliases, browserFallbacks } = clientAliases;
 const root = fileURLToPath(new URL('.', import.meta.url));
 const apiTarget = process.env.TRUSTROOTS_API_URL || 'http://localhost:3001';
 const port = Number(process.env.PORT) || 3000;
@@ -40,11 +42,14 @@ const legacyLessImports = {
       async loadFile(filename, _currentDirectory, options) {
         const [, alias, path] = /^~([^/]+)\/(.*)$/.exec(filename);
         const base = {
-          less: resolve(root, 'modules/core/client/less'),
-          modules: resolve(root, 'modules'),
+          less: aliases.less,
+          modules: aliases.modules,
           bootstrap: resolve(root, 'node_modules/bootstrap'),
           'mapbox-gl': resolve(root, 'node_modules/mapbox-gl'),
         }[alias];
+        if (!base) {
+          throw new Error(`No stylesheet directory for "~${alias}/".`);
+        }
         const resolved = this.tryAppendExtension(
           resolve(base, path),
           options.ext,
@@ -69,8 +74,14 @@ const legacyCssImports = {
     const transformed = code.replace(
       /@import ['"]~([^/'"]+)\/([^'"]+\.css)['"];/g,
       (_, alias, path) => {
-        const base = alias === 'modules' ? root : resolve(root, 'node_modules');
-        const filename = resolve(base, alias, path);
+        // `modules` is the source tree. Other `~name/*.css` imports are npm
+        // packages. `less` is both a source alias and a package, so it must
+        // not be taken from the shared alias map here.
+        const base =
+          alias === 'modules'
+            ? aliases.modules
+            : resolve(root, 'node_modules', alias);
+        const filename = resolve(base, path);
         return `@import (inline) '${filename}';`;
       },
     );
@@ -105,19 +116,12 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': root,
-      img: resolve(root, 'public/img'),
-      less: resolve(root, 'modules/core/client/less'),
-      modules: resolve(root, 'modules'),
-      '~img': resolve(root, 'public/img'),
-      '~modules': resolve(root, 'modules'),
+      ...aliases,
+      '~img': aliases.img,
+      '~modules': aliases.modules,
       '~bootstrap': resolve(root, 'node_modules/bootstrap'),
-      // Keep these CommonJS targets aligned with the current Webpack build.
-      'nostr-tools/relay': require.resolve('nostr-tools/relay'),
-      'nostr-tools/nip19': require.resolve('nostr-tools/nip19'),
-      'tiny-warning': require.resolve('tiny-warning'),
-      querystring: require.resolve('querystring-es3'),
-      url: require.resolve('url/'),
+      ...commonJsAliases,
+      ...browserFallbacks,
     },
   },
   optimizeDeps: {
