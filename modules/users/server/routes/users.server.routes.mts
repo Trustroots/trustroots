@@ -11,7 +11,20 @@ import targetedRequestLimit from '../../../core/server/middleware/targeted-reque
  * Module dependencies.
  */
 
-const defaultExport = function (app) {
+type RouteHandler = (...arguments_: never[]) => unknown;
+interface RouteChain {
+  all(...handlers: RouteHandler[]): RouteChain;
+  get(...handlers: RouteHandler[]): RouteChain;
+  post(...handlers: RouteHandler[]): RouteChain;
+  put(...handlers: RouteHandler[]): RouteChain;
+  delete(...handlers: RouteHandler[]): RouteChain;
+}
+interface RouteApplication {
+  route(path: string): RouteChain;
+  param(name: string, handler: RouteHandler): void;
+}
+
+const defaultExport = function (app: RouteApplication) {
   // Setting up the users profile api
   app
     .route('/api/users')

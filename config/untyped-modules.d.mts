@@ -79,6 +79,21 @@ declare module 'passport' {
   }
 
   interface PassportAuthenticator {
+    use(strategy: unknown): void;
+    initialize(): import('express').RequestHandler;
+    session(): import('express').RequestHandler;
+    serializeUser<User>(
+      handler: (
+        user: User,
+        done: (error: Error | null, session: unknown) => void,
+      ) => void,
+    ): void;
+    deserializeUser<Session, User>(
+      handler: (
+        session: Session,
+        done: (error: Error | null, user: User | false | null) => void,
+      ) => void,
+    ): void;
     authenticate<User>(
       strategy: string,
       callback: (
@@ -91,6 +106,36 @@ declare module 'passport' {
 
   const passport: PassportAuthenticator;
   export default passport;
+}
+
+declare module 'passport-local' {
+  interface AuthenticationInfo {
+    message?: string;
+  }
+
+  type VerifyCallback = (
+    error: Error | null,
+    user?: unknown | false | null,
+    info?: AuthenticationInfo,
+  ) => void;
+
+  type VerifyFunction = (
+    username: unknown,
+    password: unknown,
+    done: VerifyCallback,
+  ) => void;
+
+  interface StrategyOptions {
+    usernameField?: string;
+    passwordField?: string;
+  }
+
+  export class Strategy {
+    constructor(options: StrategyOptions, verify: VerifyFunction);
+  }
+
+  const passportLocal: { Strategy: typeof Strategy };
+  export default passportLocal;
 }
 
 declare module 'basic-auth' {

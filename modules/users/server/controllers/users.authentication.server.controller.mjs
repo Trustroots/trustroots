@@ -1,4 +1,3 @@
-import service from './users.authentication.server.controller.mts';
-
-export default service;
-export { service as 'module.exports' };
+export { default } from './users.authentication.server.controller.mts';
+export * from './users.authentication.server.controller.mts';
+export { default as 'module.exports' } from './users.authentication.server.controller.mts';

@@ -69,7 +69,7 @@ describe('Local passport strategy unit tests', () => {
 
     const passportUse = sinon.spy();
     const configureStrategy = mockModule<() => void>(
-      require.resolve('../../../server/config/strategies/local.mjs'),
+      require.resolve('../../../server/config/strategies/local.mts'),
       {
         mongoose: {
           model: () => User,

@@ -1,16 +1,29 @@
 import passport from 'passport';
 import passportLocal from 'passport-local';
-import mongoose from 'mongoose';
-import passwordHashing from '../../services/password-hashing.server.service.mjs';
-import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../../lib/account-identifier.server.mjs';
+import mongoose, { type FilterQuery } from 'mongoose';
+import passwordHashing from '../../services/password-hashing.server.service.mts';
+import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../../lib/account-identifier.server.mts';
+import type {
+  UserServerDocument,
+  UserServerModel,
+  UserServerRecord,
+} from '../../models/user.server.types.mts';
+
+type VerifyCallback = (
+  error: Error | null,
+  user?: UserServerDocument | false | null,
+  info?: { message: string },
+) => void;
 /**
  * Module dependencies.
  */
-const LocalStrategy = passportLocal.Strategy;
-const User = mongoose.model('User');
+const User = mongoose.model<UserServerRecord, UserServerModel>('User');
 
-const rejectCredentials = (password, done) =>
-  passwordHashing
+function rejectCredentials(
+  password: unknown,
+  done: VerifyCallback,
+): Promise<void> {
+  return passwordHashing
     .verifyPassword(typeof password === 'string' ? password : '', null, null)
     .then(() =>
       done(null, false, {
@@ -18,16 +31,24 @@ const rejectCredentials = (password, done) =>
       }),
     )
     .catch(done);
+}
 
-const defaultExport = function () {
+function findUser(
+  filter: FilterQuery<UserServerRecord>,
+  callback: (error: Error | null, user: UserServerDocument | null) => void,
+): unknown {
+  return Reflect.apply(User.findOne, User, [filter, callback]);
+}
+
+const defaultExport = function (): void {
   // Use local strategy
   passport.use(
-    new LocalStrategy(
+    new passportLocal.Strategy(
       {
         usernameField: 'username',
         passwordField: 'password',
       },
-      function (username, password, done) {
+      function (username: unknown, password: unknown, done: VerifyCallback) {
         if (
           typeof username !== 'string' ||
           typeof password !== 'string' ||
@@ -36,7 +57,7 @@ const defaultExport = function () {
           return rejectCredentials(password, done);
         }
 
-        User.findOne(
+        return findUser(
           {
             $or: [
               { username: username.toLowerCase() },
@@ -68,5 +89,6 @@ const defaultExport = function () {
     ),
   );
 };
+
 export default defaultExport;
 export { defaultExport as 'module.exports' };

@@ -1,5 +1,14 @@
-import mongoose from 'mongoose';
-const schema = new mongoose.Schema({
+import mongoose, { type Types } from 'mongoose';
+
+interface UnifiedPushRegistrationRecord {
+  user: Types.ObjectId;
+  endpoint: string;
+  publicKey: string;
+  auth: string;
+  updated: Date;
+}
+
+const schema = new mongoose.Schema<UnifiedPushRegistrationRecord>({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -24,4 +33,7 @@ const schema = new mongoose.Schema({
     default: Date.now,
   },
 });
-mongoose.model('UnifiedPushRegistration', schema);
+mongoose.model<UnifiedPushRegistrationRecord>(
+  'UnifiedPushRegistration',
+  schema,
+);

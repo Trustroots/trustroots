@@ -76,13 +76,17 @@ const emailService = emailServiceModule as {
 const fileRemovalService = fileRemovalServiceModule as {
   removeLocalPath(path: string): Promise<void>;
 };
-interface PopulatedTribeDocument {
+type TribeCountResult = NonNullable<
+  Parameters<Parameters<typeof updateCount>[3]>[1]
+>;
+type PopulatedTribeDocument = TribeCountResult & {
   _id: mongoose.Types.ObjectId;
-  slug: string;
-  label: string;
-  count: number;
-  image?: string;
-  color?: string;
+};
+
+function hasTribeId(
+  tribe: TribeCountResult | null | undefined,
+): tribe is PopulatedTribeDocument {
+  return Boolean(tribe && tribe._id);
 }
 
 /**
@@ -1165,9 +1169,9 @@ service.joinTribe = function (req, res) {
           tribeId,
           1,
           true,
-          function (err: Error | null, tribe: PopulatedTribeDocument | null) {
+          function (err: Error | null, tribe?: TribeCountResult | null) {
             // Tribe by id `req.body.id` didn't exist
-            if (!tribe || !tribe._id) {
+            if (!hasTribeId(tribe)) {
               return res.status(400).send({
                 message: errorService.getErrorMessageByKey('bad-request'),
               });
@@ -1287,9 +1291,9 @@ service.leaveTribe = function (req, res) {
           tribeId,
           -1,
           true,
-          function (err: Error | null, tribe: PopulatedTribeDocument | null) {
+          function (err: Error | null, tribe?: TribeCountResult | null) {
             // Tribe by id `req.body.id` didn't exist
-            if (!tribe || !tribe._id) {
+            if (!hasTribeId(tribe)) {
               return res.status(400).send({
                 message: errorService.getErrorMessageByKey('bad-request'),
               });

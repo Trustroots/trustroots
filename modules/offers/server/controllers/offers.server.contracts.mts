@@ -1,4 +1,4 @@
-import type { NextFunction, Response } from 'express';
+import type { NextFunction } from 'express';
 import type { Types } from 'mongoose';
 import type {
   CreateOfferRequest,
@@ -122,10 +122,11 @@ export type OfferResponseBody =
   | OfferSearchFeatureCollection
   | Array<OfferSanitisedPayload>;
 
-export type OfferResponse = Pick<
-  Response<OfferResponseBody>,
-  'status' | 'send' | 'json'
->;
+export interface OfferResponse {
+  status(code: number): OfferResponse;
+  send(body: OfferResponseBody): OfferResponse;
+  json(body: OfferResponseBody): OfferResponse;
+}
 /** The controller methods only consume this subset of Express' request object.
  * Keeping the protocol structural also lets unit tests model malformed input. */
 export interface OfferRequest<Body = Record<string, unknown>> {

@@ -14,7 +14,7 @@ import type {
 } from '../models/user.server.types.mts';
 
 interface AgendaJob {
-  attrs: { _id: { toString(): string } };
+  attrs: { _id?: { toString(): string } };
 }
 
 type WaterfallCallback = (error?: Error | null, ...results: unknown[]) => void;
