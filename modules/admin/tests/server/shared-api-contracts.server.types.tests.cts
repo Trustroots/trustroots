@@ -1,11 +1,19 @@
-const assert = require('assert/strict');
-const { execFileSync } = require('child_process');
-const path = require('path');
+const assert: typeof import('node:assert/strict') = require('assert/strict');
+const {
+  execFileSync,
+}: typeof import('node:child_process') = require('child_process');
+const path: typeof import('node:path') = require('path');
+
+type Diagnostic = { code: number; messageText: string };
 
 describe('Shared API contract compiler regressions', function () {
   this.timeout(30000);
   const root = path.resolve(__dirname, '../../../..');
-  function diagnostics(file, before, after) {
+  function diagnostics(
+    file?: string,
+    before?: string,
+    after?: string,
+  ): Diagnostic[] {
     // Release each compiler's memory before the next case and avoid inheriting
     // coverage hooks: these checks read source code rather than execute it.
     const output = execFileSync(
@@ -16,7 +24,7 @@ describe('Shared API contract compiler regressions', function () {
       ],
       { env: { ...process.env, NODE_OPTIONS: '' }, encoding: 'utf8' },
     );
-    return JSON.parse(output);
+    return JSON.parse(output) as Diagnostic[];
   }
 
   it('checks the unmodified shared contracts and server payload builders', () => {

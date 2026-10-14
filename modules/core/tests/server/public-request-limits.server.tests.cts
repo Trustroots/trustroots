@@ -1,16 +1,16 @@
-const assert = require('node:assert/strict');
-const mongoose = require('mongoose');
-const request = require('supertest');
-const config = require('../../../../config/config.mjs');
-const express = require('../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
-const testutils = require('../../../../testutils/server/server.testutil');
+const assert: typeof import('node:assert/strict') = require('node:assert/strict');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const request: typeof import('supertest') = require('supertest');
+const config: typeof import('../../../../config/config.mjs').default = require('../../../../config/config.mjs');
+const express: import('../../../../testutils/server/model-contracts.mts').TestExpressModule = require('../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mjs') = require('../../../../testutils/server/data.server.testutil');
+const testutils: typeof import('../../../../testutils/server/server.testutil.mts') = require('../../../../testutils/server/server.testutil');
 
 describe('Signup and support request allowances', () => {
   const jobs = testutils.catchJobs();
-  let app;
-  let originalSignup;
-  let originalSupport;
+  let app: import('../../../../testutils/server/model-contracts.mts').TestExpressApp;
+  let originalSignup: typeof config.targetedRequestLimits.signup;
+  let originalSupport: typeof config.targetedRequestLimits.support;
   before(async () => {
     app = await express.init(mongoose.connection);
   });
@@ -25,7 +25,7 @@ describe('Signup and support request allowances', () => {
     await utils.clearDatabase();
   });
 
-  function signup(email) {
+  function signup(email: string) {
     return {
       firstName: 'Amina',
       lastName: 'Vale',
