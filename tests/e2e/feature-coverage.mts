@@ -1718,6 +1718,7 @@ const features = [
       'Later camera commands recenter the raster map after a place search.',
       'Empty map-offers fixture leaves the search map usable.',
       'Rendered map offer deep-link opens deterministic sidebar data.',
+      'Trackpad pinch zoom preserves the centre selected by place search.',
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'search page loads for a signed in member'),

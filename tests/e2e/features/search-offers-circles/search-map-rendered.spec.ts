@@ -1070,6 +1070,7 @@ test.describe('rendered search map feature coverage', () => {
     // would hide a reset occurring immediately after selecting the result.
     await expect.poll(() => readMapZoom(page)).toBeGreaterThan(7);
     const searchedZoom = await readMapZoom(page);
+    expectPresent(searchedZoom);
     await page
       .locator('.search-map-container .overlays')
       .dispatchEvent('wheel', {
