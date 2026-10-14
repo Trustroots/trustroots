@@ -1,0 +1,2074 @@
+/**
+ * Unit tests for the messages controller guard, validation and error
+ * branches that the higher-level route tests do not reach. Handlers are
+ * called directly with mock req/res objects against the test database.
+ */
+import type { FilterQuery, UpdateQuery } from 'mongoose';
+import type {
+  MessageDocument,
+  MessageModel,
+  MessageRecord,
+  ThreadModel,
+  ThreadRecord,
+  UserDocument,
+  UserModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+
+type LegacyCallback<T = unknown> = (error: Error | null, result?: T) => void;
+type PaginationPayload = {
+  docs: object[] | null;
+  pages?: number;
+  total?: number;
+};
+
+const mongoose: typeof import('mongoose') = require('mongoose');
+const sinon: typeof import('sinon') = require('sinon');
+
+const messagesController: typeof import('../../server/controllers/messages.server.controller.mjs').default = require('./../../server/controllers/messages.server.controller.mjs');
+interface ControllerTestConfig {
+  limits: { messagesToIndividualsThrottle: { count: number } };
+  https: boolean;
+  akismet: { enabled: boolean };
+}
+const config: ControllerTestConfig = require('./../../../../config/config.mjs');
+const spamService = require('./../../../core/server/services/spam.server.service.mjs');
+const messageStatService = require('./../../server/services/message-stat.server.service.mjs');
+const utils = require('../../../../testutils/server/data.server.testutil');
+require('should');
+
+const User = mongoose.model('User') as UserModel;
+const Thread: ThreadModel = mongoose.model('Thread');
+type MessagePaginationResult = {
+  docs: MessageDocument[];
+  pages: number;
+  total: number;
+};
+type MessageTestModel = MessageModel & {
+  paginate(
+    query: FilterQuery<MessageRecord>,
+    options: { page: number; limit: number; sort?: Record<string, 1 | -1> },
+  ): Promise<MessagePaginationResult>;
+};
+const Message = mongoose.model('Message') as MessageTestModel;
+
+function typedStub<TArgs extends readonly unknown[]>(
+  target: object,
+  method: string,
+): import('sinon').SinonStub<TArgs, unknown> {
+  const methods = target as Record<string, (...args: TArgs) => unknown>;
+  return sinon.stub(methods, method) as unknown as import('sinon').SinonStub<
+    TArgs,
+    unknown
+  >;
+}
+
+/**
+ * Response mock that resolves a promise when the controller responds, so both
+ * synchronous guards and async waterfalls can be awaited.
+ */
+interface DeferredResponse {
+  statusCode: number;
+  body: object;
+  locals?: { paginate?: { href(input: { page: number }): string } };
+  linkHeader?: { next?: string };
+  links(links?: { next?: string }): DeferredResponse;
+  status(code: number): DeferredResponse;
+  send(body: object): DeferredResponse;
+  json(body: object): DeferredResponse;
+  waitForResponse(): Promise<DeferredResponse>;
+}
+
+function bodyField<T>(body: object, field: string): T {
+  return (body as Record<string, unknown>)[field] as T;
+}
+
+function bodyArray<T>(body: object): T[] {
+  return body as T[];
+}
+
+function required<T>(value: T): NonNullable<T> {
+  if (value === null || value === undefined) throw new Error('Expected value');
+  return value as NonNullable<T>;
+}
+
+function deferredResponse(): DeferredResponse {
+  let resolveResponse: (response: DeferredResponse) => void;
+  const promise = new Promise<DeferredResponse>(resolve => {
+    resolveResponse = resolve;
+  });
+
+  const res = {
+    statusCode: 200,
+    body: {},
+    links: () => res,
+  } as DeferredResponse;
+  res.status = function (code) {
+    res.statusCode = code;
+    return res;
+  };
+  res.send = function (body: object) {
+    res.body = body;
+    resolveResponse(res);
+    return res;
+  };
+  res.json = function (body: object) {
+    res.body = body;
+    resolveResponse(res);
+    return res;
+  };
+  res.waitForResponse = () => promise;
+  return res;
+}
+
+describe('Messages controller unit tests', () => {
+  describe('draft previews', () => {
+    it('requires authentication', () => {
+      const res = deferredResponse();
+      messagesController.preview({}, res);
+      res.statusCode.should.equal(403);
+    });
+
+    for (const content of [undefined, null, 7, {}, '', '<p> </p>']) {
+      it(`rejects invalid draft content: ${JSON.stringify(content)}`, () => {
+        const res = deferredResponse();
+        messagesController.preview({ user: {}, body: { content } }, res);
+        res.statusCode.should.equal(400);
+      });
+    }
+
+    it('rejects a missing body', () => {
+      const res = deferredResponse();
+      messagesController.preview({ user: {} }, res);
+      res.statusCode.should.equal(400);
+    });
+
+    it('formats and sanitises a draft without altering messages, threads or statistics', async () => {
+      const res = deferredResponse();
+      const content =
+        '<p><strong>Fictional draft</strong> <a href="javascript:alert(1)">Link</a></p><script>alert(1)</script>';
+      const textService = require('../../../core/server/services/text.server.service.mjs');
+      const messageBefore = await Message.find({}).lean();
+      const threadBefore = await Thread.find({}).lean();
+      const statsBefore = await mongoose.model('MessageStat').find({}).lean();
+      messagesController.preview({ user: {}, body: { content } }, res);
+      bodyField<string>(res.body, 'content').should.equal(
+        textService.html(content),
+      );
+      bodyField<string>(res.body, 'content').should.containEql(
+        '<b>Fictional draft</b>',
+      );
+      bodyField<string>(res.body, 'content').should.not.containEql('<script');
+      bodyField<string>(res.body, 'content').should.not.containEql(
+        'javascript:',
+      );
+      (await Message.find({}).lean()).should.deepEqual(messageBefore);
+      (await Thread.find({}).lean()).should.deepEqual(threadBefore);
+      (await mongoose.model('MessageStat').find({}).lean()).should.deepEqual(
+        statsBefore,
+      );
+    });
+  });
+  afterEach(() => {
+    sinon.restore();
+    return utils.clearDatabase();
+  });
+
+  it('paginates stored messages with the existing Mongoose plugin', async () => {
+    const [sender, recipient] = await utils.saveUsers(
+      utils.generateUsers(2, { public: true }),
+    );
+    await Message.create(
+      [1, 2, 3].map(sequence => ({
+        userFrom: sender._id,
+        userTo: recipient._id,
+        content: `Anonymous message ${sequence}`,
+        created: new Date(Date.UTC(2020, 0, sequence)),
+      })),
+    );
+
+    const page = await Message.paginate(
+      { userFrom: sender._id },
+      { page: 2, limit: 1, sort: { created: -1 } },
+    );
+
+    page.total.should.equal(3);
+    page.pages.should.equal(3);
+    page.docs.length.should.equal(1);
+    page.docs[0].content!.should.equal('Anonymous message 2');
+  });
+
+  describe('guards require an authenticated user', () => {
+    it('inbox responds with 403', async () => {
+      const res = deferredResponse();
+      messagesController.inbox({}, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(403);
+    });
+
+    it('send responds with 403', async () => {
+      const res = deferredResponse();
+      messagesController.send({}, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(403);
+    });
+
+    it('markRead responds with 403', async () => {
+      const res = deferredResponse();
+      messagesController.markRead({}, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(403);
+    });
+
+    it('messagesCount responds with 403', async () => {
+      const res = deferredResponse();
+      messagesController.messagesCount({}, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(403);
+    });
+
+    it('sync responds with 403', async () => {
+      const res = deferredResponse();
+      messagesController.sync({}, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(403);
+    });
+
+    it('threadByUser responds with 403', async () => {
+      const res = deferredResponse();
+      messagesController.threadByUser({}, res, () => {}, 'x');
+      await res.waitForResponse();
+      res.statusCode.should.equal(403);
+    });
+  });
+
+  describe('send validation', () => {
+    let sender: UserDocument;
+
+    beforeEach(async () => {
+      [sender] = await utils.saveUsers(
+        utils.generateUsers(1, { public: true }),
+      );
+      sender.roles = ['user'];
+    });
+
+    it('requires a userTo field', async () => {
+      const res = deferredResponse();
+      messagesController.send({ user: sender, body: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      bodyField<string>(res.body, 'message').should.equal(
+        'Missing `userTo` field.',
+      );
+    });
+
+    it('rejects an invalid userTo id', async () => {
+      const res = deferredResponse();
+      messagesController.send(
+        { user: sender, body: { userTo: 'not-an-id' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('rejects messaging yourself', async () => {
+      const res = deferredResponse();
+      messagesController.send(
+        { user: sender, body: { userTo: sender._id.toString() } },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(403);
+    });
+
+    it('requires message content', async () => {
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: { userTo: new mongoose.Types.ObjectId().toString() },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      bodyField<string>(res.body, 'message').should.equal(
+        'Please write a message.',
+      );
+    });
+
+    it('returns 404 when the recipient does not exist', async () => {
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: new mongoose.Types.ObjectId().toString(),
+            content: 'Hello there friend',
+          },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(404);
+    });
+
+    it('rejects a first message from an empty profile', async () => {
+      const [receiver] = await utils.saveUsers(
+        utils.generateUsers(1, { public: true }),
+      );
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello there friend',
+          },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      bodyField<string>(res.body, 'error').should.equal('empty-profile');
+    });
+
+    it('throttles users who message too many people', async () => {
+      const throttle = config.limits.messagesToIndividualsThrottle;
+      const originalCount = throttle.count;
+      throttle.count = -1;
+      try {
+        const res = deferredResponse();
+        messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: new mongoose.Types.ObjectId().toString(),
+              content: 'Hello there friend',
+            },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(429);
+      } finally {
+        throttle.count = originalCount;
+      }
+    });
+
+    for (const role of ['welcome-team', 'admin']) {
+      it(`exempts ${role} from throttling while retaining recipient validation`, async () => {
+        sender.roles = ['user', role];
+        const distinct = sinon
+          .stub(Message, 'distinct')
+          .resolves(
+            Array.from(
+              { length: config.limits.messagesToIndividualsThrottle.count + 1 },
+              () => new mongoose.Types.ObjectId(),
+            ),
+          );
+        const res = deferredResponse();
+        await messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: new mongoose.Types.ObjectId().toString(),
+              content: 'Welcome to the community.',
+            },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(404);
+        distinct.called.should.equal(false);
+
+        sender.roles = ['user'];
+        const revokedResponse = deferredResponse();
+        await messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: new mongoose.Types.ObjectId().toString(),
+              content: 'Welcome to the community.',
+            },
+          },
+          revokedResponse,
+        );
+        await revokedResponse.waitForResponse();
+        revokedResponse.statusCode.should.equal(429);
+        distinct.calledOnce.should.equal(true);
+      });
+    }
+
+    it('sends a message successfully', async () => {
+      const senderDoc = required(await User.findById(sender._id));
+      senderDoc.description =
+        'I am a long-time member of this community and I love to travel and host people from all over the world. ' +
+        'I enjoy cooking, cycling, hiking and sharing stories with travellers passing through my town.';
+      await senderDoc.save();
+
+      const [receiver] = await utils.saveUsers(
+        utils.generateUsers(1, { public: true }),
+      );
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: senderDoc,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello there, would love to host you!',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      bodyField<string>(res.body, 'content').should.containEql('Hello there');
+    });
+  });
+
+  describe('threadByUser validation', () => {
+    it('rejects an invalid user id', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const res = deferredResponse();
+      messagesController.threadByUser({ user }, res, () => {}, 'not-an-id');
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+  });
+
+  describe('thread', () => {
+    it('returns sanitized messages', () => {
+      const res = deferredResponse();
+      messagesController.thread(
+        { messages: [{ content: '<b>hi</b><script>x</script>' }] },
+        res,
+      );
+      res.body.should.be.an.Array();
+      bodyArray<{ content: string }>(res.body)[0].content.should.equal(
+        '<b>hi</b>',
+      );
+    });
+
+    it('returns an empty array without messages', () => {
+      const res = deferredResponse();
+      messagesController.thread({}, res);
+      res.body.should.deepEqual([]);
+    });
+  });
+
+  describe('sync date validation', () => {
+    let user: UserDocument;
+
+    beforeEach(async () => {
+      [user] = await utils.saveUsers(utils.generateUsers(1));
+    });
+
+    it('rejects an invalid dateFrom', async () => {
+      const res = deferredResponse();
+      messagesController.sync({ user, query: { dateFrom: 'nonsense' } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      bodyField<string>(res.body, 'message').should.equal(
+        'Invalid `dateFrom`.',
+      );
+    });
+
+    it('rejects an invalid dateTo', async () => {
+      const res = deferredResponse();
+      messagesController.sync(
+        { user, query: { dateFrom: '2020-01-01', dateTo: 'nonsense' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      bodyField<string>(res.body, 'message').should.equal('Invalid `dateTo`.');
+    });
+
+    it('rejects dateFrom later than dateTo', async () => {
+      const res = deferredResponse();
+      messagesController.sync(
+        { user, query: { dateFrom: '2021-01-01', dateTo: '2020-01-01' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      bodyField<string>(res.body, 'message').should.containEql(
+        'cannot be later',
+      );
+    });
+
+    it('returns data for a valid date range', async () => {
+      const res = deferredResponse();
+      messagesController.sync(
+        { user, query: { dateFrom: '2020-01-01', dateTo: '2021-01-01' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.body.should.have.property('messages');
+      res.body.should.have.property('users');
+    });
+  });
+
+  describe('markAllMessagesToUserNotified', () => {
+    it('updates without error for a user with no messages', done => {
+      messagesController.markAllMessagesToUserNotified(
+        new mongoose.Types.ObjectId().toString(),
+        (err: Error | null) => {
+          (err === null || err === undefined).should.be.true();
+          done();
+        },
+      );
+    });
+
+    it('marks every message to the user without changing other recipients', async () => {
+      const [sender, recipient, otherRecipient] = await utils.saveUsers(
+        utils.generateUsers(3, { public: true }),
+      );
+      await Message.create([
+        {
+          userFrom: sender._id,
+          userTo: recipient._id,
+          content: 'First message',
+        },
+        {
+          userFrom: sender._id,
+          userTo: recipient._id,
+          content: 'Second message',
+        },
+        {
+          userFrom: sender._id,
+          userTo: otherRecipient._id,
+          content: 'Other message',
+        },
+      ]);
+
+      await new Promise<void>((resolve, reject) => {
+        messagesController.markAllMessagesToUserNotified(
+          recipient._id.toString(),
+          (err: Error | null) => (err ? reject(err) : resolve()),
+        );
+      });
+
+      const messages = await Message.find().sort('content');
+      const recipientMessages = messages.filter(message =>
+        required(message.userTo).equals(recipient._id),
+      );
+      const otherMessages = messages.filter(message =>
+        required(message.userTo).equals(otherRecipient._id),
+      );
+      recipientMessages.length.should.equal(2);
+      recipientMessages
+        .every(message => message.notificationCount === 2)
+        .should.be.true();
+      otherMessages
+        .every(message => message.notificationCount === 0)
+        .should.be.true();
+    });
+  });
+
+  describe('sanitizeMessages', () => {
+    it('returns an empty array for missing input', () => {
+      const sanitizeMessages = messagesController.sanitizeMessages as (
+        input: MessageRecord[] | null,
+      ) => MessageRecord[];
+      sanitizeMessages(null).should.deepEqual([]);
+      sanitizeMessages([]).should.deepEqual([]);
+    });
+  });
+
+  describe('markRead', () => {
+    for (const messageIds of [
+      undefined,
+      null,
+      'invalid',
+      [null],
+      [1],
+      [{}],
+      [{ $ne: null }],
+      ['invalid'],
+      ['abcdefghijklmnopqrstuvwx'],
+    ]) {
+      it(`rejects invalid message identifiers ${JSON.stringify(
+        messageIds,
+      )}`, async () => {
+        const update = sinon.spy(Message, 'update');
+        const res = deferredResponse();
+        messagesController.markRead(
+          {
+            user: { _id: new mongoose.Types.ObjectId() },
+            body: { messageIds },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+        update.called.should.be.false();
+      });
+    }
+
+    it('rejects a missing body and accepts an empty acknowledgement', async () => {
+      const user = { _id: new mongoose.Types.ObjectId() };
+      const missing = deferredResponse();
+      messagesController.markRead({ user }, missing);
+      await missing.waitForResponse();
+      missing.statusCode.should.equal(400);
+      const empty = deferredResponse();
+      messagesController.markRead({ user, body: { messageIds: [] } }, empty);
+      await empty.waitForResponse();
+      empty.statusCode.should.equal(200);
+    });
+
+    it('acknowledges only the recipient’s threads whose latest message is read', async () => {
+      const [sender, receiver, stranger] = await utils.saveUsers(
+        utils.generateUsers(3, { public: true }),
+      );
+      const messages = await Message.create([
+        {
+          content: 'Earlier hello',
+          userFrom: sender._id,
+          userTo: receiver._id,
+        },
+        { content: 'Latest hello', userFrom: sender._id, userTo: receiver._id },
+        {
+          content: 'Separate hello',
+          userFrom: sender._id,
+          userTo: stranger._id,
+        },
+      ]);
+      const threads = await Thread.create([
+        {
+          userFrom: sender._id,
+          userTo: receiver._id,
+          message: messages[1]._id,
+          read: false,
+        },
+        {
+          userFrom: sender._id,
+          userTo: stranger._id,
+          message: messages[2]._id,
+          read: false,
+        },
+      ]);
+      const acknowledge = async (ids: import('mongoose').Types.ObjectId[]) => {
+        const res = deferredResponse();
+        messagesController.markRead(
+          {
+            user: receiver,
+            body: { messageIds: ids.map(id => id.toString()) },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+      };
+      await acknowledge([messages[0]._id]);
+      required(await Thread.findById(threads[0]._id)).read!.should.be.false();
+      await acknowledge([messages[1]._id, messages[2]._id]);
+      required(await Thread.findById(threads[0]._id)).read!.should.be.true();
+      required(await Thread.findById(threads[1]._id)).read!.should.be.false();
+      required(await Message.findById(messages[2]._id)).read!.should.be.false();
+    });
+
+    it('returns 400 when thread acknowledgement fails', async () => {
+      typedStub<
+        [
+          query: FilterQuery<ThreadRecord>,
+          update: UpdateQuery<ThreadRecord>,
+          callback: LegacyCallback,
+        ]
+      >(Thread, 'updateMany').callsFake((query, update, callback) => {
+        callback(new Error('Thread update failed'));
+      });
+      const [receiver] = await utils.saveUsers(utils.generateUsers(1));
+      const res = deferredResponse();
+      messagesController.markRead(
+        {
+          user: receiver,
+          body: { messageIds: [new mongoose.Types.ObjectId().toString()] },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+    it('marks messages as read', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const Message = mongoose.model('Message');
+      const message = await new Message({
+        content: 'Unread hello',
+        userFrom: sender._id,
+        userTo: receiver._id,
+        read: false,
+      }).save();
+
+      const res = deferredResponse();
+      messagesController.markRead(
+        {
+          user: { _id: receiver._id, id: receiver._id.toString() },
+          body: { messageIds: [message._id.toString()] },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+
+      const reloaded = required(await Message.findById(message._id));
+      reloaded.read.should.be.true();
+    });
+
+    it('does not mark another member’s incoming message as read', async () => {
+      const [sender, receiver, stranger] = await utils.saveUsers(
+        utils.generateUsers(3, { public: true }),
+      );
+      const Message = mongoose.model('Message');
+      const message = await new Message({
+        content: 'Unread hello',
+        userFrom: sender._id,
+        userTo: receiver._id,
+        read: false,
+      }).save();
+
+      const res = deferredResponse();
+      messagesController.markRead(
+        {
+          user: { _id: stranger._id, id: stranger._id.toString() },
+          body: { messageIds: [message._id.toString()] },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+
+      const reloaded = required(await Message.findById(message._id));
+      reloaded.read.should.be.false();
+    });
+  });
+
+  describe('messagesCount', () => {
+    it('returns zero for a user with no unread threads', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const res = deferredResponse();
+      messagesController.messagesCount({ user: { _id: user._id } }, res);
+      await res.waitForResponse();
+      bodyField<number>(res.body, 'unread').should.equal(0);
+    });
+  });
+
+  describe('inbox', () => {
+    it('returns an empty inbox', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const res = deferredResponse();
+      messagesController.inbox({ user: { _id: user._id }, query: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.should.deepEqual([]);
+    });
+
+    it('returns sanitized threads for the inbox', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const Message = mongoose.model('Message');
+      const Thread = mongoose.model('Thread');
+      const message = await new Message({
+        content: '<b>Hello</b> there',
+        userFrom: sender._id,
+        userTo: receiver._id,
+      }).save();
+      await new Thread({
+        userFrom: sender._id,
+        userTo: receiver._id,
+        message: message._id,
+        read: false,
+        updated: Date.now(),
+      }).save();
+
+      const res = deferredResponse();
+      messagesController.inbox({ user: { _id: receiver._id }, query: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.should.be.an.Array().with.lengthOf(1);
+      bodyArray<{ message: { excerpt: string } }>(
+        res.body,
+      )[0].message.excerpt.should.containEql('Hello');
+    });
+
+    it('marks threads read when the latest message was sent by the viewer', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const Message = mongoose.model('Message');
+      const Thread = mongoose.model('Thread');
+      const message = await new Message({
+        content: 'My own message',
+        userFrom: sender._id,
+        userTo: receiver._id,
+      }).save();
+      await new Thread({
+        userFrom: sender._id,
+        userTo: receiver._id,
+        message: message._id,
+        read: false,
+        updated: Date.now(),
+      }).save();
+
+      const res = deferredResponse();
+      messagesController.inbox({ user: { _id: sender._id }, query: {} }, res);
+      await res.waitForResponse();
+      bodyArray<{ read: boolean }>(res.body)[0].read.should.be.true();
+    });
+
+    it('shows exactly the threads counted as unread', async () => {
+      const [viewer, sender, other] = await utils.saveUsers(
+        utils.generateUsers(3, { public: true }),
+      );
+      const messages = await Message.create([
+        {
+          content: 'Unread conversation',
+          userFrom: sender._id,
+          userTo: viewer._id,
+        },
+        {
+          content: 'Read conversation',
+          userFrom: other._id,
+          userTo: viewer._id,
+        },
+        {
+          content: 'Sent conversation',
+          userFrom: viewer._id,
+          userTo: other._id,
+        },
+      ]);
+      await Thread.create([
+        {
+          userFrom: sender._id,
+          userTo: viewer._id,
+          message: messages[0]._id,
+          read: false,
+        },
+        {
+          userFrom: other._id,
+          userTo: viewer._id,
+          message: messages[1]._id,
+          read: true,
+        },
+        {
+          userFrom: viewer._id,
+          userTo: other._id,
+          message: messages[2]._id,
+          read: false,
+        },
+      ]);
+
+      const count = deferredResponse();
+      messagesController.messagesCount({ user: viewer }, count);
+      await count.waitForResponse();
+
+      const inbox = deferredResponse();
+      messagesController.inbox(
+        { user: viewer, query: { filter: 'unread' } },
+        inbox,
+      );
+      await inbox.waitForResponse();
+
+      bodyField<number>(count.body, 'unread').should.equal(1);
+      inbox.body.should.be.an.Array().with.lengthOf(1);
+      bodyArray<{ message: { excerpt: string } }>(
+        inbox.body,
+      )[0].message.excerpt.should.equal('Unread conversation');
+    });
+  });
+
+  describe('threadByUser middleware', () => {
+    interface ThreadByUserRequest {
+      user?: UserDocument;
+      query: Record<string, unknown>;
+      messages?: object[];
+    }
+    interface ThreadByUserResult {
+      res: DeferredResponse;
+      nextCalled: boolean;
+      req: ThreadByUserRequest;
+    }
+    function runThreadByUser(
+      req: ThreadByUserRequest,
+      userId: string,
+    ): Promise<ThreadByUserResult> {
+      return new Promise<ThreadByUserResult>(resolve => {
+        const res = deferredResponse();
+        const finish = (nextCalled: boolean) =>
+          resolve({ res, nextCalled, req });
+        res.status = (code: number) => {
+          res.statusCode = code;
+          return res;
+        };
+        res.send = (body: object) => {
+          res.body = body;
+          finish(false);
+          return res;
+        };
+        res.json = (body: object) => {
+          res.body = body;
+          finish(false);
+          return res;
+        };
+        messagesController.threadByUser(req, res, () => finish(true), userId);
+      });
+    }
+
+    it('loads messages without changing message or thread read state', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const Message = mongoose.model('Message');
+      const Thread = mongoose.model('Thread');
+      const message = await new Message({
+        content: 'Unread thread message',
+        userFrom: sender._id,
+        userTo: receiver._id,
+        read: false,
+      }).save();
+      await new Thread({
+        userFrom: sender._id,
+        userTo: receiver._id,
+        message: message._id,
+        read: false,
+        updated: Date.now(),
+      }).save();
+
+      const { nextCalled, req } = await runThreadByUser(
+        { user: receiver, query: {} },
+        sender._id.toString(),
+      );
+      nextCalled.should.be.true();
+      req.messages!.should.be.an.Array().with.lengthOf(1);
+      const thread = required(
+        await Thread.findOne({
+          userFrom: sender._id,
+          userTo: receiver._id,
+        }),
+      );
+      thread.read.should.be.false();
+      required(await Message.findById(message._id)).read.should.be.false();
+    });
+
+    it('skips marking read when the latest message was sent by the viewer', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const Message = mongoose.model('Message');
+      const Thread = mongoose.model('Thread');
+      const message = await new Message({
+        content: 'Sent by viewer',
+        userFrom: sender._id,
+        userTo: receiver._id,
+      }).save();
+      await new Thread({
+        userFrom: sender._id,
+        userTo: receiver._id,
+        message: message._id,
+        read: false,
+        updated: Date.now(),
+      }).save();
+
+      const { nextCalled } = await runThreadByUser(
+        { user: sender, query: {} },
+        receiver._id.toString(),
+      );
+      nextCalled.should.be.true();
+    });
+  });
+
+  describe('send follow-up messages', () => {
+    const longDescription =
+      'I am a long-time member of this community and I love to travel and host people from all over the world. ' +
+      'I enjoy cooking, cycling, hiking and sharing stories with travellers passing through my town.';
+
+    async function prepareSender() {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const senderDoc = required(await User.findById(sender._id));
+      senderDoc.description = longDescription;
+      senderDoc.roles = ['user'];
+      await senderDoc.save();
+      return { sender: senderDoc, receiver };
+    }
+
+    it('allows a follow-up message in an existing thread', async () => {
+      const { sender, receiver } = await prepareSender();
+      const Message = mongoose.model('Message');
+      const Thread = mongoose.model('Thread');
+      const first = await new Message({
+        content: 'First hello',
+        userFrom: sender._id,
+        userTo: receiver._id,
+      }).save();
+      await new Thread({
+        userFrom: sender._id,
+        userTo: receiver._id,
+        message: first._id,
+        read: false,
+        updated: Date.now(),
+      }).save();
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Second hello',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      bodyField<string>(res.body, 'content').should.containEql('Second hello');
+    });
+
+    it('rejects a profile that is too short but not empty', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const senderDoc = required(await User.findById(sender._id));
+      senderDoc.description = 'Too short.';
+      await senderDoc.save();
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: senderDoc,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello there friend',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      bodyField<string>(res.body, 'message').should.containEql(
+        'longer profile description',
+      );
+    });
+
+    it('does not let regular users message suspended members', async () => {
+      const { sender, receiver } = await prepareSender();
+      const receiverDoc = required(await User.findById(receiver._id));
+      receiverDoc.roles = ['user', 'suspended'];
+      await receiverDoc.save();
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello suspended user',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(404);
+    });
+
+    it('lets admins message suspended members', async () => {
+      const { sender, receiver } = await prepareSender();
+      sender.roles = ['user', 'admin'];
+      await sender.save();
+      const receiverDoc = required(await User.findById(receiver._id));
+      receiverDoc.roles = ['user', 'suspended'];
+      await receiverDoc.save();
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello suspended member from admin',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      bodyField<string>(res.body, 'content').should.containEql(
+        'Hello suspended member',
+      );
+    });
+
+    it('returns 404 when recipient lookup errors', async () => {
+      const { sender, receiver } = await prepareSender();
+      typedStub<[query?: FilterQuery<UserRecord>]>(User, 'findOne').returns({
+        exec: (cb: LegacyCallback) => cb(new Error('recipient lookup failed')),
+      });
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello unreachable member',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(404);
+    });
+
+    it('returns 400 when thread upsert fails', async () => {
+      const { sender, receiver } = await prepareSender();
+      typedStub<
+        [
+          query: FilterQuery<ThreadRecord>,
+          update: UpdateQuery<ThreadRecord>,
+          options: Record<string, unknown>,
+          callback: LegacyCallback,
+        ]
+      >(Thread, 'updateOne').callsFake((query, data, options, cb) => {
+        cb(new Error('thread upsert failed'));
+      });
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello without thread write',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('shadow-hides messages from restricted senders', async () => {
+      const { sender, receiver } = await prepareSender();
+      sender.roles = ['user', 'shadowban'];
+      await sender.save();
+      const updateMessageStat = sinon.stub(
+        messageStatService,
+        'updateMessageStat',
+      );
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hidden from recipient',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+
+      const Message = mongoose.model('Message');
+      const saved = required(
+        await Message.findOne({ userFrom: sender._id }).sort({
+          created: -1,
+        }),
+      );
+      saved.shadowHidden.should.be.true();
+      saved.read.should.be.true();
+      sinon.assert.notCalled(updateMessageStat);
+    });
+  });
+
+  describe('sync with messages', () => {
+    it('groups messages and returns related users', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const Message = mongoose.model('Message');
+      await new Message({
+        content: 'Sync test message',
+        userFrom: sender._id,
+        userTo: receiver._id,
+      }).save();
+
+      const res = deferredResponse();
+      messagesController.sync({ user: receiver, query: {} }, res);
+      await res.waitForResponse();
+      bodyField<object[]>(res.body, 'users')
+        .should.be.an.Array()
+        .with.lengthOf(2);
+      Object.keys(
+        bodyField<Record<string, Array<{ content?: string }>>>(
+          res.body,
+          'messages',
+        ),
+      ).length.should.be.aboveOrEqual(1);
+    });
+  });
+
+  describe('messagesCount with unread threads', () => {
+    it('returns the unread thread count', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const Message = mongoose.model('Message');
+      const Thread = mongoose.model('Thread');
+      const message = await new Message({
+        content: 'Unread',
+        userFrom: sender._id,
+        userTo: receiver._id,
+      }).save();
+      await new Thread({
+        userFrom: sender._id,
+        userTo: receiver._id,
+        message: message._id,
+        read: false,
+        updated: Date.now(),
+      }).save();
+
+      const res = deferredResponse();
+      messagesController.messagesCount({ user: { _id: receiver._id } }, res);
+      await res.waitForResponse();
+      bodyField<number>(res.body, 'unread').should.equal(1);
+    });
+  });
+
+  describe('sanitizeMessages with content', () => {
+    it('strips unsafe html from message content', () => {
+      const cleaned = messagesController.sanitizeMessages([
+        { content: '<b>hi</b><script>x</script>' },
+      ]);
+      cleaned[0].content.should.equal('<b>hi</b>');
+    });
+  });
+
+  describe('error paths', () => {
+    it('returns 400 when inbox pagination fails', async () => {
+      typedStub<
+        [
+          query: FilterQuery<ThreadRecord>,
+          options: Record<string, unknown>,
+          callback: LegacyCallback<PaginationPayload>,
+        ]
+      >(Thread, 'paginate').callsFake((query, options, cb) => {
+        cb(new Error('paginate failed'));
+      });
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const res = deferredResponse();
+      messagesController.inbox({ user: { _id: user._id }, query: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('uses excerpt fallback when the thread message is missing', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const message = await new Message({
+        content: 'Will be deleted',
+        userFrom: sender._id,
+        userTo: receiver._id,
+      }).save();
+      const thread = await new Thread({
+        userFrom: sender._id,
+        userTo: receiver._id,
+        message: message._id,
+        read: false,
+        updated: Date.now(),
+      }).save();
+      await Message.deleteOne({ _id: message._id });
+
+      const res = deferredResponse();
+      messagesController.inbox({ user: { _id: receiver._id }, query: {} }, res);
+      await res.waitForResponse();
+      bodyArray<{ message: { excerpt: string } }>(
+        res.body,
+      )[0].message.excerpt.should.equal('…');
+      thread._id.should.be.ok();
+    });
+
+    it('returns 400 when markRead update fails', async () => {
+      typedStub<
+        [
+          query: FilterQuery<MessageRecord>,
+          update: UpdateQuery<MessageRecord>,
+          options: Record<string, unknown>,
+          callback: LegacyCallback,
+        ]
+      >(Message, 'update').callsFake((query, update, options, cb) => {
+        cb(new Error('update failed'));
+      });
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const res = deferredResponse();
+      messagesController.markRead(
+        {
+          user: { id: user._id.toString(), _id: user._id },
+          body: { messageIds: [new mongoose.Types.ObjectId().toString()] },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when messagesCount lookup fails', async () => {
+      typedStub<
+        [query: FilterQuery<ThreadRecord>, callback: LegacyCallback<number>]
+      >(Thread, 'countDocuments').callsFake((query, cb) => {
+        cb(new Error('count failed'));
+      });
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const res = deferredResponse();
+      messagesController.messagesCount({ user: { _id: user._id } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when sync message lookup fails', async () => {
+      typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
+        sort: () => ({
+          select: () => ({
+            exec: (cb: LegacyCallback) => cb(new Error('find failed')),
+          }),
+        }),
+      });
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const res = deferredResponse();
+      messagesController.sync({ user, query: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when threadByUser pagination fails', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      typedStub<
+        [
+          query: FilterQuery<MessageRecord>,
+          options: Record<string, unknown>,
+          callback: LegacyCallback<PaginationPayload>,
+        ]
+      >(Message, 'paginate').callsFake((query, options, cb) => {
+        cb(new Error('paginate failed'));
+      });
+
+      const res = deferredResponse();
+      messagesController.threadByUser(
+        { user: receiver, query: {} },
+        res,
+        () => {},
+        sender._id.toString(),
+      );
+      const response = await res.waitForResponse();
+      response.statusCode.should.equal(400);
+    });
+  });
+
+  describe('uncovered controller paths', () => {
+    const longDescription =
+      'I am a long-time member of this community and I love to travel and host people from all over the world. ' +
+      'I enjoy cooking, cycling, hiking and sharing stories with travellers passing through my town.';
+
+    async function prepareSender() {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const senderDoc = required(await User.findById(sender._id));
+      senderDoc.description = longDescription;
+      senderDoc.roles = ['user'];
+      await senderDoc.save();
+      return { sender: senderDoc, receiver };
+    }
+
+    it('backfills deleted profile ids in inbox threads', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const message = await new Message({
+        content: 'Hello before deletion',
+        userFrom: sender._id,
+        userTo: receiver._id,
+      }).save();
+      await new Thread({
+        userFrom: sender._id,
+        userTo: receiver._id,
+        message: message._id,
+        read: false,
+        updated: Date.now(),
+      }).save();
+      await User.deleteOne({ _id: sender._id });
+
+      const res = deferredResponse();
+      messagesController.inbox({ user: { _id: receiver._id }, query: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.should.be.an.Array().with.lengthOf(1);
+      bodyArray<{ userFrom: { _id: { toString(): string } } }>(res.body)[0]
+        .userFrom._id.toString()
+        .should.equal(sender._id.toString());
+    });
+
+    it('backfills deleted recipient ids in inbox threads', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const message = await new Message({
+        content: 'Hello deleted recipient',
+        userFrom: sender._id,
+        userTo: receiver._id,
+      }).save();
+      await new Thread({
+        userFrom: sender._id,
+        userTo: receiver._id,
+        message: message._id,
+        read: false,
+        updated: Date.now(),
+      }).save();
+      await User.deleteOne({ _id: receiver._id });
+
+      const res = deferredResponse();
+      messagesController.inbox({ user: { _id: sender._id }, query: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.should.be.an.Array().with.lengthOf(1);
+      bodyArray<{ userTo: { _id: { toString(): string } } }>(res.body)[0]
+        .userTo._id.toString()
+        .should.equal(receiver._id.toString());
+    });
+
+    it('adds a next page link and excerpt fallback for empty thread messages', async () => {
+      const originalHttps = config.https;
+      config.https = true;
+      const viewerId = new mongoose.Types.ObjectId();
+      const otherId = new mongoose.Types.ObjectId();
+      const threadId = new mongoose.Types.ObjectId();
+      typedStub<
+        [
+          query: FilterQuery<ThreadRecord>,
+          options: Record<string, unknown>,
+          callback: LegacyCallback<PaginationPayload>,
+        ]
+      >(Thread, 'paginate').callsFake((query, options, cb) => {
+        cb(null, {
+          docs: [
+            {
+              _id: threadId,
+              message: {},
+              read: false,
+              userFrom: { _id: viewerId },
+              userTo: { _id: otherId },
+              toObject() {
+                return {
+                  _id: threadId,
+                  message: {},
+                  read: false,
+                  userFrom: { _id: viewerId },
+                  userTo: { _id: otherId },
+                };
+              },
+            },
+          ],
+          pages: 2,
+        });
+      });
+
+      try {
+        const res = deferredResponse();
+        res.locals = {
+          paginate: {
+            href: ({ page }) => `/api/messages?page=${page}`,
+          },
+        };
+        res.links = links => {
+          res.linkHeader = links;
+          return res;
+        };
+
+        messagesController.inbox(
+          { user: { _id: viewerId }, query: { page: 1, limit: 1 } },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+        res.linkHeader!.next!.should.containEql('https://');
+        res.linkHeader!.next!.should.containEql('page=2');
+        bodyArray<{ message: { excerpt: string } }>(
+          res.body,
+        )[0].message.excerpt.should.equal('…');
+      } finally {
+        config.https = originalHttps;
+      }
+    });
+
+    it('keeps deleted profile fields empty when backfill lookup errors', async () => {
+      const viewerId = new mongoose.Types.ObjectId();
+      const threadId = new mongoose.Types.ObjectId();
+      typedStub<
+        [
+          query: FilterQuery<ThreadRecord>,
+          options: Record<string, unknown>,
+          callback: LegacyCallback<PaginationPayload>,
+        ]
+      >(Thread, 'paginate').callsFake((query, options, cb) => {
+        cb(null, {
+          docs: [
+            {
+              _id: threadId,
+              message: { content: 'Deleted profile' },
+              read: false,
+              userFrom: { _id: viewerId },
+              userTo: null,
+              toObject() {
+                return {
+                  _id: threadId,
+                  message: { content: 'Deleted profile' },
+                  read: false,
+                  userFrom: { _id: viewerId },
+                  userTo: null,
+                };
+              },
+            },
+          ],
+          pages: 1,
+        });
+      });
+      typedStub<
+        [
+          id: import('mongoose').Types.ObjectId,
+          field: string,
+          callback: LegacyCallback,
+        ]
+      >(Thread, 'findById').callsFake((id, field, cb) => {
+        cb(new Error('backfill failed'));
+      });
+
+      const res = deferredResponse();
+      messagesController.inbox({ user: { _id: viewerId }, query: {} }, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      (
+        bodyArray<{ userTo?: object | null }>(res.body)[0].userTo === null ||
+        bodyArray<{ userTo?: object | null }>(res.body)[0].userTo === undefined
+      ).should.be.true();
+    });
+
+    it('keeps deleted profile fields empty when backfill finds no thread', async () => {
+      const viewerId = new mongoose.Types.ObjectId();
+      const threadId = new mongoose.Types.ObjectId();
+      typedStub<
+        [
+          query: FilterQuery<ThreadRecord>,
+          options: Record<string, unknown>,
+          callback: LegacyCallback<PaginationPayload>,
+        ]
+      >(Thread, 'paginate').callsFake((query, options, cb) => {
+        cb(null, {
+          docs: [
+            {
+              _id: threadId,
+              message: { content: 'Deleted profile' },
+              read: false,
+              userFrom: null,
+              userTo: { _id: viewerId },
+              toObject() {
+                return {
+                  _id: threadId,
+                  message: { content: 'Deleted profile' },
+                  read: false,
+                  userFrom: null,
+                  userTo: { _id: viewerId },
+                };
+              },
+            },
+          ],
+          pages: 1,
+        });
+      });
+      typedStub<
+        [
+          id: import('mongoose').Types.ObjectId,
+          field: string,
+          callback: LegacyCallback,
+        ]
+      >(Thread, 'findById').callsFake((id, field, cb) => {
+        cb(null, null);
+      });
+
+      const res = deferredResponse();
+      messagesController.inbox({ user: { _id: viewerId }, query: {} }, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      (
+        bodyArray<{ userFrom?: object | null }>(res.body)[0].userFrom ===
+          null ||
+        bodyArray<{ userFrom?: object | null }>(res.body)[0].userFrom ===
+          undefined
+      ).should.be.true();
+    });
+
+    it('marks messages as spam when akismet reports spam', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalAkismetEnabled = config.akismet.enabled;
+      process.env.NODE_ENV = 'development';
+      config.akismet.enabled = true;
+      sinon.stub(spamService, 'check').resolves('spam');
+
+      try {
+        const { sender, receiver } = await prepareSender();
+        const res = deferredResponse();
+        messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: receiver._id.toString(),
+              content: 'Buy cheap pills now',
+            },
+            headers: { 'x-forwarded-for': '203.0.113.1' },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+
+        const saved = required(
+          await Message.findOne({ userFrom: sender._id }).sort({
+            created: -1,
+          }),
+        );
+        saved.spam!.should.be.true();
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+        config.akismet.enabled = originalAkismetEnabled;
+      }
+    });
+
+    it('marks messages as not spam when akismet reports clean', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalAkismetEnabled = config.akismet.enabled;
+      process.env.NODE_ENV = 'development';
+      config.akismet.enabled = true;
+      sinon.stub(spamService, 'check').resolves('not-spam');
+
+      try {
+        const { sender, receiver } = await prepareSender();
+        const res = deferredResponse();
+        messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: receiver._id.toString(),
+              content: 'Hello there, would love to host you!',
+            },
+            headers: { 'x-forwarded-for': '203.0.113.1' },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+
+        const saved = required(
+          await Message.findOne({ userFrom: sender._id }).sort({
+            created: -1,
+          }),
+        );
+        saved.spam!.should.be.false();
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+        config.akismet.enabled = originalAkismetEnabled;
+      }
+    });
+
+    it('sends successfully when spam check rejects', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalAkismetEnabled = config.akismet.enabled;
+      process.env.NODE_ENV = 'development';
+      config.akismet.enabled = true;
+      sinon
+        .stub(spamService, 'check')
+        .rejects(new Error('akismet unavailable'));
+
+      try {
+        const { sender, receiver } = await prepareSender();
+        const res = deferredResponse();
+        messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: receiver._id.toString(),
+              content: 'Hello despite akismet failure',
+            },
+            headers: { 'x-forwarded-for': '203.0.113.1' },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+        bodyField<string>(res.body, 'content').should.containEql(
+          'Hello despite akismet failure',
+        );
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+        config.akismet.enabled = originalAkismetEnabled;
+      }
+    });
+
+    it('uses the passenger client address for spam checks when present', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalAkismetEnabled = config.akismet.enabled;
+      process.env.NODE_ENV = 'development';
+      config.akismet.enabled = true;
+      const check = sinon.stub(spamService, 'check').resolves('not-spam');
+
+      try {
+        const { sender, receiver } = await prepareSender();
+        const res = deferredResponse();
+        messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: receiver._id.toString(),
+              content: 'Hello with passenger header',
+            },
+            headers: {
+              '!~passenger-client-address': '198.51.100.10',
+              'x-forwarded-for': '203.0.113.20',
+              'user-agent': 'Trustroots e2e',
+            },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+        check.firstCall.args[0].ip.should.equal('198.51.100.10');
+        check.firstCall.args[0].useragent.should.equal('Trustroots e2e');
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+        config.akismet.enabled = originalAkismetEnabled;
+      }
+    });
+
+    it('uses req.ip for spam checks when proxy headers are absent', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalAkismetEnabled = config.akismet.enabled;
+      process.env.NODE_ENV = 'development';
+      config.akismet.enabled = true;
+      const check = sinon.stub(spamService, 'check').resolves('not-spam');
+
+      try {
+        const { sender, receiver } = await prepareSender();
+        const res = deferredResponse();
+        messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: receiver._id.toString(),
+              content: 'Hello with request ip',
+            },
+            headers: { 'user-agent': 'Trustroots tests' },
+            ip: '192.0.2.55',
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+        check.firstCall.args[0].ip.should.equal('192.0.2.55');
+        check.firstCall.args[0].useragent.should.equal('Trustroots tests');
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+        config.akismet.enabled = originalAkismetEnabled;
+      }
+    });
+
+    it('uses empty spam metadata defaults when request details are absent', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalAkismetEnabled = config.akismet.enabled;
+      process.env.NODE_ENV = 'development';
+      config.akismet.enabled = true;
+      const check = sinon.stub(spamService, 'check').resolves('not-spam');
+
+      try {
+        const { sender, receiver } = await prepareSender();
+        const res = deferredResponse();
+        messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: receiver._id.toString(),
+              content: 'Hello with no request metadata',
+            },
+            headers: {},
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+        check.firstCall.args[0].ip.should.equal('');
+        check.firstCall.args[0].useragent.should.equal('');
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+        config.akismet.enabled = originalAkismetEnabled;
+      }
+    });
+
+    it('returns 400 when first-message profile lookup fails', async () => {
+      const { sender, receiver } = await prepareSender();
+      typedStub<[id: import('mongoose').Types.ObjectId]>(
+        User,
+        'findById',
+      ).returns({
+        exec: (cb: LegacyCallback) => cb(new Error('profile lookup failed')),
+      });
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello there friend',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when send populate fails', async () => {
+      typedStub<[callback: LegacyCallback]>(
+        Message.prototype,
+        'save',
+      ).callsFake(function (cb) {
+        const fakeMessage = {
+          populate: sinon.stub().callsFake((opts, populateCb) => {
+            populateCb(new Error('populate failed'));
+          }),
+        };
+        cb(null, fakeMessage);
+      });
+      const { sender, receiver } = await prepareSender();
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello there friend',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when message save fails', async () => {
+      typedStub<[callback: LegacyCallback]>(
+        Message.prototype,
+        'save',
+      ).callsFake(cb => {
+        cb(new Error('save failed'));
+      });
+      const { sender, receiver } = await prepareSender();
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'This will not save',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when threadByUser pagination returns no docs', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      typedStub<
+        [
+          query: FilterQuery<MessageRecord>,
+          options: Record<string, unknown>,
+          callback: LegacyCallback<PaginationPayload>,
+        ]
+      >(Message, 'paginate').callsFake((query, options, cb) => {
+        cb(null, { docs: null });
+      });
+
+      const res = deferredResponse();
+      messagesController.threadByUser(
+        { user: receiver, query: {} },
+        res,
+        () => {},
+        sender._id.toString(),
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('groups incoming sync messages by sender id', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const viewerId = receiver._id;
+      const incoming = {
+        content: 'Incoming sync message',
+        userFrom: sender._id,
+        userTo: viewerId,
+        created: new Date(),
+      };
+      typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
+        sort: () => ({
+          select: () => ({
+            exec: (cb: LegacyCallback<object[]>) => cb(null, [incoming]),
+          }),
+        }),
+      });
+
+      const res = deferredResponse();
+      messagesController.sync({ user: { _id: viewerId }, query: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      const senderKey = sender._id.toString();
+      bodyField<Record<string, Array<{ content?: string }>>>(
+        res.body,
+        'messages',
+      ).should.have.property(senderKey);
+      bodyField<Record<string, Array<{ content?: string }>>>(
+        res.body,
+        'messages',
+      )
+        [senderKey].should.be.an.Array()
+        .with.lengthOf(1);
+      bodyField<Record<string, Array<{ content?: string }>>>(
+        res.body,
+        'messages',
+      )[senderKey][0].content!.should.containEql('Incoming sync message');
+    });
+
+    it('groups outgoing sync messages by recipient id', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const viewerId = sender._id;
+      const outgoing = {
+        content: 'Outgoing sync message',
+        userFrom: viewerId,
+        userTo: receiver._id,
+        created: new Date(),
+      };
+      typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
+        sort: () => ({
+          select: () => ({
+            exec: (cb: LegacyCallback<object[]>) => cb(null, [outgoing]),
+          }),
+        }),
+      });
+
+      const res = deferredResponse();
+      messagesController.sync({ user: { _id: viewerId }, query: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      const receiverKey = receiver._id.toString();
+      bodyField<Record<string, Array<{ content?: string }>>>(
+        res.body,
+        'messages',
+      ).should.have.property(receiverKey);
+      bodyField<Record<string, Array<{ content?: string }>>>(
+        res.body,
+        'messages',
+      )
+        [receiverKey].should.be.an.Array()
+        .with.lengthOf(1);
+      bodyField<Record<string, Array<{ content?: string }>>>(
+        res.body,
+        'messages',
+      )[receiverKey][0].content!.should.containEql('Outgoing sync message');
+    });
+
+    it('returns 400 when sync user lookup fails', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const viewerId = receiver._id;
+      typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
+        sort: () => ({
+          select: () => ({
+            exec: (cb: LegacyCallback<object[]>) =>
+              cb(null, [
+                {
+                  content: 'Sync test message',
+                  userFrom: sender._id,
+                  userTo: viewerId,
+                  created: new Date(),
+                },
+              ]),
+          }),
+        }),
+      });
+      typedStub<[query?: FilterQuery<UserRecord>]>(User, 'find').returns({
+        select: () => ({
+          exec: (cb: LegacyCallback) => cb(new Error('user lookup failed')),
+        }),
+      });
+
+      const res = deferredResponse();
+      messagesController.sync({ user: { _id: viewerId }, query: {} }, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when sync user lookup fails', async () => {
+      typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
+        sort: () => ({
+          select: () => ({
+            exec: (cb: LegacyCallback<object[]>) => cb(null, []),
+          }),
+        }),
+      });
+      typedStub<[query?: FilterQuery<UserRecord>]>(User, 'find').returns({
+        select: () => ({
+          exec: (cb: LegacyCallback) => cb(new Error('user lookup failed')),
+        }),
+      });
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+
+      const res = deferredResponse();
+      messagesController.sync({ user: { _id: user._id }, query: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+  });
+});

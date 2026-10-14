@@ -1,0 +1,284 @@
+// test whether the daily statistics job reaches influxdb via Stats api
+
+const should: typeof import('should') = require('should');
+const influx: typeof import('influx') = require('influx');
+const sinon = require('sinon');
+
+const config: typeof import('../../../../../config/config.mjs').default = require('./../../../../../config/config.mjs');
+require('./../../../../offers/server/models/offer.server.model.mjs');
+require('./../../../../users/server/models/user.server.model.mjs');
+type StatObject =
+  import('../../../../stats/server/services/stats.server.service.mts').StatObject;
+type StatService = {
+  deliver(statObject: StatObject, callback: (error?: unknown) => void): void;
+};
+const statsService: StatService = require('./../../../../stats/server/services/stats.server.service.mts');
+type JobCallback = (error?: Error | null) => void;
+const statsJob: (
+  job: unknown,
+  callback: JobCallback,
+) => void = require('./../../../server/jobs/daily-statistics.server.job.mjs');
+type StatisticsController = {
+  getUsersCount(callback: (error: Error | null, count?: number) => void): void;
+  getHostOffersCount(
+    callback: (error: Error | null, counts?: number[]) => void,
+  ): void;
+  getMeetOffersCount(
+    callback: (error: Error | null, counts?: number[]) => void,
+  ): void;
+  getUserLanguagesCount(
+    limit: number,
+    callback: (
+      error: Error | null,
+      counts?: Array<{ _id: string; count: number }>,
+    ) => void,
+  ): void;
+  getLastSeenStatistic(
+    since: unknown,
+    callback: (error: Error | null, result?: unknown) => void,
+  ): void;
+  getExternalSiteCount(
+    site: string,
+    callback: (error: Error | null, count?: number) => void,
+  ): void;
+};
+let writeMeasurementStub: import('sinon').SinonStub<
+  Parameters<typeof influx.InfluxDB.prototype.writeMeasurement>,
+  ReturnType<typeof influx.InfluxDB.prototype.writeMeasurement>
+>;
+
+describe('Daily Statistics Job - Unit Test', function () {
+  afterEach(function () {
+    // restore the stubbed services
+    sinon.restore();
+  });
+
+  // stub the influx endpoint
+  beforeEach(function () {
+    // stub the influx endpoint(s)
+    writeMeasurementStub = sinon.stub(
+      influx.InfluxDB.prototype,
+      'writeMeasurement',
+    );
+
+    // and writeMeasurement returns a Promise
+    writeMeasurementStub.callsFake(
+      () => new Promise<void>(resolve => process.nextTick(resolve)),
+    );
+
+    // provide config options for influxdb
+    sinon.stub(config.influxdb, 'options').value({
+      host: 'localhost',
+      port: 8086,
+      protocol: 'http',
+      database: 'trustroots-test',
+    });
+  });
+
+  context('influxdb configured', function () {
+    const statistics: Pick<
+      StatisticsController,
+      | 'getUsersCount'
+      | 'getHostOffersCount'
+      | 'getMeetOffersCount'
+      | 'getUserLanguagesCount'
+      | 'getLastSeenStatistic'
+      | 'getExternalSiteCount'
+    > = require('./../../../server/controllers/statistics.server.controller.mjs');
+
+    beforeEach(function () {
+      // stub enable influx in config
+      sinon.stub(config.influxdb, 'enabled').value(true);
+    });
+
+    it('continues when fetching the user count fails', function (done) {
+      sinon
+        .stub(statistics, 'getUsersCount')
+        .callsFake((cb: Parameters<StatisticsController['getUsersCount']>[0]) =>
+          cb(new Error('db down')),
+        );
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('continues when fetching host offer counts fails', function (done) {
+      sinon
+        .stub(statistics, 'getHostOffersCount')
+        .callsFake(
+          (cb: Parameters<StatisticsController['getHostOffersCount']>[0]) =>
+            cb(new Error('offers db down')),
+        );
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('continues when fetching meet offer count fails', function (done) {
+      sinon
+        .stub(statistics, 'getMeetOffersCount')
+        .callsFake(
+          (cb: Parameters<StatisticsController['getMeetOffersCount']>[0]) =>
+            cb(new Error('meet db down')),
+        );
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('continues when fetching spoken language counts fails', function (done) {
+      sinon
+        .stub(statistics, 'getUserLanguagesCount')
+        .callsFake(
+          (
+            limit: number,
+            cb: Parameters<StatisticsController['getUserLanguagesCount']>[1],
+          ) => cb(new Error('languages db down')),
+        );
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('writes language statistics when spoken language counts are available', function (done) {
+      sinon
+        .stub(statistics, 'getUserLanguagesCount')
+        .callsFake(
+          (
+            limit: number,
+            cb: Parameters<StatisticsController['getUserLanguagesCount']>[1],
+          ) =>
+            cb(null, [
+              { _id: 'en', count: 3 },
+              { _id: 'fi', count: 1 },
+            ]),
+        );
+      sinon
+        .stub(statistics, 'getUsersCount')
+        .callsFake((cb: Parameters<StatisticsController['getUsersCount']>[0]) =>
+          cb(null, 4),
+        );
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('continues when collecting last-seen statistics fails', function (done) {
+      sinon
+        .stub(statistics, 'getLastSeenStatistic')
+        .callsFake(
+          (
+            since: unknown,
+            cb: Parameters<StatisticsController['getLastSeenStatistic']>[1],
+          ) => cb(new Error('last seen db down')),
+        );
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('logs and completes when a network count fails', function (done) {
+      const original = statistics.getExternalSiteCount;
+      statistics.getExternalSiteCount = function (
+        site: string,
+        cb: Parameters<StatisticsController['getExternalSiteCount']>[1],
+      ) {
+        if (site === 'facebook') {
+          return cb(new Error('network db down'));
+        }
+        return original.call(statistics, site, cb);
+      };
+
+      statsJob(null, function (e) {
+        statistics.getExternalSiteCount = original;
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('continues when writing to influx fails with a general error', function (done) {
+      sinon
+        .stub(statsService, 'deliver')
+        .callsFake((statObject: StatObject, cb: (error?: unknown) => void) =>
+          cb(new Error('influx unavailable')),
+        );
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('continues when writing to influx fails with an influx-specific error', function (done) {
+      sinon
+        .stub(statsService, 'deliver')
+        .callsFake((statObject: StatObject, cb: (error?: unknown) => void) =>
+          cb({
+            message: 'Writing to Influx service failed.',
+            errors: { influx: new Error('influx write failed') },
+          }),
+        );
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('continues when an influx-specific error lacks nested details', function (done) {
+      sinon
+        .stub(statsService, 'deliver')
+        .callsFake((statObject: StatObject, cb: (error?: unknown) => void) =>
+          cb({
+            message: 'Writing to Influx service failed.',
+          }),
+        );
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('should reach the influxdb with data in correct format', function (done) {
+      statsJob(null, function (e) {
+        if (e) return done(e);
+
+        try {
+          // test influx endpoint
+
+          // Called once per each remaining daily stat write
+          sinon.assert.callCount(writeMeasurementStub, 16);
+
+          // Member count stat point
+          const memberMeasurement = writeMeasurementStub.getCall(0).args[0];
+          const memberPoints = writeMeasurementStub.getCall(0).args[1];
+          const memberPoint = memberPoints[0];
+          should(memberPoints.length).eql(1);
+          should(memberMeasurement).eql('members');
+          should(memberPoint).have.propertyByPath('fields', 'count').eql(0);
+          should(memberPoint)
+            .have.propertyByPath('tags', 'members')
+            .eql('members');
+          should(memberPoint).not.have.property('timestamp');
+
+          return done();
+        } catch (e) {
+          return done(e);
+        }
+      });
+    });
+  });
+});

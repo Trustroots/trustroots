@@ -32,10 +32,22 @@ interface UserFixtureExtraFields {
   avatarSource?: string;
   avatarUploaded?: boolean;
   avatarVersion?: string;
-  created?: Date | string;
+  created?: Date;
   emailHash?: string;
+  emailTokenIssuedAt?: Date;
+  emailTokenExpires?: Date;
+  extSitesCouchers?: string;
+  extSitesBW?: string;
+  extSitesCS?: string;
+  extSitesWS?: string;
+  lastIpAddress?: string;
+  providerData?: Record<string, unknown> | Array<Record<string, unknown>>;
+  removeProfileToken?: string;
+  removeProfileExpires?: Date | number;
+  seen?: Date;
   provider?: string;
   emailTemporary?: string;
+  publicReminderCount?: number;
   pushRegistration?: PushRegistrationFixture[];
   description?: string;
   displayName?: string;
@@ -52,7 +64,7 @@ type ExperienceFixtureDocument = HydratedDocument<ExperienceFixture> &
   Pick<ExperienceFixture, 'interactions'> & {
     _id: mongoose.Types.ObjectId;
   };
-type UserFixtureDocument = HydratedDocument<
+export type UserFixtureDocument = HydratedDocument<
   CachedUserFixtureData,
   UserFixtureMethods
 >;

@@ -20,18 +20,26 @@ export interface UserRecord {
   username: string;
   usernameUpdated?: Date;
   seen?: Date;
+  lastIpAddress?: string;
   created?: Date;
   password?: string;
   salt?: string;
   authVersion?: number;
   resetPasswordToken?: string;
+  removeProfileToken?: string;
+  removeProfileExpires?: Date;
   provider?: string;
+  providerData?: Record<string, unknown> | Array<Record<string, unknown>>;
   roles?: string[];
   public?: boolean;
   locale?: string;
   newsletter?: boolean;
   publicReminderCount?: number;
   acquisitionStory?: string;
+  extSitesCouchers?: string;
+  extSitesBW?: string;
+  extSitesCS?: string;
+  extSitesWS?: string;
   avatarSource?: string;
   avatarUploaded?: boolean;
   avatarVersion?: string;
@@ -63,10 +71,8 @@ export interface UserStatics {
 export type UserModel = Model<UserRecord, Record<string, never>, UserMethods> &
   UserStatics;
 export type UserModelDocument = HydratedDocument<UserRecord, UserMethods>;
-export type UserDocument = ReturnType<
-  typeof import('./data.server.testutil.mts').createTestUser
-> &
-  Pick<UserRecord, 'avatarSource' | 'avatarUploaded' | 'emailHash'>;
+export type UserDocument =
+  import('./data.server.testutil.mts').UserFixtureDocument;
 export type ContactDocument = HydratedDocument<ContactRecord>;
 export type ExperienceDocument = HydratedDocument<ExperienceRecord>;
 export type MessageDocument = HydratedDocument<MessageRecord>;
@@ -158,6 +164,25 @@ export interface MessageStatRecord {
   firstReplyCreated?: Date | null;
   firstReplyLength?: number | null;
   timeToFirstReply?: number | null;
+}
+
+/** Payload emitted by the message statistics processor before it is stored. */
+export interface MessageStatsPoint {
+  namespace: 'messages';
+  counts: { sent: 1 };
+  values: { timeToFirstReply?: number };
+  tags: {
+    spam: 'yes' | 'no' | 'unknown';
+    position: 'first' | 'firstReply' | 'other';
+    messageLengthType: 'short' | 'long';
+  };
+  meta: {
+    messageId: string;
+    userFrom: string;
+    userTo: string;
+    messageLength: number;
+  };
+  time: Date;
 }
 
 /** Offer fields used by offer model and route tests. */
