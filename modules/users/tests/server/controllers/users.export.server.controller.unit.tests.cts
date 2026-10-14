@@ -8,19 +8,39 @@ const config: {
 config.files.server.models.forEach(modelPath =>
   require(path.resolve(modelPath)),
 );
+const mongoose: typeof import('mongoose') = require('mongoose');
+
+type ExportRecord = Record<string, unknown>;
+interface ExportProfile {
+  username?: string;
+  displayName?: string;
+  member?: Array<{
+    since?: string;
+    tribe?: string | { _id: unknown; slug?: string; label?: string };
+  }>;
+  [key: string]: unknown;
+}
+interface ExportCircle {
+  _id: unknown;
+  slug?: string;
+  label?: string;
+  since?: string;
+}
 interface ExportRequest {
   user: { _id: string; username: string };
-  profile?: { username: string; displayName: string };
-  contacts?: Array<{ displayName: string }>;
-  offers?: Array<{ title: string }>;
+  profile?: ExportProfile;
+  contacts?: ExportRecord[];
 }
 interface ExportBody {
   format: string;
   version: number;
   exportedAt: string;
-  profile: ExportRequest['profile'] | Record<string, never>;
-  contacts: Array<{ displayName: string }>;
-  hostingOffers: Array<{ title: string }>;
+  profile: ExportProfile | Record<string, never>;
+  circles: ExportCircle[];
+  contacts: ExportRecord[];
+  hostingOffers: ExportRecord[];
+  messages: ExportRecord[];
+  experiences: ExportRecord[];
 }
 interface MockResponse {
   body: ExportBody | null;
@@ -42,14 +62,15 @@ type Middleware = (
 const contactsService: {
   contactListByUser: Middleware;
 } = require('./../../../../contacts/server/controllers/contacts.server.controller.mjs');
-const offersService: {
-  offersByUserId: Middleware;
-} = require('./../../../../offers/server/controllers/offers.server.controller.mjs');
 const profilesService: {
   userByUsername: Middleware;
 } = require('./../../../server/controllers/users.profile.server.controller.mjs');
 const controller: {
-  EXPORT_FILENAME: string;
+  buildExportFilename(username: string, exportedAt: Date): string;
+  circlesFromProfile(profile: ExportProfile | null): ExportCircle[];
+  writtenMessages(userId: string): Promise<ExportRecord[]>;
+  writtenExperiences(userId: string): Promise<ExportRecord[]>;
+  memberOffers(userId: string): Promise<ExportRecord[]>;
   download(
     request: ExportRequest,
     response: MockResponse,
@@ -60,16 +81,38 @@ const controller: {
 function loadController({
   profile,
   contacts,
-  offers,
+  messages = [],
+  experiences = [],
+  offers = [],
 }: {
   profile: Middleware;
   contacts: Middleware;
-  offers: Middleware;
+  messages?: ExportRecord[];
+  experiences?: ExportRecord[];
+  offers?: ExportRecord[];
 }): typeof controller {
   sinon.stub(profilesService, 'userByUsername').callsFake(profile);
   sinon.stub(contactsService, 'contactListByUser').callsFake(contacts);
-  sinon.stub(offersService, 'offersByUserId').callsFake(offers);
+  sinon.stub(controller, 'writtenMessages').resolves(messages);
+  sinon.stub(controller, 'writtenExperiences').resolves(experiences);
+  sinon.stub(controller, 'memberOffers').resolves(offers);
   return controller;
+}
+
+interface TestQuery {
+  query: ReturnType<ReturnType<typeof mongoose.model>['find']>;
+  sort: import('sinon').SinonStub;
+  populate: import('sinon').SinonStub;
+}
+function resolvableQuery(
+  model: ReturnType<typeof mongoose.model>,
+  result: ExportRecord[],
+): TestQuery {
+  const query = model.find({});
+  const sort = sinon.stub(query, 'sort').returns(query);
+  const populate = sinon.stub(query, 'populate').returns(query);
+  sinon.stub(query, 'lean').resolves(result);
+  return { query, sort, populate };
 }
 
 function mockResponse(): MockResponse {
@@ -94,16 +137,17 @@ function mockResponse(): MockResponse {
     response.contentType = value;
     return response;
   });
-  sinon.stub(response, 'attachment').callsFake(filename => {
-    response.filename = filename;
+  sinon.stub(response, 'attachment').callsFake(value => {
+    response.filename = value;
     return response;
   });
-  sinon.stub(response, 'send').callsFake(body => {
-    response.body = body;
+  sinon.stub(response, 'send').callsFake(value => {
+    response.body = value;
     return response;
   });
   return response;
 }
+
 function responseBody(response: MockResponse): ExportBody {
   if (!response.body) throw new Error('expected the controller to send a body');
   return response.body;
@@ -117,38 +161,79 @@ describe('Member data export controller', () => {
 
   it('returns the current member’s sanitised profile, contacts, and offers', async () => {
     sinon.useFakeTimers(exportedAt);
-    const profile = sinon.stub().callsFake((req, res, next, username) => {
+    const profile: Middleware = (req, _res, next, username) => {
       username.should.equal(user.username);
-      req.profile = { username, displayName: 'Member Example' };
+      req.profile = {
+        username,
+        displayName: 'Member Example',
+        member: [
+          {
+            since: '2020-01-01T00:00:00.000Z',
+            tribe: { _id: 'circle-1', slug: 'hikers', label: 'Hikers' },
+          },
+          { since: '2020-02-01T00:00:00.000Z' },
+        ],
+      };
       next();
-    });
-    const contacts = sinon.stub().callsFake((req, res, next, userId) => {
+    };
+    const contacts: Middleware = (req, _res, next, userId) => {
       userId.should.equal(user._id);
       req.contacts = [{ displayName: 'Contact Example' }];
       next();
+    };
+    const controller = loadController({
+      profile,
+      contacts,
+      messages: [{ _id: 'message-1', content: 'Hello' }],
+      experiences: [{ _id: 'experience-1', recommend: 'yes' }],
+      offers: [
+        {
+          _id: 'offer-1',
+          type: 'host',
+          validUntil: '2020-01-01T00:00:00.000Z',
+        },
+      ],
     });
-    const offers = sinon.stub().callsFake((req, res, next, userId) => {
-      userId.should.equal(user._id);
-      req.offers = [{ title: 'Guest bed' }];
-      next();
-    });
-    const controller = loadController({ profile, contacts, offers });
     const response = mockResponse();
 
     await controller.download({ user: { ...user } }, response, sinon.stub());
 
     response.contentType!.should.equal('application/json');
     response.filename!.should.equal('trustroots-data-member-20261014-0931.json');
-    const body = responseBody(response);
-    body.should.containEql({
+    responseBody(response).should.containEql({
       format: 'trustroots-data-export',
       version: 1,
       exportedAt: '2026-10-14T09:31:00.000Z',
-      profile: { username: user.username, displayName: 'Member Example' },
+      profile: {
+        username: user.username,
+        displayName: 'Member Example',
+        member: [
+          {
+            since: '2020-01-01T00:00:00.000Z',
+            tribe: { _id: 'circle-1', slug: 'hikers', label: 'Hikers' },
+          },
+          { since: '2020-02-01T00:00:00.000Z' },
+        ],
+      },
+      circles: [
+        {
+          _id: 'circle-1',
+          slug: 'hikers',
+          label: 'Hikers',
+          since: '2020-01-01T00:00:00.000Z',
+        },
+      ],
       contacts: [{ displayName: 'Contact Example' }],
-      hostingOffers: [{ title: 'Guest bed' }],
+      hostingOffers: [
+        {
+          _id: 'offer-1',
+          type: 'host',
+          validUntil: '2020-01-01T00:00:00.000Z',
+        },
+      ],
+      messages: [{ _id: 'message-1', content: 'Hello' }],
+      experiences: [{ _id: 'experience-1', recommend: 'yes' }],
     });
-    new Date(body.exportedAt).toISOString().should.equal(body.exportedAt);
   });
 
   it('names the file with a lowercase username and UTC time', async () => {
@@ -156,7 +241,6 @@ describe('Member data export controller', () => {
     const controller = loadController({
       profile: (req, res, next) => next(),
       contacts: (req, res, next) => next(),
-      offers: (req, res, next) => next(),
     });
     const response = mockResponse();
 
@@ -176,7 +260,6 @@ describe('Member data export controller', () => {
     const controller = loadController({
       profile: (req, res, next) => next(),
       contacts: (req, res, next) => next(),
-      offers: (req, res, next) => next(),
     });
     const response = mockResponse();
 
@@ -198,33 +281,181 @@ describe('Member data export controller', () => {
     missingUsername.filename!.should.equal('trustroots-data-20261014-0931.json');
   });
 
-  it('returns an empty hosting offer list when the member has no offers', async () => {
-    const notFound = () => {
-      return Object.assign(new Error('Not found'), { statusCode: 404 });
-    };
+  it('returns empty lists when the member has no extra records', async () => {
     const controller = loadController({
       profile: (req, res, next) => next(),
       contacts: (req, res, next) => next(),
-      offers: (req, res) => res.status(404).send(notFound()),
     });
     const response = mockResponse();
 
     await controller.download({ user: { ...user } }, response, sinon.stub());
 
-    responseBody(response).hostingOffers.should.deepEqual([]);
+    const body = responseBody(response);
+    body.circles.should.deepEqual([]);
+    body.hostingOffers.should.deepEqual([]);
+    body.messages.should.deepEqual([]);
+    body.experiences.should.deepEqual([]);
   });
 
-  it('defaults to an empty hosting offer list when middleware returns no list', async () => {
-    const controller = loadController({
-      profile: (req, res, next) => next(),
-      contacts: (req, res, next) => next(),
-      offers: (req, res, next) => next(),
-    });
-    const response = mockResponse();
+  it('lists circles from populated and id-only memberships', () => {
+    controller
+      .circlesFromProfile({
+        member: [
+          {
+            since: '2020-01-01T00:00:00.000Z',
+            tribe: { _id: 'circle-1', slug: 'hikers', label: 'Hikers' },
+          },
+          { since: '2020-02-01T00:00:00.000Z', tribe: 'circle-2' },
+          { since: '2020-03-01T00:00:00.000Z' },
+        ],
+      })
+      .should.deepEqual([
+        {
+          _id: 'circle-1',
+          slug: 'hikers',
+          label: 'Hikers',
+          since: '2020-01-01T00:00:00.000Z',
+        },
+        { _id: 'circle-2', since: '2020-02-01T00:00:00.000Z' },
+      ]);
+    controller.circlesFromProfile(null).should.deepEqual([]);
+  });
 
-    await controller.download({ user: { ...user } }, response, sinon.stub());
+  it('exports messages and experiences the member wrote', async () => {
+    const messageModel = mongoose.model('Message');
+    const messageQuery = resolvableQuery(messageModel, [
+      {
+        _id: 'message-1',
+        created: '2024-01-01T00:00:00.000Z',
+        content: 'Hello',
+        read: true,
+        userTo: {
+          _id: 'recipient-1',
+          username: 'bob',
+          displayName: 'Bob Example',
+          email: 'bob@example.test',
+        },
+        notificationCount: 4,
+      },
+      {
+        _id: 'message-2',
+        created: '2024-01-02T00:00:00.000Z',
+        content: 'Still here',
+        read: false,
+        userTo: 'recipient-2',
+      },
+    ]);
+    const experienceModel = mongoose.model('Experience');
+    const experienceQuery = resolvableQuery(experienceModel, [
+      {
+        _id: 'experience-1',
+        created: '2024-02-01T00:00:00.000Z',
+        public: false,
+        interactions: { met: true, guest: false, host: true },
+        recommend: 'yes',
+        feedbackPublic: 'A good stay',
+        removedAt: '2024-03-01T00:00:00.000Z',
+        userTo: { _id: 'recipient-1', username: 'bob' },
+      },
+      {
+        _id: 'experience-2',
+        created: '2024-02-02T00:00:00.000Z',
+        public: true,
+        recommend: 'unknown',
+        userTo: null,
+      },
+    ]);
+    const findMessages = sinon
+      .stub(messageModel, 'find')
+      .returns(messageQuery.query);
+    const findExperiences = sinon
+      .stub(experienceModel, 'find')
+      .returns(experienceQuery.query);
 
-    responseBody(response).hostingOffers.should.deepEqual([]);
+    const messages = await controller.writtenMessages(user._id);
+    const experiences = await controller.writtenExperiences(user._id);
+
+    findMessages.calledWith({ userFrom: user._id }).should.be.true();
+    findExperiences.calledWith({ userFrom: user._id }).should.be.true();
+    messageQuery.sort.calledWith({ created: 1 }).should.be.true();
+    messageQuery.populate
+      .calledWith('userTo', 'username displayName')
+      .should.be.true();
+    messages.should.deepEqual([
+      {
+        _id: 'message-1',
+        created: '2024-01-01T00:00:00.000Z',
+        content: 'Hello',
+        read: true,
+        userTo: {
+          _id: 'recipient-1',
+          username: 'bob',
+          displayName: 'Bob Example',
+        },
+      },
+      {
+        _id: 'message-2',
+        created: '2024-01-02T00:00:00.000Z',
+        content: 'Still here',
+        read: false,
+        userTo: 'recipient-2',
+      },
+    ]);
+    experiences.should.deepEqual([
+      {
+        _id: 'experience-1',
+        created: '2024-02-01T00:00:00.000Z',
+        public: false,
+        interactions: { met: true, guest: false, host: true },
+        recommend: 'yes',
+        feedbackPublic: 'A good stay',
+        removedAt: '2024-03-01T00:00:00.000Z',
+        userTo: { _id: 'recipient-1', username: 'bob' },
+      },
+      {
+        _id: 'experience-2',
+        created: '2024-02-02T00:00:00.000Z',
+        public: true,
+        interactions: { met: false, guest: false, host: false },
+        recommend: 'unknown',
+        userTo: null,
+      },
+    ]);
+  });
+
+  it('exports every stored offer, including expired ones', async () => {
+    const offerModel = mongoose.model('Offer');
+    const offerQuery = resolvableQuery(offerModel, [
+      {
+        _id: 'offer-1',
+        type: 'host',
+        user: user._id,
+        location: [52.1, 4.3],
+        locationFuzzy: [52.2, 4.4],
+        description: 'Guest bed',
+        validUntil: '2020-01-01T00:00:00.000Z',
+        createdAt: '2019-01-01T00:00:00.000Z',
+        reactivateReminderSent: '2019-06-01T00:00:00.000Z',
+      },
+    ]);
+    const find = sinon.stub(offerModel, 'find').returns(offerQuery.query);
+
+    const offers = await controller.memberOffers(user._id);
+
+    find.calledOnce.should.be.true();
+    find.firstCall.args.should.deepEqual([{ user: user._id }]);
+    offerQuery.sort.calledWith({ createdAt: 1 }).should.be.true();
+    offers.should.deepEqual([
+      {
+        _id: 'offer-1',
+        type: 'host',
+        user: user._id,
+        location: [52.1, 4.3],
+        description: 'Guest bed',
+        validUntil: '2020-01-01T00:00:00.000Z',
+        createdAt: '2019-01-01T00:00:00.000Z',
+      },
+    ]);
   });
 
   it('passes unexpected export errors to the error handler', async () => {
@@ -233,7 +464,6 @@ describe('Member data export controller', () => {
     const controller = loadController({
       profile: (req, res, callback) => callback(error),
       contacts: sinon.stub(),
-      offers: sinon.stub(),
     });
 
     await controller.download({ user: { ...user } }, mockResponse(), next);
@@ -247,8 +477,9 @@ describe('Member data export controller', () => {
     const controller = loadController({
       profile: (req, res, callback) => callback(),
       contacts: (req, res, callback) => callback(),
-      offers: (req, res, callback) => callback(error),
     });
+    sinon.stub(controller, 'memberOffers').restore();
+    sinon.stub(controller, 'memberOffers').rejects(error);
 
     await controller.download({ user: { ...user } }, mockResponse(), next);
 

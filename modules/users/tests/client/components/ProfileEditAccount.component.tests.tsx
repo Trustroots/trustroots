@@ -88,7 +88,9 @@ describe('ProfileEditAccount', () => {
       screen.getByText(/trustroots-data-username-20261014-0931\.json/),
     ).toBeVisible();
     expect(
-      screen.getByText(/does not include messages, experiences, your password/),
+      screen.getByText(
+        /does not include your password, your profile photo file/,
+      ),
     ).toBeVisible();
     expect(
       screen.getByRole('link', { name: 'Download your data' }),

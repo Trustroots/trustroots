@@ -131,7 +131,7 @@ test.describe.serial('account settings feature coverage', () => {
       page.getByText(/trustroots-data-username-20261014-0931\.json/),
     ).toBeVisible();
     await expect(
-      page.getByText(/does not include messages, experiences, your password/),
+      page.getByText(/does not include your password, your profile photo file/),
     ).toBeVisible();
 
     const downloadPromise = page.waitForEvent('download');

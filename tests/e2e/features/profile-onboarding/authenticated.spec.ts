@@ -134,7 +134,7 @@ test.describe('authenticated member flows', () => {
   }, testInfo) => {
     annotateFeature(testInfo, 'account.data-export', [
       'The combined export is an attachment with the documented filename.',
-      'The export has format and version metadata plus profile, contacts, and hosting offer sections.',
+      'The export has format and version metadata plus profile, circles, contacts, hosting offer, message, and experience sections.',
     ]);
 
     const response = await page.request.get('/api/users/export');
@@ -150,8 +150,11 @@ test.describe('authenticated member flows', () => {
       format: 'trustroots-data-export',
       version: 1,
       profile: expect.any(Object),
+      circles: expect.any(Array),
       contacts: expect.any(Array),
       hostingOffers: expect.any(Array),
+      messages: expect.any(Array),
+      experiences: expect.any(Array),
     });
     expect(new Date(data.exportedAt).toISOString()).toBe(data.exportedAt);
   });
