@@ -7,6 +7,8 @@ import inject from '@rollup/plugin-inject';
 import react from '@vitejs/plugin-react';
 import { defineConfig, transformWithOxc } from 'vite';
 
+import { rtlStylesheetPlugin } from './config/vite/rtl-stylesheet.mjs';
+
 const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL('.', import.meta.url));
 const apiTarget = process.env.TRUSTROOTS_API_URL || 'http://localhost:3001';
@@ -82,6 +84,7 @@ export default defineConfig({
   plugins: [
     legacyJsx,
     legacyCssImports,
+    rtlStylesheetPlugin(),
     react(),
     inject({
       include:

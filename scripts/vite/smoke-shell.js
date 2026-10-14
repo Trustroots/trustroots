@@ -14,12 +14,33 @@ async function main() {
   expressConfig.initLocalVariables(app);
   expressConfig.initViewEngine(app);
   app.use(express.static('public'));
-  app.get(['/signin', '/password/forgot', '/safety'], (_req, res) => {
-    res.render('react-index.server.view.html', {
-      user: null,
-      nonce: 'vite-smoke',
-    });
+  // These pages fetch public lists while rendering. Empty payloads keep the
+  // shell check independent of MongoDB.
+  app.get('/api/tribes', (_req, res) => {
+    res.json([]);
   });
+  app.get('/api/volunteers', (_req, res) => {
+    res.json({ alumni: [], volunteers: [] });
+  });
+  app.get(
+    [
+      '/signin',
+      '/signup',
+      '/password/forgot',
+      '/safety',
+      '/faq',
+      '/support',
+      '/circles',
+      '/privacy',
+      '/team',
+    ],
+    (_req, res) => {
+      res.render('react-index.server.view.html', {
+        user: null,
+        nonce: 'vite-smoke',
+      });
+    },
+  );
 
   const server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');
@@ -52,8 +73,14 @@ async function main() {
 
     for (const [route, role, name] of [
       ['/signin', 'button', /^Login$/],
+      ['/signup', 'heading', /Join Trustroots/],
       ['/password/forgot', 'heading', /Restore your password/],
       ['/safety', 'heading', /Safety Tips for Trustroots/],
+      ['/faq', 'heading', /Frequently Asked Questions/],
+      ['/support', 'heading', /Trustroots Support/],
+      ['/circles', 'heading', /Discover circles/],
+      ['/privacy', 'heading', /^Privacy$/],
+      ['/team', 'heading', /Trustroots Team/],
     ]) {
       const script = page.waitForResponse(
         response => new URL(response.url()).pathname === scriptPath,
@@ -108,11 +135,42 @@ async function main() {
         `Bootstrap grid and utilities must be available on ${route}`,
       );
     }
+    if (!development) {
+      await page.context().addCookies([
+        { name: 'i18n', value: 'ar', url: baseURL },
+      ]);
+      const stylesheet = page.waitForResponse(
+        response =>
+          new URL(response.url()).pathname === '/assets/react-main.rtl.css',
+      );
+      await page.goto(`${baseURL}/password/forgot`);
+      const rtlResponse = await stylesheet;
+      assert.equal(rtlResponse.status(), 200);
+      const rtlCss = await rtlResponse.text();
+      const ltrResponse = await page.request.get(
+        `${baseURL}/assets/react-main.css`,
+      );
+      assert.equal(ltrResponse.status(), 200);
+      const ltrCss = await ltrResponse.text();
+      const ltrLeft = ltrCss.match(/margin-left/g)?.length ?? 0;
+      const rtlLeft = rtlCss.match(/margin-left/g)?.length ?? 0;
+      assert.ok(ltrLeft > 0, 'LTR stylesheet should contain margin-left');
+      assert.ok(
+        rtlLeft < ltrLeft,
+        'RTL stylesheet should flip margin-left rules',
+      );
+      assert.match(rtlCss, /margin-right/);
+      assert.equal(await page.locator('html').getAttribute('dir'), 'rtl');
+      assert.equal(
+        await page.locator('#rtl-style').evaluate(link => Boolean(link.sheet)),
+        true,
+      );
+    }
     assert.deepEqual(errors, []);
     console.log(
       `Vite ${
         development ? 'development proxy' : 'production bundle'
-      } renders three routes with the Express template.`,
+      } renders public routes with the Express template.`,
     );
   } finally {
     if (browser) await browser.close();
