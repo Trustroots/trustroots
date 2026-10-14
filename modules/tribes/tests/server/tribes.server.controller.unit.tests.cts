@@ -1,55 +1,86 @@
+import type {
+  ContactModel,
+  ContactRecord,
+  TribeModel,
+  TribeRecord,
+} from '../../../../testutils/server/model-contracts.mts';
+import type { Types } from 'mongoose';
 /**
  * Unit tests for tribes controller list and middleware branches.
  */
-const mongoose = require('mongoose');
-const sinon = require('sinon');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const sinon: typeof import('sinon') = require('sinon');
 
-const tribesController = require('./../../server/controllers/tribes.server.controller.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+const tribesController: typeof import('./../../server/controllers/tribes.server.controller.mjs') = require('./../../server/controllers/tribes.server.controller.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
-const Tribe = mongoose.model('Tribe');
-const Contact = mongoose.model('Contact');
+const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
+const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
 
-function deferredResponse() {
-  let resolveResponse;
-  const promise = new Promise(resolve => {
+interface TestTribeView {
+  _id: Types.ObjectId;
+  slug: string;
+  label?: string;
+  count?: number;
+}
+
+interface DeferredResponse<Body> {
+  statusCode: number;
+  body: Body;
+  headers: Record<string, string>;
+  locals: { url: string; paginate: { href(query: { page?: number }): string } };
+  status(code: number): this;
+  send(body: unknown): this;
+  json(body: unknown): this;
+  set(key: string, value: string): this;
+  links(links: Record<string, string>): this;
+  waitForResponse(): Promise<this>;
+}
+
+function deferredResponse<
+  Body = Record<string, unknown>,
+>(): DeferredResponse<Body> {
+  let resolveResponse: (response: DeferredResponse<Body>) => void = () => {};
+  const promise = new Promise<DeferredResponse<Body>>(resolve => {
     resolveResponse = resolve;
   });
-  const res = {
+  const res: DeferredResponse<Body> = {
     statusCode: 200,
-    body: null,
-    headers: {},
+    body: {} as Body,
+    headers: {} as Record<string, string>,
     locals: {
       url: '/api/tribes/',
-      paginate: { href: query => `?page=${query.page}` },
+      paginate: { href: (query: { page?: number }) => `?page=${query.page}` },
+    },
+    status(code: number) {
+      res.statusCode = code;
+      return res;
+    },
+    send(body: unknown) {
+      res.body = body as Body;
+      resolveResponse(res);
+      return res;
+    },
+    json(body: unknown) {
+      res.body = body as Body;
+      resolveResponse(res);
+      return res;
+    },
+    set(key: string, value: string) {
+      res.headers[key] = value;
+      return res;
+    },
+    links(links: Record<string, string>) {
+      res.headers.Link = Object.entries(links)
+        .map(([rel, href]) => `<${href}>; rel="${rel}"`)
+        .join(', ');
+      return res;
+    },
+    waitForResponse() {
+      return promise;
     },
   };
-  res.status = code => {
-    res.statusCode = code;
-    return res;
-  };
-  res.send = body => {
-    res.body = body;
-    resolveResponse(res);
-    return res;
-  };
-  res.json = body => {
-    res.body = body;
-    resolveResponse(res);
-    return res;
-  };
-  res.set = (key, value) => {
-    res.headers[key] = value;
-    return res;
-  };
-  res.links = links => {
-    res.headers.Link = Object.entries(links)
-      .map(([rel, href]) => `<${href}>; rel="${rel}"`)
-      .join(', ');
-    return res;
-  };
-  res.waitForResponse = () => promise;
   return res;
 }
 
@@ -74,7 +105,7 @@ describe('Tribes controller unit tests', () => {
         count: 5,
       }).save();
 
-      const res = deferredResponse();
+      const res = deferredResponse<TestTribeView[]>();
       tribesController.listTribes(
         { query: {}, protocol: 'https', originalUrl: '/api/tribes' },
         res,
@@ -96,7 +127,7 @@ describe('Tribes controller unit tests', () => {
         public: true,
       }).save();
 
-      const res = deferredResponse();
+      const res = deferredResponse<TestTribeView[]>();
       tribesController.listTribes(
         { query: {}, protocol: 'https', originalUrl: '/api/tribes' },
         res,
@@ -112,7 +143,7 @@ describe('Tribes controller unit tests', () => {
         public: true,
       }).save();
 
-      const res = deferredResponse();
+      const res = deferredResponse<TestTribeView[]>();
       tribesController.listTribes(
         {
           user: { roles: ['user'] },
@@ -140,7 +171,7 @@ describe('Tribes controller unit tests', () => {
         count: 5,
       }).save();
 
-      const res = deferredResponse();
+      const res = deferredResponse<TestTribeView[]>();
       tribesController.listTribes(
         {
           query: { sortBy: 'alphabetically' },
@@ -159,14 +190,15 @@ describe('Tribes controller unit tests', () => {
           sort: () => ({
             limit: () => ({
               skip: () => ({
-                exec: cb => cb(new Error('find failed')),
+                exec: (cb: (error: Error) => void) =>
+                  cb(new Error('find failed')),
               }),
             }),
           }),
         }),
-      });
+      } as unknown as ReturnType<typeof Tribe.find>);
 
-      const res = deferredResponse();
+      const res = deferredResponse<Record<string, unknown>>();
       tribesController.listTribes(
         { query: {}, protocol: 'https', originalUrl: '/api/tribes' },
         res,
@@ -181,15 +213,21 @@ describe('Tribes controller unit tests', () => {
           sort: () => ({
             limit: () => ({
               skip: () => ({
-                exec: cb => cb(null, []),
+                exec: (
+                  cb: (error: Error | null, rows?: TestTribeView[]) => void,
+                ) => cb(null, []),
               }),
             }),
           }),
         }),
-      });
-      sinon.stub(Tribe, 'countDocuments').callsFake((query, cb) => {
+      } as unknown as ReturnType<typeof Tribe.find>);
+      sinon.stub(Tribe, 'countDocuments').callsFake(((
+        query: unknown,
+        cb: (error: Error) => void,
+      ) => {
+        void query;
         cb(new Error('count failed'));
-      });
+      }) as unknown as typeof Tribe.countDocuments);
 
       const res = deferredResponse();
       tribesController.listTribes(
@@ -203,7 +241,7 @@ describe('Tribes controller unit tests', () => {
 
   describe('getTribe', () => {
     it('returns an empty object when no tribe is attached', async () => {
-      const res = deferredResponse();
+      const res = deferredResponse<Record<string, unknown>>();
       tribesController.getTribe({}, res);
       await res.waitForResponse();
       res.body.should.deepEqual({});
@@ -211,7 +249,7 @@ describe('Tribes controller unit tests', () => {
 
     it('returns the tribe attached to the request', async () => {
       const tribe = await new Tribe({ label: 'Shown', slug: 'shown' }).save();
-      const res = deferredResponse();
+      const res = deferredResponse<TestTribeView>();
       tribesController.getTribe({ tribe }, res);
       await res.waitForResponse();
       res.body.slug.should.equal('shown');
@@ -244,9 +282,11 @@ describe('Tribes controller unit tests', () => {
       }).save();
       const res = deferredResponse();
       let nextCalled = false;
-      const req = { user: { roles: ['user'] } };
+      const req: { user: { roles: string[] }; tribe?: TestTribeView } = {
+        user: { roles: ['user'] },
+      };
 
-      await new Promise(resolve => {
+      await new Promise<void>(resolve => {
         tribesController.tribeBySlug(
           req,
           res,
@@ -258,7 +298,7 @@ describe('Tribes controller unit tests', () => {
         );
       });
       nextCalled.should.be.true();
-      req.tribe._id.toString().should.equal(tribe._id.toString());
+      req.tribe?._id?.toString().should.equal(tribe._id.toString());
     });
 
     it('attaches a tribe and calls next', async () => {
@@ -268,8 +308,8 @@ describe('Tribes controller unit tests', () => {
       }).save();
       const res = deferredResponse();
       let nextCalled = false;
-      const req = {};
-      await new Promise(resolve => {
+      const req: { tribe?: TestTribeView } = {};
+      await new Promise<void>(resolve => {
         tribesController.tribeBySlug(
           req,
           res,
@@ -281,13 +321,13 @@ describe('Tribes controller unit tests', () => {
         );
       });
       nextCalled.should.be.true();
-      req.tribe._id.toString().should.equal(tribe._id.toString());
+      req.tribe?._id?.toString().should.equal(tribe._id.toString());
     });
 
     it('returns 400 when tribe lookup fails', async () => {
       sinon.stub(Tribe, 'findOne').returns({
-        exec: cb => cb(new Error('find failed')),
-      });
+        exec: (cb: (error: Error) => void) => cb(new Error('find failed')),
+      } as unknown as ReturnType<typeof Tribe.findOne>);
       const res = deferredResponse();
 
       tribesController.tribeBySlug({}, res, () => {}, 'missing-slug');
@@ -299,7 +339,11 @@ describe('Tribes controller unit tests', () => {
   describe('listMembers', () => {
     it('supports legacy viewers without a blocked list', async () => {
       const circleId = new mongoose.Types.ObjectId();
-      const res = deferredResponse();
+      const res = deferredResponse<{
+        contacts: unknown[];
+        recommenders: unknown[];
+        active: unknown[];
+      }>();
 
       await tribesController.listMembers(
         {
@@ -324,7 +368,7 @@ describe('Tribes controller unit tests', () => {
         option: () => ({
           exec: () => Promise.reject(error),
         }),
-      });
+      } as unknown as ReturnType<typeof Contact.aggregate>);
       const next = sinon.stub();
       const res = deferredResponse();
 
