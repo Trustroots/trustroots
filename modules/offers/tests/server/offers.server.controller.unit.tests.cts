@@ -1,50 +1,110 @@
+import type {
+  OfferDocument,
+  OfferModel,
+  OfferRecord,
+  TestConfigModule,
+  UserDocument,
+  UserModel,
+  UserRecord,
+} from '../../../../testutils/server/model-contracts.mts';
 /**
  * Unit tests for the offers controller guard, validation, middleware and error
  * branches that the route tests do not exercise. Handlers are invoked directly
  * with mock req/res/next against the test database.
  */
-const mongoose = require('mongoose');
-const asyncLib = require('async');
-const sinon = require('sinon');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const asyncLib: {
+  waterfall(
+    tasks: unknown[],
+    callback: (error?: Error | null, result?: unknown) => void,
+  ): void;
+} = require('async');
+const sinon: typeof import('sinon') = require('sinon');
 
-const config = require('./../../../../config/config.mjs');
-const offersController = require('./../../server/controllers/offers.server.controller.mjs');
-const userProfile = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+const config: TestConfigModule = require('./../../../../config/config.mjs');
+const offersController: typeof import('./../../server/controllers/offers.server.controller.mjs') = require('./../../server/controllers/offers.server.controller.mjs');
+const userProfile: typeof import('./../../../users/server/controllers/users.profile.server.controller.mjs') = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
-const User = mongoose.model('User');
-const Offer = mongoose.model('Offer');
+const User = mongoose.model<UserRecord, UserModel>('User');
+const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
 
-function runHandler(invoke) {
+interface OfferResponseBody extends Record<string, unknown> {
+  message: string;
+  type: string;
+  description: string;
+  location: number[];
+  noOfferDescription: string;
+  features: unknown[];
+}
+interface MockOfferResponse {
+  statusCode: number;
+  body: OfferResponseBody;
+  _next?: boolean;
+  _nextArg?: unknown;
+  status(code: number): MockOfferResponse;
+  send(body: unknown): MockOfferResponse;
+  json(body: unknown): MockOfferResponse;
+}
+type HandlerResult = {
+  res: MockOfferResponse;
+  nextCalled: boolean;
+  nextArg: unknown;
+};
+function runHandler(
+  invoke: (
+    res: import('express').Response,
+    next: (arg?: unknown) => void,
+  ) => unknown,
+): Promise<HandlerResult> {
   return new Promise(resolve => {
-    const res = { statusCode: 200, body: null };
+    const res = {} as MockOfferResponse;
     const finish = () =>
-      resolve({ res, nextCalled: res._next, nextArg: res._nextArg });
-    res.status = function (code) {
-      res.statusCode = code;
-      return res;
-    };
-    res.send = function (body) {
-      res.body = body;
-      finish();
-      return res;
-    };
-    res.json = function (body) {
-      res.body = body;
-      finish();
-      return res;
-    };
-    const next = arg => {
+      resolve({ res, nextCalled: res._next === true, nextArg: res._nextArg });
+    Object.assign(res, {
+      statusCode: 200,
+      body: {} as OfferResponseBody,
+      status(code: number) {
+        res.statusCode = code;
+        return res;
+      },
+      send(body: unknown) {
+        res.body = body as OfferResponseBody;
+        finish();
+        return res;
+      },
+      json(body: unknown) {
+        res.body = body as OfferResponseBody;
+        finish();
+        return res;
+      },
+    });
+    const next = (arg?: unknown) => {
       res._next = true;
       res._nextArg = arg;
       finish();
     };
-    invoke(res, next);
+    invoke(res as unknown as import('express').Response, next);
   });
 }
 
-async function createOffer(userId, overrides = {}) {
+function required<T>(value: T): NonNullable<T> {
+  if (value === null || value === undefined) throw new Error('Expected value');
+  return value as NonNullable<T>;
+}
+
+type PopulatedOffer = OfferDocument & {
+  user: UserRecord & { _id: UserDocument['_id'] };
+};
+function populatedOffer(offer: OfferDocument | null): PopulatedOffer {
+  return required(offer) as unknown as PopulatedOffer;
+}
+
+async function createOffer(
+  userId: UserDocument['_id'],
+  overrides: Partial<OfferRecord> = {},
+): Promise<OfferDocument> {
   const offer = new Offer({
     type: 'host',
     location: [10, 20],
@@ -56,8 +116,8 @@ async function createOffer(userId, overrides = {}) {
 }
 
 describe('Offers controller unit tests', () => {
-  let owner;
-  let stranger;
+  let owner: UserDocument;
+  let stranger: UserDocument;
 
   beforeEach(async () => {
     [owner, stranger] = await utils.saveUsers(
@@ -89,7 +149,9 @@ describe('Offers controller unit tests', () => {
     });
 
     it('rejects offer types when schema enum values are unavailable', async () => {
-      const typePath = Offer.schema.path('type');
+      const typePath = Offer.schema.path(
+        'type',
+      ) as import('mongoose').SchemaType & { enumValues?: string[] };
       const enumValues = typePath.enumValues;
       typePath.enumValues = undefined;
 
@@ -236,9 +298,14 @@ describe('Offers controller unit tests', () => {
     });
 
     it('returns 400 when saving a new offer fails', async () => {
-      sinon.stub(Offer.prototype, 'save').callsFake(function (cb) {
-        cb(new Error('save failed'));
-      });
+      const saveOffer = sinon.stub(
+        Offer.prototype,
+        'save',
+      ) as unknown as import('sinon').SinonStub<
+        [(error?: Error | null) => void],
+        void
+      >;
+      saveOffer.callsFake(callback => callback(new Error('save failed')));
 
       const { res } = await runHandler(res =>
         offersController.create(
@@ -252,13 +319,12 @@ describe('Offers controller unit tests', () => {
   });
 
   describe('update', () => {
-    let offerReq;
+    let offerReq: OfferDocument;
 
     beforeEach(async () => {
       await createOffer(owner._id, { type: 'meet' });
-      offerReq = await Offer.findOne({ user: owner._id }).populate(
-        'user',
-        '_id',
+      offerReq = required(
+        await Offer.findOne({ user: owner._id }).populate('user', '_id'),
       );
     });
 
@@ -340,8 +406,8 @@ describe('Offers controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
 
-      const reloaded = await Offer.findById(offerReq._id);
-      reloaded.validUntil.should.be.a.Date();
+      const reloaded = required(await Offer.findById(offerReq._id));
+      required(reloaded.validUntil).should.be.a.Date();
     });
 
     it('accepts a valid validUntil when updating a meet offer', async () => {
@@ -358,14 +424,19 @@ describe('Offers controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
 
-      const reloaded = await Offer.findById(offerReq._id);
-      reloaded.validUntil.should.be.a.Date();
+      const reloaded = required(await Offer.findById(offerReq._id));
+      required(reloaded.validUntil).should.be.a.Date();
     });
 
     it('returns 400 when saving an updated offer fails', async () => {
-      sinon.stub(Offer.prototype, 'save').callsFake(function (cb) {
-        cb(new Error('save failed'));
-      });
+      const saveOffer = sinon.stub(
+        Offer.prototype,
+        'save',
+      ) as unknown as import('sinon').SinonStub<
+        [(error?: Error | null) => void],
+        void
+      >;
+      saveOffer.callsFake(callback => callback(new Error('save failed')));
 
       const { res } = await runHandler(res =>
         offersController.update(
@@ -407,9 +478,8 @@ describe('Offers controller unit tests', () => {
   describe('update host offer', () => {
     it('strips validUntil when updating a host offer', async () => {
       const hostOffer = await createOffer(owner._id, { type: 'host' });
-      const offerReq = await Offer.findById(hostOffer._id).populate(
-        'user',
-        '_id',
+      const offerReq = populatedOffer(
+        await Offer.findById(hostOffer._id).populate('user', '_id'),
       );
       const validUntil = require('moment')().add(10, 'days').toISOString();
 
@@ -425,7 +495,7 @@ describe('Offers controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
 
-      const reloaded = await Offer.findById(hostOffer._id);
+      const reloaded = required(await Offer.findById(hostOffer._id));
       (
         reloaded.validUntil === undefined || reloaded.validUntil === null
       ).should.be.true();
@@ -435,7 +505,9 @@ describe('Offers controller unit tests', () => {
   describe('delete', () => {
     it('responds with 403 for a non-owner', async () => {
       const offer = await createOffer(owner._id);
-      const offerReq = await Offer.findById(offer._id).populate('user', '_id');
+      const offerReq = populatedOffer(
+        await Offer.findById(offer._id).populate('user', '_id'),
+      );
       const { res } = await runHandler(res =>
         offersController.delete({ user: stranger, offer: offerReq }, res),
       );
@@ -444,7 +516,9 @@ describe('Offers controller unit tests', () => {
 
     it('removes an owned offer', async () => {
       const offer = await createOffer(owner._id);
-      const offerReq = await Offer.findById(offer._id).populate('user', '_id');
+      const offerReq = populatedOffer(
+        await Offer.findById(offer._id).populate('user', '_id'),
+      );
       const { res } = await runHandler(res =>
         offersController.delete({ user: owner, offer: offerReq }, res),
       );
@@ -454,10 +528,22 @@ describe('Offers controller unit tests', () => {
 
     it('returns 400 when removing an offer fails', async () => {
       const offer = await createOffer(owner._id);
-      const offerReq = await Offer.findById(offer._id).populate('user', '_id');
-      sinon.stub(Offer, 'findOneAndRemove').callsFake((query, cb) => {
-        cb(new Error('remove failed'));
-      });
+      const offerReq = populatedOffer(
+        await Offer.findById(offer._id).populate('user', '_id'),
+      );
+      const findOneAndRemove = sinon.stub(
+        Offer,
+        'findOneAndRemove',
+      ) as unknown as import('sinon').SinonStub<
+        [
+          import('mongoose').FilterQuery<OfferRecord>,
+          (error: Error | null) => void,
+        ],
+        void
+      >;
+      findOneAndRemove.callsFake((_query, cb) =>
+        cb(new Error('remove failed')),
+      );
 
       const { res } = await runHandler(res =>
         offersController.delete({ user: owner, offer: offerReq }, res),
@@ -528,10 +614,11 @@ describe('Offers controller unit tests', () => {
     });
 
     it('returns 400 when the map query fails', async () => {
-      const ownerDoc = await User.findById(owner._id);
-      sinon.stub(Offer, 'aggregate').returns({
+      const ownerDoc = required(await User.findById(owner._id));
+      const aggregate = sinon.stub(Offer, 'aggregate');
+      aggregate.returns({
         exec: () => Promise.reject(new Error('aggregate failed')),
-      });
+      } as unknown as ReturnType<typeof aggregate>);
 
       const { res } = await runHandler(res =>
         offersController.list(
@@ -549,7 +636,7 @@ describe('Offers controller unit tests', () => {
     });
 
     it('returns a feature collection', async () => {
-      const ownerDoc = await User.findById(owner._id);
+      const ownerDoc = required(await User.findById(owner._id));
       const { res } = await runHandler(res =>
         offersController.list(
           {
@@ -571,7 +658,7 @@ describe('Offers controller unit tests', () => {
     });
 
     it('ignores invalid language filters', async () => {
-      const ownerDoc = await User.findById(owner._id);
+      const ownerDoc = required(await User.findById(owner._id));
       const { res } = await runHandler(res =>
         offersController.list(
           {
@@ -590,7 +677,7 @@ describe('Offers controller unit tests', () => {
     });
 
     it('accepts coordinates with leading whitespace', async () => {
-      const ownerDoc = await User.findById(owner._id);
+      const ownerDoc = required(await User.findById(owner._id));
       const { res } = await runHandler(res =>
         offersController.list(
           {
@@ -614,7 +701,7 @@ describe('Offers controller unit tests', () => {
       const tribe = await mongoose
         .model('Tribe')
         .create({ label: 'Offer Tribe' });
-      const ownerDoc = await User.findById(owner._id);
+      const ownerDoc = required(await User.findById(owner._id));
       ownerDoc.member = [{ tribe: tribe._id, since: new Date() }];
       await ownerDoc.save();
       await createOffer(owner._id, { type: 'host' });
@@ -642,7 +729,7 @@ describe('Offers controller unit tests', () => {
       const [member, outsider] = await utils.saveUsers(
         utils.generateUsers(2, { public: true }),
       );
-      const memberDoc = await User.findById(member._id);
+      const memberDoc = required(await User.findById(member._id));
       memberDoc.member = [{ tribe: tribe._id, since: new Date() }];
       await memberDoc.save();
       const viewerDoc = await User.findById(outsider._id);
@@ -698,9 +785,11 @@ describe('Offers controller unit tests', () => {
         description: '<p>Hosting <script>alert()</script></p>',
         noOfferDescription: '<p>Unavailable <script>alert()</script></p>',
       });
-      const offerReq = await Offer.findById(offer._id).populate(
-        'user',
-        userProfile.userListingProfileFields,
+      const offerReq = populatedOffer(
+        await Offer.findById(offer._id).populate(
+          'user',
+          userProfile.userListingProfileFields,
+        ),
       );
       const { res } = await runHandler(res =>
         offersController.getOffer({ user: owner, offer: offerReq }, res),
@@ -717,9 +806,11 @@ describe('Offers controller unit tests', () => {
           '<p>Write to member@example.org or visit https://example.org/offer.</p>',
         noOfferDescription: '<p>Call (555) 666-7777 instead.</p>',
       });
-      const offerReq = await Offer.findById(offer._id).populate(
-        'user',
-        userProfile.userListingProfileFields,
+      const offerReq = populatedOffer(
+        await Offer.findById(offer._id).populate(
+          'user',
+          userProfile.userListingProfileFields,
+        ),
       );
       stranger.roles = ['user', 'shadowban'];
 
@@ -736,9 +827,11 @@ describe('Offers controller unit tests', () => {
       const offer = await createOffer(owner._id, {
         description: '<p>Visit https://example.org/offer.</p>',
       });
-      const offerReq = await Offer.findById(offer._id).populate(
-        'user',
-        userProfile.userListingProfileFields,
+      const offerReq = populatedOffer(
+        await Offer.findById(offer._id).populate(
+          'user',
+          userProfile.userListingProfileFields,
+        ),
       );
       stranger.roles = ['user', 'admin', 'shadowban'];
 
@@ -790,9 +883,11 @@ describe('Offers controller unit tests', () => {
         location: [12, 22],
         locationFuzzy: [10, 20],
       });
-      const offerReq = await Offer.findById(offer._id).populate(
-        'user',
-        userProfile.userListingProfileFields,
+      const offerReq = populatedOffer(
+        await Offer.findById(offer._id).populate(
+          'user',
+          userProfile.userListingProfileFields,
+        ),
       );
 
       const { res } = await runHandler(res =>
@@ -805,9 +900,11 @@ describe('Offers controller unit tests', () => {
 
     it('returns fuzzy location without an authenticated viewer', async () => {
       const offer = await createOffer(owner._id);
-      const offerReq = await Offer.findById(offer._id).populate(
-        'user',
-        userProfile.userListingProfileFields,
+      const offerReq = populatedOffer(
+        await Offer.findById(offer._id).populate(
+          'user',
+          userProfile.userListingProfileFields,
+        ),
       );
 
       const { res } = await runHandler(res =>
@@ -815,20 +912,31 @@ describe('Offers controller unit tests', () => {
       );
 
       res.statusCode.should.equal(200);
-      res.body.location.should.deepEqual(Array.from(offerReq.locationFuzzy));
+      res.body.location.should.deepEqual(
+        Array.from(required(offerReq.locationFuzzy)),
+      );
     });
 
     it('returns 400 when populating tribe memberships fails', async () => {
       const offer = await createOffer(owner._id);
-      const offerReq = await Offer.findById(offer._id).populate(
-        'user',
-        userProfile.userListingProfileFields,
+      const offerReq = populatedOffer(
+        await Offer.findById(offer._id).populate(
+          'user',
+          userProfile.userListingProfileFields,
+        ),
       );
       offerReq.user.member = [{ tribe: new mongoose.Types.ObjectId() }];
 
-      sinon
-        .stub(User, 'populate')
-        .callsFake((doc, options, cb) => cb(new Error('populate failed')));
+      const populate = sinon.stub(
+        User,
+        'populate',
+      ) as unknown as import('sinon').SinonStub<
+        [UserRecord, unknown, (error: Error | null, user?: UserRecord) => void],
+        void
+      >;
+      populate.callsFake((_doc, _options, cb) =>
+        cb(new Error('populate failed')),
+      );
 
       const { res } = await runHandler(res =>
         offersController.getOffer({ user: owner, offer: offerReq }, res),
@@ -838,9 +946,11 @@ describe('Offers controller unit tests', () => {
 
     it('returns an offer when the owner has no tribe memberships', async () => {
       const offer = await createOffer(owner._id);
-      const offerReq = await Offer.findById(offer._id).populate(
-        'user',
-        userProfile.userListingProfileFields,
+      const offerReq = populatedOffer(
+        await Offer.findById(offer._id).populate(
+          'user',
+          userProfile.userListingProfileFields,
+        ),
       );
       offerReq.user.member = [];
 
@@ -853,9 +963,11 @@ describe('Offers controller unit tests', () => {
 
     it('returns an offer when tribe memberships are undefined', async () => {
       const offer = await createOffer(owner._id);
-      const offerReq = await Offer.findById(offer._id).populate(
-        'user',
-        userProfile.userListingProfileFields,
+      const offerReq = populatedOffer(
+        await Offer.findById(offer._id).populate(
+          'user',
+          userProfile.userListingProfileFields,
+        ),
       );
       delete offerReq.user.member;
 
@@ -932,7 +1044,7 @@ describe('Offers controller unit tests', () => {
 
     it('calls next and attaches offers filtered by type', async () => {
       await createOffer(owner._id, { type: 'host' });
-      const ownerDoc = await User.findById(owner._id);
+      const ownerDoc = required(await User.findById(owner._id));
       const { nextCalled } = await runHandler((res, next) =>
         offersController.offersByUserId(
           { user: ownerDoc, query: { types: 'host' } },
@@ -946,7 +1058,7 @@ describe('Offers controller unit tests', () => {
 
     it('ignores invalid requested types', async () => {
       await createOffer(owner._id, { type: 'host' });
-      const ownerDoc = await User.findById(owner._id);
+      const ownerDoc = required(await User.findById(owner._id));
 
       const { nextCalled } = await runHandler((res, next) =>
         offersController.offersByUserId(
@@ -961,9 +1073,17 @@ describe('Offers controller unit tests', () => {
     });
 
     it('passes lookup errors to next', async () => {
-      sinon.stub(Offer, 'find').callsFake((query, cb) => {
-        cb(new Error('lookup failed'));
-      });
+      const findOffers = sinon.stub(
+        Offer,
+        'find',
+      ) as unknown as import('sinon').SinonStub<
+        [
+          import('mongoose').FilterQuery<OfferRecord>,
+          (error: Error | null, offers?: OfferDocument[]) => void,
+        ],
+        void
+      >;
+      findOffers.callsFake((_query, cb) => cb(new Error('lookup failed')));
 
       const { nextArg } = await runHandler((res, next) =>
         offersController.offersByUserId(
@@ -973,6 +1093,7 @@ describe('Offers controller unit tests', () => {
           owner._id.toString(),
         ),
       );
+      if (!(nextArg instanceof Error)) throw new Error('Expected lookup error');
       nextArg.message.should.equal('lookup failed');
     });
   });
@@ -1010,9 +1131,25 @@ describe('Offers controller unit tests', () => {
     });
 
     it('responds with 404 when loading an offer errors', async () => {
-      sinon.stub(Offer, 'findById').returns({
+      const findOfferById = sinon.stub(
+        Offer,
+        'findById',
+      ) as unknown as import('sinon').SinonStub<
+        [string],
+        {
+          populate(): {
+            exec(
+              callback: (
+                error: Error | null,
+                offer?: OfferDocument | null,
+              ) => void,
+            ): void;
+          };
+        }
+      >;
+      findOfferById.returns({
         populate: () => ({
-          exec: cb => cb(new Error('lookup failed')),
+          exec: callback => callback(new Error('lookup failed')),
         }),
       });
 
@@ -1056,6 +1193,7 @@ describe('Offers controller unit tests', () => {
         ),
       );
       nextCalled.should.be.true();
+      if (!(nextArg instanceof Error)) throw new Error('Expected attach error');
       nextArg.should.be.Error();
       nextArg.message.should.equal('attach failed');
     });
@@ -1063,16 +1201,29 @@ describe('Offers controller unit tests', () => {
 
   describe('removeAllByUserId', () => {
     it('removes offers without error', done => {
-      offersController.removeAllByUserId(new mongoose.Types.ObjectId(), err => {
-        (err === null || err === undefined).should.be.true();
-        done();
-      });
+      offersController.removeAllByUserId(
+        new mongoose.Types.ObjectId(),
+        (err: Error | null) => {
+          (err === null || err === undefined).should.be.true();
+          done();
+        },
+      );
     });
 
     it('does not require a callback', done => {
-      sinon.stub(Offer, 'deleteMany').callsFake((query, cb) => cb());
+      const deleteOffers = sinon.stub(
+        Offer,
+        'deleteMany',
+      ) as unknown as import('sinon').SinonStub<
+        [
+          import('mongoose').FilterQuery<OfferRecord>,
+          (error?: Error | null) => void,
+        ],
+        void
+      >;
+      deleteOffers.callsFake((_query, callback) => callback());
       offersController.removeAllByUserId(new mongoose.Types.ObjectId());
-      Offer.deleteMany.calledOnce.should.be.true();
+      sinon.assert.calledOnce(deleteOffers);
       done();
     });
   });
