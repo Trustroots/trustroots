@@ -43,6 +43,14 @@ type PublicStatistics = {
   experiences: ExperienceCounts;
   messageInteractions: InteractionCounts;
 };
+type StatisticsAccumulator = {
+  total?: number;
+  connections: PublicStatistics['connections'];
+  hosting: Partial<PublicStatistics['hosting']>;
+  newsletter?: PublicStatistics['newsletter'];
+  experiences: Partial<ExperienceCounts>;
+  messageInteractions: Partial<InteractionCounts>;
+};
 
 interface UserRecord {
   _id: Types.ObjectId;
@@ -110,7 +118,7 @@ interface JsonResponse<Body> {
   json(body: Body): this;
 }
 interface StatisticsRequest {
-  statistics?: PublicStatistics;
+  statistics?: StatisticsAccumulator;
 }
 interface CollectionRequest {
   body?: unknown;
@@ -888,31 +896,11 @@ export const getPublicStatistics = function (
       )
       .json(publicStatisticsCache.statistics);
   }
-  const state: PublicStatistics = {
-    total: 0,
+  const state: StatisticsAccumulator = {
     connections: [],
-    newsletter: { count: 0, percentage: 0 },
-    experiences: {
-      total: 0,
-      recommended: 0,
-      notRecommended: 0,
-      recent: { total: 0, recommended: 0, notRecommended: 0 },
-      realLifeConnections: { total: 0, recent: 0 },
-    },
-    messageInteractions: {
-      total: 0,
-      positive: 0,
-      negative: 0,
-      recent: { total: 0, positive: 0, negative: 0 },
-    },
-    hosting: {
-      total: 0,
-      percentage: 0,
-      yes: 0,
-      yesPercentage: 0,
-      maybe: 0,
-      maybePercentage: 0,
-    },
+    experiences: {},
+    hosting: {},
+    messageInteractions: {},
   };
   req.statistics = state;
   async.waterfall(
@@ -1032,7 +1020,7 @@ export const getPublicStatistics = function (
             }
             state.newsletter = {
               count: count!,
-              percentage: Math.round((count! / state.total) * 100),
+              percentage: Math.round((count! / state.total!) * 100),
             };
             done();
           },
@@ -1073,7 +1061,7 @@ export const getPublicStatistics = function (
           const totalHosting = counter!.yes + counter!.maybe;
           state.hosting = {
             total: totalHosting,
-            percentage: Math.round((totalHosting / state.total) * 100),
+            percentage: Math.round((totalHosting / state.total!) * 100),
             yes: counter!.yes,
             yesPercentage: Math.round((counter!.yes / totalHosting) * 100),
             maybe: counter!.maybe,
@@ -1084,16 +1072,20 @@ export const getPublicStatistics = function (
       },
       // Done!
       function () {
+        // This stage runs only after every preceding task has populated the
+        // accumulator; the assertion changes no runtime shape or values.
+        const statistics = state as PublicStatistics;
         publicStatisticsCache = {
           expiresAt: Date.now() + PUBLIC_STATISTICS_CACHE_SECONDS * 1000,
-          statistics: state,
+          statistics,
         };
+        req.statistics = statistics;
         return res
           .header(
             'Cache-Control',
             `public, max-age=${PUBLIC_STATISTICS_CACHE_SECONDS}`,
           )
-          .json(state);
+          .json(statistics);
       },
     ],
     function (err?: Error | null) {
