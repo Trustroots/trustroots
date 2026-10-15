@@ -11,20 +11,13 @@ import _ from 'lodash';
 import path from 'path';
 import errorService from './../../../core/server/services/error.server.service.mjs';
 import textService from './../../../core/server/services/text.server.service.mjs';
-import {
-  tribeFields,
-  updateCount,
-} from './../../../tribes/server/controllers/tribes.server.controller.mjs';
-import {
-  isUsernameFormatValid,
-  usernameFormatMessage,
-  validateUsername,
-} from '../services/authentication.server.service.mjs';
+import tribesHandler from './../../../tribes/server/controllers/tribes.server.controller.mjs';
+import authenticationService from '../services/authentication.server.service.mjs';
 import emailServiceModule from './../../../core/server/services/email.server.service.mjs';
 import statService from './../../../stats/server/services/stats.server.service.mts';
 import log from './../../../../config/lib/logger.mjs';
 import fileRemovalServiceModule from '../../../core/server/services/file-removal.server.service.mjs';
-import { readFormattedMessageStatsOfUser } from './../../../messages/server/services/message-stat.server.service.mjs';
+import messageStatService from './../../../messages/server/services/message-stat.server.service.mjs';
 import config from './../../../../config/config.mjs';
 import async from 'async';
 import crypto from 'crypto';
@@ -32,6 +25,7 @@ import sanitizeHtml from 'sanitize-html';
 import mongoose from 'mongoose';
 import moment from 'moment';
 import * as nip19 from 'nostr-tools/nip19';
+import validator from 'validator';
 import type {
   ProfilePayload,
   SanitizedProfileRequest,
@@ -77,7 +71,7 @@ const fileRemovalService = fileRemovalServiceModule as {
   removeLocalPath(path: string): Promise<void>;
 };
 type TribeCountResult = NonNullable<
-  Parameters<Parameters<typeof updateCount>[3]>[1]
+  Parameters<Parameters<typeof tribesHandler.updateCount>[3]>[1]
 >;
 type PopulatedTribeDocument = TribeCountResult & {
   _id: mongoose.Types.ObjectId;
@@ -138,23 +132,34 @@ service.update = function (req, res) {
   if (!req.user) {
     return errorService.sendForbidden(res);
   }
+  if (
+    Object.prototype.hasOwnProperty.call(req.body, 'email') &&
+    (typeof req.body.email !== 'string' ||
+      (req.body.email !== '' && !validator.isEmail(req.body.email)))
+  ) {
+    return res.status(400).send({
+      message: 'Please enter a valid email address.',
+    });
+  }
   const authenticatedUser = req.user;
   const requestedEmail = req.body.email as string | undefined;
 
   if (Object.prototype.hasOwnProperty.call(req.body, 'username')) {
     if (typeof req.body.username !== 'string') {
-      return res.status(400).send({ message: usernameFormatMessage });
+      return res
+        .status(400)
+        .send({ message: authenticationService.usernameFormatMessage });
     }
     const selectedUsername = req.body.username.trim();
     req.body.username = selectedUsername.toLowerCase();
     if (
       req.body.username !== authenticatedUser.username &&
-      !validateUsername(selectedUsername)
+      !authenticationService.validateUsername(selectedUsername)
     ) {
       return res.status(400).send({
-        message: isUsernameFormatValid(selectedUsername)
+        message: authenticationService.isUsernameFormatValid(selectedUsername)
           ? 'Username is not available.'
-          : usernameFormatMessage,
+          : authenticationService.usernameFormatMessage,
       });
     }
   }
@@ -364,13 +369,16 @@ service.update = function (req, res) {
       function (
         token: string | false,
         user: UserServerDocument,
-        done: (error: Error | null, user: UserServerDocument) => void,
+        done: (
+          error: Error | null | undefined,
+          user: UserServerDocument,
+        ) => void,
       ) {
         if (token) {
           emailService.sendChangeEmailConfirmation(
             user,
             function (err: Error | null) {
-              done(err ?? null, user);
+              done(err, user);
             },
           );
         } else {
@@ -541,21 +549,21 @@ service.removeProfile = function (req, res) {
       // Remove profile
       function (
         user: UserServerRecord,
-        done: (error: Error | null, user: UserServerRecord) => void,
+        done: (error: Error | null | undefined, user: UserServerRecord) => void,
       ) {
         User.findOneAndRemove(
           {
             _id: user._id,
           },
           function (err?: Error | null) {
-            done(err ?? null, user);
+            done(err, user);
           },
         );
       },
       // Remove native message alert registrations
       function (
         user: UserServerRecord,
-        done: (error: Error | null, user: UserServerRecord) => void,
+        done: (error: Error | null | undefined, user: UserServerRecord) => void,
       ) {
         mongoose.model('UnifiedPushRegistration').deleteMany(
           {
@@ -574,7 +582,7 @@ service.removeProfile = function (req, res) {
       // Remove offers
       function (
         user: UserServerRecord,
-        done: (error: Error | null, user: UserServerRecord) => void,
+        done: (error: Error | null | undefined, user: UserServerRecord) => void,
       ) {
         getOfferHandler().removeAllByUserId(user._id, function (err) {
           if (err) {
@@ -588,7 +596,7 @@ service.removeProfile = function (req, res) {
       // Remove contacts
       function (
         user: UserServerRecord,
-        done: (error: Error | null, user: UserServerRecord) => void,
+        done: (error: Error | null | undefined, user: UserServerRecord) => void,
       ) {
         getContactHandler().removeAllByUserId(user._id, function (err) {
           if (err) {
@@ -606,19 +614,19 @@ service.removeProfile = function (req, res) {
       // Mark all messages sent _to_ that user as `notified:true` (so that unread-messages doesn't pick them up anymore). Leave messages _from_ that user as is.
       function (
         user: UserServerRecord,
-        done: (error: Error | null, user: UserServerRecord) => void,
+        done: (error: Error | null | undefined, user: UserServerRecord) => void,
       ) {
         getMessageHandler().markAllMessagesToUserNotified(
           user._id,
           function (err?: Error | null) {
-            return done(err ?? null, user);
+            return done(err, user);
           },
         );
       },
       // Subtract 1 from all the tribes.count of which user is member
       function (
         user: UserServerRecord,
-        done: (error: Error | null, user: UserServerRecord) => void,
+        done: (error: Error | null | undefined, user: UserServerRecord) => void,
       ) {
         async.each(
           user.member,
@@ -627,10 +635,10 @@ service.removeProfile = function (req, res) {
             callback: (error?: Error | null) => void,
           ) {
             // Update the count of every tribe user is member of
-            updateCount(membership.tribe.toString(), -1, false, callback);
+            tribesHandler.updateCount(membership.tribe, -1, false, callback);
           },
           function (err?: Error | null) {
-            done(err ?? null, user);
+            done(err, user);
           },
         );
       },
@@ -853,7 +861,7 @@ service.userByUsername = function (req, res, next, username) {
         )
           .populate({
             path: 'member.tribe',
-            select: tribeFields,
+            select: tribesHandler.tribeFields,
             model: 'Tribe',
             // Not possible at the moment due bug in Mongoose
             // http://mongoosejs.com/docs/faq.html#populate_sort_order
@@ -899,7 +907,7 @@ service.userByUsername = function (req, res, next, username) {
         done: (error?: Error | null) => void,
       ) {
         // find the statistics
-        readFormattedMessageStatsOfUser(
+        messageStatService.readFormattedMessageStatsOfUser(
           profile._id,
           Date.now(),
           function (
@@ -1165,7 +1173,7 @@ service.joinTribe = function (req, res) {
       function (
         done: (error: Error | null, tribe: PopulatedTribeDocument) => void,
       ) {
-        updateCount(
+        tribesHandler.updateCount(
           tribeId,
           1,
           true,
@@ -1216,7 +1224,7 @@ service.joinTribe = function (req, res) {
       ) {
         // Preserver only public fields
         // Array of keys to preserve in tribe before sending it to the frontend
-        const pickedTribe = _.pick(tribe, tribeFields.split(' '));
+        const pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
 
         // Sanitize user profile
         const sanitizedUser = service.sanitizeProfile(user, authenticatedUser);
@@ -1287,7 +1295,7 @@ service.leaveTribe = function (req, res) {
       function (
         done: (error: Error | null, tribe: PopulatedTribeDocument) => void,
       ) {
-        updateCount(
+        tribesHandler.updateCount(
           tribeId,
           -1,
           true,
@@ -1337,7 +1345,7 @@ service.leaveTribe = function (req, res) {
       ) {
         // Preserver only public fields
         // Array of keys to preserve in tribe before sending it to the frontend
-        const pickedTribe = _.pick(tribe, tribeFields.split(' '));
+        const pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
 
         // Sanitize user profile
         const sanitizedUser = service.sanitizeProfile(user, authenticatedUser);
@@ -1388,7 +1396,7 @@ service.getUserMemberships = function (req, res) {
   User.findById(req.user._id, 'member')
     .populate({
       path: 'member.tribe',
-      select: tribeFields,
+      select: tribesHandler.tribeFields,
       model: 'Tribe',
       // Not possible at the moment due bug in Mongoose
       // http://mongoosejs.com/docs/faq.html#populate_sort_order
@@ -1402,7 +1410,7 @@ service.getUserMemberships = function (req, res) {
           message: 'Failed to get list of tribes.',
         });
       }
-      return res.send(profile?.member || []);
+      return res.send(profile!.member || []);
     });
 };
 
@@ -1510,7 +1518,7 @@ service.search = function (req, res, next) {
         'Please refine your member search instead of requesting more pages.',
     });
   }
-  const blocked = req.user?.blocked || [];
+  const blocked = req.user!.blocked || [];
   // perform the search
   User.find(
     {

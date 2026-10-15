@@ -1,7 +1,5 @@
 import type { NextFunction, Response } from 'express';
 import mongoose, { type Types } from 'mongoose';
-import type { OfferPayload } from '../../../offers/shared/offer.js';
-import { prepareOfferPayload } from '../../../offers/server/services/offer-payload.server.service.mts';
 import type {
   ProfileRequest,
   ProfileResponse,
@@ -36,15 +34,25 @@ interface ExportExperienceRecord extends ExportRecord {
   userTo?: unknown;
 }
 
-type ExportOfferRecord = OfferPayload<ExportId, Date> & {
-  createdAt?: Date;
-};
-
-interface ExportRequest extends ProfileRequest {
-  user: UserServerDocument;
-  contacts?: unknown;
-  profile?: UserServerDocument | ProfileRequest['profile'];
+interface ExportOfferRecord extends ExportRecord {
+  _id: unknown;
+  type: unknown;
+  user: unknown;
+  location: unknown;
+  status?: unknown;
+  description?: unknown;
+  noOfferDescription?: unknown;
+  maxGuests?: unknown;
+  updated?: unknown;
+  validUntil?: unknown;
+  showOnlyInMyCircles?: unknown;
+  createdAt?: unknown;
 }
+
+type ExportRequest = ProfileRequest &
+  Parameters<typeof contacts.contactListByUser>[0] & {
+    user: UserServerDocument;
+  };
 
 interface ExportMember {
   [field: string]: unknown;
@@ -69,13 +77,23 @@ interface ExportProfileRecord {
   member?: ExportMembership[] | null;
 }
 
+type ContactMiddlewareResponse = Parameters<
+  typeof contacts.contactListByUser
+>[1];
+type MiddlewareResponseBody =
+  ProfileResponseBody | Parameters<ContactMiddlewareResponse['send']>[0];
+
 interface MiddlewareResponse extends ProfileResponse {
   statusCode?: number;
+  status(code: number): MiddlewareResponse;
+  send(body: MiddlewareResponseBody): MiddlewareResponse;
+  json(body: MiddlewareResponseBody): MiddlewareResponse;
+  redirect(url: string): MiddlewareResponse;
 }
 
 type ExportMiddleware<Value extends ExportId> = (
-  req: ProfileRequest,
-  res: ProfileResponse,
+  req: ExportRequest,
+  res: MiddlewareResponse,
   next: NextFunction,
   value: Value,
 ) => unknown;
@@ -87,7 +105,7 @@ interface ExportBody {
   profile: unknown;
   circles: ExportRecord[];
   contacts: unknown;
-  hostingOffers: ExportOfferRecord[];
+  hostingOffers: ExportRecord[];
   messages: ExportRecord[];
   experiences: ExportRecord[];
 }
@@ -102,7 +120,7 @@ interface UserExportService {
   circlesFromProfile(profile: unknown): ExportRecord[];
   writtenMessages(userId: ExportId): Promise<ExportRecord[]>;
   writtenExperiences(userId: ExportId): Promise<ExportRecord[]>;
-  memberOffers(userId: ExportId): Promise<ExportOfferRecord[]>;
+  memberOffers(userId: ExportId): Promise<ExportRecord[]>;
 }
 
 const service = {} as UserExportService;
@@ -209,9 +227,25 @@ function selectWrittenExperience(
   };
 }
 
-function selectOwnedOffer(offer: ExportOfferRecord): ExportOfferRecord {
+function selectOwnedOffer(offer: ExportOfferRecord): ExportRecord {
   return {
-    ...prepareOfferPayload(offer),
+    _id: offer._id,
+    type: offer.type,
+    user: offer.user,
+    location: offer.location,
+    ...(offer.status === undefined ? {} : { status: offer.status }),
+    ...(offer.description === undefined
+      ? {}
+      : { description: offer.description }),
+    ...(offer.noOfferDescription === undefined
+      ? {}
+      : { noOfferDescription: offer.noOfferDescription }),
+    ...(offer.maxGuests === undefined ? {} : { maxGuests: offer.maxGuests }),
+    ...(offer.updated === undefined ? {} : { updated: offer.updated }),
+    ...(offer.validUntil === undefined ? {} : { validUntil: offer.validUntil }),
+    ...(offer.showOnlyInMyCircles === undefined
+      ? {}
+      : { showOnlyInMyCircles: offer.showOnlyInMyCircles }),
     ...(offer.createdAt === undefined ? {} : { createdAt: offer.createdAt }),
   };
 }
@@ -234,13 +268,11 @@ async function writtenExperiences(userId: ExportId): Promise<ExportRecord[]> {
   return experiences.map(selectWrittenExperience);
 }
 
-async function memberOffers(
-  userId: ExportId,
-): Promise<ExportOfferRecord[]> {
+async function memberOffers(userId: ExportId): Promise<ExportRecord[]> {
   const Offer = mongoose.model<ExportOfferRecord>('Offer');
   const offers = await Offer.find({ user: userId })
     .sort({ createdAt: 1 })
-    .lean();
+    .lean<ExportOfferRecord[]>();
   return offers.map(selectOwnedOffer);
 }
 
@@ -256,7 +288,7 @@ function invokeMiddleware<Value extends ExportId>(
         this.statusCode = code;
         return this;
       },
-      send(body: ProfileResponseBody) {
+      send(body: MiddlewareResponseBody) {
         const message =
           body && typeof body === 'object' && 'message' in body
             ? body.message
@@ -266,13 +298,13 @@ function invokeMiddleware<Value extends ExportId>(
           { statusCode: this.statusCode },
         );
         reject(error);
-        return undefined;
+        return this;
       },
       json() {
-        return undefined;
+        return this;
       },
       redirect() {
-        return undefined;
+        return this;
       },
     };
     middleware(
