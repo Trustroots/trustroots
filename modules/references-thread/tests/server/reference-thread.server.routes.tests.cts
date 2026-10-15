@@ -208,9 +208,7 @@ describe('Reference Thread CRUD tests', function () {
         },
       ],
       function (err) {
-        if (err) {
-          done(err);
-        }
+        done(err);
       },
     );
   });
