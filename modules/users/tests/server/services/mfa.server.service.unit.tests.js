@@ -1,7 +1,7 @@
 const should = require('should');
 const sinon = require('sinon');
 const crypto = require('node:crypto');
-const config = require('../../../../../config/config.mjs');
+const config = require('../../../../../config/config.mts');
 require('./../../../server/models/user.server.model.mjs');
 const mfaService = require('./../../../server/services/mfa.server.service.mjs');
 const User = require('mongoose').model('User');

@@ -8,7 +8,7 @@ const request: typeof import('supertest') = require('supertest');
 const crypto: typeof import('node:crypto') = require('node:crypto');
 require('should');
 const express: import('../../../../testutils/server/model-contracts.mts').TestExpressModule = require('./../../../../config/lib/express.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil.mjs') = require('../../../../testutils/server/data.server.testutil');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 describe('Admin access route tests', () => {
   let app: TestExpressApp;
   before(async function () {

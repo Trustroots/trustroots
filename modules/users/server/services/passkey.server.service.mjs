@@ -6,7 +6,7 @@ import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
-import config from '../../../../config/config.mjs';
+import config from '../../../../config/config.mts';
 import mfa from './mfa.server.service.mjs';
 
 export const webauthn = {

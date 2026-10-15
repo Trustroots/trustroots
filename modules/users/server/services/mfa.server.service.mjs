@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import mongoose from 'mongoose';
-import config from '../../../../config/config.mjs';
+import config from '../../../../config/config.mts';
 
 const User = mongoose.model('User');
 const TOTP_PERIOD_SECONDS = 30;

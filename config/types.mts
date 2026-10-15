@@ -13,6 +13,8 @@ export interface DatabaseConfig {
 }
 
 export interface Config {
+  mfaEncryptionKey: string;
+  passkeys: { rpId: string; origins: string[] };
   featureFlags: Record<string, boolean>;
   app: { title: string; description: string };
   siteAnnouncement: { enabled: boolean; message: string };

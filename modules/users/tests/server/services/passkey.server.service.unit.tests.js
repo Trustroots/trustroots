@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const sinon = require('sinon');
 const mongoose = require('mongoose');
-const config = require('../../../../../config/config.mjs');
+const config = require('../../../../../config/config.mts');
 const mfa = require('../../../server/services/mfa.server.service.mjs').default;
 const service = require('../../../server/services/passkey.server.service.mjs');
 const { webauthn } = service;
