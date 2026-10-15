@@ -127,7 +127,7 @@ async.waterfall(
         if (progress === count) {
           return done(null, progress, count);
         }
-      })
+      });
     },
   ],
   function (err, processedCount, totalCount) {

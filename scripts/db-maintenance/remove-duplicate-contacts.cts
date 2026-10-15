@@ -83,7 +83,7 @@ q.drain(function () {
       );
       process.exit(0);
     });
-})
+});
 
 // Check for initial count
 Contact.find()
