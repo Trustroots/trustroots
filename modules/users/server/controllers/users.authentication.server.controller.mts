@@ -169,8 +169,7 @@ service.signup = function (req, res) {
 
       // Simple anti spam check on name input fields
       function (done: WaterfallCallback) {
-        const body = validatedSignupBody;
-        if (!body) return done(new Error('Please provide required fields.'));
+        const body = validatedSignupBody!;
         const { firstName, lastName, username } = body;
         if (isNameSpam(firstName) || isNameSpam(lastName)) {
           return done(new Error('Invalid signup attempt'));
@@ -198,10 +197,8 @@ service.signup = function (req, res) {
       },
 
       // Save user
-      function (salt: unknown, done: WaterfallCallback) {
-        const body = validatedSignupBody;
-        if (!body) return done(new Error('Please provide required fields.'));
-        if (!Buffer.isBuffer(salt)) return done(new TypeError('Invalid salt.'));
+      function (salt: Buffer, done: WaterfallCallback) {
+        const body = validatedSignupBody!;
         const user = new User(
           _.pick(body, [
             'firstName',
@@ -245,8 +242,7 @@ service.signup = function (req, res) {
 
       // Send email
       function (_user: unknown, done: WaterfallCallback) {
-        const createdUser = signupUser;
-        if (!createdUser) return done(new Error('User signup failed.'));
+        const createdUser = signupUser!;
         const matchedKeywords = signupSafety.matchSignupProfile(createdUser);
         if (matchedKeywords.length) {
           emailService.sendFlaggedSignupAlert(
@@ -272,8 +268,7 @@ service.signup = function (req, res) {
 
       // Login
       function (_user: unknown, done: WaterfallCallback) {
-        const createdUser = signupUser;
-        if (!createdUser) return done(new Error('User signup failed.'));
+        const createdUser = signupUser!;
         req.login!(createdUser, function (err) {
           // Remove sensitive data befor sending user
           const sanitizedUser = userProfile.sanitizeOwnProfile(createdUser);
@@ -374,7 +369,7 @@ service.signupValidation = function (req, res) {
       function (done: WaterfallCallback) {
         User.findOne(
           {
-            username: username?.toLowerCase() ?? '',
+            username: username!.toLowerCase(),
           },
           function (err: Error | null, user: UserDocument | null) {
             if (user) {

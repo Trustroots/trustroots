@@ -42,18 +42,9 @@ interface PasswordResponse {
 
 type WaterfallCallback = (error?: Error | null, ...results: unknown[]) => void;
 
-function getErrorStatus(error: unknown): number | undefined {
-  if (typeof error !== 'object' || error === null || !('status' in error)) {
-    return undefined;
-  }
-  return typeof error.status === 'number' ? error.status : undefined;
-}
-
-function getErrorCode(error: unknown): string | undefined {
-  if (typeof error !== 'object' || error === null || !('code' in error)) {
-    return undefined;
-  }
-  return typeof error.code === 'string' ? error.code : undefined;
+interface PasswordError extends Error {
+  status?: number;
+  code?: string;
 }
 
 interface PasswordController {
@@ -218,11 +209,12 @@ service.reset = async function (req, res) {
   let password;
   try {
     password = await User.hashPassword(newPassword);
-  } catch (err) {
-    if (getErrorCode(err) !== 'KDF_OVERLOADED') {
+  } catch (error: unknown) {
+    const err = error as PasswordError;
+    if (err.code !== 'KDF_OVERLOADED') {
       log('error', 'Password reset credential generation failed.');
     }
-    return res.status(getErrorStatus(err) || 400).send({
+    return res.status(err.status || 400).send({
       message: 'Password reset failed.',
     });
   }
@@ -247,7 +239,8 @@ service.reset = async function (req, res) {
     { new: true, runValidators: true },
     (err: Error | null, user: UserServerDocument | null) => {
       if (err || !user) {
-        return res.status(getErrorStatus(err) || 400).send({
+        const passwordError = err as PasswordError | null;
+        return res.status(passwordError?.status || 400).send({
           message: err
             ? 'Password reset failed.'
             : 'Password reset token is invalid or has expired.',
@@ -338,10 +331,7 @@ service.changePassword = function (req, res) {
         const oldPassword = user.password;
         const oldSalt = user.salt;
         const authVersion = user.authVersion;
-        if (validatedNewPassword === undefined) {
-          return done(new Error('Please provide a new password.'));
-        }
-        User.hashPassword(validatedNewPassword)
+        User.hashPassword(validatedNewPassword!)
           .then((password: string) => {
             const filter: FilterQuery<UserServerRecord> = {
               _id: user._id,
@@ -409,7 +399,7 @@ service.changePassword = function (req, res) {
     function (err: Error | null | undefined) {
       /* istanbul ignore else */
       if (err) {
-        res.status(getErrorStatus(err) || 400).send({
+        res.status((err as PasswordError).status || 400).send({
           message: err.message || errorService.getErrorMessageByKey('default'),
         });
       }

@@ -17,7 +17,7 @@ interface ExportProfile {
   displayName?: string;
   member?: Array<{
     since?: string;
-    tribe?: string | { _id: unknown; slug?: string; label?: string };
+    tribe?: string | { _id?: unknown; slug?: string; label?: string };
   }>;
   [key: string]: unknown;
 }
@@ -314,7 +314,11 @@ describe('Member data export controller', () => {
             tribe: { _id: 'circle-1', slug: 'hikers', label: 'Hikers' },
           },
           { since: '2020-02-01T00:00:00.000Z', tribe: 'circle-2' },
-          { since: '2020-03-01T00:00:00.000Z' },
+          {
+            since: '2020-03-01T00:00:00.000Z',
+            tribe: { slug: 'circle-without-id', label: 'Fallback Circle' },
+          },
+          { since: '2020-04-01T00:00:00.000Z' },
         ],
       })
       .should.deepEqual([
@@ -325,6 +329,12 @@ describe('Member data export controller', () => {
           since: '2020-01-01T00:00:00.000Z',
         },
         { _id: 'circle-2', since: '2020-02-01T00:00:00.000Z' },
+        {
+          _id: { slug: 'circle-without-id', label: 'Fallback Circle' },
+          slug: 'circle-without-id',
+          label: 'Fallback Circle',
+          since: '2020-03-01T00:00:00.000Z',
+        },
       ]);
     controller.circlesFromProfile(null).should.deepEqual([]);
   });
@@ -453,9 +463,14 @@ describe('Member data export controller', () => {
         type: 'host',
         user: user._id,
         location: [52.1, 4.3],
+        status: 'active',
         locationFuzzy: [52.2, 4.4],
         description: 'Guest bed',
+        noOfferDescription: 'A quiet place to rest',
+        maxGuests: 2,
+        updated: '2019-12-01T00:00:00.000Z',
         validUntil: '2020-01-01T00:00:00.000Z',
+        showOnlyInMyCircles: true,
         createdAt: '2019-01-01T00:00:00.000Z',
         reactivateReminderSent: '2019-06-01T00:00:00.000Z',
       },
@@ -479,8 +494,13 @@ describe('Member data export controller', () => {
         type: 'host',
         user: user._id,
         location: [52.1, 4.3],
+        status: 'active',
         description: 'Guest bed',
+        noOfferDescription: 'A quiet place to rest',
+        maxGuests: 2,
+        updated: '2019-12-01T00:00:00.000Z',
         validUntil: '2020-01-01T00:00:00.000Z',
+        showOnlyInMyCircles: true,
         createdAt: '2019-01-01T00:00:00.000Z',
       },
       {
