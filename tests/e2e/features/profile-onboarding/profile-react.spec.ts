@@ -1,6 +1,12 @@
 import { annotateFeature, test, expect } from '../../support/fixtures.mts';
 import { SEEDED_MEMBERS, signInViaApi } from '../../support/helpers.mts';
 
+declare global {
+  interface Window {
+    fixtureMarkupExecuted?: boolean;
+  }
+}
+
 test('profile descriptions retain supported formatting in collapsed and expanded views', async ({
   page,
   request,
