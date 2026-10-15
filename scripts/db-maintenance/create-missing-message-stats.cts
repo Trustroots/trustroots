@@ -92,7 +92,9 @@ async.waterfall(
       let progress = 0; // progress counter
 
       // this is the test for async.doWhilst
-      function testKeepGoing(testCallback: (error: unknown, truth?: boolean) => void) {
+      function testKeepGoing(
+        testCallback: (error: unknown, truth?: boolean) => void,
+      ) {
         testCallback(null, keepGoing);
       }
 
