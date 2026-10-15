@@ -17,10 +17,20 @@ jobs:
       run-code: ${{ steps.changes.outputs.run-code }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
+      - name: Fetch comparison history
+        id: history
+        # Classification fails open to application CI if history is unavailable.
+        continue-on-error: true
+        run: python3 scripts/ci/fetch-comparison.py
       - name: Check docs and native-app change detection
-        run: python3 -m unittest discover -s scripts/ci -p 'test_detect_docs_only.py'
+        run: python3 -m unittest discover -s scripts/ci -p 'test_*.py'
       - name: Classify changed files
         id: changes
-        run: python3 scripts/ci/detect_docs_only.py
+        env:
+          HISTORY_OUTCOME: ${{ steps.history.outcome }}
+        run: |
+          if [ "$HISTORY_OUTCOME" = success ]; then
+            python3 scripts/ci/detect_docs_only.py
+          else
+            echo 'run-code=true' >> "$GITHUB_OUTPUT"
+          fi

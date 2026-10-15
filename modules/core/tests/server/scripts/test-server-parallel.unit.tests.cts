@@ -68,6 +68,47 @@ function fakeWorkers(plan: Worker[], options: Record<string, unknown> = {}) {
 describe('Parallel server test orchestration', () => {
   afterEach(() => sinon.restore());
 
+  it('balances measured durations and estimates new files without losing any tests', () => {
+    const durations = { [files[0]]: 1000, [files[1]]: 10, [files[2]]: 20 };
+    const plan: Worker[] = createPlan(files, 2, token, durations);
+    assert.deepEqual(plan[0].files, [files[0]]);
+    assert.deepEqual(plan[1].files, [files[2], files[1]]);
+    assert.deepEqual(
+      plan.map(worker => worker.size),
+      [1000, 30],
+    );
+    assert.deepEqual(
+      plan,
+      createPlan([...files].reverse(), 2, token, durations),
+    );
+    const partial: Worker[] = createPlan(files, 2, token, { [files[0]]: 1000 });
+    assert.deepEqual(
+      partial.flatMap(worker => worker.files).sort(),
+      [...files].sort(),
+    );
+    assert.ok(
+      partial.every(worker => Number.isFinite(worker.size) && worker.size > 0),
+    );
+    assert.deepEqual(
+      createPlan(files, 2, token, { [files[0]]: NaN, [files[1]]: -1 }),
+      createPlan(files, 2, token),
+    );
+  });
+
+  it('writes each worker timing report to a distinct file', async () => {
+    const run = fakeWorkers(createPlan(files, 2, token), {
+      env: { SERVER_TEST_TIMINGS_DIR: 'coverage/server-timings' },
+    });
+    run.children.forEach((child, index) => {
+      assert.equal(
+        child.options.env?.SERVER_TEST_TIMINGS_OUTPUT,
+        path.join('coverage/server-timings', `worker-${index + 1}.json`),
+      );
+      child.emit('exit', 0, null);
+    });
+    assert.equal(await run.result, 0);
+  });
+
   it('discovers and accepts native CommonJS TypeScript server tests', () => {
     const testFile = path.relative(process.cwd(), __filename);
     const discoveredFiles = globSync(

@@ -55,8 +55,12 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/home/app/ms-playwright
 
 WORKDIR /home/app/trustroots
 
+# CI changes HOME and XDG_CACHE_HOME. Keep the store identity stable so pnpm
+# reuses the image's node_modules instead of recreating it before running tests.
+ENV pnpm_config_store_dir=/pnpm/store
+
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
+RUN --mount=type=cache,target=/pnpm/store \
   pnpm install --frozen-lockfile
 
 # Server tests use the same dependencies without downloading browser binaries.

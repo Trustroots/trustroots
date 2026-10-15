@@ -24,6 +24,9 @@ let message: MessageDocument;
  * Unit tests
  */
 describe('Message Model Unit Tests:', function () {
+  // Register cleanup while defining this suite, so it cannot become a root
+  // hook that deletes fixtures belonging to later suites in the same worker.
+  afterEach(utils.clearDatabase);
   beforeEach(function (done) {
     userFrom = new User({
       firstName: 'Full',
@@ -43,7 +46,6 @@ describe('Message Model Unit Tests:', function () {
       password: 'password123',
       provider: 'local',
     });
-    afterEach(utils.clearDatabase);
     // Create users
     userFrom
       .save()
