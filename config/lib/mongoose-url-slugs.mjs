@@ -2,7 +2,7 @@
  * Local fork of mongoose-url-slugs 1.0.2, patched for Mongoose 8
  * compatibility (removed callback-based .exec() and .findOne() calls).
  */
-import extend from 'extend';
+import _ from 'lodash';
 
 function defaultURLSlugGeneration(text, separator) {
   let slug = text
@@ -136,7 +136,7 @@ const defaultOptions = {
 };
 
 export default function (slugFields, options) {
-  options = extend(true, {}, defaultOptions, options);
+  options = _.merge({}, defaultOptions, options);
 
   if (slugFields.indexOf(' ') > -1) {
     slugFields = slugFields.split(' ');
