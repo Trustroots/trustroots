@@ -12,8 +12,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -60,11 +63,13 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.ImeAction
 import android.text.Html
+import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.launch
 import org.trustroots.android.api.DirectMessage
 import org.trustroots.android.api.AccommodationOffer
@@ -97,6 +102,7 @@ internal fun MemberSearchScreen(
     onProfileOpenChange: (Boolean) -> Unit = {},
     searchMode: (@Composable () -> Unit)? = null,
     onSwitchToMap: (() -> Unit)? = null,
+    contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
@@ -124,18 +130,18 @@ internal fun MemberSearchScreen(
         }
     }
     selected?.let { username ->
-        MemberProfileScreen(api, session, username, onSessionInvalidated) { selected = null }
+        MemberProfileScreen(api, session, username, onSessionInvalidated, onBack = { selected = null }, contentPadding = contentPadding)
         return
     }
-    Column(Modifier.fillMaxSize()) {
-        Surface(color = TrustrootsPaleGreen, modifier = Modifier.fillMaxWidth()) {
+    Column(Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding())) {
+        Surface(color = Color.White, modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = query,
             onValueChange = { query = it; searched = false; error = null; results = emptyList() },
             placeholder = { Text("Name or username") },
             leadingIcon = searchMode,
             singleLine = true,
-            modifier = Modifier.fillMaxWidth().padding(8.dp).testTag("memberSearchField"),
+            modifier = Modifier.fillMaxWidth().padding(contentPadding.horizontalInset()).padding(8.dp).testTag("memberSearchField"),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { search() }),
             trailingIcon = {
@@ -168,9 +174,9 @@ internal fun MemberSearchScreen(
                 }
             }
         }
-        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
+        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
             results.forEach { member ->
-                Row(Modifier.fillMaxWidth().clickable { selected = member.username }.padding(vertical = 12.dp)) {
+                Row(Modifier.fillMaxWidth().clickable { selected = member.username }.padding(vertical = 12.dp).padding(horizontal = 20.dp).padding(contentPadding.horizontalInset())) {
                     RemoteArtwork(
                         url = member.id?.let { api.avatarURL(it, 64) },
                         sessionCookie = session.cookieHeader,
@@ -198,6 +204,7 @@ internal fun MemberProfileScreen(
     onSessionInvalidated: () -> Unit,
     onOwnProfileSaved: (MemberProfile) -> Unit = {},
     startInEditMode: Boolean = false,
+    contentPadding: PaddingValues = PaddingValues.Zero,
     onBack: () -> Unit,
 ) {
     var profile by remember(username) { mutableStateOf<MemberProfile?>(null) }
@@ -235,6 +242,7 @@ internal fun MemberProfileScreen(
             api, session, requireNotNull(profile), onSessionInvalidated,
             onCancel = { editing = false },
             onSaved = { updated -> profile = updated; editing = false; onOwnProfileSaved(updated) },
+            contentPadding = contentPadding,
         )
         return
     }
@@ -247,19 +255,20 @@ internal fun MemberProfileScreen(
             onSessionInvalidated = onSessionInvalidated,
             onBack = { sharingExperience = false },
             onCreated = { sharingExperience = false },
+            contentPadding = contentPadding,
         )
         return
     }
     relatedUsername?.let { related ->
-        MemberProfileScreen(api, session, related, onSessionInvalidated) { relatedUsername = null }
+        MemberProfileScreen(api, session, related, onSessionInvalidated, onBack = { relatedUsername = null }, contentPadding = contentPadding)
         return
     }
     recipient?.let {
-        ConversationScreen(api, session, it, onSessionInvalidated, onBack = { recipient = null })
+        ConversationScreen(api, session, it, onSessionInvalidated, onBack = { recipient = null }, contentPadding = contentPadding)
         return
     }
     browserRoute?.let { route ->
-        TrustrootsBrowser(route = route, onClose = { browserRoute = null })
+        TrustrootsBrowser(route = route, onClose = { browserRoute = null }, contentPadding = contentPadding)
         return
     }
     if (confirmRemoveContact) {
@@ -384,9 +393,11 @@ internal fun MemberProfileScreen(
                             else -> confirmRemoveContact = true
                         }
                     },
+                    topPadding = contentPadding.calculateTopPadding(),
+                    horizontalInset = contentPadding.horizontalInset(),
                 )
                 HorizontalPager(state = profilePager, modifier = Modifier.weight(1f).fillMaxWidth().testTag("profilePager")) { page ->
-                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                    Column(Modifier.fillMaxSize().padding(bottom = contentPadding.calculateBottomPadding()).verticalScroll(rememberScrollState())) {
                         ArtworkHero(
                             url = member.id?.let { api.avatarURL(it, 512) },
                             sessionCookie = session.cookieHeader,
@@ -401,7 +412,7 @@ internal fun MemberProfileScreen(
                             contactCount = contacts.size,
                             onSelect = { section -> scope.launch { profilePager.animateScrollToPage(section.ordinal) } },
                         )
-                        Column(Modifier.padding(20.dp)) {
+                        Column(Modifier.padding(20.dp).padding(contentPadding.horizontalInset())) {
                             when (ProfileSection.entries[page]) {
                                 ProfileSection.About -> {
                                     member.tagline?.let { Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(), style = MaterialTheme.typography.titleMedium) }
@@ -451,6 +462,8 @@ private fun ProfileActionBar(
     onShareExperience: () -> Unit,
     contactLabel: String?,
     onContactAction: () -> Unit,
+    topPadding: Dp = 0.dp,
+    horizontalInset: PaddingValues = PaddingValues.Zero,
 ) {
     Surface(
         color = TrustrootsPaleGreen,
@@ -461,6 +474,8 @@ private fun ProfileActionBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
+                .padding(top = topPadding)
+                .padding(horizontalInset)
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -648,6 +663,7 @@ internal fun EditProfileScreen(
     onSessionInvalidated: () -> Unit,
     onCancel: () -> Unit,
     onSaved: (MemberProfile) -> Unit,
+    contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     var name by remember(profile.username) { mutableStateOf(profile.displayName) }
     var tagline by remember(profile.username) { mutableStateOf(profile.tagline.orEmpty()) }
@@ -682,9 +698,9 @@ internal fun EditProfileScreen(
                     saving = false
                 }
             }
-    Column(Modifier.fillMaxSize().imePadding()) {
-        FormActionBar("Edit profile", saving, name.isNotBlank(), cancel, save)
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp)) {
+    Column(Modifier.fillMaxSize().imePadding().padding(top = contentPadding.calculateTopPadding())) {
+        FormActionBar("Edit profile", saving, name.isNotBlank(), cancel, save, horizontalInset = contentPadding.horizontalInset())
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = contentPadding.calculateBottomPadding()).padding(20.dp).padding(contentPadding.horizontalInset())) {
         OutlinedTextField(name, { name = it }, enabled = !saving, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(tagline, { tagline = it }, enabled = !saving, label = { Text("Tagline") }, modifier = Modifier.fillMaxWidth())
         OutlinedTextField(living, { living = it }, enabled = !saving, label = { Text("Lives in") }, modifier = Modifier.fillMaxWidth())
@@ -739,6 +755,7 @@ internal fun MessageInboxScreen(
     session: MemberSession,
     onSessionInvalidated: () -> Unit,
     initialMemberID: String? = null,
+    contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     var threads by remember { mutableStateOf<List<MessageThread>>(emptyList()) }
     var selected by remember { mutableStateOf<MessageMember?>(null) }
@@ -749,7 +766,7 @@ internal fun MessageInboxScreen(
     var loaded by remember { mutableStateOf(false) }
     var reload by remember { mutableStateOf(0) }
     selectedProfile?.let { username ->
-        MemberProfileScreen(api, session, username, onSessionInvalidated) { selectedProfile = null }
+        MemberProfileScreen(api, session, username, onSessionInvalidated, onBack = { selectedProfile = null }, contentPadding = contentPadding)
         return
     }
     selected?.let { member ->
@@ -757,6 +774,7 @@ internal fun MessageInboxScreen(
             api, session, member, onSessionInvalidated,
             onBack = { selected = null; reload++ },
             onOpenProfile = member.username?.let { username -> { selectedProfile = username } },
+            contentPadding = contentPadding,
         )
         return
     }
@@ -781,18 +799,26 @@ internal fun MessageInboxScreen(
         loaded = true
         loading = false
     }
-    Column(Modifier.fillMaxSize().padding(20.dp)) {
-        Text("Messages", style = MaterialTheme.typography.headlineMedium)
-        OutlinedTextField(filter, { filter = it }, label = { Text("Filter conversations") }, modifier = Modifier.fillMaxWidth())
-        if (loading) CircularProgressIndicator()
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        if (loaded && threads.isEmpty() && error == null) Text("No conversations yet.")
-        Column(Modifier.verticalScroll(rememberScrollState())) {
-            threads.filter {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding())
+            .padding(20.dp),
+    ) {
+        Column (Modifier.padding(contentPadding.horizontalInset())) {
+            Text("Messages", style = MaterialTheme.typography.headlineMedium)
+            OutlinedTextField(filter, { filter = it }, label = { Text("Filter conversations") }, modifier = Modifier.fillMaxWidth())
+            if (loading) CircularProgressIndicator()
+            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            if (loaded && threads.isEmpty() && error == null) Text("No conversations yet.")
+        }
+        LazyColumn(Modifier.fillMaxWidth()) {
+            val filteredThreads = threads.filter {
                 val text = "${it.otherMember.label} ${it.otherMember.username.orEmpty()} ${it.excerpt}"
                 text.contains(filter.trim(), ignoreCase = true)
-            }.forEach { thread ->
-                Row(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+            }
+            items(filteredThreads, key = { it.id }) { thread ->
+                Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(vertical = 8.dp).padding(contentPadding.horizontalInset())) {
                     Column(Modifier.weight(1f).clickable { selected = thread.otherMember }) {
                         Row {
                             RemoteArtwork(
@@ -825,6 +851,7 @@ internal fun ConversationScreen(
     onSessionInvalidated: () -> Unit,
     onBack: () -> Unit,
     onOpenProfile: (() -> Unit)? = null,
+    contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     BackHandler(onBack = onBack)
     val context = LocalContext.current
@@ -875,7 +902,7 @@ internal fun ConversationScreen(
             else error = it.message ?: "Could not load conversation."
         }
     }
-    Column(Modifier.fillMaxSize().imePadding().padding(20.dp)) {
+    Column(Modifier.fillMaxSize().imePadding().padding(contentPadding).padding(20.dp)) {
         NativeBackButton(onBack)
         Row(verticalAlignment = Alignment.CenterVertically) {
             RemoteArtwork(
@@ -986,13 +1013,14 @@ internal fun ContactsScreen(
     session: MemberSession,
     onSessionInvalidated: () -> Unit,
     onBack: () -> Unit,
+    contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     var contacts by remember { mutableStateOf<List<ProfileContact>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var selectedUsername by remember { mutableStateOf<String?>(null) }
     selectedUsername?.let { username ->
-        MemberProfileScreen(api, session, username, onSessionInvalidated) { selectedUsername = null }
+        MemberProfileScreen(api, session, username, onSessionInvalidated, onBack = { selectedUsername = null }, contentPadding = contentPadding)
         return
     }
     LaunchedEffect(session.member.username) {
@@ -1023,7 +1051,12 @@ internal fun ContactsScreen(
             }
         }
     }
-    Column(Modifier.fillMaxSize().padding(20.dp)) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(top = contentPadding.calculateTopPadding())
+            .padding(20.dp),
+    ) {
         NativeBackButton(onBack)
         Text("Contacts", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         when {
@@ -1038,7 +1071,7 @@ internal fun ContactsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 16.dp),
             )
-            else -> Column(Modifier.verticalScroll(rememberScrollState()).padding(top = 12.dp)) {
+            else -> Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = contentPadding.calculateBottomPadding()).padding(top = 12.dp)) {
                 contacts.forEach { contact ->
                     val username = contact.user.username
                     Row(

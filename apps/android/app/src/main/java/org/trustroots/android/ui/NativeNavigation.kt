@@ -1,6 +1,7 @@
 package org.trustroots.android.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -79,9 +80,16 @@ internal fun rememberFormLeave(dirty: Boolean, saving: Boolean, onCancel: () -> 
 }
 
 @Composable
-internal fun FormActionBar(title: String, saving: Boolean, canSave: Boolean, onCancel: () -> Unit, onSave: () -> Unit) {
+internal fun FormActionBar(
+    title: String,
+    saving: Boolean,
+    canSave: Boolean,
+    onCancel: () -> Unit,
+    onSave: () -> Unit,
+    horizontalInset: PaddingValues = PaddingValues.Zero,
+) {
     Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
-        Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(horizontalInset).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onCancel, enabled = !saving) {
                 Icon(Icons.Default.Close, contentDescription = "Cancel")
             }
