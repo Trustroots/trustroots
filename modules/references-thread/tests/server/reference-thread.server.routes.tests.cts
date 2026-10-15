@@ -177,21 +177,14 @@ describe('Reference Thread CRUD tests', function () {
           new Message(message)
             .save()
             .then(function (messageRes) {
-              if (err) return stepDone(err);
               thread.message = messageRes._id;
-              new Thread(thread)
-                .save()
-                .then(function (threadRes) {
-                  threadId = threadRes._id;
-                  stepDone(err);
-                })
-                .catch(function (err) {
-                  if (typeof stepDone === 'function') return stepDone(err);
-                  if (typeof done === 'function') return done(err);
-                  throw err;
-                });
+              return new Thread(thread).save();
             })
-            .catch(err => done(err));
+            .then(function (threadRes) {
+              threadId = threadRes._id;
+              stepDone();
+            })
+            .catch(stepDone);
         },
         // Create message+thread between userTo and userNonPublic
         function (stepDone) {
@@ -204,21 +197,14 @@ describe('Reference Thread CRUD tests', function () {
           new Message(message)
             .save()
             .then(function (messageRes) {
-              if (err) return stepDone(err);
               thread.message = messageRes._id;
-              new Thread(thread)
-                .save()
-                .then(function (threadRes) {
-                  threadNonpublicId = threadRes._id;
-                  return done(err);
-                })
-                .catch(function (err) {
-                  if (typeof stepDone === 'function') return stepDone(err);
-                  if (typeof done === 'function') return done(err);
-                  throw err;
-                });
+              return new Thread(thread).save();
             })
-            .catch(err => done(err));
+            .then(function (threadRes) {
+              threadNonpublicId = threadRes._id;
+              stepDone();
+            })
+            .catch(stepDone);
         },
       ],
       function (err) {

@@ -43,8 +43,8 @@ describe('Admin threads controller unit tests', () => {
 
   it('returns 400 when thread aggregation fails', async () => {
     const query = {
-      exec(callback: (error: Error | null, threads?: unknown[]) => void) {
-        callback(new Error('aggregate failed'));
+      exec() {
+        return Promise.reject(new Error('aggregate failed'));
       },
     };
     sinon
