@@ -4,7 +4,7 @@ const sinon = require('sinon');
 const request = require('supertest');
 const mongoose = require('mongoose');
 const express = require('../../../../config/lib/express.mjs');
-const config = require('../../../../config/config.mjs');
+const config = require('../../../../config/config.mts');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const mfa = require('../../server/services/mfa.server.service.mjs').default;
 const {
@@ -25,8 +25,8 @@ describe('Combined account access flows', function () {
     user = await User.create({
       firstName: 'Fictional',
       lastName: 'Member',
-      username: 'combined-member',
-      email: 'combined-member@example.test',
+      username: 'combinedmember',
+      email: 'combinedmember@example.test',
       password,
       public: true,
       roles: ['user'],
@@ -40,7 +40,7 @@ describe('Combined account access flows', function () {
   const signin = agent =>
     agent
       .post('/api/auth/signin')
-      .send({ username: 'combined-member', password });
+      .send({ username: 'combinedmember', password });
   async function authenticate(agent) {
     await signin(agent).expect(202);
     await agent

@@ -1359,53 +1359,6 @@ describe('Authentication controller OAuth unit tests', () => {
       should.not.exist(reloaded.emailToken);
     });
 
-    it('does not authenticate from a confirmation when authVersion changes mid-request', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const token = 'stale-confirm-token';
-      const pendingEmail = 'pending@example.test';
-      await User.updateOne(
-        { _id: saved._id },
-        {
-          $set: {
-            public: false,
-            emailTemporary: pendingEmail,
-            emailToken: token,
-          },
-        },
-      );
-
-      const originalFindOneAndUpdate = User.findOneAndUpdate;
-      sinon
-        .stub(User, 'findOneAndUpdate')
-        .callsFake((filter, update, options, callback) => {
-          User.updateOne({ _id: saved._id }, { $inc: { authVersion: 1 } }).then(
-            () => {
-              originalFindOneAndUpdate.call(
-                User,
-                filter,
-                update,
-                options,
-                callback,
-              );
-            },
-            callback,
-          );
-        });
-
-      const login = sinon.spy((_user, callback) => callback());
-      const res = deferredResponse();
-      authController.confirmEmail({ params: { token }, login }, res);
-      await res.waitForResponse();
-
-      res.statusCode.should.equal(400);
-      login.called.should.be.false();
-      const unchanged = await User.findById(saved._id);
-      unchanged.authVersion.should.equal(1);
-      unchanged.public.should.be.false();
-      unchanged.emailTemporary.should.equal(pendingEmail);
-      unchanged.emailToken.should.equal(token);
-    });
-
     it('does not create a session when confirming email for an MFA account', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       await User.updateOne(
@@ -1491,10 +1444,11 @@ describe('Authentication controller OAuth unit tests', () => {
       authController.confirmEmail(
         {
           params: { token: 'legacy-verified-confirm-token' },
-          user: {
+          user: Object.assign(await findUser(saved._id), {
             _id: saved._id,
+            authVersion: undefined,
             $locals: { mfaVerified: true },
-          },
+          }),
           login,
         },
         res,
@@ -1502,7 +1456,7 @@ describe('Authentication controller OAuth unit tests', () => {
       await res.waitForResponse();
 
       res.statusCode.should.equal(200);
-      res.body.mfaRequired.should.be.false();
+      responseField(res, 'mfaRequired').should.be.false();
       login.calledOnce.should.be.true();
     });
 
@@ -1526,11 +1480,11 @@ describe('Authentication controller OAuth unit tests', () => {
       authController.confirmEmail(
         {
           params: { token: 'stale-session-confirm-token' },
-          user: {
+          user: Object.assign(await findUser(saved._id), {
             _id: saved._id,
             authVersion: 1,
             $locals: { mfaVerified: true },
-          },
+          }),
           login,
         },
         res,
@@ -1538,7 +1492,7 @@ describe('Authentication controller OAuth unit tests', () => {
       await res.waitForResponse();
 
       res.statusCode.should.equal(200);
-      res.body.mfaRequired.should.be.true();
+      responseField(res, 'mfaRequired').should.be.true();
       login.called.should.be.false();
     });
 

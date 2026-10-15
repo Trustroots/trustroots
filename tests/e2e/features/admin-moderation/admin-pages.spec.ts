@@ -79,6 +79,8 @@ test.describe('admin moderation page flows', () => {
       negativeExperiences: Array<{
         recommend: string;
         feedbackPublic: string;
+        userFrom?: { username?: string };
+        userTo?: { username?: string };
       }>;
     };
     expect(dashboardData.threadVotes).toHaveLength(1);
@@ -91,8 +93,8 @@ test.describe('admin moderation page flows', () => {
         experience.userTo?.username === SEEDED_MEMBERS[0].username,
     );
     expect(seededNegativeExperience).toBeDefined();
-    expect(seededNegativeExperience.recommend).toBe('no');
-    expect(seededNegativeExperience.feedbackPublic).toBe(
+    expect(seededNegativeExperience!.recommend).toBe('no');
+    expect(seededNegativeExperience!.feedbackPublic).toBe(
       SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK,
     );
 

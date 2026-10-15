@@ -4,7 +4,7 @@ const path = require('node:path');
 
 describe('Server test runner safety', function () {
   it('refuses to start outside NODE_ENV=test before connecting to a database', function () {
-    const script = path.resolve('scripts/test-server.js');
+    const script = path.resolve('scripts/test-server.cts');
     const result = spawnSync(process.execPath, [script], {
       cwd: process.cwd(),
       env: {

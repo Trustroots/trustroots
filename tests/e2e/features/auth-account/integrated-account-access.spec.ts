@@ -1,11 +1,13 @@
-const crypto = require('node:crypto');
-const { test, expect, annotateFeature } = require('../../support/fixtures');
-const { createUser, registerViaApi } = require('../../support/helpers');
-const { updateUserByUsername, withE2eDb } = require('../../support/db');
-const { provisionFixtureMfa } = require('../../support/mfa');
-const config = require('../../support/app-config');
+import crypto from 'node:crypto';
+import { test, expect, annotateFeature } from '../../support/fixtures.mts';
+import { createUser, registerViaApi } from '../../support/helpers.mts';
+import { updateUserByUsername, withE2eDb } from '../../support/db.mts';
+import { provisionFixtureMfa } from '../../support/mfa.mts';
+import config from '../../support/app-config.mts';
 
-async function enrolledMember(request) {
+async function enrolledMember(
+  request: import('@playwright/test').APIRequestContext,
+) {
   const user = createUser();
   await registerViaApi(request, user);
   await updateUserByUsername(user.username, {
@@ -13,6 +15,7 @@ async function enrolledMember(request) {
   });
   const code = await provisionFixtureMfa(user);
   await updateUserByUsername(user.username, { $set: { roles: ['user'] } });
+  if (!code) throw new Error('Expected enrolled fixture recovery code');
   return { user, code };
 }
 
