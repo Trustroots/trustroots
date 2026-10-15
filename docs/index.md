@@ -19,7 +19,7 @@ Here are some ideas:
 
 - communication
 - help trustroots users to organize locally
-- welcoming new members (added features for this in Sept 2026)
+- [welcoming new members](welcome.md) with practical advice for members and the team
 - test the [Android app](https://github.com/Trustroots/trustroots/releases)
 - help support members through conflicts and contribute to community safety processes
 - improve the [Trustroots Wiki](https://wiki.trustroots.org/) and connect it to the main site

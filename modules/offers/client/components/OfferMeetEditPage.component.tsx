@@ -9,6 +9,7 @@ import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator'
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import { createOffer, getOffer, updateOffer } from '../api/offers.api';
 import type { CreateOfferRequest } from '../../shared/offer';
+import { plainTextLength } from './offerEdit.helpers';
 import MeetsExplanation from './MeetsExplanation.component';
 import OfferLocationEditor from './OfferLocationEditor.component';
 
@@ -20,10 +21,6 @@ interface MeetOffer {
   description: string;
   location: [number, number] | null;
   validUntil: string | number | Date;
-}
-
-function plainTextLength(value = ''): number {
-  return value.replace(/<[^>]*>/g, '').trim().length;
 }
 
 function defaultValidUntil() {
