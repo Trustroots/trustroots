@@ -132,13 +132,9 @@ export default function SupportForm({ user }: SupportFormProps) {
             ref={errorRef}
             tabIndex={-1}
           >
-            <strong>
-              {t('Something went wrong sending your message.')}
-            </strong>
+            <strong>{t('Something went wrong sending your message.')}</strong>
             <br />
-            {t(
-              'Please ensure you are connected to internet and try again.',
-            )}
+            {t('Please ensure you are connected to internet and try again.')}
           </div>
         )}
         <form
@@ -186,9 +182,7 @@ export default function SupportForm({ user }: SupportFormProps) {
                   </p>
                 ) : (
                   <p className="help-block">
-                    {t(
-                      'Please include the member’s username in your message.',
-                    )}
+                    {t('Please include the member’s username in your message.')}
                   </p>
                 )}
                 <p className="form-control-static">
@@ -269,9 +263,7 @@ export default function SupportForm({ user }: SupportFormProps) {
           {/* Name is sent only for logged in users, don't bother to ask it from non-logged users */}
           {user?.displayName && (
             <div className="form-group">
-              <label className="col-sm-3 control-label">
-                {t('Name')}
-              </label>
+              <label className="col-sm-3 control-label">{t('Name')}</label>
               <div className="col-sm-9">
                 <p className="form-control-static">{user.displayName}</p>
               </div>

@@ -101,9 +101,7 @@ function YourProfileSeemsQuiteEmpty() {
       <p className="lead">
         {t('Your profile seems quite empty.')}
         <br />
-        {t(
-          'Please write longer profile description before sending messages.',
-        )}
+        {t('Please write longer profile description before sending messages.')}
         <br />
         <a href="/profile/edit">{t('Edit your profile')}</a>
       </p>

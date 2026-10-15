@@ -134,9 +134,7 @@ export default function Inbox({ user }: InboxProps) {
             aria-label={t('Unread conversations')}
             className="btn btn-default"
           >
-            <span className="hidden-xs">
-              {t('Unread conversations')}
-            </span>
+            <span className="hidden-xs">{t('Unread conversations')}</span>
             <span className="visible-xs-inline">{t('Unread')}</span>
           </a>
         </nav>
