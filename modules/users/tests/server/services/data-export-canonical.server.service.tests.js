@@ -83,11 +83,17 @@ describe('Member data export canonicalisation', () => {
         profile,
         contacts: [{ _id: 'b' }, { _id: 'a' }],
         hostingOffers: [{ _id: 'y' }, { _id: 'x' }],
+        circles: [{ _id: 'd' }, { _id: 'c' }],
+        messages: [{ _id: 'f' }, { _id: 'e' }],
+        experiences: [{ _id: 'h' }, { _id: 'g' }],
       });
       const backwards = canonical.buildSignedPayload({
         profile,
         contacts: [{ _id: 'a' }, { _id: 'b' }],
         hostingOffers: [{ _id: 'x' }, { _id: 'y' }],
+        circles: [{ _id: 'c' }, { _id: 'd' }],
+        messages: [{ _id: 'e' }, { _id: 'f' }],
+        experiences: [{ _id: 'g' }, { _id: 'h' }],
       });
 
       canonical
@@ -144,6 +150,9 @@ describe('Member data export canonicalisation', () => {
       payload.profile.should.deepEqual({});
       payload.contacts.should.deepEqual([]);
       payload.hostingOffers.should.deepEqual([]);
+      payload.circles.should.deepEqual([]);
+      payload.messages.should.deepEqual([]);
+      payload.experiences.should.deepEqual([]);
     });
   });
 
@@ -161,6 +170,9 @@ describe('Member data export canonicalisation', () => {
         'profile',
         'contacts',
         'hostingOffers',
+        'circles',
+        'messages',
+        'experiences',
       ]);
       Object.values(digests.sections).forEach(digest =>
         digest.should.match(/^[0-9a-f]{64}$/),

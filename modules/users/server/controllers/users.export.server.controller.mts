@@ -102,18 +102,6 @@ type ExportMiddleware<
   value: Value,
 ) => unknown;
 
-interface ExportBody {
-  format: 'trustroots-data-export';
-  version: 2;
-  exportedAt: string;
-  profile: unknown;
-  circles: ExportRecord[];
-  contacts: unknown;
-  hostingOffers: ExportRecord[];
-  messages: ExportRecord[];
-  experiences: ExportRecord[];
-}
-
 interface UserExportService {
   download(
     req: ExportRequest,
@@ -346,9 +334,14 @@ service.download = async function (
       messages,
       experiences,
     });
-    const signature = signing.signPayload(body, { username: req.user.username });
+    const signature = signing.signPayload(body, {
+      username: req.user.username,
+    });
     if (!signature) {
-      log('warn', 'Serving an unsigned export because no signing key is configured.');
+      log(
+        'warn',
+        'Serving an unsigned export because no signing key is configured.',
+      );
     }
     res
       .type('application/json')

@@ -14,7 +14,7 @@
 import { finalizeEvent, getPublicKey } from 'nostr-tools/pure';
 import * as nip19 from 'nostr-tools/nip19';
 
-import config from '../../../../config/config.mjs';
+import config from '../../../../config/config.mts';
 import log from '../../../../config/lib/logger.mjs';
 import * as canonical from './data-export-canonical.server.service.mjs';
 
