@@ -3,6 +3,7 @@ import {
   sessionId,
   sessionLifetimes,
 } from '../services/member-session.server.service.mjs';
+import { recordActivity } from '../services/account-activity.server.service.mjs';
 
 export function requireMember(req, res, next) {
   res.set('Cache-Control', 'no-store');
@@ -69,6 +70,10 @@ export async function revoke(req, res, next) {
         { $set: { revoked: true } },
       );
     if (!record) return res.sendStatus(404);
+    await recordActivity({
+      userId: req.user._id,
+      eventType: 'session_revoked',
+    });
     if (req.params.id === sessionId(req.sessionID))
       return req.session.destroy(error =>
         error ? next(error) : res.sendStatus(204),
@@ -86,6 +91,10 @@ export async function revokeAll(req, res, next) {
     await mongoose
       .model('MemberSession')
       .updateMany({ user: req.user._id }, { $set: { revoked: true } });
+    await recordActivity({
+      userId: req.user._id,
+      eventType: 'sessions_signed_out',
+    });
     return req.session.destroy(error =>
       error ? next(error) : res.sendStatus(204),
     );

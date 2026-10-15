@@ -551,6 +551,18 @@ service.removeProfile = function (req, res) {
         user: UserServerRecord,
         done: (error: Error | null | undefined, user: UserServerRecord) => void,
       ) {
+        mongoose
+          .model('AccountActivity')
+          .deleteMany({ user: user._id })
+          .then(
+            () => done(null, user),
+            error => done(error, user),
+          );
+      },
+      function (
+        user: UserServerRecord,
+        done: (error: Error | null | undefined, user: UserServerRecord) => void,
+      ) {
         User.findOneAndRemove(
           {
             _id: user._id,

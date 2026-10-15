@@ -72,6 +72,7 @@ const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
 const Message = mongoose.model<MessageRecord, MessageModel>('Message');
 const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
 const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
+const AccountActivity = mongoose.model('AccountActivity');
 
 /**
  * Globals
@@ -659,6 +660,21 @@ describe('User removal CRUD tests', function () {
       userA.removeProfileExpires = new Date(Date.now() + 24 * 3600000);
       userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
       userA.save(done);
+    });
+    it('deletes the removed member’s account activity', async function () {
+      await AccountActivity.create({
+        _id: 'removed-account-activity',
+        user: userA._id,
+        eventType: 'password_changed',
+      });
+
+      await agent
+        .delete('/api/users/remove/' + userA.removeProfileToken)
+        .set('X-Trustroots-Request', '1')
+        .expect(200);
+      (await AccountActivity.countDocuments({ user: userA._id })).should.equal(
+        0,
+      );
     });
     it('should remove profile images', function (done: DoneCallback) {
       // Each user has their own folder for avatars

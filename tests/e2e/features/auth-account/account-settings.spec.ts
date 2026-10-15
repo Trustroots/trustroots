@@ -140,6 +140,37 @@ test.describe.serial('account settings feature coverage', () => {
     expect(facebookRequests).toEqual([]);
   });
 
+  test('members can review credential activity from account settings', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.activity', [
+      'Members can see a credential change in account activity.',
+    ]);
+
+    const user = createUser();
+    await registerViaApi(request, user);
+    await signInViaApi(page, request, user);
+    await page.goto('/profile/edit/account');
+
+    const activity = page.getByRole('list', {
+      name: 'Recent account activity',
+    });
+    await expect(activity).toContainText('New session started');
+    await page
+      .getByLabel('Current password', { exact: true })
+      .fill(user.password);
+    const newPassword = `${DEFAULT_PASSWORD}ActivityChanged`;
+    await page.getByLabel('New password', { exact: true }).fill(newPassword);
+    await page.getByLabel('Verify password', { exact: true }).fill(newPassword);
+    await page.getByRole('button', { name: 'Change password' }).click();
+    await expect(
+      page.getByText('Your password is now changed. Have a nice day!'),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Refresh activity' }).click();
+    await expect(activity).toContainText('Password changed');
+  });
+
   test('members can enrol an authenticator and use it at sign-in', async ({
     page,
     request,
@@ -205,6 +236,12 @@ test.describe.serial('account settings feature coverage', () => {
     await expect(page).not.toHaveURL(/\/signin/);
     const session = await page.request.get('/api/auth/session');
     expect((await session.json()).userId).toBeTruthy();
+    const activityResponse = await page.request.get('/api/users/activity');
+    const activityEvents = (await activityResponse.json()).events.map(
+      (event: { eventType: string }) => event.eventType,
+    );
+    expect(activityEvents).toContain('mfa_enabled');
+    expect(activityEvents).toContain('recovery_code_used');
 
     await signOut(page);
     await page.goto('/signin');

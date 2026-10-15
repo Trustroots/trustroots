@@ -1,3 +1,4 @@
+import type { Response } from 'express';
 import usersPolicy from './../policies/users.server.policy.mts';
 import userProfile from './../controllers/users.profile.server.controller.mjs';
 import userAvatar from './../controllers/users.avatar.server.controller.mjs';
@@ -7,6 +8,17 @@ import userExport from './../controllers/users.export.server.controller.mjs';
 import unifiedPush from './../controllers/users.unified-push.server.controller.mjs';
 import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mjs';
 import userMfa from './../controllers/users.mfa.server.controller.mjs';
+import userActivity from './../controllers/users.activity.server.controller.mjs';
+
+function setActivityResponseHeaders(
+  _req: unknown,
+  res: Pick<Response, 'set' | 'vary'>,
+  next: () => void,
+) {
+  res.set('Cache-Control', 'no-store');
+  res.vary('Cookie');
+  return next();
+}
 
 /**
  * Module dependencies.
@@ -43,6 +55,10 @@ const defaultExport = function (app: RouteApplication) {
     .route('/api/users/export')
     .all(usersPolicy.isAllowed)
     .get(userExport.download);
+  app
+    .route('/api/users/activity')
+    .all(setActivityResponseHeaders, usersPolicy.isAllowed)
+    .get(userActivity.list);
   app
     .route('/api/users-avatar')
     .all(usersPolicy.isAllowed)

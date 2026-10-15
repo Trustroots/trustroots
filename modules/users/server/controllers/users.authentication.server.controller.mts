@@ -20,6 +20,7 @@ import {
   emailConfirmationTokenQuery,
   setEmailConfirmationToken,
 } from '../services/email-confirmation.server.service.mts';
+import { recordActivity } from '../services/account-activity.server.service.mjs';
 type UserDocument = UserServerDocument;
 type AuthenticatedUser = UserDocument;
 
@@ -84,6 +85,7 @@ interface StatsPayload {
 }
 
 interface EmailConfirmationResult {
+  emailChangeWasRequested?: boolean;
   mfaRequired?: boolean;
   profileMadePublic: boolean;
   user?: import('./users.profile.server.contracts.mts').ProfilePayload;
@@ -559,6 +561,12 @@ service.verifyMfa = async function (req, res) {
         .status(400)
         .send({ message: 'Authenticator or recovery code is invalid.' });
     }
+    if (result.recovery) {
+      await recordActivity({
+        userId: result.user._id,
+        eventType: 'recovery_code_used',
+      });
+    }
     result.user.$locals.mfaVerified = true;
     return req.login!(result.user, error => {
       if (error) {
@@ -586,9 +594,16 @@ service.session = function (req, res) {
  * Signout
  */
 service.signout = function (req, res, next) {
+  const userId = req.user?._id;
   req.logout!(function (err) {
     if (err) {
       return next(err);
+    }
+    if (userId) {
+      return recordActivity({
+        userId,
+        eventType: 'session_revoked',
+      }).then(() => res.redirect('/'));
     }
     return res.redirect('/');
   });
@@ -693,6 +708,13 @@ service.confirmEmail = function (req, res) {
                 ),
               );
 
+              result.emailChangeWasRequested = Boolean(
+                user.public &&
+                user.emailTemporary &&
+                user.emailTemporary.trim().toLowerCase() !==
+                  user.email.trim().toLowerCase(),
+              );
+
               done(null, result, user);
             } else {
               return res.status(400).send({
@@ -773,15 +795,25 @@ service.confirmEmail = function (req, res) {
         user: UserDocument,
         done: WaterfallCallback,
       ) {
-        if (result.mfaRequired) {
-          return done(null, result, user);
+        const continueConfirmation = () => {
+          delete result.emailChangeWasRequested;
+          if (result.mfaRequired) {
+            return done(null, result, user);
+          }
+          if (user.mfaEnabled === true) {
+            user.$locals.mfaVerified = true;
+          }
+          req.login!(user, function (err?: Error | null) {
+            done(err, result, user);
+          });
+        };
+        if (result.emailChangeWasRequested) {
+          return recordActivity({
+            userId: user._id,
+            eventType: 'email_changed',
+          }).then(continueConfirmation);
         }
-        if (user.mfaEnabled === true) {
-          user.$locals.mfaVerified = true;
-        }
-        req.login!(user, function (err?: Error | null) {
-          done(err, result, user);
-        });
+        return continueConfirmation();
       },
 
       function (result: EmailConfirmationResult, user: UserDocument) {
