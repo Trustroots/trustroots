@@ -112,6 +112,7 @@ internal fun CirclesScreen(
             }
             Column(Modifier.padding(20.dp).padding(contentPadding.horizontalInset()).padding(contentPadding.bottomInset())) {
             circle.description?.let {
+                Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(), modifier = Modifier.padding(vertical = 16.dp))
             }
             Button(onClick = { toggle(circle) }, enabled = updating == null) {
                 Text(if (circle.id in memberships) "Leave circle" else "Join circle")
