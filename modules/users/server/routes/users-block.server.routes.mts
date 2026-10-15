@@ -5,7 +5,18 @@ import userBlock from './../controllers/users.block.server.controller.mjs';
  * Module dependencies.
  */
 
-const defaultExport = function (app) {
+type RouteHandler = (...arguments_: never[]) => unknown;
+interface RouteChain {
+  all(...handlers: RouteHandler[]): RouteChain;
+  get(...handlers: RouteHandler[]): RouteChain;
+  put(...handlers: RouteHandler[]): RouteChain;
+  delete(...handlers: RouteHandler[]): RouteChain;
+}
+interface RouteApplication {
+  route(path: string): RouteChain;
+}
+
+const defaultExport = function (app: RouteApplication) {
   // Setting up the users profile api
   app
     .route('/api/blocked-users')

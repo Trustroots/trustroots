@@ -698,14 +698,14 @@ describe('Avatar controller unit tests', () => {
 
   function loadAvatarWithStubs(stubs: Record<string, unknown>) {
     return proxyquire<AvatarController>(
-      require.resolve('./../../server/controllers/users.avatar.server.controller.mjs'),
+      require.resolve('./../../server/controllers/users.avatar.server.controller.mts'),
       stubs,
     );
   }
 
   function loadAvatarWithProcessor(processor: AvatarProcessor) {
     return loadAvatarWithStubs({
-      './../../server/services/avatar-processing.server.service.mjs': processor,
+      './../../server/services/avatar-processing.server.service.mts': processor,
     });
   }
 

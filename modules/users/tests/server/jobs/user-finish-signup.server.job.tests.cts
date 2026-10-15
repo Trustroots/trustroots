@@ -126,37 +126,43 @@ describe('Job: user finish signup', function () {
     saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
 
-      userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
-        if (err) return done(err);
-        jobs.length.should.equal(0);
-        done();
-      });
+      userFinishSignupJobHandler(
+        { attrs: { _id: { toString: () => 'fixture-job-id' } } },
+        function (err: Error | null | undefined) {
+          if (err) return done(err);
+          jobs.length.should.equal(0);
+          done();
+        },
+      );
     });
   });
 
   it('Remind unconfirmed users >4 hours after their signup', function (done) {
-    userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
-      if (err) return done(err);
-
-      jobs.length.should.equal(1);
-      jobs[0].type.should.equal('send email');
-      jobs[0].data.subject.should.equal('Complete your signup to Trustroots');
-      jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
-      (['html', 'text'] as const).forEach(function (format) {
-        jobs[0].data[format].should.containEql(
-          'This is a reminder 1/3, after which we will stop sending you emails.',
-        );
-        jobs[0].data[format].should.containEql('4 hours ago');
-      });
-
-      findUserByEmail(_unConfirmedUser.email, function (err, user) {
+    userFinishSignupJobHandler(
+      { attrs: { _id: { toString: () => 'fixture-job-id' } } },
+      function (err: Error | null | undefined) {
         if (err) return done(err);
-        if (!user) return done(new Error('Expected reminder user'));
-        user.publicReminderCount!.should.equal(1);
-        should.exist(user.publicReminderSent);
-        done();
-      });
-    });
+
+        jobs.length.should.equal(1);
+        jobs[0].type.should.equal('send email');
+        jobs[0].data.subject.should.equal('Complete your signup to Trustroots');
+        jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
+        (['html', 'text'] as const).forEach(function (format) {
+          jobs[0].data[format].should.containEql(
+            'This is a reminder 1/3, after which we will stop sending you emails.',
+          );
+          jobs[0].data[format].should.containEql('4 hours ago');
+        });
+
+        findUserByEmail(_unConfirmedUser.email, function (err, user) {
+          if (err) return done(err);
+          if (!user) return done(new Error('Expected reminder user'));
+          user.publicReminderCount!.should.equal(1);
+          should.exist(user.publicReminderSent);
+          done();
+        });
+      },
+    );
   });
 
   it('Remind unconfirmed users 2nd time >2 days after previous notification', function (done) {
@@ -166,28 +172,33 @@ describe('Job: user finish signup', function () {
     );
     saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
-      userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
-        if (err) return done(err);
-
-        jobs.length.should.equal(1);
-        jobs[0].type.should.equal('send email');
-        jobs[0].data.subject.should.equal('Complete your signup to Trustroots');
-        jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
-        (['html', 'text'] as const).forEach(function (format) {
-          jobs[0].data[format].should.containEql(
-            'This is a reminder 2/3, after which we will stop sending you emails.',
-          );
-          jobs[0].data[format].should.containEql('4 hours ago');
-        });
-
-        findUserByEmail(_unConfirmedUser.email, function (err, user) {
+      userFinishSignupJobHandler(
+        { attrs: { _id: { toString: () => 'fixture-job-id' } } },
+        function (err: Error | null | undefined) {
           if (err) return done(err);
-          if (!user) return done(new Error('Expected reminder user'));
-          user.publicReminderCount!.should.equal(2);
-          should.exist(user.publicReminderSent);
-          done();
-        });
-      });
+
+          jobs.length.should.equal(1);
+          jobs[0].type.should.equal('send email');
+          jobs[0].data.subject.should.equal(
+            'Complete your signup to Trustroots',
+          );
+          jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
+          (['html', 'text'] as const).forEach(function (format) {
+            jobs[0].data[format].should.containEql(
+              'This is a reminder 2/3, after which we will stop sending you emails.',
+            );
+            jobs[0].data[format].should.containEql('4 hours ago');
+          });
+
+          findUserByEmail(_unConfirmedUser.email, function (err, user) {
+            if (err) return done(err);
+            if (!user) return done(new Error('Expected reminder user'));
+            user.publicReminderCount!.should.equal(2);
+            should.exist(user.publicReminderSent);
+            done();
+          });
+        },
+      );
     });
   });
 
@@ -198,30 +209,33 @@ describe('Job: user finish signup', function () {
     );
     saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
-      userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
-        if (err) return done(err);
-
-        jobs.length.should.equal(1);
-        jobs[0].type.should.equal('send email');
-        jobs[0].data.subject.should.equal(
-          'Last chance to complete your signup to Trustroots!',
-        );
-        jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
-        (['html', 'text'] as const).forEach(function (format) {
-          jobs[0].data[format].should.containEql(
-            'This is our last reminder, after which we will stop sending you emails.',
-          );
-          jobs[0].data[format].should.containEql('4 hours ago');
-        });
-
-        findUserByEmail(_unConfirmedUser.email, function (err, user) {
+      userFinishSignupJobHandler(
+        { attrs: { _id: { toString: () => 'fixture-job-id' } } },
+        function (err: Error | null | undefined) {
           if (err) return done(err);
-          if (!user) return done(new Error('Expected reminder user'));
-          user.publicReminderCount!.should.equal(3);
-          should.exist(user.publicReminderSent);
-          done();
-        });
-      });
+
+          jobs.length.should.equal(1);
+          jobs[0].type.should.equal('send email');
+          jobs[0].data.subject.should.equal(
+            'Last chance to complete your signup to Trustroots!',
+          );
+          jobs[0].data.to.address.should.equal(_unConfirmedUser.email);
+          (['html', 'text'] as const).forEach(function (format) {
+            jobs[0].data[format].should.containEql(
+              'This is our last reminder, after which we will stop sending you emails.',
+            );
+            jobs[0].data[format].should.containEql('4 hours ago');
+          });
+
+          findUserByEmail(_unConfirmedUser.email, function (err, user) {
+            if (err) return done(err);
+            if (!user) return done(new Error('Expected reminder user'));
+            user.publicReminderCount!.should.equal(3);
+            should.exist(user.publicReminderSent);
+            done();
+          });
+        },
+      );
     });
   });
 
@@ -229,55 +243,30 @@ describe('Job: user finish signup', function () {
     unConfirmedUser.created = moment().subtract(moment.duration({ days: 8 }));
     saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
-      userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
-        if (err) return done(err);
+      userFinishSignupJobHandler(
+        { attrs: { _id: { toString: () => 'fixture-job-id' } } },
+        function (err: Error | null | undefined) {
+          if (err) return done(err);
 
-        (['html', 'text'] as const).forEach(function (format) {
-          jobs[0].data[format].should.containEql('8 days ago');
-        });
-        done();
-      });
+          (['html', 'text'] as const).forEach(function (format) {
+            jobs[0].data[format].should.containEql('8 days ago');
+          });
+          done();
+        },
+      );
     });
   });
 
   it('Do not remind unconfirmed users >4 hours after their signup again before >2 days has passed', function (done) {
     // Run the job 1st time, sends notification
-    userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
-      if (err) return done(err);
-
-      // Run the same job 2nd time, should not send notification
-      userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
-        if (err) return done(err);
-
-        jobs.length.should.equal(1);
-        jobs[0].type.should.equal('send email');
-        jobs[0].data.subject.should.equal('Complete your signup to Trustroots');
-
-        findUserByEmail(_unConfirmedUser.email, function (err, user) {
-          if (err) return done(err);
-          if (!user) return done(new Error('Expected reminder user'));
-          user.publicReminderCount!.should.equal(1);
-          done();
-        });
-      });
-    });
-  });
-
-  it('Do not remind unconfirmed users >2 hours after their signup again before another >2 days has passed', function (done) {
-    unConfirmedUser.publicReminderCount = 1;
-    unConfirmedUser.publicReminderSent = moment().subtract(
-      moment.duration({ days: 2, hours: 1 }),
-    );
-    saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
-      if (err) return done(err);
-
-      // Run the job 1st time, sends notification
-      userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
+    userFinishSignupJobHandler(
+      { attrs: { _id: { toString: () => 'fixture-job-id' } } },
+      function (err: Error | null | undefined) {
         if (err) return done(err);
 
         // Run the same job 2nd time, should not send notification
         userFinishSignupJobHandler(
-          {},
+          { attrs: { _id: { toString: () => 'fixture-job-id' } } },
           function (err: Error | null | undefined) {
             if (err) return done(err);
 
@@ -290,12 +279,51 @@ describe('Job: user finish signup', function () {
             findUserByEmail(_unConfirmedUser.email, function (err, user) {
               if (err) return done(err);
               if (!user) return done(new Error('Expected reminder user'));
-              user.publicReminderCount!.should.equal(2);
+              user.publicReminderCount!.should.equal(1);
               done();
             });
           },
         );
-      });
+      },
+    );
+  });
+
+  it('Do not remind unconfirmed users >2 hours after their signup again before another >2 days has passed', function (done) {
+    unConfirmedUser.publicReminderCount = 1;
+    unConfirmedUser.publicReminderSent = moment().subtract(
+      moment.duration({ days: 2, hours: 1 }),
+    );
+    saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
+      if (err) return done(err);
+
+      // Run the job 1st time, sends notification
+      userFinishSignupJobHandler(
+        { attrs: { _id: { toString: () => 'fixture-job-id' } } },
+        function (err: Error | null | undefined) {
+          if (err) return done(err);
+
+          // Run the same job 2nd time, should not send notification
+          userFinishSignupJobHandler(
+            { attrs: { _id: { toString: () => 'fixture-job-id' } } },
+            function (err: Error | null | undefined) {
+              if (err) return done(err);
+
+              jobs.length.should.equal(1);
+              jobs[0].type.should.equal('send email');
+              jobs[0].data.subject.should.equal(
+                'Complete your signup to Trustroots',
+              );
+
+              findUserByEmail(_unConfirmedUser.email, function (err, user) {
+                if (err) return done(err);
+                if (!user) return done(new Error('Expected reminder user'));
+                user.publicReminderCount!.should.equal(2);
+                done();
+              });
+            },
+          );
+        },
+      );
     });
   });
 
@@ -306,17 +334,20 @@ describe('Job: user finish signup', function () {
     );
     saveWithCallback(unConfirmedUser, function (err: Error | null | undefined) {
       if (err) return done(err);
-      userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
-        if (err) return done(err);
-        jobs.length.should.equal(0);
-        findUserByEmail(_unConfirmedUser.email, function (err, user) {
+      userFinishSignupJobHandler(
+        { attrs: { _id: { toString: () => 'fixture-job-id' } } },
+        function (err: Error | null | undefined) {
           if (err) return done(err);
-          if (!user) return done(new Error('Expected reminder user'));
-          user.publicReminderCount!.should.equal(3);
-          should.exist(user.publicReminderSent);
-          done();
-        });
-      });
+          jobs.length.should.equal(0);
+          findUserByEmail(_unConfirmedUser.email, function (err, user) {
+            if (err) return done(err);
+            if (!user) return done(new Error('Expected reminder user'));
+            user.publicReminderCount!.should.equal(3);
+            should.exist(user.publicReminderSent);
+            done();
+          });
+        },
+      );
     });
   });
 
@@ -341,12 +372,15 @@ describe('Job: user finish signup', function () {
     User.insertMany(_users, function (err: Error | null | undefined) {
       if (err) return done(err);
 
-      userFinishSignupJobHandler({}, function (err: Error | null | undefined) {
-        if (err) return done(err);
+      userFinishSignupJobHandler(
+        { attrs: { _id: { toString: () => 'fixture-job-id' } } },
+        function (err: Error | null | undefined) {
+          if (err) return done(err);
 
-        jobs.length.should.equal(config.limits.maxProcessSignupReminders);
-        done();
-      });
+          jobs.length.should.equal(config.limits.maxProcessSignupReminders);
+          done();
+        },
+      );
     });
   });
 
@@ -360,7 +394,7 @@ describe('Job: user finish signup', function () {
           if (err) return done(err);
 
           userFinishSignupJobHandler(
-            {},
+            { attrs: { _id: { toString: () => 'fixture-job-id' } } },
             function (err: Error | null | undefined) {
               if (err) return done(err);
               jobs.length.should.equal(0);

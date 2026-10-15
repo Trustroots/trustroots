@@ -1,3 +1,4 @@
+import type { Request, Response } from 'express';
 import userAuthentication from './../controllers/users.authentication.server.controller.mjs';
 import userPassword from './../controllers/users.password.server.controller.mjs';
 import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mjs';
@@ -6,7 +7,17 @@ import targetedRequestLimit from '../../../core/server/middleware/targeted-reque
  * Module dependencies.
  */
 
-const defaultExport = function (app) {
+type RouteHandler = (...arguments_: never[]) => unknown;
+interface RouteChain {
+  all(...handlers: RouteHandler[]): RouteChain;
+  get(...handlers: RouteHandler[]): RouteChain;
+  post(...handlers: RouteHandler[]): RouteChain;
+}
+interface RouteApplication {
+  route(path: string): RouteChain;
+}
+
+const defaultExport = function (app: RouteApplication) {
   // Confirm users email
   app
     .route('/api/auth/confirm-email/:token')
@@ -43,7 +54,7 @@ const defaultExport = function (app) {
   app.route('/api/auth/session').get(userAuthentication.session);
   app
     .route('/api/auth/signout')
-    .get((req, res) => res.sendStatus(405))
+    .get((_req: Request, res: Response) => res.sendStatus(405))
     .post(userAuthentication.signout);
 
   // Validate username

@@ -81,7 +81,7 @@ describe('Job: user finish signup direct unit tests', function () {
 
     job(
       { attrs: { _id: { toString: () => 'job-id' } } },
-      function (err: Error | null) {
+      function (err?: Error | null) {
         try {
           should.not.exist(err);
           sinon.assert.calledOnce(findUsers);
@@ -126,7 +126,7 @@ describe('Job: user finish signup direct unit tests', function () {
 
     job(
       { attrs: { _id: { toString: () => 'job-id' } } },
-      function (err: Error | null) {
+      function (err?: Error | null) {
         try {
           should.not.exist(err);
           query.and.firstCall.args[0][0].$or[0].publicReminderCount.$lt.should.equal(

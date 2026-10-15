@@ -228,7 +228,7 @@ function loadController({
     '../../../../config/lib/logger': () => {},
   } satisfies PasswordDependencies & Record<string, unknown>;
   return mockModule<Controller>(
-    require.resolve('../../../server/controllers/users.password.server.controller.mjs'),
+    require.resolve('../../../server/controllers/users.password.server.controller.mts'),
     dependencies,
   );
 }

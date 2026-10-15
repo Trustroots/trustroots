@@ -73,7 +73,7 @@ interface PasswordController {
 }
 
 const controllerPath =
-  '../../server/controllers/users.password.server.controller.mjs';
+  '../../server/controllers/users.password.server.controller.mts';
 const emailServicePath =
   '../../../core/server/services/email.server.service.mjs';
 

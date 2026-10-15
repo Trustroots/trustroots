@@ -21,7 +21,7 @@ const passport: {
 } = require('passport');
 const config: typeof import('../../../../config/config.mjs').default = require('../../../../config/config.mjs');
 
-const controllerPath = '../../server/config/users.config.server.mjs';
+const controllerPath = '../../server/config/users.config.server.mts';
 require('../../server/models/user.server.model.mjs');
 const User = mongoose.model('User');
 

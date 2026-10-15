@@ -106,7 +106,7 @@ const service = {} as {
     slug: string,
   ): void;
   updateCount(
-    id: string,
+    id: string | Types.ObjectId,
     difference: number | string,
     returnUpdated: boolean,
     callback: (error: Error | null, tribe?: TribeRecord | null) => void,

@@ -1,19 +1,3 @@
-import _ from 'lodash';
-export const restrictedMessagingRoles = ['suspended', 'shadowban'];
-export function hasRole(user, role) {
-  return _.get(user, 'roles', []).includes(role);
-}
-export function hasAnyRole(user, roles) {
-  return _.intersection(_.get(user, 'roles', []), roles).length > 0;
-}
-export function hasRestrictedMessagingRole(user) {
-  return hasAnyRole(user, restrictedMessagingRoles);
-}
-const defaultInterop = {
-  restrictedMessagingRoles,
-  hasRole,
-  hasAnyRole,
-  hasRestrictedMessagingRole,
-};
-export default defaultInterop;
-export { defaultInterop as 'module.exports' };
+export { default } from './user-roles.server.service.mts';
+export * from './user-roles.server.service.mts';
+export { default as 'module.exports' } from './user-roles.server.service.mts';

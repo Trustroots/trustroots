@@ -24,7 +24,7 @@ declare module 'async' {
   export function eachSeries<Item>(
     items: Item[],
     iteratee: (item: Item, callback: (error?: Error | null) => void) => void,
-    callback: (error?: Error | null) => void,
+    callback?: (error?: Error | null) => void,
   ): void;
   export function eachOfSeries<Items extends object>(
     items: Items extends readonly unknown[] ? never : Items,
@@ -54,6 +54,10 @@ declare module 'async' {
     callback: (error: Error | null, result: Record<string, R>) => void,
   ): void;
   export function nextTick(callback: () => void): void;
+  export function queue<T>(
+    worker: (task: T, callback: (error?: Error | null) => void) => void,
+    concurrency: number,
+  ): { length(): number; push(task: T): void };
   const async: {
     map: typeof map;
     each: typeof each;
@@ -63,8 +67,75 @@ declare module 'async' {
     parallel: typeof parallel;
     eachSeries: typeof eachSeries;
     eachOfSeries: typeof eachOfSeries;
+    each: typeof each;
+    queue: typeof queue;
   };
   export default async;
+}
+
+declare module 'passport' {
+  interface AuthenticationInfo {
+    message?: string;
+  }
+
+  interface PassportAuthenticator {
+    use(strategy: unknown): void;
+    initialize(): import('express').RequestHandler;
+    session(): import('express').RequestHandler;
+    serializeUser<User>(
+      handler: (
+        user: User,
+        done: (error: Error | null, session: unknown) => void,
+      ) => void,
+    ): void;
+    deserializeUser<Session, User>(
+      handler: (
+        session: Session,
+        done: (error: Error | null, user: User | false | null) => void,
+      ) => void,
+    ): void;
+    authenticate<User>(
+      strategy: string,
+      callback: (
+        error: Error | null,
+        user: User | null | false,
+        info?: AuthenticationInfo,
+      ) => void,
+    ): (req: unknown, res: unknown, next: (error?: Error) => void) => unknown;
+  }
+
+  const passport: PassportAuthenticator;
+  export default passport;
+}
+
+declare module 'passport-local' {
+  interface AuthenticationInfo {
+    message?: string;
+  }
+
+  type VerifyCallback = (
+    error: Error | null,
+    user?: unknown | false | null,
+    info?: AuthenticationInfo,
+  ) => void;
+
+  type VerifyFunction = (
+    username: unknown,
+    password: unknown,
+    done: VerifyCallback,
+  ) => void;
+
+  interface StrategyOptions {
+    usernameField?: string;
+    passwordField?: string;
+  }
+
+  export class Strategy {
+    constructor(options: StrategyOptions, verify: VerifyFunction);
+  }
+
+  const passportLocal: { Strategy: typeof Strategy };
+  export default passportLocal;
 }
 
 declare module 'basic-auth' {
@@ -135,11 +206,19 @@ declare module 'html-to-text' {
 
 declare module 'validator' {
   export function isEmail(text: string): boolean;
+  export function isLength(
+    value: unknown,
+    options: { min?: number; max?: number } | number,
+  ): boolean;
   export function isURL(
     text: string,
     options?: Record<string, unknown>,
   ): boolean;
-  const validator: { isEmail: typeof isEmail; isURL: typeof isURL };
+  const validator: {
+    isEmail: typeof isEmail;
+    isLength: typeof isLength;
+    isURL: typeof isURL;
+  };
   export default validator;
 }
 
@@ -294,4 +373,69 @@ declare module 'express-session' {
     };
     store: object;
   }): import('express').RequestHandler;
+}
+
+declare module 'web-push' {
+  interface PushSubscription {
+    endpoint: string;
+    keys: { p256dh: string; auth: string };
+  }
+  interface SendOptions {
+    TTL?: number;
+  }
+  const webPush: {
+    setVapidDetails(
+      subject: string,
+      publicKey: string,
+      privateKey: string,
+    ): void;
+    sendNotification(
+      subscription: PushSubscription,
+      payload: string,
+      options?: SendOptions,
+    ): Promise<unknown>;
+  };
+  export default webPush;
+}
+
+declare module 'gm' {
+  import type { EventEmitter } from 'node:events';
+
+  export interface Command {
+    options(options: { timeout: number }): this;
+    addDisposer(emitter: EventEmitter, events: string[]): this;
+    command(name: string): this;
+    in(...args: Array<string | number>): this;
+    toBuffer(
+      callback: (error: Error | null, output: Buffer | null) => void,
+    ): this;
+    identify(
+      options: { format: string },
+      callback: (error: Error | null, output: string) => void,
+    ): this;
+    autoOrient(): this;
+    noProfile(): this;
+    colorspace(value: string): this;
+    interlace(value: string): this;
+    filter(value: string): this;
+    resize(width: number, height: string): this;
+    gravity(value: string): this;
+    extent(width: number, height: number): this;
+    unsharp(
+      radius: number,
+      sigma: number,
+      amount: number,
+      threshold: number,
+    ): this;
+    quality(value: number): this;
+    write(path: string, callback: (error?: Error | null) => void): this;
+  }
+
+  interface GraphicsMagick {
+    (source: string | null): Command;
+    subClass(options: { imageMagick: boolean }): GraphicsMagick;
+  }
+
+  const gm: GraphicsMagick;
+  export default gm;
 }

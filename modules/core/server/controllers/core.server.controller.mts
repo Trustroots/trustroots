@@ -7,6 +7,7 @@ import deprecatedLanguages from './../../../../config/languages/deprecated.mjs';
 import reactRouteOwnership, {
   type ReactRouteUser,
 } from '../../shared/react-route-ownership.mts';
+import type { UserServerDocument } from '../../../users/server/models/user.server.types.mts';
 const languagesObject: Record<string, string> = JSON.parse(
   readFileSync(
     new URL('../../../../config/languages/languages.json', import.meta.url),
@@ -26,7 +27,7 @@ type BootstrapUser = ReactRouteUser & { username?: string; _id?: unknown };
 type IndexRequest = {
   path: string;
   originalUrl?: string;
-  user?: BootstrapUser & Record<string, unknown>;
+  user?: UserServerDocument;
   tribe?: unknown;
 };
 type BootstrapVariables = {

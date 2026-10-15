@@ -436,7 +436,7 @@ describe('API route registrations', () => {
     const targetedRequestLimit = controller(['avatarUpload'], 'requestLimit');
 
     const { params, routes } = register(
-      './../../../users/server/routes/users.server.routes.mjs',
+      './../../../users/server/routes/users.server.routes.mts',
       {
         '../controllers/users.authentication.server.controller': authentication,
         '../controllers/users.avatar.server.controller': avatar,
@@ -535,7 +535,7 @@ describe('API route registrations', () => {
     );
 
     const { routes } = register(
-      './../../../users/server/routes/auth.server.routes.mjs',
+      './../../../users/server/routes/auth.server.routes.mts',
       {
         '../controllers/users.authentication.server.controller': authentication,
         '../controllers/users.password.server.controller': password,
@@ -602,7 +602,7 @@ describe('API route registrations', () => {
     );
 
     const { routes } = register(
-      './../../../users/server/routes/users-block.server.routes.mjs',
+      './../../../users/server/routes/users-block.server.routes.mts',
       {
         '../controllers/users.block.server.controller': block,
         '../policies/users.server.policy': policy,

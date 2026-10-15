@@ -796,7 +796,7 @@ function offersByUserId(
   req: OfferRequest,
   res: OfferResponse,
   next: OfferNext,
-  userId: string,
+  userId: string | Types.ObjectId,
 ) {
   // Authenticated user required
   if (!req.user) {
