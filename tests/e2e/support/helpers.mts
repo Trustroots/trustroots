@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from "node:crypto";
 import {
   expect,
   type APIRequestContext,
@@ -29,7 +29,6 @@ export type SeededMember = {
 export type NewUser = Omit<SeededMember, 'id'> & { roles?: string[] };
 
 export type CreateUserOverrides = Partial<NewUser>;
-import { createHash } from 'node:crypto';
 
 export type RegisteredUser = { _id: string };
 

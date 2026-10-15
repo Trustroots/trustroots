@@ -1,12 +1,13 @@
-const { test, expect, annotateFeature } = require('../../support/fixtures');
-const {
+import { test, expect, annotateFeature } from '../../support/fixtures.mts';
+import type { Response } from '@playwright/test';
+import {
   authenticateViaApi,
   createUser,
   registerViaApi,
-} = require('../../support/helpers');
-const { withE2eDb } = require('../../support/db');
-const crypto = require('crypto');
-const config = require('../../support/app-config');
+} from '../../support/helpers.mts';
+import { withE2eDb } from '../../support/db.mts';
+import crypto from 'node:crypto';
+import config from '../../support/app-config.mts';
 
 test('a member signs in through the browser after an account-wide challenge', async ({
   page,
@@ -37,7 +38,7 @@ test('a member signs in through the browser after an account-wide challenge', as
   const apiLogin = await authenticateViaApi(request, user);
   expect(apiLogin.ok()).toBe(true);
 
-  const challengeResponses = [];
+  const challengeResponses: Response[] = [];
   page.on('response', response => {
     if (
       response.url().endsWith('/api/auth/signin') &&
