@@ -1,6 +1,6 @@
 const assert = require('assert');
 const sinon = require('sinon');
-const proxyquire = require('proxyquire').noCallThru();
+const proxyquire = require('../../../../testutils/server/mock-module');
 
 function response() {
   const res = { statusCode: 200 };
@@ -63,10 +63,10 @@ describe('Admin circles controller', () => {
     sharp = sinon.stub().returns(image);
     uploadFile = sinon.stub();
     controller = proxyquire(
-      '../../server/controllers/admin.circles.server.controller',
+      require.resolve('../../server/controllers/admin.circles.server.controller.mjs'),
       {
         mongoose: { model: () => Tribe },
-        fs: { promises: fs },
+        'node:fs': { promises: fs },
         sharp,
         '../../../../config/config': { circleImagesDir: '/circle-images' },
         '../../../core/server/services/error.server.service': {

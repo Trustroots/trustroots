@@ -1,10 +1,11 @@
-const fs = require('fs');
-const path = require('path');
-const mongoose = require('mongoose');
-const sharp = require('sharp');
+import fs from 'node:fs';
+import path from 'node:path';
+import mongoose from 'mongoose';
+import sharp from 'sharp';
 
-const config = require('../../../../config/config');
-const errorService = require('../../../core/server/services/error.server.service');
+import config from '../../../../config/config.mts';
+import errorService from '../../../core/server/services/error.server.service.mts';
+import fileUpload from '../../../core/server/services/file-upload.service.mts';
 
 const Tribe = mongoose.model('Tribe');
 const imageSizes = [
@@ -102,7 +103,7 @@ function sendError(res, err) {
   return res.status(400).send({ message: errorService.getErrorMessage(err) });
 }
 
-exports.list = async (req, res) => {
+export const list = async (req, res) => {
   try {
     const circles = await Tribe.find()
       .select(circleFields)
@@ -114,7 +115,7 @@ exports.list = async (req, res) => {
   }
 };
 
-exports.get = async (req, res) => {
+export const get = async (req, res) => {
   try {
     const circle = await Tribe.findById(req.params.circle)
       .select(circleFields)
@@ -126,7 +127,7 @@ exports.get = async (req, res) => {
   }
 };
 
-exports.create = async (req, res) => {
+export const create = async (req, res) => {
   let circle;
   try {
     circle = await new Tribe(circleData(req.body)).save();
@@ -149,7 +150,7 @@ exports.create = async (req, res) => {
   }
 };
 
-exports.update = async (req, res) => {
+export const update = async (req, res) => {
   try {
     const circle = await Tribe.findById(req.params.circle).exec();
     if (!circle) return res.status(404).send({ message: 'Circle not found.' });
@@ -172,9 +173,8 @@ exports.update = async (req, res) => {
   }
 };
 
-exports.processImageUpload = (req, res, next) => {
+export const processImageUpload = (req, res, next) => {
   if (!req.is('multipart/form-data')) return next();
-  const fileUpload = require('../../../core/server/services/file-upload.service');
   return fileUpload.uploadFile(
     ['image/gif', 'image/jpeg', 'image/jpg', 'image/png'],
     'image',
@@ -183,3 +183,7 @@ exports.processImageUpload = (req, res, next) => {
     next,
   );
 };
+
+const service = { list, get, create, update, processImageUpload };
+export default service;
+export { service as 'module.exports' };

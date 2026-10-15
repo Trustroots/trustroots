@@ -1,6 +1,6 @@
-const { annotateFeature, expect, test } = require('../../support/fixtures');
+import { annotateFeature, expect, test } from '../../support/fixtures.mts';
 
-const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
+import { SEEDED_ADMIN, signInViaApi } from '../../support/helpers.mts';
 
 test.describe('admin circles feature coverage', () => {
   test.beforeEach(async ({ page, request }) => {
