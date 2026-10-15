@@ -424,50 +424,53 @@ export default function OfferHostPage({ user }: HostPageProps) {
             </div>
           </Tab>
           <Tab eventKey="location" title="Location">
-            {!hasLocation && (
-              <p className="alert alert-info" role="status">
-                Search for a place or move the map to set your hosting location.
-              </p>
-            )}
-            {firstTimeAround && (
-              <div
-                aria-describedby="firstTimeAroundDescription"
-                aria-labelledby="firstTimeAroundLabel"
-                className="alert alert-info offer-map-guide"
-                role="dialog"
-              >
-                <p className="lead" role="document">
-                  <strong id="firstTimeAroundLabel">
-                    Set your hosting location on the map.
-                  </strong>
-                  <br />
-                  <br />
-                  <span id="firstTimeAroundDescription">
-                    Your exact location will not be revealed to others; the
-                    location is publicly randomised by a couple of hundred
-                    metres.
-                  </span>
-                  <br />
-                  <br />
-                  <button
-                    aria-label="Close information dialog about hosting location map"
-                    className="btn btn-lg btn-info"
-                    onClick={() => setFirstTimeAround(false)}
-                    type="button"
-                  >
-                    Got it!
-                  </button>
+            <div id="location">
+              {!hasLocation && (
+                <p className="alert alert-info" role="status">
+                  Search for a place or move the map to set your hosting
+                  location.
                 </p>
-              </div>
-            )}
-            <OfferLocationEditor
-              location={offer.location}
-              offerStatus={offer.status}
-              offerType="host"
-              onLocationChange={location =>
-                setOffer(current => ({ ...current, location }))
-              }
-            />
+              )}
+              {firstTimeAround && (
+                <div
+                  aria-describedby="firstTimeAroundDescription"
+                  aria-labelledby="firstTimeAroundLabel"
+                  className="alert alert-info offer-map-guide"
+                  role="dialog"
+                >
+                  <p className="lead" role="document">
+                    <strong id="firstTimeAroundLabel">
+                      Set your hosting location on the map.
+                    </strong>
+                    <br />
+                    <br />
+                    <span id="firstTimeAroundDescription">
+                      Your exact location will not be revealed to others; the
+                      location is publicly randomised by a couple of hundred
+                      metres.
+                    </span>
+                    <br />
+                    <br />
+                    <button
+                      aria-label="Close information dialog about hosting location map"
+                      className="btn btn-lg btn-info"
+                      onClick={() => setFirstTimeAround(false)}
+                      type="button"
+                    >
+                      Got it!
+                    </button>
+                  </p>
+                </div>
+              )}
+              <OfferLocationEditor
+                location={offer.location}
+                offerStatus={offer.status}
+                offerType="host"
+                onLocationChange={location =>
+                  setOffer(current => ({ ...current, location }))
+                }
+              />
+            </div>
           </Tab>
         </Tabs>
       </form>
