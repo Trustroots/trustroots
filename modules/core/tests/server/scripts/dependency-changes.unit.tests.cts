@@ -434,11 +434,16 @@ describe('PR dependency summaries', () => {
         __dirname,
         '../../../../../scripts/ci/production-dependencies.cts',
       );
+      // These subprocesses test the executable's plain Node CLI modes. Avoid
+      // inheriting NYC's ESM preload so each child does not load the coverage
+      // instrumentation again while this synchronous test is running.
+      const childEnv = { ...process.env, NODE_OPTIONS: '' };
       assert.deepStrictEqual(
         JSON.parse(
           execFileSync(process.execPath, [script], {
             cwd: root,
             encoding: 'utf8',
+            env: childEnv,
           }),
         ),
         inventory,
@@ -449,6 +454,7 @@ describe('PR dependency summaries', () => {
             cwd: root,
             input: fs.readFileSync(script, 'utf8'),
             encoding: 'utf8',
+            env: childEnv,
           }),
         ),
         inventory,
@@ -462,6 +468,7 @@ describe('PR dependency summaries', () => {
               cwd: root,
               input: fs.readFileSync(script, 'utf8'),
               encoding: 'utf8',
+              env: childEnv,
             },
           ),
         ),
