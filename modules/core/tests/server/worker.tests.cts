@@ -298,7 +298,7 @@ describe('Worker tests', function () {
           },
         };
       },
-    });
+    } as never);
 
     worker.unlockAgendaJobs(function (err?: Error) {
       if (err) return done(err);
@@ -337,7 +337,7 @@ describe('Worker tests', function () {
           },
         };
       },
-    });
+    } as never);
 
     worker.unlockAgendaJobs(function (err?: Error) {
       if (!err) return done(new Error('Expected the update error'));

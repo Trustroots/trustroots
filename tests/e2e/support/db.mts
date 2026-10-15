@@ -173,7 +173,7 @@ export async function updateUserByUsername(
   update: UserTestUpdate,
 ): Promise<UpdateResult> {
   return withE2eDb(db =>
-    db.collection('users').updateOne({ username }, update),
+    db.collection('users').updateOne({ username }, update as never),
   );
 }
 

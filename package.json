@@ -139,7 +139,7 @@
     "medium-editor": "5.23.3",
     "migrate": "2.1.0",
     "moment": "2.31.0",
-    "mongodb": "4.17.2",
+    "mongodb": "6.20.0",
     "mongoose": "8.24.5",
     "mongoose-url-slugs": "1.0.2",
     "morgan": "1.12.1",
