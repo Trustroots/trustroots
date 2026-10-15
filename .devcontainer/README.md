@@ -41,7 +41,7 @@ host terminal with this environment variable, then use **Dev Containers:
 Rebuild and Reopen in Container**:
 
 ```sh
-TRUSTROOTS_DEV_WEBPACK_BIND_ADDRESS=0.0.0.0 code .
+TRUSTROOTS_DEV_APP_BIND_ADDRESS=0.0.0.0 code .
 ```
 
 Start the app in the devcontainer as usual:
@@ -59,8 +59,9 @@ node scripts/devcontainer/phone-url.cts
 Open one of those URLs on a phone connected to the same Wi-Fi network. The
 Vite development server proxies requests to the API inside the devcontainer,
 so port `13000` is the only port that needs to be reachable.
-The legacy `TRUSTROOTS_DEV_WEBPACK_BIND_ADDRESS` variable still chooses which
-host address Docker publishes; it is kept for existing devcontainer setups.
+`TRUSTROOTS_DEV_APP_BIND_ADDRESS` and `TRUSTROOTS_DEV_APP_HOST_PORT` choose
+which host address and port Docker publishes. The older
+`TRUSTROOTS_DEV_WEBPACK_*` names remain accepted for existing setups.
 
 Keep the default binding for ordinary development. When phone testing is
 finished, close VS Code and reopen it normally (without the environment
