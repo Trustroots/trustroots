@@ -58,6 +58,17 @@ test('welcome team location correction review sends from the current member', as
     await page
       .getByRole('button', { name: `Review ${recipient.username}` })
       .click();
+    const review = page.getByRole('dialog', { name: 'Review Casey Visitor' });
+    await expect(review).toBeInViewport();
+    await expect(review.getByLabel('Message from your account')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(review).toHaveCount(0);
+    await expect(
+      page.getByRole('button', { name: `Review ${recipient.username}` }),
+    ).toBeFocused();
+    await page
+      .getByRole('button', { name: `Review ${recipient.username}` })
+      .click();
     const message = `Hello Casey, please check your hosting location at ${page.url()}.`;
     await page.getByLabel('Message from your account').fill(message);
     await page.getByRole('button', { name: 'Send message' }).click();

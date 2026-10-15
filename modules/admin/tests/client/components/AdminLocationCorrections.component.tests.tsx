@@ -63,14 +63,16 @@ describe('AdminLocationCorrections', () => {
       await screen.findByText('Exact default location'),
     ).toBeInTheDocument();
     expect(screen.getByText('Nearby for review')).toBeInTheDocument();
+    expect(screen.getByText('2 users awaiting review')).toBeInTheDocument();
     expect(apiMock.sendLocationCorrection).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Review alex' }));
     expect(
-      within(
-        screen.getByRole('region', { name: 'Review location correction' }),
-      ).getByText('Exact default location'),
+      within(screen.getByRole('dialog', { name: 'Review Alex' })).getByText(
+        'Exact default location',
+      ),
     ).toBeInTheDocument();
+    expect(screen.getByLabelText('Message from your account')).toHaveFocus();
     expect(screen.getByRole('link', { name: 'View offer' })).toHaveAttribute(
       'href',
       '/search?offer=offer-1',
@@ -90,6 +92,7 @@ describe('AdminLocationCorrections', () => {
     expect(
       await screen.findByText('Message sent to Alex.'),
     ).toBeInTheDocument();
+    expect(screen.getByText('1 user awaiting review')).toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'Review alex' }),
     ).not.toBeInTheDocument();
@@ -229,13 +232,26 @@ describe('AdminLocationCorrections', () => {
       target: { value: 'A useful correction.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
-    expect(screen.getByRole('button', { name: 'Send message' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Sending…' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
     fireEvent.submit(getMessageForm());
     expect(apiMock.sendLocationCorrection).toHaveBeenCalledTimes(1);
     finishSend(new Error('offline'));
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Could not send the message.',
     );
+  });
+
+  it('closes the review dialog with Escape and restores focus to Review', async () => {
+    render(<AdminLocationCorrections />);
+    const review = await screen.findByRole('button', { name: 'Review alex' });
+    review.focus();
+    fireEvent.click(review);
+    const dialog = screen.getByRole('dialog', { name: 'Review Alex' });
+    fireEvent.keyDown(dialog, { key: 'Escape', code: 'Escape', keyCode: 27 });
+    await waitFor(() => expect(dialog).not.toBeInTheDocument());
+    expect(review).toHaveFocus();
+    expect(apiMock.sendLocationCorrection).not.toHaveBeenCalled();
   });
 
   it('ignores a late queue response after unmounting', async () => {
