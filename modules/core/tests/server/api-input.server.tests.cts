@@ -2,8 +2,13 @@ const assert: typeof import('node:assert/strict') = require('node:assert/strict'
 const express: typeof import('express') = require('express');
 const request: typeof import('supertest') = require('supertest');
 const validateApiInput: typeof import('../../server/middleware/api-input.server.middleware.mjs').default = require('../../server/middleware/api-input.server.middleware.mjs');
-const csrfProtection: typeof import('../../../../config/lib/csrf-protection.mjs').default = require('../../../../config/lib/csrf-protection.mjs');
-const qs: typeof import('qs') = require('qs');
+type CsrfFactory = (config: {
+  domain: string;
+  https: boolean;
+  csrfAllowedOrigins?: string[];
+}) => import('express').RequestHandler;
+const csrfProtection: CsrfFactory = require('../../../../config/lib/csrf-protection.mjs');
+const qs: { parse(query: string): unknown } = require('qs');
 
 describe('API input boundaries', () => {
   function app() {
@@ -67,7 +72,7 @@ describe('API input boundaries', () => {
 
   it('rejects structured query expressions before reaching a handler', async () => {
     const application = app();
-    application.set('query parser', query => qs.parse(query));
+    application.set('query parser', (query: string) => qs.parse(query));
     for (const query of [
       'userTo[$ne]=null',
       'filter[$where]=value',

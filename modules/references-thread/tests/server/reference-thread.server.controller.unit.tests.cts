@@ -53,7 +53,12 @@ function responseBody(response: DeferredResponse): ResponseBody {
 type ReferenceRequest = {
   user?: UserDocument;
   referenceThread?: ReferenceThreadDocument | { _id: string; reference: 'yes' };
-  body?: { userTo?: string; reference?: 'yes' | 'no'; feedback?: string };
+  body?: {
+    userTo?: string;
+    reference?: 'yes' | 'no';
+    feedback?: string;
+    [key: string]: unknown;
+  };
 };
 type Next = (error?: unknown) => void;
 type ReferenceController = {
@@ -215,10 +220,6 @@ describe('Reference thread controller unit tests', () => {
         utils.generateUsersWithSharedPassword(2, { public: true }),
       );
       await createThreadWithMessage(author, other, false);
-
-      const suppliedId = new mongoose.Types.ObjectId();
-
-      const before = Date.now();
 
       const res = deferredResponse();
       controller.readReferenceThreadById(
@@ -458,6 +459,8 @@ describe('Reference thread controller unit tests', () => {
         utils.generateUsersWithSharedPassword(2, { public: true }),
       );
       await createThreadWithMessage(author, other, false);
+      const suppliedId = new mongoose.Types.ObjectId();
+      const createdBefore = Date.now();
 
       const res = deferredResponse();
       controller.createReferenceThread(
@@ -488,7 +491,8 @@ describe('Reference thread controller unit tests', () => {
       if (!saved) throw new Error('Expected a saved reference');
       saved.reference.should.equal('yes');
       saved._id.equals(suppliedId).should.be.false();
-      (saved.created.getTime() >= before).should.be.true();
+      if (!saved.created) throw new Error('Expected created timestamp');
+      (saved.created.getTime() >= createdBefore).should.be.true();
     });
 
     it('responds with 400 when saving the reference fails', async () => {
