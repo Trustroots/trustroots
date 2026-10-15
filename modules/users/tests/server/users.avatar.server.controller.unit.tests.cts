@@ -73,12 +73,17 @@ function replaceAvatarVersionLookup(
 ): void {
   const query = {
     exec(
-      callback: (
+      callback?: (
         error: Error | null,
         user: { avatarVersion?: string } | null,
       ) => void,
     ) {
-      callback(error, version === null ? null : { avatarVersion: version });
+      const user = version === null ? null : { avatarVersion: version };
+      if (typeof callback === 'function') {
+        callback(error, user);
+        return undefined;
+      }
+      return error ? Promise.reject(error) : Promise.resolve(user);
     },
   };
   User.findById = (() =>

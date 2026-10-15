@@ -57,8 +57,8 @@ describe('Job: user finish signup unit tests', () => {
       limit() {
         return this;
       },
-      exec(callback: (error: Error | null) => void) {
-        callback(new Error('lookup failed'));
+      exec() {
+        return Promise.reject(new Error('lookup failed'));
       },
     };
     sinon

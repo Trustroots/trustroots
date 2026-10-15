@@ -40,40 +40,44 @@ describe('Job: reactivate hosts unit tests', () => {
       provider: 'local',
     });
 
-    user.save(function (err) {
-      if (err) {
-        return done(err);
-      }
+    user
+      .save()
+      .then(function () {
+        offerHost = new Offer({
+          type: 'host',
+          user: user._id,
+          status: 'no',
+          description: '<p>I can host! :)</p>',
+          noOfferDescription: '<p>I cannot host... :(</p>',
+          maxGuests: 1,
+          updated: moment().subtract(
+            moment.duration(config.limits.timeToReactivateHosts),
+          ),
+          location: [52.498981209298776, 13.418329954147339],
+          locationFuzzy: [52.50155039101136, 13.42255019882177],
+        });
 
-      offerHost = new Offer({
-        type: 'host',
-        user: user._id,
-        status: 'no',
-        description: '<p>I can host! :)</p>',
-        noOfferDescription: '<p>I cannot host... :(</p>',
-        maxGuests: 1,
-        updated: moment().subtract(
-          moment.duration(config.limits.timeToReactivateHosts),
-        ),
-        location: [52.498981209298776, 13.418329954147339],
-        locationFuzzy: [52.50155039101136, 13.42255019882177],
-      });
-
-      offerHost.save(done);
-    });
+        offerHost.save().then(result => done(null, result), done);
+      })
+      .catch(err => done(err));
   });
 
   afterEach(function (done) {
     sinon.restore();
-    Offer.deleteMany().exec(function () {
-      User.deleteMany().exec(done);
-    });
+    Offer.deleteMany()
+      .exec()
+      .then(function () {
+        User.deleteMany()
+          .exec()
+          .then(result => done(null, result), done);
+      })
+      .catch(err => done(err));
   });
 
   it('passes lookup errors to agenda', function (done) {
     sinon.stub(Offer, 'find').returns({
       populate: () => ({
-        exec: (cb: (error: Error) => void) => cb(new Error('lookup failed')),
+        exec: () => Promise.reject(new Error('lookup failed')),
       }),
     } as unknown as ReturnType<typeof Offer.find>);
 

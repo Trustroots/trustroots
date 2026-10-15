@@ -174,14 +174,24 @@ describe('Reference Thread CRUD tests', function () {
           message.userFrom = referenceUserToId;
           thread.userTo = referenceUserFromId;
           thread.userFrom = referenceUserToId;
-          new Message(message).save(function (err, messageRes) {
-            if (err) return stepDone(err);
-            thread.message = messageRes._id;
-            new Thread(thread).save(function (err, threadRes) {
-              threadId = threadRes._id;
-              stepDone(err);
-            });
-          });
+          new Message(message)
+            .save()
+            .then(function (messageRes) {
+              if (err) return stepDone(err);
+              thread.message = messageRes._id;
+              new Thread(thread)
+                .save()
+                .then(function (threadRes) {
+                  threadId = threadRes._id;
+                  stepDone(err);
+                })
+                .catch(function (err) {
+                  if (typeof stepDone === 'function') return stepDone(err);
+                  if (typeof done === 'function') return done(err);
+                  throw err;
+                });
+            })
+            .catch(err => done(err));
         },
         // Create message+thread between userTo and userNonPublic
         function (stepDone) {
@@ -191,14 +201,24 @@ describe('Reference Thread CRUD tests', function () {
           message.userFrom = referenceUserToId;
           thread.userTo = referenceUserNonPublicId;
           thread.userFrom = referenceUserToId;
-          new Message(message).save(function (err, messageRes) {
-            if (err) return stepDone(err);
-            thread.message = messageRes._id;
-            new Thread(thread).save(function (err, threadRes) {
-              threadNonpublicId = threadRes._id;
-              return done(err);
-            });
-          });
+          new Message(message)
+            .save()
+            .then(function (messageRes) {
+              if (err) return stepDone(err);
+              thread.message = messageRes._id;
+              new Thread(thread)
+                .save()
+                .then(function (threadRes) {
+                  threadNonpublicId = threadRes._id;
+                  return done(err);
+                })
+                .catch(function (err) {
+                  if (typeof stepDone === 'function') return stepDone(err);
+                  if (typeof done === 'function') return done(err);
+                  throw err;
+                });
+            })
+            .catch(err => done(err));
         },
       ],
       function (err) {
@@ -232,8 +252,10 @@ describe('Reference Thread CRUD tests', function () {
         // Save a new reference
         referenceThread.userFrom = referenceUserNonPublicId;
         referenceThread.thread = threadNonpublicId;
-        new ReferenceThread(referenceThread).save(
-          function (referenceThreadErr) {
+        new ReferenceThread(referenceThread).save().then(
+          function () {
+            const referenceThreadErr = null;
+
             // Handle error
             if (referenceThreadErr) return done(referenceThreadErr);
 
@@ -258,6 +280,12 @@ describe('Reference Thread CRUD tests', function () {
                 return done(referenceReadErr);
               });
           },
+          function (referenceThreadErr) {
+            if (typeof done === 'function') return done(referenceThreadErr);
+            if (typeof stepDone === 'function')
+              return stepDone(referenceThreadErr);
+            throw referenceThreadErr;
+          },
         );
       });
   });
@@ -273,8 +301,10 @@ describe('Reference Thread CRUD tests', function () {
         // Save a new reference
         referenceThread.userFrom = referenceUserFromId;
         referenceThread.thread = threadId;
-        new ReferenceThread(referenceThread).save(
-          function (referenceThreadErr) {
+        new ReferenceThread(referenceThread).save().then(
+          function () {
+            const referenceThreadErr = null;
+
             // Handle error
             if (referenceThreadErr) return done(referenceThreadErr);
 
@@ -296,6 +326,12 @@ describe('Reference Thread CRUD tests', function () {
                 // Call the assertion callback
                 return done(referenceReadErr);
               });
+          },
+          function (referenceThreadErr) {
+            if (typeof done === 'function') return done(referenceThreadErr);
+            if (typeof stepDone === 'function')
+              return stepDone(referenceThreadErr);
+            throw referenceThreadErr;
           },
         );
       });
@@ -362,26 +398,37 @@ describe('Reference Thread CRUD tests', function () {
         if (signinErr) return done(signinErr);
 
         // Remove message threads completely
-        Message.deleteMany().exec(function () {
-          Thread.deleteMany().exec(function () {
-            // Read reference
-            agent
-              .get('/api/references-thread/' + referenceUserToId)
-              .expect(404)
-              .end(function (referenceReadErr, referenceReadRes) {
-                referenceReadRes.body.message.should.equal('Not found.');
+        Message.deleteMany()
+          .exec()
+          .then(function () {
+            Thread.deleteMany()
+              .exec()
+              .then(function () {
+                // Read reference
+                agent
+                  .get('/api/references-thread/' + referenceUserToId)
+                  .expect(404)
+                  .end(function (referenceReadErr, referenceReadRes) {
+                    referenceReadRes.body.message.should.equal('Not found.');
 
-                // Since authenticated user has NOT received messages from the other user
-                // authenticated user should be told that she will NOT BE allowed leave references
-                referenceReadRes.body.allowCreatingReference.should.equal(
-                  false,
-                );
+                    // Since authenticated user has NOT received messages from the other user
+                    // authenticated user should be told that she will NOT BE allowed leave references
+                    referenceReadRes.body.allowCreatingReference.should.equal(
+                      false,
+                    );
 
-                // Call the assertion callback
-                return done(referenceReadErr);
+                    // Call the assertion callback
+                    return done(referenceReadErr);
+                  });
+              })
+              .catch(function (mongooseErr) {
+                if (typeof stepDone === 'function')
+                  return stepDone(mongooseErr);
+                if (typeof done === 'function') return done(mongooseErr);
+                throw mongooseErr;
               });
-          });
-        });
+          })
+          .catch(err => done(err));
       });
   });
   it('should not be able to create reference if not logged in', function (done) {
@@ -495,8 +542,10 @@ describe('Reference Thread CRUD tests', function () {
           .toDate();
 
         // Save 1st new reference ("yes") directly to the DB:
-        new ReferenceThread(referenceThread).save(
-          function (referenceThreadErr) {
+        new ReferenceThread(referenceThread).save().then(
+          function () {
+            const referenceThreadErr = null;
+
             if (referenceThreadErr) return done(referenceThreadErr);
 
             // Save 2st new reference ("no") via API
@@ -514,63 +563,77 @@ describe('Reference Thread CRUD tests', function () {
                   userFrom: referenceUserFromId,
                 })
                   .sort('-created') // Latest first
-                  .exec(
-                    function (referenceThreadFindErr, referenceThreadFindRes) {
-                      if (referenceThreadFindErr) return done(referenceSaveErr);
+                  .exec()
+                  .then(function (referenceThreadFindRes) {
+                    const referenceThreadFindErr = null;
 
-                      // We should have two references
-                      referenceThreadFindRes.length.should.equal(2);
+                    if (referenceThreadFindErr) return done(referenceSaveErr);
 
-                      // They should be identical...
-                      referenceThreadFindRes[0].userTo
-                        .toString()
-                        .should.equal(
-                          referenceThreadFindRes[1].userTo.toString(),
+                    // We should have two references
+                    referenceThreadFindRes.length.should.equal(2);
+
+                    // They should be identical...
+                    referenceThreadFindRes[0].userTo
+                      .toString()
+                      .should.equal(
+                        referenceThreadFindRes[1].userTo.toString(),
+                      );
+                    referenceThreadFindRes[0].userFrom
+                      .toString()
+                      .should.equal(
+                        referenceThreadFindRes[1].userFrom.toString(),
+                      );
+                    referenceThreadFindRes[0].thread
+                      .toString()
+                      .should.equal(
+                        referenceThreadFindRes[1].thread.toString(),
+                      );
+
+                    // Apart from this:
+                    referenceThreadFindRes[0].reference.should.equal('no');
+                    referenceThreadFindRes[1].reference.should.equal('yes');
+
+                    // Dates should have ~24h difference (when rounded, there might be a few seconds extra due time it takes to run tests)
+                    moment()
+                      .diff(referenceThreadFindRes[1].created, 'hours')
+                      .should.equal(24);
+
+                    // Read reference
+                    agent
+                      .get('/api/references-thread/' + referenceUserToId)
+                      .expect(200)
+                      .end(function (referenceReadErr, referenceReadRes) {
+                        if (referenceReadErr) return done(referenceReadErr);
+                        referenceReadRes.body.userFrom.should.equal(
+                          referenceUserFromId.toString(),
                         );
-                      referenceThreadFindRes[0].userFrom
-                        .toString()
-                        .should.equal(
-                          referenceThreadFindRes[1].userFrom.toString(),
+                        referenceReadRes.body.userTo.should.equal(
+                          referenceUserToId.toString(),
                         );
-                      referenceThreadFindRes[0].thread
-                        .toString()
-                        .should.equal(
-                          referenceThreadFindRes[1].thread.toString(),
+                        referenceReadRes.body.thread.should.equal(
+                          threadId.toString(),
                         );
+                        referenceReadRes.body.reference.should.equal('no');
+                        should.exist(referenceReadRes.body.created);
 
-                      // Apart from this:
-                      referenceThreadFindRes[0].reference.should.equal('no');
-                      referenceThreadFindRes[1].reference.should.equal('yes');
-
-                      // Dates should have ~24h difference (when rounded, there might be a few seconds extra due time it takes to run tests)
-                      moment()
-                        .diff(referenceThreadFindRes[1].created, 'hours')
-                        .should.equal(24);
-
-                      // Read reference
-                      agent
-                        .get('/api/references-thread/' + referenceUserToId)
-                        .expect(200)
-                        .end(function (referenceReadErr, referenceReadRes) {
-                          if (referenceReadErr) return done(referenceReadErr);
-                          referenceReadRes.body.userFrom.should.equal(
-                            referenceUserFromId.toString(),
-                          );
-                          referenceReadRes.body.userTo.should.equal(
-                            referenceUserToId.toString(),
-                          );
-                          referenceReadRes.body.thread.should.equal(
-                            threadId.toString(),
-                          );
-                          referenceReadRes.body.reference.should.equal('no');
-                          should.exist(referenceReadRes.body.created);
-
-                          // Call the assertion callback
-                          return done();
-                        });
-                    },
-                  );
+                        // Call the assertion callback
+                        return done();
+                      });
+                  })
+                  .catch(function (referenceThreadFindErr) {
+                    if (typeof stepDone === 'function')
+                      return stepDone(referenceThreadFindErr);
+                    if (typeof done === 'function')
+                      return done(referenceThreadFindErr);
+                    throw referenceThreadFindErr;
+                  });
               });
+          },
+          function (referenceThreadErr) {
+            if (typeof done === 'function') return done(referenceThreadErr);
+            if (typeof stepDone === 'function')
+              return stepDone(referenceThreadErr);
+            throw referenceThreadErr;
           },
         );
       });

@@ -169,7 +169,7 @@ describe('User last seen CRUD tests', function () {
         User,
         'findByIdAndUpdate',
       ) as unknown as sinon.SinonStub<Parameters<CallbackUpdate>, void>;
-      findByIdAndUpdate.callsFake((id, update, callback) => callback());
+      findByIdAndUpdate.resolves();
       const req: LastSeenRequest = {
         get: () => '203.0.113.24',
         ip: '198.51.100.24',

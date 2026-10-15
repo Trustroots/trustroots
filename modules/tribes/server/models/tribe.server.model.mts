@@ -2,7 +2,7 @@ import textService from '../../../core/server/services/text.server.service.mjs';
 import config from '../../../../config/config.mts';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
 import moment from 'moment';
-import mongoosePaginate from 'mongoose-paginate';
+import mongoosePaginate from '../../../../config/lib/mongoose-paginate.mjs';
 import uniqueValidation from '../../../../config/lib/mongoose-unique-validation.mjs';
 import urlslugs from '../../../../config/lib/mongoose-url-slugs.mjs';
 import speakingurl from 'speakingurl';

@@ -936,15 +936,16 @@ function removeAllByUserId(
   userId: Types.ObjectId | string,
   callback?: (error: Error | null) => void,
 ) {
-  Offer.deleteMany(
-    {
-      user: userId,
-    },
-    function (err) {
-      if (callback) {
-        callback(err);
-      }
-    },
+  const deletion = Offer.deleteMany({
+    user: userId,
+  });
+  const pending =
+    deletion && typeof deletion.exec === 'function'
+      ? deletion.exec()
+      : deletion;
+  void Promise.resolve(pending).then(
+    () => callback?.(null),
+    (err: Error) => callback?.(err),
   );
 }
 const service = {

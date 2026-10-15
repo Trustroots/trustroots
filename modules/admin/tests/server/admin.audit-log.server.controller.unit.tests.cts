@@ -105,10 +105,6 @@ function stubFind(execute: () => Promise<AuditLogRecord[] | null>): void {
     .returns(query as unknown as ReturnType<typeof AuditLog.find>);
 }
 
-function auditLogSaveCallback(value: unknown): value is (error: Error) => void {
-  return typeof value === 'function';
-}
-
 describe('Admin audit log controller unit tests', () => {
   afterEach(() => {
     sinon.restore();
@@ -192,13 +188,7 @@ describe('Admin audit log controller unit tests', () => {
 
     it('still calls next when saving the audit log fails', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
-      sinon.stub(AuditLog.prototype, 'save').callsFake((...args: unknown[]) => {
-        const callback = args[0];
-        if (!auditLogSaveCallback(callback)) {
-          throw new Error('Expected the audit log save callback');
-        }
-        callback(new Error('save failed'));
-      });
+      sinon.stub(AuditLog.prototype, 'save').rejects(new Error('save failed'));
       let nextCalled = false;
 
       await new Promise<void>(resolve => {

@@ -243,7 +243,8 @@ service.update = function (req, res) {
             ],
           },
           'emailTemporary email',
-          function (err: Error | null, emailUser: UserServerDocument | null) {
+        ).then(
+          (emailUser: UserServerDocument | null) => {
             // Not available
             if (emailUser) {
               // If the user we found with this email is currently authenticated user,
@@ -262,6 +263,7 @@ service.update = function (req, res) {
               done();
             }
           },
+          () => done(),
         );
       },
       // Check if nostr npub is already claimed by another user
@@ -277,13 +279,8 @@ service.update = function (req, res) {
             nostrNpub: requestedNostrNpub,
           },
           '_id',
-          function (
-            err: Error | null,
-            existingNostrUser: UserServerDocument | null,
-          ) {
-            if (err) {
-              return done(err);
-            }
+        ).then(
+          (existingNostrUser: UserServerDocument | null) => {
             if (existingNostrUser) {
               return res.status(403).send({
                 message:
@@ -292,6 +289,7 @@ service.update = function (req, res) {
             }
             done();
           },
+          (err: Error) => done(err),
         );
       },
       // Check if we should generate new email token
@@ -451,14 +449,16 @@ service.initializeRemoveProfile = function (req, res) {
             // Return updated user document
             new: true,
           },
-          function (err: Error | null, result: UserServerRecord | null) {
+        ).then(
+          result => {
             if (result) {
               const user = result as UserServerDocument;
               user.$locals.actionTokens = { removeProfileToken: token };
-              return done(err, user);
+              return done(null, user);
             }
-            done(err, null);
+            done(null, null);
           },
+          (err: Error) => done(err, null),
         );
       },
       // Send email
@@ -515,17 +515,16 @@ service.removeProfile = function (req, res) {
     [
       // Validate token
       function (done: (error: Error | null, user: UserServerRecord) => void) {
-        User.findOne(
-          {
-            _id: authenticatedUser._id,
-            removeProfileToken: matchToken(req.params.token),
-            removeProfileExpires: {
-              $gt: Date.now(),
-            },
+        User.findOne({
+          _id: authenticatedUser._id,
+          removeProfileToken: matchToken(req.params.token),
+          removeProfileExpires: {
+            $gt: Date.now(),
           },
-          function (err: Error | null, user: UserServerRecord | null) {
+        }).then(
+          (user: UserServerRecord | null) => {
             // Can't find user (=invalid or expired token) or other error
-            if (err || !user) {
+            if (!user) {
               // Report failure to stats
               return statService.stat(
                 {
@@ -547,6 +546,23 @@ service.removeProfile = function (req, res) {
             }
             done(null, user);
           },
+          () =>
+            statService.stat(
+              {
+                namespace: 'profileRemoval',
+                counts: {
+                  count: 1,
+                },
+                tags: {
+                  status: 'failed',
+                },
+              },
+              function () {
+                return res.status(400).send({
+                  message: 'Profile remove token is invalid or has expired.',
+                });
+              },
+            ),
         );
       },
       // Remove profile
@@ -554,13 +570,11 @@ service.removeProfile = function (req, res) {
         user: UserServerRecord,
         done: (error: Error | null | undefined, user: UserServerRecord) => void,
       ) {
-        User.findOneAndRemove(
-          {
-            _id: user._id,
-          },
-          function (err?: Error | null) {
-            done(err, user);
-          },
+        User.findOneAndDelete({
+          _id: user._id,
+        }).then(
+          () => done(null, user),
+          (err: Error) => done(err, user),
         );
       },
       // Remove native message alert registrations
@@ -568,19 +582,20 @@ service.removeProfile = function (req, res) {
         user: UserServerRecord,
         done: (error: Error | null | undefined, user: UserServerRecord) => void,
       ) {
-        mongoose.model('UnifiedPushRegistration').deleteMany(
-          {
+        mongoose
+          .model('UnifiedPushRegistration')
+          .deleteMany({
             user: user._id,
-          },
-          function (err: Error | null) {
-            if (err) {
+          })
+          .then(
+            () => done(null, user),
+            (err: Error) => {
               log('error', 'Error removing message alert registrations.', {
                 error: err,
               });
-            }
-            done(null, user);
-          },
-        );
+              done(null, user);
+            },
+          );
       },
       // Remove offers
       function (
@@ -807,36 +822,37 @@ service.userMiniByID = function (req, res, next, userId) {
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return errorService.sendInvalidId(res);
   }
-  User.findById(userId, service.userMiniProfileFields + ' public roles blocked')
-    .exec()
-    .then(
-      function (profile) {
-        // Something went wrong or no profile
-        if (!profile) {
-          return errorService.sendNotFound(res);
-        }
-        const {
-          isAdmin,
-          isOwnProfile,
-          isBannedProfile,
-          isBlocked,
-          hasBlocked,
-        } = classifyPermission(req.user, profile);
-        // Not own profile, and not public, or suspended, or shadowbanned user
-        if (
-          !isAdmin &&
-          !isOwnProfile &&
-          (!profile.public || isBannedProfile || isBlocked || hasBlocked)
-        ) {
-          return errorService.sendNotFound(res);
-        }
-        req.profile = profile;
-        next();
-      },
-      function () {
+  const miniLookup = User.findById(
+    userId,
+    service.userMiniProfileFields + ' public roles blocked',
+  );
+  const miniPending =
+    miniLookup && typeof miniLookup.exec === 'function'
+      ? miniLookup.exec()
+      : miniLookup;
+  Promise.resolve(miniPending).then(
+    function (profile) {
+      // Something went wrong or no profile
+      if (!profile) {
         return errorService.sendNotFound(res);
-      },
-    );
+      }
+      const { isAdmin, isOwnProfile, isBannedProfile, isBlocked, hasBlocked } =
+        classifyPermission(req.user, profile);
+      // Not own profile, and not public, or suspended, or shadowbanned user
+      if (
+        !isAdmin &&
+        !isOwnProfile &&
+        (!profile.public || isBannedProfile || isBlocked || hasBlocked)
+      ) {
+        return errorService.sendNotFound(res);
+      }
+      req.profile = profile;
+      next();
+    },
+    function () {
+      return errorService.sendNotFound(res);
+    },
+  );
 };
 
 /**
@@ -865,51 +881,57 @@ service.userByUsername = function (req, res, next, username) {
       function (
         done: (error: Error | null, profile: UserServerDocument) => void,
       ) {
-        User.findOne(
+        const profileLookup = User.findOne(
           {
             username: username.toLowerCase(),
           },
           service.userProfileFields + ' roles public blocked',
-        )
-          .populate({
-            path: 'member.tribe',
-            select: tribesHandler.tribeFields,
-            model: 'Tribe',
-            // Not possible at the moment due bug in Mongoose
-            // http://mongoosejs.com/docs/faq.html#populate_sort_order
-            // https://github.com/Automattic/mongoose/issues/2202
-            // options: { sort: { count: -1 } }
-          })
-          .exec()
-          .then(
-            function (profile) {
-              if (!profile) {
-                // No such user
-                return res.status(404).send({
-                  message: errorService.getErrorMessageByKey('not-found'),
-                });
-              }
-              const { isAdmin, isOwnProfile, isBannedProfile, isBlocked } =
-                classifyPermission(authenticatedUser, profile);
-
-              // Not own profile, and not public, or suspended, or shadowbanned user
-              if (
-                !isAdmin &&
-                !isOwnProfile &&
-                (!profile.public || isBannedProfile || isBlocked)
-              ) {
-                return res.status(404).send({
-                  message: errorService.getErrorMessageByKey('not-found'),
-                });
-              }
-              done(null, profile);
-            },
-            function () {
+        );
+        const populatedProfile =
+          profileLookup && typeof profileLookup.populate === 'function'
+            ? profileLookup.populate({
+                path: 'member.tribe',
+                select: tribesHandler.tribeFields,
+                model: 'Tribe',
+                // Not possible at the moment due bug in Mongoose
+                // http://mongoosejs.com/docs/faq.html#populate_sort_order
+                // https://github.com/Automattic/mongoose/issues/2202
+                // options: { sort: { count: -1 } }
+              })
+            : profileLookup;
+        const profilePending =
+          populatedProfile && typeof populatedProfile.exec === 'function'
+            ? populatedProfile.exec()
+            : populatedProfile;
+        Promise.resolve(profilePending).then(
+          function (profile) {
+            if (!profile) {
+              // No such user
               return res.status(404).send({
                 message: errorService.getErrorMessageByKey('not-found'),
               });
-            },
-          );
+            }
+            const { isAdmin, isOwnProfile, isBannedProfile, isBlocked } =
+              classifyPermission(authenticatedUser, profile);
+
+            // Not own profile, and not public, or suspended, or shadowbanned user
+            if (
+              !isAdmin &&
+              !isOwnProfile &&
+              (!profile.public || isBannedProfile || isBlocked)
+            ) {
+              return res.status(404).send({
+                message: errorService.getErrorMessageByKey('not-found'),
+              });
+            }
+            done(null, profile);
+          },
+          function () {
+            return res.status(404).send({
+              message: errorService.getErrorMessageByKey('not-found'),
+            });
+          },
+        );
       },
       // Sanitize profile
       function (

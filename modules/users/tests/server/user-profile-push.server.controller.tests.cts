@@ -105,9 +105,9 @@ function responseArray(response: TestResponse): unknown[] {
   return body;
 }
 function failedQuery(error: unknown): {
-  exec(callback: (error: unknown) => void): void;
+  exec(): Promise<never>;
 } {
-  return { exec: callback => callback(error) };
+  return { exec: () => Promise.reject(error) };
 }
 
 describe('Profile controller push/membership unit tests', () => {
@@ -141,8 +141,8 @@ describe('Profile controller push/membership unit tests', () => {
         populate() {
           return failedMembershipQuery;
         },
-        exec(callback: (error: unknown) => void) {
-          callback(new Error('db error'));
+        exec() {
+          return Promise.reject(new Error('db error'));
         },
       };
       sinon

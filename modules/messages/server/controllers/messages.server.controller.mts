@@ -408,14 +408,17 @@ function fillDeletedProfiles(
 
       // Check which field is `null` — only one of them can
       const field = !thread.userTo ? 'userTo' : 'userFrom';
-      Thread.findById(thread._id, field, function (err, newThread) {
-        if (!err && newThread) {
-          thread[field] = {
-            _id: newThread[field] as Types.ObjectId,
-          };
-        }
-        done(null, thread);
-      });
+      Thread.findById(thread._id, field).then(
+        newThread => {
+          if (newThread) {
+            thread[field] = {
+              _id: newThread[field] as Types.ObjectId,
+            };
+          }
+          done(null, thread);
+        },
+        () => done(null, thread),
+      );
     },
     callback,
   );
@@ -789,7 +792,10 @@ service.send = async function (req, res) {
         } else if (spamStatus === 'not-spam') {
           message.spam = false;
         }
-        message.save(done);
+        message.save().then(
+          saved => done(null, saved),
+          (err: Error) => done(err),
+        );
       },
       // Create/upgrade Thread handle between these two users
       function (
@@ -839,9 +845,9 @@ service.send = async function (req, res) {
           {
             upsert: true,
           },
-          err => {
-            done(err, message);
-          },
+        ).then(
+          () => done(null, message),
+          (err: Error) => done(err, message),
         );
       },
       // Here we send some metrics to Stats API to measure how many messages
@@ -880,20 +886,16 @@ service.send = async function (req, res) {
       },
       // We'll need some info about related users, populate some fields
       function (message: MessageEndpointDocument, done: WaterfallDone) {
-        message.populate(
-          [userMiniService.miniUserPopulate('userFrom userTo')],
-          function (err, message) {
-            if (err) {
-              return done(err);
-            }
-
+        message
+          .populate([userMiniService.miniUserPopulate('userFrom userTo')])
+          .then(populated => {
             // Turn to object to be able to delete fields
-            message = message.toObject();
+            const messageObject = populated.toObject();
 
             // Finally return the approved message fields.
-            return res.json(prepareMessageForClient(message));
-          },
-        );
+            return res.json(prepareMessageForClient(messageObject));
+          })
+          .catch((err: Error) => done(err));
       },
     ],
     function (err?: unknown) {
@@ -1029,34 +1031,22 @@ service.markRead = function (req, res) {
     return res.status(200).send(prepareMarkReadResponse());
   }
   // Mark messages read
-  Message.update(
-    prepareMarkReadSelector(messageIds, user.id),
-    {
-      read: true,
-    },
-    {
-      multi: true,
-    },
-    function (err) {
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
-      }
+  Message.updateMany(prepareMarkReadSelector(messageIds, user.id), {
+    read: true,
+  })
+    .then(() =>
       Thread.updateMany(
         { userTo: user._id, message: { $in: messageIds } },
         { $set: { read: true } },
-        function (threadError) {
-          if (threadError) {
-            return res.status(400).send({
-              message: errorService.getErrorMessage(threadError),
-            });
-          }
-          res.status(200).send(prepareMarkReadResponse());
-        },
-      );
-    },
-  );
+      ),
+    )
+    .then(
+      () => res.status(200).send(prepareMarkReadResponse()),
+      (err: Error) =>
+        res.status(400).send({
+          message: errorService.getErrorMessage(err),
+        }),
+    );
 };
 
 /**
@@ -1077,14 +1067,12 @@ service.messagesCount = function (req, res) {
       },
       user,
     ),
-    function (err, unreadCount) {
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
-      }
-      return res.json(prepareUnreadMessageCount(unreadCount));
-    },
+  ).then(
+    unreadCount => res.json(prepareUnreadMessageCount(unreadCount)),
+    (err: Error) =>
+      res.status(400).send({
+        message: errorService.getErrorMessage(err),
+      }),
   );
 };
 
@@ -1267,9 +1255,9 @@ service.markAllMessagesToUserNotified = function (userId, callback) {
   Message.updateMany(
     { userTo: userId },
     { $set: { notificationCount: 2 } },
-    function (err) {
-      callback(err);
-    },
+  ).then(
+    () => callback(null),
+    (err: Error) => callback(err),
   );
 };
 /** Format a draft without saving it or touching conversation state. */

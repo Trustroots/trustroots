@@ -67,14 +67,15 @@ export const record = (
   });
 
   // Save support request to db
-  auditLogItem.save((error: Error | null) => {
-    if (error) {
+  auditLogItem.save().then(
+    () => next(),
+    (error: Error) => {
       log('error', 'Failed storing audit log item to the DB. #fi2fb2', {
         error,
       });
-    }
-    next();
-  });
+      next();
+    },
+  );
 };
 
 /** Return the latest matching entries, filtered by acting staff. */

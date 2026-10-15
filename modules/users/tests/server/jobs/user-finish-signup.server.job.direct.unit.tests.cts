@@ -54,7 +54,7 @@ describe('Job: user finish signup direct unit tests', function () {
     findUsers.returns(query as unknown as ReturnType<typeof User.find>);
     const findByIdAndUpdate = sinon.stub(User, 'findByIdAndUpdate');
     const updateOne = sinon.stub(User, 'updateOne');
-    updateOne.callsArgWith(2, null, { matchedCount: 1 });
+    updateOne.resolves({ matchedCount: 1 });
     const sendSignupEmailReminder = sinon.stub(
       emailService,
       'sendSignupEmailReminder',
@@ -77,7 +77,7 @@ describe('Job: user finish signup direct unit tests', function () {
     const { findUsers, job, query, sendSignupEmailReminder } = loadJob({
       limits: {},
     });
-    query.exec.callsArgWith(0, null, []);
+    query.exec.resolves([]);
 
     job(
       { attrs: { _id: { toString: () => 'job-id' } } },
@@ -120,9 +120,9 @@ describe('Job: user finish signup direct unit tests', function () {
         maxSignupReminders: 1,
       },
     });
-    query.exec.callsArgWith(0, null, [user]);
+    query.exec.resolves([user]);
     sendSignupEmailReminder.callsArgWith(1, null);
-    findByIdAndUpdate.callsArgWith(2, null);
+    findByIdAndUpdate.resolves();
 
     job(
       { attrs: { _id: { toString: () => 'job-id' } } },

@@ -215,7 +215,7 @@ describe('Statistics controller unit tests', () => {
       typedStub<[unknown, (error: Error | null, count: number) => void]>(
         User,
         'countDocuments',
-      ).callsFake((query, cb) => cb(dbError, 0));
+      ).rejects(dbError);
       statistics.getUsersCount(err => {
         err!.should.be.Error();
         done();
@@ -226,7 +226,7 @@ describe('Statistics controller unit tests', () => {
       typedStub<[unknown, (error: Error | null, count: number) => void]>(
         User,
         'countDocuments',
-      ).callsFake((query, cb) => cb(dbError, 0));
+      ).rejects(dbError);
       statistics.getNewsletterSubscriptionsCount(err => {
         err!.should.be.Error();
         done();
@@ -237,7 +237,7 @@ describe('Statistics controller unit tests', () => {
       typedStub<[unknown, (error: Error | null, count: number) => void]>(
         User,
         'countDocuments',
-      ).callsFake((query, cb) => cb(dbError, 0));
+      ).rejects(dbError);
       statistics.getLastSeenStatistic({ days: 7 }, err => {
         err!.should.be.Error();
         done();
@@ -248,7 +248,7 @@ describe('Statistics controller unit tests', () => {
       typedStub<[unknown, (error: Error | null, count: number) => void]>(
         User,
         'countDocuments',
-      ).callsFake((query, cb) => cb(dbError, 0));
+      ).rejects(dbError);
       statistics.getExternalSiteCount('github', err => {
         err!.should.be.Error();
         done();
@@ -259,7 +259,7 @@ describe('Statistics controller unit tests', () => {
       typedStub<[unknown, (error: Error | null, count: number) => void]>(
         Offer,
         'countDocuments',
-      ).callsFake((query, cb) => cb(dbError, 0));
+      ).rejects(dbError);
       statistics.getMeetOffersCount(err => {
         err!.should.be.Error();
         done();
@@ -270,7 +270,7 @@ describe('Statistics controller unit tests', () => {
       typedStub<[unknown, (error: Error | null, rows: unknown[]) => void]>(
         Offer,
         'aggregate',
-      ).callsFake((pipeline, cb) => cb(dbError, []));
+      ).rejects(dbError);
       statistics.getHostOffersCount(err => {
         err!.should.be.Error();
         done();
@@ -281,7 +281,7 @@ describe('Statistics controller unit tests', () => {
       typedStub<[unknown, (error: Error | null, rows: unknown[]) => void]>(
         User,
         'aggregate',
-      ).callsFake((pipeline, cb) => cb(dbError, []));
+      ).rejects(dbError);
       statistics.getUserLanguagesCount(5, err => {
         err!.should.be.Error();
         done();
@@ -292,10 +292,7 @@ describe('Statistics controller unit tests', () => {
       typedStub<[unknown, (error: Error | null, rows: unknown[]) => void]>(
         Experience,
         'aggregate',
-      ).callsFake((pipeline, cb) => {
-        cb(dbError, []);
-        return undefined;
-      });
+      ).rejects(dbError);
       statistics.getExperienceStatistics(new Date(), err => {
         err!.should.be.Error();
         done();
@@ -306,10 +303,7 @@ describe('Statistics controller unit tests', () => {
       typedStub<[unknown, (error: Error | null, rows: unknown[]) => void]>(
         MessageStat,
         'aggregate',
-      ).callsFake((pipeline, cb) => {
-        cb(dbError, []);
-        return undefined;
-      });
+      ).rejects(dbError);
       statistics.getMessageInteractionStatistics(new Date(), err => {
         err!.should.be.Error();
         done();
@@ -682,14 +676,11 @@ describe('Statistics controller unit tests', () => {
             rows: Array<{ _id: string; count: string }>,
           ) => void,
         ]
-      >(Offer, 'aggregate').callsFake((pipeline, cb) => {
-        cb(null, [
-          { _id: 'yes', count: '2' },
-          { _id: 'maybe', count: 'not-a-number' },
-          { _id: 'other', count: '9' },
-        ]);
-        return undefined;
-      });
+      >(Offer, 'aggregate').resolves([
+        { _id: 'yes', count: '2' },
+        { _id: 'maybe', count: 'not-a-number' },
+        { _id: 'other', count: '9' },
+      ]);
 
       statistics.getHostOffersCount((err, counters) => {
         if (err) return done(err);

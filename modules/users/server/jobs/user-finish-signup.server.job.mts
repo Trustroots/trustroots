@@ -151,39 +151,33 @@ const defaultExport = function (
                   emailTokenExpires: user.emailTokenExpires,
                 },
               },
-              function (
-                saveErr: Error | null,
-                result: { matchedCount: number },
-              ) {
-                if (saveErr) return callback(saveErr);
+            ).then(
+              (result: { matchedCount: number }) => {
                 if (result.matchedCount !== 1) return callback();
                 emailService.sendSignupEmailReminder(
                   user,
                   function (err?: Error | null) {
                     if (err) {
                       return callback(err);
-                    } else {
-                      // Mark reminder sent and update the reminder count
-                      User.findByIdAndUpdate(
-                        user._id,
-                        {
-                          $set: {
-                            publicReminderSent: new Date(),
-                          },
-                          // If the field does not exist, $inc creates the field
-                          // and sets the field to the specified value.
-                          $inc: {
-                            publicReminderCount: 1,
-                          },
-                        },
-                        function (err?: Error | null) {
-                          callback(err);
-                        },
-                      );
                     }
+                    // Mark reminder sent and update the reminder count
+                    User.findByIdAndUpdate(user._id, {
+                      $set: {
+                        publicReminderSent: new Date(),
+                      },
+                      // If the field does not exist, $inc creates the field
+                      // and sets the field to the specified value.
+                      $inc: {
+                        publicReminderCount: 1,
+                      },
+                    }).then(
+                      () => callback(null),
+                      (updateErr: Error) => callback(updateErr),
+                    );
                   },
                 );
               },
+              (saveErr: Error) => callback(saveErr),
             );
           },
           function (err?: Error | null) {

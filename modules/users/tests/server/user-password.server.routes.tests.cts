@@ -19,15 +19,14 @@ type RecoveryJob =
     text?: string;
   }>;
 let jobs: RecoveryJob[];
-type LegacyFindOne = (
-  query: import('mongoose').FilterQuery<PasswordUserRecord>,
-  callback: (error: Error | null, foundUser: PasswordUser | null) => void,
-) => void;
 function findOneWithCallback(
   query: import('mongoose').FilterQuery<PasswordUserRecord>,
   callback: (error: Error | null, foundUser: PasswordUser | null) => void,
 ): void {
-  (User.findOne as unknown as LegacyFindOne)(query, callback);
+  User.findOne(query).then(
+    foundUser => callback(null, foundUser),
+    (error: Error) => callback(error, null),
+  );
 }
 /**
  * Globals

@@ -44,9 +44,7 @@ describe('Contacts controller mongoose error handling', () => {
       await res.waitForResponse();
 
       res.statusCode.should.equal(400);
-      sendBadRequest.firstCall.args[1].message.should.equal(
-        'Failed to load user ' + user2._id,
-      );
+      sendBadRequest.firstCall.args[1].message.should.equal('db down');
     });
 
     it('still responds with 400 when removing the unsent contact rejects', async () => {

@@ -251,101 +251,53 @@ describe('User Model Unit Tests:', function () {
         })
         .catch(done);
     });
-    it('should not be able to save different user with the same email address', function (done) {
+    it('should not be able to save different user with the same email address', async function () {
       const _user = new User(user);
       const _user3 = new User(user3);
-      _user
-        .deleteOne()
-        .then(
-          () => {
-            throw new Error('Expected the operation to reject');
-          },
-          err => {
-            should.not.exist(err);
-            _user
-              .save()
-              .then(
-                () => {
-                  throw new Error('Expected the operation to reject');
-                },
-                err => {
-                  should.not.exist(err);
-                  const user3_email = _user3.email;
-                  _user3.email = _user.email;
-                  _user3
-                    .save()
-                    .then(
-                      () => {
-                        throw new Error('Expected the operation to reject');
-                      },
-                      err => {
-                        should.exist(err);
-                        assertPresent(err);
-                        if (!(err instanceof mongoose.Error.ValidationError))
-                          throw err;
-                        err.errors.email.message.should.equal(
-                          'Account with this email exists already.',
-                        );
-                        // Restoring the original email for test3 so it can be used in later tests
-                        _user3.email = user3_email;
-                        done();
-                      },
-                    )
-                    .catch(done);
-                },
-              )
-              .catch(done);
-          },
-        )
-        .catch(done);
+      await _user.deleteOne();
+      await _user.save();
+      const user3Email = _user3.email;
+      _user3.email = _user.email;
+      try {
+        await _user3.save();
+        throw new Error('Expected the operation to reject');
+      } catch (err) {
+        if (
+          err instanceof Error &&
+          err.message === 'Expected the operation to reject'
+        ) {
+          throw err;
+        }
+        assertPresent(err);
+        if (!(err instanceof mongoose.Error.ValidationError)) throw err;
+        err.errors.email.message.should.equal(
+          'Account with this email exists already.',
+        );
+        _user3.email = user3Email;
+      }
     });
-    it('should not be able to save different user with the same username', function (done) {
+    it('should not be able to save different user with the same username', async function () {
       const _user = new User(user);
       const _user3 = new User(user3);
-      _user
-        .deleteOne()
-        .then(
-          () => {
-            throw new Error('Expected the operation to reject');
-          },
-          err => {
-            should.not.exist(err);
-            _user
-              .save()
-              .then(
-                () => {
-                  throw new Error('Expected the operation to reject');
-                },
-                err => {
-                  should.not.exist(err);
-                  const user3_username = _user3.username;
-                  _user3.username = _user.username;
-                  _user3
-                    .save()
-                    .then(
-                      () => {
-                        throw new Error('Expected the operation to reject');
-                      },
-                      err => {
-                        should.exist(err);
-                        assertPresent(err);
-                        if (!(err instanceof mongoose.Error.ValidationError))
-                          throw err;
-                        err.errors.username.message.should.equal(
-                          'Username exists already.',
-                        );
-                        // Restoring the original username for test3 so it can be used in later tests
-                        _user3.username = user3_username;
-                        done();
-                      },
-                    )
-                    .catch(done);
-                },
-              )
-              .catch(done);
-          },
-        )
-        .catch(done);
+      await _user.deleteOne();
+      await _user.save();
+      const user3Username = _user3.username;
+      _user3.username = _user.username;
+      try {
+        await _user3.save();
+        throw new Error('Expected the operation to reject');
+      } catch (err) {
+        if (
+          err instanceof Error &&
+          err.message === 'Expected the operation to reject'
+        ) {
+          throw err;
+        }
+        assertPresent(err);
+        if (!(err instanceof mongoose.Error.ValidationError)) throw err;
+        err.errors.username.message.should.equal('Username exists already.');
+        _user3.username = user3Username;
+      }
     });
   });
   describe('Mongoose 6 database compatibility', function () {
