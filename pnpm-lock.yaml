@@ -51,8 +51,8 @@ importers:
         specifier: 5.3.0
         version: 5.3.0(supports-color@5.5.0)
       async:
-        specifier: 2.6.4
-        version: 2.6.4
+        specifier: 3.2.6
+        version: 3.2.6
       autolinker:
         specifier: 4.1.5
         version: 4.1.5
@@ -3033,9 +3033,6 @@ packages:
   async-function@1.0.0:
     resolution: {integrity: sha512-hsU18Ae8CDTR6Kgu9DYf0EbCr/a5iGL0rytQDobUcdpYOKokk8LEjVphnXkDkgpi0wYVsqrXuP0bZxJaTqdgoA==}
     engines: {node: '>= 0.4'}
-
-  async@2.6.4:
-    resolution: {integrity: sha512-mzo5dfJYwAn29PeiJ0zvwTo04zj8HDJj0Mn8TD7sno7q12prdbnasKJHhkm2c1LgrhlJ0teaea8860oxi51mGA==}
 
   async@3.2.6:
     resolution: {integrity: sha512-htCUDlxyyCLMgaM3xXg0C0LW2xqfuQ6p05pCEIsXuyQ+a1koYKTuBMzRNwmybfLgvJDMd0r1LTn4+E0Ti6C2AA==}
@@ -10363,10 +10360,6 @@ snapshots:
       tslib: 2.8.1
 
   async-function@1.0.0: {}
-
-  async@2.6.4:
-    dependencies:
-      lodash: 4.18.1
 
   async@3.2.6: {}
 

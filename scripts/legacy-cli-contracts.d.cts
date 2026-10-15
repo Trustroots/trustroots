@@ -33,7 +33,7 @@ export interface ConnectionHelper {
 }
 export interface Queue<T> {
   push(value: T | T[]): void;
-  drain: () => void;
+  drain(callback?: () => void): void;
 }
 export interface QueueFactory {
   queue<T>(
@@ -75,7 +75,7 @@ export interface MessageStatsAsync {
   ): void;
   doWhilst(
     worker: (callback: Done) => void,
-    test: () => boolean,
+    test: (callback: (error?: unknown, truth?: boolean) => void) => void,
     callback: Done,
   ): void;
 }

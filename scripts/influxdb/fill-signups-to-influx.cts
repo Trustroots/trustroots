@@ -123,11 +123,11 @@ async.waterfall(
       });
 
       // Done with all docs
-      q.drain = function () {
+      q.drain(function () {
         if (progress === count) {
           return done(null, progress, count);
         }
-      };
+      });
     },
   ],
   function (err, processedCount, totalCount) {

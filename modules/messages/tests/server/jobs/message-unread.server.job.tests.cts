@@ -13,11 +13,11 @@ require('should');
 const moment: typeof import('moment') = require('moment');
 const emailService: typeof import('./../../../../core/server/services/email.server.service.mjs') = require('./../../../../core/server/services/email.server.service.mjs');
 const sinon: typeof import('sinon') = require('sinon');
+const winston: typeof import('winston') = require('winston');
+const unifiedPush: typeof import('./../../../../users/server/services/unified-push.server.service.mjs') = require('./../../../../users/server/services/unified-push.server.service.mjs');
 type UnreadUser = Pick<UserRecord, 'email' | 'displayName' | 'roles'> & {
   _id: UserModelDocument['_id'];
 };
-type TestQueue = { push(): void; drain: ((error?: Error) => void) | null };
-const async: { queue: (...args: unknown[]) => TestQueue } = require('async');
 const testutils: typeof import('../../../../../testutils/server/server.testutil') = require('../../../../../testutils/server/server.testutil');
 const mongoose: typeof import('mongoose') = require('mongoose');
 type WebPushService = {
@@ -699,22 +699,19 @@ describe('Job: message unread', function () {
       sinon.restore();
     });
 
-    it('logs queue drain errors but still completes', function (done) {
+    it('logs the first queue error and completes after multiple task failures', function (done) {
       const jobWithQueueError = require('./../../../server/jobs/message-unread.server.job.mjs');
-      sinon.stub(async, 'queue').callsFake(() => {
-        const queue: TestQueue = {
-          push() {
-            setImmediate(() => {
-              if (typeof queue.drain === 'function')
-                queue.drain(new Error('queue failed'));
-            });
-          },
-          drain: null,
-        };
-        return queue;
-      });
+      const queueLog = sinon.stub(winston.Logger.prototype, 'log');
+      const missingRecipientId = new mongoose.Types.ObjectId();
 
       sinon.stub(Message, 'aggregate').yields(null, [
+        {
+          _id: { userTo: missingRecipientId, userFrom: userFromId },
+          messages: [
+            { id: message._id, content: 'a message', created: new Date() },
+          ],
+          notificationCount: 0,
+        },
         {
           _id: { userTo: userToId, userFrom: userFromId },
           messages: [
@@ -741,10 +738,32 @@ describe('Job: message unread', function () {
             },
           ]),
       } as unknown as ReturnType<typeof findUsers>);
+      const emailFailure = new Error('email failed');
+      emailFailure.name = 'EmailDeliveryError';
+      sinon
+        .stub(emailService, 'sendMessagesUnread')
+        .callsArgWith(3, emailFailure);
+      sinon.stub(unifiedPush, 'notifyUnread').resolves();
       sinon.stub(Message, 'update').yields(null);
 
       jobWithQueueError({}, function (err?: Error | null) {
         if (err) return done(err);
+        const queueErrorLog = queueLog
+          .getCalls()
+          .find(
+            call =>
+              call.args[1] ===
+              'Sending unread message notifications caused an error. #j38vax',
+          );
+        if (!queueErrorLog) {
+          return done(
+            new Error('Expected unread notification queue error log'),
+          );
+        }
+        const loggedArgs = queueErrorLog.args as unknown as unknown[];
+        const loggedError = (loggedArgs[2] as { error: { name: string } })
+          .error;
+        loggedError.name.should.equal('Error');
         done();
       });
     });

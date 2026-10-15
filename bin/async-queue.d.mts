@@ -4,7 +4,7 @@ declare module 'async' {
   interface Queue<T> {
     push(task: T): void;
     error(handler: (error: Error, task: T) => void): void;
-    drain: (() => void) | null;
+    drain(callback?: () => void): void;
     length(): number;
   }
 
@@ -18,7 +18,7 @@ declare module 'async/queue.js' {
   interface Queue<T> {
     push(task: T): void;
     error(handler: (error: Error, task: T) => void): void;
-    drain: (() => void) | null;
+    drain(callback?: () => void): void;
     length(): number;
   }
 

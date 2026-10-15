@@ -367,26 +367,30 @@ function sendUnreadMessageReminders(reminder: Reminder, callback: Done): void {
           );
         }, 5); // How many notifications to process simultaneously?
 
-        // Start processing notifications
-        notificationsQueue.push(notifications);
+        let queueError: Error | undefined;
+        notificationsQueue.error(function (error) {
+          queueError ??= error;
+        });
 
-        // Assign a final callback to work queue
         // All notification jobs done, continue
-        notificationsQueue.drain = function (err) {
+        notificationsQueue.drain(function () {
           // Log detected error but don't stop processing this job because of it
           // Otherwise this job might get stuck infinitely for some notification
-          if (err) {
+          if (queueError) {
             // Log the failure to send the notification
             log(
               'error',
               'Sending unread message notifications caused an error. #j38vax',
               {
-                error: err,
+                error: queueError,
               },
             );
           }
           done(null, notifications);
-        };
+        });
+
+        // Start processing notifications
+        notificationsQueue.push(notifications);
       },
       // Update notificationCount of messages
       function (notifications: Notification[], done: Done) {

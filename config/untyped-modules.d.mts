@@ -60,7 +60,8 @@ declare module 'async' {
   ): {
     length(): number;
     push(task: T | T[]): void;
-    drain: ((error?: Error | null) => void) | null;
+    error(handler: (error: Error, task: T) => void): void;
+    drain(callback?: () => void): void;
   };
   const async: {
     map: typeof map;
