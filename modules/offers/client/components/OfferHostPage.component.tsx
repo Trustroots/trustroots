@@ -9,6 +9,7 @@ import {
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { createOffer, getOffers, updateOffer } from '../api/offers.api';
 import type { CreateOfferRequest } from '../../shared/offer';
+import { plainTextLength } from './offerEdit.helpers';
 import OfferLocationEditor from './OfferLocationEditor.component';
 
 type HostStatus = 'yes' | 'maybe' | 'no';
@@ -27,11 +28,6 @@ interface HostOffer {
 
 interface HostPageProps {
   user: { _id: string; username: string };
-}
-
-/* istanbul ignore next -- offer descriptions are initialised before validation. */
-function plainTextLength(value = ''): number {
-  return value.replace(/<[^>]*>/g, '').trim().length;
 }
 
 function defaultHostOffer(): HostOffer {

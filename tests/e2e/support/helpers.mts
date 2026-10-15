@@ -8,6 +8,12 @@ import {
   type Page,
   type Response as PlaywrightResponse,
 } from '@playwright/test';
+import {
+  CONVERSATIONS,
+  E2E_PASSWORD,
+  MEMBERS,
+  SHADOW_MESSAGES,
+} from '../../../scripts/e2e/data.mts';
 
 export type SeededMember = {
   id: string;
@@ -24,84 +30,50 @@ export type CreateUserOverrides = Partial<NewUser>;
 
 export type RegisteredUser = { _id: string };
 
-export const DEFAULT_PASSWORD = 'Tester123';
+export const DEFAULT_PASSWORD = E2E_PASSWORD;
 
 // Confirmed members created by scripts/e2e/seed.js before Playwright runs.
-export const SEEDED_MEMBERS: SeededMember[] = [
-  {
-    id: '665000000000000000000001',
-    username: 'e2e-seeded-berlin',
-    email: 'e2e-seeded-berlin@example.test',
-    password: DEFAULT_PASSWORD,
-    firstName: 'Berlin',
-    lastName: 'Host',
-  },
-  {
-    id: '665000000000000000000002',
-    username: 'e2e-seeded-portland',
-    email: 'e2e-seeded-portland@example.test',
-    password: DEFAULT_PASSWORD,
-    firstName: 'Portland',
-    lastName: 'Host',
-  },
-  {
-    id: '665000000000000000000003',
-    username: 'e2e-seeded-beijing',
-    email: 'e2e-seeded-beijing@example.test',
-    password: DEFAULT_PASSWORD,
-    firstName: 'Beijing',
-    lastName: 'Host',
-  },
-];
+const asTestMember = (username: string): SeededMember => {
+  const member = MEMBERS.find(member => member.username === username);
+  if (!member) {
+    throw new Error(`Seeded member not found: ${username}`);
+  }
 
-export const SEEDED_ADMIN: SeededMember = {
-  id: '665000000000000000000005',
-  username: 'e2e-seeded-admin',
-  email: 'e2e-seeded-admin@example.test',
-  password: DEFAULT_PASSWORD,
-  firstName: 'E2E',
-  lastName: 'Admin',
+  return {
+    id: member.id,
+    username: member.username,
+    email: member.email,
+    password: DEFAULT_PASSWORD,
+    firstName: member.firstName,
+    lastName: member.lastName,
+  };
 };
+
+export const SEEDED_MEMBERS = [
+  'e2e-seeded-berlin',
+  'e2e-seeded-portland',
+  'e2e-seeded-beijing',
+].map(asTestMember);
+export const SEEDED_ADMIN = asTestMember('e2e-seeded-admin');
 
 export const SEEDED_RELATIONSHIP_MEMBERS: Record<
   'alice' | 'bob',
   SeededMember
 > = {
-  alice: {
-    id: '665000000000000000000006',
-    username: 'e2e-seeded-alice',
-    email: 'e2e-seeded-alice@example.test',
-    password: DEFAULT_PASSWORD,
-    firstName: 'Alice',
-    lastName: 'Contact',
-  },
-  bob: {
-    id: '665000000000000000000007',
-    username: 'e2e-seeded-bob',
-    email: 'e2e-seeded-bob@example.test',
-    password: DEFAULT_PASSWORD,
-    firstName: 'Bob',
-    lastName: 'Blocked',
-  },
+  alice: asTestMember('e2e-seeded-alice'),
+  bob: asTestMember('e2e-seeded-bob'),
 };
 
-export const SEEDED_SHADOW: SeededMember = {
-  id: '665000000000000000000004',
-  username: 'e2e-seeded-shadow',
-  email: 'e2e-seeded-shadow@example.test',
-  password: DEFAULT_PASSWORD,
-  firstName: 'Shadow',
-  lastName: 'Spammer',
-};
+export const SEEDED_SHADOW = asTestMember('e2e-seeded-shadow');
 
 export const SEEDED_CONVERSATIONS = {
   berlinPortland: {
-    latestReply: 'Yes, happy to host you!',
-    openingMessage: 'Hi Berlin host, are you available next week?',
+    latestReply: CONVERSATIONS[0].messages[1].content,
+    openingMessage: CONVERSATIONS[0].messages[0].content,
   },
 };
 
-export const SEEDED_SHADOW_MESSAGE = 'Hidden outreach from shadowbanned member';
+export const SEEDED_SHADOW_MESSAGE = SHADOW_MESSAGES[0].content;
 
 export const SEEDED_EXPERIENCE = {
   profileUsername: 'e2e-seeded-portland',
