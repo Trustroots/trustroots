@@ -7,9 +7,9 @@ export const plainText = (html: unknown): string => {
   ) {
     return '';
   }
-  const div = document.createElement('div');
-  div.innerHTML = html;
-  return div.textContent || div.innerText || '';
+  const template = document.createElement('template');
+  template.innerHTML = html;
+  return template.content.textContent || '';
 };
 
 export const plainTextLength = (html: unknown): number =>

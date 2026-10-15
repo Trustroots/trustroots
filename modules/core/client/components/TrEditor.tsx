@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import MediumEditor from 'medium-editor';
 import PropTypes from 'prop-types';
-import React, { useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import 'medium-editor/dist/css/medium-editor.css';
+import { sanitiseRichText } from '../utils/rich-text';
 
 const baseOptions = {
   disableReturn: false,
@@ -184,7 +185,7 @@ export default function TrEditor({
   const onChangeRef = useRef(onChange);
   const onCtrlEnterRef = useRef(onCtrlEnter);
   const latestEditorText = useRef(text);
-  const initialMarkup = useRef({ __html: text });
+  const [initialMarkup] = useState(() => ({ __html: sanitiseRichText(text) }));
   const isApplyingExternalText = useRef(false);
   const { t } = useTranslation('core');
 
@@ -224,7 +225,7 @@ export default function TrEditor({
       latestEditorText.current = text;
       isApplyingExternalText.current = true;
       try {
-        mediumRef.current?.setContent(text);
+        mediumRef.current?.setContent(sanitiseRichText(text));
       } finally {
         isApplyingExternalText.current = false;
       }
@@ -237,7 +238,7 @@ export default function TrEditor({
       id={id}
       className="tr-editor"
       data-placeholder={placeholder ? placeholder : t<string>('Type your text')}
-      dangerouslySetInnerHTML={initialMarkup.current}
+      dangerouslySetInnerHTML={initialMarkup}
     />
   );
 }

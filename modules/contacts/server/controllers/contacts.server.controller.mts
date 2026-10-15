@@ -178,11 +178,12 @@ async function createContact(req: AddContactRequest, res: ContactResponse) {
       return errorService.sendForbidden(res);
     }
 
-    const newContact = new Contact(req.body);
+    const newContact = new Contact({
+      confirmed: false,
+      userFrom: req.user._id,
+      userTo: new mongoose.Types.ObjectId(friendUserId),
+    });
     contact = newContact;
-    newContact.confirmed = false;
-    newContact.userFrom = req.user._id;
-    newContact.userTo = new mongoose.Types.ObjectId(friendUserId);
     await newContact.save();
 
     await new Promise<void>((resolve, reject) => {

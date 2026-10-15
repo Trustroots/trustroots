@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 // Internal dependencies
 import '@/config/client/i18n';
 import { plainText, plainTextLength } from '../utils/filters';
+import RichText from './RichText';
 
 const LIMIT = 2000;
 
@@ -20,7 +21,7 @@ export default function ReadMorePanel({ content, id }: ReadMorePanelProps) {
   }
 
   if (showMore || plainTextLength(content) <= LIMIT) {
-    return <div dangerouslySetInnerHTML={{ __html: content }} />;
+    return <RichText content={content} />;
   }
 
   return (

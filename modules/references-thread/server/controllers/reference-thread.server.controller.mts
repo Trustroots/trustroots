@@ -137,11 +137,12 @@ service.createReferenceThread = async function (req, res) {
       .exec();
     if (!referenceUserTo) throw new Error('Failed to load referenced user.');
 
-    const referenceThread = new ReferenceThread(req.body);
-    referenceThread.thread = thread._id;
-    referenceThread.userFrom = req.user._id;
-    referenceThread.userTo = referenceUserTo._id;
-    referenceThread.created = new Date(); // Ensure user doesn't try to set this
+    const referenceThread = new ReferenceThread({
+      reference: req.body.reference,
+      thread: thread._id,
+      userFrom: req.user._id,
+      userTo: referenceUserTo._id,
+    });
 
     const savedReferenceThread = await referenceThread.save();
     res.json(savedReferenceThread);

@@ -1,3 +1,4 @@
+import RichText from '@/modules/core/client/components/RichText';
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
@@ -194,9 +195,9 @@ export default function TribeDetailPage({
                 </h2>
                 <span className="tribe-meta">{countInfo}</span>
                 {tribe.description && (
-                  <div
+                  <RichText
                     className="lead tribe-meta"
-                    dangerouslySetInnerHTML={{ __html: tribe.description }}
+                    content={tribe.description}
                   />
                 )}
                 {!user && (
