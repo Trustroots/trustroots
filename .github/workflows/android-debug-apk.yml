@@ -90,6 +90,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
@@ -97,7 +99,7 @@ jobs:
       - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
       - name: Install Android build SDK
         run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
-      - name: Test coverage table formatting
+      - name: Test coverage reporting scripts
         run: python3 -m unittest discover -s apps/android/scripts
       - name: Enable KVM
         run: |
@@ -111,8 +113,27 @@ jobs:
           disable-animations: true
           profile: pixel_6
           script: bash apps/android/gradlew -p apps/android -PtrustrootsCoverage=true debugCoverageTable
+      - name: Enforce Android coverage ratchet
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          reference_args=()
+          if [ -n "$BASE_SHA" ]; then
+            git cat-file -e "$BASE_SHA^{commit}" || git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          fi
+          if [ -n "$BASE_SHA" ] && git cat-file -e "$BASE_SHA:apps/android/coverage-baseline.json" 2>/dev/null; then
+            git show "$BASE_SHA:apps/android/coverage-baseline.json" > "$RUNNER_TEMP/android-coverage-baseline.json"
+            reference_args=(--reference "$RUNNER_TEMP/android-coverage-baseline.json")
+          fi
+          python3 apps/android/scripts/coverage-ratchet.py \
+            apps/android/app/build/reports/coverage/debug/coverage.xml \
+            apps/android/coverage-baseline.json "${reference_args[@]}"
       - name: Publish Android coverage table
-        run: cat apps/android/app/build/reports/coverage/debug/coverage.md >> "$GITHUB_STEP_SUMMARY"
+        if: always()
+        run: |
+          if [ -f apps/android/app/build/reports/coverage/debug/coverage.md ]; then
+            cat apps/android/app/build/reports/coverage/debug/coverage.md >> "$GITHUB_STEP_SUMMARY"
+          fi
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:

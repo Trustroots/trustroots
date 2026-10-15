@@ -11,6 +11,7 @@ class CoverageTableTest(unittest.TestCase):
     def test_uses_merged_counters_rather_than_averaging_file_percentages(self):
         report = ET.fromstring('''<report>
             <package name="org/trustroots/android/ui">
+                <sourcefile name="Comparisons.kt"/>
                 <counter type="LINE" covered="3" missed="1"/>
                 <counter type="BRANCH" covered="1" missed="1"/>
             </package>
@@ -20,6 +21,7 @@ class CoverageTableTest(unittest.TestCase):
         table = coverage["coverage_table"](report)
         self.assertIn("| android.ui | 3/4 (75.0%) | 1/2 (50.0%) |", table)
         self.assertIn("| **Total** | **3/4 (75.0%)** | **1/2 (50.0%)** |", table)
+        self.assertNotIn("Comparisons.kt", table)
 
     def test_keeps_untested_files_visible(self):
         report = ET.fromstring('''<report>

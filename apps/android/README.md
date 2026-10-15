@@ -161,12 +161,29 @@ same report locally with a connected emulator:
 
 ```sh
 ./gradlew -PtrustrootsCoverage=true debugCoverageTable
+python3 scripts/coverage-ratchet.py app/build/reports/coverage/debug/coverage.xml coverage-baseline.json
 python3 -m unittest discover -s scripts
 ```
 
 The generated table is `app/build/reports/coverage/debug/coverage.md`; the XML
 report is beside it, and the HTML report is under `html/index.html`. CI uploads
-these reports with the test results. No Android coverage threshold is enforced.
+these reports with the test results. The global line and branch coverage ratios
+must not fall below `coverage-baseline.json`; comparisons use exact counters, not
+the table's rounded percentages. Per-file figures are informational. The baseline
+is measured with all unit and device tests, so do not use a filtered test run to
+update it.
+
+The initial floor uses the lower result from two complete API 36 emulator runs
+(38 unit tests and 39 device tests each).
+
+When coverage improves, raise the baseline and commit it with the change:
+
+```sh
+python3 scripts/coverage-ratchet.py app/build/reports/coverage/debug/coverage.xml coverage-baseline.json --update
+```
+
+The update refuses regressions. CI also compares the checked-in floor with the
+base commit's baseline, preventing a baseline edit from silently lowering it.
 
 For only the design regression journeys, without collecting full-suite coverage:
 
