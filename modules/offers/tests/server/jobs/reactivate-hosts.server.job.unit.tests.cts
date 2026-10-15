@@ -57,7 +57,7 @@ describe('Job: reactivate hosts unit tests', () => {
           locationFuzzy: [52.50155039101136, 13.42255019882177],
         });
 
-        offerHost.save().then(result => done(null, result), done);
+        offerHost.save().then(() => done(), done);
       })
       .catch(err => done(err));
   });
@@ -69,7 +69,7 @@ describe('Job: reactivate hosts unit tests', () => {
       .then(function () {
         User.deleteMany()
           .exec()
-          .then(result => done(null, result), done);
+          .then(() => done(), done);
       })
       .catch(err => done(err));
   });

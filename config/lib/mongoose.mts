@@ -111,8 +111,8 @@ function connect(
           return done();
         }
         const engines = dependency6.engines as { mongodb: string };
-        mongoose.connection.db
-          .admin()
+        mongoose.connection
+          .db!.admin()
           .buildInfo()
           .then(function (info) {
             log('info', 'MongoDB', {
@@ -163,10 +163,7 @@ function dropDatabase(connection: mongoose.Connection, callback?: Done) {
   }
   connection.dropDatabase().then(
     function () {
-      log(
-        'info',
-        'Successfully dropped database: ' + connection.db.databaseName,
-      );
+      log('info', 'Successfully dropped database: ' + connection.name);
       if (callback) {
         callback();
       }

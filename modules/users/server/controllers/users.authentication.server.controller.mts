@@ -603,7 +603,7 @@ service.confirmEmail = function (req, res) {
       function (done: WaterfallCallback) {
         // Check if user exists with this token
         User.findOne(tokenQuery).then(
-          (user: (UserDocument & { emailTemporary: string }) | null) => {
+          user => {
             if (user) {
               // Will be the returned object when no errors
               const result: EmailConfirmationResult = {

@@ -67,8 +67,10 @@ interface UserModel {
   ): void;
   findById(
     id: string,
-    callback: (error: Error | null, user: TestUser | null) => void,
-  ): void;
+    projectionOrCallback?:
+      string | ((error: Error | null, user: TestUser | null) => void),
+    callback?: (error: Error | null, user: TestUser | null) => void,
+  ): Promise<TestUser | null> | undefined;
   findOneAndUpdate(
     query: Record<string, unknown>,
     update: PasswordUpdate,

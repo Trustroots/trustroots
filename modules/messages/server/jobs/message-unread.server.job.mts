@@ -33,10 +33,10 @@ interface ReminderUser {
   username: string;
   roles: string[];
 }
-type Done<Results extends unknown[] = []> = (
-  error?: Error | null,
-  ...results: Results
-) => void;
+type Done<Results extends unknown[] = []> = {
+  (error?: Error | null): void;
+  (error: Error | null | undefined, ...results: Results): void;
+};
 type UsersById = Record<string, ReminderUser> | ReminderUser[];
 
 const unifiedPushWithNotify = unifiedPush as {

@@ -66,8 +66,8 @@ interface CircleMemberRecord extends Document {
         throw new Error(`Circle ${circleId} was not found`);
       }
       console.log(`\nGathering members from circle ${circle.label}...`);
-      let err;
-      let users;
+      let err: unknown;
+      let users: CircleMemberRecord[] = [];
       try {
         users = await User.find(
           {

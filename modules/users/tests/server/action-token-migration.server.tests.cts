@@ -2,7 +2,8 @@ import type { Collection, Filter, FindOptions } from 'mongodb';
 import type { UserTokenRecord } from '../../../../bin/db-maintenance/hash-account-action-tokens.mts';
 
 const assert: typeof import('node:assert/strict') = require('node:assert/strict');
-const mongoose: typeof import('mongoose') = require('mongoose');
+const { MongoClient }: typeof import('mongodb') = require('mongodb');
+const config = require('../../../../config/config.mts');
 const {
   hashToken,
 }: typeof import('../../server/services/action-token.server.service.mjs') = require('../../server/services/action-token.server.service.mjs');
@@ -10,14 +11,17 @@ let hashLegacyTokens: typeof import('../../../../bin/db-maintenance/hash-account
 
 describe('Legacy account action token migration', function () {
   let collection: Collection<UserTokenRecord>;
+  const client = new MongoClient(config.db.uri);
   before(async () => {
     ({ hashLegacyTokens } =
       await import('../../../../bin/db-maintenance/hash-account-action-tokens.mts'));
-    const db = mongoose.connection.db;
-    assert.ok(db);
-    collection = db.collection<UserTokenRecord>(
-      'action_token_migration_fixtures',
-    );
+    await client.connect();
+    collection = client
+      .db()
+      .collection<UserTokenRecord>('action_token_migration_fixtures');
+  });
+  after(async () => {
+    await client.close();
   });
   afterEach(async () => {
     await collection.deleteMany({});

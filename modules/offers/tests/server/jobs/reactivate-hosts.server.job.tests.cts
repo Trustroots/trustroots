@@ -54,7 +54,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
     user = new User(_user);
 
     // Save a user to the test db
-    user.save().then(result => done(null, result), done);
+    user.save().then(() => done(), done);
   });
 
   // Create a hosting offer
@@ -76,7 +76,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
     offerHost = new Offer(_offerHost);
 
     // Save offer to the test db
-    offerHost.save().then(result => done(null, result), done);
+    offerHost.save().then(() => done(), done);
   });
 
   it('Send reactivation email for offers modified longer than configured limit ago', function (done) {
@@ -126,7 +126,6 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
               done();
             })
             .catch(function (err) {
-              if (typeof stepDone === 'function') return stepDone(err);
               if (typeof done === 'function') return done(err);
               throw err;
             });
@@ -222,7 +221,6 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
             );
           })
           .catch(function (err) {
-            if (typeof stepDone === 'function') return stepDone(err);
             if (typeof done === 'function') return done(err);
             throw err;
           });
@@ -236,7 +234,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
       .then(function () {
         User.deleteMany()
           .exec()
-          .then(result => done(null, result), done);
+          .then(() => done(), done);
       })
       .catch(err => done(err));
   });

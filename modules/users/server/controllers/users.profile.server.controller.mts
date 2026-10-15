@@ -364,7 +364,7 @@ service.update = function (req, res) {
           .then(function () {
             done(null, token, user);
           })
-          .catch(done);
+          .catch(error => done(error, token, user));
       },
       // Send email
       function (
@@ -1261,7 +1261,7 @@ service.joinTribe = function (req, res) {
               done(null, tribe, user);
             },
             function (err) {
-              done(err);
+              done(err, tribe, null);
             },
           );
       },
@@ -1389,7 +1389,7 @@ service.leaveTribe = function (req, res) {
               done(null, tribe, user);
             },
             function (err) {
-              done(err);
+              done(err, tribe, null);
             },
           );
       },

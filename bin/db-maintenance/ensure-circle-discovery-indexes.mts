@@ -13,14 +13,14 @@ import type { Connection } from 'mongoose';
 mongooseService.connect(async (connection: Connection) => {
   try {
     await Promise.all([
-      connection.db
-        .collection('users')
+      connection
+        .db!.collection('users')
         .createIndex(
           { 'member.tribe': 1, seen: -1, _id: 1 },
           { name: 'circle_discovery_member_seen' },
         ),
-      connection.db
-        .collection('experiences')
+      connection
+        .db!.collection('experiences')
         .createIndex(
           { userTo: 1, public: 1, recommend: 1, created: -1 },
           { name: 'circle_discovery_recommenders' },

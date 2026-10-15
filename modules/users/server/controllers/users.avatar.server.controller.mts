@@ -120,8 +120,9 @@ const avatarUpload = (req: AvatarUploadRequest, res: AvatarResponse): void => {
         ]);
         return res.status(400).send({
           message:
-            errorService.getErrorMessage(error) ||
-            'Failed to save the new avatar version.',
+            errorService.getErrorMessage(
+              error instanceof Error ? error : new Error(String(error)),
+            ) || 'Failed to save the new avatar version.',
         });
       }
       await removeTemporaryUpload(req.file.path);

@@ -44,14 +44,12 @@ interface ContactPerson extends ContactUser {
   _id: Types.ObjectId;
 }
 type ContactParty = Types.ObjectId | ContactPerson;
-type PopulatedContact = Omit<
-  ContactDocument,
-  'created' | 'userFrom' | 'userTo'
-> & {
-  created?: Date;
-  userFrom: ContactParty;
-  userTo: ContactParty;
-};
+type PopulatedContact = HydratedDocument<
+  Omit<ContactRecord, 'userFrom' | 'userTo'> & {
+    userFrom: ContactParty;
+    userTo: ContactParty;
+  }
+>;
 type ContactResponseBody =
   | ContactDocument
   | PopulatedContact
