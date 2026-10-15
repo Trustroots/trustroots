@@ -30,10 +30,21 @@ test('client import resolution stays in the Vite configuration check', () => {
   );
 });
 
-test('Webpack remains an explicit development server and production fallback', () => {
-  assert.match(scripts['start:webpack'], /pnpm:webpack:server/);
-  assert.doesNotMatch(scripts['start:webpack'], /VITE/);
+test('production and browser tests use Vite without Webpack commands', () => {
   assert.match(scripts.build, /build:vite/);
-  assert.doesNotMatch(scripts.build, /build:webpack/);
-  assert.match(scripts['build:webpack'], /pnpm run webpack/);
+  assert.match(scripts['build:vite'], /vite build/);
+  for (const [name, command] of Object.entries(scripts)) {
+    assert.doesNotMatch(name, /webpack/);
+    assert.doesNotMatch(command, /webpack/);
+  }
+  const e2eBuild = readFileSync(
+    new URL('../../scripts/e2e/build-web.sh', import.meta.url),
+    'utf8',
+  );
+  assert.match(e2eBuild, /vite build/);
+  const windowsWorkflow = readFileSync(
+    new URL('../../.github/workflows/windows-map-wheel.yml', import.meta.url),
+    'utf8',
+  );
+  assert.match(windowsWorkflow, /pnpm exec vite build/);
 });

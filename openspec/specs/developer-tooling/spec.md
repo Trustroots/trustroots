@@ -89,7 +89,7 @@ The project SHALL implement administration, offers and search client modules in 
 #### Scenario: JavaScript callers use explicit `.js` imports for migrated modules
 
 - **WHEN** an existing JavaScript client module imports an administration, offer or search module with an explicit `.js` suffix
-- **THEN** Jest and Webpack resolve the corresponding TypeScript or TSX source
+- **THEN** Jest and Vite resolve the corresponding TypeScript or TSX source
 - **AND** no JavaScript compatibility shim is required
 
 ### Requirement: Public pages and statistics client code use TypeScript
@@ -297,8 +297,9 @@ the supported package manager.
 ### Requirement: Production client build uses Vite
 
 The production build command SHALL emit `react-main.js`, `react-main.css`, and
-`react-main.rtl.css` with Vite at the paths Express serves. A Webpack
-production build command SHALL remain available.
+`react-main.rtl.css` with Vite at the paths Express serves. Vite SHALL be the
+only supported client build tool in development, production, and end-to-end
+CI; Webpack fallback commands SHALL NOT be provided.
 
 #### Scenario: Production build
 
@@ -306,10 +307,11 @@ production build command SHALL remain available.
 - **THEN** Vite emits the client JavaScript and both stylesheets under `public/assets`
 - **AND** unrelated generated files outside that asset build are left in place
 
-#### Scenario: Webpack production fallback
+#### Scenario: Development and browser tests
 
-- **WHEN** the Webpack production build command runs
-- **THEN** it emits the same entry filenames with Webpack
+- **WHEN** a developer starts the application or CI builds browser test assets
+- **THEN** development uses the Vite server and browser tests use the Vite production assets
+- **AND** Windows browser tests use the same client build as other end-to-end jobs
 
 ### Requirement: CI timing overview
 

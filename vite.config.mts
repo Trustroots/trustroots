@@ -42,7 +42,7 @@ const legacyJsx = {
   },
 };
 
-// Client styles still use Webpack-style ~ imports.
+// Client styles still use legacy ~ imports.
 const legacyLessImports = {
   install(
     less: { FileManager: new () => LegacyAliasFileManager },
@@ -171,7 +171,7 @@ export default defineConfig({
     },
   },
   server: {
-    // Same bind address as the Webpack development server, including local.js.
+    // Honour the configured bind address, including local.js.
     host: config.host,
     port,
     strictPort: true,
@@ -187,7 +187,7 @@ export default defineConfig({
     outDir: resolve(root, 'public/assets'),
     assetsDir: '.',
     emptyOutDir: false,
-    // Match Webpack's asset module inline limit.
+    // Inline small assets while keeping larger files independently cacheable.
     assetsInlineLimit: 10000,
     sourcemap: true,
     manifest: 'vite-manifest.json',

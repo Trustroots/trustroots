@@ -13,7 +13,7 @@ const service = {
   featureFlags: {
     reference: true,
   },
-  // in dev we have webpack-dev-server on 3000, and the real server on 3001
+  // In development, Vite serves the client on 3000 and Express runs on 3001.
   port: 3001,
   // This is required for the server to work inside docker
   host: '0.0.0.0',

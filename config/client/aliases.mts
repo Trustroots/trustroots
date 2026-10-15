@@ -16,7 +16,7 @@ const aliases = {
 };
 
 // Try the written `.js` specifier before the migrated TypeScript file so
-// Webpack and ESLint select the same file when both exist. Vite applies this
+// Vite and ESLint select the same file when both exist. Vite applies this
 // order in its own resolver: the exact `.js` file, then `.ts`, then `.tsx`.
 const jsExtensionAlias = ['.js', '.ts', '.tsx'];
 

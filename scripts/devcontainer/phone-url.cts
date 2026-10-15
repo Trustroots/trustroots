@@ -8,11 +8,13 @@ if (fs.existsSync('/.dockerenv')) {
   process.exit(1);
 }
 
-const port = Number(process.env.TRUSTROOTS_DEV_WEBPACK_HOST_PORT || 13000);
+const port = Number(
+  process.env.TRUSTROOTS_DEV_APP_HOST_PORT ||
+    process.env.TRUSTROOTS_DEV_WEBPACK_HOST_PORT ||
+    13000,
+);
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
-  console.error(
-    'TRUSTROOTS_DEV_WEBPACK_HOST_PORT must be a valid port number.',
-  );
+  console.error('TRUSTROOTS_DEV_APP_HOST_PORT must be a valid port number.');
   process.exit(1);
 }
 

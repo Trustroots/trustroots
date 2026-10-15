@@ -83,10 +83,6 @@ test.describe('public pages and unauthenticated flows', () => {
     context,
     baseURL,
   }, testInfo) => {
-    test.skip(
-      process.env.TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER === 'true',
-      'RTL CSS is emitted by the production build.',
-    );
     annotateFeature(testInfo, 'public.languages-api', [
       'RTL languages load the stylesheet emitted by the production build.',
     ]);

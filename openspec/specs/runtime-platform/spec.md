@@ -40,7 +40,7 @@ The project SHALL build browser assets and load required native functionality on
 
 #### Scenario: Browser assets are built
 
-- **WHEN** the production and end-to-end Webpack builds run on Node.js 24
+- **WHEN** the production and end-to-end Vite builds run on Node.js 24
 - **THEN** they complete without `--openssl-legacy-provider`
 
 #### Scenario: Server dependencies are installed

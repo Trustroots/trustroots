@@ -46,7 +46,7 @@ module.exports = defineConfig({
   projects: [
     {
       name: 'setup-windows-wheel',
-      testMatch: /setup\/auth\.setup\.js/,
+      testMatch: /setup\/auth\.setup\.mts/,
       use: {
         ...devices['Desktop Edge'],
         userAgent: undefined,

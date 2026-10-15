@@ -87,11 +87,9 @@ const service = {
   host: process.env.TRUSTROOTS_E2E_HOST || 'localhost',
   port: Number(process.env.PORT) || 3001,
   csrfAllowedOrigins: [
-    `http://localhost:${process.env.TRUSTROOTS_E2E_WEB_PORT || 4300}`,
     `http://localhost:${
       process.env.TRUSTROOTS_E2E_API_PORT || process.env.PORT || 4301
     }`,
-    `http://127.0.0.1:${process.env.TRUSTROOTS_E2E_WEB_PORT || 4300}`,
     `http://127.0.0.1:${
       process.env.TRUSTROOTS_E2E_API_PORT || process.env.PORT || 4301
     }`,

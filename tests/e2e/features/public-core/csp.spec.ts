@@ -10,18 +10,16 @@ declare global {
 test('browser blocks unnonced scripts and object content while the app loads', async ({
   page,
 }) => {
-  if (process.env.TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER === 'false') {
-    // The test API permits development source maps. With built production
-    // assets, exercise the production policy's additional eval restriction.
-    await page.route('**/signin', async route => {
-      const response = await route.fetch();
-      const headers = response.headers();
-      headers['content-security-policy'] = headers[
-        'content-security-policy'
-      ].replace("'unsafe-eval'", '');
-      await route.fulfill({ response, headers });
-    });
-  }
+  // The test API permits development source maps; exercise the production
+  // policy's additional eval restriction with built assets.
+  await page.route('**/signin', async route => {
+    const response = await route.fetch();
+    const headers = response.headers();
+    headers['content-security-policy'] = headers[
+      'content-security-policy'
+    ].replace("'unsafe-eval'", '');
+    await route.fulfill({ response, headers });
+  });
   const response = await page.goto('/signin');
   expectPresent(response);
   const policy = response.headers()['content-security-policy'];

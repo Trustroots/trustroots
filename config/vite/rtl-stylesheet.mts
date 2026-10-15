@@ -36,7 +36,7 @@ function stylesheetSource(asset: { source: string | Uint8Array }): string {
 }
 
 /**
- * Emit the same RTL stylesheet filename as Webpack's RTL plugin.
+ * Emit the RTL stylesheet alongside the standard client stylesheet.
  * Production Express and the client language switch both request this file.
  */
 export function rtlStylesheetPlugin(): Plugin {
