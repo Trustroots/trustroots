@@ -261,7 +261,7 @@ describe('Admin access route tests', () => {
   it('requires administrators to enrol MFA before account access', async () => {
     const User = mongoose.model('User');
     const credentials = {
-      username: 'mfa-admin-test',
+      username: 'mfaadmintest',
       password: 'ExamplePassword123!',
     };
     await new User({
