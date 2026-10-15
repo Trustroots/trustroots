@@ -2657,13 +2657,6 @@ packages:
     peerDependencies:
       '@babel/core': ^7.11.0 || ^8.0.0-0
 
-  babel-loader@8.2.4:
-    resolution: {integrity: sha512-8dytA3gcvPPPv4Grjhnt8b5IIiTcq/zeXOPk4iTYI0SVXcsmuGg7JtBRDp8S9X+gJfhQ8ektjXZlDu1Bb33U8A==}
-    engines: {node: '>= 8.9'}
-    peerDependencies:
-      '@babel/core': ^7.0.0
-      webpack: '>=2'
-
   babel-plugin-i18next-extract@1.1.0:
     resolution: {integrity: sha512-PakTFKErA1FWlRcUGdJhI6fYKkKHY3QfOAu72bVS+y5ie27TaRu9yECtRk9ZVdKozf75LfkuirfidmPlTxxRSQ==}
     engines: {node: '>=10.0.0'}
@@ -8891,15 +8884,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  babel-loader@8.2.4(@babel/core@7.29.7(supports-color@5.5.0))(webpack@5.108.4):
-    dependencies:
-      '@babel/core': 7.29.7(supports-color@5.5.0)
-      find-cache-dir: 3.3.2
-      loader-utils: 2.0.4
-      make-dir: 3.1.0
-      schema-utils: 2.7.1
-      webpack: 5.108.4(lightningcss@1.33.0)(postcss@8.5.29)(webpack-cli@7.2.3)
-
   babel-plugin-i18next-extract@1.1.0(supports-color@5.5.0)(typescript@6.0.3):
     dependencies:
       '@babel/core': 7.29.7(supports-color@5.5.0)
@@ -10414,7 +10398,7 @@ snapshots:
 
   i18next@25.10.10(typescript@6.0.3):
     dependencies:
-      '@babel/runtime': 7.29.7
+      '@babel/runtime': 7.29.10
     optionalDependencies:
       typescript: 6.0.3
 
@@ -11990,11 +11974,11 @@ snapshots:
 
   react-i18next@17.0.15(i18next@26.4.2(typescript@6.0.3))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(typescript@6.0.3):
     dependencies:
-      '@babel/runtime': 7.29.7
+      '@babel/runtime': 7.29.10
       html-parse-stringify: 4.0.1
       i18next: 26.4.2(typescript@6.0.3)
       react: 19.3.0
-      use-sync-external-store: 1.6.0(react@19.3.0)
+      use-sync-external-store: 1.7.0(react@19.3.0)
     optionalDependencies:
       react-dom: 19.3.0(react@19.3.0)
       typescript: 6.0.3
