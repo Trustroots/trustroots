@@ -52,29 +52,15 @@ describe('Message Model Unit Tests:', function () {
           .save()
           .then(function () {
             // Check id for userTo
-            const findOneWithCallback = User.findOne as unknown as (
-              this: UserModel,
-              filter: {
-                username: string;
-              },
-              callback: (
-                err: Error | null,
-                userTo: UserModelDocument | null,
-              ) => void,
-            ) => void;
-            findOneWithCallback.call(
-              User,
-              { username: userTo.username },
-              function (_err, foundUser) {
-                // Create message & continue
-                message = new Message({
-                  content: 'Message content',
-                  userTo: foundUser!._id,
-                  read: false,
-                });
-                return done();
-              },
-            );
+            User.findOne({ username: userTo.username }).then(foundUser => {
+              // Create message & continue
+              message = new Message({
+                content: 'Message content',
+                userTo: foundUser!._id,
+                read: false,
+              });
+              return done();
+            }, done);
           })
           .catch(done);
       })

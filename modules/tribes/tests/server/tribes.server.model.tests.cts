@@ -154,12 +154,20 @@ describe('Tribe Model Unit Tests:', function () {
           const _tribe = new Tribe(tribe1);
           const _tribe2 = new Tribe(tribe2);
 
-          _tribe.save(function () {
-            _tribe2.save(function (err) {
+          _tribe.save().then(function () {
+
+            _tribe2.save().then(function () {
+
               should.exist(err);
               done();
-            });
-          });
+            
+}).catch(function (err) {
+  if (typeof stepDone === 'function') return stepDone(err);
+  if (typeof done === 'function') return done(err);
+  throw err;
+});
+          
+}).catch(err => done(err));
         });
         */
     it('should confirm that saving tribe model doesnt change the color', function (done) {

@@ -235,11 +235,9 @@ describe('Password controller unit tests', () => {
         },
       );
       const fakeUser: LookupUserDouble = {
-        save: callback => callback(),
+        save: () => Promise.resolve(),
       };
-      stubLegacyFindOne().callsFake((query, fields, callback) => {
-        callback(null, fakeUser);
-      });
+      stubLegacyFindOne().callsFake(() => Promise.resolve(fakeUser));
       const res = deferredResponse();
 
       controller.forgot({ body: { username: 'known-member' } }, res);
@@ -274,15 +272,13 @@ describe('Password controller unit tests', () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(saved._id);
 
-      stubLegacyFindOne().callsFake(function (query, fields, cb) {
-        cb(null, {
+      stubLegacyFindOne().callsFake(() =>
+        Promise.resolve({
           email: userDoc.email,
           username: userDoc.username,
-          save(saveCb) {
-            saveCb(new Error('save failed'));
-          },
-        });
-      });
+          save: () => Promise.reject(new Error('save failed')),
+        }),
+      );
 
       const res = deferredResponse();
       controller.forgot({ body: { username: userDoc.username } }, res);
@@ -427,9 +423,7 @@ describe('Password controller unit tests', () => {
 
       (
         sinon.stub(User, 'findOneAndUpdate') as unknown as FailedUpdateStub
-      ).callsFake((_query, _update, _options, callback) =>
-        callback(new Error('save failed')),
-      );
+      ).rejects(new Error('save failed'));
 
       const res = deferredResponse();
       controller.reset(
@@ -580,8 +574,8 @@ describe('Password controller unit tests', () => {
     it('uses error status and default message for password lookup failures', async () => {
       const controller = loadPasswordController();
       const lookupError = Object.assign(new Error(''), { status: 418 });
-      (sinon.stub(User, 'findById') as unknown as FailedLookupStub).callsFake(
-        (_id, callback) => callback(lookupError),
+      (sinon.stub(User, 'findById') as unknown as FailedLookupStub).rejects(
+        lookupError,
       );
 
       const res = deferredResponse();

@@ -334,7 +334,7 @@ describe('Offers controller unit tests', () => {
         [(error?: Error | null) => void],
         void
       >;
-      saveOffer.callsFake(callback => callback(new Error('save failed')));
+      saveOffer.callsFake(() => Promise.reject(new Error('save failed')));
 
       const { res } = await runHandler(res =>
         offersController.create(
@@ -510,7 +510,7 @@ describe('Offers controller unit tests', () => {
         [(error?: Error | null) => void],
         void
       >;
-      saveOffer.callsFake(callback => callback(new Error('save failed')));
+      saveOffer.callsFake(() => Promise.reject(new Error('save failed')));
 
       const { res } = await runHandler(res =>
         offersController.update(
@@ -1199,7 +1199,7 @@ describe('Offers controller unit tests', () => {
         ],
         void
       >;
-      findOffers.callsFake((_query, cb) => cb(new Error('lookup failed')));
+      findOffers.callsFake(() => Promise.reject(new Error('lookup failed')));
 
       const { nextArg } = await runHandler((res, next) =>
         offersController.offersByUserId(
@@ -1265,7 +1265,7 @@ describe('Offers controller unit tests', () => {
       >;
       findOfferById.returns({
         populate: () => ({
-          exec: callback => callback(new Error('lookup failed')),
+          exec: () => Promise.reject(new Error('lookup failed')),
         }),
       });
 
@@ -1294,24 +1294,27 @@ describe('Offers controller unit tests', () => {
       nextCalled.should.be.true();
     });
 
-    it('calls next(err) when attaching the offer fails', async () => {
-      sinon
-        .stub(asyncLib, 'waterfall')
-        .callsArgWith(1, new Error('attach failed'));
-      const failingOffersController = offersController;
+    it('responds with 404 when attaching the offer fails', async () => {
+      const findOfferById = sinon.stub(
+        Offer,
+        'findById',
+      ) as unknown as import('sinon').SinonStub;
+      findOfferById.returns({
+        populate: () => ({
+          exec: () => Promise.reject(new Error('attach failed')),
+        }),
+      });
 
-      const { nextCalled, nextArg } = await runHandler((res, next) =>
-        failingOffersController.offerById(
+      const { res, nextCalled } = await runHandler((res, next) =>
+        offersController.offerById(
           { user: owner },
           res,
           next,
           new mongoose.Types.ObjectId().toString(),
         ),
       );
-      nextCalled.should.be.true();
-      if (!(nextArg instanceof Error)) throw new Error('Expected attach error');
-      nextArg.should.be.Error();
-      nextArg.message.should.equal('attach failed');
+      nextCalled.should.be.false();
+      res.statusCode.should.equal(404);
     });
   });
 
@@ -1337,7 +1340,7 @@ describe('Offers controller unit tests', () => {
         ],
         void
       >;
-      deleteOffers.callsFake((_query, callback) => callback());
+      deleteOffers.resolves({ acknowledged: true, deletedCount: 0 });
       offersController.removeAllByUserId(new mongoose.Types.ObjectId());
       sinon.assert.calledOnce(deleteOffers);
       done();

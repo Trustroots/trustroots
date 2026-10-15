@@ -111,19 +111,19 @@ export const getNotes = async (
   // Check that the user id is provided
   if (!isValidObjectId(userId)) return errorService.sendInvalidId(res);
 
-  AdminNote.find({ user: userId })
-    .sort('-date')
-    .populate({
-      path: 'admin',
-      select: 'username displayname',
-      model: 'User',
-    })
-    .exec((err, items) => {
-      if (err) {
-        return errorService.sendBadRequest(res, err);
-      }
-      res.send(items || []);
-    });
+  try {
+    const items = await AdminNote.find({ user: userId })
+      .sort('-date')
+      .populate({
+        path: 'admin',
+        select: 'username displayname',
+        model: 'User',
+      })
+      .exec();
+    res.send(items || []);
+  } catch (err) {
+    return errorService.sendBadRequest(res, err);
+  }
 };
 const defaultInterop = {
   addNote,

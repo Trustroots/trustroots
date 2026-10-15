@@ -621,19 +621,11 @@ describe('Admin users controller unit tests', () => {
 
     it('defaults nullable thread references to an empty array', async () => {
       const users = await utils.saveUsers(utils.generateUsers(1));
-      const referenceThreadFind = sinon.stub(ReferenceThread, 'find');
-      for (let index = 0; index < 4; index += 1) {
-        referenceThreadFind.onCall(index).returns({
-          count: () => Promise.resolve(0),
-        } as unknown as ReturnType<typeof ReferenceThread.find>);
-      }
-      referenceThreadFind.onCall(4).returns({
+      sinon.stub(ReferenceThread, 'find').returns({
         sort: () => ({
           limit: () => ({
             populate: () => ({
-              populate: () => ({
-                then: (resolve: (value: null) => unknown) => resolve(null),
-              }),
+              populate: () => Promise.resolve(null),
             }),
           }),
         }),

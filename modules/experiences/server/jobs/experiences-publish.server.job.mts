@@ -24,7 +24,10 @@ function run(
     {
       public: true,
     },
-  ).exec(agendaDone);
+  ).then(
+    result => agendaDone(null, result),
+    (error: Error) => agendaDone(error),
+  );
 }
 export { run };
 export default run;

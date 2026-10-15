@@ -174,12 +174,32 @@ function loadController({
     isValidPassword: password =>
       validPassword && typeof password === 'string' && password.length >= 8,
     findOne(query, projectionOrCallback, callback) {
-      const cb = callback || projectionOrCallback;
-      if (typeof cb !== 'function') throw new Error('Expected query callback');
-      cb(findOneError || null, user || null);
+      const cb =
+        typeof callback === 'function'
+          ? callback
+          : typeof projectionOrCallback === 'function'
+            ? projectionOrCallback
+            : null;
+      if (cb) {
+        cb(findOneError || null, user || null);
+        return undefined;
+      }
+      return findOneError
+        ? Promise.reject(findOneError)
+        : Promise.resolve(user || null);
     },
-    findById(id, cb) {
-      cb(null, user || null);
+    findById(id, projectionOrCallback, callback) {
+      const cb =
+        typeof callback === 'function'
+          ? callback
+          : typeof projectionOrCallback === 'function'
+            ? projectionOrCallback
+            : null;
+      if (cb) {
+        cb(null, user || null);
+        return undefined;
+      }
+      return Promise.resolve(user || null);
     },
     findOneAndUpdate(query, update, options, cb) {
       const error = findOneAndUpdateError || null;
@@ -324,7 +344,9 @@ describe('Password controller direct unit tests', () => {
       );
       (await lookupResponse.waitForResponse()).statusCode.should.equal(200);
 
-      const saveFailure = fakeUser({ save: cb => cb(new Error('save')) });
+      const saveFailure = fakeUser({
+        save: () => Promise.reject(new Error('save')),
+      });
       const saveController = makeController({ user: saveFailure });
       const saveResponse = deferredResponse();
       saveController.forgot(

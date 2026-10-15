@@ -151,12 +151,16 @@ async function createContact(req: AddContactRequest, res: ContactResponse) {
   delete req.body.message;
 
   try {
-    const existingContact = await Contact.findOne({
+    const existingContactQuery = Contact.findOne({
       $or: [
         { userTo: friendUserId, userFrom: req.user._id },
         { userTo: req.user._id, userFrom: friendUserId },
       ],
-    }).exec();
+    });
+    const existingContact = await (typeof existingContactQuery?.exec ===
+    'function'
+      ? existingContactQuery.exec()
+      : existingContactQuery);
     if (existingContact) {
       return res.status(409).json({
         message: errorService.getErrorMessageByKey('conflict'),
@@ -166,13 +170,16 @@ async function createContact(req: AddContactRequest, res: ContactResponse) {
 
     // Find friend before creating a contact, so restricted profiles do not
     // receive a request or reveal that they exist.
-    const friend = await User.findOne(
+    const friendQuery = User.findOne(
       {
         _id: friendUserId,
         roles: { $nin: userRolesService.restrictedMessagingRoles },
       },
       'email displayName roles blocked',
-    ).exec();
+    );
+    const friend = await (typeof friendQuery?.exec === 'function'
+      ? friendQuery.exec()
+      : friendQuery);
     if (!friend) throw new Error('Failed to load user ' + friendUserId);
     if (friend.blocked?.some(id => id.equals(req.user._id))) {
       return errorService.sendForbidden(res);
@@ -201,7 +208,7 @@ async function createContact(req: AddContactRequest, res: ContactResponse) {
       );
     });
   } catch (error: unknown) {
-    if (contact) await contact.remove().catch(() => undefined);
+    if (contact) await contact.deleteOne().catch(() => undefined);
     return sendBadRequest(res, error);
   }
 }
@@ -212,7 +219,7 @@ async function createContact(req: AddContactRequest, res: ContactResponse) {
 service.remove = async function (req, res) {
   const contact = req.contact!;
   try {
-    await contact.remove();
+    await contact.deleteOne();
     return res.status(200).send({ message: 'Contact removed.' });
   } catch (error: unknown) {
     return sendBadRequest(res, error);
@@ -223,7 +230,7 @@ service.remove = async function (req, res) {
  * Clear all contacts by user id
  */
 service.removeAllByUserId = function (userId, callback) {
-  void Contact.deleteMany({
+  const deletion = Contact.deleteMany({
     $or: [
       {
         userTo: userId,
@@ -232,12 +239,15 @@ service.removeAllByUserId = function (userId, callback) {
         userFrom: userId,
       },
     ],
-  })
-    .exec()
-    .then(
-      () => callback?.(),
-      (error: Error) => callback?.(error),
-    );
+  });
+  const pending =
+    deletion && typeof deletion.exec === 'function'
+      ? deletion.exec()
+      : deletion;
+  void Promise.resolve(pending).then(
+    () => callback?.(),
+    (error: Error) => callback?.(error),
+  );
 };
 
 /**

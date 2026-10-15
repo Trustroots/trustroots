@@ -40,9 +40,9 @@ describe('Authentication controller mongoose error handling', () => {
         body: {
           firstName: 'Fictional',
           lastName: 'Member',
-          username: 'fictional-save-error',
+          username: 'fictionalsaveerror',
           password: 'password123',
-          email: 'fictional-save-error@example.test',
+          email: 'fictionalsaveerror@example.test',
         },
         login: (_user: unknown, cb: () => void) => cb(),
       },
