@@ -71,8 +71,11 @@ test.describe('public pages and unauthenticated flows', () => {
         ]);
         expectPresent(board);
         expectPresent(content);
+        const viewport = page.viewportSize();
+        expectPresent(viewport);
+        const expectedGap = viewport.width >= 768 ? 40 : 30;
         expect(
-          Math.abs(content.y - (board.y + board.height)),
+          Math.abs(content.y - (board.y + board.height) - expectedGap),
         ).toBeLessThanOrEqual(1);
       }
     }
