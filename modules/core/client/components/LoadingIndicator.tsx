@@ -11,7 +11,7 @@ export default function LoadingIndicator() {
       className="content-wait"
       role="alertdialog"
     >
-      <small>{t<string>('Wait a moment…')}</small>
+      <small>{t('Wait a moment…')}</small>
     </div>
   );
 }

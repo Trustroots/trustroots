@@ -25,12 +25,12 @@ export default function ReportMember({
     <a
       href={`/support?report=${username}`}
       className={className}
-      aria-label={t<string>('Report member {{username}} to support', {
+      aria-label={t('Report member {{username}} to support', {
         username,
       })}
     >
       <Icon icon="flag" />
-      {t<string>('Report member to support')}
+      {t('Report member to support')}
     </a>
   );
 }

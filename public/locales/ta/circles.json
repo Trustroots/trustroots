@@ -14,6 +14,6 @@
     "No members yet": "இன்னும் உறுப்பினர்கள் இல்லை",
     "Send us suggestions!": "எங்களுக்கு பரிந்துரைகளை அனுப்புங்கள்!",
     "Sign up with Trustroots": "ட்ரச்ட்ரூட்சுடன் பதிவுபெறுக",
-    "{{count, number}} members": "ஒரு உறுப்பினர்",
-    "{{count, number}} members_plural": "{{count, number}} உறுப்பினர்கள்"
+    "{{count, number}} members_one": "ஒரு உறுப்பினர்",
+    "{{count, number}} members_other": "{{count, number}} உறுப்பினர்கள்"
 }

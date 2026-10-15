@@ -87,9 +87,9 @@
     "Unblock member": "Desbloquear miembro",
     "Unblock member \"{{username}}\"": "Desbloquear miembro \"{{username}}\"",
     "You have blocked this member.": "Has bloqueado a este miembro.",
-    "{{count}} experiences_0": "{{count}} experiencia",
-    "{{count}} experiences_1": "{{count}} experiencias",
-    "{{count}} experiences_2": "{{count}} experiencias",
+    "{{count}} experiences_one": "{{count}} experiencia",
+    "{{count}} experiences_other": "{{count}} experiencias",
+    "{{count}} experiences_many": "{{count}} experiencias",
     "Anonymous member": "Miembro anónimo",
     "Download your data": "Descarga tus datos",
     "Are you sure you want to unblock them? They will be able to see your profile and messaage you again.": "¿Estás seguro de que quieres desbloquearlos? Podrán ver tu perfil y enviarte mensajes de nuevo.",
@@ -98,7 +98,7 @@
     "Share your experience": "Comparte tu experiencia",
     "The person you are looking for is not available.": "La persona que busca no está disponible.",
     "Your data is yours. We are committed to making it easy for you to get all of your data into, and out of, Trustroots at any time.": "La información sobre ti es tuya. Nos comprometemos a que puedas eliminar y agregar información de la plataforma cuando lo desees.",
-    "{{count}} contacts_0": "{{count}} contacto",
-    "{{count}} contacts_1": "{{count}} contactos",
-    "{{count}} contacts_2": "{{count}} contactos"
+    "{{count}} contacts_one": "{{count}} contacto",
+    "{{count}} contacts_other": "{{count}} contactos",
+    "{{count}} contacts_many": "{{count}} contactos"
 }

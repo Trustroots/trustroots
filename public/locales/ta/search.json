@@ -7,6 +7,6 @@
     "Spoken languages": "பேசும் மொழிகள்",
     "Type name, username…": "பெயர் பெயர், பயனர்பெயர்…",
     "Zoom closer to find members.": "உறுப்பினர்களைக் கண்டுபிடிக்க நெருக்கமாக பெரிதாக்கவும்.",
-    "{{count}} members found": "ஒரு உறுப்பினர் கண்டுபிடித்தார்",
-    "{{count}} members found_plural": "{{count}} உறுப்பினர்கள் காணப்பட்டனர்"
+    "{{count}} members found_one": "ஒரு உறுப்பினர் கண்டுபிடித்தார்",
+    "{{count}} members found_other": "{{count}} உறுப்பினர்கள் காணப்பட்டனர்"
 }

@@ -41,9 +41,9 @@
     "{{birthdate, age}} years": "",
     "“Everyone is necessarily the hero of their own life story.”": "\"Każdy jest siłą rzeczy bohaterem swojej własnej historii życia.\"",
     "Find people": "Szukaj ludzi",
-    "{{count}} contacts_0": "{{count}} kontakt",
-    "{{count}} contacts_1": "{{count}} kontakty",
-    "{{count}} contacts_2": "{{count}} kontaktów",
+    "{{count}} contacts_one": "{{count}} kontakt",
+    "{{count}} contacts_few": "{{count}} kontakty",
+    "{{count}} contacts_many": "{{count}} kontaktów",
     "Experiences": "Doświadczenia",
     "Oops!": "Ups!",
     "Note that your profile will not be visible to others until you confirm your email.": "Pamiętaj, że Twój profil nie będzie widoczny dla innych, dopóki nie potwierdzisz swojego adresu e-mail.",
@@ -82,7 +82,7 @@
     "Are you sure you want to block them? They will not be able to see or message you.": "Czy na pewno chcesz ich zablokować? Nie będą mogli Cię widzieć ani wysyłać do Ciebie wiadomości.",
     "If you didn’t receive the message, check your spam folder or resend it via <1>email settings</1>.": "Jeśli nie otrzymałeś tej wiadomości, sprawdź folder spamu lub wyślij ją ponownie za pośrednictwem <1>ustawień poczty</1>.",
     "Your data is yours. We are committed to making it easy for you to get all of your data into, and out of, Trustroots at any time.": "Twoje dane są Twoje. Dokładamy wszelkich starań, aby ułatwić Ci wprowadzanie i usuwanie wszystkich Twoich danych z systemu Trustroots w dowolnym momencie.",
-    "{{count}} experiences_0": "{{count}} doświadczenie",
-    "{{count}} experiences_1": "{{count}} doświadczenia",
-    "{{count}} experiences_2": "{{count}} doświadczeń"
+    "{{count}} experiences_one": "{{count}} doświadczenie",
+    "{{count}} experiences_few": "{{count}} doświadczenia",
+    "{{count}} experiences_many": "{{count}} doświadczeń"
 }

@@ -31,10 +31,9 @@
     "...explaining that you are interested in meeting them, not just looking for free accommodation.": "...מסביר שאת מעוניינת להיפגש איתנו ולא רק לא בא לך לשלם על הוסטל.",
     "Conversation started {{ date }}": "ההמרה החלה {{ date }}",
     "License": "רישיון",
-    "{{count}} unread messages_0": "הודעה שלא נקראה",
-    "{{count}} unread messages_1": "{{count}} הודעות שלא נקראו",
-    "{{count}} unread messages_2": "{{count}} הודעות שלא נקראו",
-    "{{count}} unread messages_3": "{{count}} הודעות שלא נקראו",
+    "{{count}} unread messages_one": "הודעה שלא נקראה",
+    "{{count}} unread messages_two": "{{count}} הודעות שלא נקראו",
+    "{{count}} unread messages_other": "{{count}} הודעות שלא נקראו",
     "Failed to send the message. Perhaps your internet went down? Please try again.": "שליחת ההודעה נכשלה. אולי התנתק לך האינטרנט? נא לנסות שוב.",
     "You are writing to too many people too fast. Slow down and try later again.": "כתבת ליותר מדי אנשים מהר מדי. כדאי להאט ולנסות שוב מאוחר יותר.",
     "Highlight text to add links or change its appearance. Ctrl+Enter to send.": "יש לסמן טקסט כדי להוסיף קישורים או לשנות את העיצוב. Ctrl+Enter לשליחה."

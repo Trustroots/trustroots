@@ -34,7 +34,7 @@
     "Write back": "Відповісти",
     "You're much more likely to get a positive response if you have written a bit about yourself.": "Імовірно, що у вас буде більше шансів отримати позитивну відповідь, якщо ви трохи напишете про себе.",
     "Your profile seems quite empty.": "Ваш профіль здається зовсім порожнім.",
-    "{{count}} unread messages_0": "{{count}} непрочитане повідомлення",
-    "{{count}} unread messages_1": "{{count}} непрочитані повідомлення",
-    "{{count}} unread messages_2": "{{count}} непрочитаних повідомлень"
+    "{{count}} unread messages_one": "{{count}} непрочитане повідомлення",
+    "{{count}} unread messages_few": "{{count}} непрочитані повідомлення",
+    "{{count}} unread messages_many": "{{count}} непрочитаних повідомлень"
 }

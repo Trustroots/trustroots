@@ -62,7 +62,7 @@ export default function AppHeader({
           document.getElementById('tr-main')?.focus();
         }}
       >
-        {t<string>('Skip to main content')}
+        {t('Skip to main content')}
       </a>
       {user?.username ? (
         <NavigationLoggedIn

@@ -33,7 +33,7 @@
     "You are writing to too many people too fast. Slow down and try later again.": "आप अत्यधिक लोगों को निरंतर लिख रहे हैं। थोड़ी प्रतीक्षा करें और बाद में पुन: प्रयास करें।",
     "Your profile seems quite empty.": "आपका विवरण कुछ खाली है।",
     "Your response won't be visible to them.": "आपकी प्रतिक्रिया उन्हें दिखाई नहीं देगी।",
-    "{{count}} unread messages": "{{count}} अपठित संदेश",
-    "{{count}} unread messages_plural": "{{count}} अपठित संदेश",
+    "{{count}} unread messages_one": "{{count}} अपठित संदेश",
+    "{{count}} unread messages_other": "{{count}} अपठित संदेश",
     "Yes, I can host!": "हाँ, मैं अतिथि स्वीकार (होस्ट) कर सकता हूँ!"
 }
