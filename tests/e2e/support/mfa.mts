@@ -40,7 +40,10 @@ export async function provisionFixtureMfa(user: { username: string }) {
   }
 
   const code = crypto.randomBytes(8).toString('hex').toUpperCase();
-  const hash = crypto.createHash('sha256').update(code).digest('hex');
+  const hash = crypto
+    .createHmac('sha256', Buffer.from(appConfig.mfaEncryptionKey, 'base64'))
+    .update(code)
+    .digest('hex');
   await updateUserByUsername(user.username, {
     $push: { mfaRecoveryCodeHashes: hash },
   });

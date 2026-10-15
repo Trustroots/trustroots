@@ -937,6 +937,35 @@ describe('Authentication controller OAuth unit tests', () => {
       );
     });
 
+    it('continues with an authenticator challenge when passkey lookup fails', async () => {
+      sinon
+        .stub(MemberPasskey, 'exists')
+        .rejects(new Error('lookup unavailable'));
+      const controller = loadSigninController(() => [
+        null,
+        {
+          _id: 'fictional-user',
+          authVersion: 2,
+          roles: ['user'],
+          mfaEnabled: true,
+        },
+        null,
+      ]);
+      const res = deferredResponse();
+      const session: MfaSession = {
+        regenerate: callback => callback(),
+        save: callback => callback(),
+      };
+
+      controller.signin({ session }, res, () => {});
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(202);
+      responseField(res, 'mfaRequired').should.be.true();
+      responseField(res, 'passkeyAvailable').should.be.false();
+      session.mfaChallenge?.authVersion.should.equal(2);
+    });
+
     it('starts a short-lived challenge instead of creating an MFA session', async () => {
       sinon.stub(MemberPasskey, 'exists').resolves(null);
       const controller = loadSigninController(() => [
