@@ -112,6 +112,7 @@ interface AuthenticationResponseBody {
   usernameUpdateAllowed?: boolean;
   profileMadePublic?: boolean;
   mfaRequired?: boolean;
+  passkeyAvailable?: boolean;
   _id?: { toString(): string };
 }
 interface DeferredResponse {

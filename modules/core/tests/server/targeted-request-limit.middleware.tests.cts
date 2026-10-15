@@ -1,4 +1,4 @@
-const should: typeof import('should') = require('should');
+require('should');
 
 type Operation =
   | 'signup'

@@ -1,5 +1,5 @@
 const mockModule: typeof import('../../../../../testutils/server/mock-module.mts').default = require('../../../../../testutils/server/mock-module');
-const should: typeof import('should') = require('should');
+require('should');
 
 type Callback = (error?: Error | null) => void;
 interface PasswordBody {
