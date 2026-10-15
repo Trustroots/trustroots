@@ -316,7 +316,7 @@ export async function signIn(
     .lean();
   if (
     authenticatedUser?.roles?.some(role =>
-      ['admin', 'welcome-team'].includes(role),
+      ['admin', 'welcome-team', 'support-team'].includes(role),
     )
   ) {
     await elevateAdminAccess(agent, password);

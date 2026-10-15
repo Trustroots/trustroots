@@ -380,7 +380,7 @@ describe('Member session controls', function () {
 
   async function createMember() {
     const credentials = {
-      username: 'session-control-member',
+      username: 'sessioncontrolmember',
       password: 'ExamplePassword123!',
     };
     const user = await new User({

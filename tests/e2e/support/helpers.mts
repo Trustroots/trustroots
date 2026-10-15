@@ -308,7 +308,11 @@ export async function authenticateViaApi(
   const roles =
     responseJSON?.roles ||
     (responseJSON?.isGreeter ? ['welcome-team'] : user.roles || []);
-  if (roles.includes('admin') || roles.includes('welcome-team')) {
+  if (
+    roles.includes('admin') ||
+    roles.includes('welcome-team') ||
+    roles.includes('support-team')
+  ) {
     await elevateAdminViaApi(request, user.password);
   } else if (user.username === SEEDED_ADMIN.username) {
     await elevateAdminViaApi(request, user.password);
