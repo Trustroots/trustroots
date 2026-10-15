@@ -912,13 +912,13 @@ service.userByUsername = function (req, res, next, username) {
           Date.now(),
           function (
             err: Error | null,
-            stats: { replyRate?: string; replyTime?: string },
+            stats?: { replyRate?: string; replyTime?: string },
           ) {
             // If we receive error, let's just continue.
             // The stats are non-essential.
             if (!err) {
               // add replyRate and replyTime to req.profile
-              _.assign(req.profile, _.pick(stats, ['replyRate', 'replyTime']));
+              _.assign(req.profile, _.pick(stats!, ['replyRate', 'replyTime']));
             }
             return done();
           },

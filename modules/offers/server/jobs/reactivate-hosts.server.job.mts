@@ -106,7 +106,7 @@ function run(_job: unknown, agendaDone: Done): void {
           offers,
           function (offer, callback) {
             emailService.sendReactivateHosts(
-              offer.user,
+              offer.user as ReactivationUser,
               function (err: Error | null | undefined) {
                 if (err) {
                   return callback(err);

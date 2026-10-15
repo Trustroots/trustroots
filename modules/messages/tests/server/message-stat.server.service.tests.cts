@@ -586,8 +586,7 @@ describe('MessageStat Creation & Updating Test', function () {
       it('returns an error when no first message exists in the thread', function (done) {
         sinon.stub(Message, 'findOne').returns({
           sort: () => ({
-            exec: (callback: (error: Error | null, doc: null) => void) =>
-              callback(null, null),
+            exec: () => Promise.resolve(null),
           }),
         } as unknown as ReturnType<MessageModel['findOne']>);
 

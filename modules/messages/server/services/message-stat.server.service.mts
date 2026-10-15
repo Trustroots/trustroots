@@ -241,9 +241,9 @@ function readFormattedMessageStatsOfUser(
   timeNow: number,
   callback: Callback<FormattedStats>,
 ): void {
-  readMessageStatsOfUser(userId, timeNow, (error, stats) => {
+  service.readMessageStatsOfUser(userId, timeNow, (error, stats) => {
     if (error) return callback(error);
-    callback(null, formatStats(stats!));
+    callback(null, service.formatStats(stats!));
   });
 }
 

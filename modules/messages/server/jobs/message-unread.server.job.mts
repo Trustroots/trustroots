@@ -14,6 +14,7 @@ interface Reminder {
   timing: moment.DurationInputArg1;
 }
 interface ReminderMessage {
+  [key: string]: unknown;
   id: Types.ObjectId;
   content: string;
   created: Date;
@@ -32,22 +33,12 @@ interface ReminderUser {
   username: string;
   roles: string[];
 }
-interface ReminderQueue {
-  push(items: Notification[]): void;
-  drain: (error?: Error | null) => void;
-}
 type Done<Results extends unknown[] = []> = (
   error?: Error | null,
   ...results: Results
 ) => void;
 type UsersById = Record<string, ReminderUser> | ReminderUser[];
 
-const asyncWithQueue = async as typeof async & {
-  queue<Item>(
-    worker: (item: Item, callback: Done) => void,
-    concurrency: number,
-  ): ReminderQueue;
-};
 const unifiedPushWithNotify = unifiedPush as {
   notifyUnread(userId: Types.ObjectId, senderId: Types.ObjectId): Promise<void>;
 };
@@ -317,7 +308,7 @@ function sendUnreadMessageReminders(reminder: Reminder, callback: Done): void {
         // Create a queue worker to send notifications in parallel
         // Process at most 3 notifications at the same time
         // @link https://github.com/caolan/async#queueworker-concurrency
-        const notificationsQueue = asyncWithQueue.queue(function (
+        const notificationsQueue = async.queue<Notification>(function (
           notification: Notification,
           notificationCallback: Done,
         ) {

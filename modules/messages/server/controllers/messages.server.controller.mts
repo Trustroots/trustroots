@@ -224,6 +224,18 @@ type ClientThreadSummary = MessageThreadSummary<
   Types.ObjectId | string,
   Date | string
 >;
+type SpamComment = Parameters<typeof spamService.check>[0];
+type SpamCheckInput = Omit<SpamComment, 'ip' | 'useragent'> & {
+  ip?: string | string[];
+  useragent?: string | string[];
+};
+const spamServiceWithRawHeaders = spamService as unknown as {
+  check(message: SpamCheckInput): ReturnType<typeof spamService.check>;
+};
+type PaginatedResponse = ControllerResponse & {
+  locals: { paginate: { href(params: Record<string, unknown>): string } };
+  links(links: Record<string, string>): unknown;
+};
 
 interface ControllerResponse {
   status(code: number): this;
@@ -509,7 +521,11 @@ service.inbox = function (req, res) {
         return errorService.sendBadRequest(res, err);
       } else {
         // Pass pagination data to construct link header
-        paginationService.setLinkHeader(req, res, data.pages);
+        paginationService.setLinkHeader(
+          { query },
+          res as PaginatedResponse,
+          data.pages,
+        );
 
         // Sanitize and return threads
         sanitizeThreads(data.docs, user._id, function (err, threads) {
@@ -714,7 +730,7 @@ service.send = async function (req, res) {
           // http://expressjs.com/en/5x/api.html#req.ip — can be spoofed by client
           '';
         const userAgent = headers['user-agent'] || '';
-        spamService
+        spamServiceWithRawHeaders
           .check({
             content: body.content as string,
             ip: userIp,
@@ -722,7 +738,7 @@ service.send = async function (req, res) {
             email: user.email,
             name: user.displayName,
           })
-          .then(spamStatus => {
+          .then((spamStatus: 'unknown' | 'spam' | 'not-spam') => {
             done(null, spamStatus);
           })
           .catch(() => {
@@ -950,7 +966,11 @@ service.threadByUser = function (req, res, next, userId) {
 
             // Pass pagination data to construct link header
             if (data.docs.length > 0) {
-              paginationService.setLinkHeader(req, res, data.pages);
+              paginationService.setLinkHeader(
+                { query },
+                res as PaginatedResponse,
+                data.pages,
+              );
             }
             done(err, data.docs);
           },

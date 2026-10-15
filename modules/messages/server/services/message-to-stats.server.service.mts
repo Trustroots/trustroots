@@ -54,7 +54,8 @@ function save(message: MessageEndpointDocument, callback?: Callback): void {
   const completion: Callback = error => {
     if (
       error &&
-      !isInfluxDisabledError(error) &&
+      (error as { message?: unknown }).message !==
+        INFLUXDB_DISABLED_ERROR_MESSAGE &&
       nodeProcess.env.NODE_ENV !== 'test'
     ) {
       // Keep the logger's legacy third-argument value unchanged at this boundary.
@@ -71,9 +72,9 @@ function save(message: MessageEndpointDocument, callback?: Callback): void {
     completion(new Error(INFLUXDB_DISABLED_ERROR_MESSAGE));
     return;
   }
-  process(message, (error, statObject) => {
+  service.process(message, (error, statObject) => {
     if (error) return completion(error);
-    send(statObject!, completion);
+    service.send(statObject!, completion);
   });
 }
 
@@ -160,13 +161,6 @@ function process(
       },
       error => callback(error),
     );
-}
-
-function isInfluxDisabledError(error: unknown): boolean {
-  if (error === null || error === undefined) return false;
-  return (
-    (error as { message?: unknown }).message === INFLUXDB_DISABLED_ERROR_MESSAGE
-  );
 }
 
 function getUserId(
