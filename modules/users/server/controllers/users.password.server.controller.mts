@@ -31,6 +31,7 @@ interface PasswordRequest {
     user: UserServerDocument,
     callback: (error: Error | null) => void,
   ): void;
+  logout(callback: (error?: Error | null) => void): void;
 }
 
 interface PasswordResponse {
@@ -247,6 +248,28 @@ service.reset = async function (req, res) {
         });
       }
 
+      if (user.mfaEnabled === true) {
+        // Password recovery changes a credential, but it cannot satisfy the
+        // second factor. Force a fresh password + MFA sign-in.
+        return req.logout(logoutErr => {
+          if (logoutErr) {
+            return res.status(400).send({ message: 'Password reset failed.' });
+          }
+          emailService.sendResetPasswordConfirm(
+            { displayName: user.displayName, email: user.email },
+            (emailErr?: Error | null) => {
+              if (emailErr) {
+                log(
+                  'error',
+                  'Password reset confirmation email delivery failed.',
+                );
+              }
+              return res.json({ mfaRequired: true });
+            },
+          );
+        });
+      }
+
       req.login(user, loginErr => {
         if (loginErr) {
           log('error', 'Authenticating user after password reset failed.');
@@ -371,6 +394,10 @@ service.changePassword = function (req, res) {
 
       // Login again and return new user
       function (user: UserServerDocument, done: WaterfallCallback) {
+        if (user.mfaEnabled === true) {
+          user.$locals = user.$locals || {};
+          user.$locals.mfaVerified = req.user?.$locals?.mfaVerified === true;
+        }
         req.login(user, function (err?: Error | null) {
           if (err) return done(err);
           done(null, user);

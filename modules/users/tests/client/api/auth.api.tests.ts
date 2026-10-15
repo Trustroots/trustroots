@@ -35,6 +35,17 @@ describe('auth.api', () => {
     });
   });
 
+  it('verifies the second factor for a staged sign-in', async () => {
+    axiosMock.post.mockResolvedValue(response({ _id: 'user-1' }));
+
+    await expect(authApi.verifyMfa('123456')).resolves.toEqual({
+      _id: 'user-1',
+    });
+    expect(axiosMock.post).toHaveBeenCalledWith('/api/auth/mfa/verify', {
+      code: '123456',
+    });
+  });
+
   it('signs up with credentials', async () => {
     axiosMock.post.mockResolvedValue(response({ _id: 'user-2' }));
 

@@ -1,5 +1,6 @@
 """Regression checks using fake Docker and HTTP responses; never deploys."""
 import importlib.util
+import base64
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -14,6 +15,37 @@ spec.loader.exec_module(deploy)
 
 
 class DeploymentTests(unittest.TestCase):
+    def test_mfa_key_configuration_is_canonical_and_shared_without_disclosing_values(self):
+        encoded = base64.b64encode(bytes(range(32))).decode('ascii')
+        config = {'services': {name: {'environment': {'MFA_ENCRYPTION_KEY': encoded}}
+                               for name in deploy.SERVICES}}
+        deploy.validate_mfa_environment(config)
+        for value in [None, '', 'not-base64', base64.b64encode(b'short').decode('ascii'), encoded + '\n']:
+            with self.subTest(value=value):
+                config['services']['worker']['environment']['MFA_ENCRYPTION_KEY'] = value
+                with self.assertRaisesRegex(RuntimeError, 'worker requires MFA_ENCRYPTION_KEY') as error:
+                    deploy.validate_mfa_environment(config)
+                self.assertNotIn(encoded, str(error.exception))
+        other_key = base64.b64encode(bytes(reversed(range(32)))).decode('ascii')
+        config['services']['worker']['environment']['MFA_ENCRYPTION_KEY'] = other_key
+        with self.assertRaisesRegex(RuntimeError, 'same MFA_ENCRYPTION_KEY') as error:
+            deploy.validate_mfa_environment(config)
+        self.assertNotIn(encoded, str(error.exception))
+        self.assertNotIn(other_key, str(error.exception))
+
+    def test_missing_mfa_configuration_stops_deployment_before_runtime_or_image_changes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            media = Path(directory)
+            args = SimpleNamespace(media_mount=media, compose=media / 'compose.yml')
+            config = {'services': {name: {'logging': {'driver': 'local', 'options': {
+                'max-size': '10m', 'max-file': '3'}}} for name in (*deploy.SERVICES, 'mongodb')}}
+            with patch.object(deploy.os.path, 'ismount', return_value=True), \
+                    patch.object(deploy, 'run', return_value=json.dumps(config)) as docker:
+                with self.assertRaisesRegex(RuntimeError, 'MFA_ENCRYPTION_KEY'):
+                    deploy.preflight(args)
+                self.assertEqual(docker.call_count, 1)
+                self.assertIn('config', docker.call_args.args[0])
+
     def test_local_logging_requires_explicit_positive_rotation_limits(self):
         for size in ['1k', '10m', '2G']:
             deploy.validate_logging('webapp', 'local', {'max-size': size, 'max-file': '3'})
@@ -73,6 +105,8 @@ class DeploymentTests(unittest.TestCase):
                         {'type': 'bind', 'target': '/home/app/trustroots/public/uploads-profile',
                          'source': str(photos)}
                     ]} for name in (*deploy.SERVICES, 'mongodb')}
+                    for name in deploy.SERVICES:
+                        services[name]['environment'] = {'MFA_ENCRYPTION_KEY': base64.b64encode(bytes(range(32))).decode('ascii')}
                     commands = []
                     def docker(command, **kwargs):
                         commands.append(command)

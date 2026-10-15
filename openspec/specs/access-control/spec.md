@@ -27,3 +27,30 @@ external database-backed ACL packages.
 
 - **WHEN** none of a request's roles has permission for its route and method
 - **THEN** the route policy denies the request
+
+### Requirement: Multi-factor verification for privileged roles
+
+Administrator access SHALL require an MFA-enabled account and a session that
+has completed second-factor verification. Admin routes SHALL treat an
+unenrolled or unverified session as an ordinary member. An administrator who
+is not enrolled SHALL be restricted to authenticator setup, sign-out, and
+necessary anonymous/authentication routes. Moderator and welcome-team access
+does not require MFA.
+
+#### Scenario: Privileged account has not enrolled MFA
+
+- **WHEN** an administrator signs in without MFA
+- **THEN** the system restricts the session to the authenticator setup flow
+- **AND** the account cannot access admin routes
+
+#### Scenario: Privileged account has not verified this session
+
+- **WHEN** an MFA-enabled privileged member has not completed a second factor
+  for the current session
+- **THEN** the system denies privileged routes until the member verifies a TOTP
+  or unused recovery code
+
+#### Scenario: Privileged role is removed
+
+- **WHEN** a member's privileged role is removed
+- **THEN** the next request authorises the member using the current roles only

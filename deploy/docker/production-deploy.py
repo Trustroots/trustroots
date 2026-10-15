@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Deploy and roll back app containers with prerequisite and session checks."""
 import argparse
+import base64
+import binascii
 import fcntl
 import getpass
 import http.cookiejar
@@ -61,6 +63,21 @@ def check_existing_logging(args):
             validate_logging('Existing ' + service, config.get('Type'), config.get('Config') or {})
 
 
+def validate_mfa_environment(config):
+    keys = []
+    for service in SERVICES:
+        encoded = (config['services'][service].get('environment') or {}).get('MFA_ENCRYPTION_KEY')
+        try:
+            key = base64.b64decode(encoded, validate=True)
+            if len(key) != 32 or base64.b64encode(key).decode('ascii') != encoded:
+                raise ValueError('Invalid key format')
+        except (binascii.Error, ValueError, TypeError):
+            raise RuntimeError(service + ' requires MFA_ENCRYPTION_KEY as a base64-encoded 32-byte key') from None
+        keys.append(key)
+    if keys[0] != keys[1]:
+        raise RuntimeError('webapp and worker must use the same MFA_ENCRYPTION_KEY')
+
+
 def preflight(args, runtime=True):
     if not os.path.ismount(args.media_mount):
         raise RuntimeError('Required media filesystem is not mounted: ' + str(args.media_mount))
@@ -69,6 +86,8 @@ def preflight(args, runtime=True):
         definition = config['services'][service]
         logging = definition.get('logging', {})
         validate_logging(service, logging.get('driver'), logging.get('options') or {})
+    if runtime:
+        validate_mfa_environment(config)
     for service in SERVICES:
         mounts = [v for v in config['services'][service].get('volumes', [])
                   if v.get('target') == '/home/app/trustroots/public/uploads-profile']

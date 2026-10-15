@@ -2,7 +2,7 @@ const request: typeof import('supertest') = require('supertest');
 const mongoose: typeof import('mongoose') = require('mongoose');
 require('should');
 const express: import('../../../../testutils/server/model-contracts.mts').TestExpressModule = require('./../../../../config/lib/express.mjs');
-const utils: typeof import('../../../../testutils/server/data.server.testutil.mjs') = require('../../../../testutils/server/data.server.testutil');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 const ReferenceThread =
   mongoose.model<
     import('../../../../testutils/server/model-contracts.mts').ReferenceThreadRecord
@@ -71,7 +71,7 @@ describe('Admin Reference thread CRUD tests', () => {
         body.message.should.equal('Forbidden.');
       });
       it('admin users should be allowed to read reference threads', async () => {
-        await utils.signIn(_users[0], agent);
+        await utils.signInPrivileged(_users[0], agent);
         const { body } = await agent
           .get('/api/admin/reference-threads')
           .expect(200);

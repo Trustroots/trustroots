@@ -4,6 +4,7 @@ import mongoose, { type FilterQuery } from 'mongoose';
 import path from 'path';
 import config from './../../../../config/config.mts';
 import usersSuspended from './../controllers/users.suspended.server.controller.mts';
+import requireMfaForAccountAccess from './../middleware/mfa-session.server.middleware.mjs';
 import type {
   UserServerDocument,
   UserServerModel,
@@ -16,6 +17,7 @@ import type {
 interface SessionCandidate {
   id?: unknown;
   authVersion?: unknown;
+  mfaVerified?: unknown;
 }
 interface UsersApplication {
   use(...handlers: ((...arguments_: never[]) => unknown)[]): unknown;
@@ -36,6 +38,8 @@ const defaultExport = async function (app: UsersApplication): Promise<void> {
     done(null, {
       id: user.id,
       authVersion: user.authVersion || 0,
+      mfaVerified:
+        user.$locals?.mfaVerified === true && user.mfaEnabled === true,
     });
   });
 
@@ -61,6 +65,11 @@ const defaultExport = async function (app: UsersApplication): Promise<void> {
           if ((user.authVersion || 0) !== sessionData!.authVersion) {
             return done(null, false);
           }
+          // MFA verification is a session fact. Never infer it from the account
+          // record or from a password/email recovery login path.
+          user.$locals = user.$locals || {};
+          user.$locals.mfaVerified =
+            user.mfaEnabled === true && sessionData!.mfaVerified === true;
           return done(null, user);
         },
       );
@@ -83,6 +92,7 @@ const defaultExport = async function (app: UsersApplication): Promise<void> {
 
   // Handle logging out suspended users
   app.use(usersSuspended.invalidateSuspendedSessions);
+  app.use(requireMfaForAccountAccess);
 };
 export default defaultExport;
 export { defaultExport as 'module.exports' };

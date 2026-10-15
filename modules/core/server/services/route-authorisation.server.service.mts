@@ -16,7 +16,17 @@ export const createRouteAuthorisation = function (
     res: PolicyResponse,
     next: PolicyNext,
   ): unknown {
-    const roles = req.user && req.user.roles ? req.user.roles : ['guest'];
+    let roles = req.user && req.user.roles ? req.user.roles : ['guest'];
+    const hasPrivilegedRole = roles.includes('admin');
+    if (
+      hasPrivilegedRole &&
+      (req.user?.mfaEnabled !== true || req.user.$locals?.mfaVerified !== true)
+    ) {
+      // Admin never reaches the ACL until this session has completed a second
+      // factor. The member can still access ordinary account routes.
+      roles = roles.filter(role => role !== 'admin');
+      if (!roles.includes('user')) roles.push('user');
+    }
     return acl.areAnyRolesAllowed(
       roles,
       req.route.path,

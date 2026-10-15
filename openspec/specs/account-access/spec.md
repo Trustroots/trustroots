@@ -646,6 +646,84 @@ SHALL remain removable independently of profile images.
 - **WHEN** a member disconnects stored Facebook provider data
 - **THEN** the connection is removed without enabling Facebook profile images
 
+### Requirement: Authenticator MFA
+
+Administrators MAY enable authenticator-app MFA using TOTP. Other members SHALL NOT enrol. Enrolment SHALL remain pending until the administrator confirms a valid code. The system SHALL encrypt pending and active TOTP secrets with AES-256-GCM using a dedicated deployment key, separate from the session and password keys, and SHALL store recovery codes as HMAC digests bound to that key. The deployment SHALL document key generation, configuration, rotation, and backup requirements.
+
+#### Scenario: A member enrols an authenticator
+
+- **WHEN** a member confirms their current password and requests enrolment
+- **THEN** the system returns a one-time authenticator provisioning URI and a pending secret
+- **AND** it does not mark MFA active until a valid, unused TOTP is verified
+- **AND** the pending secret expires after a short period
+
+#### Scenario: An active member verifies MFA
+
+- **WHEN** a member signs in with a valid password and has MFA enabled
+- **THEN** the password check creates only a short-lived pre-authentication challenge
+- **AND** the system establishes an authenticated session only after a valid TOTP or recovery code
+- **AND** concurrent requests cannot consume the same TOTP time step or recovery code more than once
+
+#### Scenario: A member manages MFA
+
+- **WHEN** a member views or changes MFA settings
+- **THEN** the system never returns the active secret or recovery-code hashes
+- **AND** enrolment, replacement recovery codes, and disablement require a recent password confirmation
+- **AND** replacement recovery codes are shown only once and previous codes stop working atomically
+
+#### Scenario: A privileged account lacks verified MFA
+
+- **WHEN** an administrator has no verified MFA session
+- **THEN** privileged routes treat that account as an ordinary member
+- **AND** promotion of a privileged account requires MFA to be enrolled and verified before privileged access is granted
+
+#### Scenario: Account recovery does not bypass MFA
+
+- **WHEN** a member resets or changes their password, confirms an email address, or uses another direct login path
+- **THEN** the operation cannot establish an MFA-verified session without a successful second factor
+- **AND** credential changes invalidate older sessions
+
+#### Scenario: MFA verification is rate limited
+
+- **WHEN** a client submits too many sign-in challenges, TOTP codes, recovery codes, or password confirmations
+- **THEN** the system applies bounded IP and account or challenge limits and returns a retry response
+
+### Requirement: Staff passkey registration
+
+The system SHALL let administrators register and manage optional WebAuthn credentials after fresh password and existing second-factor verification. It SHALL store public credential material and an opaque user handle. Passkeys remain optional: the authenticator and recovery codes stay available, and removing the last passkey is allowed while TOTP enrolment remains. Disabling authenticator MFA SHALL remove the member's passkeys and outstanding passkey ceremonies.
+
+#### Scenario: Verified staff member registers a passkey
+
+- **WHEN** a staff member completes a valid registration ceremony with required user verification
+- **THEN** the system stores a uniquely owned credential with a member-selected label
+- **AND** no authenticator private key is received or stored
+
+#### Scenario: Staff member removes their last passkey
+
+- **WHEN** a staff member removes their only registered passkey while authenticator MFA remains enabled
+- **THEN** the removal succeeds
+- **AND** authenticator codes and recovery codes remain available for sign-in
+
+#### Scenario: Authenticator MFA is disabled
+
+- **WHEN** an administrator disables authenticator MFA
+- **THEN** stored passkeys and outstanding passkey ceremonies for that account are deleted
+
+### Requirement: Verified passkey second factor
+
+The system SHALL accept a passkey as a second factor only after server verification of origin, relying-party ID, ceremony challenge, ownership, signature and user verification. Challenges SHALL expire within five minutes and be atomically single-use. After password sign-in, the client SHALL be told a passkey is available only when the account has a registered passkey, not merely because the account is privileged.
+
+#### Scenario: Password-first sign-in uses a passkey
+
+- **WHEN** a member completes the current password-first passkey challenge
+- **THEN** the resulting session satisfies the same second-factor policy as an accepted authenticator code
+- **AND** the pre-authentication challenge is cleared
+
+#### Scenario: Ceremony does not match its account or deployment
+
+- **WHEN** a response is expired, replayed, unverified or bound to another member, origin or relying party
+- **THEN** it does not establish a verified session
+
 ### Requirement: Bounded signup requests
 
 Signup SHALL accept only supported registration fields. The server SHALL apply

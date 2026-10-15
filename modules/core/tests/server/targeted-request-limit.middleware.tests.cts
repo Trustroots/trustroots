@@ -7,7 +7,9 @@ type Operation =
   | 'forgotPassword'
   | 'resetPassword'
   | 'resendConfirmation'
-  | 'avatarUpload';
+  | 'avatarUpload'
+  | 'mfaVerify'
+  | 'mfaManage';
 type Policy = {
   enabled?: boolean;
   windowMs: number;
@@ -20,6 +22,7 @@ type Request = {
   user?: { id?: string };
   body?: { email?: unknown; username?: unknown };
   params?: { token?: unknown };
+  session?: { mfaChallenge?: { userId?: unknown } };
   get?: (name: string) => string | undefined;
 };
 type Dimension = { name: string; value: string; limit: number };
@@ -70,6 +73,8 @@ function loadMiddleware(
       resetPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       resendConfirmation: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       avatarUpload: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
+      mfaVerify: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
+      mfaManage: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
     },
   };
   (
@@ -284,6 +289,14 @@ describe('Targeted request limit middleware', function () {
       getRequestIdentity({ params: { token: 123 } }, 'token'),
       undefined,
     );
+    assert.equal(getRequestIdentity({}, 'mfaChallenge'), undefined);
+    assert.equal(
+      getRequestIdentity(
+        { session: { mfaChallenge: { userId: 123 } } },
+        'mfaChallenge',
+      ),
+      undefined,
+    );
     assert.equal(getRequestIdentity({}, 'unknown'), undefined);
   });
 
@@ -319,6 +332,41 @@ describe('Targeted request limit middleware', function () {
     );
     options!.dimensions.should.deepEqual([
       { name: 'member', value: 'fictional-member', limit: 2 },
+    ]);
+  });
+
+  it('limits MFA attempts by account across different IP addresses', async function () {
+    let options: ConsumeOptions | undefined;
+    const middleware = loadMiddleware(
+      async value => {
+        options = value;
+        return { allowed: true };
+      },
+      () => '198.51.100.30',
+    );
+    await middleware.mfaVerify(
+      { session: { mfaChallenge: { userId: 'fictional-member-id' } } },
+      response(),
+      () => {},
+    );
+
+    if (!options) throw new Error('Expected request limit options');
+    options.dimensions.should.deepEqual([
+      {
+        name: 'ip',
+        value: '198.51.100.30',
+        limit: 10,
+      },
+      {
+        name: 'ip-and-identity',
+        value: JSON.stringify(['198.51.100.30', 'fictional-member-id']),
+        limit: 2,
+      },
+      {
+        name: 'member',
+        value: 'fictional-member-id',
+        limit: 2,
+      },
     ]);
   });
 

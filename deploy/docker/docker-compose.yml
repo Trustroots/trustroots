@@ -5,9 +5,13 @@ x-local-logging: &local-logging
     max-size: '10m'
     max-file: '3'
 
+x-production-environment: &production-environment
+  MFA_ENCRYPTION_KEY: ${MFA_ENCRYPTION_KEY:-}
+
 # Shared configuration for the local production-like app and worker.
 x-production-app: &production-app
   logging: *local-logging
+  environment: *production-environment
   image: trustrootsops/trustroots:latest
   restart: unless-stopped
   profiles:
@@ -64,6 +68,7 @@ services:
     environment:
       - NODE_ENV=development
       - DB_1_PORT_27017_TCP_ADDR=mongodb
+      - MFA_ENCRYPTION_KEY=${MFA_ENCRYPTION_KEY:-}
     depends_on:
       - mongodb
     networks:
@@ -86,7 +91,8 @@ services:
     # The worker needs NODE_ENV set to production because it doesn't use
     # passenger to run the worker
     environment:
-      - NODE_ENV=production
+      <<: *production-environment
+      NODE_ENV: production
     # Override the container's start command (which will start passenger) to
     # start the worker
     command: ['node', 'worker.js']

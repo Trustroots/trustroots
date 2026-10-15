@@ -115,6 +115,17 @@ describe('ResetPasswordPage', () => {
     expect(navigate).toHaveBeenCalledWith('reset-success');
   });
 
+  it('does not establish a session when MFA is required', async () => {
+    resetPassword.mockResolvedValue({ mfaRequired: true });
+
+    renderPage();
+    await fillPasswords('new-password', 'new-password');
+    await submitForm();
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('reset-success'));
+    expect(applyUser).not.toHaveBeenCalled();
+  });
+
   it('shows an error when the reset request fails', async () => {
     resetPassword.mockRejectedValue({
       response: { data: { message: 'Reset token expired.' } },

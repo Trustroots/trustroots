@@ -12,6 +12,12 @@ import type { DefaultConfig } from '../types.mts';
  */
 
 const service = {
+  passkeys: {
+    rpId: process.env.TRUSTROOTS_PASSKEY_RP_ID || '',
+    origins: (process.env.TRUSTROOTS_PASSKEY_ORIGINS || '')
+      .split(',')
+      .filter(Boolean),
+  },
   featureFlags: {
     reference: true,
   },
@@ -51,6 +57,8 @@ const service = {
   // overwrites the header and the application cannot be reached directly.
   sessionProxy: false,
   sessionSecret: 'MEAN',
+  // Dedicated 32-byte AES-256-GCM key, encoded as base64.
+  mfaEncryptionKey: process.env.MFA_ENCRYPTION_KEY || '',
   sessionCollection: 'sessions',
   domain: 'localhost:3000',
   // Additional trusted browser origins for reverse-proxy or multi-origin
@@ -168,6 +176,8 @@ const service = {
     signup: { windowMs: 60 * 60 * 1000, ipLimit: 20, identityLimit: 3 },
     support: { windowMs: 60 * 60 * 1000, ipLimit: 10, identityLimit: 10 },
     signin: { windowMs: 15 * 60 * 1000, ipLimit: 120, identityLimit: 20 },
+    mfaVerify: { windowMs: 15 * 60 * 1000, ipLimit: 60, identityLimit: 10 },
+    mfaManage: { windowMs: 15 * 60 * 1000, ipLimit: 30, identityLimit: 10 },
     forgotPassword: { windowMs: 60 * 60 * 1000, ipLimit: 30, identityLimit: 5 },
     resetPassword: { windowMs: 60 * 60 * 1000, ipLimit: 60, identityLimit: 10 },
     resendConfirmation: {
