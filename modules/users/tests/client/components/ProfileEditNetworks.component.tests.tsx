@@ -39,7 +39,10 @@ const user: UserProfile = {
   displayName: 'Ada Example',
 };
 
-function renderPage(overrides: Partial<UserProfile> = {}) {
+function renderPage(
+  overrides: Partial<UserProfile> = {},
+  viewer: UserProfile | null = { ...user, ...overrides },
+) {
   const profile = { ...user, ...overrides };
 
   return render(
@@ -49,7 +52,7 @@ function renderPage(overrides: Partial<UserProfile> = {}) {
         isNativeMobileApp: false,
         settings: {},
         title: 'Trustroots',
-        user: profile,
+        user: viewer,
       }}
     >
       <ProfileEditNetworks user={profile} />
@@ -61,6 +64,28 @@ describe('ProfileEditNetworks', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     delete window.nostr;
+  });
+
+  it('offers personalised Nostroots onboarding from network settings', () => {
+    renderPage();
+
+    expect(
+      screen.getByRole('link', { name: 'Continue in Nostroots' }),
+    ).toHaveAttribute(
+      'href',
+      'https://nos.trustroots.org/open/onboarding?username=ada',
+    );
+    expect(
+      screen.getByRole('link', { name: 'Continue in Nostroots' }),
+    ).toHaveAttribute('data-umami-event-source', 'network-settings');
+  });
+
+  it('omits username prefill when the signed-in identity is unavailable', () => {
+    renderPage({}, null);
+
+    expect(
+      screen.getByRole('link', { name: 'Continue in Nostroots' }),
+    ).toHaveAttribute('href', 'https://nos.trustroots.org/open/onboarding');
   });
 
   it('saves hospitality network changes and shows related links', async () => {

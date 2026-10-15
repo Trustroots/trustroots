@@ -8,6 +8,7 @@ import { removeSocialAccount, update } from '../api/users.api';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import type { UserProfile } from '../types';
 import { readApiError } from '../utils/api-error';
+import NostrootsOnboarding from '@/modules/core/client/components/NostrootsOnboarding.component';
 
 declare global {
   interface Window {
@@ -40,7 +41,7 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
-  const { setUser } = useAuth();
+  const { user: viewer, setUser } = useAuth();
   const [draftUser, setDraftUser] = useState({ ...user });
   const [hasChanges, setHasChanges] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
@@ -137,6 +138,11 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                   Nostroots
                 </a>
               </h4>
+              <NostrootsOnboarding
+                username={viewer?.username}
+                source="network-settings"
+                linkRef={undefined}
+              />
               <div className="form-group">
                 <div className="input-group">
                   <label className="input-group-addon" htmlFor="nostrNpub">
