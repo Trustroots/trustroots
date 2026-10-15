@@ -5,10 +5,14 @@ import java.net.URL
 import java.net.URLEncoder
 import java.io.IOException
 import java.time.Instant
+import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -23,6 +27,7 @@ data class AccountDetails(
     val email: String,
     val emailTemporary: String? = null,
     val newsletter: Boolean = false,
+    val isPublic: Boolean = true,
 )
 
 data class MemberSession(
@@ -164,13 +169,39 @@ class MobileApiClient(
                 val request = JSONObject()
                     .put("username", usernameOrEmail)
                     .put("password", password)
-                    .toString()
-                val response = jsonRequest(
+                val initial = jsonRequest(
                         path = "/api/auth/signin",
                         method = "POST",
-                        body = request,
+                        body = request.toString(),
                         rejectedMessage = "Sign-in was not accepted.",
+                        acceptedStatusCodes = setOf(429),
                     )
+                val response = if (initial.statusCode == 429) {
+                    val challenge = runCatching {
+                        JSONObject(initial.body).getJSONObject("signinChallenge")
+                    }.getOrElse {
+                        throw MobileApiException(429, "Sign-in was not accepted. Please try again later.")
+                    }
+                    val token = challenge.optString("token")
+                    val difficulty = challenge.optInt("difficulty", -1)
+                    val solution = solveSigninChallenge(token, difficulty)
+                    request.put("signinProof", JSONObject().put("token", token).put("solution", solution))
+                    jsonRequest(
+                        path = "/api/auth/signin",
+                        method = "POST",
+                        body = request.toString(),
+                        rejectedMessage = "Sign-in check failed. Please try again.",
+                    )
+                } else initial
+                val requiresMfa = response.statusCode == 202 || runCatching {
+                    JSONObject(response.body).optBoolean("mfaRequired", false)
+                }.getOrDefault(false)
+                if (requiresMfa) {
+                    throw MobileApiException(
+                        statusCode = 202,
+                        message = "This account requires multi-factor authentication, which is not supported in the mobile app. Sign in using a browser to continue.",
+                    )
+                }
                 MemberSession(
                     cookieHeader = requireNotNull(response.sessionCookie) {
                         "Trustroots did not return a member session."
@@ -218,6 +249,34 @@ class MobileApiClient(
             ).body))
         }
     }
+
+    suspend fun changeEmail(
+        session: MemberSession,
+        email: String,
+        currentPassword: String,
+        mfaCode: String,
+    ): Result<AccountDetails> = withContext(Dispatchers.IO) {
+        runCatching {
+            require(email.isNotBlank())
+            require(currentPassword.isNotBlank())
+            val body = JSONObject()
+                .put("email", email.trim())
+                .put("currentPassword", currentPassword)
+            if (mfaCode.isNotBlank()) body.put("mfaCode", mfaCode.trim())
+            parseAccountDetails(JSONObject(jsonRequest(
+                "/api/users/email-change", "POST", body.toString(), session.cookieHeader,
+            ).body))
+        }
+    }
+
+    suspend fun cancelEmailChange(session: MemberSession): Result<AccountDetails> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                parseAccountDetails(JSONObject(jsonRequest(
+                    "/api/users/email-change", "DELETE", sessionCookie = session.cookieHeader,
+                ).body))
+            }
+        }
 
     suspend fun changePassword(
         session: MemberSession,
@@ -557,6 +616,7 @@ class MobileApiClient(
     private data class JsonResponse(
         val body: String,
         val sessionCookie: String?,
+        val statusCode: Int,
     )
 
     private fun jsonRequest(
@@ -566,6 +626,7 @@ class MobileApiClient(
         sessionCookie: String? = null,
         requestHeaders: Map<String, String> = emptyMap(),
         rejectedMessage: String = "The request was not accepted.",
+        acceptedStatusCodes: Set<Int> = emptySet(),
     ): JsonResponse {
         val endpoint = URL("${baseURL.trimEnd('/')}$path")
         val connection = endpoint.openConnection() as HttpURLConnection
@@ -590,7 +651,7 @@ class MobileApiClient(
             } else {
                 connection.errorStream
             })?.bufferedReader()?.use { it.readText() }.orEmpty()
-            if (connection.responseCode !in 200..299) {
+            if (connection.responseCode !in 200..299 && connection.responseCode !in acceptedStatusCodes) {
                 val message = runCatching { JSONObject(responseBody).optString("message") }
                     .getOrNull()
                     .orEmpty()
@@ -618,6 +679,7 @@ class MobileApiClient(
             return JsonResponse(
                 body = responseBody.ifBlank { "{}" },
                 sessionCookie = sessionCookieFrom(connection.headerFields),
+                statusCode = connection.responseCode,
             )
         } catch (error: IOException) {
             val cached = if (method == "GET" && sessionCookie != null && cacheAccount != null) {
@@ -625,7 +687,7 @@ class MobileApiClient(
             } else null
             if (cached != null) {
                 mutableOfflineSavedAt.value = cached.savedAt
-                return JsonResponse(cached.body, null)
+                return JsonResponse(cached.body, null, 200)
             }
             throw error
         } finally {
@@ -633,6 +695,38 @@ class MobileApiClient(
         }
     }
 
+}
+
+private suspend fun solveSigninChallenge(token: String, difficulty: Int): Long {
+    if (token.isBlank() || token.length > 2048 || difficulty != 14) {
+        throw MobileApiException(429, "Sign-in check was invalid. Please try again later.")
+    }
+    return try {
+        withTimeout(30_000) {
+            withContext(Dispatchers.Default) {
+                val digest = MessageDigest.getInstance("SHA-256")
+                val startedAt = System.nanoTime()
+                for (solution in 0L..4_194_304L) {
+                    if ((solution and 0x3fffL) == 0L) {
+                        currentCoroutineContext().ensureActive()
+                        if (System.nanoTime() - startedAt >= 25_000_000_000L) {
+                            throw MobileApiException(429, "Sign-in check timed out. Please try again.")
+                        }
+                    }
+                    val hash = digest.digest("$token:$solution".toByteArray(Charsets.UTF_8))
+                    if (hash[0].toInt() == 0 && (hash[1].toInt() and 0xfc) == 0) return@withContext solution
+                }
+                throw MobileApiException(429, "Sign-in check could not be completed. Please try again.")
+            }
+        }
+    } catch (error: kotlinx.coroutines.TimeoutCancellationException) {
+        throw MobileApiException(429, "Sign-in check timed out. Please try again.")
+    }
+}
+
+internal fun isSigninProofSolution(token: String, solution: Long): Boolean {
+    val hash = MessageDigest.getInstance("SHA-256").digest("$token:$solution".toByteArray(Charsets.UTF_8))
+    return hash[0].toInt() == 0 && (hash[1].toInt() and 0xfc) == 0
 }
 
 internal fun sessionCookieFrom(headers: Map<String?, List<String>>): String? =
@@ -677,6 +771,7 @@ internal fun parseAccountDetails(value: JSONObject): AccountDetails {
         email = value.optionalText("email").orEmpty(),
         emailTemporary = value.optionalText("emailTemporary"),
         newsletter = value.optBoolean("newsletter", false),
+        isPublic = value.optBoolean("public", true),
     )
 }
 

@@ -11,6 +11,7 @@ export type TargetedRequestLimit = {
 
 export type E2EAppConfig = {
   sessionSecret: string;
+  mfaEncryptionKey: string;
   db: { uri: string };
   targetedRequestLimits: Record<string, TargetedRequestLimit>;
 };

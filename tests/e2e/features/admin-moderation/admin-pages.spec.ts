@@ -79,15 +79,22 @@ test.describe('admin moderation page flows', () => {
       negativeExperiences: Array<{
         recommend: string;
         feedbackPublic: string;
+        userFrom?: { username?: string };
+        userTo?: { username?: string };
       }>;
     };
     expect(dashboardData.threadVotes).toHaveLength(1);
     expect(
       dashboardData.threadVotes.every(vote => vote.reference === 'no'),
     ).toBe(true);
-    expect(dashboardData.negativeExperiences).toHaveLength(1);
-    expect(dashboardData.negativeExperiences[0].recommend).toBe('no');
-    expect(dashboardData.negativeExperiences[0].feedbackPublic).toBe(
+    const seededNegativeExperience = dashboardData.negativeExperiences.find(
+      experience =>
+        experience.userFrom?.username === SEEDED_MEMBERS[1].username &&
+        experience.userTo?.username === SEEDED_MEMBERS[0].username,
+    );
+    expect(seededNegativeExperience).toBeDefined();
+    expect(seededNegativeExperience!.recommend).toBe('no');
+    expect(seededNegativeExperience!.feedbackPublic).toBe(
       SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK,
     );
 
@@ -137,7 +144,11 @@ test.describe('admin moderation page flows', () => {
       }
     });
     await gotoAdminPage(page, '/admin', /\/admin$/);
-    const trigger = page.getByRole('button', {
+    const seededRow = page
+      .getByRole('row')
+      .filter({ hasText: SEEDED_MEMBERS[1].username })
+      .filter({ hasText: SEEDED_MEMBERS[0].username });
+    const trigger = seededRow.getByRole('button', {
       name: /Preview public feedback from/,
     });
     const preview = page.getByRole('tooltip');
@@ -185,7 +196,11 @@ test.describe('admin moderation page flows', () => {
       });
     const touchPage = await touchContext.newPage();
     await touchPage.goto('/admin');
-    const touchTrigger = touchPage.getByRole('button', {
+    const touchSeededRow = touchPage
+      .getByRole('row')
+      .filter({ hasText: SEEDED_MEMBERS[1].username })
+      .filter({ hasText: SEEDED_MEMBERS[0].username });
+    const touchTrigger = touchSeededRow.getByRole('button', {
       name: /Preview public feedback from/,
     });
     const touchPreview = touchPage.getByRole('tooltip');

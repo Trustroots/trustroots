@@ -109,6 +109,11 @@ export interface ProfileResponse {
 export type ProfileNext = NextFunction;
 
 export interface UserProfileController {
+  changeEmail(req: ProfileRequest, res: ProfileResponse): Promise<unknown>;
+  cancelEmailChange(
+    req: ProfileRequest,
+    res: ProfileResponse,
+  ): Promise<unknown>;
   userProfileFields: string;
   userMiniProfileFields: string;
   userListingProfileFields: string;

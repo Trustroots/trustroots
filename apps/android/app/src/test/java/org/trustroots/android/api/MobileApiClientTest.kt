@@ -7,6 +7,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertThrows
 import org.junit.Test
+import kotlinx.coroutines.runBlocking
+import com.sun.net.httpserver.HttpServer
+import java.net.InetSocketAddress
 
 class MobileApiClientTest {
     @Test
@@ -74,6 +77,81 @@ class MobileApiClientTest {
         assertEquals("quiet@example.test", details.email)
         assertEquals("pending@example.test", details.emailTemporary)
         assertTrue(details.newsletter)
+        assertTrue(details.isPublic)
+        val unconfirmed = parseAccountDetails(JSONObject("""{"username":"quiet-fox","email":"new@example.test","public":false}"""))
+        assertFalse(unconfirmed.isPublic)
+    }
+
+    @Test
+    fun updatesUnconfirmedAccountEmailThroughProfileEndpoint() = runBlocking {
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        var requestedEmail: String? = null
+        server.createContext("/api/users") { exchange ->
+            assertEquals("PUT", exchange.requestMethod)
+            assertEquals("1", exchange.requestHeaders.getFirst("X-Trustroots-Request"))
+            assertEquals("connect.sid=member-session", exchange.requestHeaders.getFirst("Cookie"))
+            requestedEmail = JSONObject(exchange.requestBody.bufferedReader().use { it.readText() }).getString("email")
+            exchange.responseHeaders.add("Content-Type", "application/json")
+            val response = """{"username":"quiet-fox","email":"corrected@example.test","public":false}""".toByteArray()
+            exchange.sendResponseHeaders(200, response.size.toLong())
+            exchange.responseBody.use { it.write(response) }
+        }
+        server.start()
+        try {
+            val api = MobileApiClient("http://127.0.0.1:${server.address.port}")
+            val session = MemberSession("connect.sid=member-session", MobileMember("quiet-fox", "Quiet Fox"))
+            val updated = api.updateAccount(session, "corrected@example.test", true).getOrThrow()
+            assertFalse(updated.isPublic)
+            assertEquals("corrected@example.test", requestedEmail)
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun stagesAndCancelsAccountEmailChangeThroughDedicatedEndpoints() = runBlocking {
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        val requests = mutableListOf<Pair<String, JSONObject?>>()
+        server.createContext("/api/users/email-change") { exchange ->
+            val body = exchange.requestBody.bufferedReader().use { it.readText() }
+            requests += exchange.requestMethod to body.takeIf { it.isNotBlank() }?.let(::JSONObject)
+            assertEquals("1", exchange.requestHeaders.getFirst("X-Trustroots-Request"))
+            assertEquals("connect.sid=member-session", exchange.requestHeaders.getFirst("Cookie"))
+            exchange.responseHeaders.add("Content-Type", "application/json")
+            val response = """{"username":"quiet-fox","displayName":"Quiet Fox","email":"quiet@example.test","emailTemporary":"pending@example.test"}"""
+                .toByteArray()
+            exchange.sendResponseHeaders(200, response.size.toLong())
+            exchange.responseBody.use { it.write(response) }
+        }
+        server.start()
+
+        try {
+            val api = MobileApiClient("http://127.0.0.1:${server.address.port}")
+            val session = MemberSession(
+                "connect.sid=member-session",
+                MobileMember("quiet-fox", "Quiet Fox"),
+            )
+            val staged = api.changeEmail(
+                session,
+                " pending@example.test ",
+                "fictional-current-password",
+                "fictional-mfa-code",
+            )
+            assertTrue(staged.isSuccess)
+            val cancelled = api.cancelEmailChange(session)
+            assertTrue(cancelled.isSuccess)
+
+            assertEquals(listOf("POST", "DELETE"), requests.map { it.first })
+            assertEquals("pending@example.test", requests.first().second?.getString("email"))
+            assertEquals(
+                "fictional-current-password",
+                requests.first().second?.getString("currentPassword"),
+            )
+            assertEquals("fictional-mfa-code", requests.first().second?.getString("mfaCode"))
+            assertTrue(requests.last().second == null)
+        } finally {
+            server.stop(0)
+        }
     }
 
     @Test
@@ -112,6 +190,75 @@ class MobileApiClientTest {
 
         assertEquals("river-otter", member.username)
         assertEquals("River Otter", member.displayName)
+    }
+
+    @Test
+    fun verifiesSigninProofUsingTheServerHashFormat() {
+        assertTrue(isSigninProofSolution("fictional-challenge", 13049))
+        assertFalse(isSigninProofSolution("fictional-challenge", 13048))
+    }
+
+    @Test
+    fun doesNotTreatPreAuthCookieOnMfaChallengeAsMemberSession() = runBlocking {
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        var requests = 0
+        server.createContext("/api/auth/signin") { exchange ->
+            requests += 1
+            val (status, body) = if (requests == 1) {
+                429 to """{"signinChallenge":{"token":"fictional-challenge","difficulty":14}}"""
+            } else {
+                202 to """{"username":"quiet-fox","displayName":"Quiet Fox","public":true,"mfaRequired":true,"challenge":"pre-auth-challenge"}"""
+            }
+            exchange.responseHeaders.add("Content-Type", "application/json")
+            if (requests == 2) {
+                exchange.responseHeaders.add("Set-Cookie", "connect.sid=pre-auth-session; Path=/; HttpOnly")
+            }
+            val response = body.toByteArray()
+            exchange.sendResponseHeaders(status, response.size.toLong())
+            exchange.responseBody.use { it.write(response) }
+        }
+        server.start()
+
+        try {
+            val result = MobileApiClient("http://127.0.0.1:${server.address.port}")
+                .signIn("quiet-fox", "fictional-password")
+            val error = result.exceptionOrNull()
+            val mobileError = error as? MobileApiException
+
+            assertEquals("Proof retry failed: ${error?.message}", 2, requests)
+            assertTrue("An MFA challenge must not produce a member session", result.isFailure)
+            assertTrue(mobileError != null)
+            assertEquals(202, mobileError?.statusCode)
+            assertTrue(mobileError?.message.orEmpty().contains("browser", ignoreCase = true))
+        } finally {
+            server.stop(0)
+        }
+    }
+
+    @Test
+    fun rejectsMfaMarkerEvenWhenResponseStatusIsSuccessful() = runBlocking {
+        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        server.createContext("/api/auth/signin") { exchange ->
+            exchange.responseHeaders.add("Content-Type", "application/json")
+            exchange.responseHeaders.add("Set-Cookie", "connect.sid=pre-auth-session; Path=/; HttpOnly")
+            val body = """{"username":"quiet-fox","displayName":"Quiet Fox","public":true,"mfaRequired":true,"challenge":"pre-auth-challenge"}"""
+                .toByteArray()
+            exchange.sendResponseHeaders(200, body.size.toLong())
+            exchange.responseBody.use { it.write(body) }
+        }
+        server.start()
+
+        try {
+            val result = MobileApiClient("http://127.0.0.1:${server.address.port}")
+                .signIn("quiet-fox", "fictional-password")
+            val error = result.exceptionOrNull() as? MobileApiException
+
+            assertTrue("An MFA marker must not produce a member session", result.isFailure)
+            assertEquals(202, error?.statusCode)
+            assertTrue(error?.message.orEmpty().contains("browser", ignoreCase = true))
+        } finally {
+            server.stop(0)
+        }
     }
 
     @Test

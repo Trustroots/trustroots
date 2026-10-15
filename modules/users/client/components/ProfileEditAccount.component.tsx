@@ -3,8 +3,11 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import ProfileEditPage from './ProfileEditPage.component';
+import MemberSessions from './MemberSessions.component';
 import {
   changePassword,
+  changeEmail,
+  cancelEmailChange,
   removeProfile,
   resendEmailConfirmation,
   update,
@@ -16,6 +19,7 @@ import {
   SIGNUP_USERNAME_REGEX,
   SIGNUP_USERNAME_FORMAT_MESSAGE,
 } from '../config/username.client.constants';
+import MfaSettings from './MfaSettings.component';
 
 interface ProfileEditAccountProps {
   user: UserProfile;
@@ -34,6 +38,8 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
   const [removeProfileConfirm, setRemoveProfileConfirm] = useState(false);
   const [isRemovingProfile, setIsRemovingProfile] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
+  const [emailChangePassword, setEmailChangePassword] = useState('');
+  const [emailChangeMfaCode, setEmailChangeMfaCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [verifyPassword, setVerifyPassword] = useState('');
   const removalRef = useRef<HTMLDivElement>(null);
@@ -54,15 +60,34 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
     setEmailMessage('');
 
     try {
-      const savedUser = await update({ email: draftUser.email });
+      const savedUser = await changeEmail({
+        email: draftUser.email || '',
+        currentPassword: emailChangePassword,
+        mfaCode: emailChangeMfaCode,
+      });
       setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
+      setEmailChangePassword('');
+      setEmailChangeMfaCode('');
       setEmailMessage(
         t(
           'We sent you an email to {{email}} with further instructions. Email change will not be active until that.',
           { email: savedUser.emailTemporary },
         ),
       );
+    } catch (error: unknown) {
+      const { message } = readApiError(error);
+      setEmailMessage(message || t('Something went wrong.'));
+    }
+  }
+
+  async function handleCancelEmailChange() {
+    setEmailMessage('');
+    try {
+      const savedUser = await cancelEmailChange();
+      setUser(current => ({ ...current, ...savedUser }));
+      setDraftUser({ ...savedUser });
+      setEmailMessage(t('Pending email change cancelled.'));
     } catch (error: unknown) {
       const { message } = readApiError(error);
       setEmailMessage(message || t('Something went wrong.'));
@@ -193,19 +218,80 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                   {emailMessage && <p className="help-block">{emailMessage}</p>}
                 </div>
               </div>
+              {draftUser.email !== user.email && (
+                <>
+                  <div className="form-group">
+                    <label
+                      htmlFor="emailChangePassword"
+                      className="col-sm-3 text-right control-label"
+                    >
+                      {t('Current password to confirm email change')}
+                    </label>
+                    <div className="col-sm-9">
+                      <input
+                        type="password"
+                        id="emailChangePassword"
+                        autoComplete="current-password"
+                        className="form-control"
+                        value={emailChangePassword}
+                        onChange={event =>
+                          setEmailChangePassword(event.target.value)
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label
+                      htmlFor="emailChangeMfaCode"
+                      className="col-sm-3 text-right control-label"
+                    >
+                      {t('Authenticator or recovery code (if enabled)')}
+                    </label>
+                    <div className="col-sm-9">
+                      <input
+                        type="text"
+                        id="emailChangeMfaCode"
+                        autoComplete="one-time-code"
+                        className="form-control"
+                        value={emailChangeMfaCode}
+                        onChange={event =>
+                          setEmailChangeMfaCode(event.target.value)
+                        }
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
               <div className="form-group">
                 <div className="col-sm-push-3 col-sm-9">
-                  <button type="submit" className="btn btn-primary">
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={
+                      draftUser.email !== user.email && !emailChangePassword
+                    }
+                  >
                     {t('Change email')}
                   </button>
                   {draftUser.emailTemporary && (
-                    <button
-                      type="button"
-                      className="btn btn-default"
-                      onClick={handleResendConfirmation}
-                    >
-                      {t('Resend confirmation')}
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        className="btn btn-default"
+                        onClick={handleResendConfirmation}
+                      >
+                        {t('Resend confirmation')}
+                      </button>
+                      {draftUser.emailTemporary !== draftUser.email && (
+                        <button
+                          type="button"
+                          className="btn btn-default"
+                          onClick={handleCancelEmailChange}
+                        >
+                          {t('Cancel pending email change')}
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -269,6 +355,8 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
           </form>
         </div>
       </div>
+
+      <MfaSettings />
 
       <div className="panel panel-default">
         <div className="panel-heading">{t('News and updates')}</div>
@@ -402,6 +490,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
           {removalMessage && <p className="help-block">{removalMessage}</p>}
         </div>
       </div>
+      <MemberSessions />
     </ProfileEditPage>
   );
 }

@@ -5,6 +5,8 @@ struct AccountView: View {
     let openPasswordRecovery: () -> Void
     @State private var profile: MemberProfile?
     @State private var email = ""
+    @State private var emailChangePassword = ""
+    @State private var emailChangeMfaCode = ""
     @State private var newsletter = false
     @State private var currentPassword = ""
     @State private var newPassword = ""
@@ -16,6 +18,10 @@ struct AccountView: View {
     @State private var errorMessage: String?
 
     private let api = TrustrootsAPI()
+
+    private var requiresEmailConfirmation: Bool {
+        profile?.isPublic ?? session.member?.isPublic ?? true
+    }
 
     var body: some View {
         ScrollView {
@@ -71,14 +77,35 @@ struct AccountView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(TrustrootsPalette.green)
                 .accessibilityLabel("Save")
-                .disabled(isSavingAccount || email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .disabled(
+                    isSavingAccount
+                        || email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        || (requiresEmailConfirmation
+                            && email.trimmingCharacters(in: .whitespacesAndNewlines)
+                            != (profile?.email ?? session.member?.email ?? "")
+                            && emailChangePassword.isEmpty)
+                )
+            }
+            if requiresEmailConfirmation && email.trimmingCharacters(in: .whitespacesAndNewlines)
+                != (profile?.email ?? session.member?.email ?? "") {
+                SecureField("Current password to confirm email change", text: $emailChangePassword)
+                TextField("Authenticator or recovery code (if enabled)", text: $emailChangeMfaCode)
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
+                    .textContentType(.oneTimeCode)
             }
             Toggle("Community newsletter", isOn: $newsletter)
                 .tint(TrustrootsPalette.green)
-            if let pendingEmail = profile?.emailTemporary {
+            if let pendingEmail = profile?.emailTemporary, !pendingEmail.isEmpty {
                 Text("Email confirmation is pending for \(pendingEmail).")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
+                if pendingEmail != profile?.email {
+                    Button("Cancel pending email change") {
+                        Task { await cancelEmailChange() }
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
         }
         .padding(16)
@@ -173,9 +200,24 @@ struct AccountView: View {
         confirmation = nil
         defer { isSavingAccount = false }
         do {
+            let currentEmail = profile?.email ?? session.member?.email ?? ""
+            let nextEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+            let confirmedEmailChange = requiresEmailConfirmation && nextEmail != currentEmail
+            if confirmedEmailChange {
+                let changed = try await api.changeAccountEmail(
+                    serverURLString: session.serverURLString,
+                    email: nextEmail,
+                    currentPassword: emailChangePassword,
+                    mfaCode: emailChangeMfaCode
+                )
+                profile = changed
+                email = changed.email ?? email
+                emailChangePassword = ""
+                emailChangeMfaCode = ""
+            }
             let updated = try await api.updateAccount(
                 serverURLString: session.serverURLString,
-                email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                email: confirmedEmailChange ? (profile?.email ?? currentEmail) : nextEmail,
                 newsletter: newsletter
             )
             profile = updated
@@ -183,6 +225,21 @@ struct AccountView: View {
             newsletter = updated.newsletter ?? newsletter
             session.updateAccountDetails(email: email, newsletter: newsletter)
             confirmation = "Account settings saved."
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func cancelEmailChange() async {
+        errorMessage = nil
+        confirmation = nil
+        do {
+            let updated = try await api.cancelAccountEmailChange(
+                serverURLString: session.serverURLString
+            )
+            profile = updated
+            email = updated.email ?? email
+            confirmation = "Pending email change cancelled."
         } catch {
             errorMessage = error.localizedDescription
         }

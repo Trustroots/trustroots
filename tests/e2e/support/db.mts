@@ -29,6 +29,10 @@ export interface UserDocument {
   removeProfileToken?: string;
   removeProfileExpires?: Date;
   authVersion?: number;
+  mfaEnabled?: boolean;
+  mfaSecretEncrypted?: string;
+  mfaLastTotpCounter?: number;
+  mfaRecoveryCodeHashes?: string[];
   avatarUploaded?: boolean;
   avatarVersion?: number;
   additionalProvidersData?: Record<string, unknown>;
@@ -103,6 +107,7 @@ interface AgendaJobDocument {
 }
 
 export type UserTestUpdate = {
+  $push?: { mfaRecoveryCodeHashes?: string };
   $set?: Partial<UserDocument> & Record<string, unknown>;
   $unset?: Record<string, '' | 1 | true>;
   $addToSet?: { roles?: string | { $each: string[] } };

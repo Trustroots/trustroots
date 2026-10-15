@@ -2,6 +2,8 @@ import axios, { type AxiosResponse } from 'axios';
 
 import {
   changePassword,
+  changeEmail,
+  cancelEmailChange,
   fetch,
   fetchMini,
   removeProfile,
@@ -44,6 +46,32 @@ describe('users api', () => {
 
     await expect(fetch('alice')).resolves.toBe(user);
     expect(axiosMock.get).toHaveBeenCalledWith('/api/users/alice');
+  });
+
+  it('changes the email with fresh credentials', async () => {
+    const user = { _id: 'user-1', email: 'new@example.test' };
+    axiosMock.post.mockResolvedValueOnce(response(user));
+
+    await expect(
+      changeEmail({
+        email: 'new@example.test',
+        currentPassword: 'correct-password',
+        mfaCode: '123456',
+      }),
+    ).resolves.toBe(user);
+    expect(axiosMock.post).toHaveBeenCalledWith('/api/users/email-change', {
+      email: 'new@example.test',
+      currentPassword: 'correct-password',
+      mfaCode: '123456',
+    });
+  });
+
+  it('cancels a pending email change', async () => {
+    const user = { _id: 'user-1', email: 'old@example.test' };
+    axiosMock.delete.mockResolvedValueOnce(response(user));
+
+    await expect(cancelEmailChange()).resolves.toBe(user);
+    expect(axiosMock.delete).toHaveBeenCalledWith('/api/users/email-change');
   });
 
   it('fetches a mini user profile', async () => {

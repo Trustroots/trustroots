@@ -127,7 +127,10 @@ jobs:
         working-directory: deploy/docker
         env:
           CHANGED_SPECS: ${{ steps.changed.outputs.specs }}
+          TRUSTROOTS_BUILD_BRANCH: ${{ github.head_ref }}
         run: |
+          build_commit="$(git rev-parse HEAD)"
+          build_committed_at="$(git show -s --format=%cI HEAD)"
           rm -rf ../../tmp/screenshots
           mkdir -p ../../tmp/screenshots
 
@@ -135,6 +138,9 @@ jobs:
           set +e
           docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
             -e CI=true \
+            -e TRUSTROOTS_BUILD_COMMIT="$build_commit" \
+            -e TRUSTROOTS_BUILD_COMMITTED_AT="$build_committed_at" \
+            -e TRUSTROOTS_BUILD_BRANCH \
             -e NODE_ENV=test \
             -e DB_1_PORT_27017_TCP_ADDR=mongodb \
             -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \

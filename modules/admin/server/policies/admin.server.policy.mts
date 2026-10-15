@@ -9,6 +9,11 @@ import type {
   PolicyRequest,
   PolicyResponse,
 } from '../../../core/server/services/policy-types.server.mts';
+import {
+  requireAdminElevation,
+  confirmAdminPassword,
+  elevateAdminSession,
+} from '../services/admin-elevation.server.service.mjs';
 const aclInstance = createMemoryPolicy();
 
 /**
@@ -40,6 +45,10 @@ export const invokeRolesPolicies = () => {
       roles: ['welcome-team', 'support-team'],
       allows: [
         {
+          resources: '/api/admin/elevate',
+          permissions: ['post'],
+        },
+        {
           resources: '/api/admin/acquisition-stories',
           permissions: ['post'],
         },
@@ -57,6 +66,10 @@ export const invokeRolesPolicies = () => {
         {
           resources: '/api/admin/hackerspaces/preview',
           permissions: ['get'],
+        },
+        {
+          resources: '/api/admin/elevate',
+          permissions: ['post'],
         },
         {
           resources: '/api/admin/acquisition-stories',
@@ -179,7 +192,11 @@ export const isAllowed = (
 const defaultInterop = {
   invokeRolesPolicies,
   isAllowed,
+  requireAdminElevation,
+  confirmAdminPassword,
+  elevateAdminSession,
 };
 export default defaultInterop; // Expose the ACL instance only to native ESM tests; the CommonJS API stays unchanged.
 export { aclInstance as _acl };
+export { requireAdminElevation, confirmAdminPassword, elevateAdminSession };
 export { defaultInterop as 'module.exports' };

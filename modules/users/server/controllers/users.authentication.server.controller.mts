@@ -1,3 +1,4 @@
+import mfaService from '../services/mfa.server.service.mjs';
 import _ from 'lodash';
 import errorService from '../../../core/server/services/error.server.service.mjs';
 import emailService from '../../../core/server/services/email.server.service.mjs';
@@ -24,6 +25,11 @@ type AuthenticatedUser = UserDocument;
 
 interface AuthRequest {
   body?: Record<string, unknown>;
+  session?: {
+    mfaChallenge?: { userId: string; authVersion: number; expiresAt: number };
+    regenerate(callback: (error?: Error) => void): void;
+    save(callback: (error?: Error) => void): void;
+  };
   params?: Record<string, string>;
   query?: Record<string, unknown>;
   user?: AuthenticatedUser;
@@ -78,11 +84,13 @@ interface StatsPayload {
 }
 
 interface EmailConfirmationResult {
+  mfaRequired?: boolean;
   profileMadePublic: boolean;
   user?: import('./users.profile.server.contracts.mts').ProfilePayload;
 }
 
 interface AuthenticationController {
+  verifyMfa(req: AuthRequest, res: AuthResponse): Promise<unknown>;
   signup(req: AuthRequest, res: AuthResponse): void;
   signupValidation(req: AuthRequest, res: AuthResponse): void;
   signin(req: AuthRequest, res: AuthResponse, next: AuthNext): void;
@@ -475,6 +483,27 @@ service.signin = function (req, res, next) {
       return;
     }
 
+    if (user.mfaEnabled === true) {
+      return req.session!.regenerate(regenerateError => {
+        if (regenerateError) {
+          return res
+            .status(503)
+            .send({ message: 'Could not start MFA verification.' });
+        }
+        req.session!.mfaChallenge = mfaService.createChallenge(user);
+        return req.session!.save(saveError => {
+          if (saveError) {
+            return res
+              .status(503)
+              .send({ message: 'Could not start MFA verification.' });
+          }
+          statsObject.tags.status = 'mfa-required';
+          statService.stat(statsObject, function () {});
+          return res.status(202).json({ mfaRequired: true });
+        });
+      });
+    }
+
     req.login!(user, function (err) {
       if (err) {
         // Log the failure to signin
@@ -497,6 +526,51 @@ service.signin = function (req, res, next) {
       res.json(userProfile.sanitizeOwnProfile(user));
     });
   })(req, res, next);
+};
+
+/** Complete the short-lived, unauthenticated second-factor challenge. */
+service.verifyMfa = async function (req, res) {
+  const challenge = req.session?.mfaChallenge;
+  if (!mfaService.challengeIsValid(challenge)) {
+    return res.status(401).send({
+      message: 'Sign-in challenge has expired. Please sign in again.',
+    });
+  }
+  try {
+    const user = await User.findOne({
+      _id: challenge!.userId,
+      authVersion: challenge!.authVersion,
+      mfaEnabled: true,
+    }).exec();
+    if (!user || user.roles.includes('suspended')) {
+      delete req.session!.mfaChallenge;
+      return res
+        .status(401)
+        .send({ message: 'Sign-in challenge is no longer valid.' });
+    }
+    const result = await mfaService.verifyAndConsume(
+      user._id,
+      req.body?.code,
+      Date.now(),
+      challenge!.authVersion,
+    );
+    if (!result) {
+      return res
+        .status(400)
+        .send({ message: 'Authenticator or recovery code is invalid.' });
+    }
+    result.user.$locals.mfaVerified = true;
+    return req.login!(result.user, error => {
+      if (error) {
+        return res.status(503).send({ message: 'Could not complete sign-in.' });
+      }
+      return res.json(userProfile.sanitizeOwnProfile(result.user));
+    });
+  } catch {
+    return res.status(503).send({
+      message: 'Authenticator verification is temporarily unavailable.',
+    });
+  }
 };
 
 /**
@@ -609,6 +683,16 @@ service.confirmEmail = function (req, res) {
                 profileMadePublic: !user.public,
               };
 
+              result.mfaRequired = Boolean(
+                user.mfaEnabled === true &&
+                !(
+                  req.user &&
+                  String(req.user._id) === String(user._id) &&
+                  (req.user.authVersion || 0) === (user.authVersion || 0) &&
+                  req.user.$locals?.mfaVerified === true
+                ),
+              );
+
               done(null, result, user);
             } else {
               return res.status(400).send({
@@ -667,6 +751,7 @@ service.confirmEmail = function (req, res) {
                 .update(user.emailTemporary.trim().toLowerCase())
                 .digest('hex'),
             },
+            $inc: { authVersion: 1 },
           },
           {
             // Return the document after updates if `new = true`
@@ -688,6 +773,12 @@ service.confirmEmail = function (req, res) {
         user: UserDocument,
         done: WaterfallCallback,
       ) {
+        if (result.mfaRequired) {
+          return done(null, result, user);
+        }
+        if (user.mfaEnabled === true) {
+          user.$locals.mfaVerified = true;
+        }
         req.login!(user, function (err?: Error | null) {
           done(err, result, user);
         });
@@ -800,6 +891,7 @@ const defaultExport = service;
 export const signup = service.signup;
 export const signupValidation = service.signupValidation;
 export const signin = service.signin;
+export const verifyMfa = service.verifyMfa;
 export const signout = service.signout;
 export const removeOAuthProvider = service.removeOAuthProvider;
 export const validateEmailToken = service.validateEmailToken;

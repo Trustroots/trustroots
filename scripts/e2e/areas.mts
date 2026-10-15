@@ -2,8 +2,10 @@ import type { AreaResult } from './report-types.mts';
 import path from 'path';
 
 const AREA_BY_SPEC: Record<string, string> = {
+  'integrated-account-access.spec.js': 'Authentication',
   'hashed-action-tokens.spec.js': 'Authentication',
   'csp.spec.js': 'Public pages',
+  'signin-challenge.spec.js': 'Authentication',
   'react-recovery-pages.spec.js': 'Public pages',
   'react-member-connections.spec.js': 'Public pages',
   'react-contact-confirmation.spec.js': 'Public pages',
@@ -21,6 +23,7 @@ const AREA_BY_SPEC: Record<string, string> = {
   'account-input-validation.spec.js': 'Authentication',
   'signup-and-support-limits.spec.js': 'Authentication',
   'account-settings.spec.js': 'Authentication',
+  'email-change.spec.js': 'Authentication',
   'authenticated.spec.js': 'Member flows',
   'desktop-navigation.spec.js': 'Member flows',
   'profile-react.spec.js': 'Member flows',

@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import signinChallenge from '../services/signin-challenge.server.service.mjs';
 import userAuthentication from './../controllers/users.authentication.server.controller.mjs';
 import userPassword from './../controllers/users.password.server.controller.mjs';
 import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mjs';
@@ -50,7 +51,14 @@ const defaultExport = function (app: RouteApplication) {
     .post(userAuthentication.signupValidation);
   app
     .route('/api/auth/signin')
-    .post(targetedRequestLimit.signin, userAuthentication.signin);
+    .post(
+      targetedRequestLimit.signin,
+      signinChallenge,
+      userAuthentication.signin,
+    );
+  app
+    .route('/api/auth/mfa/verify')
+    .post(targetedRequestLimit.mfaVerify, userAuthentication.verifyMfa);
   app.route('/api/auth/session').get(userAuthentication.session);
   app
     .route('/api/auth/signout')

@@ -178,6 +178,20 @@ const controllerPath =
 const emailServicePath =
   './../../../core/server/services/email.server.service.mjs';
 
+function getEmailService(): {
+  sendChangeEmailConfirmation(
+    user: unknown,
+    callback: (error?: Error | null) => void,
+  ): void;
+  sendEmailChangeNotificationToOldAddress(
+    user: unknown,
+    previousEmail: string,
+    callback: (error?: Error | null) => void,
+  ): void;
+} {
+  return require(emailServicePath);
+}
+
 function stubControllerDependencies<
   TDependencies extends Record<string, object>,
 >(controllerPath: string, dependencyStubs: TDependencies) {
@@ -309,7 +323,6 @@ describe('Profile controller unit tests', () => {
         utils.generateUsers(1, { public: true }),
       );
       const otherDoc = await findUser(other._id);
-
       const { res } = await runHandler(res =>
         profileController.update(
           { user: userDoc, body: { email: otherDoc.email }, login: () => {} },
@@ -317,6 +330,97 @@ describe('Profile controller unit tests', () => {
         ),
       );
       res.statusCode.should.equal(403);
+    });
+
+    it('requires password confirmation to change a confirmed account email', async () => {
+      userDoc.public = true;
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { email: 'new-address@example.test' },
+            login: () => {},
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+      responseString(res, 'message').should.containEql('current password');
+    });
+
+    it('lets an unconfirmed user resend confirmation for their pending email', async () => {
+      userDoc.public = false;
+      userDoc.emailTemporary = 'pending-address@example.test';
+      await userDoc.save();
+      const sendConfirmation = sinon
+        .stub(getEmailService(), 'sendChangeEmailConfirmation')
+        .callsFake((user, callback) => callback());
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { email: 'pending-address@example.test' },
+            login: (_user: unknown, callback: () => void) => callback(),
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      sendConfirmation.calledOnce.should.equal(true);
+      responseString(res, 'emailTemporary').should.equal(
+        'pending-address@example.test',
+      );
+    });
+
+    it('blocks an unconfirmed email already used by another account', async () => {
+      userDoc.public = false;
+      await userDoc.save();
+      const [other] = await utils.saveUsers(utils.generateUsers(1));
+      other.emailTemporary = 'claimed-address@example.test';
+      await other.save();
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { email: 'CLAIMED-ADDRESS@example.test' },
+            login: (_user: unknown, callback: () => void) => callback(),
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(403);
+      responseString(res, 'message').should.containEql('already in use');
+    });
+
+    it('saves an available confirmation address for an unconfirmed user', async () => {
+      userDoc.public = false;
+      await userDoc.save();
+      const sendConfirmation = sinon
+        .stub(getEmailService(), 'sendChangeEmailConfirmation')
+        .callsFake((user, callback) => callback());
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { email: 'available-address@example.test' },
+            login: (_user: unknown, callback: () => void) => callback(),
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      sendConfirmation.calledOnce.should.equal(true);
+      const reloaded = await findUser(userDoc._id);
+      reloaded.emailTemporary!.should.equal('available-address@example.test');
+      reloaded.emailToken!.should.match(/^sha256:[a-f0-9]{64}$/);
+      reloaded.emailTokenIssuedAt!.should.be.a.Date();
+      reloaded.emailTokenExpires!.should.be.a.Date();
     });
 
     it('updates a simple field', async () => {
@@ -348,7 +452,8 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(200);
     });
 
-    it('allows resubmitting a pending email change address', async () => {
+    it('does not allow changing email through the general profile update handler', async () => {
+      userDoc.public = true;
       userDoc.emailTemporary = 'pending-change@example.com';
       await userDoc.save();
 
@@ -362,7 +467,7 @@ describe('Profile controller unit tests', () => {
           res,
         ),
       );
-      res.statusCode.should.equal(200);
+      res.statusCode.should.equal(400);
     });
 
     it('preserves the authenticated session when saving a profile', async () => {
@@ -457,12 +562,25 @@ describe('Profile controller unit tests', () => {
       res.json.called.should.be.false();
     });
 
-    it('changes the email and triggers a confirmation token', async () => {
+    it('stages an email change after password confirmation and queues both messages', async () => {
+      userDoc.public = true;
+      userDoc.password = 'Password123!';
+      await userDoc.save();
+      sinon
+        .stub(getEmailService(), 'sendChangeEmailConfirmation')
+        .callsFake((user, callback) => callback());
+      sinon
+        .stub(getEmailService(), 'sendEmailChangeNotificationToOldAddress')
+        .callsFake((user, previousEmail, callback) => callback());
+
       const { res } = await runHandler(res =>
-        profileController.update(
+        profileController.changeEmail(
           {
             user: userDoc,
-            body: { email: 'brand-new-email@example.com' },
+            body: {
+              email: 'brand-new-email@example.com',
+              currentPassword: 'Password123!',
+            },
             login: (_user: unknown, cb: () => void) => cb(),
           },
           res,

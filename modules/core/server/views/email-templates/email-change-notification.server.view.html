@@ -1,0 +1,11 @@
+{% extends './email-with-container.server.view.html' %}
+
+{% block textcontent %}
+  <p>Hey {{name}}!</p>
+
+  <p>A request was made to change the email address on your Trustroots account at {{changedAt}}.</p>
+
+  <p>Your current email address has not changed. If you made this request, confirm the new address using the message sent there.</p>
+
+  <p>If you did not make this request, sign in to <a href="{{accountSettingsUrl}}">your account settings</a> to cancel the pending change. You can also change your password.</p>
+{% endblock textcontent %}

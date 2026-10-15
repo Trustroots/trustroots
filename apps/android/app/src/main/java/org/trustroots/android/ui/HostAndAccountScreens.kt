@@ -23,6 +23,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -341,6 +342,8 @@ internal fun AccountSettingsScreen(
     var details by remember { mutableStateOf<AccountDetails?>(null) }
     var email by remember { mutableStateOf("") }
     var newsletter by remember { mutableStateOf(false) }
+    var emailChangePassword by remember { mutableStateOf("") }
+    var emailChangeMfaCode by remember { mutableStateOf("") }
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var verifyPassword by remember { mutableStateOf("") }
@@ -398,6 +401,24 @@ internal fun AccountSettingsScreen(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth(),
         )
+        if (details?.isPublic != false && email.trim() != details?.email.orEmpty()) {
+            OutlinedTextField(
+                emailChangePassword,
+                { emailChangePassword = it },
+                label = { Text("Current password to confirm email change") },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            OutlinedTextField(
+                emailChangeMfaCode,
+                { emailChangeMfaCode = it },
+                label = { Text("Authenticator or recovery code (if enabled)") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = newsletter, onCheckedChange = { newsletter = it })
             Text("Community newsletter")
@@ -408,6 +429,28 @@ internal fun AccountSettingsScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
             )
+            if (it != details?.email) {
+                OutlinedButton(
+                    onClick = {
+                        scope.launch {
+                            savingAccount = true
+                            error = null
+                            message = null
+                            api.cancelEmailChange(session).onSuccess { updated ->
+                                details = updated
+                                email = updated.email
+                                message = "Pending email change cancelled."
+                            }.onFailure { failure ->
+                                if ((failure as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                                else error = failure.message ?: "Could not cancel the pending email change."
+                            }
+                            savingAccount = false
+                        }
+                    },
+                    enabled = !savingAccount,
+                    modifier = Modifier.padding(top = 6.dp),
+                ) { Text("Cancel pending email change") }
+            }
         }
         Button(
             onClick = {
@@ -415,17 +458,40 @@ internal fun AccountSettingsScreen(
                     savingAccount = true
                     error = null
                     message = null
-                    api.updateAccount(session, email, newsletter).onSuccess {
-                        details = it
-                        message = "Account saved."
-                    }.onFailure {
-                        if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
-                        else error = it.message ?: "Could not save account."
+                    var emailChangeFailed = false
+                    val requestedEmailChange = email.trim() != details?.email.orEmpty()
+                    val confirmedEmailChange = requestedEmailChange && details?.isPublic != false
+                    if (confirmedEmailChange) {
+                        api.changeEmail(
+                            session,
+                            email,
+                            emailChangePassword,
+                            emailChangeMfaCode,
+                        ).onSuccess {
+                            details = it
+                            email = it.email
+                            emailChangePassword = ""
+                            emailChangeMfaCode = ""
+                        }.onFailure {
+                            emailChangeFailed = true
+                            if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                            else error = it.message ?: "Could not change email."
+                        }
+                    }
+                    if (!emailChangeFailed) {
+                        api.updateAccount(session, if (confirmedEmailChange) details?.email ?: email else email, newsletter).onSuccess {
+                            details = it
+                            message = if (requestedEmailChange) "Email confirmation sent." else "Account saved."
+                        }.onFailure {
+                            if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                            else error = it.message ?: "Could not save account."
+                        }
                     }
                     savingAccount = false
                 }
             },
-            enabled = !savingAccount && email.isNotBlank(),
+            enabled = !savingAccount && email.isNotBlank() &&
+                (details?.isPublic == false || email.trim() == details?.email.orEmpty() || emailChangePassword.isNotBlank()),
             modifier = Modifier.padding(top = 8.dp),
         ) { Text(if (savingAccount) "Saving…" else "Save email settings") }
         HorizontalDivider(Modifier.padding(vertical = 20.dp))

@@ -9,6 +9,8 @@ import type {
   UserServerModel,
   UserServerRecord,
 } from '../models/user.server.types.mts';
+import { checkMemberSession } from '../services/member-session.server.service.mjs';
+import requireMfaForAccountAccess from './../middleware/mfa-session.server.middleware.mjs';
 /**
  * Module dependencies.
  */
@@ -16,6 +18,7 @@ import type {
 interface SessionCandidate {
   id?: unknown;
   authVersion?: unknown;
+  mfaVerified?: unknown;
 }
 interface UsersApplication {
   use(...handlers: ((...arguments_: never[]) => unknown)[]): unknown;
@@ -32,10 +35,16 @@ function findSessionUser(
 
 const defaultExport = async function (app: UsersApplication): Promise<void> {
   // Serialize sessions
-  passport.serializeUser<UserServerDocument>(function (user, done) {
+  passport.serializeUser<
+    { session: { memberSessionCreatedAt?: number } },
+    UserServerDocument
+  >(function (req, user, done) {
+    req.session.memberSessionCreatedAt = Date.now();
     done(null, {
       id: user.id,
       authVersion: user.authVersion || 0,
+      mfaVerified:
+        user.$locals?.mfaVerified === true && user.mfaEnabled === true,
     });
   });
 
@@ -61,6 +70,9 @@ const defaultExport = async function (app: UsersApplication): Promise<void> {
           if ((user.authVersion || 0) !== sessionData!.authVersion) {
             return done(null, false);
           }
+          user.$locals = user.$locals || {};
+          user.$locals.mfaVerified =
+            user.mfaEnabled === true && sessionData!.mfaVerified === true;
           return done(null, user);
         },
       );
@@ -83,6 +95,8 @@ const defaultExport = async function (app: UsersApplication): Promise<void> {
 
   // Handle logging out suspended users
   app.use(usersSuspended.invalidateSuspendedSessions);
+  app.use(checkMemberSession);
+  app.use(requireMfaForAccountAccess);
 };
 export default defaultExport;
 export { defaultExport as 'module.exports' };
