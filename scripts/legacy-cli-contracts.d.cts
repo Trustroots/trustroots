@@ -5,25 +5,23 @@ export type Done<Values extends unknown[] = []> = (
   ...values: Values
 ) => void;
 export type Result<T> = (error: unknown, value: T) => void;
-export interface Query<T> {
-  exec(callback: Result<T>): void;
-  count(): Query<number>;
+export interface Query<T> extends PromiseLike<T> {
+  exec(): Promise<T>;
   cursor(): Cursor<T extends Array<infer Item> ? Item : T>;
 }
 export interface Cursor<T> {
-  next(callback: Result<T | null>): void;
+  next(): Promise<T | null>;
 }
 export interface Model<T> {
-  count(query: object): Query<number>;
+  countDocuments(query?: object): Promise<number>;
   find(query?: object): Query<T[]>;
-  findByIdAndRemove(id: Types.ObjectId, callback: Done): void;
-  aggregate<Row>(pipeline: object[], callback: Result<Row[]>): void;
+  findByIdAndDelete(id: Types.ObjectId): Promise<unknown>;
+  aggregate<Row>(pipeline: object[]): Promise<Row[]>;
 }
-// The installed Mongoose 6 runtime retains these legacy callback overloads.
 export interface LegacyMongoose {
   Promise: PromiseConstructor;
   set(name: 'strictQuery', value: boolean): void;
-  connect(uri: string, callback: Done): unknown;
+  connect(uri: string): Promise<unknown>;
   disconnect(): Promise<void>;
   model<T>(name: string): Model<T>;
 }
