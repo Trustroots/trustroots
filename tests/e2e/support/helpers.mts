@@ -18,7 +18,7 @@ export type SeededMember = {
   lastName: string;
 };
 
-export type NewUser = Omit<SeededMember, 'id'>;
+export type NewUser = Omit<SeededMember, 'id'> & { roles?: string[] };
 
 export type CreateUserOverrides = Partial<NewUser>;
 
@@ -276,7 +276,10 @@ export async function signUp(page: Page, user: NewUser): Promise<void> {
 /**
  * Authenticate a request context without opening a browser page.
  */
-export async function elevateAdminViaApi(request: APIRequestContext, password: string): Promise<APIResponse> {
+export async function elevateAdminViaApi(
+  request: APIRequestContext,
+  password: string,
+): Promise<APIResponse> {
   const response = await request.post('/api/admin/elevate', {
     data: { password },
   });
@@ -289,7 +292,7 @@ export async function elevateAdminViaApi(request: APIRequestContext, password: s
 
 export async function authenticateViaApi(
   request: APIRequestContext,
-  user: Pick<SeededMember, 'username' | 'password'>,
+  user: Pick<SeededMember, 'username' | 'password'> & { roles?: string[] },
 ): Promise<APIResponse> {
   const response = await request.post('/api/auth/signin', {
     data: { username: user.username, password: user.password },
@@ -317,7 +320,7 @@ export async function authenticateViaApi(
 export async function signInViaApi(
   page: Page,
   request: APIRequestContext | undefined,
-  user: Pick<SeededMember, 'username' | 'password'>,
+  user: Pick<SeededMember, 'username' | 'password'> & { roles?: string[] },
 ): Promise<void> {
   // A project storage state can be shared by many test contexts. Passport
   // regenerates the current session on login, so never send that shared cookie
@@ -350,7 +353,7 @@ export async function signInViaApi(
  */
 export async function signIn(
   page: Page,
-  user: Pick<SeededMember, 'username' | 'password'>,
+  user: Pick<SeededMember, 'username' | 'password'> & { roles?: string[] },
   identifier = user.username,
 ): Promise<void> {
   await page.goto('/signin');

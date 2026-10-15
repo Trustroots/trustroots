@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import config from '../../../../config/config.mjs';
+import config from '../../../../config/config.mts';
 
 export const ADMIN_ELEVATION_REQUIRED = 'ADMIN_ELEVATION_REQUIRED';
 

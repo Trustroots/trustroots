@@ -7,6 +7,7 @@ type Operation =
   | 'forgotPassword'
   | 'resetPassword'
   | 'resendConfirmation'
+  | 'manageSessions'
   | 'avatarUpload';
 type Policy = {
   enabled?: boolean;
@@ -203,7 +204,7 @@ describe('Targeted request limit middleware', function () {
   });
 
   it('uses a dedicated member-scoped operation for session management', async function () {
-    let options;
+    let options: ConsumeOptions | undefined;
     const middleware = loadMiddleware(async value => {
       options = value;
       return { allowed: true, retryAfterSeconds: 3 };
@@ -218,8 +219,8 @@ describe('Targeted request limit middleware', function () {
     );
 
     proceeded.should.be.true();
-    options.operation.should.equal('manageSessions');
-    options.dimensions
+    options!.operation.should.equal('manageSessions');
+    options!.dimensions
       .map(value => value.value)
       .should.deepEqual([
         '198.51.100.20',

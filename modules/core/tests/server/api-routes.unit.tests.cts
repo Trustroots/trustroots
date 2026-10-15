@@ -108,18 +108,23 @@ function assertHandlers(
   }
 }
 
-function assertPolicy(route: RecordedRoute, policy: { isAllowed: NamedHandler; requireAdminElevation?: NamedHandler }) {
+function assertPolicy(
+  route: RecordedRoute,
+  policy: { isAllowed: NamedHandler; requireAdminElevation?: NamedHandler },
+) {
   const expected = [policy.isAllowed];
   if (
     route.path.startsWith('/api/admin/') &&
     route.path !== '/api/admin/elevate' &&
     !route.path.startsWith('/api/admin/support') &&
     !route.path.startsWith('/api/admin/location-corrections') &&
+    !route.path.startsWith('/api/admin/experiences') &&
+    !route.path.startsWith('/api/admin/experience-change-requests') &&
     policy.requireAdminElevation
   ) {
     expected.push(policy.requireAdminElevation);
   }
-  const handlerNames = handlers =>
+  const handlerNames = (handlers: NamedHandler[]) =>
     handlers.map(handler =>
       (handler.routeTestName || handler.name).split('.').pop(),
     );
@@ -643,12 +648,8 @@ describe('API route registrations', () => {
       { default: targetedRequestLimit },
     ] = await Promise.all([
       import('../../../users/server/routes/sessions.server.routes.mjs'),
-      import(
-        '../../../users/server/controllers/users.sessions.server.controller.mjs'
-      ),
-      import(
-        '../../server/middleware/targeted-request-limit.server.middleware.mjs'
-      ),
+      import('../../../users/server/controllers/users.sessions.server.controller.mjs'),
+      import('../../server/middleware/targeted-request-limit.server.middleware.mjs'),
     ]);
     const { app, routes } = createAppRecorder();
     memberSessionRoutes(app);
@@ -665,7 +666,7 @@ describe('API route registrations', () => {
       ),
       [
         memberSessionController.requireMember,
-        targetedRequestLimit.manageSessions,
+        targetedRequestLimit.manageSessions as unknown as NamedHandler,
         memberSessionController.confirmPassword,
         memberSessionController.revokeAll,
       ],
@@ -676,7 +677,7 @@ describe('API route registrations', () => {
       ),
       [
         memberSessionController.requireMember,
-        targetedRequestLimit.manageSessions,
+        targetedRequestLimit.manageSessions as unknown as NamedHandler,
         memberSessionController.confirmPassword,
         memberSessionController.revoke,
       ],

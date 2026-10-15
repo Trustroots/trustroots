@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const request = require('supertest');
 const sinon = require('sinon');
 require('should');
-const config = require('./../../../../config/config.mjs');
+const config = require('./../../../../config/config.mts');
 const express = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const {

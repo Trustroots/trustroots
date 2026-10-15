@@ -74,41 +74,41 @@ export default function AdminHeader() {
   return (
     <>
       <AdminElevationPrompt />
-    <nav className="navbar navbar-white navbar-admin">
-      <div className="container">
-        <div className="navbar-header">
-          <a
-            className="navbar-brand"
-            href={
-              isAdmin
-                ? '/admin'
-                : isSupport
-                  ? '/admin/support'
-                  : '/admin/acquisition-stories'
-            }
-          >
-            {isAdmin ? 'Admin' : isSupport ? 'Support' : 'Greeters'}
-          </a>
+      <nav className="navbar navbar-white navbar-admin">
+        <div className="container">
+          <div className="navbar-header">
+            <a
+              className="navbar-brand"
+              href={
+                isAdmin
+                  ? '/admin'
+                  : isSupport
+                    ? '/admin/support'
+                    : '/admin/acquisition-stories'
+              }
+            >
+              {isAdmin ? 'Admin' : isSupport ? 'Support' : 'Greeters'}
+            </a>
+          </div>
+          <ul className="nav navbar-nav">
+            {pages
+              .filter(
+                page =>
+                  isAdmin ||
+                  (page.path === 'support' && isSupport) ||
+                  (page.path === 'staff-blockers' &&
+                    (isWelcomeTeam || isSupport)) ||
+                  page.path === 'acquisition-stories' ||
+                  ((isWelcomeTeam || isSupport) &&
+                    page.path === 'location-corrections'),
+              )
+              .map(page => renderTab(page))}
+          </ul>
+          <ul className="nav navbar-nav pull-right">
+            {isAdmin && renderTab({ path: 'audit-log', label: 'Audit log' })}
+          </ul>
         </div>
-        <ul className="nav navbar-nav">
-          {pages
-            .filter(
-              page =>
-                isAdmin ||
-                (page.path === 'support' && isSupport) ||
-                (page.path === 'staff-blockers' &&
-                  (isWelcomeTeam || isSupport)) ||
-                page.path === 'acquisition-stories' ||
-                ((isWelcomeTeam || isSupport) &&
-                  page.path === 'location-corrections'),
-            )
-            .map(page => renderTab(page))}
-        </ul>
-        <ul className="nav navbar-nav pull-right">
-          {isAdmin && renderTab({ path: 'audit-log', label: 'Audit log' })}
-        </ul>
-      </div>
-    </nav>
+      </nav>
     </>
   );
 }

@@ -70,8 +70,8 @@ describe('Admin policy unit tests', () => {
     welcome.allows
       .sort((a, b) => a.resources.localeCompare(b.resources))
       .should.deepEqual([
-        { resources: '/api/admin/elevate', permissions: ['post'] },
         { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
+        { resources: '/api/admin/elevate', permissions: ['post'] },
         { resources: '/api/admin/location-corrections', permissions: ['get'] },
         {
           resources: '/api/admin/location-corrections/send',

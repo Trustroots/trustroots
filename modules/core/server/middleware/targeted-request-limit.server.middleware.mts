@@ -8,6 +8,7 @@ type Operation =
   | 'forgotPassword'
   | 'resetPassword'
   | 'resendConfirmation'
+  | 'manageSessions'
   | 'avatarUpload';
 interface LimitRequest {
   get?: (header: string) => string | undefined;

@@ -18,12 +18,10 @@ describe('Member session controls', function () {
 
   before(async function () {
     app = await express.init(mongoose.connection);
-    ({ checkMemberSession, sessionId, sessionLifetimes } = await import(
-      '../../server/services/member-session.server.service.mjs'
-    ));
-    sessionsController = await import(
-      '../../server/controllers/users.sessions.server.controller.mjs'
-    );
+    ({ checkMemberSession, sessionId, sessionLifetimes } =
+      await import('../../server/services/member-session.server.service.mjs'));
+    sessionsController =
+      await import('../../server/controllers/users.sessions.server.controller.mjs');
   });
 
   afterEach(utils.clearDatabase);

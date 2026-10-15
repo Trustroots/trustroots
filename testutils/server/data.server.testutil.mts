@@ -83,7 +83,9 @@ type UserFixtureModel = Model<
   UserFixtureStatics;
 
 interface SupertestResponse {
-  send(body: unknown): SupertestResponse & PromiseLike<{ status: number; text: string }>;
+  send(
+    body: unknown,
+  ): SupertestResponse & PromiseLike<{ status: number; text: string }>;
   set(name: string, value: string): SupertestResponse;
   expect(status: number): PromiseLike<unknown>;
 }
@@ -287,7 +289,10 @@ export async function clearDatabase(): Promise<void> {
   }
 }
 
-export async function elevateAdminAccess(agent: SupertestAgent, password: string): Promise<void> {
+export async function elevateAdminAccess(
+  agent: SupertestAgent,
+  password: string,
+): Promise<void> {
   await agent
     .post('/api/admin/elevate')
     .set('X-Trustroots-Request', '1')
@@ -306,7 +311,7 @@ export async function signIn(
   // probing the endpoint for regular members, since that request itself is
   // authenticated activity and can affect unrelated middleware behaviour.
   const authenticatedUser = await mongoose
-    .model('User')
+    .model<{ roles?: string[] }>('User')
     .findOne({ username }, 'roles')
     .lean();
   if (
