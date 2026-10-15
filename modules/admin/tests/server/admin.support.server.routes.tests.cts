@@ -16,7 +16,7 @@ const express: typeof import('../../../../config/lib/express.mjs') & {
   init(connection: import('mongoose').Connection): Promise<TestExpressApp>;
 } = require('../../../../config/lib/express.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
-const controller: typeof import('../../server/controllers/admin.support.server.controller.mjs') = require('../../server/controllers/admin.support.server.controller.mjs');
+const controller: typeof import('../../server/controllers/admin.support.server.controller.mts') = require('../../server/controllers/admin.support.server.controller.mts');
 const supportController: typeof import('../../../support/server/controllers/support.server.controller.mjs') = require('../../../support/server/controllers/support.server.controller.mjs');
 const {
   linkHistoricalReport,
@@ -376,6 +376,15 @@ describe('Support team access and investigation', () => {
       .expect(500);
     Object.hasOwn(response.body, 'items').should.equal(false);
   });
+  it('preserves non-string error messages from legacy audit failures', async () => {
+    sinon
+      .stub(AuditLog.prototype, 'save')
+      .rejects({ status: 422, message: 42 });
+    const response = await agent
+      .get(`${endpoint(report._id)}/messages`)
+      .expect(422);
+    response.body.message.should.equal(42);
+  });
   it('covers controller defaults and request-list pagination', async () => {
     await SupportRequest.insertMany(
       Array.from({ length: 51 }, () => ({ message: 'Fictional request' })),
@@ -386,6 +395,7 @@ describe('Support team access and investigation', () => {
         user: users[0],
         query: {},
         params: {},
+        body: {},
         route: { path: '/api/admin/support' },
       },
       res,

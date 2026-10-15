@@ -6,11 +6,11 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon = require('sinon');
 
 type AcquisitionController =
-  typeof import('../../server/controllers/admin.acquisition-stories.server.controller.mjs');
+  typeof import('../../server/controllers/admin.acquisition-stories.server.controller.mts');
 const adminAcquisitionStories: Pick<
   AcquisitionController,
   'list'
-> = require('./../../server/controllers/admin.acquisition-stories.server.controller.mjs');
+> = require('./../../server/controllers/admin.acquisition-stories.server.controller.mts');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
 type OfferRecord =
   import('../../../../testutils/server/model-contracts.mts').OfferRecord;

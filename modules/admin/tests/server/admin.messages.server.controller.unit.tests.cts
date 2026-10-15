@@ -2,11 +2,16 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon: typeof import('sinon') = require('sinon');
 
 type MessagesController =
-  typeof import('../../server/controllers/admin.messages.server.controller.mjs');
+  typeof import('../../server/controllers/admin.messages.server.controller.mts');
+type MessagesSanitizerModule = Pick<
+  typeof import('../../../messages/server/controllers/messages.server.controller.mjs'),
+  'sanitizeMessages'
+>;
 const adminMessages: Pick<
   MessagesController,
   'getMessages' | 'getScammerRecipients' | 'sendScammerWarning'
-> = require('./../../server/controllers/admin.messages.server.controller.mjs');
+> = require('./../../server/controllers/admin.messages.server.controller.mts');
+const messagesSanitizer: MessagesSanitizerModule = require('../../../messages/server/controllers/messages.server.controller.mjs');
 const should: typeof import('should') = require('should');
 
 type MessageRecord =
@@ -127,19 +132,39 @@ describe('Admin messages controller unit tests', () => {
   });
 
   it('rejects invalid user ids', async () => {
+    for (const user1 of ['bad-id', {}]) {
+      const res = mockResponse();
+      adminMessages.getMessages(
+        {
+          body: {
+            user1,
+            user2: new mongoose.Types.ObjectId().toString(),
+          },
+        },
+        res,
+      );
+      const response = await res.waitForResponse();
+      response.statusCode.should.equal(400);
+      should(responseBody(response).message).equal('Cannot interpret id.');
+    }
+  });
+
+  it('accepts ObjectId-like query ids supported by Mongoose', async () => {
+    sinon.stub(Message, 'find').returns(messageFindQuery(cb => cb(null, [])));
+    sinon
+      .stub(ReferenceThread, 'find')
+      .returns(referenceThreadFindQuery(cb => cb(null, [])));
+    const id = new mongoose.Types.ObjectId();
     const res = mockResponse();
     adminMessages.getMessages(
       {
         body: {
-          user1: 'bad-id',
-          user2: new mongoose.Types.ObjectId().toString(),
+          user1: { id: id.id, toHexString: () => id.toHexString() },
         },
       },
       res,
     );
-    const response = await res.waitForResponse();
-    response.statusCode.should.equal(400);
-    should(responseBody(response).message).equal('Cannot interpret id.');
+    (await res.waitForResponse()).statusCode.should.equal(200);
   });
 
   it('returns 400 when message lookup fails', async () => {
@@ -205,6 +230,23 @@ describe('Admin messages controller unit tests', () => {
     should(responseBody(response).referenceThreads).deepEqual([]);
   });
 
+  it('passes a null message lookup result to the legacy sanitizer', async () => {
+    const sanitizer = sinon
+      .stub(messagesSanitizer, 'sanitizeMessages')
+      .returns([]);
+    sinon.stub(Message, 'find').returns(messageFindQuery(cb => cb(null, null)));
+    sinon
+      .stub(ReferenceThread, 'find')
+      .returns(referenceThreadFindQuery(cb => cb(null, [])));
+
+    const res = mockResponse();
+    adminMessages.getMessages({ body: {} }, res);
+
+    await res.waitForResponse();
+    should(sanitizer.calledOnce).equal(true);
+    should(sanitizer.firstCall.args[0]).equal(null);
+  });
+
   it('looks up recipients when no current administrator id is available', async () => {
     const scammerId = new mongoose.Types.ObjectId();
     const recipientId = new mongoose.Types.ObjectId();
@@ -267,6 +309,43 @@ describe('Admin messages controller unit tests', () => {
     const response = await res.waitForResponse();
 
     response.statusCode.should.equal(400);
+  });
+
+  it('preserves a coded lookup error that has no message', async () => {
+    sinon
+      .stub(User, 'findOne')
+      .returns(
+        promiseQuery(() =>
+          Promise.reject({ statusCode: 422 }),
+        ) as unknown as ReturnType<typeof User.findOne>,
+      );
+    const res = mockResponse();
+    await adminMessages.getScammerRecipients(
+      { body: { username: 'scammer' }, user: { _id: 'admin-id' } },
+      res,
+    );
+    const response = await res.waitForResponse();
+    response.statusCode.should.equal(422);
+    should(Object.hasOwn(responseBody(response), 'message')).equal(true);
+  });
+
+  it('preserves non-string messages from coded lookup errors', async () => {
+    const message = { legacy: 'payload' };
+    sinon
+      .stub(User, 'findOne')
+      .returns(
+        promiseQuery(() =>
+          Promise.reject({ statusCode: 422, message }),
+        ) as unknown as ReturnType<typeof User.findOne>,
+      );
+    const res = mockResponse();
+    await adminMessages.getScammerRecipients(
+      { body: { username: 'scammer' }, user: { _id: 'admin-id' } },
+      res,
+    );
+    const response = await res.waitForResponse();
+    response.statusCode.should.equal(422);
+    should(responseBody(response).message).equal(message);
   });
 
   it('rejects missing warning content', async () => {

@@ -50,7 +50,7 @@ interface NewsletterController {
   audience: Handler;
   splitSubscribers: Handler;
 }
-const adminNewsletter: NewsletterController = require('../../server/controllers/admin.newsletter.server.controller.mjs');
+const adminNewsletter: NewsletterController = require('../../server/controllers/admin.newsletter.server.controller.mts');
 const errorService: typeof import('../../../core/server/services/error.server.service.mjs') = require('../../../core/server/services/error.server.service.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
 require('should');
@@ -456,6 +456,25 @@ describe('Admin newsletter controller unit tests', () => {
         'Choose at least one location source or circle.',
       );
     });
+
+    it('accepts ObjectId-like circle identifiers supported by Mongoose', async () => {
+      const circleId = new mongoose.Types.ObjectId();
+      const res = mockResponse();
+      await adminNewsletter.audience(
+        {
+          body: {
+            circleIds: [
+              {
+                id: circleId.id,
+                toHexString: () => circleId.toHexString(),
+              },
+            ],
+          },
+        },
+        res,
+      );
+      responseData(res).count!.should.equal(0);
+    });
   });
 
   describe('splitSubscribers', () => {
@@ -511,6 +530,7 @@ describe('Admin newsletter controller unit tests', () => {
                 '{"emailAddress":"missing-one@example.com"}',
                 '{"address":"missing-two@example.com"}',
                 '"missing-three@example.com"',
+                'null',
                 '{"email":"ELIGIBLE@example.com"}',
                 '{"name":"No email"}',
                 '',

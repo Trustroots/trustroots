@@ -1,13 +1,44 @@
 /**
  * Module dependencies.
  */
-import mongoose from 'mongoose';
+import mongoose, { type Types } from 'mongoose';
 import errorService from './../../../core/server/services/error.server.service.mjs';
-const ReferenceThread = mongoose.model('ReferenceThread');
-const User = mongoose.model('User');
+import type { ValidationFailure } from './../../../core/server/services/error.server.service.mts';
+
+interface ReferenceThreadRecord {
+  _id: Types.ObjectId;
+  thread: Types.ObjectId;
+  userFrom: Types.ObjectId;
+  userTo: Types.ObjectId;
+  reference: 'yes' | 'no';
+  created?: Date;
+}
+
+interface UserRecord {
+  _id: Types.ObjectId;
+  username: string;
+  displayName?: string;
+}
+
+interface NegativeRecipientCount {
+  _id: Types.ObjectId;
+  count: number;
+}
+
+interface HttpResponse {
+  status(code: number): HttpResponse;
+  send(body: unknown): unknown;
+}
+
+const ReferenceThread =
+  mongoose.model<ReferenceThreadRecord>('ReferenceThread');
+const User = mongoose.model<UserRecord>('User');
 const REFERENCE_THREADS_LIMIT = 500;
 const TOP_NEGATIVE_RECIPIENTS_LIMIT = 10;
-export const list = async (req, res) => {
+export const list = async (
+  _req: unknown,
+  res: HttpResponse,
+): Promise<unknown> => {
   try {
     const topScoreCutoff = new Date();
     topScoreCutoff.setUTCFullYear(topScoreCutoff.getUTCFullYear() - 1);
@@ -28,7 +59,7 @@ export const list = async (req, res) => {
           model: 'User',
         })
         .exec(),
-      ReferenceThread.aggregate([
+      ReferenceThread.aggregate<NegativeRecipientCount>([
         {
           $match: {
             created: {
@@ -67,10 +98,13 @@ export const list = async (req, res) => {
           .select('username displayName _id')
           .exec()
       : [];
-    const usersById = users.reduce((result, user) => {
-      result[user._id.toString()] = user;
-      return result;
-    }, {});
+    const usersById = users.reduce<Record<string, UserRecord>>(
+      (result, user) => {
+        result[user._id.toString()] = user;
+        return result;
+      },
+      {},
+    );
     const topNegativeRecipients = (topNegativeRecipientCounts || []).map(
       ({ _id, count }) => ({
         count,
@@ -81,9 +115,9 @@ export const list = async (req, res) => {
       items: items || [],
       topNegativeRecipients,
     });
-  } catch (err) {
+  } catch (err: unknown) {
     return res.status(400).send({
-      message: errorService.getErrorMessage(err),
+      message: errorService.getErrorMessage(err as ValidationFailure),
     });
   }
 };

@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import mongoose from 'mongoose';
+import mongoose, { type FilterQuery, type Types } from 'mongoose';
 import config from '../../../../config/config.mjs';
 import textService from '../../../core/server/services/text.server.service.mjs';
 import messageToStatsService from '../../../messages/server/services/message-to-stats.server.service.mjs';
@@ -7,11 +7,93 @@ import messageStatService from '../../../messages/server/services/message-stat.s
 import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
 import { isProfileDeletionPending } from '../services/profile-deletion.server.service.mts';
 
-const service = {};
+type LocationMatch = 'exact' | 'nearby';
 
-const Offer = mongoose.model('Offer');
-const Message = mongoose.model('Message');
-const Thread = mongoose.model('Thread');
+export interface LocationRecipient {
+  _id: Types.ObjectId | string;
+  username: string;
+  displayName?: string;
+  public?: boolean;
+  roles?: string[];
+  removeProfileToken?: unknown;
+  removeProfileExpires?: Date | number | string | null;
+}
+
+interface OfferRecord {
+  _id: Types.ObjectId;
+  user?: Types.ObjectId | LocationRecipient | null;
+  type?: 'host' | 'meet';
+  status?: 'yes' | 'maybe' | 'no';
+  location: number[];
+  validUntil?: Date;
+  updated?: Date;
+}
+
+export interface LocationOffer {
+  _id: Types.ObjectId;
+  type?: 'host' | 'meet';
+  location: number[];
+  match: LocationMatch;
+  updated?: Date;
+}
+
+export interface LocationCandidate {
+  userId: string;
+  username: string;
+  displayName?: string;
+  offers: LocationOffer[];
+  match: LocationMatch;
+  key?: string;
+}
+
+interface CoveredOffer {
+  offer?: Types.ObjectId;
+  location: number[];
+}
+
+interface MessageRecord {
+  _id: Types.ObjectId;
+  created: Date;
+  content: string;
+  userFrom: Types.ObjectId;
+  userTo: Types.ObjectId;
+  read?: boolean;
+  shadowHidden?: boolean;
+  locationCorrectionKey?: string;
+  locationCorrectionOffers: CoveredOffer[];
+}
+
+interface ThreadRecord {
+  _id?: Types.ObjectId | string;
+  updated?: Date;
+  userFrom?: Types.ObjectId | string;
+  userTo?: Types.ObjectId | string;
+  message?: Types.ObjectId | string;
+  read?: boolean;
+}
+
+interface Sender extends LocationRecipient {
+  _id: Types.ObjectId;
+  description?: string;
+}
+
+interface LocationRequest {
+  body?: unknown;
+  user?: Sender;
+}
+
+type ObjectIdValidationInput = Parameters<
+  typeof mongoose.Types.ObjectId.isValid
+>[0];
+
+interface LocationResponse {
+  status(code: number): LocationResponse;
+  send(body: unknown): unknown;
+}
+
+const Offer = mongoose.model<OfferRecord>('Offer');
+const Message = mongoose.model<MessageRecord>('Message');
+const Thread = mongoose.model<ThreadRecord>('Thread');
 
 // The map's default is stored as latitude, longitude, as are offer locations.
 const DEFAULT_LOCATION = [48.6908333333, 9.14055555556];
@@ -22,7 +104,10 @@ const HISTORIC_AREA = {
   east: 9.1519975662,
 };
 
-function isEligibleRecipient(user, senderId) {
+function isEligibleRecipient(
+  user: LocationRecipient | null | undefined,
+  senderId: Types.ObjectId | string,
+): boolean | null | undefined {
   return (
     user &&
     user.public === true &&
@@ -32,9 +117,11 @@ function isEligibleRecipient(user, senderId) {
   );
 }
 
-function classifyLocation(location) {
+function classifyLocation(location: unknown): LocationMatch | null {
   if (!Array.isArray(location) || location.length !== 2) return null;
-  const [latitude, longitude] = location;
+  const coordinates: unknown[] = location;
+  const latitude = Number(coordinates[0]);
+  const longitude = Number(coordinates[1]);
   if (
     latitude < HISTORIC_AREA.south ||
     latitude > HISTORIC_AREA.north ||
@@ -48,7 +135,7 @@ function classifyLocation(location) {
     : 'nearby';
 }
 
-function candidateKey(userId, offers) {
+function candidateKey(userId: unknown, offers: LocationOffer[]): string {
   const snapshot = offers
     .map(offer => [String(offer._id), ...offer.location].join(':'))
     .sort();
@@ -58,7 +145,10 @@ function candidateKey(userId, offers) {
     .digest('hex');
 }
 
-function compareCandidates(a, b) {
+function compareCandidates(
+  a: Pick<LocationCandidate, 'match' | 'username'>,
+  b: Pick<LocationCandidate, 'match' | 'username'>,
+): number {
   return a.match === b.match
     ? a.username.localeCompare(b.username)
     : a.match === 'exact'
@@ -66,7 +156,20 @@ function compareCandidates(a, b) {
       : 1;
 }
 
-async function findCandidates(senderId) {
+function isPopulatedRecipient(
+  user: OfferRecord['user'],
+): user is LocationRecipient {
+  return (
+    typeof user === 'object' &&
+    user !== null &&
+    '_id' in user &&
+    'username' in user
+  );
+}
+
+async function findCandidates(
+  senderId: Types.ObjectId | string,
+): Promise<LocationCandidate[]> {
   const offers = await Offer.find({
     location: {
       $geoWithin: {
@@ -88,21 +191,29 @@ async function findCandidates(senderId) {
     )
     .exec();
 
-  const byUser = new Map();
+  const byUser = new Map<string, Omit<LocationCandidate, 'match' | 'key'>>();
   for (const offer of offers) {
     const match = classifyLocation(offer.location);
     const user = offer.user;
-    if (!match || !isEligibleRecipient(user, senderId)) continue;
+    if (
+      !match ||
+      !isPopulatedRecipient(user) ||
+      !isEligibleRecipient(user, senderId)
+    ) {
+      continue;
+    }
     const userId = String(user._id);
-    if (!byUser.has(userId)) {
-      byUser.set(userId, {
+    let candidate = byUser.get(userId);
+    if (!candidate) {
+      candidate = {
         userId,
         username: user.username,
         displayName: user.displayName,
         offers: [],
-      });
+      };
+      byUser.set(userId, candidate);
     }
-    byUser.get(userId).offers.push({
+    candidate.offers.push({
       _id: offer._id,
       type: offer.type,
       location: Array.from(offer.location),
@@ -111,15 +222,17 @@ async function findCandidates(senderId) {
     });
   }
 
-  const candidates = Array.from(byUser.values()).map(candidate => ({
-    ...candidate,
-    offers: candidate.offers.sort((a, b) =>
-      String(a._id).localeCompare(String(b._id)),
-    ),
-    match: candidate.offers.some(offer => offer.match === 'exact')
-      ? 'exact'
-      : 'nearby',
-  }));
+  const candidates: LocationCandidate[] = Array.from(byUser.values()).map(
+    candidate => ({
+      ...candidate,
+      offers: candidate.offers.sort((a, b) =>
+        String(a._id).localeCompare(String(b._id)),
+      ),
+      match: candidate.offers.some(offer => offer.match === 'exact')
+        ? 'exact'
+        : 'nearby',
+    }),
+  );
   const contacted = candidates.length
     ? await Message.find({
         userTo: { $in: candidates.map(candidate => candidate.userId) },
@@ -128,18 +241,20 @@ async function findCandidates(senderId) {
         .select('userTo locationCorrectionOffers')
         .exec()
     : [];
-  const covered = new Map();
+  const covered = new Map<string, Set<string>>();
   for (const message of contacted) {
     const userId = String(message.userTo);
-    if (!covered.has(userId)) covered.set(userId, new Set());
+    let userCoverage = covered.get(userId);
+    if (!userCoverage) {
+      userCoverage = new Set<string>();
+      covered.set(userId, userCoverage);
+    }
     for (const offer of message.locationCorrectionOffers) {
-      covered
-        .get(userId)
-        .add([String(offer.offer), ...offer.location].join(':'));
+      userCoverage.add([String(offer.offer), ...offer.location].join(':'));
     }
   }
   return candidates
-    .map(candidate => {
+    .flatMap(candidate => {
       const uncovered = candidate.offers.filter(
         offer =>
           !covered
@@ -147,15 +262,14 @@ async function findCandidates(senderId) {
             ?.has([String(offer._id), ...offer.location].join(':')),
       );
       return uncovered.length
-        ? { ...candidate, key: candidateKey(candidate.userId, uncovered) }
-        : null;
+        ? [{ ...candidate, key: candidateKey(candidate.userId, uncovered) }]
+        : [];
     })
-    .filter(Boolean)
     .sort(compareCandidates);
 }
 
-async function updateThread(message) {
-  const pair = {
+async function updateThread(message: MessageRecord): Promise<void> {
+  const pair: FilterQuery<ThreadRecord> = {
     $or: [
       { userFrom: message.userFrom, userTo: message.userTo },
       { userFrom: message.userTo, userTo: message.userFrom },
@@ -182,7 +296,7 @@ async function updateThread(message) {
       { upsert: true },
     ).exec();
   } catch (error) {
-    if (error.code !== 11000) throw error;
+    if (!isDuplicateKeyError(error)) throw error;
     await Thread.updateOne(
       pair,
       { $setOnInsert: { ...latest, _id: threadId } },
@@ -195,20 +309,49 @@ async function updateThread(message) {
   ).exec();
 }
 
-service.list = async (req, res) => {
+function isDuplicateKeyError(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    error.code === 11000
+  );
+}
+
+function sendBody(req: LocationRequest): {
+  userId?: unknown;
+  key?: unknown;
+  content?: unknown;
+} {
+  const body = req.body;
+  if (typeof body !== 'object' || body === null) return {};
+  return {
+    userId: 'userId' in body ? body.userId : undefined,
+    key: 'key' in body ? body.key : undefined,
+    content: 'content' in body ? body.content : undefined,
+  };
+}
+
+export async function list(
+  req: LocationRequest,
+  res: LocationResponse,
+): Promise<unknown> {
   try {
-    return res.send(await findCandidates(req.user._id));
+    return res.send(await findCandidates(req.user!._id));
   } catch {
     return res
       .status(500)
       .send({ message: 'Could not load location corrections.' });
   }
-};
+}
 
-service.send = async (req, res) => {
-  const { userId, key, content } = req.body || {};
+export async function send(
+  req: LocationRequest,
+  res: LocationResponse,
+): Promise<unknown> {
+  const { userId, key, content } = sendBody(req);
   if (
-    !mongoose.Types.ObjectId.isValid(userId) ||
+    !mongoose.Types.ObjectId.isValid(userId as ObjectIdValidationInput) ||
     typeof key !== 'string' ||
     !/^[a-f0-9]{64}$/.test(key) ||
     typeof content !== 'string' ||
@@ -220,14 +363,13 @@ service.send = async (req, res) => {
   if (!cleanContent || textService.isEmpty(cleanContent)) {
     return res.status(400).send({ message: 'Please write a message.' });
   }
-  if (
-    !req.user.public ||
-    userRolesService.hasRestrictedMessagingRole(req.user)
-  ) {
+  const sender = req.user!;
+  if (!sender.public || userRolesService.hasRestrictedMessagingRole(sender)) {
     return res.status(403).send({ message: 'Messaging is unavailable.' });
   }
   const descriptionLength = textService.plainText(
-    req.user.description || '',
+    sender.description || '',
+    false,
   ).length;
   if (descriptionLength < config.profileMinimumLength) {
     return res.status(400).send({
@@ -236,7 +378,7 @@ service.send = async (req, res) => {
   }
 
   try {
-    const candidates = await findCandidates(req.user._id);
+    const candidates = await findCandidates(sender._id);
     const candidate = candidates.find(
       item => item.userId === userId && item.key === key,
     );
@@ -261,7 +403,7 @@ service.send = async (req, res) => {
           : 'The candidate has changed. Refresh the queue.',
       });
     }
-    let message;
+    let message: MessageRecord | null;
     let inserted = false;
     try {
       const result = await Message.findOneAndUpdate(
@@ -269,7 +411,7 @@ service.send = async (req, res) => {
         {
           $setOnInsert: {
             content: cleanContent,
-            userFrom: req.user._id,
+            userFrom: sender._id,
             userTo: candidate.userId,
             read: false,
             shadowHidden: false,
@@ -288,32 +430,36 @@ service.send = async (req, res) => {
         },
       ).exec();
       message = result.value;
-      inserted = !result.lastErrorObject.updatedExisting;
+      inserted = !result.lastErrorObject!.updatedExisting;
     } catch (error) {
-      if (error.code !== 11000) throw error;
+      if (!isDuplicateKeyError(error)) throw error;
       message = await Message.findById(messageId).exec();
     }
-    await updateThread(message);
+    await updateThread(message!);
     if (inserted) {
-      messageToStatsService.save(message, () => {});
-      await new Promise(resolve =>
-        messageStatService.updateMessageStat(message, resolve),
+      messageToStatsService.save(message!, () => {});
+      await new Promise<void>(resolve =>
+        messageStatService.updateMessageStat(message!, () => resolve()),
       );
     }
-    return res.send({ sent: inserted, messageId: message._id });
+    return res.send({ sent: inserted, messageId: message!._id });
   } catch {
     return res
       .status(500)
       .send({ message: 'Could not send the correction message.' });
   }
-};
+}
 
-service._test = {
-  classifyLocation,
-  candidateKey,
-  compareCandidates,
-  findCandidates,
-  isEligibleRecipient,
+const service = {
+  list,
+  send,
+  _test: {
+    classifyLocation,
+    candidateKey,
+    compareCandidates,
+    findCandidates,
+    isEligibleRecipient,
+  },
 };
 
 export default service;

@@ -2,25 +2,142 @@
  * Module dependencies.
  */
 import _ from 'lodash';
-import mongoose from 'mongoose';
+import mongoose, {
+  type FilterQuery,
+  type HydratedDocument,
+  type Types,
+  type UpdateQuery,
+} from 'mongoose';
 import net from 'net';
 import { prepareStaffBlockers } from '../services/staff-blockers-payload.server.service.mts';
 
 import errorService from '../../../core/server/services/error.server.service.mjs';
+import type { ValidationFailure } from '../../../core/server/services/error.server.service.mts';
 import log from '../../../../config/lib/logger.mjs';
 import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../../../users/server/lib/account-identifier.server.mjs';
 import {
+  type AdminIdentity,
   getAdminIdentityIdentifiers,
   getUniqueAdminIdentityIdentifiers,
 } from '../services/admin-identity.server.service.mts';
 
-const AdminNote = mongoose.model('AdminNote');
-const Contact = mongoose.model('Contact');
-const Message = mongoose.model('Message');
-const Offer = mongoose.model('Offer');
-const ReferenceThread = mongoose.model('ReferenceThread');
-const Thread = mongoose.model('Thread');
-const User = mongoose.model('User');
+interface UserRecord {
+  _id: Types.ObjectId;
+  acquisitionStory?: string;
+  additionalProvidersData?: Record<string, unknown>;
+  authVersion?: number;
+  blocked: Types.ObjectId[];
+  created?: Date;
+  displayName?: string;
+  email?: string;
+  emailTemporary?: string;
+  firstName?: string;
+  lastIpAddress?: string;
+  lastName?: string;
+  member?: Array<{ tribe: Types.ObjectId }>;
+  newsletter?: boolean;
+  public?: boolean;
+  removeProfileExpires?: Date | null;
+  removeProfileToken?: string | null;
+  resetPasswordExpires?: Date | null;
+  resetPasswordToken?: string | null;
+  roles: string[];
+  username: string;
+}
+
+interface AdminNoteRecord {
+  admin: Types.ObjectId | string;
+  user: Types.ObjectId | string;
+  note: string;
+}
+
+interface ContactRecord {
+  userFrom: Types.ObjectId;
+  userTo: Types.ObjectId;
+}
+
+interface MessageRecord {
+  userFrom: Types.ObjectId;
+  userTo: Types.ObjectId;
+}
+
+interface OfferRecord {
+  user: Types.ObjectId;
+}
+
+interface ReferenceThreadRecord {
+  userFrom: Types.ObjectId;
+  userTo: Types.ObjectId;
+  reference: 'yes' | 'no';
+  created?: Date;
+}
+
+interface ThreadRecord {
+  userFrom: Types.ObjectId;
+  userTo: Types.ObjectId;
+}
+
+type UserDocument = HydratedDocument<UserRecord>;
+type ObjectIdInput =
+  | string
+  | number
+  | Types.ObjectId
+  | Buffer
+  | Uint8Array
+  | { id: string | Buffer; toHexString(): string };
+
+function isObjectIdInput(value: unknown): value is ObjectIdInput {
+  return (
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    Buffer.isBuffer(value) ||
+    value instanceof Uint8Array ||
+    (typeof value === 'object' &&
+      value !== null &&
+      'toHexString' in value &&
+      typeof value.toHexString === 'function' &&
+      'id' in value &&
+      (typeof value.id === 'string' || Buffer.isBuffer(value.id)))
+  );
+}
+
+interface AdminRequest {
+  body?: Record<string, unknown>;
+  query?: Record<string, unknown>;
+  userIdFromUsername?: unknown;
+  user?: { _id: Types.ObjectId | string; roles: string[] };
+}
+
+type PotentialMatchUser = Pick<UserRecord, '_id' | 'username'> &
+  Partial<Pick<UserRecord, 'acquisitionStory' | 'email' | 'emailTemporary'>>;
+
+interface AdminListRequest extends AdminRequest {
+  body?: {
+    page?: unknown;
+    search?: unknown;
+    role?: unknown;
+    ipAddress?: unknown;
+    sort?: { column?: unknown; direction?: unknown };
+  };
+}
+
+interface AdminResponse {
+  status(code: number | undefined): AdminResponse;
+  send(body: unknown): unknown;
+}
+
+interface AdminNext {
+  (): void;
+}
+
+const AdminNote = mongoose.model<AdminNoteRecord>('AdminNote');
+const Contact = mongoose.model<ContactRecord>('Contact');
+const Message = mongoose.model<MessageRecord>('Message');
+const Offer = mongoose.model<OfferRecord>('Offer');
+const ReferenceThread =
+  mongoose.model<ReferenceThreadRecord>('ReferenceThread');
+const Thread = mongoose.model<ThreadRecord>('Thread');
+const User = mongoose.model<UserRecord>('User');
 
 const ADMIN_MEMBER_PAGE_SIZE = 150;
 const POTENTIAL_MATCH_LIMIT = 25;
@@ -32,7 +149,8 @@ const ADMIN_MEMBER_SORT_FIELDS = {
   email: 'email',
   lastIpAddress: 'lastIpAddress',
   username: 'username',
-};
+} as const;
+type AdminMemberSortColumn = keyof typeof ADMIN_MEMBER_SORT_FIELDS;
 const DEFAULT_ADMIN_MEMBER_SORT = {
   column: 'username',
   direction: 'ascending',
@@ -45,7 +163,11 @@ const ADMIN_LISTABLE_ROLES = [
   'suspended',
   'volunteer-alumni',
   'volunteer',
-];
+] as const;
+type AdminListableRole = (typeof ADMIN_LISTABLE_ROLES)[number];
+function isListableRole(value: unknown): value is AdminListableRole {
+  return ADMIN_LISTABLE_ROLES.some(role => role === value);
+}
 const ADMIN_CHANGEABLE_ROLES = [
   'welcome-team',
   'support-team',
@@ -53,7 +175,11 @@ const ADMIN_CHANGEABLE_ROLES = [
   'suspended',
   'volunteer-alumni',
   'volunteer',
-];
+] as const;
+type AdminChangeableRole = (typeof ADMIN_CHANGEABLE_ROLES)[number];
+function isChangeableRole(value: unknown): value is AdminChangeableRole {
+  return ADMIN_CHANGEABLE_ROLES.some(role => role === value);
+}
 
 // Everything that's needed for `AdminSearchUsers.component.js` and `UserState.component.js`
 const USER_LIST_FIELDS = [
@@ -78,7 +204,7 @@ const POTENTIAL_MATCH_FIELDS = [...USER_LIST_FIELDS, 'acquisitionStory'];
  * Overwrite tokens from results as a security measure.
  * We still want to pull this info to know if it's there.
  */
-function obfuscateTokens(user) {
+function obfuscateTokens(user: UserDocument | null | undefined) {
   if (!user) {
     return;
   }
@@ -110,13 +236,13 @@ function obfuscateTokens(user) {
  * From https://github.com/sindresorhus/escape-string-regexp/blob/ba9a4473850cb367936417e97f1f2191b7cc67dd/index.js
  * Import as a package once we support ESM modules
  */
-function escapeStringRegexp(string) {
+function escapeStringRegexp(string: string): string {
   // Escape characters with special meaning either inside or outside character sets.
   // Use a simple backslash escape when it’s always valid, and a `\xnn` escape when the simpler form would be disallowed by Unicode patterns’ stricter grammar.
   return string.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d');
 }
 
-function createMemberSearchRegexp(search) {
+function createMemberSearchRegexp(search: unknown): RegExp {
   if (typeof search !== 'string') {
     throw new TypeError('Expected a string');
   }
@@ -129,11 +255,14 @@ function createMemberSearchRegexp(search) {
   return new RegExp('.*' + whitespaceTolerantSearch + '.*', 'i');
 }
 
-function normalizeAcquisitionStory(value) {
+function normalizeAcquisitionStory(value: string): string {
   return value.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
-function createFlexibleIdentifierRegexp(identifier, emailLocalPartOnly) {
+function createFlexibleIdentifierRegexp(
+  identifier: string,
+  emailLocalPartOnly: boolean,
+): RegExp {
   const pattern = identifier
     .split('')
     .map(escapeStringRegexp)
@@ -145,12 +274,23 @@ function createFlexibleIdentifierRegexp(identifier, emailLocalPartOnly) {
   );
 }
 
-function getPotentialMatchSignals(user) {
+interface PotentialMatchSignals {
+  acquisitionStory: string;
+  identifiers: AdminIdentity[];
+}
+
+function getPotentialMatchSignals(
+  user: PotentialMatchUser,
+): PotentialMatchSignals {
   const signals = getUniqueAdminIdentityIdentifiers(
-    user,
+    {
+      username: user.username,
+      email: user.email!,
+      emailTemporary: user.emailTemporary!,
+    },
     POTENTIAL_MATCH_MIN_IDENTIFIER_LENGTH,
   );
-  const acquisitionStory = normalizeAcquisitionStory(user.acquisitionStory);
+  const acquisitionStory = normalizeAcquisitionStory(user.acquisitionStory!);
 
   return {
     acquisitionStory,
@@ -158,11 +298,16 @@ function getPotentialMatchSignals(user) {
   };
 }
 
-function getPotentialMatchReasons(user, signals) {
-  const candidateIdentifiers = getAdminIdentityIdentifiers(user).map(
-    ({ value }) => value,
-  );
-  const reasons = signals.identifiers
+function getPotentialMatchReasons(
+  user: PotentialMatchUser,
+  signals: PotentialMatchSignals,
+): string[] {
+  const candidateIdentifiers = getAdminIdentityIdentifiers({
+    username: user.username,
+    email: user.email!,
+    emailTemporary: user.emailTemporary!,
+  }).map(({ value }) => value);
+  const reasons: string[] = signals.identifiers
     .filter(({ value }) =>
       candidateIdentifiers.some(identifier => identifier.includes(value)),
     )
@@ -170,7 +315,7 @@ function getPotentialMatchReasons(user, signals) {
 
   if (
     signals.acquisitionStory &&
-    normalizeAcquisitionStory(user.acquisitionStory) ===
+    normalizeAcquisitionStory(user.acquisitionStory!) ===
       signals.acquisitionStory
   ) {
     reasons.push('Acquisition story');
@@ -179,13 +324,15 @@ function getPotentialMatchReasons(user, signals) {
   return reasons;
 }
 
-export async function findPotentialMatches(user) {
+export async function findPotentialMatches(user: PotentialMatchUser) {
   const signals = getPotentialMatchSignals(user);
-  const querySignals = signals.identifiers.flatMap(({ value }) => [
-    { username: createFlexibleIdentifierRegexp(value, false) },
-    { email: createFlexibleIdentifierRegexp(value, true) },
-    { emailTemporary: createFlexibleIdentifierRegexp(value, true) },
-  ]);
+  const querySignals: FilterQuery<UserRecord>[] = signals.identifiers.flatMap(
+    ({ value }) => [
+      { username: createFlexibleIdentifierRegexp(value, false) },
+      { email: createFlexibleIdentifierRegexp(value, true) },
+      { emailTemporary: createFlexibleIdentifierRegexp(value, true) },
+    ],
+  );
 
   if (signals.acquisitionStory) {
     querySignals.push({
@@ -218,7 +365,15 @@ export async function findPotentialMatches(user) {
   }));
 }
 
-function getMemberListOptions(body) {
+interface MemberListOptions {
+  page: number;
+  sort: {
+    column: AdminMemberSortColumn;
+    direction: 'ascending' | 'descending';
+  };
+}
+
+function getMemberListOptions(body: unknown): MemberListOptions | null {
   const page = _.get(body, ['page'], 1);
   const sortColumn = _.get(
     body,
@@ -234,7 +389,11 @@ function getMemberListOptions(body) {
   if (
     !Number.isInteger(page) ||
     page < 1 ||
-    !ADMIN_MEMBER_SORT_FIELDS[sortColumn] ||
+    typeof sortColumn !== 'string' ||
+    !Object.prototype.hasOwnProperty.call(
+      ADMIN_MEMBER_SORT_FIELDS,
+      sortColumn,
+    ) ||
     !['ascending', 'descending'].includes(sortDirection)
   ) {
     return null;
@@ -243,13 +402,17 @@ function getMemberListOptions(body) {
   return {
     page,
     sort: {
-      column: sortColumn,
-      direction: sortDirection,
+      column: sortColumn as AdminMemberSortColumn,
+      direction: sortDirection as 'ascending' | 'descending',
     },
   };
 }
 
-async function sendMemberList(req, res, query) {
+async function sendMemberList(
+  req: AdminListRequest,
+  res: AdminResponse,
+  query: FilterQuery<UserRecord>,
+): Promise<unknown> {
   const options = getMemberListOptions(req.body);
 
   if (!options) {
@@ -285,7 +448,7 @@ async function sendMemberList(req, res, query) {
     });
   } catch (err) {
     return res.status(400).send({
-      message: errorService.getErrorMessage(err),
+      message: errorService.getErrorMessage(err as ValidationFailure),
     });
   }
 }
@@ -293,12 +456,18 @@ async function sendMemberList(req, res, query) {
 /*
  * This middleware sends a page of found users.
  */
-export const searchUsers = (req, res) => {
+export const searchUsers = (req: AdminListRequest, res: AdminResponse) => {
   const query = _.get(req, ['body', 'search']);
   const search = typeof query === 'string' ? _.trim(query) : query;
+  const searchLength = search
+    ? Reflect.get(Object(search), 'length')
+    : undefined;
 
   // Validate the query string
-  if (!search || search.length < SEARCH_STRING_LIMIT) {
+  if (
+    !search ||
+    (searchLength !== undefined && Number(searchLength) < SEARCH_STRING_LIMIT)
+  ) {
     return res.status(400).send({
       message: `Query string at least ${SEARCH_STRING_LIMIT} characters long required.`,
     });
@@ -319,11 +488,11 @@ export const searchUsers = (req, res) => {
 /*
  * This middleware sends a page of users with the selected role.
  */
-export const listUsersByRole = (req, res) => {
+export const listUsersByRole = (req: AdminListRequest, res: AdminResponse) => {
   const role = _.get(req, ['body', 'role']);
 
   // Allowed roles to query
-  if (!role || !ADMIN_LISTABLE_ROLES.includes(role)) {
+  if (!isListableRole(role)) {
     return res.status(400).send({
       message: 'Invalid role.',
     });
@@ -337,7 +506,10 @@ export const listUsersByRole = (req, res) => {
 /*
  * This middleware sends members whose current stored IP address exactly matches.
  */
-export const listUsersByLastIpAddress = (req, res) => {
+export const listUsersByLastIpAddress = (
+  req: AdminListRequest,
+  res: AdminResponse,
+) => {
   const ipAddress = _.get(req, ['body', 'ipAddress']);
 
   if (typeof ipAddress !== 'string' || !net.isIP(ipAddress)) {
@@ -349,11 +521,11 @@ export const listUsersByLastIpAddress = (req, res) => {
   return sendMemberList(req, res, { lastIpAddress: ipAddress });
 };
 
-const handleAdminApiError = (res, err) => {
+const handleAdminApiError = (res: AdminResponse, err: unknown): unknown => {
   /* istanbul ignore else */
   if (err) {
     return res.status(400).send({
-      message: errorService.getErrorMessage(err),
+      message: errorService.getErrorMessage(err as ValidationFailure),
     });
   }
 };
@@ -361,7 +533,10 @@ const handleAdminApiError = (res, err) => {
 /**
  * This middleware sends response with an array of found users
  */
-export const getUser = async (req, res) => {
+export const getUser = async (
+  req: AdminRequest,
+  res: AdminResponse,
+): Promise<unknown> => {
   const userId = req.userIdFromUsername || _.get(req, ['body', 'id']);
 
   if (!userId && _.get(req, ['body', 'username'])) {
@@ -371,7 +546,11 @@ export const getUser = async (req, res) => {
   }
 
   // Check that the search string is provided
-  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+  if (
+    !userId ||
+    !isObjectIdInput(userId) ||
+    !mongoose.Types.ObjectId.isValid(userId)
+  ) {
     return res.status(400).send({
       message: errorService.getErrorMessageByKey('invalid-id'),
     });
@@ -484,16 +663,19 @@ export const getUser = async (req, res) => {
 };
 
 /** Admins inspect blockers of all staff; Welcome team members inspect their own. */
-export const listStaffBlockers = async (req, res) => {
+export const listStaffBlockers = async (
+  req: AdminRequest,
+  res: AdminResponse,
+) => {
   try {
-    const staffMembers = req.user.roles.includes('admin')
+    const staffMembers = req.user!.roles.includes('admin')
       ? await User.find({
           roles: { $in: ['admin', 'welcome-team', 'support-team'] },
         })
           .select('username displayName')
           .sort({ username: 1 })
           .lean()
-      : await User.find({ _id: req.user._id })
+      : await User.find({ _id: req.user!._id })
           .select('username displayName')
           .lean();
     const staffIds = staffMembers.map(staff => staff._id);
@@ -516,31 +698,42 @@ export const listStaffBlockers = async (req, res) => {
  * This middleware changes user roles by ID
  * Used for suspending, shadowbanning, and restoring users
  */
-export const changeRole = async (req, res) => {
+export const changeRole = async (
+  req: AdminRequest,
+  res: AdminResponse,
+): Promise<unknown> => {
   const userId = _.get(req, ['body', 'id']);
-  const role = _.get(req, ['body', 'role']);
+  const roleValue = _.get(req, ['body', 'role']);
 
-  const action = _.get(req, ['body', 'action'], 'add');
+  const actionValue = _.get(req, ['body', 'action'], 'add');
   if (
-    !ADMIN_CHANGEABLE_ROLES.includes(role) ||
-    !['add', 'remove'].includes(action) ||
-    (action === 'remove' &&
-      !['welcome-team', 'support-team', 'shadowban'].includes(role))
+    !isChangeableRole(roleValue) ||
+    (actionValue !== 'add' && actionValue !== 'remove') ||
+    (actionValue === 'remove' &&
+      !['welcome-team', 'support-team', 'shadowban'].some(
+        allowedRole => allowedRole === roleValue,
+      ))
   ) {
     return res.status(400).send({
       message: 'Invalid role.',
     });
   }
+  const role = roleValue as AdminChangeableRole;
+  const action: 'add' | 'remove' = actionValue;
 
   // Check that the search string is provided
-  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+  if (
+    !userId ||
+    !isObjectIdInput(userId) ||
+    !mongoose.Types.ObjectId.isValid(userId)
+  ) {
     return res.status(400).send({
       message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
 
   try {
-    const id = new mongoose.Types.ObjectId(userId);
+    const id = new mongoose.Types.ObjectId(userId as ObjectIdInput);
     let changedUser = false;
 
     // Compare-and-set the role array so overlapping updates cannot overwrite
@@ -569,14 +762,13 @@ export const changeRole = async (req, res) => {
         currentRoles.some(
           (existingRole, index) => existingRole !== nextRoles[index],
         );
-      const filter = { _id: id };
+      const filter: FilterQuery<UserRecord> = { _id: id };
       filter.roles = Object.prototype.hasOwnProperty.call(current, 'roles')
         ? current.roles
         : { $exists: false };
-      const update = { $set: { roles: nextRoles } };
+      const update: UpdateQuery<UserRecord> = { $set: { roles: nextRoles } };
       if (action === 'add' && role === 'suspended') {
-        update.$set.newsletter = false;
-        update.$set.public = false;
+        update.$set = { ...update.$set, newsletter: false, public: false };
       }
       if (rolesChanged) update.$inc = { authVersion: 1 };
 
@@ -623,7 +815,7 @@ export const changeRole = async (req, res) => {
 
     // Add new admin-note about role change
     const adminNoteItem = new AdminNote({
-      admin: req.user._id,
+      admin: req.user!._id,
       note: `<p><b>Performed action:</b></p><p><i>${roleChangeMessage}</i></p>`,
       user: userId,
     });
@@ -638,7 +830,11 @@ export const changeRole = async (req, res) => {
   }
 };
 
-export const usernameToUserId = async (req, res, next) => {
+export const usernameToUserId = async (
+  req: AdminRequest,
+  res: Partial<AdminResponse>,
+  next: AdminNext,
+): Promise<unknown> => {
   const username = _.get(req, ['body', 'username']);
 
   if (
@@ -646,7 +842,7 @@ export const usernameToUserId = async (req, res, next) => {
     (typeof username !== 'string' ||
       username.length > ACCOUNT_IDENTIFIER_MAX_LENGTH)
   ) {
-    return res.status(400).send({ message: 'Invalid username.' });
+    return res.status!(400).send!({ message: 'Invalid username.' });
   }
 
   // Get userID based on provided username

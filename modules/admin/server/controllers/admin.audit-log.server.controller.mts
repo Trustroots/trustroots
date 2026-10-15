@@ -2,15 +2,57 @@
  * Module dependencies.
  */
 import errorService from './../../../core/server/services/error.server.service.mjs';
+import type { ValidationFailure } from './../../../core/server/services/error.server.service.mts';
 import log from './../../../../config/lib/logger.mjs';
-import mongoose from 'mongoose';
-const AuditLog = mongoose.model('AuditLog');
-const User = mongoose.model('User');
+import mongoose, { type Types } from 'mongoose';
+
+interface AuditLogRecord {
+  body?: unknown;
+  date?: Date;
+  ip?: string;
+  params?: unknown;
+  query?: unknown;
+  route?: string;
+  user: Types.ObjectId | string;
+}
+
+interface UserRecord {
+  _id: Types.ObjectId;
+  username: string;
+  displayName?: string;
+  roles?: string[];
+}
+
+interface AuditRequest {
+  query?: { username?: unknown; team?: unknown };
+}
+
+interface AuditRecordRequest {
+  body: unknown;
+  get(name: string): string | null;
+  ip: string;
+  params: unknown;
+  query: unknown;
+  route: { path: string };
+  user: { _id: Types.ObjectId | string };
+}
+
+interface AuditResponse {
+  status(code: number): AuditResponse;
+  send(body: unknown): unknown;
+}
+
+const AuditLog = mongoose.model<AuditLogRecord>('AuditLog');
+const User = mongoose.model<UserRecord>('User');
 
 /**
  * This middleware stores queries to audit log
  */
-export const record = (req, res, next) => {
+export const record = (
+  req: AuditRecordRequest,
+  _res: unknown,
+  next: (error?: Error | null) => void,
+): void => {
   // Client address when using Phusion Passenger
   // https://www.phusionpassenger.com/library/indepth/nodejs/secure_http_headers.html#passenger-client-address
   const passengerClientAddress = req.get('!~Passenger-Client-Address');
@@ -25,7 +67,7 @@ export const record = (req, res, next) => {
   });
 
   // Save support request to db
-  auditLogItem.save(error => {
+  auditLogItem.save((error: Error | null) => {
     if (error) {
       log('error', 'Failed storing audit log item to the DB. #fi2fb2', {
         error,
@@ -36,20 +78,22 @@ export const record = (req, res, next) => {
 };
 
 /** Return the latest matching entries, filtered by acting staff. */
-export const list = async (req, res) => {
+export const list = async (
+  req: AuditRequest,
+  res: AuditResponse,
+): Promise<unknown> => {
   const { username, team } = req.query || {};
   if (
-    [username, team].some(
-      value => value !== undefined && typeof value !== 'string',
-    ) ||
+    (username !== undefined && typeof username !== 'string') ||
+    (team !== undefined && typeof team !== 'string') ||
     (team && !['admin', 'welcome-team', 'support-team'].includes(team))
   ) {
     return res.status(400).send({ message: 'Invalid audit log filters.' });
   }
   try {
-    const criteria = {};
+    const criteria: Record<string, unknown> = {};
     if (username || team) {
-      const actorCriteria = {};
+      const actorCriteria: Record<string, unknown> = {};
       if (username) actorCriteria.username = username.trim().toLowerCase();
       if (team) actorCriteria.roles = team;
       const actors = await User.find(actorCriteria).select('_id').lean();
@@ -65,12 +109,17 @@ export const list = async (req, res) => {
       })
       .exec();
     return res.send(items || []);
-  } catch (err) {
-    return res.status(400).send({ message: errorService.getErrorMessage(err) });
+  } catch (err: unknown) {
+    return res.status(400).send({
+      message: errorService.getErrorMessage(err as ValidationFailure),
+    });
   }
 };
 /** Existing actors from the whole history, independent of the current filters. */
-export const actors = async (req, res) => {
+export const actors = async (
+  _req: unknown,
+  res: AuditResponse,
+): Promise<unknown> => {
   try {
     const actorIds = await AuditLog.distinct('user');
     const users = await User.find({ _id: { $in: actorIds } })
@@ -78,8 +127,10 @@ export const actors = async (req, res) => {
       .sort({ username: 1 })
       .lean();
     return res.send(users);
-  } catch (err) {
-    return res.status(400).send({ message: errorService.getErrorMessage(err) });
+  } catch (err: unknown) {
+    return res.status(400).send({
+      message: errorService.getErrorMessage(err as ValidationFailure),
+    });
   }
 };
 

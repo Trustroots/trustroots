@@ -12,7 +12,7 @@ import type {
 const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon: typeof import('sinon') = require('sinon');
 
-const adminDashboard: typeof import('../../server/controllers/admin.dashboard.server.controller.mjs') = require('./../../server/controllers/admin.dashboard.server.controller.mjs');
+const adminDashboard: typeof import('../../server/controllers/admin.dashboard.server.controller.mts') = require('./../../server/controllers/admin.dashboard.server.controller.mts');
 require('should');
 
 const Experience: ExperienceModel =
@@ -98,7 +98,7 @@ function stubThreadFind(result: DashboardThreadVote[] | null) {
   return find;
 }
 
-type DashboardBody = Record<string, object | string>;
+type DashboardBody = Record<string, object | string | boolean>;
 type DashboardResponse = {
   statusCode: number;
   body: DashboardBody | null;

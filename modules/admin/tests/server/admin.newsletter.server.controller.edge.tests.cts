@@ -77,7 +77,7 @@ async function loadController({
   const rolesLength = roles.length;
   roleReset = { roles, rolesLength };
   roles.push('custom-restricted');
-  const controller = require('./../../server/controllers/admin.newsletter.server.controller.mjs');
+  const controller = require('./../../server/controllers/admin.newsletter.server.controller.mts');
 
   return { controller, findStub };
 }

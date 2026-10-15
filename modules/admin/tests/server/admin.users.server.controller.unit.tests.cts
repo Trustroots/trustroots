@@ -4,7 +4,7 @@
 const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon: typeof import('sinon') = require('sinon');
 
-const adminUsers: typeof import('../../server/controllers/admin.users.server.controller.mjs').default = require('./../../server/controllers/admin.users.server.controller.mjs');
+const adminUsers: typeof import('../../server/controllers/admin.users.server.controller.mts').default = require('./../../server/controllers/admin.users.server.controller.mts');
 const errorService: typeof import('../../../core/server/services/error.server.service.mjs').default = require('./../../../core/server/services/error.server.service.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 const should: typeof import('should') = require('should');

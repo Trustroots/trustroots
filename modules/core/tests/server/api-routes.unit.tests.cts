@@ -667,7 +667,7 @@ describe('API route registrations', () => {
     );
 
     const { routes } = register(
-      './../../../admin/server/routes/admin.server.routes.mjs',
+      './../../../admin/server/routes/admin.server.routes.mts',
       {
         '../controllers/admin.support.server.controller': support,
         '../controllers/admin.acquisition-stories.server.controller':

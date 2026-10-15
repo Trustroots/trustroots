@@ -1,23 +1,36 @@
-import adminAcquisitionStories from './../controllers/admin.acquisition-stories.server.controller.mjs';
-import adminAuditLog from './../controllers/admin.audit-log.server.controller.mjs';
-import adminMessages from './../controllers/admin.messages.server.controller.mjs';
-import adminNewsletter from './../controllers/admin.newsletter.server.controller.mjs';
+import adminAcquisitionStories from './../controllers/admin.acquisition-stories.server.controller.mts';
+import adminAuditLog from './../controllers/admin.audit-log.server.controller.mts';
+import adminMessages from './../controllers/admin.messages.server.controller.mts';
+import adminNewsletter from './../controllers/admin.newsletter.server.controller.mts';
 import adminPolicy from './../policies/admin.server.policy.mts';
-import adminThreads from './../controllers/admin.threads.server.controller.mjs';
-import adminUsers from './../controllers/admin.users.server.controller.mjs';
-import adminDashboard from './../controllers/admin.dashboard.server.controller.mjs';
-import support from '../controllers/admin.support.server.controller.mjs';
-import adminNotes from './../controllers/admin.notes.server.controller.mjs';
-import adminReferenceThreads from './../controllers/admin.reference-threads.server.controller.mjs';
-import adminHackerspaces from './../controllers/admin.hackerspaces.server.controller.mjs';
-import adminLocationCorrections from '../controllers/admin.location-corrections.server.controller.mjs';
+import adminThreads from './../controllers/admin.threads.server.controller.mts';
+import adminUsers from './../controllers/admin.users.server.controller.mts';
+import adminDashboard from './../controllers/admin.dashboard.server.controller.mts';
+import support from '../controllers/admin.support.server.controller.mts';
+import adminNotes from './../controllers/admin.notes.server.controller.mts';
+import adminReferenceThreads from './../controllers/admin.reference-threads.server.controller.mts';
+import adminHackerspaces from './../controllers/admin.hackerspaces.server.controller.mts';
+import adminLocationCorrections from '../controllers/admin.location-corrections.server.controller.mts';
 import adminExperienceChanges from '../controllers/admin.experience-changes.server.controller.mjs';
+
+type RouteHandler = (...args: never[]) => unknown;
+
+interface RouteChain {
+  all(...handlers: RouteHandler[]): RouteChain;
+  get(...handlers: RouteHandler[]): RouteChain;
+  patch(...handlers: RouteHandler[]): RouteChain;
+  post(...handlers: RouteHandler[]): RouteChain;
+}
+
+interface RouteApp {
+  route(path: string): RouteChain;
+}
 
 /**
  * Module dependencies.
  */
 
-const registerRoutes = app => {
+const registerRoutes = (app: RouteApp): void => {
   app.route('/api/admin/support').all(adminPolicy.isAllowed).get(support.list);
   app
     .route('/api/admin/support/:requestId')

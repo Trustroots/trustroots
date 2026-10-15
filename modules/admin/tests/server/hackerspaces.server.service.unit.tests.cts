@@ -1,35 +1,9 @@
 const assert = require('node:assert/strict');
 
-type CollectorResponse = {
-  ok: boolean;
-  status?: number;
-  json?(): Promise<unknown>;
-};
-type CollectorOptions = { headers: { accept: string }; signal: AbortSignal };
-type CollectorFetcher = (
-  url: string,
-  options: CollectorOptions,
-) => Promise<CollectorResponse>;
-type CollectorEntry = {
-  endpoint: string;
-  valid: boolean;
-  eligible: boolean;
-  name?: string;
-  latitude: number | null;
-  longitude: number | null;
-  address: string;
-  addressParts: string[];
-  open: string;
-  fetchedAt: string;
-  spaceType?: string;
-  description?: string;
-  website: string;
-};
-type SpaceApiService = {
-  normaliseCollectorEntry(entry: unknown, fetchedAt: string): CollectorEntry;
-  fetchSpaceApiCollector(fetcher?: CollectorFetcher): Promise<CollectorEntry[]>;
-  SPACEAPI_COLLECTOR_URL: string;
-};
+type CollectorOptions =
+  import('../../server/services/hackerspaces.server.service.mts').CollectorOptions;
+type SpaceApiService =
+  typeof import('../../server/services/hackerspaces.server.service.mts');
 type PreviewResponse = {
   statusCode: number;
   body: unknown;
@@ -41,7 +15,7 @@ describe('SpaceAPI Collector import service', () => {
   let service: SpaceApiService;
   before(async () => {
     service =
-      await import('../../server/services/hackerspaces.server.service.mjs');
+      await import('../../server/services/hackerspaces.server.service.mts');
   });
   it('normalises valid geolocated entries and source snapshots', () => {
     const result = service.normaliseCollectorEntry(
@@ -321,14 +295,14 @@ describe('SpaceAPI Collector import service', () => {
 
 describe('SpaceAPI import preview controller', () => {
   type PreviewController = Pick<
-    typeof import('../../server/controllers/admin.hackerspaces.server.controller.mjs'),
+    typeof import('../../server/controllers/admin.hackerspaces.server.controller.mts'),
     'preview'
   >;
   let controller: PreviewController;
   const originalFetch = global.fetch;
   before(async () => {
     controller =
-      await import('../../server/controllers/admin.hackerspaces.server.controller.mjs');
+      await import('../../server/controllers/admin.hackerspaces.server.controller.mts');
   });
   afterEach(() => {
     global.fetch = originalFetch;

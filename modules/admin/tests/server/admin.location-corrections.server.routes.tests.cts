@@ -34,7 +34,7 @@ const express: typeof import('../../../../config/lib/express.mjs') & {
   init(connection: import('mongoose').Connection): Promise<TestExpressApp>;
 } = require('../../../../config/lib/express.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
-const controller: typeof import('../../server/controllers/admin.location-corrections.server.controller.mjs') & {
+const controller: typeof import('../../server/controllers/admin.location-corrections.server.controller.mts') & {
   _test: {
     classifyLocation(location: unknown): 'exact' | 'nearby' | null;
     candidateKey(userId: unknown, offers: unknown[]): string;
@@ -51,7 +51,7 @@ const controller: typeof import('../../server/controllers/admin.location-correct
     req: { body?: unknown },
     res: { status(code: number): unknown; send(body: unknown): unknown },
   ): Promise<unknown>;
-} = require('../../server/controllers/admin.location-corrections.server.controller.mjs');
+} = require('../../server/controllers/admin.location-corrections.server.controller.mts');
 require('should');
 
 const Offer = mongoose.model<OfferRecord>('Offer');
