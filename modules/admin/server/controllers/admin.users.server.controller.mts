@@ -12,6 +12,7 @@ import net from 'net';
 import { prepareStaffBlockers } from '../services/staff-blockers-payload.server.service.mts';
 
 import errorService from '../../../core/server/services/error.server.service.mjs';
+import type { ValidationFailure } from '../../../core/server/services/error.server.service.mts';
 import log from '../../../../config/lib/logger.mjs';
 import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../../../users/server/lib/account-identifier.server.mjs';
 import {
@@ -447,7 +448,7 @@ async function sendMemberList(
     });
   } catch (err) {
     return res.status(400).send({
-      message: errorService.getErrorMessage(err),
+      message: errorService.getErrorMessage(err as ValidationFailure),
     });
   }
 }
@@ -524,7 +525,7 @@ const handleAdminApiError = (res: AdminResponse, err: unknown): unknown => {
   /* istanbul ignore else */
   if (err) {
     return res.status(400).send({
-      message: errorService.getErrorMessage(err),
+      message: errorService.getErrorMessage(err as ValidationFailure),
     });
   }
 };

@@ -20,7 +20,7 @@ export interface LocationRecipient {
 }
 
 interface OfferRecord {
-  _id: Types.ObjectId | string;
+  _id: Types.ObjectId;
   user?: Types.ObjectId | LocationRecipient | null;
   type?: 'host' | 'meet';
   status?: 'yes' | 'maybe' | 'no';
@@ -30,7 +30,7 @@ interface OfferRecord {
 }
 
 export interface LocationOffer {
-  _id: Types.ObjectId | string;
+  _id: Types.ObjectId;
   type?: 'host' | 'meet';
   location: number[];
   match: LocationMatch;
@@ -47,16 +47,16 @@ export interface LocationCandidate {
 }
 
 interface CoveredOffer {
-  offer?: Types.ObjectId | string;
+  offer?: Types.ObjectId;
   location: number[];
 }
 
 interface MessageRecord {
-  _id: Types.ObjectId | string;
+  _id: Types.ObjectId;
   created: Date;
   content: string;
-  userFrom: Types.ObjectId | string;
-  userTo: Types.ObjectId | string;
+  userFrom: Types.ObjectId;
+  userTo: Types.ObjectId;
   read?: boolean;
   shadowHidden?: boolean;
   locationCorrectionKey?: string;
@@ -82,18 +82,14 @@ interface LocationRequest {
   user?: Sender;
 }
 
+type ObjectIdValidationInput = Parameters<
+  typeof mongoose.Types.ObjectId.isValid
+>[0];
+
 interface LocationResponse {
   status(code: number): LocationResponse;
   send(body: unknown): unknown;
 }
-
-interface ObjectIdLike {
-  id: string | Buffer;
-  toHexString(): string;
-}
-
-type ObjectIdValidationInput =
-  string | number | Types.ObjectId | ObjectIdLike | Buffer | Uint8Array;
 
 const Offer = mongoose.model<OfferRecord>('Offer');
 const Message = mongoose.model<MessageRecord>('Message');
@@ -322,28 +318,6 @@ function isDuplicateKeyError(error: unknown): boolean {
   );
 }
 
-function isObjectIdValidationInput(
-  value: unknown,
-): value is ObjectIdValidationInput {
-  if (
-    typeof value === 'string' ||
-    typeof value === 'number' ||
-    value instanceof mongoose.Types.ObjectId ||
-    Buffer.isBuffer(value) ||
-    value instanceof Uint8Array
-  ) {
-    return true;
-  }
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'id' in value &&
-    (typeof value.id === 'string' || Buffer.isBuffer(value.id)) &&
-    'toHexString' in value &&
-    typeof value.toHexString === 'function'
-  );
-}
-
 function sendBody(req: LocationRequest): {
   userId?: unknown;
   key?: unknown;
@@ -363,8 +337,7 @@ export async function list(
   res: LocationResponse,
 ): Promise<unknown> {
   try {
-    if (!req.user) throw new TypeError('Missing authenticated sender.');
-    return res.send(await findCandidates(req.user._id));
+    return res.send(await findCandidates(req.user!._id));
   } catch {
     return res
       .status(500)
@@ -378,8 +351,7 @@ export async function send(
 ): Promise<unknown> {
   const { userId, key, content } = sendBody(req);
   if (
-    !isObjectIdValidationInput(userId) ||
-    !mongoose.Types.ObjectId.isValid(userId) ||
+    !mongoose.Types.ObjectId.isValid(userId as ObjectIdValidationInput) ||
     typeof key !== 'string' ||
     !/^[a-f0-9]{64}$/.test(key) ||
     typeof content !== 'string' ||
@@ -391,8 +363,7 @@ export async function send(
   if (!cleanContent || textService.isEmpty(cleanContent)) {
     return res.status(400).send({ message: 'Please write a message.' });
   }
-  const sender = req.user;
-  if (!sender) throw new TypeError('Missing authenticated sender.');
+  const sender = req.user!;
   if (!sender.public || userRolesService.hasRestrictedMessagingRole(sender)) {
     return res.status(403).send({ message: 'Messaging is unavailable.' });
   }

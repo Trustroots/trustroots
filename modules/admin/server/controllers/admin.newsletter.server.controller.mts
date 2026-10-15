@@ -516,14 +516,17 @@ function extractEmailsFromJsonLines(jsonLinesText: string): string[] {
         `Could not parse JSON on line ${lineIndex + 1}.`,
       );
     }
+    const recordFields = record as {
+      email?: unknown;
+      emailAddress?: unknown;
+      address?: unknown;
+    } | null;
     const value =
       typeof record === 'string'
         ? record
-        : typeof record === 'object' && record !== null
-          ? ('email' in record && record.email) ||
-            ('emailAddress' in record && record.emailAddress) ||
-            ('address' in record && record.address)
-          : undefined;
+        : recordFields?.email ||
+          recordFields?.emailAddress ||
+          recordFields?.address;
     const email = normaliseEmail(value);
     if (!email || seenEmails.has(email)) {
       return;

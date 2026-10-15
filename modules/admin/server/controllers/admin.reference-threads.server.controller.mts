@@ -3,6 +3,7 @@
  */
 import mongoose, { type Types } from 'mongoose';
 import errorService from './../../../core/server/services/error.server.service.mjs';
+import type { ValidationFailure } from './../../../core/server/services/error.server.service.mts';
 
 interface ReferenceThreadRecord {
   _id: Types.ObjectId;
@@ -116,7 +117,7 @@ export const list = async (
     });
   } catch (err: unknown) {
     return res.status(400).send({
-      message: errorService.getErrorMessage(err),
+      message: errorService.getErrorMessage(err as ValidationFailure),
     });
   }
 };

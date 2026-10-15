@@ -3,6 +3,10 @@ import _ from 'lodash';
 import crypto from 'crypto';
 import mongoose, { type Types } from 'mongoose';
 import errorService from './../../../core/server/services/error.server.service.mjs';
+import type {
+  ErrorBody,
+  ValidationFailure,
+} from './../../../core/server/services/error.server.service.mts';
 import MessagesController from './../../../messages/server/controllers/messages.server.controller.mjs';
 import { findPairRecords } from '../services/admin-pair-records.server.service.mts';
 import textService from './../../../core/server/services/text.server.service.mjs';
@@ -16,7 +20,7 @@ interface UserRecord {
 interface MessageRecord {
   _id: Types.ObjectId | string;
   created: Date;
-  content?: string;
+  content: string;
   userFrom: Types.ObjectId | string;
   userTo: Types.ObjectId | string;
   read?: boolean;
@@ -48,20 +52,17 @@ interface AdminRequest {
 
 interface AdminResponse {
   status(code: number): AdminResponse;
-  send(body: Record<string, unknown>): unknown;
+  send(body: Record<string, unknown> | ErrorBody): unknown;
 }
 
-interface WarningError extends Error {
-  statusCode?: number;
+interface WarningError {
+  statusCode?: unknown;
+  message?: unknown;
 }
 
-interface ObjectIdLike {
-  id: string | Buffer;
-  toHexString(): string;
-}
-
-type ObjectIdValidationInput =
-  string | number | Types.ObjectId | ObjectIdLike | Buffer | Uint8Array;
+type ObjectIdValidationInput = Parameters<
+  typeof mongoose.Types.ObjectId.isValid
+>[0];
 
 const Message = mongoose.model<MessageRecord>('Message');
 const Thread = mongoose.model<ThreadRecord>('Thread');
@@ -100,43 +101,8 @@ async function findScammerRecipients(
   return { scammer, recipients };
 }
 
-function statusCode(error: unknown): number | undefined {
-  if (typeof error === 'object' && error !== null && 'statusCode' in error) {
-    return typeof error.statusCode === 'number' ? error.statusCode : undefined;
-  }
-  return undefined;
-}
-
-function responseMessage(error: unknown): string | boolean | undefined {
-  if (typeof error === 'object' && error !== null && 'message' in error) {
-    return typeof error.message === 'string' ||
-      typeof error.message === 'boolean'
-      ? error.message
-      : undefined;
-  }
-  return undefined;
-}
-
-function isObjectIdValidationInput(
-  value: unknown,
-): value is ObjectIdValidationInput {
-  if (
-    typeof value === 'string' ||
-    typeof value === 'number' ||
-    value instanceof mongoose.Types.ObjectId ||
-    Buffer.isBuffer(value) ||
-    value instanceof Uint8Array
-  ) {
-    return true;
-  }
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'id' in value &&
-    (typeof value.id === 'string' || Buffer.isBuffer(value.id)) &&
-    'toHexString' in value &&
-    typeof value.toHexString === 'function'
-  );
+function warningError(error: unknown): WarningError {
+  return error as WarningError;
 }
 
 export const getScammerRecipients = async (
@@ -156,11 +122,11 @@ export const getScammerRecipients = async (
       recipients,
     });
   } catch (error) {
-    const code = statusCode(error);
-    return res.status(code || 400).send({
-      message: code
-        ? responseMessage(error)
-        : errorService.getErrorMessage(error),
+    const failure = warningError(error);
+    return res.status((failure.statusCode as number) || 400).send({
+      message: failure.statusCode
+        ? failure.message
+        : errorService.getErrorMessage(error as ValidationFailure),
     });
   }
 };
@@ -219,19 +185,19 @@ export const sendScammerWarning = async (
     );
     if (savedMessages.length) {
       const updates = savedMessages.flatMap(message => {
-        if (!message) throw new Error('Expected a saved warning message.');
+        const savedMessage = message!;
         const pair = {
           $or: [
-            { userTo: message.userTo, userFrom: message.userFrom },
-            { userTo: message.userFrom, userFrom: message.userTo },
+            { userTo: savedMessage.userTo, userFrom: savedMessage.userFrom },
+            { userTo: savedMessage.userFrom, userFrom: savedMessage.userTo },
           ],
         };
         const latest = {
-          updated: message.created,
-          userFrom: message.userFrom,
-          userTo: message.userTo,
-          message: message._id,
-          read: message.read,
+          updated: savedMessage.created,
+          userFrom: savedMessage.userFrom,
+          userTo: savedMessage.userTo,
+          message: savedMessage._id,
+          read: savedMessage.read,
         };
         // Concurrent retries must also agree on the new thread's primary key.
         // Existing threads retain their IDs, including the reverse direction.
@@ -239,7 +205,10 @@ export const sendScammerWarning = async (
           .createHash('sha256')
           .update(
             JSON.stringify(
-              [String(message.userFrom), String(message.userTo)].sort(),
+              [
+                String(savedMessage.userFrom),
+                String(savedMessage.userTo),
+              ].sort(),
             ),
           )
           .digest('hex')
@@ -256,7 +225,7 @@ export const sendScammerWarning = async (
           // read warning unread again or replacing a newer conversation message.
           {
             updateOne: {
-              filter: { ...pair, updated: { $lt: message.created } },
+              filter: { ...pair, updated: { $lt: savedMessage.created } },
               update: { $set: latest },
             },
           },
@@ -283,11 +252,11 @@ export const sendScammerWarning = async (
       sent: savedMessages.length,
     });
   } catch (error) {
-    const code = statusCode(error);
-    return res.status(code || 400).send({
-      message: code
-        ? responseMessage(error)
-        : errorService.getErrorMessage(error),
+    const failure = warningError(error);
+    return res.status((failure.statusCode as number) || 400).send({
+      message: failure.statusCode
+        ? failure.message
+        : errorService.getErrorMessage(error as ValidationFailure),
     });
   }
 };
@@ -301,28 +270,29 @@ export const getMessages = (req: AdminRequest, res: AdminResponse): unknown => {
     ![user1, user2].every(
       user =>
         !user ||
-        (isObjectIdValidationInput(user) &&
-          mongoose.Types.ObjectId.isValid(user)),
+        mongoose.Types.ObjectId.isValid(user as ObjectIdValidationInput),
     )
   ) {
     return res.status(400).send({
       message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
-  findPairRecords(Message, user1, user2).exec((error, messages) => {
-    if (error) return errorService.sendBadRequest(res, error);
-    findPairRecords(ReferenceThread, user1, user2).exec(
-      (referenceThreadError, referenceThreads) => {
-        if (referenceThreadError) {
-          return errorService.sendBadRequest(res, referenceThreadError);
-        }
-        return res.send({
-          messages: MessagesController.sanitizeMessages(messages || []),
-          referenceThreads: referenceThreads || [],
-        });
-      },
-    );
-  });
+  findPairRecords<MessageRecord>(Message, user1, user2).exec(
+    (error, messages) => {
+      if (error) return errorService.sendBadRequest(res, error);
+      findPairRecords(ReferenceThread, user1, user2).exec(
+        (referenceThreadError, referenceThreads) => {
+          if (referenceThreadError) {
+            return errorService.sendBadRequest(res, referenceThreadError);
+          }
+          return res.send({
+            messages: MessagesController.sanitizeMessages(messages!),
+            referenceThreads: referenceThreads || [],
+          });
+        },
+      );
+    },
+  );
 };
 
 const defaultInterop = {

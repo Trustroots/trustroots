@@ -530,6 +530,7 @@ describe('Admin newsletter controller unit tests', () => {
                 '{"emailAddress":"missing-one@example.com"}',
                 '{"address":"missing-two@example.com"}',
                 '"missing-three@example.com"',
+                'null',
                 '{"email":"ELIGIBLE@example.com"}',
                 '{"name":"No email"}',
                 '',

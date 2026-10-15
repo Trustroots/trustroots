@@ -2,6 +2,7 @@
  * Module dependencies.
  */
 import errorService from './../../../core/server/services/error.server.service.mjs';
+import type { ValidationFailure } from './../../../core/server/services/error.server.service.mts';
 import log from './../../../../config/lib/logger.mjs';
 import mongoose, { type Types } from 'mongoose';
 
@@ -109,7 +110,9 @@ export const list = async (
       .exec();
     return res.send(items || []);
   } catch (err: unknown) {
-    return res.status(400).send({ message: errorService.getErrorMessage(err) });
+    return res.status(400).send({
+      message: errorService.getErrorMessage(err as ValidationFailure),
+    });
   }
 };
 /** Existing actors from the whole history, independent of the current filters. */
@@ -125,7 +128,9 @@ export const actors = async (
       .lean();
     return res.send(users);
   } catch (err: unknown) {
-    return res.status(400).send({ message: errorService.getErrorMessage(err) });
+    return res.status(400).send({
+      message: errorService.getErrorMessage(err as ValidationFailure),
+    });
   }
 };
 
