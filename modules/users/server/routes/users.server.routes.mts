@@ -1,3 +1,4 @@
+import type { Response } from 'express';
 import usersPolicy from './../policies/users.server.policy.mts';
 import userProfile from './../controllers/users.profile.server.controller.mjs';
 import userAvatar from './../controllers/users.avatar.server.controller.mjs';
@@ -9,7 +10,11 @@ import targetedRequestLimit from '../../../core/server/middleware/targeted-reque
 import userMfa from './../controllers/users.mfa.server.controller.mjs';
 import userActivity from './../controllers/users.activity.server.controller.mjs';
 
-function setActivityResponseHeaders(_req, res, next) {
+function setActivityResponseHeaders(
+  _req: unknown,
+  res: Pick<Response, 'set' | 'vary'>,
+  next: () => void,
+) {
   res.set('Cache-Control', 'no-store');
   res.vary('Cookie');
   return next();

@@ -47,8 +47,8 @@ export async function list(req, res, next) {
     cursorValue === undefined
       ? null
       : typeof cursorValue === 'string' && cursorValue.length <= 512
-      ? decodeCursor(cursorValue)
-      : null;
+        ? decodeCursor(cursorValue)
+        : null;
   if (cursorValue !== undefined && !cursor) {
     return res.status(400).json({ message: 'Invalid activity cursor.' });
   }
@@ -90,5 +90,6 @@ export async function list(req, res, next) {
   }
 }
 
-export default { list };
-export { list as 'module.exports' };
+const service = { list };
+export default service;
+export { service as 'module.exports' };

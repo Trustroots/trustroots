@@ -238,7 +238,7 @@ test.describe.serial('account settings feature coverage', () => {
     expect((await session.json()).userId).toBeTruthy();
     const activityResponse = await page.request.get('/api/users/activity');
     const activityEvents = (await activityResponse.json()).events.map(
-      event => event.eventType,
+      (event: { eventType: string }) => event.eventType,
     );
     expect(activityEvents).toContain('mfa_enabled');
     expect(activityEvents).toContain('recovery_code_used');

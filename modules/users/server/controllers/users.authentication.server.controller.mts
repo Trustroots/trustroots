@@ -20,6 +20,7 @@ import {
   emailConfirmationTokenQuery,
   setEmailConfirmationToken,
 } from '../services/email-confirmation.server.service.mts';
+import { recordActivity } from '../services/account-activity.server.service.mjs';
 type UserDocument = UserServerDocument;
 type AuthenticatedUser = UserDocument;
 
@@ -104,7 +105,6 @@ interface AuthenticationController {
 }
 
 const service = {} as AuthenticationController;
-import { recordActivity } from '../services/account-activity.server.service.mjs';
 /**
  * Module dependencies.
  */
@@ -710,9 +710,9 @@ service.confirmEmail = function (req, res) {
 
               result.emailChangeWasRequested = Boolean(
                 user.public &&
-                  user.emailTemporary &&
-                  user.emailTemporary.trim().toLowerCase() !==
-                    user.email.trim().toLowerCase(),
+                user.emailTemporary &&
+                user.emailTemporary.trim().toLowerCase() !==
+                  user.email.trim().toLowerCase(),
               );
 
               done(null, result, user);

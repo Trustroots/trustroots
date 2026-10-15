@@ -15,12 +15,10 @@ describe('Member account activity', function () {
 
   before(async function () {
     app = await express.init(mongoose.connection);
-    ({ recordActivity } = await import(
-      '../../server/services/account-activity.server.service.mjs'
-    ));
-    ({ list: listActivity } = await import(
-      '../../server/controllers/users.activity.server.controller.mjs'
-    ));
+    ({ recordActivity } =
+      await import('../../server/services/account-activity.server.service.mjs'));
+    ({ list: listActivity } =
+      await import('../../server/controllers/users.activity.server.controller.mjs'));
   });
 
   afterEach(utils.clearDatabase);
@@ -89,8 +87,8 @@ describe('Member account activity', function () {
   });
 
   it('returns only the signed-in member’s redacted activity with no-store headers', async function () {
-    const memberA = await createMember('activity-member-a');
-    const memberB = await createMember('activity-member-b');
+    const memberA = await createMember('activitymembera');
+    const memberB = await createMember('activitymemberb');
     const agentA = await signedInAgent(memberA.credentials);
     const agentB = await signedInAgent(memberB.credentials);
     assert.equal(
@@ -154,7 +152,7 @@ describe('Member account activity', function () {
   });
 
   it('uses opaque stable cursors and bounds each page at 50 entries', async function () {
-    const member = await createMember('activity-pages');
+    const member = await createMember('activitypages');
     const agent = await signedInAgent(member.credentials);
     await AccountActivity.deleteMany({});
     const createdAt = Date.now() - 10000;
@@ -225,7 +223,7 @@ describe('Member account activity', function () {
   });
 
   it('forwards storage errors to the application error handler', async function () {
-    const member = await createMember('activity-storage-error');
+    const member = await createMember('activitystorageerror');
     const agent = await signedInAgent(member.credentials);
     const query = {
       sort: () => query,
@@ -257,10 +255,7 @@ describe('Member account activity', function () {
     });
     assert.equal(recorded, true);
     assert.equal(attempts, 2);
-    assert.deepEqual(identifiers, [
-      'stable-retry-event',
-      'stable-retry-event',
-    ]);
+    assert.deepEqual(identifiers, ['stable-retry-event', 'stable-retry-event']);
 
     const indexes = AccountActivity.schema.indexes();
     assert.ok(
