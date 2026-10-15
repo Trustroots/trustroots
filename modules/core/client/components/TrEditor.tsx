@@ -11,6 +11,7 @@ const baseOptions = {
   // Automatically turns URLs entered into
   // the text field into HTML anchor tags
   autoLink: false,
+  anchorPreview: false,
   paste: {
     // Forces pasting as plain text
     forcePlainText: false,
@@ -143,10 +144,6 @@ const baseOptions = {
       {
         name: 'underline',
         contentDefault: '<span class="icon-underline"></span>',
-      },
-      {
-        name: 'anchor',
-        contentDefault: '<span class="icon-link"></span>',
       },
       {
         name: 'quote',

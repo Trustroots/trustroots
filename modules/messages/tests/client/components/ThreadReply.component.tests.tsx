@@ -164,14 +164,16 @@ describe('<ThreadReply>', () => {
     );
     fireEvent.click(getByRole('button', { name: 'Retry' }));
     await waitFor(() =>
-      expect(getByRole('link', { name: 'Internal' })).toHaveAttribute(
-        'href',
-        '/profile/fictional',
-      ),
+      expect(
+        getByRole('region', { name: 'Message preview' }),
+      ).toHaveTextContent('Internal'),
     );
     expect(getByRole('region', { name: 'Message preview' })).toHaveTextContent(
       'External',
     );
+    expect(
+      getByRole('region', { name: 'Message preview' }).querySelector('a'),
+    ).toBeNull();
     expect(previewMessageMock).toHaveBeenCalledTimes(2);
   });
 

@@ -24,7 +24,6 @@ test('retains supported formatting and attributes on their supported elements', 
     'strong',
     'u',
     'br',
-    'a',
     'ul',
     'li',
     'blockquote',
@@ -54,7 +53,7 @@ test.each([
   expect(container.querySelector('a[href^="javascript:"]')).toBeNull();
 });
 
-test('retains the existing link schemes and literal encoded text', () => {
+test('displays link labels for all schemes and literal encoded text', () => {
   render(
     <RichText
       content={
@@ -65,30 +64,26 @@ test('retains the existing link schemes and literal encoded text', () => {
     />,
   );
   for (const scheme of richTextLinkSchemes) {
-    expect(screen.getByRole('link', { name: scheme })).toHaveAttribute(
-      'href',
-      `${scheme}:example`,
-    );
+    expect(
+      screen.queryByRole('link', { name: scheme }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText(new RegExp(scheme))).toBeInTheDocument();
   }
   expect(screen.getByText(/<img src=x>/)).toBeInTheDocument();
 });
 
-test('message presentation retains only same-origin HTTP links and their formatted labels', () => {
+test('presentation unwraps all links and retains their formatted labels', () => {
   const { container, rerender } = render(
     <RichText
-      internalLinksOnly
       content={
         '<a href="/safety">Safety</a><a href="https://example.test"><b>External</b></a><a href="mailto:member@example.test">Email</a><a href="http://[">Invalid</a><a>Missing</a><a href="">Empty</a><a href="javascript:alert(1)">Other</a>'
       }
     />,
   );
-  expect(container.querySelectorAll('a')).toHaveLength(1);
-  expect(screen.getByRole('link', { name: 'Safety' })).toHaveAttribute(
-    'href',
-    '/safety',
-  );
+  expect(container.querySelectorAll('a')).toHaveLength(0);
+  expect(container).toHaveTextContent('Safety');
   expect(screen.getByText('External').tagName).toBe('B');
   expect(container).toHaveTextContent('EmailInvalidMissingEmptyOther');
-  rerender(<RichText internalLinksOnly content="" />);
+  rerender(<RichText content="" />);
   expect(container.firstChild).toBeEmptyDOMElement();
 });

@@ -8,6 +8,16 @@ import TrEditor from '@/modules/core/client/components/TrEditor';
 type TrEditorProps = React.ComponentProps<typeof TrEditor>;
 
 describe('<TrEditor /> with MediumEditor', () => {
+  it('offers formatting without a link tool or clickable link preview', () => {
+    const content = '<p><a href="https://example.org/">Fictional notes</a></p>';
+    const { container } = render(
+      <TrEditor id="editor" text={content} onChange={jest.fn()} />,
+    );
+    expect(document.querySelector('[data-action="createLink"]')).toBeNull();
+    expect(document.querySelector('.medium-editor-anchor-preview')).toBeNull();
+    expect(document.querySelector('[data-action="bold"]')).toBeInTheDocument();
+    expect(container.querySelector('.tr-editor')?.innerHTML).toBe(content);
+  });
   it('applies the formatting policy to initial and externally replaced content', () => {
     const onChange = jest.fn();
     const { container, rerender } = render(

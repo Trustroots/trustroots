@@ -9,6 +9,17 @@ const longContent = (character: string, length: number) =>
   `<p>${character.repeat(length)}</p>`;
 
 describe('<ReadMorePanel />', () => {
+  it.each([false, true])('unwraps links in descriptions (long: %s)', long => {
+    const { container } = render(
+      <ReadMorePanel
+        content={`<p><a href="/safety"><b>Fictional notes</b></a>${long ? 'x'.repeat(2100) : ''}</p>`}
+        id="linked-description"
+      />,
+    );
+    if (long) fireEvent.click(screen.getByText('Read more…'));
+    expect(container.querySelector('a')).toBeNull();
+    expect(container.querySelector('b')).toHaveTextContent('Fictional notes');
+  });
   it('keeps encoded markup literal in collapsed and expanded descriptions', () => {
     const content = `&lt;img src=x onerror=alert(1)&gt;${'A'.repeat(2100)}`;
     const { container } = render(

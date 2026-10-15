@@ -164,9 +164,8 @@ test.describe.serial('message action feature coverage', () => {
       await expect(
         preview.getByRole('link', { name: 'External label' }),
       ).toHaveCount(0);
-      await expect(
-        preview.getByRole('link', { name: 'Internal label' }),
-      ).toHaveAttribute('href', '/profile/fictional');
+      await expect(preview).toContainText('Internal label');
+      await expect(preview.locator('a')).toHaveCount(0);
       expect(sends).toHaveLength(0);
       await expect(
         page.getByRole('button', { name: 'Edit', exact: true }),
@@ -300,7 +299,7 @@ test.describe.serial('message action feature coverage', () => {
     await expect(editor).toBeFocused();
   });
 
-  test('external links in messages are displayed as plain text', async ({
+  test('all links in messages are displayed as plain text', async ({
     page,
     request,
   }, testInfo) => {
@@ -313,7 +312,7 @@ test.describe.serial('message action feature coverage', () => {
       data: {
         userTo: recipientId,
         content:
-          'Here is my scam link <a href="https://scammetyscammetyscam.example.com/">scammetyscammetyscam.example.com</a> please click it or else',
+          'Here is my scam link <a href="https://scammetyscammetyscam.example.com/">scammetyscammetyscam.example.com</a> <a href="/safety">Internal label</a>',
       },
     });
     expect(message.ok()).toBeTruthy();
@@ -324,6 +323,7 @@ test.describe.serial('message action feature coverage', () => {
     });
     await expect(body).toBeVisible();
     await expect(body.locator('a')).toHaveCount(0);
+    await expect(body).toContainText('Internal label');
   });
 
   test('direct conversation links change the recipient and clear the previous draft', async ({
@@ -370,9 +370,13 @@ test.describe.serial('message action feature coverage', () => {
         response.url().endsWith(`/api/users/${recipient.username}`) &&
         response.ok(),
     );
-    await page
-      .getByRole('link', { name: conversationLabel, exact: true })
-      .click();
+    await expect(
+      page.getByText(conversationLabel, { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: conversationLabel, exact: true }),
+    ).toHaveCount(0);
+    await page.goto(`/messages/${recipient.username}`);
     await loadedRecipient;
     await expect(editor).toBeVisible();
     await expect(editor).toHaveText('');

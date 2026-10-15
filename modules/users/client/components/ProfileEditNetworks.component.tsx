@@ -234,14 +234,20 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                       />
                       {fieldValue && (
                         <span className="input-group-btn">
-                          <a
-                            href={field.testUrl(fieldValue)}
-                            target="_blank"
-                            className="btn btn-primary"
-                            rel="noopener noreferrer"
-                          >
-                            <small>{t('Test')}</small>
-                          </a>
+                          {field.field === 'extSitesCS' ? (
+                            <span className="input-group-text">
+                              {field.testUrl(fieldValue)}
+                            </span>
+                          ) : (
+                            <a
+                              href={field.testUrl(fieldValue)}
+                              target="_blank"
+                              className="btn btn-primary"
+                              rel="noopener noreferrer"
+                            >
+                              <small>{t('Test')}</small>
+                            </a>
+                          )}
                         </span>
                       )}
                     </div>

@@ -182,7 +182,7 @@ describe('ProfileEditNetworks', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('renders links for all supported hospitality networks', () => {
+  it('renders hospitality test links except Couchsurfing', () => {
     renderPage({
       extSitesBW: 'ada-bw',
       extSitesCS: 'ada-cs',
@@ -194,7 +194,12 @@ describe('ProfileEditNetworks', () => {
       'href',
       'https://www.bewelcome.org/members/ada-bw',
     );
-    expect(screen.getAllByRole('link', { name: 'Test' })).toHaveLength(4);
+    expect(screen.getAllByRole('link', { name: 'Test' })).toHaveLength(3);
+    expect(
+      screen
+        .getByText('https://www.couchsurfing.com/people/ada-cs')
+        .closest('a'),
+    ).toBeNull();
   });
 
   it('lets members delete stored legacy social connections', async () => {

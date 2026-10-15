@@ -218,17 +218,7 @@ export default function ProfileViewBasics({
         {profile.extSitesCS && (
           <li className="social-profile">
             <i className="social-profile-icon icon-fw icon-lg icon-cs"></i>
-            {/*
-            Link here has `noreferrer` because;
-            https://github.com/Trustroots/trustroots/issues/464
-          */}
-            <a
-              rel="noreferrer noopener"
-              className="social-profile-handle"
-              href={`https://www.couchsurfing.com/people/${profile.extSitesCS}`}
-            >
-              Couchsurfing
-            </a>
+            <span className="social-profile-handle">Couchsurfing</span>
           </li>
         )}
         {/* WarmShowers */}
