@@ -1,3 +1,4 @@
+import RichText from '@/modules/core/client/components/RichText';
 // External dependencies
 import React, {
   useCallback,
@@ -340,9 +341,7 @@ export default function AdminMessages() {
                     {message.read ? 'Seen.' : 'Not seen.'}
                     <br />
                     <br />
-                    <div
-                      dangerouslySetInnerHTML={{ __html: message.content }}
-                    />
+                    <RichText content={message.content} />
                     <br />
                     <details>
                       <summary>Database entry</summary>

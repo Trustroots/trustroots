@@ -1,3 +1,5 @@
+import RichText from '@/modules/core/client/components/RichText';
+import { plainText } from '@/modules/core/client/utils/filters';
 import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
 
@@ -148,7 +150,7 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
             )}
 
             {offer.description && offer.description.length < 2000 && (
-              <div dangerouslySetInnerHTML={{ __html: offer.description }} />
+              <RichText content={offer.description} />
             )}
 
             {offer.description && offer.description.length >= 2000 && (
@@ -157,9 +159,6 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
                   <div className="panel-more-wrap">
                     <div
                       className="panel-more-excerpt"
-                      dangerouslySetInnerHTML={{
-                        __html: offer.description.slice(0, 2000),
-                      }}
                       onClick={() =>
                         setExpandedDescriptions(current => ({
                           ...current,
@@ -167,7 +166,9 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
                         }))
                       }
                       role="presentation"
-                    />
+                    >
+                      {plainText(offer.description).slice(0, 2000)}
+                    </div>
                     <div
                       className="panel-more-fade"
                       onClick={() =>
@@ -182,9 +183,7 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
                     </div>
                   </div>
                 ) : (
-                  <div
-                    dangerouslySetInnerHTML={{ __html: offer.description }}
-                  />
+                  <RichText content={offer.description} />
                 )}
               </div>
             )}

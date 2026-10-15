@@ -120,6 +120,35 @@ describe('Contacts controller unit tests', () => {
   });
 
   describe('add', () => {
+    it('assigns record fields independently of extra request fields', async () => {
+      const suppliedId = new mongoose.Types.ObjectId();
+      const createdBefore = Date.now();
+      const { res } = await runHandler(res =>
+        contactsController.add(
+          {
+            user: user1,
+            body: {
+              friendUserId: user2.id,
+              _id: suppliedId.toString(),
+              created: '2000-01-01',
+              confirmed: true,
+              userFrom: user2.id,
+              userTo: user1.id,
+            },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      const contact = await Contact.findOne({
+        userFrom: user1._id,
+        userTo: user2._id,
+      });
+      if (!contact) throw new Error('Expected a saved contact');
+      contact._id.equals(suppliedId).should.be.false();
+      contact.confirmed.should.be.false();
+      (contact.created.getTime() >= createdBefore).should.be.true();
+    });
     for (const blocker of ['sender', 'recipient']) {
       it(`does not create or email a request when the ${blocker} blocked the other member`, async () => {
         const blockedBy = blocker === 'sender' ? user1 : user2;

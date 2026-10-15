@@ -3,13 +3,6 @@ import {
   plainTextLength,
 } from '@/modules/core/client/utils/filters';
 
-// These DOM doubles expose only the text fields used by the filter helper.
-function textElement(
-  fields: Pick<HTMLElement, 'innerHTML' | 'textContent' | 'innerText'>,
-): HTMLElement {
-  return fields as HTMLElement;
-}
-
 describe('client filter utilities', () => {
   it('turns html into plain text', () => {
     expect(plainText('<p>Hello <strong>there</strong></p>')).toBe(
@@ -23,27 +16,8 @@ describe('client filter utilities', () => {
     expect(plainTextLength('<p>  Welcome home  </p>')).toBe(12);
   });
 
-  it('falls back to innerText when textContent is empty', () => {
-    jest.spyOn(document, 'createElement').mockReturnValue(
-      textElement({
-        innerHTML: '',
-        textContent: '',
-        innerText: 'Fallback text',
-      }),
-    );
-
-    expect(plainText('<p>Fallback text</p>')).toBe('Fallback text');
-  });
-
-  it('returns empty text when generated element has no text fields', () => {
-    jest.spyOn(document, 'createElement').mockReturnValue(
-      textElement({
-        innerHTML: '',
-        textContent: '',
-        innerText: '',
-      }),
-    );
-
+  it('keeps encoded markup literal and ignores empty elements', () => {
+    expect(plainText('&lt;img src=x&gt;<b>Text</b>')).toBe('<img src=x>Text');
     expect(plainText('<br>')).toBe('');
   });
 

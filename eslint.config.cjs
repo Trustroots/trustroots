@@ -132,17 +132,10 @@ const legacyConfig = {
       },
     },
     {
-      // Full rich text is formatted on the server before reaching these views.
+      // These two boundaries sanitise markup before inserting it.
       files: [
-        'modules/core/client/components/ReadMorePanel.tsx',
+        'modules/core/client/components/RichText.tsx',
         'modules/core/client/components/TrEditor.tsx',
-        'modules/messages/client/components/ThreadMessage.tsx',
-        'modules/messages/client/components/ThreadReply.tsx',
-        'modules/admin/client/components/AdminMessages.component.tsx',
-        'modules/admin/client/components/AdminNotes.tsx',
-        'modules/offers/client/components/OfferMeetListPage.component.tsx',
-        'modules/search/client/components/SearchSidebarResults.component.tsx',
-        'modules/tribes/client/components/TribeDetailPage.component.tsx',
       ],
       rules: { 'react/no-danger': 0 },
     },
@@ -151,7 +144,7 @@ const legacyConfig = {
       files: [
         'modules/core/client/components/TrEditor.tsx',
         'modules/core/client/utils/filters.ts',
-        'modules/messages/client/utils/message-content.ts',
+        'modules/core/client/utils/rich-text.ts',
       ],
       rules: { 'no-restricted-properties': 0 },
     },
