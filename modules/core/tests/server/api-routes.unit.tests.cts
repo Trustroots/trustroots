@@ -190,7 +190,7 @@ describe('API route registrations', () => {
     );
 
     const { params, routes } = register(
-      './../../../contacts/server/routes/contacts.server.routes.mjs',
+      './../../../contacts/server/routes/contacts.server.routes.mts',
       {
         '../controllers/contacts.server.controller': contacts,
         '../policies/contacts.server.policy': policy,
@@ -289,7 +289,7 @@ describe('API route registrations', () => {
     );
 
     const { params, routes } = register(
-      './../../../offers/server/routes/offers.server.routes.mjs',
+      './../../../offers/server/routes/offers.server.routes.mts',
       {
         '../controllers/offers.server.controller': offers,
         '../policies/offers.server.policy': policy,
@@ -332,7 +332,7 @@ describe('API route registrations', () => {
     );
 
     const { params, routes } = register(
-      './../../../references-thread/server/routes/reference-thread.server.routes.mjs',
+      './../../../references-thread/server/routes/reference-thread.server.routes.mts',
       {
         '../controllers/reference-thread.server.controller': referenceThread,
         '../policies/reference-thread.server.policy': policy,
@@ -364,14 +364,14 @@ describe('API route registrations', () => {
     const supportLimit = { support: handler('requestLimit.support') };
 
     const tribeRoutes = register(
-      './../../../tribes/server/routes/tribes.server.routes.mjs',
+      './../../../tribes/server/routes/tribes.server.routes.mts',
       {
         '../controllers/tribes.server.controller': tribes,
         '../policies/tribes.server.policy': tribesPolicy,
       },
     );
     const supportRoutes = register(
-      './../../../support/server/routes/support.server.routes.mjs',
+      './../../../support/server/routes/support.server.routes.mts',
       {
         '../controllers/support.server.controller': support,
         '../../../core/server/middleware/targeted-request-limit.server.middleware':
@@ -798,14 +798,14 @@ describe('API route registrations', () => {
     );
 
     const pagesRoutes = register(
-      './../../../pages/server/routes/pages.server.routes.mjs',
+      './../../../pages/server/routes/pages.server.routes.mts',
       {
         '../controllers/pages.volunteers.server.controller': volunteers,
         '../controllers/pages.greeters.server.controller': greeters,
       },
     );
     const statisticsRoutes = register(
-      './../../../statistics/server/routes/statistics.server.routes.mjs',
+      './../../../statistics/server/routes/statistics.server.routes.mts',
       {
         '../controllers/statistics.server.controller': statistics,
       },

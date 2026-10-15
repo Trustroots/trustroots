@@ -7,7 +7,7 @@ const path: typeof import('path') = require('path');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const proxyquire: typeof import('./../../../../testutils/server/mock-module.mts').default = require('./../../../../testutils/server/mock-module');
 
-const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
 require('./../../server/models/user.server.model.mjs');
 
 type AvatarUser = {

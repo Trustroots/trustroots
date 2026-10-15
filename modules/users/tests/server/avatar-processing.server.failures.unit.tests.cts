@@ -4,7 +4,7 @@ const fs: typeof import('node:fs/promises') = require('fs').promises;
 const path: typeof import('node:path') = require('path');
 const proxyquire: typeof import('../../../../testutils/server/mock-module.mts').default = require('./../../../../testutils/server/mock-module');
 
-const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
 const actualFs: typeof import('node:fs/promises') = require('fs').promises;
 interface AvatarFailureOptions {
   probeError?: Error;
@@ -232,7 +232,7 @@ describe('Avatar processing failure handling', () => {
       service: proxyquire<AvatarFailureService>(
         require.resolve('./../../server/services/avatar-processing.server.service.mts'),
         {
-          './../../../../config/config.mjs': {
+          './../../../../config/config.mts': {
             ...serviceConfig,
           },
           fs: { promises: createFsProxy(fsHooks) },
@@ -408,7 +408,7 @@ describe('Avatar processing failure handling', () => {
     const publicCleanupService = proxyquire<AvatarFailureService>(
       require.resolve('./../../server/services/avatar-processing.server.service.mts'),
       {
-        './../../../../config/config.mjs': {
+        './../../../../config/config.mts': {
           ...config,
           uploadDir: path.join(temporaryRoot, 'public'),
           uploadTmpDir: path.join(temporaryRoot, 'private'),
@@ -450,7 +450,7 @@ describe('Avatar processing failure handling', () => {
     const privateCleanupService = proxyquire<AvatarFailureService>(
       require.resolve('./../../server/services/avatar-processing.server.service.mts'),
       {
-        './../../../../config/config.mjs': {
+        './../../../../config/config.mts': {
           ...config,
           uploadDir: path.join(temporaryRoot, 'public-private-cleanup'),
           uploadTmpDir: path.join(temporaryRoot, 'private'),
@@ -493,7 +493,7 @@ describe('Avatar processing failure handling', () => {
     const service = proxyquire<AvatarFailureService>(
       require.resolve('./../../server/services/avatar-processing.server.service.mts'),
       {
-        './../../../../config/config.mjs': {
+        './../../../../config/config.mts': {
           ...config,
           uploadDir: path.join(temporaryRoot, 'public-version-cleanup'),
           uploadTmpDir: path.join(temporaryRoot, 'private'),
@@ -575,7 +575,7 @@ describe('Avatar processing failure handling', () => {
     const service = proxyquire<AvatarFailureService>(
       require.resolve('./../../server/services/avatar-processing.server.service.mts'),
       {
-        './../../../../config/config.mjs': config,
+        './../../../../config/config.mts': config,
         gm: require('gm'),
       },
     );
@@ -620,7 +620,7 @@ describe('Avatar processing failure handling', () => {
             push: (job: AvatarJob) => pending.push(job),
           }),
         },
-        './../../../../config/config.mjs': config,
+        './../../../../config/config.mts': config,
         gm: require('gm'),
       },
     );
@@ -638,7 +638,7 @@ describe('Avatar processing failure handling', () => {
     const service = proxyquire<AvatarFailureService>(
       require.resolve('./../../server/services/avatar-processing.server.service.mts'),
       {
-        './../../../../config/config.mjs': {
+        './../../../../config/config.mts': {
           ...config,
           uploadDir: path.join(temporaryRoot, 'queue-public'),
           uploadTmpDir: path.join(temporaryRoot, 'queue-private'),

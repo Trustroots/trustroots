@@ -37,7 +37,7 @@ const searchMessagesParam = {
 };
 
 const async = require('async') as MessageStatsAsync;
-const config = require('./../../config/config.mjs');
+const config = require('./../../config/config.mts');
 require('./../../config/lib/mongoose.mjs');
 const mongoose = require('mongoose') as LegacyMongoose;
 require('./../../modules/messages/server/models/message.server.model.mjs');

@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import winston from 'winston';
-import config from './../config.mjs';
+import config from './../config.mts';
 import dependency3 from './log-redaction.mjs';
 import dependency4 from 'winston-papertrail-transport';
 /*
@@ -29,7 +29,14 @@ winston.configure({
 
 // If there we have a host and port for papertrail, then configure it
 if (papertrailConfig.host && papertrailConfig.port) {
-  winston.add(new PapertrailTransport(papertrailConfig));
+  winston.add(
+    new PapertrailTransport(
+      papertrailConfig as typeof papertrailConfig & {
+        host: string;
+        port: number;
+      },
+    ),
+  );
 }
 
 // Log that the logger has been instantiated

@@ -2,7 +2,7 @@ import userProfile from '../../../users/server/controllers/users.profile.server.
 import { readFileSync } from 'node:fs';
 import _ from 'lodash';
 import async from 'async';
-import config from './../../../../config/config.mjs';
+import config from './../../../../config/config.mts';
 import errorService from './../../../core/server/services/error.server.service.mjs';
 import tribes from './../../../tribes/server/controllers/tribes.server.controller.mjs';
 import textService from './../../../core/server/services/text.server.service.mjs';

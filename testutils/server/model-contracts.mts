@@ -88,7 +88,7 @@ export type TestExpressModule =
     init(connection: Connection): Promise<TestExpressApp>;
   };
 export type TestConfigModule =
-  typeof import('../../config/config.mjs').default & {
+  typeof import('../../config/config.mts').default & {
     illegalStrings: string[];
   };
 export type ContactModel = Model<ContactRecord>;

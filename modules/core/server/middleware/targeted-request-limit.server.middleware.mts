@@ -1,4 +1,4 @@
-import config from '../../../../config/config.mjs';
+import config from '../../../../config/config.mts';
 import { getClientIpAddress as defaultGetClientIpAddress } from '../services/client-ip.server.service.mts';
 import defaultRequestLimitService from '../services/targeted-request-limits.server.service.mts';
 type Operation =

@@ -31,7 +31,7 @@ interface ControllerTestConfig {
   https: boolean;
   akismet: { enabled: boolean };
 }
-const config: ControllerTestConfig = require('./../../../../config/config.mjs');
+const config: ControllerTestConfig = require('./../../../../config/config.mts');
 const spamService = require('./../../../core/server/services/spam.server.service.mjs');
 const messageStatService = require('./../../server/services/message-stat.server.service.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');

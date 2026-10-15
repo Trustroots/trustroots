@@ -7,7 +7,7 @@
  * Production images are kept at `public/uploads-circle`.
  */
 import { queue } from 'async';
-import config from './../config/config.mjs';
+import config from './../config/config.mts';
 import fs from 'fs';
 import { globSync } from 'node:fs';
 import path from 'path';

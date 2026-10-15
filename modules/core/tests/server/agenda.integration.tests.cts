@@ -3,7 +3,7 @@ import type { Collection, MongoClient as MongoClientInstance } from 'mongodb';
 const Agenda: typeof import('agenda').default = require('agenda');
 const MongoClient: typeof import('mongodb').MongoClient =
   require('mongodb').MongoClient;
-const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
 const worker: {
   unlockAgendaJobs(callback: (error?: Error | null) => void): void;
 } = require('./../../../../config/lib/worker.mjs');

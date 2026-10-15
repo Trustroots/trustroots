@@ -1,6 +1,6 @@
 import Influx from 'influx';
 import _ from 'lodash';
-import config from './../../../../config/config.mjs';
+import config from './../../../../config/config.mts';
 import log from './../../../../config/lib/logger.mjs';
 
 type Callback = (error?: Error | null) => void;

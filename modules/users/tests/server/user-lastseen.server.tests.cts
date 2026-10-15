@@ -6,7 +6,7 @@ const moment: typeof import('moment') = require('moment');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const should: typeof import('should') = require('should');
 const sinon: typeof import('sinon') = require('sinon');
-const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
 const express: {
   init(
     connection: import('mongoose').Connection,

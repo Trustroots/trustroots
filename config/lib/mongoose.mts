@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import config from './../config.mjs';
+import config from './../config.mts';
 import async from 'async';
 import path from 'path';
 import log from './logger.mjs';

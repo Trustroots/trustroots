@@ -16,7 +16,7 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const emailService: typeof import('./../../../../core/server/services/email.server.service.mjs') = require('./../../../../core/server/services/email.server.service.mjs');
 const reactivateHostsJobHandler: typeof import('./../../../server/jobs/reactivate-hosts.server.job.mjs').default = require('./../../../server/jobs/reactivate-hosts.server.job.mjs');
 const testutils: typeof import('../../../../../testutils/server/server.testutil') = require('../../../../../testutils/server/server.testutil');
-const config: TestConfigModule = require('./../../../../../config/config.mjs');
+const config: TestConfigModule = require('./../../../../../config/config.mts');
 const moment: typeof import('moment') = require('moment');
 require('should');
 

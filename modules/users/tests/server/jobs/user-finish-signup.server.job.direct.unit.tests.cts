@@ -1,5 +1,5 @@
 const should: typeof import('should') = require('should');
-const config: typeof import('../../../../../config/config.mjs').default = require('./../../../../../config/config.mjs');
+const config: typeof import('../../../../../config/config.mts').default = require('./../../../../../config/config.mts');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const winston: typeof import('winston') = require('winston');
 const emailService: typeof import('../../../../core/server/services/email.server.service.mjs').default = require('./../../../../core/server/services/email.server.service.mjs');

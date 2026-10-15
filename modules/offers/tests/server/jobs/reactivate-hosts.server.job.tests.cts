@@ -12,7 +12,7 @@ import type {
  */
 const should: typeof import('should') = require('should');
 const testutils: typeof import('../../../../../testutils/server/server.testutil') = require('../../../../../testutils/server/server.testutil');
-const config: TestConfigModule = require('./../../../../../config/config.mjs');
+const config: TestConfigModule = require('./../../../../../config/config.mts');
 const moment: typeof import('moment') = require('moment');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const User = mongoose.model<UserRecord, UserModel>('User');

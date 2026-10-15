@@ -2,7 +2,7 @@ import type { ServerUserFixture } from '../../../../testutils/common/data.common
 
 const request: typeof import('supertest') = require('supertest');
 const mongoose: typeof import('mongoose') = require('mongoose');
-const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
 const express: {
   init(
     connection: import('mongoose').Connection,

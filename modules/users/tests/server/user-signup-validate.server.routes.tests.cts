@@ -7,9 +7,9 @@ const should: typeof import('should') = require('should');
 const request: typeof import('supertest') = require('supertest');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const express: typeof import('../../../../config/lib/express.mjs').default = require('./../../../../config/lib/express.mjs');
-const config: typeof import('../../../../config/config.mjs').default & {
+const config: typeof import('../../../../config/config.mts').default & {
   illegalStrings: string[];
-} = require('./../../../../config/config.mjs');
+} = require('./../../../../config/config.mts');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 const User = mongoose.model<UserRecord, UserModel>('User');
 

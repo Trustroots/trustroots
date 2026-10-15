@@ -4,7 +4,7 @@ import os from 'node:os';
 import fs from 'node:fs';
 
 // Internal dependencies
-import config from './../../../../config/config.mjs';
+import config from './../../../../config/config.mts';
 import * as errorService from './error.server.service.mts';
 type MimeCallback = (error: Error | null, mime?: string) => void;
 interface UploadRequest {

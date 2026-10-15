@@ -4,7 +4,7 @@ const should: typeof import('should') = require('should');
 const influx: typeof import('influx') = require('influx');
 const sinon = require('sinon');
 
-const config: typeof import('../../../../../config/config.mjs').default = require('./../../../../../config/config.mjs');
+const config: typeof import('../../../../../config/config.mts').default = require('./../../../../../config/config.mts');
 require('./../../../../offers/server/models/offer.server.model.mjs');
 require('./../../../../users/server/models/user.server.model.mjs');
 type StatObject =

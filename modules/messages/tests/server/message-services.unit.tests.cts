@@ -8,7 +8,7 @@ import type {
 } from '../../../../testutils/server/model-contracts.mts';
 const should: typeof import('should') = require('should');
 const mongoose: typeof import('mongoose') = require('mongoose');
-const config: TestConfigModule = require('./../../../../config/config.mjs');
+const config: TestConfigModule = require('./../../../../config/config.mts');
 const winston: typeof import('winston') = require('winston');
 const statService: typeof import('./../../../stats/server/services/stats.server.service.mts') = require('./../../../stats/server/services/stats.server.service.mts');
 const sinon: typeof import('sinon') = require('sinon');

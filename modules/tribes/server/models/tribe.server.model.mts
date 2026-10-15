@@ -1,5 +1,5 @@
 import textService from '../../../core/server/services/text.server.service.mjs';
-import config from '../../../../config/config.mjs';
+import config from '../../../../config/config.mts';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
 import moment from 'moment';
 import mongoosePaginate from 'mongoose-paginate';

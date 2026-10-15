@@ -42,7 +42,7 @@ const removeLocalPath =
     .removeLocalPath as (filename: string) => Promise<void>;
 const async = require('async') as TemplateAsync;
 const nodemailer = require('nodemailer') as StreamMailer;
-const config = require('./../config/config.mjs') as { supportEmail: string };
+const config = require('./../config/config.mts') as { supportEmail: string };
 const emailService =
   require('./../modules/core/server/services/email.server.service.mjs') as typeof import('../modules/core/server/services/email.server.service.mts').default;
 

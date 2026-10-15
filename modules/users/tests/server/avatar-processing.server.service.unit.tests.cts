@@ -4,7 +4,7 @@ const fs: typeof import('node:fs/promises') = require('fs').promises;
 const path: typeof import('node:path') = require('path');
 const proxyquire: typeof import('../../../../testutils/server/mock-module.mts').default = require('./../../../../testutils/server/mock-module');
 
-const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
 interface ProcessorCommand {
   args(): string[];
 }
@@ -101,7 +101,7 @@ describe('Avatar processing service', () => {
       const service = proxyquire<ImageMagickProcessingService>(
         require.resolve('./../../server/services/avatar-processing.server.service.mts'),
         {
-          './../../../../config/config.mjs': imageMagickConfig,
+          './../../../../config/config.mts': imageMagickConfig,
           gm: imageMagick,
         },
       );
@@ -192,7 +192,7 @@ describe('Avatar processing service', () => {
       const service = proxyquire<AvatarProcessingService>(
         require.resolve('./../../server/services/avatar-processing.server.service.mts'),
         {
-          './../../../../config/config.mjs': {
+          './../../../../config/config.mts': {
             ...config,
             uploadDir,
             uploadTmpDir: tempDir,
@@ -370,7 +370,7 @@ describe('Avatar processing service', () => {
       const service = proxyquire<AvatarProcessingService>(
         require.resolve('./../../server/services/avatar-processing.server.service.mts'),
         {
-          './../../../../config/config.mjs': {
+          './../../../../config/config.mts': {
             ...config,
             uploadDir,
             uploadTmpDir: tempDir,

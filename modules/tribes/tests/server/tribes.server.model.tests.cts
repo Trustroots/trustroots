@@ -13,7 +13,7 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const validator: {
   isHexadecimal(value: string): boolean;
 } = require('validator');
-const config: TestConfigModule = require('./../../../../config/config.mjs');
+const config: TestConfigModule = require('./../../../../config/config.mts');
 const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 
 const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');

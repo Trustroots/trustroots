@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.server.json",
+  "include": ["*.cts", "vite.config.mts", "config/**/*.cts", "config/**/*.mts"],
+  "exclude": [
+    "node_modules",
+    "config/**/*.test.mts",
+    "config/vite/react-main.tsx"
+  ]
+}

@@ -11,7 +11,7 @@ const should: typeof import('should') = require('should');
 const crypto: typeof import('node:crypto') = require('node:crypto');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon: typeof import('sinon') = require('sinon');
-const config: typeof import('../../../../config/config.mjs').default = require('../../../../config/config.mjs');
+const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model<UserRecord, UserModel>('User');

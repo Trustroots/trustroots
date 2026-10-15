@@ -1,4 +1,4 @@
-import config from '../../../../config/config.mjs';
+import config from '../../../../config/config.mts';
 import qs from 'qs';
 interface PaginationRequest {
   query: Record<string, unknown>;

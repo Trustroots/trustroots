@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import mongoose, { type Types } from 'mongoose';
-import config from '../../../../config/config.mjs';
+import config from '../../../../config/config.mts';
 import textService from '../../../core/server/services/text.server.service.mjs';
 import type {
   ExperienceChangeAccess,

@@ -13,10 +13,10 @@ type MockResponse = {
   set(key: string, value: string): MockResponse;
   waitForResponse(): Promise<MockResponse>;
 };
-type WebhookConfig = typeof import('../../../../config/config.mjs').default & {
+type WebhookConfig = typeof import('../../../../config/config.mts').default & {
   sparkpostWebhook: { enabled: boolean; username: string; password: string };
 };
-const config: WebhookConfig = require('./../../../../config/config.mjs');
+const config: WebhookConfig = require('./../../../../config/config.mts');
 const winston: typeof import('winston') = require('winston');
 const statService: typeof import('../../../stats/server/services/stats.server.service.mts').default = require('./../../../stats/server/services/stats.server.service.mts');
 const controller: WebhookController = require('./../../server/controllers/sparkpost-webhooks.server.controller.mts');

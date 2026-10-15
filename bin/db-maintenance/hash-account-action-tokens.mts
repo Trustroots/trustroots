@@ -7,7 +7,7 @@ import {
   type Filter,
   type ObjectId,
 } from 'mongodb';
-import config from '../../config/config.mjs';
+import config from '../../config/config.mts';
 import { hashToken } from '../../modules/users/server/services/action-token.server.service.mjs';
 
 export interface UserTokenRecord extends Document {

@@ -7,10 +7,11 @@ import {
   type RtlStylesheetBundle,
   type RtlStylesheetPlugin,
   type RtlStylesheetPluginContext,
-} from './rtl-stylesheet.mjs';
+} from './rtl-stylesheet.mts';
 
 function runPlugin(bundle: RtlStylesheetBundle): RtlStylesheetAsset[] {
-  const plugin = rtlStylesheetPlugin() as RtlStylesheetPlugin;
+  // Exercise only the hook/context subset supplied by this test harness.
+  const plugin = rtlStylesheetPlugin() as unknown as RtlStylesheetPlugin;
   const hook = plugin.generateBundle;
   const emitted: RtlStylesheetAsset[] = [];
   const context = {

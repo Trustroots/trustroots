@@ -19,7 +19,7 @@ const _: typeof import('lodash') = require('lodash');
 const sinon: typeof import('sinon') = require('sinon');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const should: typeof import('should') = require('should');
-const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
 const userHandler =
   require('./../../server/controllers/users.profile.server.controller.mjs') as typeof import('../../server/controllers/users.profile.server.controller.mjs').default;
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');

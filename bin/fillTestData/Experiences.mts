@@ -4,7 +4,7 @@ import yargs from 'yargs';
 import { faker } from '@faker-js/faker';
 import mongoose, { type Document, type Types } from 'mongoose';
 import queue from 'async/queue.js';
-import config from './../../config/config.mjs';
+import config from './../../config/config.mts';
 import moment from 'moment';
 
 interface SeedUser extends Document {

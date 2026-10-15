@@ -7,7 +7,7 @@ import type { UserRecord } from '../../../../../testutils/server/model-contracts
 const _: typeof import('lodash') = require('lodash');
 const should = require('should');
 const testutils: typeof import('../../../../../testutils/server/server.testutil.mts') = require('../../../../../testutils/server/server.testutil');
-const config: typeof import('../../../../../config/config.mjs').default = require('./../../../../../config/config.mjs');
+const config: typeof import('../../../../../config/config.mts').default = require('./../../../../../config/config.mts');
 const moment: typeof import('moment') = require('moment');
 const mongoose: typeof import('mongoose') = require('mongoose');
 interface SignupReminderUser extends Omit<

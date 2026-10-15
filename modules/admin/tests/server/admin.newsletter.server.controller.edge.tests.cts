@@ -4,7 +4,7 @@ const { Readable }: typeof import('node:stream') = require('stream');
 
 const sinon = require('sinon');
 const mongoose = require('mongoose');
-const config = require('./../../../../config/config.mjs');
+const config = require('./../../../../config/config.mts');
 const userRolesService = require('./../../../users/server/services/user-roles.server.service.mjs');
 require('./../../../users/server/models/user.server.model.mjs');
 require('./../../../offers/server/models/offer.server.model.mjs');

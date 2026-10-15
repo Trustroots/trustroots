@@ -1,5 +1,5 @@
 import emailService from './../../../core/server/services/email.server.service.mjs';
-import config from './../../../../config/config.mjs';
+import config from './../../../../config/config.mts';
 import async from 'async';
 import moment from 'moment';
 import log from './../../../../config/lib/logger.mjs';

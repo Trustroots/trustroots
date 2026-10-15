@@ -3,7 +3,7 @@
 /**
  * Ensure uploads directory exists
  */
-import config from './../config/config.mjs';
+import config from './../config/config.mts';
 import fs from 'fs';
 if (!fs.existsSync(config.uploadDir)) {
   fs.mkdir(

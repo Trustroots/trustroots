@@ -5,7 +5,7 @@ import type { HydratedDocument } from 'mongoose';
 import type { UserRecord } from '../../../../../testutils/server/model-contracts.mts';
 
 const testutils: typeof import('../../../../../testutils/server/server.testutil.mts') = require('../../../../../testutils/server/server.testutil');
-const config: typeof import('../../../../../config/config.mjs').default = require('./../../../../../config/config.mjs');
+const config: typeof import('../../../../../config/config.mts').default = require('./../../../../../config/config.mts');
 const moment: typeof import('moment') = require('moment');
 const mongoose: typeof import('mongoose') = require('mongoose');
 require('should');

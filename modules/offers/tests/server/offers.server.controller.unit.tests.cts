@@ -22,7 +22,7 @@ const asyncLib: {
 } = require('async');
 const sinon: typeof import('sinon') = require('sinon');
 
-const config: TestConfigModule = require('./../../../../config/config.mjs');
+const config: TestConfigModule = require('./../../../../config/config.mts');
 const offersController: typeof import('./../../server/controllers/offers.server.controller.mjs') = require('./../../server/controllers/offers.server.controller.mjs');
 const userProfile: typeof import('./../../../users/server/controllers/users.profile.server.controller.mjs') = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');

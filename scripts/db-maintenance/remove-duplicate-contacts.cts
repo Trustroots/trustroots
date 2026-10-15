@@ -16,7 +16,7 @@ interface DuplicateContacts {
  */
 
 const async = require('async') as QueueFactory;
-const config = require('./../../config/config.mjs');
+const config = require('./../../config/config.mts');
 require('./../../config/lib/mongoose.mjs');
 require('./../../config/lib/express.mjs');
 const mongoose = require('mongoose') as LegacyMongoose;

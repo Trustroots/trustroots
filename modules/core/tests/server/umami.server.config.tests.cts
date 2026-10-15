@@ -1,10 +1,10 @@
 type ConfigWithUmami =
-  typeof import('../../../../config/env/development.mjs').default & {
+  typeof import('../../../../config/env/development.mts').default & {
     umami: { scriptSrc: string; websiteId: string };
   };
-const developmentConfig: ConfigWithUmami = require('./../../../../config/env/development.mjs');
-const productionConfig: ConfigWithUmami = require('./../../../../config/env/production.mjs');
-const testConfig: ConfigWithUmami = require('./../../../../config/env/test.mjs');
+const developmentConfig: ConfigWithUmami = require('./../../../../config/env/development.mts');
+const productionConfig: ConfigWithUmami = require('./../../../../config/env/production.mts');
+const testConfig: ConfigWithUmami = require('./../../../../config/env/test.mts');
 const should: typeof import('should') = require('should');
 void should;
 

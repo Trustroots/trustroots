@@ -3,7 +3,7 @@ import errorService from './../services/error.server.service.mjs';
 import userProfile from './../../../users/server/controllers/users.profile.server.controller.mjs';
 import textService from './../services/text.server.service.mjs';
 import log from './../../../../config/lib/logger.mjs';
-import deprecatedLanguages from './../../../../config/languages/deprecated.mjs';
+import deprecatedLanguages from './../../../../config/languages/deprecated.mts';
 import reactRouteOwnership, {
   type ReactRouteUser,
 } from '../../shared/react-route-ownership.mts';

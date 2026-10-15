@@ -1,6 +1,6 @@
 import './../models/message.server.model.mjs';
 import nodeProcess from 'node:process';
-import config from './../../../../config/config.mjs';
+import config from './../../../../config/config.mts';
 import mongoose, { type Types } from 'mongoose';
 import log from './../../../../config/lib/logger.mjs';
 import statService, {

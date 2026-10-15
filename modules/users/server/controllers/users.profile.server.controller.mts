@@ -18,7 +18,7 @@ import statService from './../../../stats/server/services/stats.server.service.m
 import log from './../../../../config/lib/logger.mjs';
 import fileRemovalServiceModule from '../../../core/server/services/file-removal.server.service.mjs';
 import messageStatService from './../../../messages/server/services/message-stat.server.service.mjs';
-import config from './../../../../config/config.mjs';
+import config from './../../../../config/config.mts';
 import async from 'async';
 import crypto from 'crypto';
 import sanitizeHtml from 'sanitize-html';
@@ -36,7 +36,7 @@ import type {
   UserServerModel,
   UserServerRecord,
 } from '../models/user.server.types.mts';
-import deprecatedLanguages from './../../../../config/languages/deprecated.mjs';
+import deprecatedLanguages from './../../../../config/languages/deprecated.mts';
 import {
   profileQueryFields,
   selectMiniProfileResponse,
@@ -1559,7 +1559,12 @@ service.search = function (req, res, next) {
       },
     })
     // limit the amount of found users
-    .limit(Math.min(req.query.limit || config.limits.paginationLimit, 50))
+    .limit(
+      Math.min(
+        (req.query.limit || config.limits.paginationLimit) as number,
+        50,
+      ),
+    )
     // skip to the page, automatically handles invalid page number
     .skip(req.skip)
     .maxTimeMS(2000)

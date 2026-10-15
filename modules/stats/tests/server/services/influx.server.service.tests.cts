@@ -17,7 +17,7 @@ type TestInfluxService = Omit<InfluxService, '_writeMeasurement'> & {
 const influxService =
   require('./../../../server/services/influx.server.service.mts') as TestInfluxService;
 const config =
-  require('./../../../../../config/config.mjs') as typeof import('../../../../../config/config.mjs').default;
+  require('./../../../../../config/config.mts') as typeof import('../../../../../config/config.mts').default;
 type WriteMeasurementArgs = [
   string,
   import('influx').IPoint[],

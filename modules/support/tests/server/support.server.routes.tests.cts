@@ -5,7 +5,7 @@ import type { CapturedJob } from '../../../../testutils/server/server.testutil.m
 const mongoose: typeof import('mongoose') = require('mongoose');
 const request: typeof import('supertest') = require('supertest');
 const should = require('should');
-const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
 const express: typeof import('../../../../config/lib/express.mjs').default = require('./../../../../config/lib/express.mjs');
 const testutils: typeof import('../../../../testutils/server/server.testutil.mts') = require('../../../../testutils/server/server.testutil');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
