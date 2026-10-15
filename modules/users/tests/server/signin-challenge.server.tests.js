@@ -1,6 +1,6 @@
 const assert = require('assert/strict');
 const crypto = require('crypto');
-const config = require('../../../../config/config.mjs');
+const config = require('../../../../config/config.mts');
 const {
   issueChallenge,
   verifyChallenge,

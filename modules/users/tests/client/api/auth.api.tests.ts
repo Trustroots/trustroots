@@ -39,12 +39,12 @@ describe('auth.api', () => {
 
   it('solves one elevated-activity challenge and retries the same credentials', async () => {
     const challenge = { token: 'signed-challenge', difficulty: 14 };
-    axios.post
+    axiosMock.post
       .mockRejectedValueOnce({
         response: { status: 429, data: { signinChallenge: challenge } },
       })
       .mockResolvedValueOnce({ data: { _id: 'sample' } });
-    solveSigninChallenge.mockResolvedValue({
+    jest.mocked(solveSigninChallenge).mockResolvedValue({
       token: challenge.token,
       solution: 42,
     });
@@ -64,7 +64,7 @@ describe('auth.api', () => {
     { response: { status: 429 } },
     { response: { status: 429, data: {} } },
   ])('preserves ordinary sign-in failures', async error => {
-    axios.post.mockRejectedValue(error);
+    axiosMock.post.mockRejectedValue(error);
     await expect(
       authApi.signin({ username: 'sample', password: 'example' }),
     ).rejects.toBe(error);

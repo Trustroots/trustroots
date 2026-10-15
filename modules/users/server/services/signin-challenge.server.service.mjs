@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
-import config from '../../../../config/config.mjs';
+import config from '../../../../config/config.mts';
 import limits from '../../../core/server/services/targeted-request-limits.server.service.mjs';
-import { getClientIpAddress } from '../../../core/server/services/client-ip.server.service.mjs';
+import { getClientIpAddress } from '../../../core/server/services/client-ip.server.service.mts';
 
 const lifetimeMs = 120000;
 function signature(value) {

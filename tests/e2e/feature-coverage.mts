@@ -143,7 +143,7 @@ function apiRoute(
 }
 
 const specPaths: Record<string, string> = {
-  'signin-challenge.spec.js': 'features/auth-account/signin-challenge.spec.js',
+  'signin-challenge.spec.js': 'features/auth-account/signin-challenge.spec.ts',
   'account-email-tokens.spec.js':
     'features/auth-account/account-email-tokens.spec.js',
   'account-settings.spec.js': 'features/auth-account/account-settings.spec.js',
