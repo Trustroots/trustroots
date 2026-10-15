@@ -1,9 +1,7 @@
 const assert: typeof import('node:assert') = require('assert');
 const proxyquire: typeof import('./../../../../testutils/server/mock-module') = require('./../../../../testutils/server/mock-module');
-type RedactionApi = {
-  redactMetadata(value: unknown): unknown;
-  safeError(error: Error): unknown;
-};
+type RedactionApi =
+  typeof import('../../../../config/lib/log-redaction.mts').default;
 const {
   redactMetadata,
   safeError,
@@ -300,7 +298,7 @@ describe('diagnostic log redaction', () => {
       },
     };
     const logger: (...args: unknown[]) => unknown = proxyquire(
-      require.resolve('./../../../../config/lib/logger.mjs'),
+      require.resolve('./../../../../config/lib/logger.mts'),
       {
         winston,
         '../config': { log: { papertrail: papertrailConfig } },

@@ -2,25 +2,10 @@ const assert: typeof import('node:assert') = require('assert');
 const proxyquire = require('./../../../../testutils/server/mock-module');
 const sinon: typeof import('sinon') = require('sinon');
 
-type BuildMetadataValue = {
-  shortCommit: string;
-  commit: string;
-  committedAt: string;
-  commitUrl: string;
-  branch?: string;
-};
-
-type BuildMetadataService = {
-  formatUtcDateTime(date: Date): string;
-  buildMetadataFromGitLog(
-    output: string,
-    branch?: string | false,
-  ): BuildMetadataValue | false;
-  buildMetadataFromEnvironment(): BuildMetadataValue | false;
-  getBuildMetadata(
-    callback: (metadata: BuildMetadataValue | false) => void,
-  ): void;
-};
+type BuildMetadataValue =
+  import('../../../../config/lib/build-metadata.mts').BuildMetadata;
+type BuildMetadataService =
+  typeof import('../../../../config/lib/build-metadata.mts').default;
 
 const buildMetadata: BuildMetadataService = require('./../../../../config/lib/build-metadata.mjs');
 

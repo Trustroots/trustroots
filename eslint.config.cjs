@@ -162,6 +162,7 @@ const legacyConfig = {
       files: [
         '*.js',
         '*.mjs',
+        '*.mts',
         '*.cjs',
         'config/**',
         'scripts/**/*.{mts,cts}',
@@ -183,7 +184,7 @@ const legacyConfig = {
     {
       files: [
         'modules/*/server/**/*.{mjs,mts}',
-        'config/lib/**/*.mjs',
+        'config/lib/**/*.{mjs,mts}',
         'bin/**/*.mjs',
       ],
       rules: {
@@ -266,6 +267,7 @@ const legacyConfig = {
     {
       files: [
         'config/vite/**/*.{ts,tsx,mts}',
+        'worker.mts',
         'jest/**/*.cts',
         'bin/**/*.mts',
         'scripts/**/*.{mts,cts}',
@@ -275,6 +277,7 @@ const legacyConfig = {
         'modules/*/shared/**/*.{ts,tsx,mts}',
         'modules/*/server/**/*.mts',
         'config/**/*.d.mts',
+        'config/lib/**/*.mts',
         'modules/*/tests/client/**/*.{ts,tsx,mts}',
         'modules/*/tests/server/**/*.{cts,mts}',
         'testutils/client/**/*.{ts,tsx}',

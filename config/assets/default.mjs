@@ -2,10 +2,10 @@ let service = {};
 service = {
   server: {
     fontelloConfig: 'modules/core/client/fonts/fontello/config.json',
-    workerJS: ['worker.js', 'config/**/*.{js,mjs}'],
+    workerJS: ['worker.{js,mjs,mts}', 'config/**/*.{js,mjs,mts}'],
     allJS: [
       'server.js',
-      'config/**/*.{js,mjs}',
+      'config/**/*.{js,mjs,mts}',
       'modules/*/server/**/*.{mjs,mts}',
     ],
     models: 'modules/*/server/models/**/*.{mjs,mts}',

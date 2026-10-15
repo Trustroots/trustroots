@@ -225,10 +225,7 @@ describe('file-upload.service unit tests', () => {
     config.maxUploadSize = 10 * 1024 * 1024;
     app.post(
       '/photo',
-      (
-        req: { file: UploadedFile },
-        res: { send(body: { size: number }): unknown },
-      ) => {
+      (req: { file: UploadedFile }, res: import('express').Response) => {
         uploadService.uploadFile(
           validMimeTypes,
           'avatar',

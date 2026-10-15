@@ -52,7 +52,12 @@ describe('API input boundaries', () => {
       value = child;
     }
     let continued = false;
-    validateApiInput({ body }, {}, () => {
+    const response = {
+      status() {
+        throw new Error('Valid input must not create an error response.');
+      },
+    };
+    validateApiInput({ body }, response, () => {
       continued = true;
     });
     assert.equal(continued, true);

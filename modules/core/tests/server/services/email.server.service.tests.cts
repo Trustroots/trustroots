@@ -834,7 +834,7 @@ describe('Service: email', function () {
     sandbox.stub(config, 'https').value(true);
     sandbox.stub(config, 'domain').value('secure.example.test');
     const secureModule = (await import(
-      `${pathToFileURL(path.resolve(__dirname, '../../../server/services/email.server.service.mjs')).href}?production-https`
+      `${pathToFileURL(path.resolve(__dirname, '../../../server/services/email.server.service.mts')).href}?production-https`
     )) as { default: EmailService };
     const { default: secureService } = secureModule;
     const send = sandbox.stub(secureService, 'renderEmailAndSend');

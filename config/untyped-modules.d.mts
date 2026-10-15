@@ -8,6 +8,11 @@ declare module 'async' {
     tasks: Array<(...args: never[]) => void>,
     callback?: (error?: Error | null, ...results: unknown[]) => void,
   ): void;
+  export function each<T>(
+    items: T[],
+    iteratee: (item: T, callback: (error?: Error | null) => void) => void,
+    callback?: (error?: Error | null) => void,
+  ): void;
   export function parallel<Result extends Record<string, unknown>>(
     tasks: {
       [Key in keyof Result]: (
@@ -39,8 +44,21 @@ declare module 'async' {
     ) => void,
     callback: (error?: Error | null) => void,
   ): void;
+  export function mapValuesSeries<T, R>(
+    values: Record<string, T>,
+    iteratee: (
+      value: T,
+      key: string,
+      callback: (error: Error | null, result: R) => void,
+    ) => void,
+    callback: (error: Error | null, result: Record<string, R>) => void,
+  ): void;
+  export function nextTick(callback: () => void): void;
   const async: {
     map: typeof map;
+    each: typeof each;
+    mapValuesSeries: typeof mapValuesSeries;
+    nextTick: typeof nextTick;
     waterfall: typeof waterfall;
     parallel: typeof parallel;
     eachSeries: typeof eachSeries;
@@ -79,15 +97,30 @@ declare module 'speakingurl' {
 }
 
 declare module 'sanitize-html' {
+  export interface SanitizeFrame {
+    tag: string;
+    text: string;
+    attribs: Record<string, string>;
+  }
+  export interface SanitizeOptions {
+    allowedTags?: string[];
+    allowedAttributes?: Record<string, string[]>;
+    transformTags?: Record<string, string>;
+    exclusiveFilter?: (frame: SanitizeFrame) => boolean;
+    selfClosing?: string[];
+    allowProtocolRelative?: boolean;
+    allowedSchemesByTag?: Record<string, string[]>;
+  }
   export default function sanitizeHtml(
-    text: string,
-    options?: Record<string, unknown>,
+    content: string,
+    options?: SanitizeOptions,
   ): string;
 }
 
 declare module 'semver' {
+  export function valid(version: string): string | null;
   export function satisfies(version: string, range: string): boolean;
-  const semver: { satisfies: typeof satisfies };
+  const semver: { satisfies: typeof satisfies; valid: typeof valid };
   export default semver;
 }
 
@@ -108,4 +141,157 @@ declare module 'validator' {
   ): boolean;
   const validator: { isEmail: typeof isEmail; isURL: typeof isURL };
   export default validator;
+}
+
+declare module 'he' {
+  const he: { decode(content: string): string };
+  export default he;
+}
+
+declare module 'juice' {
+  export default function juice(html: string): string;
+}
+
+declare module 'qs' {
+  const qs: {
+    stringify(values: Record<string, unknown>): string;
+    parse(value: string): Record<string, unknown>;
+  };
+  export default qs;
+}
+
+declare module 'multer' {
+  interface UploadedFile {
+    buffer: Buffer;
+    originalname: string;
+  }
+  interface UploadRequest {
+    file?: UploadedFile;
+  }
+  interface MulterError extends Error {
+    code?: string;
+  }
+  type FileFilterCallback = (error: Error | null, acceptFile?: boolean) => void;
+  type UploadCallback = (error: MulterError | null) => void;
+  interface Multer {
+    single(
+      fieldName: string,
+    ): (req: UploadRequest, res: unknown, callback: UploadCallback) => void;
+  }
+  function multer(options: {
+    limits?: { fileSize?: number };
+    storage: object;
+    fileFilter(
+      req: object,
+      file: { originalname: string },
+      callback: FileFilterCallback,
+    ): void;
+  }): Multer;
+  function multer(options: {
+    dest: string;
+    limits: { fileSize: number; files: number; fields: number; parts: number };
+    fileFilter(
+      req: object,
+      file: { mimetype?: string },
+      callback: FileFilterCallback,
+    ): void;
+  }): {
+    single(
+      fieldName: string,
+    ): (
+      req: { file?: { path?: string } },
+      res: unknown,
+      callback: UploadCallback,
+    ) => void;
+  };
+  namespace multer {
+    function memoryStorage(): object;
+  }
+  export default multer;
+}
+
+declare module 'nunjucks' {
+  interface Environment {
+    addFilter(name: string, filter: (value: unknown) => string): void;
+  }
+  interface Renderer {
+    (
+      template: string,
+      context: object,
+      callback: (error: Error | null, result?: string) => void,
+    ): void;
+    (template: string, context?: object): string;
+  }
+  const nunjucks: {
+    configure(
+      path: string,
+      options: {
+        watch: boolean;
+        noCache: boolean;
+        express?: import('express').Express;
+      },
+    ): Environment;
+    render: Renderer;
+  };
+  export default nunjucks;
+}
+
+declare module 'winston-papertrail-transport' {
+  const transport: {
+    PapertrailTransport: new (options: {
+      host: string;
+      port: number;
+    }) => import('winston-transport');
+  };
+  export default transport;
+}
+
+declare module 'morgan' {
+  export default function morgan(
+    format: string,
+  ): import('express').RequestHandler;
+}
+
+declare module 'serve-favicon' {
+  export default function favicon(
+    path: string,
+  ): import('express').RequestHandler;
+}
+
+declare module 'cookie-parser' {
+  export default function cookieParser(): import('express').RequestHandler;
+}
+
+declare module 'compression' {
+  export default function compression(options: {
+    filter(
+      req: import('express').Request,
+      res: import('express').Response,
+    ): boolean;
+    level: number;
+  }): import('express').RequestHandler;
+}
+
+declare module 'expect-ct' {
+  export default function expectCt(options: {
+    enforce: boolean;
+    maxAge: number;
+    reportUri: string;
+  }): import('express').RequestHandler;
+}
+
+declare module 'express-session' {
+  export default function session(options: {
+    saveUninitialized: boolean;
+    resave: boolean;
+    secret: string;
+    proxy: boolean;
+    cookie: {
+      secure: boolean;
+      httpOnly: boolean;
+      sameSite: 'lax';
+      maxAge: number;
+    };
+    store: object;
+  }): import('express').RequestHandler;
 }

@@ -191,7 +191,7 @@ export const supportRequest: SupportService['supportRequest'] = async function (
   emailService.sendSupportRequest(
     replyTo,
     supportRequestData,
-    function (emailServiceErr: Error | null) {
+    function (emailServiceErr?: Error | null) {
       if (emailServiceErr) {
         log('error', 'Failed sending support request via email. #49ghsd', {
           error: emailServiceErr,
