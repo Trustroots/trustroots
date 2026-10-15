@@ -163,6 +163,11 @@ internal fun HostMapScreen(
             expirationOverrideDuration = 7L * 24 * 60 * 60 * 1000
         }
         MapView(context).apply {
+            // The AndroidView holder below can be detached and re-attached (e.g. when navigating
+            // to a host detail and back). With the default destroy mode, MapView.onDetachedFromWindow()
+            // calls onDetach(), invalidating MapViewRepository (getRepository() then dereferences a
+            // null MapView when building the default MarkerInfoWindow -> NPE on re-attach).
+            setDestroyMode(false)
             val mapboxToken = org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN
             setTileSource(if (mapboxToken.isNotBlank()) {
                 XYTileSource(
