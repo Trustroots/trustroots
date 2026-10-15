@@ -22,7 +22,7 @@ interface OfferMapProps {
   'aria-describedby'?: string;
   className: string;
   fallbackMarker?: { color: string; location: [number, number] };
-  height: number;
+  height: number | string;
   location: [number, number];
   onLocationChange?: (location: [number, number]) => void;
   onClick?: (event: { lngLat?: [number, number] }) => void;
@@ -101,7 +101,7 @@ export default function OfferLocationEditor({
                 }
               : undefined
           }
-          height={320}
+          height="100%"
           location={mapLocation}
           onLocationChange={handleMapLocationChange}
           onClick={event => {

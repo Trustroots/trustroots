@@ -13,6 +13,12 @@ import OfferLocationEditor from './OfferLocationEditor.component';
 
 type HostStatus = 'yes' | 'maybe' | 'no';
 const HOST_STATUSES: HostStatus[] = ['yes', 'maybe', 'no'];
+const HOST_TABS = ['availability', 'description', 'location'] as const;
+
+function getTabFromHash() {
+  const tab = window.location.hash.slice(1);
+  return HOST_TABS.find(value => value === tab) || 'availability';
+}
 
 interface HostOffer {
   _id?: string;
@@ -44,11 +50,21 @@ function defaultHostOffer(): HostOffer {
 export default function OfferHostPage({ user }: HostPageProps) {
   const routeParams = getCurrentRouteParams();
   const [offer, setOffer] = useState<HostOffer>(defaultHostOffer());
-  const [activeTab, setActiveTab] = useState<string | number>(0);
+  const [activeTab, setActiveTab] = useState<string>(getTabFromHash);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [firstTimeAround, setFirstTimeAround] = useState(false);
   const [loadError, setLoadError] = useState(false);
+
+  useEffect(() => {
+    const syncTab = () => setActiveTab(getTabFromHash());
+    window.addEventListener('hashchange', syncTab);
+    window.addEventListener('popstate', syncTab);
+    return () => {
+      window.removeEventListener('hashchange', syncTab);
+      window.removeEventListener('popstate', syncTab);
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -124,6 +140,11 @@ export default function OfferHostPage({ user }: HostPageProps) {
   const hasLocation =
     Array.isArray(offer.location) && offer.location.length === 2;
 
+  function selectTab(tab: string) {
+    setActiveTab(tab);
+    window.location.hash = tab;
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -163,36 +184,49 @@ export default function OfferHostPage({ user }: HostPageProps) {
   }
 
   return (
-    <section className="offers-edit">
+    <section className="offers-edit offers-edit-host">
       <form autoComplete="off" noValidate onSubmit={handleSubmit}>
-        <button
-          className="btn btn-lg btn-inverse-primary pull-right"
-          disabled={isSaving || isDescriptionTooShort || !hasLocation}
-          title={
-            isDescriptionTooShort
-              ? 'Write longer description first'
-              : !hasLocation
-                ? 'Choose a location first'
-                : undefined
-          }
-          type="submit"
-        >
-          Save and Exit
-        </button>
+        <div className="offer-host-header">
+          <h1>Hosting offer</h1>
+          <button
+            className="btn btn-lg btn-inverse-primary"
+            disabled={isSaving || isDescriptionTooShort || !hasLocation}
+            title={
+              isDescriptionTooShort
+                ? 'Write longer description first'
+                : !hasLocation
+                  ? 'Choose a location first'
+                  : undefined
+            }
+            type="submit"
+          >
+            Save and Exit
+          </button>
+        </div>
 
         <Tabs
           activeKey={activeTab}
           className="offer-tabs"
           id="offer-host-tabs"
           onSelect={key => {
-            if (key !== null) setActiveTab(Number(key));
+            if (key !== null) {
+              selectTab(String(key));
+            }
           }}
         >
-          <Tab eventKey={0} title="Availability">
+          <Tab eventKey="availability" title="Availability">
             {!hasLocation && (
               <p className="alert alert-info" role="status">
-                Choose a location in the Location tab before saving, even if you
-                cannot host.
+                <a
+                  href="#location"
+                  onClick={event => {
+                    event.preventDefault();
+                    selectTab('location');
+                  }}
+                >
+                  Choose a location
+                </a>{' '}
+                in the Location tab before saving, even if you cannot host.
               </p>
             )}
             <div className="row">
@@ -342,7 +376,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
               </div>
             </div>
           </Tab>
-          <Tab eventKey={1} title="Description">
+          <Tab eventKey="description" title="Description">
             {offer.status === 'no' && (
               <div className="panel panel-default">
                 <div className="panel-heading">
@@ -389,7 +423,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
               </div>
             </div>
           </Tab>
-          <Tab disabled={isDescriptionTooShort} eventKey={2} title="Location">
+          <Tab eventKey="location" title="Location">
             {!hasLocation && (
               <p className="alert alert-info" role="status">
                 Search for a place or move the map to set your hosting location.

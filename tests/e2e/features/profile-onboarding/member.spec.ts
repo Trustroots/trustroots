@@ -1,4 +1,10 @@
-import { annotateFeature, test, expect } from '../../support/fixtures.mts';
+import {
+  annotateFeature,
+  test,
+  expect,
+  expectPresent,
+  useElementScreenshot,
+} from '../../support/fixtures.mts';
 
 import {
   SEEDED_EXPERIENCE,
@@ -245,6 +251,7 @@ test.describe('confirmed member flows', () => {
   test('another host accommodation page shows hosting details', async ({
     page,
   }, testInfo) => {
+    useElementScreenshot(testInfo, '.offer-view');
     annotateFeature(testInfo, 'profile.view-accommodation', [
       'Accommodation tab loads for a host.',
       'Hosting details from seeded offer/profile are visible.',
@@ -255,6 +262,15 @@ test.describe('confirmed member flows', () => {
     await expect(page.getByText(SEEDED_OFFER.hostingStatus)).toBeVisible();
     await expect(page.getByText(SEEDED_OFFER.description)).toBeVisible();
     await expect(page.getByText(SEEDED_OFFER.maxGuestsLabel)).toBeVisible();
+    await expect(page.getByText('Approximate hosting location')).toBeVisible();
+    const map = page.locator('.offer-view .offer-location');
+    await expect(map).toBeVisible();
+    const box = await map.boundingBox();
+    expectPresent(box);
+    expect(box.height).toBe(220);
+    await expect(
+      map.locator('.mapboxgl-canvas, .leaflet-pane').first(),
+    ).toBeVisible();
   });
 
   test('profile actions link to messaging and experiences', async ({

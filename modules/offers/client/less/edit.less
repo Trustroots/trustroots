@@ -8,6 +8,57 @@
 @offer-map-height: 400px;
 @offer-map-height-xs: 220px;
 
+.offers-edit.offers-edit-host {
+  .offer-host-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+  }
+
+  @media (max-width: @screen-xs) {
+    .offer-host-header {
+      h1 {
+        font-size: 22px;
+      }
+
+      button {
+        font-size: @font-size-base;
+        white-space: nowrap;
+      }
+    }
+
+    .offer-tabs.nav-tabs {
+      position: static;
+      display: flex;
+      margin: 0 0 20px;
+
+      .nav-item {
+        flex: 1;
+        text-align: center;
+      }
+    }
+
+    .offer-map,
+    .offer-location-overlay {
+      position: relative;
+      top: auto;
+      height: 320px;
+    }
+
+    .offer-location-overlay {
+      position: absolute;
+      top: 0;
+    }
+  }
+}
+
 .offer-tabs {
   @media (max-width: @screen-xs) {
     margin-top: @navbar-height;
