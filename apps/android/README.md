@@ -173,8 +173,11 @@ the table's rounded percentages. Per-file figures are informational. The baselin
 is measured with all unit and device tests, so do not use a filtered test run to
 update it.
 
-The initial floor uses the lower result from two complete API 36 emulator runs
-(38 unit tests and 39 device tests each).
+Repeat the complete suite before raising the floor. The saved `branchMargin`
+allows ten branches when calculating a new branch floor: the initial measurements
+varied by six branches between local and CI emulators, and by three between local
+runs. The line floor uses the measured ratio without an allowance. The allowance
+does not relax checks against the saved floor and cannot lower an existing floor.
 
 When coverage improves, raise the baseline and commit it with the change:
 

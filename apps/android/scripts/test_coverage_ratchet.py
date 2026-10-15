@@ -29,6 +29,18 @@ class CoverageRatchetTest(unittest.TestCase):
         current["branches"] = {"covered": 1, "total": 4}
         self.assertTrue(ratchet["regressions"](current, baseline())[0].startswith("branches:"))
 
+    def test_branch_margin_is_explicit_and_does_not_change_the_line_floor(self):
+        updated = ratchet["raised_baseline"](baseline(30, 40), baseline(1, 4), 2)
+        self.assertEqual({"covered": 30, "total": 40}, updated["lines"])
+        self.assertEqual({"covered": 28, "total": 40}, updated["branches"])
+        self.assertEqual(2, updated["branchMargin"])
+
+    def test_margin_cannot_lower_an_existing_floor(self):
+        updated = ratchet["raised_baseline"](baseline(4, 4), baseline(), 2)
+        self.assertEqual(baseline()["branches"], updated["branches"])
+        with self.assertRaises(ValueError):
+            ratchet["raised_baseline"](baseline(), baseline(), -1)
+
     def test_invalid_counters_are_rejected(self):
         for counter in ({"covered": 0, "total": 0}, {"covered": -1, "total": 4},
                         {"covered": 5, "total": 4}, {"covered": True, "total": 4}):

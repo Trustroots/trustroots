@@ -1,11 +1,12 @@
 {
   "schemaVersion": 1,
+  "branchMargin": 10,
   "lines": {
-    "covered": 2827,
+    "covered": 2975,
     "total": 4002
   },
   "branches": {
-    "covered": 1215,
+    "covered": 1296,
     "total": 2526
   }
 }

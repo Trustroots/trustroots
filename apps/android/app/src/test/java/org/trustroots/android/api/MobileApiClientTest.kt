@@ -1,5 +1,10 @@
 package org.trustroots.android.api
 
+import java.net.ServerSocket
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
+import kotlin.concurrent.thread
+import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import org.json.JSONArray
 import org.junit.Assert.assertEquals
@@ -168,5 +173,124 @@ class MobileApiClientTest {
         assertThrows(IllegalArgumentException::class.java) {
             secureApiBaseURL("https://api.example.test/mobile?token=secret")
         }
+    }
+
+    @Test
+    fun signsInWithJsonAndKeepsOnlyTheMemberSessionCookie() {
+        val (result, request) = withApiResponse(
+            status = 200,
+            responseBody = """{"username":"quiet-fox","displayName":"Quiet Fox"}""",
+            responseHeaders = listOf(
+                "Set-Cookie: _passenger_route=route-value; Path=/; Secure",
+                "Set-Cookie: connect.sid=session-value; Path=/; HttpOnly",
+            ),
+        ) { baseURL ->
+            runBlocking { MobileApiClient(baseURL).signIn("quiet-fox", "fictional password") }
+        }
+
+        val session = result.getOrThrow()
+        assertEquals("connect.sid=session-value", session.cookieHeader)
+        assertEquals("Quiet Fox", session.member.displayName)
+        assertEquals("POST /api/auth/signin HTTP/1.1", request.line)
+        assertTrue(request.headers.any { it.equals("X-Trustroots-Request: 1", ignoreCase = true) })
+        assertTrue(request.headers.any { it.equals("Content-Type: application/json", ignoreCase = true) })
+        assertEquals(
+            "quiet-fox",
+            JSONObject(request.body).getString("username"),
+        )
+        assertEquals("fictional password", JSONObject(request.body).getString("password"))
+    }
+
+    @Test
+    fun reportsAuthenticationStatusAndFallbackMessageFromMalformedErrorBody() {
+        val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
+        val (result, request) = withApiResponse(status = 401, responseBody = "not JSON") { baseURL ->
+            runBlocking { MobileApiClient(baseURL).currentMember(session) }
+        }
+
+        val error = result.exceptionOrNull() as MobileApiException
+        assertTrue(error.isAuthenticationFailure)
+        assertEquals("The request was not accepted.", error.message)
+        assertEquals("GET /api/users/quiet-fox HTTP/1.1", request.line)
+        assertTrue(request.headers.any { it.equals("Cookie: connect.sid=session-value", ignoreCase = true) })
+        assertFalse(request.headers.any { it.startsWith("X-Trustroots-Request:", ignoreCase = true) })
+    }
+
+    @Test
+    fun treatsMissingContactRelationshipAsAnUnconfirmedContact() {
+        val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
+        val (result, request) = withApiResponse(status = 404, responseBody = "{}") { baseURL ->
+            runBlocking { MobileApiClient(baseURL).contactWith(session, "member two") }
+        }
+
+        assertEquals(ContactRelationship(id = null, confirmed = false), result.getOrThrow())
+        assertEquals("GET /api/contact-by/member+two HTTP/1.1", request.line)
+    }
+
+    @Test
+    fun rejectsInvalidSearchInputBeforeOpeningAConnection() {
+        val result = runBlocking {
+            MobileApiClient("http://127.0.0.1:1").searchMembers(
+                MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox")),
+                "  ab  ",
+            )
+        }
+
+        assertTrue(result.exceptionOrNull() is IllegalArgumentException)
+    }
+}
+
+private data class CapturedApiRequest(val line: String, val headers: List<String>, val body: String)
+
+private fun <T> withApiResponse(
+    status: Int,
+    responseBody: String,
+    responseHeaders: List<String> = emptyList(),
+    call: (String) -> T,
+): Pair<T, CapturedApiRequest> = ServerSocket(0).use { server ->
+    val capturedRequests = LinkedBlockingQueue<CapturedApiRequest>()
+    val worker = thread(isDaemon = true) {
+        server.accept().use { socket ->
+            val reader = socket.getInputStream().bufferedReader()
+            val requestLine = reader.readLine()
+            val headers = mutableListOf<String>()
+            while (true) {
+                val line = reader.readLine() ?: break
+                if (line.isEmpty()) break
+                headers += line
+            }
+            val contentLength = headers.firstOrNull { it.startsWith("Content-Length:", ignoreCase = true) }
+                ?.substringAfter(':')?.trim()?.toIntOrNull() ?: 0
+            val body = CharArray(contentLength)
+            var offset = 0
+            while (offset < body.size) {
+                val count = reader.read(body, offset, body.size - offset)
+                if (count < 0) break
+                offset += count
+            }
+            capturedRequests.put(CapturedApiRequest(requestLine.orEmpty(), headers, String(body, 0, offset)))
+
+            val encodedBody = responseBody.toByteArray(Charsets.UTF_8)
+            val response = buildString {
+                append("HTTP/1.1 ").append(status).append(if (status in 200..299) " OK\r\n" else " Error\r\n")
+                append("Content-Type: application/json\r\n")
+                responseHeaders.forEach { append(it).append("\r\n") }
+                append("Content-Length: ").append(encodedBody.size).append("\r\n")
+                append("Connection: close\r\n\r\n")
+            }.toByteArray(Charsets.UTF_8)
+            socket.getOutputStream().use { output ->
+                output.write(response)
+                output.write(encodedBody)
+            }
+        }
+    }
+    try {
+        val result = call("http://127.0.0.1:${server.localPort}")
+        val request = capturedRequests.poll(5, TimeUnit.SECONDS)
+        worker.join(1_000)
+        result to requireNotNull(request) { "Expected the API request to reach the local server" }
+    } finally {
+        server.close()
+        worker.join(1_000)
     }
 }

@@ -49,12 +49,25 @@ def regressions(current, baseline):
     return failures
 
 
+def raised_baseline(current, baseline, branch_margin):
+    if type(branch_margin) is not int or branch_margin < 0:
+        raise ValueError("The branch margin must be a non-negative integer")
+    updated = {"schemaVersion": 1, "branchMargin": branch_margin,
+               "lines": dict(current["lines"]), "branches": dict(current["branches"])}
+    updated["branches"]["covered"] = max(0, updated["branches"]["covered"] - branch_margin)
+    # Allowance for observed UI variability must never lower an existing floor.
+    if baseline and ratio(updated["branches"]) < ratio(baseline["branches"]):
+        updated["branches"] = dict(baseline["branches"])
+    return updated
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("report", type=Path)
     parser.add_argument("baseline", type=Path)
     parser.add_argument("--reference", type=Path, help="Baseline from the PR base commit; prevents lowering the floor")
     parser.add_argument("--update", action="store_true", help="Raise the baseline; regressions are refused")
+    parser.add_argument("--branch-margin", type=int, help="Branch-count allowance when raising the floor; defaults to the saved margin")
     args = parser.parse_args()
     current = read_report(args.report)
     baseline = read_baseline(args.baseline) if args.baseline.exists() else None
@@ -66,7 +79,9 @@ def main():
     if failures:
         raise ValueError("Android coverage ratchet failed:\n" + "\n".join(failures))
     if args.update:
-        args.baseline.write_text(json.dumps(current, indent=2) + "\n")
+        margin = args.branch_margin if args.branch_margin is not None else (baseline or {}).get("branchMargin", 0)
+        updated = raised_baseline(current, baseline, margin)
+        args.baseline.write_text(json.dumps(updated, indent=2) + "\n")
         print(f"Updated {args.baseline}; commit this file when coverage improves.")
     else:
         print("Android coverage ratchet passed (lines and branches).")
