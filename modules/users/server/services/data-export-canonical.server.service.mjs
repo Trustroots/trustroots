@@ -20,7 +20,14 @@ import crypto from 'node:crypto';
 
 const EXPORT_FORMAT = 'trustroots-data-export';
 const EXPORT_VERSION = 2;
-const SECTION_NAMES = ['profile', 'contacts', 'hostingOffers', 'circles', 'messages', 'experiences'];
+const SECTION_NAMES = [
+  'profile',
+  'contacts',
+  'hostingOffers',
+  'circles',
+  'messages',
+  'experiences',
+];
 const SIGNATURE_ALGORITHM = 'nostr-schnorr-secp256k1/jcs-sha256';
 
 function serialise(value) {
@@ -119,7 +126,14 @@ function sortSection(items) {
  * identifiers, and nothing that varies between two downloads of unchanged
  * data.
  */
-function buildSignedPayload({ profile, contacts, hostingOffers, circles, messages, experiences } = {}) {
+function buildSignedPayload({
+  profile,
+  contacts,
+  hostingOffers,
+  circles,
+  messages,
+  experiences,
+} = {}) {
   return {
     format: EXPORT_FORMAT,
     version: EXPORT_VERSION,

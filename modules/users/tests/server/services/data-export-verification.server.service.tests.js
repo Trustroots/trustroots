@@ -2,7 +2,7 @@ const { generateSecretKey, getPublicKey } = require('nostr-tools/pure');
 const nip19 = require('nostr-tools/nip19');
 require('should');
 
-const config = require('../../../../../config/config.mjs');
+const config = require('../../../../../config/config.mts');
 
 const canonical = require('../../../server/services/data-export-canonical.server.service.mjs');
 const verification = require('../../../server/services/data-export-verification.server.service.mjs');

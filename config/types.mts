@@ -28,6 +28,7 @@ export interface Config {
   https: boolean;
   sessionProxy: boolean;
   sessionSecret: string;
+  dataExportSigning: { nsec: string };
   sessionCollection: string;
   domain: string;
   csrfAllowedOrigins: string[];
