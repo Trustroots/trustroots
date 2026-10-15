@@ -1,9 +1,14 @@
 # Account activity history deployment
 
 Account activity is stored separately from member profiles. The collection
-keeps only event type, owner, timestamp and whether a session event describes
-the session which created it. It does not store credentials, action tokens,
-session-store IDs, IP addresses, browser fingerprints or message content.
+keeps only event type, owner and timestamp. It does not store credentials,
+action tokens, session-store IDs, IP addresses, browser fingerprints or
+message content.
+
+Recording is best-effort: the write path retries once immediately on failure
+and does not sleep in the request. Session creation keeps a stable event id in
+the session so a later request can retry if the first write failed. Other
+account transitions log a storage error and continue.
 
 The API returns events from the last 90 days. MongoDB TTL deletion is
 asynchronous, so expired records can remain briefly in storage after they stop

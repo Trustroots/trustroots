@@ -6,7 +6,8 @@ import {
   type AccountActivityEventType,
 } from '../api/activity.api';
 
-const EVENT_LABELS: Record<AccountActivityEventType, string> = {
+// English-as-key i18n entries in public/locales/*/users.json.
+const EVENT_I18N_KEYS: Record<AccountActivityEventType, string> = {
   session_created: 'New session started',
   session_revoked: 'A session was signed out',
   sessions_signed_out: 'Sessions signed out',
@@ -94,7 +95,7 @@ export default function AccountActivity() {
         <ul aria-label={t('Recent account activity')}>
           {events.map((event, index) => (
             <li key={`${event.eventType}-${event.createdAt}-${index}`}>
-              <span>{t(EVENT_LABELS[event.eventType])}</span>{' '}
+              <span>{t(EVENT_I18N_KEYS[event.eventType])}</span>{' '}
               <time dateTime={event.createdAt}>
                 {formatDate(event.createdAt)}
               </time>

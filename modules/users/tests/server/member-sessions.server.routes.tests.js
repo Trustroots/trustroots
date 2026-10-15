@@ -200,7 +200,7 @@ describe('Member session controls', function () {
     assert.equal(nextCalled, true);
     should.not.exist(nextError);
     assert.equal(req.session.memberActivityEventId, eventId);
-    assert.equal(AccountActivity.updateOne.callCount, 3);
+    assert.equal(AccountActivity.updateOne.callCount, 2);
   });
 
   it('passes storage failures and a missing record to error handling', async function () {

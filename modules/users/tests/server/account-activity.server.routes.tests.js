@@ -241,13 +241,13 @@ describe('Member account activity', function () {
     await agent.get('/api/users/activity').expect(500);
   });
 
-  it('retries storage with the same event identifier and creates retention indexes', async function () {
+  it('retries storage once immediately with the same event identifier and creates retention indexes', async function () {
     let attempts = 0;
     const identifiers = [];
     sinon.stub(AccountActivity, 'updateOne').callsFake(async filter => {
       attempts += 1;
       identifiers.push(filter._id);
-      if (attempts < 3) throw new Error('temporary storage failure');
+      if (attempts < 2) throw new Error('temporary storage failure');
       return { upsertedCount: 1 };
     });
     const recorded = await recordActivity({
@@ -256,9 +256,8 @@ describe('Member account activity', function () {
       eventId: 'stable-retry-event',
     });
     assert.equal(recorded, true);
-    assert.equal(attempts, 3);
+    assert.equal(attempts, 2);
     assert.deepEqual(identifiers, [
-      'stable-retry-event',
       'stable-retry-event',
       'stable-retry-event',
     ]);
