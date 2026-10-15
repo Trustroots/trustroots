@@ -149,22 +149,6 @@ declare module 'basic-auth' {
   ): { name: string; pass: string } | undefined;
 }
 
-declare module 'mongoose-paginate' {
-  export default function mongoosePaginate(
-    schema: import('mongoose').Schema,
-  ): void;
-}
-
-declare module 'mongoose-url-slugs' {
-  export default function urlSlugs(
-    source: string,
-    options: {
-      field: string;
-      generator(value: string): string;
-    },
-  ): (schema: import('mongoose').Schema) => void;
-}
-
 declare module 'speakingurl' {
   export default function speakingurl(
     text: string,
