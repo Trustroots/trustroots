@@ -101,6 +101,43 @@ describe('CI timing overview', () => {
     assert.equal(formatDuration(null), 'n/a');
   });
 
+  it('labels duration bands independently of test outcome and keeps skipped jobs neutral', () => {
+    const cases = [
+      { seconds: 59, conclusion: 'failure', label: '🟢 Fast' },
+      { seconds: 60, conclusion: 'success', label: '🟡 Moderate' },
+      { seconds: 299, conclusion: 'success', label: '🟡 Moderate' },
+      { seconds: 300, conclusion: 'success', label: '🔴 Slow' },
+      { seconds: 600, conclusion: 'skipped', label: '⚪ Skipped' },
+    ];
+    for (const { seconds, conclusion, label } of cases) {
+      const end = new Date(
+        Date.parse(startedAt) + seconds * 1000,
+      ).toISOString();
+      const html = renderTimings({
+        ...timings,
+        workflows: [
+          {
+            ...timings.workflows[0],
+            jobs: [
+              {
+                ...job,
+                conclusion,
+                completed_at: end,
+                steps: [{ ...job.steps[0], conclusion, completed_at: end }],
+              },
+            ],
+          },
+        ],
+      });
+      assert.ok(html.includes(`<td>${label}</td><td><a`));
+      assert.ok(html.includes(`<td>${label}</td></tr>`));
+      assert.ok(html.includes('<summary>Step timings</summary>'));
+      if (conclusion === 'skipped') {
+        assert.ok(html.includes('<td><strong>n/a</strong></td>'));
+      }
+    }
+  });
+
   it('renders unavailable data and completed jobs without any steps', () => {
     assert.ok(renderTimings(null).includes('unavailable'));
     assert.ok(renderTimings({ workflows: [] }).includes('unavailable'));

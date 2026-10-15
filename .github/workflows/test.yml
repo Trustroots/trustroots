@@ -125,7 +125,6 @@ jobs:
       packages: write
     outputs:
       image-ref: ${{ steps.image.outputs.image-ref }}
-      server-image-ref: ${{ steps.image.outputs.server-image-ref }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up Docker Buildx
@@ -135,7 +134,6 @@ jobs:
         run: |
           image_ref="ghcr.io/${GITHUB_REPOSITORY,,}/trustroots-dev:${GITHUB_SHA}"
           echo "image-ref=$image_ref" >> "$GITHUB_OUTPUT"
-          echo "server-image-ref=${image_ref}-server" >> "$GITHUB_OUTPUT"
       - name: Log in to GHCR
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
@@ -152,16 +150,6 @@ jobs:
           cache-from: type=gha
           # Cache availability must not fail a successful build or image push.
           cache-to: type=gha,ignore-error=true,mode=max
-          push: true
-
-      - name: Publish browser-free server image
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
-        with:
-          context: .
-          file: deploy/docker/dev.Dockerfile
-          target: server
-          tags: ${{ steps.image.outputs.server-image-ref }}
-          cache-from: type=gha
           push: true
 
   client:
@@ -245,81 +233,56 @@ jobs:
           if-no-files-found: ignore
 
   server:
-    needs: [changes, build-dev-image]
+    needs: changes
     if: >
       always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
-      (github.event_name != 'workflow_dispatch' || inputs.run_server) &&
-      (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
+      (github.event_name != 'workflow_dispatch' || inputs.run_server)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
-      packages: read
+    env:
+      CI: true
+      NODE_ENV: test
+      DB_1_PORT_27017_TCP_ADDR: 127.0.0.1
+      TRUSTROOTS_SKIP_LOCAL_CONFIG: true
+      TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK: true
+      TRUSTROOTS_FILE_MAGIC_FALLBACK: true
+      SERVER_TEST_WORKERS: 4
+    services:
+      mongodb:
+        image: mongo:4.4
+        ports:
+          - 27017:27017
+        options: >-
+          --tmpfs /data/db
+          --health-cmd "mongo --quiet --eval 'quit(db.adminCommand({ping:1}).ok ? 0 : 1)'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Use Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
       - name: Test production deployment safeguards
         run: python3 deploy/docker/test-production-deploy.py
-      - name: Set up Docker Buildx
-        if: needs.build-dev-image.result == 'skipped'
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
-      - name: Log in to GHCR
-        if: needs.build-dev-image.result == 'success'
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Pull server image
-        if: needs.build-dev-image.result == 'success'
-        run: |
-          docker pull "${{ needs.build-dev-image.outputs.server-image-ref }}"
-          docker tag "${{ needs.build-dev-image.outputs.server-image-ref }}" trustroots-dev:ci
-      - name: Build server image
-        if: needs.build-dev-image.result == 'skipped'
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
-        with:
-          context: .
-          file: deploy/docker/dev.Dockerfile
-          target: server
-          tags: trustroots-dev:ci
-          cache-from: type=gha
-          # Cache availability must not fail a successful build or image push.
-          cache-to: type=gha,ignore-error=true,mode=max
-          load: true
-      - name: Prepare compose local config
-        run: node ./scripts/ci/ensure-compose-local.cts
-      - name: Start MongoDB
-        working-directory: deploy/docker
-        run: |
-          # Either public registry can rate-limit shared CI runner addresses.
-          if ! docker compose -f docker-compose.yml -f docker-compose.ci.yml pull mongodb; then
-            docker pull mongo:4.4
-            docker tag mongo:4.4 public.ecr.aws/docker/library/mongo:4.4
-          fi
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --pull never mongodb
       # Record access route tests are included in the full server suite below.
       - name: Test server with coverage
-        working-directory: deploy/docker
         run: |
-          mkdir -p ../../coverage/server
+          mkdir -p coverage/server
           started_at="$(date +%s%3N)"
           exit_code=0
           set +e
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
-            -e CI=true \
-            -e NODE_ENV=test \
-            -e DB_1_PORT_27017_TCP_ADDR=mongodb \
-            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
-            -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
-            -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
-            -e SERVER_TEST_WORKERS=4 \
-            dev pnpm run test:coverage:server:parallel
+          pnpm run test:coverage:server:parallel
           exit_code="$?"
           if [ "$exit_code" -eq 0 ]; then
-            docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
-              -e CI=true \
-              -e NODE_ENV=test \
-              dev pnpm run coverage:check --scope=server
+            pnpm run coverage:check --scope=server
             exit_code="$?"
           fi
           set -e
@@ -343,7 +306,7 @@ jobs:
             command: process.env.COMMAND,
             durationMs: Number(process.env.DURATION_MS),
           };
-          fs.writeFileSync('../../coverage/server/coverage-status.json', `${JSON.stringify(status, null, 2)}\n`);
+          fs.writeFileSync('coverage/server/coverage-status.json', `${JSON.stringify(status, null, 2)}\n`);
           NODE
           exit "$exit_code"
       - name: Upload server coverage report
