@@ -21,7 +21,7 @@ import {
   waitForTribesList,
 } from '../../support/helpers.mts';
 
-import { updateUserByUsername } from '../../support/db.mts';
+import { findOffersByUser, updateUserByUsername } from '../../support/db.mts';
 
 const berlin = SEEDED_MEMBERS[0];
 const portland = SEEDED_MEMBERS[1];
@@ -522,12 +522,24 @@ test.describe('confirmed member flows', () => {
 
   test('meet offers list page shows the empty state', async ({
     page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'offers.meet-list', [
       'Meet offers list page loads.',
       'Empty state is shown when member has no meet offers.',
       'Existing meet offers are listed with edit links.',
     ]);
+
+    // Clear leftover meets from other specs that share the seeded member
+    // (e.g. offers-and-circles when the screenshots job runs changed files together).
+    const memberId = await fetchUserIdByUsername(request, berlin.username);
+    const leftoverMeets = await findOffersByUser(memberId, { type: 'meet' });
+    for (const offer of leftoverMeets) {
+      const remove = await page.request.delete(`/api/offers/${offer._id}`, {
+        headers: { 'X-Trustroots-Request': '1' },
+      });
+      expect(remove.ok()).toBeTruthy();
+    }
 
     await page.goto('/offer/meet');
 

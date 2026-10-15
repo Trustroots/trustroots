@@ -269,7 +269,10 @@ test.describe.serial('search offers and circles feature coverage', () => {
       type: 'meet',
       description: 'A meeting in the park.',
     });
-    await page.request.delete(`/api/offers/${meeting._id}`);
+    const remove = await page.request.delete(`/api/offers/${meeting._id}`, {
+      headers: { 'X-Trustroots-Request': '1' },
+    });
+    expect(remove.ok()).toBeTruthy();
   });
 
   test('hosting location follows place searches and map dragging', async ({
