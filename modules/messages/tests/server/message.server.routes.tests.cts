@@ -511,7 +511,9 @@ describe('Message CRUD tests', function () {
         // @link https://github.com/caolan/async#whilsttest-fn-callback
         let count = 0;
         async.whilst(
-          function (testCallback: (error: Error | null, truth?: boolean) => void) {
+          function (
+            testCallback: (error: Error | null, truth?: boolean) => void,
+          ) {
             testCallback(null, count < 25);
           },
           function (callback: (error: Error | null, result?: number) => void) {
