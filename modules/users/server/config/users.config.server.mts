@@ -27,7 +27,11 @@ function findSessionUser(
   id: FilterQuery<UserServerRecord>['_id'],
   callback: (error: Error | null, user: UserServerDocument | null) => void,
 ): void {
-  Reflect.apply(User.findOne, User, [{ _id: id }, '-salt -password +nostrVerifiedNpub +nostrVerifiedAt', callback]);
+  Reflect.apply(User.findOne, User, [
+    { _id: id },
+    '-salt -password +nostrVerifiedNpub +nostrVerifiedAt',
+    callback,
+  ]);
 }
 
 const defaultExport = async function (app: UsersApplication): Promise<void> {

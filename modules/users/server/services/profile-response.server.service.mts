@@ -213,8 +213,10 @@ export function selectProfileResponse<Id, Timestamp>(
     passwordUpdated: profile.passwordUpdated,
     usernameUpdated: profile.usernameUpdated,
     usernameUpdateAllowed: profile.usernameUpdateAllowed,
-    ...(profile.nostrVerifiedNpub === profile.nostrNpub && profile.nostrVerifiedAt
-      ? { nostrVerifiedAt: profile.nostrVerifiedAt } : {}),
+    ...(profile.nostrVerifiedNpub === profile.nostrNpub &&
+    profile.nostrVerifiedAt
+      ? { nostrVerifiedAt: profile.nostrVerifiedAt }
+      : {}),
   };
 }
 

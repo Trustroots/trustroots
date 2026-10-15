@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import mongoose from 'mongoose';
-import config from '../../../../config/config.mjs';
+import config from '../../../../config/config.mts';
 import * as nip19 from 'nostr-tools/nip19';
 import { validateEvent, verifyEvent } from 'nostr-tools';
 import profiles from './users.profile.server.controller.mjs';

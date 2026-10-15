@@ -38,6 +38,8 @@ describe('Service: profile-response', function () {
   });
 
   const profile: OwnProfile<string, Date> & {
+    nostrVerifiedNpub: string;
+    nostrVerifiedAt: Date;
     lastIpAddress: string;
     pushRegistration: Array<{ token: string }>;
     providerData: Array<{ accessToken: string }>;
@@ -195,8 +197,8 @@ describe('Service: profile-response', function () {
   it('keeps account-editing fields for the account holder only', function () {
     const response = esmService.selectProfileResponse(profile, true);
     response.avatarVersion!.should.equal('0123456789abcdef0123456789abcdef');
-    response.nostrVerifiedAt.should.equal(profile.nostrVerifiedAt);
-    (response.nostrVerifiedNpub === undefined).should.be.true();
+    response.nostrVerifiedAt!.should.equal(profile.nostrVerifiedAt);
+    hasRuntimeField(response, 'nostrVerifiedNpub').should.be.false();
 
     for (const field of [
       'firstName',

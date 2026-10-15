@@ -8,7 +8,9 @@ type Operation =
   | 'forgotPassword'
   | 'resetPassword'
   | 'resendConfirmation'
-  | 'avatarUpload';
+  | 'avatarUpload'
+  | 'nostrChallenge'
+  | 'nostrVerify';
 interface LimitRequest {
   get?: (header: string) => string | undefined;
   ip?: string;

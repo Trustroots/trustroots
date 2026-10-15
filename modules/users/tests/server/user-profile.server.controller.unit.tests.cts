@@ -286,6 +286,7 @@ describe('Profile controller unit tests', () => {
       const saved = await User.findById(userDoc._id).select(
         '+nostrVerifiedNpub +nostrVerifiedAt +nostrChallenge +nostrChallengeExpiresAt',
       );
+      if (!saved) throw new Error('Expected the updated profile to exist');
       should.not.exist(saved.nostrVerifiedNpub);
       should.not.exist(saved.nostrVerifiedAt);
       should.not.exist(saved.nostrChallenge);

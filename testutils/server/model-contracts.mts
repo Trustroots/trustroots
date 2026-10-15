@@ -56,6 +56,10 @@ export interface UserRecord {
   locationFrom?: string;
   member?: Array<{ tribe: Types.ObjectId; since?: Date }>;
   nostrNpub?: string;
+  nostrVerifiedNpub?: string;
+  nostrVerifiedAt?: Date;
+  nostrChallenge?: string;
+  nostrChallengeExpiresAt?: Date;
 }
 
 export interface UserMethods {

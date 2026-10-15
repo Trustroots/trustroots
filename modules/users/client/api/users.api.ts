@@ -6,7 +6,10 @@ import type {
   UpdateProfileRequest,
 } from '../../shared/profile.js';
 import type { ClientOwnProfile } from '../types.js';
-import type { SignedNostrEvent, UnsignedNostrEvent } from '../services/nostr-signers.client';
+import type {
+  SignedNostrEvent,
+  UnsignedNostrEvent,
+} from '../services/nostr-signers.client.js';
 
 export type UserUpdate = UpdateProfileRequest;
 
@@ -43,9 +46,12 @@ export async function createNostrVerificationChallenge(): Promise<{
 export async function verifyNostrKey(
   event: SignedNostrEvent,
 ): Promise<ClientOwnProfile> {
-  const { data } = await axios.post<ClientOwnProfile>('/api/users/nostr/verify', {
-    event,
-  });
+  const { data } = await axios.post<ClientOwnProfile>(
+    '/api/users/nostr/verify',
+    {
+      event,
+    },
+  );
   return data;
 }
 

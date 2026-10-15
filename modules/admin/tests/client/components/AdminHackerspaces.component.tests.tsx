@@ -1,3 +1,7 @@
+import type {
+  UnsignedNostrEvent,
+  SignedNostrEvent,
+} from '@/modules/users/client/services/nostr-signers.client';
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -67,7 +71,7 @@ describe('administrator place import', () => {
   const publishNomadwiki = jest.fn();
   const closeTrustroots = jest.fn();
   const closeNomadwiki = jest.fn();
-  const signEvent = jest.fn(async (unsigned: Record<string, unknown>) => ({
+  const signEvent = jest.fn(async (unsigned: UnsignedNostrEvent) => ({
     ...unsigned,
     id: 'signed-event',
     pubkey: 'fictional-key',
@@ -393,7 +397,7 @@ describe('administrator place import', () => {
         finishFetch = resolve;
       }),
     );
-    let finishSigning!: (value: Record<string, unknown>) => void;
+    let finishSigning!: (value: SignedNostrEvent) => void;
     window.nostr!.signEvent = jest.fn(
       () =>
         new Promise(resolve => {
@@ -412,7 +416,15 @@ describe('administrator place import', () => {
     expect(
       screen.getByRole('button', { name: /Sign and publish/ }),
     ).toBeDisabled();
-    finishSigning({ kind: 33000 });
+    finishSigning({
+      kind: 33000,
+      created_at: 0,
+      tags: [],
+      content: '',
+      id: 'signed-event',
+      pubkey: 'fictional-key',
+      sig: 'fictional-signature',
+    });
     await waitFor(() =>
       expect(
         screen.getByRole('button', { name: 'Fetch preview' }),

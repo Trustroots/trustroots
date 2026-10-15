@@ -1,7 +1,7 @@
 require('should');
 const mongoose = require('mongoose');
 const sinon = require('sinon');
-const config = require('../../../../config/config.mjs');
+const config = require('../../../../config/config.mts');
 const {
   generateSecretKey,
   getPublicKey,

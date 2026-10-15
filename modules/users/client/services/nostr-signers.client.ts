@@ -4,7 +4,7 @@ import {
   createNostrConnectURI,
   parseBunkerInput,
   type BunkerPointer,
-} from 'nostr-tools/nip46'; // eslint-disable-line import/no-unresolved -- exposed via package exports.
+} from 'nostr-tools/nip46';
 import { generateSecretKey, getPublicKey, SimplePool } from 'nostr-tools';
 
 export const DEFAULT_NOSTR_RELAY = 'wss://relay.trustroots.org';

@@ -134,11 +134,13 @@ describe('Users Passport session configuration', () => {
     sinon.stub(User, 'findOne').callsFake(findOne);
     const handlers = await installSessionHandlers();
 
+    if (!handlers.deserialize)
+      throw new Error('Passport handler was not installed');
     handlers.deserialize(
       { id: 'member-id', authVersion: 4 },
       (err, restoredUser) => {
         should.not.exist(err);
-        restoredUser.should.equal(currentUser);
+        should(restoredUser).equal(currentUser);
         findOne.calledOnce.should.be.true();
       },
     );

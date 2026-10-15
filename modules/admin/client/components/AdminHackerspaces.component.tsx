@@ -34,16 +34,6 @@ type Space = {
   action: 'new' | 'updated' | 'retained' | 'inactive' | 'excluded';
   existing?: NostrEvent;
 };
-declare global {
-  interface Window {
-    nostr?: {
-      getPublicKey?: () => Promise<string>;
-      signEvent?: (
-        event: Record<string, unknown>,
-      ) => Promise<Record<string, unknown>>;
-    };
-  }
-}
 const sourceId = (event: NostrEvent) =>
   event.tags.find(tag => tag[0] === 'd')?.[1];
 const isInactive = (event: NostrEvent) =>

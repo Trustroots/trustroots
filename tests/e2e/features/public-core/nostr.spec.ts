@@ -3,9 +3,15 @@ import {
   generateSecretKey,
   getPublicKey,
   nip19,
+  type EventTemplate,
 } from 'nostr-tools';
 
-import { annotateFeature, test, expect } from '../../support/fixtures.mts';
+import {
+  annotateFeature,
+  test,
+  expect,
+  expectPresent,
+} from '../../support/fixtures.mts';
 
 import {
   createUser,
@@ -14,7 +20,15 @@ import {
   SEEDED_MEMBERS,
   signInViaApi,
 } from '../../support/helpers.mts';
-import { installNostrBunkerStub, installNostrRelayStub } from '../../support/nostr.mts';
+import {
+  installNostrBunkerStub,
+  installNostrRelayStub,
+} from '../../support/nostr.mts';
+
+function required<Value>(value: Value | null | undefined): Value {
+  expectPresent(value);
+  return value;
+}
 
 // `npub1qqq…zqujme` decodes to an all-zero 32-byte public key, which is the
 // canonical "valid but empty" key the server-side tests reuse.
@@ -371,13 +385,18 @@ test.describe.serial('Nostr signer profile flows', () => {
     const signerUri = await page
       .getByRole('link', { name: 'Open in Android signer' })
       .getAttribute('href');
+    const checkedSignerUri = required(signerUri);
     const callbackUrl = new URL(
-      new URLSearchParams(signerUri.slice(signerUri.indexOf('?') + 1)).get(
-        'callbackUrl',
+      required(
+        new URLSearchParams(
+          checkedSignerUri.slice(checkedSignerUri.indexOf('?') + 1),
+        ).get('callbackUrl'),
       ),
     );
     const pendingRequest = await page.evaluate(() =>
-      JSON.parse(window.sessionStorage.getItem('trustroots.nostr.pending')),
+      JSON.parse(
+        window.sessionStorage.getItem('trustroots.nostr.pending') || 'null',
+      ),
     );
     expect(pendingRequest.operationId).toBe(
       callbackUrl.searchParams.get('nostrOperation'),
@@ -407,7 +426,7 @@ test.describe.serial('Nostr signer profile flows', () => {
     const secretKey = generateSecretKey();
     const pubkey = getPublicKey(secretKey);
     const npub = nip19.npubEncode(pubkey);
-    await page.exposeFunction('__e2eSignNostrEvent', event =>
+    await page.exposeFunction('__e2eSignNostrEvent', (event: EventTemplate) =>
       finalizeEvent(event, secretKey),
     );
     await page.addInitScript(publicKey => {
@@ -437,7 +456,9 @@ test.describe.serial('Nostr signer profile flows', () => {
       }),
     ).toHaveCount(0);
 
-    const anonymousContext = await page.context().browser().newContext();
+    const anonymousContext = await required(
+      page.context().browser(),
+    ).newContext();
     const viewerPage = await anonymousContext.newPage();
     await signInViaApi(viewerPage, anonymousContext.request, SEEDED_MEMBERS[0]);
     const publicProfile = await anonymousContext.request.get(
@@ -472,7 +493,7 @@ test.describe.serial('Nostr signer profile flows', () => {
     const otherSecretKey = generateSecretKey();
     const savedNpub = nip19.npubEncode(getPublicKey(savedSecretKey));
     const otherPubkey = getPublicKey(otherSecretKey);
-    await page.exposeFunction('__e2eSignNostrEvent', event =>
+    await page.exposeFunction('__e2eSignNostrEvent', (event: EventTemplate) =>
       finalizeEvent(event, otherSecretKey),
     );
     await page.addInitScript(publicKey => {
@@ -521,13 +542,17 @@ test.describe.serial('Nostr signer profile flows', () => {
     const signerUri = await page
       .getByRole('link', { name: 'Open in Android signer' })
       .getAttribute('href');
+    const checkedSignerUri = required(signerUri);
     const query = new URLSearchParams(
-      signerUri.slice(signerUri.indexOf('?') + 1),
+      checkedSignerUri.slice(checkedSignerUri.indexOf('?') + 1),
     );
-    const callbackUrl = new URL(query.get('callbackUrl'));
+    const callbackUrl = new URL(required(query.get('callbackUrl')));
     const template = JSON.parse(
       decodeURIComponent(
-        signerUri.slice('nostrsigner:'.length, signerUri.indexOf('?')),
+        checkedSignerUri.slice(
+          'nostrsigner:'.length,
+          checkedSignerUri.indexOf('?'),
+        ),
       ),
     );
     const signedEvent = finalizeEvent(template, secretKey);
