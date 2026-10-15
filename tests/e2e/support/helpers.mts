@@ -33,24 +33,38 @@ export type RegisteredUser = { _id: string };
 export const DEFAULT_PASSWORD = E2E_PASSWORD;
 
 // Confirmed members created by scripts/e2e/seed.js before Playwright runs.
-const asTestMember = (member: (typeof MEMBERS)[number]): SeededMember => ({
-  id: member.id,
-  username: member.username,
-  email: member.email,
-  password: DEFAULT_PASSWORD,
-  firstName: member.firstName,
-  lastName: member.lastName,
-});
+const asTestMember = (username: string): SeededMember => {
+  const member = MEMBERS.find(member => member.username === username);
+  if (!member) {
+    throw new Error(`Seeded member not found: ${username}`);
+  }
 
-export const SEEDED_MEMBERS = MEMBERS.slice(0, 3).map(asTestMember);
-export const SEEDED_ADMIN = asTestMember(MEMBERS[4]);
+  return {
+    id: member.id,
+    username: member.username,
+    email: member.email,
+    password: DEFAULT_PASSWORD,
+    firstName: member.firstName,
+    lastName: member.lastName,
+  };
+};
+
+export const SEEDED_MEMBERS = [
+  'e2e-seeded-berlin',
+  'e2e-seeded-portland',
+  'e2e-seeded-beijing',
+].map(asTestMember);
+export const SEEDED_ADMIN = asTestMember('e2e-seeded-admin');
 
 export const SEEDED_RELATIONSHIP_MEMBERS: Record<
   'alice' | 'bob',
   SeededMember
-> = { alice: asTestMember(MEMBERS[5]), bob: asTestMember(MEMBERS[6]) };
+> = {
+  alice: asTestMember('e2e-seeded-alice'),
+  bob: asTestMember('e2e-seeded-bob'),
+};
 
-export const SEEDED_SHADOW = asTestMember(MEMBERS[3]);
+export const SEEDED_SHADOW = asTestMember('e2e-seeded-shadow');
 
 export const SEEDED_CONVERSATIONS = {
   berlinPortland: {

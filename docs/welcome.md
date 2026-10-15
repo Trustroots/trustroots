@@ -48,16 +48,19 @@ and sending functions remain in the codebase, but all three background job
 handlers are currently no-ops. The sequence is not an active member onboarding
 feature.
 
-1. **First email:** encouraged a new member to complete their profile and linked
-   to the FAQ. Its job selected public members at step 0 after the configured
-   wait, excluding members with suspended or shadowban roles.
-2. **Second email:** asked for first impressions and invited the member to create
-   a meetup. Its job selected members at step 1 after the configured wait, with
-   the same public and role conditions.
-3. **Third email:** selected members at step 2 after the configured wait. It
-   checked the member's description length: shorter descriptions received a
-   profile reminder; others were asked for feedback. The old job code used a
-   batch limit of 50 and advanced the welcome step after a successful send.
+All three former jobs selected public members, excluded members with suspended
+or shadowban roles, and limited each batch to 50 members. Each selected members
+at its welcome step whose `welcomeSequenceSent` timestamp was older than the
+wait configured for that step. After each successful send, the job updated that
+timestamp and advanced the member's welcome step.
+
+1. **First email (step 0):** encouraged a new member to complete their profile
+   and linked to the FAQ. The configured wait followed email confirmation.
+2. **Second email (step 1):** asked for first impressions and invited the member
+   to create a meetup. The configured wait followed the previous welcome email.
+3. **Third email (step 2):** checked the member's description length: shorter
+   descriptions received a profile reminder; others were asked for feedback.
+   The configured wait followed the previous welcome email.
 
 The handlers for all three steps now finish immediately without querying
 members, sending email, or updating welcome-sequence progress. Do not describe
