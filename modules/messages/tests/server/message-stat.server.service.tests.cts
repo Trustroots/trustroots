@@ -103,8 +103,11 @@ describe('Count Message Statistics of User', function () {
     // adaptive hash for all fixtures and insert the schema-shaped documents
     // directly, keeping password-hook/KDF tests in the user model suite.
     const fixturePassword = await User.hashPassword('fixture-password');
-    const fixtureUsers = Array.from({ length: 29 }, () =>
-      utils.createTestUser({ password: fixturePassword }),
+    const fixtureUsers = Array.from({ length: 29 }, (_, index) =>
+      utils.createTestUser({
+        email: `message-stat-member-${index}@example.test`,
+        password: fixturePassword,
+      }),
     );
     users.push(...fixtureUsers);
     await User.collection.insertMany(fixtureUsers.map(user => user.toObject()));
