@@ -38,7 +38,7 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 const User = mongoose.model('User') as UserModel;
-const Thread: ThreadModel = mongoose.model('Thread');
+const Thread = mongoose.model('Thread') as ThreadModel;
 type MessagePaginationResult = {
   docs: MessageDocument[];
   pages: number;
@@ -595,7 +595,7 @@ describe('Messages controller unit tests', () => {
       it(`rejects invalid message identifiers ${JSON.stringify(
         messageIds,
       )}`, async () => {
-        const update = sinon.spy(Message, 'update');
+        const update = sinon.spy(Message, 'updateMany');
         const res = deferredResponse();
         messagesController.markRead(
           {
@@ -1114,7 +1114,7 @@ describe('Messages controller unit tests', () => {
     it('returns 404 when recipient lookup errors', async () => {
       const { sender, receiver } = await prepareSender();
       typedStub<[query?: FilterQuery<UserRecord>]>(User, 'findOne').returns({
-        exec: (cb: LegacyCallback) => cb(new Error('recipient lookup failed')),
+        exec: () => Promise.reject(new Error('recipient lookup failed')),
       });
 
       const res = deferredResponse();
@@ -1142,9 +1142,9 @@ describe('Messages controller unit tests', () => {
           options: Record<string, unknown>,
           callback: LegacyCallback,
         ]
-      >(Thread, 'updateOne').callsFake((query, data, options, cb) => {
-        cb(new Error('thread upsert failed'));
-      });
+      >(Thread, 'updateOne').callsFake(() =>
+        Promise.reject(new Error('thread upsert failed')),
+      );
 
       const res = deferredResponse();
       messagesController.send(
@@ -1314,9 +1314,9 @@ describe('Messages controller unit tests', () => {
           options: Record<string, unknown>,
           callback: LegacyCallback,
         ]
-      >(Message, 'update').callsFake((query, update, options, cb) => {
-        cb(new Error('update failed'));
-      });
+      >(Message, 'updateMany').callsFake(() =>
+        Promise.reject(new Error('update failed')),
+      );
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const res = deferredResponse();
       messagesController.markRead(
@@ -1333,9 +1333,9 @@ describe('Messages controller unit tests', () => {
     it('returns 400 when messagesCount lookup fails', async () => {
       typedStub<
         [query: FilterQuery<ThreadRecord>, callback: LegacyCallback<number>]
-      >(Thread, 'countDocuments').callsFake((query, cb) => {
-        cb(new Error('count failed'));
-      });
+      >(Thread, 'countDocuments').callsFake(() =>
+        Promise.reject(new Error('count failed')),
+      );
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const res = deferredResponse();
       messagesController.messagesCount({ user: { _id: user._id } }, res);
@@ -1347,7 +1347,7 @@ describe('Messages controller unit tests', () => {
       typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
         sort: () => ({
           select: () => ({
-            exec: (cb: LegacyCallback) => cb(new Error('find failed')),
+            exec: () => Promise.reject(new Error('find failed')),
           }),
         }),
       });
@@ -1558,9 +1558,9 @@ describe('Messages controller unit tests', () => {
           field: string,
           callback: LegacyCallback,
         ]
-      >(Thread, 'findById').callsFake((id, field, cb) => {
-        cb(new Error('backfill failed'));
-      });
+      >(Thread, 'findById').callsFake(() =>
+        Promise.reject(new Error('backfill failed')),
+      );
 
       const res = deferredResponse();
       messagesController.inbox({ user: { _id: viewerId }, query: {} }, res);
@@ -1611,9 +1611,7 @@ describe('Messages controller unit tests', () => {
           field: string,
           callback: LegacyCallback,
         ]
-      >(Thread, 'findById').callsFake((id, field, cb) => {
-        cb(null, null);
-      });
+      >(Thread, 'findById').callsFake(() => Promise.resolve(null));
 
       const res = deferredResponse();
       messagesController.inbox({ user: { _id: viewerId }, query: {} }, res);
@@ -1838,7 +1836,7 @@ describe('Messages controller unit tests', () => {
         User,
         'findById',
       ).returns({
-        exec: (cb: LegacyCallback) => cb(new Error('profile lookup failed')),
+        exec: () => Promise.reject(new Error('profile lookup failed')),
       });
 
       const res = deferredResponse();
@@ -1861,13 +1859,11 @@ describe('Messages controller unit tests', () => {
       typedStub<[callback: LegacyCallback]>(
         Message.prototype,
         'save',
-      ).callsFake(function (cb) {
+      ).callsFake(function () {
         const fakeMessage = {
-          populate: sinon.stub().callsFake((opts, populateCb) => {
-            populateCb(new Error('populate failed'));
-          }),
+          populate: sinon.stub().rejects(new Error('populate failed')),
         };
-        cb(null, fakeMessage);
+        return Promise.resolve(fakeMessage);
       });
       const { sender, receiver } = await prepareSender();
 
@@ -1891,9 +1887,7 @@ describe('Messages controller unit tests', () => {
       typedStub<[callback: LegacyCallback]>(
         Message.prototype,
         'save',
-      ).callsFake(cb => {
-        cb(new Error('save failed'));
-      });
+      ).callsFake(() => Promise.reject(new Error('save failed')));
       const { sender, receiver } = await prepareSender();
 
       const res = deferredResponse();
@@ -1951,7 +1945,7 @@ describe('Messages controller unit tests', () => {
       typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
         sort: () => ({
           select: () => ({
-            exec: (cb: LegacyCallback<object[]>) => cb(null, [incoming]),
+            exec: () => Promise.resolve([incoming]),
           }),
         }),
       });
@@ -1991,7 +1985,7 @@ describe('Messages controller unit tests', () => {
       typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
         sort: () => ({
           select: () => ({
-            exec: (cb: LegacyCallback<object[]>) => cb(null, [outgoing]),
+            exec: () => Promise.resolve([outgoing]),
           }),
         }),
       });
@@ -2025,8 +2019,8 @@ describe('Messages controller unit tests', () => {
       typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
         sort: () => ({
           select: () => ({
-            exec: (cb: LegacyCallback<object[]>) =>
-              cb(null, [
+            exec: () =>
+              Promise.resolve([
                 {
                   content: 'Sync test message',
                   userFrom: sender._id,
@@ -2039,7 +2033,7 @@ describe('Messages controller unit tests', () => {
       });
       typedStub<[query?: FilterQuery<UserRecord>]>(User, 'find').returns({
         select: () => ({
-          exec: (cb: LegacyCallback) => cb(new Error('user lookup failed')),
+          exec: () => Promise.reject(new Error('user lookup failed')),
         }),
       });
 
@@ -2054,13 +2048,13 @@ describe('Messages controller unit tests', () => {
       typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
         sort: () => ({
           select: () => ({
-            exec: (cb: LegacyCallback<object[]>) => cb(null, []),
+            exec: () => Promise.resolve([]),
           }),
         }),
       });
       typedStub<[query?: FilterQuery<UserRecord>]>(User, 'find').returns({
         select: () => ({
-          exec: (cb: LegacyCallback) => cb(new Error('user lookup failed')),
+          exec: () => Promise.reject(new Error('user lookup failed')),
         }),
       });
       const [user] = await utils.saveUsers(utils.generateUsers(1));

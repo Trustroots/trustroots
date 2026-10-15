@@ -110,56 +110,55 @@ const avatarUpload = (req: AvatarUploadRequest, res: AvatarResponse): void => {
       const processedAvatar = result!;
       const previousVersion = req.user.avatarVersion;
       req.user.avatarVersion = processedAvatar.version;
-      req.user.save(async error => {
-        if (error) {
-          req.user.avatarVersion = previousVersion;
-          await Promise.all([
-            removeTemporaryUpload(req.file.path),
-            removeVersionAfterSaveFailure(processedAvatar),
-          ]);
-          return res.status(400).send({
-            message:
-              errorService.getErrorMessage(error) ||
-              'Failed to save the new avatar version.',
-          });
-        }
-        await removeTemporaryUpload(req.file.path);
-        User.findById(req.user._id, 'avatarVersion').exec(
-          async (
-            findError: Error | null,
-            currentUser: UserServerDocument | null,
-          ) => {
-            if (findError) {
+      try {
+        await req.user.save();
+      } catch (error) {
+        req.user.avatarVersion = previousVersion;
+        await Promise.all([
+          removeTemporaryUpload(req.file.path),
+          removeVersionAfterSaveFailure(processedAvatar),
+        ]);
+        return res.status(400).send({
+          message:
+            errorService.getErrorMessage(error as Error) ||
+            'Failed to save the new avatar version.',
+        });
+      }
+      await removeTemporaryUpload(req.file.path);
+      try {
+        const currentUser = await User.findById(
+          req.user._id,
+          'avatarVersion',
+        ).exec();
+        if (currentUser?.avatarVersion === processedAvatar.version) {
+          if (
+            previousVersion &&
+            avatarVersionPattern.test(previousVersion) &&
+            previousVersion !== processedAvatar.version
+          ) {
+            try {
+              await avatarProcessor.removeAvatarVersion(
+                processedAvatar.avatarDirectory,
+                previousVersion,
+              );
+            } catch (cleanupError: unknown) {
               log(
                 'error',
-                'User profile avatar upload: failed to verify current avatar version.',
-                findError as unknown as Record<string, unknown>,
+                'User profile avatar upload: failed to remove the previous avatar version.',
+                cleanupError as unknown as Record<string, unknown>,
               );
-            } else if (currentUser?.avatarVersion === processedAvatar.version) {
-              if (
-                previousVersion &&
-                avatarVersionPattern.test(previousVersion) &&
-                previousVersion !== processedAvatar.version
-              ) {
-                try {
-                  await avatarProcessor.removeAvatarVersion(
-                    processedAvatar.avatarDirectory,
-                    previousVersion,
-                  );
-                } catch (cleanupError: unknown) {
-                  log(
-                    'error',
-                    'User profile avatar upload: failed to remove the previous avatar version.',
-                    cleanupError as unknown as Record<string, unknown>,
-                  );
-                }
-              }
             }
-            return res.send({
-              message: 'Avatar image uploaded.',
-            });
-          },
+          }
+        }
+      } catch (findError: unknown) {
+        log(
+          'error',
+          'User profile avatar upload: failed to verify current avatar version.',
+          findError as unknown as Record<string, unknown>,
         );
+      }
+      return res.send({
+        message: 'Avatar image uploaded.',
       });
     },
   };

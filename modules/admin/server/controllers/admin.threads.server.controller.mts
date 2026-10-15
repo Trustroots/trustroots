@@ -107,12 +107,12 @@ export const getThreads = async (
         updated: -1,
       },
     },
-  ]).exec((err: Error | null, threads: ThreadResult[]) => {
-    if (err) {
-      return errorService.sendBadRequest(res, err);
-    }
-    return res.send(threads);
-  });
+  ])
+    .exec()
+    .then(
+      (threads: ThreadResult[]) => res.send(threads),
+      (err: Error) => errorService.sendBadRequest(res, err),
+    );
 };
 const defaultInterop = {
   getThreads,

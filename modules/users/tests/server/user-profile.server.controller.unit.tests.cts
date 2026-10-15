@@ -158,11 +158,17 @@ function stubSearch(
       budget.should.equal(2000);
       return {
         exec: (
-          callback: (
+          callback?: (
             error: Error | null,
             result: ProfileUserDocument[] | null,
           ) => void,
-        ) => callback(error, error ? null : users),
+        ) => {
+          if (typeof callback === 'function') {
+            callback(error, error ? null : users);
+            return undefined;
+          }
+          return error ? Promise.reject(error) : Promise.resolve(users);
+        },
       };
     },
   };
@@ -261,14 +267,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('returns 400 when checking nostr npub availability fails', async () => {
-      const failedNpubLookup = (
-        _query: unknown,
-        _fields: unknown,
-        callback: (error: Error | null, user: unknown) => void,
-      ): void => callback(new Error('lookup failed'), null);
-      sinon
-        .stub(User, 'findOne')
-        .callsFake(failedNpubLookup as unknown as typeof User.findOne);
+      sinon.stub(User, 'findOne').rejects(new Error('lookup failed'));
 
       const { res } = await runHandler(res =>
         profileController.update(
@@ -409,11 +408,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('returns 400 when saving profile updates fails', async () => {
-      const failedSave = (callback: (error: Error | null) => void): void =>
-        callback(new Error('save failed'));
-      sinon
-        .stub(userDoc, 'save')
-        .callsFake(failedSave as unknown as typeof userDoc.save);
+      sinon.stub(userDoc, 'save').rejects(new Error('save failed'));
 
       const { res } = await runHandler(res =>
         profileController.update(
@@ -549,17 +544,9 @@ describe('Profile controller unit tests', () => {
     it('returns 400 without sending a removal email when token persistence fails', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(saved._id);
-      const failedTokenPersistence = (
-        _query: unknown,
-        _update: unknown,
-        _options: unknown,
-        callback: (error: Error | null, user: unknown) => void,
-      ): void => callback(new Error('storage unavailable'), null);
       sinon
         .stub(User, 'findOneAndUpdate')
-        .callsFake(
-          failedTokenPersistence as unknown as typeof User.findOneAndUpdate,
-        );
+        .rejects(new Error('storage unavailable'));
       const { res } = await runHandler(res =>
         profileController.initializeRemoveProfile({ user: userDoc }, res),
       );
@@ -752,15 +739,9 @@ describe('Profile controller unit tests', () => {
       userDoc.removeProfileExpires = new Date(Date.now() + 3600000);
       await userDoc.save();
 
-      const failedPushCleanup = (
-        _query: unknown,
-        callback: (error: Error | null) => void,
-      ): void => callback(new Error('push cleanup failed'));
       const pushCleanup = sinon
         .stub(UnifiedPushRegistration, 'deleteMany')
-        .callsFake(
-          failedPushCleanup as unknown as typeof UnifiedPushRegistration.deleteMany,
-        );
+        .rejects(new Error('push cleanup failed'));
       const { res } = await runHandler(res =>
         controller.removeProfile(
           {
@@ -1010,6 +991,24 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(404);
     });
 
+    it('accepts a thenable profile lookup without populate or exec helpers', async () => {
+      const [viewer] = await utils.saveUsers(utils.generateUsers(1));
+      sinon
+        .stub(User, 'findOne')
+        .returns(
+          Promise.resolve(null) as unknown as ReturnType<typeof User.findOne>,
+        );
+      const { res } = await runHandler((res, next) =>
+        profileController.userByUsername(
+          { user: { _id: viewer._id, roles: ['user'] } },
+          res,
+          next,
+          'promiseusername',
+        ),
+      );
+      res.statusCode.should.equal(404);
+    });
+
     it('calls next for an existing public profile', async () => {
       const [viewer] = await utils.saveUsers(utils.generateUsers(1));
       const [target] = await utils.saveUsers(
@@ -1163,9 +1162,7 @@ describe('Profile controller unit tests', () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const membershipQuery = {
         populate: () => ({
-          exec: (
-            callback: (error: Error | null, value: { member: null }) => void,
-          ) => callback(null, { member: null }),
+          exec: () => Promise.resolve({ member: null }),
         }),
       };
       sinon
@@ -1186,8 +1183,7 @@ describe('Profile controller unit tests', () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const failedMembershipQuery = {
         populate: () => ({
-          exec: (callback: (error: Error | null, value: unknown) => void) =>
-            callback(new Error('membership lookup failed'), null),
+          exec: () => Promise.reject(new Error('membership lookup failed')),
         }),
       };
       sinon
@@ -1320,7 +1316,7 @@ describe('Profile controller unit tests', () => {
       const userDoc = await findUser(saved._id);
       userDoc.member = [{ tribe: tribe._id, since: new Date() }];
       await userDoc.save();
-      await Tribe.findByIdAndRemove(tribe._id);
+      await Tribe.findByIdAndDelete(tribe._id);
 
       const { res } = await runHandler(res =>
         profileController.leaveTribe(
@@ -1428,8 +1424,7 @@ describe('Profile controller unit tests', () => {
       await userDoc.save();
 
       const failedMembershipUpdate = {
-        exec: (callback: (error: Error | null, value: unknown) => void) =>
-          callback(new Error('save failed'), null),
+        exec: () => Promise.reject(new Error('save failed')),
       };
       sinon
         .stub(User, 'findByIdAndUpdate')
@@ -1460,8 +1455,7 @@ describe('Profile controller unit tests', () => {
       await userDoc.save();
 
       const failedMembershipUpdate = {
-        exec: (callback: (error: Error | null, value: unknown) => void) =>
-          callback(new Error('save failed'), null),
+        exec: () => Promise.reject(new Error('save failed')),
       };
       sinon
         .stub(User, 'findByIdAndUpdate')

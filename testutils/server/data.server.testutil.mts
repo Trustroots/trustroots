@@ -58,7 +58,7 @@ interface UserFixtureExtraFields {
 type UserFixtureData = Omit<ServerUserFixture, 'roles' | 'languages'> &
   Partial<Pick<ServerUserFixture, 'roles' | 'languages'>> &
   UserFixtureExtraFields;
-type CachedUserFixtureData = ServerUserFixture &
+type CachedUserFixtureData = Omit<ServerUserFixture, '_id'> &
   UserFixtureExtraFields & { salt?: string };
 type ExperienceFixtureDocument = Omit<
   HydratedDocument<ExperienceFixture>,

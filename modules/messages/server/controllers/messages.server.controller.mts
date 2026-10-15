@@ -70,16 +70,6 @@ type ThreadEndpointRecord = Omit<
   message?: Types.ObjectId | Pick<MessageEndpointRecord, 'content'> | null;
 };
 type MessageEndpointDocument = HydratedDocument<MessageEndpointRecord> & {
-  save(
-    callback: (error: Error | null, document?: MessageEndpointDocument) => void,
-  ): void;
-  populate(
-    paths: unknown[],
-    callback: (
-      error: Error | null,
-      document: PopulatedMessageEndpointDocument,
-    ) => void,
-  ): void;
   toObject(): MessageEndpointRecord;
 };
 type PopulatedMessageEndpointDocument = HydratedDocument<
@@ -91,10 +81,10 @@ type PopulatedMessageEndpointDocument = HydratedDocument<
 type ThreadEndpointDocument = HydratedDocument<ThreadEndpointRecord> & {
   toObject(): ThreadEndpointRecord;
 };
-interface QueryResult<Result> {
+interface QueryResult<Result> extends PromiseLike<Result> {
   sort(sort: Record<string, 1 | -1>): this;
   select(fields: string): this;
-  exec(callback: (error: Error | null, result: Result) => void): void;
+  exec(): Promise<Result>;
 }
 interface PageResult<Document> {
   docs: Document[] | null;
@@ -116,13 +106,7 @@ interface MessageEndpointModel {
       result: PageResult<PopulatedMessageEndpointDocument>,
     ) => void,
   ): void;
-  update(
-    query: object,
-    update: object,
-    options: object,
-    callback: ErrorCallback,
-  ): void;
-  updateMany(query: object, update: object, callback: ErrorCallback): void;
+  updateMany(query: object, update: object): Promise<unknown>;
 }
 interface ThreadEndpointModel {
   new (record?: Partial<ThreadEndpointRecord>): ThreadEndpointDocument;
@@ -137,29 +121,11 @@ interface ThreadEndpointModel {
   findById(
     id: ObjectIdInput,
     projection: string,
-    callback: (
-      error: Error | null,
-      result: ThreadEndpointDocument | null,
-    ) => void,
-  ): void;
-  findOne(
-    query: object,
-    callback: (
-      error: Error | null,
-      result: ThreadEndpointDocument | null,
-    ) => void,
-  ): void;
-  updateOne(
-    query: object,
-    update: object,
-    options: object,
-    callback: ErrorCallback,
-  ): void;
-  updateMany(query: object, update: object, callback: ErrorCallback): void;
-  countDocuments(
-    query: object,
-    callback: (error: Error | null, count: number) => void,
-  ): void;
+  ): QueryResult<ThreadEndpointDocument | null>;
+  findOne(query: object): QueryResult<ThreadEndpointDocument | null>;
+  updateOne(query: object, update: object, options: object): Promise<unknown>;
+  updateMany(query: object, update: object): Promise<unknown>;
+  countDocuments(query: object): Promise<number>;
 }
 interface UserEndpointModel {
   findOne(query: object): QueryResult<HydratedDocument<MessageUser> | null>;
@@ -408,14 +374,17 @@ function fillDeletedProfiles(
 
       // Check which field is `null` — only one of them can
       const field = !thread.userTo ? 'userTo' : 'userFrom';
-      Thread.findById(thread._id, field, function (err, newThread) {
-        if (!err && newThread) {
-          thread[field] = {
-            _id: newThread[field] as Types.ObjectId,
-          };
-        }
-        done(null, thread);
-      });
+      Thread.findById(thread._id, field).then(
+        newThread => {
+          if (newThread) {
+            thread[field] = {
+              _id: newThread[field] as Types.ObjectId,
+            };
+          }
+          done(null, thread);
+        },
+        () => done(null, thread),
+      );
     },
     callback,
   );
@@ -443,13 +412,13 @@ function sanitizeThreads(
       done: (error?: Error | null, result?: ClientThreadSummary) => void,
     ) {
       // Threads need just excerpt
-      thread = thread.toObject();
+      const plainThread = thread.toObject();
 
       // Clean message content from html + clean all whitespace + shorten
       let excerpt;
-      if (thread.message) {
+      if (plainThread.message) {
         const messageContent = (
-          thread.message as Pick<MessageEndpointRecord, 'content'>
+          plainThread.message as Pick<MessageEndpointRecord, 'content'>
         ).content;
         excerpt = messageContent
           ? textService.plainText(messageContent, true).substring(0, 100)
@@ -461,13 +430,13 @@ function sanitizeThreads(
       // If latest message in the thread was from current user, show
       // it as read - sender obviously read his/her own message
       if (
-        thread.userFrom &&
-        thread.userFrom._id &&
-        thread.userFrom._id.toString() === authenticatedUserId.toString()
+        plainThread.userFrom &&
+        plainThread.userFrom._id &&
+        plainThread.userFrom._id.toString() === authenticatedUserId.toString()
       ) {
-        thread.read = true;
+        plainThread.read = true;
       }
-      done(null, prepareThreadSummary(thread, excerpt));
+      done(null, prepareThreadSummary(plainThread, excerpt));
     },
     callback,
   );
@@ -643,70 +612,79 @@ service.send = async function (req, res) {
         User.findOne({
           _id: body.userTo,
           ...publicityLimit,
-        }).exec(function (err, receiver) {
-          // If we were unable to find the receiver, return the error and stop here
-          if (err || !receiver) {
-            return res.status(404).send({
-              message: 'Member you are writing to does not exist.',
-            });
-          }
-          done();
-        });
+        })
+          .exec()
+          .then(
+            function (receiver) {
+              // If we were unable to find the receiver, return the error and stop here
+              if (!receiver) {
+                return res.status(404).send({
+                  message: 'Member you are writing to does not exist.',
+                });
+              }
+              done();
+            },
+            function () {
+              return res.status(404).send({
+                message: 'Member you are writing to does not exist.',
+              });
+            },
+          );
       },
       // Check if this is first message to this thread (=does the thread object exist?)
       function (done: WaterfallDone<[ThreadEndpointDocument | null]>) {
-        Thread.findOne(
-          {
-            // User id's can be either way around in thread handle, so we gotta test for both situations
-            $or: [
-              {
-                userTo: user._id,
-                userFrom: body.userTo,
-              },
-              {
-                userTo: body.userTo,
-                userFrom: user._id,
-              },
-            ],
-          },
-          function (err, thread) {
-            done(err, thread);
-          },
-        );
+        Thread.findOne({
+          // User id's can be either way around in thread handle, so we gotta test for both situations
+          $or: [
+            {
+              userTo: user._id,
+              userFrom: body.userTo,
+            },
+            {
+              userTo: body.userTo,
+              userFrom: user._id,
+            },
+          ],
+        }).then(function (thread) {
+          done(null, thread);
+        }, done);
       },
       // Check sender's profile isn't empty If it was first message
       // If the sending user has an empty profile, reject the message
       function (thread: ThreadEndpointDocument | null, done: WaterfallDone) {
         // If this was first message to the thread
         if (!thread) {
-          User.findById(user._id, 'description').exec(function (err, sender) {
-            // Handle errors
-            if (err) {
-              return done(err);
-            }
-            const plainText = textService.plainText as (
-              value: string,
-              keepNewLines?: boolean,
-            ) => string;
-            const descriptionLength = sender?.description
-              ? plainText(sender.description).length
-              : 0;
+          User.findById(user._id, 'description')
+            .exec()
+            .then(
+              function (sender) {
+                const plainText = textService.plainText as (
+                  value: string,
+                  keepNewLines?: boolean,
+                ) => string;
+                const descriptionLength = sender?.description
+                  ? plainText(sender.description).length
+                  : 0;
 
-            // If the sender has too empty description, return an error
-            if (descriptionLength < config.profileMinimumLength) {
-              return res.status(400).send({
-                error: 'empty-profile',
-                limit: config.profileMinimumLength,
-                message:
-                  descriptionLength === 0
-                    ? 'Please fill out your profile description before you send messages.'
-                    : 'Please write longer profile description before you send messages.',
-              });
-            }
+                // If the sender has too empty description, return an error
+                if (descriptionLength < config.profileMinimumLength) {
+                  return res.status(400).send({
+                    error: 'empty-profile',
+                    limit: config.profileMinimumLength,
+                    message:
+                      descriptionLength === 0
+                        ? 'Please fill out your profile description before you send messages.'
+                        : 'Please write longer profile description before you send messages.',
+                  });
+                }
 
-            // Continue
-            done(err);
-          });
+                // Continue
+                done();
+              },
+              function (err) {
+                done(err);
+              },
+            );
         } else {
           // It wasn't first message to this thread
           done();
@@ -775,7 +753,7 @@ service.send = async function (req, res) {
         } else if (spamStatus === 'not-spam') {
           message.spam = false;
         }
-        message.save(done);
+        message.save().then(saved => done(null, saved), done);
       },
       // Create/upgrade Thread handle between these two users
       function (
@@ -825,9 +803,9 @@ service.send = async function (req, res) {
           {
             upsert: true,
           },
-          err => {
-            done(err, message);
-          },
+        ).then(
+          () => done(null, message),
+          (err: Error) => done(err, message),
         );
       },
       // Here we send some metrics to Stats API to measure how many messages
@@ -866,20 +844,16 @@ service.send = async function (req, res) {
       },
       // We'll need some info about related users, populate some fields
       function (message: MessageEndpointDocument, done: WaterfallDone) {
-        message.populate(
-          [userMiniService.miniUserPopulate('userFrom userTo')],
-          function (err, message) {
-            if (err) {
-              return done(err);
-            }
-
+        message
+          .populate([userMiniService.miniUserPopulate('userFrom userTo')])
+          .then(populated => {
             // Turn to object to be able to delete fields
-            message = message.toObject();
+            const messageObject = populated.toObject();
 
             // Finally return the approved message fields.
-            return res.json(prepareMessageForClient(message));
-          },
-        );
+            return res.json(prepareMessageForClient(messageObject));
+          })
+          .catch(done);
       },
     ],
     function (err?: unknown) {
@@ -1015,34 +989,22 @@ service.markRead = function (req, res) {
     return res.status(200).send(prepareMarkReadResponse());
   }
   // Mark messages read
-  Message.update(
-    prepareMarkReadSelector(messageIds, user.id),
-    {
-      read: true,
-    },
-    {
-      multi: true,
-    },
-    function (err) {
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
-      }
+  Message.updateMany(prepareMarkReadSelector(messageIds, user.id), {
+    read: true,
+  })
+    .then(() =>
       Thread.updateMany(
         { userTo: user._id, message: { $in: messageIds } },
         { $set: { read: true } },
-        function (threadError) {
-          if (threadError) {
-            return res.status(400).send({
-              message: errorService.getErrorMessage(threadError),
-            });
-          }
-          res.status(200).send(prepareMarkReadResponse());
-        },
-      );
-    },
-  );
+      ),
+    )
+    .then(
+      () => res.status(200).send(prepareMarkReadResponse()),
+      (err: Error) =>
+        res.status(400).send({
+          message: errorService.getErrorMessage(err),
+        }),
+    );
 };
 
 /**
@@ -1063,14 +1025,12 @@ service.messagesCount = function (req, res) {
       },
       user,
     ),
-    function (err, unreadCount) {
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
-      }
-      return res.json(prepareUnreadMessageCount(unreadCount));
-    },
+  ).then(
+    unreadCount => res.json(prepareUnreadMessageCount(unreadCount)),
+    (err: Error) =>
+      res.status(400).send({
+        message: errorService.getErrorMessage(err),
+      }),
   );
 };
 
@@ -1177,34 +1137,36 @@ service.sync = function (req, res) {
             created: -1,
           })
           .select(messageFields)
-          .exec(function (err, messages) {
-            if (err) {
-              return done(err);
-            }
+          .exec()
+          .then(
+            function (messages) {
+              // Sanitize messages
+              messages = sanitizeMessages(messages);
 
-            // Sanitize messages
-            messages = sanitizeMessages(messages);
+              // Collect user ids
+              let userIds: string[] = [];
 
-            // Collect user ids
-            let userIds: string[] = [];
+              // Re-group messages by users
+              data.messages = _.groupBy(messages, function (row) {
+                // Collect user id
+                userIds.push(row.userTo.toString());
+                userIds.push(row.userFrom.toString());
 
-            // Re-group messages by users
-            data.messages = _.groupBy(messages, function (row) {
-              // Collect user id
-              userIds.push(row.userTo.toString());
-              userIds.push(row.userFrom.toString());
+                // Determines key of the group
+                if (row.userTo === user._id) {
+                  return row.userFrom;
+                }
+                return row.userTo;
+              });
 
-              // Determines key of the group
-              if (row.userTo === user._id) {
-                return row.userFrom;
-              }
-              return row.userTo;
-            });
-
-            // Ensure we have only one of each user ids
-            userIds = _.uniq(userIds);
-            done(err, userIds);
-          });
+              // Ensure we have only one of each user ids
+              userIds = _.uniq(userIds);
+              done(null, userIds);
+            },
+            function (err) {
+              done(err);
+            },
+          );
       },
       // Collect users
       function (userIds: string[], done: WaterfallDone) {
@@ -1215,10 +1177,16 @@ service.sync = function (req, res) {
           },
         })
           .select(userMiniService.userMiniProfileFields)
-          .exec(function (err, users) {
-            data.users = users;
-            done(err);
-          });
+          .exec()
+          .then(
+            function (users) {
+              data.users = users;
+              done();
+            },
+            function (err) {
+              done(err);
+            },
+          );
       },
       // Return the package
       function () {
@@ -1245,10 +1213,7 @@ service.markAllMessagesToUserNotified = function (userId, callback) {
   Message.updateMany(
     { userTo: userId },
     { $set: { notificationCount: 2 } },
-    function (err) {
-      callback(err);
-    },
-  );
+  ).then(() => callback(null), callback);
 };
 /** Format a draft without saving it or touching conversation state. */
 service.preview = function (req, res) {

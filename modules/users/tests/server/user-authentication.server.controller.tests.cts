@@ -198,7 +198,9 @@ describe('Authentication controller OAuth unit tests', () => {
       userDoc.additionalProvidersData = { github: { id: 'gh-1' } };
       userDoc.markModified('additionalProvidersData');
       await userDoc.save();
-      stubLegacySave(userDoc).callsFake(cb => cb(new Error('save failed')));
+      stubLegacySave(userDoc).callsFake(() =>
+        Promise.reject(new Error('save failed')),
+      );
 
       const req = {
         user: userDoc,
@@ -426,7 +428,9 @@ describe('Authentication controller OAuth unit tests', () => {
       userDoc.public = false;
       userDoc.emailTemporary = userDoc.email;
       await userDoc.save();
-      stubLegacySave(userDoc).callsFake(cb => cb(new Error('save failed')));
+      stubLegacySave(userDoc).callsFake(() =>
+        Promise.reject(new Error('save failed')),
+      );
 
       const res = deferredResponse();
       authController.resendConfirmation({ user: userDoc }, res);
@@ -1065,12 +1069,7 @@ describe('Authentication controller OAuth unit tests', () => {
         filter: Parameters<typeof User.findOneAndUpdate>[0],
         update: Parameters<typeof User.findOneAndUpdate>[1],
         options: Parameters<typeof User.findOneAndUpdate>[2],
-        callback: (
-          error: Error | null,
-          document: AuthenticationUserDocument | null,
-          result?: unknown,
-        ) => void,
-      ) => void;
+      ) => PromiseLike<unknown>;
       const originalFindOneAndUpdate =
         User.findOneAndUpdate as unknown as LegacyFindOneAndUpdate;
       const legacyUserModel = User as unknown as {
@@ -1078,20 +1077,11 @@ describe('Authentication controller OAuth unit tests', () => {
       };
       sinon
         .stub(legacyUserModel, 'findOneAndUpdate')
-        .callsFake((filter, update, options, callback) => {
+        .callsFake((filter, update, options) =>
           User.updateOne({ _id: saved._id }, { $inc: { authVersion: 1 } }).then(
-            () => {
-              originalFindOneAndUpdate.call(
-                User,
-                filter,
-                update,
-                options,
-                callback,
-              );
-            },
-            error => callback(error, null),
-          );
-        });
+            () => originalFindOneAndUpdate.call(User, filter, update, options),
+          ),
+        );
 
       const login = sinon.spy((_user: unknown, callback: AuthCallback) =>
         callback(),
@@ -1160,7 +1150,7 @@ describe('Authentication controller OAuth unit tests', () => {
       userDoc.emailTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
       await userDoc.save();
 
-      sinon.stub(User, 'findOneAndUpdate').yields(new Error('update failed'));
+      sinon.stub(User, 'findOneAndUpdate').rejects(new Error('update failed'));
 
       const res = deferredResponse();
       authController.confirmEmail(

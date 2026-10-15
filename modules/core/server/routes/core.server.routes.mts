@@ -81,18 +81,12 @@ const defaultExport = function (app: Application) {
       ...new Set((pubkeys as string[]).map(pubkey => pubkey.toLowerCase())),
     ];
     const npubs = normalizedPubkeys.map(pubkey => nip19.npubEncode(pubkey));
-    User.find(
-      {
-        nostrNpub: {
-          $in: npubs,
-        },
+    User.find({
+      nostrNpub: {
+        $in: npubs,
       },
-      function (err: Error | null, users: NostrUserRecord[]) {
-        if (err) {
-          return res.status(500).send({
-            error: 'Internal server error',
-          });
-        }
+    }).then(
+      (users: NostrUserRecord[]) => {
         const linkedNpubs = new Set(users.map(user => user.nostrNpub));
         const visibleNpubs = new Set(
           users
@@ -115,6 +109,10 @@ const defaultExport = function (app: Application) {
           ),
         });
       },
+      () =>
+        res.status(500).send({
+          error: 'Internal server error',
+        }),
     );
   });
 
@@ -144,25 +142,18 @@ const defaultExport = function (app: Application) {
       });
     }
     const name = (rawName as string).toLowerCase();
-    User.findOne(
-      {
-        username: name,
-        public: true,
-        email: {
-          $exists: true,
-          $nin: ['', null],
-        },
-        roles: {
-          $nin: ['suspended', 'shadowban'],
-        },
+    User.findOne({
+      username: name,
+      public: true,
+      email: {
+        $exists: true,
+        $nin: ['', null],
       },
-      function (err: Error | null, user: NostrUserRecord | null) {
-        if (err) {
-          res.status(500).send({
-            error: 'Internal server error',
-          });
-          return;
-        }
+      roles: {
+        $nin: ['suspended', 'shadowban'],
+      },
+    }).then(
+      (user: NostrUserRecord | null) => {
         const obj: { names: Record<string, string> } = {
           names: {},
         };
@@ -179,11 +170,16 @@ const defaultExport = function (app: Application) {
               obj.names[name] = result.data.toLowerCase();
             }
           }
-        } catch (err) {
+        } catch (decodeError) {
           // Malformed stored Nostr keys should fail closed.
-          _.noop(err);
+          _.noop(decodeError);
         }
         res.json(obj);
+      },
+      () => {
+        res.status(500).send({
+          error: 'Internal server error',
+        });
       },
     );
   });

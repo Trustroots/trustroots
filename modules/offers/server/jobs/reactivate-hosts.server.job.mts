@@ -20,21 +20,12 @@ interface ReactivationOffer {
 
 interface OfferQuery {
   populate(path: string, fields: string): this;
-  exec(
-    callback: (
-      error: Error | null,
-      offers: ReactivationOffer[] | null | undefined,
-    ) => void,
-  ): void;
+  exec(): Promise<ReactivationOffer[]>;
 }
 
 interface OfferModel {
   find(query: object): OfferQuery;
-  findByIdAndUpdate(
-    id: Types.ObjectId,
-    update: object,
-    callback: (error: Error | null) => void,
-  ): void;
+  findByIdAndUpdate(id: Types.ObjectId, update: object): Promise<unknown>;
 }
 
 type Done = (error?: Error | null) => void;
@@ -92,9 +83,10 @@ function run(_job: unknown, agendaDone: Done): void {
           },
         })
           .populate('user', 'public email firstName displayName')
-          .exec(function (err, offers) {
-            done(err, offers || []);
-          });
+          .exec()
+          .then(function (offers) {
+            done(null, offers);
+          }, done);
       },
       // Send emails
       function (offers: ReactivationOffer[], done: WaterfallDone) {
@@ -112,17 +104,13 @@ function run(_job: unknown, agendaDone: Done): void {
                   return callback(err);
                 } else {
                   // Mark reactivation mail sent
-                  Offer.findByIdAndUpdate(
-                    offer._id,
-                    {
-                      $set: {
-                        reactivateReminderSent: new Date(),
-                      },
+                  Offer.findByIdAndUpdate(offer._id, {
+                    $set: {
+                      reactivateReminderSent: new Date(),
                     },
-                    function (err) {
-                      callback(err);
-                    },
-                  );
+                  }).then(function () {
+                    callback();
+                  }, callback);
                 }
               },
             );

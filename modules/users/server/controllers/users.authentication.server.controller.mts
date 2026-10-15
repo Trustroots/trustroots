@@ -106,12 +106,10 @@ function findOneAndUpdateWithCallback(
   options: { new: boolean },
   callback: (error: Error | null, user: UserDocument | null) => void,
 ): void {
-  Reflect.apply(User.findOneAndUpdate, User, [
-    filter,
-    update,
-    options,
-    callback,
-  ]);
+  User.findOneAndUpdate(filter, update, options).then(
+    user => callback(null, user),
+    (error: Error) => callback(error, null),
+  );
 }
 
 function isNameSpam(input: string): boolean {
@@ -231,13 +229,20 @@ service.signup = function (req, res) {
         );
 
         // Then save the user
-        user.save(function (err) {
-          // Remove sensitive data before login
-          user.password = undefined;
-          user.salt = undefined;
+        user.save().then(
+          function () {
+            // Remove sensitive data before login
+            user.password = undefined;
+            user.salt = undefined;
 
-          done(err, user);
-        });
+            done(null, user);
+          },
+          function (err: Error) {
+            user.password = undefined;
+            user.salt = undefined;
+            done(err);
+          },
+        );
       },
 
       // Send email
@@ -367,11 +372,10 @@ service.signupValidation = function (req, res) {
 
       // Check username availability against database
       function (done: WaterfallCallback) {
-        User.findOne(
-          {
-            username: username!.toLowerCase(),
-          },
-          function (err: Error | null, user: UserDocument | null) {
+        User.findOne({
+          username: username!.toLowerCase(),
+        }).then(
+          (user: UserDocument | null) => {
             if (user) {
               return done(
                 new Error('Username is not available.'),
@@ -381,6 +385,7 @@ service.signupValidation = function (req, res) {
 
             done();
           },
+          () => done(),
         );
       },
     ],
@@ -552,12 +557,8 @@ service.removeOAuthProvider = function (req, res) {
     user.markModified('additionalProvidersData');
   }
 
-  user.save(function (err) {
-    if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err),
-      });
-    } else {
+  user.save().then(
+    function () {
       req.login!(user, function (err) {
         if (err) {
           return res.status(400).send(err);
@@ -566,8 +567,13 @@ service.removeOAuthProvider = function (req, res) {
         // Remove sensitive data before sending out
         res.json(userProfile.sanitizeOwnProfile(user));
       });
-    }
-  });
+    },
+    function (err: Error) {
+      res.status(400).send({
+        message: errorService.getErrorMessage(err),
+      });
+    },
+  );
 };
 
 /**
@@ -575,14 +581,14 @@ service.removeOAuthProvider = function (req, res) {
  */
 service.validateEmailToken = function (req, res) {
   const now = new Date();
-  User.findOne(
-    emailConfirmationTokenQuery(req.params!.token, now),
-    function (err: Error | null, user: UserDocument | null) {
+  User.findOne(emailConfirmationTokenQuery(req.params!.token, now)).then(
+    (user: UserDocument | null) => {
       if (!user) {
         return res.redirect('/confirm-email-invalid');
       }
       res.redirect('/confirm-email/' + req.params!.token);
     },
+    () => res.redirect('/confirm-email-invalid'),
   );
 };
 
@@ -596,13 +602,9 @@ service.confirmEmail = function (req, res) {
     [
       function (done: WaterfallCallback) {
         // Check if user exists with this token
-        User.findOne(
-          tokenQuery,
-          function (
-            err: Error | null,
-            user: (UserDocument & { emailTemporary: string }) | null,
-          ) {
-            if (!err && user) {
+        User.findOne(tokenQuery).then(
+          user => {
+            if (user) {
               // Will be the returned object when no errors
               const result: EmailConfirmationResult = {
                 // If users profile was hidden, it means it was first confirmation email after registration.
@@ -616,6 +618,10 @@ service.confirmEmail = function (req, res) {
               });
             }
           },
+          () =>
+            res.status(400).send({
+              message: 'Email confirm token is invalid or has expired.',
+            }),
         );
       },
 
@@ -754,10 +760,12 @@ service.resendConfirmation = function (req, res) {
           user,
           authenticationService.generateEmailToken(user, salt),
         );
-        user.save(function (err: Error | null) {
-          if (err) return done(err);
-          done(null, user);
-        });
+        user
+          .save()
+          .then(function () {
+            done(null, user);
+          })
+          .catch(done);
       },
 
       // Send email

@@ -79,20 +79,19 @@ const testLocations = {
     location: [80.912672, 79.732322],
   },
 };
-
 interface OfferFeature {
   properties: {
     id: string;
     status: string;
     type: string;
   };
-  geometry: { coordinates: number[] };
+  geometry: {
+    coordinates: number[];
+  };
 }
-
 function assertPresent<T>(value: T | null | undefined): asserts value is T {
   should.exist(value);
 }
-
 function requestResult(
   test: import('supertest').Test,
 ): Promise<import('supertest').Response> {
@@ -106,7 +105,6 @@ function requestResult(
     });
   });
 }
-
 /**
  * Offer routes tests
  */
@@ -125,13 +123,11 @@ describe('Offer search tests', function () {
       username: 'loremipsum',
       password: 'Password123!',
     };
-
     // Create user2 credentials
     credentials2 = {
       username: 'loremipsum2',
       password: 'Password123!',
     };
-
     // Create a new user
     user1 = new User({
       firstName: 'Full',
@@ -145,7 +141,6 @@ describe('Offer search tests', function () {
       public: true,
       seen: new Date(),
     });
-
     // Create a new user
     user2 = new User({
       firstName: 'Full',
@@ -160,7 +155,6 @@ describe('Offer search tests', function () {
       public: true,
       seen: new Date(),
     });
-
     // Create a new user
     user3 = new User({
       firstName: 'Full',
@@ -174,7 +168,6 @@ describe('Offer search tests', function () {
       public: true,
       seen: new Date(),
     });
-
     // Used only for sending via POST and thus doesn't include some data
     offer1 = {
       type: 'host',
@@ -224,7 +217,6 @@ describe('Offer search tests', function () {
       count: 1,
       public: true,
     });
-
     // Save data to the test db in the same order as the legacy waterfall.
     await tribe1.save();
     tribe1Id = tribe1._id;
@@ -255,7 +247,6 @@ describe('Offer search tests', function () {
       .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
-
         // Get offers (in Niger)
         agent
           .get(
@@ -269,10 +260,8 @@ describe('Offer search tests', function () {
           .end(function (offersGetErr, offersGetRes) {
             // Handle offer get error
             if (offersGetErr) return done(offersGetErr);
-
             // Set assertions
             offersGetRes.body.features.length.should.equal(0);
-
             // Call the assertion callback
             return done();
           });
@@ -286,7 +275,6 @@ describe('Offer search tests', function () {
       .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
-
         // Get offers (in Niger)
         agent
           .get(
@@ -300,10 +288,8 @@ describe('Offer search tests', function () {
           .end(function (offersGetErr, offersGetRes) {
             // Handle offer get error
             if (offersGetErr) return done(offersGetErr);
-
             // Set assertions
             offersGetRes.body.features.length.should.equal(2);
-
             // Call the assertion callback
             return done();
           });
@@ -317,7 +303,6 @@ describe('Offer search tests', function () {
       .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
-
         // Missing `southWestLng` paramter
         agent
           .get(
@@ -338,7 +323,6 @@ describe('Offer search tests', function () {
       .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
-
         // Missing `southWestLng` paramter
         agent
           .get(
@@ -363,7 +347,6 @@ describe('Offer search tests', function () {
       .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
-
         // Missing `southWestLng` paramter
         agent
           .get(
@@ -386,7 +369,6 @@ describe('Offer search tests', function () {
         // Handle offer get error
         if (offersGetErr) return done(offersGetErr);
         offersGetRes.body.message.should.equal('Forbidden.');
-
         // Call the assertion callback
         return done();
       });
@@ -399,7 +381,6 @@ describe('Offer search tests', function () {
       .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
-
         // Get offers (around Berlin)
         agent
           .get('/api/offers' + testLocations.Europe.queryBoundingBox)
@@ -407,10 +388,8 @@ describe('Offer search tests', function () {
           .end(function (offersGetErr, offersGetRes) {
             // Handle offer get error
             if (offersGetErr) return done(offersGetErr);
-
             // Set assertions
             offersGetRes.body.features.should.have.lengthOf(2);
-
             // MongoDb returns these in random order, figure out order here
             let user2Order = 1;
             let user3Order = 0;
@@ -447,13 +426,11 @@ describe('Offer search tests', function () {
               0.0000000000001,
             );
             offerB.properties.id.should.equal(offer3Id.toString());
-
             // Call the assertion callback
             return done();
           });
       });
   });
-
   // Tests different regions in the globe (Asia, USA, North Pole etc)
   _.forEach(testLocations, function (testLocation, area) {
     it(
@@ -466,128 +443,52 @@ describe('Offer search tests', function () {
           .end(function (signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
-
             // Clean out the DB from other offers
-            Offer.deleteMany().exec(function () {
-              // Create new offer to target location
-              const testLocationOffer = new Offer(offer1);
-              testLocationOffer.location = testLocation.location;
-              testLocationOffer.save(function (saveErr, saveRes) {
-                if (saveErr) return done(saveErr);
-
-                // Get offers (around Berlin)
-                agent
-                  .get('/api/offers' + testLocation.queryBoundingBox)
-                  .expect(200)
-                  .end(function (offersGetErr, offersGetRes) {
-                    // Handle offer get error
-                    if (offersGetErr) return done(offersGetErr);
-
-                    // Set assertions
-                    offersGetRes.body.features.should.have.lengthOf(1);
-                    const offerA = offersGetRes.body.features[0];
-                    offerA.properties.id.should.equal(saveRes._id.toString());
-                    offerA.geometry.coordinates[0].should.be.approximately(
-                      testLocation.location[1],
-                      0.1,
-                    );
-                    offerA.geometry.coordinates[1].should.be.approximately(
-                      testLocation.location[0],
-                      0.1,
-                    );
-
-                    // Call the assertion callback
-                    return done();
-                  });
-              });
-            });
+            Offer.deleteMany()
+              .exec()
+              .then(function () {
+                // Create new offer to target location
+                const testLocationOffer = new Offer(offer1);
+                testLocationOffer.location = testLocation.location;
+                testLocationOffer
+                  .save()
+                  .then(saveRes => {
+                    // Get offers (around Berlin)
+                    agent
+                      .get('/api/offers' + testLocation.queryBoundingBox)
+                      .expect(200)
+                      .end(function (offersGetErr, offersGetRes) {
+                        // Handle offer get error
+                        if (offersGetErr) return done(offersGetErr);
+                        // Set assertions
+                        offersGetRes.body.features.should.have.lengthOf(1);
+                        const offerA = offersGetRes.body.features[0];
+                        offerA.properties.id.should.equal(
+                          saveRes._id.toString(),
+                        );
+                        offerA.geometry.coordinates[0].should.be.approximately(
+                          testLocation.location[1],
+                          0.1,
+                        );
+                        offerA.geometry.coordinates[1].should.be.approximately(
+                          testLocation.location[0],
+                          0.1,
+                        );
+                        // Call the assertion callback
+                        return done();
+                      });
+                  })
+                  .catch(done);
+              })
+              .catch(done);
           });
       },
     );
   });
   it('should include both meet and host offers when getting a list of offers from an area', function (done) {
-    offerMeet.save(function (saveErr) {
-      // Handle save error
-      if (saveErr) return done(saveErr);
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-
-          // Get offers (around Berlin)
-          agent
-            .get('/api/offers' + testLocations.Europe.queryBoundingBox)
-            .expect(200)
-            .end(function (offersGetErr, offersGetRes) {
-              // Handle offer get error
-              if (offersGetErr) return done(offersGetErr);
-
-              // Set assertions
-              offersGetRes.body.features.should.have.lengthOf(3);
-
-              // Count different offer types
-              // This produces `{'host': 2, 'meet': 1}`
-              const count = _.countBy(
-                offersGetRes.body.features,
-                offer => offer.properties.type,
-              );
-              count.host.should.equal(2);
-              count.meet.should.equal(1);
-
-              // Call the assertion callback
-              return done();
-            });
-        });
-    });
-  });
-  it('should not include outdated meet offers when getting a list of offers from an area', function (done) {
-    // Set date to past
-    offerMeet.validUntil = moment().subtract(1, 'minute').toDate();
-    offerMeet.save(function (saveErr) {
-      // Handle save error
-      if (saveErr) return done(saveErr);
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-
-          // Get offers (around Berlin)
-          agent
-            .get('/api/offers' + testLocations.Europe.queryBoundingBox)
-            .expect(200)
-            .end(function (offersGetErr, offersGetRes) {
-              // Handle offer get error
-              if (offersGetErr) return done(offersGetErr);
-
-              // Set assertions
-              offersGetRes.body.features.should.have.lengthOf(2);
-
-              // Only "host" offers here
-              // Note that these are in random order from Mongo but it doesn't matter here
-              offersGetRes.body.features[0].properties.type.should.equal(
-                'host',
-              );
-              offersGetRes.body.features[1].properties.type.should.equal(
-                'host',
-              );
-
-              // Call the assertion callback
-              return done();
-            });
-        });
-    });
-  });
-  describe('Search offers by "types" filter', function () {
-    it('should be able to get list of offers from an area filtered by type "host"', function (done) {
-      offerMeet.save(function (saveErr) {
-        // Handle save error
-        if (saveErr) return done(saveErr);
+    offerMeet
+      .save()
+      .then(() => {
         agent
           .post('/api/auth/signin')
           .send(credentials)
@@ -595,120 +496,15 @@ describe('Offer search tests', function () {
           .end(function (signinErr) {
             // Handle signin error
             if (signinErr) return done(signinErr);
-
             // Get offers (around Berlin)
-            const filters = {
-              types: ['host'],
-            };
             agent
-              .get(
-                '/api/offers' +
-                  testLocations.Europe.queryBoundingBox +
-                  '&filters=' +
-                  encodeURIComponent(JSON.stringify(filters)),
-              )
+              .get('/api/offers' + testLocations.Europe.queryBoundingBox)
               .expect(200)
               .end(function (offersGetErr, offersGetRes) {
                 // Handle offer get error
                 if (offersGetErr) return done(offersGetErr);
-
-                // MongoDb returns these in random order, figure out order here
-                let user2Order = 1;
-                let user3Order = 0;
-                if (
-                  offersGetRes.body.features[0].properties.id ===
-                  offer2Id.toString()
-                ) {
-                  user2Order = 0;
-                  user3Order = 1;
-                }
-
-                // Set assertions
-                offersGetRes.body.features.should.have.lengthOf(2);
-                offersGetRes.body.features[
-                  user2Order
-                ].properties.type.should.equal(offer2.type);
-                offersGetRes.body.features[
-                  user3Order
-                ].properties.type.should.equal(offer3.type);
-
-                // Call the assertion callback
-                return done();
-              });
-          });
-      });
-    });
-    it('should be able to get list of offers from an area filtered by type "meet"', function (done) {
-      offerMeet.save(function (saveErr) {
-        // Handle save error
-        if (saveErr) return done(saveErr);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            // Handle signin error
-            if (signinErr) return done(signinErr);
-
-            // Get offers (around Berlin)
-            const filters = {
-              types: ['meet'],
-            };
-            agent
-              .get(
-                '/api/offers' +
-                  testLocations.Europe.queryBoundingBox +
-                  '&filters=' +
-                  encodeURIComponent(JSON.stringify(filters)),
-              )
-              .expect(200)
-              .end(function (offersGetErr, offersGetRes) {
-                // Handle offer get error
-                if (offersGetErr) return done(offersGetErr);
-
-                // Set assertions
-                offersGetRes.body.features.should.have.lengthOf(1);
-                offersGetRes.body.features[0].properties.type.should.equal(
-                  offerMeet.type,
-                );
-
-                // Call the assertion callback
-                return done();
-              });
-          });
-      });
-    });
-    it('should be able to get list of offers from an area filtered by non existing type', function (done) {
-      offerMeet.save(function (saveErr) {
-        // Handle save error
-        if (saveErr) return done(saveErr);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            // Handle signin error
-            if (signinErr) return done(signinErr);
-
-            // Get offers (around Berlin)
-            const filters = {
-              types: ['foobar'],
-            };
-            agent
-              .get(
-                '/api/offers' +
-                  testLocations.Europe.queryBoundingBox +
-                  '&filters=' +
-                  encodeURIComponent(JSON.stringify(filters)),
-              )
-              .expect(200)
-              .end(function (offersGetErr, offersGetRes) {
-                // Handle offer get error
-                if (offersGetErr) return done(offersGetErr);
-
                 // Set assertions
                 offersGetRes.body.features.should.have.lengthOf(3);
-
                 // Count different offer types
                 // This produces `{'host': 2, 'meet': 1}`
                 const count = _.countBy(
@@ -717,12 +513,182 @@ describe('Offer search tests', function () {
                 );
                 count.host.should.equal(2);
                 count.meet.should.equal(1);
-
                 // Call the assertion callback
                 return done();
               });
           });
-      });
+      })
+      .catch(done);
+  });
+  it('should not include outdated meet offers when getting a list of offers from an area', function (done) {
+    // Set date to past
+    offerMeet.validUntil = moment().subtract(1, 'minute').toDate();
+    offerMeet
+      .save()
+      .then(() => {
+        agent
+          .post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) return done(signinErr);
+            // Get offers (around Berlin)
+            agent
+              .get('/api/offers' + testLocations.Europe.queryBoundingBox)
+              .expect(200)
+              .end(function (offersGetErr, offersGetRes) {
+                // Handle offer get error
+                if (offersGetErr) return done(offersGetErr);
+                // Set assertions
+                offersGetRes.body.features.should.have.lengthOf(2);
+                // Only "host" offers here
+                // Note that these are in random order from Mongo but it doesn't matter here
+                offersGetRes.body.features[0].properties.type.should.equal(
+                  'host',
+                );
+                offersGetRes.body.features[1].properties.type.should.equal(
+                  'host',
+                );
+                // Call the assertion callback
+                return done();
+              });
+          });
+      })
+      .catch(done);
+  });
+  describe('Search offers by "types" filter', function () {
+    it('should be able to get list of offers from an area filtered by type "host"', function (done) {
+      offerMeet
+        .save()
+        .then(() => {
+          agent
+            .post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function (signinErr) {
+              // Handle signin error
+              if (signinErr) return done(signinErr);
+              // Get offers (around Berlin)
+              const filters = {
+                types: ['host'],
+              };
+              agent
+                .get(
+                  '/api/offers' +
+                    testLocations.Europe.queryBoundingBox +
+                    '&filters=' +
+                    encodeURIComponent(JSON.stringify(filters)),
+                )
+                .expect(200)
+                .end(function (offersGetErr, offersGetRes) {
+                  // Handle offer get error
+                  if (offersGetErr) return done(offersGetErr);
+                  // MongoDb returns these in random order, figure out order here
+                  let user2Order = 1;
+                  let user3Order = 0;
+                  if (
+                    offersGetRes.body.features[0].properties.id ===
+                    offer2Id.toString()
+                  ) {
+                    user2Order = 0;
+                    user3Order = 1;
+                  }
+                  // Set assertions
+                  offersGetRes.body.features.should.have.lengthOf(2);
+                  offersGetRes.body.features[
+                    user2Order
+                  ].properties.type.should.equal(offer2.type);
+                  offersGetRes.body.features[
+                    user3Order
+                  ].properties.type.should.equal(offer3.type);
+                  // Call the assertion callback
+                  return done();
+                });
+            });
+        })
+        .catch(done);
+    });
+    it('should be able to get list of offers from an area filtered by type "meet"', function (done) {
+      offerMeet
+        .save()
+        .then(() => {
+          agent
+            .post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function (signinErr) {
+              // Handle signin error
+              if (signinErr) return done(signinErr);
+              // Get offers (around Berlin)
+              const filters = {
+                types: ['meet'],
+              };
+              agent
+                .get(
+                  '/api/offers' +
+                    testLocations.Europe.queryBoundingBox +
+                    '&filters=' +
+                    encodeURIComponent(JSON.stringify(filters)),
+                )
+                .expect(200)
+                .end(function (offersGetErr, offersGetRes) {
+                  // Handle offer get error
+                  if (offersGetErr) return done(offersGetErr);
+                  // Set assertions
+                  offersGetRes.body.features.should.have.lengthOf(1);
+                  offersGetRes.body.features[0].properties.type.should.equal(
+                    offerMeet.type,
+                  );
+                  // Call the assertion callback
+                  return done();
+                });
+            });
+        })
+        .catch(done);
+    });
+    it('should be able to get list of offers from an area filtered by non existing type', function (done) {
+      offerMeet
+        .save()
+        .then(() => {
+          agent
+            .post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function (signinErr) {
+              // Handle signin error
+              if (signinErr) return done(signinErr);
+              // Get offers (around Berlin)
+              const filters = {
+                types: ['foobar'],
+              };
+              agent
+                .get(
+                  '/api/offers' +
+                    testLocations.Europe.queryBoundingBox +
+                    '&filters=' +
+                    encodeURIComponent(JSON.stringify(filters)),
+                )
+                .expect(200)
+                .end(function (offersGetErr, offersGetRes) {
+                  // Handle offer get error
+                  if (offersGetErr) return done(offersGetErr);
+                  // Set assertions
+                  offersGetRes.body.features.should.have.lengthOf(3);
+                  // Count different offer types
+                  // This produces `{'host': 2, 'meet': 1}`
+                  const count = _.countBy(
+                    offersGetRes.body.features,
+                    offer => offer.properties.type,
+                  );
+                  count.host.should.equal(2);
+                  count.meet.should.equal(1);
+                  // Call the assertion callback
+                  return done();
+                });
+            });
+        })
+        .catch(done);
     });
   });
   describe('Search offers by "languages" filter', function () {
@@ -734,7 +700,6 @@ describe('Offer search tests', function () {
         .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
-
           // Get offers (around Berlin)
           const filters = {
             languages: ['fin'],
@@ -750,13 +715,11 @@ describe('Offer search tests', function () {
             .end(function (offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
-
               // Set assertions
               offersGetRes.body.features.should.have.lengthOf(1);
               offersGetRes.body.features[0].properties.id.should.equal(
                 offer2._id.toString(),
               );
-
               // Call the assertion callback
               return done();
             });
@@ -770,7 +733,6 @@ describe('Offer search tests', function () {
         .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
-
           // Get offers (around Berlin)
           const filters = {
             languages: ['fin', 'ita'],
@@ -786,7 +748,6 @@ describe('Offer search tests', function () {
             .end(function (offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
-
               // MongoDb returns these in random order, figure out order here
               let user2Order = 1;
               let user3Order = 0;
@@ -797,7 +758,6 @@ describe('Offer search tests', function () {
                 user2Order = 0;
                 user3Order = 1;
               }
-
               // Set assertions
               offersGetRes.body.features.should.have.lengthOf(2);
               offersGetRes.body.features[user2Order].properties.id.should.equal(
@@ -806,7 +766,6 @@ describe('Offer search tests', function () {
               offersGetRes.body.features[user3Order].properties.id.should.equal(
                 offer3._id.toString(),
               );
-
               // Call the assertion callback
               return done();
             });
@@ -822,7 +781,6 @@ describe('Offer search tests', function () {
         .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
-
           // Get offers (around Berlin)
           const filters = {
             tribes: [tribe2Id],
@@ -838,7 +796,6 @@ describe('Offer search tests', function () {
             .end(function (offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
-
               // Set assertions
               offersGetRes.body.features.should.have.lengthOf(1);
               const offerA = offersGetRes.body.features[0];
@@ -855,7 +812,6 @@ describe('Offer search tests', function () {
                 offer2.locationFuzzy[0],
                 0.0000000000001,
               );
-
               // Call the assertion callback
               return done();
             });
@@ -863,55 +819,55 @@ describe('Offer search tests', function () {
     });
     it('should be able to get list of offers from an area filtered by tribes and not get tribe-less offers', function (done) {
       user3.member = [];
-      user3.save(function (err, user3res) {
-        should.not.exist(err);
-        assertPresent(user3res.member);
-        user3res.member.length.should.equal(0);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            // Handle signin error
-            if (signinErr) return done(signinErr);
-
-            // Get offers (around Berlin)
-            const filters = {
-              tribes: [tribe1Id, tribe2Id],
-            };
-            agent
-              .get(
-                '/api/offers' +
-                  testLocations.Europe.queryBoundingBox +
-                  '&filters=' +
-                  encodeURIComponent(JSON.stringify(filters)),
-              )
-              .expect(200)
-              .end(function (offersGetErr, offersGetRes) {
-                // Handle offer get error
-                if (offersGetErr) return done(offersGetErr);
-
-                // Set assertions
-                offersGetRes.body.features.should.have.lengthOf(1);
-                const offerA = offersGetRes.body.features[0];
-                offerA.properties.status.should.equal(offer2.status);
-                offerA.properties.type.should.equal(offer2.type);
-                offerA.geometry.coordinates.should.have.lengthOf(2);
-                assertPresent(offer2.locationFuzzy);
-                offerA.geometry.coordinates[0].should.be.approximately(
-                  offer2.locationFuzzy[1],
-                  0.0000000000001,
-                );
-                offerA.geometry.coordinates[1].should.be.approximately(
-                  offer2.locationFuzzy[0],
-                  0.0000000000001,
-                );
-
-                // Call the assertion callback
-                return done();
-              });
-          });
-      });
+      user3
+        .save()
+        .then(user3res => {
+          should.not.exist(null);
+          assertPresent(user3res.member);
+          user3res.member.length.should.equal(0);
+          agent
+            .post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function (signinErr) {
+              // Handle signin error
+              if (signinErr) return done(signinErr);
+              // Get offers (around Berlin)
+              const filters = {
+                tribes: [tribe1Id, tribe2Id],
+              };
+              agent
+                .get(
+                  '/api/offers' +
+                    testLocations.Europe.queryBoundingBox +
+                    '&filters=' +
+                    encodeURIComponent(JSON.stringify(filters)),
+                )
+                .expect(200)
+                .end(function (offersGetErr, offersGetRes) {
+                  // Handle offer get error
+                  if (offersGetErr) return done(offersGetErr);
+                  // Set assertions
+                  offersGetRes.body.features.should.have.lengthOf(1);
+                  const offerA = offersGetRes.body.features[0];
+                  offerA.properties.status.should.equal(offer2.status);
+                  offerA.properties.type.should.equal(offer2.type);
+                  offerA.geometry.coordinates.should.have.lengthOf(2);
+                  assertPresent(offer2.locationFuzzy);
+                  offerA.geometry.coordinates[0].should.be.approximately(
+                    offer2.locationFuzzy[1],
+                    0.0000000000001,
+                  );
+                  offerA.geometry.coordinates[1].should.be.approximately(
+                    offer2.locationFuzzy[0],
+                    0.0000000000001,
+                  );
+                  // Call the assertion callback
+                  return done();
+                });
+            });
+        })
+        .catch(done);
     });
     it('should be able to get list of offers from an area filtered by many tribes', function (done) {
       agent
@@ -921,7 +877,6 @@ describe('Offer search tests', function () {
         .end(function (signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
-
           // Get offers (around Berlin)
           const filters = {
             tribes: [tribe1Id, tribe2Id],
@@ -937,10 +892,8 @@ describe('Offer search tests', function () {
             .end(function (offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
-
               // Set assertions
               offersGetRes.body.features.should.have.lengthOf(2);
-
               // MongoDb returns these in random order, figure out order here
               let user2Order = 1;
               let user3Order = 0;
@@ -953,7 +906,6 @@ describe('Offer search tests', function () {
               }
               const offerA = offersGetRes.body.features[user2Order];
               const offerB = offersGetRes.body.features[user3Order];
-
               // User 2 offer
               offerA.properties.id.should.equal(offer2Id.toString());
               offerA.properties.status.should.equal(offer2.status);
@@ -968,7 +920,6 @@ describe('Offer search tests', function () {
                 offer2.locationFuzzy[0],
                 0.0000000000001,
               );
-
               // User 3 offer
               offerB.properties.id.should.equal(offer3Id.toString());
               offerB.properties.status.should.equal(offer3.status);
@@ -983,7 +934,6 @@ describe('Offer search tests', function () {
                 offer3.locationFuzzy[0],
                 0.0000000000001,
               );
-
               // Call the assertion callback
               return done();
             });
@@ -1007,10 +957,8 @@ describe('Offer search tests', function () {
             .end(function (offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
-
               // Set assertions
               offersGetRes.body.features.should.have.lengthOf(2);
-
               // Call the assertion callback
               return done();
             });
@@ -1034,12 +982,10 @@ describe('Offer search tests', function () {
             .end(function (offersGetErr, offersGetRes) {
               // Handle offer get error
               if (offersGetErr) return done(offersGetErr);
-
               // Set assertions
               offersGetRes.body.message.should.equal(
                 'Could not parse filters.',
               );
-
               // Call the assertion callback
               return done();
             });
@@ -1053,58 +999,68 @@ describe('Offer search tests', function () {
           months: 2,
         })
         .toDate();
-      user2.save(function (user2SaveErr) {
-        if (user2SaveErr) {
-          return done(user2SaveErr);
-        }
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            // Handle signin error
-            if (signinErr) {
-              return done(signinErr);
-            }
-            const filters = {
-              seen: {
-                months: 1,
-              },
-            };
-            agent
-              .get(
-                '/api/offers' +
-                  testLocations.Europe.queryBoundingBox +
-                  '&filters=' +
-                  encodeURIComponent(JSON.stringify(filters)),
-              )
-              .expect(200)
-              .end(function (offersGetErr, offersGetRes) {
-                // Handle offer get error
-                if (offersGetErr) return done(offersGetErr);
-
-                // Set assertions
-                // User2's offer should be filtered out
-                offersGetRes.body.features.should.be.have.lengthOf(1);
-                offersGetRes.body.features[0].properties.id.should.equal(
-                  offer3Id.toString(),
-                );
-
-                // Call the assertion callback
-                return done();
-              });
-          });
-      });
+      user2
+        .save()
+        .then(() => {
+          agent
+            .post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function (signinErr) {
+              // Handle signin error
+              if (signinErr) {
+                return done(signinErr);
+              }
+              const filters = {
+                seen: {
+                  months: 1,
+                },
+              };
+              agent
+                .get(
+                  '/api/offers' +
+                    testLocations.Europe.queryBoundingBox +
+                    '&filters=' +
+                    encodeURIComponent(JSON.stringify(filters)),
+                )
+                .expect(200)
+                .end(function (offersGetErr, offersGetRes) {
+                  // Handle offer get error
+                  if (offersGetErr) return done(offersGetErr);
+                  // Set assertions
+                  // User2's offer should be filtered out
+                  offersGetRes.body.features.should.be.have.lengthOf(1);
+                  offersGetRes.body.features[0].properties.id.should.equal(
+                    offer3Id.toString(),
+                  );
+                  // Call the assertion callback
+                  return done();
+                });
+            });
+        })
+        .catch(done);
     });
   });
   /*
-  describe('Exclude offers from shadowbanned, suspended and non-public users', () => {
-    afterEach(async () => {
-      await utils.signOut(agent);
-    });
-     ['shadowban', 'suspended'].forEach(role => {
-      it(`should not see users with "${role}"`, async () => {
-        user3.roles = [role];
+    describe('Exclude offers from shadowbanned, suspended and non-public users', () => {
+      afterEach(async () => {
+        await utils.signOut(agent);
+      });
+       ['shadowban', 'suspended'].forEach(role => {
+        it(`should not see users with "${role}"`, async () => {
+          user3.roles = [role];
+          await user3.save();
+          await utils.signIn(credentials, agent);
+           const { body } = await agent
+            .get('/api/offers' + testLocations.Europe.queryBoundingBox)
+            .expect(200)
+            .end();
+           // body.features.should.have.lengthOf(1);
+          console.log('🚀', role, body); //eslint-disable-line
+        });
+      });
+       it(`should not see users which are not public`, async () => {
+        user3.public = false;
         await user3.save();
         await utils.signIn(credentials, agent);
          const { body } = await agent
@@ -1112,22 +1068,10 @@ describe('Offer search tests', function () {
           .expect(200)
           .end();
          // body.features.should.have.lengthOf(1);
-        console.log('🚀', role, body); //eslint-disable-line
+        console.log('🚀 non public', body); //eslint-disable-line
       });
     });
-     it(`should not see users which are not public`, async () => {
-      user3.public = false;
-      await user3.save();
-      await utils.signIn(credentials, agent);
-       const { body } = await agent
-        .get('/api/offers' + testLocations.Europe.queryBoundingBox)
-        .expect(200)
-        .end();
-       // body.features.should.have.lengthOf(1);
-      console.log('🚀 non public', body); //eslint-disable-line
-    });
-  });
-  */
+    */
   it('should be able to get offers from users with circles in common and have "showOnlyInMyCircles" set', async function () {
     // Verify that offers where showOnlyInMyCircles is true are only appearing
     // in searches where the authenticated user (user1) has at least one circle
@@ -1165,7 +1109,6 @@ describe('Offer search tests', function () {
     await user2.save();
     user3.member = [{ tribe: tribe3Id, since: new Date() }];
     await user3.save();
-
     // Update the hosting offers.
     const o1 = await new Offer({
       ...offer1,
@@ -1182,7 +1125,6 @@ describe('Offer search tests', function () {
     offer3.location = testLocations.Europe.location;
     offer3.showOnlyInMyCircles = false;
     await offer3.save();
-
     await requestResult(
       agent.post('/api/auth/signin').send(credentials).expect(200),
     );
@@ -1191,11 +1133,9 @@ describe('Offer search tests', function () {
         .get('/api/offers' + testLocations.Europe.queryBoundingBox)
         .expect(200),
     );
-
     // Verify the offers.
     const features = offersGetRes.body.features as OfferFeature[];
     features.should.have.lengthOf(2);
-
     // The offers are returned in any order.
     let offerRes1: OfferFeature;
     let offerRes3: OfferFeature;

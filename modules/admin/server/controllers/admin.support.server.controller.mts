@@ -298,7 +298,7 @@ async function findMembers(search: string) {
   const escaped = escapeRegex(lowered);
   // Usernames and emails are stored in lowercase, so these clauses can use
   // their indexes. A fresh expression is required for each field.
-  const indexed = await User.find({
+  const indexed: UserRecord[] = await User.find({
     $or: [
       { username: lowered },
       { email: lowered },
@@ -325,10 +325,8 @@ async function findMembers(search: string) {
   );
   let named: UserRecord[] = [];
   try {
-    named = await User.find(
-      { $text: { $search: trimmed } },
-      { score: { $meta: 'textScore' } },
-    )
+    named = await User.find({ $text: { $search: trimmed } })
+      .select({ score: { $meta: 'textScore' } })
       .select(MEMBER_FIELDS)
       .sort({ score: { $meta: 'textScore' } })
       .limit(PAGE_SIZE)

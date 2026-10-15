@@ -516,7 +516,7 @@ describe('Core CRUD tests', function () {
     }
     it('should return 500 when the user lookup fails', function (done) {
       const sinon = require('sinon');
-      sinon.stub(User, 'findOne').yields(new Error('db down'));
+      sinon.stub(User, 'findOne').rejects(new Error('db down'));
       agent
         .get('/.well-known/nostr.json?name=nostruser')
         .expect(500)
@@ -855,7 +855,7 @@ describe('Core CRUD tests', function () {
     });
     it('returns an error when the author lookup fails', function (done) {
       const sinon = require('sinon');
-      sinon.stub(User, 'find').yields(new Error('db unavailable'));
+      sinon.stub(User, 'find').rejects(new Error('db unavailable'));
       agent
         .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
         .expect(500)

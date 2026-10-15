@@ -20,12 +20,12 @@ type ReferenceThreadRecord =
   import('../../../../testutils/server/model-contracts.mts').ReferenceThreadRecord;
 type UserRecord =
   import('../../../../testutils/server/model-contracts.mts').UserRecord;
-type CallbackQuery<T> = {
-  sort(): CallbackQuery<T>;
-  populate(): CallbackQuery<T>;
-  exec(callback: (error: Error | null, result: T | null) => void): void;
-};
 type PromiseQuery<T> = { exec(): Promise<T> };
+type ChainablePromiseQuery<T> = {
+  sort(): ChainablePromiseQuery<T>;
+  populate(): ChainablePromiseQuery<T>;
+  exec(): Promise<T>;
+};
 type RecipientQuery = {
   select(fields: string): {
     sort(): PromiseQuery<
@@ -47,41 +47,28 @@ const ReferenceThread =
   mongoose.model<ReferenceThreadRecord>('ReferenceThread');
 const User = mongoose.model<UserRecord>('User');
 
-function messageQuery<T>(
-  execute: (callback: (error: Error | null, result: T | null) => void) => void,
-): CallbackQuery<T> {
-  const query: CallbackQuery<T> = {
+function messageQuery<T>(execute: () => Promise<T>): ChainablePromiseQuery<T> {
+  const query: ChainablePromiseQuery<T> = {
     sort() {
       return query;
     },
     populate() {
       return query;
     },
-    exec(callback) {
-      execute(callback);
-    },
+    exec: execute,
   };
-  return {
-    ...query,
-    populate() {
-      return query;
-    },
-  };
+  return query;
 }
 
 function messageFindQuery(
-  execute: (
-    callback: (error: Error | null, result: unknown[] | null) => void,
-  ) => void,
+  execute: () => Promise<unknown[] | null>,
 ): ReturnType<typeof Message.find> {
   // The controller's tests exercise only this query-chain surface.
   return messageQuery(execute) as unknown as ReturnType<typeof Message.find>;
 }
 
 function referenceThreadFindQuery(
-  execute: (
-    callback: (error: Error | null, result: unknown[] | null) => void,
-  ) => void,
+  execute: () => Promise<unknown[] | null>,
 ): ReturnType<typeof ReferenceThread.find> {
   // The controller's tests exercise only this query-chain surface.
   return messageQuery(execute) as unknown as ReturnType<
@@ -150,10 +137,10 @@ describe('Admin messages controller unit tests', () => {
   });
 
   it('accepts ObjectId-like query ids supported by Mongoose', async () => {
-    sinon.stub(Message, 'find').returns(messageFindQuery(cb => cb(null, [])));
+    sinon.stub(Message, 'find').returns(messageFindQuery(async () => []));
     sinon
       .stub(ReferenceThread, 'find')
-      .returns(referenceThreadFindQuery(cb => cb(null, [])));
+      .returns(referenceThreadFindQuery(async () => []));
     const id = new mongoose.Types.ObjectId();
     const res = mockResponse();
     adminMessages.getMessages(
@@ -168,9 +155,11 @@ describe('Admin messages controller unit tests', () => {
   });
 
   it('returns 400 when message lookup fails', async () => {
-    sinon
-      .stub(Message, 'find')
-      .returns(messageFindQuery(cb => cb(new Error('lookup failed'), null)));
+    sinon.stub(Message, 'find').returns(
+      messageFindQuery(async () => {
+        throw new Error('lookup failed');
+      }),
+    );
 
     const res = mockResponse();
     adminMessages.getMessages(
@@ -187,14 +176,12 @@ describe('Admin messages controller unit tests', () => {
   });
 
   it('returns 400 when reference thread lookup fails', async () => {
-    sinon.stub(Message, 'find').returns(messageFindQuery(cb => cb(null, [])));
-    sinon
-      .stub(ReferenceThread, 'find')
-      .returns(
-        referenceThreadFindQuery(cb =>
-          cb(new Error('reference lookup failed'), null),
-        ),
-      );
+    sinon.stub(Message, 'find').returns(messageFindQuery(async () => []));
+    sinon.stub(ReferenceThread, 'find').returns(
+      referenceThreadFindQuery(async () => {
+        throw new Error('reference lookup failed');
+      }),
+    );
 
     const res = mockResponse();
     adminMessages.getMessages(
@@ -211,10 +198,10 @@ describe('Admin messages controller unit tests', () => {
   });
 
   it('uses an empty reference thread list when the lookup returns null', async () => {
-    sinon.stub(Message, 'find').returns(messageFindQuery(cb => cb(null, [])));
+    sinon.stub(Message, 'find').returns(messageFindQuery(async () => []));
     sinon
       .stub(ReferenceThread, 'find')
-      .returns(referenceThreadFindQuery(cb => cb(null, null)));
+      .returns(referenceThreadFindQuery(async () => null));
 
     const res = mockResponse();
     adminMessages.getMessages(
@@ -234,10 +221,10 @@ describe('Admin messages controller unit tests', () => {
     const sanitizer = sinon
       .stub(messagesSanitizer, 'sanitizeMessages')
       .returns([]);
-    sinon.stub(Message, 'find').returns(messageFindQuery(cb => cb(null, null)));
+    sinon.stub(Message, 'find').returns(messageFindQuery(async () => null));
     sinon
       .stub(ReferenceThread, 'find')
-      .returns(referenceThreadFindQuery(cb => cb(null, [])));
+      .returns(referenceThreadFindQuery(async () => []));
 
     const res = mockResponse();
     adminMessages.getMessages({ body: {} }, res);
@@ -274,7 +261,12 @@ describe('Admin messages controller unit tests', () => {
     };
     const findUsers = sinon
       .stub(User, 'find')
-      .returns(recipientQuery as unknown as ReturnType<typeof User.find>);
+      .returns(
+        recipientQuery as unknown as ReturnType<typeof User.find>,
+      ) as import('sinon').SinonStub<
+      [filter?: import('mongoose').FilterQuery<UserRecord>],
+      ReturnType<typeof User.find>
+    >;
 
     const res = mockResponse();
     await adminMessages.getScammerRecipients(

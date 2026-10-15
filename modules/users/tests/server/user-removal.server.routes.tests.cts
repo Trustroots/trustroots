@@ -72,7 +72,6 @@ const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
 const Message = mongoose.model<MessageRecord, MessageModel>('Message');
 const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
 const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
-
 /**
  * Globals
  */
@@ -85,14 +84,15 @@ let userA: UserDocument;
 let _userA: UserRecord;
 let userB: UserDocument;
 let _userB: UserRecord;
-
 /**
  * User routes tests
  */
 describe('User removal CRUD tests', function () {
   interface RemovalMailData {
     subject: string;
-    to: { address: string };
+    to: {
+      address: string;
+    };
     text: string;
   }
   const jobs = testutils.catchJobs<RemovalMailData>();
@@ -104,7 +104,6 @@ describe('User removal CRUD tests', function () {
       done();
     })().catch(done);
   });
-
   // initialize sinon
   beforeEach(function () {
     const testClockStart = Date.now();
@@ -117,7 +116,6 @@ describe('User removal CRUD tests', function () {
   afterEach(function () {
     sinon.restore();
   });
-
   // Create an user A
   beforeEach(function (done: DoneCallback) {
     // Create user credentials for user A
@@ -125,7 +123,6 @@ describe('User removal CRUD tests', function () {
       username: 'usera',
       password: 'M3@n.jsI$Aw3$0m3',
     };
-
     // Create a new user A
     _userA = {
       public: true,
@@ -138,11 +135,12 @@ describe('User removal CRUD tests', function () {
       provider: 'local',
     };
     userA = new User(_userA);
-
     // Save a user to the test db
-    userA.save(done);
+    userA
+      .save()
+      .then(() => done())
+      .catch(done);
   });
-
   // Create user B
   beforeEach(function (done: DoneCallback) {
     // Create user credentials for user B
@@ -150,7 +148,6 @@ describe('User removal CRUD tests', function () {
       username: 'userb',
       password: 'M3@n.jsI$Aw3$0m3',
     };
-
     // Create a new user B
     _userB = {
       public: true,
@@ -163,9 +160,11 @@ describe('User removal CRUD tests', function () {
       provider: 'local',
     };
     userB = new User(_userB);
-
     // Save a user to the test db
-    userB.save(done);
+    userB
+      .save()
+      .then(() => done())
+      .catch(done);
   });
   afterEach(dataUtils.clearDatabase);
   it('should not be able to initiate removing profile when not logged in', function (done: DoneCallback) {
@@ -179,46 +178,40 @@ describe('User removal CRUD tests', function () {
           return done(deleteErr);
         }
         jobs.length.should.equal(0);
-
         // User should still exist
-        User.findOne(
-          {
-            username: userA.username,
-          },
-          function (
-            findUsersErr: Error | null,
-            findUser: UserModelDocument | null,
-          ) {
-            if (findUsersErr) {
-              return done(findUsersErr);
-            }
+        User.findOne({
+          username: userA.username,
+        })
+          .then((findUser: UserModelDocument | null) => {
             findUser!.username.should.equal(userA.username);
             done();
-          },
-        );
+          })
+          .catch(done);
       });
   });
   it('Signin in should not reveal profile removal tokens', function (done: DoneCallback) {
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
     userA.removeProfileExpires = new Date();
-    userA.save(function (err: Error | null) {
-      should.not.exist(err);
-      agent
-        .post('/api/auth/signin')
-        .send(credentialsA)
-        .expect(200)
-        .end(function (signinErr, signinRes) {
-          // Handle signin error
-          if (signinErr) {
-            return done(signinErr);
-          }
-
-          // Sensitive information should be not sent to the client
-          should.not.exist(signinRes.body.removeProfileToken);
-          should.not.exist(signinRes.body.removeProfileExpires);
-          done();
-        });
-    });
+    userA
+      .save()
+      .then(() => {
+        should.not.exist(null);
+        agent
+          .post('/api/auth/signin')
+          .send(credentialsA)
+          .expect(200)
+          .end(function (signinErr, signinRes) {
+            // Handle signin error
+            if (signinErr) {
+              return done(signinErr);
+            }
+            // Sensitive information should be not sent to the client
+            should.not.exist(signinRes.body.removeProfileToken);
+            should.not.exist(signinRes.body.removeProfileExpires);
+            done();
+          });
+      })
+      .catch(done);
   });
   it('should be able to initiate removing profile when signed in', function (done: DoneCallback) {
     agent
@@ -248,23 +241,16 @@ describe('User removal CRUD tests', function () {
               'Confirm removing your Trustroots profile',
             );
             jobs[0].data.to.address.should.equal(_userA.email);
-            User.findById(
-              signedInUser.body._id,
-              function (
-                findUsersErr: Error | null,
-                findUser: UserModelDocument | null,
-              ) {
-                if (findUsersErr) {
-                  return done(findUsersErr);
-                }
+            User.findById(signedInUser.body._id)
+              .then((findUser: UserModelDocument | null) => {
                 removalToken(requireUserDocument(findUser)).should.equal(
                   hashToken(tokenFromRemovalEmail(jobs[0].data.text)),
                 );
                 should.exist(findUser!.removeProfileExpires);
                 should.exist(findUser!.removeProfileToken);
                 done();
-              },
-            );
+              })
+              .catch(done);
           });
       });
   });
@@ -296,21 +282,13 @@ describe('User removal CRUD tests', function () {
               'Confirm removing your Trustroots profile',
             );
             jobs[0].data.to.address.should.equal(_userA.email);
-            User.findById(
-              signedInUser.body._id,
-              function (
-                findUsersErr1: Error | null,
-                findUser1: UserModelDocument | null,
-              ) {
-                if (findUsersErr1) {
-                  return done(findUsersErr1);
-                }
+            User.findById(signedInUser.body._id)
+              .then((findUser1: UserModelDocument | null) => {
                 removalToken(requireUserDocument(findUser1)).should.equal(
                   hashToken(tokenFromRemovalEmail(jobs[0].data.text)),
                 );
                 should.exist(findUser1!.removeProfileExpires);
                 should.exist(findUser1!.removeProfileToken);
-
                 // Send another delete request
                 // This should refresh token to new one so check everything again
                 agent
@@ -331,15 +309,8 @@ describe('User removal CRUD tests', function () {
                       'Confirm removing your Trustroots profile',
                     );
                     jobs[1].data.to.address.should.equal(_userA.email);
-                    User.findById(
-                      signedInUser.body._id,
-                      function (
-                        findUsersErr2: Error | null,
-                        findUser2: UserModelDocument | null,
-                      ) {
-                        if (findUsersErr2) {
-                          return done(findUsersErr2);
-                        }
+                    User.findById(signedInUser.body._id)
+                      .then((findUser2: UserModelDocument | null) => {
                         removalToken(
                           requireUserDocument(findUser2),
                         ).should.equal(
@@ -348,288 +319,259 @@ describe('User removal CRUD tests', function () {
                         should.exist(findUser2!.removeProfileExpires);
                         should.exist(findUser2!.removeProfileToken);
                         done();
-                      },
-                    );
+                      })
+                      .catch(done);
                   });
-              },
-            );
+              })
+              .catch(done);
           });
       });
   });
   it('should be able to confirm removing profile when signed in', function (done: DoneCallback) {
     userA.removeProfileExpires = new Date(Date.now() + 24 * 3600000);
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
-    userA.save(function (err, savedUser) {
-      should.not.exist(err);
-      agent
-        .post('/api/auth/signin')
-        .send(credentialsA)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) {
-            return done(signinErr);
-          }
-          agent
-            .del('/api/users/remove/' + savedUser.removeProfileToken)
-            .set('X-Trustroots-Request', '1')
-            .expect(200)
-            .end(function (deleteErr, deleteRes) {
-              // Handle signup error
-              if (deleteErr) {
-                return done(deleteErr);
-              }
-              deleteRes.body.message.should.equal(
-                'Your profile has been removed.',
-              );
-              jobs.length.should.equal(1);
-              jobs[0].type.should.equal('send email');
-              jobs[0].data.subject.should.equal(
-                'Your Trustroots profile has been removed',
-              );
-              jobs[0].data.to.address.should.equal(_userA.email);
-              jobs[0].data.text.should.containEql(
-                'Your Trustroots account has been removed.',
-              );
-              User.findById(
-                savedUser._id,
-                function (
-                  findUsersErr: Error | null,
-                  findUser: UserModelDocument | null,
-                ) {
-                  if (findUsersErr) {
-                    return done(findUsersErr);
-                  }
-                  should.not.exist(findUser);
-                  done();
-                },
-              );
-            });
-        });
-    });
+    userA
+      .save()
+      .then(savedUser => {
+        should.not.exist(null);
+        agent
+          .post('/api/auth/signin')
+          .send(credentialsA)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) {
+              return done(signinErr);
+            }
+            agent
+              .del('/api/users/remove/' + savedUser.removeProfileToken)
+              .set('X-Trustroots-Request', '1')
+              .expect(200)
+              .end(function (deleteErr, deleteRes) {
+                // Handle signup error
+                if (deleteErr) {
+                  return done(deleteErr);
+                }
+                deleteRes.body.message.should.equal(
+                  'Your profile has been removed.',
+                );
+                jobs.length.should.equal(1);
+                jobs[0].type.should.equal('send email');
+                jobs[0].data.subject.should.equal(
+                  'Your Trustroots profile has been removed',
+                );
+                jobs[0].data.to.address.should.equal(_userA.email);
+                jobs[0].data.text.should.containEql(
+                  'Your Trustroots account has been removed.',
+                );
+                User.findById(savedUser._id)
+                  .then((findUser: UserModelDocument | null) => {
+                    should.not.exist(findUser);
+                    done();
+                  })
+                  .catch(done);
+              });
+          });
+      })
+      .catch(done);
   });
   it('should not able to initiate removing profile with role "shadowban"', function (done: DoneCallback) {
     userA.roles = ['user', 'shadowban'];
-    userA.save(function (err: Error | null) {
-      should.not.exist(err);
-      agent
-        .post('/api/auth/signin')
-        .send(credentialsA)
-        .expect(200)
-        .end(function (signinErr) {
-          should.not.exist(signinErr);
-          agent
-            .del('/api/users')
-            .set('X-Trustroots-Request', '1')
-            .expect(403)
-            .end(function (deleteErr, deleteRes) {
-              should.not.exist(deleteErr);
-              deleteRes.body.message.should.equal(
-                'Oops! Something went wrong. Please get in touch with support at trustroots.org/support',
-              );
-              jobs.length.should.equal(0);
-              done();
-            });
-        });
-    });
+    userA
+      .save()
+      .then(() => {
+        should.not.exist(null);
+        agent
+          .post('/api/auth/signin')
+          .send(credentialsA)
+          .expect(200)
+          .end(function (signinErr) {
+            should.not.exist(signinErr);
+            agent
+              .del('/api/users')
+              .set('X-Trustroots-Request', '1')
+              .expect(403)
+              .end(function (deleteErr, deleteRes) {
+                should.not.exist(deleteErr);
+                deleteRes.body.message.should.equal(
+                  'Oops! Something went wrong. Please get in touch with support at trustroots.org/support',
+                );
+                jobs.length.should.equal(0);
+                done();
+              });
+          });
+      })
+      .catch(done);
   });
   it('should not be able to confirm removing profile when not signed in', function (done: DoneCallback) {
     userA.removeProfileExpires = new Date(Date.now() + 24 * 3600000);
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
-    userA.save(function (err, savedUser) {
-      should.not.exist(err);
-      agent
-        .del('/api/users/remove/' + savedUser.removeProfileToken)
-        .set('X-Trustroots-Request', '1')
-        .expect(403)
-        .end(function (deleteErr, deleteRes) {
-          // Handle signup error
-          if (deleteErr) {
-            return done(deleteErr);
-          }
-          deleteRes.body.message.should.equal('Forbidden.');
-          jobs.length.should.equal(0);
-
-          // User should still exist
-          User.findById(
-            savedUser._id,
-            function (
-              findUsersErr: Error | null,
-              findUser: UserModelDocument | null,
-            ) {
-              if (findUsersErr) {
-                return done(findUsersErr);
-              }
-              removalToken(requireUserDocument(findUser)).should.equal(
-                userA.removeProfileToken,
-              );
-              done();
-            },
-          );
-        });
-    });
+    userA
+      .save()
+      .then(savedUser => {
+        should.not.exist(null);
+        agent
+          .del('/api/users/remove/' + savedUser.removeProfileToken)
+          .set('X-Trustroots-Request', '1')
+          .expect(403)
+          .end(function (deleteErr, deleteRes) {
+            // Handle signup error
+            if (deleteErr) {
+              return done(deleteErr);
+            }
+            deleteRes.body.message.should.equal('Forbidden.');
+            jobs.length.should.equal(0);
+            // User should still exist
+            User.findById(savedUser._id)
+              .then((findUser: UserModelDocument | null) => {
+                removalToken(requireUserDocument(findUser)).should.equal(
+                  userA.removeProfileToken,
+                );
+                done();
+              })
+              .catch(done);
+          });
+      })
+      .catch(done);
   });
   it('should not be able to confirm removing profile with wrong token', function (done: DoneCallback) {
     userA.removeProfileExpires = new Date(Date.now() + 24 * 3600000);
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
-    userA.save(function (err, savedUser) {
-      should.not.exist(err);
-      agent
-        .post('/api/auth/signin')
-        .send(credentialsA)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) {
-            return done(signinErr);
-          }
-          agent
-            .del('/api/users/remove/wrongtoken')
-            .set('X-Trustroots-Request', '1')
-            .expect(400)
-            .end(function (deleteErr, deleteRes) {
-              // Handle signup error
-              if (deleteErr) {
-                return done(deleteErr);
-              }
-              deleteRes.body.message.should.equal(
-                'Profile remove token is invalid or has expired.',
-              );
-              jobs.length.should.equal(0);
-
-              // User should still exist
-              User.findById(
-                savedUser._id,
-                function (
-                  findUsersErr: Error | null,
-                  findUser: UserModelDocument | null,
-                ) {
-                  if (findUsersErr) {
-                    return done(findUsersErr);
-                  }
-                  removalToken(requireUserDocument(findUser)).should.equal(
-                    userA.removeProfileToken,
-                  );
-                  done();
-                },
-              );
-            });
-        });
-    });
+    userA
+      .save()
+      .then(savedUser => {
+        should.not.exist(null);
+        agent
+          .post('/api/auth/signin')
+          .send(credentialsA)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) {
+              return done(signinErr);
+            }
+            agent
+              .del('/api/users/remove/wrongtoken')
+              .set('X-Trustroots-Request', '1')
+              .expect(400)
+              .end(function (deleteErr, deleteRes) {
+                // Handle signup error
+                if (deleteErr) {
+                  return done(deleteErr);
+                }
+                deleteRes.body.message.should.equal(
+                  'Profile remove token is invalid or has expired.',
+                );
+                jobs.length.should.equal(0);
+                // User should still exist
+                User.findById(savedUser._id)
+                  .then((findUser: UserModelDocument | null) => {
+                    removalToken(requireUserDocument(findUser)).should.equal(
+                      userA.removeProfileToken,
+                    );
+                    done();
+                  })
+                  .catch(done);
+              });
+          });
+      })
+      .catch(done);
   });
   it('should not be able to confirm removing profile with expired token', function (done: DoneCallback) {
     userA.removeProfileExpires = new Date(Date.now() - 24 * 3600000); // 24h in the past
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
-    userA.save(function (err, savedUser) {
-      should.not.exist(err);
-      agent
-        .post('/api/auth/signin')
-        .send(credentialsA)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) {
-            return done(signinErr);
-          }
-          agent
-            .del('/api/users/remove/' + userA.removeProfileToken)
-            .set('X-Trustroots-Request', '1')
-            .expect(400)
-            .end(function (deleteErr, deleteRes) {
-              // Handle signup error
-              if (deleteErr) {
-                return done(deleteErr);
-              }
-              deleteRes.body.message.should.equal(
-                'Profile remove token is invalid or has expired.',
-              );
-              jobs.length.should.equal(0);
-
-              // User should still exist
-              User.findById(
-                savedUser._id,
-                function (
-                  findUsersErr: Error | null,
-                  findUser: UserModelDocument | null,
-                ) {
-                  if (findUsersErr) {
-                    return done(findUsersErr);
-                  }
-                  removalToken(requireUserDocument(findUser)).should.equal(
-                    userA.removeProfileToken,
-                  );
-                  done();
-                },
-              );
-            });
-        });
-    });
+    userA
+      .save()
+      .then(savedUser => {
+        should.not.exist(null);
+        agent
+          .post('/api/auth/signin')
+          .send(credentialsA)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) {
+              return done(signinErr);
+            }
+            agent
+              .del('/api/users/remove/' + userA.removeProfileToken)
+              .set('X-Trustroots-Request', '1')
+              .expect(400)
+              .end(function (deleteErr, deleteRes) {
+                // Handle signup error
+                if (deleteErr) {
+                  return done(deleteErr);
+                }
+                deleteRes.body.message.should.equal(
+                  'Profile remove token is invalid or has expired.',
+                );
+                jobs.length.should.equal(0);
+                // User should still exist
+                User.findById(savedUser._id)
+                  .then((findUser: UserModelDocument | null) => {
+                    removalToken(requireUserDocument(findUser)).should.equal(
+                      userA.removeProfileToken,
+                    );
+                    done();
+                  })
+                  .catch(done);
+              });
+          });
+      })
+      .catch(done);
   });
   it('should not be able to confirm removing profile when signed in as wrong user', function (done: DoneCallback) {
     userA.removeProfileExpires = new Date(Date.now() + 24 * 3600000);
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
-    userA.save(function (err, savedUser) {
-      should.not.exist(err);
-      agent
-        .post('/api/auth/signin')
-        .send(credentialsB) // User B signs in insetead of user A
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) {
-            return done(signinErr);
-          }
-          agent
-            .del('/api/users/remove/' + userA.removeProfileToken)
-            .set('X-Trustroots-Request', '1')
-            .expect(400)
-            .end(function (deleteErr, deleteRes) {
-              // Handle signup error
-              if (deleteErr) {
-                return done(deleteErr);
-              }
-              deleteRes.body.message.should.equal(
-                'Profile remove token is invalid or has expired.',
-              );
-              jobs.length.should.equal(0);
-
-              // User should still exist
-              User.findById(
-                savedUser._id,
-                function (
-                  findUsersErr: Error | null,
-                  findUser: UserModelDocument | null,
-                ) {
-                  if (findUsersErr) {
-                    return done(findUsersErr);
-                  }
-                  removalToken(requireUserDocument(findUser)).should.equal(
-                    userA.removeProfileToken,
-                  );
-
-                  // Signed in user should still exist
-                  User.findOne(
-                    {
+    userA
+      .save()
+      .then(savedUser => {
+        should.not.exist(null);
+        agent
+          .post('/api/auth/signin')
+          .send(credentialsB) // User B signs in insetead of user A
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) {
+              return done(signinErr);
+            }
+            agent
+              .del('/api/users/remove/' + userA.removeProfileToken)
+              .set('X-Trustroots-Request', '1')
+              .expect(400)
+              .end(function (deleteErr, deleteRes) {
+                // Handle signup error
+                if (deleteErr) {
+                  return done(deleteErr);
+                }
+                deleteRes.body.message.should.equal(
+                  'Profile remove token is invalid or has expired.',
+                );
+                jobs.length.should.equal(0);
+                // User should still exist
+                User.findById(savedUser._id)
+                  .then((findUser: UserModelDocument | null) => {
+                    removalToken(requireUserDocument(findUser)).should.equal(
+                      userA.removeProfileToken,
+                    );
+                    // Signed in user should still exist
+                    User.findOne({
                       username: userB.username,
-                    },
-                    function (
-                      findUsersErr: Error | null,
-                      findUser: UserModelDocument | null,
-                    ) {
-                      if (findUsersErr) {
-                        return done(findUsersErr);
-                      }
-                      findUser!.username.should.equal(userB.username);
-                      should.not.exist(userB.removeProfileExpires);
-                      should.not.exist(userB.removeProfileToken);
-                      done();
-                    },
-                  );
-                },
-              );
-            });
-        });
-    });
+                    })
+                      .then((findUser: UserModelDocument | null) => {
+                        findUser!.username.should.equal(userB.username);
+                        should.not.exist(userB.removeProfileExpires);
+                        should.not.exist(userB.removeProfileToken);
+                        done();
+                      })
+                      .catch(done);
+                  })
+                  .catch(done);
+              });
+          });
+      })
+      .catch(done);
   });
   context('logged in & valid token', function () {
     function sendDeleteRequest(cb: StepCallback): void {
@@ -641,7 +583,6 @@ describe('User removal CRUD tests', function () {
           cb(deleteErr);
         });
     }
-
     // sign in
     beforeEach(function (done: DoneCallback) {
       agent
@@ -653,18 +594,19 @@ describe('User removal CRUD tests', function () {
           return done(signinErr);
         });
     });
-
     // save removeToken for user a
     beforeEach(function (done: DoneCallback) {
       userA.removeProfileExpires = new Date(Date.now() + 24 * 3600000);
       userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
-      userA.save(done);
+      userA
+        .save()
+        .then(() => done())
+        .catch(done);
     });
     it('should remove profile images', function (done: DoneCallback) {
       // Each user has their own folder for avatars
       const uploadDir =
         path.resolve(config.uploadDir) + '/' + userA._id + '/avatar'; // No trailing slash
-
       function checkAvatarExistence(
         shouldExist: boolean,
         cb: StepCallback,
@@ -721,7 +663,10 @@ describe('User removal CRUD tests', function () {
             async.each(
               [messageAB, messageBA],
               function (msg, callback) {
-                msg.save(callback);
+                msg
+                  .save()
+                  .then(() => callback())
+                  .catch(callback);
               },
               cb,
             );
@@ -729,11 +674,10 @@ describe('User removal CRUD tests', function () {
           sendDeleteRequest,
           // check that the messages to the removed user are notificationCount: 2
           function (cb: StepCallback) {
-            Message.findOne(
-              {
-                userTo: userA._id,
-              },
-              function (err: Error | null, msg: MessageRecord | null) {
+            Message.findOne({
+              userTo: userA._id,
+            })
+              .then((msg: MessageRecord | null) => {
                 if (!msg) return done(new Error('Expected test message'));
                 try {
                   should(msg.notificationCount).eql(2);
@@ -741,16 +685,15 @@ describe('User removal CRUD tests', function () {
                 } catch (e) {
                   cb(e);
                 }
-              },
-            );
+              })
+              .catch(cb);
           },
           // check that the messages from the removed user are left unchanged
           function (cb: StepCallback) {
-            Message.findOne(
-              {
-                userFrom: userA._id,
-              },
-              function (err: Error | null, msg: MessageRecord | null) {
+            Message.findOne({
+              userFrom: userA._id,
+            })
+              .then((msg: MessageRecord | null) => {
                 if (!msg) return done(new Error('Expected test message'));
                 try {
                   should(msg.notificationCount).eql(0);
@@ -758,8 +701,8 @@ describe('User removal CRUD tests', function () {
                 } catch (e) {
                   cb(e);
                 }
-              },
-            );
+              })
+              .catch(cb);
           },
         ],
         done,
@@ -791,7 +734,10 @@ describe('User removal CRUD tests', function () {
             async.each(
               [tribeA, tribeB],
               function (tribe, callback) {
-                tribe.save(callback);
+                tribe
+                  .save()
+                  .then(() => callback())
+                  .catch(callback);
               },
               cb,
             );
@@ -809,9 +755,8 @@ describe('User removal CRUD tests', function () {
           },
           // now the tribeA should have count 6
           function (cb: StepCallback) {
-            Tribe.findById(
-              tribeA._id,
-              function (err: Error | null, tribe: TribeRecord | null) {
+            Tribe.findById(tribeA._id)
+              .then((tribe: TribeRecord | null) => {
                 if (!tribe) throw new Error('Expected test tribe');
                 try {
                   should(tribe.count).eql(6);
@@ -819,15 +764,14 @@ describe('User removal CRUD tests', function () {
                 } catch (e) {
                   cb(e);
                 }
-              },
-            );
+              })
+              .catch(cb);
           },
           sendDeleteRequest,
           // tribeA should have lower count by 1 (5 -> 6 -> 5 now)
           function (cb: StepCallback) {
-            Tribe.findById(
-              tribeA._id,
-              function (err: Error | null, tribe: TribeRecord | null) {
+            Tribe.findById(tribeA._id)
+              .then((tribe: TribeRecord | null) => {
                 if (!tribe) throw new Error('Expected test tribe');
                 try {
                   should(tribe.count).eql(5);
@@ -835,14 +779,13 @@ describe('User removal CRUD tests', function () {
                 } catch (e) {
                   cb(e);
                 }
-              },
-            );
+              })
+              .catch(cb);
           },
           // tribeB should have count 5 all the time
           function (cb: StepCallback) {
-            Tribe.findById(
-              tribeB._id,
-              function (err: Error | null, tribe: TribeRecord | null) {
+            Tribe.findById(tribeB._id)
+              .then((tribe: TribeRecord | null) => {
                 if (!tribe) throw new Error('Expected test tribe');
                 try {
                   should(tribe.count).eql(5);
@@ -850,8 +793,8 @@ describe('User removal CRUD tests', function () {
                 } catch (e) {
                   cb(e);
                 }
-              },
-            );
+              })
+              .catch(cb);
           },
         ],
         done,
@@ -866,42 +809,43 @@ describe('User removal CRUD tests', function () {
               user: userA._id,
               location: [0, 0],
             });
-            offer.save(function (err: Error | null) {
-              cb(err);
-            });
+            offer
+              .save()
+              .then(() => {
+                cb(null);
+              })
+              .catch(cb);
           },
           // at the beginning 1 offer should exist in database
           function (cb: StepCallback) {
-            Offer.find(
-              {
-                user: userA._id,
-              },
-              function (err: Error | null, offer: OfferRecord[]) {
+            Offer.find({
+              user: userA._id,
+            })
+              .then((offer: OfferRecord[]) => {
                 try {
                   should(offer).length(1);
                   cb();
                 } catch (e) {
                   cb(e);
                 }
-              },
-            );
+              })
+              .catch(cb);
           },
           sendDeleteRequest,
           // now the offer shouldn't be there
           function (cb: StepCallback) {
-            Offer.find(
-              {
-                user: userA._id,
-              },
-              function (err: Error | null, offers: OfferRecord[]) {
+            Offer.find({
+              user: userA._id,
+            })
+              .then((offers: OfferRecord[]) => {
                 try {
                   should(offers).length(0);
                   cb();
                 } catch (e) {
                   cb(e);
                 }
-              },
-            );
+              })
+              .catch(cb);
           },
         ],
         done,
@@ -923,9 +867,12 @@ describe('User removal CRUD tests', function () {
               password: '**********asdfasdf',
               provider: 'local',
             });
-            userC.save(function (err: Error | null) {
-              cb(err);
-            });
+            userC
+              .save()
+              .then(() => {
+                cb(null);
+              })
+              .catch(cb);
           },
           // add contacts between the users
           function (cb: StepCallback) {
@@ -947,16 +894,22 @@ describe('User removal CRUD tests', function () {
             async.each(
               [contactAB, contactBC, contactCA],
               function (contact, callback) {
-                contact.save(callback);
+                contact
+                  .save()
+                  .then(() => callback())
+                  .catch(callback);
               },
               cb,
             );
           },
           // 3 contacts should exist
           function (cb: StepCallback) {
-            Contact.find().exec(function (err, contacts) {
-              cb(null, contacts);
-            });
+            Contact.find()
+              .exec()
+              .then(contacts => {
+                cb(null, contacts);
+              })
+              .catch(cb);
           },
           function (contacts: unknown, cb: StepCallback) {
             try {
@@ -969,9 +922,12 @@ describe('User removal CRUD tests', function () {
           sendDeleteRequest,
           // only 1 contact should exist now (the one between users B and C)
           function (cb: StepCallback) {
-            Contact.find().exec(function (err, contacts) {
-              cb(null, contacts);
-            });
+            Contact.find()
+              .exec()
+              .then(contacts => {
+                cb(null, contacts);
+              })
+              .catch(cb);
           },
           function (contacts: unknown, cb: StepCallback) {
             try {

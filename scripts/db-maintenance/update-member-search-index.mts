@@ -4,15 +4,14 @@
  * MongoDB permits one text index per collection: search is briefly unavailable
  * while that index is rebuilt. Other indexes and profile documents are untouched.
  */
-import mongoose from 'mongoose';
-import type { IndexDirection, CreateIndexesOptions } from 'mongodb';
+import mongoose, { type mongo } from 'mongoose';
 import config from '../../config/config.mts';
 import '../../modules/users/server/models/user.server.model.mjs';
 
 const User = mongoose.model('User');
-// Mongoose 6 returns index/options pairs; its declaration only names the keys.
+// Keep index options aligned with the MongoDB driver bundled by Mongoose.
 const schemaIndexes = User.schema.indexes() as unknown as Array<
-  [Record<string, IndexDirection>, CreateIndexesOptions]
+  [Record<string, mongo.IndexDirection>, mongo.CreateIndexesOptions]
 >;
 const [keys, options] = schemaIndexes.find(
   ([definition]) => definition.username === 'text',

@@ -494,10 +494,7 @@ UserSchema.statics.hashPassword = passwordHashing.hashPassword;
 
 UserSchema.statics.isValidPassword = validatePassword;
 
-UserSchema.methods.hashPassword = function (
-  this: UserServerDocument,
-  password: string,
-) {
+UserSchema.methods.hashPassword = function (password: string) {
   const model = this.constructor as UserServerModel;
   return model.hashPassword(password);
 };
@@ -505,22 +502,20 @@ UserSchema.methods.hashPassword = function (
 /**
  * Create instance method for authenticating user
  */
-UserSchema.methods.authenticate = async function (
-  this: UserServerDocument,
-  password: string,
-) {
+UserSchema.methods.authenticate = async function (password: unknown) {
   const model = this.constructor as UserServerModel;
+  const candidate = typeof password === 'string' ? password : '';
   const oldPassword = this.password;
   const oldSalt = this.salt;
   const verification = await passwordHashing.verifyPassword(
-    password,
+    candidate,
     oldPassword,
     oldSalt,
   );
   if (!verification.valid) return false;
   if (!verification.needsRehash) return true;
 
-  const newPassword = await passwordHashing.hashPassword(password);
+  const newPassword = await passwordHashing.hashPassword(candidate);
   const filter: FilterQuery<UserServerRecord> = {
     _id: this._id,
     password: oldPassword,
@@ -567,7 +562,7 @@ UserSchema.methods.authenticate = async function (
   if (!fresh) return false;
 
   const retry = await passwordHashing.verifyPassword(
-    password,
+    candidate,
     fresh.password,
     fresh.salt,
   );

@@ -287,14 +287,16 @@ function create(
 
   // Update timestamp
   offer.updated = new Date();
-  offer.save(function (err) {
-    if (err) {
-      return res.status(400).send({
+  offer.save().then(
+    function () {
+      res.json(prepareOfferMutationResponse('Offer saved.'));
+    },
+    function () {
+      res.status(400).send({
         message: 'Failed to save offer.',
       });
-    }
-    res.json(prepareOfferMutationResponse('Offer saved.'));
-  });
+    },
+  );
 }
 
 /**
@@ -363,9 +365,14 @@ function update(
         updatedOffer: OfferEndpointDocument,
         done: (error?: Error | null) => void,
       ) {
-        updatedOffer.save(function (err) {
-          done(err);
-        });
+        updatedOffer.save().then(
+          function () {
+            done();
+          },
+          function (err: Error) {
+            done(err);
+          },
+        );
       },
       // Done!
       function () {
@@ -390,16 +397,15 @@ function deleteOffer(req: OfferRequest, res: OfferResponse) {
   if (!req.user || !owner._id.equals(req.user._id)) {
     return errorService.sendForbidden(res);
   }
-  Offer.findOneAndRemove(
-    {
-      _id: offer._id,
-      user: req.user._id,
+  Offer.findOneAndDelete({
+    _id: offer._id,
+    user: req.user._id,
+  }).then(
+    function () {
+      res.json(prepareOfferMutationResponse('Offer removed.'));
     },
     function (err: CallbackError) {
-      if (err) {
-        return errorService.sendBadRequest(res, err);
-      }
-      res.json(prepareOfferMutationResponse('Offer removed.'));
+      errorService.sendBadRequest(res, err);
     },
   );
 }
@@ -869,13 +875,8 @@ function offersByUserId(
   }
 
   // Get offers
-  Offer.find(
-    query,
-    function (err: CallbackError, offers: OfferEndpointDocument[] | null) {
-      // Errors
-      if (err) {
-        return next(err);
-      }
+  Offer.find(query).then(
+    function (offers: OfferEndpointDocument[]) {
       if (!offers || offers.length === 0) {
         return errorService.sendNotFound(res);
       }
@@ -885,6 +886,9 @@ function offersByUserId(
         return sanitizeOffer(offer, req.user);
       });
       next();
+    },
+    function (err: CallbackError) {
+      next(err);
     },
   );
 }
@@ -905,48 +909,24 @@ function offerById(
   if (!mongoose.Types.ObjectId.isValid(offerId)) {
     return errorService.sendInvalidId(res);
   }
-  async.waterfall(
-    [
-      // Find offer
-      function (
-        done: (error?: Error | null, result?: OfferEndpointDocument) => void,
-      ) {
-        Offer.findById(offerId)
-          .populate('user', getUserProfile().userListingProfileFields)
-          .exec(function (
-            err: CallbackError,
-            offer: OfferEndpointDocument | null,
-          ) {
-            // No offer
-            if (err) {
-              log('error', 'Getting offer by id caused an error. #2kg3g3', {
-                error: err,
-              });
-            }
-            if (err || !offer) {
-              return errorService.sendNotFound(res);
-            }
-            done(null, offer);
-          });
+  Offer.findById(offerId)
+    .populate('user', getUserProfile().userListingProfileFields)
+    .exec()
+    .then(
+      function (offer: OfferEndpointDocument | null) {
+        if (!offer) {
+          return errorService.sendNotFound(res);
+        }
+        req.offer = offer as OfferReadDocument;
+        return next();
       },
-      // Continue
-      function (
-        offer: OfferReadDocument,
-        done: (error?: Error | null) => void,
-      ) {
-        req.offer = offer;
-        done();
-      },
-    ],
-    function (err?: Error | null) {
-      if (err) {
-        log('error', 'Getting offer by id caused an error. #g34gj3', {
+      function (err: CallbackError) {
+        log('error', 'Getting offer by id caused an error. #2kg3g3', {
           error: err,
         });
-      }
-      return next(err);
-    },
-  );
+        return errorService.sendNotFound(res);
+      },
+    );
 }
 
 /**
@@ -956,15 +936,16 @@ function removeAllByUserId(
   userId: Types.ObjectId | string,
   callback?: (error: Error | null) => void,
 ) {
-  Offer.deleteMany(
-    {
-      user: userId,
-    },
-    function (err) {
-      if (callback) {
-        callback(err);
-      }
-    },
+  const deletion = Offer.deleteMany({
+    user: userId,
+  });
+  const pending =
+    deletion && typeof deletion.exec === 'function'
+      ? deletion.exec()
+      : deletion;
+  void Promise.resolve(pending).then(
+    () => callback?.(null),
+    (err: Error) => callback?.(err),
   );
 }
 const service = {

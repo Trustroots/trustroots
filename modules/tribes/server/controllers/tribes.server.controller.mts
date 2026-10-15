@@ -169,22 +169,18 @@ service.listTribes = function (req, res) {
     .sort(sort)
     .limit(limit)
     .skip((page - 1) * limit)
-    .exec((error, docs) => {
-      if (error) {
-        errorService.sendBadRequest(res, error);
-        return;
-      }
-      Tribe.countDocuments(query, (countError: Error | null, total: number) => {
-        if (countError) {
-          errorService.sendBadRequest(res, countError);
-          return;
-        }
+    .exec()
+    .then(docs =>
+      Tribe.countDocuments(query).then(total => {
         const pages = Math.ceil(total / limit);
         if (pages > page) {
           paginationService.setLinkHeader(req, res, pages, { relative: true });
         }
         res.json(docs);
-      });
+      }),
+    )
+    .catch((error: Error) => {
+      errorService.sendBadRequest(res, error);
     });
 };
 
@@ -320,16 +316,17 @@ service.tribeBySlug = function (req, res, next, slug) {
     errorService.sendForbidden(res);
     return;
   }
-  Tribe.findOne({ public: true, slug }, service.tribeFields).exec(
-    (error, tribe) => {
-      if (error) {
+  Tribe.findOne({ public: true, slug }, service.tribeFields)
+    .exec()
+    .then(
+      tribe => {
+        req.tribe = tribe;
+        return next();
+      },
+      (error: Error) => {
         errorService.sendBadRequest(res, error);
-        return;
-      }
-      req.tribe = tribe;
-      return next();
-    },
-  );
+      },
+    );
 };
 
 /** Update cached member count for a tribe. */
@@ -337,9 +334,8 @@ service.updateCount = function (id, difference, returnUpdated, callback) {
   Tribe.findByIdAndUpdate(
     id,
     { $inc: { count: parseInt(String(difference)) } },
-    { safe: false, new: Boolean(returnUpdated) },
-    callback,
-  );
+    { new: Boolean(returnUpdated) },
+  ).then(tribe => callback(null, tribe), callback);
 };
 
 const getTribe = service.getTribe;

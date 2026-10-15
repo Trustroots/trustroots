@@ -262,7 +262,10 @@ export const sendScammerWarning = async (
 };
 
 /** This middleware sends a response with an array of found users. */
-export const getMessages = (req: AdminRequest, res: AdminResponse): unknown => {
+export const getMessages = async (
+  req: AdminRequest,
+  res: AdminResponse,
+): Promise<unknown> => {
   const user1: unknown = _.get(req, ['body', 'user1']);
   const user2: unknown = _.get(req, ['body', 'user2']);
   // Check that all provided IDs are valid.
@@ -277,22 +280,24 @@ export const getMessages = (req: AdminRequest, res: AdminResponse): unknown => {
       message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
-  findPairRecords<MessageRecord>(Message, user1, user2).exec(
-    (error, messages) => {
-      if (error) return errorService.sendBadRequest(res, error);
-      findPairRecords(ReferenceThread, user1, user2).exec(
-        (referenceThreadError, referenceThreads) => {
-          if (referenceThreadError) {
-            return errorService.sendBadRequest(res, referenceThreadError);
-          }
-          return res.send({
-            messages: MessagesController.sanitizeMessages(messages!),
-            referenceThreads: referenceThreads || [],
-          });
-        },
-      );
-    },
-  );
+  try {
+    const messages = await findPairRecords<MessageRecord>(
+      Message,
+      user1,
+      user2,
+    ).exec();
+    const referenceThreads = await findPairRecords(
+      ReferenceThread,
+      user1,
+      user2,
+    ).exec();
+    return res.send({
+      messages: MessagesController.sanitizeMessages(messages),
+      referenceThreads: referenceThreads || [],
+    });
+  } catch (error) {
+    return errorService.sendBadRequest(res, error as Error);
+  }
 };
 
 const defaultInterop = {

@@ -211,7 +211,7 @@ describe('Admin notes controller unit tests', () => {
       const nullQuery: CallbackQuery<AdminNoteRecord[]> = {
         sort: () => nullQuery,
         populate: () => nullQuery,
-        exec: callback => callback(null, null),
+        exec: () => Promise.resolve(null),
       };
       sinon
         .stub(AdminNote, 'find')
@@ -231,7 +231,7 @@ describe('Admin notes controller unit tests', () => {
       const errorQuery: CallbackQuery<AdminNoteRecord[]> = {
         sort: () => errorQuery,
         populate: () => errorQuery,
-        exec: callback => callback(new Error('lookup failed'), null),
+        exec: () => Promise.reject(new Error('lookup failed')),
       };
       sinon
         .stub(AdminNote, 'find')

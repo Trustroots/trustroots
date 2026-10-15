@@ -17,6 +17,7 @@ type FakeQuery = {
   sort: import('sinon').SinonStub<[field: string], FakeQuery>;
   limit: import('sinon').SinonStub<[count: number], FakeQuery>;
   exec: import('sinon').SinonStub<[callback: QueryCallback], void>;
+  then: Promise<Greeter[] | undefined>['then'];
 };
 type MockResponse = {
   statusCode: number;
@@ -59,7 +60,17 @@ async function loadController(execHandler: ExecHandler) {
   const select = sinon.stub<[field: string], FakeQuery>();
   const sort = sinon.stub<[field: string], FakeQuery>();
   const limit = sinon.stub<[count: number], FakeQuery>();
-  const query: FakeQuery = { select, sort, limit, exec };
+  const query: FakeQuery = {
+    select,
+    sort,
+    limit,
+    exec,
+    then(onFulfilled, onRejected) {
+      return new Promise<Greeter[] | undefined>((resolve, reject) => {
+        execHandler((error, users) => (error ? reject(error) : resolve(users)));
+      }).then(onFulfilled, onRejected);
+    },
+  };
   select.withArgs('username displayName').returns(query);
   sort.withArgs('displayName username').returns(query);
   limit.withArgs(500).returns(query);

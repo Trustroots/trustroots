@@ -369,19 +369,19 @@ describe('Job: user finish signup', function () {
     }
 
     // Save all users to the test db
-    User.insertMany(_users, function (err: Error | null | undefined) {
-      if (err) return done(err);
+    User.insertMany(_users)
+      .then(function () {
+        userFinishSignupJobHandler(
+          { attrs: { _id: { toString: () => 'fixture-job-id' } } },
+          function (err: Error | null | undefined) {
+            if (err) return done(err);
 
-      userFinishSignupJobHandler(
-        { attrs: { _id: { toString: () => 'fixture-job-id' } } },
-        function (err: Error | null | undefined) {
-          if (err) return done(err);
-
-          jobs.length.should.equal(config.limits.maxProcessSignupReminders);
-          done();
-        },
-      );
-    });
+            jobs.length.should.equal(config.limits.maxProcessSignupReminders);
+            done();
+          },
+        );
+      })
+      .catch(err => done(err));
   });
 
   ['suspended', 'shadowban'].forEach(function (role) {
@@ -407,6 +407,8 @@ describe('Job: user finish signup', function () {
   });
 
   afterEach(function (done) {
-    User.deleteMany().exec(done);
+    User.deleteMany()
+      .exec()
+      .then(() => done(), done);
   });
 });

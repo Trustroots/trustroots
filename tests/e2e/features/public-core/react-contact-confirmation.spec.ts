@@ -35,7 +35,9 @@ test('recipient can confirm a pending contact and reopen the result', async ({
     ).toBeVisible();
   } finally {
     await withE2eDb(db =>
-      db.collection('contacts').replaceOne({ _id: contact._id }, contact),
+      db
+        .collection('contacts')
+        .replaceOne({ _id: contact._id as never }, contact),
     );
   }
 });

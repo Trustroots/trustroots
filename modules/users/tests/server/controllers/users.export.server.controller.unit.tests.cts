@@ -400,8 +400,12 @@ describe('Member data export controller', () => {
     const messages = await controller.writtenMessages(user._id);
     const experiences = await controller.writtenExperiences(user._id);
 
-    assert.deepEqual(findMessages.firstCall.args[0], { userFrom: user._id });
-    assert.deepEqual(findExperiences.firstCall.args[0], { userFrom: user._id });
+    assert.deepEqual(findMessages.getCall(0).args.at(0), {
+      userFrom: user._id,
+    });
+    assert.deepEqual(findExperiences.getCall(0).args.at(0), {
+      userFrom: user._id,
+    });
     messageQuery.sort.calledWith({ created: 1 }).should.be.true();
     messageQuery.populate
       .calledWith('userTo', 'username displayName')

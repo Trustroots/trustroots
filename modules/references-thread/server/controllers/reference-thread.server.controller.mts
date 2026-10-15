@@ -87,7 +87,7 @@ service.createReferenceThread = async function (req, res) {
   }
   try {
     // Make sure referenced thread exists and that UserFrom is participating in it.
-    const thread = await Thread.findOne(
+    const threadQuery = Thread.findOne(
       {
         $or: [
           { userFrom: req.user._id, userTo: req.body.userTo },
@@ -95,7 +95,15 @@ service.createReferenceThread = async function (req, res) {
         ],
       },
       'userTo userFrom',
-    ).exec();
+    );
+    let thread;
+    try {
+      thread = await (typeof threadQuery.exec === 'function'
+        ? threadQuery.exec()
+        : threadQuery);
+    } catch {
+      return res.status(400).send({ message: 'Thread does not exist.' });
+    }
     if (!thread) {
       return res.status(400).send({ message: 'Thread does not exist.' });
     }
@@ -111,10 +119,13 @@ service.createReferenceThread = async function (req, res) {
     // The referenced person must have sent messages to the authenticated user.
     let message;
     try {
-      message = await Message.findOne({
+      const messageQuery = Message.findOne({
         userFrom: referenceUserToId,
         userTo: req.user._id,
-      }).exec();
+      });
+      message = await (typeof messageQuery.exec === 'function'
+        ? messageQuery.exec()
+        : messageQuery);
     } catch (error: unknown) {
       log('error', 'Thread reference: Not allowed per message rules. #158472', {
         error,

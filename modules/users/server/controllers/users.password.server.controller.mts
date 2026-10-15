@@ -69,12 +69,10 @@ function findOneAndUpdateWithCallback(
   options: { new: boolean; runValidators?: boolean },
   callback: (error: Error | null, user: UserServerDocument | null) => void,
 ): void {
-  Reflect.apply(User.findOneAndUpdate, User, [
-    filter,
-    update,
-    options,
-    callback,
-  ]);
+  User.findOneAndUpdate(filter, update, options).then(
+    user => callback(null, user),
+    (error: Error) => callback(error, null),
+  );
 }
 
 /**
@@ -121,12 +119,8 @@ service.forgot = function (req, res) {
       User.findOne(
         { $or: [{ username: userHandle }, { email: userHandle }] },
         '-salt -password',
-        (findErr: Error | null, user: UserServerDocument | null) => {
-          if (findErr) {
-            log('error', 'Password recovery account lookup failed.');
-            return reportStat('failed:lookup');
-          }
-
+      ).then(
+        (user: UserServerDocument | null) => {
           if (!user) {
             return reportStat('failed:noUser');
           }
@@ -134,22 +128,30 @@ service.forgot = function (req, res) {
           setToken(user, 'resetPasswordToken', buffer.toString('hex'));
           user.resetPasswordExpires = Date.now() + 24 * 3600000; // 24 hours
 
-          user.save((saveErr: Error | null) => {
-            if (saveErr) {
+          user.save().then(
+            () => {
+              emailService.sendResetPassword(
+                user,
+                (emailErr?: Error | null) => {
+                  if (emailErr) {
+                    // Never include recipient addresses or provider error details.
+                    log('error', 'Password recovery email delivery failed.');
+                    return reportStat('failed:emailDelivery');
+                  }
+
+                  return reportStat('emailSent');
+                },
+              );
+            },
+            () => {
               log('error', 'Password recovery token save failed.');
               return reportStat('failed:tokenSave');
-            }
-
-            emailService.sendResetPassword(user, (emailErr?: Error | null) => {
-              if (emailErr) {
-                // Never include recipient addresses or provider error details.
-                log('error', 'Password recovery email delivery failed.');
-                return reportStat('failed:emailDelivery');
-              }
-
-              return reportStat('emailSent');
-            });
-          });
+            },
+          );
+        },
+        () => {
+          log('error', 'Password recovery account lookup failed.');
+          return reportStat('failed:lookup');
         },
       );
     });
@@ -160,14 +162,13 @@ service.forgot = function (req, res) {
  * Reset password GET from email token
  */
 service.validateResetToken = function (req, res) {
-  User.findOne(
-    {
-      resetPasswordToken: matchToken(req.params.token),
-      resetPasswordExpires: {
-        $gt: Date.now(),
-      },
+  User.findOne({
+    resetPasswordToken: matchToken(req.params.token),
+    resetPasswordExpires: {
+      $gt: Date.now(),
     },
-    function (err: Error | null, user: UserServerDocument | null) {
+  }).then(
+    (user: UserServerDocument | null) => {
       if (!user) {
         return res.redirect('/password/reset/invalid');
       }
@@ -190,6 +191,7 @@ service.validateResetToken = function (req, res) {
 
       res.redirect(passwordResetUrl);
     },
+    () => res.redirect('/password/reset/invalid'),
   );
 };
 
@@ -307,11 +309,9 @@ service.changePassword = function (req, res) {
 
       // Find currently logged in user
       function (done: WaterfallCallback) {
-        User.findById(
-          req.user!.id,
-          function (err: Error | null, user: UserServerDocument | null) {
-            done(err, user);
-          },
+        User.findById(req.user!.id).then(
+          (user: UserServerDocument | null) => done(null, user),
+          done,
         );
       },
 

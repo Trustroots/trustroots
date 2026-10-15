@@ -1,6 +1,5 @@
 import type { HydratedDocument } from 'mongoose';
 import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
-
 const should: typeof import('should') = require('should');
 const request: typeof import('supertest') = require('supertest');
 const mongoose: typeof import('mongoose') = require('mongoose');
@@ -13,7 +12,6 @@ const express: {
 const log: (
   ...args: unknown[]
 ) => void = require('./../../../../config/lib/logger.mjs');
-
 interface Credentials {
   username: string;
   password: string;
@@ -31,20 +29,17 @@ interface ApiProfile {
 interface SearchResult {
   username: string;
 }
-
 function requireResponse(
   response: import('supertest').Response | void,
 ): import('supertest').Response {
   if (!response) throw new Error('expected the request to return a response');
   return response;
 }
-
 /**
  * Globals
  */
 let app: import('express').Express;
 let agent: ReturnType<typeof request.agent>;
-
 /* users of the test */
 let alice: UserFixture;
 let bob: UserFixture;
@@ -74,7 +69,6 @@ const login = (
         resolve(resp);
       });
   });
-
 /**
  * Requests reused during tests
  */
@@ -143,7 +137,6 @@ const searchUser = (
         resolve(resp.body as SearchResult[]);
       }),
   );
-
 /**
  * User routes tests
  */
@@ -179,7 +172,6 @@ describe('User block - user', function () {
       user: aliceUser,
       profile: aliceProfile,
     };
-
     // Bob user
     const bobCredentials = {
       username: 'bobtheblocked',
@@ -202,14 +194,16 @@ describe('User block - user', function () {
       user: bobUser,
       profile: bobProfile,
     };
-
     // Save alice and bob to test db
     Promise.all([aliceUser.save(), bobUser.save()])
       .then(() => done())
       .catch(done);
   });
   afterEach(function (done) {
-    User.deleteMany().exec(done);
+    User.deleteMany()
+      .exec()
+      .then(() => done())
+      .catch(done);
   });
   it('should be able to see a user if not blocked by her', function (done) {
     /* bob login */

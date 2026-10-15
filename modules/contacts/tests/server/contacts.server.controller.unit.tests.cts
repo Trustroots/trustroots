@@ -259,7 +259,7 @@ describe('Contacts controller unit tests', () => {
       sinon
         .stub(Contact, 'findOne')
         .returns(
-          callbackQuery(new Error('lookup failed')) as unknown as ReturnType<
+          Promise.reject(new Error('lookup failed')) as unknown as ReturnType<
             typeof Contact.findOne
           >,
         );
@@ -311,10 +311,10 @@ describe('Contacts controller unit tests', () => {
       sinon
         .stub(emailService, 'sendConfirmContact')
         .callsArgWith(5, new Error('mail failed'));
-      sinon.stub(Contact.prototype, 'remove').returns(
+      sinon.stub(Contact.prototype, 'deleteOne').returns(
         Promise.resolve().then(() => {
           throw new Error('cleanup failed');
-        }) as ReturnType<typeof Contact.prototype.remove>,
+        }) as ReturnType<typeof Contact.prototype.deleteOne>,
       );
 
       const { res } = await runHandler(res =>
@@ -417,12 +417,9 @@ describe('Contacts controller unit tests', () => {
         confirmed: true,
       }).save();
 
-      const failRemove = (callback: (error: Error) => void) => {
-        callback(new Error('remove failed'));
-      };
       sinon
-        .stub(Contact.prototype, 'remove')
-        .callsFake(failRemove as unknown as typeof Contact.prototype.remove);
+        .stub(Contact.prototype, 'deleteOne')
+        .rejects(new Error('remove failed'));
 
       const { res } = await runHandler(res =>
         contactsController.remove({ contact }, res),

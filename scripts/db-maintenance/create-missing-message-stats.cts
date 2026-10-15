@@ -58,20 +58,23 @@ mongoose.Promise = Promise;
 
 // Bootstrap db connection
 mongoose.set('strictQuery', false);
-mongoose.connect(config.db.uri, function (err) {
-  if (err) {
-    console.log('Could not connect to MongoDB!');
-    console.error(err);
-  }
+mongoose.connect(config.db.uri).catch(function (err) {
+  console.log('Could not connect to MongoDB!');
+  console.error(err);
 });
 
 async.waterfall(
   [
     // count all messages to be able to show progress
     function countAllMessages(done) {
-      Message.count(searchMessagesParam).exec(function (err, messageNo) {
-        done(err, messageNo);
-      });
+      Message.countDocuments(searchMessagesParam).then(
+        function (messageNo) {
+          done(null, messageNo);
+        },
+        function (err) {
+          done(err, 0);
+        },
+      );
     },
 
     function findAndProcessMessages(messageNo, done) {
@@ -139,23 +142,23 @@ async.waterfall(
         callback: import('../legacy-cli-contracts.d.cts').Done,
       ) {
         // getting the next message from mongodb
-        cursor.next(function (err, msg) {
-          // error
-          if (err) {
+        cursor.next().then(
+          function (msg) {
+            // when we got to the end of stream
+            // msg should be null at the end, but weaker check is safe
+            if (!msg) {
+              keepGoing = false;
+              return callback();
+            }
+
+            // when there is a message to process, process it
+            saveMessageAndRunCounter(msg, callback);
+          },
+          function (err) {
             console.error(err);
-            return callback(err);
-          }
-
-          // when we got to the end of stream
-          // msg should be null at the end, but weaker check is safe
-          if (!msg) {
-            keepGoing = false;
-            return callback();
-          }
-
-          // when there is a message to process, process it
-          saveMessageAndRunCounter(msg, callback);
-        });
+            callback(err);
+          },
+        );
       }
 
       // callback for the end of the script

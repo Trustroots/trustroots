@@ -16,7 +16,7 @@ type PopulateOptions = {
 type PairQuery<T> = {
   sort(sort: { created: 1 }): PairQuery<T>;
   populate(options: PopulateOptions): PairQuery<T>;
-  exec(callback: (error: Error | null, records?: T[] | null) => void): unknown;
+  exec(): Promise<T[] | null>;
 };
 
 type PairModel<T> = {
