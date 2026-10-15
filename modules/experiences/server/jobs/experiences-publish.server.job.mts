@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import moment from 'moment';
-import config from './../../../../config/config.mjs';
+import config from './../../../../config/config.mts';
 const Experience = mongoose.model('Experience');
 
 /**

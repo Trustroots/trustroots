@@ -1,5 +1,5 @@
 import { Agenda, type DefineOptions, type Job } from 'agenda';
-import config from './../config.mjs';
+import config from './../config.mts';
 // The installed Agenda implementation accepts string priorities and typed job
 // payloads; its published define() signature omits these combinations.
 export type RuntimeAgenda = Agenda & {

@@ -6,7 +6,7 @@ const proxyquire: typeof import('./../../../../testutils/server/mock-module') = 
 const request: typeof import('supertest') = require('supertest');
 const should: typeof import('should') = require('should');
 type SessionConfig = { https: boolean; sessionProxy: boolean };
-const config: SessionConfig = require('./../../../../config/config.mjs');
+const config: SessionConfig = require('./../../../../config/config.mts');
 
 type ExpressConfig = {
   initSession(app: import('express').Application, options: object): void;

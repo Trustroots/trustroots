@@ -15,7 +15,7 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const _: typeof import('lodash') = require('lodash');
 const sinon: typeof import('sinon') = require('sinon');
 const winston: typeof import('winston') = require('winston');
-const config: TestConfigModule = require('./../../../../config/config.mjs');
+const config: TestConfigModule = require('./../../../../config/config.mts');
 const messageToStatsService: typeof import('./../../server/services/message-to-stats.server.service.mjs') = require('./../../server/services/message-to-stats.server.service.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 require('should');

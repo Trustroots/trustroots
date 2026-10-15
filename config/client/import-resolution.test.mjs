@@ -13,7 +13,7 @@ const {
   commonJsAliases,
   jsExtensionAlias,
   resolverAliases,
-} = require('./aliases.cjs');
+} = require('./aliases.mts');
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const eslint = new ESLint({ cwd: root });
@@ -30,7 +30,7 @@ const resolvedFiles = [
     'modules/messages/client/services/visibility.client.service.js',
     'modules/messages/client/services/visibility.client.service.ts',
   ],
-  ['./i18n.js', 'config/client/i18n.js'],
+  ['./i18n.js', 'config/client/i18n.ts'],
   [
     '@/modules/support/shared/volunteering-copy.ts',
     'modules/support/shared/volunteering-copy.ts',
@@ -41,7 +41,7 @@ let resolverOptions;
 
 before(async () => {
   const config = await eslint.calculateConfigForFile(
-    resolve(root, 'config/client/i18n.js'),
+    resolve(root, 'config/client/i18n.ts'),
   );
   resolverOptions = config.settings['import/resolver'].typescript;
   assert.ok(resolverOptions, 'TypeScript import resolver is not configured');

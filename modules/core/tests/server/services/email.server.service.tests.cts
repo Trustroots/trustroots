@@ -17,7 +17,7 @@ const nunjucks = require('nunjucks') as {
 const path: typeof import('node:path') = require('node:path');
 const { pathToFileURL }: typeof import('node:url') = require('node:url');
 const config =
-  require('./../../../../../config/config.mjs') as typeof import('../../../../../config/config.mjs').default;
+  require('./../../../../../config/config.mts') as typeof import('../../../../../config/config.mts').default;
 
 interface EmailAddress {
   name?: string;

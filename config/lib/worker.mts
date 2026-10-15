@@ -1,6 +1,6 @@
 import type { Job } from 'agenda';
 import type { RuntimeAgenda } from './agenda.mts';
-import config from './../config.mjs';
+import config from './../config.mts';
 import dependency1 from 'util';
 import statService from './../../modules/stats/server/services/stats.server.service.mts';
 import dependency3 from 'mongodb';

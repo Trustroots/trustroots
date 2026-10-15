@@ -76,7 +76,7 @@ async function loadController(execHandler: ExecHandler) {
   const shuffle = sinon.stub(lodash, 'shuffle').callsFake(users => users);
   void shuffle;
   const controller =
-    await import('../../server/controllers/pages.volunteers.server.controller.mjs');
+    await import('../../server/controllers/pages.volunteers.server.controller.mts');
 
   return { controller, exec, find, limit, select, sort };
 }
@@ -87,7 +87,10 @@ describe('Volunteers controller unit tests', () => {
     const harness = await loadController(callback => callback(null, []));
     const res = mockResponse();
 
-    harness.controller.list({}, res);
+    harness.controller.list(
+      {},
+      res as unknown as Parameters<typeof harness.controller.list>[1],
+    );
     await res.waitForResponse();
 
     harness.find
@@ -108,7 +111,10 @@ describe('Volunteers controller unit tests', () => {
     );
     const res = mockResponse();
 
-    harness.controller.list({}, res);
+    harness.controller.list(
+      {},
+      res as unknown as Parameters<typeof harness.controller.list>[1],
+    );
     const response = await res.waitForResponse();
 
     response.statusCode.should.equal(400);
@@ -144,7 +150,10 @@ describe('Volunteers controller unit tests', () => {
     const harness = await loadController(callback => callback(null, users));
     const res = mockResponse();
 
-    harness.controller.list({}, res);
+    harness.controller.list(
+      {},
+      res as unknown as Parameters<typeof harness.controller.list>[1],
+    );
     const response = await res.waitForResponse();
 
     response.statusCode.should.equal(200);

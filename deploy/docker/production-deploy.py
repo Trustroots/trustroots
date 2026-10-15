@@ -82,7 +82,7 @@ def preflight(args, runtime=True):
     if not runtime:
         return
     # Emit only non-secret settings. Never print the loaded configuration.
-    script = """import config from './config/config.mjs';
+    script = """import config from './config/config.mts';
 import mongoose from 'mongoose';
 if (config.https !== true || config.sessionProxy !== true ||
     'https://' + config.domain !== process.env.DEPLOY_ORIGIN) process.exit(2);

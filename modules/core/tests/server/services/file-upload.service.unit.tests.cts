@@ -42,7 +42,7 @@ const multer = require('multer') as {
   prototype: object;
 };
 const config =
-  require('./../../../../../config/config.mjs') as typeof import('../../../../../config/config.mjs').default;
+  require('./../../../../../config/config.mts') as typeof import('../../../../../config/config.mts').default;
 const uploadService =
   require('./../../../server/services/file-upload.service.mjs') as typeof import('../../../server/services/file-upload.service.mjs');
 const multerPrototype = Object.getPrototypeOf(multer());
@@ -151,7 +151,7 @@ describe('file-upload.service unit tests', () => {
     sinon.restore();
     Object.keys(config).forEach(key => {
       if (!Object.prototype.hasOwnProperty.call(originalConfig, key)) {
-        delete config[key];
+        Reflect.deleteProperty(config, key);
       }
     });
     Object.assign(config, originalConfig);

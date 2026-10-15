@@ -129,7 +129,7 @@ async function main() {
       process.env.TRUSTROOTS_API_URL = apiURL;
       const { createServer } = await import('vite');
       vite = await createServer({
-        configFile: 'vite.config.mjs',
+        configFile: 'vite.config.mts',
         server: { host: '127.0.0.1', port: 0, open: false },
       });
       await vite.listen();

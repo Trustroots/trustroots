@@ -21,12 +21,12 @@ const modules = [
   'modules/admin/server/routes/admin.server.routes.mts',
   'modules/statistics/server/controllers/statistics.server.controller.mjs',
   'modules/statistics/server/jobs/daily-statistics.server.job.mjs',
-  'modules/statistics/server/routes/statistics.server.routes.mjs',
+  'modules/statistics/server/routes/statistics.server.routes.mts',
   'modules/support/server/controllers/support.server.controller.mjs',
   'modules/support/server/models/support.server.model.mjs',
-  'modules/support/server/routes/support.server.routes.mjs',
-  'modules/pages/server/controllers/pages.volunteers.server.controller.mjs',
-  'modules/pages/server/routes/pages.server.routes.mjs',
+  'modules/support/server/routes/support.server.routes.mts',
+  'modules/pages/server/controllers/pages.volunteers.server.controller.mts',
+  'modules/pages/server/routes/pages.server.routes.mts',
 ];
 
 describe('ESM interoperability: administration', () => {

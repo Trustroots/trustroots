@@ -17,13 +17,17 @@
       "@/*": ["./*"],
       "modules/*": ["./modules/*"]
     },
-    "types": [],
+    "types": ["vite/client"],
     "resolveJsonModule": true
   },
   "include": [
+    "config/client/i18n.ts",
+    "config/vite/load-module-styles.ts",
+    "config/vite/load-styles.ts",
     "config/vite/react-main.tsx",
     "modules/*/client/**/*.ts",
-    "modules/*/client/**/*.tsx"
+    "modules/*/client/**/*.tsx",
+    "config/webpack/entries/react-main.tsx"
   ],
   "exclude": ["node_modules"]
 }

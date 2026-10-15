@@ -1,6 +1,6 @@
 import type { MailMessage } from 'nodemailer';
 import agenda from '../../config/lib/agenda.mjs';
-import config from '../../config/config.mjs';
+import config from '../../config/config.mts';
 
 export type CapturedJob<TData = unknown> = {
   type: string;

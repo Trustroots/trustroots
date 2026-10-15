@@ -8,7 +8,7 @@ requests have to go through Vite. Set `PORT` for Vite's browser port and
 `TRUSTROOTS_API_URL` for the Express target when using different ports. The
 Vite server listens on the same host as Webpack.
 
-Both builds share client aliases from `config/client/aliases.cjs` and the
+Both builds share client aliases from `config/client/aliases.mts` and the
 main stylesheet from `config/client/styles/main.less`. Webpack and ESLint
 share that module's `.js` extension order. ESLint also keeps the TypeScript
 resolver's other extension mappings. Vite resolves an explicit `.js` import

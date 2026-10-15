@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import { setEmailConfirmationToken } from '../services/email-confirmation.server.service.mts';
 import _ from 'lodash';
 import emailService from './../../../core/server/services/email.server.service.mjs';
-import config from './../../../../config/config.mjs';
+import config from './../../../../config/config.mts';
 import log from './../../../../config/lib/logger.mjs';
 import async from 'async';
 import moment from 'moment';

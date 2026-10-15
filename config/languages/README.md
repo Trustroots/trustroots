@@ -6,7 +6,7 @@ To re-generate `languages.json`, run:
 
 ```bash
 cd config/languages
-node generate.js
+node generate.cts
 ```
 
 ### Todo

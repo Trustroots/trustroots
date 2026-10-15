@@ -1,7 +1,7 @@
 import type { RequestLimitRecord } from '../models/request-limit.server.model.mts';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
-import config from '../../../../config/config.mjs';
+import config from '../../../../config/config.mts';
 export interface RequestLimitDimension {
   name: string;
   value: unknown;

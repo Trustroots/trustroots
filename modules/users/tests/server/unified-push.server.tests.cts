@@ -15,7 +15,7 @@ const webPush: {
   ): Promise<unknown>;
   setVapidDetails(subject: string, publicKey: string, privateKey: string): void;
 } = require('web-push');
-const config: typeof import('../../../../config/config.mjs').default = require('../../../../config/config.mjs');
+const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
 const express: typeof import('../../../../config/lib/express.mjs').default = require('../../../../config/lib/express.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 const push: typeof import('../../server/services/unified-push.server.service.mjs') = require('../../server/services/unified-push.server.service.mjs');

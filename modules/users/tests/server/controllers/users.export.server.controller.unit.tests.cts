@@ -5,7 +5,7 @@ require('should');
 const path: typeof import('node:path') = require('node:path');
 const config: {
   files: { server: { models: string[] } };
-} = require('./../../../../../config/config.mjs');
+} = require('./../../../../../config/config.mts');
 config.files.server.models.forEach(modelPath =>
   require(path.resolve(modelPath)),
 );

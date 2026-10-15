@@ -49,9 +49,9 @@ interface StoredSupportRequest {
 }
 const emailService: EmailServiceModule = require('../../../core/server/services/email.server.service.mjs');
 const statsService: StatsServiceModule = require('../../../stats/server/services/stats.server.service.mts');
-const config: typeof import('../../../../config/config.mjs') & {
+const config: typeof import('../../../../config/config.mts') & {
   supportEmail: string;
-} = require('../../../../config/config.mjs');
+} = require('../../../../config/config.mts');
 const winston: typeof import('winston') = require('winston');
 require('./../../server/models/support.server.model.mjs');
 const sinon: typeof import('sinon') = require('sinon');

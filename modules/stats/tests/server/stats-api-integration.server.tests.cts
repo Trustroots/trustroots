@@ -15,7 +15,7 @@ type WriteMeasurementStub = import('sinon').SinonStub<
   ReturnType<typeof influx.InfluxDB.prototype.writeMeasurement>
 >;
 const statsService: typeof import('../../server/services/stats.server.service.mts').default = require('./../../server/services/stats.server.service.mts');
-const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
 let writeMeasurement: WriteMeasurementStub;
 
 describe('Stat API integration tests', function () {

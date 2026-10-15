@@ -2,7 +2,7 @@ import { pathToFileURL } from 'node:url';
 import passport from 'passport';
 import mongoose, { type FilterQuery } from 'mongoose';
 import path from 'path';
-import config from './../../../../config/config.mjs';
+import config from './../../../../config/config.mts';
 import usersSuspended from './../controllers/users.suspended.server.controller.mts';
 import type {
   UserServerDocument,

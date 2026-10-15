@@ -5,7 +5,7 @@ import basicAuth from 'basic-auth';
 import speakingurl from 'speakingurl';
 import log from './../../../../config/lib/logger.mjs';
 import errorService from './../../../core/server/services/error.server.service.mjs';
-import config from './../../../../config/config.mjs';
+import config from './../../../../config/config.mts';
 import statService, {
   type StatObject,
 } from './../../../stats/server/services/stats.server.service.mts';

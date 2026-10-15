@@ -34,7 +34,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
   pnpm install --frozen-lockfile
 
 # Copy code into the container
-COPY .prettierrc.json .prettierignore eslint.config.cjs babel.config.* tsconfig.json vite.config.mjs server.js server.mjs worker.js worker.mjs worker.mts ./
+COPY .prettierrc.json .prettierignore eslint.config.cjs eslint.config.cts babel.config.* tsconfig.json vite.config.mts server.js server.mjs worker.js worker.mjs worker.mts ./
 COPY bin bin
 COPY config config
 COPY migrations migrations

@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import mongoose, { type FilterQuery, type Types } from 'mongoose';
-import config from '../../../../config/config.mjs';
+import config from '../../../../config/config.mts';
 import textService from '../../../core/server/services/text.server.service.mjs';
 import messageToStatsService from '../../../messages/server/services/message-to-stats.server.service.mjs';
 import messageStatService from '../../../messages/server/services/message-stat.server.service.mjs';

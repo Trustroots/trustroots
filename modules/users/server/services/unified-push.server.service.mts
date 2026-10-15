@@ -1,6 +1,6 @@
 import mongoose, { type Types } from 'mongoose';
 import webPush from 'web-push';
-import config from './../../../../config/config.mjs';
+import config from './../../../../config/config.mts';
 import log from './../../../../config/lib/logger.mjs';
 interface UnifiedPushRegistrationRecord {
   _id: Types.ObjectId;

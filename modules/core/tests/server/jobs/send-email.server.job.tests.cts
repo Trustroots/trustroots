@@ -15,6 +15,14 @@ type EmailJob = {
 };
 type JobCallback = (error?: Error | null) => void;
 type SendEmailJobHandler = (job: EmailJob, callback: JobCallback) => void;
+type RuntimeConfig = typeof import('../../../../../config/config.mts').default;
+type ConfigWithTestTransport = Omit<RuntimeConfig, 'mailer'> & {
+  mailer: Omit<RuntimeConfig['mailer'], 'options'> & {
+    options: Omit<RuntimeConfig['mailer']['options'], 'send'> & {
+      send?: (data: EmailData, callback: JobCallback) => void;
+    };
+  };
+};
 
 /**
  * Globals
@@ -29,7 +37,8 @@ describe('job: send email', function () {
   });
 
   it('reports send failures', function (done) {
-    const config: typeof import('../../../../../config/config.mjs').default = require('./../../../../../config/config.mjs');
+    const config =
+      require('./../../../../../config/config.mts') as ConfigWithTestTransport;
     const originalSend = config.mailer.options.send;
     config.mailer.options.send = function (
       data: EmailData,

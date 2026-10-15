@@ -3,7 +3,7 @@ import mongooseService from './../../config/lib/mongoose.mjs';
 import yargs from 'yargs';
 import { faker } from '@faker-js/faker';
 import mongoose, { type Document } from 'mongoose';
-import config from './../../config/config.mjs';
+import config from './../../config/config.mts';
 
 interface SeedCircleRecord extends Document {
   label: string;

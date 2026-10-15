@@ -1,7 +1,7 @@
 const request: typeof import('supertest') = require('supertest');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const express: typeof import('../../../../config/lib/express.mjs').default = require('./../../../../config/lib/express.mjs');
-const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
 require('should');
 
 type SparkPostEvent = {

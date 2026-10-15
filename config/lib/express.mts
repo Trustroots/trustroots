@@ -2,7 +2,7 @@ import type { Connection } from 'mongoose';
 import type { MongoClient } from 'mongodb';
 import { pathToFileURL } from 'node:url';
 import _ from 'lodash';
-import config from './../config.mjs';
+import config from './../config.mts';
 import errorService from './../../modules/core/server/services/error.server.service.mjs';
 import express, {
   type Express,

@@ -46,7 +46,7 @@ describe('ESM interoperability: identity-platform', () => {
         `
       (async () => {
       const assert = require('node:assert/strict');
-      const config = require('./config/config.mjs');
+      const config = require('./config/config.mts');
       config.https = true;
       config.domain = 'secure.example.test';
       config.imageProcessor = 'imagemagic';

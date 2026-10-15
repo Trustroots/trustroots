@@ -1,5 +1,5 @@
 const sinon: typeof import('sinon') = require('sinon');
-const config: typeof import('../../../../../config/config.mjs').default = require('./../../../../../config/config.mjs');
+const config: typeof import('../../../../../config/config.mts').default = require('./../../../../../config/config.mts');
 
 require('should');
 

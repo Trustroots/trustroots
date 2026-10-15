@@ -1,11 +1,11 @@
 import type { TestConfigModule } from '../../../../testutils/server/model-contracts.mts';
 const express: typeof import('express') = require('express');
 const sinon: typeof import('sinon') = require('sinon');
-const config: TestConfigModule = require('../../../../config/config.mjs');
+const config: TestConfigModule = require('../../../../config/config.mts');
 const policy: typeof import('../../server/policies/experiences.server.policy.mts') = require('../../server/policies/experiences.server.policy.mts');
 const controller: typeof import('../../server/controllers/experiences.server.controller.mjs') = require('../../server/controllers/experiences.server.controller.mjs');
 const changes: typeof import('../../server/controllers/experience-changes.server.controller.mjs') = require('../../server/controllers/experience-changes.server.controller.mjs');
-const registerRoutes: typeof import('../../server/routes/experiences.server.routes.mjs').default = require('../../server/routes/experiences.server.routes.mjs');
+const registerRoutes: typeof import('../../server/routes/experiences.server.routes.mts').default = require('../../server/routes/experiences.server.routes.mts');
 const request: typeof import('supertest') = require('supertest');
 require('should');
 

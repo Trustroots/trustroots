@@ -8,7 +8,7 @@ type PaginationService = {
   ): void;
 };
 const paginationService: PaginationService = require('../../../server/services/pagination.server.service.mjs');
-const config: typeof import('../../../../../config/config.mjs').default = require('../../../../../config/config.mjs');
+const config: typeof import('../../../../../config/config.mts').default = require('../../../../../config/config.mts');
 
 const should: typeof import('should') = require('should');
 void should;

@@ -15,7 +15,7 @@ const languagesArray: Array<{
   value: string;
   label: string;
 }> = require('../../../../config/languages/languages-array.json');
-const deprecatedLanguages: Set<string> = require('./../../../../config/languages/deprecated.mjs');
+const deprecatedLanguages: Set<string> = require('./../../../../config/languages/deprecated.mts');
 
 require('should');
 const should: typeof import('should') = require('should');

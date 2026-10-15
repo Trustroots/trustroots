@@ -6,7 +6,7 @@ import type { SinonStub } from 'sinon';
 const should: typeof import('should') = require('should');
 const influx: typeof import('influx') = require('influx');
 const sinon: typeof import('sinon') = require('sinon');
-const config: typeof import('../../../../config/config.mjs').default = require('./../../../../config/config.mjs');
+const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
 const sparkpostWebhooks: typeof import('../../server/controllers/sparkpost-webhooks.server.controller.mts').default = require('./../../server/controllers/sparkpost-webhooks.server.controller.mts');
 
 interface SparkpostEvent {

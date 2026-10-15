@@ -235,7 +235,7 @@ describe('Parallel server test orchestration', () => {
     const originalEnvironment = process.env.NODE_ENV;
     const originalDatabase = process.env.TRUSTROOTS_SERVER_TEST_DATABASE;
     const url = pathToFileURL(
-      path.resolve(__dirname, '../../../../../config/env/test.mjs'),
+      path.resolve(__dirname, '../../../../../config/env/test.mts'),
     );
     try {
       process.env.NODE_ENV = 'test';

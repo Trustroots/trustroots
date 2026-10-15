@@ -19,7 +19,7 @@ const passport: {
   initialize(): unknown;
   session(): unknown;
 } = require('passport');
-const config: typeof import('../../../../config/config.mjs').default = require('../../../../config/config.mjs');
+const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
 
 const controllerPath = '../../server/config/users.config.server.mts';
 require('../../server/models/user.server.model.mjs');

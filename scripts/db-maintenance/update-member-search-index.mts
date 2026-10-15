@@ -6,7 +6,7 @@
  */
 import mongoose from 'mongoose';
 import type { IndexDirection, CreateIndexesOptions } from 'mongodb';
-import config from '../../config/config.mjs';
+import config from '../../config/config.mts';
 import '../../modules/users/server/models/user.server.model.mjs';
 
 const User = mongoose.model('User');

@@ -1,4 +1,4 @@
-import config from './../../../../config/config.mjs';
+import config from './../../../../config/config.mts';
 
 interface AuthenticationUser {
   email: string;

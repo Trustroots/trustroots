@@ -69,7 +69,7 @@ async function loadController(execHandler: ExecHandler) {
   >;
   find.returns(query);
   const controller =
-    await import('../../server/controllers/pages.greeters.server.controller.mjs');
+    await import('../../server/controllers/pages.greeters.server.controller.mts');
   return { controller, exec, find, limit, select, sort };
 }
 
@@ -88,7 +88,10 @@ describe('Greeters controller unit tests', () => {
     const harness = await loadController(callback => callback(null, users));
     const res = mockResponse();
 
-    harness.controller.list({}, res);
+    harness.controller.list(
+      {},
+      res as unknown as Parameters<typeof harness.controller.list>[1],
+    );
     const response = await res.waitForResponse();
 
     harness.find
@@ -119,7 +122,10 @@ describe('Greeters controller unit tests', () => {
     );
     const res = mockResponse();
 
-    harness.controller.list({}, res);
+    harness.controller.list(
+      {},
+      res as unknown as Parameters<typeof harness.controller.list>[1],
+    );
     const response = await res.waitForResponse();
 
     response.statusCode.should.equal(500);

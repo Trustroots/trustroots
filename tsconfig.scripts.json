@@ -18,6 +18,7 @@
     "bin/**/*.cts",
     "bin/**/*.mts",
     "config/vite/**/*.test.mts",
+    "config/config.test.mts",
     "scripts/**/*.cts",
     "scripts/**/*.mts",
     "scripts/ci/**/*.test.mts"

@@ -5,7 +5,7 @@ import yargs from 'yargs';
 import { faker } from '@faker-js/faker';
 import moment from 'moment';
 import mongoose, { type Document, type Types } from 'mongoose';
-import config from './../../config/config.mjs';
+import config from './../../config/config.mts';
 import './../../modules/offers/server/models/offer.server.model.mjs';
 
 interface City {

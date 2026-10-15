@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { readFile } from 'node:fs/promises';
 import mongoose from 'mongoose';
-import config from '../../config/config.mjs';
+import config from '../../config/config.mts';
 import mongooseService from '../../config/lib/mongoose.mjs';
 
 // Usage: NODE_ENV=production node bin/db-maintenance/link-support-reports.mts mappings.json ADMIN_ID [--apply]

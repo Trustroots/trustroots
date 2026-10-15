@@ -5,7 +5,7 @@ import gm, { type Command as GmCommand } from 'gm';
 import os from 'os';
 import path from 'path';
 import crypto from 'crypto';
-import config from './../../../../config/config.mjs';
+import config from './../../../../config/config.mts';
 import log from './../../../../config/lib/logger.mjs';
 import type { EventEmitter as EventEmitterType } from 'node:events';
 import type {

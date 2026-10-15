@@ -18,7 +18,7 @@ const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
 const testutils: typeof import('../../../../testutils/server/server.testutil') = require('../../../../testutils/server/server.testutil');
 const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
 const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
-const config: TestConfigModule = require('./../../../../config/config.mjs');
+const config: TestConfigModule = require('./../../../../config/config.mts');
 describe('Create an experience', () => {
   let app: TestExpressApp;
   let agent: TestAgent;

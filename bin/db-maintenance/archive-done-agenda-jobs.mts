@@ -21,7 +21,7 @@ import {
   type Filter,
   type WithId,
 } from 'mongodb';
-import config from './../../config/config.mjs';
+import config from './../../config/config.mts';
 
 const filter: Filter<Document> = {
   nextRunAt: null,

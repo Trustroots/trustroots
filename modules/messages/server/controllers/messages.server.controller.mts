@@ -3,7 +3,7 @@ import async from 'async';
 import sanitizeHtml from 'sanitize-html';
 import moment from 'moment';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
-import config from '../../../../config/config.mjs';
+import config from '../../../../config/config.mts';
 import log from '../../../../config/lib/logger.mjs';
 import messageToStatsService from '../services/message-to-stats.server.service.mjs';
 import messageStatService from '../services/message-stat.server.service.mjs';

@@ -2,7 +2,7 @@ import mongoose, { type UpdateQuery } from 'mongoose';
 import type { NextFunction, Request, Response } from 'express';
 import moment from 'moment';
 import net from 'net';
-import config from './../../../../config/config.mjs';
+import config from './../../../../config/config.mts';
 import type {
   UserServerDocument,
   UserServerRecord,

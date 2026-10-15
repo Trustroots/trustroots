@@ -12,7 +12,7 @@
 const async = require('async');
 const mongooseService = require('./../../config/lib/mongoose.mjs');
 const mongoose = require('mongoose');
-const config = require('./../../config/config.mjs');
+const config = require('./../../config/config.mts');
 // eslint-disable-next-line no-unused-vars
 const messageModels = require('./../../modules/messages/server/models/message.server.model.mjs');
 const Message = mongoose.model('Message');

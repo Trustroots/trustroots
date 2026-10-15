@@ -1,5 +1,5 @@
 import akismetApi from 'akismet-api';
-import config from './../../../../config/config.mjs';
+import config from './../../../../config/config.mts';
 import logModule from './../../../../config/lib/logger.mjs';
 const log = logModule as (
   level: string,

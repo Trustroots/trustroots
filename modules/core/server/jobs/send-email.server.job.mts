@@ -2,7 +2,7 @@ import type { Job } from 'agenda';
 import type { RenderedEmail } from '../services/email.server.service.mts';
 import _ from 'lodash';
 import nodemailer from 'nodemailer';
-import config from './../../../../config/config.mjs';
+import config from './../../../../config/config.mts';
 import log from './../../../../config/lib/logger.mjs';
 const defaultExport = function (
   job: Pick<Job<RenderedEmail>, 'attrs'>,

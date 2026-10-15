@@ -5,7 +5,7 @@ import type {
 const should: typeof import('should') = require('should');
 const _: typeof import('lodash') = require('lodash');
 const sinon: typeof import('sinon') = require('sinon');
-const config: TestConfigModule = require('./../../../../config/config.mjs');
+const config: TestConfigModule = require('./../../../../config/config.mts');
 const EventEmitter: typeof import('events') = require('events');
 const influx: typeof import('influx') = require('influx');
 const messageController: typeof import('./../../server/controllers/messages.server.controller.mjs') = require('./../../server/controllers/messages.server.controller.mjs');

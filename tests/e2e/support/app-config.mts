@@ -22,7 +22,7 @@ const dumpPath = path.join(
 );
 const dumpScript = `
 import config from ${JSON.stringify(
-  path.join(packageRoot, 'config/config.mjs'),
+  path.join(packageRoot, 'config/config.mts'),
 )};
 import fs from 'node:fs';
 fs.writeFileSync(${JSON.stringify(dumpPath)}, JSON.stringify(config));
