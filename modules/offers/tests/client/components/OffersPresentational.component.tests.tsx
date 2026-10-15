@@ -5,6 +5,27 @@ import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import OffersPresentational from '@/modules/offers/client/components/OffersPresentational';
 import type { Offer } from '@/modules/offers/client/api/offers.api';
+import type OfferLocation from '@/modules/offers/client/components/OfferLocation.component';
+
+jest.mock('@/modules/offers/client/components/OfferLocation.component', () => {
+  const React = jest.requireActual<typeof import('react')>('react');
+  return function MockOfferLocation({
+    location,
+    height,
+    offerStatus,
+    offerType,
+  }: React.ComponentProps<typeof OfferLocation>) {
+    return location ? (
+      <div
+        data-testid="hosting-map"
+        data-location={JSON.stringify(location)}
+        data-height={height}
+        data-status={offerStatus}
+        data-type={offerType}
+      />
+    ) : null;
+  };
+});
 
 const hostingOffer: Offer = {
   status: 'yes',
@@ -13,6 +34,48 @@ const hostingOffer: Offer = {
 };
 
 describe('<OffersPresentational />', () => {
+  it('links the owner directly to the location editor', () => {
+    render(
+      <OffersPresentational
+        isOwnOffer={true}
+        isUserPublic={true}
+        offer={{ ...hostingOffer, location: [51, 4] }}
+      />,
+    );
+    expect(screen.getByText('Approximate hosting location')).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Edit location' })).toHaveAttribute(
+      'href',
+      '/offer/host#location',
+    );
+  });
+  it.each(['yes', 'maybe'] as const)(
+    'shows a compact map for status %s',
+    status => {
+      render(
+        <OffersPresentational
+          isOwnOffer={false}
+          isUserPublic={true}
+          offer={{ ...hostingOffer, status, location: [51, 4] }}
+        />,
+      );
+      const map = screen.getByTestId('hosting-map');
+      expect(map).toHaveAttribute('data-location', '[51,4]');
+      expect(map).toHaveAttribute('data-height', '220');
+      expect(map).toHaveAttribute('data-status', status);
+      expect(map).toHaveAttribute('data-type', 'host');
+    },
+  );
+
+  it('omits the map when the member is not hosting', () => {
+    render(
+      <OffersPresentational
+        isOwnOffer={false}
+        isUserPublic={true}
+        offer={{ status: 'no', location: [51, 4] }}
+      />,
+    );
+    expect(screen.queryByTestId('hosting-map')).not.toBeInTheDocument();
+  });
   it('renders a hosting offer with description and guest count', () => {
     render(
       <OffersPresentational

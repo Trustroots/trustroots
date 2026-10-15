@@ -1,4 +1,10 @@
-import { annotateFeature, test, expect } from '../../support/fixtures.mts';
+import {
+  annotateFeature,
+  test,
+  expect,
+  expectPresent,
+  useElementScreenshot,
+} from '../../support/fixtures.mts';
 
 import {
   SEEDED_EXPERIENCE,
@@ -15,7 +21,7 @@ import {
   waitForTribesList,
 } from '../../support/helpers.mts';
 
-import { updateUserByUsername } from '../../support/db.mts';
+import { findOffersByUser, updateUserByUsername } from '../../support/db.mts';
 
 const berlin = SEEDED_MEMBERS[0];
 const portland = SEEDED_MEMBERS[1];
@@ -245,6 +251,7 @@ test.describe('confirmed member flows', () => {
   test('another host accommodation page shows hosting details', async ({
     page,
   }, testInfo) => {
+    useElementScreenshot(testInfo, '.offer-view');
     annotateFeature(testInfo, 'profile.view-accommodation', [
       'Accommodation tab loads for a host.',
       'Hosting details from seeded offer/profile are visible.',
@@ -255,6 +262,15 @@ test.describe('confirmed member flows', () => {
     await expect(page.getByText(SEEDED_OFFER.hostingStatus)).toBeVisible();
     await expect(page.getByText(SEEDED_OFFER.description)).toBeVisible();
     await expect(page.getByText(SEEDED_OFFER.maxGuestsLabel)).toBeVisible();
+    await expect(page.getByText('Approximate hosting location')).toBeVisible();
+    const map = page.locator('.offer-view .offer-location');
+    await expect(map).toBeVisible();
+    const box = await map.boundingBox();
+    expectPresent(box);
+    expect(box.height).toBe(220);
+    await expect(
+      map.locator('.mapboxgl-canvas, .leaflet-pane').first(),
+    ).toBeVisible();
   });
 
   test('profile actions link to messaging and experiences', async ({
@@ -506,12 +522,24 @@ test.describe('confirmed member flows', () => {
 
   test('meet offers list page shows the empty state', async ({
     page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'offers.meet-list', [
       'Meet offers list page loads.',
       'Empty state is shown when member has no meet offers.',
       'Existing meet offers are listed with edit links.',
     ]);
+
+    // Clear leftover meets from other specs that share the seeded member
+    // (e.g. offers-and-circles when the screenshots job runs changed files together).
+    const memberId = await fetchUserIdByUsername(request, berlin.username);
+    const leftoverMeets = await findOffersByUser(memberId, { type: 'meet' });
+    for (const offer of leftoverMeets) {
+      const remove = await page.request.delete(`/api/offers/${offer._id}`, {
+        headers: { 'X-Trustroots-Request': '1' },
+      });
+      expect(remove.ok()).toBeTruthy();
+    }
 
     await page.goto('/offer/meet');
 

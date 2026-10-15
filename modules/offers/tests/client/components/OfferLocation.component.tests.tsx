@@ -59,6 +59,9 @@ describe('<OfferLocation />', () => {
 
     expect(screen.getByTestId('map')).toBeInTheDocument();
     expect(screen.getByTestId('offer-overlay')).toBeInTheDocument();
+    expect(mockMap).toHaveBeenCalledWith(
+      expect.objectContaining({ height: 320 }),
+    );
     expect(mockOfferLocationOverlay).toHaveBeenCalledWith(
       expect.objectContaining({
         location: [50.12, 19.89],
@@ -66,5 +69,17 @@ describe('<OfferLocation />', () => {
         offerType: 'host',
       }),
     );
+  });
+
+  it('supports a compact map height', () => {
+    render(<OfferLocation location={[51, 4]} height={220} />);
+    expect(mockMap).toHaveBeenCalledWith(
+      expect.objectContaining({ height: 220 }),
+    );
+  });
+
+  it('omits maps for incomplete locations', () => {
+    const { container } = render(<OfferLocation location={[51]} />);
+    expect(container).toBeEmptyDOMElement();
   });
 });

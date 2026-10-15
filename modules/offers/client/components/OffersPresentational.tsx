@@ -6,6 +6,7 @@ import type { Offer } from '../api/offers.api';
 // Internal dependencies
 import '@/config/client/i18n';
 import OfferStatusButton from './OfferStatusButton';
+import OfferLocation from './OfferLocation.component';
 import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
 
 interface OffersPresentationalProps {
@@ -163,6 +164,22 @@ export class OffersPresentational extends Component<
           {/* Hosting: no */}
           {!this.isHosting() && this.renderHostingNo()}
         </div>
+        {this.isHosting() && offer.location?.length === 2 && (
+          <div className="offer-location-section">
+            <div className="offer-location-heading">
+              <span>{t('Approximate hosting location')}</span>
+              {isOwnOffer && (
+                <a href="/offer/host#location">{t('Edit location')}</a>
+              )}
+            </div>
+            <OfferLocation
+              height={220}
+              location={offer.location}
+              offerStatus={offer.status}
+              offerType="host"
+            />
+          </div>
+        )}
       </div>
     );
   }

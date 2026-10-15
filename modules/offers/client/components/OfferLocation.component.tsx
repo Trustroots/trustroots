@@ -7,7 +7,8 @@ import OfferLocationOverlay from './OfferLocationOverlay';
 import { getOfferHexColor } from '../utils/markers.js';
 
 interface OfferLocationProps {
-  location: number[];
+  location?: number[];
+  height?: number;
   offerStatus?: string;
   offerType?: string;
 }
@@ -16,6 +17,7 @@ export default function OfferLocation({
   location,
   offerStatus,
   offerType,
+  height = 320,
 }: OfferLocationProps) {
   if (!location || location.length !== 2) {
     return null;
@@ -31,7 +33,7 @@ export default function OfferLocation({
         color: getOfferHexColor({ offerType, offerStatus }),
         location: coordinates,
       }}
-      height={320}
+      height={height}
       location={coordinates}
       scrollZoom={false}
       width="100%"

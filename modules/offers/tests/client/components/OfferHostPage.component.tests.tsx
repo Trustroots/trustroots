@@ -71,8 +71,68 @@ const hostOffer: OfferPayload = {
 describe('OfferHostPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    window.history.replaceState({}, '', '/offer/host');
     offersApiMock.getOffers.mockResolvedValue([hostOffer]);
     getCurrentRouteParamsMock.mockReturnValue({});
+  });
+
+  it.each(['availability', 'description', 'location'])(
+    'opens the %s tab from a direct link',
+    async tab => {
+      window.history.replaceState({}, '', `/offer/host#${tab}`);
+      render(<OfferHostPage user={user} />);
+
+      expect(
+        await screen.findByRole('tab', { name: new RegExp(tab, 'i') }),
+      ).toHaveAttribute('aria-selected', 'true');
+    },
+  );
+
+  it('falls back to Availability for an unknown fragment', async () => {
+    window.history.replaceState({}, '', '/offer/host#unknown');
+    render(<OfferHostPage user={user} />);
+    expect(
+      await screen.findByRole('tab', { name: 'Availability' }),
+    ).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('updates the fragment and follows history without losing edits', async () => {
+    render(<OfferHostPage user={user} />);
+    fireEvent.click(await screen.findByRole('tab', { name: 'Description' }));
+    expect(window.location.hash).toBe('#description');
+    fireEvent.change(
+      screen.getByLabelText(/Tell about your home and hosting possibilities/),
+      { target: { value: 'An unsaved hosting description.' } },
+    );
+    fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
+    expect(window.location.hash).toBe('#location');
+
+    window.history.replaceState({}, '', '/offer/host#description');
+    fireEvent.popState(window);
+    expect(screen.getByRole('tab', { name: 'Description' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(
+      screen.getByDisplayValue('An unsaved hosting description.'),
+    ).toBeVisible();
+
+    window.history.replaceState({}, '', '/offer/host#location');
+    fireEvent(window, new HashChangeEvent('hashchange'));
+    expect(screen.getByRole('tab', { name: 'Location' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+  });
+
+  it('opens Location for a new offer without a description', async () => {
+    offersApiMock.getOffers.mockResolvedValue([]);
+    window.history.replaceState({}, '', '/offer/host#location');
+    render(<OfferHostPage user={user} />);
+    expect(await screen.findByTestId('location-editor')).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Save and Exit' }),
+    ).toBeDisabled();
   });
 
   it('loads the host offer editor with availability controls', async () => {
@@ -236,12 +296,23 @@ describe('OfferHostPage', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'No' }));
 
     expect(
-      screen.getByText(/Choose a location in the Location tab before saving/),
-    ).toBeVisible();
+      screen
+        .getByRole('link', { name: 'Choose a location' })
+        .closest('[role="status"]'),
+    ).toHaveTextContent('Choose a location in the Location tab before saving');
+    expect(
+      screen.getByRole('link', { name: 'Choose a location' }),
+    ).toHaveAttribute('href', '#location');
     expect(screen.getByRole('tab', { name: 'Location' })).toBeEnabled();
     expect(
       screen.getByRole('button', { name: 'Save and Exit' }),
     ).toBeDisabled();
+    fireEvent.click(screen.getByRole('link', { name: 'Choose a location' }));
+    expect(screen.getByRole('tab', { name: 'Location' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(window.location.hash).toBe('#location');
   });
 
   it('adjusts guest count and circle visibility settings', async () => {

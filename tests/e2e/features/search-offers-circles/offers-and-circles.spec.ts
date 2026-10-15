@@ -68,6 +68,72 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await signInViaApi(page, request, berlin);
   });
 
+  test('hosting tab deep links preserve edits through browser history', async ({
+    page,
+  }) => {
+    await page.goto('/offer/host#location');
+    await expect(page.getByRole('tab', { name: 'Location' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(
+      page.getByLabel('Search places', { exact: true }),
+    ).toBeVisible();
+    await page.getByRole('tab', { name: 'Description' }).click();
+    await expect(page).toHaveURL(/\/offer\/host#description$/);
+    const description = page.getByLabel(
+      'Tell about your home and hosting possibilities',
+      { exact: false },
+    );
+    await description.fill('An unsaved spare room description.');
+    await page.getByRole('tab', { name: 'Availability' }).click();
+    await expect(page).toHaveURL(/\/offer\/host#availability$/);
+    await page.goBack();
+    await expect(description).toHaveValue('An unsaved spare room description.');
+    await page.goBack();
+    await expect(page.getByRole('tab', { name: 'Location' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await page.goForward();
+    await expect(description).toHaveValue('An unsaved spare room description.');
+    await page.reload();
+    await expect(
+      page.getByRole('tab', { name: 'Description' }),
+    ).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('mobile hosting map keeps search, tabs and save controls accessible', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/profile/${berlin.username}/accommodation`);
+    await page
+      .getByRole('link', { name: 'Edit location', exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/offer\/host#location$/);
+    await expect(
+      page.getByRole('heading', { name: 'Hosting offer' }),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel('Search places', { exact: true }),
+    ).toBeVisible();
+    const map = page.locator('.offer-map .offer-location');
+    await expect(map).toBeVisible();
+    const mapBox = await map.boundingBox();
+    const frameBox = await page.locator('.offer-map').boundingBox();
+    expectPresent(mapBox);
+    expectPresent(frameBox);
+    expect(mapBox.height).toBe(frameBox.height);
+    await page
+      .getByRole('button', { name: 'Save and Exit' })
+      .scrollIntoViewIfNeeded();
+    await expect(
+      page.getByRole('button', { name: 'Save and Exit' }),
+    ).toBeInViewport();
+    await expect(page.getByRole('tab', { name: 'Location' })).toBeInViewport();
+  });
+
   test('mobile offer editors expose working save controls', async ({
     page,
   }) => {
@@ -203,7 +269,10 @@ test.describe.serial('search offers and circles feature coverage', () => {
       type: 'meet',
       description: 'A meeting in the park.',
     });
-    await page.request.delete(`/api/offers/${meeting._id}`);
+    const remove = await page.request.delete(`/api/offers/${meeting._id}`, {
+      headers: { 'X-Trustroots-Request': '1' },
+    });
+    expect(remove.ok()).toBeTruthy();
   });
 
   test('hosting location follows place searches and map dragging', async ({
