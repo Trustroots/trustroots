@@ -447,6 +447,14 @@ describe('<ReactApp />', () => {
     expect(document.title).toBe('Admin - Audit log - Trustroots');
   });
 
+  it('renders the admin circles page for an administrator', async () => {
+    renderApp('/admin/circles', {
+      user: { roles: ['user', 'admin'], username: 'admin' },
+    });
+    expect(await screen.findByText('Admin circles route')).toBeInTheDocument();
+    expect(document.title).toBe('Admin - Circles - Trustroots');
+  });
+
   it('honors headerHidden and noScrollingTop route metadata', async () => {
     const route = REACT_ROUTE_POLICIES.find(route => route.path === '/rules')!;
     route.headerHidden = true;

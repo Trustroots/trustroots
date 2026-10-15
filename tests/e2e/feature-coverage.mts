@@ -143,6 +143,7 @@ function apiRoute(
 }
 
 const specPaths: Record<string, string> = {
+  'admin-circles.spec.js': 'features/admin-moderation/admin-circles.spec.ts',
   'account-email-tokens.spec.js':
     'features/auth-account/account-email-tokens.spec.js',
   'account-settings.spec.js': 'features/auth-account/account-settings.spec.js',

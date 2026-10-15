@@ -1,3 +1,4 @@
+import adminCircles from '../controllers/admin.circles.server.controller.mjs';
 import adminAcquisitionStories from './../controllers/admin.acquisition-stories.server.controller.mts';
 import adminAuditLog from './../controllers/admin.audit-log.server.controller.mts';
 import adminMessages from './../controllers/admin.messages.server.controller.mts';
@@ -20,6 +21,7 @@ interface RouteChain {
   get(...handlers: RouteHandler[]): RouteChain;
   patch(...handlers: RouteHandler[]): RouteChain;
   post(...handlers: RouteHandler[]): RouteChain;
+  put(...handlers: RouteHandler[]): RouteChain;
 }
 
 interface RouteApp {
@@ -29,7 +31,6 @@ interface RouteApp {
 /**
  * Module dependencies.
  */
-import adminCircles from '../controllers/admin.circles.server.controller.js';
 
 const registerRoutes = (app: RouteApp): void => {
   app.route('/api/admin/support').all(adminPolicy.isAllowed).get(support.list);
