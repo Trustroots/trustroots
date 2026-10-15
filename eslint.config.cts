@@ -42,7 +42,10 @@ const rules = {
   'keyword-spacing': [2, { before: true, after: true }],
   'new-cap': [
     2,
-    { newIsCapExceptions: ['acl.memoryBackend', 'acl', 'useQueryClient'] },
+    {
+      newIsCapExceptions: ['acl.memoryBackend', 'acl', 'useQueryClient'],
+      capIsNewExceptions: ['mongoose.Types.ObjectId'],
+    },
   ],
   'no-caller': 2,
   'no-console': isDevelopment ? 1 : 2,
