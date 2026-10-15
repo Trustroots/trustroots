@@ -96,9 +96,15 @@ const defaultExport = function (
             },
           ])
           .limit(config.limits.maxProcessSignupReminders || 50)
-          .exec(function (err: Error | null, users: UserServerDocument[]) {
-            done(err, users);
-          });
+          .exec()
+          .then(
+            function (users: UserServerDocument[]) {
+              done(null, users);
+            },
+            function (err: Error) {
+              done(err);
+            },
+          );
       },
       // Send emails
       function (users: UserServerDocument[], done: WaterfallCallback) {

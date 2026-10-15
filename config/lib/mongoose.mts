@@ -161,62 +161,45 @@ function dropDatabase(connection: mongoose.Connection, callback?: Done) {
     log('error', 'You cannot drop database in production mode!');
     return process.exit(1);
   }
-  connection.dropDatabase(function (err) {
-    if (err) {
-      log('error', 'Failed to drop database', {
-        error: err,
-      });
-    } else {
+  connection.dropDatabase().then(
+    function () {
       log(
         'info',
         'Successfully dropped database: ' + connection.db.databaseName,
       );
-    }
-    if (callback) {
-      callback(err);
-    }
-  });
+      if (callback) {
+        callback();
+      }
+    },
+    function (err) {
+      log('error', 'Failed to drop database', {
+        error: err,
+      });
+      if (callback) {
+        callback(err);
+      }
+    },
+  );
 }
-function ensureIndexes(modelNames: string[]): Promise<void> {
-  return new Promise<void>(function (resolve, reject) {
-    // assuming openFiles is an array of file names
-    async.each(
-      modelNames,
-      function (modelName, callback) {
-        mongoose.connection.model(modelName).ensureIndexes(function (error) {
-          if (error) {
-            log('error', 'Indexing Mongoose Schema failed', {
-              model: modelName,
-              error,
-            });
-            callback(error);
-          } else {
-            log('info', 'Indexed Mongoose Schema ' + modelName);
-            callback();
-          }
-        });
-      },
-      function (error) {
-        // if any of the file processing produced an error
-        if (error) {
-          // One of the iterations produced an error.
-          // All processing will now stop.
-          log('error', 'A Schema failed to index.', {
-            error,
-          });
-          reject(error);
-        } else {
-          log(
-            'info',
-            modelNames.length +
-              ' Schemas have been indexed successfully:\n - ' +
-              modelNames.join('\n - '),
-          );
-        }
-        resolve();
-      },
-    );
-  });
+async function ensureIndexes(modelNames: string[]): Promise<void> {
+  for (const modelName of modelNames) {
+    try {
+      await mongoose.connection.model(modelName).ensureIndexes();
+      log('info', 'Indexed Mongoose Schema ' + modelName);
+    } catch (error) {
+      log('error', 'Indexing Mongoose Schema failed', {
+        model: modelName,
+        error,
+      });
+      throw error;
+    }
+  }
+  log(
+    'info',
+    modelNames.length +
+      ' Schemas have been indexed successfully:\n - ' +
+      modelNames.join('\n - '),
+  );
 }
 export default service;
 export { service as 'module.exports' };

@@ -51,10 +51,13 @@ describe('Contact Model Unit Tests:', function () {
     });
 
     // Create users
-    user1.save(function () {
-      user1Id = user1._id;
-
-      user2.save(function () {
+    user1
+      .save()
+      .then(function () {
+        user1Id = user1._id;
+        return user2.save();
+      })
+      .then(function () {
         user2Id = user2._id;
 
         // Create connection between users
@@ -66,36 +69,51 @@ describe('Contact Model Unit Tests:', function () {
         });
 
         done();
-      });
-    });
+      })
+      .catch(done);
   });
 
   afterEach(utils.clearDatabase);
 
   describe('Method Save', function () {
     it('should be able to save without problems', function (done) {
-      contact.save(function (err) {
-        should.not.exist(err);
-        return done();
-      });
+      contact.save().then(
+        function () {
+          done();
+        },
+        function (err) {
+          should.not.exist(err);
+          done(err);
+        },
+      );
     });
 
     it('should be able to show an error when try to save without `userFrom`', function (done) {
       contact.set('userFrom', '');
 
-      contact.save(function (err) {
-        should.exist(err);
-        return done();
-      });
+      contact.save().then(
+        function () {
+          done(new Error('Expected save to fail'));
+        },
+        function (err) {
+          should.exist(err);
+          done();
+        },
+      );
     });
 
     it('should be able to show an error when try to save without `userTo`', function (done) {
       contact.set('userTo', '');
 
-      contact.save(function (err) {
-        should.exist(err);
-        return done();
-      });
+      contact.save().then(
+        function () {
+          done(new Error('Expected save to fail'));
+        },
+        function (err) {
+          should.exist(err);
+          done();
+        },
+      );
     });
   });
 });

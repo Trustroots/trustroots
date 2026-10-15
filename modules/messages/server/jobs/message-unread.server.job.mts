@@ -275,21 +275,25 @@ function sendUnreadMessageReminders(reminder: Reminder, callback: Done): void {
               'username',
               'roles',
             ].join(' '),
-          ).exec(function (err: Error | null, users: ReminderUser[]) {
-            // Re-organise users into more handy array (`collectedUsers`)
-            const collectedUsers: Record<string, ReminderUser> = {};
-            // `users` is `undefined` when the query errors, so guard before
-            // iterating and let `done(err, ...)` forward the error instead.
-            /* istanbul ignore else */
-            if (users) {
-              users.forEach(function (user) {
-                // @link https://lodash.com/docs/#set
-                // _.set(object, path, value)
-                _.set(collectedUsers, user._id.toString(), user);
-              });
-            }
-            done(err, collectedUsers, notifications);
-          });
+          )
+            .exec()
+            .then(
+              function (users: ReminderUser[]) {
+                // Re-organise users into more handy array (`collectedUsers`)
+                const collectedUsers: Record<string, ReminderUser> = {};
+                if (users) {
+                  users.forEach(function (user) {
+                    // @link https://lodash.com/docs/#set
+                    // _.set(object, path, value)
+                    _.set(collectedUsers, user._id.toString(), user);
+                  });
+                }
+                done(null, collectedUsers, notifications);
+              },
+              function (err: Error) {
+                done(err);
+              },
+            );
         } else {
           done(null, [], notifications);
         }

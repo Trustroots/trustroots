@@ -57,13 +57,14 @@ const defaultExport = function (
       if (hasChangedIpAddress) {
         update.lastIpAddress = clientIpAddress;
       }
-      Reflect.apply(User.findByIdAndUpdate, User, [
-        req.user.id,
-        update,
-        function (err: Error | null) {
-          return next(err);
+      User.findByIdAndUpdate(req.user.id, update).then(
+        function () {
+          next();
         },
-      ]);
+        function (err: Error) {
+          next(err);
+        },
+      );
     } else {
       return next();
     }

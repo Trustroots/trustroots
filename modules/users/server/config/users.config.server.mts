@@ -23,11 +23,10 @@ interface UsersApplication {
 
 const User = mongoose.model<UserServerRecord, UserServerModel>('User');
 
-function findSessionUser(
+async function findSessionUser(
   id: FilterQuery<UserServerRecord>['_id'],
-  callback: (error: Error | null, user: UserServerDocument | null) => void,
-): void {
-  Reflect.apply(User.findOne, User, [{ _id: id }, '-salt -password', callback]);
+): Promise<UserServerDocument | null> {
+  return User.findOne({ _id: id }, '-salt -password');
 }
 
 const defaultExport = async function (app: UsersApplication): Promise<void> {
@@ -54,14 +53,18 @@ const defaultExport = async function (app: UsersApplication): Promise<void> {
 
       findSessionUser(
         sessionData!.id as FilterQuery<UserServerRecord>['_id'],
-        function (err, user) {
-          if (err || !user) {
-            return done(err, user);
+      ).then(
+        function (user) {
+          if (!user) {
+            return done(null, user);
           }
           if ((user.authVersion || 0) !== sessionData!.authVersion) {
             return done(null, false);
           }
           return done(null, user);
+        },
+        function (err) {
+          done(err);
         },
       );
     },

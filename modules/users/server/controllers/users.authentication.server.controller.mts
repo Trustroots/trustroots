@@ -231,13 +231,16 @@ service.signup = function (req, res) {
         );
 
         // Then save the user
-        user.save(function (err) {
-          // Remove sensitive data before login
-          user.password = undefined;
-          user.salt = undefined;
+        user
+          .save()
+          .then(function () {
+            // Remove sensitive data before login
+            user.password = undefined;
+            user.salt = undefined;
 
-          done(err, user);
-        });
+            done(null, user);
+          })
+          .catch(done);
       },
 
       // Send email
@@ -552,12 +555,8 @@ service.removeOAuthProvider = function (req, res) {
     user.markModified('additionalProvidersData');
   }
 
-  user.save(function (err) {
-    if (err) {
-      return res.status(400).send({
-        message: errorService.getErrorMessage(err),
-      });
-    } else {
+  user.save().then(
+    function () {
       req.login!(user, function (err) {
         if (err) {
           return res.status(400).send(err);
@@ -566,8 +565,13 @@ service.removeOAuthProvider = function (req, res) {
         // Remove sensitive data before sending out
         res.json(userProfile.sanitizeOwnProfile(user));
       });
-    }
-  });
+    },
+    function (err: Error) {
+      res.status(400).send({
+        message: errorService.getErrorMessage(err),
+      });
+    },
+  );
 };
 
 /**
@@ -754,10 +758,12 @@ service.resendConfirmation = function (req, res) {
           user,
           authenticationService.generateEmailToken(user, salt),
         );
-        user.save(function (err: Error | null) {
-          if (err) return done(err);
-          done(null, user);
-        });
+        user
+          .save()
+          .then(function () {
+            done(null, user);
+          })
+          .catch(done);
       },
 
       // Send email

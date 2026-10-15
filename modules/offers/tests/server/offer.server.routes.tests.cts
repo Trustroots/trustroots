@@ -15,13 +15,6 @@ import type {
 } from '../../../../testutils/server/model-contracts.mts';
 const should: typeof import('should') = require('should');
 const request: typeof import('supertest') = require('supertest');
-type WaterfallDone = (error?: Error | null) => void;
-const async: {
-  waterfall(
-    tasks: Array<(done: WaterfallDone) => void>,
-    callback: WaterfallDone,
-  ): void;
-} = require('async');
 const moment: typeof import('moment') = require('moment');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
@@ -31,35 +24,15 @@ const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
 const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
 
 type OfferQueryFilter = import('mongoose').FilterQuery<OfferRecord>;
-type OfferQueryCallback = (
-  error: import('mongoose').CallbackError | null,
-  offer: OfferDocument | null,
-) => void;
-type OffersQueryCallback = (
-  error: import('mongoose').CallbackError | null,
-  offers: OfferDocument[],
-) => void;
 
-function findOneOffer(
+async function findOneOffer(
   filter: OfferQueryFilter,
-  callback: OfferQueryCallback,
-): void {
-  const findOne = Offer.findOne as unknown as (
-    query: OfferQueryFilter,
-    done: OfferQueryCallback,
-  ) => void;
-  findOne.call(Offer, filter, callback);
+): Promise<OfferDocument | null> {
+  return Offer.findOne(filter);
 }
 
-function findOffers(
-  filter: OfferQueryFilter,
-  callback: OffersQueryCallback,
-): void {
-  const find = Offer.find as unknown as (
-    query: OfferQueryFilter,
-    done: OffersQueryCallback,
-  ) => void;
-  find.call(Offer, filter, callback);
+async function findOffers(filter: OfferQueryFilter): Promise<OfferDocument[]> {
+  return Offer.find(filter);
 }
 
 function assertPresent<T>(value: T | null | undefined): asserts value is T {
@@ -135,7 +108,7 @@ describe('Offer CRUD tests', function () {
       done();
     })().catch(done);
   });
-  beforeEach(function (doneBeforeEach) {
+  beforeEach(async function () {
     // Create user credentials
     credentials = {
       username: 'loremipsum',
@@ -240,76 +213,44 @@ describe('Offer CRUD tests', function () {
     });
 
     // Save data to the test db
-    async.waterfall(
-      [
-        // Save tribe 1
-        function (done) {
-          tribe1.save(function (err, tribe1) {
-            tribe1Id = tribe1._id;
-            done(err);
-          });
-        },
-        // Save tribe 2
-        function (done) {
-          tribe2.save(function (err, tribe2) {
-            tribe2Id = tribe2._id;
-            done(err);
-          });
-        },
-        // Save user 1 (without tribe membership)
-        function (done) {
-          utils.saveUserWithCachedPassword(user1).then(function (user1res) {
-            user1Id = user1res._id;
-            done();
-          }, done);
-        },
-        // Save user 2 (with tribe membership)
-        function (done) {
-          user2.member = [
-            {
-              tribe: tribe2Id,
-              since: new Date(),
-            },
-          ];
-          utils.saveUserWithCachedPassword(user2).then(function (user2res) {
-            user2Id = user2res._id;
-            done();
-          }, done);
-        },
-        // Save user 3 (with tribe membership)
-        function (done) {
-          user3.member = [
-            {
-              tribe: tribe1Id,
-              since: new Date(),
-            },
-          ];
-          utils.saveUserWithCachedPassword(user3).then(function (user3res) {
-            user3Id = user3res._id;
-            return done();
-          }, done);
-        },
-        // Save hosting offer 2
-        function (done) {
-          offer2.user = user2Id;
-          offer2.save(function (err, offer2) {
-            offer2Id = offer2._id;
-            done(err);
-          });
-        },
-        // Save hosting offer 3
-        function (done) {
-          offer3.user = user3Id;
-          offer3.save(function (err) {
-            done(err);
-          });
-        },
-      ],
-      function (err) {
-        should.not.exist(err);
-        doneBeforeEach(err);
+    const savedTribe1 = await tribe1.save();
+    tribe1Id = savedTribe1._id;
+
+    const savedTribe2 = await tribe2.save();
+    tribe2Id = savedTribe2._id;
+
+    // Save user 1 (without tribe membership)
+    const user1res = await utils.saveUserWithCachedPassword(user1);
+    user1Id = user1res._id;
+
+    // Save user 2 (with tribe membership)
+    user2.member = [
+      {
+        tribe: tribe2Id,
+        since: new Date(),
       },
-    );
+    ];
+    const user2res = await utils.saveUserWithCachedPassword(user2);
+    user2Id = user2res._id;
+
+    // Save user 3 (with tribe membership)
+    user3.member = [
+      {
+        tribe: tribe1Id,
+        since: new Date(),
+      },
+    ];
+    const user3res = await utils.saveUserWithCachedPassword(user3);
+    user3Id = user3res._id;
+
+    // Save hosting offer 2
+    offer2.user = user2Id;
+    const savedOffer2 = await offer2.save();
+    offer2Id = savedOffer2._id;
+
+    // Save hosting offer 3
+    offer3.user = user3Id;
+    await offer3.save();
   });
   afterEach(utils.clearDatabase);
   describe('Read offer by offer id:', function () {
@@ -507,16 +448,10 @@ describe('Offer CRUD tests', function () {
             .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
-              findOneOffer(
-                {
-                  _id: offer2Id,
-                },
-                function (err, offer) {
-                  should.not.exist(err);
-                  should.exist(offer);
-                  return done();
-                },
-              );
+              findOneOffer({ _id: offer2Id }).then(function (offer) {
+                should.exist(offer);
+                done();
+              }, done);
             });
         });
     });
@@ -537,16 +472,10 @@ describe('Offer CRUD tests', function () {
             .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
-              findOneOffer(
-                {
-                  _id: offer2Id,
-                },
-                function (err, offer) {
-                  should.not.exist(err);
-                  should.not.exist(offer);
-                  return done();
-                },
-              );
+              findOneOffer({ _id: offer2Id }).then(function (offer) {
+                should.not.exist(offer);
+                done();
+              }, done);
             });
         });
     });
@@ -890,52 +819,40 @@ describe('Offer CRUD tests', function () {
               if (offerSaveErr) return done(offerSaveErr);
 
               // Get id for offer we just saved
-              findOneOffer(
-                {
-                  user: user1Id,
-                },
-                function (offerFindErr, offer) {
-                  // Handle error
-                  if (offerFindErr) return done(offerFindErr);
-                  assertPresent(offer);
+              findOneOffer({ user: user1Id }).then(function (offer) {
+                assertPresent(offer);
 
-                  // Modify offer
-                  offer.description = 'MODIFIED';
-                  offer.noOfferDescription = 'MODIFIED';
-                  offer.showOnlyInMyCircles = true;
+                // Modify offer
+                offer.description = 'MODIFIED';
+                offer.noOfferDescription = 'MODIFIED';
+                offer.showOnlyInMyCircles = true;
 
-                  // Store this for later comparison
-                  const previousUpdated = offer.updated;
+                // Store this for later comparison
+                const previousUpdated = offer.updated;
 
-                  // Update offer
-                  agent
-                    .put('/api/offers/' + offer._id)
-                    .send(offer)
-                    .expect(200)
-                    .end(function (offerPutErr, offerPutRes) {
-                      // Handle offer put error
-                      if (offerPutErr) return done(offerPutErr);
-                      offerPutRes.body.message.should.equal('Offer updated.');
-                      findOneOffer(
-                        {
-                          _id: offer._id,
-                        },
-                        function (err, offerNew) {
-                          assertPresent(offerNew);
-                          assertPresent(offerNew.description);
-                          assertPresent(offerNew.noOfferDescription);
-                          assertPresent(offerNew.updated);
-                          assertPresent(offerNew.showOnlyInMyCircles);
-                          offerNew.description.should.equal('MODIFIED');
-                          offerNew.noOfferDescription.should.equal('MODIFIED');
-                          offerNew.updated.should.not.equal(previousUpdated);
-                          offerNew.showOnlyInMyCircles.should.equal(true);
-                          return done(err);
-                        },
-                      );
-                    });
-                },
-              );
+                // Update offer
+                agent
+                  .put('/api/offers/' + offer._id)
+                  .send(offer)
+                  .expect(200)
+                  .end(function (offerPutErr, offerPutRes) {
+                    // Handle offer put error
+                    if (offerPutErr) return done(offerPutErr);
+                    offerPutRes.body.message.should.equal('Offer updated.');
+                    findOneOffer({ _id: offer._id }).then(function (offerNew) {
+                      assertPresent(offerNew);
+                      assertPresent(offerNew.description);
+                      assertPresent(offerNew.noOfferDescription);
+                      assertPresent(offerNew.updated);
+                      assertPresent(offerNew.showOnlyInMyCircles);
+                      offerNew.description.should.equal('MODIFIED');
+                      offerNew.noOfferDescription.should.equal('MODIFIED');
+                      offerNew.updated.should.not.equal(previousUpdated);
+                      offerNew.showOnlyInMyCircles.should.equal(true);
+                      done();
+                    }, done);
+                  });
+              }, done);
             });
         });
     });
@@ -957,18 +874,12 @@ describe('Offer CRUD tests', function () {
             .end(function (offerSaveErr) {
               // Handle offer save error
               if (offerSaveErr) return done(offerSaveErr);
-              findOneOffer(
-                {
-                  _id: offer2Id,
-                },
-                function (err, offer) {
-                  should.not.exist(err);
-                  assertPresent(offer);
-                  assertPresent(offer.description);
-                  offer.description.should.not.equal(offer2.description);
-                  return done();
-                },
-              );
+              findOneOffer({ _id: offer2Id }).then(function (offer) {
+                assertPresent(offer);
+                assertPresent(offer.description);
+                offer.description.should.not.equal(offer2.description);
+                done();
+              }, done);
             });
         });
     });
@@ -991,46 +902,34 @@ describe('Offer CRUD tests', function () {
               if (offerSaveErr) return done(offerSaveErr);
 
               // Get id for offer we just saved
-              findOneOffer(
-                {
-                  user: user1Id,
-                },
-                function (offerFindErr, offer) {
-                  // Handle error
-                  if (offerFindErr) return done(offerFindErr);
-                  assertPresent(offer);
+              findOneOffer({ user: user1Id }).then(function (offer) {
+                assertPresent(offer);
 
-                  // Modify offer
-                  const modifiedOffer = offer1;
-                  modifiedOffer.type = 'meet';
+                // Modify offer
+                const modifiedOffer = offer1;
+                modifiedOffer.type = 'meet';
 
-                  // Update offer
-                  agent
-                    .put('/api/offers/' + offer._id)
-                    .send(modifiedOffer)
-                    .expect(400)
-                    .end(function (offerSaveErr, offerSaveRes) {
-                      // Handle offer save error
-                      if (offerSaveErr) return done(offerSaveErr);
-                      offerSaveRes.body.message.should.equal(
-                        'You cannot update offer type.',
-                      );
-                      findOffers(
-                        {
-                          user: user1Id,
-                        },
-                        function (err, offers) {
-                          offers.length.should.equal(1);
-                          const [savedOffer] = offers;
-                          assertPresent(savedOffer);
-                          assertPresent(savedOffer.type);
-                          savedOffer.type.should.equal('host');
-                          return done(err);
-                        },
-                      );
-                    });
-                },
-              );
+                // Update offer
+                agent
+                  .put('/api/offers/' + offer._id)
+                  .send(modifiedOffer)
+                  .expect(400)
+                  .end(function (offerSaveErr, offerSaveRes) {
+                    // Handle offer save error
+                    if (offerSaveErr) return done(offerSaveErr);
+                    offerSaveRes.body.message.should.equal(
+                      'You cannot update offer type.',
+                    );
+                    findOffers({ user: user1Id }).then(function (offers) {
+                      offers.length.should.equal(1);
+                      const [savedOffer] = offers;
+                      assertPresent(savedOffer);
+                      assertPresent(savedOffer.type);
+                      savedOffer.type.should.equal('host');
+                      done();
+                    }, done);
+                  });
+              }, done);
             });
         });
     });
@@ -1040,9 +939,7 @@ describe('Offer CRUD tests', function () {
       const fromNow2 = moment().add(31, 'days');
       offerMeet.user = user1Id;
       offerMeet.validUntil = fromNow1.toDate();
-      offerMeet.save(function (offerMeetErr, offerMeetSaved) {
-        // Handle save error
-        if (offerMeetErr) return done(offerMeetErr);
+      offerMeet.save().then(function (offerMeetSaved) {
         moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
         agent
           .post('/api/auth/signin')
@@ -1061,29 +958,24 @@ describe('Offer CRUD tests', function () {
               .end(function (offerPutErr) {
                 // Handle offer put error
                 if (offerPutErr) return done(offerPutErr);
-                findOneOffer(
-                  {
-                    _id: offerMeetSaved._id,
-                  },
-                  function (err, offerNew) {
-                    assertPresent(offerNew);
-                    moment(offerNew.validUntil)
-                      .diff(now, 'days')
-                      .should.equal(30);
-                    return done(err);
-                  },
-                );
+                findOneOffer({ _id: offerMeetSaved._id }).then(function (
+                  offerNew,
+                ) {
+                  assertPresent(offerNew);
+                  moment(offerNew.validUntil)
+                    .diff(now, 'days')
+                    .should.equal(30);
+                  done();
+                }, done);
               });
           });
-      });
+      }, done);
     });
     it.skip('should be keep `validUntil` value to previously saved when updating offer', function (done) {
       const now = moment();
       offerMeet.user = user1Id;
       offerMeet.validUntil = moment().add(2, 'days').toDate();
-      offerMeet.save(function (offerMeetErr, offerMeetSaved) {
-        // Handle save error
-        if (offerMeetErr) return done(offerMeetErr);
+      offerMeet.save().then(function (offerMeetSaved) {
         moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
         agent
           .post('/api/auth/signin')
@@ -1101,21 +993,16 @@ describe('Offer CRUD tests', function () {
               .end(function (offerPutErr) {
                 // Handle offer put error
                 if (offerPutErr) return done(offerPutErr);
-                findOneOffer(
-                  {
-                    _id: offerMeetSaved._id,
-                  },
-                  function (err, offerNew) {
-                    assertPresent(offerNew);
-                    moment(offerNew.validUntil)
-                      .diff(now, 'days')
-                      .should.equal(2);
-                    return done(err);
-                  },
-                );
+                findOneOffer({ _id: offerMeetSaved._id }).then(function (
+                  offerNew,
+                ) {
+                  assertPresent(offerNew);
+                  moment(offerNew.validUntil).diff(now, 'days').should.equal(2);
+                  done();
+                }, done);
               });
           });
-      });
+      }, done);
     });
     it.skip('should default to 30 days from now when attempting to set `validUntil` value to over 30 days from now', function (done) {
       const now = moment();
@@ -1123,9 +1010,7 @@ describe('Offer CRUD tests', function () {
       const fromNow2 = moment().add(32, 'days');
       offerMeet.user = user1Id;
       offerMeet.validUntil = fromNow1.toDate();
-      offerMeet.save(function (offerMeetErr, offerMeetSaved) {
-        // Handle save error
-        if (offerMeetErr) return done(offerMeetErr);
+      offerMeet.save().then(function (offerMeetSaved) {
         moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
         agent
           .post('/api/auth/signin')
@@ -1144,22 +1029,19 @@ describe('Offer CRUD tests', function () {
               .end(function (offerPutErr) {
                 // Handle offer put error
                 if (offerPutErr) return done(offerPutErr);
-                findOneOffer(
-                  {
-                    _id: offerMeetSaved._id,
-                  },
-                  function (err, offerNew) {
-                    assertPresent(offerNew);
-                    // We set it to 32, but it should default to 30 days
-                    moment(offerNew.validUntil)
-                      .diff(now, 'days')
-                      .should.equal(30);
-                    return done(err);
-                  },
-                );
+                findOneOffer({ _id: offerMeetSaved._id }).then(function (
+                  offerNew,
+                ) {
+                  assertPresent(offerNew);
+                  // We set it to 32, but it should default to 30 days
+                  moment(offerNew.validUntil)
+                    .diff(now, 'days')
+                    .should.equal(30);
+                  done();
+                }, done);
               });
           });
-      });
+      }, done);
     });
     it.skip('should default to 30 days from now when attempting to set `validUntil` value to past', function (done) {
       const now = moment();
@@ -1167,9 +1049,7 @@ describe('Offer CRUD tests', function () {
       const fromNow2 = moment().subtract(1, 'days');
       offerMeet.user = user1Id;
       offerMeet.validUntil = fromNow1.toDate();
-      offerMeet.save(function (offerMeetErr, offerMeetSaved) {
-        // Handle save error
-        if (offerMeetErr) return done(offerMeetErr);
+      offerMeet.save().then(function (offerMeetSaved) {
         moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
         agent
           .post('/api/auth/signin')
@@ -1188,22 +1068,19 @@ describe('Offer CRUD tests', function () {
               .end(function (offerPutErr) {
                 // Handle offer put error
                 if (offerPutErr) return done(offerPutErr);
-                findOneOffer(
-                  {
-                    _id: offerMeetSaved._id,
-                  },
-                  function (err, offerNew) {
-                    assertPresent(offerNew);
-                    // We set it to -2 days, but it should default to 30 days
-                    moment(offerNew.validUntil)
-                      .diff(now, 'days')
-                      .should.equal(30);
-                    return done(err);
-                  },
-                );
+                findOneOffer({ _id: offerMeetSaved._id }).then(function (
+                  offerNew,
+                ) {
+                  assertPresent(offerNew);
+                  // We set it to -2 days, but it should default to 30 days
+                  moment(offerNew.validUntil)
+                    .diff(now, 'days')
+                    .should.equal(30);
+                  done();
+                }, done);
               });
           });
-      });
+      }, done);
     });
     it.skip('should remove reactivation flag field when updating offer', function (done) {
       agent
@@ -1216,10 +1093,7 @@ describe('Offer CRUD tests', function () {
 
           // Add field to offer
           offer2.reactivateReminderSent = new Date();
-          offer2.save(function (offerSaveErr, offerSavedRes) {
-            // Handle offer save error
-            if (offerSaveErr) return done(offerSaveErr);
-
+          offer2.save().then(function (offerSavedRes) {
             // Save a new offer
             agent
               .put('/api/offers/' + offerSavedRes._id)
@@ -1228,18 +1102,13 @@ describe('Offer CRUD tests', function () {
               .end(function (offerSaveErr) {
                 // Handle offer save error
                 if (offerSaveErr) return done(offerSaveErr);
-                findOneOffer(
-                  {
-                    user: user2Id,
-                  },
-                  function (err, offer) {
-                    assertPresent(offer);
-                    should.not.exist(offer.reactivateReminderSent);
-                    return done(err);
-                  },
-                );
+                findOneOffer({ user: user2Id }).then(function (offer) {
+                  assertPresent(offer);
+                  should.not.exist(offer.reactivateReminderSent);
+                  done();
+                }, done);
               });
-          });
+          }, done);
         });
     });
   });

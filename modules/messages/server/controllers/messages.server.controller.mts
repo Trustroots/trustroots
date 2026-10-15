@@ -643,34 +643,45 @@ service.send = async function (req, res) {
         User.findOne({
           _id: body.userTo,
           ...publicityLimit,
-        }).exec(function (err, receiver) {
-          // If we were unable to find the receiver, return the error and stop here
-          if (err || !receiver) {
-            return res.status(404).send({
-              message: 'Member you are writing to does not exist.',
-            });
-          }
-          done();
-        });
+        })
+          .exec()
+          .then(
+            function (receiver) {
+              // If we were unable to find the receiver, return the error and stop here
+              if (!receiver) {
+                return res.status(404).send({
+                  message: 'Member you are writing to does not exist.',
+                });
+              }
+              done();
+            },
+            function () {
+              return res.status(404).send({
+                message: 'Member you are writing to does not exist.',
+              });
+            },
+          );
       },
       // Check if this is first message to this thread (=does the thread object exist?)
       function (done: WaterfallDone<[ThreadEndpointDocument | null]>) {
-        Thread.findOne(
-          {
-            // User id's can be either way around in thread handle, so we gotta test for both situations
-            $or: [
-              {
-                userTo: user._id,
-                userFrom: body.userTo,
-              },
-              {
-                userTo: body.userTo,
-                userFrom: user._id,
-              },
-            ],
+        Thread.findOne({
+          // User id's can be either way around in thread handle, so we gotta test for both situations
+          $or: [
+            {
+              userTo: user._id,
+              userFrom: body.userTo,
+            },
+            {
+              userTo: body.userTo,
+              userFrom: user._id,
+            },
+          ],
+        }).then(
+          function (thread) {
+            done(null, thread);
           },
-          function (err, thread) {
-            done(err, thread);
+          function (err) {
+            done(err);
           },
         );
       },
@@ -679,34 +690,37 @@ service.send = async function (req, res) {
       function (thread: ThreadEndpointDocument | null, done: WaterfallDone) {
         // If this was first message to the thread
         if (!thread) {
-          User.findById(user._id, 'description').exec(function (err, sender) {
-            // Handle errors
-            if (err) {
-              return done(err);
-            }
-            const plainText = textService.plainText as (
-              value: string,
-              keepNewLines?: boolean,
-            ) => string;
-            const descriptionLength = sender?.description
-              ? plainText(sender.description).length
-              : 0;
+          User.findById(user._id, 'description')
+            .exec()
+            .then(
+              function (sender) {
+                const plainText = textService.plainText as (
+                  value: string,
+                  keepNewLines?: boolean,
+                ) => string;
+                const descriptionLength = sender?.description
+                  ? plainText(sender.description).length
+                  : 0;
 
-            // If the sender has too empty description, return an error
-            if (descriptionLength < config.profileMinimumLength) {
-              return res.status(400).send({
-                error: 'empty-profile',
-                limit: config.profileMinimumLength,
-                message:
-                  descriptionLength === 0
-                    ? 'Please fill out your profile description before you send messages.'
-                    : 'Please write longer profile description before you send messages.',
-              });
-            }
+                // If the sender has too empty description, return an error
+                if (descriptionLength < config.profileMinimumLength) {
+                  return res.status(400).send({
+                    error: 'empty-profile',
+                    limit: config.profileMinimumLength,
+                    message:
+                      descriptionLength === 0
+                        ? 'Please fill out your profile description before you send messages.'
+                        : 'Please write longer profile description before you send messages.',
+                  });
+                }
 
-            // Continue
-            done(err);
-          });
+                // Continue
+                done();
+              },
+              function (err) {
+                done(err);
+              },
+            );
         } else {
           // It wasn't first message to this thread
           done();
@@ -1177,34 +1191,36 @@ service.sync = function (req, res) {
             created: -1,
           })
           .select(messageFields)
-          .exec(function (err, messages) {
-            if (err) {
-              return done(err);
-            }
+          .exec()
+          .then(
+            function (messages) {
+              // Sanitize messages
+              messages = sanitizeMessages(messages);
 
-            // Sanitize messages
-            messages = sanitizeMessages(messages);
+              // Collect user ids
+              let userIds: string[] = [];
 
-            // Collect user ids
-            let userIds: string[] = [];
+              // Re-group messages by users
+              data.messages = _.groupBy(messages, function (row) {
+                // Collect user id
+                userIds.push(row.userTo.toString());
+                userIds.push(row.userFrom.toString());
 
-            // Re-group messages by users
-            data.messages = _.groupBy(messages, function (row) {
-              // Collect user id
-              userIds.push(row.userTo.toString());
-              userIds.push(row.userFrom.toString());
+                // Determines key of the group
+                if (row.userTo === user._id) {
+                  return row.userFrom;
+                }
+                return row.userTo;
+              });
 
-              // Determines key of the group
-              if (row.userTo === user._id) {
-                return row.userFrom;
-              }
-              return row.userTo;
-            });
-
-            // Ensure we have only one of each user ids
-            userIds = _.uniq(userIds);
-            done(err, userIds);
-          });
+              // Ensure we have only one of each user ids
+              userIds = _.uniq(userIds);
+              done(null, userIds);
+            },
+            function (err) {
+              done(err);
+            },
+          );
       },
       // Collect users
       function (userIds: string[], done: WaterfallDone) {
@@ -1215,10 +1231,16 @@ service.sync = function (req, res) {
           },
         })
           .select(userMiniService.userMiniProfileFields)
-          .exec(function (err, users) {
-            data.users = users;
-            done(err);
-          });
+          .exec()
+          .then(
+            function (users) {
+              data.users = users;
+              done();
+            },
+            function (err) {
+              done(err);
+            },
+          );
       },
       // Return the package
       function () {

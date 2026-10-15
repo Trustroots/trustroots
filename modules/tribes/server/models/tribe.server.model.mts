@@ -4,7 +4,7 @@ import mongoose, { type HydratedDocument, type Types } from 'mongoose';
 import moment from 'moment';
 import mongoosePaginate from 'mongoose-paginate';
 import uniqueValidation from '../../../../config/lib/mongoose-unique-validation.mjs';
-import urlslugs from 'mongoose-url-slugs';
+import urlslugs from '../../../../config/lib/mongoose-url-slugs.mjs';
 import speakingurl from 'speakingurl';
 import validator from 'validator';
 import sanitizeHtml from 'sanitize-html';
