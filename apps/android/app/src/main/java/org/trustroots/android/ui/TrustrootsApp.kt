@@ -11,11 +11,13 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -469,6 +471,7 @@ private fun MemberShell(
     }
     CompositionLocalProvider(LocalLeaveGuard provides leaveGuard) {
     Scaffold(
+        contentWindowInsets = WindowInsets.safeDrawing,
         bottomBar = {
             MemberNavigationBar(
                 destination = destination,
@@ -490,20 +493,24 @@ private fun MemberShell(
                 },
             )
         },
-    ) { insets ->
-        Column(Modifier.fillMaxSize().padding(insets).consumeWindowInsets(insets)) {
+    ) { contentPadding ->
+        Column(Modifier.fillMaxSize()) {
             offlineSavedAt?.let { savedAt ->
                 Text(
                     "Offline · Showing saved data from " +
                         SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ROOT).format(Date(savedAt)),
                     color = Color.White,
-                    modifier = Modifier.fillMaxWidth().background(TrustrootsGreen).padding(8.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(TrustrootsGreen)
+                        .padding(top = contentPadding.calculateTopPadding())
+                        .padding(8.dp),
                 )
             }
             Box(Modifier.fillMaxWidth().weight(1f)) {
             val browser = browserRoute
             if (browser != null) {
-                TrustrootsBrowser(route = browser, onClose = { browserRoute = null })
+                TrustrootsBrowser(route = browser, onClose = { browserRoute = null }, contentPadding = contentPadding)
             } else if (destination == Destination.Menu) {
                 when (menuPage) {
                     MenuPage.Menu -> MenuScreen(
@@ -524,12 +531,10 @@ private fun MemberShell(
                             searchNavigationID++
                             navigateTo(Destination.Search)
                         },
-                        openCircles = {
-                            circlesNavigationID++
-                            navigateTo(Destination.Circles)
-                        },
+                        openCircles = { circlesNavigationID++; navigateTo(Destination.Circles) },
                         openAccount = { menuPage = MenuPage.Account },
                         openBrowser = { browserRoute = it },
+                        contentPadding = contentPadding,
                     )
                     MenuPage.Profile -> MemberProfileScreen(
                         api = api,
@@ -540,6 +545,7 @@ private fun MemberShell(
                         onOwnProfileSaved = { updated ->
                             onMemberUpdated(MobileMember(updated.username, updated.displayName))
                         },
+                        contentPadding = contentPadding,
                     )
                     MenuPage.EditProfile -> MemberProfileScreen(
                         api = api,
@@ -551,24 +557,28 @@ private fun MemberShell(
                         onOwnProfileSaved = { updated ->
                             onMemberUpdated(MobileMember(updated.username, updated.displayName))
                         },
+                        contentPadding = contentPadding,
                     )
                     MenuPage.Contacts -> ContactsScreen(
                         api = api,
                         session = session,
                         onSessionInvalidated = onSessionInvalidated,
                         onBack = { menuPage = MenuPage.Menu },
+                        contentPadding = contentPadding,
                     )
                     MenuPage.Host -> HostOfferScreen(
                         api = api,
                         session = session,
                         onSessionInvalidated = onSessionInvalidated,
                         onBack = { menuPage = MenuPage.Menu },
+                        contentPadding = contentPadding,
                     )
                     MenuPage.Account -> AccountSettingsScreen(
                         api = api,
                         session = session,
                         onSessionInvalidated = onSessionInvalidated,
                         onBack = { menuPage = MenuPage.Menu },
+                        contentPadding = contentPadding,
                         onResetPassword = {
                             browserRoute = BrowserRoute(
                                 title = "Reset password",
@@ -587,7 +597,7 @@ private fun MemberShell(
             } else {
                 when (destination) {
                     Destination.Circles -> key(circlesNavigationID) {
-                        CirclesScreen(api, session, onSessionInvalidated)
+                        CirclesScreen(api, session, onSessionInvalidated, contentPadding = contentPadding)
                     }
                     Destination.Search -> key(searchNavigationID) {
                         SearchHubScreen(
@@ -595,12 +605,13 @@ private fun MemberShell(
                             session,
                             onSessionInvalidated,
                             initialTab = searchInitialTab,
+                            contentPadding = contentPadding,
                         )
                     }
                     Destination.Messages -> key(messagesNavigationID) {
-                        MessageInboxScreen(api, session, onSessionInvalidated, initialMessageSender)
+                        MessageInboxScreen(api, session, onSessionInvalidated, initialMessageSender, contentPadding = contentPadding)
                     }
-                    else -> PlaceholderScreen(destination = destination, session = session)
+                    else -> PlaceholderScreen(destination = destination, session = session, contentPadding = contentPadding)
                 }
             }
             }
@@ -684,11 +695,14 @@ internal fun MenuScreen(
     openCircles: () -> Unit,
     openAccount: () -> Unit,
     openBrowser: (BrowserRoute) -> Unit,
+    contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     val buildDate = rememberBuildDate()
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding())
+            .padding(contentPadding.horizontalInset())
             .verticalScroll(rememberScrollState())
             .padding(top = 12.dp),
     ) {
@@ -838,6 +852,7 @@ internal fun AccountScreen(
     onCheckAccount: () -> Unit,
     onResetPassword: () -> Unit,
     onSignedOut: () -> Unit,
+    contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -872,6 +887,7 @@ internal fun AccountScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding())
             .padding(20.dp),
     ) {
         NativeBackButton(onBack)
@@ -963,8 +979,8 @@ internal fun ApkUpdateSettings(
 }
 
 @Composable
-private fun PlaceholderScreen(destination: Destination, session: MemberSession) {
-    Column(Modifier.padding(20.dp)) {
+private fun PlaceholderScreen(destination: Destination, session: MemberSession, contentPadding: PaddingValues = PaddingValues.Zero) {
+    Column(Modifier.padding(contentPadding).padding(20.dp)) {
         Text(destination.label, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(10.dp))
         Text("Signed in as ${session.member.displayName} (@${session.member.username}).")

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,10 +44,11 @@ internal fun HostResultCard(
     api: MobileApiClient,
     session: MemberSession,
     maxHeight: Dp = Dp.Unspecified,
+    horizontalInset: PaddingValues = PaddingValues.Zero,
     onClose: () -> Unit,
     onOpenProfile: () -> Unit,
 ) {
-    Card(onClick = onOpenProfile, enabled = offer.user.username != null, modifier = Modifier.fillMaxWidth().testTag("hostResultCard")) {
+    Card(onClick = onOpenProfile, enabled = offer.user.username != null, modifier = Modifier.fillMaxWidth().padding(horizontalInset).testTag("hostResultCard")) {
         Column(Modifier.heightIn(max = maxHeight).verticalScroll(rememberScrollState()).padding(12.dp)) {
             val status = when {
                 isMeet -> "Available to meet"

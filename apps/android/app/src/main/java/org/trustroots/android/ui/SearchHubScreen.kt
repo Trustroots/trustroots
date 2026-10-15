@@ -3,6 +3,7 @@ package org.trustroots.android.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -56,6 +57,7 @@ internal fun SearchHubScreen(
     session: MemberSession,
     onSessionInvalidated: () -> Unit,
     initialTab: Int = 0,
+    contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     var tab by remember(initialTab) { mutableIntStateOf(initialTab) }
     var profileOpen by remember { mutableStateOf(false) }
@@ -64,11 +66,13 @@ internal fun SearchHubScreen(
     when (tab) {
         0 -> HostMapScreen(
             api, session, onSessionInvalidated,
+            contentPadding = contentPadding,
             onProfileOpenChange = { profileOpen = it },
             searchMode = { SearchModeMenu(tab, selectMode) },
         )
         else -> MemberSearchScreen(
             api, session, onSessionInvalidated,
+            contentPadding = contentPadding,
             onProfileOpenChange = { profileOpen = it },
             searchMode = { SearchModeMenu(tab, selectMode) },
             onSwitchToMap = { selectMode(0) },
