@@ -2,14 +2,14 @@
  * Shared, anonymous client/server fixture generators used by tests.
  */
 
-import { ObjectId } from 'mongodb';
+import { randomBytes } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import lodash from 'lodash';
 import type { PublicProviderIdentities } from '../../modules/users/shared/profile.ts';
 
 const { defaultsDeep, range, sample, sampleSize } = lodash;
 
-export type FixtureId = string | Pick<ObjectId, 'toString' | 'toHexString'>;
+export type FixtureId = string | { toString(): string; toHexString(): string };
 
 /** The common identity fields shared by generated server and client users. */
 export interface UserFixture {
@@ -179,7 +179,7 @@ function generateServerUser(overrides: GenerateUserOptions): ServerUserFixture {
 export { generateValidUsername };
 
 export function generateId(): string {
-  return new ObjectId().toString();
+  return randomBytes(12).toString('hex');
 }
 
 export function generateClientUser(): ClientUserFixture;
