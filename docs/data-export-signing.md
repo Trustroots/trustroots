@@ -1,18 +1,18 @@
 # Signing the member data export
 
-`GET /api/users/export` serves a member their own profile, contacts, and hosting offers as `trustroots-data.json`. From version 2 of that format the file also carries a `signature`: a Nostr attestation from Trustroots that the data in it is what Trustroots holds. The point is [issue #2669](https://github.com/Trustroots/trustroots/issues/2669) — a fork that receives the file needs some way to tell it from a file the member typed by hand, otherwise the exported social graph carries no weight and "forkable" stops at "you can copy your own text out".
+`GET /api/users/export` serves a member their own profile, circles, contacts, hosting offers, written messages, and written experiences as `trustroots-data-<username>-<UTC timestamp>.json`. From version 2 of that format the file also carries a `signature`: a Nostr attestation from Trustroots that the data in it is what Trustroots holds. The point is [issue #2669](https://github.com/Trustroots/trustroots/issues/2669) — a fork that receives the file needs some way to tell it from a file the member typed by hand, otherwise the exported social graph carries no weight and "forkable" stops at "you can copy your own text out".
 
 ## Determinism comes first
 
 A signature over bytes that change on every download attests nothing useful: two downloads a minute apart would produce two unrelated digests, and nobody could tell a changed digest from an unchanged one. So before anything is signed, three sources of variation are removed.
 
-**Request-time metadata is excluded from the signed payload.** `exportedAt` is stamped when the request arrives, so it stays in the file — it is genuinely useful to the member — but sits outside what the signature covers. The signature's `signed` array names exactly what is covered: `format`, `version`, `profile`, `contacts`, `hostingOffers`. Nothing else.
+**Request-time metadata is excluded from the signed payload.** `exportedAt` is stamped when the request arrives, so it stays in the file — it is genuinely useful to the member — but sits outside what the signature covers. The signature's `signed` array names exactly what is covered: `format`, `version`, `profile`, `contacts`, `hostingOffers`, `circles`, `messages`, and `experiences`.
 
 **Key order is fixed by canonicalisation.** Mongo, Mongoose, and Express between them make no promise about the order of object keys. The signed bytes are [RFC 8785 JCS](https://www.rfc-editor.org/rfc/rfc8785) canonical JSON: keys sorted by UTF-16 code unit, no insignificant whitespace, ECMAScript number formatting. That also means a file that has been through a text editor or a re-save still verifies, because the verifier re-canonicalises rather than comparing raw bytes.
 
-**List order is fixed by sorting.** JCS does not reorder arrays, and the contacts and hosting-offer aggregations return documents in no guaranteed order — this is the part that canonicalisation alone would have missed. `contacts` and `hostingOffers` are sorted by `_id`, with the item's own canonical form as a tiebreak, before they are digested *and* before they are sent, so the delivered file canonicalises to exactly what was signed.
+**List order is fixed by sorting.** JCS does not reorder arrays, and the contacts and hosting-offer aggregations return documents in no guaranteed order — this is the part that canonicalisation alone would have missed. `contacts`, `hostingOffers`, `circles`, `messages`, and `experiences` are sorted by `_id`, with the item's own canonical form as a tiebreak, before they are digested _and_ before they are sent, so the delivered file canonicalises to exactly what was signed.
 
-The result is that the *attested content* is a pure function of the member's data: two downloads of unchanged data yield the same section digests and the same root digest. The attestation itself is not byte-identical between downloads — `created_at` moves and Schnorr signing uses fresh randomness — and it does not need to be. The root digest is the stable identifier of a member's exported state.
+The result is that the _attested content_ is a pure function of the member's data: two downloads of unchanged data yield the same section digests and the same root digest. The attestation itself is not byte-identical between downloads — `created_at` moves and Schnorr signing uses fresh randomness — and it does not need to be. The root digest is the stable identifier of a member's exported state.
 
 ## What is signed, and how
 
@@ -21,8 +21,8 @@ The signature is detached: it sits alongside the payload rather than inside it, 
 ```json
 "signature": {
   "alg": "nostr-schnorr-secp256k1/jcs-sha256",
-  "signed": ["format", "version", "profile", "contacts", "hostingOffers"],
-  "sections": { "profile": "<sha256>", "contacts": "<sha256>", "hostingOffers": "<sha256>" },
+  "signed": ["format", "version", "profile", "contacts", "hostingOffers", "circles", "messages", "experiences"],
+  "sections": { "profile": "<sha256>", "contacts": "<sha256>", "hostingOffers": "<sha256>", "circles": "<sha256>", "messages": "<sha256>", "experiences": "<sha256>" },
   "root": "<sha256>",
   "event": { "kind": 30410, "pubkey": "…", "created_at": 1788609600, "tags": [["x", "<root>"], ["m", "application/json"], ["d", "<username>"], ["alt", "Trustroots member data export attestation"]], "content": "", "id": "…", "sig": "…" }
 }
@@ -32,7 +32,7 @@ Each section is digested separately, and the root digest covers the section dige
 
 The envelope is a plain NIP-01 event — BIP-340 Schnorr over secp256k1, `id` the SHA-256 of the serialised event array — so any Nostr library verifies it without knowing anything about Trustroots. The tag vocabulary is borrowed from [NIP-94](https://github.com/nostr-protocol/nips/blob/master/94.md) (`x`, `m`, `alt`), but not its kind 1063: 1063 means "a file is downloadable at this URL", and this file is generated on demand behind authentication and never lives at an address. Kind **30410 is a placeholder** pending an assignment in the nostroots `nr-common` kind registry. The attestation travels inside the exported file rather than to a relay, so replaceable-kind semantics never come into play.
 
-The member's data is deliberately *not* restructured into Nostr events. Designing kinds for hosting offers and contact edges — and deciding whose key signs a contact edge — is a protocol design project. Nostroots is where Trustroots data becomes Nostr-native; this export attests what Trustroots holds.
+The member's data is deliberately _not_ restructured into Nostr events. Designing kinds for hosting offers and contact edges — and deciding whose key signs a contact edge — is a protocol design project. Nostroots is where Trustroots data becomes Nostr-native; this export attests what Trustroots holds.
 
 ## Verifying
 
@@ -42,13 +42,13 @@ node bin/verify-data-export.mjs trustroots-data.json
 
 Exit 0 when every check passes, 1 otherwise. It needs no server, no database, and no network. It checks, in order: the format and version; each section's digest; the root against the section digests and against the event's `x` tag; the event id and Schnorr signature; and the signing key against the pinned key history in `config/data-export-signing-keys.json`.
 
-It reports rather than merely passing or failing, because a fork operator deciding whether to trust an imported social graph needs to know *which* section failed and what the signing key's status is. It also distinguishes an absent section from an empty one, so a partial file cannot be mistaken for a member with no contacts.
+It reports rather than merely passing or failing, because a fork operator deciding whether to trust an imported social graph needs to know _which_ section failed and what the signing key's status is. It also distinguishes an absent section from an empty one, so a partial file cannot be mistaken for a member with no contacts.
 
 ## What a signature does not prove
 
 **It does not prove when the file was signed.** NIP-01 `created_at` is chosen by whoever holds the key, so a thief with the key can mint a signature dated last year. A signature proves authorship, not time. This matters directly for the property asked for in #2669 — that signatures made before a compromise stay good — which a signature alone cannot deliver.
 
-What this design does deliver today is the weaker, honest version: once a key is declared compromised, a verifier can reject signatures whose claimed date falls after the compromise, and can report that an earlier claimed date is *unproven*. The verifier says so in those words rather than returning a bare "valid".
+What this design does deliver today is the weaker, honest version: once a key is declared compromised, a verifier can reject signatures whose claimed date falls after the compromise, and can report that an earlier claimed date is _unproven_. The verifier says so in those words rather than returning a bare "valid".
 
 Making the strong version true needs an independent time anchor. The intended follow-up is OpenTimestamps: accumulate the day's root digests, publish the Merkle root, and stamp it so that Bitcoin attests the root existed no later than a given block. That gives a genuine upper bound on the signing time from a source Trustroots cannot forge. The sectioned root digest exists so that this is an addition rather than a format break. It is deliberately not part of this change.
 
@@ -66,7 +66,7 @@ or as `dataExportSigning.nsec` in `config/env/local.js`. **An nsec must never be
 
 ## Key distribution
 
-A key published on trustroots.org is exactly as trustworthy as trustroots.org, which is the thing a fork exists to stop depending on. No single channel fixes that. Together, these make a *silent* key substitution require compromising several independent parties, and a *loud* one visible. That is the achievable property; claiming more would be false.
+A key published on trustroots.org is exactly as trustworthy as trustroots.org, which is the thing a fork exists to stop depending on. No single channel fixes that. Together, these make a _silent_ key substitution require compromising several independent parties, and a _loud_ one visible. That is the achievable property; claiming more would be false.
 
 1. `config/data-export-signing-keys.json` in this repository — the pinned history the verifier reads. A fork operator who audits it once inherits the trust anchor. This is the strongest link, and it is the Debian `debian-archive-keyring` model: distribute the key with the client, not from the server being verified.
 2. A signed git tag in `Trustroots/trustroots`, so the introduction is timestamped and third-party-mirrored.
@@ -78,9 +78,9 @@ A key published on trustroots.org is exactly as trustworthy as trustroots.org, w
 
 Rotate annually as well as on suspicion, so the mechanism is exercised rather than theoretical.
 
-*Retirement* and *revocation* are different, and the key history records both. A retired key's old signatures stay good — set `status: "retired"` and `validUntil`. A compromised key's signatures are good only up to the compromise boundary — set `status: "compromised"` and `revokedAt`, and expect the verifier to say that any earlier claimed date is unproven until the time anchor exists.
+_Retirement_ and _revocation_ are different, and the key history records both. A retired key's old signatures stay good — set `status: "retired"` and `validUntil`. A compromised key's signatures are good only up to the compromise boundary — set `status: "compromised"` and `revokedAt`, and expect the verifier to say that any earlier claimed date is unproven until the time anchor exists.
 
-Each history entry should be signed by the *next* key and, ideally, counter-signed by a long-lived offline root key held by more than one volunteer. Otherwise whoever steals the signing key can also rewrite its own obituary.
+Each history entry should be signed by the _next_ key and, ideally, counter-signed by a long-lived offline root key held by more than one volunteer. Otherwise whoever steals the signing key can also rewrite its own obituary.
 
 To rotate:
 

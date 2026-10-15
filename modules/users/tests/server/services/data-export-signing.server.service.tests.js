@@ -6,7 +6,7 @@ const {
 const nip19 = require('nostr-tools/nip19');
 require('should');
 
-const config = require('../../../../../config/config.mjs');
+const config = require('../../../../../config/config.mts');
 
 const canonical = require('../../../server/services/data-export-canonical.server.service.mjs');
 
@@ -75,6 +75,9 @@ describe('Member data export signing', () => {
       'profile',
       'contacts',
       'hostingOffers',
+      'circles',
+      'messages',
+      'experiences',
     ]);
     signature.sections.should.deepEqual(
       canonical.digestPayload(payload).sections,
