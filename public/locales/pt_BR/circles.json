@@ -1,6 +1,6 @@
 {
-    "{{count, number}} members": "Um membro",
-    "{{count, number}} members_plural": "{{count, number}} membros",
+    "{{count, number}} members_one": "Um membro",
+    "{{count, number}} members_other": "{{count, number}} membros",
     "Sign up with Trustroots": "Inscreva-se no Trustroots",
     "Send us suggestions!": "Envie-nos sugestões!",
     "No members yet": "Sem membros ainda",

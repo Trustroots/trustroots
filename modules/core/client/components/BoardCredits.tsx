@@ -66,9 +66,9 @@ export default function BoardCredits({
                 (
                 <a
                   href={credit.license_url}
-                  title={t<string>('License')}
+                  title={t('License')}
                   rel="license noopener"
-                  aria-label={t<string>('License')}
+                  aria-label={t('License')}
                 >
                   {credit.license}
                 </a>

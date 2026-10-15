@@ -56,7 +56,7 @@ export default function AppHeader({
         className="btn btn-primary sr-only sr-only-focusable sr-helper"
         href="#tr-main"
       >
-        {t<string>('Skip to main content')}
+        {t('Skip to main content')}
       </a>
       {user?.username ? (
         <NavigationLoggedIn

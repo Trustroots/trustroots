@@ -1,9 +1,9 @@
 {
     "Accommodation": "Mój dom",
     "At most {{count}} guests": {
-        "At most {{count}} guests._0": "Maksymalnie {{count}} gość.",
-        "At most {{count}} guests._1": "Maksymalnie {{count}} gości.",
-        "At most {{count}} guests._2": ""
+        "At most {{count}} guests._one": "Maksymalnie {{count}} gość.",
+        "At most {{count}} guests._few": "Maksymalnie {{count}} gości.",
+        "At most {{count}} guests._many": ""
     },
     "Bigger map": "Większa mapa",
     "Can host": "Przyjmuje gości",
@@ -28,9 +28,9 @@
     },
     "Start hosting travellers": "Zacznij przyjmować podróżnych",
     "Send a message": "Wyślij wiadomość",
-    "At most {{count}} guests._0": "Maksymalnie przyjmowali jednego gościa.",
-    "At most {{count}} guests._1": "Maksymalnie przyjmowali {{count}} gości.",
-    "At most {{count}} guests._2": "Maksymalnie przyjmowali {{count}} gości.",
+    "At most {{count}} guests._one": "Maksymalnie przyjmowali jednego gościa.",
+    "At most {{count}} guests._few": "Maksymalnie przyjmowali {{count}} gości.",
+    "At most {{count}} guests._many": "Maksymalnie przyjmowali {{count}} gości.",
     "Just making a dinner and would like to invite people over?": "Właśnie przygotowujesz kolację i chcesz zaprosić na nią więcej osób?",
     "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "Podróżujesz? Organizujesz wydarzenie? Właśnie przygotowujesz kolację i chcesz zaprosić na nią więcej osób?",
     "Add it to map!": "Dodaj to do mapy!",

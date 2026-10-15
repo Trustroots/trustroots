@@ -2,8 +2,8 @@
     "Accommodation": "Husvære",
     "At most {{count}} guests": {
         "At most {{count}} guests": {
-            "At most {{count}} guests.": "Kun én gjest.",
-            "At most {{count}} guests._plural": "Kun {{count}} gjester."
+            "At most {{count}} guests._one": "Kun én gjest.",
+            "At most {{count}} guests._other": "Kun {{count}} gjester."
         }
     },
     "Bigger map": "Større kart",
@@ -29,6 +29,6 @@
     },
     "Start hosting travellers": "Begynn å huse reisende",
     "Send a message": "Send en melding",
-    "At most {{count}} guests.": "Maksimalt en gjest.",
-    "At most {{count}} guests._plural": "Maksimalt {{count}} gjester."
+    "At most {{count}} guests._one": "Maksimalt en gjest.",
+    "At most {{count}} guests._other": "Maksimalt {{count}} gjester."
 }

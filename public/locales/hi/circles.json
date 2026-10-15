@@ -12,8 +12,8 @@
     "New circle!": "नया समुदाय!",
     "Send us suggestions!": "हमें सुझाव भेजें!",
     "Sign up with Trustroots": "Trustroots के सदस्य बने",
-    "{{count, number}} members": "एक सदस्य",
-    "{{count, number}} members_plural": "{{count, number}} सदस्य",
+    "{{count, number}} members_one": "एक सदस्य",
+    "{{count, number}} members_other": "{{count, number}} सदस्य",
     "Joined": "सम्मिलित हैं",
     "Missing your circle?": "अपनी मंडली/समुदाय को याद कर रहे हैं?"
 }

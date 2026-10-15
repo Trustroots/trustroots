@@ -46,8 +46,8 @@
         "": "Din profil ser lite tom ut."
     },
     "Yes": "Ja",
-    "{{count}} unread messages": "{{count}} oläst meddelande",
-    "{{count}} unread messages_plural": "{{count}} olästa meddelanden",
+    "{{count}} unread messages_one": "{{count}} oläst meddelande",
+    "{{count}} unread messages_other": "{{count}} olästa meddelanden",
     "Your response won't be visible to them.": "Ditt svar kommer inte att visas för personen.",
     "No": "Nej",
     "Member is not available anymore.": "Medlemmen är inte längre tillgänglig.",

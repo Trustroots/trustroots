@@ -32,11 +32,11 @@ const BackButton = ({ small, ...props }: StepButtonProps) => {
         'btn-action': !small,
         'btn-link': !small,
       })}
-      aria-label={t<string>('Previous section')}
+      aria-label={t('Previous section')}
       {...props}
     >
       <span className="icon-left" aria-hidden="true"></span>
-      {t<string>('Back')}
+      {t('Back')}
     </button>
   );
 };
@@ -52,10 +52,10 @@ const NextButton = ({ small, ...props }: StepButtonProps) => {
         'btn-action': !small,
         'btn-primary': true,
       })}
-      aria-label={t<string>('Next section')}
+      aria-label={t('Next section')}
       {...props}
     >
-      {t<string>('Next')}
+      {t('Next')}
       {small && <span className="icon-right" aria-hidden="true"></span>}
     </button>
   );
@@ -72,10 +72,10 @@ const SubmitButton = ({ small, label, ...props }: SubmitButtonProps) => {
         'btn-action': !small,
         'btn-primary': true,
       })}
-      aria-label={label || t<string>('Finish editing and save')}
+      aria-label={label || t('Finish editing and save')}
       {...props}
     >
-      {label || t<string>('Finish')}
+      {label || t('Finish')}
       {small && <span className="icon-ok" aria-hidden="true"></span>}
     </button>
   );
