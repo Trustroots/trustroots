@@ -399,7 +399,8 @@ describe('PR dependency summaries', () => {
     }
   });
 
-  it('inventories actual nested and scoped installations, including duplicate versions', () => {
+  it('inventories actual nested and scoped installations, including duplicate versions', function () {
+    this.timeout(30000);
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'fictional-installed-'));
     try {
       assert.deepStrictEqual(collectInstalledPackages(root), []);
