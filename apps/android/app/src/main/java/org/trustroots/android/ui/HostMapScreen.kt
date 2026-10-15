@@ -297,6 +297,7 @@ internal fun HostMapScreen(
             searchJob.getAndSet(null)?.cancel()
             map.removeMapListener(listener)
             map.onPause()
+            map.onDetach()
         }
     }
     profileUsername?.let { username ->
@@ -517,7 +518,6 @@ internal fun HostMapScreen(
                 api = api,
                 session = session,
                 maxHeight = resultCardMaxHeight,
-                horizontalInset = contentPadding.horizontalInset(),
                 onClose = { host = null },
                 onOpenProfile = { selected.user.username?.let { profileUsername = it } },
             )

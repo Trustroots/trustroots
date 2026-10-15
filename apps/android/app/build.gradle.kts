@@ -1,8 +1,12 @@
+import org.gradle.testing.jacoco.tasks.JacocoReport
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
+    jacoco
 }
 
+val coverageEnabled = providers.gradleProperty("trustrootsCoverage").map(String::toBoolean).orElse(false)
 val configuredApiURL = providers.gradleProperty("trustrootsApiUrl")
     .orElse("https://www.trustroots.org")
 val configuredMapboxToken = providers.gradleProperty("trustrootsMapboxToken")
@@ -57,6 +61,8 @@ android {
 
     buildTypes {
         debug {
+            enableUnitTestCoverage = coverageEnabled.get()
+            enableAndroidTestCoverage = coverageEnabled.get()
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-dev"
         }
@@ -88,6 +94,49 @@ android {
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
+}
+
+// Combine host-side unit tests and device journeys against the same debug classes.
+val debugCoverageReport = tasks.register<JacocoReport>("debugCoverageReport") {
+    val collectCoverage = coverageEnabled
+    group = "verification"
+    description = "Combine Android unit and device test coverage (requires -PtrustrootsCoverage=true)."
+    dependsOn("testDebugUnitTest", "connectedDebugAndroidTest")
+    dependsOn("compileDebugKotlin", "compileDebugJavaWithJavac")
+    sourceDirectories.setFrom(files("src/main/java"))
+    classDirectories.setFrom(
+        fileTree(layout.buildDirectory.dir("intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes")) {
+            exclude("**/R.class", "**/R\$*.class", "**/BuildConfig.class")
+        },
+        fileTree(layout.buildDirectory.dir("intermediates/javac/debug/compileDebugJavaWithJavac/classes")) {
+            exclude("**/R.class", "**/R\$*.class", "**/BuildConfig.class")
+        },
+    )
+    executionData.setFrom(fileTree(layout.buildDirectory) {
+        include("outputs/unit_test_code_coverage/debugUnitTest/*.exec")
+        include("outputs/code_coverage/debugAndroidTest/connected/**/*.ec")
+    })
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        xml.outputLocation.set(layout.buildDirectory.file("reports/coverage/debug/coverage.xml"))
+        html.outputLocation.set(layout.buildDirectory.dir("reports/coverage/debug/html"))
+    }
+    doFirst {
+        check(collectCoverage.get()) { "Pass -PtrustrootsCoverage=true to collect Android coverage." }
+        check(executionData.files.any { it.isFile }) { "No Android coverage execution data was collected." }
+    }
+}
+
+tasks.register<Exec>("debugCoverageTable") {
+    group = "verification"
+    description = "Write a Markdown table of measured Android source coverage."
+    dependsOn(debugCoverageReport)
+    commandLine(
+        "python3", "../scripts/coverage-table.py",
+        layout.buildDirectory.file("reports/coverage/debug/coverage.xml").get().asFile,
+        layout.buildDirectory.file("reports/coverage/debug/coverage.md").get().asFile,
+    )
 }
 
 dependencies {

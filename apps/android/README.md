@@ -151,6 +151,29 @@ the native UI tests on a connected Android device:
 ./gradlew connectedDebugAndroidTest
 ```
 
+Android changes also run all unit and device tests on an API 36 emulator in the
+Android debug APK workflow, publishing combined line and branch coverage tables
+in its job summary. The report includes every production package and source file,
+including untested files; only generated R and BuildConfig classes are excluded.
+JaCoCo applies its standard Kotlin bytecode filters. Coverage instrumentation is
+opt-in and does not affect ordinary debug or release builds. To generate the
+same report locally with a connected emulator:
+
+```sh
+./gradlew -PtrustrootsCoverage=true debugCoverageTable
+python3 -m unittest discover -s scripts
+```
+
+The generated table is `app/build/reports/coverage/debug/coverage.md`; the XML
+report is beside it, and the HTML report is under `html/index.html`. CI uploads
+these reports with the test results. No Android coverage threshold is enforced.
+
+For only the design regression journeys, without collecting full-suite coverage:
+
+```sh
+./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=org.trustroots.android.ui.DesignFixesJourneyTest,org.trustroots.android.ui.CirclesJourneyTest,org.trustroots.android.ui.MemberNavigationBarJourneyTest
+```
+
 When a phone and emulator are both connected, build the test APK and target the
 emulator explicitly:
 
