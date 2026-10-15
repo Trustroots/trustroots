@@ -38,6 +38,8 @@ describe('Service: profile-response', function () {
   });
 
   const profile: OwnProfile<string, Date> & {
+    nostrVerifiedNpub: string;
+    nostrVerifiedAt: Date;
     lastIpAddress: string;
     pushRegistration: Array<{ token: string }>;
     providerData: Array<{ accessToken: string }>;
@@ -68,6 +70,9 @@ describe('Service: profile-response', function () {
     pushRegistration: [{ token: 'fictional-push-token' }],
     providerData: [{ accessToken: 'fictional-provider-token' }],
     futurePrivateField: 'must stay private',
+    nostrNpub: 'npub1fictional',
+    nostrVerifiedNpub: 'npub1fictional',
+    nostrVerifiedAt: new Date('2026-01-02T03:04:05.000Z'),
     additionalProvidersData: {
       facebook: { id: 'fictional-facebook-id', accessToken: 'private' },
       twitter: { screen_name: 'fictional-twitter', accessToken: 'private' },
@@ -180,6 +185,10 @@ describe('Service: profile-response', function () {
       'pushRegistration',
       'providerData',
       'futurePrivateField',
+      'locationCoordinates',
+      'exactAddress',
+      'nostrVerifiedNpub',
+      'nostrVerifiedAt',
     ]) {
       hasRuntimeField(response, field).should.be.false();
     }
@@ -188,6 +197,8 @@ describe('Service: profile-response', function () {
   it('keeps account-editing fields for the account holder only', function () {
     const response = esmService.selectProfileResponse(profile, true);
     response.avatarVersion!.should.equal('0123456789abcdef0123456789abcdef');
+    response.nostrVerifiedAt!.should.equal(profile.nostrVerifiedAt);
+    hasRuntimeField(response, 'nostrVerifiedNpub').should.be.false();
 
     for (const field of [
       'firstName',
@@ -278,5 +289,16 @@ describe('Service: profile-response', function () {
     (
       miniProfileWithoutProviders.additionalProvidersData === undefined
     ).should.be.true();
+  });
+
+  it('omits verification status when it does not match the current saved key', function () {
+    const response = selectProfileResponse(
+      {
+        ...profile,
+        nostrVerifiedNpub: 'npub1oldkey',
+      },
+      true,
+    );
+    (response.nostrVerifiedAt === undefined).should.be.true();
   });
 });

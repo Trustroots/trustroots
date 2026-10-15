@@ -6,6 +6,10 @@ import type {
   UpdateProfileRequest,
 } from '../../shared/profile.js';
 import type { ClientOwnProfile } from '../types.js';
+import type {
+  SignedNostrEvent,
+  UnsignedNostrEvent,
+} from '../services/nostr-signers.client.js';
 
 export type UserUpdate = UpdateProfileRequest;
 
@@ -26,6 +30,29 @@ export interface ChangePasswordInput {
 export async function update(data: UserUpdate): Promise<OwnProfile> {
   const { data: user } = await axios.put<OwnProfile>('/api/users', data);
   return user;
+}
+
+export async function createNostrVerificationChallenge(): Promise<{
+  event: UnsignedNostrEvent;
+  expiresAt: string;
+}> {
+  const { data } = await axios.post<{
+    event: UnsignedNostrEvent;
+    expiresAt: string;
+  }>('/api/users/nostr/challenge');
+  return data;
+}
+
+export async function verifyNostrKey(
+  event: SignedNostrEvent,
+): Promise<ClientOwnProfile> {
+  const { data } = await axios.post<ClientOwnProfile>(
+    '/api/users/nostr/verify',
+    {
+      event,
+    },
+  );
+  return data;
 }
 
 export async function fetch(

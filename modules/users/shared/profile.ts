@@ -81,6 +81,7 @@ export interface OwnProfile<
   lastName?: string;
   email?: string;
   emailTemporary?: string;
+  nostrVerifiedAt?: Timestamp;
   newsletter?: boolean;
   locale?: string;
   provider?: string;
@@ -98,6 +99,7 @@ export type ProfileResponseSource<Id = string, Timestamp = string> = Omit<
 > & {
   _id: Id;
   username: string;
+  nostrVerifiedNpub?: string;
   displayName?: string;
   member?: Array<
     Omit<ProfileMembership<Id, Timestamp>, 'tribe'> & {

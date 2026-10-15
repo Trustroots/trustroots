@@ -345,6 +345,11 @@ function createClientRouteComponent(clientRoute: ClientRoute) {
     if (clientRoute.path === '/search') {
       delete remountSearch.offer;
     }
+    // Scrubbing signer callbacks must preserve the imported draft and status.
+    if (clientRoute.path === '/profile/edit/networks') {
+      delete remountSearch.nostrOperation;
+      delete remountSearch.nostrResult;
+    }
 
     return (
       <React.Fragment key={JSON.stringify({ params, search: remountSearch })}>

@@ -267,6 +267,11 @@ const UserSchema = new Schema<
     lowercase: true,
     set: setPlainTextField,
   },
+  // Private state used only to prove ownership of the currently saved npub.
+  nostrVerifiedNpub: { type: String, select: false },
+  nostrVerifiedAt: { type: Date, select: false },
+  nostrChallenge: { type: String, select: false },
+  nostrChallengeExpiresAt: { type: Date, select: false },
   password: {
     type: String,
     default: '',

@@ -5,6 +5,7 @@ import userPassword from './../controllers/users.password.server.controller.mjs'
 import userAuthentication from './../controllers/users.authentication.server.controller.mjs';
 import userExport from './../controllers/users.export.server.controller.mjs';
 import unifiedPush from './../controllers/users.unified-push.server.controller.mjs';
+import userNostr from './../controllers/users.nostr.server.controller.mjs';
 import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mjs';
 
 /**
@@ -26,6 +27,15 @@ interface RouteApplication {
 
 const defaultExport = function (app: RouteApplication) {
   // Setting up the users profile api
+  app
+    .route('/api/users/nostr/challenge')
+    .all(usersPolicy.isAllowed)
+    .post(targetedRequestLimit.nostrChallenge, userNostr.challenge);
+  app
+    .route('/api/users/nostr/verify')
+    .all(usersPolicy.isAllowed)
+    .post(targetedRequestLimit.nostrVerify, userNostr.verify);
+
   app
     .route('/api/users')
     .all(usersPolicy.isAllowed)

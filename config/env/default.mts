@@ -176,6 +176,12 @@ const service = {
       identityLimit: 5,
     },
     avatarUpload: { windowMs: 60 * 60 * 1000, ipLimit: 120, identityLimit: 20 },
+    nostrChallenge: {
+      windowMs: 15 * 60 * 1000,
+      ipLimit: 60,
+      identityLimit: 10,
+    },
+    nostrVerify: { windowMs: 15 * 60 * 1000, ipLimit: 60, identityLimit: 10 },
   },
   limits: {
     // Maximum length for public feedback for an experience

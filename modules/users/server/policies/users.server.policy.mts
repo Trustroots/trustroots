@@ -69,6 +69,14 @@ function invokeRolesPolicies() {
           permissions: ['get', 'put', 'delete'],
         },
         {
+          resources: '/api/users/nostr/challenge',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/users/nostr/verify',
+          permissions: ['post'],
+        },
+        {
           resources: '/api/users/export',
           permissions: ['get'],
         },

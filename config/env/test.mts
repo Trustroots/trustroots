@@ -55,6 +55,16 @@ const service = {
       ipLimit: 10000,
       identityLimit: 10000,
     },
+    nostrChallenge: {
+      windowMs: 60 * 60 * 1000,
+      ipLimit: 10000,
+      identityLimit: 10000,
+    },
+    nostrVerify: {
+      windowMs: 60 * 60 * 1000,
+      ipLimit: 10000,
+      identityLimit: 10000,
+    },
   },
   featureFlags: {
     reference: true,

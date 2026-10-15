@@ -61,6 +61,8 @@ export const profileQueryFields = [
   'extSitesCS',
   'extSitesWS',
   'nostrNpub',
+  '+nostrVerifiedNpub',
+  '+nostrVerifiedAt',
   'emailHash',
   'additionalProvidersData.facebook.id',
   'additionalProvidersData.twitter.screen_name',
@@ -211,6 +213,10 @@ export function selectProfileResponse<Id, Timestamp>(
     passwordUpdated: profile.passwordUpdated,
     usernameUpdated: profile.usernameUpdated,
     usernameUpdateAllowed: profile.usernameUpdateAllowed,
+    ...(profile.nostrVerifiedNpub === profile.nostrNpub &&
+    profile.nostrVerifiedAt
+      ? { nostrVerifiedAt: profile.nostrVerifiedAt }
+      : {}),
   };
 }
 

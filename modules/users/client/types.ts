@@ -11,6 +11,7 @@ export interface UserProfile extends OwnProfile {
   name?: string;
   lastSeen?: string;
   roles?: string[];
+  nostrVerifiedAt?: string;
   subscriptions?: Record<string, boolean>;
   networks?: Record<string, string>;
   profile?: Record<string, unknown>;

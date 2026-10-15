@@ -41,6 +41,10 @@ export interface UserServerRecord {
   extSitesCS?: string;
   extSitesWS?: string;
   nostrNpub?: string;
+  nostrVerifiedNpub?: string;
+  nostrVerifiedAt?: Date;
+  nostrChallenge?: string;
+  nostrChallengeExpiresAt?: Date;
   password?: string;
   salt?: string;
   authVersion?: number;

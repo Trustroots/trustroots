@@ -7,7 +7,9 @@ type Operation =
   | 'forgotPassword'
   | 'resetPassword'
   | 'resendConfirmation'
-  | 'avatarUpload';
+  | 'avatarUpload'
+  | 'nostrChallenge'
+  | 'nostrVerify';
 type Policy = {
   enabled?: boolean;
   windowMs: number;
@@ -70,6 +72,8 @@ function loadMiddleware(
       resetPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       resendConfirmation: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       avatarUpload: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
+      nostrChallenge: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
+      nostrVerify: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
     },
   };
   (
