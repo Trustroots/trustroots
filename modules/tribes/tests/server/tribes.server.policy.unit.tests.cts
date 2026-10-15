@@ -136,7 +136,12 @@ describe('Tribes policy unit tests', () => {
 
     policy.isAllowed(
       {
-        user: { _id: { valueOf: () => 'user-id' }, roles: ['admin'] },
+        user: {
+          _id: { valueOf: () => 'user-id' },
+          roles: ['admin'],
+          mfaEnabled: true,
+          $locals: { mfaVerified: true },
+        },
         route: { path: '/api/tribes/:tribe' },
         method: 'GET',
       },

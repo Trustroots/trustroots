@@ -322,8 +322,18 @@ describe('Profile controller unit tests', () => {
       const [other] = await utils.saveUsers(
         utils.generateUsers(1, { public: true }),
       );
-      await findUser(other._id);
+      const otherDoc = await findUser(other._id);
+      const { res } = await runHandler(res =>
+        profileController.update(
+          { user: userDoc, body: { email: otherDoc.email }, login: () => {} },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(403);
+    });
 
+    it('requires password confirmation to change a confirmed account email', async () => {
+      userDoc.public = true;
       const { res } = await runHandler(res =>
         profileController.update(
           {

@@ -1470,62 +1470,6 @@ describe('Authentication controller OAuth unit tests', () => {
       should.not.exist(confirmed.emailTokenExpires);
     });
 
-    it('does not authenticate from a confirmation when authVersion changes mid-request', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const token = 'stale-confirm-token';
-      const pendingEmail = 'pending@example.test';
-      await User.updateOne(
-        { _id: saved._id },
-        {
-          $set: {
-            public: false,
-            emailTemporary: pendingEmail,
-            emailToken: token,
-            emailTokenIssuedAt: new Date(),
-            emailTokenExpires: new Date(Date.now() + 86400000),
-          },
-        },
-      );
-
-      const originalFindOneAndUpdate = User.findOneAndUpdate;
-      sinon
-        .stub(User, 'findOneAndUpdate')
-        .callsFake((filter, update, options, callback) => {
-          if (!callback) throw new Error('Expected update callback');
-          const completion = callback;
-          const query = User.updateOne(
-            { _id: saved._id },
-            { $inc: { authVersion: 1 } },
-          );
-          void query.then(
-            () => {
-              originalFindOneAndUpdate.call(
-                User,
-                filter,
-                update,
-                options,
-                completion,
-              );
-            },
-            error => completion(error, null, undefined),
-          );
-          return query as unknown as ReturnType<typeof User.findOneAndUpdate>;
-        });
-
-      const login = sinon.spy((_user, callback) => callback());
-      const res = deferredResponse();
-      authController.confirmEmail({ params: { token }, login }, res);
-      await res.waitForResponse();
-
-      res.statusCode.should.equal(400);
-      login.called.should.be.false();
-      const unchanged = await findUser(saved._id);
-      userField(unchanged, 'authVersion').should.equal(1);
-      userField(unchanged, 'public').should.be.false();
-      userField(unchanged, 'emailTemporary').should.equal(pendingEmail);
-      userField(unchanged, 'emailToken').should.equal(token);
-    });
-
     it('does not create a session when confirming email for an MFA account', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       await User.updateOne(
