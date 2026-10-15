@@ -95,7 +95,7 @@ export default function LanguageSwitch({
       </button>
       <Modal show={isModalVisible} onHide={onModalHide}>
         <Modal.Header closeButton>
-          <Modal.Title>{t<string>('Select a language')}</Modal.Title>
+          <Modal.Title>{t('Select a language')}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {locales.length >= 8 && (
@@ -106,7 +106,7 @@ export default function LanguageSwitch({
               onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                 setSearch(event.target.value)
               }
-              placeholder={t<string>('Search languages…')}
+              placeholder={t('Search languages…')}
             />
           )}
           <LanguageList>
@@ -134,7 +134,7 @@ export default function LanguageSwitch({
         </Modal.Body>
         <Modal.Footer>
           <button className="btn btn-default pull-left" onClick={onModalHide}>
-            {t<string>('Cancel')}
+            {t('Cancel')}
           </button>
           <small>
             <a
@@ -142,7 +142,7 @@ export default function LanguageSwitch({
               onClick={onModalHide}
               className="text-muted"
             >
-              {t<string>('Help us translate.')}
+              {t('Help us translate.')}
             </a>
           </small>
         </Modal.Footer>

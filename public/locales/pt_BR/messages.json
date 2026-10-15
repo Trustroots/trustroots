@@ -1,6 +1,6 @@
 {
-    "{{count}} unread messages": "{{count}} mensagem não lida",
-    "{{count}} unread messages_plural": "{{count}} mensagens não lidas",
+    "{{count}} unread messages_one": "{{count}} mensagem não lida",
+    "{{count}} unread messages_other": "{{count}} mensagens não lidas",
     "Your response won't be visible to them.": "Sua resposta não ficará visível.",
     "Your profile seems quite empty.": "Seu perfil parece bastante vazio.",
     "You're much more likely to get a positive response if you have written a bit about yourself.": "É mais provável que você receba uma resposta positiva se escrever um pouco sobre você.",

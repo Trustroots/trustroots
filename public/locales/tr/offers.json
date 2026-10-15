@@ -1,6 +1,6 @@
 {
-    "At most {{count}} guests.": "En fazla 1 misafir.",
-    "At most {{count}} guests._plural": "En fazla {{sayı}} misafir.",
+    "At most {{count}} guests._one": "En fazla 1 misafir.",
+    "At most {{count}} guests._other": "En fazla {{sayı}} misafir.",
     "Change": "Değiştir",
     "Sorry, user is not hosting currently.": "Üzgünüz, kullanıcı şu an ev sahipliği yapmıyor.",
     "Send a message": "Bir mesaj gönder",

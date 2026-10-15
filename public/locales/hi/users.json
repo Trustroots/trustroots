@@ -66,14 +66,14 @@
     "Unblock member": "सदस्य को निरवरोध (अनब्लॉक) करें",
     "You have blocked this member.": "आपने इस सदस्य को निरुद्ध (ब्लॉक) कर दिया है।",
     "Your data is yours. We are committed to making it easy for you to get all of your data into, and out of, Trustroots at any time.": "आपका डेटा आपका है। हम आपके लिए आपका सम्पूर्ण डेटा किसी भी समय Trustroots के अन्दर और बाहर प्राप्त करने को सरल बनाने के लिए प्रतिबद्ध हैं।",
-    "{{count}} experiences": "{{count}} अनुभव",
-    "{{count}} experiences_plural": "{{count}} अनुभव",
+    "{{count}} experiences_one": "{{count}} अनुभव",
+    "{{count}} experiences_other": "{{count}} अनुभव",
     "{{birthdate, age}} years.": "{{birthdate, age}} वर्ष।",
     "“Everyone is necessarily the hero of their own life story.”": "\"हर कोई स्वयं के जीवन की कहानी का नायक है।\"",
     "Edit your profile": "अपने विवरण को संपादित करें",
     "Add languages you speak.": "आपके द्वारा बोली जानेवाली भाषाओं को जोड़ें।",
     "Are you sure you want to unblock them? They will be able to see your profile and messaage you again.": "क्या आप वास्तव में उन्हें अनब्लॉक करना चाहते हैं? वे आपका विवरण देख सकेंगे और आपको फिर से संदेश भेज सकेंगे।",
-    "{{count}} contacts": "{{count}} संपर्क सूची",
-    "{{count}} contacts_plural": "{{count}} संपर्क सूची",
+    "{{count}} contacts_one": "{{count}} संपर्क सूची",
+    "{{count}} contacts_other": "{{count}} संपर्क सूची",
     "Download your data": "अपना डेटा डाउनलोड करें"
 }

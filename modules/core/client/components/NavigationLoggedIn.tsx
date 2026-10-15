@@ -81,17 +81,17 @@ export default function NavigationLoggedIn({
           renderMenuOnMount
           className="hidden-xs cursor-pointer"
           id="support-dropdown"
-          title={t<string>('Support')}
+          title={t('Support')}
         >
           <Dropdown.Item href="/faq">
-            {t<string>('Frequently Asked Questions')}
+            {t('Frequently Asked Questions')}
           </Dropdown.Item>
-          <Dropdown.Item href="/safety">{t<string>('Safety')}</Dropdown.Item>
+          <Dropdown.Item href="/safety">{t('Safety')}</Dropdown.Item>
           <Dropdown.Item href="/support?category=reportBug">
-            {t<string>('Report a bug')}
+            {t('Report a bug')}
           </Dropdown.Item>
           <Dropdown.Item href="/support">
-            {t<string>('Contact us')}
+            {t('Contact us')}
           </Dropdown.Item>
         </NavDropdown>
       </Nav>
@@ -122,7 +122,7 @@ export default function NavigationLoggedIn({
         <MenuItem
           currentPath={currentPath}
           path="/circles"
-          aria-label={t<string>('Circles')}
+          aria-label={t('Circles')}
           className={
             circles.length ? 'dropdown header-link-dropdown' : undefined
           }
@@ -149,18 +149,18 @@ export default function NavigationLoggedIn({
             icon="tribes"
             size="lg"
           />
-          <span className="hidden-xs">{t<string>('Circles')}</span>
+          <span className="hidden-xs">{t('Circles')}</span>
         </MenuItem>
         <MenuItem
           currentPath={currentPath}
           path="/search"
-          aria-label={t<string>('Search hosts')}
+          aria-label={t('Search hosts')}
           className="dropdown header-link-dropdown"
           submenu={
             <ul className="dropdown-menu hidden-xs">
               <li>
                 <a className="dropdown-item" href="/search/members">
-                  {t<string>('Find member by name')}
+                  {t('Find member by name')}
                 </a>
               </li>
             </ul>
@@ -172,12 +172,12 @@ export default function NavigationLoggedIn({
             icon="search"
             size="lg"
           />
-          <span className="hidden-xs">{t<string>('Search')}</span>
+          <span className="hidden-xs">{t('Search')}</span>
         </MenuItem>
         <MenuItem
           currentPath={currentPath}
           path="/messages"
-          aria-label={t<string>('Messages')}
+          aria-label={t('Messages')}
         >
           <Icon
             className="visible-xs-block"
@@ -185,7 +185,7 @@ export default function NavigationLoggedIn({
             icon="messages"
             size="lg"
           />
-          <span className="hidden-xs">{t<string>('Messages')}</span>
+          <span className="hidden-xs">{t('Messages')}</span>
           <UnreadCount />
         </MenuItem>
         <MenuItem
@@ -193,7 +193,7 @@ export default function NavigationLoggedIn({
           path="/offer/host"
           className="hidden-xs"
         >
-          {t<string>('Host')}
+          {t('Host')}
         </MenuItem>
         <MenuItem
           currentPath={currentPath}
@@ -227,68 +227,68 @@ export default function NavigationLoggedIn({
           </div>
           <Dropdown.Divider />
           <Dropdown.Item href={`/profile/${user.username}`}>
-            {t<string>('My profile')}
+            {t('My profile')}
           </Dropdown.Item>
           <Dropdown.Item href="/profile/edit">
-            {t<string>('Edit profile')}
+            {t('Edit profile')}
           </Dropdown.Item>
           <Dropdown.Item href={`/profile/${user.username}/contacts`}>
-            {t<string>('Contacts')}
+            {t('Contacts')}
           </Dropdown.Item>
           <Dropdown.Item href="/search/members">
-            {t<string>('Find people')}
+            {t('Find people')}
           </Dropdown.Item>
           <Dropdown.Divider />
           <Dropdown.Item href="/profile/edit/account">
-            {t<string>('Account')}
+            {t('Account')}
           </Dropdown.Item>
           <Dropdown.Item
             onClick={event => onSignout(event)}
             href="/api/auth/signout"
             target="_top"
           >
-            {t<string>('Sign out')}
+            {t('Sign out')}
           </Dropdown.Item>
           <Dropdown.Divider />
           <SubMenuList
             list={[
               {
                 href: '/',
-                label: t<string>('About'),
+                label: t('About'),
               },
               {
                 href: '/foundation',
-                label: t<string>('Foundation'),
+                label: t('Foundation'),
               },
               {
                 href: '/media',
-                label: t<string>('Media'),
+                label: t('Media'),
               },
               {
                 href: '/privacy',
-                label: t<string>('Privacy'),
+                label: t('Privacy'),
               },
               {
                 href: '/rules',
-                label: t<string>('Rules'),
+                label: t('Rules'),
               },
               {
                 href: '/safety',
-                label: t<string>('Safety'),
+                label: t('Safety'),
               },
               {
                 href: '/statistics',
-                label: t<string>('Statistics'),
+                label: t('Statistics'),
               },
               /* Disable shop and navigation links - issue #2672
               {
                 href: 'https://trustroots.teemill.com',
-                label: t<string>('Shop'),
+                label: t('Shop'),
               },
               */
               {
                 href: '/team',
-                label: t<string>('Team'),
+                label: t('Team'),
               },
             ]}
           />
@@ -298,39 +298,39 @@ export default function NavigationLoggedIn({
               /*
               {
                 href: 'https://www.facebook.com/trustroots.org',
-                ariaLabel: t<string>('Trustroots at Facebook'),
+                ariaLabel: t('Trustroots at Facebook'),
                 label: 'Facebook',
               },
               {
                 href: 'https://twitter.com/trustroots',
-                ariaLabel: t<string>('Trustroots at Twitter'),
+                ariaLabel: t('Trustroots at Twitter'),
                 label: 'Twitter',
               },
               {
                 href: 'https://www.instagram.com/trustroots/',
-                ariaLabel: t<string>('Trustroots at Instagram'),
+                ariaLabel: t('Trustroots at Instagram'),
                 label: 'Instagram',
               },
               */
               {
                 href: 'https://ideas.trustroots.org/',
-                label: t<string>('Blog'),
+                label: t('Blog'),
               },
               {
                 href: 'https://wiki.trustroots.org/',
-                label: t<string>('Wiki'),
+                label: t('Wiki'),
                 target: '_blank',
                 rel: 'noopener noreferrer',
               },
               {
                 href: '/support?category=volunteering',
-                label: t<string>('Volunteering'),
+                label: t('Volunteering'),
               },
             ]}
           />
         </NavDropdown>
         <MenuItem
-          aria-label={t<string>('My profile, info and support')}
+          aria-label={t('My profile, info and support')}
           className="visible-xs-block"
           currentPath={currentPath}
           path="/navigation"

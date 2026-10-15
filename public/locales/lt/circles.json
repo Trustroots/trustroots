@@ -1,7 +1,7 @@
 {
-    "{{count, number}} members_0": "{{count, number}} Vienas asmuo",
-    "{{count, number}} members_1": "Sekantis asmuo",
-    "{{count, number}} members_2": "Keletas asmenų",
+    "{{count, number}} members_one": "{{count, number}} Vienas asmuo",
+    "{{count, number}} members_few": "Sekantis asmuo",
+    "{{count, number}} members_other": "Keletas asmenų",
     "Sign up with Trustroots": "Prisijungti į Trustroots",
     "Send us suggestions!": "Siųsti pasiūlymus!",
     "No members yet": "Nėra narių",

@@ -14,16 +14,16 @@
     "Requested {{created, LL}}": "अनुरोध किया जा चुका है {{created, LL}}",
     "Requested {{date, LL}}": "{{date, LL}} को अनुरोध कर दिया गया है",
     "Connected since {{date, LL}}": "{{date, LL}} से जुड़े हुए",
-    "(additional {{count}} pending)": "(अतिरिक्त {{count}} लंबित)",
-    "(additional {{count}} pending)_plural": "(अतिरिक्त {{count}} लंबित)",
+    "(additional {{count}} pending)_one": "(अतिरिक्त {{count}} लंबित)",
+    "(additional {{count}} pending)_other": "(अतिरिक्त {{count}} लंबित)",
     "Decline Request": "अनुरोध अस्वीकार करें",
     "No contacts yet.": "अभी तक कोई संपर्क नहीं है।",
     "Lives in <2>{{locationLiving}}</2>": "रहने का स्थान <2>{{locationLiving}}</2>",
     "Yes, decline request": "हां, अनुरोध अस्वीकार करें",
     "Since {{created, LL}}": "{{created, LL}} से",
     "Yes, revoke request": "हाँ, अनुरोध रद्द करें",
-    "{{count}} contacts": "{{count}} संपर्क संख्या",
-    "{{count}} contacts_plural": "{{count}} संपर्क संख्या",
-    "{{count}} contacts in common": "आपस में एक परिचित सम्पर्क",
-    "{{count}} contacts in common_plural": "आपस में {{count}} परिचित सम्पर्क"
+    "{{count}} contacts_one": "{{count}} संपर्क संख्या",
+    "{{count}} contacts_other": "{{count}} संपर्क संख्या",
+    "{{count}} contacts in common_one": "आपस में एक परिचित सम्पर्क",
+    "{{count}} contacts in common_other": "आपस में {{count}} परिचित सम्पर्क"
 }

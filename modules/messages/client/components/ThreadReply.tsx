@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import TrEditor from '@/modules/core/client/components/TrEditor';
@@ -103,11 +103,11 @@ export default function ThreadReply({
     setEditorKeyCounter(n => n + 1);
   }
 
-  useEffect(() => {
-    if (autoFocus || editorKeyCounter > 0) {
+  useLayoutEffect(() => {
+    if (!previewing && (autoFocus || editorKeyCounter > 0)) {
       document.getElementById('message-reply-content')?.focus();
     }
-  }, [autoFocus, editorKeyCounter]);
+  }, [autoFocus, editorKeyCounter, previewing]);
 
   async function send(event: React.SyntheticEvent | KeyboardEvent) {
     event.preventDefault();
@@ -184,7 +184,7 @@ export default function ThreadReply({
         role="separator"
         tabIndex={0}
         aria-orientation="horizontal"
-        aria-label={t<string>('Resize message editor')}
+        aria-label={t('Resize message editor')}
         aria-controls="message-reply-writing-area"
         aria-keyshortcuts="ArrowUp ArrowDown Home End"
         aria-valuemin={88}
@@ -210,16 +210,16 @@ export default function ThreadReply({
           {previewing ? (
             <section
               className="message-draft-preview"
-              aria-label={t<string>('Message preview')}
+              aria-label={t('Message preview')}
               aria-live="polite"
             >
               <small className="text-muted">
-                {t<string>('Message preview')}
+                {t('Message preview')}
               </small>
               {previewError ? (
                 <div role="alert">
                   <p>
-                    {t<string>('Failed to load preview. Please try again.')}
+                    {t('Failed to load preview. Please try again.')}
                   </p>
                   <button
                     type="button"
@@ -227,11 +227,11 @@ export default function ThreadReply({
                     disabled={sending}
                     onClick={showPreview}
                   >
-                    {t<string>('Retry')}
+                    {t('Retry')}
                   </button>
                 </div>
               ) : previewContent === null ? (
-                <p role="status">{t<string>('Loading preview…')}</p>
+                <p role="status">{t('Loading preview…')}</p>
               ) : (
                 <MessageBubble className="message-sender-me">
                   <div className="message-main">
@@ -268,10 +268,10 @@ export default function ThreadReply({
           disabled={sending || (!previewing && plainTextLength(content) === 0)}
           onClick={previewing ? edit : showPreview}
         >
-          {previewing ? t<string>('Edit') : t<string>('Preview')}
+          {previewing ? t('Edit') : t('Preview')}
         </button>
         <small className="text-muted hidden-xs">
-          {t<string>(
+          {t(
             'Highlight text to change its appearance. Ctrl+Enter to send.',
           )}
         </small>
@@ -282,7 +282,7 @@ export default function ThreadReply({
           disabled={sending}
         >
           <i className="icon-send" />
-          <span className="hidden-xs">&nbsp;{t<string>('Send')}</span>
+          <span className="hidden-xs">&nbsp;{t('Send')}</span>
         </button>
       </div>
     </form>

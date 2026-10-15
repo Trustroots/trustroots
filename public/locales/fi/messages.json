@@ -1,6 +1,6 @@
 {
-    "{{count}} unread messages": "{{count}} lukematon viesti",
-    "{{count}} unread messages_plural": "{{count}} lukematonta viestiä",
+    "{{count}} unread messages_one": "{{count}} lukematon viesti",
+    "{{count}} unread messages_other": "{{count}} lukematonta viestiä",
     "Your profile seems quite empty.": "Profiilisi vaikuttaa tyhjältä.",
     "You replied": "Vastasit",
     "You haven't been talking yet.": "Ette ole keskustelleet vielä.",
