@@ -129,7 +129,7 @@ describe('Job: message unread', function () {
       .subtract(moment.duration({ minutes: 9 }))
       .toDate();
     message.save();
-    messageUnreadJobHandler({}, function (err: Error | null) {
+    messageUnreadJobHandler({}, function (err?: Error | null) {
       if (err) return done(err);
 
       jobs.length.should.equal(0);
@@ -141,10 +141,10 @@ describe('Job: message unread', function () {
     message.created = moment()
       .subtract(moment.duration({ minutes: 10, seconds: 1 }))
       .toDate();
-    message.save(function (err: Error | null) {
+    message.save(function (err?: Error | null) {
       if (err) return done(err);
 
-      messageUnreadJobHandler({}, function (err: Error | null) {
+      messageUnreadJobHandler({}, function (err?: Error | null) {
         if (err) return done(err);
 
         jobs.length.should.equal(1);
@@ -187,7 +187,7 @@ describe('Job: message unread', function () {
     sinon.stub(webPush, 'setVapidDetails');
     try {
       await new Promise<void>((resolve, reject) => {
-        messageUnreadJobHandler({}, (error: Error | null) =>
+        messageUnreadJobHandler({}, (error?: Error | null) =>
           error ? reject(error) : resolve(),
         );
       });
@@ -212,7 +212,7 @@ describe('Job: message unread', function () {
 
     try {
       await new Promise<void>((resolve, reject) => {
-        messageUnreadJobHandler({}, (error: Error | null) =>
+        messageUnreadJobHandler({}, (error?: Error | null) =>
           error ? reject(error) : resolve(),
         );
       });
@@ -230,16 +230,16 @@ describe('Job: message unread', function () {
     message2.created = moment()
       .subtract(moment.duration({ minutes: 11 }))
       .toDate();
-    message2.save(function (err: Error | null) {
+    message2.save(function (err?: Error | null) {
       if (err) return done(err);
 
       message.created = moment()
         .subtract(moment.duration({ minutes: 10, seconds: 1 }))
         .toDate();
-      message.save(function (err: Error | null) {
+      message.save(function (err?: Error | null) {
         if (err) return done(err);
 
-        messageUnreadJobHandler({}, function (err: Error | null) {
+        messageUnreadJobHandler({}, function (err?: Error | null) {
           if (err) return done(err);
 
           jobs.length.should.equal(1);
@@ -277,16 +277,16 @@ describe('Job: message unread', function () {
         .subtract(moment.duration({ minutes: 11 }))
         .toDate();
       message2.userFrom = user._id;
-      message2.save(function (err: Error | null) {
+      message2.save(function (err?: Error | null) {
         if (err) return done(err);
 
         message.created = moment()
           .subtract(moment.duration({ minutes: 10, seconds: 1 }))
           .toDate();
-        message.save(function (err: Error | null) {
+        message.save(function (err?: Error | null) {
           if (err) return done(err);
 
-          messageUnreadJobHandler({}, function (err: Error | null) {
+          messageUnreadJobHandler({}, function (err?: Error | null) {
             if (err) return done(err);
 
             // Agenda sets jobs in random order, figure out order here
@@ -326,12 +326,12 @@ describe('Job: message unread', function () {
     message.created = moment()
       .subtract(moment.duration({ minutes: 10, seconds: 1 }))
       .toDate();
-    message.save(function (err: Error | null) {
+    message.save(function (err?: Error | null) {
       if (err) return done(err);
-      userFrom.remove(function (err: Error | null) {
+      userFrom.remove(function (err?: Error | null) {
         if (err) return done(err);
 
-        messageUnreadJobHandler({}, function (err: Error | null) {
+        messageUnreadJobHandler({}, function (err?: Error | null) {
           if (err) return done(err);
 
           jobs.length.should.equal(0);
@@ -349,14 +349,14 @@ describe('Job: message unread', function () {
     message.created = moment()
       .subtract(moment.duration({ minutes: 10, seconds: 1 }))
       .toDate();
-    message.save(function (err: Error | null) {
+    message.save(function (err?: Error | null) {
       if (err) return done(err);
 
       userFrom.roles = ['user', 'shadowban'];
-      userFrom.save(function (err: Error | null) {
+      userFrom.save(function (err?: Error | null) {
         if (err) return done(err);
 
-        messageUnreadJobHandler({}, function (err: Error | null) {
+        messageUnreadJobHandler({}, function (err?: Error | null) {
           if (err) return done(err);
 
           jobs.length.should.equal(0);
@@ -385,7 +385,7 @@ describe('Job: message unread', function () {
     const sent = sinon.stub(webPush, 'sendNotification');
     try {
       await new Promise<void>((resolve, reject) => {
-        messageUnreadJobHandler({}, (error: Error | null) =>
+        messageUnreadJobHandler({}, (error?: Error | null) =>
           error ? reject(error) : resolve(),
         );
       });
@@ -400,14 +400,14 @@ describe('Job: message unread', function () {
     message.created = moment()
       .subtract(moment.duration({ minutes: 10, seconds: 1 }))
       .toDate();
-    message.save(function (err: Error | null) {
+    message.save(function (err?: Error | null) {
       if (err) return done(err);
 
       userTo.roles = ['user', 'suspended'];
-      userTo.save(function (err: Error | null) {
+      userTo.save(function (err?: Error | null) {
         if (err) return done(err);
 
-        messageUnreadJobHandler({}, function (err: Error | null) {
+        messageUnreadJobHandler({}, function (err?: Error | null) {
           if (err) return done(err);
 
           jobs.length.should.equal(0);
@@ -429,16 +429,16 @@ describe('Job: message unread', function () {
 
     // Attach non-existing user to this message
     message2.userFrom = new mongoose.Types.ObjectId();
-    message2.save(function (err: Error | null) {
+    message2.save(function (err?: Error | null) {
       if (err) return done(err);
 
       message.created = moment()
         .subtract(moment.duration({ minutes: 10, seconds: 1 }))
         .toDate();
-      message.save(function (err: Error | null) {
+      message.save(function (err?: Error | null) {
         if (err) return done(err);
 
-        messageUnreadJobHandler({}, function (err: Error | null) {
+        messageUnreadJobHandler({}, function (err?: Error | null) {
           if (err) return done(err);
 
           jobs.length.should.equal(1);
@@ -480,13 +480,13 @@ describe('Job: message unread', function () {
     it('Remind user again after a specified time.', function (done) {
       // update: message is created at the current time
       message.created = new Date();
-      message.save(function (err: Error | null) {
+      message.save(function (err?: Error | null) {
         if (err) return done(err);
 
         // wait for 10 minutes
         sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
 
-        messageUnreadJobHandler({}, function (err: Error | null) {
+        messageUnreadJobHandler({}, function (err?: Error | null) {
           if (err) return done(err);
 
           // check that the first reminder is sent
@@ -495,7 +495,7 @@ describe('Job: message unread', function () {
           // wait for 24 hours
           sinon.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
 
-          messageUnreadJobHandler({}, function (err: Error | null) {
+          messageUnreadJobHandler({}, function (err?: Error | null) {
             if (err) return done(err);
 
             // check that the second reminder is sent
@@ -517,7 +517,7 @@ describe('Job: message unread', function () {
         notificationCount: 0,
       });
 
-      messageBefore.save(function (err: Error | null) {
+      messageBefore.save(function (err?: Error | null) {
         if (err) return done(err);
 
         // wait a minute
@@ -525,13 +525,13 @@ describe('Job: message unread', function () {
 
         // update: message is created at the current time
         message.created = new Date();
-        message.save(function (err: Error | null) {
+        message.save(function (err?: Error | null) {
           if (err) return done(err);
 
           // wait for 10 minutes
           sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
 
-          messageUnreadJobHandler({}, function (err: Error | null) {
+          messageUnreadJobHandler({}, function (err?: Error | null) {
             if (err) return done(err);
 
             // check that the first reminder is sent
@@ -540,7 +540,7 @@ describe('Job: message unread', function () {
             // wait for 24 hours
             sinon.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
 
-            messageUnreadJobHandler({}, function (err: Error | null) {
+            messageUnreadJobHandler({}, function (err?: Error | null) {
               if (err) return done(err);
 
               // check that the second reminder _is not_ sent
@@ -563,7 +563,7 @@ describe('Job: message unread', function () {
         notificationCount: 0,
       });
 
-      messageBefore.save(function (err: Error | null) {
+      messageBefore.save(function (err?: Error | null) {
         if (err) return done(err);
 
         // wait a minute
@@ -571,13 +571,13 @@ describe('Job: message unread', function () {
 
         // update: message is created at the current time
         message.created = new Date();
-        message.save(function (err: Error | null) {
+        message.save(function (err?: Error | null) {
           if (err) return done(err);
 
           // wait for 10 minutes
           sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
 
-          messageUnreadJobHandler({}, function (err: Error | null) {
+          messageUnreadJobHandler({}, function (err?: Error | null) {
             if (err) return done(err);
 
             // check that the first reminder is sent
@@ -586,7 +586,7 @@ describe('Job: message unread', function () {
             // wait for 24 hours
             sinon.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
 
-            messageUnreadJobHandler({}, function (err: Error | null) {
+            messageUnreadJobHandler({}, function (err?: Error | null) {
               if (err) return done(err);
 
               // check that the second reminder _is_ sent
@@ -602,13 +602,13 @@ describe('Job: message unread', function () {
     it('Let the further notification text be different from the first one.', function (done) {
       // update: message is created at the current time
       message.created = new Date();
-      message.save(function (err: Error | null) {
+      message.save(function (err?: Error | null) {
         if (err) return done(err);
 
         // wait for 10 minutes
         sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
 
-        messageUnreadJobHandler({}, function (err: Error | null) {
+        messageUnreadJobHandler({}, function (err?: Error | null) {
           if (err) return done(err);
 
           // check that the first reminder is sent
@@ -622,7 +622,7 @@ describe('Job: message unread', function () {
           // wait for 24 hours
           sinon.clock.tick(milliseconds({ hours: 23, minutes: 50 }));
 
-          messageUnreadJobHandler({}, function (err: Error | null) {
+          messageUnreadJobHandler({}, function (err?: Error | null) {
             if (err) return done(err);
 
             // check that the second reminder is sent
@@ -643,13 +643,13 @@ describe('Job: message unread', function () {
     it("When we didn't send the first notification on time for some erroneous reason, send just one; not two of them at the same time.", function (done) {
       // update: message is created at the current time
       message.created = new Date();
-      message.save(function (err: Error | null) {
+      message.save(function (err?: Error | null) {
         if (err) return done(err);
 
         // wait for 24 hours
         sinon.clock.tick(milliseconds({ hours: 24, milliseconds: 1 }));
 
-        messageUnreadJobHandler({}, function (err: Error | null) {
+        messageUnreadJobHandler({}, function (err?: Error | null) {
           if (err) return done(err);
 
           // check that the first reminder is sent
@@ -666,13 +666,13 @@ describe('Job: message unread', function () {
     it("Don't send further notification about very old messages.", function (done) {
       // update: message is created at the current time
       message.created = new Date();
-      message.save(function (err: Error | null) {
+      message.save(function (err?: Error | null) {
         if (err) return done(err);
 
         // wait for 10 minutes
         sinon.clock.tick(milliseconds({ minutes: 10, milliseconds: 1 }));
 
-        messageUnreadJobHandler({}, function (err: Error | null) {
+        messageUnreadJobHandler({}, function (err?: Error | null) {
           if (err) return done(err);
 
           // check that the first reminder is sent
@@ -681,7 +681,7 @@ describe('Job: message unread', function () {
           // wait for 14 days
           sinon.clock.tick(milliseconds({ days: 14 }));
 
-          messageUnreadJobHandler({}, function (err: Error | null) {
+          messageUnreadJobHandler({}, function (err?: Error | null) {
             if (err) return done(err);
 
             // check that the second reminder is not sent
@@ -743,7 +743,7 @@ describe('Job: message unread', function () {
       } as unknown as ReturnType<typeof findUsers>);
       sinon.stub(Message, 'update').yields(null);
 
-      jobWithQueueError({}, function (err: Error | null) {
+      jobWithQueueError({}, function (err?: Error | null) {
         if (err) return done(err);
         done();
       });
@@ -780,7 +780,7 @@ describe('Job: message unread', function () {
       } as unknown as ReturnType<typeof findUsers>);
       sinon.stub(Message, 'update').yields(null);
 
-      jobWithEmptyMessages({}, function (err: Error | null) {
+      jobWithEmptyMessages({}, function (err?: Error | null) {
         if (err) return done(err);
         done();
       });
@@ -790,12 +790,12 @@ describe('Job: message unread', function () {
       message.created = moment()
         .subtract(moment.duration({ minutes: 10, seconds: 1 }))
         .toDate();
-      message.save(function (err: Error | null) {
+      message.save(function (err?: Error | null) {
         if (err) return done(err);
 
         sinon.stub(Message, 'update').yields(new Error('update failed'));
 
-        messageUnreadJobHandler({}, function (err: Error | null) {
+        messageUnreadJobHandler({}, function (err?: Error | null) {
           if (!err) throw new Error('Expected update error');
           err.should.be.an.Error();
           err.message.should.equal('update failed');

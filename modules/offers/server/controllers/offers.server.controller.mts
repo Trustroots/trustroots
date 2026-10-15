@@ -86,7 +86,7 @@ function normaliseEndpointExpiry(
   validUntil: unknown,
 ): Date | undefined {
   return normaliseOfferExpiry(
-    type as OfferType,
+    type,
     validUntil,
     config.limits.maxOfferValidFromNow,
     moment().toDate(),

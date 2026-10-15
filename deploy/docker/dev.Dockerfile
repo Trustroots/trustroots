@@ -3,7 +3,7 @@
 # Node 24, native build deps, pnpm install to seed the `node_modules` named volume.
 # App code is bind-mounted at runtime. Playwright browsers are baked for E2E.
 
-FROM node:24.21.0-bookworm-slim
+FROM node:24.21.0-bookworm-slim AS server
 
 RUN apt-get -qq update && apt-get -q install -y \
   build-essential \
@@ -58,6 +58,10 @@ WORKDIR /home/app/trustroots
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
   pnpm install --frozen-lockfile
+
+# Server tests use the same dependencies without downloading browser binaries.
+# Keep the full browser image as the default for local development and E2E.
+FROM server AS dev
 
 RUN mkdir -p "$PLAYWRIGHT_BROWSERS_PATH" \
   && chmod 777 "$PLAYWRIGHT_BROWSERS_PATH" \

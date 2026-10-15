@@ -16,25 +16,35 @@ const sinon: typeof import('sinon') = require('sinon');
 type TestQueryResult<T> = {
   sort(): TestQueryResult<T>;
   populate(): TestQueryResult<T>;
-  exec(callback: (error: Error | null, value?: T) => void): TestQueryResult<T>;
+  exec(): Promise<T>;
+  exec(callback: (error: Error | null, value?: T) => void): void;
 };
 
 function queryResult<T>(
   value: T,
   err: Error | null = null,
 ): TestQueryResult<T> {
-  return {
+  function exec(): Promise<T>;
+  function exec(callback: (error: Error | null, value?: T) => void): void;
+  function exec(
+    callback?: (error: Error | null, value?: T) => void,
+  ): void | Promise<T> {
+    if (callback) {
+      callback(err, value);
+      return;
+    }
+    return err ? Promise.reject(err) : Promise.resolve(value);
+  }
+  const result: TestQueryResult<T> = {
     sort() {
       return this;
     },
     populate() {
       return this;
     },
-    exec(callback) {
-      callback(err, value);
-      return this;
-    },
+    exec,
   };
+  return result;
 }
 function required<T>(value: T | null | undefined): T {
   if (value === null || value === undefined) throw new Error('Expected value');
@@ -320,6 +330,22 @@ describe('Message server services unit tests', function () {
       });
     });
 
+    it('returns processing errors from save without sending stats', function (done) {
+      const { service, stat } = loadMessageToStatsService();
+      const error = new Error('message stats processing failed');
+      sinon.stub(service, 'process').callsArgWith(1, error);
+
+      service.save({ _id: 'message-id' }, function (err?: Error | null) {
+        try {
+          should(err).equal(error);
+          sinon.assert.notCalled(stat);
+          done();
+        } catch (assertionError) {
+          done(assertionError);
+        }
+      });
+    });
+
     it('delegates processed stats to the stats service', function (done) {
       const { service, stat } = loadMessageToStatsService();
       const statObject = { namespace: 'messages', counts: { sent: 1 } };
@@ -393,7 +419,7 @@ describe('Message server services unit tests', function () {
         messageFindOne: queryResult(firstMessage),
       });
       const error = new Error('save failed');
-      save.callsArgWith(0, error);
+      save.rejects(error);
 
       service.updateMessageStat(firstMessage, function (err?: Error | null) {
         try {
@@ -426,7 +452,7 @@ describe('Message server services unit tests', function () {
       });
       const error = new Error('update failed');
       statFindOneAndUpdate.returns({
-        exec: (callback: (error?: Error | null) => void) => callback(error),
+        exec: () => Promise.reject(error),
       } as unknown as ReturnType<typeof statFindOneAndUpdate>);
 
       service.updateMessageStat(firstReply, function (err?: Error | null) {
@@ -463,6 +489,25 @@ describe('Message server services unit tests', function () {
           try {
             if (!err) throw new Error('Expected read error');
             err.should.equal(error);
+            done();
+          } catch (assertionError) {
+            done(assertionError);
+          }
+        },
+      );
+    });
+
+    it('returns read errors from formatted message stats', function (done) {
+      const error = new Error('find failed');
+      const { service } = loadMessageStatService();
+      sinon.stub(service, 'readMessageStatsOfUser').callsArgWith(2, error);
+
+      service.readFormattedMessageStatsOfUser(
+        'user-id',
+        new Date('2026-02-01T00:00:00Z').getTime(),
+        function (err?: Error | null) {
+          try {
+            should(err).equal(error);
             done();
           } catch (assertionError) {
             done(assertionError);

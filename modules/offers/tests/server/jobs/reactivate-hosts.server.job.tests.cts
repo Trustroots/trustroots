@@ -83,7 +83,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
     // This should not be there before notifications are sent
     should.not.exist(offerHost.reactivateReminderSent);
 
-    reactivateHostsJobHandler({}, function (err: Error | null) {
+    reactivateHostsJobHandler({}, function (err: Error | null | undefined) {
       if (err) return done(err);
 
       jobs.length.should.equal(1);
@@ -112,7 +112,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
     user.save(function (err: Error | null) {
       if (err) return done(err);
 
-      reactivateHostsJobHandler({}, function (err: Error | null) {
+      reactivateHostsJobHandler({}, function (err: Error | null | undefined) {
         if (err) return done(err);
 
         jobs.length.should.equal(1);
@@ -138,7 +138,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
     offerHost.updated = new Date();
     offerHost.save(function (err: Error | null) {
       if (err) return done(err);
-      reactivateHostsJobHandler({}, function (err: Error | null) {
+      reactivateHostsJobHandler({}, function (err: Error | null | undefined) {
         if (err) return done(err);
         jobs.length.should.equal(0);
         done();
@@ -150,7 +150,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
     offerHost.status = 'yes';
     offerHost.save(function (err: Error | null) {
       if (err) return done(err);
-      reactivateHostsJobHandler({}, function (err: Error | null) {
+      reactivateHostsJobHandler({}, function (err: Error | null | undefined) {
         if (err) return done(err);
         jobs.length.should.equal(0);
         done();
@@ -162,7 +162,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
     offerHost.status = 'maybe';
     offerHost.save(function (err: Error | null) {
       if (err) return done(err);
-      reactivateHostsJobHandler({}, function (err: Error | null) {
+      reactivateHostsJobHandler({}, function (err: Error | null | undefined) {
         if (err) return done(err);
         jobs.length.should.equal(0);
         done();
@@ -174,7 +174,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
     offerHost.status = undefined;
     offerHost.save(function (err: Error | null) {
       if (err) return done(err);
-      reactivateHostsJobHandler({}, function (err: Error | null) {
+      reactivateHostsJobHandler({}, function (err: Error | null | undefined) {
         if (err) return done(err);
         jobs.length.should.equal(0);
         done();
@@ -203,7 +203,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
       offerHost.remove(function (err: Error | null) {
         if (err) return done(err);
 
-        reactivateHostsJobHandler({}, function (err: Error | null) {
+        reactivateHostsJobHandler({}, function (err: Error | null | undefined) {
           if (err) return done(err);
           jobs.length.should.equal(0);
           done();

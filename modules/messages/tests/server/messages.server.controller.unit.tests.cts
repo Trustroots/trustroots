@@ -1473,14 +1473,14 @@ describe('Messages controller unit tests', () => {
           docs: [
             {
               _id: threadId,
-              message: {},
+              message: { content: '' },
               read: false,
               userFrom: { _id: viewerId },
               userTo: { _id: otherId },
               toObject() {
                 return {
                   _id: threadId,
-                  message: {},
+                  message: { content: '' },
                   read: false,
                   userFrom: { _id: viewerId },
                   userTo: { _id: otherId },

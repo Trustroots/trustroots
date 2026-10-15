@@ -57,7 +57,11 @@ declare module 'async' {
   export function queue<T>(
     worker: (task: T, callback: (error?: Error | null) => void) => void,
     concurrency: number,
-  ): { length(): number; push(task: T): void };
+  ): {
+    length(): number;
+    push(task: T | T[]): void;
+    drain: ((error?: Error | null) => void) | null;
+  };
   const async: {
     map: typeof map;
     each: typeof each;

@@ -116,12 +116,7 @@ describe('Message to stats server service Unit Tests:', function () {
     it('returns an error when the first message cannot be found', function (done) {
       const fakeQuery = {
         sort: () => ({
-          exec: (
-            callback: (
-              error: Error | null,
-              message: MessageDocument | null,
-            ) => void,
-          ) => callback(null, null),
+          exec: () => Promise.resolve(null),
         }),
       };
       sinon
