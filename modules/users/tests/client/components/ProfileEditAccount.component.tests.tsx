@@ -83,6 +83,15 @@ describe('ProfileEditAccount', () => {
     expect(screen.getByText(/including at least one letter/)).toBeVisible();
     expect(screen.getByLabelText('Current password')).toBeInTheDocument();
     expect(screen.getByText('Community newsletter')).toBeInTheDocument();
+    expect(screen.getByText('Your data')).toBeVisible();
+    expect(
+      screen.getByText(/trustroots-data-username-20261014-0931\.json/),
+    ).toBeVisible();
+    expect(
+      screen.getByText(
+        /does not include your password, your profile photo file/,
+      ),
+    ).toBeVisible();
     expect(
       screen.getByRole('link', { name: 'Download your data' }),
     ).toHaveAttribute('href', '/api/users/export');

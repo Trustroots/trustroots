@@ -115,6 +115,7 @@ test.describe.serial('account settings feature coverage', () => {
   }, testInfo) => {
     annotateFeature(testInfo, 'account.data-export', [
       'Account settings exposes a download link for the combined export.',
+      'Account settings explains which data the download includes and leaves out.',
       'The combined export downloads with the documented filename.',
     ]);
 
@@ -126,11 +127,19 @@ test.describe.serial('account settings feature coverage', () => {
     const downloadLink = page.getByRole('link', { name: 'Download your data' });
     await expect(downloadLink).toBeVisible();
     await expect(downloadLink).toHaveAttribute('href', '/api/users/export');
+    await expect(
+      page.getByText(/trustroots-data-username-20261014-0931\.json/),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/does not include your password, your profile photo file/),
+    ).toBeVisible();
 
     const downloadPromise = page.waitForEvent('download');
     await downloadLink.click();
     const download = await downloadPromise;
-    expect(download.suggestedFilename()).toBe('trustroots-data.json');
+    expect(download.suggestedFilename()).toMatch(
+      new RegExp(`^trustroots-data-${user.username}-\\d{8}-\\d{4}\\.json$`),
+    );
   });
 
   test('password changes refresh the current browser and revoke other sessions', async ({
