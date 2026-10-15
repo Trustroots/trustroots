@@ -3,8 +3,7 @@ const assert: typeof import('node:assert/strict') = require('node:assert/strict'
 const uniqueValidation = require('./../../../../config/lib/mongoose-unique-validation.mjs');
 require('should');
 
-type HookName =
-  'findOneAndUpdate' | 'save' | 'update' | 'updateMany' | 'updateOne';
+type HookName = 'findOneAndUpdate' | 'save' | 'updateMany' | 'updateOne';
 type HookCallback = (error?: Error | null) => void;
 type DuplicateError = {
   code?: number;
@@ -47,7 +46,6 @@ describe('Mongoose unique validation adapter', function () {
       .should.deepEqual([
         'findOneAndUpdate',
         'save',
-        'update',
         'updateMany',
         'updateOne',
       ]);

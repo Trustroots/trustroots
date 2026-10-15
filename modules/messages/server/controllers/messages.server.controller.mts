@@ -70,16 +70,6 @@ type ThreadEndpointRecord = Omit<
   message?: Types.ObjectId | Pick<MessageEndpointRecord, 'content'> | null;
 };
 type MessageEndpointDocument = HydratedDocument<MessageEndpointRecord> & {
-  save(
-    callback: (error: Error | null, document?: MessageEndpointDocument) => void,
-  ): void;
-  populate(
-    paths: unknown[],
-    callback: (
-      error: Error | null,
-      document: PopulatedMessageEndpointDocument,
-    ) => void,
-  ): void;
   toObject(): MessageEndpointRecord;
 };
 type PopulatedMessageEndpointDocument = HydratedDocument<
@@ -91,10 +81,10 @@ type PopulatedMessageEndpointDocument = HydratedDocument<
 type ThreadEndpointDocument = HydratedDocument<ThreadEndpointRecord> & {
   toObject(): ThreadEndpointRecord;
 };
-interface QueryResult<Result> {
+interface QueryResult<Result> extends PromiseLike<Result> {
   sort(sort: Record<string, 1 | -1>): this;
   select(fields: string): this;
-  exec(callback: (error: Error | null, result: Result) => void): void;
+  exec(): Promise<Result>;
 }
 interface PageResult<Document> {
   docs: Document[] | null;
@@ -116,13 +106,7 @@ interface MessageEndpointModel {
       result: PageResult<PopulatedMessageEndpointDocument>,
     ) => void,
   ): void;
-  update(
-    query: object,
-    update: object,
-    options: object,
-    callback: ErrorCallback,
-  ): void;
-  updateMany(query: object, update: object, callback: ErrorCallback): void;
+  updateMany(query: object, update: object): Promise<unknown>;
 }
 interface ThreadEndpointModel {
   new (record?: Partial<ThreadEndpointRecord>): ThreadEndpointDocument;
@@ -137,29 +121,11 @@ interface ThreadEndpointModel {
   findById(
     id: ObjectIdInput,
     projection: string,
-    callback: (
-      error: Error | null,
-      result: ThreadEndpointDocument | null,
-    ) => void,
-  ): void;
-  findOne(
-    query: object,
-    callback: (
-      error: Error | null,
-      result: ThreadEndpointDocument | null,
-    ) => void,
-  ): void;
-  updateOne(
-    query: object,
-    update: object,
-    options: object,
-    callback: ErrorCallback,
-  ): void;
-  updateMany(query: object, update: object, callback: ErrorCallback): void;
-  countDocuments(
-    query: object,
-    callback: (error: Error | null, count: number) => void,
-  ): void;
+  ): QueryResult<ThreadEndpointDocument | null>;
+  findOne(query: object): QueryResult<ThreadEndpointDocument | null>;
+  updateOne(query: object, update: object, options: object): Promise<unknown>;
+  updateMany(query: object, update: object): Promise<unknown>;
+  countDocuments(query: object): Promise<number>;
 }
 interface UserEndpointModel {
   findOne(query: object): QueryResult<HydratedDocument<MessageUser> | null>;
@@ -446,13 +412,13 @@ function sanitizeThreads(
       done: (error?: Error | null, result?: ClientThreadSummary) => void,
     ) {
       // Threads need just excerpt
-      thread = thread.toObject();
+      const plainThread = thread.toObject();
 
       // Clean message content from html + clean all whitespace + shorten
       let excerpt;
-      if (thread.message) {
+      if (plainThread.message) {
         const messageContent = (
-          thread.message as Pick<MessageEndpointRecord, 'content'>
+          plainThread.message as Pick<MessageEndpointRecord, 'content'>
         ).content;
         excerpt = messageContent
           ? textService.plainText(messageContent, true).substring(0, 100)
@@ -464,13 +430,13 @@ function sanitizeThreads(
       // If latest message in the thread was from current user, show
       // it as read - sender obviously read his/her own message
       if (
-        thread.userFrom &&
-        thread.userFrom._id &&
-        thread.userFrom._id.toString() === authenticatedUserId.toString()
+        plainThread.userFrom &&
+        plainThread.userFrom._id &&
+        plainThread.userFrom._id.toString() === authenticatedUserId.toString()
       ) {
-        thread.read = true;
+        plainThread.read = true;
       }
-      done(null, prepareThreadSummary(thread, excerpt));
+      done(null, prepareThreadSummary(plainThread, excerpt));
     },
     callback,
   );

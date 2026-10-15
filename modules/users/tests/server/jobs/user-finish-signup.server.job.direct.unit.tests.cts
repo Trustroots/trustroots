@@ -54,7 +54,13 @@ describe('Job: user finish signup direct unit tests', function () {
     findUsers.returns(query as unknown as ReturnType<typeof User.find>);
     const findByIdAndUpdate = sinon.stub(User, 'findByIdAndUpdate');
     const updateOne = sinon.stub(User, 'updateOne');
-    updateOne.resolves({ matchedCount: 1 });
+    updateOne.resolves({
+      acknowledged: true,
+      matchedCount: 1,
+      modifiedCount: 1,
+      upsertedCount: 0,
+      upsertedId: null,
+    });
     const sendSignupEmailReminder = sinon.stub(
       emailService,
       'sendSignupEmailReminder',

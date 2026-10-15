@@ -15,9 +15,6 @@ const emailService: typeof import('./../../../../core/server/services/email.serv
 const sinon: typeof import('sinon') = require('sinon');
 const winston: typeof import('winston') = require('winston');
 const unifiedPush: typeof import('./../../../../users/server/services/unified-push.server.service.mjs') = require('./../../../../users/server/services/unified-push.server.service.mjs');
-type UnreadUser = Pick<UserRecord, 'email' | 'displayName' | 'roles'> & {
-  _id: UserModelDocument['_id'];
-};
 const testutils: typeof import('../../../../../testutils/server/server.testutil') = require('../../../../../testutils/server/server.testutil');
 const mongoose: typeof import('mongoose') = require('mongoose');
 type WebPushService = {
@@ -156,7 +153,6 @@ describe('Job: message unread', function () {
               done();
             })
             .catch(function (err) {
-              if (typeof stepDone === 'function') return stepDone(err);
               if (typeof done === 'function') return done(err);
               throw err;
             });
@@ -260,14 +256,12 @@ describe('Job: message unread', function () {
                   done();
                 })
                 .catch(function (err) {
-                  if (typeof stepDone === 'function') return stepDone(err);
                   if (typeof done === 'function') return done(err);
                   throw err;
                 });
             });
           })
           .catch(function (err) {
-            if (typeof stepDone === 'function') return stepDone(err);
             if (typeof done === 'function') return done(err);
             throw err;
           });
@@ -342,20 +336,17 @@ describe('Job: message unread', function () {
                       done();
                     })
                     .catch(function (err) {
-                      if (typeof stepDone === 'function') return stepDone(err);
                       if (typeof done === 'function') return done(err);
                       throw err;
                     });
                 });
               })
               .catch(function (err) {
-                if (typeof stepDone === 'function') return stepDone(err);
                 if (typeof done === 'function') return done(err);
                 throw err;
               });
           })
           .catch(function (err) {
-            if (typeof stepDone === 'function') return stepDone(err);
             if (typeof done === 'function') return done(err);
             throw err;
           });
@@ -386,14 +377,12 @@ describe('Job: message unread', function () {
                   done();
                 })
                 .catch(function (err) {
-                  if (typeof stepDone === 'function') return stepDone(err);
                   if (typeof done === 'function') return done(err);
                   throw err;
                 });
             });
           })
           .catch(function (err) {
-            if (typeof stepDone === 'function') return stepDone(err);
             if (typeof done === 'function') return done(err);
             throw err;
           });
@@ -425,14 +414,12 @@ describe('Job: message unread', function () {
                   done();
                 })
                 .catch(function (err) {
-                  if (typeof stepDone === 'function') return stepDone(err);
                   if (typeof done === 'function') return done(err);
                   throw err;
                 });
             });
           })
           .catch(function (err) {
-            if (typeof stepDone === 'function') return stepDone(err);
             if (typeof done === 'function') return done(err);
             throw err;
           });
@@ -490,14 +477,12 @@ describe('Job: message unread', function () {
                   done();
                 })
                 .catch(function (err) {
-                  if (typeof stepDone === 'function') return stepDone(err);
                   if (typeof done === 'function') return done(err);
                   throw err;
                 });
             });
           })
           .catch(function (err) {
-            if (typeof stepDone === 'function') return stepDone(err);
             if (typeof done === 'function') return done(err);
             throw err;
           });
@@ -542,14 +527,12 @@ describe('Job: message unread', function () {
                   done();
                 })
                 .catch(function (err) {
-                  if (typeof stepDone === 'function') return stepDone(err);
                   if (typeof done === 'function') return done(err);
                   throw err;
                 });
             });
           })
           .catch(function (err) {
-            if (typeof stepDone === 'function') return stepDone(err);
             if (typeof done === 'function') return done(err);
             throw err;
           });
@@ -652,7 +635,6 @@ describe('Job: message unread', function () {
               });
             })
             .catch(function (err) {
-              if (typeof stepDone === 'function') return stepDone(err);
               if (typeof done === 'function') return done(err);
               throw err;
             });
@@ -704,7 +686,6 @@ describe('Job: message unread', function () {
               });
             })
             .catch(function (err) {
-              if (typeof stepDone === 'function') return stepDone(err);
               if (typeof done === 'function') return done(err);
               throw err;
             });

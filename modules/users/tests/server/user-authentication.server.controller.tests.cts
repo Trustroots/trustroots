@@ -1069,12 +1069,7 @@ describe('Authentication controller OAuth unit tests', () => {
         filter: Parameters<typeof User.findOneAndUpdate>[0],
         update: Parameters<typeof User.findOneAndUpdate>[1],
         options: Parameters<typeof User.findOneAndUpdate>[2],
-        callback: (
-          error: Error | null,
-          document: AuthenticationUserDocument | null,
-          result?: unknown,
-        ) => void,
-      ) => void;
+      ) => PromiseLike<unknown>;
       const originalFindOneAndUpdate =
         User.findOneAndUpdate as unknown as LegacyFindOneAndUpdate;
       const legacyUserModel = User as unknown as {

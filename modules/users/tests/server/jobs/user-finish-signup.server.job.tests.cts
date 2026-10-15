@@ -409,6 +409,6 @@ describe('Job: user finish signup', function () {
   afterEach(function (done) {
     User.deleteMany()
       .exec()
-      .then(result => done(null, result), done);
+      .then(() => done(), done);
   });
 });

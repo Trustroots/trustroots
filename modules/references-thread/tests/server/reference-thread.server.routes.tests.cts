@@ -268,8 +268,6 @@ describe('Reference Thread CRUD tests', function () {
           },
           function (referenceThreadErr) {
             if (typeof done === 'function') return done(referenceThreadErr);
-            if (typeof stepDone === 'function')
-              return stepDone(referenceThreadErr);
             throw referenceThreadErr;
           },
         );
@@ -315,8 +313,6 @@ describe('Reference Thread CRUD tests', function () {
           },
           function (referenceThreadErr) {
             if (typeof done === 'function') return done(referenceThreadErr);
-            if (typeof stepDone === 'function')
-              return stepDone(referenceThreadErr);
             throw referenceThreadErr;
           },
         );
@@ -408,8 +404,6 @@ describe('Reference Thread CRUD tests', function () {
                   });
               })
               .catch(function (mongooseErr) {
-                if (typeof stepDone === 'function')
-                  return stepDone(mongooseErr);
                 if (typeof done === 'function') return done(mongooseErr);
                 throw mongooseErr;
               });
@@ -607,8 +601,6 @@ describe('Reference Thread CRUD tests', function () {
                       });
                   })
                   .catch(function (referenceThreadFindErr) {
-                    if (typeof stepDone === 'function')
-                      return stepDone(referenceThreadFindErr);
                     if (typeof done === 'function')
                       return done(referenceThreadFindErr);
                     throw referenceThreadFindErr;
@@ -617,8 +609,6 @@ describe('Reference Thread CRUD tests', function () {
           },
           function (referenceThreadErr) {
             if (typeof done === 'function') return done(referenceThreadErr);
-            if (typeof stepDone === 'function')
-              return stepDone(referenceThreadErr);
             throw referenceThreadErr;
           },
         );

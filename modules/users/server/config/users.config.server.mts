@@ -64,7 +64,7 @@ const defaultExport = async function (app: UsersApplication): Promise<void> {
           return done(null, user);
         },
         function (err) {
-          done(err);
+          done(err, false);
         },
       );
     },

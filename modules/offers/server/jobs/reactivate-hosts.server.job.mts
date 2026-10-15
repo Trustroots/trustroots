@@ -20,21 +20,12 @@ interface ReactivationOffer {
 
 interface OfferQuery {
   populate(path: string, fields: string): this;
-  exec(
-    callback: (
-      error: Error | null,
-      offers: ReactivationOffer[] | null | undefined,
-    ) => void,
-  ): void;
+  exec(): Promise<ReactivationOffer[]>;
 }
 
 interface OfferModel {
   find(query: object): OfferQuery;
-  findByIdAndUpdate(
-    id: Types.ObjectId,
-    update: object,
-    callback: (error: Error | null) => void,
-  ): void;
+  findByIdAndUpdate(id: Types.ObjectId, update: object): Promise<unknown>;
 }
 
 type Done = (error?: Error | null) => void;

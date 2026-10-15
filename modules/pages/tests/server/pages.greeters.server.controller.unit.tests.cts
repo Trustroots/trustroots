@@ -66,7 +66,7 @@ async function loadController(execHandler: ExecHandler) {
     limit,
     exec,
     then(onFulfilled, onRejected) {
-      return new Promise((resolve, reject) => {
+      return new Promise<Greeter[] | undefined>((resolve, reject) => {
         execHandler((error, users) => (error ? reject(error) : resolve(users)));
       }).then(onFulfilled, onRejected);
     },

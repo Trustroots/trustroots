@@ -70,7 +70,7 @@ export interface OfferEndpointDocument {
   validUntil?: Date;
   showOnlyInMyCircles?: boolean;
   set(path: string, value: unknown): void;
-  save(callback: (error?: Error | null) => void): void;
+  save(): Promise<unknown>;
   toObject(): OfferSanitiseRecord;
 }
 

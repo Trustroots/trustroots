@@ -64,7 +64,6 @@ const service = function uniqueValidation<
   // Custom messages on schema.index({ ... }, { unique: 'message' }) are not
   // supported; this adapter reads messages from individual schema paths.
   schema.post('save', handleDuplicate);
-  schema.post('update', handleDuplicate);
   schema.post('updateOne', handleDuplicate);
   schema.post('updateMany', handleDuplicate);
   schema.post('findOneAndUpdate', handleDuplicate);

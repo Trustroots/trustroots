@@ -21,7 +21,7 @@ const express: TestExpressModule = require('./../../../../config/lib/express.mjs
 const utils = require('../../../../testutils/server/data.server.testutil');
 const User = mongoose.model('User') as UserModel;
 const Message = mongoose.model('Message') as MessageModel;
-const Thread: ThreadModel = mongoose.model('Thread');
+const Thread = mongoose.model('Thread') as ThreadModel;
 
 /**
  * Globals
@@ -283,7 +283,6 @@ describe('Message CRUD tests', function () {
       },
       function (saveErr) {
         if (typeof done === 'function') return done(saveErr);
-        if (typeof stepDone === 'function') return stepDone(saveErr);
         throw saveErr;
       },
     );
@@ -311,7 +310,6 @@ describe('Message CRUD tests', function () {
       },
       function (saveErr) {
         if (typeof done === 'function') return done(saveErr);
-        if (typeof stepDone === 'function') return stepDone(saveErr);
         throw saveErr;
       },
     );
@@ -336,7 +334,6 @@ describe('Message CRUD tests', function () {
       },
       function (saveErr) {
         if (typeof done === 'function') return done(saveErr);
-        if (typeof stepDone === 'function') return stepDone(saveErr);
         throw saveErr;
       },
     );
@@ -367,14 +364,12 @@ describe('Message CRUD tests', function () {
               });
           })
           .catch(function (saveErr) {
-            if (typeof stepDone === 'function') return stepDone(saveErr);
             if (typeof done === 'function') return done(saveErr);
             throw saveErr;
           });
       },
       function (saveErr) {
         if (typeof done === 'function') return done(saveErr);
-        if (typeof stepDone === 'function') return stepDone(saveErr);
         throw saveErr;
       },
     );
@@ -875,14 +870,12 @@ describe('Message CRUD tests', function () {
                       });
                   })
                   .catch(function (err) {
-                    if (typeof stepDone === 'function') return stepDone(err);
                     if (typeof done === 'function') return done(err);
                     throw err;
                   });
               });
           })
           .catch(function (newThreadErr) {
-            if (typeof stepDone === 'function') return stepDone(newThreadErr);
             if (typeof done === 'function') return done(newThreadErr);
             throw newThreadErr;
           }); // newThread
@@ -984,21 +977,17 @@ describe('Message CRUD tests', function () {
                   });
               })
               .catch(function (newThreadErr) {
-                if (typeof stepDone === 'function')
-                  return stepDone(newThreadErr);
                 if (typeof done === 'function') return done(newThreadErr);
                 throw newThreadErr;
               });
           })
           .catch(function (newMessage2Err) {
-            if (typeof stepDone === 'function') return stepDone(newMessage2Err);
             if (typeof done === 'function') return done(newMessage2Err);
             throw newMessage2Err;
           });
       },
       function (newMessage1Err) {
         if (typeof done === 'function') return done(newMessage1Err);
-        if (typeof stepDone === 'function') return stepDone(newMessage1Err);
         throw newMessage1Err;
       },
     );
@@ -1120,21 +1109,17 @@ describe('Message CRUD tests', function () {
                   });
               })
               .catch(function (newThreadErr) {
-                if (typeof stepDone === 'function')
-                  return stepDone(newThreadErr);
                 if (typeof done === 'function') return done(newThreadErr);
                 throw newThreadErr;
               });
           })
           .catch(function (newMessage2Err) {
-            if (typeof stepDone === 'function') return stepDone(newMessage2Err);
             if (typeof done === 'function') return done(newMessage2Err);
             throw newMessage2Err;
           });
       },
       function (newMessage1Err) {
         if (typeof done === 'function') return done(newMessage1Err);
-        if (typeof stepDone === 'function') return stepDone(newMessage1Err);
         throw newMessage1Err;
       },
     );
@@ -1231,21 +1216,17 @@ describe('Message CRUD tests', function () {
                   });
               })
               .catch(function (newThreadErr) {
-                if (typeof stepDone === 'function')
-                  return stepDone(newThreadErr);
                 if (typeof done === 'function') return done(newThreadErr);
                 throw newThreadErr;
               });
           })
           .catch(function (newMessage2Err) {
-            if (typeof stepDone === 'function') return stepDone(newMessage2Err);
             if (typeof done === 'function') return done(newMessage2Err);
             throw newMessage2Err;
           });
       },
       function (newMessage1Err) {
         if (typeof done === 'function') return done(newMessage1Err);
-        if (typeof stepDone === 'function') return stepDone(newMessage1Err);
         throw newMessage1Err;
       },
     );
@@ -1289,7 +1270,6 @@ describe('Message CRUD tests', function () {
       },
       function (saveErr) {
         if (typeof done === 'function') return done(saveErr);
-        if (typeof stepDone === 'function') return stepDone(saveErr);
         throw saveErr;
       },
     );
@@ -1337,7 +1317,6 @@ describe('Message CRUD tests', function () {
       },
       function (saveErr) {
         if (typeof done === 'function') return done(saveErr);
-        if (typeof stepDone === 'function') return stepDone(saveErr);
         throw saveErr;
       },
     );
@@ -1387,7 +1366,6 @@ describe('Message CRUD tests', function () {
       },
       function (saveErr) {
         if (typeof done === 'function') return done(saveErr);
-        if (typeof stepDone === 'function') return stepDone(saveErr);
         throw saveErr;
       },
     );

@@ -236,7 +236,7 @@ function addOffer(
   offer.user = userID;
   offer.location = location;
   offer.locationFuzzy = location;
-  offer.save((err: Error | null) => {
+  function savedOffer(err: Error | null) {
     if (err != null) console.log(err);
     else {
       savedOffers++;
@@ -251,7 +251,8 @@ function addOffer(
         callback();
       }
     }
-  });
+  }
+  offer.save().then(() => savedOffer(null), savedOffer);
 }
 
 /**
@@ -408,7 +409,7 @@ function addUsers(max: number, adminUsers: string[] = []) {
               }
 
               // Save the user
-              user.save(function (err: Error | null) {
+              function savedUser(err: Error | null) {
                 savedUsers++;
                 process.stdout.write('.');
                 if (!err && admin !== undefined) {
@@ -422,7 +423,8 @@ function addUsers(max: number, adminUsers: string[] = []) {
                   console.log(err);
                 }
                 addOffer(user._id, max, userCount, limit, () => resolve());
-              });
+              }
+              user.save().then(() => savedUser(null), savedUser);
 
               // No more admin users
               if (numAdminUsers === 1) {
