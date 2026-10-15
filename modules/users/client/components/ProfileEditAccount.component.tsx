@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import ProfileEditPage from './ProfileEditPage.component';
+import MemberSessions from './MemberSessions.component';
 import {
   changePassword,
   removeProfile,
@@ -16,6 +17,7 @@ import {
   SIGNUP_USERNAME_REGEX,
   SIGNUP_USERNAME_FORMAT_MESSAGE,
 } from '../config/username.client.constants';
+import MfaSettings from './MfaSettings.component';
 
 interface ProfileEditAccountProps {
   user: UserProfile;
@@ -270,6 +272,8 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
         </div>
       </div>
 
+      <MfaSettings />
+
       <div className="panel panel-default">
         <div className="panel-heading">{t('News and updates')}</div>
         <div className="panel-body">
@@ -402,6 +406,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
           {removalMessage && <p className="help-block">{removalMessage}</p>}
         </div>
       </div>
+      <MemberSessions />
     </ProfileEditPage>
   );
 }

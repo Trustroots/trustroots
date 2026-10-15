@@ -8,10 +8,14 @@ type Operation =
   | 'forgotPassword'
   | 'resetPassword'
   | 'resendConfirmation'
+  | 'manageSessions'
+  | 'mfaVerify'
+  | 'mfaManage'
   | 'avatarUpload';
 interface LimitRequest {
   get?: (header: string) => string | undefined;
   ip?: string;
+  session?: { mfaChallenge?: { userId?: string } };
   user?: { id?: string };
   body?: { username?: unknown; email?: unknown };
   params?: { token?: unknown };
@@ -46,7 +50,7 @@ interface LimitDependencies {
 }
 
 function getRequestIdentity(
-  req: Pick<LimitRequest, 'body' | 'user' | 'params'>,
+  req: Pick<LimitRequest, 'body' | 'user' | 'params' | 'session'>,
   source: string,
 ): string | undefined {
   if (source === 'member') return req.user && req.user.id;
@@ -61,6 +65,9 @@ function getRequestIdentity(
   if (source === 'token') {
     const token = req.params && req.params.token;
     return typeof token === 'string' ? token : undefined;
+  }
+  if (source === 'mfaChallenge') {
+    return req.session?.mfaChallenge?.userId;
   }
   return undefined;
 }
@@ -118,12 +125,12 @@ function createLimiter(
       });
     }
     if (
-      (identitySource === 'member' || identitySource === 'recipient') &&
+      ['member', 'recipient', 'mfaChallenge'].includes(identitySource) &&
       identity &&
       hasIdentityLimit
     ) {
       dimensions.push({
-        name: identitySource,
+        name: identitySource === 'recipient' ? 'recipient' : 'member',
         value: identity,
         limit: policy.identityLimit,
       });
@@ -161,7 +168,10 @@ function createTargetedRequestLimits(deps?: LimitDependencies) {
     signin: createLimiter('signin', 'account', deps),
     forgotPassword: createLimiter('forgotPassword', 'account', deps),
     resetPassword: createLimiter('resetPassword', 'token', deps),
+    mfaVerify: createLimiter('mfaVerify', 'mfaChallenge', deps),
+    mfaManage: createLimiter('mfaManage', 'member', deps),
     resendConfirmation: createLimiter('resendConfirmation', 'member', deps),
+    manageSessions: createLimiter('manageSessions', 'member', deps),
     avatarUpload: createLimiter('avatarUpload', 'member', deps),
     getRequestIdentity,
   };

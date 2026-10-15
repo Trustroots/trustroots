@@ -174,12 +174,13 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
-          if git fetch --depth=1 origin pr-screenshots:pr-screenshots 2>/dev/null; then
-            git checkout pr-screenshots
-          else
-            git checkout --orphan pr-screenshots
-            git rm -rf . >/dev/null 2>&1 || true
-          fi
+          for attempt in 1 2 3 4 5; do
+            if git fetch --depth=1 origin pr-screenshots 2>/dev/null; then
+              git checkout -B pr-screenshots FETCH_HEAD
+            else
+              git checkout --orphan pr-screenshots
+              git rm -rf . >/dev/null 2>&1 || true
+            fi
 
           mkdir -p "$RUN_DIR"
           cp "$workdir"/*.png "$RUN_DIR/"

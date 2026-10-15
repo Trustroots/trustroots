@@ -110,9 +110,31 @@ function assertHandlers(
 
 function assertPolicy(
   route: RecordedRoute,
-  policy: { isAllowed: NamedHandler },
+  policy: { isAllowed: NamedHandler; requireAdminElevation?: NamedHandler },
 ) {
-  assertHandlers(route.all, [policy.isAllowed], `${route.path} policy`);
+  const expected = [policy.isAllowed];
+  if (route.path.startsWith('/api/users/mfa/'))
+    expected.push(handler('requestLimit.mfaManage'));
+  if (
+    route.path.startsWith('/api/admin/') &&
+    route.path !== '/api/admin/elevate' &&
+    !route.path.startsWith('/api/admin/support') &&
+    !route.path.startsWith('/api/admin/location-corrections') &&
+    !route.path.startsWith('/api/admin/experiences') &&
+    !route.path.startsWith('/api/admin/experience-change-requests') &&
+    policy.requireAdminElevation
+  ) {
+    expected.push(policy.requireAdminElevation);
+  }
+  const handlerNames = (handlers: NamedHandler[]) =>
+    handlers.map(handler =>
+      (handler.routeTestName || handler.name).split('.').pop(),
+    );
+  assert.deepStrictEqual(
+    handlerNames(route.all),
+    handlerNames(expected),
+    `${route.path} policy`,
+  );
 }
 
 function register(
@@ -433,7 +455,20 @@ describe('API route registrations', () => {
       ['removeOAuthProvider'],
       'userAuthentication',
     );
-    const targetedRequestLimit = controller(['avatarUpload'], 'requestLimit');
+    const targetedRequestLimit = controller(
+      ['avatarUpload', 'mfaManage'],
+      'requestLimit',
+    );
+    const mfa = controller(
+      [
+        'settings',
+        'beginEnrollment',
+        'verifyEnrollment',
+        'regenerateRecoveryCodes',
+        'disable',
+      ],
+      'userMfa',
+    );
 
     const { params, routes } = register(
       './../../../users/server/routes/users.server.routes.mts',
@@ -442,6 +477,7 @@ describe('API route registrations', () => {
         '../controllers/users.avatar.server.controller': avatar,
         '../controllers/users.password.server.controller': password,
         '../controllers/users.profile.server.controller': profile,
+        '../controllers/users.mfa.server.controller': mfa,
         '../policies/users.server.policy': policy,
         '../../../core/server/middleware/targeted-request-limit.server.middleware':
           targetedRequestLimit,
@@ -516,6 +552,7 @@ describe('API route registrations', () => {
         'signup',
         'signupValidation',
         'validateEmailToken',
+        'verifyMfa',
       ],
       'userAuthentication',
     );
@@ -530,6 +567,7 @@ describe('API route registrations', () => {
         'resetPassword',
         'signin',
         'signup',
+        'mfaVerify',
       ],
       'requestLimit',
     );
@@ -538,6 +576,9 @@ describe('API route registrations', () => {
       './../../../users/server/routes/auth.server.routes.mts',
       {
         '../controllers/users.authentication.server.controller': authentication,
+        '../services/signin-challenge.server.service': {
+          signinChallenge: handler('signinChallenge'),
+        },
         '../controllers/users.password.server.controller': password,
         '../../../core/server/middleware/targeted-request-limit.server.middleware':
           targetedRequestLimit,
@@ -574,6 +615,7 @@ describe('API route registrations', () => {
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/signin').post, [
       targetedRequestLimit.signin,
+      handler('signinChallenge'),
       authentication.signin,
     ]);
     const signoutRoute = routeByPath(routes, '/api/auth/signout');
@@ -621,8 +663,56 @@ describe('API route registrations', () => {
     routes.forEach(route => assertPolicy(route, policy));
   });
 
+  it('registers member session management routes with password confirmation and a dedicated limit', async () => {
+    const [
+      { default: memberSessionRoutes },
+      memberSessionController,
+      { default: targetedRequestLimit },
+    ] = await Promise.all([
+      import('../../../users/server/routes/sessions.server.routes.mjs'),
+      import('../../../users/server/controllers/users.sessions.server.controller.mjs'),
+      import('../../server/middleware/targeted-request-limit.server.middleware.mjs'),
+    ]);
+    const { app, routes } = createAppRecorder();
+    memberSessionRoutes(app);
+
+    assertHandlers(
+      routeByPath(routes, '/api/auth/sessions').all.concat(
+        routeByPath(routes, '/api/auth/sessions').get,
+      ),
+      [memberSessionController.requireMember, memberSessionController.list],
+    );
+    assertHandlers(
+      routeByPath(routes, '/api/auth/sessions').all.concat(
+        routeByPath(routes, '/api/auth/sessions').delete,
+      ),
+      [
+        memberSessionController.requireMember,
+        targetedRequestLimit.manageSessions as unknown as NamedHandler,
+        memberSessionController.confirmPassword,
+        memberSessionController.revokeAll,
+      ],
+    );
+    assertHandlers(
+      routeByPath(routes, '/api/auth/sessions/:id').all.concat(
+        routeByPath(routes, '/api/auth/sessions/:id').delete,
+      ),
+      [
+        memberSessionController.requireMember,
+        targetedRequestLimit.manageSessions as unknown as NamedHandler,
+        memberSessionController.confirmPassword,
+        memberSessionController.revoke,
+      ],
+    );
+  });
+
   it('registers admin routes with audit log middleware where required', () => {
-    const policy = { isAllowed: handler('adminPolicy.isAllowed') };
+    const policy = {
+      isAllowed: handler('adminPolicy.isAllowed'),
+      requireAdminElevation: handler('adminPolicy.requireAdminElevation'),
+      confirmAdminPassword: handler('adminPolicy.confirmAdminPassword'),
+      elevateAdminSession: handler('adminPolicy.elevateAdminSession'),
+    };
     const support = controller(
       [
         'list',
@@ -704,6 +794,11 @@ describe('API route registrations', () => {
       routeByPath(routes, '/api/admin/location-corrections/send').post,
       [auditLog.record, locationCorrections.send],
     );
+    assertHandlers(routeByPath(routes, '/api/admin/elevate').post, [
+      policy.confirmAdminPassword,
+      policy.elevateAdminSession,
+    ]);
+
     assertHandlers(routeByPath(routes, '/api/admin/acquisition-stories').post, [
       auditLog.record,
       acquisitionStories.list,

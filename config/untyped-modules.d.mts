@@ -87,6 +87,13 @@ declare module 'passport' {
     use(strategy: unknown): void;
     initialize(): import('express').RequestHandler;
     session(): import('express').RequestHandler;
+    serializeUser<Request, User>(
+      handler: (
+        request: Request,
+        user: User,
+        done: (error: Error | null, session: unknown) => void,
+      ) => void,
+    ): void;
     serializeUser<User>(
       handler: (
         user: User,

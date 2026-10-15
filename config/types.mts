@@ -29,6 +29,8 @@ export interface Config {
   sessionProxy: boolean;
   sessionSecret: string;
   sessionCollection: string;
+  adminElevation: { lifetimeMs: number };
+  mfaEncryptionKey: string;
   domain: string;
   csrfAllowedOrigins: string[];
   supportEmail: string;

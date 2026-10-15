@@ -53,6 +53,7 @@ test('greeter menu links directly to acquisition stories', async ({
     await updateUserByUsername(member.username, {
       $addToSet: { roles: 'welcome-team' },
     });
+    member.roles = ['user', 'welcome-team'];
     await signInViaApi(page, request, member);
     await page.goto('/circles');
     const adminLink = page.getByRole('link', { name: 'Admin', exact: true });

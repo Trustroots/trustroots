@@ -1,4 +1,5 @@
 import axios from '../../../core/client/api/http-client.js';
+import { solveSigninChallenge } from '../utils/signin-challenge';
 
 export interface SigninCredentials {
   username: string;
@@ -23,10 +24,40 @@ export interface AuthenticatedUser {
   [key: string]: unknown;
 }
 
+export interface MfaChallenge {
+  mfaRequired: true;
+}
+
 export async function signin(
   credentials: SigninCredentials,
-): Promise<AuthenticatedUser> {
-  const { data } = await axios.post('/api/auth/signin', credentials);
+): Promise<AuthenticatedUser | MfaChallenge> {
+  try {
+    const { data } = await axios.post('/api/auth/signin', credentials);
+    return data;
+  } catch (error) {
+    const response = (
+      error as {
+        response?: {
+          status?: number;
+          data?: { signinChallenge?: { token: string; difficulty: number } };
+        };
+      }
+    ).response;
+    if (response?.status !== 429 || !response.data?.signinChallenge)
+      throw error;
+    const signinProof = await solveSigninChallenge(
+      response.data.signinChallenge,
+    );
+    const { data } = await axios.post('/api/auth/signin', {
+      ...credentials,
+      signinProof,
+    });
+    return data;
+  }
+}
+
+export async function verifyMfa(code: string): Promise<AuthenticatedUser> {
+  const { data } = await axios.post('/api/auth/mfa/verify', { code });
   return data;
 }
 
@@ -62,6 +93,7 @@ export async function validateSignup(
 export interface ConfirmEmailResponse {
   user: AuthenticatedUser;
   profileMadePublic?: boolean;
+  mfaRequired?: boolean;
 }
 
 export async function confirmEmail(
@@ -81,7 +113,7 @@ export async function forgotPassword(credentials: {
 export async function resetPassword(
   token: string,
   passwordDetails: PasswordDetails,
-): Promise<AuthenticatedUser> {
+): Promise<AuthenticatedUser | MfaChallenge> {
   const { data } = await axios.post(
     `/api/auth/reset/${token}`,
     passwordDetails,

@@ -23,6 +23,10 @@ if (
  */
 
 const service = {
+  // Test-only key; deployments must supply MFA_ENCRYPTION_KEY independently.
+  mfaEncryptionKey:
+    process.env.MFA_ENCRYPTION_KEY ||
+    'dHJ1c3Ryb290cy10ZXN0LWtleS1mb3ItbWZhLW9ubHk=',
   // Test-only VAPID pair. Production keys must be supplied through environment variables.
   webPush: {
     publicKey:
@@ -35,6 +39,16 @@ const service = {
     signup: { windowMs: 60 * 60 * 1000, ipLimit: 10000, identityLimit: 10000 },
     support: { windowMs: 60 * 60 * 1000, ipLimit: 10000, identityLimit: 10000 },
     signin: { windowMs: 60 * 60 * 1000, ipLimit: 10000, identityLimit: 10000 },
+    mfaVerify: {
+      windowMs: 60 * 60 * 1000,
+      ipLimit: 10000,
+      identityLimit: 10000,
+    },
+    mfaManage: {
+      windowMs: 60 * 60 * 1000,
+      ipLimit: 10000,
+      identityLimit: 10000,
+    },
     forgotPassword: {
       windowMs: 60 * 60 * 1000,
       ipLimit: 10000,
@@ -46,6 +60,11 @@ const service = {
       identityLimit: 10000,
     },
     resendConfirmation: {
+      windowMs: 60 * 60 * 1000,
+      ipLimit: 10000,
+      identityLimit: 10000,
+    },
+    manageSessions: {
       windowMs: 60 * 60 * 1000,
       ipLimit: 10000,
       identityLimit: 10000,

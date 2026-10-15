@@ -83,7 +83,7 @@ describe('Admin Thread CRUD tests', () => {
         body.message.should.equal('Forbidden.');
       });
       it('admin users should be allowed to read threads by user ID', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/threads')
           .send({
@@ -97,7 +97,7 @@ describe('Admin Thread CRUD tests', () => {
         ]);
       });
       it('admin users should get an error for an invalid user ID', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/threads')
           .send({
@@ -107,7 +107,7 @@ describe('Admin Thread CRUD tests', () => {
         body.message.should.equal('Cannot interpret id.');
       });
       it('admin users should get an error when no user is provided', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/threads')
           .send({})
@@ -115,7 +115,7 @@ describe('Admin Thread CRUD tests', () => {
         body.message.should.equal('Cannot interpret id.');
       });
       it('admin users should be allowed to read threads by username', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signInPrivileged(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/threads')
           .send({

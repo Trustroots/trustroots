@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import crypto from 'node:crypto';
 import mongoose, { type HydratedDocument, type Model } from 'mongoose';
 
 import {
@@ -287,13 +288,108 @@ export async function clearDatabase(): Promise<void> {
   }
 }
 
-/** Sign in to the app using a Supertest agent. */
+export async function elevateAdminAccess(
+  agent: SupertestAgent,
+  password: string,
+) {
+  await agent
+    .post('/api/admin/elevate')
+    .set('X-Trustroots-Request', '1')
+    .send({ password })
+    .expect(200);
+}
+
 export async function signIn(
   user: { username: string; password: string },
   agent: SupertestAgent,
+  { privilegedAccess = true } = {},
 ): Promise<void> {
   const { username, password } = user;
+  if (privilegedAccess) {
+    const storedUser = await mongoose
+      .model('User')
+      .findOne({ username }, 'roles')
+      .lean();
+    if (
+      storedUser?.roles?.some((role: string) =>
+        ['admin', 'moderator', 'welcome-team'].includes(role),
+      )
+    ) {
+      return signInPrivileged(user, agent);
+    }
+  }
   await agent.post('/api/auth/signin').send({ username, password }).expect(200);
+}
+
+/**
+ * Sign in a privileged test user through the real MFA challenge and, by
+ * default, password step-up. The fixture provisions a fixed test-only secret
+ * before sign-in; access is granted only after the server verifies a current
+ * TOTP code. Elevation tests can opt out of password step-up.
+ * @param {object} user
+ * @param {object} agent - supertest's agent
+ * @param {object} [options]
+ * @param {boolean} [options.elevate=true]
+ * @returns {Promise<void>}
+ */
+export async function signInPrivileged(
+  user: { username: string; password: string },
+  agent: SupertestAgent,
+  { elevate = true } = {},
+): Promise<void> {
+  const User = mongoose.model<CachedUserFixtureData, UserFixtureModel>('User');
+  const storedUser = await User.findOne({ username: user.username }).exec();
+  if (
+    !storedUser ||
+    !storedUser.roles.some((role: string) =>
+      ['admin', 'moderator', 'welcome-team'].includes(role),
+    )
+  ) {
+    return signIn(user, agent, { privilegedAccess: false });
+  }
+
+  const { default: mfaService } =
+    await import('../../modules/users/server/services/mfa.server.service.mjs');
+  const secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+  await User.updateOne(
+    { _id: storedUser._id },
+    {
+      $set: {
+        mfaEnabled: true,
+        mfaSecretEncrypted: mfaService.encryptSecret(secret),
+        mfaLastTotpCounter: -1,
+        mfaRecoveryCodeHashes: [],
+      },
+    },
+  ).exec();
+
+  const { username, password } = user;
+  await agent.post('/api/auth/signin').send({ username, password }).expect(202);
+
+  const counter = Math.floor(Date.now() / 30000);
+  const key = Buffer.from('12345678901234567890');
+  const counterBuffer = Buffer.alloc(8);
+  counterBuffer.writeUInt32BE(Math.floor(counter / 0x100000000), 0);
+  counterBuffer.writeUInt32BE(counter % 0x100000000, 4);
+  const digest = crypto.createHmac('sha1', key).update(counterBuffer).digest();
+  const offset = digest[digest.length - 1] & 0x0f;
+  const binary = digest.readUInt32BE(offset) & 0x7fffffff;
+  const code = String(binary % 1000000).padStart(6, '0');
+
+  await agent
+    .post('/api/auth/mfa/verify')
+    .set('X-Trustroots-Request', '1')
+    .send({ code })
+    .expect(200);
+
+  if (
+    elevate &&
+    storedUser.roles.some((role: string) =>
+      ['admin', 'welcome-team', 'support-team'].includes(role),
+    )
+  ) {
+    await elevateAdminAccess(agent, password);
+  }
 }
 
 /** Sign out from the app using a Supertest agent. */
@@ -305,3 +401,23 @@ export async function signOut(agent: SupertestAgent): Promise<void> {
 }
 
 export { generateUsers, generateExperiences };
+
+export async function saveUsersWithSharedPassword(users: UserFixtureData[]) {
+  const User = mongoose.model<CachedUserFixtureData, UserFixtureModel>('User');
+  const password = users.find(user => user.password)?.password;
+  if (!password)
+    throw new Error('Shared-password fixtures require a password.');
+  const hashedPassword = await User.hashPassword(password);
+  const documents = users.map(user => {
+    const document = new User({ ...user, password: hashedPassword });
+    document.displayName = `${document.firstName} ${document.lastName}`;
+    return document.toObject();
+  });
+  await User.collection.insertMany(
+    documents.map(document => ({
+      ...document,
+      _id: new mongoose.Types.ObjectId(String(document._id)),
+    })),
+  );
+  return documents;
+}

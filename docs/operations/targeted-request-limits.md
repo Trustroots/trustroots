@@ -32,3 +32,7 @@ across client addresses. Support defaults to ten requests per client address
 and ten per signed-in member per hour; anonymous requests use the address
 allowance. Configure these policies under `targetedRequestLimits.signup` and
 `targetedRequestLimits.support`.
+
+Session-management mutations use a separate `manageSessions` policy in
+`targetedRequestLimits` so password-protected session changes do not consume
+the confirmation-email resend allowance.
