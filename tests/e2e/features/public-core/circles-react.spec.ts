@@ -391,7 +391,7 @@ test('administrators can review a SpaceAPI import preview', async ({
     const NativeWebSocket = window.WebSocket;
     window.placePublications = [];
     // Keep the browser test offline for the two publication relays while
-    // retaining normal sockets (including the webpack development server).
+    // retaining normal sockets to the API server.
     const PlaceRelaySocket = function (
       this: StubSocket,
       url: string | URL,

@@ -11,7 +11,6 @@ MONGO_ERROR=""
 DOCKER_ERROR=""
 PLAYWRIGHT_ERROR=""
 
-export TRUSTROOTS_E2E_WEB_PORT="${TRUSTROOTS_E2E_WEB_PORT:-4300}"
 export TRUSTROOTS_E2E_API_PORT="${TRUSTROOTS_E2E_API_PORT:-4301}"
 export TRUSTROOTS_E2E_HOST="${TRUSTROOTS_E2E_HOST:-127.0.0.1}"
 export TRUSTROOTS_E2E_REUSE_SERVER="${TRUSTROOTS_E2E_REUSE_SERVER:-false}"
@@ -39,12 +38,6 @@ if [ "${CI:-}" = "true" ]; then
   fi
 
   mkdir -p "$HOME" "$npm_config_cache" "$XDG_CACHE_HOME" "$PLAYWRIGHT_BROWSERS_PATH"
-fi
-
-# Local and CI runs build the Vite client once. Set this to true to serve the
-# Webpack development server instead.
-if [ -z "${TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER:-}" ]; then
-  export TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=false
 fi
 
 write_status() {
@@ -351,17 +344,15 @@ if ! NODE_ENV=test \
     "End-to-end tests blocked because the test database could not be seeded."
 fi
 
-if [ "${TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER:-false}" != "true" ]; then
-  export TRUSTROOTS_E2E_USE_EXTRACTED_CSS=true
+export TRUSTROOTS_E2E_USE_EXTRACTED_CSS=true
 
-  if [ "${TRUSTROOTS_E2E_SKIP_WEB_BUILD:-false}" != "true" ]; then
-    echo "Building client assets for end-to-end tests..."
-    if ! pnpm run build:e2e; then
-      exit_with_status \
-        "blocked" \
-        1 \
-        "End-to-end tests blocked because the client bundle could not be built."
-    fi
+if [ "${TRUSTROOTS_E2E_SKIP_WEB_BUILD:-false}" != "true" ]; then
+  echo "Building client assets for end-to-end tests..."
+  if ! pnpm run build:e2e; then
+    exit_with_status \
+      "blocked" \
+      1 \
+      "End-to-end tests blocked because the client bundle could not be built."
   fi
 fi
 

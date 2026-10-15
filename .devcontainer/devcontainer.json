@@ -9,7 +9,7 @@
   "postStartCommand": "pnpm run check-environment",
   "portsAttributes": {
     "3000": {
-      "label": "Webpack dev server",
+      "label": "Vite dev server",
       "onAutoForward": "ignore"
     },
     "3001": {

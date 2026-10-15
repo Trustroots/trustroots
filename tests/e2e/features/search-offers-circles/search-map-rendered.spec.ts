@@ -288,18 +288,16 @@ async function waitForRasterTileNear(
 test.describe('rendered search map feature coverage', () => {
   test.beforeEach(
     async ({ context, page, request, mapZoom, browser }, testInfo) => {
-      if (process.env.TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER === 'false') {
-        // The test API allows eval source maps; built assets must also work
-        // with the production policy's eval restriction, including map workers.
-        await page.route(/\/search(?:\?|$)/, async route => {
-          const response = await route.fetch();
-          const headers = response.headers();
-          headers['content-security-policy'] = headers[
-            'content-security-policy'
-          ].replace("'unsafe-eval'", '');
-          await route.fulfill({ response, headers });
-        });
-      }
+      // The test API permits eval source maps; built assets must also work
+      // with the production policy's eval restriction, including map workers.
+      await page.route(/\/search(?:\?|$)/, async route => {
+        const response = await route.fetch();
+        const headers = response.headers();
+        headers['content-security-policy'] = headers[
+          'content-security-policy'
+        ].replace("'unsafe-eval'", '');
+        await route.fulfill({ response, headers });
+      });
       if (process.env.TRUSTROOTS_E2E_WHEEL_DIAGNOSTICS === 'true') {
         testInfo.annotations.push({
           type: 'browser-version',

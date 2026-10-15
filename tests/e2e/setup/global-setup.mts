@@ -5,15 +5,9 @@ import {
 } from '@playwright/test';
 
 async function globalSetup(): Promise<void> {
-  const webPort = process.env.TRUSTROOTS_E2E_WEB_PORT || 4300;
   const apiPort = process.env.TRUSTROOTS_E2E_API_PORT || 4301;
-  const useWebpackDevServer =
-    process.env.TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER === 'true';
   const baseURL =
-    process.env.PLAYWRIGHT_BASE_URL ||
-    (useWebpackDevServer
-      ? `http://localhost:${webPort}`
-      : `http://localhost:${apiPort}`);
+    process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${apiPort}`;
 
   const timeoutMs =
     Number(process.env.TRUSTROOTS_E2E_WARMUP_TIMEOUT_MS) || 90000;

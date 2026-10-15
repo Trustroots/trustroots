@@ -53,14 +53,14 @@ pnpm start
 From a host terminal, print the available phone URLs:
 
 ```sh
-node scripts/devcontainer/phone-url.js
+node scripts/devcontainer/phone-url.cts
 ```
 
 Open one of those URLs on a phone connected to the same Wi-Fi network. The
 Vite development server proxies requests to the API inside the devcontainer,
 so port `13000` is the only port that needs to be reachable.
-`TRUSTROOTS_DEV_WEBPACK_BIND_ADDRESS` still chooses which host address Docker
-publishes.
+The legacy `TRUSTROOTS_DEV_WEBPACK_BIND_ADDRESS` variable still chooses which
+host address Docker publishes; it is kept for existing devcontainer setups.
 
 Keep the default binding for ordinary development. When phone testing is
 finished, close VS Code and reopen it normally (without the environment
@@ -87,7 +87,7 @@ pnpm run test:e2e
 pnpm run coverage:report
 ```
 
-`pnpm run test:e2e` builds the Vite client first. For the Webpack development server instead, set `TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=true`. For two workers:
+`pnpm run test:e2e` builds the Vite client first. For two workers:
 
 ```sh
 CI=true pnpm run test:e2e

@@ -9,20 +9,14 @@ const {
 }: typeof import('@playwright/test') = require('@playwright/test');
 
 const apiPort = process.env.TRUSTROOTS_E2E_API_PORT || 4301;
-const webPort = process.env.TRUSTROOTS_E2E_WEB_PORT || 4300;
 const applicationHost = process.env.TRUSTROOTS_E2E_HOST || 'localhost';
 const applicationUrlHost = applicationHost.includes(':')
   ? `[${applicationHost}]`
   : applicationHost;
-const useWebpackDevServer =
-  process.env.TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER === 'true';
 // The e2e script pins this host to IPv4 loopback so Node and Chromium cannot
 // choose different localhost address families inside a container.
 const baseURL =
-  process.env.PLAYWRIGHT_BASE_URL ||
-  (useWebpackDevServer
-    ? `http://${applicationUrlHost}:${webPort}`
-    : `http://${applicationUrlHost}:${apiPort}`);
+  process.env.PLAYWRIGHT_BASE_URL || `http://${applicationUrlHost}:${apiPort}`;
 const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 const seededMemberStorageState = path.join(
   __dirname,
@@ -52,34 +46,16 @@ function serializedDependencies(
   return serializeProjects ? serializedDependencies : defaultDependencies;
 }
 
-const webServers = useWebpackDevServer
-  ? [
-      {
-        command: 'pnpm run start:e2e:api',
-        env: { TRUSTROOTS_TEST_STATS_OUTAGE: 'true' },
-        url: `http://${applicationUrlHost}:${apiPort}/api/languages?format=array`,
-        timeout: 120 * 1000,
-        reuseExistingServer:
-          process.env.TRUSTROOTS_E2E_REUSE_SERVER === 'true' && !process.env.CI,
-      },
-      {
-        command: 'pnpm run start:e2e:web',
-        url: baseURL,
-        timeout: 180 * 1000,
-        reuseExistingServer:
-          process.env.TRUSTROOTS_E2E_REUSE_SERVER === 'true' && !process.env.CI,
-      },
-    ]
-  : [
-      {
-        command: 'pnpm run start:e2e:api',
-        env: { TRUSTROOTS_TEST_STATS_OUTAGE: 'true' },
-        url: `http://${applicationUrlHost}:${apiPort}/api/languages?format=array`,
-        timeout: 120 * 1000,
-        reuseExistingServer:
-          process.env.TRUSTROOTS_E2E_REUSE_SERVER === 'true' && !process.env.CI,
-      },
-    ];
+const webServers = [
+  {
+    command: 'pnpm run start:e2e:api',
+    env: { TRUSTROOTS_TEST_STATS_OUTAGE: 'true' },
+    url: `http://${applicationUrlHost}:${apiPort}/api/languages?format=array`,
+    timeout: 120 * 1000,
+    reuseExistingServer:
+      process.env.TRUSTROOTS_E2E_REUSE_SERVER === 'true' && !process.env.CI,
+  },
+];
 
 const config: PlaywrightTestConfig = defineConfig({
   testDir: './tests/e2e',

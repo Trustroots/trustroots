@@ -58,8 +58,7 @@ docker compose up
 ```
 
 - App with hot reload at http://localhost:3000 (Vite; the API runs on :3001
-  inside the container). `pnpm start:webpack` still starts the Webpack
-  development server.
+  inside the container).
 - Mailpit UI at http://localhost:1080 (SMTP to `mailpit:1025` from the app).
 - Runs `dev` + `mongodb` + `mailpit`; the repo is bind-mounted.
 - Mailpit's UI is bound to localhost and its SMTP port is not published to the
@@ -76,7 +75,7 @@ The first run builds the dev image (installs dependencies); this is slow once.
 ### After changing dependencies
 
 `node_modules` lives in a named volume seeded from the image, so rebuild and
-recreate it when `package.json` / `package-lock.json` change:
+recreate it when `package.json` / `pnpm-lock.yaml` change:
 
 ```bash
 docker compose build dev

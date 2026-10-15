@@ -1,0 +1,4 @@
+- [x] Remove Webpack configuration, commands, and exclusive dependencies.
+- [x] Route Windows map-wheel CI through Vite and simplify end-to-end orchestration without removing tests.
+- [x] Update documentation and current build specifications.
+- [x] Validate lint, typechecking, client tests, Vite configuration tests, production build, and browser smoke checks; run relevant end-to-end coverage where available.

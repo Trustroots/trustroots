@@ -1,9 +1,5 @@
 import type { BabelConfiguration } from './config/build-tool-types.mjs';
 
-const compact = require('lodash/compact');
-
-const isDevelopment = process.env.NODE_ENV === 'development';
-
 const babelConfig: BabelConfiguration = {
   presets: [
     [
@@ -17,11 +13,10 @@ const babelConfig: BabelConfiguration = {
     ['@babel/preset-react'],
     ['@babel/preset-typescript'],
   ],
-  plugins: compact([
+  plugins: [
     // Transpile class fields consistently regardless of browser targets.
     '@babel/plugin-transform-class-properties',
-    isDevelopment && 'react-refresh/babel',
-  ]),
+  ],
 };
 
 module.exports = babelConfig;

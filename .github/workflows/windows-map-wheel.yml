@@ -32,7 +32,6 @@ jobs:
       TRUSTROOTS_E2E_SKIP_JS_COVERAGE: 'true'
       TRUSTROOTS_E2E_USE_EXTRACTED_CSS: 'true'
       TRUSTROOTS_E2E_WHEEL_DIAGNOSTICS: 'true'
-      TRUSTROOTS_WEBPACK_SKIP_ESLINT: 'true'
       BROWSERSLIST_IGNORE_OLD_DATA: '1'
     steps:
       - uses: actions/checkout@v7
@@ -89,7 +88,8 @@ jobs:
       - name: Build the production client
         env:
           NODE_ENV: production
-        run: node node_modules/webpack/bin/webpack.js --config config/webpack/webpack.config.js
+          TRUSTROOTS_SKIP_LOCAL_CONFIG: 'true'
+        run: pnpm exec vite build --config vite.config.mjs
       - name: Seed the test database
         run: node scripts/e2e/seed.js
       - name: Run Windows wheel scenarios

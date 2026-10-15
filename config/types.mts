@@ -110,7 +110,6 @@ export interface Config {
     };
   };
   akismet: { enabled: boolean; key: string; url: string };
-  bundleAnalyzer: { enabled: boolean; options: Record<string, unknown> };
   db: DatabaseConfig;
   files: {
     server: {

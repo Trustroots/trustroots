@@ -26,8 +26,7 @@
     "config/vite/load-styles.ts",
     "config/vite/react-main.tsx",
     "modules/*/client/**/*.ts",
-    "modules/*/client/**/*.tsx",
-    "config/webpack/entries/react-main.tsx"
+    "modules/*/client/**/*.tsx"
   ],
   "exclude": ["node_modules"]
 }
