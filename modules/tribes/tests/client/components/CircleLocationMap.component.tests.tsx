@@ -61,6 +61,51 @@ const props = {
 };
 
 describe('shared circle map', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('fits the initial results without animation, then preserves the view on live updates', () => {
+    const { rerender } = render(
+      <CircleLocationMap {...props} locations={[]} state="loading" />,
+    );
+    const map = jest.mocked(L.map).mock.results[0].value;
+    rerender(<CircleLocationMap {...props} state="loading" />);
+    const second = { ...location, id: 'second', latitude: -30, longitude: -80 };
+    const locations = [location, second];
+    rerender(
+      <CircleLocationMap {...props} locations={locations} state="loading" />,
+    );
+    expect(map.fitBounds).not.toHaveBeenCalled();
+    rerender(<CircleLocationMap {...props} locations={locations} />);
+    expect(map.fitBounds).toHaveBeenCalledWith(
+      [
+        [12, 34],
+        [-30, -80],
+      ],
+      { padding: [24, 24], maxZoom: 8, animate: false },
+    );
+    rerender(<CircleLocationMap {...props} locations={[second]} />);
+    expect(map.fitBounds).toHaveBeenCalledTimes(1);
+    expect(L.circleMarker).toHaveBeenLastCalledWith(
+      [-30, -80],
+      expect.any(Object),
+    );
+  });
+
+  it('preserves a view chosen before the initial locations finish loading', () => {
+    const { rerender } = render(
+      <CircleLocationMap {...props} state="loading" />,
+    );
+    const map = jest.mocked(L.map).mock.results[0].value;
+    const moveStart = map.on.mock.calls.find(
+      ([name]: [string]) => name === 'movestart',
+    )[1];
+    act(() => moveStart());
+    rerender(<CircleLocationMap {...props} />);
+    expect(map.fitBounds).not.toHaveBeenCalled();
+  });
+
   it('renders markers, safe text popups and attribution, and removes its map', () => {
     const { unmount, rerender } = render(
       <CircleLocationMap {...props} attribution="Source attribution" />,

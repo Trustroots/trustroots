@@ -65,6 +65,7 @@ export default function CircleLocationMap(props: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
+  const initialViewSet = useRef(false);
   useEffect(() => {
     const element = container.current!;
     const minimumZoom = () =>
@@ -87,6 +88,10 @@ export default function CircleLocationMap(props: Props) {
       ],
       maxBoundsViscosity: 1,
     }).setView([20, 0], minimumZoom());
+    // Preserve any view chosen while the initial relay results are loading.
+    map.on('movestart', () => {
+      initialViewSet.current = true;
+    });
     map.on('resize', () => map.setMinZoom(minimumZoom()));
     const tiles = getRasterMapTiles();
     L.tileLayer(tiles.url, tiles.options).addTo(map);
@@ -96,6 +101,7 @@ export default function CircleLocationMap(props: Props) {
       map.remove();
       mapRef.current = null;
       markersRef.current = null;
+      initialViewSet.current = false;
     };
   }, []);
   useEffect(() => {
@@ -112,7 +118,16 @@ export default function CircleLocationMap(props: Props) {
         .bindPopup(locationPopup(location))
         .addTo(markers);
     });
-    if (props.locations.length)
+  }, [props.locations, props.markerColor]);
+  useEffect(() => {
+    // Fit the initial batch once. Streaming updates must not keep panning the
+    // map or interrupt someone exploring it.
+    if (
+      props.state !== 'loading' &&
+      props.locations.length &&
+      !initialViewSet.current
+    ) {
+      initialViewSet.current = true;
       mapRef.current!.fitBounds(
         L.latLngBounds(
           props.locations.map(
@@ -120,9 +135,10 @@ export default function CircleLocationMap(props: Props) {
               [location.latitude, location.longitude] as [number, number],
           ),
         ),
-        { padding: [24, 24], maxZoom: 8 },
+        { padding: [24, 24], maxZoom: 8, animate: false },
       );
-  }, [props.locations, props.markerColor]);
+    }
+  }, [props.locations, props.state]);
   return (
     <section
       className={`circle-location-map-panel${
