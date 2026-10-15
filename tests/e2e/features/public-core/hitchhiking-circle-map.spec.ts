@@ -3,6 +3,81 @@ import { installNostrRelayStub } from '../../support/nostr.mts';
 import { finalizeEvent, generateSecretKey } from 'nostr-tools';
 import type { Page } from '@playwright/test';
 
+test('circle map stays still without dragging and preserves its view as live places arrive', async ({
+  page,
+}) => {
+  const secret = generateSecretKey();
+  const events = ['s00000', 'u4pruy'].map((geohash, index) =>
+    finalizeEvent(
+      {
+        kind: 33000,
+        created_at: Math.floor(Date.now() / 1000),
+        content: 'A fictional workshop.',
+        tags: [
+          ['d', `example-${index}`],
+          ['L', 'physical-location'],
+          ['g', geohash],
+          ['name', `Example workshop ${index}`],
+          ['meta', 'source', 'https://api.spaceapi.io/'],
+        ],
+      },
+      secret,
+    ),
+  );
+  let publish: ((event: (typeof events)[number]) => void) | undefined;
+  await page.routeWebSocket('wss://relay.trustroots.org', socket => {
+    socket.onMessage(message => {
+      const [type, subscription] = JSON.parse(String(message));
+      if (type !== 'REQ') return;
+      publish = event =>
+        socket.send(JSON.stringify(['EVENT', subscription, event]));
+      publish(events[0]);
+      socket.send(JSON.stringify(['EOSE', subscription]));
+    });
+  });
+  await installNostrRelayStub(page, { relayUrl: 'wss://relay.nomadwiki.org' });
+  await page.route('**/api/tribes/hackers', route =>
+    route.fulfill({
+      json: {
+        _id: 'example-circle',
+        slug: 'hackers',
+        label: 'Hackers',
+        count: 0,
+      },
+    }),
+  );
+  await page.goto('/circles/hackers');
+  const map = page.locator('.circle-location-map');
+  await expect(page.locator('.circle-location-map-status')).toHaveText(
+    '1 SpaceAPI-reported places',
+  );
+  const pane = map.locator('.leaflet-map-pane');
+  const position = await pane.getAttribute('style');
+  const markerPosition = await map
+    .locator('.leaflet-interactive')
+    .getAttribute('d');
+  const box = await map.boundingBox();
+  expectPresent(box);
+  await page.mouse.move(box.x + 100, box.y + 100);
+  await page.mouse.move(box.x + 200, box.y + 150, { steps: 20 });
+  await expect(pane).toHaveAttribute('style', position!);
+  expectPresent(publish);
+  publish(events[1]);
+  await expect(page.locator('.circle-location-map-status')).toHaveText(
+    '2 SpaceAPI-reported places',
+  );
+  await expect(map.locator('.leaflet-interactive')).toHaveCount(2);
+  await expect(pane).toHaveAttribute('style', position!);
+  await expect(map.locator('.leaflet-interactive').first()).toHaveAttribute(
+    'd',
+    markerPosition!,
+  );
+  await page.mouse.down();
+  await page.mouse.move(box.x + 280, box.y + 180, { steps: 10 });
+  await page.mouse.up();
+  await expect(pane).not.toHaveAttribute('style', position!);
+});
+
 async function prepareCircle(page: Page, unavailable = false): Promise<void> {
   await installNostrRelayStub(page, {
     relayUrl: 'wss://relay.maps.hitchwiki.org',
