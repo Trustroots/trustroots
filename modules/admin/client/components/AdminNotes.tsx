@@ -1,7 +1,6 @@
 import RichText from '@/modules/core/client/components/RichText';
 // External dependencies
 import React, { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 
 import * as api from '../api/admin-notes.api';
 import TrEditor from '@/modules/core/client/components/TrEditor';
@@ -112,8 +111,3 @@ export default function AdminNotes({
     </>
   );
 }
-
-AdminNotes.propTypes = {
-  id: PropTypes.string.isRequired,
-  refreshToken: PropTypes.number,
-};

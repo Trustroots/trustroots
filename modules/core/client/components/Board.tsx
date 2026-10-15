@@ -5,7 +5,6 @@ import React, {
   type ReactNode,
   type HTMLAttributes,
 } from 'react';
-import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import isArray from 'lodash/isArray';
 
@@ -90,14 +89,3 @@ export default function Board({
     </section>
   );
 }
-
-Board.propTypes = {
-  names: PropTypes.oneOfType([
-    PropTypes.string,
-    PropTypes.arrayOf(PropTypes.string),
-  ]).isRequired,
-  ignoreBackgroundOnSmallScreen: PropTypes.bool,
-  style: PropTypes.object,
-  className: PropTypes.string,
-  children: PropTypes.node,
-};

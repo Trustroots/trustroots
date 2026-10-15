@@ -23,5 +23,3 @@ export default function ConfirmEmailNotification() {
     </div>
   );
 }
-
-ConfirmEmailNotification.propTypes = {};

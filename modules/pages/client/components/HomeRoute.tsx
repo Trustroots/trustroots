@@ -1,5 +1,4 @@
 import React, { useLayoutEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 import Home from './Home.component';
 import {
   useAppConfig,
@@ -59,5 +58,3 @@ export default function HomeRoute({ user }: { user?: PageUser | null }) {
     />
   );
 }
-
-HomeRoute.propTypes = { user: PropTypes.object };

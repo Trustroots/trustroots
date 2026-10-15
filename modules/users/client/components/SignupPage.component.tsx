@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import shuffle from 'lodash/shuffle';
 
@@ -77,12 +76,6 @@ function SignupTribePanel({
     </div>
   );
 }
-
-SignupTribePanel.propTypes = {
-  tribe: PropTypes.object.isRequired,
-  user: PropTypes.object,
-  onMembershipUpdated: PropTypes.func.isRequired,
-};
 
 type UsernameFieldErrors = Partial<
   Record<
@@ -724,5 +717,3 @@ export default function SignupPage() {
     </section>
   );
 }
-
-SignupPage.propTypes = {};

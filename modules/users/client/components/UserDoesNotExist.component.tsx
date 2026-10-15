@@ -24,5 +24,3 @@ export default function UserDoesNotExist() {
     </div>
   );
 }
-
-UserDoesNotExist.propTypes = {};

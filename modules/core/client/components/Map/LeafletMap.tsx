@@ -1,6 +1,5 @@
 // External dependencies
 import L from 'leaflet';
-import PropTypes from 'prop-types';
 import React, { useEffect, useRef } from 'react';
 
 import { getRasterMapTiles } from '../../utils/map';
@@ -116,18 +115,3 @@ export default function LeafletMap({
     />
   );
 }
-
-LeafletMap.propTypes = {
-  onLocationChange: PropTypes.func,
-  ariaHidden: PropTypes.bool,
-  className: PropTypes.string,
-  height: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  location: PropTypes.arrayOf(PropTypes.number).isRequired,
-  marker: PropTypes.shape({
-    color: PropTypes.string.isRequired,
-    location: PropTypes.arrayOf(PropTypes.number).isRequired,
-  }),
-  scrollZoom: PropTypes.bool,
-  width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  zoom: PropTypes.number,
-};

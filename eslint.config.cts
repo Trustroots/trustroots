@@ -249,7 +249,6 @@ const legacyConfig = {
         browser: true,
         jest: true,
         jasmine: true,
-        jquery: true,
       },
       globals: {
         L: true,

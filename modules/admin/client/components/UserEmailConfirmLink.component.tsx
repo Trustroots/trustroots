@@ -1,6 +1,5 @@
 // External dependencies
 import React from 'react';
-import PropTypes from 'prop-types';
 
 export default function UserEmailConfirmLink({
   user,
@@ -47,7 +46,3 @@ export default function UserEmailConfirmLink({
     </>
   );
 }
-
-UserEmailConfirmLink.propTypes = {
-  user: PropTypes.object.isRequired,
-};

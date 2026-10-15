@@ -1,6 +1,5 @@
 import RichText from '@/modules/core/client/components/RichText';
 import { plainText } from '@/modules/core/client/utils/filters';
-import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
 
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
@@ -239,7 +238,3 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
     </section>
   );
 }
-
-OfferMeetListPage.propTypes = {
-  user: PropTypes.object.isRequired,
-};

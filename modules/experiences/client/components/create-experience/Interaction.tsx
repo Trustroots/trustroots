@@ -1,8 +1,7 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
-import type { ExperienceInteractions } from '../../experiences.prop-types';
+import type { ExperienceInteractions } from '../../../shared/experience';
 
 type InteractionKind = 'met' | 'host' | 'guest';
 
@@ -66,8 +65,3 @@ export default function Interaction({
     </div>
   );
 }
-
-Interaction.propTypes = {
-  onChange: PropTypes.func.isRequired,
-  interactions: PropTypes.object.isRequired,
-};

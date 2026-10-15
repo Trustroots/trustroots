@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import LeaveTribeModal from './LeaveTribeModal';
 import Tooltip from '@/modules/core/client/components/Tooltip';
@@ -106,18 +105,6 @@ function JoinButtonPresentational({
   );
 }
 
-JoinButtonPresentational.propTypes = {
-  activeClassName: PropTypes.string,
-  className: PropTypes.string,
-  icon: PropTypes.bool,
-  isMember: PropTypes.bool.isRequired,
-  isLoading: PropTypes.bool,
-  isLoggedIn: PropTypes.bool.isRequired,
-  memberLabel: PropTypes.string,
-  tribe: PropTypes.object.isRequired,
-  onToggle: PropTypes.func,
-};
-
 // @TODO this can (and should) be replaced by other container, when we finish the migration; when we start using redux etc.
 export default function JoinButton({
   tribe,
@@ -193,13 +180,3 @@ export default function JoinButton({
     </>
   );
 }
-
-JoinButton.propTypes = {
-  activeClassName: PropTypes.string,
-  className: PropTypes.string,
-  icon: PropTypes.bool,
-  memberLabel: PropTypes.string,
-  tribe: PropTypes.object.isRequired,
-  user: PropTypes.object,
-  onUpdated: PropTypes.func.isRequired,
-};

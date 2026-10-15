@@ -19,6 +19,8 @@ describe('Targeted request limit storage', function () {
   });
 
   it('atomically counts concurrent requests despite simultaneous first upserts', async function () {
+    // All increments must use one window, even across a real minute boundary.
+    const now = Date.now() + 60_000;
     const dimensions = [
       { name: 'ip-and-identity', value: '198.51.100.9:sample', limit: 100 },
     ];
@@ -28,6 +30,7 @@ describe('Targeted request limit storage', function () {
           operation: 'concurrency-test',
           dimensions,
           windowMs: 60_000,
+          now,
         }),
       ),
     );

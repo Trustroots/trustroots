@@ -3,7 +3,6 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
@@ -93,9 +92,3 @@ export default function BottomNavigationSmall({
     </nav>
   );
 }
-
-BottomNavigationSmall.propTypes = {
-  isSelf: PropTypes.bool.isRequired,
-  contactCount: PropTypes.number.isRequired,
-  username: PropTypes.string.isRequired,
-};

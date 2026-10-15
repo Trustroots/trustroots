@@ -43,5 +43,3 @@ export default function Welcome() {
     </section>
   );
 }
-
-Welcome.propTypes = {};

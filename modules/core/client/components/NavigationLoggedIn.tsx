@@ -1,11 +1,9 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React, { useEffect, useState, type MouseEvent } from 'react';
 import { Navbar, NavDropdown, Nav, Dropdown } from 'react-bootstrap';
 
 // Internal dependencies
-import { userType } from '@/modules/users/client/users.prop-types';
 import type { AuthUser } from '@/modules/core/client/react-app/auth';
 import Avatar from '@/modules/users/client/components/Avatar.component.js';
 import UnreadCount from '@/modules/messages/client/components/UnreadCount.component';
@@ -336,9 +334,3 @@ export default function NavigationLoggedIn({
     </div>
   );
 }
-
-NavigationLoggedIn.propTypes = {
-  currentPath: PropTypes.string.isRequired,
-  onSignout: PropTypes.func.isRequired,
-  user: userType,
-};

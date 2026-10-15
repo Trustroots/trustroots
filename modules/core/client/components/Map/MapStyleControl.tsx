@@ -3,7 +3,6 @@ import { BaseControl } from 'react-map-gl';
 import type { MapControlProps } from 'react-map-gl/dist/es6/components/use-map-control';
 import type { TFunction } from 'i18next';
 import { withTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React from 'react';
 
 // Internal dependencies
@@ -131,13 +130,5 @@ class MapStyleControl extends BaseControl<
     );
   }
 }
-
-Object.assign(MapStyleControl, {
-  propTypes: {
-    mapStyle: PropTypes.oneOfType([PropTypes.object, PropTypes.string])
-      .isRequired,
-    setMapstyle: PropTypes.func.isRequired,
-  },
-});
 
 export default withTranslation(['core'])(MapStyleControl);

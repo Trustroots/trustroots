@@ -2,7 +2,6 @@
 import { useTranslation } from 'react-i18next';
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import styled from 'styled-components';
 
 // Internal dependencies
@@ -13,8 +12,7 @@ import Avatar from '@/modules/users/client/components/Avatar.component';
 import Meta from './Meta';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import UserLink from '@/modules/users/client/components/UserLink';
-import { experienceType } from '@/modules/experiences/client/experiences.prop-types';
-import type { Experience as ExperienceModel } from '../../experiences.prop-types';
+import type { Experience as ExperienceModel } from '../../../shared/experience';
 
 const PendingNotice = styled.div`
   font-style: italic;
@@ -207,8 +205,3 @@ export default function Experience({
     </div>
   );
 }
-
-Experience.propTypes = {
-  experience: experienceType.isRequired,
-  onReceiverProfile: PropTypes.bool.isRequired,
-};

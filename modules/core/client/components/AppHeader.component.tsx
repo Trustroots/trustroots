@@ -1,12 +1,9 @@
-// External dependencies
-import PropTypes from 'prop-types';
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navbar } from 'react-bootstrap';
 
 // Internal dependencies
 import { useCurrentPath } from '@/modules/core/client/react-app/useCurrentPath';
-import { userType } from '@/modules/users/client/users.prop-types';
 import type { AuthUser } from '@/modules/core/client/react-app/auth';
 import NavigationLoggedIn from './NavigationLoggedIn';
 import NavigationLoggedOut from './NavigationLoggedOut';
@@ -73,9 +70,3 @@ export default function AppHeader({
     </Navbar>
   );
 }
-
-AppHeader.propTypes = {
-  currentPath: PropTypes.string,
-  onSignout: PropTypes.func.isRequired,
-  user: userType,
-};

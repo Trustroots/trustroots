@@ -24,5 +24,3 @@ export default function TribesJoinTrustroots() {
     </div>
   );
 }
-
-TribesJoinTrustroots.propTypes = {};

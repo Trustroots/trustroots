@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
 import React, { type ReactNode } from 'react';
 
@@ -23,10 +22,3 @@ export default function NoContent({
     </div>
   );
 }
-
-NoContent.propTypes = {
-  children: PropTypes.node,
-  className: PropTypes.string,
-  icon: PropTypes.string,
-  message: PropTypes.string.isRequired,
-};

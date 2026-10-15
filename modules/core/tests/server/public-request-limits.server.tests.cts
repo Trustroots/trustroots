@@ -1,12 +1,15 @@
 const assert: typeof import('node:assert/strict') = require('node:assert/strict');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const request: typeof import('supertest') = require('supertest');
+const sinon: typeof import('sinon') = require('sinon');
+const requestLimitService: typeof import('../../server/services/targeted-request-limits.server.service.mts').default = require('../../server/services/targeted-request-limits.server.service.mjs');
 const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
 const express: import('../../../../testutils/server/model-contracts.mts').TestExpressModule = require('../../../../config/lib/express.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mjs') = require('../../../../testutils/server/data.server.testutil');
 const testutils: typeof import('../../../../testutils/server/server.testutil.mts') = require('../../../../testutils/server/server.testutil');
 
 describe('Signup and support request allowances', () => {
+  const sandbox = sinon.createSandbox();
   const jobs = testutils.catchJobs();
   let app: import('../../../../testutils/server/model-contracts.mts').TestExpressApp;
   let originalSignup: typeof config.targetedRequestLimits.signup;
@@ -15,11 +18,18 @@ describe('Signup and support request allowances', () => {
     app = await express.init(mongoose.connection);
   });
   beforeEach(() => {
+    // Keep requests in one window with expiry ahead of MongoDB's real clock.
+    const now = Date.now() + 60_000;
+    const consume = requestLimitService.consume;
+    sandbox
+      .stub(requestLimitService, 'consume')
+      .callsFake(options => consume({ ...options, now }));
     originalSignup = config.targetedRequestLimits.signup;
     originalSupport = config.targetedRequestLimits.support;
     jobs.length = 0;
   });
   afterEach(async () => {
+    sandbox.restore();
     config.targetedRequestLimits.signup = originalSignup;
     config.targetedRequestLimits.support = originalSupport;
     await utils.clearDatabase();

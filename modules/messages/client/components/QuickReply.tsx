@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -70,8 +69,3 @@ export default function QuickReply({ onSend, onFocus }: QuickReplyProps) {
     </div>
   );
 }
-
-QuickReply.propTypes = {
-  onSend: PropTypes.func.isRequired,
-  onFocus: PropTypes.func.isRequired,
-};

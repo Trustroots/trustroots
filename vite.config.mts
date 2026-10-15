@@ -131,8 +131,6 @@ export default defineConfig({
       include:
         /\/(?:modules|config\/client|config\/vite)\/.*\.(?:[cm]?js|[jt]sx?)(?:\?.*)?$/,
       L: 'leaflet',
-      jQuery: 'jquery',
-      $: 'jquery',
       moment: 'moment',
       process: 'process/browser',
     }),

@@ -34,11 +34,6 @@ jest.mock('@/modules/contacts/client/components/RemoveContactContainer', () => {
       </div>
     ) : null;
   }
-  MockRemoveContact.propTypes = {
-    show: () => null,
-    onCancel: () => null,
-    onSuccess: () => null,
-  };
   return MockRemoveContact;
 });
 

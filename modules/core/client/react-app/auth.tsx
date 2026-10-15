@@ -7,7 +7,6 @@ import React, {
   type ReactNode,
   type SetStateAction,
 } from 'react';
-import PropTypes from 'prop-types';
 
 export type AuthUser = {
   _id?: string;
@@ -66,8 +65,3 @@ export function useAuth(): AuthContextValue {
   }
   return auth;
 }
-
-AuthProvider.propTypes = {
-  children: PropTypes.node.isRequired,
-  initialUser: PropTypes.object,
-};

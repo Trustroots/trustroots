@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import React, { type ReactElement } from 'react';
 import { Tooltip as BootstrapTooltip, OverlayTrigger } from 'react-bootstrap';
 
@@ -29,10 +28,3 @@ export default function HoverTooltip({
     </OverlayTrigger>
   );
 }
-
-HoverTooltip.propTypes = {
-  children: PropTypes.node.isRequired,
-  tooltip: PropTypes.string.isRequired,
-  placement: PropTypes.string,
-  hidden: PropTypes.bool,
-};

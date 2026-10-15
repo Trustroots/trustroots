@@ -1,7 +1,6 @@
 // External dependencies
 import { Tab, Tabs } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
@@ -25,7 +24,7 @@ import type {
   ExperienceMine,
   ExperienceRecommendation,
   ExperienceUser,
-} from '../experiences.prop-types';
+} from '../../shared/experience';
 
 export default function CreateExperience({
   userFrom,
@@ -479,9 +478,3 @@ function ExperienceForm({
     </div>
   );
 }
-
-CreateExperience.propTypes = {
-  userFrom: PropTypes.object.isRequired,
-  userTo: PropTypes.object.isRequired,
-};
-ExperienceForm.propTypes = CreateExperience.propTypes;

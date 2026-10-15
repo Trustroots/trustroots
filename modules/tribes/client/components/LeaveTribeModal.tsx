@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Modal } from 'react-bootstrap';
 import type { TribeSummary } from '../api/tribes.api';
@@ -46,10 +45,3 @@ export default function LeaveTribeModal({
     </Modal>
   );
 }
-
-LeaveTribeModal.propTypes = {
-  show: PropTypes.bool.isRequired,
-  onConfirm: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired,
-  tribe: PropTypes.object.isRequired,
-};

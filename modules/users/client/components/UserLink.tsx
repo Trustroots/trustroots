@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React from 'react';
 import type { UserProfile } from '../types';
 
@@ -31,8 +30,3 @@ export default function UserLink({
     </a>
   );
 }
-
-UserLink.propTypes = {
-  className: PropTypes.string,
-  user: PropTypes.object.isRequired,
-};

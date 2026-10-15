@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
 
 import { normalizeTypes } from '../utils/search-filters';
@@ -38,8 +37,3 @@ export default function SearchTypesToggle({
     </ul>
   );
 }
-
-SearchTypesToggle.propTypes = {
-  onChange: PropTypes.func.isRequired,
-  types: PropTypes.arrayOf(PropTypes.string).isRequired,
-};

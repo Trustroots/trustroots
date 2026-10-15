@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
 
 const MONTHS = [
   { value: 1, name: 'January' },
@@ -140,8 +139,3 @@ export default function BirthdateSelect({
     </div>
   );
 }
-
-BirthdateSelect.propTypes = {
-  onChange: PropTypes.func.isRequired,
-  value: PropTypes.string,
-};

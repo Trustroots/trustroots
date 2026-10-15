@@ -1,11 +1,8 @@
-// External dependencies
-import PropTypes from 'prop-types';
 import React from 'react';
 
 // Internal dependencies
 import Experience from './Experience';
-import { experienceType } from '@/modules/experiences/client/experiences.prop-types';
-import type { Experience as ExperienceModel } from '../../experiences.prop-types';
+import type { Experience as ExperienceModel } from '../../../shared/experience';
 
 /**
  * List of user's experiences
@@ -28,8 +25,3 @@ export default function ExperiencesSection({
     </div>
   ));
 }
-
-ExperiencesSection.propTypes = {
-  experiences: PropTypes.arrayOf(experienceType).isRequired,
-  onReceiverProfile: PropTypes.bool.isRequired,
-};

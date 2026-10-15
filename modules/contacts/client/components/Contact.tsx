@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import ContactPresentational from './ContactPresentational';
 import RemoveContact from './RemoveContactContainer';
 import type { ContactListEntry } from '../types';
@@ -48,17 +47,6 @@ export default function Contact({
     </>
   );
 }
-
-Contact.propTypes = {
-  className: PropTypes.string,
-  contact: PropTypes.object.isRequired,
-  avatarSize: PropTypes.number,
-  selfId: PropTypes.string.isRequired,
-  hideMeta: PropTypes.bool,
-  // Notify the parent that a contact was removed.
-  // @TODO this won't be needed when migration is finished
-  onContactRemoved: PropTypes.func,
-};
 
 function getSituation(contact: ContactListEntry, selfId: string) {
   const userFrom =

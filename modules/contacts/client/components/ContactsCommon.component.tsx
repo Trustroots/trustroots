@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import Contact from './Contact';
 import { getContactsCommon } from '../api/contacts.api';
 import '@/config/client/i18n';
@@ -46,7 +45,3 @@ export default function ContactsCommon({ profileId }: { profileId: string }) {
     </div>
   );
 }
-
-ContactsCommon.propTypes = {
-  profileId: PropTypes.string,
-};

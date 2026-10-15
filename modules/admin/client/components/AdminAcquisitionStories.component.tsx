@@ -1,5 +1,3 @@
-// External dependencies
-import PropTypes from 'prop-types';
 import { getCurrentUser } from '../../../core/client/services/client-runtime';
 import React, { useMemo, useState, useEffect } from 'react';
 
@@ -153,17 +151,6 @@ function SortableHeader({
   );
 }
 
-SortableHeader.propTypes = {
-  column: PropTypes.oneOf(Object.keys(storySortValues)).isRequired,
-  label: PropTypes.string.isRequired,
-  onSort: PropTypes.func.isRequired,
-  sort: PropTypes.shape({
-    column: PropTypes.string.isRequired,
-    direction: PropTypes.oneOf(['ascending', 'descending']).isRequired,
-  }).isRequired,
-  tooltip: PropTypes.string.isRequired,
-};
-
 function StaticHeader({ label, tooltip }: StaticHeaderProps) {
   return (
     <th>
@@ -185,11 +172,6 @@ function StaticHeader({ label, tooltip }: StaticHeaderProps) {
     </th>
   );
 }
-
-StaticHeader.propTypes = {
-  label: PropTypes.string.isRequired,
-  tooltip: PropTypes.string.isRequired,
-};
 
 export default function AdminAcquisitionStories() {
   const viewerLanguages = getCurrentUser()?.languages || [];
@@ -489,5 +471,3 @@ export default function AdminAcquisitionStories() {
     </>
   );
 }
-
-AdminAcquisitionStories.propTypes = {};

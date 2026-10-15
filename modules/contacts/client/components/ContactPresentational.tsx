@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Trans, useTranslation } from 'react-i18next';
 import '@/config/client/i18n';
 import MemberAvatar from '@/modules/users/client/components/MemberAvatar';
@@ -122,12 +121,3 @@ export default function ContactPresentational({
     </div>
   );
 }
-
-ContactPresentational.propTypes = {
-  className: PropTypes.string,
-  contact: PropTypes.object.isRequired,
-  avatarSize: PropTypes.number,
-  situation: PropTypes.string.isRequired,
-  hideMeta: PropTypes.bool,
-  onClickRemove: PropTypes.func.isRequired,
-};

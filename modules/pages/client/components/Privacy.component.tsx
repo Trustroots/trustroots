@@ -1,7 +1,6 @@
 import type { PageTranslator } from '../types';
 import React from 'react';
 import Board from './PageBoard';
-import { userType } from '@/modules/users/client/users.prop-types';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function Privacy() {
@@ -195,7 +194,3 @@ export default function Privacy() {
     </>
   );
 }
-
-Privacy.propTypes = {
-  user: userType,
-};

@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import React from 'react';
 
 type SubMenuItem = {
@@ -27,7 +26,3 @@ export default function NavigationSubMenuList({
     </div>
   );
 }
-
-NavigationSubMenuList.propTypes = {
-  list: PropTypes.array.isRequired,
-};

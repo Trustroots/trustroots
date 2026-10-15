@@ -3,7 +3,6 @@ import get from 'lodash/get';
 import { formatRoleLabel } from '../utils/role-label';
 import { getAdminUserHref } from '../utils/member-url';
 import { formatAdminUtcDate } from '../utils/admin-date';
-import PropTypes from 'prop-types';
 import React, { Component, type ChangeEvent, type FormEvent } from 'react';
 import { Modal } from 'react-bootstrap';
 
@@ -290,10 +289,6 @@ function InfoTable({ rows }: InfoTableProps) {
     </table>
   );
 }
-
-InfoTable.propTypes = {
-  rows: PropTypes.arrayOf(PropTypes.array).isRequired,
-};
 
 export default class AdminUser extends Component<
   { username?: string; viewer?: AuthUser | null },

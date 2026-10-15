@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
 import axios from 'axios';
 
 import { useSettings } from '@/modules/core/client/react-app/AppProviders';
@@ -165,11 +164,3 @@ export default function LocationInput({
     </div>
   );
 }
-
-LocationInput.propTypes = {
-  id: PropTypes.string.isRequired,
-  limitLocationTypes: PropTypes.bool,
-  onChange: PropTypes.func.isRequired,
-  placeholder: PropTypes.string,
-  value: PropTypes.string,
-};

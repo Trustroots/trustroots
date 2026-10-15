@@ -31,5 +31,3 @@ export default function HostingAndMeetPanel() {
     </div>
   );
 }
-
-HostingAndMeetPanel.propTypes = {};

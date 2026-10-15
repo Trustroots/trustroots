@@ -1,5 +1,3 @@
-// External dependencies
-import PropTypes from 'prop-types';
 import React from 'react';
 import styled from 'styled-components';
 import classnames from 'classnames';
@@ -34,9 +32,3 @@ export default function Stat({ children, title, className }: StatProps) {
     </Container>
   );
 }
-
-Stat.propTypes = {
-  children: PropTypes.node.isRequired,
-  className: PropTypes.string,
-  title: PropTypes.string.isRequired,
-};

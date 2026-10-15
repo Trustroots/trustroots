@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import PropTypes from 'prop-types';
 
 /**
  * Action-gate modal shown when a user tries to perform an action that requires
@@ -111,9 +110,3 @@ export default function NostrootsActionModal({
     </div>
   );
 }
-
-NostrootsActionModal.propTypes = {
-  isOpen: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  plusCode: PropTypes.string,
-};

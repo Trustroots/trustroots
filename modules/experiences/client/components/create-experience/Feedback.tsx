@@ -1,7 +1,6 @@
-import PropTypes from 'prop-types';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ExperienceRecommendation } from '../../experiences.prop-types';
+import type { ExperienceRecommendation } from '../../../shared/experience';
 
 interface FeedbackProps {
   feedback: string;
@@ -102,11 +101,3 @@ export default function Feedback({
     </div>
   );
 }
-
-Feedback.propTypes = {
-  feedback: PropTypes.string.isRequired,
-  recommend: PropTypes.string,
-  report: PropTypes.bool,
-  onChangeFeedback: PropTypes.func.isRequired,
-  maximumLength: PropTypes.number,
-};

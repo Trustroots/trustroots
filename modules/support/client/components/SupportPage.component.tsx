@@ -1,6 +1,5 @@
 // External dependencies
 import { Trans, useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React from 'react';
 
 // Internal dependencies
@@ -65,7 +64,3 @@ export default function SupportPage({ user }: SupportPageProps) {
     </>
   );
 }
-
-SupportPage.propTypes = {
-  user: PropTypes.object,
-};

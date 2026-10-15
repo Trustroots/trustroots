@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import RemoveContact from './RemoveContact';
 import * as contacts from '../api/contacts.api';
 import type { ContactRecord } from '../types';
@@ -38,11 +37,3 @@ export default function RemoveContactContainer({
     />
   );
 }
-
-RemoveContactContainer.propTypes = {
-  selfId: PropTypes.string.isRequired,
-  contact: PropTypes.object.isRequired,
-  show: PropTypes.bool.isRequired,
-  onSuccess: PropTypes.func.isRequired,
-  onCancel: PropTypes.func.isRequired,
-};

@@ -1,6 +1,5 @@
 // External dependencies
 import { useTranslation, Trans } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React from 'react';
 
 // Internal dependencies
@@ -64,10 +63,3 @@ export default function SubmittedInfo({
     </SuccessMessage>
   );
 }
-
-SubmittedInfo.propTypes = {
-  isPublic: PropTypes.bool.isRequired,
-  isReported: PropTypes.bool.isRequired,
-  name: PropTypes.string.isRequired,
-  username: PropTypes.string.isRequired,
-};

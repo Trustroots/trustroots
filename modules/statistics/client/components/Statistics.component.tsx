@@ -1,6 +1,5 @@
 // External dependencies
 import { Trans, useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
@@ -501,7 +500,3 @@ export default function Statistics({
     </>
   );
 }
-
-Statistics.propTypes = {
-  isAuthenticated: PropTypes.bool.isRequired,
-};

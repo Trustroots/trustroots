@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React from 'react';
 
 import '@/config/client/i18n';
@@ -35,8 +34,3 @@ export default function ReportMember({
     </a>
   );
 }
-
-ReportMember.propTypes = {
-  className: PropTypes.string,
-  username: PropTypes.string.isRequired,
-};

@@ -1,6 +1,5 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React from 'react';
 
 // Internal dependencies
@@ -47,9 +46,3 @@ export default function LanguageList({
     </ul>
   );
 }
-
-LanguageList.propTypes = {
-  className: PropTypes.string,
-  languages: PropTypes.array.isRequired,
-  emphasisedLanguages: PropTypes.arrayOf(PropTypes.string),
-};

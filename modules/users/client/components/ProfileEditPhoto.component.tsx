@@ -1,5 +1,4 @@
 import React, { useRef, useState } from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import Avatar from './Avatar.component';
@@ -196,7 +195,3 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
     </ProfileEditPage>
   );
 }
-
-ProfileEditPhoto.propTypes = {
-  user: PropTypes.object.isRequired,
-};

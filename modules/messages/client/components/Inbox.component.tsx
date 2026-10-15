@@ -5,7 +5,6 @@ import * as api from '../api/messages.api';
 import Activate from '@/modules/users/client/components/Activate';
 import { trackEvent } from '@/modules/core/client/services/client-runtime';
 import InboxThread from '@/modules/messages/client/components/InboxThread';
-import { userType } from '@/modules/users/client/users.prop-types';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
 import type { MessageThreadSummary, PageParams } from '../api/messages.api';
 
@@ -201,7 +200,3 @@ export default function Inbox({ user }: InboxProps) {
     </section>
   );
 }
-
-Inbox.propTypes = {
-  user: userType.isRequired,
-};

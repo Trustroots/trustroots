@@ -303,5 +303,3 @@ export default function Safety() {
     </>
   );
 }
-
-Safety.propTypes = {};

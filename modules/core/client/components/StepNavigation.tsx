@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import React, { type ButtonHTMLAttributes } from 'react';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
@@ -151,17 +150,3 @@ export default function StepNavigation({
     </>
   );
 }
-
-BackButton.propTypes = { small: PropTypes.bool };
-NextButton.propTypes = { small: PropTypes.bool };
-SubmitButton.propTypes = { small: PropTypes.bool };
-StepNavigation.propTypes = {
-  currentStep: PropTypes.number.isRequired,
-  numberOfSteps: PropTypes.number.isRequired,
-  disabled: PropTypes.bool,
-  disabledReason: PropTypes.string,
-  onBack: PropTypes.func.isRequired,
-  onNext: PropTypes.func.isRequired,
-  onSubmit: PropTypes.func.isRequired,
-  submitLabel: PropTypes.string,
-};

@@ -1,13 +1,11 @@
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React from 'react';
 import styled from 'styled-components';
 
-import { interactionsType } from '@/modules/experiences/client/experiences.prop-types';
 import type {
   ExperienceInteractions,
   ExperienceRecommendation,
-} from '../../experiences.prop-types';
+} from '../../../shared/experience';
 
 const Labels = styled.div`
   display: flex;
@@ -48,8 +46,3 @@ export default function Meta({
     </Labels>
   );
 }
-
-Meta.propTypes = {
-  interactions: interactionsType.isRequired,
-  recommend: PropTypes.string.isRequired,
-};

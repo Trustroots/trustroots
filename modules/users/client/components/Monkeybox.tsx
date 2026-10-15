@@ -4,7 +4,6 @@ import keyBy from 'lodash/keyBy';
 import { useTranslation } from 'react-i18next';
 
 // Internal dependencies
-import { userType } from '@/modules/users/client/users.prop-types';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import LanguageList from './LanguageList';
 import type { UserProfile, TribeMembership } from '../types';
@@ -62,11 +61,6 @@ function TribesInCommon({
   );
 }
 
-TribesInCommon.propTypes = {
-  user: userType.isRequired,
-  otherUser: userType.isRequired,
-};
-
 export default function Monkeybox({
   user,
   otherUser,
@@ -98,8 +92,3 @@ export default function Monkeybox({
     </div>
   );
 }
-
-Monkeybox.propTypes = {
-  user: userType.isRequired,
-  otherUser: userType.isRequired,
-};

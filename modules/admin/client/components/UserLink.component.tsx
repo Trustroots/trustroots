@@ -1,6 +1,5 @@
 // External dependencies
 import React from 'react';
-import PropTypes from 'prop-types';
 import { getAdminUserHref } from '../utils/member-url';
 import { getCurrentUser } from '../../../core/client/services/client-runtime';
 
@@ -41,8 +40,3 @@ export default function UserLink({
   }
   return <a href={getAdminUserHref({ _id, username })}>{label}</a>;
 }
-
-UserLink.propTypes = {
-  user: PropTypes.object.isRequired,
-  publicProfile: PropTypes.bool,
-};

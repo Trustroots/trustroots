@@ -1,5 +1,3 @@
-// External dependencies
-import PropTypes from 'prop-types';
 import React from 'react';
 
 // Internal dependencies
@@ -8,17 +6,8 @@ import UserState from './UserState.component';
 import ZendeskInboxSearch from './ZendeskInboxSearch.component';
 import { formatAdminDate, isSuspendedUser } from './userSearch.helpers';
 
-const USER_SORT_COLUMNS = [
-  'created',
-  'displayName',
-  'email',
-  'lastIpAddress',
-  'username',
-];
-type UserSortColumn = (typeof USER_SORT_COLUMNS)[number];
-
 interface UserSort {
-  column: UserSortColumn;
+  column: string;
   direction: 'ascending' | 'descending';
 }
 
@@ -41,7 +30,7 @@ interface UserPagination {
 }
 
 interface SortableHeaderProps {
-  column: UserSortColumn;
+  column: string;
   label: string;
   onSortChange: (sort: UserSort) => void;
   sort: UserSort;
@@ -82,16 +71,6 @@ function SortableHeader({
     </th>
   );
 }
-
-SortableHeader.propTypes = {
-  column: PropTypes.oneOf(USER_SORT_COLUMNS).isRequired,
-  label: PropTypes.string.isRequired,
-  onSortChange: PropTypes.func.isRequired,
-  sort: PropTypes.shape({
-    column: PropTypes.string,
-    direction: PropTypes.oneOf(['ascending', 'descending']),
-  }).isRequired,
-};
 
 export default function AdminUserResultsTable({
   onPageChange = () => {},
@@ -253,22 +232,3 @@ export default function AdminUserResultsTable({
     </div>
   );
 }
-
-AdminUserResultsTable.propTypes = {
-  onPageChange: PropTypes.func,
-  onSortChange: PropTypes.func,
-  pagination: PropTypes.shape({
-    page: PropTypes.number.isRequired,
-    pageSize: PropTypes.number.isRequired,
-    total: PropTypes.number.isRequired,
-    totalPages: PropTypes.number.isRequired,
-  }),
-  showPublicProfileLink: PropTypes.bool,
-  showUserState: PropTypes.bool,
-  showZendeskActions: PropTypes.bool,
-  sort: PropTypes.shape({
-    column: PropTypes.oneOf(USER_SORT_COLUMNS).isRequired,
-    direction: PropTypes.oneOf(['ascending', 'descending']).isRequired,
-  }),
-  userResults: PropTypes.array.isRequired,
-};

@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { useMediaQuery } from 'react-responsive';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +10,6 @@ import {
 } from '@/modules/core/client/services/client-runtime';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import * as usersAPI from '@/modules/users/client/api/users.api';
-import { userType } from '@/modules/users/client/users.prop-types';
 import Monkeybox from '@/modules/users/client/components/Monkeybox';
 import ReportMember from '@/modules/support/client/components/ReportMember.component';
 import BlockMember from '@/modules/users/client/components/BlockMember.component';
@@ -478,8 +476,3 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     </section>
   );
 }
-
-Thread.propTypes = {
-  user: userType.isRequired,
-  profileMinimumLength: PropTypes.number.isRequired,
-};

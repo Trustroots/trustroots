@@ -26,5 +26,3 @@ export default function ManifestoText() {
     </>
   );
 }
-
-ManifestoText.propTypes = {};

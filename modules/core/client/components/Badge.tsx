@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import React, { type ReactNode } from 'react';
 import styled from 'styled-components';
 
@@ -25,8 +24,3 @@ export default function Badge({ children, withNotification }: BadgeProps) {
     </span>
   );
 }
-
-Badge.propTypes = {
-  children: PropTypes.node.isRequired,
-  withNotification: PropTypes.bool,
-};

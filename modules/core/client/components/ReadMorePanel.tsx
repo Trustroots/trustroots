@@ -1,6 +1,5 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 
 // Internal dependencies
@@ -45,8 +44,3 @@ export default function ReadMorePanel({ content, id }: ReadMorePanelProps) {
     </div>
   );
 }
-
-ReadMorePanel.propTypes = {
-  content: PropTypes.string.isRequired,
-  id: PropTypes.string.isRequired,
-};

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import ActivateProfileNotice from '@/modules/users/client/components/ActivateProfileNotice.component';
@@ -210,7 +209,3 @@ export default function ContactConfirmPage({ user }: { user: UserProfile }) {
     </section>
   );
 }
-
-ContactConfirmPage.propTypes = {
-  user: PropTypes.object.isRequired,
-};

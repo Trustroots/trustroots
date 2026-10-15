@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { onClientEvent } from '@/modules/core/client/services/client-runtime';
 import omit from 'lodash/omit';
@@ -83,7 +82,3 @@ export default function BoardCredits({
     </small>
   );
 }
-
-BoardCredits.propTypes = {
-  photoCredits: PropTypes.object,
-};

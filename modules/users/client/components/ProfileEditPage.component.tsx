@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 
@@ -57,11 +56,6 @@ function ProfileEditNav({
   );
 }
 
-ProfileEditNav.propTypes = {
-  activeTab: PropTypes.string.isRequired,
-  variant: PropTypes.oneOf(['bottom', 'sidebar']).isRequired,
-};
-
 function ProfileEditSidebar({
   activeTab,
   username,
@@ -89,12 +83,6 @@ function ProfileEditSidebar({
     </>
   );
 }
-
-ProfileEditSidebar.propTypes = {
-  activeTab: PropTypes.string.isRequired,
-  children: PropTypes.node,
-  username: PropTypes.string.isRequired,
-};
 
 export default function ProfileEditPage({
   user,
@@ -131,8 +119,3 @@ export default function ProfileEditPage({
     </>
   );
 }
-
-ProfileEditPage.propTypes = {
-  children: PropTypes.node.isRequired,
-  user: PropTypes.object.isRequired,
-};

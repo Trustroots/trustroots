@@ -117,5 +117,3 @@ export default function Guide() {
     </>
   );
 }
-
-Guide.propTypes = {};

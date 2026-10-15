@@ -1,6 +1,5 @@
 // External dependencies
 import React, { Component, type ChangeEvent, type FormEvent } from 'react';
-import PropTypes from 'prop-types';
 import { formatRoleLabel } from '../utils/role-label';
 
 // Internal dependencies
@@ -76,10 +75,6 @@ export class AdminSearchUsersContent extends Component<
   SearchUsersProps,
   SearchUsersState
 > {
-  static propTypes = {
-    showHeading: PropTypes.bool,
-  };
-
   static defaultProps = {
     showHeading: true,
   };

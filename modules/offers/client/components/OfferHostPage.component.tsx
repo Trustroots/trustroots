@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 
@@ -441,7 +440,3 @@ export default function OfferHostPage({ user }: HostPageProps) {
     </section>
   );
 }
-
-OfferHostPage.propTypes = {
-  user: PropTypes.object.isRequired,
-};

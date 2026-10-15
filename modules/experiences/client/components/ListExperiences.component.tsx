@@ -1,6 +1,5 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
@@ -10,7 +9,7 @@ import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator'
 import ExperienceCounts from './read-experiences/ExperienceCounts';
 import ExperiencesSection from './read-experiences/ExperiencesSection';
 import NoContent from '@/modules/core/client/components/NoContent';
-import type { Experience, ExperienceUser } from '../experiences.prop-types';
+import type { Experience, ExperienceUser } from '../../shared/experience';
 
 const NoContentWithChildren = NoContent as unknown as React.ComponentType<{
   icon: string;
@@ -125,8 +124,3 @@ export default function ListExperiences({
     </>
   );
 }
-
-ListExperiences.propTypes = {
-  profile: PropTypes.object.isRequired,
-  authenticatedUser: PropTypes.object.isRequired,
-};

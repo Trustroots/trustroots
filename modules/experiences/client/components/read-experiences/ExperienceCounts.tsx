@@ -1,13 +1,11 @@
 // Internal dependencies
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React from 'react';
 import styled from 'styled-components';
 
 // External dependencies
-import { experienceType } from '@/modules/experiences/client/experiences.prop-types';
 import Icon from '@/modules/core/client/components/Icon';
-import type { Experience } from '../../experiences.prop-types';
+import type { Experience } from '../../../shared/experience';
 
 const Summary = styled.div`
   margin: 20px 0;
@@ -227,7 +225,3 @@ export default function ExperienceCounts({
     </Summary>
   );
 }
-
-ExperienceCounts.propTypes = {
-  experiences: PropTypes.arrayOf(experienceType).isRequired,
-};

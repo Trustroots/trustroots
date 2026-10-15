@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
 import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
 import { useTranslation } from 'react-i18next';
 
@@ -132,14 +131,6 @@ function ProfileAboutTab({
   );
 }
 
-ProfileAboutTab.propTypes = {
-  authUser: PropTypes.object.isRequired,
-  contacts: PropTypes.array,
-  isSelf: PropTypes.bool.isRequired,
-  profile: PropTypes.object.isRequired,
-  profileMinimumLength: PropTypes.number.isRequired,
-};
-
 function ProfileDesktopActions({
   isAdmin,
   isSelf,
@@ -228,16 +219,6 @@ function ProfileDesktopActions({
     </ul>
   );
 }
-
-ProfileDesktopActions.propTypes = {
-  isAdmin: PropTypes.bool.isRequired,
-  isSelf: PropTypes.bool.isRequired,
-  contact: PropTypes.object.isRequired,
-  contactResolved: PropTypes.bool.isRequired,
-  onRemoveClick: PropTypes.func.isRequired,
-  profile: PropTypes.object.isRequired,
-  referencesEnabled: PropTypes.bool.isRequired,
-};
 
 export default function ProfilePage({
   currentPath: routedPath,
@@ -664,10 +645,3 @@ export default function ProfilePage({
     </>
   );
 }
-
-ProfilePage.propTypes = {
-  currentPath: PropTypes.string,
-  embedded: PropTypes.bool,
-  profileUsername: PropTypes.string,
-  user: PropTypes.object.isRequired,
-};

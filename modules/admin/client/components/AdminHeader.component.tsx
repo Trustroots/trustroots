@@ -106,5 +106,3 @@ export default function AdminHeader() {
     </nav>
   );
 }
-
-AdminHeader.propTypes = {};

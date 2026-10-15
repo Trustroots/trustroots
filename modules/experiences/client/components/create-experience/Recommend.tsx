@@ -1,14 +1,13 @@
 // External dependencies
 import { ToggleButton, ToggleButtonGroup } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React from 'react';
 import styled from 'styled-components';
 
 // Internal dependencies
 import '@/config/client/i18n';
 import Report from './Report';
-import type { ExperienceRecommendation } from '../../experiences.prop-types';
+import type { ExperienceRecommendation } from '../../../shared/experience';
 
 type PrimaryInteraction = 'guest' | 'host' | 'met';
 
@@ -121,13 +120,3 @@ export default function Recommend({
     </div>
   );
 }
-
-Recommend.propTypes = {
-  primaryInteraction: PropTypes.string.isRequired,
-  recommend: PropTypes.string,
-  report: PropTypes.bool.isRequired,
-  reportMessage: PropTypes.string.isRequired,
-  onChangeRecommend: PropTypes.func.isRequired,
-  onChangeReport: PropTypes.func.isRequired,
-  onChangeReportMessage: PropTypes.func.isRequired,
-};

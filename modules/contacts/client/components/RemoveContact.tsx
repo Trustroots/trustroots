@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Modal } from 'react-bootstrap';
 import type { ContactRecord } from '../types';
@@ -96,12 +95,3 @@ export default function RemoveContact({
     </Modal>
   );
 }
-
-RemoveContact.propTypes = {
-  contact: PropTypes.object.isRequired,
-  show: PropTypes.bool.isRequired,
-  inProgress: PropTypes.bool.isRequired,
-  selfId: PropTypes.string.isRequired,
-  onCancel: PropTypes.func.isRequired,
-  onRemove: PropTypes.func.isRequired,
-};

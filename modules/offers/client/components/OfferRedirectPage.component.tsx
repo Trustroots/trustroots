@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import PropTypes from 'prop-types';
 
 /* istanbul ignore next -- the default browser location is exercised by the browser bundle. */
 export function defaultNavigate(
@@ -21,7 +20,3 @@ export default function OfferRedirectPage({
 
   return <div aria-hidden="true">Redirecting…</div>;
 }
-
-OfferRedirectPage.propTypes = {
-  navigate: PropTypes.func,
-};

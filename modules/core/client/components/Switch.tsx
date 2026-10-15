@@ -1,5 +1,4 @@
 import React, { type ChangeEvent, type ReactNode } from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
 
 type SwitchProps = {
@@ -27,10 +26,3 @@ export default function Switch({
     </label>
   );
 }
-
-Switch.propTypes = {
-  checked: PropTypes.bool.isRequired,
-  children: PropTypes.node.isRequired,
-  onChange: PropTypes.func.isRequired,
-  isSmall: PropTypes.bool,
-};

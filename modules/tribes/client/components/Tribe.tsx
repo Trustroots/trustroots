@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import styled, { css } from 'styled-components';
@@ -85,9 +84,3 @@ export default function Tribe({
     </Container>
   );
 }
-
-Tribe.propTypes = {
-  tribe: PropTypes.object.isRequired,
-  user: PropTypes.object,
-  onMembershipUpdated: PropTypes.func.isRequired,
-};

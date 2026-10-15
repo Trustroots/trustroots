@@ -1,6 +1,5 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React from 'react';
 
 // Internal dependencies
@@ -70,9 +69,3 @@ export default function AboutMe({
     </>
   );
 }
-
-AboutMe.propTypes = {
-  profile: PropTypes.object,
-  isSelf: PropTypes.bool,
-  profileMinimumLength: PropTypes.number.isRequired,
-};

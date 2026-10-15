@@ -1,7 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import PropTypes from 'prop-types';
 import React from 'react';
 
 // Internal dependencies
@@ -51,9 +50,3 @@ export default function OfferStatusButton({
     </AccessibleTooltip>
   );
 }
-
-OfferStatusButton.propTypes = {
-  isOwnOffer: PropTypes.bool.isRequired,
-  status: PropTypes.string,
-  username: PropTypes.string,
-};

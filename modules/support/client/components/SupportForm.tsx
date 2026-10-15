@@ -1,6 +1,5 @@
 // External dependencies
 import React, { useState, useEffect, useRef } from 'react';
-import PropTypes from 'prop-types';
 import { Trans, useTranslation } from 'react-i18next';
 
 // Internal dependencies
@@ -338,7 +337,3 @@ export default function SupportForm({ user }: SupportFormProps) {
     </div>
   );
 }
-
-SupportForm.propTypes = {
-  user: PropTypes.object,
-};

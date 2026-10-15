@@ -1,7 +1,6 @@
 // External dependencies
 import React from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import { nip19 } from 'nostr-tools';
 
 // Internal dependencies
@@ -306,7 +305,3 @@ export default function ProfileViewBasics({
     </div>
   );
 }
-
-ProfileViewBasics.propTypes = {
-  profile: PropTypes.object,
-};

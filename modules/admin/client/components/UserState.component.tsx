@@ -1,7 +1,6 @@
 // External dependencies
 import classnames from 'classnames';
 import React from 'react';
-import PropTypes from 'prop-types';
 import { formatRoleLabel } from '../utils/role-label';
 
 /**
@@ -98,7 +97,3 @@ export default function UserState({ user }: { user: UserStateUser }) {
     </div>
   );
 }
-
-UserState.propTypes = {
-  user: PropTypes.object.isRequired,
-};

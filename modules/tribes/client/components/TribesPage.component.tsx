@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
 
 import TribesHeader from './TribesHeader';
 import TribesList from './TribesList';
@@ -66,8 +65,3 @@ export default function TribesPage({
     </>
   );
 }
-
-TribesPage.propTypes = {
-  user: PropTypes.object,
-  onMembershipUpdated: PropTypes.func.isRequired,
-};

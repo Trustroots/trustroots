@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
@@ -60,12 +59,6 @@ function TribeCard({
   );
 }
 
-TribeCard.propTypes = {
-  membership: PropTypes.object.isRequired,
-  onMembershipUpdated: PropTypes.func,
-  user: PropTypes.object,
-};
-
 export default function ProfileTribesTab({
   memberships = [],
   user,
@@ -92,9 +85,3 @@ export default function ProfileTribesTab({
     </div>
   );
 }
-
-ProfileTribesTab.propTypes = {
-  memberships: PropTypes.array,
-  onMembershipUpdated: PropTypes.func,
-  user: PropTypes.object,
-};

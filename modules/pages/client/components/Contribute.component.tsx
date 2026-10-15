@@ -94,5 +94,3 @@ export default function Contribute() {
     </>
   );
 }
-
-Contribute.propTypes = {};

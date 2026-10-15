@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import MessageBubble from './MessageBubble';
@@ -7,7 +6,6 @@ import RichText from '@/modules/core/client/components/RichText';
 
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
-import { userType } from '@/modules/users/client/users.prop-types';
 import type { Message, MessageUser } from '../api/messages.api';
 
 function isHosting(content: string): boolean | null {
@@ -69,13 +67,3 @@ export default function ThreadMessage({ message, user }: ThreadMessageProps) {
     </MessageBubble>
   );
 }
-
-ThreadMessage.propTypes = {
-  message: PropTypes.shape({
-    _id: PropTypes.string.isRequired,
-    userFrom: userType.isRequired,
-    created: PropTypes.string.isRequired,
-    content: PropTypes.string.isRequired,
-  }),
-  user: userType.isRequired,
-};

@@ -5,7 +5,6 @@
  */
 
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import Avatar from './Avatar.component';
 import ProfileViewBasics from './ProfileViewBasics';
 import { Modal } from 'react-bootstrap';
@@ -65,8 +64,3 @@ export default function ProfileOverview({
     </QueryClientProvider>
   );
 }
-
-ProfileOverview.propTypes = {
-  profile: PropTypes.object.isRequired,
-  isSelf: PropTypes.bool,
-};

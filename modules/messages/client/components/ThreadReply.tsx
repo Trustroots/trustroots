@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import TrEditor from '@/modules/core/client/components/TrEditor';
@@ -285,9 +284,3 @@ export default function ThreadReply({
     </form>
   );
 }
-
-ThreadReply.propTypes = {
-  onSend: PropTypes.func.isRequired,
-  cacheKey: PropTypes.string,
-  autoFocus: PropTypes.bool,
-};
