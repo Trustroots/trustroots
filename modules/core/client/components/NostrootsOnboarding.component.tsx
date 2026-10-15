@@ -4,9 +4,7 @@ import qrcode from 'qrcode-generator';
 import { getNostrootsOnboardingUrl } from '../utils/nostroots-onboarding';
 
 export type NostrootsOnboardingSource =
-  | 'community-notes'
-  | 'profile-notes'
-  | 'network-settings';
+  'community-notes' | 'profile-notes' | 'network-settings';
 
 type Props = {
   username?: string | null;

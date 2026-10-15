@@ -39,7 +39,10 @@ const user: UserProfile = {
   displayName: 'Ada Example',
 };
 
-function renderPage(overrides: Partial<UserProfile> = {}, viewer: UserProfile | null = { ...user, ...overrides }) {
+function renderPage(
+  overrides: Partial<UserProfile> = {},
+  viewer: UserProfile | null = { ...user, ...overrides },
+) {
   const profile = { ...user, ...overrides };
 
   return render(

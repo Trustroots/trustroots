@@ -9,7 +9,7 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
 }));
 
 jest.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: key => key }),
+  useTranslation: () => ({ t: (key: string) => key }),
 }));
 
 describe('NostrootsActionModal', () => {
@@ -122,7 +122,7 @@ describe('NostrootsActionModal', () => {
   });
 
   it('focuses the onboarding link and uses the current viewer from authentication', () => {
-    getCurrentUser.mockReturnValueOnce({
+    jest.mocked(getCurrentUser).mockReturnValueOnce({
       username: 'sampleviewer',
     });
     const { getByRole } = render(
