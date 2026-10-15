@@ -33,7 +33,7 @@ export interface ConnectionHelper {
 }
 export interface Queue<T> {
   push(value: T | T[]): void;
-  drain(callback?: (error?: Error | null) => void): void;
+  drain(callback?: () => void): void;
 }
 export interface QueueFactory {
   queue<T>(
