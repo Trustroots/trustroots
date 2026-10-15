@@ -20,6 +20,11 @@ To run selected server test files locally, use `pnpm run test:server:files modul
 
 For parallel server tests, start MongoDB and run `pnpm run test:server:parallel`. It defaults to two worker processes; set `SERVER_TEST_WORKERS=4` to choose between one and eight. Selected files can be passed after `--`, or through `SERVER_TEST_FILES`. Every invocation gives each worker a unique database, including its Agenda jobs, and removes these databases when the workers finish. Local configuration overrides are skipped to preserve isolation; use `DB_1_PORT_27017_TCP_ADDR` to choose the MongoDB host and port. The serial command remains the default. Each worker can allocate about 128 MiB for a password derivation in addition to normal process memory, so start with two workers and measure before increasing it. Use `pnpm run test:coverage:server:parallel` to collect combined worker coverage.
 
+Set `SERVER_TEST_TIMINGS_DIR=coverage/server-timings` to record per-file durations,
+including suite setup and teardown, and balance later runs using those durations.
+CI caches these reports after successful server jobs. Missing or invalid timings
+fall back to file-size estimates; timing data never changes which tests run.
+
 End-to-end tests build the client once with Vite (`pnpm run build:e2e`) and serve pages from the API server, locally and in CI.
 
 Playwright runs one worker by default for local stability. Set `TRUSTROOTS_E2E_WORKERS=2` to opt into limited file-level parallelism, matching CI. Full multi-worker runs serialize Playwright projects by default to avoid shared seeded-state races; set `TRUSTROOTS_E2E_SERIAL_PROJECTS=false` only when deliberately checking project overlap. CI also sets `TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true` because the smoke lane publishes Playwright results, not browser JavaScript coverage, and records Playwright video only on retries to keep green runs lighter.

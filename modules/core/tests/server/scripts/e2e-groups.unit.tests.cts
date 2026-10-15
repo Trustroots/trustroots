@@ -16,26 +16,18 @@ const {
 const featureManifest = require('../../../../../tests/e2e/feature-coverage');
 
 const EXPECTED_GROUPS: Record<string, string[]> = {
-  'account-public': [
-    'auth-smoke',
-    'public',
-    'authenticated',
-    'photo-upload-firefox',
-    'member',
-  ],
+  'account-public': ['auth-smoke', 'public', 'member'],
   community: [
     'messages',
     'message-actions',
     'relationships-safety',
     'experiences',
     'messages-firefox-layout',
-  ],
-  'admin-search': [
-    'admin',
-    'search-offers-circles',
-    'search-map-rendered',
+    'authenticated',
+    'photo-upload-firefox',
     'search-map-wheel-firefox',
   ],
+  'admin-search': ['admin', 'search-offers-circles', 'search-map-rendered'],
 };
 
 type Project = { name: string; dependencies: string[] };
@@ -225,8 +217,6 @@ describe('E2E group selection', () => {
         ['setup-authenticated', []],
         ['auth-smoke', ['setup-authenticated', 'public']],
         ['public', ['setup-authenticated']],
-        ['authenticated', ['public']],
-        ['photo-upload-firefox', ['authenticated']],
         ['member', ['setup-authenticated']],
       ],
     );
@@ -241,6 +231,9 @@ describe('E2E group selection', () => {
       { name: 'relationships-safety', dependencies: ['message-actions'] },
       { name: 'experiences', dependencies: ['relationships-safety'] },
       { name: 'messages-firefox-layout', dependencies: ['experiences'] },
+      { name: 'authenticated', dependencies: ['setup-authenticated'] },
+      { name: 'photo-upload-firefox', dependencies: ['authenticated'] },
+      { name: 'search-map-wheel-firefox', dependencies: ['admin'] },
     ];
 
     const selected = selectProjects(projects, 'community', true);
@@ -254,6 +247,9 @@ describe('E2E group selection', () => {
         ['relationships-safety', ['message-actions']],
         ['experiences', ['relationships-safety']],
         ['messages-firefox-layout', ['experiences']],
+        ['authenticated', ['messages-firefox-layout']],
+        ['photo-upload-firefox', ['authenticated']],
+        ['search-map-wheel-firefox', ['photo-upload-firefox']],
       ],
     );
   });

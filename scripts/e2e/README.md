@@ -8,6 +8,10 @@ TRUSTROOTS_E2E_GROUP=community pnpm run test:e2e
 TRUSTROOTS_E2E_GROUP=admin-search pnpm run test:e2e
 ```
 
+Groups are balanced by observed CI duration rather than project count. The
+community group also runs authenticated profile checks and Firefox map-wheel
+checks. Projects remain serial within each CI group to protect shared fixtures.
+
 CI runs these groups on three separate runners with independent apps and MongoDB
 instances. Each uses two workers and serialises its projects to protect shared
 seeded state. Group runs intentionally allow partial feature coverage; the final

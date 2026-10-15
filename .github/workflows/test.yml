@@ -249,6 +249,7 @@ jobs:
       TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK: true
       TRUSTROOTS_FILE_MAGIC_FALLBACK: true
       SERVER_TEST_WORKERS: 4
+      SERVER_TEST_TIMINGS_DIR: coverage/server-timings
     services:
       mongodb:
         image: mongo:4.4
@@ -272,6 +273,12 @@ jobs:
         run: pnpm install --frozen-lockfile --prefer-offline
       - name: Test production deployment safeguards
         run: python3 deploy/docker/test-production-deploy.py
+      - name: Restore server test durations
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: coverage/server-timings
+          key: ${{ runner.os }}-server-timings-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: ${{ runner.os }}-server-timings-v1-
       # Record access route tests are included in the full server suite below.
       - name: Test server with coverage
         run: |
@@ -512,7 +519,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
+      - name: Fetch comparison history
+        run: python3 scripts/ci/fetch-comparison.py
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
       - name: Download production dependency inventory
         if: needs.build-production-image.result != 'skipped'

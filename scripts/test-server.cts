@@ -3,6 +3,7 @@
 const { globSync } = require('node:fs') as typeof import('node:fs');
 const Mocha: typeof import('mocha') = require('mocha');
 const path = require('node:path') as typeof import('node:path');
+const { recordTimings } = require('./server-test-timings.cts');
 
 interface MongooseService {
   connect(callback: (connection: import('mongoose').Connection) => void): void;
@@ -61,13 +62,16 @@ mongooseService.connect((db: import('mongoose').Connection) => {
           );
 
           await mochaRunner.loadFilesAsync();
-          mochaRunner.run((failures: number) => {
+          const runner = mochaRunner.run((failures: number) => {
             if (typeof mochaRunner.unloadFiles === 'function') {
               mochaRunner.unloadFiles();
             }
 
             finish(failures ? `${failures} server test(s) failed.` : null);
           });
+          if (process.env.SERVER_TEST_TIMINGS_OUTPUT) {
+            recordTimings(runner, process.env.SERVER_TEST_TIMINGS_OUTPUT);
+          }
         })
         .catch(finish);
     });

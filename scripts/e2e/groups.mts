@@ -1,24 +1,16 @@
 const GROUPS: Record<string, string[]> = {
-  'account-public': [
-    'auth-smoke',
-    'public',
-    'authenticated',
-    'photo-upload-firefox',
-    'member',
-  ],
+  'account-public': ['auth-smoke', 'public', 'member'],
   community: [
     'messages',
     'message-actions',
     'relationships-safety',
     'experiences',
     'messages-firefox-layout',
-  ],
-  'admin-search': [
-    'admin',
-    'search-offers-circles',
-    'search-map-rendered',
+    'authenticated',
+    'photo-upload-firefox',
     'search-map-wheel-firefox',
   ],
+  'admin-search': ['admin', 'search-offers-circles', 'search-map-rendered'],
 };
 
 function selectProjects<T extends { name?: string; dependencies?: string[] }>(

@@ -6,6 +6,7 @@ const { randomBytes } = require('node:crypto') as typeof import('node:crypto');
 const { globSync, statSync } = require('node:fs') as typeof import('node:fs');
 const path = require('node:path') as typeof import('node:path');
 const { MongoClient } = require('mongodb') as typeof import('mongodb');
+const { readTimings } = require('./server-test-timings.cts');
 
 const root = path.resolve(__dirname, '..');
 
@@ -28,6 +29,7 @@ function createPlan(
   files: string[],
   workerCount: string | number = '2',
   token: string = randomBytes(6).toString('hex'),
+  durations: Record<string, number> = {},
 ): Worker[] {
   if (!/^[1-8]$/.test(String(workerCount))) {
     throw new Error('SERVER_TEST_WORKERS must be an integer between 1 and 8.');
@@ -55,7 +57,24 @@ function createPlan(
       size: 0,
     }),
   );
-  // File size is a cheap initial estimate; largest files go to the lightest worker.
+  // Estimate unknown files on the same scale as measured milliseconds.
+  const measured = uniqueFiles.filter(
+    entry =>
+      durations[entry.file] > 0 && Number.isFinite(durations[entry.file]),
+  );
+  const millisecondsPerByte = measured.length
+    ? measured.reduce((sum, entry) => sum + durations[entry.file], 0) /
+      Math.max(
+        1,
+        measured.reduce((sum, entry) => sum + entry.size, 0),
+      )
+    : 1;
+  for (const entry of uniqueFiles) {
+    entry.size = measured.includes(entry)
+      ? durations[entry.file]
+      : Math.max(1, entry.size * millisecondsPerByte);
+  }
+  // Longest files go to the lightest worker, independent of input ordering.
   uniqueFiles.sort((a, b) => b.size - a.size || a.file.localeCompare(b.file));
   for (const entry of uniqueFiles) {
     const worker = workers.reduce((lightest, candidate) =>
@@ -126,6 +145,14 @@ async function runWorkers(
                     TRUSTROOTS_SKIP_LOCAL_CONFIG: 'true',
                     TRUSTROOTS_SERVER_TEST_DATABASE: worker.database,
                     SERVER_TEST_FILES: worker.files.join(','),
+                    ...(env.SERVER_TEST_TIMINGS_DIR
+                      ? {
+                          SERVER_TEST_TIMINGS_OUTPUT: path.join(
+                            env.SERVER_TEST_TIMINGS_DIR,
+                            `worker-${index + 1}.json`,
+                          ),
+                        }
+                      : {}),
                   },
                 },
               );
@@ -175,7 +202,15 @@ async function main(): Promise<void> {
       : globSync('modules/*/tests/server/**/*.{js,cts,mts}', {
           cwd: root,
         }).sort();
-  const plan = createPlan(selected, process.env.SERVER_TEST_WORKERS ?? '2');
+  const durations = process.env.SERVER_TEST_TIMINGS_DIR
+    ? readTimings(process.env.SERVER_TEST_TIMINGS_DIR)
+    : {};
+  const plan = createPlan(
+    selected,
+    process.env.SERVER_TEST_WORKERS ?? '2',
+    undefined,
+    durations,
+  );
   process.exitCode = await runWorkers(plan);
 }
 
