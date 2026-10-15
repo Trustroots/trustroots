@@ -36,14 +36,9 @@ class ContactsScreenTest {
                     }
                     val body = payload.toByteArray()
                     socket.getOutputStream().write(
-                        """
-                        HTTP/1.1 200 OK
-                        Content-Type: application/json
-                        Content-Length: ${body.size}
-                        Connection: close
-
-                        """.trimIndent().replace("\n", "\r\n").toByteArray() + body,
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ${body.size}\r\nConnection: close\r\n\r\n".toByteArray() + body,
                     )
+                    socket.getOutputStream().flush()
                 }
             }
         }

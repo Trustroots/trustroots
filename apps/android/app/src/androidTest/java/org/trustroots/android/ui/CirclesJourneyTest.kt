@@ -63,11 +63,13 @@ class CirclesJourneyTest {
             }
         }
         compose.setContent {
-            CirclesScreen(
-                api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
-                session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
-                onSessionInvalidated = {},
-            )
+            NativeTestAppFrame(Destination.Circles, unreadMessageCount = 2) {
+                CirclesScreen(
+                    api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                    session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
+                    onSessionInvalidated = {},
+                )
+            }
         }
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Wanderers").fetchSemanticsNodes().isNotEmpty()
@@ -75,6 +77,7 @@ class CirclesJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithContentDescription("Wanderers image").fetchSemanticsNodes().isNotEmpty()
         }
+        captureUsabilityScreenshot(compose, "android_circles")
         val popularTop = compose.onNodeWithText("Wanderers").fetchSemanticsNode().boundsInRoot.top
         val quietTop = compose.onNodeWithText("Quiet Circle").fetchSemanticsNode().boundsInRoot.top
         assertTrue(popularTop < quietTop)
@@ -91,7 +94,8 @@ class CirclesJourneyTest {
             compose.onAllNodesWithText("Leave circle").fetchSemanticsNodes().isNotEmpty()
         }
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
-        compose.onNodeWithText("Circles").assertIsDisplayed()
+        compose.onNodeWithText("Discover circles").assertIsDisplayed()
+        captureUsabilityScreenshot(compose, "android_navigation")
         responder.join(1_000)
     }
 }

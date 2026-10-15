@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +17,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PersonSearch
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -30,19 +45,22 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.ImeAction
@@ -77,7 +95,11 @@ internal fun MemberSearchScreen(
     session: MemberSession,
     onSessionInvalidated: () -> Unit,
     onProfileOpenChange: (Boolean) -> Unit = {},
+    searchMode: (@Composable () -> Unit)? = null,
+    onSwitchToMap: (() -> Unit)? = null,
 ) {
+    val keyboard = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
     var query by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<List<MemberProfile>>(emptyList()) }
     var selected by remember { mutableStateOf<String?>(null) }
@@ -88,6 +110,8 @@ internal fun MemberSearchScreen(
     val scope = rememberCoroutineScope()
     val search: () -> Unit = search@{
         if (query.trim().length < 3 || loading) return@search
+        keyboard?.hide()
+        focusManager.clearFocus()
         scope.launch {
             loading = true
             error = null
@@ -103,28 +127,48 @@ internal fun MemberSearchScreen(
         MemberProfileScreen(api, session, username, onSessionInvalidated) { selected = null }
         return
     }
-    Column(Modifier.fillMaxSize().padding(20.dp)) {
-        Text("Find members", style = MaterialTheme.typography.headlineMedium)
-        Text("Search by name or username.")
+    Column(Modifier.fillMaxSize()) {
+        Surface(color = TrustrootsPaleGreen, modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = query,
             onValueChange = { query = it; searched = false; error = null; results = emptyList() },
-            label = { Text("Name or username") },
+            placeholder = { Text("Name or username") },
+            leadingIcon = searchMode,
             singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(8.dp).testTag("memberSearchField"),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions = KeyboardActions(onSearch = { search() }),
             trailingIcon = {
-                TextButton(onClick = search, enabled = query.trim().length >= 3 && !loading) {
-                    Text("Search")
+                IconButton(onClick = search, enabled = query.trim().length >= 3 && !loading) {
+                    Icon(Icons.Default.Search, contentDescription = "Search members")
                 }
             },
         )
+        }
         if (query.trim().isNotEmpty() && query.trim().length < 3) Text("Enter at least 3 characters.")
         if (loading) CircularProgressIndicator()
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         if (searched && results.isEmpty()) Text("No members found. Try another name or username.")
-        Column(Modifier.verticalScroll(rememberScrollState())) {
+        if (!searched && results.isEmpty() && !loading && error == null) {
+            Column(
+                Modifier.weight(1f).fillMaxWidth().padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Icon(Icons.Default.People, null, modifier = Modifier.size(72.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+                Text("Find a member", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
+                Text("Search name or username", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
+                if (onSwitchToMap != null) {
+                    HorizontalDivider(Modifier.padding(vertical = 24.dp))
+                    TextButton(onClick = onSwitchToMap) {
+                        Icon(Icons.Default.Place, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Switch to map search")
+                    }
+                }
+            }
+        }
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)) {
             results.forEach { member ->
                 Row(Modifier.fillMaxWidth().clickable { selected = member.username }.padding(vertical = 12.dp)) {
                     RemoteArtwork(
@@ -167,7 +211,7 @@ internal fun MemberProfileScreen(
     var showAllContacts by remember(username) { mutableStateOf(false) }
     var showAllReferences by remember(username) { mutableStateOf(false) }
     var editing by remember(username) { mutableStateOf(startInEditMode) }
-    var section by remember(username) { mutableStateOf(ProfileSection.Overview) }
+    val profilePager = rememberPagerState { ProfileSection.entries.size }
     var browserRoute by remember(username) { mutableStateOf<BrowserRoute?>(null) }
     var relationship by remember(username) { mutableStateOf<ContactRelationship?>(null) }
     var relationshipResolved by remember(username) { mutableStateOf(false) }
@@ -297,12 +341,11 @@ internal fun MemberProfileScreen(
         }
     }
     val isSelf = profile?.username == session.member.username
-    val showContactsTab = isSelf || contacts.isNotEmpty()
     Column(Modifier.fillMaxSize()) {
         when {
             profile == null && error == null -> CircularProgressIndicator(Modifier.padding(20.dp))
             error != null -> {
-                TextButton(onClick = onBack) { Text("‹ Back") }
+                NativeBackButton(onBack)
                 Text(
                     requireNotNull(error),
                     color = MaterialTheme.colorScheme.error,
@@ -342,12 +385,8 @@ internal fun MemberProfileScreen(
                         }
                     },
                 )
-                Box(Modifier.weight(1f).fillMaxWidth()) {
-                    Column(
-                        Modifier
-                            .fillMaxSize()
-                            .verticalScroll(rememberScrollState()),
-                    ) {
+                HorizontalPager(state = profilePager, modifier = Modifier.weight(1f).fillMaxWidth().testTag("profilePager")) { page ->
+                    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
                         ArtworkHero(
                             url = member.id?.let { api.avatarURL(it, 512) },
                             sessionCookie = session.cookieHeader,
@@ -357,21 +396,27 @@ internal fun MemberProfileScreen(
                             blurBackground = true,
                             testTag = "profileHero",
                         )
-                        Column(Modifier.padding(20.dp).padding(bottom = 8.dp)) {
-                            when (section) {
-                                ProfileSection.Overview -> ProfileOverviewSection(
-                                    member = member,
+                        ProfileSectionBar(
+                            selected = ProfileSection.entries[profilePager.currentPage],
+                            contactCount = contacts.size,
+                            onSelect = { section -> scope.launch { profilePager.animateScrollToPage(section.ordinal) } },
+                        )
+                        Column(Modifier.padding(20.dp)) {
+                            when (ProfileSection.entries[page]) {
+                                ProfileSection.About -> {
+                                    member.tagline?.let { Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(), style = MaterialTheme.typography.titleMedium) }
+                                    member.location?.let { Text(it, modifier = Modifier.padding(vertical = 6.dp)) }
+                                    ProfileAboutSection(member = member, api = api)
+                                    HorizontalDivider(Modifier.padding(vertical = 16.dp))
+                                    ProfileHostingSection(hosting = hosting, hostingLoaded = hostingLoaded)
+                                }
+                                ProfileSection.Experiences -> ProfileOverviewSection(
                                     references = references,
                                     showAllReferences = showAllReferences,
                                     onToggleReferences = { showAllReferences = !showAllReferences },
                                     onOpenRelated = { relatedUsername = it },
                                     api = api,
                                     session = session,
-                                )
-                                ProfileSection.About -> ProfileAboutSection(member = member, api = api)
-                                ProfileSection.Hosting -> ProfileHostingSection(
-                                    hosting = hosting,
-                                    hostingLoaded = hostingLoaded,
                                 )
                                 ProfileSection.Contacts -> ProfileContactsSection(
                                     contacts = contacts,
@@ -385,22 +430,15 @@ internal fun MemberProfileScreen(
                         }
                     }
                 }
-                ProfileSectionBar(
-                    selected = section,
-                    showContacts = showContactsTab,
-                    contactCount = contacts.size,
-                    onSelect = { section = it },
-                )
             }
         }
     }
 }
 
 private enum class ProfileSection(val label: String) {
-    Overview("Overview"),
     About("About"),
-    Hosting("Hosting"),
     Contacts("Contacts"),
+    Experiences("Experiences"),
 }
 
 @Composable
@@ -427,7 +465,7 @@ private fun ProfileActionBar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            TextButton(onClick = onBack) { Text("‹ Back") }
+            NativeBackButton(onBack)
             if (isSelf) {
                 TextButton(onClick = onEditProfile) { Text("Edit your profile") }
             } else {
@@ -446,55 +484,23 @@ private fun ProfileActionBar(
 @Composable
 private fun ProfileSectionBar(
     selected: ProfileSection,
-    showContacts: Boolean,
     contactCount: Int,
     onSelect: (ProfileSection) -> Unit,
 ) {
-    val sections = buildList {
-        add(ProfileSection.Overview)
-        add(ProfileSection.About)
-        add(ProfileSection.Hosting)
-        if (showContacts) add(ProfileSection.Contacts)
-    }
-    Surface(
-        color = TrustrootsPaleGreen,
-        shadowElevation = 6.dp,
-        modifier = Modifier.fillMaxWidth().testTag("profileSections"),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            sections.forEach { item ->
-                val label = if (item == ProfileSection.Contacts && contactCount > 0) {
-                    "${item.label} ($contactCount)"
-                } else {
-                    item.label
-                }
-                TextButton(
-                    onClick = { onSelect(item) },
-                    modifier = Modifier.testTag("profileSection-${item.name.lowercase()}"),
-                ) {
-                    Text(
-                        label,
-                        fontWeight = if (selected == item) FontWeight.Bold else FontWeight.Normal,
-                        color = if (selected == item) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    )
-                }
-            }
+    TabRow(selectedTabIndex = selected.ordinal, containerColor = TrustrootsPaleGreen, modifier = Modifier.fillMaxWidth().testTag("profileSections")) {
+        ProfileSection.entries.forEach { section ->
+            Tab(
+                selected = section == selected,
+                onClick = { onSelect(section) },
+                modifier = Modifier.testTag("profileSection-${section.name.lowercase()}"),
+                text = { Text(if (section == ProfileSection.Contacts && contactCount > 0) "Contacts ($contactCount)" else section.label) },
+            )
         }
     }
 }
 
 @Composable
 private fun ProfileOverviewSection(
-    member: MemberProfile,
     references: List<ProfileReference>,
     showAllReferences: Boolean,
     onToggleReferences: () -> Unit,
@@ -502,15 +508,9 @@ private fun ProfileOverviewSection(
     api: MobileApiClient,
     session: MemberSession,
 ) {
-    member.tagline?.let {
-        Text(
-            Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(),
-            style = MaterialTheme.typography.titleMedium,
-        )
-    }
-    member.location?.let { Text(it, modifier = Modifier.padding(top = 6.dp)) }
+    if (references.isEmpty()) Text("No experiences shared yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
     if (references.isNotEmpty()) {
-        Text("References", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
+        Text("Experiences", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
         (if (showAllReferences) references else references.take(6)).forEach { reference ->
             Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -534,7 +534,7 @@ private fun ProfileOverviewSection(
         }
         if (references.size > 6) {
             TextButton(onClick = onToggleReferences) {
-                Text(if (showAllReferences) "Show fewer" else "More references (${references.size - 6})")
+                Text(if (showAllReferences) "Show fewer" else "More experiences (${references.size - 6})")
             }
         }
     }
@@ -620,6 +620,7 @@ private fun ProfileContactsSection(
             Modifier
                 .fillMaxWidth()
                 .clickable { contact.user.username?.let(onOpenRelated) }
+                .testTag("profileContact-${contact.id}")
                 .padding(vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -640,7 +641,7 @@ private fun ProfileContactsSection(
 }
 
 @Composable
-private fun EditProfileScreen(
+internal fun EditProfileScreen(
     api: MobileApiClient,
     session: MemberSession,
     profile: MemberProfile,
@@ -664,34 +665,11 @@ private fun EditProfileScreen(
         (listOf("eng", "por", "spa", "fra", "deu", "ita", "nld", "rus", "ara", "zho", "hin", "jpn", "tur", "pol", "swe", "ukr") + languages)
             .distinct().sortedBy(::languageName)
     }
-    Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(20.dp)) {
-        TextButton(onClick = onCancel) { Text("‹ Back") }
-        Text("Edit profile", style = MaterialTheme.typography.headlineMedium)
-        OutlinedTextField(name, { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(tagline, { tagline = it }, label = { Text("Tagline") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(living, { living = it }, label = { Text("Lives in") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(from, { from = it }, label = { Text("From") }, modifier = Modifier.fillMaxWidth())
-        Text("Languages", modifier = Modifier.padding(top = 12.dp))
-        Box {
-            TextButton(onClick = { languageMenu = true }) {
-                Text(if (languages.isEmpty()) "Choose languages" else languages.sortedBy(::languageName).joinToString { languageName(it) })
-            }
-            DropdownMenu(expanded = languageMenu, onDismissRequest = { languageMenu = false }) {
-                options.forEach { code ->
-                    DropdownMenuItem(
-                        text = { Text("${if (code in languages) "✓ " else ""}${languageName(code)}") },
-                        onClick = { languages = if (code in languages) languages - code else languages + code },
-                    )
-                }
-            }
-        }
-        OutlinedTextField(
-            description, { description = it }, label = { Text("About me") },
-            minLines = 5, maxLines = 12, modifier = Modifier.fillMaxWidth(),
-        )
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        Button(
-            onClick = {
+    val initialDescription = remember(profile.username) { Html.fromHtml(profile.description.orEmpty(), Html.FROM_HTML_MODE_COMPACT).toString().trim() }
+    val dirty = name != profile.displayName || tagline != profile.tagline.orEmpty() || description != initialDescription ||
+        living != profile.locationLiving.orEmpty() || from != profile.locationFrom.orEmpty() || languages != profile.languages.toSet()
+    val cancel = rememberFormCancel(dirty, saving, onCancel)
+    val save: () -> Unit = {
                 scope.launch {
                     saving = true
                     error = null
@@ -703,10 +681,37 @@ private fun EditProfileScreen(
                         }
                     saving = false
                 }
-            },
-            enabled = name.isNotBlank() && !saving,
-            modifier = Modifier.padding(top = 16.dp),
-        ) { Text(if (saving) "Saving…" else "Save profile") }
+            }
+    Column(Modifier.fillMaxSize().imePadding()) {
+        FormActionBar("Edit profile", saving, name.isNotBlank(), cancel, save)
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp)) {
+        OutlinedTextField(name, { name = it }, enabled = !saving, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(tagline, { tagline = it }, enabled = !saving, label = { Text("Tagline") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(living, { living = it }, enabled = !saving, label = { Text("Lives in") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(from, { from = it }, enabled = !saving, label = { Text("From") }, modifier = Modifier.fillMaxWidth())
+        Text("Languages", modifier = Modifier.padding(top = 12.dp))
+        Box {
+            Surface(onClick = { languageMenu = true }, enabled = !saving, shape = MaterialTheme.shapes.small, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline), modifier = Modifier.fillMaxWidth()) {
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(if (languages.isEmpty()) "Choose languages" else languages.sortedBy(::languageName).joinToString { languageName(it) }, modifier = Modifier.weight(1f))
+                    Icon(Icons.Default.Edit, contentDescription = null)
+                }
+            }
+            DropdownMenu(expanded = languageMenu, onDismissRequest = { languageMenu = false }) {
+                options.forEach { code ->
+                    DropdownMenuItem(
+                        text = { Text("${if (code in languages) "✓ " else ""}${languageName(code)}") },
+                        onClick = { languages = if (code in languages) languages - code else languages + code },
+                    )
+                }
+            }
+        }
+        OutlinedTextField(
+            description, { description = it }, enabled = !saving, label = { Text("About me") },
+            minLines = 5, maxLines = 12, modifier = Modifier.fillMaxWidth(),
+        )
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        }
     }
 }
 
@@ -871,9 +876,7 @@ internal fun ConversationScreen(
         }
     }
     Column(Modifier.fillMaxSize().imePadding().padding(20.dp)) {
-        TextButton(onClick = onBack, modifier = Modifier.height(32.dp), contentPadding = PaddingValues(horizontal = 4.dp)) {
-            Text("‹ Back")
-        }
+        NativeBackButton(onBack)
         Row(verticalAlignment = Alignment.CenterVertically) {
             RemoteArtwork(
                 url = member.id?.let { api.avatarURL(it, 96) },
@@ -900,7 +903,12 @@ internal fun ConversationScreen(
                             size = 30.dp,
                         )
                     }
-                    Column(Modifier.padding(start = 6.dp, top = 8.dp, bottom = 8.dp)) {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (message.sender.username == session.member.username) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.padding(start = 6.dp, top = 8.dp, bottom = 8.dp).widthIn(max = 280.dp).testTag(if (message.sender.username == session.member.username) "outgoingMessage" else "incomingMessage"),
+                    ) {
+                    Column(Modifier.padding(12.dp)) {
                         Text(Html.fromHtml(message.content, Html.FROM_HTML_MODE_COMPACT).toString().trim())
                         message.createdAt?.let { created ->
                             Text(
@@ -910,9 +918,11 @@ internal fun ConversationScreen(
                             )
                         }
                     }
+                    }
                 }
             }
         }
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
         if (showQuickReply) {
             QuickReplyBar(
                 onHostYes = {
@@ -941,10 +951,12 @@ internal fun ConversationScreen(
             minLines = 2,
             maxLines = 8,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
+            trailingIcon = {
+                IconButton(onClick = send, enabled = member.id != null && draft.isNotBlank() && !sending) {
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = if (sending) "Sending…" else "Send")
+                }
+            },
         )
-        Button(onClick = send, enabled = member.id != null && draft.isNotBlank() && !sending) {
-            Text("Send")
-        }
     }
 }
 
@@ -1012,7 +1024,7 @@ internal fun ContactsScreen(
         }
     }
     Column(Modifier.fillMaxSize().padding(20.dp)) {
-        TextButton(onClick = onBack) { Text("‹ Back") }
+        NativeBackButton(onBack)
         Text("Contacts", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         when {
             loading -> CircularProgressIndicator(modifier = Modifier.padding(top = 20.dp))

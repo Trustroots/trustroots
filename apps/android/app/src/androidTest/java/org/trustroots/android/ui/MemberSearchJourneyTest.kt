@@ -11,9 +11,16 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
 import java.io.ByteArrayOutputStream
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Rule
@@ -68,16 +75,20 @@ class MemberSearchJourneyTest {
             }
         }
         compose.setContent {
-            SearchHubScreen(
-                api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
-                session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
-                onSessionInvalidated = {},
-                initialTab = 1,
-            )
+            NativeTestAppFrame(Destination.Search) {
+                SearchHubScreen(
+                    api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                    session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
+                    onSessionInvalidated = {},
+                    initialTab = 1,
+                )
+            }
         }
-        compose.onNodeWithText("Members").assertIsDisplayed()
+        compose.onNodeWithText("Name or username").assertIsDisplayed()
+        captureUsabilityScreenshot(compose, "android_member_search")
+        compose.onNodeWithContentDescription("Search mode").assertIsDisplayed()
         compose.onNodeWithText("Name or username").performTextInput("quiet fox")
-        compose.onNodeWithText("Search").performClick()
+        compose.onNodeWithContentDescription("Search members").performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
         }
@@ -102,19 +113,105 @@ class MemberSearchJourneyTest {
             compose.onAllNodesWithText("Add contact").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Add contact").assertIsDisplayed()
-        compose.onNodeWithText("References").assertIsDisplayed()
-        compose.onNodeWithText("A thoughtful guest").assertIsDisplayed()
-        compose.onNodeWithText("About").performClick()
-        compose.onNodeWithText("Languages: English, Portuguese").assertIsDisplayed()
-        compose.onNodeWithText("Hosting").performClick()
-        compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Spare room").fetchSemanticsNodes().isNotEmpty()
+        assertTrue(compose.onAllNodesWithText("A thoughtful guest").fetchSemanticsNodes().isEmpty())
+        compose.onNodeWithText("Languages: English, Portuguese").performScrollTo().assertIsDisplayed()
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Spare room").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Spare room").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profileSection-contacts").performScrollTo().performClick()
+        compose.onNodeWithTag("profileContact-contact-one").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profilePager").performTouchInput { swipeLeft() }
+        compose.onNodeWithText("A thoughtful guest").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithContentDescription("Search mode").assertIsDisplayed()
+        responder.join(1_000)
+    }
+
+    @Test fun requiresThreeCharactersAndShowsEmptySearchResults() {
+        val requestCount = AtomicInteger()
+        val requestedPath = AtomicReference("")
+        val responder = thread(isDaemon = true) {
+            val connection = runCatching { server.accept() }.getOrNull() ?: return@thread
+            connection.use { socket ->
+                val input = socket.getInputStream().bufferedReader()
+                requestedPath.set(input.readLine().orEmpty())
+                while (!input.readLine().isNullOrEmpty()) Unit
+                requestCount.incrementAndGet()
+                val bytes = "[]".toByteArray()
+                socket.getOutputStream().write(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n".toByteArray(),
+                )
+                socket.getOutputStream().write(bytes)
+                socket.getOutputStream().flush()
+            }
         }
-        compose.onNodeWithText("Spare room").assertIsDisplayed()
-        compose.onNodeWithText("Contacts").performClick()
-        compose.onNodeWithText("Calm Lynx").assertIsDisplayed()
-        compose.onNodeWithText("‹ Back").performClick()
-        compose.onNodeWithText("Members").assertIsDisplayed()
+        compose.setContent {
+            NativeTestAppFrame(Destination.Search) {
+                MemberSearchScreen(
+                    api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                    session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
+                    onSessionInvalidated = {},
+                )
+            }
+        }
+        compose.onNodeWithTag("memberSearchField").performTextInput("ab")
+        compose.onNodeWithText("Enter at least 3 characters.").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Search members").assertIsNotEnabled()
+        compose.onNodeWithTag("memberSearchField").performTextReplacement("  fox  ")
+        compose.onNodeWithContentDescription("Search members").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("No members found. Try another name or username.")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        assertEquals(1, requestCount.get())
+        assertTrue(requestedPath.get().contains("/api/users?search=fox&limit=50"))
+        responder.join(1_000)
+    }
+
+    @Test fun retriesMemberSearchAfterServerError() {
+        val requestCount = AtomicInteger()
+        val responder = thread(isDaemon = true) {
+            repeat(2) {
+                val connection = runCatching { server.accept() }.getOrNull() ?: return@thread
+                connection.use { socket ->
+                    val input = socket.getInputStream().bufferedReader()
+                    val request = input.readLine().orEmpty()
+                    while (!input.readLine().isNullOrEmpty()) Unit
+                    val attempt = requestCount.incrementAndGet()
+                    val status = if (attempt == 1) "HTTP/1.1 503 Service Unavailable" else "HTTP/1.1 200 OK"
+                    val payload = if (attempt == 1) {
+                        """{"message":"Search temporarily unavailable."}"""
+                    } else {
+                        """[{"username":"quiet-fox","displayName":"Quiet Fox"}]"""
+                    }
+                    val bytes = payload.toByteArray()
+                    socket.getOutputStream().write(
+                        "$status\r\nContent-Type: application/json\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n".toByteArray(),
+                    )
+                    socket.getOutputStream().write(bytes)
+                    socket.getOutputStream().flush()
+                }
+            }
+        }
+        compose.setContent {
+            NativeTestAppFrame(Destination.Search) {
+                MemberSearchScreen(
+                    api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                    session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
+                    onSessionInvalidated = {},
+                )
+            }
+        }
+        compose.onNodeWithText("Name or username").performTextInput("quiet fox")
+        compose.onNodeWithContentDescription("Search members").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Search temporarily unavailable.").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithContentDescription("Search members").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
+        }
+        assertEquals(2, requestCount.get())
+        assertTrue(compose.onAllNodesWithText("Search temporarily unavailable.").fetchSemanticsNodes().isEmpty())
         responder.join(1_000)
     }
 }
