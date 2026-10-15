@@ -1,7 +1,7 @@
 import './../models/message.server.model.mjs';
 import nodeProcess from 'node:process';
 import config from './../../../../config/config.mjs';
-import mongoose, { type HydratedDocument, type Types } from 'mongoose';
+import mongoose, { type Types } from 'mongoose';
 import log from './../../../../config/lib/logger.mjs';
 import statService, {
   type StatObject,
@@ -10,14 +10,14 @@ import textService from './../../../core/server/services/text.server.service.mjs
 import type { MessageRecord } from '../models/message.server.model.mts';
 
 type Callback = (error?: unknown | null) => void;
-type MessageEndpointDocument = HydratedDocument<
-  MessageRecord & {
-    content: string;
-    created: Date;
-    userFrom: Types.ObjectId | { _id: Types.ObjectId };
-    userTo: Types.ObjectId | { _id: Types.ObjectId };
-  }
->;
+type MessageStatsInput = {
+  _id: Types.ObjectId;
+  content: string;
+  created: Date;
+  userFrom: Types.ObjectId | { _id: Types.ObjectId };
+  userTo: Types.ObjectId | { _id: Types.ObjectId };
+  spam?: boolean;
+};
 type MessageStatsPoint = StatObject & {
   namespace: 'messages';
   counts: { sent: 1 };
@@ -37,9 +37,9 @@ type MessageStatsPoint = StatObject & {
 };
 
 interface MessageToStatsService {
-  save(message: MessageEndpointDocument, callback?: Callback): void;
+  save(message: MessageStatsInput, callback?: Callback): void;
   process(
-    message: MessageEndpointDocument,
+    message: MessageStatsInput,
     callback: (error: unknown | null, point?: MessageStatsPoint) => void,
   ): void;
   send(point: MessageStatsPoint, callback: Callback): void;
@@ -50,7 +50,7 @@ const Message = mongoose.model<MessageRecord>('Message');
 const INFLUXDB_DISABLED_ERROR_MESSAGE =
   'InfluxDB disabled. Not creating a point for message statistics.';
 
-function save(message: MessageEndpointDocument, callback?: Callback): void {
+function save(message: MessageStatsInput, callback?: Callback): void {
   const completion: Callback = error => {
     if (
       error &&
@@ -79,7 +79,7 @@ function save(message: MessageEndpointDocument, callback?: Callback): void {
 }
 
 function process(
-  message: MessageEndpointDocument,
+  message: MessageStatsInput,
   callback: (error: unknown | null, point?: MessageStatsPoint) => void,
 ): void {
   let isFirstMessage = false;
@@ -101,7 +101,7 @@ function process(
           'first message not found, but should have been already saved',
         );
       }
-      const completeFirstMessage = firstMessage as MessageEndpointDocument;
+      const completeFirstMessage = firstMessage as MessageStatsInput;
       isFirstMessage = String(completeFirstMessage._id) === String(message._id);
       const canBeTheFirstReply =
         !isFirstMessage &&
@@ -117,7 +117,7 @@ function process(
         .exec()
         .then(firstReply => ({
           firstMessage: completeFirstMessage,
-          firstReply: firstReply as MessageEndpointDocument | null,
+          firstReply: firstReply as MessageStatsInput | null,
         }));
     })
     .then(

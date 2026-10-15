@@ -11,6 +11,7 @@ type CompleteMessage = MessageRecord & {
   userFrom: Types.ObjectId;
   userTo: Types.ObjectId;
 };
+type MessageStatInput = Pick<CompleteMessage, 'userFrom' | 'userTo'>;
 type CompleteMessageStat = HydratedDocument<
   MessageStatRecord & {
     firstMessageUserFrom: Types.ObjectId;
@@ -30,7 +31,7 @@ type StatResult = 'first' | 'firstReply' | 'other';
 
 interface MessageStatService {
   updateMessageStat(
-    message: CompleteMessage,
+    message: MessageStatInput,
     callback: Callback<StatResult>,
   ): void;
   readMessageStatsOfUser(
@@ -90,7 +91,7 @@ function addFirstReplyInfo(
 }
 
 function updateMessageStat(
-  message: CompleteMessage,
+  message: MessageStatInput,
   callback: Callback<StatResult>,
 ): void {
   const query = {
