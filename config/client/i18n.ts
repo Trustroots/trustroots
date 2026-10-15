@@ -84,7 +84,11 @@ function format(
 
 // i18next >= 21 ignores `interpolation.format` and uses its own formatter,
 // so ours is registered as the formatter module.
-const formatter = { type: 'formatter' as const, init() {}, format: format as FormatFunction };
+const formatter = {
+  type: 'formatter' as const,
+  init() {},
+  format: format as FormatFunction,
+};
 
 if (!isTest) {
   // load translation using Fetch -> see /public/locales

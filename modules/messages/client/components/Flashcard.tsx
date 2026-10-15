@@ -42,9 +42,7 @@ export default function Flashcard() {
   const { title, content } = getRandomCard();
   return (
     <a href="/guide" className="tr-flashcards text-center font-brand-regular">
-      <small className="tr-flashcards-tip text-uppercase">
-        {t('Tip')}
-      </small>
+      <small className="tr-flashcards-tip text-uppercase">{t('Tip')}</small>
       <p className="tr-flashcards-title">{title}</p>
       <p className="tr-flashcards-content">{content}</p>
     </a>
