@@ -1,14 +1,12 @@
 // External dependencies
 import { Trans, useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 import type { PageTranslator, PageUser } from '../types';
 
 // Internal dependencies
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
 import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
-import { userType } from '@/modules/users/client/users.prop-types';
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
 import Board from './PageBoard';
 import SiteFooter, {
@@ -559,11 +557,3 @@ export default function Home({
     </>
   );
 }
-
-Home.propTypes = {
-  routeParams: PropTypes.object,
-  user: userType,
-  isNativeMobileApp: PropTypes.bool,
-  photoCredits: PropTypes.object,
-  build: PropTypes.object,
-};

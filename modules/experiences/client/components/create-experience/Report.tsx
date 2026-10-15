@@ -1,6 +1,5 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -69,10 +68,3 @@ export default function Report({
     </ReportContainer>
   );
 }
-
-Report.propTypes = {
-  report: PropTypes.bool.isRequired,
-  reportMessage: PropTypes.string.isRequired,
-  onChangeReport: PropTypes.func.isRequired,
-  onChangeReportMessage: PropTypes.func.isRequired,
-};

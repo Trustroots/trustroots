@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React from 'react';
 
 import '@/config/client/i18n';
@@ -95,9 +94,3 @@ export default function BlockMember({
     </button>
   );
 }
-
-BlockMember.propTypes = {
-  isBlocked: PropTypes.bool,
-  className: PropTypes.string,
-  username: PropTypes.string.isRequired,
-};

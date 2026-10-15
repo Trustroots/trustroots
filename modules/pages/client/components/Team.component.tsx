@@ -5,7 +5,6 @@ import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
 import { getVolunteers, type Volunteer } from '../api/volunteers.api';
-import { userType } from '@/modules/users/client/users.prop-types';
 import Board from './PageBoard';
 import ManifestoText from './ManifestoText.component.js';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
@@ -211,7 +210,3 @@ export default function Team({ user }: { user?: PageUser | null }) {
     </>
   );
 }
-
-Team.propTypes = {
-  user: userType,
-};

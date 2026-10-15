@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
 import Contact from './Contact';
@@ -129,14 +128,6 @@ export default function ContactListPresentational({
     </div>
   );
 }
-
-ContactListPresentational.propTypes = {
-  contacts: PropTypes.array,
-  filter: PropTypes.string.isRequired,
-  selfId: PropTypes.string.isRequired,
-  onContactRemoved: PropTypes.func.isRequired,
-  onFilterChange: PropTypes.func.isRequired,
-};
 
 /**
  * Filters contacts whose user has a string field containing the given text.

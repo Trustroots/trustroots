@@ -1,6 +1,5 @@
 import RichText from '@/modules/core/client/components/RichText';
 import React, { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import styled, { css } from 'styled-components';
 
@@ -414,9 +413,3 @@ export default function TribeDetailPage({
     </>
   );
 }
-
-TribeDetailPage.propTypes = {
-  circle: PropTypes.string.isRequired,
-  onMembershipUpdated: PropTypes.func.isRequired,
-  user: PropTypes.object,
-};

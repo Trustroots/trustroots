@@ -39,5 +39,3 @@ export default function NoMeets() {
     </div>
   );
 }
-
-NoMeets.propTypes = {};

@@ -22,5 +22,3 @@ export default function UnreadCount() {
     </span>
   );
 }
-
-UnreadCount.propTypes = {};

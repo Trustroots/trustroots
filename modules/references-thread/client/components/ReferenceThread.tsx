@@ -1,7 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
@@ -143,7 +142,3 @@ export default function ReferenceThread({ userToId }: ReferenceThreadProps) {
     </div>
   );
 }
-
-ReferenceThread.propTypes = {
-  userToId: PropTypes.string.isRequired,
-};

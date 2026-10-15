@@ -1,6 +1,5 @@
 // External dependencies
 import L from 'leaflet';
-import PropTypes from 'prop-types';
 import React, { useEffect, useRef } from 'react';
 import Supercluster from 'supercluster';
 
@@ -356,31 +355,3 @@ export default function LeafletSearchMap({
     />
   );
 }
-
-LeafletSearchMap.propTypes = {
-  bounds: PropTypes.shape({
-    northEast: PropTypes.shape({
-      lat: PropTypes.number.isRequired,
-      lng: PropTypes.number.isRequired,
-    }).isRequired,
-    southWest: PropTypes.shape({
-      lat: PropTypes.number.isRequired,
-      lng: PropTypes.number.isRequired,
-    }).isRequired,
-  }),
-  communityNotes: PropTypes.shape({
-    features: PropTypes.array.isRequired,
-  }).isRequired,
-  offers: PropTypes.shape({
-    features: PropTypes.array.isRequired,
-  }).isRequired,
-  onCommunityNoteClick: PropTypes.func.isRequired,
-  onMapChange: PropTypes.func.isRequired,
-  onMapClick: PropTypes.func.isRequired,
-  onOfferClick: PropTypes.func.isRequired,
-  viewport: PropTypes.shape({
-    latitude: PropTypes.number.isRequired,
-    longitude: PropTypes.number.isRequired,
-    zoom: PropTypes.number.isRequired,
-  }).isRequired,
-};

@@ -1,7 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
@@ -108,13 +107,3 @@ export default function ProfileTabs({
     </div>
   );
 }
-
-ProfileTabs.propTypes = {
-  activePathName: PropTypes.string,
-  contactsCount: PropTypes.number,
-  initialPathName: PropTypes.string.isRequired,
-  isExperiencesEnabled: PropTypes.bool.isRequired,
-  isOWnProfile: PropTypes.bool.isRequired,
-  username: PropTypes.string.isRequired,
-  userId: PropTypes.string.isRequired,
-};

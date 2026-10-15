@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import React, {
   useCallback,
   useEffect,
@@ -547,7 +546,3 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
     </section>
   );
 }
-
-SearchPage.propTypes = {
-  user: PropTypes.object,
-};

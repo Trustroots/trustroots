@@ -2,7 +2,6 @@
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import styled from 'styled-components';
 
@@ -151,8 +150,3 @@ export default function LanguageSwitch({
     </>
   );
 }
-
-LanguageSwitch.propTypes = {
-  buttonStyle: PropTypes.string,
-  saveToAPI: PropTypes.bool,
-};

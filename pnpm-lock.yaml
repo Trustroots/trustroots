@@ -182,9 +182,6 @@ importers:
       process:
         specifier: 0.11.10
         version: 0.11.10
-      prop-types:
-        specifier: 15.8.1
-        version: 15.8.1
       qs:
         specifier: 6.16.0
         version: 6.16.0
@@ -251,9 +248,6 @@ importers:
       winston-papertrail-transport:
         specifier: 1.0.9
         version: 1.0.9(winston@3.19.0)
-      zod:
-        specifier: 4.4.3
-        version: 4.4.3
     devDependencies:
       '@babel/cli':
         specifier: 7.29.7
@@ -330,9 +324,6 @@ importers:
       '@types/node':
         specifier: 26.6.5
         version: 26.6.5
-      '@types/prop-types':
-        specifier: 15.7.15
-        version: 15.7.15
       '@types/react':
         specifier: 19.3.0
         version: 19.3.0
@@ -417,9 +408,6 @@ importers:
       jest-environment-jsdom:
         specifier: 30.5.2
         version: 30.5.2(supports-color@5.5.0)
-      jquery:
-        specifier: 3.6.0
-        version: 3.6.0
       js-yaml:
         specifier: 4.3.2
         version: 4.3.2
@@ -4336,8 +4324,9 @@ packages:
       node-notifier:
         optional: true
 
-  jquery@3.6.0:
-    resolution: {integrity: sha512-JVzAR/AjBvVt2BmYhxRCSYysDsPcssdmTFnzyLEts9qNwmjmu4JTAMYubEfwVOSwpQ1I1sKKFcxhZCI2buerfw==}
+  jiti@2.7.0:
+    resolution: {integrity: sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==}
+    hasBin: true
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -6291,9 +6280,6 @@ packages:
   yocto-queue@0.1.0:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
-
-  zod@4.4.3:
-    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
 snapshots:
 
@@ -10977,7 +10963,7 @@ snapshots:
       - supports-color
       - ts-node
 
-  jquery@3.6.0: {}
+  jiti@2.7.0: {}
 
   js-tokens@4.0.0: {}
 
@@ -13184,5 +13170,3 @@ snapshots:
       yargs-parser: 21.1.1
 
   yocto-queue@0.1.0: {}
-
-  zod@4.4.3: {}

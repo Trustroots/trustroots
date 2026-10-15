@@ -25,7 +25,6 @@ import React, {
   type ReactNode,
   type Ref,
 } from 'react';
-import PropTypes from 'prop-types';
 import last from 'lodash/last';
 import debounce from 'lodash/debounce';
 
@@ -128,9 +127,3 @@ export default function InfiniteMessages({
     </Component>
   );
 }
-
-InfiniteMessages.propTypes = {
-  component: PropTypes.elementType.isRequired,
-  onFetchMore: PropTypes.func.isRequired,
-  children: PropTypes.node.isRequired,
-};

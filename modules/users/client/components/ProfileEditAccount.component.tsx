@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import ProfileEditPage from './ProfileEditPage.component';
@@ -405,7 +404,3 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
     </ProfileEditPage>
   );
 }
-
-ProfileEditAccount.propTypes = {
-  user: PropTypes.object.isRequired,
-};

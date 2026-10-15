@@ -634,5 +634,3 @@ export default function AdminNewsletter() {
     </>
   );
 }
-
-AdminNewsletter.propTypes = {};

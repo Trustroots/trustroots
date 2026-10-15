@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
 
 import BoardCredits, { type PhotoCredit } from './BoardCredits';
@@ -48,15 +47,6 @@ function BuildLink({ build }: { build?: Build | null }) {
     </a>
   );
 }
-
-BuildLink.propTypes = {
-  build: PropTypes.shape({
-    branch: PropTypes.string,
-    committedAt: PropTypes.string,
-    commitUrl: PropTypes.string,
-    shortCommit: PropTypes.string,
-  }),
-};
 
 function FooterLinks() {
   return (
@@ -115,12 +105,6 @@ function SharedFooter({ build, photoCredits, variant }: Props) {
   );
 }
 
-SharedFooter.propTypes = {
-  build: BuildLink.propTypes.build,
-  photoCredits: PropTypes.object,
-  variant: PropTypes.string,
-};
-
 export default function SiteFooter({
   build,
   photoCredits,
@@ -147,9 +131,3 @@ export default function SiteFooter({
     <SharedFooter build={build} photoCredits={photoCredits} variant={variant} />
   );
 }
-
-SiteFooter.propTypes = {
-  build: BuildLink.propTypes.build,
-  photoCredits: PropTypes.object,
-  variant: PropTypes.string,
-};

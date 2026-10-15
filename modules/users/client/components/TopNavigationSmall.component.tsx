@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
 import { useTranslation } from 'react-i18next';
 import RemoveContact from '@/modules/contacts/client/components/RemoveContactContainer';
@@ -143,14 +142,3 @@ export default function TopNavigationSmall({
     </>
   );
 }
-
-TopNavigationSmall.propTypes = {
-  isAdmin: PropTypes.bool,
-  username: PropTypes.string.isRequired,
-  selfId: PropTypes.string.isRequired,
-  userId: PropTypes.string.isRequired,
-  contact: PropTypes.object,
-  referencesEnabled: PropTypes.bool.isRequired,
-  isResolved: PropTypes.bool.isRequired,
-  onContactRemoved: PropTypes.func.isRequired,
-};

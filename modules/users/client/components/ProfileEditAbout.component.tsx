@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import BirthdateSelect from '@/modules/core/client/components/BirthdateSelect.component';
@@ -229,7 +228,3 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
     </ProfileEditPage>
   );
 }
-
-ProfileEditAbout.propTypes = {
-  user: PropTypes.object.isRequired,
-};

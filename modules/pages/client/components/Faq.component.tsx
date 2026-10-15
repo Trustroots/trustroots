@@ -1,6 +1,5 @@
 import type { PageTranslator } from '../types';
 import React, { useEffect, useRef, useState } from 'react';
-import PropTypes from 'prop-types';
 import Board from './PageBoard';
 import { Trans, useTranslation } from 'react-i18next';
 import GeneralQuestions from './FaqGeneralQuestions';
@@ -438,8 +437,3 @@ export default function Faq({ category, children }: FaqProps) {
     </>
   );
 }
-
-Faq.propTypes = {
-  category: PropTypes.string,
-  children: PropTypes.node,
-};

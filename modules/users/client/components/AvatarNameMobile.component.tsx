@@ -4,7 +4,6 @@
  */
 
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import classNames from 'classnames';
 
 import Avatar from './Avatar.component';
@@ -59,8 +58,3 @@ export default function AvatarNameMobile({
     </div>
   );
 }
-
-AvatarNameMobile.propTypes = {
-  profile: PropTypes.object.isRequired,
-  isSelf: PropTypes.bool,
-};

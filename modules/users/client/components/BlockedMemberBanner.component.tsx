@@ -4,7 +4,6 @@
 
 import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React from 'react';
 
 import BlockMember from './BlockMember.component';
@@ -36,7 +35,3 @@ export default function BlockedMemberBanner({
     </div>
   );
 }
-
-BlockedMemberBanner.propTypes = {
-  username: PropTypes.string.isRequired,
-};

@@ -33,14 +33,6 @@ jest.mock('@/modules/contacts/client/components/Contact', () => {
     );
   }
 
-  MockContact.propTypes = {
-    avatarSize: () => null,
-    className: () => null,
-    contact: () => null,
-    hideMeta: () => null,
-    selfId: () => null,
-  };
-
   return MockContact;
 });
 

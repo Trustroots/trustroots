@@ -1,5 +1,3 @@
-// External dependencies
-import PropTypes from 'prop-types';
 import React from 'react';
 
 // Internal dependencies
@@ -33,7 +31,3 @@ export default function MapIcon({ mapboxStyle }: MapIconProps) {
     />
   );
 }
-
-MapIcon.propTypes = {
-  mapboxStyle: PropTypes.string,
-};

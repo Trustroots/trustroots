@@ -1,5 +1,3 @@
-// External dependencies
-import PropTypes from 'prop-types';
 import React from 'react';
 
 // Internal dependencies
@@ -105,9 +103,3 @@ export default function AdminReferenceVoteItem({
     </li>
   );
 }
-
-AdminReferenceVoteItem.propTypes = {
-  referenceThread: PropTypes.object.isRequired,
-  showBadge: PropTypes.bool,
-  showMessagesLink: PropTypes.bool,
-};

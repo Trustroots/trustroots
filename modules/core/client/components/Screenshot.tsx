@@ -1,5 +1,3 @@
-// External dependencies
-import PropTypes from 'prop-types';
 import React from 'react';
 import styled from 'styled-components';
 
@@ -70,10 +68,3 @@ export default function Screenshot({
     </Browser>
   );
 }
-
-Screenshot.propTypes = {
-  png: PropTypes.string.isRequired,
-  png2x: PropTypes.string.isRequired,
-  webp: PropTypes.string.isRequired,
-  webp2x: PropTypes.string.isRequired,
-};

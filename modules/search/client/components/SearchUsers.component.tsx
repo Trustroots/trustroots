@@ -130,5 +130,3 @@ export default function SearchUsers() {
     </section>
   );
 }
-
-SearchUsers.propTypes = {};

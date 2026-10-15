@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 import { nostrService } from '@/modules/search/client/services/nostr.client.service';
 import { timeAgo } from '@/modules/search/client/utils/time-ago';
 import NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
@@ -81,7 +80,3 @@ export default function ProfileNostrBadge({
     </div>
   );
 }
-
-ProfileNostrBadge.propTypes = {
-  npubHex: PropTypes.string,
-};

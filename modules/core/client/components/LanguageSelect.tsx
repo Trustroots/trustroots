@@ -2,7 +2,6 @@
 import { useTranslation } from 'react-i18next';
 import AsyncSelect from 'react-select/async';
 import type { OnChangeValue } from 'react-select';
-import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
@@ -103,10 +102,3 @@ export default function LanguageSelect({
     </>
   );
 }
-
-LanguageSelect.propTypes = {
-  excludeDeprecated: PropTypes.bool,
-  onChangeLanguages: PropTypes.func,
-  placeholder: PropTypes.string,
-  preSelectedLanguages: PropTypes.array,
-};

@@ -4,7 +4,6 @@ import type { PageTranslator, PageUser } from '../types';
 import React from 'react';
 
 // Internal dependencies`
-import { userType } from '@/modules/users/client/users.prop-types';
 import Board from './PageBoard';
 import ManifestoText from './ManifestoText.component.js';
 
@@ -145,7 +144,3 @@ export default function Foundation({ user }: { user?: PageUser | null }) {
     </>
   );
 }
-
-Foundation.propTypes = {
-  user: userType,
-};

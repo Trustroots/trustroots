@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 
@@ -226,7 +225,3 @@ export default function ContactAddPage({ user }: { user: UserProfile }) {
     </section>
   );
 }
-
-ContactAddPage.propTypes = {
-  user: PropTypes.object.isRequired,
-};

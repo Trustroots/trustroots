@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
 
 import { read as readCircles } from '@/modules/tribes/client/api/tribes.api';
@@ -86,8 +85,3 @@ export default function SearchCirclesToggle({
     </ul>
   );
 }
-
-SearchCirclesToggle.propTypes = {
-  onChange: PropTypes.func.isRequired,
-  selectedTribeIds: PropTypes.arrayOf(PropTypes.string).isRequired,
-};

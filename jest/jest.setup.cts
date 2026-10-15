@@ -44,9 +44,6 @@ if (globalThis.HTMLCanvasElement) {
 
 if (typeof window !== 'undefined') {
   const leafletModuleName: string = 'leaflet';
-  const jqueryModuleName: string = 'jquery';
   const leaflet: unknown = require(leafletModuleName);
-  const jquery: unknown = require(jqueryModuleName);
   Reflect.set(globalThis, 'L', leaflet);
-  Reflect.set(globalThis, 'jQuery', jquery);
 }

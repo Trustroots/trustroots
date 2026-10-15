@@ -4,7 +4,6 @@ import React, {
   useMemo,
   type ReactNode,
 } from 'react';
-import PropTypes from 'prop-types';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { AuthProvider, type AuthUser } from './auth';
@@ -56,14 +55,3 @@ export function useAppConfig() {
   const { env, isNativeMobileApp, title } = useBootstrapData();
   return { env, isNativeMobileApp, title };
 }
-
-AppProviders.propTypes = {
-  bootstrapData: PropTypes.shape({
-    env: PropTypes.string,
-    isNativeMobileApp: PropTypes.bool,
-    settings: PropTypes.object,
-    title: PropTypes.string,
-    user: PropTypes.object,
-  }),
-  children: PropTypes.node.isRequired,
-};

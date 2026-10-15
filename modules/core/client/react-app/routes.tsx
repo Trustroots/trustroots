@@ -7,7 +7,6 @@ import {
   useSearch,
 } from '@tanstack/react-router';
 import React from 'react';
-import PropTypes from 'prop-types';
 
 import {
   matchReactRoute,
@@ -147,10 +146,6 @@ function NavigationRoute({ user }: RouteContext) {
   );
 }
 
-NavigationRoute.propTypes = {
-  user: PropTypes.object,
-};
-
 function TribesPageRoute({ user }: RouteContext) {
   const { setUser } = useAuth();
 
@@ -170,10 +165,6 @@ function TribesPageRoute({ user }: RouteContext) {
     />
   );
 }
-
-TribesPageRoute.propTypes = {
-  user: PropTypes.object,
-};
 
 function TribeDetailPageRoute({
   user,
@@ -202,11 +193,6 @@ function TribeDetailPageRoute({
   );
 }
 
-TribeDetailPageRoute.propTypes = {
-  circle: PropTypes.string,
-  user: PropTypes.object,
-};
-
 function ThreadRoute({ user }: RouteContext) {
   if (!user) return null;
 
@@ -220,10 +206,6 @@ function ThreadRoute({ user }: RouteContext) {
     />
   );
 }
-
-ThreadRoute.propTypes = {
-  user: PropTypes.object,
-};
 
 function renderCircleDetail({ user, params }: RouteContext) {
   return React.createElement(

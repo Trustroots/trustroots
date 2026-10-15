@@ -37,6 +37,10 @@ describe('auth utils', () => {
     expect(getEmailFromToken()).toBeNull();
   });
 
+  it('rejects non-string confirmation tokens', () => {
+    expect(getEmailFromToken(123 as unknown as string)).toBeNull();
+  });
+
   it('returns username validation messages', () => {
     expect(
       getUsernameValidationError({
@@ -152,8 +156,10 @@ describe('auth utils', () => {
   it('rejects external destinations after signin', () => {
     expect(getSafeReturnTo('https://example.com')).toBeNull();
     expect(getSafeReturnTo('//example.com')).toBeNull();
+    expect(getSafeReturnTo('/\t/example.com')).toBeNull();
     expect(getSafeReturnTo('/\\example.com')).toBeNull();
     expect(getSafeReturnTo('messages/alice')).toBeNull();
+    expect(getSafeReturnTo(123 as unknown as string)).toBeNull();
 
     redirectAfterSignin(true, '//example.com');
     expect(mockedNavigate).toHaveBeenCalledWith('search.map', undefined, {

@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import React, { type ReactNode } from 'react';
 import styled from 'styled-components';
 import sparklesSvg from '../img/sparkles.svg';
@@ -41,9 +40,3 @@ export default function SuccessMessage({
     </Container>
   );
 }
-
-SuccessMessage.propTypes = {
-  children: PropTypes.node,
-  cta: PropTypes.node,
-  title: PropTypes.string,
-};

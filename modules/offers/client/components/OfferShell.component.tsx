@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import React from 'react';
 
 import OfferActivateProfile from './OfferActivateProfile.component';
@@ -17,8 +16,3 @@ export default function OfferShell({
     </section>
   );
 }
-
-OfferShell.propTypes = {
-  children: PropTypes.node,
-  user: PropTypes.object,
-};

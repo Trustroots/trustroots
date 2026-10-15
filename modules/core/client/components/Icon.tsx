@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import classnames from 'classnames';
 import React from 'react';
 
@@ -29,10 +28,3 @@ export default function Icon({
     />
   );
 }
-
-Icon.propTypes = {
-  className: PropTypes.string,
-  fixedWidth: PropTypes.bool,
-  icon: PropTypes.string.isRequired,
-  size: PropTypes.oneOf(['lg', '2x', '3x', '4x', '5x']),
-};

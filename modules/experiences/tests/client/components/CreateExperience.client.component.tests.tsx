@@ -17,7 +17,7 @@ import CreateExperience from '@/modules/experiences/client/components/CreateExpe
 import type {
   ExperienceMine,
   ExperienceUser,
-} from '@/modules/experiences/client/experiences.prop-types';
+} from '@/modules/experiences/shared/experience';
 
 const mockedExperiencesApi = jest.mocked(experiencesApi);
 const mockedSupportApi = jest.mocked(supportApi);

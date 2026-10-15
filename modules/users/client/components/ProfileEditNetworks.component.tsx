@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { nip19 } from 'nostr-tools';
 
@@ -316,7 +315,3 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
     </ProfileEditPage>
   );
 }
-
-ProfileEditNetworks.propTypes = {
-  user: PropTypes.object.isRequired,
-};

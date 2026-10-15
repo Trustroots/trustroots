@@ -1,5 +1,3 @@
-// External dependencies
-import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
 import ReactMapGL from 'react-map-gl';
 import { reactMapGLDefaultProps } from './reactMapGLDefaultProps';
@@ -114,20 +112,3 @@ export default function Map(props: MapProps) {
     </ReactMapGL>
   );
 }
-
-Map.propTypes = {
-  'aria-hidden': PropTypes.bool,
-  children: PropTypes.node,
-  className: PropTypes.string,
-  fallbackMarker: PropTypes.shape({
-    color: PropTypes.string.isRequired,
-    location: PropTypes.arrayOf(PropTypes.number).isRequired,
-  }),
-  location: PropTypes.arrayOf(PropTypes.number),
-  onLocationChange: PropTypes.func,
-  height: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  scrollZoom: PropTypes.bool,
-  showMapStyles: PropTypes.bool,
-  width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
-  zoom: PropTypes.number,
-};

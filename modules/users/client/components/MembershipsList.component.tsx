@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
@@ -32,10 +31,6 @@ function TribeBadge({ membership }: { membership: TribeMembership }) {
     </li>
   );
 }
-
-TribeBadge.propTypes = {
-  membership: PropTypes.object.isRequired,
-};
 
 export default function MembershipsList({
   memberships = [],
@@ -115,8 +110,3 @@ export default function MembershipsList({
     </div>
   );
 }
-
-MembershipsList.propTypes = {
-  isOwnProfile: PropTypes.bool.isRequired,
-  memberships: PropTypes.array,
-};

@@ -2,18 +2,9 @@ import {
   broadcastClientEvent,
   navigate,
 } from '@/modules/core/client/services/client-runtime';
-import { refine, regex, string } from 'zod/mini';
 
-const confirmationTokenSchema = string().check(
-  regex(/^.{40}(?:[0-9a-f]{2})+$/i),
-);
-const localReturnToSchema = string().check(
-  regex(/^\/(?:$|[^/\\])/),
-  refine(
-    value =>
-      new URL(value, window.location.origin).origin === window.location.origin,
-  ),
-);
+const confirmationTokenPattern = /^.{40}(?:[0-9a-f]{2})+$/i;
+const localReturnToPattern = /^\/(?:$|[^/\\])/;
 
 interface UsernameValidationInput {
   value?: string;
@@ -39,18 +30,14 @@ interface AuthenticatedUser {
 }
 
 export function getEmailFromToken(token = ''): string | null {
-  const parsedToken = confirmationTokenSchema.safeParse(token);
-
-  if (!parsedToken.success) {
+  if (typeof token !== 'string' || !confirmationTokenPattern.test(token)) {
     return null;
   }
 
   let email = '';
 
-  for (let index = 40; index < parsedToken.data.length; index += 2) {
-    email += String.fromCharCode(
-      parseInt(parsedToken.data.substr(index, 2), 16),
-    );
+  for (let index = 40; index < token.length; index += 2) {
+    email += String.fromCharCode(parseInt(token.substr(index, 2), 16));
   }
 
   return email;
@@ -105,13 +92,15 @@ export function applyAuthenticatedUser(
 export function getSafeReturnTo(
   returnTo: string | null | undefined,
 ): string | null {
-  const parsedReturnTo = localReturnToSchema.safeParse(returnTo);
-
-  if (!parsedReturnTo.success) {
+  if (typeof returnTo !== 'string' || !localReturnToPattern.test(returnTo)) {
     return null;
   }
 
-  const destination = new URL(parsedReturnTo.data, window.location.origin);
+  const destination = new URL(returnTo, window.location.origin);
+
+  if (destination.origin !== window.location.origin) {
+    return null;
+  }
 
   return `${destination.pathname}${destination.search}${destination.hash}`;
 }

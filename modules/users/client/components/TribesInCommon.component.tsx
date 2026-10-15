@@ -1,5 +1,4 @@
 import React, { useMemo } from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import type { TribeMembership } from '../types';
 
@@ -45,8 +44,3 @@ export default function TribesInCommon({
     </div>
   );
 }
-
-TribesInCommon.propTypes = {
-  memberIds: PropTypes.array,
-  memberships: PropTypes.array,
-};

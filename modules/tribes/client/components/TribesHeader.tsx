@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import Board from '@/modules/core/client/components/Board';
 
@@ -38,7 +37,3 @@ export default function TribesHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
     </Board>
   );
 }
-
-TribesHeader.propTypes = {
-  isLoggedIn: PropTypes.bool.isRequired,
-};

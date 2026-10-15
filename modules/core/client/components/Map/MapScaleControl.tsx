@@ -18,5 +18,3 @@ export default function MapScaleControl() {
     </div>
   );
 }
-
-MapScaleControl.propTypes = {};

@@ -1,7 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import PropTypes from 'prop-types';
 import React from 'react';
 
 import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
@@ -47,8 +46,3 @@ export default function ProfileEditLanguages({
     </div>
   );
 }
-
-ProfileEditLanguages.propTypes = {
-  onChangeLanguages: PropTypes.func.isRequired,
-  profileLanguages: PropTypes.array.isRequired,
-};

@@ -8,7 +8,7 @@ import Experience from '@/modules/experiences/client/components/read-experiences
 import type {
   Experience as ExperienceModel,
   ExperienceUser,
-} from '@/modules/experiences/client/experiences.prop-types';
+} from '@/modules/experiences/shared/experience';
 
 const userFrom: ExperienceUser = {
   _id: 'user-from',

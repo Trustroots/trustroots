@@ -1,5 +1,4 @@
 import { RouterProvider } from '@tanstack/react-router';
-import PropTypes from 'prop-types';
 import React, { useMemo } from 'react';
 
 import { createAppRouter } from './routes';
@@ -17,7 +16,3 @@ export default function ReactApp({
     <RouterProvider context={{ navigateOverride: navigate }} router={router} />
   );
 }
-
-ReactApp.propTypes = {
-  navigate: PropTypes.func,
-};

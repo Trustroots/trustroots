@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next';
 import ContactListPresentational from './ContactListPresentational';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import NoContent from '@/modules/core/client/components/NoContent';
-import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 import type { ContactList as ContactListData, ContactRecord } from '../types';
 import type { UserProfile } from '@/modules/users/client/types';
@@ -39,9 +38,3 @@ export default function ContactList({
     />
   );
 }
-
-ContactList.propTypes = {
-  appUser: PropTypes.object.isRequired,
-  contacts: PropTypes.array,
-  onContactRemoved: PropTypes.func.isRequired,
-};

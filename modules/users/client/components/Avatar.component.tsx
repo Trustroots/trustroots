@@ -1,5 +1,4 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
 
@@ -75,14 +74,6 @@ export default function Avatar({
     </div>
   );
 }
-
-Avatar.propTypes = {
-  user: PropTypes.object.isRequired,
-  size: PropTypes.number,
-  source: PropTypes.string,
-  link: PropTypes.bool,
-  onClick: PropTypes.func,
-};
 
 /**
  * Generate url to avatar image that user uploaded

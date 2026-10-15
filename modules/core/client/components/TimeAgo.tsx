@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import moment from 'moment';
 import React, { useEffect, useState } from 'react';
 
@@ -23,7 +22,3 @@ export default function TimeAgo({ date }: TimeAgoProps) {
     </time>
   );
 }
-
-TimeAgo.propTypes = {
-  date: PropTypes.instanceOf(Date).isRequired,
-};

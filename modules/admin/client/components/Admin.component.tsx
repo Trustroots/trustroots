@@ -217,5 +217,3 @@ export default function Admin() {
     </>
   );
 }
-
-Admin.propTypes = {};

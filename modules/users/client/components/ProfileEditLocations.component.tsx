@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import LocationInput from '@/modules/core/client/components/LocationInput.component';
@@ -109,7 +108,3 @@ export default function ProfileEditLocations({ user }: { user: UserProfile }) {
     </ProfileEditPage>
   );
 }
-
-ProfileEditLocations.propTypes = {
-  user: PropTypes.object.isRequired,
-};

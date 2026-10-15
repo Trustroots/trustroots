@@ -1,10 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
 import React from 'react';
 
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
-import { userType } from '@/modules/users/client/users.prop-types';
 import type { MessageThreadSummary, MessageUser } from '../api/messages.api';
 
 type InboxThreadProps = { user: MessageUser; thread: MessageThreadSummary };
@@ -45,19 +43,6 @@ export default function InboxThread({ user, thread }: InboxThreadProps) {
     </li>
   );
 }
-
-InboxThread.propTypes = {
-  user: userType.isRequired,
-  thread: PropTypes.shape({
-    read: PropTypes.bool.isRequired,
-    updated: PropTypes.string.isRequired,
-    userFrom: userType.isRequired,
-    userTo: userType.isRequired,
-    message: PropTypes.shape({
-      excerpt: PropTypes.string.isRequired,
-    }),
-  }),
-};
 
 function findOtherUser(
   currentUser: MessageUser,

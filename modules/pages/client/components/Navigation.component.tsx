@@ -5,8 +5,6 @@ import {
   infoAndSupportHeading,
   infoAndSupportLinks,
 } from '@/modules/core/shared/navigation-links';
-import PropTypes from 'prop-types';
-import { userType } from '@/modules/users/client/users.prop-types';
 import { useTranslation } from 'react-i18next';
 
 interface NavigationProps {
@@ -215,8 +213,3 @@ export default function Navigation({ user, onSignout }: NavigationProps) {
     </>
   );
 }
-
-Navigation.propTypes = {
-  user: userType,
-  onSignout: PropTypes.func,
-};
