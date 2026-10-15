@@ -311,7 +311,7 @@ service.changePassword = function (req, res) {
       function (done: WaterfallCallback) {
         User.findById(req.user!.id).then(
           (user: UserServerDocument | null) => done(null, user),
-          (err: Error) => done(err),
+          done,
         );
       },
 

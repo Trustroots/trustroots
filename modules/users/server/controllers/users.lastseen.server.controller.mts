@@ -57,14 +57,9 @@ const defaultExport = function (
       if (hasChangedIpAddress) {
         update.lastIpAddress = clientIpAddress;
       }
-      User.findByIdAndUpdate(req.user.id, update).then(
-        function () {
-          next();
-        },
-        function (err: Error) {
-          next(err);
-        },
-      );
+      User.findByIdAndUpdate(req.user.id, update).then(function () {
+        next();
+      }, next);
     } else {
       return next();
     }

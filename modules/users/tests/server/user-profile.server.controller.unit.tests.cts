@@ -991,6 +991,24 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(404);
     });
 
+    it('accepts a thenable profile lookup without populate or exec helpers', async () => {
+      const [viewer] = await utils.saveUsers(utils.generateUsers(1));
+      sinon
+        .stub(User, 'findOne')
+        .returns(
+          Promise.resolve(null) as unknown as ReturnType<typeof User.findOne>,
+        );
+      const { res } = await runHandler((res, next) =>
+        profileController.userByUsername(
+          { user: { _id: viewer._id, roles: ['user'] } },
+          res,
+          next,
+          'promiseusername',
+        ),
+      );
+      res.statusCode.should.equal(404);
+    });
+
     it('calls next for an existing public profile', async () => {
       const [viewer] = await utils.saveUsers(utils.generateUsers(1));
       const [target] = await utils.saveUsers(

@@ -198,7 +198,7 @@ export const getUsersCount = function (callback: Callback<number>): void {
     public: true,
   }).then(
     (count: number) => callback(null, parseStatisticsCount(count)),
-    (err: Error) => callback(err),
+    callback,
   );
 };
 
@@ -278,7 +278,7 @@ export const getExternalSiteCount = function (
   }
   User.countDocuments(query).then(
     (count: number) => callback(null, parseStatisticsCount(count)),
-    (err: Error) => callback(err),
+    callback,
   );
 };
 
@@ -302,7 +302,7 @@ export const getMeetOffersCount = function (callback: Callback<number>): void {
     ],
   }).then(
     (count: number) => callback(null, parseStatisticsCount(count)),
-    (err: Error) => callback(err),
+    callback,
   );
 };
 
@@ -327,44 +327,37 @@ export const getHostOffersCount = function (
         },
       },
     },
-  ]).then(
-    counters => {
-      if (!counters) {
-        return callback(new Error('Missing host offer counters.'));
-      }
-
-      // the returned counters is expected to be an array of a form
-      //
-      // [
-      //   {
-      //     _id: 'yes',
-      //     count: number // amount of 'yes' offers
-      //   },
-      //   {
-      //     _id: 'maybe',
-      //     count: number // amount of 'maybe' offers
-      //   },
-      //   {
-      //     _id: 'no',
-      //     count: number // amount of 'no' offers
-      //   }
-      // ]
-      const values: HostingCounts = {
-        yes: 0,
-        maybe: 0,
-        no: 0,
-      };
-      if (counters && counters.length > 0) {
-        counters.forEach(function (counter) {
-          if (isOfferStatus(counter._id)) {
-            values[counter._id] = parseStatisticsCount(counter.count);
-          }
-        });
-      }
-      callback(null, values);
-    },
-    (err: Error) => callback(err),
-  );
+  ]).then(counters => {
+    // the returned counters is expected to be an array of a form
+    //
+    // [
+    //   {
+    //     _id: 'yes',
+    //     count: number // amount of 'yes' offers
+    //   },
+    //   {
+    //     _id: 'maybe',
+    //     count: number // amount of 'maybe' offers
+    //   },
+    //   {
+    //     _id: 'no',
+    //     count: number // amount of 'no' offers
+    //   }
+    // ]
+    const values: HostingCounts = {
+      yes: 0,
+      maybe: 0,
+      no: 0,
+    };
+    if (counters && counters.length > 0) {
+      counters.forEach(function (counter) {
+        if (isOfferStatus(counter._id)) {
+          values[counter._id] = parseStatisticsCount(counter.count);
+        }
+      });
+    }
+    callback(null, values);
+  }, callback);
 };
 
 /**
@@ -378,7 +371,7 @@ export const getNewsletterSubscriptionsCount = function (
     public: true,
   }).then(
     (count: number) => callback(null, parseStatisticsCount(count)),
-    (err: Error) => callback(err),
+    callback,
   );
 };
 
@@ -399,7 +392,7 @@ export const getLastSeenStatistic = function (
   };
   User.countDocuments(query).then(
     (count: number) => callback(null, parseStatisticsCount(count)),
-    (err: Error) => callback(err),
+    callback,
   );
 };
 
@@ -433,10 +426,7 @@ export const getUserLanguagesCount = function (
     {
       $limit: limit,
     },
-  ]).then(
-    rows => callback(null, rows),
-    (error: Error) => callback(error),
-  );
+  ]).then(rows => callback(null, rows), callback);
 };
 
 /**
@@ -534,10 +524,7 @@ export const getExperienceStatistics = function (
               },
             },
           },
-        ]).then(
-          rows => done(null, rows),
-          (error: Error) => done(error),
-        );
+        ]).then(rows => done(null, rows), done);
       },
       realLifeConnections: done => {
         Experience.aggregate<ConnectionAggregate>([
@@ -601,10 +588,7 @@ export const getExperienceStatistics = function (
               },
             },
           },
-        ]).then(
-          rows => done(null, rows),
-          (error: Error) => done(error),
-        );
+        ]).then(rows => done(null, rows), done);
       },
     },
     (err, results) => {
@@ -677,10 +661,7 @@ export const getMessageInteractionStatistics = function (
               },
             },
           },
-        ]).then(
-          rows => done(null, rows),
-          (error: Error) => done(error),
-        );
+        ]).then(rows => done(null, rows), done);
       },
       feedback: done => {
         ReferenceThread.aggregate<FeedbackAggregate>([
@@ -836,10 +817,7 @@ export const getMessageInteractionStatistics = function (
               },
             },
           },
-        ]).then(
-          rows => done(null, rows),
-          (error: Error) => done(error),
-        );
+        ]).then(rows => done(null, rows), done);
       },
     },
     (err, results) => {

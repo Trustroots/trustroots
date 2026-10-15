@@ -792,8 +792,9 @@ describe('Avatar controller unit tests', () => {
       const user = {
         _id: new mongoose.Types.ObjectId(),
         avatarVersion: 'a'.repeat(32),
-        save: (callback: (error: Error) => void) =>
-          callback(new Error('database unavailable')),
+        save: async () => {
+          throw new Error('database unavailable');
+        },
       };
       const res = deferredResponse();
 

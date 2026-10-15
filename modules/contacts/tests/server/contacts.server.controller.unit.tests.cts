@@ -259,7 +259,7 @@ describe('Contacts controller unit tests', () => {
       sinon
         .stub(Contact, 'findOne')
         .returns(
-          callbackQuery(new Error('lookup failed')) as unknown as ReturnType<
+          Promise.reject(new Error('lookup failed')) as unknown as ReturnType<
             typeof Contact.findOne
           >,
         );

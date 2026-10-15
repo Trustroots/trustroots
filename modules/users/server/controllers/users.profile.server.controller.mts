@@ -279,18 +279,15 @@ service.update = function (req, res) {
             nostrNpub: requestedNostrNpub,
           },
           '_id',
-        ).then(
-          (existingNostrUser: UserServerDocument | null) => {
-            if (existingNostrUser) {
-              return res.status(403).send({
-                message:
-                  'This nostr npub is already in use. Please use another one.',
-              });
-            }
-            done();
-          },
-          (err: Error) => done(err),
-        );
+        ).then((existingNostrUser: UserServerDocument | null) => {
+          if (existingNostrUser) {
+            return res.status(403).send({
+              message:
+                'This nostr npub is already in use. Please use another one.',
+            });
+          }
+          done();
+        }, done);
       },
       // Check if we should generate new email token
       function (

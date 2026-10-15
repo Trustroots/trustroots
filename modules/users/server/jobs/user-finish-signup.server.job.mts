@@ -170,10 +170,7 @@ const defaultExport = function (
                       $inc: {
                         publicReminderCount: 1,
                       },
-                    }).then(
-                      () => callback(null),
-                      (updateErr: Error) => callback(updateErr),
-                    );
+                    }).then(() => callback(null), callback);
                   },
                 );
               },

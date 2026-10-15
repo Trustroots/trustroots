@@ -180,7 +180,7 @@ function sendUnreadMessageReminders(reminder: Reminder, callback: Done): void {
           },
         ]).then(
           (notifications: Notification[]) => done(null, notifications),
-          (err: Error) => done(err),
+          done,
         );
       },
       /*
@@ -209,32 +209,29 @@ function sendUnreadMessageReminders(reminder: Reminder, callback: Done): void {
             Message.countDocuments({
               userFrom: notification._id.userTo,
               userTo: notification._id.userFrom,
-            }).then(
-              (count: number) => {
-                const isThreadReplied = count > 0;
+            }).then((count: number) => {
+              const isThreadReplied = count > 0;
 
-                // find out whether it is too late to send the further notification
-                // we just wrap it to function for clearer organisation
-                const isTooLate = (function () {
-                  const lastMessage = _.maxBy(
-                    notification.messages,
-                    function (msg: ReminderMessage) {
-                      return msg.created;
-                    },
-                  ) as ReminderMessage;
-                  const tooLate = config.limits.unreadMessageRemindersTooLate;
-                  const tooOld = moment()
-                    .subtract(moment.duration(tooLate))
-                    .toDate();
-                  return lastMessage.created < tooOld;
-                })();
-                if (isThreadReplied || isTooLate) {
-                  notification.dontSend = true;
-                }
-                checkDone();
-              },
-              (err: Error) => checkDone(err),
-            );
+              // find out whether it is too late to send the further notification
+              // we just wrap it to function for clearer organisation
+              const isTooLate = (function () {
+                const lastMessage = _.maxBy(
+                  notification.messages,
+                  function (msg: ReminderMessage) {
+                    return msg.created;
+                  },
+                ) as ReminderMessage;
+                const tooLate = config.limits.unreadMessageRemindersTooLate;
+                const tooOld = moment()
+                  .subtract(moment.duration(tooLate))
+                  .toDate();
+                return lastMessage.created < tooOld;
+              })();
+              if (isThreadReplied || isTooLate) {
+                notification.dontSend = true;
+              }
+              checkDone();
+            }, checkDone);
           },
           function (err?: Error | null) {
             return done(err, notifications);
@@ -275,23 +272,16 @@ function sendUnreadMessageReminders(reminder: Reminder, callback: Done): void {
             ].join(' '),
           )
             .exec()
-            .then(
-              function (users: ReminderUser[]) {
-                // Re-organise users into more handy array (`collectedUsers`)
-                const collectedUsers: Record<string, ReminderUser> = {};
-                if (users) {
-                  users.forEach(function (user) {
-                    // @link https://lodash.com/docs/#set
-                    // _.set(object, path, value)
-                    _.set(collectedUsers, user._id.toString(), user);
-                  });
-                }
-                done(null, collectedUsers, notifications);
-              },
-              function (err: Error) {
-                done(err);
-              },
-            );
+            .then(function (users: ReminderUser[]) {
+              // Re-organise users into more handy array (`collectedUsers`)
+              const collectedUsers: Record<string, ReminderUser> = {};
+              users.forEach(function (user) {
+                // @link https://lodash.com/docs/#set
+                // _.set(object, path, value)
+                _.set(collectedUsers, user._id.toString(), user);
+              });
+              done(null, collectedUsers, notifications);
+            }, done);
         } else {
           done(null, [], notifications);
         }

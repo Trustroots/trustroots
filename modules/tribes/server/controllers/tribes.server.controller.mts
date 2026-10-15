@@ -335,10 +335,7 @@ service.updateCount = function (id, difference, returnUpdated, callback) {
     id,
     { $inc: { count: parseInt(String(difference)) } },
     { new: Boolean(returnUpdated) },
-  ).then(
-    tribe => callback(null, tribe),
-    (error: Error) => callback(error),
-  );
+  ).then(tribe => callback(null, tribe), callback);
 };
 
 const getTribe = service.getTribe;

@@ -645,14 +645,9 @@ service.send = async function (req, res) {
               userFrom: user._id,
             },
           ],
-        }).then(
-          function (thread) {
-            done(null, thread);
-          },
-          function (err) {
-            done(err);
-          },
-        );
+        }).then(function (thread) {
+          done(null, thread);
+        }, done);
       },
       // Check sender's profile isn't empty If it was first message
       // If the sending user has an empty profile, reject the message
@@ -758,10 +753,7 @@ service.send = async function (req, res) {
         } else if (spamStatus === 'not-spam') {
           message.spam = false;
         }
-        message.save().then(
-          saved => done(null, saved),
-          (err: Error) => done(err),
-        );
+        message.save().then(saved => done(null, saved), done);
       },
       // Create/upgrade Thread handle between these two users
       function (
@@ -861,7 +853,7 @@ service.send = async function (req, res) {
             // Finally return the approved message fields.
             return res.json(prepareMessageForClient(messageObject));
           })
-          .catch((err: Error) => done(err));
+          .catch(done);
       },
     ],
     function (err?: unknown) {
@@ -1221,10 +1213,7 @@ service.markAllMessagesToUserNotified = function (userId, callback) {
   Message.updateMany(
     { userTo: userId },
     { $set: { notificationCount: 2 } },
-  ).then(
-    () => callback(null),
-    (err: Error) => callback(err),
-  );
+  ).then(() => callback(null), callback);
 };
 /** Format a draft without saving it or touching conversation state. */
 service.preview = function (req, res) {
