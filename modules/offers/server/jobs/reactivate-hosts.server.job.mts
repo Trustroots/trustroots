@@ -92,9 +92,15 @@ function run(_job: unknown, agendaDone: Done): void {
           },
         })
           .populate('user', 'public email firstName displayName')
-          .exec(function (err, offers) {
-            done(err, offers || []);
-          });
+          .exec()
+          .then(
+            function (offers) {
+              done(null, offers || []);
+            },
+            function (err) {
+              done(err);
+            },
+          );
       },
       // Send emails
       function (offers: ReactivationOffer[], done: WaterfallDone) {
@@ -112,12 +118,13 @@ function run(_job: unknown, agendaDone: Done): void {
                   return callback(err);
                 } else {
                   // Mark reactivation mail sent
-                  Offer.findByIdAndUpdate(
-                    offer._id,
-                    {
-                      $set: {
-                        reactivateReminderSent: new Date(),
-                      },
+                  Offer.findByIdAndUpdate(offer._id, {
+                    $set: {
+                      reactivateReminderSent: new Date(),
+                    },
+                  }).then(
+                    function () {
+                      callback();
                     },
                     function (err) {
                       callback(err);

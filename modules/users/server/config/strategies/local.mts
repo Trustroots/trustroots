@@ -33,11 +33,10 @@ function rejectCredentials(
     .catch(done);
 }
 
-function findUser(
+async function findUser(
   filter: FilterQuery<UserServerRecord>,
-  callback: (error: Error | null, user: UserServerDocument | null) => void,
-): unknown {
-  return Reflect.apply(User.findOne, User, [filter, callback]);
+): Promise<UserServerDocument | null> {
+  return User.findOne(filter);
 }
 
 const defaultExport = function (): void {
@@ -54,20 +53,17 @@ const defaultExport = function (): void {
           typeof password !== 'string' ||
           username.length > ACCOUNT_IDENTIFIER_MAX_LENGTH
         ) {
-          return rejectCredentials(password, done);
+          rejectCredentials(password, done);
+          return;
         }
 
-        return findUser(
-          {
-            $or: [
-              { username: username.toLowerCase() },
-              { email: username.toLowerCase() },
-            ],
-          },
-          function (err, user) {
-            if (err) {
-              return done(err);
-            }
+        findUser({
+          $or: [
+            { username: username.toLowerCase() },
+            { email: username.toLowerCase() },
+          ],
+        }).then(
+          function (user) {
             if (!user) {
               return rejectCredentials(password, done);
             }
@@ -83,6 +79,9 @@ const defaultExport = function (): void {
                 return done(null, user);
               })
               .catch(done);
+          },
+          function (err) {
+            done(err);
           },
         );
       },

@@ -361,9 +361,12 @@ service.update = function (req, res) {
           setEmailConfirmationToken(user, token);
           user.emailTemporary = email;
         }
-        user.save(function (err: Error | null) {
-          done(err, token, user);
-        });
+        user
+          .save()
+          .then(function () {
+            done(null, token, user);
+          })
+          .catch(done);
       },
       // Send email
       function (
@@ -804,27 +807,36 @@ service.userMiniByID = function (req, res, next, userId) {
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return errorService.sendInvalidId(res);
   }
-  User.findById(
-    userId,
-    service.userMiniProfileFields + ' public roles blocked',
-  ).exec(function (err, profile) {
-    // Something went wrong or no profile
-    if (err || !profile) {
-      return errorService.sendNotFound(res);
-    }
-    const { isAdmin, isOwnProfile, isBannedProfile, isBlocked, hasBlocked } =
-      classifyPermission(req.user, profile);
-    // Not own profile, and not public, or suspended, or shadowbanned user
-    if (
-      !isAdmin &&
-      !isOwnProfile &&
-      (!profile.public || isBannedProfile || isBlocked || hasBlocked)
-    ) {
-      return errorService.sendNotFound(res);
-    }
-    req.profile = profile;
-    next();
-  });
+  User.findById(userId, service.userMiniProfileFields + ' public roles blocked')
+    .exec()
+    .then(
+      function (profile) {
+        // Something went wrong or no profile
+        if (!profile) {
+          return errorService.sendNotFound(res);
+        }
+        const {
+          isAdmin,
+          isOwnProfile,
+          isBannedProfile,
+          isBlocked,
+          hasBlocked,
+        } = classifyPermission(req.user, profile);
+        // Not own profile, and not public, or suspended, or shadowbanned user
+        if (
+          !isAdmin &&
+          !isOwnProfile &&
+          (!profile.public || isBannedProfile || isBlocked || hasBlocked)
+        ) {
+          return errorService.sendNotFound(res);
+        }
+        req.profile = profile;
+        next();
+      },
+      function () {
+        return errorService.sendNotFound(res);
+      },
+    );
 };
 
 /**
@@ -868,28 +880,36 @@ service.userByUsername = function (req, res, next, username) {
             // https://github.com/Automattic/mongoose/issues/2202
             // options: { sort: { count: -1 } }
           })
-          .exec(function (err, profile) {
-            if (err || !profile) {
-              // No such user
-              return res.status(404).send({
-                message: errorService.getErrorMessageByKey('not-found'),
-              });
-            }
-            const { isAdmin, isOwnProfile, isBannedProfile, isBlocked } =
-              classifyPermission(authenticatedUser, profile);
+          .exec()
+          .then(
+            function (profile) {
+              if (!profile) {
+                // No such user
+                return res.status(404).send({
+                  message: errorService.getErrorMessageByKey('not-found'),
+                });
+              }
+              const { isAdmin, isOwnProfile, isBannedProfile, isBlocked } =
+                classifyPermission(authenticatedUser, profile);
 
-            // Not own profile, and not public, or suspended, or shadowbanned user
-            if (
-              !isAdmin &&
-              !isOwnProfile &&
-              (!profile.public || isBannedProfile || isBlocked)
-            ) {
+              // Not own profile, and not public, or suspended, or shadowbanned user
+              if (
+                !isAdmin &&
+                !isOwnProfile &&
+                (!profile.public || isBannedProfile || isBlocked)
+              ) {
+                return res.status(404).send({
+                  message: errorService.getErrorMessageByKey('not-found'),
+                });
+              }
+              done(null, profile);
+            },
+            function () {
               return res.status(404).send({
                 message: errorService.getErrorMessageByKey('not-found'),
               });
-            }
-            done(err, profile);
-          });
+            },
+          );
       },
       // Sanitize profile
       function (
@@ -1212,9 +1232,16 @@ service.joinTribe = function (req, res) {
             // @link http://stackoverflow.com/a/4975054/1984644
             new: true, // get the updated document in return
           },
-        ).exec(function (err, user) {
-          done(err, tribe, user);
-        });
+        )
+          .exec()
+          .then(
+            function (user) {
+              done(null, tribe, user);
+            },
+            function (err) {
+              done(err);
+            },
+          );
       },
       // Done, output new tribe + user objects
       function (
@@ -1333,9 +1360,16 @@ service.leaveTribe = function (req, res) {
             // @link http://stackoverflow.com/a/4975054/1984644
             new: true, // get the updated document in return
           },
-        ).exec(function (err, user) {
-          done(err, tribe, user);
-        });
+        )
+          .exec()
+          .then(
+            function (user) {
+              done(null, tribe, user);
+            },
+            function (err) {
+              done(err);
+            },
+          );
       },
       // Done, output new tribe + user objects
       function (
@@ -1403,15 +1437,17 @@ service.getUserMemberships = function (req, res) {
       // https://github.com/Automattic/mongoose/issues/2202
       // options: { sort: { count: -1 } }
     })
-    .exec(function (err: Error | null, profile: UserServerDocument | null) {
-      // Something went wrong
-      if (err) {
+    .exec()
+    .then(
+      function (profile: UserServerDocument | null) {
+        return res.send(profile!.member || []);
+      },
+      function () {
         return res.status(400).send({
           message: 'Failed to get list of tribes.',
         });
-      }
-      return res.send(profile!.member || []);
-    });
+      },
+    );
 };
 
 /**
@@ -1434,20 +1470,23 @@ service.removePushRegistration = function (req, res) {
     safe: true,
     // @link http://stackoverflow.com/a/4975054/1984644
     new: true, // get the updated document in return
-  }).exec(function (err: Error | null, user: UserServerDocument | null) {
-    if (err) {
-      return res.status(400).send({
-        message:
-          errorService.getErrorMessage(err) ||
-          'Failed to remove registration, please try again.',
-      });
-    } else {
-      return res.send({
-        message: 'Removed registration.',
-        user: service.sanitizeOwnProfile(user),
-      });
-    }
-  });
+  })
+    .exec()
+    .then(
+      function (user: UserServerDocument | null) {
+        return res.send({
+          message: 'Removed registration.',
+          user: service.sanitizeOwnProfile(user),
+        });
+      },
+      function (err: Error) {
+        return res.status(400).send({
+          message:
+            errorService.getErrorMessage(err) ||
+            'Failed to remove registration, please try again.',
+        });
+      },
+    );
 };
 
 /**
@@ -1568,12 +1607,17 @@ service.search = function (req, res, next) {
     // skip to the page, automatically handles invalid page number
     .skip(req.skip)
     .maxTimeMS(2000)
-    .exec(function (err, users) {
-      if (err) return next(err);
-      /** filter ones that have blocked me */
-      const filterFnc = createBlockingUserFilter(req.user!);
-      return res.send(filterFnc(users));
-    });
+    .exec()
+    .then(
+      function (users) {
+        /** filter ones that have blocked me */
+        const filterFnc = createBlockingUserFilter(req.user!);
+        return res.send(filterFnc(users));
+      },
+      function (err) {
+        return next(err);
+      },
+    );
 };
 const defaultExport = service;
 export default defaultExport;
