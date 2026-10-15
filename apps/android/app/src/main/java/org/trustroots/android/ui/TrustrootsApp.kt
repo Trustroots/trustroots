@@ -54,6 +54,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material.icons.filled.BubbleChart
 import androidx.compose.runtime.CompositionLocalProvider
@@ -72,6 +73,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -617,9 +619,20 @@ internal fun MemberNavigationBar(
     memberLabel: String,
     onNavigate: (Destination) -> Unit,
 ) {
-    NavigationBar(containerColor = TrustrootsPaleGreen) {
+    NavigationBar(
+        modifier = Modifier.shadow(elevation = 8.dp),
+        containerColor = TrustrootsGreen,
+        tonalElevation = 0.dp,
+    ) {
         Destination.entries.forEach { item ->
             NavigationBarItem(
+                colors = NavigationBarItemDefaults.colors(
+                    selectedIconColor = Color.White,
+                    selectedTextColor = Color.White,
+                    unselectedIconColor = Color.White.copy(alpha = 0.7f),
+                    unselectedTextColor = Color.White.copy(alpha = 0.7f),
+                    indicatorColor = Color.White.copy(alpha = 0.25f),
+                ),
                 selected = destination == item,
                 label = { Text(item.label) },
                 onClick = { onNavigate(item) },
