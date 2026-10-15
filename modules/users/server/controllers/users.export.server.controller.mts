@@ -83,17 +83,18 @@ type ContactMiddlewareResponse = Parameters<
 type MiddlewareResponseBody =
   ProfileResponseBody | Parameters<ContactMiddlewareResponse['send']>[0];
 
-interface MiddlewareResponse extends ProfileResponse {
+interface MiddlewareResponse {
   statusCode?: number;
   status(code: number): MiddlewareResponse;
   send(body: MiddlewareResponseBody): MiddlewareResponse;
-  json(body: MiddlewareResponseBody): MiddlewareResponse;
-  redirect(url: string): MiddlewareResponse;
 }
 
-type ExportMiddleware<Value extends ExportId> = (
+type ExportMiddleware<
+  Value extends ExportId,
+  Response extends ProfileResponse | ContactMiddlewareResponse,
+> = (
   req: ExportRequest,
-  res: MiddlewareResponse,
+  res: Response,
   next: NextFunction,
   value: Value,
 ) => unknown;
@@ -276,8 +277,11 @@ async function memberOffers(userId: ExportId): Promise<ExportRecord[]> {
   return offers.map(selectOwnedOffer);
 }
 
-function invokeMiddleware<Value extends ExportId>(
-  middleware: ExportMiddleware<Value>,
+function invokeMiddleware<
+  Value extends ExportId,
+  Response extends ProfileResponse | ContactMiddlewareResponse,
+>(
+  middleware: ExportMiddleware<Value, Response>,
   req: ExportRequest,
   value: Value,
 ): Promise<void> {
@@ -300,16 +304,10 @@ function invokeMiddleware<Value extends ExportId>(
         reject(error);
         return this;
       },
-      json() {
-        return this;
-      },
-      redirect() {
-        return this;
-      },
     };
     middleware(
       req,
-      response,
+      response as Response,
       error => {
         if (error) {
           reject(error);

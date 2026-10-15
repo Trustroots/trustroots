@@ -177,7 +177,7 @@ service.update = function (req, res) {
     return errorService.sendBadRequest(res, undefined);
   }
   if (req.body.languages) {
-    const existingLanguages = new Set(authenticatedUser.languages ?? []);
+    const existingLanguages = new Set(authenticatedUser.languages!);
     const requestedLanguages = Array.isArray(req.body.languages)
       ? req.body.languages
       : [req.body.languages];
@@ -735,7 +735,7 @@ service.getUser = function (req: SanitizedProfileRequest, res) {
     // We had to bring it until here trough
     // ACL policy since it's needed there.
     // `req.profile.toObject()` is done at sanitizeProfile() before this.
-    if ('public' in req.profile) delete req.profile.public;
+    delete req.profile.public;
     res.json(req.profile);
   } else {
     // Profile of currently authenticated user:
