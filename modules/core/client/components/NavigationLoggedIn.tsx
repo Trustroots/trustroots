@@ -90,9 +90,7 @@ export default function NavigationLoggedIn({
           <Dropdown.Item href="/support?category=reportBug">
             {t('Report a bug')}
           </Dropdown.Item>
-          <Dropdown.Item href="/support">
-            {t('Contact us')}
-          </Dropdown.Item>
+          <Dropdown.Item href="/support">{t('Contact us')}</Dropdown.Item>
         </NavDropdown>
       </Nav>
 

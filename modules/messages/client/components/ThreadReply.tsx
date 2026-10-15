@@ -209,14 +209,10 @@ export default function ThreadReply({
               aria-label={t('Message preview')}
               aria-live="polite"
             >
-              <small className="text-muted">
-                {t('Message preview')}
-              </small>
+              <small className="text-muted">{t('Message preview')}</small>
               {previewError ? (
                 <div role="alert">
-                  <p>
-                    {t('Failed to load preview. Please try again.')}
-                  </p>
+                  <p>{t('Failed to load preview. Please try again.')}</p>
                   <button
                     type="button"
                     className="btn btn-default"
