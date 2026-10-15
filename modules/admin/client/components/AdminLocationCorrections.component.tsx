@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Modal } from 'react-bootstrap';
 import {
   getLocationCorrections,
   sendLocationCorrection,
@@ -113,7 +114,13 @@ export default function AdminLocationCorrections() {
           members may genuinely live there; review each offer before writing.
         </p>
         {isLoading && <p>Loading candidates…</p>}
-        {error && (
+        {!isLoading && (!error || candidates.length > 0) && (
+          <p>
+            {candidates.length} {candidates.length === 1 ? 'user' : 'users'}{' '}
+            awaiting review
+          </p>
+        )}
+        {error && !selected && (
           <p className="alert alert-danger" role="alert">
             {error}
           </p>
@@ -162,12 +169,26 @@ export default function AdminLocationCorrections() {
             ) : null;
           })}
         {selected && (
-          <section
-            aria-label="Review location correction"
-            className="panel panel-default"
+          <Modal
+            show
+            onHide={() => setSelected(null)}
+            keyboard={!isSending}
+            backdrop={isSending ? 'static' : true}
+            aria-labelledby="location-correction-review-title"
+            size="lg"
+            scrollable
           >
-            <div className="panel-body">
-              <h2>Review {selected.displayName || selected.username}</h2>
+            <Modal.Header closeButton={!isSending}>
+              <Modal.Title id="location-correction-review-title">
+                Review {selected.displayName || selected.username}
+              </Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              {error && (
+                <p className="alert alert-danger" role="alert">
+                  {error}
+                </p>
+              )}
               <p>
                 {selected.match === 'exact'
                   ? 'Exact default location'
@@ -187,6 +208,7 @@ export default function AdminLocationCorrections() {
                   Message from your account
                 </label>
                 <textarea
+                  autoFocus
                   className="form-control"
                   id="location-correction-message"
                   maxLength={5000}
@@ -199,18 +221,19 @@ export default function AdminLocationCorrections() {
                   disabled={isSending || !content.trim()}
                   type="submit"
                 >
-                  Send message
+                  {isSending ? 'Sending…' : 'Send message'}
                 </button>{' '}
                 <button
                   className="btn btn-default"
                   type="button"
+                  disabled={isSending}
                   onClick={() => setSelected(null)}
                 >
                   Cancel
                 </button>
               </form>
-            </div>
-          </section>
+            </Modal.Body>
+          </Modal>
         )}
       </main>
     </>
