@@ -114,7 +114,7 @@ export default function AdminLocationCorrections() {
           members may genuinely live there; review each offer before writing.
         </p>
         {isLoading && <p>Loading candidates…</p>}
-        {!isLoading && (
+        {!isLoading && (!error || candidates.length > 0) && (
           <p>
             {candidates.length} {candidates.length === 1 ? 'user' : 'users'}{' '}
             awaiting review

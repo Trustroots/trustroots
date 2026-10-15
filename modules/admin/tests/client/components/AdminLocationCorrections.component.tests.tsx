@@ -166,6 +166,7 @@ describe('AdminLocationCorrections', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Could not load location corrections.',
     );
+    expect(screen.queryByText(/awaiting review/)).not.toBeInTheDocument();
     first.unmount();
 
     apiMock.getLocationCorrections.mockResolvedValueOnce([]);
@@ -173,6 +174,7 @@ describe('AdminLocationCorrections', () => {
     expect(
       await screen.findByText('No uncontacted candidates found.'),
     ).toBeInTheDocument();
+    expect(screen.getByText('0 users awaiting review')).toBeInTheDocument();
   });
 
   it('shows a shared contact result and supports members without a display name', async () => {
