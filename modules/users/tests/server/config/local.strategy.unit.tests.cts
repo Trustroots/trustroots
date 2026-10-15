@@ -22,15 +22,11 @@ describe('Local passport strategy unit tests', () => {
     password: unknown,
     callback: VerifyCallback,
   ) => void;
-  type FindOneCallback = (
-    error: Error | null,
-    user?: AuthenticatedUser | null,
-  ) => void;
   type UserQuery = {
     $or: Array<{ username?: string; email?: string }>;
   };
   type UserDouble = {
-    findOne: SinonStub<[query: UserQuery, callback: FindOneCallback], void>;
+    findOne: SinonStub<[query: UserQuery], Promise<AuthenticatedUser | null>>;
   };
   type PasswordHashingDouble = {
     verifyPassword: SinonStub<
@@ -45,7 +41,7 @@ describe('Local passport strategy unit tests', () => {
 
   beforeEach(() => {
     User = {
-      findOne: sinon.stub<[UserQuery, FindOneCallback], void>(),
+      findOne: sinon.stub<[UserQuery], Promise<AuthenticatedUser | null>>(),
     };
     passwordHashing = {
       verifyPassword: sinon
@@ -129,9 +125,7 @@ describe('Local passport strategy unit tests', () => {
   });
 
   it('returns an error when the database lookup fails', done => {
-    User.findOne.callsFake((query, cb) => {
-      cb(new Error('db down'));
-    });
+    User.findOne.rejects(new Error('db down'));
 
     verify('testuser', 'password', (err, user, info) => {
       if (!err) return done(new Error('expected database error'));
@@ -143,9 +137,7 @@ describe('Local passport strategy unit tests', () => {
   });
 
   it('returns false when the user does not exist', done => {
-    User.findOne.callsFake((query, cb) => {
-      cb(null, null);
-    });
+    User.findOne.resolves(null);
 
     verify('missinguser', 'password', (err, user, info) => {
       should(err).be.null();
@@ -163,9 +155,7 @@ describe('Local passport strategy unit tests', () => {
       authenticate: sinon.stub().resolves(false),
     };
 
-    User.findOne.callsFake((query, cb) => {
-      cb(null, user);
-    });
+    User.findOne.resolves(user);
 
     verify('localstrategy', 'wrong-password', (err, foundUser, info) => {
       should(err).be.null();
@@ -183,14 +173,14 @@ describe('Local passport strategy unit tests', () => {
       authenticate: sinon.stub().withArgs('right-password').resolves(true),
     };
 
-    User.findOne.callsFake((query, cb) => {
+    User.findOne.callsFake(async query => {
       query.should.deepEqual({
         $or: [
           { username: 'mixedcase@example.com' },
           { email: 'mixedcase@example.com' },
         ],
       });
-      cb(null, user);
+      return user;
     });
 
     verify(
@@ -212,7 +202,7 @@ describe('Local passport strategy unit tests', () => {
   });
 
   it('does current-cost dummy verification when the user does not exist', done => {
-    User.findOne.callsFake((query, cb) => cb(null, null));
+    User.findOne.resolves(null);
 
     verify('missinguser', 'candidate-password', (err, user, info) => {
       should(err).be.null();
@@ -232,7 +222,7 @@ describe('Local passport strategy unit tests', () => {
     const error = new Error('capacity full');
     Object.assign(error, { code: 'KDF_OVERLOADED' });
     const user = { authenticate: sinon.stub().rejects(error) };
-    User.findOne.callsFake((query, cb) => cb(null, user));
+    User.findOne.resolves(user);
 
     verify('localstrategy', 'candidate-password', (err, foundUser) => {
       if (!err) return done(new Error('expected KDF error'));
