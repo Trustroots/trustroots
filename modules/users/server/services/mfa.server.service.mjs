@@ -90,7 +90,12 @@ function normaliseCode(code) {
 }
 
 function recoveryHash(code) {
-  return crypto.createHash('sha256').update(normaliseCode(code)).digest('hex');
+  // Bind recovery digests to the MFA deployment key so a database dump alone
+  // is not enough to offline-search the 64-bit codes.
+  return crypto
+    .createHmac('sha256', encryptionKey())
+    .update(normaliseCode(code))
+    .digest('hex');
 }
 
 function totpCounter(secret, counter) {
@@ -278,6 +283,12 @@ async function removeMfa(userId, expectedSecret) {
     },
     { new: true },
   ).exec();
+  if (!updated) return null;
+  // Passkeys are only valid as a second factor while TOTP enrolment remains.
+  await Promise.all([
+    mongoose.model('MemberPasskey').deleteMany({ user: userId }),
+    mongoose.model('PasskeyCeremony').deleteMany({ user: userId }),
+  ]);
   return updated;
 }
 

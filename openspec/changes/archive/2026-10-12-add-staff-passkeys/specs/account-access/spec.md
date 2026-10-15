@@ -10,10 +10,11 @@ The system SHALL let eligible staff register and manage optional WebAuthn creden
 - **THEN** the system stores a uniquely owned credential with a member-selected label
 - **AND** no authenticator private key is received or stored
 
-#### Scenario: Member attempts to remove the final available method
+#### Scenario: Staff member removes their last passkey
 
-- **WHEN** removal would leave the account without a usable sign-in or documented recovery method
-- **THEN** the operation is refused with actionable feedback
+- **WHEN** a staff member removes their only registered passkey while authenticator MFA remains enabled
+- **THEN** the removal succeeds
+- **AND** authenticator codes and recovery codes remain available for sign-in
 
 ### Requirement: Verified passkey second factor
 

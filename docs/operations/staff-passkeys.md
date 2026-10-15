@@ -3,7 +3,8 @@
 Administrators with an enrolled authenticator can add a device passkey or hardware key
 from the account settings page. Registration and removal ask for the current
 password and an unused authenticator or recovery code. The authenticator and
-recovery codes remain available after adding or removing a passkey.
+recovery codes remain available after adding or removing a passkey. Disabling
+authenticator MFA deletes that account's passkeys and outstanding ceremonies.
 
 After password sign-in, staff can choose **Use a registered passkey** for the
 second step. Native clients retain their existing authenticator compatibility

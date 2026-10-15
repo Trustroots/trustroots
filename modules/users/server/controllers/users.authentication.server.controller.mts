@@ -499,10 +499,23 @@ service.signin = function (req, res, next) {
           }
           statsObject.tags.status = 'mfa-required';
           statService.stat(statsObject, function () {});
-          return res.status(202).json({
-            mfaRequired: true,
-            passkeyAvailable: mfaService.isPrivileged(user),
-          });
+          // Advertise passkeys only when this account has one. Do not reveal
+          // administrator status for password-valid MFA challenges.
+          return mongoose
+            .model('MemberPasskey')
+            .exists({ user: user._id })
+            .then(found =>
+              res.status(202).json({
+                mfaRequired: true,
+                passkeyAvailable: Boolean(found),
+              }),
+            )
+            .catch(() =>
+              res.status(202).json({
+                mfaRequired: true,
+                passkeyAvailable: false,
+              }),
+            );
         });
       });
     }
@@ -562,6 +575,7 @@ service.verifyMfa = async function (req, res) {
         .status(400)
         .send({ message: 'Authenticator or recovery code is invalid.' });
     }
+    delete req.session!.mfaChallenge;
     result.user.$locals.mfaVerified = true;
     return req.login!(result.user, error => {
       if (error) {

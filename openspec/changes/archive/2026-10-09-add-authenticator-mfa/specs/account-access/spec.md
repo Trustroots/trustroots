@@ -27,9 +27,9 @@ Members MAY enable authenticator-app MFA using TOTP. Enrolment SHALL remain pend
 
 #### Scenario: A privileged account lacks verified MFA
 
-- **WHEN** an administrator, moderator, or other configured privileged role has no verified MFA session
+- **WHEN** an administrator has no verified MFA session
 - **THEN** privileged routes treat that account as an ordinary member
-- **AND** promotion of a privileged account requires MFA to be enrolled and verified before privileged access is granted
+- **AND** promotion to administrator requires MFA to be enrolled and verified before privileged access is granted
 
 #### Scenario: Account recovery does not bypass MFA
 

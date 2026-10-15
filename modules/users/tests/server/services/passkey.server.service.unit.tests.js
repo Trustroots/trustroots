@@ -166,6 +166,7 @@ describe('Staff passkey ceremonies', function () {
     );
     assert.equal(await service.authenticate(req), user);
     assert.equal(user.$locals.mfaVerified, true);
+    assert.equal(req.session.mfaChallenge, undefined);
     assert.deepEqual(Key.findOneAndUpdate.firstCall.args[0], {
       _id: key.id,
       user: user._id,

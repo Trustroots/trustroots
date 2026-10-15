@@ -8,9 +8,11 @@ const should: typeof import('should') = require('should');
 
 const testutils: typeof import('../../../../testutils/server/server.testutil.mts') = require('../../../../testutils/server/server.testutil');
 require('./../../server/models/user.server.model.mjs');
+require('./../../server/models/member-passkey.server.model.mjs');
 const authController: typeof import('../../server/controllers/users.authentication.server.controller.mjs').default = require('./../../server/controllers/users.authentication.server.controller.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 require('should');
+const MemberPasskey = mongoose.model('MemberPasskey');
 
 type AuthenticationUserRecord =
   import('../../server/models/user.server.types.mts').UserServerRecord;
@@ -935,6 +937,7 @@ describe('Authentication controller OAuth unit tests', () => {
     });
 
     it('starts a short-lived challenge instead of creating an MFA session', async () => {
+      sinon.stub(MemberPasskey, 'exists').resolves(null);
       const controller = loadSigninController(() => [
         null,
         {
@@ -956,8 +959,39 @@ describe('Authentication controller OAuth unit tests', () => {
 
       res.statusCode.should.equal(202);
       responseField(res, 'mfaRequired').should.be.true();
+      responseField(res, 'passkeyAvailable').should.be.false();
       session.mfaChallenge?.userId.should.equal('fictional-user');
       session.mfaChallenge?.authVersion.should.equal(2);
+    });
+
+    it('advertises passkeys only when the account already has one', async () => {
+      sinon.stub(MemberPasskey, 'exists').resolves({ _id: 'passkey-id' });
+      const controller = loadSigninController(() => [
+        null,
+        {
+          _id: 'fictional-user',
+          authVersion: 2,
+          roles: ['user', 'admin'],
+          mfaEnabled: true,
+        },
+        null,
+      ]);
+      const res = deferredResponse();
+      const session: MfaSession = {
+        regenerate: callback => callback(),
+        save: callback => callback(),
+      };
+
+      controller.signin({ session }, res, () => {});
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(202);
+      responseField(res, 'passkeyAvailable').should.be.true();
+      (MemberPasskey.exists as unknown as import('sinon').SinonStub)
+        .calledOnceWithExactly({
+          user: 'fictional-user',
+        })
+        .should.be.true();
     });
   });
 
@@ -1067,10 +1101,15 @@ describe('Authentication controller OAuth unit tests', () => {
     it('completes sign-in after a valid second factor', async () => {
       const { challenge, code, user } = await createMfaChallenge();
       const res = deferredResponse();
+      const session: MfaSession = {
+        mfaChallenge: challenge,
+        regenerate: callback => callback(),
+        save: callback => callback(),
+      };
 
       await authController.verifyMfa(
         {
-          session: { mfaChallenge: challenge },
+          session,
           body: { code },
           login: (_authenticatedUser: unknown, callback: AuthCallback) =>
             callback(),
@@ -1080,6 +1119,7 @@ describe('Authentication controller OAuth unit tests', () => {
 
       res.statusCode.should.equal(200);
       responseField(res, '_id').toString().should.equal(user._id.toString());
+      should.not.exist(session.mfaChallenge);
     });
 
     it('returns unavailable when the account lookup fails', async () => {

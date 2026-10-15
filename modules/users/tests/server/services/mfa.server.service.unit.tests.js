@@ -61,6 +61,17 @@ describe('Service: authenticator MFA', function () {
     mfaService.hashRecoveryCode(null).should.have.length(64);
   });
 
+  it('binds recovery-code digests to the MFA encryption key', function () {
+    const code = 'A1B2C3D4E5F60718';
+    const digest = mfaService.hashRecoveryCode(code);
+    digest.should.have.length(64);
+    digest.should.not.equal(
+      crypto.createHash('sha256').update(code).digest('hex'),
+    );
+    sinon.stub(config, 'mfaEncryptionKey').value('');
+    should(() => mfaService.hashRecoveryCode(code)).throw(/MFA_ENCRYPTION_KEY/);
+  });
+
   it('encodes staged secrets with non-byte-aligned base32 values', async function () {
     sinon.stub(User, 'updateOne').returns({ exec: async () => ({}) });
     sinon

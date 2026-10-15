@@ -3,8 +3,12 @@ const should = require('should');
 const sinon = require('sinon');
 
 require('./../../../server/models/user.server.model.mjs');
+require('./../../../server/models/member-passkey.server.model.mjs');
+require('./../../../server/models/passkey-ceremony.server.model.mjs');
 const mfaService = require('./../../../server/services/mfa.server.service.mjs');
 const User = mongoose.model('User');
+const MemberPasskey = mongoose.model('MemberPasskey');
+const PasskeyCeremony = mongoose.model('PasskeyCeremony');
 
 const RFC_TOTP_SECRET = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
 const RFC_TOTP_CODE = '287082';
@@ -382,6 +386,12 @@ describe('Service: authenticator MFA security branches', function () {
         .returns(
           queryReturning({ _id: 'fictional-user-id', mfaEnabled: false }),
         );
+      const deletePasskeys = sinon
+        .stub(MemberPasskey, 'deleteMany')
+        .resolves({ deletedCount: 1 });
+      const deleteCeremonies = sinon
+        .stub(PasskeyCeremony, 'deleteMany')
+        .resolves({ deletedCount: 0 });
 
       should(await mfaService.removeMfa('fictional-user-id')).equal(null);
       update.called.should.be.false();
@@ -399,10 +409,21 @@ describe('Service: authenticator MFA security branches', function () {
       changes.$unset.mfaSecretEncrypted.should.equal(1);
       changes.$inc.authVersion.should.equal(1);
       result.mfaEnabled.should.be.false();
+      deletePasskeys
+        .calledOnceWithExactly({
+          user: 'fictional-user-id',
+        })
+        .should.be.true();
+      deleteCeremonies
+        .calledOnceWithExactly({
+          user: 'fictional-user-id',
+        })
+        .should.be.true();
     });
 
     it('returns null when the secret changed before the atomic disable', async function () {
       sinon.stub(User, 'findOneAndUpdate').returns(queryReturning(null));
+      const deletePasskeys = sinon.stub(MemberPasskey, 'deleteMany');
 
       should(
         await mfaService.removeMfa(
@@ -410,6 +431,7 @@ describe('Service: authenticator MFA security branches', function () {
           mfaService.encryptSecret(RFC_TOTP_SECRET),
         ),
       ).equal(null);
+      deletePasskeys.called.should.be.false();
     });
   });
 

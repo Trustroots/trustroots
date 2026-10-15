@@ -648,7 +648,7 @@ SHALL remain removable independently of profile images.
 
 ### Requirement: Authenticator MFA
 
-Administrators MAY enable authenticator-app MFA using TOTP. Other members SHALL NOT enrol. Enrolment SHALL remain pending until the administrator confirms a valid code. The system SHALL encrypt pending and active TOTP secrets with AES-256-GCM using a dedicated deployment key, separate from the session and password keys. The deployment SHALL document key generation, configuration, rotation, and backup requirements.
+Administrators MAY enable authenticator-app MFA using TOTP. Other members SHALL NOT enrol. Enrolment SHALL remain pending until the administrator confirms a valid code. The system SHALL encrypt pending and active TOTP secrets with AES-256-GCM using a dedicated deployment key, separate from the session and password keys, and SHALL store recovery codes as HMAC digests bound to that key. The deployment SHALL document key generation, configuration, rotation, and backup requirements.
 
 #### Scenario: A member enrols an authenticator
 
@@ -690,7 +690,7 @@ Administrators MAY enable authenticator-app MFA using TOTP. Other members SHALL 
 
 ### Requirement: Staff passkey registration
 
-The system SHALL let administrators register and manage optional WebAuthn credentials after fresh password and existing second-factor verification. It SHALL store public credential material and an opaque user handle, and SHALL preserve an available recovery method.
+The system SHALL let administrators register and manage optional WebAuthn credentials after fresh password and existing second-factor verification. It SHALL store public credential material and an opaque user handle. Passkeys remain optional: the authenticator and recovery codes stay available, and removing the last passkey is allowed while TOTP enrolment remains. Disabling authenticator MFA SHALL remove the member's passkeys and outstanding passkey ceremonies.
 
 #### Scenario: Verified staff member registers a passkey
 
@@ -698,19 +698,26 @@ The system SHALL let administrators register and manage optional WebAuthn creden
 - **THEN** the system stores a uniquely owned credential with a member-selected label
 - **AND** no authenticator private key is received or stored
 
-#### Scenario: Member attempts to remove the final available method
+#### Scenario: Staff member removes their last passkey
 
-- **WHEN** removal would leave the account without a usable sign-in or documented recovery method
-- **THEN** the operation is refused with actionable feedback
+- **WHEN** a staff member removes their only registered passkey while authenticator MFA remains enabled
+- **THEN** the removal succeeds
+- **AND** authenticator codes and recovery codes remain available for sign-in
+
+#### Scenario: Authenticator MFA is disabled
+
+- **WHEN** an administrator disables authenticator MFA
+- **THEN** stored passkeys and outstanding passkey ceremonies for that account are deleted
 
 ### Requirement: Verified passkey second factor
 
-The system SHALL accept a passkey as a second factor only after server verification of origin, relying-party ID, ceremony challenge, ownership, signature and user verification. Challenges SHALL expire within five minutes and be atomically single-use.
+The system SHALL accept a passkey as a second factor only after server verification of origin, relying-party ID, ceremony challenge, ownership, signature and user verification. Challenges SHALL expire within five minutes and be atomically single-use. After password sign-in, the client SHALL be told a passkey is available only when the account has a registered passkey, not merely because the account is privileged.
 
 #### Scenario: Password-first sign-in uses a passkey
 
 - **WHEN** a member completes the current password-first passkey challenge
 - **THEN** the resulting session satisfies the same second-factor policy as an accepted authenticator code
+- **AND** the pre-authentication challenge is cleared
 
 #### Scenario: Ceremony does not match its account or deployment
 

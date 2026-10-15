@@ -278,6 +278,7 @@ export async function authenticate(req) {
     roles: { $nin: ['suspended'] },
   });
   if (!current || !mfa.isPrivileged(current)) fail('Sign in again.', 401);
+  delete req.session.mfaChallenge;
   current.$locals.mfaVerified = true;
   return current;
 }
