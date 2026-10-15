@@ -154,6 +154,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  delete window.viewContext;
   jest.clearAllMocks();
   window.localStorage.clear();
 });
@@ -811,6 +812,24 @@ describe('<Thread>', () => {
   });
 
   describe('unread messages from other user', () => {
+    it('preserves unread state and hides reply controls in a member view', async () => {
+      window.viewContext = {
+        generation: 'example-generation',
+        username: 'examplemember',
+      };
+      api.messages.fetchMessages.mockResolvedValueOnce({
+        messages: [
+          createMessage(otherUser, { content: 'Example unread message' }),
+        ],
+      });
+      render(<Thread user={me} profileMinimumLength={0} />);
+      expect(
+        await screen.findByText('Example unread message'),
+      ).toBeInTheDocument();
+      expect(api.messages.markRead).not.toHaveBeenCalled();
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('quick-reply')).not.toBeInTheDocument();
+    });
     it('marks them read and refreshes the unread message count', async () => {
       const unreadMessage = createMessage(otherUser);
       unreadMessage._id = 'unread-message';

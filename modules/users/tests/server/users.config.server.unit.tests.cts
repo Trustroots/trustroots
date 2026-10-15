@@ -35,7 +35,7 @@ async function installSessionHandlers() {
     .stub(passport, 'deserializeUser')
     .callsFake(handler => (deserialize = handler));
   sinon.stub(config.utils, 'getGlobbedPaths').returns([]);
-  const app = { use: sinon.stub() };
+  const app = { use: sinon.stub(), post: sinon.stub() };
 
   await require(controllerPath)(app);
 

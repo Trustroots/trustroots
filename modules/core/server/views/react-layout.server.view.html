@@ -216,7 +216,8 @@
           settings = {{ appSettings | jsonForScript | safe }},
           env = "{{ env }}",
           isNativeMobileApp = {{ isNativeMobileApp }},
-          user = {{ user | jsonForScript | safe }};
+          user = {{ user | jsonForScript | safe }},
+          viewContext = {{ viewContext | jsonForScript | safe }};
     </script>
 
     {% if env === 'production' %} {% for jsFile in reactJsFiles %}
