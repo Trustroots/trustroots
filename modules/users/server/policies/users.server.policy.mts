@@ -48,6 +48,10 @@ function invokeRolesPolicies() {
           permissions: [],
         },
         {
+          resources: '/api/users/email-change',
+          permissions: [],
+        },
+        {
           resources: '/api/users/accounts/:provider',
           permissions: [],
         },
@@ -94,6 +98,30 @@ function invokeRolesPolicies() {
         },
         {
           resources: '/api/users/password',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/users/email-change',
+          permissions: ['post', 'delete'],
+        },
+        {
+          resources: '/api/users/mfa',
+          permissions: ['get'],
+        },
+        {
+          resources: '/api/users/mfa/enrol',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/users/mfa/enrol/verify',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/users/mfa/recovery-codes',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/users/mfa/disable',
           permissions: ['post'],
         },
         {

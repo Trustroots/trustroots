@@ -28,6 +28,8 @@ export interface Config {
   https: boolean;
   sessionProxy: boolean;
   sessionSecret: string;
+  mfaEncryptionKey: string;
+  adminElevation: { lifetimeMs: number };
   sessionCollection: string;
   domain: string;
   csrfAllowedOrigins: string[];

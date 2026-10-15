@@ -87,6 +87,7 @@ const service = {
   sendResetPassword,
   sendResetPasswordConfirm,
   sendChangeEmailConfirmation,
+  sendEmailChangeNotificationToOldAddress,
   sendSignupEmailConfirmation,
   sendFlaggedSignupAlert,
   sendSupportRequest,
@@ -337,6 +338,24 @@ function sendChangeEmailConfirmation(user: MailUser, callback: MailCallback) {
     sparkpostCampaign: campaign,
   });
   service.renderEmailAndSend('email-confirmation', params, callback);
+}
+function sendEmailChangeNotificationToOldAddress(
+  user: MailUser,
+  previousEmail: string,
+  callback: MailCallback,
+) {
+  const accountSettingsUrl = url + '/profile/edit/account';
+  const campaign = 'email-change-notification';
+  const params = service.addEmailBaseTemplateParams({
+    subject: 'Email change requested for your Trustroots account',
+    name: user.displayName,
+    email: previousEmail,
+    changedAt: moment().utc().format('YYYY-MM-DD HH:mm [UTC]'),
+    accountSettingsUrl,
+    utmCampaign: campaign,
+    sparkpostCampaign: campaign,
+  });
+  service.renderEmailAndSend('email-change-notification', params, callback);
 }
 function sendSignupEmailConfirmation(user: MailUser, callback: MailCallback) {
   const urlConfirm =
@@ -830,6 +849,7 @@ export {
   renderEmail,
   renderEmailAndSend,
   sendChangeEmailConfirmation,
+  sendEmailChangeNotificationToOldAddress,
   sendConfirmContact,
   sendExperienceNotificationFirst,
   sendExperienceNotificationSecond,

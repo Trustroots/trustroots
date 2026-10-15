@@ -5,6 +5,8 @@ import type {
 
 const mongoose: typeof import('mongoose') = require('mongoose');
 const request: typeof import('supertest') = require('supertest');
+const crypto: typeof import('node:crypto') = require('node:crypto');
+const mfaService = require('../../../users/server/services/mfa.server.service.mjs');
 require('should');
 const express: import('../../../../testutils/server/model-contracts.mts').TestExpressModule = require('./../../../../config/lib/express.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mjs') = require('../../../../testutils/server/data.server.testutil');
@@ -13,16 +15,16 @@ describe('Admin access route tests', () => {
   before(async function () {
     app = await express.init(mongoose.connection);
   });
-  const _usersRaw = utils.generateUsers(3);
+  let _usersRaw = utils.generateUsers(3);
   _usersRaw[0].roles = ['user'];
   _usersRaw[1].roles = ['user'];
   _usersRaw[2].roles = ['user'];
   let targetUserId = '';
-  const credentialsRegular = {
+  let credentialsRegular = {
     username: _usersRaw[0].username,
     password: _usersRaw[0].password,
   };
-  const credentialsSecondRegular = {
+  let credentialsSecondRegular = {
     username: _usersRaw[1].username,
     password: _usersRaw[1].password,
   };
@@ -151,12 +153,57 @@ describe('Admin access route tests', () => {
       body.message.should.equal('Forbidden.');
     }
   }
+  function currentTotp(secret: string) {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    let bits = 0;
+    let value = 0;
+    const bytes = [];
+    for (const character of secret) {
+      value = (value << 5) | alphabet.indexOf(character);
+      bits += 5;
+      if (bits >= 8) {
+        bytes.push((value >>> (bits - 8)) & 255);
+        bits -= 8;
+      }
+    }
+    const counter = Math.floor(Date.now() / 1000 / 30);
+    const counterBuffer = Buffer.alloc(8);
+    counterBuffer.writeUInt32BE(Math.floor(counter / 0x100000000), 0);
+    counterBuffer.writeUInt32BE(counter % 0x100000000, 4);
+    const digest = crypto
+      .createHmac('sha1', Buffer.from(bytes))
+      .update(counterBuffer)
+      .digest();
+    const offset = digest[digest.length - 1] & 15;
+    return String(
+      (digest.readUInt32BE(offset) & 0x7fffffff) % 1000000,
+    ).padStart(6, '0');
+  }
   beforeEach(async () => {
+    _usersRaw = utils.generateUsers(3);
+    _usersRaw.forEach(user => {
+      user.roles = ['user'];
+      user.username = 'mfatestmember';
+      user.email = 'mfatestmember@example.test';
+      user.password = 'ExamplePassword123!';
+    });
+    _usersRaw[1].username = 'mfatestsecond';
+    _usersRaw[1].email = 'mfatestsecond@example.test';
+    _usersRaw[2].username = 'mfatesttarget';
+    _usersRaw[2].email = 'mfatesttarget@example.test';
+    credentialsRegular = {
+      username: _usersRaw[0].username,
+      password: _usersRaw[0].password,
+    };
+    credentialsSecondRegular = {
+      username: _usersRaw[1].username,
+      password: _usersRaw[1].password,
+    };
     const users = await utils.saveUsers(_usersRaw);
     targetUserId = users[2]._id.toString();
   });
   afterEach(utils.clearDatabase);
-  it('allows welcome-team acquisition access only, and honours revocation', async () => {
+  it('allows welcome-team acquisition access only after MFA, and honours revocation', async () => {
     const User = mongoose.model('User');
     await User.updateOne(
       {
@@ -168,8 +215,25 @@ describe('Admin access route tests', () => {
         },
       },
     );
+    const secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+    await User.updateOne(
+      { username: credentialsRegular.username },
+      {
+        $set: {
+          mfaEnabled: true,
+          mfaSecretEncrypted: mfaService.encryptSecret(secret),
+          mfaLastTotpCounter: -1,
+        },
+      },
+    );
     const agent = request.agent(app);
-    await utils.signIn(credentialsRegular, agent);
+    await agent.post('/api/auth/signin').send(credentialsRegular).expect(202);
+    await agent
+      .post('/api/auth/mfa/verify')
+      .set('X-Trustroots-Request', '1')
+      .send({ code: currentTotp(secret!) })
+      .expect(200);
+    await utils.elevateAdminAccess(agent, credentialsRegular.password);
     for (const endpoint of adminRequests()) {
       const expected =
         endpoint.path.startsWith('/api/admin/acquisition-stories') ||
@@ -193,6 +257,46 @@ describe('Admin access route tests', () => {
       },
     );
     await expectAdminRequestsForbidden(agent);
+  });
+  it('requires administrators to enrol MFA before account access', async () => {
+    const User = mongoose.model('User');
+    const credentials = {
+      username: 'mfa-admin-test',
+      password: 'ExamplePassword123!',
+    };
+    await new User({
+      ...credentials,
+      firstName: 'Example',
+      lastName: 'Member',
+      email: 'mfa-admin@example.test',
+      provider: 'local',
+      roles: ['user', 'admin'],
+    }).save();
+    const agent = request.agent(app);
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const blocked = await agent.get('/api/admin/dashboard').expect(403);
+    blocked.body.mfaRequired.should.be.true();
+    const enrolment = await agent
+      .post('/api/users/mfa/enrol')
+      .set('X-Trustroots-Request', '1')
+      .send({ currentPassword: credentials.password })
+      .expect(200);
+    const secret = new URL(enrolment.body.provisioningUri).searchParams.get(
+      'secret',
+    );
+    const activation = await agent
+      .post('/api/users/mfa/enrol/verify')
+      .set('X-Trustroots-Request', '1')
+      .send({ code: currentTotp(secret!) })
+      .expect(200);
+    activation.body.recoveryCodes.should.have.length(10);
+    activation.body.user.should.not.have.property('mfaSecretEncrypted');
+    const elevationRequired = await agent
+      .get('/api/admin/dashboard')
+      .expect(403);
+    elevationRequired.body.code.should.equal('ADMIN_ELEVATION_REQUIRED');
+    await utils.elevateAdminAccess(agent, credentials.password);
+    await agent.get('/api/admin/dashboard').expect(200);
   });
   it('does not allow guests to use admin endpoints', async () => {
     await expectAdminRequestsForbidden(request.agent(app));

@@ -6,6 +6,7 @@ interface SessionUser {
   authVersion?: number;
 }
 type SerializeHandler = (
+  req: { session: { memberSessionCreatedAt?: number } },
   user: SessionUser,
   done: (error: Error | null, session: unknown) => void,
 ) => void;
@@ -39,6 +40,8 @@ async function installSessionHandlers() {
 
   await require(controllerPath)(app);
 
+  if (!serialize || !deserialize)
+    throw new Error('Expected passport session handlers');
   return { serialize, deserialize };
 }
 
@@ -46,31 +49,42 @@ describe('Users Passport session configuration', () => {
   afterEach(() => sinon.restore());
 
   it('serializes the authentication version and rejects legacy ID-only sessions', async () => {
-    const user = { id: 'member-id', authVersion: 3 };
+    const user = {
+      id: 'member-id',
+      authVersion: 3,
+      mfaEnabled: true,
+      $locals: { mfaVerified: true },
+    };
     const findOne = sinon.stub();
     sinon.stub(User, 'findOne').callsFake(findOne);
     const handlers = await installSessionHandlers();
 
-    if (!handlers.serialize || !handlers.deserialize)
-      throw new Error('Passport handlers were not installed');
-    const serialize = handlers.serialize;
-    const deserialize = handlers.deserialize;
-    serialize(user, (serializeErr: Error | null, session: unknown) => {
+    const req: { session: { memberSessionCreatedAt?: number } } = {
+      session: {},
+    };
+    handlers.serialize(req, user, (serializeErr, session) => {
+      should(req.session.memberSessionCreatedAt).be.a.Number();
       should.not.exist(serializeErr);
-      should(session).deepEqual({ id: 'member-id', authVersion: 3 });
-      deserialize(
-        'member-id',
-        (legacyErr: Error | null, legacyUser: SessionUser | false | null) => {
-          should.not.exist(legacyErr);
-          should(legacyUser).equal(false);
-          findOne.called.should.equal(false);
-        },
-      );
+      should(session).deepEqual({
+        id: 'member-id',
+        authVersion: 3,
+        mfaVerified: true,
+      });
+      handlers.deserialize('member-id', (legacyErr, legacyUser) => {
+        should.not.exist(legacyErr);
+        should(legacyUser).equal(false);
+        findOne.called.should.equal(false);
+      });
     });
   });
 
   it('rejects stale versions and deleted accounts while accepting the current version', async () => {
-    const currentUser = { id: 'member-id', authVersion: 4 };
+    const currentUser = {
+      id: 'member-id',
+      authVersion: 4,
+      mfaEnabled: true,
+      $locals: {},
+    };
     const findOne = sinon
       .stub()
       .callsFake(
@@ -100,7 +114,7 @@ describe('Users Passport session configuration', () => {
         should.not.exist(staleErr);
         should(staleUser).equal(false);
         deserialize(
-          { id: 'member-id', authVersion: 4 },
+          { id: 'member-id', authVersion: 4, mfaEnabled: true, $locals: {} },
           (
             currentErr: Error | null,
             restoredUser: SessionUser | false | null,

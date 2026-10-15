@@ -1,0 +1,12 @@
+{% extends './email.server.view.html' %}
+
+{% block content %}
+Hey {{name}}!
+
+A request was made to change the email address on your Trustroots account at {{changedAt}}.
+
+Your current email address has not changed. If you made this request, confirm the new address using the message sent there.
+
+If you did not make this request, sign in to your account settings to cancel the pending change: {{accountSettingsUrl}}
+You can also change your password.
+{% endblock content %}

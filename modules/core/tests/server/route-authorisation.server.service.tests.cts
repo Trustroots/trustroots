@@ -117,6 +117,26 @@ describe('Route authorisation service', function () {
     getCall()!.roles.should.deepEqual(['guest']);
   });
 
+  it('retains member access for an unenrolled privileged user without member role', function () {
+    const { acl, getCall } = mockAcl(null, true);
+
+    createRouteAuthorisation(acl)(
+      {
+        user: {
+          roles: ['admin'],
+          mfaEnabled: false,
+          _id: { valueOf: () => 'fixture-user' },
+        },
+        route: { path: '/api/examples' },
+        method: 'GET',
+      },
+      mockResponse(),
+      function () {},
+    );
+
+    getCall()!.roles.should.deepEqual(['user']);
+  });
+
   it('passes the user roles and calls next when the ACL allows the request', function () {
     const { acl, getCall } = mockAcl(null, true);
     let nextCalled = false;

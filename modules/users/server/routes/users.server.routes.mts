@@ -6,6 +6,7 @@ import userAuthentication from './../controllers/users.authentication.server.con
 import userExport from './../controllers/users.export.server.controller.mjs';
 import unifiedPush from './../controllers/users.unified-push.server.controller.mjs';
 import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mjs';
+import userMfa from './../controllers/users.mfa.server.controller.mjs';
 
 /**
  * Module dependencies.
@@ -32,6 +33,12 @@ const defaultExport = function (app: RouteApplication) {
     .get(userProfile.search)
     .delete(userProfile.initializeRemoveProfile)
     .put(userProfile.update);
+
+  app
+    .route('/api/users/email-change')
+    .all(usersPolicy.isAllowed)
+    .post(targetedRequestLimit.emailChange, userProfile.changeEmail)
+    .delete(targetedRequestLimit.emailChange, userProfile.cancelEmailChange);
 
   // Confirm user removal
   app
@@ -90,6 +97,23 @@ const defaultExport = function (app: RouteApplication) {
     .route('/api/users/password')
     .all(usersPolicy.isAllowed)
     .post(userPassword.changePassword);
+  app.route('/api/users/mfa').all(usersPolicy.isAllowed).get(userMfa.settings);
+  app
+    .route('/api/users/mfa/enrol')
+    .all(usersPolicy.isAllowed, targetedRequestLimit.mfaManage)
+    .post(userMfa.beginEnrollment);
+  app
+    .route('/api/users/mfa/enrol/verify')
+    .all(usersPolicy.isAllowed, targetedRequestLimit.mfaManage)
+    .post(userMfa.verifyEnrollment);
+  app
+    .route('/api/users/mfa/recovery-codes')
+    .all(usersPolicy.isAllowed, targetedRequestLimit.mfaManage)
+    .post(userMfa.regenerateRecoveryCodes);
+  app
+    .route('/api/users/mfa/disable')
+    .all(usersPolicy.isAllowed, targetedRequestLimit.mfaManage)
+    .post(userMfa.disable);
   app
     .route('/api/users/:username')
     .all(usersPolicy.isAllowed)

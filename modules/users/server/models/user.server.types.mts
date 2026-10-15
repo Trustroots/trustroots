@@ -44,6 +44,13 @@ export interface UserServerRecord {
   password?: string;
   salt?: string;
   authVersion?: number;
+  mfaEnabled?: boolean;
+  mfaSecretEncrypted?: string;
+  mfaPendingSecretEncrypted?: string;
+  mfaPendingSecretExpires?: Date;
+  mfaPendingLastTotpCounter?: number;
+  mfaLastTotpCounter?: number;
+  mfaRecoveryCodeHashes?: string[];
   provider: string;
   providerData?: Record<string, unknown>;
   additionalProvidersData?: UserProviderData;

@@ -1,3 +1,4 @@
+import CryptoKit
 import MapKit
 import XCTest
 @testable import Trustroots
@@ -65,6 +66,92 @@ final class TrustrootsTests: XCTestCase {
             TrustrootsBrowserRoute.passwordRecovery.url.absoluteString,
             "https://www.trustroots.org/password/forgot"
         )
+    }
+
+    func testEmailChangeUsesCredentialedStageAndCancellationEndpoints() async throws {
+        let credentialStore = InMemorySessionCredentialStore()
+        XCTAssertTrue(credentialStore.save(
+            SessionCredentials(cookieHeader: "connect.sid=signed-session", username: "quiet-fox")
+        ))
+        var requests: [URLRequest] = []
+        var recordedBody: Data?
+        APIURLProtocol.handler = { request in
+            requests.append(request)
+            if request.httpMethod == "POST" {
+                recordedBody = request.bodyData
+            }
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (
+                response,
+                Data(#"{"username":"quiet-fox","displayName":"Quiet Fox","email":"quiet@example.test","emailTemporary":"pending@example.test"}"#.utf8)
+            )
+        }
+        defer { APIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [APIURLProtocol.self]
+        let api = TrustrootsAPI(
+            session: URLSession(configuration: configuration),
+            credentialStore: credentialStore
+        )
+        _ = try await api.changeAccountEmail(
+            serverURLString: "https://api.example.test",
+            email: " pending@example.test ",
+            currentPassword: "fictional-current-password",
+            mfaCode: "fictional-mfa-code"
+        )
+        _ = try await api.cancelAccountEmailChange(serverURLString: "https://api.example.test")
+
+        XCTAssertEqual(requests.map(\.httpMethod), ["POST", "DELETE"])
+        XCTAssertEqual(requests.first?.url?.path, "/api/users/email-change")
+        XCTAssertEqual(requests.last?.url?.path, "/api/users/email-change")
+        XCTAssertEqual(requests.first?.value(forHTTPHeaderField: "X-Trustroots-Request"), "1")
+        XCTAssertEqual(requests.last?.value(forHTTPHeaderField: "X-Trustroots-Request"), "1")
+        XCTAssertEqual(requests.first?.value(forHTTPHeaderField: "Cookie"), "connect.sid=signed-session")
+        XCTAssertEqual(requests.last?.value(forHTTPHeaderField: "Cookie"), "connect.sid=signed-session")
+        let body = try XCTUnwrap(recordedBody)
+        let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: String])
+        XCTAssertEqual(payload["email"], "pending@example.test")
+        XCTAssertEqual(payload["currentPassword"], "fictional-current-password")
+        XCTAssertEqual(payload["mfaCode"], "fictional-mfa-code")
+    }
+
+    func testUnconfirmedAccountEmailUpdateUsesCredentialedPut() async throws {
+        let credentialStore = InMemorySessionCredentialStore()
+        XCTAssertTrue(credentialStore.save(
+            SessionCredentials(cookieHeader: "connect.sid=signed-session", username: "quiet-fox")
+        ))
+        var recordedRequest: URLRequest?
+        var recordedBody: Data?
+        APIURLProtocol.handler = { request in
+            recordedRequest = request
+            recordedBody = request.bodyData
+            return (
+                HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil,
+                                headerFields: ["Content-Type": "application/json"])!,
+                Data(#"{"username":"quiet-fox","email":"corrected@example.test","public":false,"newsletter":true}"#.utf8)
+            )
+        }
+        defer { APIURLProtocol.handler = nil }
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [APIURLProtocol.self]
+        let api = TrustrootsAPI(session: URLSession(configuration: configuration), credentialStore: credentialStore)
+        let profile = try await api.updateAccount(
+            serverURLString: "https://api.example.test", email: "corrected@example.test", newsletter: true
+        )
+        XCTAssertEqual(profile.isPublic, false)
+        XCTAssertEqual(profile.email, "corrected@example.test")
+        XCTAssertEqual(recordedRequest?.httpMethod, "PUT")
+        XCTAssertEqual(recordedRequest?.url?.path, "/api/users")
+        XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "X-Trustroots-Request"), "1")
+        XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "Cookie"), "connect.sid=signed-session")
+        let body = try XCTUnwrap(recordedBody)
+        let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        XCTAssertEqual(payload["email"] as? String, "corrected@example.test")
+        XCTAssertEqual(payload["newsletter"] as? Bool, true)
     }
 
     func testBrowserRouteIdentifiersAreDistinct() {
@@ -545,6 +632,134 @@ final class TrustrootsTests: XCTestCase {
                 username: "traveller"
             )
         )
+    }
+
+    func testSignInSolvesChallengeAndRetriesCredentialsOnce() async throws {
+        var requestBodies: [[String: Any]] = []
+        APIURLProtocol.handler = { request in
+            let requestBody = request.bodyData ?? Data()
+            requestBodies.append(
+                (try? JSONSerialization.jsonObject(with: requestBody) as? [String: Any]) ?? [:]
+            )
+            let attempt = requestBodies.count
+            let status = attempt == 1 ? 429 : 200
+            let headers = attempt == 2 ? [
+                "Set-Cookie": "connect.sid=session-value; Path=/; HttpOnly"
+            ] : [:]
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: status, httpVersion: nil, headerFields: headers
+            )!
+            let body = attempt == 1
+                ? Data(#"{"signinChallenge":{"token":"fictional-challenge","difficulty":14}}"#.utf8)
+                : Data(#"{"username":"quiet-fox","displayName":"Quiet Fox","public":true}"#.utf8)
+            return (response, body)
+        }
+        defer { APIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [APIURLProtocol.self]
+        let api = TrustrootsAPI(session: URLSession(configuration: configuration))
+        let result = try await api.signIn(
+            serverURLString: "https://api.example.test",
+            usernameOrEmail: "quiet-fox",
+            password: "fictional-password"
+        )
+
+        XCTAssertEqual(requestBodies.count, 2)
+        XCTAssertNil(requestBodies[0]["signinProof"])
+        let proof = try XCTUnwrap(requestBodies[1]["signinProof"] as? [String: Any])
+        XCTAssertEqual(proof["token"] as? String, "fictional-challenge")
+        let solution = try XCTUnwrap(proof["solution"] as? Int)
+        let digest = Array(SHA256.hash(data: Data("fictional-challenge:\(solution)".utf8)))
+        XCTAssertEqual(digest[0], 0)
+        XCTAssertEqual(digest[1] & 0xfc, 0)
+        XCTAssertEqual(result.credentials.cookieHeader, "connect.sid=session-value")
+    }
+
+    func testSignInDoesNotReturnPreAuthSessionWhenProofRetryNeedsMFA() async throws {
+        var requestBodies: [[String: Any]] = []
+        APIURLProtocol.handler = { request in
+            requestBodies.append(
+                (try? JSONSerialization.jsonObject(with: request.bodyData ?? Data()) as? [String: Any]) ?? [:]
+            )
+            let isProofRetry = requestBodies.count == 2
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: isProofRetry ? 202 : 429,
+                httpVersion: nil,
+                headerFields: isProofRetry
+                    ? ["Set-Cookie": "connect.sid=pre-auth-session; Path=/; HttpOnly"]
+                    : nil
+            )!
+            let body = isProofRetry
+                ? Data(#"{"username":"quiet-fox","displayName":"Quiet Fox","public":true,"mfaRequired":true,"challenge":"pre-auth-challenge"}"#.utf8)
+                : Data(#"{"signinChallenge":{"token":"fictional-challenge","difficulty":14}}"#.utf8)
+            return (response, body)
+        }
+        defer { APIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [APIURLProtocol.self]
+        let api = TrustrootsAPI(session: URLSession(configuration: configuration))
+        var returnedSession = false
+
+        do {
+            _ = try await api.signIn(
+                serverURLString: "https://api.example.test",
+                usernameOrEmail: "quiet-fox",
+                password: "fictional-password"
+            )
+            returnedSession = true
+        } catch let error as TrustrootsAPIError {
+            XCTAssertEqual(
+                error,
+                .serverMessage(
+                    "This account requires multi-factor authentication, which is not supported in the app. Sign in using a browser to continue."
+                )
+            )
+        } catch {
+            XCTFail("Unexpected sign-in error: \(error)")
+        }
+
+        XCTAssertFalse(returnedSession, "MFA proof retry must not return a SessionResponse")
+        XCTAssertEqual(requestBodies.count, 2)
+        XCTAssertNotNil(requestBodies[1]["signinProof"])
+    }
+
+    func testSignInRejectsMFARequiredMarkerOnSuccessfulHTTPStatus() async throws {
+        APIURLProtocol.handler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Set-Cookie": "connect.sid=pre-auth-session; Path=/; HttpOnly"]
+            )!
+            return (
+                response,
+                Data(#"{"username":"quiet-fox","displayName":"Quiet Fox","public":true,"mfaRequired":true,"challenge":"pre-auth-challenge"}"#.utf8)
+            )
+        }
+        defer { APIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [APIURLProtocol.self]
+        let api = TrustrootsAPI(session: URLSession(configuration: configuration))
+
+        do {
+            _ = try await api.signIn(
+                serverURLString: "https://api.example.test",
+                usernameOrEmail: "quiet-fox",
+                password: "fictional-password"
+            )
+            XCTFail("An MFA marker must not produce a SessionResponse")
+        } catch let error as TrustrootsAPIError {
+            XCTAssertEqual(
+                error,
+                .serverMessage(
+                    "This account requires multi-factor authentication, which is not supported in the app. Sign in using a browser to continue."
+                )
+            )
+        }
     }
 
     func testOfflineResponseCacheIsScopedAndRetainsTimestamp() async throws {

@@ -44,6 +44,7 @@ import {
   selectProfileUpdateFields,
 } from '../services/profile-response.server.service.mts';
 import { userMiniProfileFields as miniProfileFields } from '../services/user-mini.server.service.mjs';
+import mfaService from '../services/mfa.server.service.mjs';
 
 const locales: Array<{ code: string }> = JSON.parse(
   readFileSync(
@@ -54,6 +55,11 @@ const locales: Array<{ code: string }> = JSON.parse(
 const service = {} as UserProfileController;
 type ErrorDone = (error?: Error | null) => void;
 const emailService = emailServiceModule as {
+  sendEmailChangeNotificationToOldAddress(
+    user: UserServerDocument,
+    oldAddress: string,
+    callback: (error: Error | null) => void,
+  ): void;
   sendChangeEmailConfirmation(
     user: UserServerDocument,
     callback: (error: Error | null) => void,
@@ -135,11 +141,25 @@ service.update = function (req, res) {
   if (
     Object.prototype.hasOwnProperty.call(req.body, 'email') &&
     (typeof req.body.email !== 'string' ||
-      (req.body.email !== '' && !validator.isEmail(req.body.email)))
+      (req.body.email.trim() !== '' &&
+        !validator.isEmail(req.body.email.trim())))
   ) {
     return res.status(400).send({
       message: 'Please enter a valid email address.',
     });
+  }
+  if (typeof req.body.email === 'string') {
+    req.body.email = req.body.email.trim().toLowerCase();
+    if (
+      req.body.email &&
+      req.body.email !== req.user.email &&
+      req.user.public === true
+    ) {
+      return res.status(400).send({
+        message:
+          'Email changes require your current password and authenticator code when enabled.',
+      });
+    }
   }
   const authenticatedUser = req.user;
   const requestedEmail = req.body.email as string | undefined;
@@ -397,6 +417,201 @@ service.update = function (req, res) {
       }
     },
   );
+};
+
+/**
+ * Stage an email change after fresh password and, when enabled, MFA proof.
+ */
+service.changeEmail = async function (req, res) {
+  if (!req.user) {
+    return errorService.sendForbidden(res);
+  }
+
+  const email = req.body?.email;
+  if (typeof email !== 'string' || !validator.isEmail(email.trim())) {
+    return res.status(400).send({
+      message: 'Please enter a valid email address.',
+    });
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  if (normalizedEmail === req.user.email) {
+    return res.json(service.sanitizeOwnProfile(req.user));
+  }
+
+  try {
+    const user = await User.findById(req.user._id).exec();
+    if (!user || user.public !== true) {
+      return res.status(400).send({
+        message: 'Confirm your current email address before changing it.',
+      });
+    }
+
+    const validPassword =
+      typeof req.body.currentPassword === 'string' &&
+      (await user.authenticate(req.body.currentPassword));
+    if (
+      !validPassword ||
+      (user.authVersion || 0) !== (req.user.authVersion || 0)
+    ) {
+      return res.status(400).send({
+        message: 'Password or authenticator confirmation failed.',
+      });
+    }
+
+    const existingUser = await User.findOne({
+      _id: { $ne: user._id },
+      $or: [{ email: normalizedEmail }, { emailTemporary: normalizedEmail }],
+    })
+      .select('_id')
+      .lean()
+      .exec();
+    if (existingUser) {
+      return res.status(403).send({
+        message: 'This email is already in use. Please use another one.',
+      });
+    }
+
+    if (
+      user.mfaEnabled === true &&
+      !(await mfaService.verifyAndConsume(
+        user._id,
+        req.body.mfaCode,
+        Date.now(),
+        user.authVersion || 0,
+      ))
+    ) {
+      return res.status(400).send({
+        message: 'Password or authenticator confirmation failed.',
+      });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const authVersion = user.authVersion || 0;
+    const tokenState: {
+      $locals: Record<string, unknown>;
+      emailToken?: string;
+      emailTokenIssuedAt?: Date;
+      emailTokenExpires?: Date;
+    } = { $locals: {} };
+    setEmailConfirmationToken(tokenState, token);
+    const updatedUser = await User.findOneAndUpdate(
+      {
+        _id: user._id,
+        ...(authVersion === 0
+          ? { $or: [{ authVersion: { $exists: false } }, { authVersion: 0 }] }
+          : { authVersion }),
+        email: user.email,
+      },
+      {
+        $set: {
+          emailTemporary: normalizedEmail,
+          emailToken: tokenState.emailToken,
+          emailTokenIssuedAt: tokenState.emailTokenIssuedAt,
+          emailTokenExpires: tokenState.emailTokenExpires,
+          updated: new Date(),
+        },
+      },
+      { new: true, runValidators: true },
+    ).exec();
+
+    if (!updatedUser) {
+      return res.status(400).send({
+        message: 'Password or authenticator confirmation failed.',
+      });
+    }
+
+    setEmailConfirmationToken(
+      updatedUser,
+      token,
+      tokenState.emailTokenIssuedAt,
+    );
+
+    await Promise.all([
+      new Promise<void>((resolve, reject) =>
+        emailService.sendChangeEmailConfirmation(updatedUser, error =>
+          error ? reject(error) : resolve(),
+        ),
+      ),
+      new Promise<void>((resolve, reject) =>
+        emailService.sendEmailChangeNotificationToOldAddress(
+          updatedUser,
+          user.email,
+          error => (error ? reject(error) : resolve()),
+        ),
+      ),
+    ]);
+
+    return res.json(service.sanitizeOwnProfile(updatedUser));
+  } catch (error) {
+    log('error', 'Could not stage account email change', error);
+    return res.status(503).send({
+      message: 'Could not send email change confirmation. Please try again.',
+    });
+  }
+};
+
+/** Cancel the current pending email change without affecting the current address. */
+service.cancelEmailChange = async function (req, res) {
+  if (!req.user) {
+    return errorService.sendForbidden(res);
+  }
+
+  try {
+    const pendingEmail = req.user.emailTemporary;
+    const pendingToken = req.user.emailToken;
+    const authVersion = req.user.authVersion || 0;
+    const authVersionQuery =
+      authVersion === 0
+        ? { $or: [{ authVersion: { $exists: false } }, { authVersion: 0 }] }
+        : { authVersion };
+    const hasPendingSnapshot =
+      typeof pendingEmail === 'string' &&
+      pendingEmail !== '' &&
+      typeof pendingToken === 'string' &&
+      pendingToken !== '';
+    const user = hasPendingSnapshot
+      ? await User.findOneAndUpdate(
+          {
+            _id: req.user._id,
+            public: true,
+            emailTemporary: pendingEmail,
+            emailToken: pendingToken,
+            $and: [authVersionQuery],
+          },
+          {
+            $unset: {
+              emailTemporary: 1,
+              emailToken: 1,
+              emailTokenIssuedAt: 1,
+              emailTokenExpires: 1,
+            },
+            $set: { updated: new Date() },
+          },
+          { new: true },
+        ).exec()
+      : null;
+    if (!user) {
+      const currentUser = await User.findOne({
+        _id: req.user._id,
+        public: true,
+      }).exec();
+      if (!currentUser) return errorService.sendForbidden(res);
+      if (currentUser.emailTemporary) {
+        return res.status(409).send({
+          message:
+            'The pending email change has changed. Refresh your account and try again.',
+        });
+      }
+      return res.json(service.sanitizeOwnProfile(currentUser));
+    }
+    return res.json(service.sanitizeOwnProfile(user));
+  } catch (error) {
+    log('error', 'Could not cancel account email change', error);
+    return res.status(503).send({
+      message: 'Could not cancel the pending email change. Please try again.',
+    });
+  }
 };
 
 /**
@@ -1578,6 +1793,8 @@ service.search = function (req, res, next) {
 const defaultExport = service;
 export default defaultExport;
 export const addPushRegistration = defaultExport.addPushRegistration;
+export const cancelEmailChange = defaultExport.cancelEmailChange;
+export const changeEmail = defaultExport.changeEmail;
 export const getMiniUser = defaultExport.getMiniUser;
 export const getUser = defaultExport.getUser;
 export const getUserMemberships = defaultExport.getUserMemberships;

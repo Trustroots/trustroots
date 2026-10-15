@@ -10,6 +10,8 @@ import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 
 jest.mock('@/modules/users/client/api/users.api');
 const updateUser = jest.mocked(usersApi.update);
+const changeEmail = jest.mocked(usersApi.changeEmail);
+const cancelEmailChange = jest.mocked(usersApi.cancelEmailChange);
 const changePassword = jest.mocked(usersApi.changePassword);
 const resendConfirmation = jest.mocked(usersApi.resendEmailConfirmation);
 const removeProfile = jest.mocked(usersApi.removeProfile);
@@ -130,7 +132,7 @@ describe('ProfileEditAccount', () => {
   });
 
   it('saves an email change and shows confirmation', async () => {
-    updateUser.mockResolvedValue({
+    changeEmail.mockResolvedValue({
       ...user,
       emailTemporary: 'new@example.test',
     });
@@ -139,12 +141,22 @@ describe('ProfileEditAccount', () => {
     fireEvent.change(screen.getByLabelText('Email Address'), {
       target: { value: 'new@example.test' },
     });
+    fireEvent.change(
+      screen.getByLabelText('Current password to confirm email change'),
+      { target: { value: 'current-secret' } },
+    );
+    fireEvent.change(
+      screen.getByLabelText('Authenticator or recovery code (if enabled)'),
+      { target: { value: '123456' } },
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Change email' }));
 
     await waitFor(() => {
-      expect(usersApi.update).toHaveBeenCalledWith(
-        expect.objectContaining({ email: 'new@example.test' }),
-      );
+      expect(usersApi.changeEmail).toHaveBeenCalledWith({
+        email: 'new@example.test',
+        currentPassword: 'current-secret',
+        mfaCode: '123456',
+      });
     });
     expect(
       await screen.findByText(/We sent you an email to new@example.test/),
@@ -256,7 +268,7 @@ describe('ProfileEditAccount', () => {
   });
 
   it('reports email change failures', async () => {
-    updateUser.mockRejectedValue({
+    changeEmail.mockRejectedValue({
       response: { data: { message: 'Email already taken.' } },
     });
     renderPage();
@@ -264,9 +276,77 @@ describe('ProfileEditAccount', () => {
     fireEvent.change(screen.getByLabelText('Email Address'), {
       target: { value: 'taken@example.test' },
     });
+    fireEvent.change(
+      screen.getByLabelText('Current password to confirm email change'),
+      { target: { value: 'current-secret' } },
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Change email' }));
 
     expect(await screen.findByText('Email already taken.')).toBeVisible();
+  });
+
+  it('submits a blank email when an incomplete profile email is cleared', async () => {
+    changeEmail.mockRejectedValue(new Error('network'));
+    renderUser(malformedFixture(user, { email: undefined }));
+
+    fireEvent.change(screen.getByLabelText('Email Address'), {
+      target: { value: 'temporary@example.test' },
+    });
+    fireEvent.change(screen.getByLabelText('Email Address'), {
+      target: { value: '' },
+    });
+    fireEvent.change(
+      screen.getByLabelText('Current password to confirm email change'),
+      { target: { value: 'current-secret' } },
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Change email' }));
+
+    await waitFor(() => {
+      expect(usersApi.changeEmail).toHaveBeenCalledWith({
+        email: '',
+        currentPassword: 'current-secret',
+        mfaCode: '',
+      });
+    });
+    expect(await screen.findByText('Something went wrong.')).toBeVisible();
+  });
+
+  it('cancels a pending email change and refreshes the profile', async () => {
+    cancelEmailChange.mockResolvedValue({ ...user });
+    renderPage({ emailTemporary: 'pending@example.test' });
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Cancel pending email change' }),
+    );
+
+    expect(
+      await screen.findByText('Pending email change cancelled.'),
+    ).toBeVisible();
+    expect(usersApi.cancelEmailChange).toHaveBeenCalled();
+  });
+
+  it('reports pending email cancellation failures', async () => {
+    cancelEmailChange.mockRejectedValue({
+      response: { data: { message: 'Could not cancel change.' } },
+    });
+    renderPage({ emailTemporary: 'pending@example.test' });
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Cancel pending email change' }),
+    );
+
+    expect(await screen.findByText('Could not cancel change.')).toBeVisible();
+  });
+
+  it('uses a fallback message when pending email cancellation has no response', async () => {
+    cancelEmailChange.mockRejectedValue(new Error('network'));
+    renderPage({ emailTemporary: 'pending@example.test' });
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Cancel pending email change' }),
+    );
+
+    expect(await screen.findByText('Something went wrong.')).toBeVisible();
   });
 
   it('reports username change failures', async () => {
@@ -345,20 +425,28 @@ describe('ProfileEditAccount', () => {
 
   it('uses fallback messages when account requests have no response body', async () => {
     updateUser.mockRejectedValue(new Error('network'));
+    changeEmail.mockRejectedValue(new Error('network'));
     changePassword.mockRejectedValue(new Error('network'));
     resendConfirmation.mockRejectedValue(new Error('network'));
     renderPage({ emailTemporary: 'pending@example.test' });
 
+    fireEvent.change(screen.getByLabelText('Email Address'), {
+      target: { value: 'new@example.test' },
+    });
+    fireEvent.change(
+      screen.getByLabelText('Current password to confirm email change'),
+      { target: { value: 'current-secret' } },
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Change email' }));
     expect(await screen.findByText('Something went wrong.')).toBeVisible();
-    expect(usersApi.update).toHaveBeenCalledTimes(1);
+    expect(usersApi.update).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Change username' }));
     expect(await screen.findByText('Something went wrong')).toBeVisible();
-    expect(usersApi.update).toHaveBeenCalledTimes(2);
+    expect(usersApi.update).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByLabelText('Community newsletter'));
-    await waitFor(() => expect(usersApi.update).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(usersApi.update).toHaveBeenCalledTimes(2));
 
     fireEvent.click(
       screen.getByRole('button', { name: 'Resend confirmation' }),

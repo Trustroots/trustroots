@@ -7,7 +7,11 @@ type Operation =
   | 'forgotPassword'
   | 'resetPassword'
   | 'resendConfirmation'
-  | 'avatarUpload';
+  | 'avatarUpload'
+  | 'mfaVerify'
+  | 'mfaManage'
+  | 'emailChange'
+  | 'manageSessions';
 type Policy = {
   enabled?: boolean;
   windowMs: number;
@@ -16,6 +20,7 @@ type Policy = {
 };
 type Config = { targetedRequestLimits: Record<Operation, Policy> };
 type Request = {
+  session?: { mfaChallenge?: { userId?: string } };
   ip?: string;
   user?: { id?: string };
   body?: { email?: unknown; username?: unknown };
@@ -69,7 +74,11 @@ function loadMiddleware(
       forgotPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       resetPassword: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       resendConfirmation: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
+      emailChange: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
+      manageSessions: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
       avatarUpload: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
+      mfaVerify: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
+      mfaManage: { windowMs: 60_000, ipLimit: 10, identityLimit: 2 },
     },
   };
   (
@@ -201,6 +210,58 @@ describe('Targeted request limit middleware', function () {
       ]);
   });
 
+  it('uses a dedicated member-scoped operation for session management', async function () {
+    let options: ConsumeOptions | undefined;
+    const middleware = loadMiddleware(async value => {
+      options = value;
+      return { allowed: true, retryAfterSeconds: 3 };
+    });
+    let proceeded = false;
+    await middleware.manageSessions(
+      { user: { id: 'member-id' }, get: () => undefined, ip: '192.0.2.1' },
+      response(),
+      () => {
+        proceeded = true;
+      },
+    );
+
+    proceeded.should.be.true();
+    options!.operation.should.equal('manageSessions');
+    options!.dimensions
+      .map(value => value.value)
+      .should.deepEqual([
+        '198.51.100.20',
+        JSON.stringify(['198.51.100.20', 'member-id']),
+        'member-id',
+      ]);
+  });
+
+  it('uses a member-scoped operation for email changes', async function () {
+    let options: ConsumeOptions | undefined;
+    const middleware = loadMiddleware(async value => {
+      options = value;
+      return { allowed: true, retryAfterSeconds: 3 };
+    });
+    let proceeded = false;
+    await middleware.emailChange(
+      { user: { id: 'member-id' }, get: () => undefined, ip: '192.0.2.1' },
+      response(),
+      () => {
+        proceeded = true;
+      },
+    );
+
+    proceeded.should.be.true();
+    options!.operation.should.equal('emailChange');
+    options!.dimensions
+      .map(value => value.value)
+      .should.deepEqual([
+        '198.51.100.20',
+        JSON.stringify(['198.51.100.20', 'member-id']),
+        'member-id',
+      ]);
+  });
+
   it('rejects limited requests with Retry-After', async function () {
     const middleware = loadMiddleware(async () => ({
       allowed: false,
@@ -319,6 +380,40 @@ describe('Targeted request limit middleware', function () {
     );
     options!.dimensions.should.deepEqual([
       { name: 'member', value: 'fictional-member', limit: 2 },
+    ]);
+  });
+
+  it('limits MFA attempts by account across different IP addresses', async function () {
+    let options: ConsumeOptions | undefined;
+    const middleware = loadMiddleware(
+      async value => {
+        options = value;
+        return { allowed: true };
+      },
+      () => '198.51.100.30',
+    );
+    await middleware.mfaVerify(
+      { session: { mfaChallenge: { userId: 'fictional-member-id' } } },
+      response(),
+      () => {},
+    );
+
+    options!.dimensions.should.deepEqual([
+      {
+        name: 'ip',
+        value: '198.51.100.30',
+        limit: 10,
+      },
+      {
+        name: 'ip-and-identity',
+        value: JSON.stringify(['198.51.100.30', 'fictional-member-id']),
+        limit: 2,
+      },
+      {
+        name: 'member',
+        value: 'fictional-member-id',
+        limit: 2,
+      },
     ]);
   });
 

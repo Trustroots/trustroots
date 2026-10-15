@@ -62,6 +62,11 @@ interface EmailService {
     callback: Done,
   ): void;
   sendChangeEmailConfirmation(user: object, callback: Done): void;
+  sendEmailChangeNotificationToOldAddress(
+    user: object,
+    previousEmail: string,
+    callback: Done,
+  ): void;
   sendResetPassword(user: object, callback: Done): void;
   sendResetPasswordConfirm(user: object, callback: Done): void;
   sendReactivateHosts(user: object, callback: Done): void;
@@ -276,6 +281,33 @@ describe('Service: email', function () {
       });
       done();
     });
+  });
+
+  it('notifies the previous address without exposing the proposed address or token', function (done) {
+    const user = {
+      displayName: 'Example Member',
+      email: 'old@example.test',
+      emailTemporary: 'new@example.test',
+    };
+    emailService.sendEmailChangeNotificationToOldAddress(
+      user,
+      user.email,
+      function (err) {
+        if (err) return done(err);
+        jobs.length.should.equal(1);
+        jobs[0].data.to.address.should.equal('old@example.test');
+        jobs[0].data.subject.should.equal(
+          'Email change requested for your Trustroots account',
+        );
+        (['html', 'text'] as const).forEach(function (format) {
+          jobs[0].data[format]!.should.containEql('email address');
+          jobs[0].data[format]!.should.containEql('/profile/edit/account');
+          jobs[0].data[format]!.should.not.containEql('new@example.test');
+          jobs[0].data[format]!.should.not.containEql('/confirm-email/');
+        });
+        done();
+      },
+    );
   });
 
   it('can send password reset email', function (done) {

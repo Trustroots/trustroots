@@ -23,8 +23,37 @@ export interface ChangePasswordInput {
   verifyPassword: string;
 }
 
+export interface ChangeEmailInput {
+  email: string;
+  currentPassword: string;
+  mfaCode?: string;
+}
+
 export async function update(data: UserUpdate): Promise<OwnProfile> {
   const { data: user } = await axios.put<OwnProfile>('/api/users', data);
+  return user;
+}
+
+export async function changeEmail({
+  email,
+  currentPassword,
+  mfaCode,
+}: ChangeEmailInput): Promise<OwnProfile> {
+  const { data: user } = await axios.post<OwnProfile>(
+    '/api/users/email-change',
+    {
+      email,
+      currentPassword,
+      mfaCode,
+    },
+  );
+  return user;
+}
+
+export async function cancelEmailChange(): Promise<OwnProfile> {
+  const { data: user } = await axios.delete<OwnProfile>(
+    '/api/users/email-change',
+  );
   return user;
 }
 

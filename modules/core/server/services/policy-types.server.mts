@@ -28,6 +28,8 @@ export interface MemoryPolicy {
 
 export interface PolicyUser {
   roles?: string[];
+  mfaEnabled?: boolean;
+  $locals?: { mfaVerified?: boolean };
   public?: boolean;
   _id: {
     valueOf(): unknown;
