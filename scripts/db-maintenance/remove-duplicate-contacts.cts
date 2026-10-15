@@ -36,12 +36,10 @@ let totalInitialContacts: number | undefined;
 
 // Bootstrap db connection
 mongoose.set('strictQuery', false);
-mongoose.connect(config.db.uri, function (err) {
-  if (err) {
-    console.error('Could not connect to MongoDB!');
-    console.log(err);
-    process.exit(0);
-  }
+mongoose.connect(config.db.uri).catch(function (err) {
+  console.error('Could not connect to MongoDB!');
+  console.log(err);
+  process.exit(0);
 });
 
 console.log('Gathering data...');
@@ -50,15 +48,16 @@ console.log('Gathering data...');
 // @link https://github.com/caolan/async#queueworker-concurrency
 const q = async.queue<Types.ObjectId>(function (contactId, callback) {
   console.log('Removing ' + contactId);
-  Contact.findByIdAndRemove(contactId, function (err) {
-    if (err) {
-      console.error('Failed to remove contact record ' + contactId);
-      callback();
-    } else {
+  Contact.findByIdAndDelete(contactId).then(
+    function () {
       removedCounter++;
       callback();
-    }
-  });
+    },
+    function () {
+      console.error('Failed to remove contact record ' + contactId);
+      callback();
+    },
+  );
 }, 2); // How many jobs to process simultaneously?
 
 // Assign a final callback to removal queue
@@ -67,33 +66,26 @@ q.drain(function () {
   console.log('Removing duplicate records done.');
 
   // All done
-  Contact.find()
-    .count()
-    .exec(function (err, contactsCount) {
-      console.log(
-        '- Found ' + totalRecordsWithIssues + ' problematic contact records.',
-      );
-      console.log('- Removed ' + removedCounter + ' contact records.');
-      console.log(
-        '- ' +
-          contactsCount +
-          ' contact records of ' +
-          totalInitialContacts +
-          ' left after this script.',
-      );
-      process.exit(0);
-    });
+  Contact.countDocuments().then(function (contactsCount) {
+    console.log(
+      '- Found ' + totalRecordsWithIssues + ' problematic contact records.',
+    );
+    console.log('- Removed ' + removedCounter + ' contact records.');
+    console.log(
+      '- ' +
+        contactsCount +
+        ' contact records of ' +
+        totalInitialContacts +
+        ' left after this script.',
+    );
+    process.exit(0);
+  });
 });
 
 // Check for initial count
-Contact.find()
-  .count()
-  .exec(function (err, contactsCount) {
-    if (err) {
-      console.error('Error:');
-      console.log(err);
-      process.exit(1);
-    } else if (contactsCount === 0) {
+Contact.countDocuments()
+  .then(function (contactsCount) {
+    if (contactsCount === 0) {
       console.log('Could not find any contact records to test.');
       process.exit(0);
     } else {
@@ -101,59 +93,57 @@ Contact.find()
       totalInitialContacts = contactsCount;
 
       // Aggregate duplicate contacts
-      Contact.aggregate<DuplicateContacts>(
-        [
-          // Pick only relevant fields
-          { $project: { _id: 1, users: 1 } },
+      return Contact.aggregate<DuplicateContacts>([
+        // Pick only relevant fields
+        { $project: { _id: 1, users: 1 } },
 
-          // Unwind users array, sort IDs and group IDs back to array
-          { $unwind: '$users' },
-          { $sort: { users: 1 } },
-          { $group: { _id: '$_id', users: { $push: '$users' } } },
-          { $project: { users: '$users' } },
+        // Unwind users array, sort IDs and group IDs back to array
+        { $unwind: '$users' },
+        { $sort: { users: 1 } },
+        { $group: { _id: '$_id', users: { $push: '$users' } } },
+        { $project: { users: '$users' } },
 
-          // Group similar arrays together and count them, include original doc ids
-          {
-            $group: {
-              _id: '$users',
-              count: { $sum: 1 },
-              ids: { $push: '$_id' },
-            },
+        // Group similar arrays together and count them, include original doc ids
+        {
+          $group: {
+            _id: '$users',
+            count: { $sum: 1 },
+            ids: { $push: '$_id' },
           },
+        },
 
-          // Choose only with multiple matches
-          { $match: { count: { $gt: 1 } } },
-        ],
-        function (err, issueContacts) {
-          if (err) {
-            console.error('Error:');
-            console.log(err);
-            process.exit(1);
-          } else if (issueContacts.length <= 0) {
-            console.log('Could not find any records with issues.');
-            process.exit(0);
-          } else {
-            totalRecordsWithIssues = issueContacts.length;
-            console.log(
-              'Found ' +
-                totalRecordsWithIssues +
-                ' contact records with issues...',
-            );
+        // Choose only with multiple matches
+        { $match: { count: { $gt: 1 } } },
+      ]).then(function (issueContacts) {
+        if (issueContacts.length <= 0) {
+          console.log('Could not find any records with issues.');
+          process.exit(0);
+        } else {
+          totalRecordsWithIssues = issueContacts.length;
+          console.log(
+            'Found ' +
+              totalRecordsWithIssues +
+              ' contact records with issues...',
+          );
 
-            // Skip first contact record and push others for removing
-            for (let i = 0; i < issueContacts.length; i++) {
-              // Note that this skips the first id as we don't want
-              // to remove all the contacts, just those extra duplicate ones. E.g.:
-              // [A, B] - leave
-              // [A, B] - remove
-              // [B, A] - remove
-              // [A, C] - leave
-              for (let j = 1; j < issueContacts[i].ids.length; j++) {
-                q.push(issueContacts[i].ids[j]);
-              }
+          // Skip first contact record and push others for removing
+          for (let i = 0; i < issueContacts.length; i++) {
+            // Note that this skips the first id as we don't want
+            // to remove all the contacts, just those extra duplicate ones. E.g.:
+            // [A, B] - leave
+            // [A, B] - remove
+            // [B, A] - remove
+            // [A, C] - leave
+            for (let j = 1; j < issueContacts[i].ids.length; j++) {
+              q.push(issueContacts[i].ids[j]);
             }
           }
-        },
-      );
+        }
+      });
     }
+  })
+  .catch(function (err) {
+    console.error('Error:');
+    console.log(err);
+    process.exit(1);
   });

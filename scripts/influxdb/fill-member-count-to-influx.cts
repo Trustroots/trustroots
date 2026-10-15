@@ -83,20 +83,29 @@ async.waterfall(
   */
 
     function (done) {
-      User.find(whereQuery)
-        .count()
-        .exec(function (err, usersCount) {
+      User.countDocuments(whereQuery).then(
+        function (usersCount) {
           console.log('Found ' + usersCount + ' users currently in the DB.\n');
-          done(err, usersCount);
-        });
+          done(null, usersCount);
+        },
+        function (err) {
+          done(err, 0);
+        },
+      );
     },
 
     function (usersCount, done) {
       // Aggregate from mongodb
-      User.aggregate<AggregatedDayGroup>(
-        [aggregateMatch, aggregateGrouping, aggregateSort],
-        function (err, cursor) {
-          done(err, cursor, usersCount);
+      User.aggregate<AggregatedDayGroup>([
+        aggregateMatch,
+        aggregateGrouping,
+        aggregateSort,
+      ]).then(
+        function (cursor) {
+          done(null, cursor, usersCount);
+        },
+        function (err) {
+          done(err, [], 0);
         },
       );
     },
