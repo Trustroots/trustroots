@@ -76,6 +76,8 @@ export async function captureEndOfTestScreenshot(
       return;
     }
 
+    // Leave the fixed header as the app renders it. Full-page shots stitch
+    // scrolled slices, so the header can appear part-way down the image.
     await page.screenshot({
       path: screenshotPath,
       fullPage: shouldCaptureFullPage(testInfo),
