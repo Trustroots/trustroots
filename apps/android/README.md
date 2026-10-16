@@ -171,9 +171,13 @@ python3 scripts/coverage-ratchet.py app/build/reports/coverage/debug/coverage.xm
 python3 -m unittest discover -s scripts
 ```
 
-CI also runs five selected notification, preview-update and offline WebView compatibility journeys
-on API 32, using the same already-built APKs, then merges those probes into the report. To reproduce that
-combined report, stop the API 36 emulator and connect a dedicated API 32 emulator
+CI also runs seven selected notification, preview-update, offline cache, session
+store and WebView compatibility journeys on API 32, using the same already-built
+APKs, then merges those probes into the report. The collector removes the
+`org.trustroots.android.debug` app package when it is installed so these journeys
+start with clean app data, including on an AVD that has been used before. It
+does not reset the emulator or remove other packages. To reproduce that combined
+report, stop the API 36 emulator and connect a dedicated API 32 debug emulator
 after the full run above, then run:
 
 ```sh
