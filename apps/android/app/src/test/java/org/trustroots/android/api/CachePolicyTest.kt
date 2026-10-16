@@ -20,4 +20,9 @@ class CachePolicyTest {
         assertNull(cachePolicy("/api/messages?page=4&limit=50", "quiet-fox"))
         assertNull(cachePolicy("/api/offers", "quiet-fox"))
     }
+
+    @Test fun doesNotCacheUnsupportedThreadLimitsOrNestedProfileRoutes() {
+        assertNull(cachePolicy("/api/messages/member-one?limit=50", "quiet-fox"))
+        assertNull(cachePolicy("/api/users/member-one/settings", "quiet-fox"))
+    }
 }
