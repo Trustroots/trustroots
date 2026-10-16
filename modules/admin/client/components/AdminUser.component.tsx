@@ -15,6 +15,7 @@ import {
   setUserRole,
 } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
+import MasqueradeStart from './MasqueradeStart';
 import AdminNotes from './AdminNotes';
 import AdminReferenceVoteItem from './AdminReferenceVoteItem.component';
 import AdminUserResultsTable from './AdminUserResultsTable.component';
@@ -770,6 +771,9 @@ export default class AdminUser extends Component<
                 </h3>
 
                 <div className="admin-user-actions">
+                  {!isSuspended && !user.profile.roles.includes('admin') && (
+                    <MasqueradeStart targetId={user.profile._id} />
+                  )}
                   {user.profile.username && !isSuspended && (
                     <a
                       className="btn btn-default"

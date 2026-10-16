@@ -135,7 +135,7 @@ export function trackEvent(
   action: string,
   options: { category?: string; label?: string; value?: string | number } = {},
 ): undefined {
-  if (typeof window.ga === 'function') {
+  if (!window.viewContext?.username && typeof window.ga === 'function') {
     window.ga(
       'send',
       'event',

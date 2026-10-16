@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom';
 import {
   defaultNavigate,
   getClientNavigationTarget,
@@ -30,6 +31,25 @@ function navigationClick(fixture: NavigationClick): MouseEvent {
 }
 
 describe('React shell helpers', () => {
+  it('binds the sign-out form to the active view context', () => {
+    const submit = jest
+      .spyOn(HTMLFormElement.prototype, 'submit')
+      .mockImplementation(() => {});
+    window.viewContext = { generation: 'example-generation' };
+    try {
+      signout();
+      expect(
+        document.querySelector('input[name="viewGeneration"]'),
+      ).toHaveValue('example-generation');
+    } finally {
+      delete window.viewContext;
+      document
+        .querySelector('input[name="viewGeneration"]')
+        ?.closest('form')
+        ?.remove();
+      submit.mockRestore();
+    }
+  });
   afterEach(() => {
     window.history.pushState({}, '', '/');
   });

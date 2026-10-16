@@ -1,5 +1,6 @@
 import { pathToFileURL } from 'node:url';
 import passport from 'passport';
+import masquerading from '../services/masquerading.server.service.mjs';
 import mongoose, { type FilterQuery } from 'mongoose';
 import path from 'path';
 import config from './../../../../config/config.mts';
@@ -86,6 +87,7 @@ const defaultExport = async function (app: UsersApplication): Promise<void> {
 
   // Handle logging out suspended users
   app.use(usersSuspended.invalidateSuspendedSessions);
+  masquerading.register(app);
 };
 export default defaultExport;
 export { defaultExport as 'module.exports' };
