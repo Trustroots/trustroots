@@ -36,9 +36,11 @@ class SecureResponseCache(context: Context) {
                 temporary.renameTo(file)
             }
             directory.listFiles { item -> item.name.startsWith("${policy.first}-") }
-                ?.sortedByDescending(File::lastModified)
-                ?.drop(policy.second)
-                ?.forEach(File::delete)
+                ?.let { snapshots ->
+                    snapshots.sortedByDescending(File::lastModified)
+                        .drop(policy.second)
+                        .forEach(File::delete)
+                }
         }
     }
 

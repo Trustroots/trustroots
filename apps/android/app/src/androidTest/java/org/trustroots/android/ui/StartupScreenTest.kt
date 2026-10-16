@@ -19,4 +19,12 @@ class StartupScreenTest {
         compose.onNodeWithText("Hi River").assertIsDisplayed()
         compose.onNodeWithText("Build:", substring = true).assertIsDisplayed()
     }
+
+    @Test fun omitsGreetingWhenMemberNameIsBlank() {
+        compose.setContent { StartupScreen("   ") }
+
+        compose.onNodeWithContentDescription("Trustroots").assertIsDisplayed()
+        compose.onNodeWithText("Hi", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("Build:", substring = true).assertIsDisplayed()
+    }
 }

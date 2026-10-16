@@ -4,6 +4,8 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
@@ -11,6 +13,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import org.json.JSONObject
@@ -31,10 +34,13 @@ class CreateExperienceOptionsJourneyTest {
     private val server = ServerSocket(0)
     private val submittedBody = AtomicReference<String>()
     private var responder: Thread? = null
+    private var fixture: LocalTransportFixture? = null
 
     @After fun closeServer() {
         server.close()
         responder?.join(1_000)
+        fixture?.close()
+        fixture = null
     }
 
     private fun acceptOrStop(): Socket? = try {
@@ -105,6 +111,57 @@ class CreateExperienceOptionsJourneyTest {
         assertTrue(interactions.getBoolean("guest"))
         assertEquals("unknown", body.getString("recommend"))
         assertEquals("A fictional shared journey.", body.getString("feedbackPublic"))
+        responder?.join(1_000)
+    }
+
+    @Test fun guestOnlyInteractionEnablesSaveAndCreatesExperience() {
+        val created = AtomicBoolean(false)
+        val local = LocalTransportFixture { request ->
+            if (request.method == "POST" && request.path == "/api/experiences") {
+                LocalTransportFixture.Response("{}", status = 201)
+            } else {
+                error("Unexpected API request: ${request.method} ${request.path}")
+            }
+        }.also { fixture = it }
+        compose.setContent {
+            NativeTestAppFrame(Destination.Menu) {
+                CreateExperienceScreen(
+                    api = MobileApiClient(local.baseURL),
+                    session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
+                    memberID = "member-two",
+                    memberLabel = "Quiet Fox",
+                    onSessionInvalidated = {},
+                    onBack = {},
+                    onCreated = { created.set(true) },
+                )
+            }
+        }
+
+        val checkbox = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox)
+        compose.onAllNodes(checkbox)[0].performClick()
+        compose.onNodeWithText("Save changes").assertIsNotEnabled()
+
+        compose.onAllNodes(checkbox)[2].performClick()
+        compose.onNodeWithText("Save changes").assertIsEnabled().performClick()
+        compose.waitUntil(10_000) {
+            created.get() && local.requests.any { it.method == "POST" && it.path == "/api/experiences" }
+        }
+
+        val request = local.requests.single()
+        assertEquals("POST", request.method)
+        assertEquals("/api/experiences", request.path)
+        assertEquals("connect.sid=test", request.cookie)
+        val payload = JSONObject(request.body)
+        assertEquals(setOf("userTo", "interactions", "recommend", "feedbackPublic"), payload.keys().asSequence().toSet())
+        assertEquals("member-two", payload.getString("userTo"))
+        assertEquals("yes", payload.getString("recommend"))
+        assertEquals("", payload.getString("feedbackPublic"))
+        val interactions = payload.getJSONObject("interactions")
+        assertEquals(setOf("met", "guest", "host"), interactions.keys().asSequence().toSet())
+        assertFalse(interactions.getBoolean("met"))
+        assertTrue(interactions.getBoolean("guest"))
+        assertFalse(interactions.getBoolean("host"))
+        assertTrue(created.get())
         responder?.join(1_000)
     }
 }

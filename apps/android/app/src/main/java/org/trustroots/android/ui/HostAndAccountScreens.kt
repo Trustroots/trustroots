@@ -51,7 +51,6 @@ import org.trustroots.android.api.ExperienceCreate
 import org.trustroots.android.api.HostOfferUpdate
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
-import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.notifications.MessageAlerts
 
 private const val defaultHostLatitude = 48.6908333333
@@ -108,14 +107,14 @@ internal fun HostOfferScreen(
                 original = HostOfferUpdate(offerId, status, description, noOfferDescription, maxGuests, showOnlyInMyCircles, latitude, longitude)
                 loading = false
             }.onFailure {
-                if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                if (it.isAuthenticationFailure()) onSessionInvalidated()
                 else {
                     error = it.message ?: "Could not load hosting offer."
                     loading = false
                 }
             }
         }.onFailure {
-            if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+            if (it.isAuthenticationFailure()) onSessionInvalidated()
             else {
                 error = it.message ?: "Could not load hosting offer."
                 loading = false
@@ -146,7 +145,7 @@ internal fun HostOfferScreen(
                         original = currentOffer.copy(id = saved.id)
                         savedMessage = "Hosting offer saved."
                     }.onFailure {
-                        if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                        if (it.isAuthenticationFailure()) onSessionInvalidated()
                         else error = it.message ?: "Could not save hosting offer."
                     }
                     saving = false
@@ -265,7 +264,7 @@ internal fun CreateExperienceScreen(
                         ),
                     ).onSuccess { onCreated() }
                         .onFailure {
-                            if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                            if (it.isAuthenticationFailure()) onSessionInvalidated()
                             else error = it.message ?: "Could not share experience."
                         }
                     saving = false
@@ -365,7 +364,7 @@ internal fun AccountSettingsScreen(
             newsletter = it.newsletter
             loading = false
         }.onFailure {
-            if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+            if (it.isAuthenticationFailure()) onSessionInvalidated()
             else {
                 error = it.message ?: "Could not load account."
                 loading = false
@@ -427,7 +426,7 @@ internal fun AccountSettingsScreen(
                         details = it
                         message = "Account saved."
                     }.onFailure {
-                        if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                        if (it.isAuthenticationFailure()) onSessionInvalidated()
                         else error = it.message ?: "Could not save account."
                     }
                     savingAccount = false
@@ -476,7 +475,7 @@ internal fun AccountSettingsScreen(
                             message = "Password changed."
                         }
                         .onFailure {
-                            if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                            if (it.isAuthenticationFailure()) onSessionInvalidated()
                             else error = it.message ?: "Could not change password."
                         }
                     changingPassword = false

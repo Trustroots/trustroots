@@ -86,7 +86,6 @@ import org.trustroots.android.api.HostOffer
 import org.trustroots.android.api.MapOffer
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
-import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.TrustrootsCircle
 import org.trustroots.android.api.CommunityNote
 import org.trustroots.android.api.NostrootsNotesClient
@@ -226,7 +225,7 @@ internal fun HostMapScreen(
                 if (generation == searchGeneration.get()) offers = it
             }.onFailure {
                 if (generation == searchGeneration.get()) {
-                    if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                    if (it.isAuthenticationFailure()) onSessionInvalidated()
                     else error = it.message ?: "Could not search hosts."
                 }
             }
@@ -336,7 +335,7 @@ internal fun HostMapScreen(
                                 selectedOfferType = offer.type
                                 scope.launch {
                                     api.hostOffer(session, offer.id).onSuccess { host = it }.onFailure {
-                                        if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                                        if (it.isAuthenticationFailure()) onSessionInvalidated()
                                         else error = it.message ?: "Could not load host."
                                     }
                                 }

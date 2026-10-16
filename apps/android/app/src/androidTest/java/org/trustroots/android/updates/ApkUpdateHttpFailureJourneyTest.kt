@@ -57,13 +57,15 @@ class ApkUpdateHttpFailureJourneyTest {
 
         val httpError = ApkUpdateAlerts.checkNow(context, previewAlertsEnabled = true, releasesUrl = releasesUrl)
         val malformed = ApkUpdateAlerts.checkNow(context, previewAlertsEnabled = true, releasesUrl = releasesUrl)
+        val protocolSwitch = ApkUpdateAlerts.checkNow(context, previewAlertsEnabled = true, releasesUrl = releasesUrl)
         val interruptedBody = ApkUpdateAlerts.checkNow(context, previewAlertsEnabled = true, releasesUrl = releasesUrl)
         responder?.join(2_000)
 
         assertEquals(ApkUpdateCheckResult.Unavailable, httpError)
         assertEquals(ApkUpdateCheckResult.Unavailable, malformed)
+        assertEquals(ApkUpdateCheckResult.Unavailable, protocolSwitch)
         assertEquals(ApkUpdateCheckResult.Unavailable, interruptedBody)
-        assertEquals(3, requests.size)
+        assertEquals(4, requests.size)
         assertTrue(requests.all { it.startsWith("GET /fixture/releases HTTP/1.1") })
         assertEquals(LAST_NOTIFIED_VERSION, preferences.getInt("last-notified-version-code", 0))
     }
@@ -71,7 +73,7 @@ class ApkUpdateHttpFailureJourneyTest {
     private fun startResponder() {
         responder = thread(isDaemon = true, name = "apk-update-error-fixture") {
             try {
-                repeat(3) { attempt ->
+                repeat(4) { attempt ->
                     val socket = try {
                         server.accept()
                     } catch (error: SocketTimeoutException) {
@@ -93,19 +95,25 @@ class ApkUpdateHttpFailureJourneyTest {
                             val (status, body) = when (attempt) {
                                 0 -> "503 Service Unavailable" to """{"message":"Fixture service unavailable."}"""
                                 1 -> "200 OK" to "not-json"
+                                2 -> "101 Switching Protocols" to ""
                                 else -> "200 OK" to "[]"
                             }
                             val bytes = body.toByteArray(Charsets.UTF_8)
-                            val declaredLength = bytes.size + if (attempt == 2) 12 else 0
+                            val declaredLength = bytes.size + if (attempt == 3) 12 else 0
+                            val responseHeaders = if (attempt == 2) {
+                                "Connection: Upgrade\r\nUpgrade: websocket"
+                            } else {
+                                "Content-Type: application/json; charset=utf-8\r\nContent-Length: $declaredLength\r\nConnection: close"
+                            }
                             socket.getOutputStream().apply {
                                 write(
-                                    "HTTP/1.1 $status\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: $declaredLength\r\nConnection: close\r\n\r\n"
+                                    "HTTP/1.1 $status\r\n$responseHeaders\r\n\r\n"
                                         .toByteArray(Charsets.US_ASCII),
                                 )
                                 write(bytes)
                                 flush()
                             }
-                            if (attempt == 2) socket.shutdownOutput()
+                            if (attempt == 2 || attempt == 3) socket.shutdownOutput()
                         }
                     } catch (_: SocketException) {
                         // The HTTP client may close the local connection after an error response.

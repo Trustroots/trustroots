@@ -105,6 +105,24 @@ class AccountSettingsScreenTest {
         assertTrue(signedOut.get())
     }
 
+    @Test fun eachPasswordFieldPromptsBeforeLeavingAndClearingRestoresCleanState() {
+        val resetPassword = AtomicBoolean(false)
+        showAccountSettings(onResetPassword = { resetPassword.set(true) }, onSignedOut = {})
+
+        listOf("Current password", "New password", "Verify new password").forEach { label ->
+            compose.onNodeWithText(label).performScrollTo().performTextReplacement("fictional-unsaved-password")
+            compose.onNodeWithText("Forgot your password?").performScrollTo().performClick()
+            compose.onNodeWithText("Discard changes?").assertIsDisplayed()
+            assertFalse(resetPassword.get())
+            compose.onNodeWithText("Keep editing").performClick()
+            compose.onNodeWithText(label).performScrollTo().performTextReplacement("")
+        }
+
+        compose.onNodeWithText("Forgot your password?").performScrollTo().performClick()
+        compose.onNodeWithText("Discard changes?").assertDoesNotExist()
+        assertTrue(resetPassword.get())
+    }
+
     private fun showAccountSettings(onResetPassword: () -> Unit, onSignedOut: () -> Unit) {
         val responder = thread(isDaemon = true) {
             server.accept().use { socket ->
