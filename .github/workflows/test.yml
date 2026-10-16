@@ -385,11 +385,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Pull dev image
-        if: needs.build-dev-image.result == 'success'
-        run: |
-          docker pull "${{ needs.build-dev-image.outputs.image-ref }}"
-          docker tag "${{ needs.build-dev-image.outputs.image-ref }}" trustroots-dev:ci
       - name: Build dev image
         if: needs.build-dev-image.result == 'skipped'
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
@@ -409,15 +404,10 @@ jobs:
           path: public/assets
       - name: Prepare compose local config
         run: node ./scripts/ci/ensure-compose-local.cts
-      - name: Start MongoDB
-        working-directory: deploy/docker
-        run: |
-          # Either public registry can rate-limit shared CI runner addresses.
-          if ! docker compose -f docker-compose.yml -f docker-compose.ci.yml pull mongodb; then
-            docker pull mongo:4.4
-            docker tag mongo:4.4 public.ecr.aws/docker/library/mongo:4.4
-          fi
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --pull never mongodb
+      - name: Prepare end-to-end containers
+        env:
+          TRUSTROOTS_CI_DEV_IMAGE: ${{ needs.build-dev-image.outputs.image-ref }}
+        run: bash scripts/ci/prepare-e2e-containers.sh
       - name: Test end-to-end group
         working-directory: deploy/docker
         run: |
@@ -521,7 +511,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
       - name: Fetch comparison history
         run: python3 scripts/ci/fetch-comparison.py
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Use Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
       - name: Download production dependency inventory
         if: needs.build-production-image.result != 'skipped'
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
@@ -574,7 +568,7 @@ jobs:
             fs.writeFileSync('coverage/ci-timings.json', JSON.stringify(timings, null, 2));
       - name: Generate coverage overview
         if: needs.changes.outputs.run-code != 'false'
-        run: pnpm run coverage:report
+        run: node scripts/coverage/generate-report.cts
       - name: Generate pull request summary
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -582,7 +576,7 @@ jobs:
           TRUSTROOTS_PR_INCLUDE_COVERAGE: ${{ needs.changes.outputs.run-code != 'false' }}
         run: |
           mkdir -p coverage-report
-          pnpm run coverage:pr-summary > coverage-report/pr-summary.md
+          node scripts/coverage/generate-pr-summary.cts > coverage-report/pr-summary.md
           cat coverage-report/pr-summary.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload coverage overview
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -631,7 +625,7 @@ jobs:
             }
       - name: Require full client and server coverage
         if: needs.changes.outputs.run-code != 'false'
-        run: pnpm run coverage:check --require-full
+        run: node scripts/coverage/check-coverage.cts --require-full
 
   pages:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
@@ -727,7 +721,11 @@ jobs:
       url: https://team.trustroots.org/
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Use Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+          package-manager-cache: false
       - name: Download client coverage report
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
@@ -761,7 +759,7 @@ jobs:
             fs.mkdirSync('coverage', { recursive: true });
             fs.writeFileSync('coverage/ci-timings.json', JSON.stringify(timings, null, 2));
       - name: Generate coverage report page
-        run: pnpm run coverage:report
+        run: node scripts/coverage/generate-report.cts
       - name: Configure GitHub Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6
       - name: Build docs site

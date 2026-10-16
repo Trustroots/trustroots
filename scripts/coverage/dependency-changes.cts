@@ -156,6 +156,9 @@ function collectDependencyChanges(
 }
 
 function renderDependencyChanges(groups: DependencyGroup[]): string {
+  if (groups.every(group => !group.added && !group.removed && !group.changed)) {
+    return '### Dependencies\n\nNo dependency changes.';
+  }
   const signed = (value: number): string =>
     value > 0 ? `+${value}` : value < 0 ? `−${Math.abs(value)}` : '0';
   const count = (value: number, colour: string): string =>
@@ -175,7 +178,7 @@ function renderDependencyChanges(groups: DependencyGroup[]): string {
     ),
   );
   return [
-    '### Dependency changes',
+    '### Dependencies',
     '',
     '| Category | Added | Removed | Updated | Net |',
     '| --- | ---: | ---: | ---: | ---: |',

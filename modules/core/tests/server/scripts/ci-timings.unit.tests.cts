@@ -167,6 +167,111 @@ describe('CI timing overview', () => {
     );
   });
 
+  it('folds comment timing tables but keeps skipped and failed jobs visible', () => {
+    const compact = renderTimings(
+      {
+        ...timings,
+        workflows: [
+          {
+            ...timings.workflows[0],
+            jobs: [
+              { ...job, conclusion: 'failure' },
+              { ...job, name: 'optional', conclusion: 'skipped' },
+              {
+                ...job,
+                name: 'running',
+                status: 'in_progress',
+                conclusion: null,
+              },
+            ],
+          },
+        ],
+      },
+      true,
+    );
+    const visible = compact.slice(0, compact.indexOf('<details>'));
+    assert.match(visible, /client &lt;checks&gt;: Failed/);
+    assert.match(visible, /optional: Skipped/);
+    assert.match(compact, /<summary>Job and step timings<\/summary>/);
+    assert.match(compact, /<td>✅ Passed<\/td>/);
+    assert.match(compact, /<td>Running<\/td>/);
+    assert.equal(formatDuration(5000), '5s');
+  });
+
+  it('shows slow jobs and steps outside disclosures at the five-minute boundary', () => {
+    const end = '2026-01-01T00:05:00Z';
+    const html = renderTimings(
+      {
+        ...timings,
+        workflows: [
+          {
+            ...timings.workflows[0],
+            jobs: [
+              {
+                ...job,
+                name: 'slow <job>',
+                completed_at: end,
+                steps: [
+                  { ...job.steps[0], name: 'slow <step>', completed_at: end },
+                ],
+              },
+              {
+                ...job,
+                name: 'moderate job',
+                completed_at: '2026-01-01T00:04:59Z',
+                steps: [],
+              },
+              {
+                ...job,
+                name: 'skipped job',
+                conclusion: 'skipped',
+                completed_at: end,
+                steps: [
+                  {
+                    ...job.steps[0],
+                    name: 'skipped step',
+                    conclusion: 'skipped',
+                    completed_at: end,
+                  },
+                ],
+              },
+              {
+                ...job,
+                name: 'running job',
+                status: 'in_progress',
+                conclusion: null,
+                completed_at: end,
+                steps: [
+                  {
+                    ...job.steps[0],
+                    name: 'running step',
+                    status: 'in_progress',
+                    conclusion: null,
+                    completed_at: end,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      true,
+    );
+    const visible = html.slice(0, html.indexOf('<details>'));
+    assert.match(visible, /<h5>Slow jobs<\/h5>/);
+    assert.match(visible, /<h5>Slow steps<\/h5>/);
+    assert.match(visible, /slow &lt;job&gt;/);
+    assert.match(visible, /slow &lt;step&gt;/);
+    assert.match(visible, /<td>✅ Passed<\/td>/);
+    const tables = visible.slice(visible.indexOf('<h5>Slow jobs'));
+    assert.doesNotMatch(
+      tables,
+      /moderate job|skipped job|skipped step|running job|running step/,
+    );
+    assert.match(html.slice(html.indexOf('<details>')), /moderate job/);
+    assert.doesNotMatch(renderTimings(timings, true), /<h5>Slow/);
+  });
+
   it('reads an optional timing snapshot', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ci-timings-'));
     try {
