@@ -83,7 +83,6 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MessageThread
 import org.trustroots.android.api.MobileApiClient
-import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.DefaultBrowserContent
 import org.trustroots.android.ui.theme.TrustrootsPaleGreen
@@ -123,7 +122,7 @@ internal fun MemberSearchScreen(
             error = null
             api.searchMembers(session, query).onSuccess { results = it; searched = true }
                 .onFailure {
-                    if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                    if (it.isAuthenticationFailure()) onSessionInvalidated()
                     else error = it.message ?: "Could not search members."
                 }
             loading = false
@@ -306,7 +305,7 @@ internal fun MemberProfileScreen(
                                 relationship = ContactRelationship(id = null, confirmed = false)
                                 confirmRemoveContact = false
                             }.onFailure {
-                                if ((it as? MobileApiException)?.isAuthenticationFailure == true) {
+                                if (it.isAuthenticationFailure()) {
                                     onSessionInvalidated()
                                 }
                             }
@@ -329,7 +328,7 @@ internal fun MemberProfileScreen(
             member.id?.let { id ->
                 launch {
                     api.accommodationOffer(session, id).onSuccess { hosting = it }.onFailure {
-                        if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                        if (it.isAuthenticationFailure()) onSessionInvalidated()
                     }
                     hostingLoaded = true
                 }
@@ -341,7 +340,7 @@ internal fun MemberProfileScreen(
                             relationship = it
                             relationshipResolved = true
                         }.onFailure {
-                            if ((it as? MobileApiException)?.isAuthenticationFailure == true) {
+                            if (it.isAuthenticationFailure()) {
                                 onSessionInvalidated()
                             } else {
                                 relationshipResolved = true
@@ -351,7 +350,7 @@ internal fun MemberProfileScreen(
                 }
             }
         }.onFailure {
-            if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+            if (it.isAuthenticationFailure()) onSessionInvalidated()
             else error = it.message ?: "Could not load profile."
         }
     }
@@ -696,7 +695,7 @@ internal fun EditProfileScreen(
                     api.updateProfile(session, ProfileUpdate(name, tagline, description, living, from, languages.toList()))
                         .onSuccess(onSaved)
                         .onFailure {
-                            if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                            if (it.isAuthenticationFailure()) onSessionInvalidated()
                             else error = it.message ?: "Could not save profile."
                         }
                     saving = false
@@ -789,7 +788,7 @@ internal fun MessageInboxScreen(
         var page = 1
         do {
             val batch = api.inbox(session, page).getOrElse {
-                if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                if (it.isAuthenticationFailure()) onSessionInvalidated()
                 else if (collected.isEmpty()) error = it.message ?: "Could not load messages."
                 break
             }
@@ -888,7 +887,7 @@ internal fun ConversationScreen(
                 drafts.clear(session.member.username, draftKey)
                 error = null
             }.onFailure {
-                if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                if (it.isAuthenticationFailure()) onSessionInvalidated()
                 else error = it.message ?: "Could not send message."
             }
             sending = false
@@ -902,7 +901,7 @@ internal fun ConversationScreen(
             messagesLoaded = true
         }.onFailure {
             messagesLoaded = true
-            if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+            if (it.isAuthenticationFailure()) onSessionInvalidated()
             else error = it.message ?: "Could not load conversation."
         }
     }
@@ -1041,14 +1040,14 @@ internal fun ContactsScreen(
                 contacts = it
                 loading = false
             }.onFailure {
-                if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                if (it.isAuthenticationFailure()) onSessionInvalidated()
                 else {
                     error = it.message ?: "Could not load contacts."
                     loading = false
                 }
             }
         }.onFailure {
-            if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+            if (it.isAuthenticationFailure()) onSessionInvalidated()
             else {
                 error = it.message ?: "Could not load contacts."
                 loading = false
