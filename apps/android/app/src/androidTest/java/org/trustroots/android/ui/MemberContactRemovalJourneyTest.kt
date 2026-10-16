@@ -2,11 +2,13 @@ package org.trustroots.android.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -15,6 +17,8 @@ import java.net.Socket
 import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
@@ -38,6 +42,9 @@ class MemberContactRemovalJourneyTest {
     private val requests = CopyOnWriteArrayList<CapturedRequest>()
     private val activeSocket = AtomicReference<Socket?>()
     private val deleteAttempts = AtomicInteger()
+    private val deleteReceived = CountDownLatch(1)
+    private val releaseDeleteResponse = CountDownLatch(1)
+    private var deferDeleteResponse = false
     private var responder: Thread? = null
 
     @After fun closeServer() {
@@ -102,6 +109,35 @@ class MemberContactRemovalJourneyTest {
         compose.onNodeWithText("Remove contact?").assertIsDisplayed()
         assertEquals(2, deleteAttempts.get())
         assertEquals(2, requests.count { it.method == "DELETE" && it.path == "/api/contact/contact-two" })
+    }
+
+    @Test fun systemBackDoesNotDismissRemovalDialogWhileDeleteIsInProgress() {
+        deferDeleteResponse = true
+        startResponder(confirmed = true, deleteStatuses = listOf(503))
+        compose.setContent { profile() }
+
+        waitForText("Remove contact")
+        compose.onNodeWithText("Remove contact").performClick()
+        compose.onNodeWithText("Confirm").performClick()
+        try {
+            assertTrue("The local delete request should start", deleteReceived.await(10, TimeUnit.SECONDS))
+
+            Espresso.pressBack()
+            compose.onNodeWithText("Remove contact?").assertIsDisplayed()
+            compose.onNodeWithText("Removing…").assertIsNotEnabled()
+
+            releaseDeleteResponse.countDown()
+            compose.waitUntil(10_000) {
+                runCatching {
+                    compose.onNodeWithText("Confirm").assertIsEnabled()
+                    true
+                }.getOrDefault(false)
+            }
+            compose.onNodeWithText("Remove contact?").assertIsDisplayed()
+            assertEquals(1, deleteAttempts.get())
+        } finally {
+            releaseDeleteResponse.countDown()
+        }
     }
 
     @Composable
@@ -196,9 +232,16 @@ class MemberContactRemovalJourneyTest {
         )
         request.method == "DELETE" && request.path == "/api/contact/contact-two" -> {
             val attempt = deleteAttempts.incrementAndGet()
-            val status = deleteStatuses.getOrElse(attempt - 1) { 200 }
-            val body = if (status in 200..299) "{}" else """{"message":"Local contact operation failed."}"""
-            FixtureResponse(status, body)
+            if (deferDeleteResponse) {
+                deleteReceived.countDown()
+            }
+            if (deferDeleteResponse && !releaseDeleteResponse.await(8, TimeUnit.SECONDS)) {
+                FixtureResponse(503, "{\"message\":\"Local contact operation failed.\"}")
+            } else {
+                val status = deleteStatuses.getOrElse(attempt - 1) { 200 }
+                val body = if (status in 200..299) "{}" else """{"message":"Local contact operation failed."}"""
+                FixtureResponse(status, body)
+            }
         }
         request.path.contains("/avatar?") -> FixtureResponse(404, "")
         else -> FixtureResponse(404, "{}")

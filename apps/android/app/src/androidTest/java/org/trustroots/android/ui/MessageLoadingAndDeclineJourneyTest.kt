@@ -8,6 +8,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -88,6 +90,38 @@ class MessageLoadingAndDeclineJourneyTest {
         compose.onNodeWithText("No conversations yet.").assertIsDisplayed()
         assertEquals(1, invalidations.get())
         assertEquals(2, local.requests.count { it.path.startsWith("/api/messages?") })
+    }
+
+    @Test fun inbox503OnLaterPageKeepsPreviouslyLoadedConversationsWithoutReplacingThemWithAnError() {
+        val local = startFixture { request ->
+            when (request.path) {
+                "/api/messages?page=1&limit=50" -> Response(200, inboxPageOfFifty())
+                "/api/messages?page=2&limit=50" -> Response(503, "{\"message\":\"Fictional later page unavailable.\"}")
+                else -> Response(404, "{}")
+            }
+        }
+        compose.setContent {
+            MessageInboxScreen(
+                api = MobileApiClient(local.baseURL),
+                session = session(),
+                onSessionInvalidated = {},
+            )
+        }
+
+        compose.waitUntil(10_000) {
+            local.requests.any { it.path == "/api/messages?page=2&limit=50" } &&
+                compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo))
+                    .fetchSemanticsNodes().isEmpty() &&
+                compose.onAllNodesWithText("A fictional message from neighbour 0.").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Messages").assertIsDisplayed()
+        compose.onNodeWithText("A fictional message from neighbour 0.").assertIsDisplayed()
+        assertTrue(compose.onAllNodesWithText("Fictional later page unavailable.").fetchSemanticsNodes().isEmpty())
+        assertTrue(compose.onAllNodesWithText("No conversations yet.").fetchSemanticsNodes().isEmpty())
+        assertEquals(
+            listOf("/api/messages?page=1&limit=50", "/api/messages?page=2&limit=50"),
+            local.requests.filter { it.path.startsWith("/api/messages?") }.map { it.path },
+        )
     }
 
     @Test fun conversation503ShowsFeedbackAnd401InvalidatesSession() {
@@ -207,6 +241,11 @@ class MessageLoadingAndDeclineJourneyTest {
         MemberSession("connect.sid=$cookie", MobileMember("steady-heron", "Steady Heron"))
 
     private fun member(id: String) = MessageMember(id, "quiet-fox", "Quiet Fox")
+
+    private fun inboxPageOfFifty(): String =
+        (0 until 50).joinToString(prefix = "[", postfix = "]") { index ->
+            """{"_id":"fictional-thread-$index","userFrom":{"_id":"fictional-member-$index","username":"neighbour-$index","displayName":"Neighbour $index"},"userTo":{"_id":"fictional-self","username":"steady-heron","displayName":"Steady Heron"},"message":{"excerpt":"A fictional message from neighbour $index."},"read":false}"""
+        }
 
     private data class Request(val method: String, val path: String, val body: String)
     private data class Response(val status: Int, val body: String)
