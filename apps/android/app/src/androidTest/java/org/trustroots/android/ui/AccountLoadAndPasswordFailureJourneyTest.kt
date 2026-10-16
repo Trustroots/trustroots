@@ -67,6 +67,10 @@ class AccountLoadAndPasswordFailureJourneyTest {
                     503,
                     """{"message":"Hosting details are temporarily unavailable."}""",
                 )
+                request.method == "GET" && request.path == "/api/users/amber-owl" -> FixtureResponse(
+                    503,
+                    """{"message":"The member profile is temporarily unavailable."}""",
+                )
                 request.method == "GET" && request.path == "/api/users/quiet-fox" -> FixtureResponse(
                     401,
                     """{"message":"Please sign in again."}""",
@@ -89,6 +93,12 @@ class AccountLoadAndPasswordFailureJourneyTest {
         compose.onNodeWithText("Hosting details are temporarily unavailable.").assertIsDisplayed()
         assertTrue(requests.any { it.path == "/api/users/steady-heron" })
         assertTrue(requests.any { it.path == "/api/offers-by/member-one?types=host" })
+        assertFalse(invalidated.get())
+        compose.runOnIdle {
+            activeSession.value = MemberSession("connect.sid=fictional-session", MobileMember("amber-owl", "Amber Owl"))
+        }
+        waitForText("The member profile is temporarily unavailable.")
+        compose.onNodeWithText("The member profile is temporarily unavailable.").assertIsDisplayed()
         assertFalse(invalidated.get())
         compose.runOnIdle {
             activeSession.value = MemberSession("connect.sid=fictional-session", MobileMember("quiet-fox", "Quiet Fox"))

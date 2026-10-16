@@ -9,6 +9,7 @@ import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
+import java.io.IOException
 import java.net.ServerSocket
 import java.net.SocketException
 import java.util.concurrent.CopyOnWriteArrayList
@@ -98,33 +99,57 @@ class BrowserNavigationJourneyTest {
     }
 
     @Test fun systemBackTraversesBrowserHistoryBeforeClosingTheRoute() {
-        val server = ServerSocket(0)
+        val server = ServerSocket(0).apply { soTimeout = 20_000 }
         val requests = CopyOnWriteArrayList<String>()
+        val activeSocket = AtomicReference<java.net.Socket?>()
+        val responderFailure = AtomicReference<Throwable?>()
         val responder = thread(isDaemon = true) {
-            while (!server.isClosed) {
-                val socket = try {
-                    server.accept()
-                } catch (error: SocketException) {
-                    if (server.isClosed) break else throw error
-                }
-                socket.use {
-                    val input = socket.getInputStream().bufferedReader()
-                    val request = input.readLine().orEmpty()
-                    requests += request
-                    while (!input.readLine().isNullOrEmpty()) Unit
-                    val path = request.split(' ').getOrNull(1)
-                    val (status, body) = when (path) {
-                        "/first" -> "200 OK" to "<html><head><title>First local page</title></head><body>First</body></html>"
-                        "/second" -> "200 OK" to "<html><head><title>Second local page</title></head><body>Second</body></html>"
-                        else -> "404 Not Found" to "<html><head><title>Missing local page</title></head><body>Not found</body></html>"
+            try {
+                while (!server.isClosed) {
+                    val socket = try {
+                        server.accept()
+                    } catch (error: SocketException) {
+                        if (server.isClosed) break
+                        responderFailure.compareAndSet(null, error)
+                        break
+                    } catch (error: IOException) {
+                        responderFailure.compareAndSet(null, error)
+                        break
                     }
-                    val bytes = body.toByteArray()
-                    socket.getOutputStream().write(
-                        "HTTP/1.1 $status\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: ${bytes.size}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n".toByteArray(),
-                    )
-                    socket.getOutputStream().write(bytes)
-                    socket.getOutputStream().flush()
+                    activeSocket.set(socket)
+                    try {
+                        socket.soTimeout = 10_000
+                        socket.use {
+                            val input = socket.getInputStream().bufferedReader()
+                            val request = input.readLine().orEmpty()
+                            requests += request
+                            while (!input.readLine().isNullOrEmpty()) Unit
+                            val path = request.split(' ').getOrNull(1)
+                            val (status, body) = when (path) {
+                                "/first" -> "200 OK" to "<html><head><title>First local page</title></head><body>First</body></html>"
+                                "/second" -> "200 OK" to "<html><head><title>Second local page</title></head><body>Second</body></html>"
+                                else -> "404 Not Found" to "<html><head><title>Missing local page</title></head><body>Not found</body></html>"
+                            }
+                            val bytes = body.toByteArray()
+                            socket.getOutputStream().write(
+                                "HTTP/1.1 $status\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: ${bytes.size}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n".toByteArray(),
+                            )
+                            socket.getOutputStream().write(bytes)
+                            socket.getOutputStream().flush()
+                        }
+                    } catch (_: SocketException) {
+                        // WebView may cancel a request while navigating back or replacing a page.
+                    } catch (error: IOException) {
+                        responderFailure.compareAndSet(null, error)
+                    } catch (error: Throwable) {
+                        responderFailure.compareAndSet(null, error)
+                    } finally {
+                        activeSocket.compareAndSet(socket, null)
+                        runCatching { socket.close() }
+                    }
                 }
+            } catch (error: Throwable) {
+                responderFailure.compareAndSet(null, error)
             }
         }
         val firstURL = "http://127.0.0.1:${server.localPort}/first"
@@ -198,10 +223,13 @@ class BrowserNavigationJourneyTest {
                 assertEquals(1, closed)
             }
             server.close()
+            activeSocket.getAndSet(null)?.let { runCatching { it.close() } }
             responder.join(1_000)
             assertTrue("The loopback responder should finish after serving both pages", !responder.isAlive)
+            responderFailure.get()?.let { throw AssertionError("The loopback responder failed", it) }
         } finally {
             server.close()
+            activeSocket.getAndSet(null)?.let { runCatching { it.close() } }
             responder.join(1_000)
         }
     }
