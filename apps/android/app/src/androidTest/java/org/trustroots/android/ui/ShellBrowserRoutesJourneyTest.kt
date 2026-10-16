@@ -146,6 +146,33 @@ class ShellBrowserRoutesJourneyTest {
         assertTrue(requests.none { it.startsWith("GET /signup ") || it.startsWith("GET /password/forgot ") })
     }
 
+    @Test fun systemBackClosesBrowserAndPreservesItsMenuOrAccountOrigin() {
+        SecureMobileSessionStore(context).save(session)
+        startResponder()
+        showApp()
+
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-menu").performClick()
+        scrollMenuControlAboveNavigation("Contact and support")
+        compose.onNodeWithText("Contact and support").performClick()
+        assertBrowserRoute("Contact and support", "https://www.trustroots.org/support")
+
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithTag("offlineBrowserSurface").assertDoesNotExist()
+        scrollMenuControlAboveNavigation("Account")
+        compose.onNodeWithText("Account").performClick()
+        waitForText("Email address")
+        scrollAccountControlAboveNavigation("Forgot your password?")
+        compose.onNodeWithText("Forgot your password?").performClick()
+        assertBrowserRoute("Reset password", "https://www.trustroots.org/password/forgot")
+
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithTag("offlineBrowserSurface").assertDoesNotExist()
+        compose.onNodeWithTag("accountSettingsScreen").assertIsDisplayed()
+        compose.onNodeWithText("Email address").assertExists()
+        assertTrue(requests.none { it.startsWith("GET /support ") || it.startsWith("GET /password/forgot ") })
+    }
+
     private fun showApp() {
         compose.setContent {
             TrustrootsTheme {
