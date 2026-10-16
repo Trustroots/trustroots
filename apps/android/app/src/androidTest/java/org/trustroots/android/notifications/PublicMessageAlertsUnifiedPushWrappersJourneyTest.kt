@@ -22,14 +22,18 @@ import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -57,6 +61,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
     private lateinit var server: ServerSocket
     private val requests = CopyOnWriteArrayList<ApiRequest>()
     private val distributorEvents = CopyOnWriteArrayList<DistributorEvent>()
+    private val completedResponses = AtomicInteger()
     private val responderFailure = AtomicReference<Throwable?>(null)
     @Volatile private var activeSocket: Socket? = null
     private var responder: Thread? = null
@@ -105,6 +110,63 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
         assertEquals(1, countRequests("GET"))
         assertFalse(MessageAlerts.isEnabled(targetContext, session.member.username))
         assertTrue(alertPreferences.all.isEmpty())
+        assertResponderHealthy()
+    }
+
+    @Test fun publicReconcileKeepsOptInWhenNoDistributorIsSaved() {
+        assumeTrue(
+            "This instrumented journey only runs with its localhost API fixture configured",
+            BuildConfig.API_BASE_URL.trimEnd('/') == FIXTURE_BASE_URL,
+        )
+
+        setUpIsolatedState()
+        startFixtureServer()
+        registerFixtureResultReceiver()
+        enableFakeDistributorComponent()
+        activityScenario = ActivityScenario.launch(ComponentActivity::class.java)
+        waitUntil("the target activity is resumed before opening the fake distributor") {
+            activityScenario?.state == Lifecycle.State.RESUMED
+        }
+        launchFakeDistributorPackage()
+        assumeTrue(
+            "The fake distributor should be available to observe accidental registration",
+            UnifiedPush.getDistributors(targetContext).toSet() == setOf(testContext.packageName),
+        )
+        assumeTrue(
+            "The isolated app profile must not have a saved distributor",
+            UnifiedPush.getSavedDistributor(targetContext) == null,
+        )
+
+        val session = MemberSession(
+            cookieHeader = "connect.sid=fictional-push-session",
+            member = MobileMember("steady-heron", "Steady Heron"),
+        )
+        alertPreferences.edit()
+            .putString("account", session.member.username)
+            .putBoolean("enabled", true)
+            .putString("endpoint", "https://push.invalid/retained-endpoint")
+            .commit()
+        MessageAlerts.status.value = "Waiting for your distributor to register message alerts."
+
+        val scopeJob = messageAlertsScopeJob()
+        val existingJobs = scopeJob.children.toSet()
+        MessageAlerts.reconcile(targetContext, session)
+
+        waitUntil("public reconcile authenticates and completes its configuration request") {
+            completedResponses.get() == 1
+        }
+        awaitNewMessageAlertJobs(scopeJob, existingJobs)
+
+        val configuration = requests.single()
+        assertEquals("GET", configuration.method)
+        assertEquals("/api/users/unified-push", configuration.path)
+        assertEquals(session.cookieHeader, configuration.cookie)
+        assertTrue("A missing distributor must not emit REGISTER", distributorEvents.none { it.action == ACTION_REGISTER })
+        assertEquals(session.member.username, alertPreferences.getString("account", null))
+        assertTrue(alertPreferences.getBoolean("enabled", false))
+        assertEquals("https://push.invalid/retained-endpoint", MessageAlerts.endpoint(targetContext))
+        assertEquals("Waiting for your distributor to register message alerts.", MessageAlerts.status.value)
+        assertNull(UnifiedPush.getSavedDistributor(targetContext))
         assertResponderHealthy()
     }
 
@@ -375,6 +437,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
                             write(bytes)
                             flush()
                         }
+                        if (status == "200 OK") completedResponses.incrementAndGet()
                     }
                 } catch (error: SocketException) {
                     // A client may close a connection after cancelling its request.
@@ -426,6 +489,19 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
 
     private fun assertResponderHealthy() {
         responderFailure.get()?.let { throw AssertionError("Fixture server failed", it) }
+    }
+
+    private fun messageAlertsScopeJob(): Job {
+        val scopeField = MessageAlerts::class.java.getDeclaredField("scope").apply { isAccessible = true }
+        val scope = scopeField.get(MessageAlerts) as CoroutineScope
+        return requireNotNull(scope.coroutineContext[Job])
+    }
+
+    private fun awaitNewMessageAlertJobs(scopeJob: Job, existingJobs: Set<Job>) = runBlocking {
+        val startedJobs = scopeJob.children.filterNot { it in existingJobs }.toList()
+        withTimeout(8_000) {
+            startedJobs.forEach { it.join() }
+        }
     }
 
     private fun restorePreferences(preferences: android.content.SharedPreferences, values: Map<String, *>) {
