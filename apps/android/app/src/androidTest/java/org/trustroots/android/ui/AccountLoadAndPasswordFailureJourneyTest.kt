@@ -2,16 +2,18 @@ package org.trustroots.android.ui
 
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -103,7 +105,7 @@ class AccountLoadAndPasswordFailureJourneyTest {
         compose.runOnIdle {
             activeSession.value = MemberSession("connect.sid=fictional-session", MobileMember("quiet-fox", "Quiet Fox"))
         }
-        compose.waitUntil(10_000) { invalidated.get() }
+        waitForInvalidatedLoading(invalidated)
         assertTrue(requests.any { it.path == "/api/users/quiet-fox" })
     }
 
@@ -142,7 +144,7 @@ class AccountLoadAndPasswordFailureJourneyTest {
         compose.runOnIdle {
             activeSession.value = MemberSession("connect.sid=fictional-session", MobileMember("quiet-fox", "Quiet Fox"))
         }
-        compose.waitUntil(10_000) { invalidated.get() }
+        waitForInvalidatedLoading(invalidated)
         assertTrue(requests.any { it.method == "GET" && it.path == "/api/users/steady-heron" })
         assertTrue(requests.any { it.method == "GET" && it.path == "/api/users/quiet-fox" })
     }
@@ -188,7 +190,12 @@ class AccountLoadAndPasswordFailureJourneyTest {
         compose.onNodeWithText("Password service is temporarily unavailable.").performScrollTo().assertIsDisplayed()
         assertFalse(invalidated.get())
         compose.onNode(hasText("Change password") and hasClickAction()).performScrollTo().assertIsEnabled().performClick()
-        compose.waitUntil(10_000) { invalidated.get() }
+        compose.waitUntil(10_000) {
+            invalidated.get() && requests.count { it.method == "POST" && it.path == "/api/users/password" } == 2 &&
+                runCatching { compose.onNode(hasText("Change password") and hasClickAction()).assertIsEnabled() }.isSuccess
+        }
+        compose.waitForIdle()
+        compose.onNode(hasText("Change password") and hasClickAction()).performScrollTo().assertIsEnabled()
 
         val attempts = requests.filter { it.method == "POST" && it.path == "/api/users/password" }
         assertEquals(2, attempts.size)
@@ -201,6 +208,7 @@ class AccountLoadAndPasswordFailureJourneyTest {
         compose.onNodeWithText("Current password").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("New password").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Verify new password").performScrollTo().assertIsDisplayed()
+        compose.waitForIdle()
     }
 
     private fun api() = MobileApiClient("http://127.0.0.1:${server.localPort}")
@@ -209,6 +217,19 @@ class AccountLoadAndPasswordFailureJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
+    }
+
+    private fun waitForInvalidatedLoading(invalidated: AtomicBoolean) {
+        compose.waitUntil(10_000) {
+            invalidated.get() && compose.onAllNodes(
+                hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate),
+            ).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.waitForIdle()
+        assertEquals(
+            1,
+            compose.onAllNodes(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).fetchSemanticsNodes().size,
+        )
     }
 
     private fun startResponder(replyFor: (CapturedRequest) -> FixtureResponse) {

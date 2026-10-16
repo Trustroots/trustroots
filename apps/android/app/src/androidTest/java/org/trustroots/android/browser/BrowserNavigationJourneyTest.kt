@@ -15,6 +15,7 @@ import java.net.SocketException
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
@@ -158,7 +159,7 @@ class BrowserNavigationJourneyTest {
         val pageState = AtomicReference("WebView has not reported a page load")
         try {
             compose.setContent {
-                TrustrootsBrowser(BrowserRoute("Local help", firstURL), { closed++ })
+                DefaultBrowserContent(BrowserRoute("Local help", firstURL), { closed++ }, PaddingValues.Zero)
             }
             try {
                 compose.waitUntil("first loopback WebView page to finish loading", 10_000) {

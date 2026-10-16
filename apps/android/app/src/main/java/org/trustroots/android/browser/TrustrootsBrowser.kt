@@ -42,6 +42,11 @@ data class BrowserRoute(
     val sessionCookie: String? = null,
 )
 
+internal val DefaultBrowserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit =
+    { route, onClose, contentPadding ->
+        TrustrootsBrowser(route = route, onClose = onClose, contentPadding = contentPadding)
+    }
+
 private const val EMBEDDED_SITE_TEXT_ZOOM_PERCENT = 90
 
 @Composable

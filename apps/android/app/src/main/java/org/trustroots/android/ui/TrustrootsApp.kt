@@ -110,7 +110,7 @@ import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.api.SecureResponseCache
 import org.trustroots.android.browser.BrowserRoute
-import org.trustroots.android.browser.TrustrootsBrowser
+import org.trustroots.android.browser.DefaultBrowserContent
 import org.trustroots.android.updates.ApkUpdateAlerts
 import org.trustroots.android.updates.ApkUpdateCheckResult
 import org.trustroots.android.notifications.MessageAlerts
@@ -121,6 +121,7 @@ import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 internal fun TrustrootsApp(
     apiBaseUrl: String = BuildConfig.API_BASE_URL,
     reconcileAlerts: (Context, MemberSession) -> Unit = MessageAlerts::reconcile,
+    browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit = DefaultBrowserContent,
 ) {
     val context = LocalContext.current
     val analytics = remember { AndroidUsageAnalytics.get(context) }
@@ -153,6 +154,7 @@ internal fun TrustrootsApp(
             analytics = analytics,
             apiBaseUrl = apiBaseUrl,
             initialMessage = signedOutMessage,
+            browserContent = browserContent,
             onSignedIn = {
                 sessionStore.save(it)
                 session = it
@@ -166,6 +168,7 @@ internal fun TrustrootsApp(
             responseCache = responseCache,
             apiBaseUrl = apiBaseUrl,
             reconcileAlerts = reconcileAlerts,
+            browserContent = browserContent,
             onMemberUpdated = { member ->
                 session?.copy(member = member)?.let { updated ->
                     sessionStore.save(updated)
@@ -233,6 +236,7 @@ private fun SignInScreen(
     apiBaseUrl: String,
     initialMessage: String?,
     onSignedIn: (MemberSession) -> Unit,
+    browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit,
 ) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -256,7 +260,7 @@ private fun SignInScreen(
 
     UsageScreenTracking(analytics, if (browserRoute == null) UsageScreen.SignIn else null)
     browserRoute?.let { route ->
-        TrustrootsBrowser(route = route, onClose = { browserRoute = null })
+        browserContent(route, { browserRoute = null }, PaddingValues.Zero)
         return
     }
 
@@ -396,6 +400,7 @@ private fun MemberShell(
     onMemberUpdated: (MobileMember) -> Unit,
     onSignedOut: () -> Unit,
     onSessionInvalidated: () -> Unit,
+    browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit,
 ) {
     val context = LocalContext.current
     var destination by remember { mutableStateOf(Destination.Circles) }
@@ -520,7 +525,7 @@ private fun MemberShell(
             Box(Modifier.fillMaxWidth().weight(1f)) {
             val browser = browserRoute
             if (browser != null) {
-                TrustrootsBrowser(route = browser, onClose = { browserRoute = null }, contentPadding = contentPadding)
+                browserContent(browser, { browserRoute = null }, contentPadding)
             } else if (destination == Destination.Menu) {
                 when (menuPage) {
                     MenuPage.Menu -> MenuScreen(
