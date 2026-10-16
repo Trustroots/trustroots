@@ -171,7 +171,7 @@ python3 scripts/coverage-ratchet.py app/build/reports/coverage/debug/coverage.xm
 python3 -m unittest discover -s scripts
 ```
 
-CI also runs four selected notification and offline WebView compatibility journeys
+CI also runs five selected notification, preview-update and offline WebView compatibility journeys
 on API 32, using the same already-built APKs, then merges those probes into the report. To reproduce that
 combined report, stop the API 36 emulator and connect a dedicated API 32 emulator
 after the full run above, then run:
