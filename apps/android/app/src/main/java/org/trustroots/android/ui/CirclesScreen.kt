@@ -65,11 +65,11 @@ internal fun CirclesScreen(
         loading = true
         api.circles(session).onSuccess { circles = it }.onFailure {
             if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
-            else error = it.message ?: "Could not load circles."
+            else error = it.messageOr("Could not load circles.")
         }
         api.circleMemberships(session).onSuccess { memberships = it }.onFailure {
             if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
-            else error = it.message ?: "Could not load circle memberships."
+            else error = it.messageOr("Could not load circle memberships.")
         }
         loading = false
     }
@@ -83,7 +83,7 @@ internal fun CirclesScreen(
                     memberships = if (joined) memberships - circle.id else memberships + circle.id
                 }.onFailure {
                     if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
-                    else error = it.message ?: "Could not update membership."
+                    else error = it.messageOr("Could not update membership.")
                 }
                 updating = null
             }

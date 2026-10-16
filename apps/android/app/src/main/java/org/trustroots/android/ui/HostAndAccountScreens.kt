@@ -110,14 +110,14 @@ internal fun HostOfferScreen(
             }.onFailure {
                 if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
                 else {
-                    error = it.message ?: "Could not load hosting offer."
+                    error = it.messageOr("Could not load hosting offer.")
                     loading = false
                 }
             }
         }.onFailure {
             if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
             else {
-                error = it.message ?: "Could not load hosting offer."
+                error = it.messageOr("Could not load hosting offer.")
                 loading = false
             }
         }
@@ -147,7 +147,7 @@ internal fun HostOfferScreen(
                         savedMessage = "Hosting offer saved."
                     }.onFailure {
                         if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
-                        else error = it.message ?: "Could not save hosting offer."
+                        else error = it.messageOr("Could not save hosting offer.")
                     }
                     saving = false
                 }
@@ -266,7 +266,7 @@ internal fun CreateExperienceScreen(
                     ).onSuccess { onCreated() }
                         .onFailure {
                             if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
-                            else error = it.message ?: "Could not share experience."
+                            else error = it.messageOr("Could not share experience.")
                         }
                     saving = false
                 }
@@ -367,7 +367,7 @@ internal fun AccountSettingsScreen(
         }.onFailure {
             if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
             else {
-                error = it.message ?: "Could not load account."
+                error = it.messageOr("Could not load account.")
                 loading = false
             }
         }
@@ -428,7 +428,7 @@ internal fun AccountSettingsScreen(
                         message = "Account saved."
                     }.onFailure {
                         if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
-                        else error = it.message ?: "Could not save account."
+                        else error = it.messageOr("Could not save account.")
                     }
                     savingAccount = false
                 }
@@ -477,7 +477,7 @@ internal fun AccountSettingsScreen(
                         }
                         .onFailure {
                             if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
-                            else error = it.message ?: "Could not change password."
+                            else error = it.messageOr("Could not change password.")
                         }
                     changingPassword = false
                 }

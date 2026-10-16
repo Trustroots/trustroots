@@ -124,7 +124,7 @@ internal fun MemberSearchScreen(
             api.searchMembers(session, query).onSuccess { results = it; searched = true }
                 .onFailure {
                     if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
-                    else error = it.message ?: "Could not search members."
+                    else error = it.messageOr("Could not search members.")
                 }
             loading = false
         }
@@ -352,7 +352,7 @@ internal fun MemberProfileScreen(
             }
         }.onFailure {
             if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
-            else error = it.message ?: "Could not load profile."
+            else error = it.messageOr("Could not load profile.")
         }
     }
     val isSelf = profile?.username == session.member.username
@@ -697,7 +697,7 @@ internal fun EditProfileScreen(
                         .onSuccess(onSaved)
                         .onFailure {
                             if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
-                            else error = it.message ?: "Could not save profile."
+                            else error = it.messageOr("Could not save profile.")
                         }
                     saving = false
                 }
@@ -790,7 +790,7 @@ internal fun MessageInboxScreen(
         do {
             val batch = api.inbox(session, page).getOrElse {
                 if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
-                else if (collected.isEmpty()) error = it.message ?: "Could not load messages."
+                else if (collected.isEmpty()) error = it.messageOr("Could not load messages.")
                 break
             }
             collected += batch
@@ -889,7 +889,7 @@ internal fun ConversationScreen(
                 error = null
             }.onFailure {
                 if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
-                else error = it.message ?: "Could not send message."
+                else error = it.messageOr("Could not send message.")
             }
             sending = false
         }
@@ -903,7 +903,7 @@ internal fun ConversationScreen(
         }.onFailure {
             messagesLoaded = true
             if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
-            else error = it.message ?: "Could not load conversation."
+            else error = it.messageOr("Could not load conversation.")
         }
     }
     Column(Modifier.fillMaxSize().imePadding().padding(contentPadding).padding(20.dp)) {
@@ -1043,14 +1043,14 @@ internal fun ContactsScreen(
             }.onFailure {
                 if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
                 else {
-                    error = it.message ?: "Could not load contacts."
+                    error = it.messageOr("Could not load contacts.")
                     loading = false
                 }
             }
         }.onFailure {
             if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
             else {
-                error = it.message ?: "Could not load contacts."
+                error = it.messageOr("Could not load contacts.")
                 loading = false
             }
         }
