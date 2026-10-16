@@ -167,6 +167,37 @@ describe('CI timing overview', () => {
     );
   });
 
+  it('folds comment timing tables but keeps skipped and failed jobs visible', () => {
+    const compact = renderTimings(
+      {
+        ...timings,
+        workflows: [
+          {
+            ...timings.workflows[0],
+            jobs: [
+              { ...job, conclusion: 'failure' },
+              { ...job, name: 'optional', conclusion: 'skipped' },
+              {
+                ...job,
+                name: 'running',
+                status: 'in_progress',
+                conclusion: null,
+              },
+            ],
+          },
+        ],
+      },
+      true,
+    );
+    const visible = compact.slice(0, compact.indexOf('<details>'));
+    assert.match(visible, /client &lt;checks&gt;: Failed/);
+    assert.match(visible, /optional: Skipped/);
+    assert.match(compact, /<summary>Job and step timings<\/summary>/);
+    assert.match(compact, /<td>Passed<\/td>/);
+    assert.match(compact, /<td>Running<\/td>/);
+    assert.equal(formatDuration(5000), '5s');
+  });
+
   it('reads an optional timing snapshot', () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ci-timings-'));
     try {

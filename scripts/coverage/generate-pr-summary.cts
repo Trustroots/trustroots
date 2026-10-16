@@ -16,7 +16,10 @@ const { renderProductionInventory } = require('./dependency-changes.cts') as {
 };
 const { readTimings, renderTimings } = require('./ci-timings.cts') as {
   readTimings: (root: string) => CiTimings | null;
-  renderTimings: (timings: CiTimings | null | undefined) => string;
+  renderTimings: (
+    timings: CiTimings | null | undefined,
+    compact?: boolean,
+  ) => string;
 };
 
 interface LineChanges {
@@ -112,11 +115,11 @@ function readJson<T>(filePath: string): T {
 
 function formatStatus(status: string | undefined): string {
   const labels: Record<string, string> = {
-    blocked: '✗ BLOCKED',
-    failed: '✗ FAILED',
-    passed: '✓',
-    skipped: 'SKIPPED',
-    unknown: 'UNKNOWN',
+    blocked: '✗ Blocked',
+    failed: '✗ Failed',
+    passed: '✓ Passed',
+    skipped: '⚪ Skipped',
+    unknown: '⚪ Unknown',
   };
   return labels[status ?? ''] || String(status || 'unknown').toUpperCase();
 }
@@ -138,7 +141,7 @@ function formatDate(isoString: string | null | undefined): string {
   const pad = (value: number): string => String(value).padStart(2, '0');
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(
     date.getUTCDate(),
-  )} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
+  )} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())} UTC`;
 }
 
 function formatDuration(ms: number | null | undefined): string {
@@ -294,17 +297,17 @@ function areaLabel(area: string): string {
 
 function areaStatus(result: AreaResult): string {
   if (result.failed > 0) {
-    return '✗ Failing';
+    return '✗ Failed';
   }
 
   if (result.passed > 0) {
-    return '✓';
+    return '✓ Passed';
   }
 
   return 'Skipped';
 }
 
-function renderOverviewTable(lanes: Lane[]): string {
+function renderOverviewTable(lanes: Lane[], compact = false): string {
   const rows = lanes
     .map(lane => {
       return (
@@ -312,7 +315,7 @@ function renderOverviewTable(lanes: Lane[]): string {
         `<td>${escapeHtml(lane.label || lane.name)}</td>` +
         `<td>${escapeHtml(formatStatus(lane.status))}</td>` +
         `<td>${recordedValue(lane)}</td>` +
-        `<td>${laneResult(lane)}</td>` +
+        `<td>${compact ? compactResult(lane) : laneResult(lane)}</td>` +
         `<td>${reportName(lane)}</td>` +
         '</tr>'
       );
@@ -335,6 +338,25 @@ function renderOverviewTable(lanes: Lane[]): string {
     '</tbody>',
     '</table>',
   ].join('\n');
+}
+
+function compactResult(lane: Lane): string {
+  const rows =
+    lane.kind === 'coverage'
+      ? coverageResultRows(lane).filter(([label]) =>
+          ['Lines', 'Branches'].includes(label),
+        )
+      : e2eResultRows(lane)?.filter(([label]) =>
+          ['Tests', 'Scenario coverage'].includes(label),
+        );
+  return escapeHtml(
+    [
+      rows?.map(([label, value]) => `${label}: ${value}`).join(' · '),
+      lane.message,
+    ]
+      .filter(Boolean)
+      .join(' — ') || 'Metrics unavailable.',
+  );
 }
 
 function renderE2eAreaTable(lane: Lane | undefined): string {
@@ -377,7 +399,9 @@ function renderE2eAreaTable(lane: Lane | undefined): string {
 
 function overallStatus(lanes: Lane[]): string {
   if (
-    lanes.some(lane => ['failed', 'blocked', 'unknown'].includes(lane.status!))
+    lanes.some(
+      lane => !['passed', 'skipped'].includes(lane.status || 'unknown'),
+    )
   ) {
     return 'Needs attention';
   }
@@ -390,44 +414,70 @@ function overallStatus(lanes: Lane[]): string {
 }
 
 function buildMarkdown(lanes: Lane[], options: BuildOptions = {}): string {
-  if (options.includeCoverage === false) {
-    return `${[
-      marker,
-      '## Pull request overview',
-      '',
-      renderLineChanges(options.lineChanges!),
-      '',
-      renderProductionInventory(options.productionInventory),
-      '',
-      renderTimings(options.timings),
-    ].join('\n')}\n`;
-  }
   const runUrl = options.runUrl || process.env.GITHUB_RUN_URL;
   const e2eLane = lanes.find(lane => lane.name === 'e2e');
-  const details = [
-    marker,
-    '## Coverage overview',
-    '',
-    `Status: **${overallStatus(lanes)}**`,
-    '',
-    renderOverviewTable(lanes),
-  ];
+  const details = [marker, '## Pull request overview'];
   const areaTable = renderE2eAreaTable(e2eLane);
+
+  details.push('', '### Tests and coverage', '');
+  if (options.includeCoverage === false) {
+    details.push('Coverage was not requested for this run.');
+  } else {
+    details.push(
+      `Coverage status: **${lanes.length ? overallStatus(lanes) : 'Unavailable'}**`,
+      '',
+      renderOverviewTable(lanes, true),
+      '',
+      '<details>',
+      '<summary>Coverage metric breakdowns</summary>',
+      '',
+      renderOverviewTable(lanes),
+      '',
+      '</details>',
+    );
+    if (areaTable) {
+      details.push(
+        '',
+        '<details>',
+        '<summary>End-to-end areas</summary>',
+        '',
+        areaTable,
+        '',
+        '</details>',
+      );
+    }
+  }
 
   if (options.lineChanges) {
     details.push('', renderLineChanges(options.lineChanges));
   }
-  details.push('', renderProductionInventory(options.productionInventory));
-  details.push('', renderTimings(options.timings));
-
-  if (areaTable) {
-    details.push('', areaTable);
+  if (!options.lineChanges?.dependencies) {
+    details.push('', '### Dependencies', '', 'Dependency changes unavailable.');
   }
+  const inventory = renderProductionInventory(
+    options.productionInventory,
+  ).replace('### Production', '#### Production');
+  details.push(
+    '',
+    ...(options.productionInventory
+      ? [
+          '<details>',
+          '<summary>Production image dependencies</summary>',
+          '',
+          inventory,
+          '',
+          '</details>',
+        ]
+      : [inventory]),
+  );
+  details.push('', renderTimings(options.timings, true));
 
   details.push(
     '',
+    '### Reports',
+    '',
     runUrl
-      ? `Full HTML overview: download the \`coverage-report\` artifact from [this workflow run](${runUrl}).`
+      ? `${options.includeCoverage === false ? 'Pull request summary' : 'Full HTML overview'}: download the \`coverage-report\` artifact from [this workflow run](${runUrl}).`
       : 'Full HTML overview: download the `coverage-report` workflow artifact.',
   );
 

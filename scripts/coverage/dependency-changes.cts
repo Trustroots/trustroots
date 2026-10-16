@@ -175,7 +175,7 @@ function renderDependencyChanges(groups: DependencyGroup[]): string {
     ),
   );
   return [
-    '### Dependency changes',
+    '### Dependencies',
     '',
     '| Category | Added | Removed | Updated | Net |',
     '| --- | ---: | ---: | ---: | ---: |',

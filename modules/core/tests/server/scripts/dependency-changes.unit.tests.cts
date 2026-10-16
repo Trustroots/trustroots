@@ -168,7 +168,7 @@ describe('PR dependency summaries', () => {
     };
     const first = updateLineChangesComment('Coverage: 100%\n', summary);
     const second = updateLineChangesComment(first, summary);
-    assert.strictEqual(second.split('### Dependency changes').length, 2);
+    assert.strictEqual(second.split('### Dependencies').length, 2);
     assert.match(second, /Coverage: 100%/);
     assert.match(renderLineChanges(summary), /Dependency details/);
     // The trusted workflow still uses main's older line-only renderer until
@@ -179,14 +179,14 @@ describe('PR dependency summaries', () => {
     );
     assert.match(legacyRefresh, /Dependency details/);
     const refreshed = updateLineChangesComment(legacyRefresh, summary);
-    assert.strictEqual(refreshed.split('### Dependency changes').length, 2);
+    assert.strictEqual(refreshed.split('### Dependencies').length, 2);
     assert.match(refreshed, /Coverage: 100%/);
     for (const includeCoverage of [true, false]) {
       const output = buildMarkdown([], {
         lineChanges: summary,
         includeCoverage,
       });
-      assert.match(output, /Dependency changes/);
+      assert.match(output, /### Dependencies/);
       assert.match(output, /Installed inventory unavailable/);
     }
   });

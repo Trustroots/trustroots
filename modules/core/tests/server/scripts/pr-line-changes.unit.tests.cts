@@ -212,7 +212,7 @@ describe('PR line-change summaries', () => {
       [{ name: 'client', kind: 'coverage', status: 'passed' }],
       { lineChanges: summariseNumstat('') },
     );
-    assert.match(coverage, /Coverage overview/);
+    assert.match(coverage, /Tests and coverage/);
     assert.match(coverage, /### Line changes/);
     const docsOnly = buildMarkdown([], {
       includeCoverage: false,

@@ -64,6 +64,7 @@ function duration(
 function formatDuration(ms: number | null): string {
   if (ms === null) return 'n/a';
   const seconds = Math.round(ms / 1000);
+  if (seconds < 60) return `${seconds}s`;
   return `${Math.floor(seconds / 60)}m ${String(seconds % 60).padStart(2, '0')}s`;
 }
 
@@ -80,11 +81,30 @@ function pace(
   return '🔴 Slow';
 }
 
-function renderTimings(timings: CiTimings | null | undefined): string {
+function renderTimings(
+  timings: CiTimings | null | undefined,
+  compact = false,
+): string {
   if (!timings || !timings.workflows.length) {
     return '<h3>CI timings</h3><p>CI timings unavailable.</p>';
   }
   const sections = timings.workflows.map(workflow => {
+    const statusLabel = (value: string): string =>
+      compact
+        ? (
+            {
+              success: 'Passed',
+              failure: 'Failed',
+              skipped: 'Skipped',
+              in_progress: 'Running',
+              queued: 'Queued',
+              cancelled: 'Cancelled',
+              timed_out: 'Timed out',
+              neutral: 'Neutral',
+              action_required: 'Action required',
+            } as Record<string, string>
+          )[value] || value
+        : value;
     const completedJobs = workflow.jobs.filter(
       job => job.status === 'completed',
     );
@@ -114,7 +134,7 @@ function renderTimings(timings: CiTimings | null | undefined): string {
             ? duration(step.started_at, step.completed_at)
             : null;
         const highlight = slowest && slowest.step === step ? ' (slowest)' : '';
-        return `<tr><td><a href="${escapeHtml(job.html_url)}#step:${step.number}:1">${escapeHtml(step.name)}</a>${highlight}</td><td>${escapeHtml(step.conclusion || step.status)}</td><td>${formatDuration(time)}</td><td>${pace(time, step.status, step.conclusion)}</td></tr>`;
+        return `<tr><td><a href="${escapeHtml(job.html_url)}#step:${step.number}:1">${escapeHtml(step.name)}</a>${highlight}</td><td>${escapeHtml(statusLabel(step.conclusion || step.status))}</td><td>${formatDuration(time)}</td><td>${pace(time, step.status, step.conclusion)}</td></tr>`;
       });
       const time =
         job.status === 'completed' && job.conclusion !== 'skipped'
@@ -122,9 +142,9 @@ function renderTimings(timings: CiTimings | null | undefined): string {
           : null;
       const speed = pace(time, job.status, job.conclusion);
       overview.push(
-        `<tr><td>${speed}</td><td><a href="${escapeHtml(job.html_url)}">${escapeHtml(job.name)}</a></td><td>${escapeHtml(job.conclusion || job.status)}</td><td><strong>${formatDuration(time)}</strong></td></tr>`,
+        `<tr><td>${speed}</td><td><a href="${escapeHtml(job.html_url)}">${escapeHtml(job.name)}</a></td><td>${escapeHtml(statusLabel(job.conclusion || job.status))}</td><td><strong>${formatDuration(time)}</strong></td></tr>`,
       );
-      return `<details><summary>${speed} · ${escapeHtml(job.name)} — ${escapeHtml(job.conclusion || job.status)} — ${formatDuration(time)}</summary><table><thead><tr><th>Step</th><th>Status</th><th>Duration</th><th>Pace</th></tr></thead><tbody>${steps.join('')}</tbody></table></details>`;
+      return `<details><summary>${speed} · ${escapeHtml(job.name)} — ${escapeHtml(statusLabel(job.conclusion || job.status))} — ${formatDuration(time)}</summary><table><thead><tr><th>Step</th><th>Status</th><th>Duration</th><th>Pace</th></tr></thead><tbody>${steps.join('')}</tbody></table></details>`;
     });
     const elapsedLabel = workflow.completedAt
       ? 'Elapsed'
@@ -132,7 +152,21 @@ function renderTimings(timings: CiTimings | null | undefined): string {
     const slowestSummary = slowest
       ? `<p>Slowest completed step: <a href="${escapeHtml(slowest.job.html_url)}#step:${slowest.step.number}:1">${escapeHtml(slowest.job.name)} / ${escapeHtml(slowest.step.name)}</a> (${formatDuration(slowest.ms)}).</p>`
       : '';
-    return `<h4><a href="${escapeHtml(workflow.url)}">${escapeHtml(workflow.name)}</a></h4><p>${elapsedLabel}: ${formatDuration(duration(workflow.startedAt, workflow.completedAt || timings.collectedAt))}. Accumulated completed job time: ${formatDuration(jobTime)}. ${completedJobs.length}/${workflow.jobs.length} jobs completed.</p>${slowestSummary}<table><thead><tr><th>Pace</th><th>Job</th><th>Status</th><th>Duration</th></tr></thead><tbody>${overview.join('')}</tbody></table><details><summary>Step timings</summary>${rows.join('\n')}</details>`;
+    const jobTables = `<table><thead><tr><th>Pace</th><th>Job</th><th>Status</th><th>Duration</th></tr></thead><tbody>${overview.join('')}</tbody></table><details><summary>Step timings</summary>${rows.join('\n')}</details>`;
+    const failures = compact
+      ? workflow.jobs
+          .filter(
+            job =>
+              job.conclusion &&
+              !['success', 'neutral'].includes(job.conclusion),
+          )
+          .map(
+            job =>
+              `<p>${escapeHtml(job.name)}: ${escapeHtml(statusLabel(job.conclusion!))}.</p>`,
+          )
+          .join('')
+      : '';
+    return `<h4><a href="${escapeHtml(workflow.url)}">${escapeHtml(workflow.name)}</a></h4><p>${elapsedLabel}: ${formatDuration(duration(workflow.startedAt, workflow.completedAt || timings.collectedAt))}. Accumulated completed job time: ${formatDuration(jobTime)}. ${completedJobs.length}/${workflow.jobs.length} jobs completed.</p>${slowestSummary}${failures}${compact ? `<details><summary>Job and step timings</summary>${jobTables}</details>` : jobTables}`;
   });
   const unavailable = (timings.unavailable || []).map(
     name => `<p>${escapeHtml(name)} timings unavailable.</p>`,
