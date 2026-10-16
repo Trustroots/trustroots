@@ -20,9 +20,11 @@ data class CommunityNote(
 class NostrootsNotesClient(
     private val onNote: (CommunityNote) -> Unit,
     private val onError: () -> Unit,
+    socketFactory: WebSocket.Factory = httpClient,
+    relayUrl: String = "wss://relay.trustroots.org",
 ) {
-    private val socket: WebSocket = httpClient.newWebSocket(
-        Request.Builder().url("wss://relay.trustroots.org").build(),
+    private val socket: WebSocket = socketFactory.newWebSocket(
+        Request.Builder().url(relayUrl).build(),
         object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 webSocket.send("""["REQ","trustroots-android-map",{"kinds":[30397],"limit":500}]""")

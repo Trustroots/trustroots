@@ -2,6 +2,7 @@ package org.trustroots.android.ui
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.text.Html
@@ -323,6 +324,8 @@ internal fun AccountSettingsScreen(
     onResetPassword: () -> Unit,
     onSignedOut: () -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
+    enableMessageAlerts: (Activity, MemberSession, (String) -> Unit) -> Unit = MessageAlerts::enable,
+    disableMessageAlerts: suspend (Context, MemberSession) -> Unit = MessageAlerts::disable,
 ) {
     val context = LocalContext.current
     var messageAlertsEnabled by remember(session.member.username) {
@@ -333,7 +336,7 @@ internal fun AccountSettingsScreen(
     val startMessageAlerts: () -> Unit = {
         val activity = context as? Activity
         if (activity == null) messageAlertStatus = "Could not choose a push distributor."
-        else MessageAlerts.enable(activity, session) {
+        else enableMessageAlerts(activity, session) {
             messageAlertStatus = it
             messageAlertsEnabled = MessageAlerts.isEnabled(context, session.member.username)
         }
@@ -492,7 +495,7 @@ internal fun AccountSettingsScreen(
         Button(onClick = {
             if (messageAlertsEnabled) {
                 scope.launch {
-                    MessageAlerts.disable(context, session)
+                    disableMessageAlerts(context, session)
                     messageAlertsEnabled = false
                     messageAlertStatus = "Message alerts are off."
                 }
