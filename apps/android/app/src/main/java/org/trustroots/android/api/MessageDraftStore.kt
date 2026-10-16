@@ -7,7 +7,7 @@ internal class MessageDraftStore(context: Context) {
         .getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
 
     fun load(selfUsername: String, otherKey: String): String =
-        preferences.getString(cacheKey(selfUsername, otherKey), "").orEmpty()
+        preferences.getString(cacheKey(selfUsername, otherKey), null).orEmpty()
 
     fun save(selfUsername: String, otherKey: String, text: String) {
         val key = cacheKey(selfUsername, otherKey)
