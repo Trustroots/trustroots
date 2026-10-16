@@ -9,6 +9,9 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.IOException
@@ -106,7 +109,31 @@ class ShellDestinationRecoveryJourneyTest {
         assertTrue(requests.none { it.startsWith("GET /api/messages/member-sender?limit=100 ") })
     }
 
-    private fun showShell(destination: MessageDestination) {
+    @Test fun matchingNotificationWaitsForDirtyProfileDecisionBeforeOpeningConversation() {
+        startResponder(populatedInbox = true)
+        showShell(destination = null)
+
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-menu").performClick()
+        compose.onNodeWithText("Edit profile").performScrollTo().performClick()
+        waitForText("Tagline")
+        compose.onNodeWithText("Tagline").performTextReplacement("A changed fictional tagline")
+
+        compose.runOnIdle {
+            MessageAlerts.destination.value = MessageDestination("steady-heron", "member-sender")
+        }
+        waitForText("Discard changes?")
+        compose.onNodeWithText("A changed fictional tagline").assertIsDisplayed()
+        assertTrue(requests.none { it.startsWith("GET /api/messages/member-sender?limit=100 ") })
+
+        compose.onNodeWithText("Discard changes").performClick()
+        waitForText("A fictional message opened from an alert.")
+        compose.onNodeWithTag("navigation-messages").assertIsSelected()
+        assertTrue(requests.any { it.startsWith("GET /api/messages/member-sender?limit=100 ") })
+        compose.waitUntil(5_000) { MessageAlerts.destination.value == null }
+    }
+
+    private fun showShell(destination: MessageDestination?) {
         SecureMobileSessionStore(context).save(session)
         MessageAlerts.destination.value = destination
         compose.setContent {
