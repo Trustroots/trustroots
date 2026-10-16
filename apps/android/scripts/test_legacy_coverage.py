@@ -10,7 +10,7 @@ import unittest
 
 
 SCRIPT = Path(__file__).with_name("collect-legacy-coverage.sh")
-SUCCESSFUL_INSTRUMENTATION = "INSTRUMENTATION_CODE: -1\nOK (4 tests)\n"
+SUCCESSFUL_INSTRUMENTATION = "INSTRUMENTATION_CODE: -1\nOK (5 tests)\n"
 
 
 FAKE_ADB = r'''#!{python}
@@ -99,7 +99,7 @@ class LegacyCoverageCollectorTest(unittest.TestCase):
         result = self.run_collector()
 
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertIn("OK (4 tests)", result.stdout)
+        self.assertIn("OK (5 tests)", result.stdout)
         self.assertIn("Collected API 32 coverage", result.stdout)
         self.assertEqual(self.fake_coverage_source.read_bytes(), (self.output_directory / "coverage.ec").read_bytes())
         self.assertEqual(2, sum(call.split("\t")[2:4] == ["install", "-r"] for call in self.adb_calls()))
@@ -107,7 +107,7 @@ class LegacyCoverageCollectorTest(unittest.TestCase):
         self.assertEqual(1, len(instrument_calls))
         class_filter = instrument_calls[0][instrument_calls[0].index("class") + 1]
         self.assertEqual(
-            "org.trustroots.android.notifications.SdkNotificationCompatibilityJourneyTest,org.trustroots.android.browser.EmbeddedBrowserStyleTest#legacyStylingOnlyRunsForTrustrootsPagesWithoutDocumentStartSupport,org.trustroots.android.browser.BrowserNavigationJourneyTest#externalNavigationRequiresConfirmationAndCanBeCancelled",
+            "org.trustroots.android.notifications.SdkNotificationCompatibilityJourneyTest,org.trustroots.android.browser.EmbeddedBrowserStyleTest#legacyStylingOnlyRunsForTrustrootsPagesWithoutDocumentStartSupport,org.trustroots.android.browser.BrowserNavigationJourneyTest#externalNavigationRequiresConfirmationAndCanBeCancelled,org.trustroots.android.ui.AccountPreviewUpdateAlertsJourneyTest#memberCanEnableCheckRetryOpenAndDisablePreviewUpdatesOffline",
             class_filter,
         )
         self.assertEqual(1, sum("exec-out" in call for call in self.adb_calls()))
@@ -132,22 +132,22 @@ class LegacyCoverageCollectorTest(unittest.TestCase):
         invalid_runs = {
             "zero tests": (
                 "INSTRUMENTATION_CODE: -1\nOK (0 tests)\n",
-                "All four selected API 32 compatibility and WebView journeys must pass",
+                "All five selected API 32 compatibility and WebView journeys must pass",
             ),
             "stale old test count": (
-                "INSTRUMENTATION_CODE: -1\nOK (2 tests)\n",
-                "All four selected API 32 compatibility and WebView journeys must pass",
+                "INSTRUMENTATION_CODE: -1\nOK (4 tests)\n",
+                "All five selected API 32 compatibility and WebView journeys must pass",
             ),
             "failed test": (
-                "INSTRUMENTATION_STATUS_CODE: -2\nFAILURES!!!\nINSTRUMENTATION_CODE: -1\nOK (4 tests)\n",
+                "INSTRUMENTATION_STATUS_CODE: -2\nFAILURES!!!\nINSTRUMENTATION_CODE: -1\nOK (5 tests)\n",
                 "API 32 instrumentation reported a failure or skipped test",
             ),
             "skipped test": (
-                "INSTRUMENTATION_STATUS_CODE: -3\nINSTRUMENTATION_CODE: -1\nOK (4 tests)\n",
+                "INSTRUMENTATION_STATUS_CODE: -3\nINSTRUMENTATION_CODE: -1\nOK (5 tests)\n",
                 "API 32 instrumentation reported a failure or skipped test",
             ),
             "coverage error": (
-                "INSTRUMENTATION_CODE: -1\nOK (4 tests)\nFailed to generate API 32 coverage file\n",
+                "INSTRUMENTATION_CODE: -1\nOK (5 tests)\nFailed to generate API 32 coverage file\n",
                 "API 32 instrumentation reported a failure or skipped test",
             ),
         }
@@ -168,7 +168,7 @@ class LegacyCoverageCollectorTest(unittest.TestCase):
         result = self.run_collector(INSTRUMENTATION_OUTPUT="INSTRUMENTATION_CODE: -1\nOK (0 tests)\n")
 
         self.assertNotEqual(0, result.returncode)
-        self.assertIn("All four selected API 32 compatibility and WebView journeys must pass", result.stderr)
+        self.assertIn("All five selected API 32 compatibility and WebView journeys must pass", result.stderr)
         self.assertFalse(previous_probe_file.exists(), "A failed run must not leave stale probes looking current")
         self.assertFalse(any("exec-out" in call for call in self.adb_calls()))
 
@@ -176,7 +176,7 @@ class LegacyCoverageCollectorTest(unittest.TestCase):
         result = self.run_collector(INSTRUMENTATION_EXIT="1")
 
         self.assertNotEqual(0, result.returncode)
-        self.assertIn("OK (4 tests)", result.stdout)
+        self.assertIn("OK (5 tests)", result.stdout)
         self.assert_no_coverage_export()
 
 

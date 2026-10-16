@@ -180,18 +180,6 @@ class MobileApiClient(
             }
         }
 
-    suspend fun currentMember(session: MemberSession): Result<MobileMember> =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                val response = jsonRequest(
-                    path = "/api/users/${session.member.username}",
-                    method = "GET",
-                    sessionCookie = session.cookieHeader,
-                )
-                mobileMemberFrom(JSONObject(response.body))
-            }
-        }
-
     suspend fun accountDetails(session: MemberSession): Result<AccountDetails> =
         withContext(Dispatchers.IO) {
             runCatching {
