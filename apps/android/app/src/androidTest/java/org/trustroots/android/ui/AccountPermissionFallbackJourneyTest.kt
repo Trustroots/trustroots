@@ -13,7 +13,7 @@ import androidx.activity.result.contract.ActivityResultContract
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -110,6 +110,7 @@ class AccountPermissionFallbackJourneyTest {
             .assertIsDisplayed()
         org.junit.Assert.assertEquals(0, enableCalls.get())
         org.junit.Assert.assertFalse(MessageAlerts.isEnabled(context, session.member.username))
+        compose.waitForIdle()
     }
 
     @Test fun reportsMissingActivityEvenWhenPermissionIsGranted() {
@@ -149,6 +150,7 @@ class AccountPermissionFallbackJourneyTest {
             .assertIsDisplayed()
         org.junit.Assert.assertEquals(0, enableCalls.get())
         org.junit.Assert.assertFalse(MessageAlerts.isEnabled(context, session.member.username))
+        compose.waitForIdle()
     }
 
     private fun api() = MobileApiClient("http://127.0.0.1:${server.localPort}")
