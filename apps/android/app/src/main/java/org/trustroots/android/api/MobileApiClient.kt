@@ -477,7 +477,7 @@ class MobileApiClient(
             runCatching {
                 require(update.status in setOf("yes", "maybe", "no"))
                 require(update.maxGuests in 1..20)
-                require(update.latitude in -90.0..90.0 && update.longitude in -180.0..180.0)
+                require(isValidWorldCoordinates(update.latitude, update.longitude))
                 val body = JSONObject()
                     .put("type", "host")
                     .put("status", update.status)
@@ -773,7 +773,7 @@ internal fun parseMapOffers(value: JSONObject): List<MapOffer> {
         if (coordinates.length() != 2) return@mapNotNull null
         val longitude = coordinates.getDouble(0)
         val latitude = coordinates.getDouble(1)
-        if (!latitude.isFinite() || !longitude.isFinite() || latitude !in -90.0..90.0 || longitude !in -180.0..180.0) {
+        if (!isValidWorldCoordinates(latitude, longitude)) {
             return@mapNotNull null
         }
         val properties = feature.getJSONObject("properties")
