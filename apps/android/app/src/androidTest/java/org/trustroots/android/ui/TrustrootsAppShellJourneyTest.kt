@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -123,6 +124,43 @@ class TrustrootsAppShellJourneyTest {
         }
         compose.onNodeWithText("People you connect with on Trustroots will appear here.").assertIsDisplayed()
         assertTrue(requests.any { it.startsWith("GET /api/contacts/member-self ") })
+    }
+
+    @Test fun menuFindPeopleOpensMemberSearchAndSearchNavigationResetsToMap() {
+        SecureMobileSessionStore(context).save(session)
+        val requests = CopyOnWriteArrayList<String>()
+        startResponder(requests) { path ->
+            when {
+                path.startsWith("/api/users/steady-heron") ->
+                    "200 OK" to """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"}"""
+                path.startsWith("/api/messages?") -> "200 OK" to "[]"
+                path == "/api/tribes?limit=150" -> "200 OK" to "[]"
+                path == "/api/users/memberships" -> "200 OK" to "[]"
+                path.startsWith("/api/offers?") -> "200 OK" to """{"features":[]}"""
+                path.contains("/avatar?") -> "404 Not Found" to ""
+                else -> "404 Not Found" to ""
+            }
+        }
+        showApp()
+
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("navigation-menu").performClick()
+        compose.onNodeWithText("Find people").performScrollTo().performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Name or username").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Name or username").assertIsDisplayed()
+        assertTrue(compose.onAllNodesWithTag("placeSearchField").fetchSemanticsNodes().isEmpty())
+
+        compose.onNodeWithTag("navigation-search").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag("placeSearchField").fetchSemanticsNodes().isNotEmpty() &&
+                requests.any { it.startsWith("GET /api/offers?") }
+        }
+        compose.onNodeWithTag("placeSearchField").assertIsDisplayed()
+        assertTrue(compose.onAllNodesWithText("Name or username").fetchSemanticsNodes().isEmpty())
     }
 
     @Test fun accountSignOutClearsTheSessionAndReturnsToSignIn() {

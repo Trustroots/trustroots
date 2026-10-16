@@ -184,18 +184,7 @@ internal fun HostMapScreen(
             // calls onDetach(), invalidating MapViewRepository (getRepository() then dereferences a
             // null MapView when building the default MarkerInfoWindow -> NPE on re-attach).
             setDestroyMode(false)
-            val mapboxToken = org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN
-            setTileSource(if (mapboxToken.isNotBlank()) {
-                XYTileSource(
-                    "Mapbox Streets", 0, 19, 256, ".png?access_token=$mapboxToken",
-                    arrayOf("https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/"),
-                )
-            } else {
-                XYTileSource(
-                    "OpenStreetMap", 0, 19, 256, ".png",
-                    arrayOf("https://tile.openstreetmap.org/"),
-                )
-            })
+            setTileSource(hostMapTileSource(org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN))
             setBackgroundColor(android.graphics.Color.rgb(236, 249, 245))
             setMultiTouchControls(true)
             controller.setZoom(6.5)
@@ -561,6 +550,18 @@ internal fun HostMapScreen(
         }
         }
     }
+}
+
+internal fun hostMapTileSource(mapboxToken: String): XYTileSource = if (mapboxToken.isNotBlank()) {
+    XYTileSource(
+        "Mapbox Streets", 0, 19, 256, ".png?access_token=$mapboxToken",
+        arrayOf("https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/"),
+    )
+} else {
+    XYTileSource(
+        "OpenStreetMap", 0, 19, 256, ".png",
+        arrayOf("https://tile.openstreetmap.org/"),
+    )
 }
 
 private val mapFilterLanguages = listOf(

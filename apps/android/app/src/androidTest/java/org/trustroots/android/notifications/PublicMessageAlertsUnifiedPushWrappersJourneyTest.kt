@@ -72,6 +72,42 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
     private var previousStatus: String? = null
     private var previousDestination: MessageDestination? = null
 
+    @Test fun publicEnableExplainsWhenNoDistributorIsInstalled() {
+        assumeTrue(
+            "This instrumented journey only runs with its localhost API fixture configured",
+            BuildConfig.API_BASE_URL.trimEnd('/') == FIXTURE_BASE_URL,
+        )
+
+        setUpIsolatedState()
+        startFixtureServer()
+        setFixtureComponentState(PackageManager.COMPONENT_ENABLED_STATE_DISABLED)
+        assumeTrue(
+            "The test must not alter a device with another installed UnifiedPush distributor",
+            UnifiedPush.getDistributors(targetContext).isEmpty(),
+        )
+        activityScenario = ActivityScenario.launch(ComponentActivity::class.java)
+        waitUntil("the target activity is resumed") {
+            activityScenario?.state == Lifecycle.State.RESUMED
+        }
+
+        val session = MemberSession(
+            cookieHeader = "connect.sid=fictional-push-session",
+            member = MobileMember("steady-heron", "Steady Heron"),
+        )
+        val result = AtomicReference<String?>(null)
+        activityScenario?.onActivity { activity ->
+            MessageAlerts.enable(activity, session) { result.set(it) }
+        }
+
+        waitUntil("enable reports that no distributor is installed") {
+            result.get() == "Install a UnifiedPush distributor such as ntfy, then try again."
+        }
+        assertEquals(1, countRequests("GET"))
+        assertFalse(MessageAlerts.isEnabled(targetContext, session.member.username))
+        assertTrue(alertPreferences.all.isEmpty())
+        assertResponderHealthy()
+    }
+
     @Test fun publicWrappersSelectDistributorReconcileRegisterEndpointAndDisableOffline() {
         // The debug BuildConfig must be supplied with -PtrustrootsApiUrl=http://127.0.0.1:38081.
         // This guard runs before any public wrapper can issue an API request.

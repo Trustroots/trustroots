@@ -24,6 +24,15 @@ class CoverageRatchetTest(unittest.TestCase):
     def test_regressions_are_not_hidden_by_display_rounding(self):
         self.assertEqual(2, len(ratchet["regressions"](baseline(3333, 10000), baseline(1, 3))))
 
+    def test_denominator_growth_cannot_hide_a_coverage_drop(self):
+        current = baseline(3, 5)
+        minimum = baseline(3, 4)
+
+        failures = ratchet["regressions"](current, minimum)
+
+        self.assertEqual(2, len(failures))
+        self.assertTrue(all("below baseline" in failure for failure in failures))
+
     def test_checks_branches_independently(self):
         current = baseline()
         current["branches"] = {"covered": 1, "total": 4}
@@ -79,6 +88,24 @@ class CoverageRatchetTest(unittest.TestCase):
             report.write_text("<report/>")
             with self.assertRaises(ValueError):
                 ratchet["read_report"](report)
+
+    def test_missing_report_fails_closed_without_changing_the_baseline(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            report = root / "missing-coverage.xml"
+            saved = root / "baseline.json"
+            original = json.dumps(baseline())
+            saved.write_text(original)
+
+            result = subprocess.run(
+                [sys.executable, str(script), str(report), str(saved)],
+                capture_output=True,
+                text=True,
+            )
+
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("missing-coverage.xml", result.stderr)
+            self.assertEqual(original, saved.read_text())
 
 
 if __name__ == "__main__":
