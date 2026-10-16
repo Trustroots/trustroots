@@ -13,6 +13,7 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -29,6 +30,30 @@ import org.unifiedpush.android.connector.data.PushEndpoint
 import org.unifiedpush.android.connector.data.PushMessage
 
 data class MessageDestination(val account: String, val senderId: String)
+
+internal suspend fun handleMessageEndpointRegistration(
+    account: String,
+    endpointUrl: String,
+    publicKey: String,
+    authKey: String,
+    loadSession: suspend () -> MemberSession?,
+    registerEndpoint: suspend (MemberSession, String, String, String) -> Boolean,
+    saveEndpoint: (String) -> String?,
+    unregisterEndpoint: suspend (MemberSession, String) -> Unit,
+    setStatus: (String) -> Unit,
+) {
+    val session = loadSession() ?: return
+    if (session.member.username != account) return
+    if (!registerEndpoint(session, endpointUrl, publicKey, authKey)) {
+        setStatus("Could not register this distributor endpoint with Trustroots.")
+        return
+    }
+    val oldEndpoint = saveEndpoint(endpointUrl)
+    if (oldEndpoint != null && oldEndpoint != endpointUrl) {
+        unregisterEndpoint(session, oldEndpoint)
+    }
+    setStatus("Message alerts are ready.")
+}
 
 object MessageAlerts {
     const val ACCOUNT_EXTRA = "org.trustroots.android.message.account"
@@ -56,24 +81,46 @@ object MessageAlerts {
     fun clearDestination() { destination.value = null }
 
     fun enable(activity: Activity, session: MemberSession, onResult: (String) -> Unit) {
+        enable(
+            activity = activity,
+            session = session,
+            onResult = onResult,
+            apiBaseUrl = BuildConfig.API_BASE_URL,
+            hasDistributors = { UnifiedPush.getDistributors(activity).isNotEmpty() },
+            chooseDistributor = { onSelected -> UnifiedPush.tryUseCurrentOrDefaultDistributor(activity, onSelected) },
+            registerDistributor = { key ->
+                UnifiedPush.register(activity, messageForDistributor = "Trustroots messages", vapid = key)
+            },
+        )
+    }
+
+    internal fun enable(
+        activity: Activity,
+        session: MemberSession,
+        onResult: (String) -> Unit,
+        apiBaseUrl: String,
+        hasDistributors: () -> Boolean,
+        chooseDistributor: ((Boolean) -> Unit) -> Unit,
+        registerDistributor: (String) -> Unit,
+    ) {
         scope.launch {
-            val key = MobileApiClient(BuildConfig.API_BASE_URL).messagePushConfiguration(session).getOrNull()
+            val key = MobileApiClient(apiBaseUrl).messagePushConfiguration(session).getOrNull()
             activity.runOnUiThread {
                 if (key.isNullOrBlank()) {
                     onResult("Message alerts are not configured on this server.")
                     return@runOnUiThread
                 }
-                if (UnifiedPush.getDistributors(activity).isEmpty()) {
+                if (!hasDistributors()) {
                     onResult("Install a UnifiedPush distributor such as ntfy, then try again.")
                     return@runOnUiThread
                 }
-                UnifiedPush.tryUseCurrentOrDefaultDistributor(activity) { selected ->
+                chooseDistributor { selected ->
                     if (!selected) {
                         onResult("Choose a UnifiedPush distributor to enable message alerts.")
                     } else {
                         preferences(activity).edit().putString("account", session.member.username)
                             .putBoolean("enabled", true).apply()
-                        UnifiedPush.register(activity, messageForDistributor = "Trustroots messages", vapid = key)
+                        registerDistributor(key)
                         status.value = null
                         onResult("Waiting for your distributor to register message alerts.")
                     }
@@ -83,30 +130,65 @@ object MessageAlerts {
     }
 
     fun reconcile(context: Context, session: MemberSession) {
+        reconcile(
+            context = context,
+            session = session,
+            apiBaseUrl = BuildConfig.API_BASE_URL,
+            hasSavedDistributor = { UnifiedPush.getSavedDistributor(context) != null },
+            registerDistributor = { key ->
+                UnifiedPush.register(context, messageForDistributor = "Trustroots messages", vapid = key)
+            },
+        )
+    }
+
+    internal fun reconcile(
+        context: Context,
+        session: MemberSession,
+        apiBaseUrl: String,
+        hasSavedDistributor: () -> Boolean,
+        registerDistributor: (String) -> Unit,
+    ): Job? {
         if (!isEnabled(context, session.member.username)) {
             status.value = null
-            return
+            return null
         }
-        scope.launch {
-            val key = MobileApiClient(BuildConfig.API_BASE_URL)
-                .messagePushConfiguration(session).getOrNull() ?: return@launch
-            if (UnifiedPush.getSavedDistributor(context) != null) {
-                UnifiedPush.register(context, messageForDistributor = "Trustroots messages", vapid = key)
+        return scope.launch {
+            val key = MobileApiClient(apiBaseUrl).messagePushConfiguration(session).getOrNull() ?: return@launch
+            if (hasSavedDistributor()) {
+                registerDistributor(key)
             }
         }
     }
 
     suspend fun disable(context: Context, session: MemberSession) {
+        disable(context, session, BuildConfig.API_BASE_URL) { UnifiedPush.unregister(context) }
+    }
+
+    internal suspend fun disable(
+        context: Context,
+        session: MemberSession,
+        apiBaseUrl: String,
+        unregisterDistributor: () -> Unit,
+    ) {
         val oldEndpoint = endpoint(context)
         preferences(context).edit().clear().apply()
         status.value = null
-        UnifiedPush.unregister(context)
+        unregisterDistributor()
         if (oldEndpoint != null) {
-            MobileApiClient(BuildConfig.API_BASE_URL).unregisterMessagePush(session, oldEndpoint)
+            MobileApiClient(apiBaseUrl).unregisterMessagePush(session, oldEndpoint)
         }
     }
 
     fun onEndpoint(context: Context, newEndpoint: PushEndpoint) {
+        onEndpoint(context, newEndpoint, BuildConfig.API_BASE_URL) { SecureMobileSessionStore(context).load() }
+    }
+
+    internal fun onEndpoint(
+        context: Context,
+        newEndpoint: PushEndpoint,
+        apiBaseUrl: String,
+        loadSession: suspend () -> MemberSession?,
+    ) {
         val account = preferences(context).getString("account", null) ?: return
         if (!isEnabled(context, account)) return
         val keys = newEndpoint.pubKeySet ?: run {
@@ -114,33 +196,50 @@ object MessageAlerts {
             return
         }
         scope.launch {
-            val session = SecureMobileSessionStore(context).load() ?: return@launch
-            if (session.member.username != account) return@launch
-            val api = MobileApiClient(BuildConfig.API_BASE_URL)
-            if (api.registerMessagePush(session, newEndpoint.url, keys.pubKey, keys.auth).isSuccess) {
-                val oldEndpoint = endpoint(context)
-                preferences(context).edit().putString("endpoint", newEndpoint.url).apply()
-                if (oldEndpoint != null && oldEndpoint != newEndpoint.url) {
-                    api.unregisterMessagePush(session, oldEndpoint)
-                }
-                status.value = "Message alerts are ready."
-            } else {
-                status.value = "Could not register this distributor endpoint with Trustroots."
-            }
+            val api = MobileApiClient(apiBaseUrl)
+            handleMessageEndpointRegistration(
+                account = account,
+                endpointUrl = newEndpoint.url,
+                publicKey = keys.pubKey,
+                authKey = keys.auth,
+                loadSession = loadSession,
+                registerEndpoint = { session, url, publicKey, authKey ->
+                    api.registerMessagePush(session, url, publicKey, authKey).isSuccess
+                },
+                saveEndpoint = { url ->
+                    val oldEndpoint = endpoint(context)
+                    preferences(context).edit().putString("endpoint", url).apply()
+                    oldEndpoint
+                },
+                unregisterEndpoint = { session, oldUrl -> api.unregisterMessagePush(session, oldUrl) },
+                setStatus = { status.value = it },
+            )
         }
     }
 
     fun onDistributorUnregistered(context: Context) {
-        val account = preferences(context).getString("account", null) ?: return
-        if (!isEnabled(context, account)) return
+        onDistributorUnregistered(
+            context = context,
+            apiBaseUrl = BuildConfig.API_BASE_URL,
+            loadSession = { SecureMobileSessionStore(context).load() },
+        )
+    }
+
+    internal fun onDistributorUnregistered(
+        context: Context,
+        apiBaseUrl: String,
+        loadSession: suspend () -> MemberSession?,
+    ): Job? {
+        val account = preferences(context).getString("account", null) ?: return null
+        if (!isEnabled(context, account)) return null
         val oldEndpoint = endpoint(context)
         preferences(context).edit().clear().apply()
         status.value = "Your push distributor stopped message alerts. Choose one again to resume."
-        if (oldEndpoint != null) {
+        return oldEndpoint?.let {
             scope.launch {
-                val session = SecureMobileSessionStore(context).load() ?: return@launch
+                val session = loadSession() ?: return@launch
                 if (session.member.username == account) {
-                    MobileApiClient(BuildConfig.API_BASE_URL).unregisterMessagePush(session, oldEndpoint)
+                    MobileApiClient(apiBaseUrl).unregisterMessagePush(session, it)
                 }
             }
         }

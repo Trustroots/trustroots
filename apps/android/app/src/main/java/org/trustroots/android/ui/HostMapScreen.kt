@@ -1,6 +1,8 @@
 package org.trustroots.android.ui
 
 import androidx.activity.compose.BackHandler
+import android.content.Context
+import android.location.Address
 import android.location.Geocoder
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -90,6 +92,12 @@ import org.trustroots.android.api.CommunityNote
 import org.trustroots.android.api.NostrootsNotesClient
 import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 
+internal fun lookupAndroidPlaces(
+    context: Context,
+    query: String,
+    maxResults: Int,
+): List<Address>? = Geocoder(context, Locale.getDefault()).getFromLocationName(query, maxResults)
+
 @Composable
 internal fun HostMapScreen(
     api: MobileApiClient,
@@ -98,11 +106,16 @@ internal fun HostMapScreen(
     onProfileOpenChange: (Boolean) -> Unit = {},
     searchMode: @Composable () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues.Zero,
+    geocoderLookup: (Context, String, Int) -> List<Address>? = ::lookupAndroidPlaces,
+    notesClientFactory: ((onNote: (CommunityNote) -> Unit, onError: () -> Unit) -> NostrootsNotesClient) =
+        { onNote, onError -> NostrootsNotesClient(onNote, onError) },
+    mapViewFactory: (Context) -> MapView = { MapView(it) },
 ) {
     val context = LocalContext.current
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
-    val scope = rememberCoroutineScope()
+    // MapView animations must resume on Android's UI looper after background lookups.
+    val scope = rememberCoroutineScope { Dispatchers.Main.immediate }
     var offers by remember { mutableStateOf<List<MapOffer>>(emptyList()) }
     var host by remember { mutableStateOf<HostOffer?>(null) }
     var selectedNotes by remember { mutableStateOf<List<CommunityNote>>(emptyList()) }
@@ -128,6 +141,11 @@ internal fun HostMapScreen(
     var suggestions by remember { mutableStateOf<List<android.location.Address>>(emptyList()) }
     var selectedProfile by remember { mutableStateOf<MemberProfile?>(null) }
     var memberships by remember { mutableStateOf<Set<String>>(emptySet()) }
+    val lookupAddresses: suspend (String, Int) -> List<android.location.Address> = { query, maxResults ->
+        withContext(Dispatchers.IO) {
+            geocoderLookup(context, query, maxResults).orEmpty()
+        }
+    }
     LaunchedEffect(host?.id) {
         selectedProfile = null
         host?.user?.username?.let { username ->
@@ -139,9 +157,7 @@ internal fun HostMapScreen(
         suggestions = emptyList()
         if (showSuggestions && locationQuery.trim().length >= 3) {
             delay(400)
-            suggestions = withContext(Dispatchers.IO) {
-                runCatching { Geocoder(context, Locale.getDefault()).getFromLocationName(locationQuery.trim(), 3).orEmpty() }.getOrDefault(emptyList())
-            }
+            suggestions = runCatching { lookupAddresses(locationQuery.trim(), 3) }.getOrDefault(emptyList())
         }
     }
     var mapRevision by remember { mutableIntStateOf(0) }
@@ -165,24 +181,13 @@ internal fun HostMapScreen(
             userAgentValue = "TrustrootsAndroid/${org.trustroots.android.BuildConfig.VERSION_NAME} (+https://www.trustroots.org)"
             expirationOverrideDuration = 7L * 24 * 60 * 60 * 1000
         }
-        MapView(context).apply {
+        mapViewFactory(context).apply {
             // The AndroidView holder below can be detached and re-attached (e.g. when navigating
             // to a host detail and back). With the default destroy mode, MapView.onDetachedFromWindow()
             // calls onDetach(), invalidating MapViewRepository (getRepository() then dereferences a
             // null MapView when building the default MarkerInfoWindow -> NPE on re-attach).
             setDestroyMode(false)
-            val mapboxToken = org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN
-            setTileSource(if (mapboxToken.isNotBlank()) {
-                XYTileSource(
-                    "Mapbox Streets", 0, 19, 256, ".png?access_token=$mapboxToken",
-                    arrayOf("https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/"),
-                )
-            } else {
-                XYTileSource(
-                    "OpenStreetMap", 0, 19, 256, ".png",
-                    arrayOf("https://tile.openstreetmap.org/"),
-                )
-            })
+            setTileSource(hostMapTileSource(org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN))
             setBackgroundColor(android.graphics.Color.rgb(236, 249, 245))
             setMultiTouchControls(true)
             controller.setZoom(6.5)
@@ -238,9 +243,9 @@ internal fun HostMapScreen(
             onDispose { }
         } else {
             noteError = false
-            val client = NostrootsNotesClient(
-                onNote = { note -> scope.launch { receivedNotes[note.id] = note } },
-                onError = { scope.launch { noteError = true } },
+            val client = notesClientFactory(
+                { note -> scope.launch { receivedNotes[note.id] = note } },
+                { scope.launch { noteError = true } },
             )
             onDispose { client.close() }
         }
@@ -265,9 +270,7 @@ internal fun HostMapScreen(
         scope.launch {
             error = null
             val result = runCatching {
-                withContext(Dispatchers.IO) {
-                    Geocoder(context, Locale.getDefault()).getFromLocationName(query, 1)?.firstOrNull()
-                }
+                lookupAddresses(query, 1).firstOrNull()
             }
             val location = result.getOrNull()
             if (location == null) error = "Could not find that place."
@@ -297,6 +300,7 @@ internal fun HostMapScreen(
             searchJob.getAndSet(null)?.cancel()
             map.removeMapListener(listener)
             map.onPause()
+            map.onDetach()
         }
     }
     profileUsername?.let { username ->
@@ -367,7 +371,7 @@ internal fun HostMapScreen(
                 }
                 view.invalidate()
             },
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().testTag("hostMapView"),
         )
         Column(
             modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()
@@ -517,7 +521,6 @@ internal fun HostMapScreen(
                 api = api,
                 session = session,
                 maxHeight = resultCardMaxHeight,
-                horizontalInset = contentPadding.horizontalInset(),
                 onClose = { host = null },
                 onOpenProfile = { selected.user.username?.let { profileUsername = it } },
             )
@@ -550,6 +553,18 @@ internal fun HostMapScreen(
         }
         }
     }
+}
+
+internal fun hostMapTileSource(mapboxToken: String): XYTileSource = if (mapboxToken.isNotBlank()) {
+    XYTileSource(
+        "Mapbox Streets", 0, 19, 256, ".png?access_token=$mapboxToken",
+        arrayOf("https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/"),
+    )
+} else {
+    XYTileSource(
+        "OpenStreetMap", 0, 19, 256, ".png",
+        arrayOf("https://tile.openstreetmap.org/"),
+    )
 }
 
 private val mapFilterLanguages = listOf(

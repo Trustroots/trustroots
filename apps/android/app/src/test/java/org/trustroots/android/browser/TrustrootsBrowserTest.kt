@@ -3,7 +3,6 @@ package org.trustroots.android.browser
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class TrustrootsBrowserTest {
@@ -48,5 +47,23 @@ class TrustrootsBrowserTest {
             listOf("connect.sid=session-value", "other=1"),
             cookiePairsForWebView("connect.sid=session-value; other=1; Path=/"),
         )
+    }
+
+    @Test fun recognisesBareHitchwikiAndCaseInsensitiveHosts() {
+        assertTrue(isAllowedTrustrootsURL("https://hitchwiki.org/"))
+        assertTrue(isAllowedTrustrootsURL("HTTPS://WWW.TRUSTROOTS.ORG/"))
+        assertFalse(isAllowedTrustrootsURL("https:///faq"))
+        assertFalse(isAllowedTrustrootsURL("/faq"))
+    }
+
+    @Test fun malformedExternalUrlsAndCookieAttributesAreIgnored() {
+        assertFalse(isSafeExternalURL("not a valid URI"))
+        assertFalse(isSafeExternalURL("https:///faq"))
+        assertFalse(isSafeExternalURL("/faq"))
+        assertEquals(
+            listOf("session=fictional", "other=a=b"),
+            cookiePairsForWebView(" ; Secure; HttpOnly; pAtH=/; dOmAiN=example.test; session=fictional; other=a=b"),
+        )
+        assertEquals(emptyList<String>(), cookiePairsForWebView(""))
     }
 }
