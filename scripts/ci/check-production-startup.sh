@@ -71,8 +71,12 @@ docker run --rm --entrypoint node "$image" -e '
       `${dependency} should be omitted from the production image`,
     );
   }
-  for (const dependency of ["express", "file-type", "gm", "semver", "sharp"]) {
+  for (const dependency of ["express", "file-type", "gm", "semver"]) {
     require.resolve(dependency);
+  }
+  const sharp = require("sharp");
+  if (typeof sharp !== "function" || !sharp.versions || !sharp.versions.vips) {
+    throw new Error("sharp native binding did not load");
   }
   console.log("Production dependencies present; representative build tools omitted.");
 '

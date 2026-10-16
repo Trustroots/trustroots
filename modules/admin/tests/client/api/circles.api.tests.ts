@@ -63,5 +63,20 @@ it('sends multipart data when uploading an image', async () => {
   expect(data.get('label')).toBe('Walkers');
   expect(data.get('public')).toBe('false');
   expect(data.get('description')).toBe('');
+  expect(data.get('color')).toBe('');
+  expect(data.get('attribution')).toBe('');
+  expect(data.get('attribution_url')).toBe('');
+  expect(data.get('_id')).toBeNull();
+  expect(data.get('slug')).toBeNull();
+  expect(data.get('count')).toBeNull();
   expect(data.get('image')).toEqual(image);
+  expect(Array.from(data.keys())).toEqual([
+    'label',
+    'color',
+    'public',
+    'attribution',
+    'attribution_url',
+    'description',
+    'image',
+  ]);
 });

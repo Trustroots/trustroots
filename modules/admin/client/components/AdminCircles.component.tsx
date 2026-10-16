@@ -1,10 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { getCircles, saveCircle, type AdminCircle } from '../api/circles.api';
 import AdminHeader from './AdminHeader.component';
 
+const suggestedColours = [
+  '1e3a8a',
+  '1e40af',
+  '065f46',
+  '166534',
+  '854d0e',
+  '92400e',
+  '9a3412',
+  '991b1b',
+  '6b21a8',
+  '86198f',
+  '155e75',
+  '334155',
+];
+
 const emptyCircle: AdminCircle = {
   label: '',
-  color: '345d5c',
+  color: suggestedColours[0],
   public: true,
   attribution: '',
   attribution_url: '',
@@ -23,6 +38,7 @@ export default function AdminCircles() {
   const [image, setImage] = useState<File | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const imageInput = useRef<HTMLInputElement>(null);
 
   async function loadCircles() {
     setCircles(await getCircles());
@@ -32,9 +48,14 @@ export default function AdminCircles() {
     loadCircles().catch(() => setError('Could not load circles.'));
   }, []);
 
+  function clearSelectedImage() {
+    setImage(null);
+    if (imageInput.current) imageInput.current.value = '';
+  }
+
   function editCircle(selected: AdminCircle) {
     setCircle({ ...selected });
-    setImage(null);
+    clearSelectedImage();
     setMessage(null);
     setError(null);
   }
@@ -46,7 +67,7 @@ export default function AdminCircles() {
     try {
       const saved = await saveCircle(circle, image);
       setCircle(saved);
-      setImage(null);
+      clearSelectedImage();
       await loadCircles();
       setMessage('Circle saved.');
     } catch (requestError) {
@@ -123,7 +144,8 @@ export default function AdminCircles() {
                   value={circle.label}
                 />
                 <p className="help-block">
-                  The URL slug is generated from the name.
+                  The URL slug is generated from the name when the circle is
+                  created and stays the same if the name changes.
                 </p>
               </div>
               <div className="form-group">
@@ -143,6 +165,7 @@ export default function AdminCircles() {
                   <input
                     className="form-control"
                     id="circle-color"
+                    list="circle-colours"
                     maxLength={6}
                     minLength={6}
                     name="color"
@@ -151,6 +174,15 @@ export default function AdminCircles() {
                     required
                     value={circle.color || ''}
                   />
+                  <datalist id="circle-colours">
+                    {suggestedColours.map(colour => (
+                      <option key={colour} value={colour} />
+                    ))}
+                  </datalist>
+                  <p className="help-block">
+                    Six hexadecimal characters. Suggested colours keep white
+                    labels readable.
+                  </p>
                 </div>
                 <div className="col-sm-8 form-group">
                   <label htmlFor="circle-image">Image</label>
@@ -161,6 +193,7 @@ export default function AdminCircles() {
                     onChange={event =>
                       setImage(event.currentTarget.files?.[0] || null)
                     }
+                    ref={imageInput}
                     type="file"
                   />
                 </div>

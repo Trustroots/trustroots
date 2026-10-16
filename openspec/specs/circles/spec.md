@@ -159,7 +159,10 @@ The system SHALL present circle contacts, recommenders and other active members 
 
 The system SHALL let authorised administrators create and edit circle
 catalogue records, including visibility, descriptive information, image
-attribution, colour, and an optional image.
+attribution, colour, and an optional image. A circle keeps the public URL slug
+generated when it is created. Empty attribution fields are removed. An uploaded
+image replaces the public files only after every existing size and format has
+been generated.
 
 #### Scenario: Administrator creates a circle
 
@@ -169,10 +172,16 @@ attribution, colour, and an optional image.
 #### Scenario: Administrator edits a circle
 
 - **WHEN** an authorised administrator saves changes to an existing circle
-- **THEN** the system updates the circle and preserves its member count
+- **THEN** the system updates the circle and preserves its member count and public URL slug
+
+#### Scenario: Administrator clears image attribution
+
+- **WHEN** an authorised administrator saves a circle with empty attribution fields
+- **THEN** the system removes the stored attribution and attribution URL
 
 #### Scenario: Administrator uploads a circle image
 
 - **WHEN** an authorised administrator uploads a valid circle image
 - **THEN** the system generates the existing circle image sizes and JPG/WebP
   formats for the circle slug
+- **AND** replaces the public files only after every size has been generated

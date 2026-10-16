@@ -60,8 +60,8 @@ const registerRoutes = (app: RouteApp): void => {
     .all(adminPolicy.isAllowed)
     .get(adminCircles.list)
     .post(
-      adminAuditLog.record,
       adminCircles.processImageUpload,
+      adminAuditLog.record,
       adminCircles.create,
     );
 
@@ -70,8 +70,8 @@ const registerRoutes = (app: RouteApp): void => {
     .all(adminPolicy.isAllowed)
     .get(adminCircles.get)
     .put(
-      adminAuditLog.record,
       adminCircles.processImageUpload,
+      adminAuditLog.record,
       adminCircles.update,
     );
 

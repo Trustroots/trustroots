@@ -791,16 +791,16 @@ describe('API route registrations', () => {
       circles.list,
     ]);
     assertHandlers(routeByPath(routes, '/api/admin/circles').post, [
-      auditLog.record,
       circles.processImageUpload,
+      auditLog.record,
       circles.create,
     ]);
     assertHandlers(routeByPath(routes, '/api/admin/circles/:circle').get, [
       circles.get,
     ]);
     assertHandlers(routeByPath(routes, '/api/admin/circles/:circle').put, [
-      auditLog.record,
       circles.processImageUpload,
+      auditLog.record,
       circles.update,
     ]);
     routes.forEach(route => assertPolicy(route, policy));

@@ -50,19 +50,41 @@ describe('Admin circle routes', () => {
     const { body: updated } = await agent
       .put(`/api/admin/circles/${created._id}`)
       .send({
-        label: 'Example walkers',
-        color: '345d5c',
+        label: 'Example walkers renamed',
+        color: 'e74c3c',
         public: true,
-        attribution: '',
-        attribution_url: '',
+        attribution: 'Example artist',
+        attribution_url: 'https://example.org/artist',
         description: 'An updated circle.',
       })
       .expect(200);
     assert.strictEqual(updated.slug, created.slug);
+    assert.strictEqual(updated.label, 'Example walkers renamed');
     assert.strictEqual(updated.public, true);
+    assert.strictEqual(updated.color, 'e74c3c');
+    assert.strictEqual(updated.attribution, 'Example artist');
     assert.strictEqual(updated.description, 'An updated circle.');
+    const { body: cleared } = await agent
+      .put(`/api/admin/circles/${created._id}`)
+      .send({
+        label: 'Example walkers renamed',
+        color: 'e74c3c',
+        public: true,
+        attribution: '',
+        attribution_url: '   ',
+        description: 'An updated circle.',
+      })
+      .expect(200);
+    assert.strictEqual(cleared.attribution, undefined);
+    assert.strictEqual(cleared.attribution_url, undefined);
     const stored = await Tribe.findById(created._id);
+    assert.strictEqual(stored.attribution, undefined);
+    assert.strictEqual(stored.attribution_url, undefined);
     assert.strictEqual(stored.description, updated.description);
+    await agent
+      .post('/api/admin/circles')
+      .send({ label: 'Bad colour', color: 'zzzzzz' })
+      .expect(400);
   });
 
   it('denies unauthenticated catalogue reads and writes', async () => {

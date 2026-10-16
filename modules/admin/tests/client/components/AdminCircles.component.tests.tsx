@@ -122,6 +122,7 @@ describe('circle form feedback and fields', () => {
       { ...circle, public: true, description: 'Updated circle' },
       image,
     );
+    expect(screen.getByLabelText('Image')).toHaveValue('');
     fireEvent.click(screen.getByRole('button', { name: 'New circle' }));
     expect(screen.queryByText('Circle saved.')).not.toBeInTheDocument();
     expect(screen.queryByAltText('Current circle')).not.toBeInTheDocument();

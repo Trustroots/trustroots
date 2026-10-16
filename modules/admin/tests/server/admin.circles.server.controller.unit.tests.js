@@ -1,4 +1,5 @@
 const assert = require('assert');
+const mongoose = require('mongoose');
 const sinon = require('sinon');
 const proxyquire = require('../../../../testutils/server/mock-module');
 
@@ -35,6 +36,7 @@ describe('Admin circles controller', () => {
   beforeEach(() => {
     circle = { _id: 'circle-1', slug: 'walkers', image: false, public: false };
     circle.save = sinon.stub().resolves(circle);
+    circle.validate = sinon.stub().resolves();
     circle.toJSON = () => ({ ...circle });
     Tribe = sinon.stub().callsFake(data => {
       Object.assign(circle, data);
@@ -166,22 +168,30 @@ describe('Admin circles controller', () => {
         res,
       );
       assert.strictEqual(res.body.image, true);
-      sinon.assert.calledTwice(circle.save);
-      sinon.assert.calledWith(fs.mkdir, '/circle-images/walkers', {
-        recursive: true,
-      });
+      sinon.assert.calledOnce(circle.save);
       sinon.assert.calledWith(
-        fs.rename,
-        sinon.match(/^\/circle-images\/walkers.jpg.tmp-/),
-        '/circle-images/walkers.jpg',
+        fs.mkdir,
+        sinon.match(/\/circle-images\/\.staging-walkers-[^/]+\/variants$/),
+        sinon.match({ recursive: true }),
       );
+      sinon.assert.calledWith(image.toFile, sinon.match(/\/canonical\.jpg$/));
       for (const size of ['120x120', '742x496', '906x240', '1400x900']) {
         for (const ext of ['jpg', 'webp'])
           sinon.assert.calledWith(
             image.toFile,
-            `/circle-images/walkers/${size}.${ext}`,
+            sinon.match(new RegExp(`/variants/${size}\\.${ext}$`)),
           );
       }
+      sinon.assert.calledWith(
+        fs.rename,
+        sinon.match(/\/canonical\.jpg$/),
+        '/circle-images/walkers.jpg',
+      );
+      sinon.assert.calledWith(
+        fs.rename,
+        sinon.match(/\/variants$/),
+        '/circle-images/walkers',
+      );
       sinon.assert.calledWith(image.rotate);
       sinon.assert.calledWith(fs.rm, '/upload.png', {
         recursive: true,
@@ -207,18 +217,24 @@ describe('Admin circles controller', () => {
     });
   });
 
-  it('rolls back the new circle and assets after an image failure', async () => {
+  it('leaves existing assets in place when image generation fails', async () => {
     image.toFile.rejects(failure);
-    Tribe.findByIdAndDelete.rejects(failure);
-    await controller.create({ body: {}, file: { path: '/upload.png' } }, res);
+    await controller.create(
+      {
+        body: { label: 'Walkers', color: '1e3a8a' },
+        file: { path: '/upload.png' },
+      },
+      res,
+    );
     assert.strictEqual(res.statusCode, 400);
-    for (const file of [
-      '/upload.png',
-      '/circle-images/walkers.jpg',
-      '/circle-images/walkers',
-    ])
-      sinon.assert.calledWith(fs.rm, file, { recursive: true, force: true });
-    sinon.assert.calledWith(Tribe.findByIdAndDelete, 'circle-1');
+    assert.strictEqual(res.body.message, failure.message);
+    sinon.assert.notCalled(circle.save);
+    sinon.assert.notCalled(Tribe.findByIdAndDelete);
+    sinon.assert.notCalled(fs.rename);
+    sinon.assert.calledWith(fs.rm, sinon.match(/\/\.staging-walkers-/), {
+      recursive: true,
+      force: true,
+    });
   });
 
   it('cleans an upload when the update target is absent', async () => {
@@ -303,6 +319,210 @@ describe('Admin circles controller', () => {
     controller.processImageUpload({ is: () => false }, res, next);
     sinon.assert.calledOnce(next);
     sinon.assert.notCalled(uploadFile);
+  });
+
+  it('rejects a non-hexadecimal colour before saving or processing', async () => {
+    for (const color of ['zzzzzz', 123456]) {
+      await controller.create({ body: { label: 'Walkers', color } }, res);
+      assert.strictEqual(res.statusCode, 400);
+      assert.strictEqual(res.body.message, 'Please choose a valid colour.');
+    }
+    sinon.assert.notCalled(circle.save);
+    sinon.assert.notCalled(sharp);
+  });
+
+  it('keeps the stored colour when the submitted colour is blank', async () => {
+    circle.color = 'e74c3c';
+    await controller.update(
+      {
+        params: { circle: 'circle-1' },
+        body: { label: 'Walkers', color: '' },
+      },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(circle.color, 'e74c3c');
+  });
+
+  it('rejects an unsafe slug before writing image files', async () => {
+    circle.slug = '../outside';
+    await controller.update(
+      {
+        params: { circle: 'circle-1' },
+        body: { label: 'Walkers', color: '1e3a8a' },
+        file: { path: '/upload.png' },
+      },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 400);
+    assert.strictEqual(
+      res.body.message,
+      'Circle slug is not safe for image storage.',
+    );
+    sinon.assert.notCalled(sharp);
+    sinon.assert.notCalled(circle.save);
+  });
+
+  it('unsets cleared attribution fields', async () => {
+    const document = new mongoose.Schema({
+      label: String,
+      color: String,
+      public: Boolean,
+      attribution: String,
+      attribution_url: String,
+      description: String,
+      image: Boolean,
+      slug: String,
+      modified: Date,
+    });
+    const Probe =
+      mongoose.models.AdminCircleUnsetProbe ||
+      mongoose.model('AdminCircleUnsetProbe', document);
+    const stored = new Probe();
+    stored.init({
+      _id: new mongoose.Types.ObjectId(),
+      label: 'Walkers',
+      color: '1e3a8a',
+      public: true,
+      attribution: 'Artist',
+      attribution_url: 'https://example.org/artist',
+      description: 'Keep',
+      image: false,
+      slug: 'walkers',
+    });
+    stored.save = sinon.stub().resolves(stored);
+    stored.validate = sinon.stub().resolves();
+    stored.toJSON = () => stored.toObject();
+    query.exec.resolves(stored);
+    await controller.update(
+      {
+        params: { circle: 'circle-1' },
+        body: {
+          label: 'Walkers',
+          color: 'e74c3c',
+          public: true,
+          attribution: '   ',
+          attribution_url: '',
+          description: 'Keep',
+        },
+      },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 200);
+    assert.deepStrictEqual(stored.getChanges().$unset, {
+      attribution: 1,
+      attribution_url: 1,
+    });
+    assert.strictEqual(stored.color, 'e74c3c');
+  });
+
+  it('restores the previous image when saving fails after processing', async () => {
+    circle.image = true;
+    circle.save.rejects(failure);
+    await controller.update(
+      {
+        params: { circle: 'circle-1' },
+        body: { label: 'Walkers', color: '1e3a8a' },
+        file: { path: '/upload.png' },
+      },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 400);
+    sinon.assert.calledWith(
+      fs.rename,
+      sinon.match(/previous-canonical\.jpg$/),
+      '/circle-images/walkers.jpg',
+    );
+    sinon.assert.calledWith(
+      fs.rename,
+      sinon.match(/previous-variants$/),
+      '/circle-images/walkers',
+    );
+  });
+
+  it('publishes generated images when no previous files exist', async () => {
+    fs.rename.callsFake(async (_from, to) => {
+      if (String(to).includes('previous-')) throw missing;
+    });
+    await controller.create(
+      {
+        body: { label: 'Walkers', color: '1e3a8a' },
+        file: { path: '/upload.png' },
+      },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 201);
+    sinon.assert.calledWith(
+      fs.rename,
+      sinon.match(/\/canonical\.jpg$/),
+      '/circle-images/walkers.jpg',
+    );
+  });
+
+  it('restores previous files when publication fails', async () => {
+    fs.rename.callsFake(async (from, to) => {
+      if (
+        String(from).endsWith('/variants') &&
+        to === '/circle-images/walkers'
+      ) {
+        throw failure;
+      }
+    });
+    await controller.create(
+      {
+        body: { label: 'Walkers', color: '1e3a8a' },
+        file: { path: '/upload.png' },
+      },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 400);
+    sinon.assert.notCalled(circle.save);
+    sinon.assert.calledWith(
+      fs.rename,
+      sinon.match(/previous-canonical\.jpg$/),
+      '/circle-images/walkers.jpg',
+    );
+  });
+
+  it('restores a moved canonical image when variant backup fails', async () => {
+    fs.rename.callsFake(async (_from, to) => {
+      if (String(to).endsWith('previous-variants')) throw failure;
+    });
+    await controller.create(
+      {
+        body: { label: 'Walkers', color: '1e3a8a' },
+        file: { path: '/upload.png' },
+      },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 400);
+    sinon.assert.notCalled(circle.save);
+    sinon.assert.calledWith(
+      fs.rename,
+      sinon.match(/previous-canonical\.jpg$/),
+      '/circle-images/walkers.jpg',
+    );
+  });
+
+  it('discards a failed publication when the circle has no previous files', async () => {
+    fs.rename.callsFake(async (from, to) => {
+      if (String(to).includes('previous-')) throw missing;
+      if (
+        String(from).endsWith('/variants') &&
+        to === '/circle-images/walkers'
+      ) {
+        throw failure;
+      }
+    });
+    await controller.create(
+      {
+        body: { label: 'Walkers', color: '1e3a8a' },
+        file: { path: '/upload.png' },
+      },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 400);
+    sinon.assert.notCalled(circle.save);
   });
 
   it('validates multipart images through the shared upload handler', () => {
