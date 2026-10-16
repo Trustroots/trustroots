@@ -100,5 +100,5 @@ internal fun decodeOpenLocationCode(code: String): Pair<Double, Double>? {
         }
     }
     val centre = latitude + latitudeResolution / 2 to longitude + longitudeResolution / 2
-    return centre.takeIf { it.first in -90.0..90.0 && it.second in -180.0..180.0 }
+    return centre.takeIf { isValidWorldCoordinates(it.first, it.second) }
 }
