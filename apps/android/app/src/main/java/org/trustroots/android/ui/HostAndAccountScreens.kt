@@ -3,9 +3,11 @@ package org.trustroots.android.ui
 import android.Manifest
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.text.Html
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -46,13 +48,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
 import org.trustroots.android.api.AccountDetails
 import org.trustroots.android.api.ExperienceCreate
 import org.trustroots.android.api.HostOfferUpdate
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.BuildConfig
 import org.trustroots.android.notifications.MessageAlerts
+import org.trustroots.android.updates.ApkUpdateAlerts
+import org.trustroots.android.updates.ApkUpdateCheckResult
 
 private const val defaultHostLatitude = 48.6908333333
 private const val defaultHostLongitude = 9.14055555556
@@ -326,6 +333,15 @@ internal fun AccountSettingsScreen(
     contentPadding: PaddingValues = PaddingValues.Zero,
     enableMessageAlerts: (Activity, MemberSession, (String) -> Unit) -> Unit = MessageAlerts::enable,
     disableMessageAlerts: suspend (Context, MemberSession) -> Unit = MessageAlerts::disable,
+    previewUpdateAlerts: Boolean = BuildConfig.PREVIEW_UPDATE_ALERTS,
+    isUpdateAlertsEnabled: (Context) -> Boolean = { ApkUpdateAlerts.isEnabled(it) },
+    setUpdateAlertsEnabled: (Context, Boolean) -> Unit = { updateContext, enabled ->
+        ApkUpdateAlerts.setEnabled(updateContext, enabled)
+    },
+    checkPreviewUpdates: suspend (Context) -> ApkUpdateCheckResult = { ApkUpdateAlerts.checkNow(it) },
+    openPreviewRelease: (Context, String) -> Unit = { updateContext, url ->
+        updateContext.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    },
 ) {
     val context = LocalContext.current
     var messageAlertsEnabled by remember(session.member.username) {
@@ -333,6 +349,15 @@ internal fun AccountSettingsScreen(
     }
     var messageAlertStatus by remember { mutableStateOf<String?>(null) }
     val distributorStatus by MessageAlerts.status.collectAsState()
+    var updateAlertsEnabled by remember(session.member.username, previewUpdateAlerts) {
+        mutableStateOf(previewUpdateAlerts && isUpdateAlertsEnabled(context))
+    }
+    var updateStatus by remember { mutableStateOf<String?>(null) }
+    var updateReleaseUrl by remember { mutableStateOf<String?>(null) }
+    var checkingUpdates by remember { mutableStateOf(false) }
+    var updateCheckGeneration by remember { mutableIntStateOf(0) }
+    var updateCheckJob by remember { mutableStateOf<Job?>(null) }
+    val scope = rememberCoroutineScope()
     val startMessageAlerts: () -> Unit = {
         val activity = context as? Activity
         if (activity == null) messageAlertStatus = "Could not choose a push distributor."
@@ -345,6 +370,48 @@ internal fun AccountSettingsScreen(
         if (granted) startMessageAlerts()
         else messageAlertStatus = "Allow notifications in Android settings to receive message alerts."
     }
+    val checkForUpdates: () -> Unit = {
+        updateCheckJob?.cancel()
+        val generation = ++updateCheckGeneration
+        val job = scope.launch(start = CoroutineStart.LAZY) {
+            checkingUpdates = true
+            try {
+                val result = checkPreviewUpdates(context)
+                if (generation == updateCheckGeneration) {
+                    when (result) {
+                        ApkUpdateCheckResult.UpToDate -> {
+                            updateStatus = "You have the latest Android preview."
+                            updateReleaseUrl = null
+                        }
+                        is ApkUpdateCheckResult.NewVersion -> {
+                            updateStatus = "${result.release.versionName} is available."
+                            updateReleaseUrl = result.release.pageUrl
+                        }
+                        ApkUpdateCheckResult.Unavailable -> {
+                            updateStatus = "Could not check for updates. Try again later."
+                            updateReleaseUrl = null
+                        }
+                    }
+                }
+            } finally {
+                if (generation == updateCheckGeneration) {
+                    checkingUpdates = false
+                    updateCheckJob = null
+                }
+            }
+        }
+        updateCheckJob = job
+        job.start()
+    }
+    val updatePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            setUpdateAlertsEnabled(context, true)
+            updateAlertsEnabled = true
+            checkForUpdates()
+        } else {
+            updateStatus = "Allow Trustroots notifications in Android settings to receive update alerts."
+        }
+    }
     var details by remember { mutableStateOf<AccountDetails?>(null) }
     var email by remember { mutableStateOf("") }
     var newsletter by remember { mutableStateOf(false) }
@@ -356,7 +423,6 @@ internal fun AccountSettingsScreen(
     var changingPassword by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
     LaunchedEffect(session.member.username) {
         loading = true
         api.accountDetails(session).onSuccess {
@@ -394,6 +460,37 @@ internal fun AccountSettingsScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp),
         )
+        if (previewUpdateAlerts) {
+            HorizontalDivider(Modifier.padding(vertical = 20.dp))
+            ApkUpdateSettings(
+                enabled = updateAlertsEnabled,
+                checking = checkingUpdates,
+                status = updateStatus,
+                releaseUrl = updateReleaseUrl,
+                onToggle = {
+                    if (updateAlertsEnabled) {
+                        updateCheckGeneration++
+                        updateCheckJob?.cancel()
+                        updateCheckJob = null
+                        checkingUpdates = false
+                        setUpdateAlertsEnabled(context, false)
+                        updateAlertsEnabled = false
+                        updateStatus = "Update alerts are off."
+                        updateReleaseUrl = null
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        updatePermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        setUpdateAlertsEnabled(context, true)
+                        updateAlertsEnabled = true
+                        checkForUpdates()
+                    }
+                },
+                onCheck = checkForUpdates,
+                onOpenRelease = { url -> openPreviewRelease(context, url) },
+            )
+        }
         when {
             loading -> CircularProgressIndicator(modifier = Modifier.padding(top = 20.dp))
             else -> {
@@ -517,5 +614,35 @@ internal fun AccountSettingsScreen(
         Spacer(Modifier.height(24.dp))
             }
         }
+    }
+}
+
+@Composable
+internal fun ApkUpdateSettings(
+    enabled: Boolean,
+    checking: Boolean,
+    status: String?,
+    releaseUrl: String?,
+    onToggle: () -> Unit,
+    onCheck: () -> Unit,
+    onOpenRelease: (String) -> Unit,
+) {
+    Text("APK updates", style = MaterialTheme.typography.titleMedium)
+    Text(
+        "Receive an alert when a new signed Android preview is available on GitHub.",
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 6.dp),
+    )
+    Button(onClick = onToggle, modifier = Modifier.padding(top = 12.dp)) {
+        Text(if (enabled) "Turn off update alerts" else "Turn on update alerts")
+    }
+    if (enabled) {
+        TextButton(onClick = onCheck, enabled = !checking) {
+            Text(if (checking) "Checking for updates…" else "Check for updates now")
+        }
+    }
+    status?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+    releaseUrl?.let { url ->
+        TextButton(onClick = { onOpenRelease(url) }) { Text("Open release page") }
     }
 }
