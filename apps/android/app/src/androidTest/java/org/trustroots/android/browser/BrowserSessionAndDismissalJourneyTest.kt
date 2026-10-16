@@ -15,9 +15,10 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.performClick
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.espresso.Espresso.pressBack
 import java.io.IOException
 import java.net.ServerSocket
 import java.net.Socket
@@ -34,6 +35,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.trustroots.android.testing.pressBackFromNonActivityRoot
 
 @RunWith(AndroidJUnit4::class)
 class BrowserSessionAndDismissalJourneyTest {
@@ -114,16 +116,16 @@ class BrowserSessionAndDismissalJourneyTest {
                 ),
             )
         }
-        compose.onNodeWithText("Open external website?").assertExists()
+        compose.onNodeWithText("Open external website?").assertIsDisplayed()
 
-        pressBack()
+        pressBackFromNonActivityRoot(compose.activity)
         compose.waitUntil(5_000) {
             compose.onAllNodesWithText("Open external website?").fetchSemanticsNodes().isEmpty()
         }
         assertTrue(openedIntents.isEmpty())
         compose.runOnIdle { assertEquals(0, closeCount) }
 
-        pressBack()
+        Espresso.pressBack()
         compose.runOnIdle { assertEquals(1, closeCount) }
     }
 

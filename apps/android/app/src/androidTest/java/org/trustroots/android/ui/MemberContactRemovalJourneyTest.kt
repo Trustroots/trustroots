@@ -4,12 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.activity.ComponentActivity
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.net.ServerSocket
@@ -29,13 +29,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.trustroots.android.testing.pressBackFromNonActivityRoot
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 
 @RunWith(AndroidJUnit4::class)
 class MemberContactRemovalJourneyTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
     private val server = ServerSocket(0).apply { soTimeout = 20_000 }
     private val session = MemberSession("connect.sid=fictional-session", MobileMember("steady-heron", "Steady Heron"))
@@ -121,8 +122,10 @@ class MemberContactRemovalJourneyTest {
         compose.onNodeWithText("Confirm").performClick()
         try {
             assertTrue("The local delete request should start", deleteReceived.await(10, TimeUnit.SECONDS))
+            compose.onNodeWithText("Remove contact?").assertIsDisplayed()
+            compose.onNodeWithText("Removing…").assertIsNotEnabled()
 
-            Espresso.pressBack()
+            pressBackFromNonActivityRoot(compose.activity)
             compose.onNodeWithText("Remove contact?").assertIsDisplayed()
             compose.onNodeWithText("Removing…").assertIsNotEnabled()
 

@@ -9,8 +9,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
-import android.view.KeyEvent
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.ByteArrayOutputStream
 import java.io.EOFException
@@ -35,6 +33,7 @@ import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.testing.pressBackFromNonActivityRoot
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
@@ -78,8 +77,8 @@ class ProfileLanguageAndFailureJourneyTest {
         compose.onNodeWithText("✓ ${languageName(UNKNOWN_LANGUAGE)}").performScrollTo().performClick()
         compose.onNodeWithText("Spanish").performScrollTo().performClick()
         compose.waitForIdle()
-        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
-        compose.waitForIdle()
+        compose.onNodeWithText("✓ Spanish").assertIsDisplayed()
+        pressBackFromNonActivityRoot(compose.activity)
         compose.waitUntil(5_000) {
             compose.onAllNodesWithText("✓ Spanish").fetchSemanticsNodes().isEmpty()
         }
