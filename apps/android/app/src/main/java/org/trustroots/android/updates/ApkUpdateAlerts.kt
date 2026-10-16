@@ -147,14 +147,21 @@ internal object ApkUpdateAlerts {
         )
     }
 
-    suspend fun checkNow(context: Context): ApkUpdateCheckResult = checkForAndroidPreviewUpdate(
-        isEnabled = { isEnabled(context) },
-        fetchRelease = { fetchLatestRelease() },
-        notify = { notifyOnce(context, it) },
+    suspend fun checkNow(context: Context): ApkUpdateCheckResult =
+        checkNow(context, BuildConfig.PREVIEW_UPDATE_ALERTS, RELEASES_URL)
+
+    internal suspend fun checkNow(
+        context: Context,
+        previewAlertsEnabled: Boolean,
+        releasesUrl: String,
+    ): ApkUpdateCheckResult = checkForAndroidPreviewUpdate(
+        isEnabled = { isEnabled(context, previewAlertsEnabled) },
+        fetchRelease = { fetchLatestRelease(releasesUrl) },
+        notify = { notifyOnce(context, it, previewAlertsEnabled) },
     )
 
-    private fun fetchLatestRelease(): AndroidPreviewRelease? {
-        val connection = URL(RELEASES_URL).openConnection() as HttpURLConnection
+    internal fun fetchLatestRelease(releasesUrl: String = RELEASES_URL): AndroidPreviewRelease? {
+        val connection = URL(releasesUrl).openConnection() as HttpURLConnection
         connection.connectTimeout = 10_000
         connection.readTimeout = 10_000
         connection.setRequestProperty("Accept", "application/vnd.github+json")
@@ -168,7 +175,11 @@ internal object ApkUpdateAlerts {
         }
     }
 
-    private fun notifyOnce(context: Context, release: AndroidPreviewRelease) {
+    private fun notifyOnce(
+        context: Context,
+        release: AndroidPreviewRelease,
+        previewAlertsEnabled: Boolean = BuildConfig.PREVIEW_UPDATE_ALERTS,
+    ) {
         val manager = context.getSystemService(NotificationManager::class.java)
         val permissionGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
@@ -177,7 +188,7 @@ internal object ApkUpdateAlerts {
             if (!shouldPostUpdateNotification(
                     notificationsEnabled = manager.areNotificationsEnabled(),
                     permissionGranted = permissionGranted,
-                    alertsEnabled = isEnabled(context),
+                    alertsEnabled = isEnabled(context, previewAlertsEnabled),
                     versionCode = release.versionCode,
                     lastNotifiedVersionCode = prefs.getInt(LAST_NOTIFIED, 0),
                 )

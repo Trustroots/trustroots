@@ -151,6 +151,7 @@ internal fun TrustrootsApp(
     if (session == null) {
         SignInScreen(
             analytics = analytics,
+            apiBaseUrl = apiBaseUrl,
             initialMessage = signedOutMessage,
             onSignedIn = {
                 sessionStore.save(it)
@@ -229,6 +230,7 @@ private fun rememberBuildDate(): String {
 @Composable
 private fun SignInScreen(
     analytics: UsageAnalytics,
+    apiBaseUrl: String,
     initialMessage: String?,
     onSignedIn: (MemberSession) -> Unit,
 ) {
@@ -238,7 +240,7 @@ private fun SignInScreen(
     var isLoading by remember { mutableStateOf(false) }
     var browserRoute by remember { mutableStateOf<BrowserRoute?>(null) }
     val scope = rememberCoroutineScope()
-    val api = remember { MobileApiClient(BuildConfig.API_BASE_URL) }
+    val api = remember(apiBaseUrl) { MobileApiClient(apiBaseUrl) }
     val buildDate = rememberBuildDate()
     val attemptSignIn: () -> Unit = {
         scope.launch {

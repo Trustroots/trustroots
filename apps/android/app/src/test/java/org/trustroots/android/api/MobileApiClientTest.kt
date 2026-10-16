@@ -266,6 +266,27 @@ class MobileApiClientTest {
         assertThrows(IllegalArgumentException::class.java) {
             secureApiBaseURL("https://api.example.test/mobile?token=secret")
         }
+        assertThrows(IllegalArgumentException::class.java) {
+            secureApiBaseURL("https://api.example.test/mobile")
+        }
+    }
+
+    @Test fun encodesAvatarIdentifiersAndUsesTheDefaultThumbnailSize() {
+        val api = MobileApiClient("https://api.example.test/")
+        assertEquals(
+            "https://api.example.test/api/users/member%2Fone/avatar?size=128",
+            api.avatarURL("member/one").toString(),
+        )
+    }
+
+    @Test fun readsCircleMembershipIdentifiersAndSkipsIncompleteReferences() {
+        val session = MemberSession("connect.sid=fictional", MobileMember("quiet-fox", "Quiet Fox"))
+        val (result, request) = withApiResponse(
+            200,
+            """[{"tribe":{"_id":"circle-one"}},{"tribe":{"id":"circle-two"}},{"tribe":{}},{"tribe":null},{}]""",
+        ) { baseURL -> runBlocking { MobileApiClient(baseURL).circleMemberships(session) } }
+        assertEquals(setOf("circle-one", "circle-two"), result.getOrThrow())
+        assertEquals("GET /api/users/memberships HTTP/1.1", request.line)
     }
 
     @Test

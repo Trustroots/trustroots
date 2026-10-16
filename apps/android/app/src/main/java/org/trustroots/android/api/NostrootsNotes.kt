@@ -20,8 +20,9 @@ data class CommunityNote(
 class NostrootsNotesClient(
     private val onNote: (CommunityNote) -> Unit,
     private val onError: () -> Unit,
+    socketFactory: WebSocket.Factory = httpClient,
 ) {
-    private val socket: WebSocket = httpClient.newWebSocket(
+    private val socket: WebSocket = socketFactory.newWebSocket(
         Request.Builder().url("wss://relay.trustroots.org").build(),
         object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {

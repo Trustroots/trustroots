@@ -368,7 +368,7 @@ internal fun HostMapScreen(
                 }
                 view.invalidate()
             },
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().testTag("hostMapView"),
         )
         Column(
             modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()
