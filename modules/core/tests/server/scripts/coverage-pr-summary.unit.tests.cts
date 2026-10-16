@@ -278,6 +278,9 @@ describe('Coverage PR summary unit tests', () => {
               encoding: 'utf8',
               env: {
                 ...process.env,
+                // Exercise the dependency-free CI path without preloading the
+                // application's instrumenter into each reporting process.
+                NODE_OPTIONS: '',
                 NODE_PATH: '',
                 PR_BASE_SHA: '',
                 PR_HEAD_SHA: '',
