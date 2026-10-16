@@ -1,7 +1,8 @@
 # Targeted request-limit index rollout
 
-The targeted signup, support, sign-in, recovery, confirmation-resend and avatar-upload limits
-store counters in the `requestlimits` collection. Before enabling the updated
+The targeted signup, support, sign-in, recovery, confirmation-resend,
+session-management and avatar-upload limits store counters in the
+requestlimits collection. Before enabling the updated
 application in production, create its unique and TTL indexes against the
 application database:
 
@@ -32,3 +33,6 @@ across client addresses. Support defaults to ten requests per client address
 and ten per signed-in member per hour; anonymous requests use the address
 allowance. Configure these policies under `targetedRequestLimits.signup` and
 `targetedRequestLimits.support`.
+Session-management mutations use a separate `manageSessions` policy in
+`targetedRequestLimits` so password-protected session changes do not consume
+the confirmation-email resend allowance.
