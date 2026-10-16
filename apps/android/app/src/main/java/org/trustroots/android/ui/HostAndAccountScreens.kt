@@ -333,11 +333,9 @@ internal fun AccountSettingsScreen(
     enableMessageAlerts: (Activity, MemberSession, (String) -> Unit) -> Unit = MessageAlerts::enable,
     disableMessageAlerts: suspend (Context, MemberSession) -> Unit = MessageAlerts::disable,
     previewUpdateAlerts: Boolean = BuildConfig.PREVIEW_UPDATE_ALERTS,
-    isUpdateAlertsEnabled: (Context) -> Boolean = { ApkUpdateAlerts.isEnabled(it) },
-    setUpdateAlertsEnabled: (Context, Boolean) -> Unit = { updateContext, enabled ->
-        ApkUpdateAlerts.setEnabled(updateContext, enabled)
-    },
-    checkPreviewUpdates: suspend (Context) -> ApkUpdateCheckResult = { ApkUpdateAlerts.checkNow(it) },
+    isUpdateAlertsEnabled: (Context) -> Boolean = ApkUpdateAlerts::isEnabled,
+    setUpdateAlertsEnabled: (Context, Boolean) -> Unit = ApkUpdateAlerts::setEnabled,
+    checkPreviewUpdates: suspend (Context) -> ApkUpdateCheckResult = ApkUpdateAlerts::checkNow,
     openPreviewRelease: (Context, String) -> Unit = { updateContext, url ->
         updateContext.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     },

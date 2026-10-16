@@ -1,8 +1,11 @@
 package org.trustroots.android.ui
 
 import android.Manifest
+import android.app.Activity
+import android.app.Instrumentation
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.ComponentActivity
@@ -84,6 +87,7 @@ class AccountPreviewUpdateAlertsJourneyTest {
             activeSocket.getAndSet(null)?.let { runCatching { it.close() } }
             responder?.join(2_000)
             assertTrue("The local account fixture should stop after shutdown", responder?.isAlive != true)
+            responderFailure.get()?.let { throw AssertionError("The local account fixture failed", it) }
         } finally {
             restorePreferences(messagePreferences, previousMessagePreferences)
             MessageAlerts.status.value = previousMessageStatus
@@ -296,6 +300,61 @@ class AccountPreviewUpdateAlertsJourneyTest {
         compose.onNodeWithText("Turn off update alerts").performScrollTo().assertIsDisplayed()
         assertEquals(listOf(true), enabledValues.toList())
         assertEquals(1, checks.get())
+    }
+
+    @Test fun defaultReleaseActionLaunchesTheExpectedUrlWithoutOpeningABrowser() {
+        startAccountFixture()
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val monitor = object : Instrumentation.ActivityMonitor() {
+            @Volatile var interceptedIntent: Intent? = null
+
+            override fun onStartActivity(intent: Intent): Instrumentation.ActivityResult? {
+                if (intent.action != Intent.ACTION_VIEW) return null
+                interceptedIntent = Intent(intent)
+                return Instrumentation.ActivityResult(Activity.RESULT_CANCELED, null)
+            }
+        }
+        val release = AndroidPreviewRelease(
+            versionCode = 97,
+            versionName = "Offline preview 97",
+            pageUrl = "https://github.com/Trustroots/trustroots/releases/tag/android-preview-97",
+        )
+        instrumentation.addMonitor(monitor)
+
+        try {
+            compose.setContent {
+                TrustrootsTheme {
+                    AccountSettingsScreen(
+                        api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                        session = MemberSession("connect.sid=fictional-session", MobileMember("steady-heron", "Steady Heron")),
+                        onSessionInvalidated = {},
+                        onBack = {},
+                        onResetPassword = {},
+                        onSignedOut = {},
+                        previewUpdateAlerts = true,
+                        isUpdateAlertsEnabled = { false },
+                        setUpdateAlertsEnabled = { _, _ -> },
+                        checkPreviewUpdates = { ApkUpdateCheckResult.NewVersion(release) },
+                        // Keep the default openPreviewRelease callback under test.
+                    )
+                }
+            }
+
+            waitForText("member@example.test")
+            compose.onNodeWithText("Turn on update alerts").performScrollTo().performClick()
+            waitForText("Offline preview 97 is available.")
+            compose.onNodeWithText("Open release page").performScrollTo().performClick()
+            compose.waitUntil(5_000) { monitor.interceptedIntent != null }
+
+            val intent = monitor.interceptedIntent
+            assertEquals(Intent.ACTION_VIEW, intent?.action)
+            assertEquals(release.pageUrl, intent?.dataString)
+            responder?.join(2_000)
+            assertTrue("The local account fixture should finish its response", responder?.isAlive != true)
+            responderFailure.get()?.let { throw AssertionError("The local account fixture failed", it) }
+        } finally {
+            instrumentation.removeMonitor(monitor)
+        }
     }
 
     private fun deniedNotificationContext(): Context = object : ContextWrapper(compose.activity) {
