@@ -18,6 +18,15 @@ export async function getCircles(): Promise<AdminCircle[]> {
   return data;
 }
 
+const editableFields = [
+  'label',
+  'color',
+  'public',
+  'attribution',
+  'attribution_url',
+  'description',
+] as const;
+
 export async function saveCircle(
   circle: AdminCircle,
   image?: File | null,
@@ -25,9 +34,10 @@ export async function saveCircle(
   let payload: AdminCircle | FormData = circle;
   if (image) {
     const formData = new FormData();
-    Object.entries(circle).forEach(([key, value]) =>
-      formData.append(key, value == null ? '' : String(value)),
-    );
+    for (const field of editableFields) {
+      const value = circle[field];
+      formData.append(field, value == null ? '' : String(value));
+    }
     formData.append('image', image);
     payload = formData;
   }

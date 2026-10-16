@@ -18,6 +18,7 @@ x-production-app: &production-app
   volumes:
     - ./data/local.js:/home/app/trustroots/config/env/local.js
     - ./data/uploads-profile:/home/app/trustroots/public/uploads-profile
+    - ./data/uploads-circle:/home/app/trustroots/public/uploads-circle
   depends_on:
     - mongodb
 

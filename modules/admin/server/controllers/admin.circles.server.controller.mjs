@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import mongoose from 'mongoose';
@@ -17,21 +18,49 @@ const imageSizes = [
 const circleFields =
   '_id slug label count color image public attribution attribution_url description created modified';
 
+function validationError(field, message) {
+  const error = new Error(message);
+  error.errors = { [field]: { message } };
+  return error;
+}
+
 function parseBoolean(value, fallback) {
   if (value === undefined) return fallback;
   if (typeof value === 'boolean') return value;
   return value === 'true';
 }
 
+function blankToUndefined(value) {
+  const text = typeof value === 'string' ? value.trim() : '';
+  // Assigning undefined marks the path for $unset on save.
+  return text || undefined;
+}
+
+function assertColour(color) {
+  if (typeof color !== 'string' || !/^[0-9a-fA-F]{6}$/.test(color)) {
+    throw validationError('color', 'Please choose a valid colour.');
+  }
+}
+
+function assertSlug(slug) {
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug || '')) {
+    throw validationError('slug', 'Circle slug is not safe for image storage.');
+  }
+}
+
 function circleData(body, existing) {
-  return {
+  const data = {
     label: body.label,
-    color: body.color,
     public: parseBoolean(body.public, existing ? existing.public : true),
-    attribution: body.attribution || undefined,
-    attribution_url: body.attribution_url || undefined,
-    description: body.description,
+    attribution: blankToUndefined(body.attribution),
+    attribution_url: blankToUndefined(body.attribution_url),
   };
+  if (body.description !== undefined) data.description = body.description;
+  if (body.color !== undefined && body.color !== '') {
+    assertColour(body.color);
+    data.color = body.color;
+  }
+  return data;
 }
 
 function imageRoot() {
@@ -54,39 +83,94 @@ async function removeIfExists(filePath) {
   }
 }
 
-async function processCircleImage(filePath, slug) {
-  const outputFolder = variantsPath(slug);
-  await fs.promises.mkdir(outputFolder, { recursive: true });
-  const canonicalPath = sourcePath(slug);
-  const temporaryCanonicalPath = `${canonicalPath}.tmp-${Date.now()}`;
-  await sharp(filePath)
-    .rotate()
-    .jpeg({ quality: 85 })
-    .toFile(temporaryCanonicalPath);
-  await fs.promises.rename(temporaryCanonicalPath, canonicalPath);
+async function moveAside(from, to) {
+  try {
+    await fs.promises.rename(from, to);
+    return true;
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+    return false;
+  }
+}
 
-  await Promise.all(
-    imageSizes.flatMap(size =>
-      ['jpg', 'webp'].map(async extension => {
-        let image = sharp(canonicalPath).resize({
-          width: size[0],
-          height: size[1],
-          fit: 'cover',
-        });
-        image =
-          extension === 'webp'
-            ? image.webp({ quality: 72 })
-            : image.jpeg({ quality: 72 });
-        await image.toFile(
-          path.join(outputFolder, `${size.join('x')}.${extension}`),
-        );
-      }),
-    ),
+async function restorePrevious(state) {
+  await removeIfExists(state.canonical);
+  await removeIfExists(state.variants);
+  if (state.hadCanonical) {
+    await moveAside(state.canonicalBackup, state.canonical);
+  }
+  if (state.hadVariants) await moveAside(state.variantsBackup, state.variants);
+}
+
+async function processCircleImage(filePath, slug) {
+  assertSlug(slug);
+  const staging = path.join(
+    imageRoot(),
+    `.staging-${slug}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
   );
+  const variantsStage = path.join(staging, 'variants');
+  const state = {
+    canonical: sourcePath(slug),
+    variants: variantsPath(slug),
+    canonicalBackup: path.join(staging, 'previous-canonical.jpg'),
+    variantsBackup: path.join(staging, 'previous-variants'),
+    hadCanonical: false,
+    hadVariants: false,
+  };
+  let swapped = false;
+  try {
+    await fs.promises.mkdir(variantsStage, { recursive: true, mode: 0o700 });
+    const canonicalStage = path.join(staging, 'canonical.jpg');
+    await sharp(filePath).rotate().jpeg({ quality: 85 }).toFile(canonicalStage);
+    await Promise.all(
+      imageSizes.flatMap(size =>
+        ['jpg', 'webp'].map(async extension => {
+          let image = sharp(canonicalStage).resize({
+            width: size[0],
+            height: size[1],
+            fit: 'cover',
+          });
+          image =
+            extension === 'webp'
+              ? image.webp({ quality: 72 })
+              : image.jpeg({ quality: 72 });
+          await image.toFile(
+            path.join(variantsStage, `${size.join('x')}.${extension}`),
+          );
+        }),
+      ),
+    );
+    state.hadCanonical = await moveAside(
+      state.canonical,
+      state.canonicalBackup,
+    );
+    state.hadVariants = await moveAside(state.variants, state.variantsBackup);
+    swapped = true;
+    await fs.promises.rename(canonicalStage, state.canonical);
+    await fs.promises.rename(variantsStage, state.variants);
+    return {
+      async commit() {
+        await removeIfExists(staging);
+      },
+      async rollback() {
+        await restorePrevious(state);
+        await removeIfExists(staging);
+      },
+    };
+  } catch (err) {
+    if (swapped) await restorePrevious(state);
+    else if (state.hadCanonical) {
+      await moveAside(state.canonicalBackup, state.canonical);
+    }
+    await removeIfExists(staging);
+    throw err;
+  }
 }
 
 async function moveCircleImage(oldSlug, newSlug) {
   if (!oldSlug || oldSlug === newSlug) return;
+  assertSlug(oldSlug);
+  assertSlug(newSlug);
   try {
     await fs.promises.rename(sourcePath(oldSlug), sourcePath(newSlug));
   } catch (err) {
@@ -101,6 +185,28 @@ async function moveCircleImage(oldSlug, newSlug) {
 
 function sendError(res, err) {
   return res.status(400).send({ message: errorService.getErrorMessage(err) });
+}
+
+async function saveCircle(circle, filePath, oldSlug) {
+  let publication;
+  let saved = false;
+  if (filePath) {
+    assertSlug(circle.slug);
+    publication = await processCircleImage(filePath, circle.slug);
+    circle.image = true;
+  }
+  try {
+    await circle.save();
+    saved = true;
+    if (publication) await publication.commit();
+    if (circle.image && oldSlug && oldSlug !== circle.slug) {
+      await moveCircleImage(oldSlug, circle.slug);
+    }
+    return circle;
+  } catch (err) {
+    if (publication && !saved) await publication.rollback();
+    throw err;
+  }
 }
 
 export const list = async (req, res) => {
@@ -130,20 +236,12 @@ export const get = async (req, res) => {
 export const create = async (req, res) => {
   let circle;
   try {
-    circle = await new Tribe(circleData(req.body)).save();
-    if (req.file) {
-      await processCircleImage(req.file.path, circle.slug);
-      circle.image = true;
-      await circle.save();
-    }
+    circle = new Tribe(circleData(req.body));
+    circle.modified = new Date();
+    await circle.validate();
+    await saveCircle(circle, req.file?.path);
     return res.status(201).json(circle.toJSON());
   } catch (err) {
-    if (req.file?.path) await removeIfExists(req.file.path);
-    if (circle?.slug) {
-      await removeIfExists(sourcePath(circle.slug));
-      await removeIfExists(variantsPath(circle.slug));
-      await Tribe.findByIdAndDelete(circle._id).catch(() => {});
-    }
     return sendError(res, err);
   } finally {
     if (req.file?.path) await removeIfExists(req.file.path);
@@ -157,14 +255,8 @@ export const update = async (req, res) => {
     const oldSlug = circle.slug;
     Object.assign(circle, circleData(req.body, circle));
     circle.modified = new Date();
-    await circle.save();
-    if (circle.image && oldSlug !== circle.slug)
-      await moveCircleImage(oldSlug, circle.slug);
-    if (req.file) {
-      await processCircleImage(req.file.path, circle.slug);
-      circle.image = true;
-      await circle.save();
-    }
+    await circle.validate();
+    await saveCircle(circle, req.file?.path, oldSlug);
     return res.json(circle.toJSON());
   } catch (err) {
     return sendError(res, err);
