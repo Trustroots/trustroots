@@ -148,8 +148,12 @@ To run
 the native UI tests on a connected Android device:
 
 ```sh
-./gradlew connectedDebugAndroidTest
+./gradlew -PtrustrootsApiUrl=http://127.0.0.1:38081 connectedDebugAndroidTest
 ```
+
+The localhost override lets public API wrappers use the device-test fixtures.
+The relay integration tests use MockWebServer to exercise real WebSocket
+connections locally; this dependency is only included in JVM tests.
 
 Android changes also run all unit and device tests on an API 36 emulator in the
 Android debug APK workflow, publishing combined line and branch coverage tables

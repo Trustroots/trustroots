@@ -1,6 +1,7 @@
 package org.trustroots.android.ui
 
 import androidx.activity.compose.BackHandler
+import android.content.Context
 import android.location.Geocoder
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -101,6 +102,7 @@ internal fun HostMapScreen(
     geocoderLookup: ((String, Int) -> List<android.location.Address>?)? = null,
     notesClientFactory: ((onNote: (CommunityNote) -> Unit, onError: () -> Unit) -> NostrootsNotesClient) =
         { onNote, onError -> NostrootsNotesClient(onNote, onError) },
+    mapViewFactory: (Context) -> MapView = { MapView(it) },
 ) {
     val context = LocalContext.current
     val keyboard = LocalSoftwareKeyboardController.current
@@ -176,7 +178,7 @@ internal fun HostMapScreen(
             userAgentValue = "TrustrootsAndroid/${org.trustroots.android.BuildConfig.VERSION_NAME} (+https://www.trustroots.org)"
             expirationOverrideDuration = 7L * 24 * 60 * 60 * 1000
         }
-        MapView(context).apply {
+        mapViewFactory(context).apply {
             // The AndroidView holder below can be detached and re-attached (e.g. when navigating
             // to a host detail and back). With the default destroy mode, MapView.onDetachedFromWindow()
             // calls onDetach(), invalidating MapViewRepository (getRepository() then dereferences a

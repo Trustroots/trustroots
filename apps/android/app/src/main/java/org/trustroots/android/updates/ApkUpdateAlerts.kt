@@ -154,10 +154,13 @@ internal object ApkUpdateAlerts {
         context: Context,
         previewAlertsEnabled: Boolean,
         releasesUrl: String,
+        postNotification: (NotificationManager, Int, Notification) -> Unit = { manager, id, notification ->
+            manager.notify(id, notification)
+        },
     ): ApkUpdateCheckResult = checkForAndroidPreviewUpdate(
         isEnabled = { isEnabled(context, previewAlertsEnabled) },
         fetchRelease = { fetchLatestRelease(releasesUrl) },
-        notify = { notifyOnce(context, it, previewAlertsEnabled) },
+        notify = { notifyOnce(context, it, previewAlertsEnabled, postNotification) },
     )
 
     private fun fetchLatestRelease(releasesUrl: String): AndroidPreviewRelease? {
@@ -179,6 +182,7 @@ internal object ApkUpdateAlerts {
         context: Context,
         release: AndroidPreviewRelease,
         previewAlertsEnabled: Boolean,
+        postNotification: (NotificationManager, Int, Notification) -> Unit,
     ) {
         val manager = context.getSystemService(NotificationManager::class.java)
         val permissionGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
@@ -211,7 +215,7 @@ internal object ApkUpdateAlerts {
                 .setAutoCancel(true)
                 .build()
             try {
-                manager.notify(NOTIFICATION_ID, notification)
+                postNotification(manager, NOTIFICATION_ID, notification)
             } catch (_: SecurityException) {
                 // Permission may have been revoked after the check above.
                 return

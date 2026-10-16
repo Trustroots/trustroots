@@ -9,8 +9,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
-import androidx.test.platform.app.InstrumentationRegistry
-import android.view.KeyEvent
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.ByteArrayOutputStream
 import java.io.EOFException
@@ -77,7 +76,9 @@ class ProfileLanguageAndFailureJourneyTest {
         compose.onNodeWithText("English, ${languageName(UNKNOWN_LANGUAGE)}").performClick()
         compose.onNodeWithText("✓ ${languageName(UNKNOWN_LANGUAGE)}").performScrollTo().performClick()
         compose.onNodeWithText("Spanish").performScrollTo().performClick()
-        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        compose.waitForIdle()
+        Espresso.pressBack()
+        compose.waitForIdle()
         compose.waitUntil(5_000) {
             compose.onAllNodesWithText("✓ Spanish").fetchSemanticsNodes().isEmpty()
         }
