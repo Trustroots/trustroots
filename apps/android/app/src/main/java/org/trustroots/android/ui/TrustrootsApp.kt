@@ -240,7 +240,7 @@ private fun SignInScreen(
             error = null
             api.signIn(username.trim(), password)
                 .onSuccess(onSignedIn)
-                .onFailure { error = it.message ?: "Could not reach Trustroots." }
+                .onFailure { error = it.messageOr("Could not reach Trustroots.") }
             isLoading = false
         }
         Unit
