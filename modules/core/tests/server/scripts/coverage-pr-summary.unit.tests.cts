@@ -110,7 +110,7 @@ describe('Coverage PR summary unit tests', () => {
       table.should.containEql('<table>');
       table.should.containEql('<th>Result</th>');
       table.should.containEql('<td>Client</td>');
-      table.should.containEql('<td>✓ Passed</td>');
+      table.should.containEql('<td>✅ Passed</td>');
       table.should.containEql('2026-07-03 19:29 UTC<br>Duration 1m 23s');
       table.should.containEql(
         '<pre>Statements  🟢 100.00%\nBranches    🟡 99.95%',
@@ -133,15 +133,30 @@ describe('Coverage PR summary unit tests', () => {
     it('renders mapped areas and unmapped specs', () => {
       const table = renderE2eAreaTable(e2eLane);
 
-      table.should.containEql('| Messages | ✓ Passed | 6 | 0 | 6 |');
+      table.should.containEql('| Messages | ✅ Passed | 6 | 0 | 6 |');
       table.should.containEql(
-        '| Other (unmapped specs) | ✓ Passed | 1 | 0 | 1 |',
+        '| Other (unmapped specs) | ✅ Passed | 1 | 0 | 1 |',
       );
       table.should.containEql('| **Total** |  | **7** | **0** | **7** |');
     });
   });
 
   describe('buildMarkdown', () => {
+    it('hides the visible coverage table only when every recorded suite passed', () => {
+      const passing = buildMarkdown([clientLane, e2eLane]);
+      const visible = passing.slice(0, passing.indexOf('<details>'));
+      assert.match(visible, /Coverage status: \*\*✅ Passed\*\*/);
+      assert.doesNotMatch(visible, /<table>/);
+      assert.match(passing.slice(passing.indexOf('<details>')), /<table>/);
+      for (const status of ['failed', 'blocked', 'skipped', 'unknown']) {
+        const output = buildMarkdown([clientLane, { ...e2eLane, status }]);
+        assert.match(output.slice(0, output.indexOf('<details>')), /<table>/);
+      }
+      assert.doesNotMatch(
+        buildMarkdown([]),
+        /Coverage status: \*\*✅ Passed\*\*/,
+      );
+    });
     it('keeps sections ordered and refreshes changes without breaking folded details', () => {
       const {
         summariseNumstat,
@@ -292,7 +307,7 @@ describe('Coverage PR summary unit tests', () => {
 
       markdown.should.startWith(marker);
       markdown.should.containEql('## Pull request overview');
-      markdown.should.containEql('Coverage status: **Passing**');
+      markdown.should.containEql('Coverage status: **✅ Passed**');
       markdown.should.containEql('[this workflow run]');
       markdown.should.containEql('coverage-report');
     });

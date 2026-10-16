@@ -117,7 +117,7 @@ function formatStatus(status: string | undefined): string {
   const labels: Record<string, string> = {
     blocked: '✗ Blocked',
     failed: '✗ Failed',
-    passed: '✓ Passed',
+    passed: '✅ Passed',
     skipped: '⚪ Skipped',
     unknown: '⚪ Unknown',
   };
@@ -301,7 +301,7 @@ function areaStatus(result: AreaResult): string {
   }
 
   if (result.passed > 0) {
-    return '✓ Passed';
+    return '✅ Passed';
   }
 
   return 'Skipped';
@@ -410,7 +410,7 @@ function overallStatus(lanes: Lane[]): string {
     return 'Partially refreshed';
   }
 
-  return 'Passing';
+  return '✅ Passed';
 }
 
 function buildMarkdown(lanes: Lane[], options: BuildOptions = {}): string {
@@ -426,8 +426,9 @@ function buildMarkdown(lanes: Lane[], options: BuildOptions = {}): string {
     details.push(
       `Coverage status: **${lanes.length ? overallStatus(lanes) : 'Unavailable'}**`,
       '',
-      renderOverviewTable(lanes, true),
-      '',
+      ...(lanes.length && lanes.every(lane => lane.status === 'passed')
+        ? []
+        : [renderOverviewTable(lanes, true), '']),
       '<details>',
       '<summary>Coverage metric breakdowns</summary>',
       '',

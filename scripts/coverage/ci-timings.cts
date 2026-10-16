@@ -93,7 +93,7 @@ function renderTimings(
       compact
         ? (
             {
-              success: 'Passed',
+              success: '✅ Passed',
               failure: 'Failed',
               skipped: 'Skipped',
               in_progress: 'Running',
@@ -127,6 +127,8 @@ function renderTimings(
       .filter((step): step is typeof step & { ms: number } => step.ms !== null)
       .sort((a, b) => b.ms - a.ms)[0];
     const overview: string[] = [];
+    const slowJobs: string[] = [];
+    const slowSteps: string[] = [];
     const rows = workflow.jobs.map(job => {
       const steps = job.steps.map(step => {
         const time =
@@ -134,16 +136,20 @@ function renderTimings(
             ? duration(step.started_at, step.completed_at)
             : null;
         const highlight = slowest && slowest.step === step ? ' (slowest)' : '';
-        return `<tr><td><a href="${escapeHtml(job.html_url)}#step:${step.number}:1">${escapeHtml(step.name)}</a>${highlight}</td><td>${escapeHtml(statusLabel(step.conclusion || step.status))}</td><td>${formatDuration(time)}</td><td>${pace(time, step.status, step.conclusion)}</td></tr>`;
+        const cells = `<td><a href="${escapeHtml(job.html_url)}#step:${step.number}:1">${escapeHtml(step.name)}</a>${highlight}</td><td>${escapeHtml(statusLabel(step.conclusion || step.status))}</td><td>${formatDuration(time)}</td><td>${pace(time, step.status, step.conclusion)}</td>`;
+        if (time !== null && time >= 300_000) {
+          slowSteps.push(`<tr><td>${escapeHtml(job.name)}</td>${cells}</tr>`);
+        }
+        return `<tr>${cells}</tr>`;
       });
       const time =
         job.status === 'completed' && job.conclusion !== 'skipped'
           ? duration(job.started_at, job.completed_at)
           : null;
       const speed = pace(time, job.status, job.conclusion);
-      overview.push(
-        `<tr><td>${speed}</td><td><a href="${escapeHtml(job.html_url)}">${escapeHtml(job.name)}</a></td><td>${escapeHtml(statusLabel(job.conclusion || job.status))}</td><td><strong>${formatDuration(time)}</strong></td></tr>`,
-      );
+      const jobRow = `<tr><td>${speed}</td><td><a href="${escapeHtml(job.html_url)}">${escapeHtml(job.name)}</a></td><td>${escapeHtml(statusLabel(job.conclusion || job.status))}</td><td><strong>${formatDuration(time)}</strong></td></tr>`;
+      overview.push(jobRow);
+      if (time !== null && time >= 300_000) slowJobs.push(jobRow);
       return `<details><summary>${speed} · ${escapeHtml(job.name)} — ${escapeHtml(statusLabel(job.conclusion || job.status))} — ${formatDuration(time)}</summary><table><thead><tr><th>Step</th><th>Status</th><th>Duration</th><th>Pace</th></tr></thead><tbody>${steps.join('')}</tbody></table></details>`;
     });
     const elapsedLabel = workflow.completedAt
@@ -153,6 +159,16 @@ function renderTimings(
       ? `<p>Slowest completed step: <a href="${escapeHtml(slowest.job.html_url)}#step:${slowest.step.number}:1">${escapeHtml(slowest.job.name)} / ${escapeHtml(slowest.step.name)}</a> (${formatDuration(slowest.ms)}).</p>`
       : '';
     const jobTables = `<table><thead><tr><th>Pace</th><th>Job</th><th>Status</th><th>Duration</th></tr></thead><tbody>${overview.join('')}</tbody></table><details><summary>Step timings</summary>${rows.join('\n')}</details>`;
+    const slowTables = compact
+      ? [
+          slowJobs.length
+            ? `<h5>Slow jobs</h5><table><thead><tr><th>Pace</th><th>Job</th><th>Status</th><th>Duration</th></tr></thead><tbody>${slowJobs.join('')}</tbody></table>`
+            : '',
+          slowSteps.length
+            ? `<h5>Slow steps</h5><table><thead><tr><th>Job</th><th>Step</th><th>Status</th><th>Duration</th><th>Pace</th></tr></thead><tbody>${slowSteps.join('')}</tbody></table>`
+            : '',
+        ].join('')
+      : '';
     const failures = compact
       ? workflow.jobs
           .filter(
@@ -166,7 +182,7 @@ function renderTimings(
           )
           .join('')
       : '';
-    return `<h4><a href="${escapeHtml(workflow.url)}">${escapeHtml(workflow.name)}</a></h4><p>${elapsedLabel}: ${formatDuration(duration(workflow.startedAt, workflow.completedAt || timings.collectedAt))}. Accumulated completed job time: ${formatDuration(jobTime)}. ${completedJobs.length}/${workflow.jobs.length} jobs completed.</p>${slowestSummary}${failures}${compact ? `<details><summary>Job and step timings</summary>${jobTables}</details>` : jobTables}`;
+    return `<h4><a href="${escapeHtml(workflow.url)}">${escapeHtml(workflow.name)}</a></h4><p>${elapsedLabel}: ${formatDuration(duration(workflow.startedAt, workflow.completedAt || timings.collectedAt))}. Accumulated completed job time: ${formatDuration(jobTime)}. ${completedJobs.length}/${workflow.jobs.length} jobs completed.</p>${slowestSummary}${failures}${slowTables}${compact ? `<details><summary>Job and step timings</summary>${jobTables}</details>` : jobTables}`;
   });
   const unavailable = (timings.unavailable || []).map(
     name => `<p>${escapeHtml(name)} timings unavailable.</p>`,

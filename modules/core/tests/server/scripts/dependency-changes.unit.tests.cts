@@ -132,7 +132,7 @@ describe('PR dependency summaries', () => {
     const empty = { manifest: {}, lock: {} };
     assert.match(
       renderDependencyChanges(summariseDependencies(empty, empty)),
-      /No dependency declaration/,
+      /No dependency changes/,
     );
     const text = renderDependencyChanges(
       summariseDependencies(empty, {
@@ -160,6 +160,27 @@ describe('PR dependency summaries', () => {
       ),
       /first 100 of 101/,
     );
+  });
+  it('omits zero-change tables and clears stale details on refresh', () => {
+    const dependencies = summariseDependencies(before, before);
+    const text = renderDependencyChanges(dependencies);
+    assert.strictEqual(text, '### Dependencies\n\nNo dependency changes.');
+    assert.doesNotMatch(text, /\| Category|<details>|Dependency details/);
+    const initial = updateLineChangesComment('Coverage: 100%\n', {
+      ...summariseNumstat(''),
+      dependencies: summariseDependencies(before, after),
+    });
+    const refreshed = updateLineChangesComment(initial, {
+      ...summariseNumstat(''),
+      dependencies,
+    });
+    assert.match(refreshed, /Coverage: 100%/);
+    assert.match(refreshed, /No dependency changes/);
+    assert.doesNotMatch(
+      refreshed,
+      /\| Category \| Added \| Removed \| Updated|Dependency details/,
+    );
+    assert.strictEqual(refreshed.split('### Dependencies').length, 2);
   });
   it('refreshes the existing section without duplicating it or losing coverage', () => {
     const summary = {
