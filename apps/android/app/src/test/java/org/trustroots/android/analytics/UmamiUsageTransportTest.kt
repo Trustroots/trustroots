@@ -12,6 +12,52 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class UmamiUsageTransportTest {
+    @Test fun aFailedRequestDoesNotPreventALaterEventFromBeingSent() {
+        ServerSocket(0).use { server ->
+            val requests = LinkedBlockingQueue<String>()
+            val endpoint = "http://127.0.0.1:${server.localPort}/api/send"
+            val transport = UmamiUsageTransport(endpoint)
+            val worker = thread(isDaemon = true) {
+                repeat(2) { index ->
+                    val socket = runCatching { server.accept() }.getOrNull() ?: return@thread
+                    socket.use {
+                        val reader = socket.getInputStream().bufferedReader()
+                        val headers = mutableListOf<String>()
+                        while (true) {
+                            val line = reader.readLine() ?: break
+                            if (line.isEmpty()) break
+                            headers.add(line)
+                        }
+                        val length = headers.first { it.startsWith("Content-Length:", true) }
+                            .substringAfter(':').trim().toInt()
+                        val body = CharArray(length)
+                        var read = 0
+                        while (read < length) read += reader.read(body, read, length - read)
+                        requests.put(String(body))
+                        if (index == 1) {
+                            socket.getOutputStream().write(
+                                "HTTP/1.1 204 No Content\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                                    .toByteArray(),
+                            )
+                        }
+                    }
+                }
+            }
+            try {
+                transport.send("first event")
+                assertEquals("first event", requests.poll(5, TimeUnit.SECONDS))
+                transport.send("later event")
+                assertEquals("later event", requests.poll(5, TimeUnit.SECONDS))
+                worker.join(1_000)
+                assertFalse("Server should receive no retry", worker.isAlive)
+            } finally {
+                transport.cancel()
+                server.close()
+                worker.join(1_000)
+            }
+        }
+    }
+
     @Test fun sendsAnonymousJsonWithoutGlobalCookiesAndDoesNotFollowRedirects() {
         ServerSocket(0).use { server ->
             val requests = LinkedBlockingQueue<Pair<List<String>, String>>()

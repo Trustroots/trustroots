@@ -68,6 +68,32 @@ internal sealed interface ApkUpdateCheckResult {
     data object Unavailable : ApkUpdateCheckResult
 }
 
+internal suspend fun checkForAndroidPreviewUpdate(
+    isEnabled: () -> Boolean,
+    fetchRelease: suspend () -> AndroidPreviewRelease?,
+    notify: (AndroidPreviewRelease) -> Unit,
+): ApkUpdateCheckResult = withContext(Dispatchers.IO) {
+    if (!isEnabled()) return@withContext ApkUpdateCheckResult.Unavailable
+    val release = try {
+        fetchRelease()
+    } catch (_: Exception) {
+        return@withContext ApkUpdateCheckResult.Unavailable
+    }
+    if (!isEnabled()) return@withContext ApkUpdateCheckResult.Unavailable
+    if (release == null) return@withContext ApkUpdateCheckResult.UpToDate
+    notify(release)
+    ApkUpdateCheckResult.NewVersion(release)
+}
+
+internal fun shouldPostUpdateNotification(
+    notificationsEnabled: Boolean,
+    permissionGranted: Boolean,
+    alertsEnabled: Boolean,
+    versionCode: Int,
+    lastNotifiedVersionCode: Int,
+): Boolean = notificationsEnabled && permissionGranted && alertsEnabled &&
+    versionCode > lastNotifiedVersionCode
+
 internal object ApkUpdateAlerts {
     private const val WORK_NAME = "android-preview-update-check"
     private const val CHANNEL_ID = "apk-updates"
@@ -79,44 +105,53 @@ internal object ApkUpdateAlerts {
         "https://api.github.com/repos/Trustroots/trustroots/releases?per_page=100"
     private val notificationLock = Any()
 
-    fun isEnabled(context: Context): Boolean =
-        BuildConfig.PREVIEW_UPDATE_ALERTS &&
+    fun isEnabled(context: Context): Boolean = isEnabled(context, BuildConfig.PREVIEW_UPDATE_ALERTS)
+
+    internal fun isEnabled(context: Context, previewAlertsEnabled: Boolean): Boolean =
+        previewAlertsEnabled &&
             context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getBoolean(ENABLED, false)
 
-    fun setEnabled(context: Context, enabled: Boolean) {
-        if (!BuildConfig.PREVIEW_UPDATE_ALERTS) return
+    fun setEnabled(context: Context, enabled: Boolean) =
+        setEnabled(context, enabled, BuildConfig.PREVIEW_UPDATE_ALERTS)
+
+    internal fun setEnabled(
+        context: Context,
+        enabled: Boolean,
+        previewAlertsEnabled: Boolean,
+        workName: String = WORK_NAME,
+    ) {
+        if (!previewAlertsEnabled) return
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit()
             .putBoolean(ENABLED, enabled).apply()
-        if (enabled) schedule(context) else WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
+        if (enabled) schedule(context, workName) else WorkManager.getInstance(context).cancelUniqueWork(workName)
     }
 
-    fun reconcile(context: Context) {
-        if (isEnabled(context)) schedule(context)
+    fun reconcile(context: Context) = reconcile(context, BuildConfig.PREVIEW_UPDATE_ALERTS)
+
+    internal fun reconcile(
+        context: Context,
+        previewAlertsEnabled: Boolean,
+        workName: String = WORK_NAME,
+    ) {
+        if (isEnabled(context, previewAlertsEnabled)) schedule(context, workName)
     }
 
-    private fun schedule(context: Context) {
+    private fun schedule(context: Context, workName: String) {
         val request = PeriodicWorkRequestBuilder<ApkUpdateWorker>(1, TimeUnit.DAYS)
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            WORK_NAME,
+            workName,
             ExistingPeriodicWorkPolicy.KEEP,
             request,
         )
     }
 
-    suspend fun checkNow(context: Context): ApkUpdateCheckResult = withContext(Dispatchers.IO) {
-        if (!isEnabled(context)) return@withContext ApkUpdateCheckResult.Unavailable
-        val release = try {
-            fetchLatestRelease()
-        } catch (_: Exception) {
-            return@withContext ApkUpdateCheckResult.Unavailable
-        }
-        if (!isEnabled(context)) return@withContext ApkUpdateCheckResult.Unavailable
-        if (release == null) return@withContext ApkUpdateCheckResult.UpToDate
-        notifyOnce(context, release)
-        ApkUpdateCheckResult.NewVersion(release)
-    }
+    suspend fun checkNow(context: Context): ApkUpdateCheckResult = checkForAndroidPreviewUpdate(
+        isEnabled = { isEnabled(context) },
+        fetchRelease = { fetchLatestRelease() },
+        notify = { notifyOnce(context, it) },
+    )
 
     private fun fetchLatestRelease(): AndroidPreviewRelease? {
         val connection = URL(RELEASES_URL).openConnection() as HttpURLConnection
@@ -135,14 +170,18 @@ internal object ApkUpdateAlerts {
 
     private fun notifyOnce(context: Context, release: AndroidPreviewRelease) {
         val manager = context.getSystemService(NotificationManager::class.java)
-        if (!manager.areNotificationsEnabled()) return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) return
+        val permissionGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         synchronized(notificationLock) {
-            if (!isEnabled(context)) return
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            if (release.versionCode <= prefs.getInt(LAST_NOTIFIED, 0)) return
+            if (!shouldPostUpdateNotification(
+                    notificationsEnabled = manager.areNotificationsEnabled(),
+                    permissionGranted = permissionGranted,
+                    alertsEnabled = isEnabled(context),
+                    versionCode = release.versionCode,
+                    lastNotifiedVersionCode = prefs.getInt(LAST_NOTIFIED, 0),
+                )
+            ) return
             manager.createNotificationChannel(
                 NotificationChannel(CHANNEL_ID, "APK updates", NotificationManager.IMPORTANCE_DEFAULT),
             )

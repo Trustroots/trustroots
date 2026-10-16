@@ -7,6 +7,8 @@ plugins {
 }
 
 val coverageEnabled = providers.gradleProperty("trustrootsCoverage").map(String::toBoolean).orElse(false)
+val coverageToolVersion = "0.8.15"
+jacoco { toolVersion = coverageToolVersion }
 val configuredApiURL = providers.gradleProperty("trustrootsApiUrl")
     .orElse("https://www.trustroots.org")
 val configuredMapboxToken = providers.gradleProperty("trustrootsMapboxToken")
@@ -32,6 +34,7 @@ val releaseSigningConfigured = listOf(
 android {
     namespace = "org.trustroots.android"
     compileSdk = 37
+    testCoverage { jacocoVersion = coverageToolVersion }
 
     defaultConfig {
         applicationId = "org.trustroots.android"
@@ -161,5 +164,6 @@ dependencies {
     testImplementation("org.json:json:20240303")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test:rules:1.7.0")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }

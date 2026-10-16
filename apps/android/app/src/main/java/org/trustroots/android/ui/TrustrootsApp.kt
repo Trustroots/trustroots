@@ -1,6 +1,7 @@
 package org.trustroots.android.ui
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -117,7 +118,10 @@ import org.trustroots.android.ui.theme.TrustrootsGreen
 import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 
 @Composable
-fun TrustrootsApp() {
+internal fun TrustrootsApp(
+    apiBaseUrl: String = BuildConfig.API_BASE_URL,
+    reconcileAlerts: (Context, MemberSession) -> Unit = MessageAlerts::reconcile,
+) {
     val context = LocalContext.current
     val analytics = remember { AndroidUsageAnalytics.get(context) }
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -159,6 +163,8 @@ fun TrustrootsApp() {
             analytics = analytics,
             session = requireNotNull(session),
             responseCache = responseCache,
+            apiBaseUrl = apiBaseUrl,
+            reconcileAlerts = reconcileAlerts,
             onMemberUpdated = { member ->
                 session?.copy(member = member)?.let { updated ->
                     sessionStore.save(updated)
@@ -166,12 +172,12 @@ fun TrustrootsApp() {
                 }
             },
             onSignedOut = {
-                session?.let { responseCache.clear(BuildConfig.API_BASE_URL.trim().trimEnd('/'), it.member.username) }
+                session?.let { responseCache.clear(apiBaseUrl.trim().trimEnd('/'), it.member.username) }
                 sessionStore.clear()
                 session = null
             },
             onSessionInvalidated = {
-                session?.let { responseCache.clear(BuildConfig.API_BASE_URL.trim().trimEnd('/'), it.member.username) }
+                session?.let { responseCache.clear(apiBaseUrl.trim().trimEnd('/'), it.member.username) }
                 sessionStore.clear()
                 session = null
                 signedOutMessage =
@@ -383,6 +389,8 @@ private fun MemberShell(
     analytics: UsageAnalytics,
     session: MemberSession,
     responseCache: SecureResponseCache,
+    apiBaseUrl: String,
+    reconcileAlerts: (Context, MemberSession) -> Unit,
     onMemberUpdated: (MobileMember) -> Unit,
     onSignedOut: () -> Unit,
     onSessionInvalidated: () -> Unit,
@@ -413,7 +421,7 @@ private fun MemberShell(
     var searchNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var searchInitialTab by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val api = remember(session.member.username) {
-        MobileApiClient(BuildConfig.API_BASE_URL, responseCache, session.member.username)
+        MobileApiClient(apiBaseUrl, responseCache, session.member.username)
     }
     val offlineSavedAt by api.offlineSavedAt.collectAsState()
     val alertDestination by MessageAlerts.destination.collectAsState()
@@ -444,7 +452,7 @@ private fun MemberShell(
         MessageAlerts.clearDestination()
     }
     LaunchedEffect(session.member.username) {
-        MessageAlerts.reconcile(context, session)
+        reconcileAlerts(context, session)
     }
     BackHandler(
         enabled = browserRoute != null ||

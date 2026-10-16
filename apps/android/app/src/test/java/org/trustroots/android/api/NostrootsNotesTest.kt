@@ -26,6 +26,10 @@ class NostrootsNotesTest {
         assertNull(parseCommunityNote("""["EOSE","map"]"""))
         assertNull(parseCommunityNote("""["EVENT","map",null]"""))
         assertNull(parseCommunityNote(noteEvent(tags = """[["t","gathering"]]""")))
+        assertNull(parseCommunityNote(noteEvent(tags = """[["l","8FVC9G8F+5W","other-code"]]""")))
+        assertNull(parseCommunityNote(noteEvent(tags = """[["l"]]""")))
+        assertNull(parseCommunityNote(noteEvent(tags = """[["l","not-a-location","open-location-code"]]""")))
+        assertNull(parseCommunityNote(noteEvent().replace("\"tags\":", "\"other\":")))
     }
 
     @Test fun rejectsMalformedEventIdentifiersAndOversizedContent() {
@@ -56,6 +60,13 @@ class NostrootsNotesTest {
         assertNull(decodeOpenLocationCode("8FVC9G+"))
         assertNull(decodeOpenLocationCode("8FVC9G8F+5W234567"))
         assertNull(decodeOpenLocationCode("8FVC9G8F+5!"))
+        assertNull(decodeOpenLocationCode("!FVC9G8F+5W"))
+        assertEquals(
+            decodeOpenLocationCode("8FVC9G8F+5W"),
+            decodeOpenLocationCode("8FVC9G8F+50W"),
+        )
+        assertNull(decodeOpenLocationCode("V2222222"))
+        assertNull(decodeOpenLocationCode("2W222222"))
     }
 }
 

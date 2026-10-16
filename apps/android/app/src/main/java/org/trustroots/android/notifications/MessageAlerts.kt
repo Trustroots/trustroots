@@ -30,6 +30,30 @@ import org.unifiedpush.android.connector.data.PushMessage
 
 data class MessageDestination(val account: String, val senderId: String)
 
+internal suspend fun handleMessageEndpointRegistration(
+    account: String,
+    endpointUrl: String,
+    publicKey: String,
+    authKey: String,
+    loadSession: suspend () -> MemberSession?,
+    registerEndpoint: suspend (MemberSession, String, String, String) -> Boolean,
+    saveEndpoint: (String) -> String?,
+    unregisterEndpoint: suspend (MemberSession, String) -> Unit,
+    setStatus: (String) -> Unit,
+) {
+    val session = loadSession() ?: return
+    if (session.member.username != account) return
+    if (!registerEndpoint(session, endpointUrl, publicKey, authKey)) {
+        setStatus("Could not register this distributor endpoint with Trustroots.")
+        return
+    }
+    val oldEndpoint = saveEndpoint(endpointUrl)
+    if (oldEndpoint != null && oldEndpoint != endpointUrl) {
+        unregisterEndpoint(session, oldEndpoint)
+    }
+    setStatus("Message alerts are ready.")
+}
+
 object MessageAlerts {
     const val ACCOUNT_EXTRA = "org.trustroots.android.message.account"
     const val SENDER_EXTRA = "org.trustroots.android.message.sender"
@@ -114,19 +138,24 @@ object MessageAlerts {
             return
         }
         scope.launch {
-            val session = SecureMobileSessionStore(context).load() ?: return@launch
-            if (session.member.username != account) return@launch
             val api = MobileApiClient(BuildConfig.API_BASE_URL)
-            if (api.registerMessagePush(session, newEndpoint.url, keys.pubKey, keys.auth).isSuccess) {
-                val oldEndpoint = endpoint(context)
-                preferences(context).edit().putString("endpoint", newEndpoint.url).apply()
-                if (oldEndpoint != null && oldEndpoint != newEndpoint.url) {
-                    api.unregisterMessagePush(session, oldEndpoint)
-                }
-                status.value = "Message alerts are ready."
-            } else {
-                status.value = "Could not register this distributor endpoint with Trustroots."
-            }
+            handleMessageEndpointRegistration(
+                account = account,
+                endpointUrl = newEndpoint.url,
+                publicKey = keys.pubKey,
+                authKey = keys.auth,
+                loadSession = { SecureMobileSessionStore(context).load() },
+                registerEndpoint = { session, url, publicKey, authKey ->
+                    api.registerMessagePush(session, url, publicKey, authKey).isSuccess
+                },
+                saveEndpoint = { url ->
+                    val oldEndpoint = endpoint(context)
+                    preferences(context).edit().putString("endpoint", url).apply()
+                    oldEndpoint
+                },
+                unregisterEndpoint = { session, oldUrl -> api.unregisterMessagePush(session, oldUrl) },
+                setStatus = { status.value = it },
+            )
         }
     }
 

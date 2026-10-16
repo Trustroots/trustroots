@@ -212,7 +212,8 @@ private fun <T> withApiResponse(
 ): Pair<T, CapturedOperationRequest> = ServerSocket(0).use { server ->
     val capturedRequests = LinkedBlockingQueue<CapturedOperationRequest>()
     val worker = thread(isDaemon = true) {
-        server.accept().use { socket ->
+        val socket = runCatching { server.accept() }.getOrNull() ?: return@thread
+        socket.use {
             val reader = socket.getInputStream().bufferedReader()
             val requestLine = reader.readLine()
             val headers = mutableListOf<String>()

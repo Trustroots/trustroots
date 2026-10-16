@@ -1,6 +1,7 @@
 package org.trustroots.android.ui
 
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.view.inputmethod.InputMethodManager
@@ -14,6 +15,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.RuleChain
@@ -22,6 +24,8 @@ import org.junit.runner.Description
 import org.junit.runner.RunWith
 import org.junit.runners.model.Statement
 import org.trustroots.android.MainActivity
+import org.trustroots.android.notifications.MessageAlerts
+import org.trustroots.android.notifications.MessageDestination
 
 @RunWith(AndroidJUnit4::class)
 class MainActivityRotationJourneyTest {
@@ -74,6 +78,42 @@ class MainActivityRotationJourneyTest {
             }
             scenario.onActivity { assertSame(originalActivity[0], it) }
             compose.onNodeWithText("anonymous-member").performScrollTo().assertIsDisplayed()
+        }
+    }
+
+    @Test fun newNotificationIntentUpdatesTheCurrentActivityAndConversation() {
+        val previousDestination = MessageAlerts.destination.value
+        MessageAlerts.clearDestination()
+        try {
+            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                val notificationIntent = arrayOfNulls<Intent>(1)
+                scenario.onActivity { activity ->
+                    notificationIntent[0] = Intent(activity.intent)
+                        .setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                        .putExtra(MessageAlerts.ACCOUNT_EXTRA, "quiet-fox")
+                        .putExtra(MessageAlerts.SENDER_EXTRA, "507f1f77bcf86cd799439012")
+                    activity.startActivity(requireNotNull(notificationIntent[0]))
+                }
+                compose.waitUntil(5_000) {
+                    MessageAlerts.destination.value == MessageDestination(
+                        "quiet-fox",
+                        "507f1f77bcf86cd799439012",
+                    )
+                }
+                scenario.onActivity { activity ->
+                    assertEquals("quiet-fox", activity.intent.getStringExtra(MessageAlerts.ACCOUNT_EXTRA))
+                    assertEquals(
+                        "507f1f77bcf86cd799439012",
+                        activity.intent.getStringExtra(MessageAlerts.SENDER_EXTRA),
+                    )
+                    assertEquals(
+                        MessageDestination("quiet-fox", "507f1f77bcf86cd799439012"),
+                        MessageAlerts.destination.value,
+                    )
+                }
+            }
+        } finally {
+            MessageAlerts.destination.value = previousDestination
         }
     }
 
