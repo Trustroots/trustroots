@@ -106,6 +106,7 @@ describe('Count Message Statistics of User', function () {
     const fixtureUsers = Array.from({ length: 29 }, (_, index) =>
       utils.createTestUser({
         email: `message-stat-member-${index}@example.test`,
+        username: `messagestatmember${index}`,
         password: fixturePassword,
       }),
     );
