@@ -319,7 +319,7 @@ class MobileApiClientTest {
     fun reportsAuthenticationStatusAndFallbackMessageFromMalformedErrorBody() {
         val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
         val (result, request) = withApiResponse(status = 401, responseBody = "not JSON") { baseURL ->
-            runBlocking { MobileApiClient(baseURL).currentMember(session) }
+            runBlocking { MobileApiClient(baseURL).accountDetails(session) }
         }
 
         val error = result.exceptionOrNull() as MobileApiException
@@ -336,11 +336,11 @@ class MobileApiClientTest {
         val (specificResult, _) = withApiResponse(
             status = 403,
             responseBody = """{"message":"This fictional account cannot access the page."}""",
-        ) { baseURL -> runBlocking { MobileApiClient(baseURL).currentMember(session) } }
+        ) { baseURL -> runBlocking { MobileApiClient(baseURL).accountDetails(session) } }
         val (blankResult, _) = withApiResponse(
             status = 503,
             responseBody = """{"message":"   "}""",
-        ) { baseURL -> runBlocking { MobileApiClient(baseURL).currentMember(session) } }
+        ) { baseURL -> runBlocking { MobileApiClient(baseURL).accountDetails(session) } }
 
         val specificError = specificResult.exceptionOrNull() as MobileApiException
         val blankError = blankResult.exceptionOrNull() as MobileApiException
