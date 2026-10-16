@@ -34,7 +34,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
@@ -672,20 +671,26 @@ internal fun MemberNavigationBar(
                             Text(if (unreadMessageCount > 99) "99+" else unreadMessageCount.toString())
                         }
                     }) {
-                        if (item == Destination.Menu) RemoteArtwork(
-                            url = avatarURL,
-                            sessionCookie = sessionCookie,
-                            label = memberLabel,
-                            size = 24.dp,
-                        ) else Icon(
-                            imageVector = when (item) {
-                                Destination.Circles -> Icons.Default.BubbleChart
-                                Destination.Search -> Icons.Default.Search
-                                Destination.Messages -> Icons.AutoMirrored.Filled.Chat
-                                Destination.Menu -> Icons.Default.AccountCircle
-                            },
-                            contentDescription = null,
-                        )
+                        when (item) {
+                            Destination.Menu -> RemoteArtwork(
+                                url = avatarURL,
+                                sessionCookie = sessionCookie,
+                                label = memberLabel,
+                                size = 24.dp,
+                            )
+                            Destination.Circles -> Icon(
+                                imageVector = Icons.Default.BubbleChart,
+                                contentDescription = null,
+                            )
+                            Destination.Search -> Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = null,
+                            )
+                            Destination.Messages -> Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Chat,
+                                contentDescription = null,
+                            )
+                        }
                     }
                 },
             )

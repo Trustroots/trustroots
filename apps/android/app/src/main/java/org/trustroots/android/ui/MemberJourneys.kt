@@ -468,8 +468,8 @@ private fun ProfileActionBar(
     onShareExperience: () -> Unit,
     contactLabel: String?,
     onContactAction: () -> Unit,
-    topPadding: Dp = 0.dp,
-    horizontalInset: PaddingValues = PaddingValues.Zero,
+    topPadding: Dp,
+    horizontalInset: PaddingValues,
 ) {
     Surface(
         color = TrustrootsPaleGreen,
