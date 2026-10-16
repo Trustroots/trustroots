@@ -42,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
-import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.TrustrootsCircle
 
 @Composable
@@ -64,11 +63,11 @@ internal fun CirclesScreen(
     LaunchedEffect(session) {
         loading = true
         api.circles(session).onSuccess { circles = it }.onFailure {
-            if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+            if (it.isAuthenticationFailure()) onSessionInvalidated()
             else error = it.message ?: "Could not load circles."
         }
         api.circleMemberships(session).onSuccess { memberships = it }.onFailure {
-            if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+            if (it.isAuthenticationFailure()) onSessionInvalidated()
             else error = it.message ?: "Could not load circle memberships."
         }
         loading = false
@@ -82,7 +81,7 @@ internal fun CirclesScreen(
                 api.setCircleMembership(session, circle.id, joined).onSuccess {
                     memberships = if (joined) memberships - circle.id else memberships + circle.id
                 }.onFailure {
-                    if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                    if (it.isAuthenticationFailure()) onSessionInvalidated()
                     else error = it.message ?: "Could not update membership."
                 }
                 updating = null
