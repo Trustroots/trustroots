@@ -157,13 +157,29 @@ in its job summary. The report includes every production package and source file
 including untested files; only generated R and BuildConfig classes are excluded.
 JaCoCo applies its standard Kotlin bytecode filters. Coverage instrumentation is
 opt-in and does not affect ordinary debug or release builds. To generate the
-same report locally with a connected emulator:
+API 36 report locally, with localhost configured for the offline adapter journeys:
 
 ```sh
-./gradlew -PtrustrootsCoverage=true debugCoverageTable
+./gradlew -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable
 python3 scripts/coverage-ratchet.py app/build/reports/coverage/debug/coverage.xml coverage-baseline.json
 python3 -m unittest discover -s scripts
 ```
+
+CI also runs the notification compatibility journeys on API 32, using the same
+already-built APKs, then merges those probes into the report. To reproduce that
+combined report, stop the API 36 emulator and connect a dedicated API 32 emulator
+after the full run above, then run:
+
+```sh
+bash scripts/collect-legacy-coverage.sh
+./gradlew -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable -x testDebugUnitTest -x connectedDebugAndroidTest -x compileDebugKotlin -x compileDebugJavaWithJavac
+python3 scripts/coverage-ratchet.py app/build/reports/coverage/debug/coverage.xml coverage-baseline.json
+```
+
+The compatibility pass reuses the compiled classes and APKs because rebuilding
+between Android versions can change class identities. The localhost API and
+UnifiedPush distributor fixture belong to device tests; the fake distributor is
+disabled outside its journey and is absent from the application APK.
 
 The generated table is `app/build/reports/coverage/debug/coverage.md`; the XML
 report is beside it, and the HTML report is under `html/index.html`. CI uploads
