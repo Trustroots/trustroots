@@ -5,6 +5,7 @@ import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
@@ -155,7 +156,12 @@ class MessageAlertPayloadLifecycleTest {
             preferencesFor("quiet-fox", enabled = true)
             MessageAlerts.show(context, PushMessage(payload(senderId), decrypted = true))
 
-            val posted = notifications.activeNotifications.firstOrNull { it.id == notificationId }
+            val notificationDeadline = SystemClock.elapsedRealtime() + 5_000
+            var posted = notifications.activeNotifications.firstOrNull { it.id == notificationId }
+            while (posted == null && SystemClock.elapsedRealtime() < notificationDeadline) {
+                Thread.sleep(25)
+                posted = notifications.activeNotifications.firstOrNull { it.id == notificationId }
+            }
             assertNotNull(posted)
             val notification = requireNotNull(posted).notification
             assertEquals("Unread message", notification.extras.getString(android.app.Notification.EXTRA_TITLE))

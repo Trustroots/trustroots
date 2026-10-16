@@ -13,6 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import kotlinx.coroutines.runBlocking
@@ -77,7 +78,8 @@ class MessageAlertsAdapterJourneyTest {
     @Test fun adaptersEnableReconcileRegisterAndUnregisterThroughLocalApi() {
         val baseUrl = "http://127.0.0.1:${server.localPort}"
         val session = MemberSession("connect.sid=fixture-session", MobileMember("quiet-fox", "Quiet Fox"))
-        val responseCount = 9
+        val responseCount = 10
+        val configurationRequests = AtomicInteger()
         responder = thread(isDaemon = true) {
             var servedResponses = 0
             while (servedResponses < responseCount) {
@@ -107,7 +109,11 @@ class MessageAlertsAdapterJourneyTest {
                         } else ""
                         requests += request to body
                         val response = if (request.startsWith("GET ")) {
-                            """{"enabled":true,"publicKey":"fixture-vapid-key"}"""
+                            if (configurationRequests.getAndIncrement() == 3) {
+                                """{"enabled":false}"""
+                            } else {
+                                """{"enabled":true,"publicKey":"fixture-vapid-key"}"""
+                            }
                         } else "{}"
                         val bytes = response.toByteArray()
                         socket.getOutputStream().write(
@@ -173,6 +179,22 @@ class MessageAlertsAdapterJourneyTest {
             }
             assertTrue("Declined-distributor result did not complete", declinedLatch.await(10, TimeUnit.SECONDS))
             assertEquals("Choose a UnifiedPush distributor to enable message alerts.", declinedResult.get())
+
+            val unconfiguredResult = AtomicReference<String>()
+            val unconfiguredLatch = CountDownLatch(1)
+            scenario.onActivity { activity ->
+                MessageAlerts.enable(
+                    activity = activity,
+                    session = session,
+                    onResult = { unconfiguredResult.set(it); unconfiguredLatch.countDown() },
+                    apiBaseUrl = baseUrl,
+                    hasDistributors = { error("An unconfigured server must stop before distributor lookup") },
+                    chooseDistributor = { error("An unconfigured server must stop before selection") },
+                    registerDistributor = { error("An unconfigured server must not register") },
+                )
+            }
+            assertTrue("Unconfigured-server result did not complete", unconfiguredLatch.await(10, TimeUnit.SECONDS))
+            assertEquals("Message alerts are not configured on this server.", unconfiguredResult.get())
         }
         assertEquals("Waiting for your distributor to register message alerts.", enableResult.get())
         assertEquals("fixture-vapid-key", registeredKey.get())
@@ -197,7 +219,7 @@ class MessageAlertsAdapterJourneyTest {
             hasSavedDistributor = { false },
             registerDistributor = { error("A missing saved distributor should not register") },
         )
-        waitForRequestCount(5)
+        waitForRequestCount(6)
 
         preferences.edit().putString("endpoint", "https://push.invalid/old").commit()
         MessageAlerts.onEndpoint(
@@ -206,7 +228,7 @@ class MessageAlertsAdapterJourneyTest {
             apiBaseUrl = baseUrl,
             loadSession = { session },
         )
-        waitForRequestCount(7)
+        waitForRequestCount(8)
         waitForStatus("Message alerts are ready.")
         assertEquals("https://push.invalid/new", MessageAlerts.endpoint(context))
 
@@ -228,16 +250,16 @@ class MessageAlertsAdapterJourneyTest {
         waitForRequestCount(responseCount)
 
         assertEquals(
-            listOf("GET", "GET", "GET", "GET", "GET", "POST", "DELETE", "DELETE", "DELETE"),
+            listOf("GET", "GET", "GET", "GET", "GET", "GET", "POST", "DELETE", "DELETE", "DELETE"),
             requests.map { it.first.substringBefore(' ') },
         )
-        val registration = JSONObject(requests[5].second)
+        val registration = JSONObject(requests[6].second)
         assertEquals("https://push.invalid/new", registration.getString("endpoint"))
         assertEquals("fixture-public", registration.getString("publicKey"))
         assertEquals("fixture-auth", registration.getString("auth"))
-        assertEquals("https://push.invalid/old", JSONObject(requests[6].second).getString("endpoint"))
-        assertEquals("https://push.invalid/new", JSONObject(requests[7].second).getString("endpoint"))
-        assertEquals("https://push.invalid/stopped", JSONObject(requests[8].second).getString("endpoint"))
+        assertEquals("https://push.invalid/old", JSONObject(requests[7].second).getString("endpoint"))
+        assertEquals("https://push.invalid/new", JSONObject(requests[8].second).getString("endpoint"))
+        assertEquals("https://push.invalid/stopped", JSONObject(requests[9].second).getString("endpoint"))
     }
 
     private fun waitForRequestCount(expected: Int) {

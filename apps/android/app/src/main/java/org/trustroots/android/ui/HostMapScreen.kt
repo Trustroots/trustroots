@@ -98,6 +98,9 @@ internal fun HostMapScreen(
     onProfileOpenChange: (Boolean) -> Unit = {},
     searchMode: @Composable () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues.Zero,
+    geocoderLookup: ((String, Int) -> List<android.location.Address>?)? = null,
+    notesClientFactory: ((onNote: (CommunityNote) -> Unit, onError: () -> Unit) -> NostrootsNotesClient) =
+        { onNote, onError -> NostrootsNotesClient(onNote, onError) },
 ) {
     val context = LocalContext.current
     val keyboard = LocalSoftwareKeyboardController.current
@@ -128,6 +131,15 @@ internal fun HostMapScreen(
     var suggestions by remember { mutableStateOf<List<android.location.Address>>(emptyList()) }
     var selectedProfile by remember { mutableStateOf<MemberProfile?>(null) }
     var memberships by remember { mutableStateOf<Set<String>>(emptySet()) }
+    val lookupAddresses: suspend (String, Int) -> List<android.location.Address> = { query, maxResults ->
+        withContext(Dispatchers.IO) {
+            if (geocoderLookup != null) {
+                geocoderLookup(query, maxResults).orEmpty()
+            } else {
+                Geocoder(context, Locale.getDefault()).getFromLocationName(query, maxResults).orEmpty()
+            }
+        }
+    }
     LaunchedEffect(host?.id) {
         selectedProfile = null
         host?.user?.username?.let { username ->
@@ -139,9 +151,7 @@ internal fun HostMapScreen(
         suggestions = emptyList()
         if (showSuggestions && locationQuery.trim().length >= 3) {
             delay(400)
-            suggestions = withContext(Dispatchers.IO) {
-                runCatching { Geocoder(context, Locale.getDefault()).getFromLocationName(locationQuery.trim(), 3).orEmpty() }.getOrDefault(emptyList())
-            }
+            suggestions = runCatching { lookupAddresses(locationQuery.trim(), 3) }.getOrDefault(emptyList())
         }
     }
     var mapRevision by remember { mutableIntStateOf(0) }
@@ -238,9 +248,9 @@ internal fun HostMapScreen(
             onDispose { }
         } else {
             noteError = false
-            val client = NostrootsNotesClient(
-                onNote = { note -> scope.launch { receivedNotes[note.id] = note } },
-                onError = { scope.launch { noteError = true } },
+            val client = notesClientFactory(
+                { note -> scope.launch { receivedNotes[note.id] = note } },
+                { scope.launch { noteError = true } },
             )
             onDispose { client.close() }
         }
@@ -265,9 +275,7 @@ internal fun HostMapScreen(
         scope.launch {
             error = null
             val result = runCatching {
-                withContext(Dispatchers.IO) {
-                    Geocoder(context, Locale.getDefault()).getFromLocationName(query, 1)?.firstOrNull()
-                }
+                lookupAddresses(query, 1).firstOrNull()
             }
             val location = result.getOrNull()
             if (location == null) error = "Could not find that place."

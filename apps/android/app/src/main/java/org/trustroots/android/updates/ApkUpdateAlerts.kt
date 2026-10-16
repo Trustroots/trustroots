@@ -160,7 +160,7 @@ internal object ApkUpdateAlerts {
         notify = { notifyOnce(context, it, previewAlertsEnabled) },
     )
 
-    internal fun fetchLatestRelease(releasesUrl: String = RELEASES_URL): AndroidPreviewRelease? {
+    private fun fetchLatestRelease(releasesUrl: String): AndroidPreviewRelease? {
         val connection = URL(releasesUrl).openConnection() as HttpURLConnection
         connection.connectTimeout = 10_000
         connection.readTimeout = 10_000
@@ -178,7 +178,7 @@ internal object ApkUpdateAlerts {
     private fun notifyOnce(
         context: Context,
         release: AndroidPreviewRelease,
-        previewAlertsEnabled: Boolean = BuildConfig.PREVIEW_UPDATE_ALERTS,
+        previewAlertsEnabled: Boolean,
     ) {
         val manager = context.getSystemService(NotificationManager::class.java)
         val permissionGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||

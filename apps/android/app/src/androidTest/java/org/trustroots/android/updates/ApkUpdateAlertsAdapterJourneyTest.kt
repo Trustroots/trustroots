@@ -4,6 +4,8 @@ import android.Manifest
 import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -75,40 +77,47 @@ class ApkUpdateAlertsAdapterJourneyTest {
         editor.commit()
     }
 
-    @Test fun checkFetchesAndPublishesAnUpdateFromLocalReleaseFixture() = runBlocking {
+    @Test fun checkFetchesAndPublishesAnUpdateFromLocalReleaseFixture(): Unit = runBlocking {
         assumeTrue("Device notifications must be enabled for this adapter journey", notifications.areNotificationsEnabled())
+        assumeTrue("Permission-denial handling is available on Android 13 and newer", Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
         val fixtureServer = ServerSocket(0).also { server = it }
         val versionCode = BuildConfig.VERSION_CODE + 1
         val versionName = "Offline preview $versionCode"
         val tag = "android-preview-$versionCode"
-        val payload = """[{"tag_name":"$tag","body":"Build $versionCode.","name":"$versionName","draft":false,"prerelease":true,"assets":[{"name":"trustroots-android-$versionCode.apk","size":123}]}]"""
+        fun payload(version: Int, name: String) =
+            """[{"tag_name":"android-preview-$version","body":"Build $version.","name":"$name","draft":false,"prerelease":true,"assets":[{"name":"trustroots-android-$version.apk","size":123}]}]"""
+        val fixtures = listOf(payload(versionCode, versionName), payload(versionCode + 1, "Next offline preview"))
         var requestLine = ""
         var headers = ""
         responder = thread(isDaemon = true) {
-            val socket = acceptOrStop(fixtureServer) ?: return@thread
-            activeSocket = socket
-            try {
-                socket.use {
-                    val input = socket.getInputStream().bufferedReader()
-                    requestLine = input.readLine().orEmpty()
-                    val capturedHeaders = StringBuilder()
-                    while (true) {
-                        val header = input.readLine().orEmpty()
-                        if (header.isEmpty()) break
-                        capturedHeaders.append(header).append('\n')
+            var served = 0
+            while (served < fixtures.size) {
+                val socket = acceptOrStop(fixtureServer) ?: break
+                activeSocket = socket
+                try {
+                    socket.use {
+                        val input = socket.getInputStream().bufferedReader()
+                        requestLine = input.readLine().orEmpty()
+                        val capturedHeaders = StringBuilder()
+                        while (true) {
+                            val header = input.readLine().orEmpty()
+                            if (header.isEmpty()) break
+                            capturedHeaders.append(header).append('\n')
+                        }
+                        if (served == 0) headers = capturedHeaders.toString()
+                        val bytes = fixtures[served].toByteArray()
+                        socket.getOutputStream().write(
+                            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n".toByteArray(),
+                        )
+                        socket.getOutputStream().write(bytes)
+                        socket.getOutputStream().flush()
                     }
-                    headers = capturedHeaders.toString()
-                    val bytes = payload.toByteArray()
-                    socket.getOutputStream().write(
-                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n".toByteArray(),
-                    )
-                    socket.getOutputStream().write(bytes)
-                    socket.getOutputStream().flush()
+                    served++
+                } catch (error: IOException) {
+                    if (fixtureServer.isClosed) break else throw error
+                } finally {
+                    activeSocket = null
                 }
-            } catch (error: IOException) {
-                if (!fixtureServer.isClosed) throw error
-            } finally {
-                activeSocket = null
             }
         }
 
@@ -138,6 +147,28 @@ class ApkUpdateAlertsAdapterJourneyTest {
         assertEquals("$versionName is ready to download.", notification.extras.getString(android.app.Notification.EXTRA_TEXT))
         assertNotNull(notification.contentIntent)
         assertEquals(versionCode, preferences.getInt(LAST_NOTIFIED_VERSION, 0))
+
+        val deniedNotificationContext = object : ContextWrapper(context) {
+            override fun checkSelfPermission(permission: String): Int =
+                if (permission == Manifest.permission.POST_NOTIFICATIONS) {
+                    PackageManager.PERMISSION_DENIED
+                } else {
+                    super.checkSelfPermission(permission)
+                }
+        }
+        val checkDenied = ApkUpdateAlerts.checkNow(
+            deniedNotificationContext,
+            previewAlertsEnabled = true,
+            releasesUrl = "http://127.0.0.1:${fixtureServer.localPort}/fixture/releases",
+        )
+        assertTrue(checkDenied is ApkUpdateCheckResult.NewVersion)
+        assertEquals(versionCode, preferences.getInt(LAST_NOTIFIED_VERSION, 0))
+        assertEquals(
+            "$versionName is ready to download.",
+            notifications.activeNotifications.single { it.id == NOTIFICATION_ID }
+                .notification.extras.getString(android.app.Notification.EXTRA_TEXT),
+        )
+        responder?.join(2_000)
     }
 
     private fun waitForNotification() {
