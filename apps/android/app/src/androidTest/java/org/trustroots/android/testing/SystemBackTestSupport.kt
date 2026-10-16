@@ -3,6 +3,8 @@ package org.trustroots.android.testing
 import android.app.Activity
 import android.view.KeyEvent
 import android.view.View
+import androidx.activity.ComponentDialog
+import androidx.activity.findViewTreeOnBackPressedDispatcherOwner
 import androidx.test.platform.app.InstrumentationRegistry
 
 /**
@@ -10,7 +12,8 @@ import androidx.test.platform.app.InstrumentationRegistry
  *
  * Espresso only delivers back to a window that already has focus. Compose dialogs and
  * dropdowns on current emulator images can stay open without taking focus, and that wait
- * then fails the journey. Deliver the key to the window directly instead.
+ * then fails the journey. Dialogs also ignore a synthetic back key and dismiss through
+ * their own back dispatcher, so call that when the window belongs to one.
  */
 internal fun pressBackFromNonActivityRoot(activity: Activity) {
     val instrumentation = InstrumentationRegistry.getInstrumentation()
@@ -18,8 +21,13 @@ internal fun pressBackFromNonActivityRoot(activity: Activity) {
     val target = topNonActivityRoot(activity)
         ?: error("Expected an open dialog or popup to receive system back")
     instrumentation.runOnMainSync {
-        target.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK))
-        target.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BACK))
+        val dialog = target.findViewTreeOnBackPressedDispatcherOwner() as? ComponentDialog
+        if (dialog != null) {
+            dialog.onBackPressedDispatcher.onBackPressed()
+        } else {
+            target.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK))
+            target.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BACK))
+        }
     }
     instrumentation.waitForIdleSync()
 }
