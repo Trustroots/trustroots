@@ -32,7 +32,7 @@ log_file="$output_dir/instrumentation.log"
 "$adb_command" -s "$serial" install -r "$test_apk"
 "$adb_command" -s "$serial" shell run-as "$app_package" mkdir -p files
 "$adb_command" -s "$serial" shell run-as "$app_package" rm -f files/api32-coverage.ec
-test_classes='org.trustroots.android.notifications.SdkNotificationCompatibilityJourneyTest,org.trustroots.android.browser.EmbeddedBrowserStyleTest#legacyStylingOnlyRunsForTrustrootsPagesWithoutDocumentStartSupport,org.trustroots.android.browser.BrowserNavigationJourneyTest#externalNavigationRequiresConfirmationAndCanBeCancelled'
+test_classes='org.trustroots.android.notifications.SdkNotificationCompatibilityJourneyTest,org.trustroots.android.browser.EmbeddedBrowserStyleTest#legacyStylingOnlyRunsForTrustrootsPagesWithoutDocumentStartSupport,org.trustroots.android.browser.BrowserNavigationJourneyTest#externalNavigationRequiresConfirmationAndCanBeCancelled,org.trustroots.android.ui.AccountPreviewUpdateAlertsJourneyTest#memberCanEnableCheckRetryOpenAndDisablePreviewUpdatesOffline'
 
 "$adb_command" -s "$serial" shell am instrument -w -r \
   -e coverage true \
@@ -47,8 +47,8 @@ import re
 import sys
 
 log = Path(sys.argv[1]).read_text()
-if "INSTRUMENTATION_CODE: -1" not in log or not re.search(r"\bOK \(4 tests\)", log):
-    raise SystemExit("All four selected API 32 compatibility and WebView journeys must pass before exporting coverage.")
+if "INSTRUMENTATION_CODE: -1" not in log or not re.search(r"\bOK \(5 tests\)", log):
+    raise SystemExit("All five selected API 32 compatibility and WebView journeys must pass before exporting coverage.")
 if re.search(r"INSTRUMENTATION_STATUS_CODE: -\d+|FAILURES!!!|Failed to generate .*coverage", log):
     raise SystemExit("API 32 instrumentation reported a failure or skipped test.")
 PY
