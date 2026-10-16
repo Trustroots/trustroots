@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -61,6 +62,7 @@ internal fun HostOfferScreen(
     session: MemberSession,
     onSessionInvalidated: () -> Unit,
     onBack: () -> Unit,
+    contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     var loading by remember { mutableStateOf(true) }
     var saving by remember { mutableStateOf(false) }
@@ -149,9 +151,9 @@ internal fun HostOfferScreen(
                     saving = false
                 }
             }
-    Column(Modifier.fillMaxSize()) {
-        FormActionBar("Host", saving, !loading && !descriptionTooShort, cancel, save)
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp).testTag("hostOfferScreen")) {
+    Column(Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding())) {
+        FormActionBar("Host", saving, !loading && !descriptionTooShort, cancel, save, horizontalInset = contentPadding.horizontalInset())
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = contentPadding.calculateBottomPadding()).padding(20.dp).padding(contentPadding.horizontalInset()).testTag("hostOfferScreen")) {
         Text(
             "Tell travellers whether you can host.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -234,6 +236,7 @@ internal fun CreateExperienceScreen(
     onSessionInvalidated: () -> Unit,
     onBack: () -> Unit,
     onCreated: () -> Unit,
+    contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     var met by remember { mutableStateOf(true) }
     var hosted by remember { mutableStateOf(false) }
@@ -267,9 +270,9 @@ internal fun CreateExperienceScreen(
                     saving = false
                 }
             }
-    Column(Modifier.fillMaxSize()) {
-        FormActionBar("Experience with $memberLabel", saving, canSave, cancel, save)
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp).testTag("createExperienceScreen")) {
+    Column(Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding())) {
+        FormActionBar("Experience with $memberLabel", saving, canSave, cancel, save, horizontalInset = contentPadding.horizontalInset())
+        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = contentPadding.calculateBottomPadding()).padding(20.dp).padding(contentPadding.horizontalInset()).testTag("createExperienceScreen")) {
         Text("What happened?", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(enabled = !saving, checked = met, onCheckedChange = { met = it })
@@ -319,6 +322,7 @@ internal fun AccountSettingsScreen(
     onBack: () -> Unit,
     onResetPassword: () -> Unit,
     onSignedOut: () -> Unit,
+    contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     val context = LocalContext.current
     var messageAlertsEnabled by remember(session.member.username) {
@@ -375,6 +379,7 @@ internal fun AccountSettingsScreen(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding())
             .padding(20.dp)
             .testTag("accountSettingsScreen"),
     ) {

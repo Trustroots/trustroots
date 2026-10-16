@@ -5,6 +5,7 @@ import android.text.Html
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -49,6 +50,7 @@ internal fun CirclesScreen(
     api: MobileApiClient,
     session: MemberSession,
     onSessionInvalidated: () -> Unit,
+    contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     var circles by remember { mutableStateOf<List<TrustrootsCircle>>(emptyList()) }
     var memberships by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -99,9 +101,16 @@ internal fun CirclesScreen(
                 blurBackground = false,
                 testTag = "circleHero",
             )
-            NativeBackButton(onBack = { selected = null }, modifier = Modifier.align(Alignment.TopStart).padding(8.dp), tint = Color.White)
+            NativeBackButton(
+                onBack = { selected = null },
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(contentPadding.horizontalInset())
+                    .padding(top = contentPadding.calculateTopPadding() + 8.dp, bottom = 8.dp, start = 8.dp, end = 8.dp),
+                tint = Color.White,
+            )
             }
-            Column(Modifier.padding(20.dp)) {
+            Column(Modifier.padding(20.dp).padding(contentPadding.horizontalInset()).padding(contentPadding.bottomInset())) {
             circle.description?.let {
                 Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(), modifier = Modifier.padding(vertical = 16.dp))
             }
@@ -113,12 +122,14 @@ internal fun CirclesScreen(
         }
         return
     }
-    Column(Modifier.fillMaxSize().padding(20.dp)) {
+    Column(Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding(), bottom = 20.dp)) {
+        Column(Modifier.padding(horizontal = 20.dp).padding(contentPadding.horizontalInset())) {
         Text("Discover circles", style = MaterialTheme.typography.headlineMedium)
         Text("Joining circles helps you find likeminded Trustroots members.", modifier = Modifier.padding(vertical = 8.dp))
         OutlinedTextField(filter, { filter = it }, label = { Text("Filter circles") }, modifier = Modifier.fillMaxWidth())
         if (loading) CircularProgressIndicator()
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        }
         val visibleCircles = remember(circles, filter) {
             circles.filter { circle ->
                 val description = circle.description?.let {
@@ -127,9 +138,12 @@ internal fun CirclesScreen(
                 "${circle.label} $description".contains(filter.trim(), ignoreCase = true)
             }.sortedWith(compareByDescending<TrustrootsCircle> { it.count }.thenBy { it.label })
         }
-        LazyColumn(Modifier.fillMaxSize()) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding()),
+        ) {
             items(visibleCircles, key = { it.id }) { circle ->
-                Row(Modifier.fillMaxWidth().clickable { selected = circle }.padding(vertical = 9.dp)) {
+                Row(Modifier.fillMaxWidth().clickable { selected = circle }.padding(horizontal = 16.dp, vertical = 9.dp).padding(contentPadding.horizontalInset())) {
                     RemoteArtwork(
                         url = if (circle.image) api.circleImageURL(circle.slug) else null,
                         sessionCookie = null,

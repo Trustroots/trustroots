@@ -12,9 +12,11 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
@@ -47,6 +49,7 @@ private const val EMBEDDED_SITE_TEXT_ZOOM_PERCENT = 90
 fun TrustrootsBrowser(
     route: BrowserRoute,
     onClose: () -> Unit,
+    contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     val context = LocalContext.current
     var webView by remember { mutableStateOf<WebView?>(null) }
@@ -75,7 +78,11 @@ fun TrustrootsBrowser(
         )
     }
 
-    Column(Modifier.fillMaxSize()) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding()),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,

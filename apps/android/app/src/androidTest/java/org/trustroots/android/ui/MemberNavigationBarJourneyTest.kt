@@ -14,6 +14,11 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.graphics.toPixelMap
+import org.junit.Assert.assertEquals
+import org.trustroots.android.ui.theme.TrustrootsGreen
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
 import org.junit.Test
@@ -34,6 +39,9 @@ class MemberNavigationBarJourneyTest {
         }
 
         compose.onNodeWithTag("navigation-circles").assertIsSelected()
+        val navigation = compose.onNodeWithTag("navigation-circles").fetchSemanticsNode().boundsInRoot
+        val pixels = compose.onRoot().captureToImage().toPixelMap()
+        assertEquals(TrustrootsGreen, pixels[1, navigation.center.y.toInt()])
         compose.onNodeWithTag("navigation-messages").assertIsDisplayed()
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "2 unread conversations"))
         compose.onNodeWithText("Profile").assertIsDisplayed()

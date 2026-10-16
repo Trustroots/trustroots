@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -54,6 +55,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
@@ -95,6 +97,7 @@ internal fun HostMapScreen(
     onSessionInvalidated: () -> Unit,
     onProfileOpenChange: (Boolean) -> Unit = {},
     searchMode: @Composable () -> Unit = {},
+    contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     val context = LocalContext.current
     val keyboard = LocalSoftwareKeyboardController.current
@@ -163,6 +166,11 @@ internal fun HostMapScreen(
             expirationOverrideDuration = 7L * 24 * 60 * 60 * 1000
         }
         MapView(context).apply {
+            // The AndroidView holder below can be detached and re-attached (e.g. when navigating
+            // to a host detail and back). With the default destroy mode, MapView.onDetachedFromWindow()
+            // calls onDetach(), invalidating MapViewRepository (getRepository() then dereferences a
+            // null MapView when building the default MarkerInfoWindow -> NPE on re-attach).
+            setDestroyMode(false)
             val mapboxToken = org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN
             setTileSource(if (mapboxToken.isNotBlank()) {
                 XYTileSource(
@@ -292,7 +300,7 @@ internal fun HostMapScreen(
         }
     }
     profileUsername?.let { username ->
-        MemberProfileScreen(api, session, username, onSessionInvalidated) { profileUsername = null }
+        MemberProfileScreen(api, session, username, onSessionInvalidated, onBack = { profileUsername = null }, contentPadding = contentPadding)
         return
     }
     BoxWithConstraints(Modifier.fillMaxSize()) {
@@ -363,9 +371,10 @@ internal fun HostMapScreen(
         )
         Column(
             modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()
-                .testTag("map-controls").background(TrustrootsPaleGreen.copy(alpha = 0.97f)),
+                .testTag("map-controls").background(Color.White)
+                .padding(top = contentPadding.calculateTopPadding()),
         ) {
-            Row(Modifier.fillMaxWidth().padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(contentPadding.horizontalInset()).padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
                     locationQuery, { locationQuery = it; showSuggestions = true },
                     placeholder = { Text("Search places") },
@@ -401,7 +410,7 @@ internal fun HostMapScreen(
             }
             if (showFilters) {
                     Row(
-                        Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp),
+                        Modifier.horizontalScroll(rememberScrollState()).padding(contentPadding.horizontalInset()).padding(horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         MultiChoiceSegmentedButtonRow {
@@ -496,7 +505,9 @@ internal fun HostMapScreen(
                 modifier = Modifier.align(Alignment.Center).background(MaterialTheme.colorScheme.surface).padding(12.dp),
             )
         }
-        Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
+        Column(
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(contentPadding.horizontalInset()).padding(bottom = contentPadding.calculateBottomPadding()),
+        ) {
         host?.let { selected ->
             HostResultCard(
                 offer = selected,
@@ -506,6 +517,7 @@ internal fun HostMapScreen(
                 api = api,
                 session = session,
                 maxHeight = resultCardMaxHeight,
+                horizontalInset = contentPadding.horizontalInset(),
                 onClose = { host = null },
                 onOpenProfile = { selected.user.username?.let { profileUsername = it } },
             )
