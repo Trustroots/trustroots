@@ -13,6 +13,7 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -228,17 +229,17 @@ object MessageAlerts {
         context: Context,
         apiBaseUrl: String,
         loadSession: suspend () -> MemberSession?,
-    ) {
-        val account = preferences(context).getString("account", null) ?: return
-        if (!isEnabled(context, account)) return
+    ): Job? {
+        val account = preferences(context).getString("account", null) ?: return null
+        if (!isEnabled(context, account)) return null
         val oldEndpoint = endpoint(context)
         preferences(context).edit().clear().apply()
         status.value = "Your push distributor stopped message alerts. Choose one again to resume."
-        if (oldEndpoint != null) {
+        return oldEndpoint?.let {
             scope.launch {
                 val session = loadSession() ?: return@launch
                 if (session.member.username == account) {
-                    MobileApiClient(apiBaseUrl).unregisterMessagePush(session, oldEndpoint)
+                    MobileApiClient(apiBaseUrl).unregisterMessagePush(session, it)
                 }
             }
         }

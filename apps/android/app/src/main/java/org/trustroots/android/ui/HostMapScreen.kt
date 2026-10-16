@@ -105,7 +105,8 @@ internal fun HostMapScreen(
     val context = LocalContext.current
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
-    val scope = rememberCoroutineScope()
+    // MapView animations must resume on Android's UI looper after background lookups.
+    val scope = rememberCoroutineScope { Dispatchers.Main.immediate }
     var offers by remember { mutableStateOf<List<MapOffer>>(emptyList()) }
     var host by remember { mutableStateOf<HostOffer?>(null) }
     var selectedNotes by remember { mutableStateOf<List<CommunityNote>>(emptyList()) }

@@ -1,10 +1,15 @@
 package org.trustroots.android.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.activity.ComponentActivity
+import android.location.Address
+import java.util.Locale
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.click
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -23,13 +28,15 @@ import org.trustroots.android.api.MobileMember
 
 @RunWith(AndroidJUnit4::class)
 class HostMapMarkerJourneyTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val server = ServerSocket(0)
     private val requests = CopyOnWriteArrayList<String>()
     private var responder: Thread? = null
+    @Volatile private var activeSocket: Socket? = null
 
     @After fun closeServer() {
         server.close()
+        activeSocket?.close()
         responder?.join(1_000)
     }
 
@@ -43,7 +50,10 @@ class HostMapMarkerJourneyTest {
         responder = thread(isDaemon = true) {
             while (true) {
                 val socket = acceptOrStop() ?: return@thread
+                activeSocket = socket
+                try {
                 socket.use {
+                    socket.soTimeout = 5_000
                     val input = socket.getInputStream().bufferedReader()
                     val request = input.readLine().orEmpty()
                     requests += request
@@ -55,7 +65,9 @@ class HostMapMarkerJourneyTest {
                     }
                     val contentLength = headers.firstOrNull { it.startsWith("Content-Length:", true) }
                         ?.substringAfter(':')?.trim()?.toIntOrNull() ?: 0
-                    repeat(contentLength) { input.read() }
+                    repeat(contentLength) {
+                        if (input.read() < 0) throw java.io.EOFException("Incomplete fixture body")
+                    }
                     val payload = when {
                         request.startsWith("GET /api/offers?") ->
                             """{"features":[{"properties":{"id":"offer-one","type":"host","status":"yes"},"geometry":{"coordinates":[-9.1393,38.7223]}}]}"""
@@ -73,6 +85,11 @@ class HostMapMarkerJourneyTest {
                     socket.getOutputStream().write(bytes)
                     socket.getOutputStream().flush()
                 }
+                } catch (error: java.io.IOException) {
+                    if (!server.isClosed) throw error
+                } finally {
+                    activeSocket = null
+                }
             }
         }
         compose.setContent {
@@ -80,6 +97,7 @@ class HostMapMarkerJourneyTest {
                 api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
                 session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
                 onSessionInvalidated = {},
+                geocoderLookup = { _, _ -> listOf(Address(Locale.UK).apply { setAddressLine(0, "Fictional destination") }) },
             )
         }
 
@@ -94,5 +112,20 @@ class HostMapMarkerJourneyTest {
         compose.onNodeWithText("A fictional spare room.").assertIsDisplayed()
         compose.onNodeWithText("Hosting travellers").assertIsDisplayed()
         check(requests.any { it.startsWith("GET /api/offers/offer-one ") })
+
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithText("A fictional spare room.").assertDoesNotExist()
+        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithText("Hosting").assertIsDisplayed()
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithText("Hosting").assertDoesNotExist()
+
+        compose.onNodeWithTag("placeSearchField").performTextReplacement("Fictional")
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithText("Fictional destination").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithText("Fictional destination").assertDoesNotExist()
+        compose.onNodeWithTag("hostMapView").assertIsDisplayed()
     }
 }

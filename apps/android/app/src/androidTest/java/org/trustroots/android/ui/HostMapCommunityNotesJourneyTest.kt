@@ -1,7 +1,8 @@
 package org.trustroots.android.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -36,7 +37,7 @@ import org.trustroots.android.api.NostrootsNotesClient
 
 @RunWith(AndroidJUnit4::class)
 class HostMapCommunityNotesJourneyTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val server = ServerSocket(0)
     private val requests = CopyOnWriteArrayList<String>()
     private val sockets = RecordingSocketFactory()
@@ -153,6 +154,14 @@ class HostMapCommunityNotesJourneyTest {
 
         compose.onNodeWithText("Close").performClick()
         compose.onNodeWithText("Community notes via Nostroots").assertDoesNotExist()
+        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("hostMapView").performTouchInput { click(center) }
+        compose.waitUntil(5_000) {
+            runCatching { compose.onNodeWithText("Community notes via Nostroots").assertIsDisplayed(); true }.getOrDefault(false)
+        }
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithText("Community notes via Nostroots").assertDoesNotExist()
+        compose.onNodeWithTag("openFilters").performClick()
         compose.onNodeWithText("Meet").performClick()
         compose.waitUntil(5_000) { recoveredConnection.socket.closes.isNotEmpty() }
         assertEquals(1000, recoveredConnection.socket.closes.single().first)

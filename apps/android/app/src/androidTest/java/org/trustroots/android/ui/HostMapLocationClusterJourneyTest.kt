@@ -145,6 +145,11 @@ class HostMapLocationClusterJourneyTest {
                 it.longitudeSpan < zoomBeforeCluster.longitudeSpan * 0.75
         })
 
+        compose.onNodeWithTag("placeSearchField").performTextReplacement("Fictional Harbour")
+        compose.onNodeWithContentDescription("Search places").performClick()
+        compose.waitUntil(10_000) { geocoderCalls.any { it == ("Fictional Harbour" to 1) } }
+        compose.onNodeWithTag("hostMapView").assertIsDisplayed()
+
         compose.onNodeWithTag("placeSearchField").performTextReplacement("Unmapped Place")
         compose.onNodeWithContentDescription("Search places").performClick()
         compose.waitUntil(10_000) {
