@@ -376,7 +376,6 @@ internal fun MemberProfileScreen(
                     onMessage = {
                         recipient = MessageMember(member.id, member.username, member.displayName)
                     },
-                    showShareExperience = referencesEnabled,
                     onShareExperience = { sharingExperience = true },
                     contactLabel = when {
                         !relationshipResolved -> null
@@ -464,7 +463,6 @@ private fun ProfileActionBar(
     onBack: () -> Unit,
     onEditProfile: () -> Unit,
     onMessage: () -> Unit,
-    showShareExperience: Boolean,
     onShareExperience: () -> Unit,
     contactLabel: String?,
     onContactAction: () -> Unit,
@@ -491,7 +489,7 @@ private fun ProfileActionBar(
                 TextButton(onClick = onEditProfile) { Text("Edit your profile") }
             } else {
                 TextButton(onClick = onMessage) { Text("Send a message") }
-                if (showShareExperience) {
+                if (referencesEnabled) {
                     TextButton(onClick = onShareExperience) { Text("Share your experience") }
                 }
                 contactLabel?.let { label ->
