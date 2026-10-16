@@ -48,28 +48,6 @@ function shouldCaptureFullPage(testInfo: TestInfo): boolean {
   );
 }
 
-/**
- * Playwright full-page screenshots stitch scroll slices. Fixed headers then
- * appear mid-page instead of at the top. Pin the site header to the document
- * so the capture matches what people see at scroll position 0.
- */
-async function pinHeaderForFullPageScreenshot(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    window.scrollTo(0, 0);
-  });
-  await page.addStyleTag({
-    content: `
-      #tr-header {
-        position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
-      }
-    `,
-  });
-}
-
 export async function captureEndOfTestScreenshot(
   page: Page,
   testInfo: TestInfo,
@@ -98,14 +76,11 @@ export async function captureEndOfTestScreenshot(
       return;
     }
 
-    const fullPage = shouldCaptureFullPage(testInfo);
-    if (fullPage) {
-      await pinHeaderForFullPageScreenshot(page);
-    }
-
+    // Leave the fixed header as the app renders it. Full-page shots stitch
+    // scrolled slices, so the header can appear part-way down the image.
     await page.screenshot({
       path: screenshotPath,
-      fullPage,
+      fullPage: shouldCaptureFullPage(testInfo),
     });
   } catch {
     // Screenshot capture is best-effort and must not fail the test run.

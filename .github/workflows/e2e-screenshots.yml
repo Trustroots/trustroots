@@ -232,6 +232,10 @@ jobs:
             if (screenshotCount === 0) {
               lines.push('', '_No screenshots were captured._');
             } else {
+              lines.push(
+                '',
+                '_The site header stays fixed to the top of the viewport. A full-page screenshot is stitched from scrolled slices, so that header can appear part-way down the image, over the page content._',
+              );
               const screenshotDir = path.join(process.cwd(), 'tmp/screenshots');
               const files = fs
                 .readdirSync(screenshotDir)
