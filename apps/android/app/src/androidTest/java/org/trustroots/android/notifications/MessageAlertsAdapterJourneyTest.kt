@@ -17,11 +17,13 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -78,7 +80,7 @@ class MessageAlertsAdapterJourneyTest {
     @Test fun adaptersEnableReconcileRegisterAndUnregisterThroughLocalApi() {
         val baseUrl = "http://127.0.0.1:${server.localPort}"
         val session = MemberSession("connect.sid=fixture-session", MobileMember("quiet-fox", "Quiet Fox"))
-        val responseCount = 10
+        val responseCount = 12
         val configurationRequests = AtomicInteger()
         responder = thread(isDaemon = true) {
             var servedResponses = 0
@@ -109,10 +111,10 @@ class MessageAlertsAdapterJourneyTest {
                         } else ""
                         requests += request to body
                         val response = if (request.startsWith("GET ")) {
-                            if (configurationRequests.getAndIncrement() == 3) {
-                                """{"enabled":false}"""
-                            } else {
-                                """{"enabled":true,"publicKey":"fixture-vapid-key"}"""
+                            when (configurationRequests.getAndIncrement()) {
+                                3, 5 -> """{"enabled":false}"""
+                                4 -> """{"enabled":true,"publicKey":""}"""
+                                else -> """{"enabled":true,"publicKey":"fixture-vapid-key"}"""
                             }
                         } else "{}"
                         val bytes = response.toByteArray()
@@ -195,10 +197,54 @@ class MessageAlertsAdapterJourneyTest {
             }
             assertTrue("Unconfigured-server result did not complete", unconfiguredLatch.await(10, TimeUnit.SECONDS))
             assertEquals("Message alerts are not configured on this server.", unconfiguredResult.get())
+
+            val blankKeySession = MemberSession(
+                "connect.sid=fixture-session",
+                MobileMember("silver-otter", "Silver Otter"),
+            )
+            val blankKeyResult = AtomicReference<String>()
+            val blankKeyLatch = CountDownLatch(1)
+            scenario.onActivity { activity ->
+                MessageAlerts.enable(
+                    activity = activity,
+                    session = blankKeySession,
+                    onResult = { blankKeyResult.set(it); blankKeyLatch.countDown() },
+                    apiBaseUrl = baseUrl,
+                    hasDistributors = { error("A blank server key must stop before distributor lookup") },
+                    chooseDistributor = { error("A blank server key must stop before selection") },
+                    registerDistributor = { error("A blank server key must not register") },
+                )
+            }
+            assertTrue("Blank-key result did not complete", blankKeyLatch.await(10, TimeUnit.SECONDS))
+            assertEquals("Message alerts are not configured on this server.", blankKeyResult.get())
+            assertFalse(MessageAlerts.isEnabled(context, blankKeySession.member.username))
+            assertEquals("quiet-fox", preferences.getString("account", null))
         }
         assertEquals("Waiting for your distributor to register message alerts.", enableResult.get())
         assertEquals("fixture-vapid-key", registeredKey.get())
         assertTrue(MessageAlerts.isEnabled(context, "quiet-fox"))
+
+        val disabledReconcileDistributorLookups = AtomicInteger()
+        val disabledReconcileRegistrations = AtomicInteger()
+        val disabledReconcileJob = MessageAlerts.reconcile(
+            context,
+            session,
+            apiBaseUrl = baseUrl,
+            hasSavedDistributor = { disabledReconcileDistributorLookups.incrementAndGet(); true },
+            registerDistributor = { disabledReconcileRegistrations.incrementAndGet() },
+        )
+        assertNotNull(disabledReconcileJob)
+        try {
+            waitForRequestCount(6)
+            runBlocking { withTimeout(10_000) { disabledReconcileJob!!.join() } }
+            assertEquals(0, disabledReconcileDistributorLookups.get())
+            assertEquals(0, disabledReconcileRegistrations.get())
+            assertTrue(MessageAlerts.isEnabled(context, "quiet-fox"))
+            assertNull(MessageAlerts.endpoint(context))
+            assertNull(MessageAlerts.status.value)
+        } finally {
+            disabledReconcileJob?.cancel()
+        }
 
         val reconciledKey = AtomicReference<String>()
         val reconcileLatch = CountDownLatch(1)
@@ -219,7 +265,7 @@ class MessageAlertsAdapterJourneyTest {
             hasSavedDistributor = { false },
             registerDistributor = { error("A missing saved distributor should not register") },
         )
-        waitForRequestCount(6)
+        waitForRequestCount(8)
 
         preferences.edit().putString("endpoint", "https://push.invalid/old").commit()
         MessageAlerts.onEndpoint(
@@ -228,7 +274,7 @@ class MessageAlertsAdapterJourneyTest {
             apiBaseUrl = baseUrl,
             loadSession = { session },
         )
-        waitForRequestCount(8)
+        waitForRequestCount(10)
         waitForStatus("Message alerts are ready.")
         assertEquals("https://push.invalid/new", MessageAlerts.endpoint(context))
 
@@ -248,18 +294,19 @@ class MessageAlertsAdapterJourneyTest {
         assertFalse(MessageAlerts.isEnabled(context, "quiet-fox"))
         assertEquals("Your push distributor stopped message alerts. Choose one again to resume.", MessageAlerts.status.value)
         waitForRequestCount(responseCount)
-
         assertEquals(
-            listOf("GET", "GET", "GET", "GET", "GET", "GET", "POST", "DELETE", "DELETE", "DELETE"),
+            listOf("GET", "GET", "GET", "GET", "GET", "GET", "GET", "GET", "POST", "DELETE", "DELETE", "DELETE"),
             requests.map { it.first.substringBefore(' ') },
         )
-        val registration = JSONObject(requests[6].second)
+        assertEquals(8, requests.count { it.first.startsWith("GET /api/users/unified-push ") })
+        assertTrue(requests.take(8).all { it.first.startsWith("GET /api/users/unified-push ") })
+        val registration = JSONObject(requests[8].second)
         assertEquals("https://push.invalid/new", registration.getString("endpoint"))
         assertEquals("fixture-public", registration.getString("publicKey"))
         assertEquals("fixture-auth", registration.getString("auth"))
-        assertEquals("https://push.invalid/old", JSONObject(requests[7].second).getString("endpoint"))
-        assertEquals("https://push.invalid/new", JSONObject(requests[8].second).getString("endpoint"))
-        assertEquals("https://push.invalid/stopped", JSONObject(requests[9].second).getString("endpoint"))
+        assertEquals("https://push.invalid/old", JSONObject(requests[9].second).getString("endpoint"))
+        assertEquals("https://push.invalid/new", JSONObject(requests[10].second).getString("endpoint"))
+        assertEquals("https://push.invalid/stopped", JSONObject(requests[11].second).getString("endpoint"))
     }
 
     private fun waitForRequestCount(expected: Int) {

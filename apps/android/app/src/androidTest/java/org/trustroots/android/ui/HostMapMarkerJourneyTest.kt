@@ -97,7 +97,9 @@ class HostMapMarkerJourneyTest {
                 api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
                 session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
                 onSessionInvalidated = {},
-                geocoderLookup = { _, _ -> listOf(Address(Locale.UK).apply { setAddressLine(0, "Fictional destination") }) },
+                geocoderLookup = { _, _, _ ->
+                    listOf(Address(Locale.UK).apply { setAddressLine(0, "Fictional destination") })
+                },
             )
         }
 

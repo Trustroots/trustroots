@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Run the API compatibility journeys from the APKs already tested on API 36.
+# Run the API 32 compatibility and WebView-style journeys from APKs tested on API 36.
 # Rebuilding here would change the classes whose probes JaCoCo needs to merge.
 android_root=$(cd "$(dirname "$0")/.." && pwd)
 adb_command=${ADB:-adb}
@@ -32,10 +32,12 @@ log_file="$output_dir/instrumentation.log"
 "$adb_command" -s "$serial" install -r "$test_apk"
 "$adb_command" -s "$serial" shell run-as "$app_package" mkdir -p files
 "$adb_command" -s "$serial" shell run-as "$app_package" rm -f files/api32-coverage.ec
+test_classes='org.trustroots.android.notifications.SdkNotificationCompatibilityJourneyTest,org.trustroots.android.browser.EmbeddedBrowserStyleTest#legacyStylingOnlyRunsForTrustrootsPagesWithoutDocumentStartSupport,org.trustroots.android.browser.BrowserNavigationJourneyTest#externalNavigationRequiresConfirmationAndCanBeCancelled'
+
 "$adb_command" -s "$serial" shell am instrument -w -r \
   -e coverage true \
   -e coverageFile "/data/user/0/$app_package/files/api32-coverage.ec" \
-  -e class org.trustroots.android.notifications.SdkNotificationCompatibilityJourneyTest \
+  -e class "$test_classes" \
   "$test_package/androidx.test.runner.AndroidJUnitRunner" | tee "$log_file"
 
 # am instrument can return shell success even when tests fail or none were found.
@@ -45,8 +47,8 @@ import re
 import sys
 
 log = Path(sys.argv[1]).read_text()
-if "INSTRUMENTATION_CODE: -1" not in log or not re.search(r"\bOK \(2 tests\)", log):
-    raise SystemExit("Both API 32 compatibility journeys must pass before exporting coverage.")
+if "INSTRUMENTATION_CODE: -1" not in log or not re.search(r"\bOK \(4 tests\)", log):
+    raise SystemExit("All four selected API 32 compatibility and WebView journeys must pass before exporting coverage.")
 if re.search(r"INSTRUMENTATION_STATUS_CODE: -\d+|FAILURES!!!|Failed to generate .*coverage", log):
     raise SystemExit("API 32 instrumentation reported a failure or skipped test.")
 PY

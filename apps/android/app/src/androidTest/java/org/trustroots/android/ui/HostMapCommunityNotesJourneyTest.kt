@@ -107,7 +107,7 @@ class HostMapCommunityNotesJourneyTest {
                 api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
                 session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
                 onSessionInvalidated = {},
-                geocoderLookup = { _, _ -> emptyList() },
+                geocoderLookup = { _, _, _ -> emptyList() },
                 notesClientFactory = { onNote, onError -> NostrootsNotesClient(onNote, onError, sockets) },
             )
         }

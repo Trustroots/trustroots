@@ -2,6 +2,7 @@ package org.trustroots.android.ui
 
 import androidx.activity.compose.BackHandler
 import android.content.Context
+import android.location.Address
 import android.location.Geocoder
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -91,6 +92,12 @@ import org.trustroots.android.api.CommunityNote
 import org.trustroots.android.api.NostrootsNotesClient
 import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 
+internal fun lookupAndroidPlaces(
+    context: Context,
+    query: String,
+    maxResults: Int,
+): List<Address>? = Geocoder(context, Locale.getDefault()).getFromLocationName(query, maxResults)
+
 @Composable
 internal fun HostMapScreen(
     api: MobileApiClient,
@@ -99,7 +106,7 @@ internal fun HostMapScreen(
     onProfileOpenChange: (Boolean) -> Unit = {},
     searchMode: @Composable () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues.Zero,
-    geocoderLookup: ((String, Int) -> List<android.location.Address>?)? = null,
+    geocoderLookup: (Context, String, Int) -> List<Address>? = ::lookupAndroidPlaces,
     notesClientFactory: ((onNote: (CommunityNote) -> Unit, onError: () -> Unit) -> NostrootsNotesClient) =
         { onNote, onError -> NostrootsNotesClient(onNote, onError) },
     mapViewFactory: (Context) -> MapView = { MapView(it) },
@@ -136,11 +143,7 @@ internal fun HostMapScreen(
     var memberships by remember { mutableStateOf<Set<String>>(emptySet()) }
     val lookupAddresses: suspend (String, Int) -> List<android.location.Address> = { query, maxResults ->
         withContext(Dispatchers.IO) {
-            if (geocoderLookup != null) {
-                geocoderLookup(query, maxResults).orEmpty()
-            } else {
-                Geocoder(context, Locale.getDefault()).getFromLocationName(query, maxResults).orEmpty()
-            }
+            geocoderLookup(context, query, maxResults).orEmpty()
         }
     }
     LaunchedEffect(host?.id) {

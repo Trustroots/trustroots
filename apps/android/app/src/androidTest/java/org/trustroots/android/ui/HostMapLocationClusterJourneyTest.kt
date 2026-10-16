@@ -103,7 +103,7 @@ class HostMapLocationClusterJourneyTest {
                 api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
                 session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
                 onSessionInvalidated = {},
-                geocoderLookup = { query, maxResults ->
+                geocoderLookup = { _, query, maxResults ->
                     geocoderCalls += query to maxResults
                     if (query == "Fictional Harbour") {
                         listOf(Address(Locale.US).apply {
@@ -111,8 +111,10 @@ class HostMapLocationClusterJourneyTest {
                             longitude = TARGET_LONGITUDE
                             setAddressLine(0, "Fictional Harbour, Somewhere")
                         })
-                    } else {
+                    } else if (query == "Unmapped Place") {
                         emptyList()
+                    } else {
+                        null
                     }
                 },
             )
@@ -156,6 +158,15 @@ class HostMapLocationClusterJourneyTest {
             compose.onAllNodesWithText("Could not find that place.").fetchSemanticsNodes().isNotEmpty()
         }
         assertTrue(geocoderCalls.any { it == ("Unmapped Place" to 1) })
+        compose.onNodeWithText("Could not find that place.").assertIsDisplayed()
+
+        // Android's geocoder may return null as well as an empty list for no matches.
+        compose.onNodeWithTag("placeSearchField").performTextReplacement("No Address Match")
+        compose.onNodeWithContentDescription("Search places").performClick()
+        compose.waitUntil(10_000) {
+            geocoderCalls.any { it == ("No Address Match" to 1) } &&
+                compose.onAllNodesWithText("Could not find that place.").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithText("Could not find that place.").assertIsDisplayed()
     }
 

@@ -153,7 +153,9 @@ the native UI tests on a connected Android device:
 
 The localhost override lets public API wrappers use the device-test fixtures.
 The relay integration tests use MockWebServer to exercise real WebSocket
-connections locally; this dependency is only included in JVM tests.
+connections locally; this dependency is only included in JVM tests. The Android
+geocoder adapter is tested offline with Robolectric, also confined to JVM tests.
+Its runtime is pinned to API 35 so these tests continue to run with JDK 17.
 
 Android changes also run all unit and device tests on an API 36 emulator in the
 Android debug APK workflow, publishing combined line and branch coverage tables
@@ -169,8 +171,8 @@ python3 scripts/coverage-ratchet.py app/build/reports/coverage/debug/coverage.xm
 python3 -m unittest discover -s scripts
 ```
 
-CI also runs the notification compatibility journeys on API 32, using the same
-already-built APKs, then merges those probes into the report. To reproduce that
+CI also runs four selected notification and offline WebView compatibility journeys
+on API 32, using the same already-built APKs, then merges those probes into the report. To reproduce that
 combined report, stop the API 36 emulator and connect a dedicated API 32 emulator
 after the full run above, then run:
 

@@ -119,7 +119,7 @@ class HostMapDetailAndCircleFilterJourneyTest {
                 api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
                 session = session,
                 onSessionInvalidated = { invalidations.incrementAndGet() },
-                geocoderLookup = { _, _ -> emptyList<Address>() },
+                geocoderLookup = { _, _, _ -> emptyList<Address>() },
             )
         }
     }

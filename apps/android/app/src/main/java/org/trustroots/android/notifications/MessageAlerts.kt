@@ -147,12 +147,12 @@ object MessageAlerts {
         apiBaseUrl: String,
         hasSavedDistributor: () -> Boolean,
         registerDistributor: (String) -> Unit,
-    ) {
+    ): Job? {
         if (!isEnabled(context, session.member.username)) {
             status.value = null
-            return
+            return null
         }
-        scope.launch {
+        return scope.launch {
             val key = MobileApiClient(apiBaseUrl).messagePushConfiguration(session).getOrNull() ?: return@launch
             if (hasSavedDistributor()) {
                 registerDistributor(key)
