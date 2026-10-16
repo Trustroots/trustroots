@@ -1,7 +1,10 @@
 package org.trustroots.android.updates
 
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ApkUpdateAlertsTest {
@@ -29,5 +32,80 @@ class ApkUpdateAlertsTest {
         ]"""
 
         assertNull(latestAndroidPreviewRelease(response, 100021))
+    }
+
+    @Test fun rejectsMalformedReleaseEntriesAndFallsBackToGeneratedName() {
+        val response = """[
+            null,
+            {"tag_name":"android-preview-nope","body":"Build 100030.","draft":false,"prerelease":true,"assets":[{"name":"trustroots-android-0.1-30.apk","size":10}]},
+            {"tag_name":"android-preview-30","body":"Build 100030.","draft":false,"prerelease":true,"assets":[{"name":"trustroots-android-0.1-30.apk","size":0}]},
+            {"tag_name":"android-preview-31","body":"Build 100031.","name":"   ","draft":false,"prerelease":true,"assets":[{"name":"trustroots-android-0.1-31.apk","size":10}]}
+        ]"""
+
+        val release = latestAndroidPreviewRelease(response, 100029)
+
+        assertEquals(
+            AndroidPreviewRelease(
+                versionCode = 100031,
+                versionName = "Android preview 100031",
+                pageUrl = "https://github.com/Trustroots/trustroots/releases/tag/android-preview-31",
+            ),
+            release,
+        )
+    }
+
+    @Test fun checkReturnsUnavailableForDisabledOrFailedChecksAndDoesNotNotify() = runBlocking {
+        var fetchCount = 0
+        var notificationCount = 0
+
+        val disabled = checkForAndroidPreviewUpdate(
+            isEnabled = { false },
+            fetchRelease = { fetchCount++; null },
+            notify = { notificationCount++ },
+        )
+        val failed = checkForAndroidPreviewUpdate(
+            isEnabled = { true },
+            fetchRelease = { fetchCount++; error("offline") },
+            notify = { notificationCount++ },
+        )
+
+        assertTrue(disabled is ApkUpdateCheckResult.Unavailable)
+        assertTrue(failed is ApkUpdateCheckResult.Unavailable)
+        assertEquals(1, fetchCount)
+        assertEquals(0, notificationCount)
+    }
+
+    @Test fun checkRechecksOptInAfterFetchAndReportsUpToDateOrNewVersion() = runBlocking {
+        val release = AndroidPreviewRelease(100032, "Preview 32", "https://example.invalid/release")
+        var enabledChecks = 0
+        var notification: AndroidPreviewRelease? = null
+        val optedOutDuringFetch = checkForAndroidPreviewUpdate(
+            isEnabled = { ++enabledChecks == 1 },
+            fetchRelease = { release },
+            notify = { notification = it },
+        )
+        val upToDate = checkForAndroidPreviewUpdate(
+            isEnabled = { true },
+            fetchRelease = { null },
+            notify = { notification = it },
+        )
+        val newVersion = checkForAndroidPreviewUpdate(
+            isEnabled = { true },
+            fetchRelease = { release },
+            notify = { notification = it },
+        )
+
+        assertTrue(optedOutDuringFetch is ApkUpdateCheckResult.Unavailable)
+        assertTrue(upToDate is ApkUpdateCheckResult.UpToDate)
+        assertEquals(ApkUpdateCheckResult.NewVersion(release), newVersion)
+        assertEquals(release, notification)
+    }
+
+    @Test fun notificationGateRequiresPermissionOptInAndANewerVersion() {
+        assertTrue(shouldPostUpdateNotification(true, true, true, 100033, 100032))
+        assertFalse(shouldPostUpdateNotification(false, true, true, 100033, 100032))
+        assertFalse(shouldPostUpdateNotification(true, false, true, 100033, 100032))
+        assertFalse(shouldPostUpdateNotification(true, true, false, 100033, 100032))
+        assertFalse(shouldPostUpdateNotification(true, true, true, 100032, 100032))
     }
 }

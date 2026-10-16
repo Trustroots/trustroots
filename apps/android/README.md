@@ -148,7 +148,72 @@ To run
 the native UI tests on a connected Android device:
 
 ```sh
-./gradlew connectedDebugAndroidTest
+./gradlew -PtrustrootsApiUrl=http://127.0.0.1:38081 connectedDebugAndroidTest
+```
+
+The localhost override lets public API wrappers use the device-test fixtures.
+The relay integration tests use MockWebServer to exercise real WebSocket
+connections locally; this dependency is only included in JVM tests. The Android
+geocoder adapter is tested offline with Robolectric, also confined to JVM tests.
+Its runtime is pinned to API 35 so these tests continue to run with JDK 17.
+
+Android changes also run all unit and device tests on an API 36 emulator in the
+Android debug APK workflow, publishing combined line and branch coverage tables
+in its job summary. The report includes every production package and source file,
+including untested files; only generated R and BuildConfig classes are excluded.
+JaCoCo applies its standard Kotlin bytecode filters. Coverage instrumentation is
+opt-in and does not affect ordinary debug or release builds. To generate the
+API 36 report locally, with localhost configured for the offline adapter journeys:
+
+```sh
+./gradlew -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable
+python3 scripts/coverage-ratchet.py app/build/reports/coverage/debug/coverage.xml coverage-baseline.json
+python3 -m unittest discover -s scripts
+```
+
+CI also runs four selected notification and offline WebView compatibility journeys
+on API 32, using the same already-built APKs, then merges those probes into the report. To reproduce that
+combined report, stop the API 36 emulator and connect a dedicated API 32 emulator
+after the full run above, then run:
+
+```sh
+bash scripts/collect-legacy-coverage.sh
+./gradlew -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable -x testDebugUnitTest -x connectedDebugAndroidTest -x compileDebugKotlin -x compileDebugJavaWithJavac
+python3 scripts/coverage-ratchet.py app/build/reports/coverage/debug/coverage.xml coverage-baseline.json
+```
+
+The compatibility pass reuses the compiled classes and APKs because rebuilding
+between Android versions can change class identities. The localhost API and
+UnifiedPush distributor fixture belong to device tests; the fake distributor is
+disabled outside its journey and is absent from the application APK.
+
+The generated table is `app/build/reports/coverage/debug/coverage.md`; the XML
+report is beside it, and the HTML report is under `html/index.html`. CI uploads
+these reports with the test results. The global line and branch coverage ratios
+must not fall below `coverage-baseline.json`; comparisons use exact counters, not
+the table's rounded percentages. Per-file figures are informational. The baseline
+is measured with all unit and device tests, so do not use a filtered test run to
+update it.
+
+Repeat the complete suite before raising the floor. The saved `branchMargin`
+allows ten branches when calculating a new branch floor: the initial measurements
+varied by six branches between local and CI emulators, and by three between local
+runs. The line floor uses the measured ratio without an allowance. The allowance
+does not relax checks against the saved floor and cannot lower an existing floor.
+
+When coverage improves, raise the baseline and commit it with the change:
+
+```sh
+python3 scripts/coverage-ratchet.py app/build/reports/coverage/debug/coverage.xml coverage-baseline.json --update
+```
+
+The update refuses regressions. CI also compares the checked-in floor with the
+base commit's baseline, preventing a baseline edit from silently lowering it.
+
+For only the design regression journeys, without collecting full-suite coverage:
+
+```sh
+./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=org.trustroots.android.ui.DesignFixesJourneyTest,org.trustroots.android.ui.CirclesJourneyTest,org.trustroots.android.ui.MemberNavigationBarJourneyTest
 ```
 
 When a phone and emulator are both connected, build the test APK and target the

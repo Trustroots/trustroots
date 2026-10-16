@@ -42,6 +42,11 @@ data class BrowserRoute(
     val sessionCookie: String? = null,
 )
 
+internal val DefaultBrowserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit =
+    { route, onClose, contentPadding ->
+        TrustrootsBrowser(route = route, onClose = onClose, contentPadding = contentPadding)
+    }
+
 private const val EMBEDDED_SITE_TEXT_ZOOM_PERCENT = 90
 
 @Composable
@@ -110,10 +115,7 @@ fun TrustrootsBrowser(
                         "${settings.userAgentString} TrustrootsAndroid/0.1 native"
                     webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView, url: String?) {
-                            if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT) &&
-                                url?.startsWith("https://www.trustroots.org/") == true) {
-                                view.evaluateJavascript(embeddedBrowserStyle, null)
-                            }
+                            applyEmbeddedBrowserStyleAfterLoad(view, url)
                         }
                         override fun shouldOverrideUrlLoading(
                             view: WebView,
@@ -165,6 +167,16 @@ internal fun installEmbeddedBrowserStyle(webView: WebView) {
         WebViewCompat.addDocumentStartJavaScript(
             webView, embeddedBrowserStyle, setOf("https://www.trustroots.org"),
         )
+    }
+}
+
+internal fun applyEmbeddedBrowserStyleAfterLoad(
+    webView: WebView,
+    url: String?,
+    documentStartSupported: Boolean = WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT),
+) {
+    if (!documentStartSupported && url?.startsWith("https://www.trustroots.org/") == true) {
+        webView.evaluateJavascript(embeddedBrowserStyle, null)
     }
 }
 

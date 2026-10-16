@@ -683,7 +683,7 @@ internal fun parseAccountDetails(value: JSONObject): AccountDetails {
 private fun encode(value: String): String = URLEncoder.encode(value, Charsets.UTF_8.name())
 
 private fun JSONObject.optionalText(key: String): String? =
-    optString(key).trim().takeIf { it.isNotEmpty() }
+    if (isNull(key)) null else optString(key).trim().takeIf { it.isNotEmpty() }
 
 internal fun parseMember(value: JSONObject): MemberProfile {
     val username = value.getString("username")

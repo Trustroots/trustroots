@@ -85,7 +85,7 @@ import org.trustroots.android.api.MessageThread
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.browser.BrowserRoute
-import org.trustroots.android.browser.TrustrootsBrowser
+import org.trustroots.android.browser.DefaultBrowserContent
 import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 import java.util.Locale
 import java.text.SimpleDateFormat
@@ -206,6 +206,7 @@ internal fun MemberProfileScreen(
     startInEditMode: Boolean = false,
     contentPadding: PaddingValues = PaddingValues.Zero,
     onBack: () -> Unit,
+    browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit = DefaultBrowserContent,
 ) {
     var profile by remember(username) { mutableStateOf<MemberProfile?>(null) }
     var hosting by remember(username) { mutableStateOf<AccommodationOffer?>(null) }
@@ -260,7 +261,12 @@ internal fun MemberProfileScreen(
         return
     }
     relatedUsername?.let { related ->
-        MemberProfileScreen(api, session, related, onSessionInvalidated, onBack = { relatedUsername = null }, contentPadding = contentPadding)
+        MemberProfileScreen(
+            api, session, related, onSessionInvalidated,
+            onBack = { relatedUsername = null },
+            contentPadding = contentPadding,
+            browserContent = browserContent,
+        )
         return
     }
     recipient?.let {
@@ -268,7 +274,7 @@ internal fun MemberProfileScreen(
         return
     }
     browserRoute?.let { route ->
-        TrustrootsBrowser(route = route, onClose = { browserRoute = null }, contentPadding = contentPadding)
+        browserContent(route, { browserRoute = null }, contentPadding)
         return
     }
     if (confirmRemoveContact) {
@@ -370,7 +376,6 @@ internal fun MemberProfileScreen(
                     onMessage = {
                         recipient = MessageMember(member.id, member.username, member.displayName)
                     },
-                    showShareExperience = referencesEnabled,
                     onShareExperience = { sharingExperience = true },
                     contactLabel = when {
                         !relationshipResolved -> null
@@ -458,12 +463,11 @@ private fun ProfileActionBar(
     onBack: () -> Unit,
     onEditProfile: () -> Unit,
     onMessage: () -> Unit,
-    showShareExperience: Boolean,
     onShareExperience: () -> Unit,
     contactLabel: String?,
     onContactAction: () -> Unit,
-    topPadding: Dp = 0.dp,
-    horizontalInset: PaddingValues = PaddingValues.Zero,
+    topPadding: Dp,
+    horizontalInset: PaddingValues,
 ) {
     Surface(
         color = TrustrootsPaleGreen,
@@ -485,7 +489,7 @@ private fun ProfileActionBar(
                 TextButton(onClick = onEditProfile) { Text("Edit your profile") }
             } else {
                 TextButton(onClick = onMessage) { Text("Send a message") }
-                if (showShareExperience) {
+                if (referencesEnabled) {
                     TextButton(onClick = onShareExperience) { Text("Share your experience") }
                 }
                 contactLabel?.let { label ->

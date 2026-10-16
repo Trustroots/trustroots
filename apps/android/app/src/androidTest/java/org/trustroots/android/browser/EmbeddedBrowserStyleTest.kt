@@ -16,6 +16,46 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class EmbeddedBrowserStyleTest {
+    @Test fun legacyStylingOnlyRunsForTrustrootsPagesWithoutDocumentStartSupport() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val finished = CountDownLatch(1)
+        val untouched = AtomicReference<String>()
+        val display = AtomicReference<String>()
+        val webView = AtomicReference<WebView>()
+        instrumentation.runOnMainSync {
+            webView.set(WebView(instrumentation.targetContext).apply {
+                settings.javaScriptEnabled = true
+                webViewClient = object : WebViewClient() {
+                    override fun onPageFinished(view: WebView, url: String?) {
+                        applyEmbeddedBrowserStyleAfterLoad(view, null, false)
+                        applyEmbeddedBrowserStyleAfterLoad(view, "https://example.test/help", false)
+                        applyEmbeddedBrowserStyleAfterLoad(view, "https://www.trustroots.org/faq", true)
+                        view.evaluateJavascript("document.getElementById('trustroots-android-embedded-style') === null") {
+                            untouched.set(it)
+                            applyEmbeddedBrowserStyleAfterLoad(view, "https://www.trustroots.org/faq", false)
+                            view.evaluateJavascript("getComputedStyle(document.getElementById('tr-header')).display") { value ->
+                                display.set(value)
+                                finished.countDown()
+                            }
+                        }
+                    }
+                }
+                loadDataWithBaseURL(
+                    "https://www.trustroots.org/faq",
+                    "<html><head></head><body><header id='tr-header'>Local fixture</header></body></html>",
+                    "text/html", "UTF-8", null,
+                )
+            })
+        }
+        try {
+            assertTrue(finished.await(10, TimeUnit.SECONDS))
+            assertEquals("true", untouched.get())
+            assertEquals("\"none\"", display.get())
+        } finally {
+            instrumentation.runOnMainSync { webView.get()?.destroy() }
+        }
+    }
+
     @Test fun hidesTrustrootsHeaderAtDocumentStart() {
         assumeTrue(WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT))
         val instrumentation = InstrumentationRegistry.getInstrumentation()
