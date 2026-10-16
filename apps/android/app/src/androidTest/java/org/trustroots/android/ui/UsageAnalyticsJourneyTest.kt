@@ -42,6 +42,53 @@ class UsageAnalyticsJourneyTest {
     @Before fun resetConsent() { AndroidUsageConsentStore(context).enabled = false }
     @After fun clearConsent() { AndroidUsageConsentStore(context).enabled = false }
 
+    @Test fun optedInAnalyticsDoesNotTrackScreensWithoutANativeDestination() {
+        val bodies = mutableListOf<String>()
+        var consentEnabled = false
+        val consent = object : org.trustroots.android.analytics.UsageConsentStore {
+            override var enabled: Boolean
+                get() = consentEnabled
+                set(value) { consentEnabled = value }
+        }
+        val transport = object : UsageTransport {
+            override fun send(body: String) { bodies.add(body) }
+            override fun cancel() = Unit
+        }
+        val analytics = UsageAnalytics(consent, transport)
+        val screen = mutableStateOf<UsageScreen?>(UsageScreen.Account)
+        val uriHandler = object : UriHandler {
+            override fun openUri(uri: String) = Unit
+        }
+        compose.setContent {
+            Column {
+                UsageScreenTracking(analytics, screen.value)
+                CompositionLocalProvider(LocalUriHandler provides uriHandler) {
+                    UsageAnalyticsSettings(analytics)
+                }
+            }
+        }
+
+        compose.onNodeWithText("Usage analytics").assertIsOff().performClick().assertIsOn()
+        compose.waitForIdle()
+        compose.runOnIdle {
+            assertEquals(
+                listOf("/android/account"),
+                bodies.map { JSONObject(it).getJSONObject("payload").getString("url") },
+            )
+            assertTrue(analytics.enabled.value)
+        }
+
+        compose.runOnIdle { screen.value = null }
+        compose.waitForIdle()
+        compose.runOnIdle {
+            assertEquals(
+                "A browser destination must not create a native screen event while opted in",
+                listOf("/android/account"),
+                bodies.map { JSONObject(it).getJSONObject("payload").getString("url") },
+            )
+        }
+    }
+
     @Test fun memberOptsInNavigatesRestartsAndOptsOut() {
         val analytics = mutableStateOf(UsageAnalytics(AndroidUsageConsentStore(context), transport))
         val screen = mutableStateOf<UsageScreen?>(UsageScreen.Account)
