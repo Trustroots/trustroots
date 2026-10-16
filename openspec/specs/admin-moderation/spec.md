@@ -786,3 +786,19 @@ The acquisition-stories API SHALL return an allowlisted `restrictionStatuses` ar
 
 - **WHEN** an ordinary member requests acquisition stories
 - **THEN** access is denied
+
+### Requirement: Circle catalogue administration
+
+The system SHALL provide authorised administrators with tools to create and
+edit circle catalogue records and their associated images.
+
+#### Scenario: Administrator manages circles
+
+- **WHEN** an authorised administrator opens the circle administration view
+- **THEN** the system lists existing circles and provides create and edit
+  controls
+
+#### Scenario: Regular member requests circle administration
+
+- **WHEN** a regular member requests a circle administration API
+- **THEN** the system denies the request

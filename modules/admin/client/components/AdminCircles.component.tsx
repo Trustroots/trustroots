@@ -1,0 +1,249 @@
+import React, { useEffect, useRef, useState } from 'react';
+import { getCircles, saveCircle, type AdminCircle } from '../api/circles.api';
+import AdminHeader from './AdminHeader.component';
+
+const suggestedColours = [
+  '1e3a8a',
+  '1e40af',
+  '065f46',
+  '166534',
+  '854d0e',
+  '92400e',
+  '9a3412',
+  '991b1b',
+  '6b21a8',
+  '86198f',
+  '155e75',
+  '334155',
+];
+
+const emptyCircle: AdminCircle = {
+  label: '',
+  color: suggestedColours[0],
+  public: true,
+  attribution: '',
+  attribution_url: '',
+  description: '',
+};
+
+function imageUrl(circle: AdminCircle) {
+  return circle.image
+    ? `/uploads-circle/${circle.slug}/120x120.jpg`
+    : undefined;
+}
+
+export default function AdminCircles() {
+  const [circles, setCircles] = useState<AdminCircle[]>([]);
+  const [circle, setCircle] = useState<AdminCircle>(emptyCircle);
+  const [image, setImage] = useState<File | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const imageInput = useRef<HTMLInputElement>(null);
+
+  async function loadCircles() {
+    setCircles(await getCircles());
+  }
+
+  useEffect(() => {
+    loadCircles().catch(() => setError('Could not load circles.'));
+  }, []);
+
+  function clearSelectedImage() {
+    setImage(null);
+    if (imageInput.current) imageInput.current.value = '';
+  }
+
+  function editCircle(selected: AdminCircle) {
+    setCircle({ ...selected });
+    clearSelectedImage();
+    setMessage(null);
+    setError(null);
+  }
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage(null);
+    setError(null);
+    try {
+      const saved = await saveCircle(circle, image);
+      setCircle(saved);
+      clearSelectedImage();
+      await loadCircles();
+      setMessage('Circle saved.');
+    } catch (requestError) {
+      const apiMessage = (
+        requestError as { response?: { data?: { message?: string } } }
+      ).response?.data?.message;
+      setError(apiMessage || 'Could not save circle.');
+    }
+  }
+
+  const update = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const target = event.currentTarget;
+    const { name, value } = target;
+    const isCheckbox =
+      target instanceof HTMLInputElement && target.type === 'checkbox';
+    const nextValue = isCheckbox ? (target as HTMLInputElement).checked : value;
+    setCircle(current => ({
+      ...current,
+      [name]: nextValue,
+    }));
+  };
+
+  return (
+    <>
+      <AdminHeader />
+      <div className="container admin-circles-page">
+        <div className="admin-circles-heading">
+          <div>
+            <h2>Circles</h2>
+            <p className="text-muted">
+              Create and maintain the public circle catalogue.
+            </p>
+          </div>
+          <button
+            className="btn btn-default"
+            onClick={() => editCircle(emptyCircle)}
+            type="button"
+          >
+            New circle
+          </button>
+        </div>
+        {message && <p className="text-success">{message}</p>}
+        {error && <p className="text-danger">{error}</p>}
+        <div className="row">
+          <div className="col-sm-5">
+            <div className="list-group" aria-label="Circles">
+              {circles.map(item => (
+                <button
+                  className="list-group-item"
+                  key={item._id}
+                  onClick={() => editCircle(item)}
+                  type="button"
+                >
+                  {item.label}
+                  <span className="pull-right text-muted">
+                    {item.public ? `${item.count} members` : 'Hidden'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="col-sm-7">
+            <form onSubmit={submit}>
+              <div className="form-group">
+                <label htmlFor="circle-label">Name</label>
+                <input
+                  className="form-control"
+                  id="circle-label"
+                  name="label"
+                  onChange={update}
+                  required
+                  value={circle.label}
+                />
+                <p className="help-block">
+                  The URL slug is generated from the name when the circle is
+                  created and stays the same if the name changes.
+                </p>
+              </div>
+              <div className="form-group">
+                <label htmlFor="circle-description">Description</label>
+                <textarea
+                  className="form-control"
+                  id="circle-description"
+                  name="description"
+                  onChange={update}
+                  rows={4}
+                  value={circle.description || ''}
+                />
+              </div>
+              <div className="row">
+                <div className="col-sm-4 form-group">
+                  <label htmlFor="circle-color">Colour</label>
+                  <input
+                    className="form-control"
+                    id="circle-color"
+                    list="circle-colours"
+                    maxLength={6}
+                    minLength={6}
+                    name="color"
+                    onChange={update}
+                    pattern="[0-9a-fA-F]{6}"
+                    required
+                    value={circle.color || ''}
+                  />
+                  <datalist id="circle-colours">
+                    {suggestedColours.map(colour => (
+                      <option key={colour} value={colour} />
+                    ))}
+                  </datalist>
+                  <p className="help-block">
+                    Six hexadecimal characters. Suggested colours keep white
+                    labels readable.
+                  </p>
+                </div>
+                <div className="col-sm-8 form-group">
+                  <label htmlFor="circle-image">Image</label>
+                  <input
+                    accept="image/jpeg,image/png,image/gif"
+                    className="form-control"
+                    id="circle-image"
+                    onChange={event =>
+                      setImage(event.currentTarget.files?.[0] || null)
+                    }
+                    ref={imageInput}
+                    type="file"
+                  />
+                </div>
+              </div>
+              {imageUrl(circle) && (
+                <img
+                  alt="Current circle"
+                  className="admin-circle-image"
+                  src={imageUrl(circle)}
+                />
+              )}
+              <div className="checkbox">
+                <label>
+                  <input
+                    checked={circle.public}
+                    name="public"
+                    onChange={update}
+                    type="checkbox"
+                  />{' '}
+                  Public
+                </label>
+              </div>
+              <div className="form-group">
+                <label htmlFor="circle-attribution">Image attribution</label>
+                <input
+                  className="form-control"
+                  id="circle-attribution"
+                  name="attribution"
+                  onChange={update}
+                  value={circle.attribution || ''}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="circle-attribution-url">Attribution URL</label>
+                <input
+                  className="form-control"
+                  id="circle-attribution-url"
+                  name="attribution_url"
+                  onChange={update}
+                  type="url"
+                  value={circle.attribution_url || ''}
+                />
+              </div>
+              <button className="btn btn-primary" type="submit">
+                Save circle
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
