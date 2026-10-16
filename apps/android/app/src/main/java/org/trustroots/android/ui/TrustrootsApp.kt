@@ -47,8 +47,6 @@ import androidx.compose.material.icons.filled.Public
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.Button
 import androidx.compose.material3.Badge
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
@@ -523,117 +521,114 @@ private fun MemberShell(
                 )
             }
             Box(Modifier.fillMaxWidth().weight(1f)) {
-            val browser = browserRoute
-            if (browser != null) {
-                browserContent(browser, { browserRoute = null }, contentPadding)
-            } else if (destination == Destination.Menu) {
-                when (menuPage) {
-                    MenuPage.Menu -> MenuScreen(
-                        session = session,
-                        openProfile = { menuPage = MenuPage.Profile },
-                        openEditProfile = { menuPage = MenuPage.EditProfile },
-                        openHost = { menuPage = MenuPage.Host },
-                        openNostroots = {
-                            browserRoute = BrowserRoute(
-                                title = "Nostroots",
-                                url = "https://nos.trustroots.org/",
-                                sessionCookie = session.cookieHeader,
+                val browser = browserRoute
+                if (browser != null) {
+                    browserContent(browser, { browserRoute = null }, contentPadding)
+                } else {
+                    when (destination) {
+                        Destination.Menu -> when (menuPage) {
+                            MenuPage.Menu -> MenuScreen(
+                                session = session,
+                                openProfile = { menuPage = MenuPage.Profile },
+                                openEditProfile = { menuPage = MenuPage.EditProfile },
+                                openHost = { menuPage = MenuPage.Host },
+                                openNostroots = {
+                                    browserRoute = BrowserRoute(
+                                        title = "Nostroots",
+                                        url = "https://nos.trustroots.org/",
+                                        sessionCookie = session.cookieHeader,
+                                    )
+                                },
+                                openContacts = { menuPage = MenuPage.Contacts },
+                                openFindPeople = {
+                                    searchInitialTab = 1
+                                    searchNavigationID++
+                                    navigateTo(Destination.Search)
+                                },
+                                openCircles = { circlesNavigationID++; navigateTo(Destination.Circles) },
+                                openAccount = { menuPage = MenuPage.Account },
+                                openBrowser = { browserRoute = it },
+                                contentPadding = contentPadding,
                             )
-                        },
-                        openContacts = { menuPage = MenuPage.Contacts },
-                        openFindPeople = {
-                            searchInitialTab = 1
-                            searchNavigationID++
-                            navigateTo(Destination.Search)
-                        },
-                        openCircles = { circlesNavigationID++; navigateTo(Destination.Circles) },
-                        openAccount = { menuPage = MenuPage.Account },
-                        openBrowser = { browserRoute = it },
-                        contentPadding = contentPadding,
-                    )
-                    MenuPage.Profile -> MemberProfileScreen(
-                        api = api,
-                        session = session,
-                        username = session.member.username,
-                        onSessionInvalidated = onSessionInvalidated,
-                        onBack = { menuPage = MenuPage.Menu },
-                        onOwnProfileSaved = { updated ->
-                            onMemberUpdated(MobileMember(updated.username, updated.displayName))
-                        },
-                        contentPadding = contentPadding,
-                    )
-                    MenuPage.EditProfile -> MemberProfileScreen(
-                        api = api,
-                        session = session,
-                        username = session.member.username,
-                        onSessionInvalidated = onSessionInvalidated,
-                        startInEditMode = true,
-                        onBack = { menuPage = MenuPage.Menu },
-                        onOwnProfileSaved = { updated ->
-                            onMemberUpdated(MobileMember(updated.username, updated.displayName))
-                        },
-                        contentPadding = contentPadding,
-                    )
-                    MenuPage.Contacts -> ContactsScreen(
-                        api = api,
-                        session = session,
-                        onSessionInvalidated = onSessionInvalidated,
-                        onBack = { menuPage = MenuPage.Menu },
-                        contentPadding = contentPadding,
-                    )
-                    MenuPage.Host -> HostOfferScreen(
-                        api = api,
-                        session = session,
-                        onSessionInvalidated = onSessionInvalidated,
-                        onBack = { menuPage = MenuPage.Menu },
-                        contentPadding = contentPadding,
-                    )
-                    MenuPage.Account -> AccountSettingsScreen(
-                        api = api,
-                        session = session,
-                        onSessionInvalidated = onSessionInvalidated,
-                        onBack = { menuPage = MenuPage.Menu },
-                        contentPadding = contentPadding,
-                        onResetPassword = {
-                            browserRoute = BrowserRoute(
-                                title = "Reset password",
-                                url = "https://www.trustroots.org/password/forgot",
+                            MenuPage.Profile -> MemberProfileScreen(
+                                api = api,
+                                session = session,
+                                username = session.member.username,
+                                onSessionInvalidated = onSessionInvalidated,
+                                onBack = { menuPage = MenuPage.Menu },
+                                onOwnProfileSaved = { updated ->
+                                    onMemberUpdated(MobileMember(updated.username, updated.displayName))
+                                },
+                                contentPadding = contentPadding,
                             )
-                        },
-                        onSignedOut = {
-                            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-                                MessageAlerts.disable(context, session)
-                                api.signOut(session)
-                                withContext(Dispatchers.Main) { onSignedOut() }
-                            }
-                        },
-                    )
-                }
-            } else {
-                when (destination) {
-                    Destination.Circles -> key(circlesNavigationID) {
-                        CirclesScreen(api, session, onSessionInvalidated, contentPadding = contentPadding)
+                            MenuPage.EditProfile -> MemberProfileScreen(
+                                api = api,
+                                session = session,
+                                username = session.member.username,
+                                onSessionInvalidated = onSessionInvalidated,
+                                startInEditMode = true,
+                                onBack = { menuPage = MenuPage.Menu },
+                                onOwnProfileSaved = { updated ->
+                                    onMemberUpdated(MobileMember(updated.username, updated.displayName))
+                                },
+                                contentPadding = contentPadding,
+                            )
+                            MenuPage.Contacts -> ContactsScreen(
+                                api = api,
+                                session = session,
+                                onSessionInvalidated = onSessionInvalidated,
+                                onBack = { menuPage = MenuPage.Menu },
+                                contentPadding = contentPadding,
+                            )
+                            MenuPage.Host -> HostOfferScreen(
+                                api = api,
+                                session = session,
+                                onSessionInvalidated = onSessionInvalidated,
+                                onBack = { menuPage = MenuPage.Menu },
+                                contentPadding = contentPadding,
+                            )
+                            MenuPage.Account -> AccountSettingsScreen(
+                                api = api,
+                                session = session,
+                                onSessionInvalidated = onSessionInvalidated,
+                                onBack = { menuPage = MenuPage.Menu },
+                                contentPadding = contentPadding,
+                                onResetPassword = {
+                                    browserRoute = BrowserRoute(
+                                        title = "Reset password",
+                                        url = "https://www.trustroots.org/password/forgot",
+                                    )
+                                },
+                                onSignedOut = {
+                                    CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                                        MessageAlerts.disable(context, session)
+                                        api.signOut(session)
+                                        withContext(Dispatchers.Main) { onSignedOut() }
+                                    }
+                                },
+                            )
+                        }
+                        Destination.Circles -> key(circlesNavigationID) {
+                            CirclesScreen(api, session, onSessionInvalidated, contentPadding = contentPadding)
+                        }
+                        Destination.Search -> key(searchNavigationID) {
+                            SearchHubScreen(
+                                api,
+                                session,
+                                onSessionInvalidated,
+                                initialTab = searchInitialTab,
+                                contentPadding = contentPadding,
+                            )
+                        }
+                        Destination.Messages -> key(messagesNavigationID) {
+                            MessageInboxScreen(api, session, onSessionInvalidated, initialMessageSender, contentPadding = contentPadding)
+                        }
                     }
-                    Destination.Search -> key(searchNavigationID) {
-                        SearchHubScreen(
-                            api,
-                            session,
-                            onSessionInvalidated,
-                            initialTab = searchInitialTab,
-                            contentPadding = contentPadding,
-                        )
-                    }
-                    Destination.Messages -> key(messagesNavigationID) {
-                        MessageInboxScreen(api, session, onSessionInvalidated, initialMessageSender, contentPadding = contentPadding)
-                    }
-                    else -> PlaceholderScreen(destination = destination, session = session, contentPadding = contentPadding)
                 }
             }
             }
         }
     }
-}
-
 }
 
 @Composable
@@ -822,42 +817,6 @@ private fun MenuLink(
 }
 
 @Composable
-private fun ProfileScreen(session: MemberSession, onBack: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(20.dp),
-    ) {
-        NativeBackButton(onBack)
-        Card(
-            colors = CardDefaults.cardColors(containerColor = TrustrootsPaleGreen),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 12.dp),
-        ) {
-            Column(Modifier.padding(22.dp)) {
-                Icon(
-                    Icons.Default.AccountCircle,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(84.dp),
-                )
-                Text(
-                    session.member.displayName,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-                Text(
-                    "@${session.member.username}",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-    }
-}
-
-@Composable
 internal fun AccountScreen(
     session: MemberSession,
     accountMessage: String?,
@@ -990,19 +949,5 @@ internal fun ApkUpdateSettings(
     status?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     releaseUrl?.let { url ->
         TextButton(onClick = { onOpenRelease(url) }) { Text("Open release page") }
-    }
-}
-
-@Composable
-private fun PlaceholderScreen(destination: Destination, session: MemberSession, contentPadding: PaddingValues = PaddingValues.Zero) {
-    Column(Modifier.padding(contentPadding).padding(20.dp)) {
-        Text(destination.label, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(10.dp))
-        Text("Signed in as ${session.member.displayName} (@${session.member.username}).")
-        Text(
-            "This native Android area is ready to use the existing Trustroots API.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 6.dp),
-        )
     }
 }
