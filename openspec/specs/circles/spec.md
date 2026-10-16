@@ -143,7 +143,7 @@ behaviour on the current supported runtime.
 #### Scenario: A circle description contains unsupported markup
 
 - **WHEN** a circle description is displayed
-- **THEN** supported text formatting and links are preserved
+- **THEN** supported text formatting and link labels are preserved without clickable destinations
 - **AND** unsupported markup is omitted
 
 ### Requirement: Circle member cards

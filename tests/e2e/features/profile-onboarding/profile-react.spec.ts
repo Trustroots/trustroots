@@ -157,3 +157,54 @@ test('mobile profile navigation stays compact and readable', async ({
   const actionsBar = await profileActions.boundingBox();
   expect(actionsBar!.height).toBeLessThanOrEqual(60);
 });
+
+test('profile descriptions disable links while dedicated network exceptions remain clickable', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'profile.view-about', [
+    'Profile descriptions display link labels without clickable destinations.',
+  ]);
+  const member = SEEDED_MEMBERS[0];
+  await signInViaApi(page, request, member);
+  await page.route(`**/api/users/${member.username}`, async route => {
+    const response = await route.fetch();
+    const profile = await response.json();
+    await route.fulfill({
+      response,
+      json: {
+        ...profile,
+        description:
+          '<p><a href="https://example.org/"><b>Fictional external notes</b></a> <a href="/safety">Fictional internal notes</a></p>',
+        extSitesCouchers: 'fictional-member',
+        extSitesBW: 'fictional-member',
+        extSitesCS: 'fictional-member',
+        extSitesWS: '12345',
+      },
+    });
+  });
+  await page.goto(`/profile/${member.username}`);
+  await expect(
+    page.getByText('Fictional external notes', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText('Fictional internal notes')).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: /Fictional .* notes/ }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('link', { name: 'Couchers.org', exact: true }),
+  ).toHaveAttribute('href', 'https://couchers.org/user/fictional-member');
+  await expect(
+    page.getByRole('link', { name: 'BeWelcome', exact: true }),
+  ).toHaveAttribute(
+    'href',
+    'https://www.bewelcome.org/members/fictional-member',
+  );
+  await expect(
+    page.getByRole('link', { name: 'Warmshowers', exact: true }),
+  ).toHaveAttribute('href', 'https://www.warmshowers.org/user/12345');
+  await expect(page.getByText('Couchsurfing', { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Couchsurfing', exact: true }),
+  ).toHaveCount(0);
+});

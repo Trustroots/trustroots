@@ -87,9 +87,7 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
           </div>
           <div className="panel-footer">
             <div id="descriptionHelp" className="help-block">
-              <small>
-                {t('Highlight text to add links or change text appearance.')}
-              </small>
+              <small>{t('Highlight text to change text appearance.')}</small>
             </div>
           </div>
         </div>

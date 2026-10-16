@@ -149,10 +149,10 @@ describe('<ProfileViewBasics />', () => {
       'href',
       'https://www.bewelcome.org/members/member-bw',
     );
-    expect(screen.getByRole('link', { name: 'Couchsurfing' })).toHaveAttribute(
-      'href',
-      'https://www.couchsurfing.com/people/member-cs',
-    );
+    expect(screen.getByText('Couchsurfing')).toBeVisible();
+    expect(
+      screen.queryByRole('link', { name: 'Couchsurfing' }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Warmshowers' })).toHaveAttribute(
       'href',
       'https://www.warmshowers.org/user/12345',

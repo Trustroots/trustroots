@@ -232,7 +232,7 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                           event: React.ChangeEvent<HTMLInputElement>,
                         ) => updateDraft({ [field.field]: event.target.value })}
                       />
-                      {fieldValue && (
+                      {fieldValue && field.field !== 'extSitesCS' && (
                         <span className="input-group-btn">
                           <a
                             href={field.testUrl(fieldValue)}
@@ -245,6 +245,11 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                         </span>
                       )}
                     </div>
+                    {field.field === 'extSitesCS' && fieldValue && (
+                      <p className="help-block text-break">
+                        {field.testUrl(fieldValue)}
+                      </p>
+                    )}
                     {field.field === 'extSitesWS' &&
                       draftUser.extSitesWS &&
                       !isWarmshowersId(draftUser.extSitesWS) && (

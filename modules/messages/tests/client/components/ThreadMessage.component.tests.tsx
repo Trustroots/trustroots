@@ -62,7 +62,7 @@ describe('<ThreadMessage />', function () {
     expect(profileLink.closest('.message')).toHaveClass('message-sender-other');
   });
 
-  it('shows external message links as text while preserving internal links', () => {
+  it('shows all message links as text', () => {
     const { container } = render(
       <ThreadMessage
         user={me}
@@ -94,10 +94,8 @@ describe('<ThreadMessage />', function () {
     expect(body).toHaveTextContent('unsafe scheme');
     expect(body).toHaveTextContent('invalid address');
     expect(body).toHaveTextContent('missing address');
-    expect(body.querySelectorAll('a')).toHaveLength(1);
-    expect(
-      screen.getByRole('link', { name: 'safety guidance' }),
-    ).toHaveAttribute('href', '/safety');
+    expect(body.querySelectorAll('a')).toHaveLength(0);
+    expect(body).toHaveTextContent('safety guidance');
   });
 
   it('shows a placeholder for deleted members', () => {

@@ -235,7 +235,6 @@ export default function ThreadReply({
                       <RichText
                         className="panel-body"
                         content={previewContent}
-                        internalLinksOnly
                       />
                     </div>
                   </div>
@@ -268,7 +267,7 @@ export default function ThreadReply({
         </button>
         <small className="text-muted hidden-xs">
           {t<string>(
-            'Highlight text to add links or change its appearance. Ctrl+Enter to send.',
+            'Highlight text to change its appearance. Ctrl+Enter to send.',
           )}
         </small>
         <button
