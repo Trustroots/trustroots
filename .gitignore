@@ -90,3 +90,4 @@ trustroots.tar.gz*
 /playwright-report/
 /test-results/
 /tests/e2e/.auth/
+.turbo

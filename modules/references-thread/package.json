@@ -1,0 +1,20 @@
+{
+  "name": "@trustroots/references-thread",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./client/*": "./client/*"
+  },
+  "scripts": {
+    "lint": "eslint --ext .js,.mjs,.mts,.cjs,.cts,.ts,.tsx .",
+    "test:client": "node ../../scripts/test-module.cts client references-thread",
+    "test:server": "node ../../scripts/test-module.cts server references-thread"
+  },
+  "dependencies": {
+    "@trustroots/core": "workspace:*",
+    "@trustroots/messages": "workspace:*",
+    "@trustroots/stats": "workspace:*",
+    "@trustroots/users": "workspace:*"
+  }
+}
