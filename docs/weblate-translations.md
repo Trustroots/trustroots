@@ -6,9 +6,9 @@ Trustroots translations are managed on [Hosted Weblate](https://hosted.weblate.o
 
 ```
 source code (modules/**/*.js)
-  → npm run i18n:extract
+  → pnpm run i18n:extract
   → public/locales/en/*.json
-  → npm run i18n:fix-weblate
+  → pnpm run i18n:fix-weblate
   → Weblate (translators edit)
   → auto-sync PR to GitHub
   → main
@@ -23,7 +23,7 @@ Merged in [#2746](https://github.com/Trustroots/trustroots/pull/2746) (June 2026
 - Weblate translation batch (58 locale files: Tamil, Esperanto, Czech, Spanish, Finnish, and others)
 - Placeholder fixes: `{{var}}}` typos that leaked a literal `}` in the UI (ta, pt, pt_BR, it)
 - Markup fixes: broken React Trans tags in he, es, cs, it, ta
-- QA tooling: [bin/check-i18n-placeholders.js](../bin/check-i18n-placeholders.js), `npm run i18n:check-placeholders`
+- QA tooling: [bin/check-i18n-placeholders.js](../bin/check-i18n-placeholders.js), `pnpm run i18n:check-placeholders`
 
 ## Open follow-up (Weblate / maintainers)
 
@@ -61,14 +61,14 @@ If repo fixes did not propagate, edit at the source:
 
 ### 4. Optional broader cleanup
 
-`npm run i18n:check-placeholders` may still report pre-existing issues in other locales (e.g. Hebrew pages missing `<2>` tags, German plural keys). These were out of scope for #2746 but worth a separate pass.
+`pnpm run i18n:check-placeholders` may still report pre-existing issues in other locales (e.g. Hebrew pages missing `<2>` tags, German plural keys). These were out of scope for #2746 but worth a separate pass.
 
 ## Local QA
 
 Scan all non-English locales for placeholder/tag mismatches vs English:
 
 ```bash
-npm run i18n:check-placeholders
+pnpm run i18n:check-placeholders
 ```
 
 Scan specific locales only:
