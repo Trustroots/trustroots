@@ -1,0 +1,21 @@
+{
+  "name": "@trustroots/support",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./client/*": "./client/*",
+    "./shared/*": "./shared/*"
+  },
+  "scripts": {
+    "lint": "eslint --ext .js,.mjs,.mts,.cjs,.cts,.ts,.tsx .",
+    "test:client": "node ../../scripts/test-module.cts client support",
+    "test:server": "node ../../scripts/test-module.cts server support"
+  },
+  "dependencies": {
+    "@trustroots/admin": "workspace:*",
+    "@trustroots/core": "workspace:*",
+    "@trustroots/stats": "workspace:*",
+    "@trustroots/users": "workspace:*"
+  }
+}
