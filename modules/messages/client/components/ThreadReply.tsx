@@ -267,9 +267,7 @@ export default function ThreadReply({
           {previewing ? t('Edit') : t('Preview')}
         </button>
         <small className="text-muted hidden-xs">
-          {t(
-            'Highlight text to change its appearance. Ctrl+Enter to send.',
-          )}
+          {t('Highlight text to change its appearance. Ctrl+Enter to send.')}
         </small>
         <button
           id="messageReplySubmit"
