@@ -61,10 +61,12 @@ export function expectedManifest(name: string, root = ROOT): Manifest {
     lint: `eslint --ext ${SOURCE_EXTENSIONS} .`,
   };
   if (hasDir(root, ...dir, 'tests', 'client')) {
-    scripts['test:client'] = `node ../../scripts/test-module.cts client ${name}`;
+    scripts['test:client'] =
+      `node ../../scripts/test-module.cts client ${name}`;
   }
   if (hasDir(root, ...dir, 'tests', 'server')) {
-    scripts['test:server'] = `node ../../scripts/test-module.cts server ${name}`;
+    scripts['test:server'] =
+      `node ../../scripts/test-module.cts server ${name}`;
   }
 
   const manifest: Manifest = {
