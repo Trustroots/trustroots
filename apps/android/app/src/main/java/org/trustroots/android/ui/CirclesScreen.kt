@@ -174,5 +174,5 @@ internal fun CirclesScreen(
 }
 
 private fun circleColor(value: String?): Color =
-    runCatching { Color(android.graphics.Color.parseColor(value)) }
+    runCatching { Color(android.graphics.Color.parseColor("#$value")) }
         .getOrDefault(Color(0xFF12B591))
