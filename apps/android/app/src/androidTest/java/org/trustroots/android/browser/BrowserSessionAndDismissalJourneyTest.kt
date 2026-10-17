@@ -94,6 +94,35 @@ class BrowserSessionAndDismissalJourneyTest {
         }
     }
 
+    @Test fun protocolRelativeSessionCookieCanBeAppliedAndCleared() {
+        val origin = "https://example.test"
+        val secureURL = "$origin/path"
+        val cookieManager = CookieManager.getInstance()
+        val uniqueSuffix = UUID.randomUUID().toString().replace("-", "")
+        val uniqueCookieName = "fictional-protocol-relative-$uniqueSuffix"
+        val cookie = "$uniqueCookieName=fictional"
+
+        compose.runOnUiThread {
+            applyBrowserSessionCookie("//example.test/path", "$cookie; Path=/")
+            cookieManager.flush()
+        }
+
+        try {
+            compose.waitUntil("protocol-relative session cookie on HTTPS origin", 5_000) {
+                cookieManager.getCookie(secureURL).orEmpty().contains(cookie)
+            }
+        } finally {
+            compose.runOnUiThread {
+                cookieManager.setCookie(origin, "$uniqueCookieName=; Max-Age=0; Path=/; Secure")
+                cookieManager.flush()
+            }
+        }
+
+        compose.waitUntil("protocol-relative session cookie cleanup", 5_000) {
+            !cookieManager.getCookie(secureURL).orEmpty().contains(cookie)
+        }
+    }
+
     @Test fun backDismissesExternalConfirmationWithoutClosingBrowserRoute() {
         var closeCount = 0
         val openedIntents = mutableListOf<Intent>()

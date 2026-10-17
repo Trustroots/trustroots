@@ -69,6 +69,24 @@ class MemberContactRemovalJourneyTest {
         assertFalse(requests.any { it.method == "DELETE" })
     }
 
+    @Test fun systemBackDismissesRemovalConfirmationWithoutDeletingTheContact() {
+        startResponder(confirmed = true)
+        compose.setContent { profile() }
+
+        waitForText("Remove contact")
+        compose.onNodeWithText("Remove contact").performClick()
+        compose.onNodeWithText("Remove contact?").assertIsDisplayed()
+
+        pressBackFromNonActivityRoot(compose.activity)
+
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Remove contact?").fetchSemanticsNodes().isEmpty()
+        }
+        compose.onNodeWithText("Remove contact").assertIsDisplayed()
+        assertFalse(requests.any { it.method == "DELETE" })
+        assertEquals(0, deleteAttempts.get())
+    }
+
     @Test fun confirmsPendingContactRequestRemovalAndReturnsToAddContact() {
         startResponder(confirmed = false)
         compose.setContent { profile() }

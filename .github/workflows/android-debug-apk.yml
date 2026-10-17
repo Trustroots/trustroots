@@ -113,7 +113,7 @@ jobs:
           arch: x86_64
           disable-animations: true
           profile: pixel_6
-          script: bash apps/android/gradlew -p apps/android -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable
+          script: bash apps/android/gradlew -p apps/android -Pkotlin.incremental=false -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable
       - name: Merge API 32 notification and WebView compatibility coverage
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
@@ -123,7 +123,7 @@ jobs:
           profile: pixel_6
           script: |
             bash apps/android/scripts/collect-legacy-coverage.sh
-            bash apps/android/gradlew -p apps/android -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable -x testDebugUnitTest -x connectedDebugAndroidTest -x compileDebugKotlin -x compileDebugJavaWithJavac
+            bash apps/android/gradlew -p apps/android -Pkotlin.incremental=false -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable -x testDebugUnitTest -x connectedDebugAndroidTest -x compileDebugKotlin -x compileDebugJavaWithJavac
       - name: Enforce Android coverage ratchet
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}

@@ -2,6 +2,8 @@ package org.trustroots.android.ui
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -10,12 +12,15 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,8 +33,13 @@ import org.trustroots.android.api.MobileMember
 class ProfileEditingJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val server = ServerSocket(0)
+    private var fixture: LocalTransportFixture? = null
 
-    @After fun closeServer() = server.close()
+    @After fun closeServer() {
+        server.close()
+        fixture?.close()
+        fixture = null
+    }
 
     @Test fun editsOwnProfileAndShowsSavedFields() {
         val savedBody = AtomicReference("")
@@ -165,5 +175,167 @@ class ProfileEditingJourneyTest {
         assertTrue(savedTagline.get() == "New line")
         assertTrue(compose.onAllNodesWithText("Profile could not be saved.").fetchSemanticsNodes().isEmpty())
         responder.join(1_000)
+    }
+
+    @Test fun updatesOptionalLivingAndFromLocations() {
+        val local = LocalTransportFixture { request ->
+            when {
+                request.method == "PUT" && request.path == "/api/users" ->
+                    LocalTransportFixture.Response(
+                        """{"_id":"fictional-member","username":"quiet-fox","displayName":"Quiet Fox","locationLiving":"Coimbra","locationFrom":"Braga","languages":["eng"]}""",
+                    )
+                else -> error("Unexpected API request: ${request.method} ${request.path}")
+            }
+        }.also { fixture = it }
+        val savedProfile = AtomicReference<MemberProfile?>()
+
+        compose.setContent {
+            EditProfileScreen(
+                api = MobileApiClient(local.baseURL),
+                session = MemberSession("connect.sid=fictional-session", MobileMember("quiet-fox", "Quiet Fox")),
+                profile = MemberProfile(
+                    id = "fictional-member",
+                    username = "quiet-fox",
+                    displayName = "Quiet Fox",
+                    tagline = "A quiet welcome",
+                    description = null,
+                    location = "Lisbon",
+                    locationLiving = "Lisbon",
+                    locationFrom = "Porto",
+                    languages = listOf("eng"),
+                ),
+                onSessionInvalidated = {},
+                onCancel = {},
+                onSaved = { savedProfile.set(it) },
+            )
+        }
+
+        compose.onNodeWithText("From").performScrollTo().performTextReplacement("Braga")
+        compose.onNodeWithText("Save changes").assertIsEnabled()
+        compose.onNodeWithText("Lives in").performScrollTo().performTextReplacement("Coimbra")
+        compose.onNodeWithText("Save changes").performClick()
+        compose.waitUntil(10_000) { local.requests.any { it.method == "PUT" && it.path == "/api/users" } }
+        compose.waitUntil(10_000) { savedProfile.get() != null }
+
+        val update = org.json.JSONObject(local.requests.single { it.method == "PUT" }.body)
+        assertEquals("Coimbra", update.getString("locationLiving"))
+        assertEquals("Braga", update.getString("locationFrom"))
+        assertEquals("Coimbra", savedProfile.get()?.locationLiving)
+        assertEquals("Braga", savedProfile.get()?.locationFrom)
+    }
+
+    @Test fun requiresANonBlankNameBeforeEnablingProfileSave() {
+        val local = LocalTransportFixture { request ->
+            error("Unexpected API request: ${request.method} ${request.path}")
+        }.also { fixture = it }
+
+        compose.setContent {
+            EditProfileScreen(
+                api = MobileApiClient(local.baseURL),
+                session = MemberSession("connect.sid=fictional-session", MobileMember("quiet-fox", "Quiet Fox")),
+                profile = MemberProfile(
+                    id = "fictional-member",
+                    username = "quiet-fox",
+                    displayName = "Quiet Fox",
+                    tagline = null,
+                    description = null,
+                    location = null,
+                    languages = emptyList(),
+                ),
+                onSessionInvalidated = {},
+                onCancel = {},
+                onSaved = {},
+            )
+        }
+
+        compose.onNodeWithText("Name").performTextReplacement("")
+        compose.onNodeWithText("Save changes").assertIsNotEnabled()
+        compose.onNodeWithText("Name").performTextReplacement("   ")
+        compose.onNodeWithText("Save changes").assertIsNotEnabled()
+        compose.onNodeWithText("Name").performTextReplacement("Quiet Fox")
+        compose.onNodeWithText("Save changes").assertIsEnabled()
+        assertTrue(local.requests.isEmpty())
+    }
+
+    @Test fun disablesProfileControlsWhileSavingAndReenablesThemAfterSuccess() {
+        val releaseSaveResponse = CountDownLatch(1)
+        val savedProfile = AtomicReference<MemberProfile?>()
+        val local = LocalTransportFixture { request ->
+            check(request.method == "PUT" && request.path == "/api/users") {
+                "Unexpected API request: ${request.method} ${request.path}"
+            }
+            check(releaseSaveResponse.await(15, TimeUnit.SECONDS)) {
+                "Timed out waiting to release the profile save response"
+            }
+            LocalTransportFixture.Response(
+                """{"_id":"fictional-member","username":"quiet-fox","displayName":"Updated Fox","tagline":"A quiet welcome","description":"An open door","locationLiving":"Lisbon","locationFrom":"Porto","languages":["eng"]}""",
+            )
+        }.also { fixture = it }
+
+        try {
+            compose.setContent {
+                EditProfileScreen(
+                    api = MobileApiClient(local.baseURL),
+                    session = MemberSession("connect.sid=fictional-session", MobileMember("quiet-fox", "Quiet Fox")),
+                    profile = MemberProfile(
+                        id = "fictional-member",
+                        username = "quiet-fox",
+                        displayName = "Quiet Fox",
+                        tagline = "A quiet welcome",
+                        description = "An open door",
+                        location = "Lisbon",
+                        locationLiving = "Lisbon",
+                        locationFrom = "Porto",
+                        languages = listOf("eng"),
+                    ),
+                    onSessionInvalidated = {},
+                    onCancel = {},
+                    onSaved = { savedProfile.set(it) },
+                )
+            }
+
+            compose.onNodeWithText("Name").performTextReplacement("Updated Fox")
+            compose.onNodeWithText("Save changes").performClick()
+            compose.waitUntil(10_000) {
+                local.requests.any { it.method == "PUT" && it.path == "/api/users" } &&
+                    compose.onAllNodesWithText("Saving…").fetchSemanticsNodes().isNotEmpty()
+            }
+
+            compose.onNodeWithText("Name").assertIsNotEnabled()
+            compose.onNodeWithText("Tagline").assertIsNotEnabled()
+            compose.onNodeWithText("Lives in").performScrollTo().assertIsNotEnabled()
+            compose.onNodeWithText("From").performScrollTo().assertIsNotEnabled()
+            compose.onNodeWithText("About me").performScrollTo().assertIsNotEnabled()
+            compose.onNodeWithText("English").performScrollTo().assertIsNotEnabled()
+            compose.onNodeWithText("Saving…").assertIsNotEnabled()
+        } finally {
+            releaseSaveResponse.countDown()
+        }
+
+        compose.waitUntil(10_000) { savedProfile.get() != null }
+        compose.onNodeWithText("Name").assertIsEnabled()
+        compose.onNodeWithText("Tagline").assertIsEnabled()
+        compose.onNodeWithText("Lives in").performScrollTo().assertIsEnabled()
+        compose.onNodeWithText("From").performScrollTo().assertIsEnabled()
+        compose.onNodeWithText("About me").performScrollTo().assertIsEnabled()
+        compose.onNodeWithText("English").performScrollTo().assertIsEnabled()
+        compose.onNodeWithText("Save changes").assertIsEnabled()
+
+        val request = local.requests.single { it.method == "PUT" && it.path == "/api/users" }
+        val payload = org.json.JSONObject(request.body)
+        assertEquals("Updated Fox", payload.getString("displayName"))
+        assertEquals("A quiet welcome", payload.getString("tagline"))
+        assertEquals("An open door", payload.getString("description"))
+        assertEquals("Lisbon", payload.getString("locationLiving"))
+        assertEquals("Porto", payload.getString("locationFrom"))
+        assertEquals(listOf("eng"), (0 until payload.getJSONArray("languages").length()).map { payload.getJSONArray("languages").getString(it) })
+
+        assertEquals("Updated Fox", savedProfile.get()?.displayName)
+        assertEquals("A quiet welcome", savedProfile.get()?.tagline)
+        assertEquals("An open door", savedProfile.get()?.description)
+        assertEquals("Lisbon", savedProfile.get()?.locationLiving)
+        assertEquals("Porto", savedProfile.get()?.locationFrom)
+        assertEquals(listOf("eng"), savedProfile.get()?.languages)
+        assertEquals(1, local.requests.count { it.method == "PUT" && it.path == "/api/users" })
     }
 }

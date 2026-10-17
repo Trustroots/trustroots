@@ -1,12 +1,17 @@
 package org.trustroots.android.ui
 
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.text.AnnotatedString
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
 import java.net.Socket
@@ -75,7 +80,7 @@ class HostOfferValidationRetryJourneyTest {
                         }
                         request.startsWith("GET /api/offers-by/") -> {
                             status = "200 OK"
-                            payload = """[{"_id":"offer-one","status":"yes","description":"","maxGuests":2,"showOnlyInMyCircles":false,"location":[48.69,9.14]}]"""
+                            payload = """[{"_id":"offer-one","type":"host","user":"member-one","description":"","maxGuests":2,"showOnlyInMyCircles":false,"location":[48.69,9.14]}]"""
                         }
                         index == 2 -> {
                             status = "500 Internal Server Error"
@@ -105,11 +110,19 @@ class HostOfferValidationRetryJourneyTest {
         }
 
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Write a longer hosting description first.").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Yes").assertIsSelected()
         compose.onNodeWithText("Save changes").assertIsNotEnabled()
         compose.onNodeWithText("Hosting description").performTextReplacement("Room")
         compose.onNodeWithText("Write a longer hosting description first.").assertIsDisplayed()
         compose.onNodeWithText("Hosting description").performTextReplacement("A cosy spare room.")
         compose.onNodeWithText("Maybe").performClick()
+        compose.onNodeWithText("Maximum guests").performTextReplacement("")
+        compose.onNodeWithText("Maximum guests").assert(
+            SemanticsMatcher.expectValue(
+                SemanticsProperties.EditableText,
+                AnnotatedString("2"),
+            ),
+        )
         compose.onNodeWithText("Maximum guests").performTextReplacement("30")
         compose.onNodeWithText("Save changes").performClick()
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Local save failed.").fetchSemanticsNodes().isNotEmpty() }

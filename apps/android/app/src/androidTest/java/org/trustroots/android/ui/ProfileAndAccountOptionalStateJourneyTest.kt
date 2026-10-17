@@ -2,7 +2,9 @@ package org.trustroots.android.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -124,9 +126,61 @@ class ProfileAndAccountOptionalStateJourneyTest {
         compose.onNodeWithText("Reference Author").performScrollTo().assertIsDisplayed()
     }
 
+    @Test fun aReferenceAuthorWithoutUsernameRemainsVisibleButCannotOpenAProfile() {
+        val requests = CopyOnWriteArrayList<LocalTransportFixture.Request>()
+        val local = LocalTransportFixture { request ->
+            requests += request
+            when {
+                request.method == "GET" && request.path == "/api/users/quiet-fox" ->
+                    LocalTransportFixture.Response(PROFILE)
+                request.method == "GET" && request.path == "/api/offers-by/member-main?types=host" ->
+                    LocalTransportFixture.Response("[]")
+                request.method == "GET" && request.path == "/api/contacts/member-main" ->
+                    LocalTransportFixture.Response("[]")
+                request.method == "GET" && request.path == "/api/experiences?userTo=member-main" ->
+                    LocalTransportFixture.Response(REFERENCE_WITHOUT_AUTHOR_USERNAME)
+                request.method == "GET" && request.path == "/api/contact-by/member-main" ->
+                    LocalTransportFixture.Response("{}", status = 404)
+                request.path.contains("/avatar?") -> LocalTransportFixture.Response("", status = 404)
+                else -> LocalTransportFixture.Response("{}", status = 404)
+            }
+        }.also { fixture = it }
+
+        compose.setContent {
+            MemberProfileScreen(
+                api = MobileApiClient(local.baseURL),
+                session = MemberSession(
+                    "connect.sid=fictional-profile-session",
+                    MobileMember("steady-heron", "Steady Heron"),
+                ),
+                username = "quiet-fox",
+                onSessionInvalidated = {},
+                onBack = {},
+            )
+        }
+
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onAllNodesWithTag("profileSection-experiences")[0].performClick()
+        compose.onNodeWithText("Reference Author").performScrollTo().assertIsDisplayed().performClick()
+
+        compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
+        compose.onAllNodesWithTag("profileSection-experiences")[0].assertIsSelected()
+        compose.onNodeWithTag("profilePager").assertIsDisplayed()
+        assertEquals(
+            listOf("/api/users/quiet-fox"),
+            requests.filter {
+                it.method == "GET" && it.path.startsWith("/api/users/") &&
+                    '/' !in it.path.removePrefix("/api/users/").substringBefore('?')
+            }.map { it.path },
+        )
+    }
+
     private companion object {
         const val ACCOUNT_DETAILS = """{"username":"steady-heron","displayName":"Steady Heron","email":"old@example.test","newsletter":false}"""
         const val PROFILE = """{"_id":"member-main","username":"quiet-fox","displayName":"Quiet Fox"}"""
         const val REFERENCE_WITHOUT_FEEDBACK = """[{"_id":"reference-private","userFrom":{"_id":"author-id","username":"reference-author","displayName":"Reference Author"}}]"""
+        const val REFERENCE_WITHOUT_AUTHOR_USERNAME = """[{"_id":"reference-private","userFrom":{"_id":"author-id","username":null,"displayName":"Reference Author"}}]"""
     }
 }

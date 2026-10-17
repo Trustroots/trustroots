@@ -166,19 +166,22 @@ opt-in and does not affect ordinary debug or release builds. To generate the
 API 36 report locally, with localhost configured for the offline adapter journeys:
 
 ```sh
-./gradlew -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable
+./gradlew -Pkotlin.incremental=false -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable
 python3 scripts/coverage-ratchet.py app/build/reports/coverage/debug/coverage.xml coverage-baseline.json
 python3 -m unittest discover -s scripts
 ```
 
-CI also runs four selected notification and offline WebView compatibility journeys
-on API 32, using the same already-built APKs, then merges those probes into the report. To reproduce that
+Coverage commands disable incremental Kotlin compilation so the report uses one
+fully compiled set of production classes.
+
+CI also runs eight selected notification, preview-update, WebView, encrypted-storage and
+message-permission compatibility journeys on API 32, using the same already-built APKs, then merges those probes into the report. To reproduce that
 combined report, stop the API 36 emulator and connect a dedicated API 32 emulator
 after the full run above, then run:
 
 ```sh
 bash scripts/collect-legacy-coverage.sh
-./gradlew -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable -x testDebugUnitTest -x connectedDebugAndroidTest -x compileDebugKotlin -x compileDebugJavaWithJavac
+./gradlew -Pkotlin.incremental=false -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable -x testDebugUnitTest -x connectedDebugAndroidTest -x compileDebugKotlin -x compileDebugJavaWithJavac
 python3 scripts/coverage-ratchet.py app/build/reports/coverage/debug/coverage.xml coverage-baseline.json
 ```
 

@@ -226,7 +226,7 @@ internal fun HostMapScreen(
             }.onFailure {
                 if (generation == searchGeneration.get()) {
                     if (it.isAuthenticationFailure()) onSessionInvalidated()
-                    else error = it.message ?: "Could not search hosts."
+                    else error = it.messageOr("Could not search hosts.")
                 }
             }
             if (generation == searchGeneration.get()) loading = false
@@ -336,7 +336,7 @@ internal fun HostMapScreen(
                                 scope.launch {
                                     api.hostOffer(session, offer.id).onSuccess { host = it }.onFailure {
                                         if (it.isAuthenticationFailure()) onSessionInvalidated()
-                                        else error = it.message ?: "Could not load host."
+                                        else error = it.messageOr("Could not load host.")
                                     }
                                 }
                             }

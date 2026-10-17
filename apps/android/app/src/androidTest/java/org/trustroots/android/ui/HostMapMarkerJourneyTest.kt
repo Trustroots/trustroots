@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import android.location.Address
 import java.util.Locale
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -19,6 +20,8 @@ import java.net.SocketException
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.thread
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,7 +49,8 @@ class HostMapMarkerJourneyTest {
         if (server.isClosed) null else throw error
     }
 
-    @Test fun opensHostDetailsFromTheVisibleMapMarker() {
+    @Test fun opensMaybeHostDetailsAndProfileFromTheVisibleMapMarker() {
+        val profileOpenChanges = CopyOnWriteArrayList<Boolean>()
         responder = thread(isDaemon = true) {
             while (true) {
                 val socket = acceptOrStop() ?: return@thread
@@ -70,9 +74,9 @@ class HostMapMarkerJourneyTest {
                     }
                     val payload = when {
                         request.startsWith("GET /api/offers?") ->
-                            """{"features":[{"properties":{"id":"offer-one","type":"host","status":"yes"},"geometry":{"coordinates":[-9.1393,38.7223]}}]}"""
+                            """{"features":[{"properties":{"id":"offer-one","type":"host","status":"maybe"},"geometry":{"coordinates":[-9.1393,38.7223]}}]}"""
                         request.startsWith("GET /api/offers/offer-one") ->
-                            """{"_id":"offer-one","status":"yes","description":"A fictional spare room.","maxGuests":2,"user":{"username":"quiet-fox","displayName":"Quiet Fox"}}"""
+                            """{"_id":"offer-one","status":"maybe","description":"A fictional spare room.","maxGuests":2,"user":{"username":"quiet-fox","displayName":"Quiet Fox"}}"""
                         request.startsWith("GET /api/users/quiet-fox") ->
                             """{"_id":"member-two","username":"quiet-fox","displayName":"Quiet Fox","tagline":"A fictional host"}"""
                         request.startsWith("GET /api/users/memberships") -> "[]"
@@ -97,12 +101,14 @@ class HostMapMarkerJourneyTest {
                 api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
                 session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
                 onSessionInvalidated = {},
+                onProfileOpenChange = { profileOpenChanges += it },
                 geocoderLookup = { _, _, _ ->
                     listOf(Address(Locale.UK).apply { setAddressLine(0, "Fictional destination") })
                 },
             )
         }
 
+        compose.waitUntil(5_000) { profileOpenChanges.contains(false) }
         compose.waitUntil(15_000) {
             compose.onAllNodesWithText("1 offers · 0 Nostroots notes in this area").fetchSemanticsNodes().isNotEmpty()
         }
@@ -112,8 +118,22 @@ class HostMapMarkerJourneyTest {
         }
 
         compose.onNodeWithText("A fictional spare room.").assertIsDisplayed()
-        compose.onNodeWithText("Hosting travellers").assertIsDisplayed()
+        compose.onNodeWithText("Maybe hosting").assertIsDisplayed()
         check(requests.any { it.startsWith("GET /api/offers/offer-one ") })
+
+        compose.onNodeWithTag("hostResultCard").performClick()
+        compose.waitUntil(10_000) {
+            profileOpenChanges.contains(true) &&
+                compose.onAllNodesWithTag("profilePager").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("profilePager").assertIsDisplayed()
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.waitUntil(10_000) {
+            profileOpenChanges.lastOrNull() == false &&
+                compose.onAllNodesWithTag("hostResultCard").fetchSemanticsNodes().isNotEmpty()
+        }
+        assertTrue(requests.any { it.startsWith("GET /api/users/quiet-fox ") })
+        assertEquals(listOf(false, true, false), profileOpenChanges.toList())
 
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithText("A fictional spare room.").assertDoesNotExist()

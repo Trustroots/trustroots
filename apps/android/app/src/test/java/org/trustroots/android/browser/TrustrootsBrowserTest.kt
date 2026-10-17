@@ -49,6 +49,21 @@ class TrustrootsBrowserTest {
         )
     }
 
+    @Test
+    fun derivesCookieOriginAndDefaultsProtocolRelativeURLsToHttps() {
+        assertEquals("https://example.test", browserCookieOrigin("//example.test/path"))
+        assertEquals("http://example.test", browserCookieOrigin("http://example.test/path"))
+        assertEquals("custom://example.test", browserCookieOrigin("custom://example.test/path"))
+        assertEquals("https://example.test", browserCookieOrigin("https://user:pass@example.test/path"))
+    }
+
+    @Test
+    fun rejectsCookieOriginForMalformedOrHostlessURLs() {
+        assertEquals(null, browserCookieOrigin("not a valid URI"))
+        assertEquals(null, browserCookieOrigin("/path"))
+        assertEquals(null, browserCookieOrigin("https:///path"))
+    }
+
     @Test fun recognisesBareHitchwikiAndCaseInsensitiveHosts() {
         assertTrue(isAllowedTrustrootsURL("https://hitchwiki.org/"))
         assertTrue(isAllowedTrustrootsURL("HTTPS://WWW.TRUSTROOTS.ORG/"))

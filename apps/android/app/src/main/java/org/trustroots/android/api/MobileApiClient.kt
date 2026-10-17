@@ -4,6 +4,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 import java.io.IOException
+import java.io.InputStreamReader
 import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -177,18 +178,6 @@ class MobileApiClient(
                     },
                     member = mobileMemberFrom(JSONObject(response.body)),
                 )
-            }
-        }
-
-    suspend fun currentMember(session: MemberSession): Result<MobileMember> =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                val response = jsonRequest(
-                    path = "/api/users/${session.member.username}",
-                    method = "GET",
-                    sessionCookie = session.cookieHeader,
-                )
-                mobileMemberFrom(JSONObject(response.body))
             }
         }
 
@@ -477,7 +466,7 @@ class MobileApiClient(
             runCatching {
                 require(update.status in setOf("yes", "maybe", "no"))
                 require(update.maxGuests in 1..20)
-                require(update.latitude in -90.0..90.0 && update.longitude in -180.0..180.0)
+                require(isValidWorldCoordinates(update.latitude, update.longitude))
                 val body = JSONObject()
                     .put("type", "host")
                     .put("status", update.status)
@@ -575,7 +564,8 @@ class MobileApiClient(
             connection.readTimeout = 15_000
             connection.setRequestProperty("Accept", "application/json")
             connection.setRequestProperty("User-Agent", "TrustrootsAndroid/0.1")
-            if (method != "GET" && method != "HEAD") {
+            // jsonRequest is private; no public API operation uses HEAD.
+            if (method != "GET") {
                 connection.setRequestProperty("X-Trustroots-Request", "1")
             }
             requestHeaders.forEach { (name, value) -> connection.setRequestProperty(name, value) }
@@ -589,7 +579,9 @@ class MobileApiClient(
                 connection.inputStream
             } else {
                 connection.errorStream
-            })?.bufferedReader()?.use { it.readText() }.orEmpty()
+            })?.let { stream ->
+                InputStreamReader(stream, Charsets.UTF_8).use { it.readText() }
+            }.orEmpty()
             if (connection.responseCode !in 200..299) {
                 val message = runCatching { JSONObject(responseBody).optString("message") }
                     .getOrNull()
@@ -599,7 +591,7 @@ class MobileApiClient(
                     message = message.ifBlank { rejectedMessage },
                 )
             }
-            if (method == "GET" && sessionCookie != null && cacheAccount != null) {
+            if (sessionCookie != null && method == "GET" && cacheAccount != null) {
                 responseCache?.save(baseURL, cacheAccount, path, responseBody)
             } else if (method != "GET" && sessionCookie != null && cacheAccount != null) {
                 when {
@@ -620,7 +612,7 @@ class MobileApiClient(
                 sessionCookie = sessionCookieFrom(connection.headerFields),
             )
         } catch (error: IOException) {
-            val cached = if (method == "GET" && sessionCookie != null && cacheAccount != null) {
+            val cached = if (sessionCookie != null && method == "GET" && cacheAccount != null) {
                 responseCache?.load(baseURL, cacheAccount, path)
             } else null
             if (cached != null) {
@@ -773,7 +765,7 @@ internal fun parseMapOffers(value: JSONObject): List<MapOffer> {
         if (coordinates.length() != 2) return@mapNotNull null
         val longitude = coordinates.getDouble(0)
         val latitude = coordinates.getDouble(1)
-        if (!latitude.isFinite() || !longitude.isFinite() || latitude !in -90.0..90.0 || longitude !in -180.0..180.0) {
+        if (!isValidWorldCoordinates(latitude, longitude)) {
             return@mapNotNull null
         }
         val properties = feature.getJSONObject("properties")

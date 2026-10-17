@@ -1,5 +1,6 @@
 package org.trustroots.android.ui
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -89,7 +90,9 @@ class MemberProfileStatesJourneyTest {
 
         compose.onNodeWithTag("profileSection-contacts").assertIsSelected()
         compose.onNodeWithText("Contact Seven").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Show fewer").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Show fewer").performScrollTo().performClick()
+        compose.onNodeWithText("More contacts (1)").performScrollTo().assertIsDisplayed()
+        compose.onAllNodesWithText("Contact Seven").assertCountEquals(0)
 
         compose.onNodeWithTag("profileSection-experiences").performClick()
         compose.onNodeWithText("More experiences (1)").performScrollTo().performClick()
@@ -101,7 +104,9 @@ class MemberProfileStatesJourneyTest {
 
         compose.onNodeWithTag("profileSection-experiences").assertIsSelected()
         compose.onNodeWithText("Reference Seven").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Show fewer").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Show fewer").performScrollTo().performClick()
+        compose.onNodeWithText("More experiences (1)").performScrollTo().assertIsDisplayed()
+        compose.onAllNodesWithText("Reference Seven").assertCountEquals(0)
     }
 
     private fun api() = MobileApiClient("http://127.0.0.1:${server.localPort}")

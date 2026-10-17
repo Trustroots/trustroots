@@ -93,6 +93,9 @@ class ShellBackNavigationJourneyTest {
 
         compose.onNodeWithText("No conversations yet.").assertIsDisplayed()
         compose.onNodeWithTag("navigation-messages").assertIsSelected()
+        pressSystemBack()
+        compose.onNodeWithText("Discover circles").assertIsDisplayed()
+        compose.onNodeWithTag("navigation-circles").assertIsSelected()
         assertEquals(session, SecureMobileSessionStore(context).load())
         assertTrue(requests.any { it.startsWith("GET /api/contacts/member-self ") })
     }

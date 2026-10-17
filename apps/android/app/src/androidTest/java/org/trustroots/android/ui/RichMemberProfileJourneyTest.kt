@@ -93,6 +93,29 @@ class RichMemberProfileJourneyTest {
         assertTrue(requests.any { it.startsWith("GET /api/offers-by/member-related?types=host ") })
     }
 
+    @Test fun noHostingOfferWithoutOptionalNoteShowsStatusWithoutLeakingActiveDescription() {
+        startResponder(ROOT_NO_OFFER_WITHOUT_NOTE)
+        showProfile("quiet-fox")
+
+        waitForText("Quiet Fox")
+        compose.onNodeWithTag("profileSection-about").performClick()
+        compose.onNodeWithText("Not hosting currently").performScrollTo().assertIsDisplayed()
+        assertTrue(
+            "An unavailable offer without its optional note must not show the active offer description",
+            compose.onAllNodesWithText(PRIVATE_ACTIVE_OFFER_DESCRIPTION, substring = true)
+                .fetchSemanticsNodes().isEmpty(),
+        )
+        assertTrue(
+            compose.onAllNodesWithText("Space for", substring = true).fetchSemanticsNodes().isEmpty(),
+        )
+
+        compose.onNodeWithTag("profileSection-experiences").performClick()
+        compose.onNodeWithText("A thoughtful visit with kind company.").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profileSection-about").performClick()
+        compose.onNodeWithText("Not hosting currently").performScrollTo().assertIsDisplayed()
+        assertTrue(requests.any { it.startsWith("GET /api/offers-by/member-main?types=host ") })
+    }
+
     private fun showProfile(username: String) {
         compose.setContent {
             MemberProfileScreen(
@@ -167,6 +190,8 @@ class RichMemberProfileJourneyTest {
         const val RELATED_PROFILE = """{"_id":"member-related","username":"reference-author","displayName":"Reference Author"}"""
         const val ROOT_MAYBE_OFFER = """[{"_id":"offer-main","status":"maybe","description":"A quiet place for one traveller.","maxGuests":1}]"""
         const val ROOT_NO_OFFER = """[{"_id":"offer-main","status":"no","description":"Private offer details should not appear.","noOfferDescription":"A busy season, but happy to share local tips.","maxGuests":4}]"""
+        const val PRIVATE_ACTIVE_OFFER_DESCRIPTION = "Private active offer details should stay hidden."
+        const val ROOT_NO_OFFER_WITHOUT_NOTE = """[{"_id":"offer-main","status":"no","description":"$PRIVATE_ACTIVE_OFFER_DESCRIPTION","maxGuests":3}]"""
         const val RELATED_OFFER = """[{"_id":"offer-related","status":"yes","description":"A fictional home for several travellers.","maxGuests":4}]"""
         const val ROOT_REFERENCES = """[{"_id":"experience-one","userFrom":{"_id":"member-related","username":"reference-author","displayName":"Reference Author"},"feedbackPublic":"A thoughtful visit with kind company.","recommend":"yes","response":{"feedbackPublic":"We would happily welcome them again."}}]"""
     }

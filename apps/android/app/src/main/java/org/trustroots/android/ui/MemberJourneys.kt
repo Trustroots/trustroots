@@ -123,7 +123,7 @@ internal fun MemberSearchScreen(
             api.searchMembers(session, query).onSuccess { results = it; searched = true }
                 .onFailure {
                     if (it.isAuthenticationFailure()) onSessionInvalidated()
-                    else error = it.message ?: "Could not search members."
+                    else error = it.messageOr("Could not search members.")
                 }
             loading = false
         }
@@ -222,13 +222,13 @@ internal fun MemberProfileScreen(
     var browserRoute by remember(username) { mutableStateOf<BrowserRoute?>(null) }
     var relationship by remember(username) { mutableStateOf<ContactRelationship?>(null) }
     var relationshipResolved by remember(username) { mutableStateOf(false) }
-    var confirmRemoveContact by remember(username) { mutableStateOf(false) }
+    var contactRemovalTarget by remember(username) { mutableStateOf<ContactRemovalTarget?>(null) }
     var removingContact by remember(username) { mutableStateOf(false) }
     var sharingExperience by remember(username) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     BackHandler {
         when {
-            confirmRemoveContact -> if (!removingContact) confirmRemoveContact = false
+            contactRemovalTarget != null -> dismissContactRemovalWhenIdle(removingContact) { contactRemovalTarget = null }
             browserRoute != null -> browserRoute = null
             recipient != null -> recipient = null
             relatedUsername != null -> relatedUsername = null
@@ -237,21 +237,22 @@ internal fun MemberProfileScreen(
             else -> onBack()
         }
     }
-    if (editing && profile != null) {
+    val currentProfile = profile
+    if (editing && currentProfile != null) {
         EditProfileScreen(
-            api, session, requireNotNull(profile), onSessionInvalidated,
+            api, session, currentProfile, onSessionInvalidated,
             onCancel = { editing = false },
             onSaved = { updated -> profile = updated; editing = false; onOwnProfileSaved(updated) },
             contentPadding = contentPadding,
         )
         return
     }
-    if (sharingExperience && profile?.id != null) {
+    if (sharingExperience && currentProfile?.id != null) {
         CreateExperienceScreen(
             api = api,
             session = session,
-            memberID = requireNotNull(profile).id!!,
-            memberLabel = requireNotNull(profile).displayName,
+            memberID = currentProfile.id,
+            memberLabel = currentProfile.displayName,
             onSessionInvalidated = onSessionInvalidated,
             onBack = { sharingExperience = false },
             onCreated = { sharingExperience = false },
@@ -276,34 +277,28 @@ internal fun MemberProfileScreen(
         browserContent(route, { browserRoute = null }, contentPadding)
         return
     }
-    if (confirmRemoveContact) {
-        val existing = relationship
+    contactRemovalTarget?.let { target ->
         AlertDialog(
-            onDismissRequest = { if (!removingContact) confirmRemoveContact = false },
+            onDismissRequest = { dismissContactRemovalWhenIdle(removingContact) { contactRemovalTarget = null } },
             title = {
-                Text(
-                    if (existing?.confirmed == true) "Remove contact?" else "Delete contact request?",
-                )
+                Text(if (target.confirmed) "Remove contact?" else "Delete contact request?")
             },
             text = {
-                Text(
-                    if (existing?.confirmed == true) {
-                        "You will no longer be contacts with this member."
-                    } else {
-                        "This cancels the pending contact request."
-                    },
-                )
+                Text(if (target.confirmed) {
+                    "You will no longer be contacts with this member."
+                } else {
+                    "This cancels the pending contact request."
+                })
             },
             confirmButton = {
                 TextButton(
-                    enabled = !removingContact && existing?.id != null,
+                    enabled = !removingContact,
                     onClick = {
-                        val contactID = existing?.id ?: return@TextButton
                         scope.launch {
                             removingContact = true
-                            api.removeContact(session, contactID).onSuccess {
+                            api.removeContact(session, target.id).onSuccess {
                                 relationship = ContactRelationship(id = null, confirmed = false)
-                                confirmRemoveContact = false
+                                contactRemovalTarget = null
                             }.onFailure {
                                 if (it.isAuthenticationFailure()) {
                                     onSessionInvalidated()
@@ -315,7 +310,7 @@ internal fun MemberProfileScreen(
                 ) { Text(if (removingContact) "Removing…" else "Confirm") }
             },
             dismissButton = {
-                TextButton(enabled = !removingContact, onClick = { confirmRemoveContact = false }) {
+                TextButton(enabled = !removingContact, onClick = { contactRemovalTarget = null }) {
                     Text("Cancel")
                 }
             },
@@ -351,23 +346,25 @@ internal fun MemberProfileScreen(
             }
         }.onFailure {
             if (it.isAuthenticationFailure()) onSessionInvalidated()
-            else error = it.message ?: "Could not load profile."
+            else error = it.messageOr("Could not load profile.")
         }
     }
-    val isSelf = profile?.username == session.member.username
+    val isSelf = currentProfile?.username == session.member.username
+    val currentError = error
     Column(Modifier.fillMaxSize()) {
         when {
-            profile == null && error == null -> CircularProgressIndicator(Modifier.padding(20.dp))
-            error != null -> {
+            currentError != null -> {
                 NativeBackButton(onBack)
                 Text(
-                    requireNotNull(error),
+                    currentError,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(20.dp),
                 )
             }
+            currentProfile == null -> CircularProgressIndicator(Modifier.padding(20.dp))
             else -> {
-                val member = requireNotNull(profile)
+                val member = currentProfile
+                val removalTarget = relationship.toRemovalTarget()
                 ProfileActionBar(
                     isSelf = isSelf,
                     onBack = onBack,
@@ -378,23 +375,21 @@ internal fun MemberProfileScreen(
                     onShareExperience = { sharingExperience = true },
                     contactLabel = when {
                         !relationshipResolved -> null
-                        relationship?.id.isNullOrBlank() -> "Add contact"
-                        relationship?.confirmed == true -> "Remove contact"
+                        removalTarget == null -> "Add contact"
+                        removalTarget.confirmed -> "Remove contact"
                         else -> "Delete contact request"
                     },
                     onContactAction = {
-                        val current = relationship
-                        when {
-                            current?.id.isNullOrBlank() -> {
-                                member.id?.let { id ->
-                                    browserRoute = BrowserRoute(
-                                        title = "Add contact",
-                                        url = "https://www.trustroots.org/contact-add/$id",
-                                        sessionCookie = session.cookieHeader,
-                                    )
-                                }
+                        if (removalTarget != null) {
+                            contactRemovalTarget = removalTarget
+                        } else {
+                            member.id?.let { id ->
+                                browserRoute = BrowserRoute(
+                                    title = "Add contact",
+                                    url = "https://www.trustroots.org/contact-add/$id",
+                                    sessionCookie = session.cookieHeader,
+                                )
                             }
-                            else -> confirmRemoveContact = true
                         }
                     },
                     topPadding = contentPadding.calculateTopPadding(),
@@ -450,10 +445,22 @@ internal fun MemberProfileScreen(
     }
 }
 
+internal data class ContactRemovalTarget(val id: String, val confirmed: Boolean)
+
+internal fun ContactRelationship?.toRemovalTarget(): ContactRemovalTarget? {
+    val relationship = this ?: return null
+    val id = relationship.id?.takeIf(String::isNotBlank) ?: return null
+    return ContactRemovalTarget(id, relationship.confirmed)
+}
+
 private enum class ProfileSection(val label: String) {
     About("About"),
     Contacts("Contacts"),
     Experiences("Experiences"),
+}
+
+private fun dismissContactRemovalWhenIdle(removingContact: Boolean, onDismiss: () -> Unit) {
+    if (!removingContact) onDismiss()
 }
 
 @Composable
@@ -696,7 +703,7 @@ internal fun EditProfileScreen(
                         .onSuccess(onSaved)
                         .onFailure {
                             if (it.isAuthenticationFailure()) onSessionInvalidated()
-                            else error = it.message ?: "Could not save profile."
+                            else error = it.messageOr("Could not save profile.")
                         }
                     saving = false
                 }
@@ -789,7 +796,7 @@ internal fun MessageInboxScreen(
         do {
             val batch = api.inbox(session, page).getOrElse {
                 if (it.isAuthenticationFailure()) onSessionInvalidated()
-                else if (collected.isEmpty()) error = it.message ?: "Could not load messages."
+                else if (collected.isEmpty()) error = it.messageOr("Could not load messages.")
                 break
             }
             collected += batch
@@ -871,26 +878,26 @@ internal fun ConversationScreen(
     val composerFocus = remember { FocusRequester() }
     val userHasReplied = messages.any { it.sender.username == session.member.username }
     val showQuickReply = messagesLoaded && messages.isNotEmpty() && !userHasReplied
+    val incomingAvatarURL = member.id?.let { api.avatarURL(it, 64) }
     val updateDraft: (String) -> Unit = { text ->
         draft = text
         drafts.save(session.member.username, draftKey, text)
     }
-    val sendContent: (String) -> Unit = sendContent@{ content ->
-        val id = member.id ?: return@sendContent
-        val trimmed = content.trim()
-        if (trimmed.isBlank() || sending) return@sendContent
-        scope.launch {
-            sending = true
-            api.sendMessage(session, id, content).onSuccess {
-                messages = listOf(it) + messages
-                draft = ""
-                drafts.clear(session.member.username, draftKey)
-                error = null
-            }.onFailure {
-                if (it.isAuthenticationFailure()) onSessionInvalidated()
-                else error = it.message ?: "Could not send message."
+    val sendContent: (String) -> Unit = { content ->
+        sendMessageIfReady(member.id, content, sending) { id, originalContent ->
+            scope.launch {
+                sending = true
+                api.sendMessage(session, id, originalContent).onSuccess {
+                    messages = listOf(it) + messages
+                    draft = ""
+                    drafts.clear(session.member.username, draftKey)
+                    error = null
+                }.onFailure {
+                    if (it.isAuthenticationFailure()) onSessionInvalidated()
+                    else error = it.messageOr("Could not send message.")
+                }
+                sending = false
             }
-            sending = false
         }
     }
     val send: () -> Unit = { sendContent(draft) }
@@ -902,7 +909,7 @@ internal fun ConversationScreen(
         }.onFailure {
             messagesLoaded = true
             if (it.isAuthenticationFailure()) onSessionInvalidated()
-            else error = it.message ?: "Could not load conversation."
+            else error = it.messageOr("Could not load conversation.")
         }
     }
     Column(Modifier.fillMaxSize().imePadding().padding(contentPadding).padding(20.dp)) {
@@ -927,7 +934,7 @@ internal fun ConversationScreen(
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = if (message.sender.username == session.member.username) Arrangement.End else Arrangement.Start) {
                     if (message.sender.username != session.member.username) {
                         RemoteArtwork(
-                            url = member.id?.let { api.avatarURL(it, 64) },
+                            url = incomingAvatarURL,
                             sessionCookie = session.cookieHeader,
                             label = member.label,
                             size = 30.dp,
@@ -1042,18 +1049,19 @@ internal fun ContactsScreen(
             }.onFailure {
                 if (it.isAuthenticationFailure()) onSessionInvalidated()
                 else {
-                    error = it.message ?: "Could not load contacts."
+                    error = it.messageOr("Could not load contacts.")
                     loading = false
                 }
             }
         }.onFailure {
             if (it.isAuthenticationFailure()) onSessionInvalidated()
             else {
-                error = it.message ?: "Could not load contacts."
+                error = it.messageOr("Could not load contacts.")
                 loading = false
             }
         }
     }
+    val currentError = error
     Column(
         Modifier
             .fillMaxSize()
@@ -1064,8 +1072,8 @@ internal fun ContactsScreen(
         Text("Contacts", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         when {
             loading -> CircularProgressIndicator(modifier = Modifier.padding(top = 20.dp))
-            error != null -> Text(
-                requireNotNull(error),
+            currentError != null -> Text(
+                currentError,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(top = 16.dp),
             )

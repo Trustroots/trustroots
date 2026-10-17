@@ -61,7 +61,8 @@ fun TrustrootsBrowser(
     var externalURL by remember { mutableStateOf<String?>(null) }
 
     BackHandler {
-        if (webView?.canGoBack() == true) webView?.goBack() else onClose()
+        val currentWebView = webView
+        if (currentWebView?.canGoBack() == true) currentWebView.goBack() else onClose()
     }
 
     externalURL?.let { url ->
@@ -148,12 +149,16 @@ internal fun cookiePairsForWebView(cookieHeader: String): List<String> =
         .map { it.trim() }
         .filter { it.contains('=') && !it.startsWith("Path=", true) && !it.startsWith("Domain=", true) }
 
+internal fun browserCookieOrigin(url: String): String? {
+    val uri = runCatching { URI(url) }.getOrNull() ?: return null
+    val host = uri.host ?: return null
+    val scheme = uri.scheme ?: "https"
+    return "$scheme://$host"
+}
+
 internal fun applyBrowserSessionCookie(url: String, cookieHeader: String?) {
     if (cookieHeader.isNullOrBlank()) return
-    val uri = runCatching { URI(url) }.getOrNull() ?: return
-    val host = uri.host ?: return
-    val scheme = uri.scheme ?: "https"
-    val origin = "$scheme://$host"
+    val origin = browserCookieOrigin(url) ?: return
     val manager = CookieManager.getInstance()
     manager.setAcceptCookie(true)
     cookiePairsForWebView(cookieHeader).forEach { pair ->

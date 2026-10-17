@@ -2,6 +2,7 @@ package org.trustroots.android.ui
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
@@ -9,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.semantics.getOrNull
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
 import java.time.Instant
@@ -20,6 +22,7 @@ import kotlin.concurrent.thread
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,8 +35,56 @@ import org.trustroots.android.api.MobileMember
 class ConversationJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val server = ServerSocket(0)
+    private var fixture: LocalTransportFixture? = null
 
-    @After fun closeServer() = server.close()
+    @After fun closeServer() {
+        server.close()
+        fixture?.close()
+        fixture = null
+    }
+
+    @Test fun legacyMessageWithoutTimestampStillAppearsWithoutTimeLabel() {
+        val local = LocalTransportFixture { request ->
+            when {
+                request.method == "GET" && request.path == "/api/messages/fictional-neighbour?limit=100" ->
+                    LocalTransportFixture.Response(
+                        """[{"_id":"fictional-message","content":"A fictional note without a timestamp.","userFrom":{"_id":"fictional-neighbour","username":"quiet-fox","displayName":"Quiet Fox"}}]""",
+                    )
+                request.path.contains("/avatar?") -> LocalTransportFixture.Response("", status = 404)
+                else -> error("Unexpected API request: ${request.method} ${request.path}")
+            }
+        }.also { fixture = it }
+
+        compose.setContent {
+            NativeTestAppFrame(Destination.Messages) {
+                ConversationScreen(
+                    api = MobileApiClient(local.baseURL),
+                    session = MemberSession("connect.sid=fictional-session", MobileMember("steady-heron", "Steady Heron")),
+                    member = MessageMember("fictional-neighbour", "quiet-fox", "Quiet Fox"),
+                    onSessionInvalidated = {},
+                    onBack = {},
+                )
+            }
+        }
+
+        compose.waitUntil(10_000) {
+            local.requests.any { it.path == "/api/messages/fictional-neighbour?limit=100" } &&
+                compose.onAllNodesWithText("A fictional note without a timestamp.")
+                    .fetchSemanticsNodes().isNotEmpty()
+        }
+        val message = compose.onNodeWithTag("incomingMessage", useUnmergedTree = true).fetchSemanticsNode()
+        assertEquals(
+            listOf("A fictional note without a timestamp."),
+            messageText(message),
+        )
+        compose.onNodeWithText("A fictional note without a timestamp.").assertIsDisplayed()
+    }
+
+    private fun messageText(node: androidx.compose.ui.semantics.SemanticsNode): List<String> = buildList {
+        node.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Text)
+            ?.forEach { add(it.text) }
+        node.children.forEach { addAll(messageText(it)) }
+    }
 
     @Test fun multilineComposerSendsMessage() {
         val posted = AtomicBoolean(false)
@@ -157,5 +208,37 @@ class ConversationJourneyTest {
         }
         assertTrue(JSONObject(postedBody.get()).getString("content").contains("data-hosting=\"yes\""))
         responder.join(1_000)
+    }
+
+    @Test fun writeBackQuickReplyMovesFocusToTheMessageComposer() {
+        val memberID = "fictional-neighbour"
+        val local = LocalTransportFixture { request ->
+            when {
+                request.method == "GET" && request.path == "/api/messages/$memberID?limit=100" ->
+                    LocalTransportFixture.Response(
+                        """[{"_id":"fictional-message","content":"Can you host?","userFrom":{"_id":"fictional-neighbour","username":"quiet-fox","displayName":"Quiet Fox"}}]""",
+                    )
+                request.path.contains("/avatar?") -> LocalTransportFixture.Response("", status = 404)
+                else -> error("Unexpected API request: ${request.method} ${request.path}")
+            }
+        }.also { fixture = it }
+
+        compose.setContent {
+            ConversationScreen(
+                api = MobileApiClient(local.baseURL),
+                session = MemberSession("connect.sid=fictional-session", MobileMember("steady-heron", "Steady Heron")),
+                member = MessageMember(memberID, "quiet-fox", "Quiet Fox"),
+                onSessionInvalidated = {},
+                onBack = {},
+            )
+        }
+
+        compose.waitUntil(10_000) {
+            local.requests.any { it.method == "GET" && it.path == "/api/messages/$memberID?limit=100" } &&
+                compose.onAllNodesWithText("Write back").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Write back").performClick()
+        compose.onNodeWithTag("messageComposer").assertIsFocused()
+        assertTrue(local.requests.none { it.method == "POST" })
     }
 }

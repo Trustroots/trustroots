@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.click
@@ -319,6 +320,56 @@ class HostMapHighZoomCommunityNotesJourneyTest {
         compose.onNodeWithTag("hostMapView").assertIsDisplayed()
     }
 
+    @Test fun placeSearchImeActionLooksUpLocationAndIgnoresAnEmptyQuery() {
+        val geocoderLimits = CopyOnWriteArrayList<Int>()
+        val local = LocalTransportFixture { request ->
+            if (request.method == "GET" && request.path.startsWith("/api/offers?")) {
+                LocalTransportFixture.Response("{\"features\":[]}")
+            } else {
+                error("Unexpected API request: ${request.method} ${request.path}")
+            }
+        }
+        fixture = local
+        compose.setContent {
+            HostMapScreen(
+                api = MobileApiClient(local.baseURL),
+                session = MemberSession(SESSION_COOKIE, MobileMember("steady-heron", "Steady Heron")),
+                onSessionInvalidated = {},
+                geocoderLookup = { _, query, maxResults ->
+                    geocoderCalls += query
+                    geocoderLimits += maxResults
+                    listOf(android.location.Address(java.util.Locale.US).apply {
+                        latitude = 37.25
+                        longitude = -8.5
+                        setAddressLine(0, "Fictional Harbour")
+                    })
+                },
+                mapViewFactory = offlineMapViewFactory,
+            )
+        }
+
+        compose.waitUntil(10_000) { local.requests.any { it.path.startsWith("/api/offers?") } }
+        compose.onNodeWithTag("placeSearchField").performImeAction()
+        compose.waitForIdle()
+        assertTrue("An empty IME search must not invoke the geocoder", geocoderCalls.isEmpty())
+        compose.onNodeWithText("Could not find that place.").assertDoesNotExist()
+
+        compose.onNodeWithTag("placeSearchField").performTextReplacement("Fictional Harbour")
+        compose.onNodeWithTag("placeSearchField").performImeAction()
+        compose.waitUntil(10_000) {
+            geocoderLimits.contains(1) && currentZoom() in 8.9..9.1 && isCentredOnFictionalHarbour()
+        }
+        compose.onNodeWithText("Could not find that place.").assertDoesNotExist()
+        assertTrue(geocoderCalls.contains("Fictional Harbour"))
+        assertTrue("IME search must use a single-result lookup", geocoderLimits.contains(1))
+        assertEquals(9.0, currentZoom(), 0.1)
+        compose.runOnUiThread {
+            val centre = requireNotNull(mapReference.get()).mapCenter
+            assertEquals(37.25, centre.latitude, 0.001)
+            assertEquals(-8.5, centre.longitude, 0.001)
+        }
+    }
+
     private val offlineMapViewFactory: (Context) -> MapView = { context ->
         MapView(context).apply {
             setUseDataConnection(false)
@@ -330,6 +381,16 @@ class HostMapHighZoomCommunityNotesJourneyTest {
         var zoom = 0.0
         compose.runOnUiThread { zoom = requireNotNull(mapReference.get()).zoomLevelDouble }
         return zoom
+    }
+
+    private fun isCentredOnFictionalHarbour(): Boolean {
+        var isCentred = false
+        compose.runOnUiThread {
+            val centre = requireNotNull(mapReference.get()).mapCenter
+            isCentred = kotlin.math.abs(centre.latitude - 37.25) <= 0.001 &&
+                kotlin.math.abs(centre.longitude - -8.5) <= 0.001
+        }
+        return isCentred
     }
 
     private fun noteEvent(idDigit: String, author: String, locationCode: String): String =

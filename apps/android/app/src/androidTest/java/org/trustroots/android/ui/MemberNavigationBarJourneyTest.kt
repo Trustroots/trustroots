@@ -50,4 +50,17 @@ class MemberNavigationBarJourneyTest {
         compose.onNodeWithTag("navigation-search").assertIsSelected()
         compose.onNodeWithTag("navigation-circles").assertIsNotSelected()
     }
+
+    @Test fun capsUnreadBadgeAt99PlusButKeepsExactAccessibleCount() {
+        compose.setContent {
+            NativeTestAppFrame(
+                destination = Destination.Circles,
+                unreadMessageCount = 100,
+            ) {}
+        }
+
+        compose.onNodeWithText("99+", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithTag("navigation-messages")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "100 unread conversations"))
+    }
 }

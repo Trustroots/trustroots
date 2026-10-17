@@ -64,11 +64,11 @@ internal fun CirclesScreen(
         loading = true
         api.circles(session).onSuccess { circles = it }.onFailure {
             if (it.isAuthenticationFailure()) onSessionInvalidated()
-            else error = it.message ?: "Could not load circles."
+            else error = it.messageOr("Could not load circles.")
         }
         api.circleMemberships(session).onSuccess { memberships = it }.onFailure {
             if (it.isAuthenticationFailure()) onSessionInvalidated()
-            else error = it.message ?: "Could not load circle memberships."
+            else error = it.messageOr("Could not load circle memberships.")
         }
         loading = false
     }
@@ -82,7 +82,7 @@ internal fun CirclesScreen(
                     memberships = if (joined) memberships - circle.id else memberships + circle.id
                 }.onFailure {
                     if (it.isAuthenticationFailure()) onSessionInvalidated()
-                    else error = it.message ?: "Could not update membership."
+                    else error = it.messageOr("Could not update membership.")
                 }
                 updating = null
             }
@@ -174,5 +174,5 @@ internal fun CirclesScreen(
 }
 
 private fun circleColor(value: String?): Color =
-    runCatching { Color(android.graphics.Color.parseColor(value)) }
+    runCatching { Color(android.graphics.Color.parseColor("#$value")) }
         .getOrDefault(Color(0xFF12B591))

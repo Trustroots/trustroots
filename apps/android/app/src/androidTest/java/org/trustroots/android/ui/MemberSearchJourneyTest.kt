@@ -1,6 +1,8 @@
 package org.trustroots.android.ui
 
 import android.graphics.Bitmap
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -10,9 +12,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
@@ -21,6 +25,8 @@ import java.net.ServerSocket
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Rule
@@ -36,8 +42,13 @@ import org.trustroots.android.api.MobileMember
 class MemberSearchJourneyTest {
     @get:Rule val compose = createComposeRule()
     private val server = ServerSocket(0)
+    private var fixture: LocalTransportFixture? = null
 
-    @After fun closeServer() = server.close()
+    @After fun closeServer() {
+        server.close()
+        fixture?.close()
+        fixture = null
+    }
 
     @Test fun searchesAndOpensMemberProfile() {
         val responder = thread(isDaemon = true) {
@@ -156,6 +167,11 @@ class MemberSearchJourneyTest {
         compose.onNodeWithTag("memberSearchField").performTextInput("ab")
         compose.onNodeWithText("Enter at least 3 characters.").assertIsDisplayed()
         compose.onNodeWithContentDescription("Search members").assertIsNotEnabled()
+        compose.onNodeWithTag("memberSearchField").performImeAction()
+        compose.waitForIdle()
+        assertEquals(0, requestCount.get())
+        compose.onNodeWithText("Enter at least 3 characters.").assertIsDisplayed()
+
         compose.onNodeWithTag("memberSearchField").performTextReplacement("  fox  ")
         compose.onNodeWithContentDescription("Search members").performClick()
         compose.waitUntil(10_000) {
@@ -213,5 +229,85 @@ class MemberSearchJourneyTest {
         assertEquals(2, requestCount.get())
         assertTrue(compose.onAllNodesWithText("Search temporarily unavailable.").fetchSemanticsNodes().isEmpty())
         responder.join(1_000)
+    }
+
+    @Test fun submitsMemberSearchFromTheKeyboardSearchAction() {
+        val local = LocalTransportFixture { request ->
+            when {
+                request.method == "GET" && request.path.startsWith("/api/users?") ->
+                    LocalTransportFixture.Response(
+                        """[{"_id":"fictional-member","username":"quiet-fox","displayName":"Quiet Fox","locationLiving":"Fictional Harbour","locationFrom":"Fictional Valley"}]""",
+                    )
+                request.path.contains("/avatar?") -> LocalTransportFixture.Response("", status = 404)
+                else -> error("Unexpected API request: ${request.method} ${request.path}")
+            }
+        }.also { fixture = it }
+        compose.setContent {
+            NativeTestAppFrame(Destination.Search) {
+                CompositionLocalProvider(LocalSoftwareKeyboardController provides null) {
+                    MemberSearchScreen(
+                        api = MobileApiClient(local.baseURL),
+                        session = MemberSession("connect.sid=fictional-session", MobileMember("steady-heron", "Steady Heron")),
+                        onSessionInvalidated = {},
+                    )
+                }
+            }
+        }
+
+        compose.onNodeWithTag("memberSearchField").performTextInput("quiet fox")
+        compose.onNodeWithTag("memberSearchField").performImeAction()
+        compose.waitUntil(10_000) {
+            local.requests.any { it.path.startsWith("/api/users?") } &&
+                compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Fictional Harbour").assertIsDisplayed()
+        compose.onNodeWithText("From Fictional Valley").assertDoesNotExist()
+        assertTrue(local.requests.any {
+            it.method == "GET" && it.path == "/api/users?search=quiet+fox&limit=50"
+        })
+    }
+
+    @Test fun ignoresASecondKeyboardSearchWhileTheFirstRequestIsLoading() {
+        val releaseSearchResponse = CountDownLatch(1)
+        val local = LocalTransportFixture { request ->
+            when {
+                request.method == "GET" && request.path.startsWith("/api/users?") -> {
+                    check(releaseSearchResponse.await(10, TimeUnit.SECONDS)) {
+                        "The test did not release the pending search response"
+                    }
+                    LocalTransportFixture.Response(
+                        """[{"_id":"fictional-member","username":"quiet-fox","displayName":"Quiet Fox"}]""",
+                    )
+                }
+                request.path.contains("/avatar?") -> LocalTransportFixture.Response("", status = 404)
+                else -> error("Unexpected API request: ${request.method} ${request.path}")
+            }
+        }.also { fixture = it }
+
+        try {
+            compose.setContent {
+                NativeTestAppFrame(Destination.Search) {
+                    MemberSearchScreen(
+                        api = MobileApiClient(local.baseURL),
+                        session = MemberSession("connect.sid=fictional-session", MobileMember("steady-heron", "Steady Heron")),
+                        onSessionInvalidated = {},
+                    )
+                }
+            }
+            compose.onNodeWithTag("memberSearchField").performTextInput("quiet fox")
+            compose.onNodeWithTag("memberSearchField").performImeAction()
+            compose.waitUntil(10_000) { local.requests.any { it.path.startsWith("/api/users?") } }
+
+            val searchField = compose.onNodeWithTag("memberSearchField")
+            searchField.assertIsEnabled().performClick().performImeAction()
+            assertEquals(1, local.requests.count { it.path.startsWith("/api/users?") })
+        } finally {
+            releaseSearchResponse.countDown()
+        }
+
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
+        }
+        assertEquals(1, local.requests.count { it.path.startsWith("/api/users?") })
     }
 }
