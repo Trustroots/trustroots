@@ -76,7 +76,7 @@ services for message delivery.
 The server requires `TRUSTROOTS_WEB_PUSH_VAPID_PUBLIC_KEY`,
 `TRUSTROOTS_WEB_PUSH_VAPID_PRIVATE_KEY`, and
 `TRUSTROOTS_WEB_PUSH_VAPID_SUBJECT` (a `mailto:` or HTTPS contact URL).
-Generate one VAPID pair with `npx web-push generate-vapid-keys` and keep its
+Generate one VAPID pair with `pnpm dlx web-push generate-vapid-keys` and keep its
 private key in the server's secret configuration. Set
 `TRUSTROOTS_WEB_PUSH_ALLOWED_HOSTS` to a comma-separated list of trusted HTTPS
 push endpoint hosts. It defaults to `ntfy.sh`; include self-hosted distributor
