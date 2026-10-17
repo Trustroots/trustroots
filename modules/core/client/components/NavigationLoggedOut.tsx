@@ -15,28 +15,28 @@ export default function NavigationLoggedOut({
   return (
     <div className="container w-100">
       <nav
-        aria-label={t<string>('Page navigation')}
+        aria-label={t('Page navigation')}
         className="header-welcome text-center"
         role="navigation"
       >
         {/* a span for centering the main header content */}
         <span className="flex-side"></span>
         <span className="header-welcome-text hidden-xs" dir="auto">
-          {t<string>('New to Trustroots?')}
+          {t('New to Trustroots?')}
         </span>
         <a href="/signup" className="btn btn-lg btn-default">
-          {t<string>('Join')}
+          {t('Join')}
         </a>
         <a href="/signin" className="btn btn-lg btn-inverse">
-          {t<string>('Login')}
+          {t('Login')}
         </a>
         {currentPath !== '/' && (
           <a
-            aria-label={t<string>('Read more about Trustroots')}
+            aria-label={t('Read more about Trustroots')}
             className="btn btn-link header-more-text hidden-xs"
             href="/"
           >
-            {t<string>('Read more')}
+            {t('Read more')}
           </a>
         )}
         <div className="flex-side language-switch">

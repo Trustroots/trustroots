@@ -10,14 +10,14 @@ export default function NotFoundPage() {
         <div className="middle-content">
           <div className="row">
             <div className="col-md-6 col-md-offset-3 text-center">
-              <h1>{t<string>('This page cannot be found.')}</h1>
+              <h1>{t('This page cannot be found.')}</h1>
               <br />
               <br />
               <a href="/" className="btn btn-default btn-md">
-                {t<string>('Continue…')}
+                {t('Continue…')}
               </a>{' '}
               <a href="/support" className="btn btn-default btn-md">
-                {t<string>('Contact us')}
+                {t('Contact us')}
               </a>
             </div>
           </div>

@@ -114,38 +114,36 @@ export default function Inbox({ user }: InboxProps) {
     <section className="container-spacer">
       <div className="container inbox-controls">
         <nav
-          aria-label={t<string>('Conversation filter')}
+          aria-label={t('Conversation filter')}
           className="inbox-view-filters"
         >
           <a
             href="/messages"
             rel="external"
             aria-current={unreadOnly ? undefined : 'page'}
-            aria-label={t<string>('All conversations')}
+            aria-label={t('All conversations')}
             className="btn btn-default"
           >
-            <span className="hidden-xs">{t<string>('All conversations')}</span>
-            <span className="visible-xs-inline">{t<string>('All')}</span>
+            <span className="hidden-xs">{t('All conversations')}</span>
+            <span className="visible-xs-inline">{t('All')}</span>
           </a>
           <a
             href="/messages?filter=unread"
             rel="external"
             aria-current={unreadOnly ? 'page' : undefined}
-            aria-label={t<string>('Unread conversations')}
+            aria-label={t('Unread conversations')}
             className="btn btn-default"
           >
-            <span className="hidden-xs">
-              {t<string>('Unread conversations')}
-            </span>
-            <span className="visible-xs-inline">{t<string>('Unread')}</span>
+            <span className="hidden-xs">{t('Unread conversations')}</span>
+            <span className="visible-xs-inline">{t('Unread')}</span>
           </a>
         </nav>
         <div className="inbox-search">
           <input
             type="search"
             className="form-control"
-            aria-label={t<string>('Filter conversations')}
-            placeholder={t<string>('Filter conversations')}
+            aria-label={t('Filter conversations')}
+            placeholder={t('Filter conversations')}
             value={searchText}
             onChange={event => {
               setSearchText(event.target.value);
@@ -154,12 +152,12 @@ export default function Inbox({ user }: InboxProps) {
           />
           {isLoadingForSearch && (
             <p className="inbox-search-status" role="status">
-              {t<string>('Searching older conversations…')}
+              {t('Searching older conversations…')}
             </p>
           )}
           {searchLoadFailed && (
             <p className="inbox-search-status" role="alert">
-              {t<string>('Older conversations could not be loaded.')}
+              {t('Older conversations could not be loaded.')}
             </p>
           )}
         </div>
@@ -173,10 +171,10 @@ export default function Inbox({ user }: InboxProps) {
             <i className="icon-3x icon-messages-alt" />
             <h4 role="alert">
               {query
-                ? t<string>('No matching conversations.')
+                ? t('No matching conversations.')
                 : unreadOnly
-                  ? t<string>('No unread conversations.')
-                  : t<string>('No conversations yet.')}
+                  ? t('No unread conversations.')
+                  : t('No conversations yet.')}
             </h4>
           </div>
         )}
@@ -193,7 +191,7 @@ export default function Inbox({ user }: InboxProps) {
             className="btn btn-primary btn-lg"
             onClick={() => fetchThreads(true)}
           >
-            {t<string>('More messages')}
+            {t('More messages')}
           </button>
         </div>
       )}

@@ -15,7 +15,7 @@ export default function UnreadCount() {
   return (
     <span
       className="notification-badge"
-      aria-label={t<string>('{{count}} unread messages', { count })}
+      aria-label={t('{{count}} unread messages', { count })}
       tabIndex={0}
     >
       {count}

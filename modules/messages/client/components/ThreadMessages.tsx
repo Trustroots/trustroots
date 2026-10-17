@@ -47,8 +47,8 @@ export default function ThreadMessages({
       onFetchMore={onFetchMore}
     >
       <div className="alert alert-warning" role="note">
-        <strong>{t<string>('Safety note:')}</strong>{' '}
-        {t<string>(
+        <strong>{t('Safety note:')}</strong>{' '}
+        {t(
           'Trustroots will never ask you for your ID, credit card details, or payment of any kind.',
         )}
       </div>
@@ -66,7 +66,7 @@ export default function ThreadMessages({
       <div className="message">
         <div className="divider divider-first text-muted">
           <small>
-            {t<string>('Conversation started {{ date }}', {
+            {t('Conversation started {{ date }}', {
               date: moment(messages[0].created).format('LL'),
             })}
           </small>

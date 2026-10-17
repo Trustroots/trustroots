@@ -21,15 +21,15 @@ export default function QuickReply({ onSend, onFocus }: QuickReplyProps) {
   const replies = [
     {
       host: true,
-      content: t<string>('Yes, I can host!'),
+      content: t('Yes, I can host!'),
     },
     {
       host: false,
-      content: t<string>("Sorry I can't host"),
+      content: t("Sorry I can't host"),
     },
     {
       write: true,
-      content: t<string>('Write back'),
+      content: t('Write back'),
     },
   ];
 

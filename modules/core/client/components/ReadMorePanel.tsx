@@ -39,7 +39,7 @@ export default function ReadMorePanel({ content, id }: ReadMorePanelProps) {
         onClick={() => setShowMore(true)}
         {...({ type: 'button' } as React.HTMLAttributes<HTMLDivElement>)}
       >
-        {t<string>('Read more…')}
+        {t('Read more…')}
       </div>
     </div>
   );

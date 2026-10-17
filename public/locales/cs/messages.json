@@ -31,9 +31,9 @@
     "License": "Licence",
     "Change": "Změň",
     "Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?": "Jsou podle tebe zprávy od této osoby slušné, respektující a v duchu Trustroots?",
-    "{{count}} unread messages_0": "{{count}} nepřečtená zpráva",
-    "{{count}} unread messages_1": "{{count}} nepřečtené zprávy",
-    "{{count}} unread messages_2": "{{count}} nepřečtených zpráv",
+    "{{count}} unread messages_one": "{{count}} nepřečtená zpráva",
+    "{{count}} unread messages_few": "{{count}} nepřečtené zprávy",
+    "{{count}} unread messages_other": "{{count}} nepřečtených zpráv",
     "Failed to send the message. Perhaps your internet went down? Please try again.": "Nepodařilo se odeslat zprávu. Zkontroluj, jestli nemáš problémy s internetem, a zkus to znovu.",
     "You are writing to too many people too fast. Slow down and try later again.": "Píšeš do příliš mnoha lidí příliš rychle. Zpomal a zkus to později.",
     "Your response won't be visible to them.": "Tvoje odpověď pro ně nebude viditelná."

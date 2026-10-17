@@ -72,8 +72,8 @@ function YouHaveNotBeenTalkingYet({ name }: { name?: string | null }) {
       <i className="icon-3x icon-messages-alt" />
       <h4>
         {name
-          ? t<string>("You haven't been talking with {{name}} yet.", { name })
-          : t<string>("You haven't been talking yet.")}
+          ? t("You haven't been talking with {{name}} yet.", { name })
+          : t("You haven't been talking yet.")}
       </h4>
       <Flashcard />
     </div>
@@ -84,11 +84,11 @@ function SafetyReminder() {
   const { t } = useTranslation('messages');
   return (
     <p className="text-muted text-center">
-      {t<string>('Before meeting someone new, read our ')}
-      <a href="/safety">{t<string>('safety tips')}</a>
-      {t<string>(' and ')}
-      <a href="/rules">{t<string>('community rules')}</a>
-      {t<string>('.')}
+      {t('Before meeting someone new, read our ')}
+      <a href="/safety">{t('safety tips')}</a>
+      {t(' and ')}
+      <a href="/rules">{t('community rules')}</a>
+      {t('.')}
     </p>
   );
 }
@@ -99,13 +99,11 @@ function YourProfileSeemsQuiteEmpty() {
     <div className="content-empty">
       <i className="icon-3x icon-messages-alt" />
       <p className="lead">
-        {t<string>('Your profile seems quite empty.')}
+        {t('Your profile seems quite empty.')}
         <br />
-        {t<string>(
-          'Please write longer profile description before sending messages.',
-        )}
+        {t('Please write longer profile description before sending messages.')}
         <br />
-        <a href="/profile/edit">{t<string>('Edit your profile')}</a>
+        <a href="/profile/edit">{t('Edit your profile')}</a>
       </p>
     </div>
   );
@@ -116,7 +114,7 @@ function UserDoesNotExist() {
   return (
     <div className="content-empty">
       <i className="icon-3x icon-messages-alt" />
-      <h4>{t<string>("This user isn't a member anymore.")}</h4>
+      <h4>{t("This user isn't a member anymore.")}</h4>
     </div>
   );
 }
@@ -126,7 +124,7 @@ function FailedToLoadThread() {
   return (
     <div className="content-empty">
       <i className="icon-3x icon-messages-alt" />
-      <h4>{t<string>('Failed to load messages. Please try again.')}</h4>
+      <h4>{t('Failed to load messages. Please try again.')}</h4>
     </div>
   );
 }
@@ -250,7 +248,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
   function createFakeUserObject(userId: string): MessageUser {
     return {
       _id: userId,
-      displayName: t<string>('Unknown member'),
+      displayName: t('Unknown member'),
     };
   }
 
@@ -314,13 +312,13 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
         // Too many requests - error
         if (error?.response?.status === 429) {
           window.alert(
-            t<string>(
+            t(
               'You are writing to too many people too fast. Slow down and try later again.',
             ),
           );
         } else {
           window.alert(
-            t<string>(
+            t(
               'Failed to send the message. Perhaps your internet went down? Please try again.',
             ),
           );
@@ -433,7 +431,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
                 <div className="panel panel-default">
                   <div className="panel-body">
                     <em className="text-danger">
-                      {t<string>('Member is not available anymore.')}
+                      {t('Member is not available anymore.')}
                     </em>
                   </div>
                 </div>

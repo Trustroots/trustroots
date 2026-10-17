@@ -17,8 +17,8 @@ export default function MapNavigationControl() {
         captureDrag
         showCompass={false}
         showZoom
-        zoomInLabel={t<string>('Zoom in')}
-        zoomOutLabel={t<string>('Zoom out')}
+        zoomInLabel={t('Zoom in')}
+        zoomOutLabel={t('Zoom out')}
       />
     </div>
   );

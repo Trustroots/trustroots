@@ -84,7 +84,7 @@ export default function AdminHackerspaces() {
           )
           .map(event => [sourceId(event)!, event]),
       );
-      const listed = new Set<string>();
+      const listed = new Set();
       const current = (data as Space[]).map(space => {
         const id = getSpaceApiIdentifier(space.endpoint);
         listed.add(id);

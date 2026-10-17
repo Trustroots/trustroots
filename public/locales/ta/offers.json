@@ -16,8 +16,8 @@
     "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "பயணம்? ஒரு நிகழ்வை ஏற்பாடு செய்கிறீர்களா? ஒரு இரவு உணவு தயாரித்து, மக்களை அழைக்க விரும்புகிறீர்களா?",
     "Accommodation": "தங்குமிடம்",
     "Add it to map!": "வரைபடத்தில் சேர்க்கவும்!",
-    "At most {{count}} guests.": "அதிகபட்சம் ஒரு விருந்தினர்.",
-    "At most {{count}} guests._plural": "அதிகபட்சம் {{count}} விருந்தினர்கள்.",
+    "At most {{count}} guests._one": "அதிகபட்சம் ஒரு விருந்தினர்.",
+    "At most {{count}} guests._other": "அதிகபட்சம் {{count}} விருந்தினர்கள்.",
     "Bigger map": "பெரிய வரைபடம்",
     "Can host": "புரவலன் செய்யலாம்"
 }

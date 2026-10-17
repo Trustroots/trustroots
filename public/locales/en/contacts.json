@@ -1,6 +1,6 @@
 {
-  "(additional {{count}} pending)": "(additional {{count}} pending)",
-  "(additional {{count}} pending)_plural": "(additional {{count}} pending)",
+  "(additional {{count}} pending)_one": "(additional {{count}} pending)",
+  "(additional {{count}} pending)_other": "(additional {{count}} pending)",
   "Cancel": "Cancel",
   "Confirm Request": "Confirm Request",
   "Connected since {{date, LL}}": "Connected since {{date, LL}}",
@@ -23,8 +23,8 @@
   "Yes, remove contact": "Yes, remove contact",
   "Yes, revoke request": "Yes, revoke request",
   "You received a contact request.": "You received a contact request.",
-  "{{count}} contacts": "{{count}} contact",
-  "{{count}} contacts in common": "One contact in common",
-  "{{count}} contacts in common_plural": "{{count}} contacts in common",
-  "{{count}} contacts_plural": "{{count}} contacts"
+  "{{count}} contacts_one": "{{count}} contact",
+  "{{count}} contacts in common_one": "One contact in common",
+  "{{count}} contacts in common_other": "{{count}} contacts in common",
+  "{{count}} contacts_other": "{{count}} contacts"
 }

@@ -44,11 +44,11 @@ export default function ThreadMessage({ message, user }: ThreadMessageProps) {
       <div className="message-main">
         <div className="message-meta">
           {sentByMe ? (
-            <span>{t<string>('You')}</span>
+            <span>{t('You')}</span>
           ) : !deletedUser ? (
             <a href={`/profile/${sender.username}`}>{sender.displayName}</a>
           ) : (
-            <span>{t<string>('Unknown member')}</span>
+            <span>{t('Unknown member')}</span>
           )}
           <span aria-hidden="true">·</span>
           <TimeAgo date={new Date(message.created)} />

@@ -233,7 +233,7 @@ export default function TrEditor({
       ref={ref}
       id={id}
       className="tr-editor"
-      data-placeholder={placeholder ? placeholder : t<string>('Type your text')}
+      data-placeholder={placeholder ? placeholder : t('Type your text')}
       dangerouslySetInnerHTML={initialMarkup}
     />
   );

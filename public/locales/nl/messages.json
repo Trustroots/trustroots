@@ -33,7 +33,7 @@
     "What are your expectations in regards with going through their town?": "Wat zijn je verwachtingen met betrekking tot door hun stad gaan?",
     "You are writing to too many people too fast. Slow down and try later again.": "Je schrijft teveel mensen te snel. Kalm aan, probeer het later weer.",
     "Your profile seems quite empty.": "Je profiel lijkt vrij leeg.",
-    "{{count}} unread messages": "{{count}} ongelezen bericht",
-    "{{count}} unread messages_plural": "{{count}} ongelezen berichten",
+    "{{count}} unread messages_one": "{{count}} ongelezen bericht",
+    "{{count}} unread messages_other": "{{count}} ongelezen berichten",
     "License": "Licentie"
 }

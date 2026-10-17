@@ -1,6 +1,6 @@
 {
-    "{{count}} contacts": "{{count}} contato",
-    "{{count}} contacts_plural": "{{count}} contatos",
+    "{{count}} contacts_one": "{{count}} contato",
+    "{{count}} contacts_other": "{{count}} contatos",
     "You received a contact request.": "Você recebeu uma solicitação de contato.",
     "Yes, revoke request": "Sim, anular solicitação",
     "Yes, remove contact": "Sim, remover contato",
@@ -22,8 +22,8 @@
     "Connected since {{date, LL}}": "Conectado desde {{date, LL}}",
     "Confirm Request": "Confirmar Solicitação",
     "Cancel": "Cancelar",
-    "{{count}} contacts in common": "Um contato em comum",
-    "{{count}} contacts in common_plural": "{{count}} contatos em comum",
-    "(additional {{count}} pending)": "({{count}} ainda pendente)",
-    "(additional {{count}} pending)_plural": "({{count}} ainda pendentes)"
+    "{{count}} contacts in common_one": "Um contato em comum",
+    "{{count}} contacts in common_other": "{{count}} contatos em comum",
+    "(additional {{count}} pending)_one": "({{count}} ainda pendente)",
+    "(additional {{count}} pending)_other": "({{count}} ainda pendentes)"
 }
