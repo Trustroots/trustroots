@@ -14,6 +14,7 @@ import type {
 
 interface LastSeenRequest extends Request {
   user?: UserServerDocument;
+  memberView?: boolean;
 }
 
 const User = mongoose.model<UserServerRecord>('User');
@@ -36,7 +37,7 @@ const defaultExport = function (
   next: NextFunction,
 ): void {
   // is user logged in?
-  if (req.user) {
+  if (req.user && !req.memberView) {
     // has enough time passed since the last update?
     const expectedTimeToPass = moment
       .duration(config.limits.timeToUpdateLastSeenUser)

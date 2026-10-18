@@ -18,6 +18,13 @@ export function signout(event?: { preventDefault: () => void }) {
   form.method = 'post';
   form.action = '/api/auth/signout';
   form.target = '_top';
+  if (window.viewContext) {
+    const context = document.createElement('input');
+    context.type = 'hidden';
+    context.name = 'viewGeneration';
+    context.value = window.viewContext.generation;
+    form.appendChild(context);
+  }
   document.body.appendChild(form);
   form.submit();
 }

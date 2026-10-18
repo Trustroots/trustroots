@@ -17,9 +17,20 @@ function asNavigationLocation(location: NavigationLocationMock): Location {
 
 describe('client runtime helpers', () => {
   afterEach(() => {
+    delete window.viewContext;
     delete window.ga;
     delete window.user;
     window.history.pushState({}, '', '/');
+  });
+
+  it('does not attribute analytics to a member being viewed', () => {
+    window.viewContext = {
+      generation: 'example-generation',
+      username: 'examplemember',
+    };
+    window.ga = jest.fn();
+    trackEvent('example');
+    expect(window.ga).not.toHaveBeenCalled();
   });
 
   it('broadcasts and receives browser events with arguments', () => {

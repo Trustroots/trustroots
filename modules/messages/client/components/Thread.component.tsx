@@ -349,6 +349,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
 
   useEffect(() => {
     async function markRead() {
+      if (window.viewContext?.username) return;
       const unreadMessages = messages
         .filter(message => !message.read) // only unread
         .filter(message => message.userFrom?._id !== user._id); // only other persons messages
@@ -415,13 +416,15 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
                 />
               )}
               {!userHasReplied && showReply && <SafetyReminder />}
-              {!isBlocked && showQuickReply && (
-                <QuickReply
-                  onSend={content => sendMessage(content)}
-                  onFocus={focus}
-                />
-              )}
-              {!isBlocked && showReply && (
+              {!window.viewContext?.username &&
+                !isBlocked &&
+                showQuickReply && (
+                  <QuickReply
+                    onSend={content => sendMessage(content)}
+                    onFocus={focus}
+                  />
+                )}
+              {!window.viewContext?.username && !isBlocked && showReply && (
                 <ThreadReply
                   key={cacheKey}
                   cacheKey={cacheKey}

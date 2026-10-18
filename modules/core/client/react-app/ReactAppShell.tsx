@@ -7,6 +7,7 @@ import {
 import React, { useEffect } from 'react';
 
 import AppHeader from '@/modules/core/client/components/AppHeader.component';
+import MemberViewBanner from '../components/MemberViewBanner';
 import NotFoundPage from '@/modules/core/client/components/NotFoundPage.component';
 import {
   getReactRouteAccessRedirect,
@@ -125,6 +126,7 @@ export default function ReactAppShell() {
           />
         )}
         <article className="content" id="tr-main" role="main" tabIndex={-1}>
+          <MemberViewBanner />
           {redirect || route?.path === '/not-found' ? (
             <NotFoundPage />
           ) : (
