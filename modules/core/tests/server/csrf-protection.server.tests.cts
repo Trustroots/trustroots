@@ -74,7 +74,6 @@ describe('CSRF origin protection', () => {
 
     for (const path of [
       '/api/report-csp-violation',
-      '/api/report-expect-ct-violation',
       '/api/sparkpost/webhook',
     ]) {
       assert.equal(

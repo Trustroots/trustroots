@@ -84,9 +84,6 @@ importers:
       dompurify:
         specifier: 3.4.17
         version: 3.4.17
-      expect-ct:
-        specifier: 1.0.0
-        version: 1.0.0
       express:
         specifier: 5.2.1
         version: 5.2.1(supports-color@5.5.0)
@@ -3530,10 +3527,6 @@ packages:
   exit-x@0.2.2:
     resolution: {integrity: sha512-+I6B/IkJc1o/2tiURyz/ivu/O0nKNEArIUB5O7zBrlDVJr22SCLH3xTeEry428LvFhRzIA1g8izguxJ/gbNcVQ==}
     engines: {node: '>= 0.8.0'}
-
-  expect-ct@1.0.0:
-    resolution: {integrity: sha512-DXxS7CswEMM/nunGGVve9x7T0KUkeVjk/jEaVNlpdmk2RbEkKOJAfLUzBGZ5NkF15QktHowln0ZMi6oq+dQPHw==}
-    engines: {node: '>=10.0.0'}
 
   expect@30.5.2:
     resolution: {integrity: sha512-0LNuMvs8/5mRYhnCR4k+lGV7fqPMs6Bnksda4S3zsCUmdxBpAn4zU4NNzXdq1pMKe/H4W5t/zVIDSJ/H3e0vDA==}
@@ -9902,8 +9895,6 @@ snapshots:
       strip-final-newline: 2.0.0
 
   exit-x@0.2.2: {}
-
-  expect-ct@1.0.0: {}
 
   expect@30.5.2:
     dependencies:

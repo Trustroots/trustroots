@@ -16,7 +16,6 @@ const requestMarkerHeader = 'x-trustroots-request';
 const requestMarkerValue = '1';
 const exemptPaths = new Set([
   '/api/report-csp-violation',
-  '/api/report-expect-ct-violation',
   '/api/sparkpost/webhook',
 ]);
 function configuredOrigins(config: OriginConfiguration) {

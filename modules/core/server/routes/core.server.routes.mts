@@ -53,15 +53,6 @@ const defaultExport = function (app: Application) {
   // your CSP report route above csurf middleware.
   // See `config/lib/express.js` and `initHelmetHeaders()` for more
   app.route('/api/report-csp-violation').post(core.receiveCSPViolationReport);
-
-  // Excect CT Violations
-  // Note: If you’re using a CSRF module like csurf, you might have problems
-  // handling these violations without a valid CSRF token. The fix is to put
-  // your CSP report route above csurf middleware.
-  // See `config/lib/express.js` and `initHelmetHeaders()` for more
-  app
-    .route('/api/report-expect-ct-violation')
-    .post(core.receiveExpectCTViolationReport);
   app.route('/api/languages').get(core.getLanguages);
   app.route('/api/nostr/author-visibility').get(function (req, res) {
     const User = mongoose.model<NostrUserRecord>('User');

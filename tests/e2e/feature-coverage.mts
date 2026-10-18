@@ -3427,7 +3427,6 @@ const features = [
       clientRoutes: [],
       apiRoutes: [
         apiRoute('POST', '/api/report-csp-violation', source.coreServer),
-        apiRoute('POST', '/api/report-expect-ct-violation', source.coreServer),
       ],
     },
     exclusionReason:
