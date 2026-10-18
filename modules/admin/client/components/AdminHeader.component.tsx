@@ -2,6 +2,8 @@
 import classnames from 'classnames';
 import React, { useEffect } from 'react';
 import { getCurrentUser } from '../../../core/client/services/client-runtime';
+import { registerAdminElevationInterceptor } from '../api/admin-elevation';
+import AdminElevationPrompt from './AdminElevationPrompt.component';
 
 export default function AdminHeader() {
   const roles = getCurrentUser()?.roles || [];
@@ -11,6 +13,7 @@ export default function AdminHeader() {
   const currentPath = window.location.pathname.replace('/admin/', '');
 
   useEffect(() => {
+    registerAdminElevationInterceptor();
     const input = document.querySelector<HTMLInputElement>(
       '.container input:not([type="hidden"]):not([disabled])',
     );
@@ -69,40 +72,43 @@ export default function AdminHeader() {
   );
 
   return (
-    <nav className="navbar navbar-white navbar-admin">
-      <div className="container">
-        <div className="navbar-header">
-          <a
-            className="navbar-brand"
-            href={
-              isAdmin
-                ? '/admin'
-                : isSupport
-                  ? '/admin/support'
-                  : '/admin/acquisition-stories'
-            }
-          >
-            {isAdmin ? 'Admin' : isSupport ? 'Support' : 'Greeters'}
-          </a>
+    <>
+      <AdminElevationPrompt />
+      <nav className="navbar navbar-white navbar-admin">
+        <div className="container">
+          <div className="navbar-header">
+            <a
+              className="navbar-brand"
+              href={
+                isAdmin
+                  ? '/admin'
+                  : isSupport
+                    ? '/admin/support'
+                    : '/admin/acquisition-stories'
+              }
+            >
+              {isAdmin ? 'Admin' : isSupport ? 'Support' : 'Greeters'}
+            </a>
+          </div>
+          <ul className="nav navbar-nav">
+            {pages
+              .filter(
+                page =>
+                  isAdmin ||
+                  (page.path === 'support' && isSupport) ||
+                  (page.path === 'staff-blockers' &&
+                    (isWelcomeTeam || isSupport)) ||
+                  page.path === 'acquisition-stories' ||
+                  ((isWelcomeTeam || isSupport) &&
+                    page.path === 'location-corrections'),
+              )
+              .map(page => renderTab(page))}
+          </ul>
+          <ul className="nav navbar-nav pull-right">
+            {isAdmin && renderTab({ path: 'audit-log', label: 'Audit log' })}
+          </ul>
         </div>
-        <ul className="nav navbar-nav">
-          {pages
-            .filter(
-              page =>
-                isAdmin ||
-                (page.path === 'support' && isSupport) ||
-                (page.path === 'staff-blockers' &&
-                  (isWelcomeTeam || isSupport)) ||
-                page.path === 'acquisition-stories' ||
-                ((isWelcomeTeam || isSupport) &&
-                  page.path === 'location-corrections'),
-            )
-            .map(page => renderTab(page))}
-        </ul>
-        <ul className="nav navbar-nav pull-right">
-          {isAdmin && renderTab({ path: 'audit-log', label: 'Audit log' })}
-        </ul>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 }

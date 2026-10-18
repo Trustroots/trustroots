@@ -24,7 +24,7 @@ export type SeededMember = {
   lastName: string;
 };
 
-export type NewUser = Omit<SeededMember, 'id'>;
+export type NewUser = Omit<SeededMember, 'id'> & { roles?: string[] };
 
 export type CreateUserOverrides = Partial<NewUser>;
 
@@ -248,9 +248,23 @@ export async function signUp(page: Page, user: NewUser): Promise<void> {
 /**
  * Authenticate a request context without opening a browser page.
  */
+export async function elevateAdminViaApi(
+  request: APIRequestContext,
+  password: string,
+): Promise<APIResponse> {
+  const response = await request.post('/api/admin/elevate', {
+    data: { password },
+  });
+  expect(
+    response.ok(),
+    `Admin elevation responded with ${response.status()}: ${await response.text()}`,
+  ).toBeTruthy();
+  return response;
+}
+
 export async function authenticateViaApi(
   request: APIRequestContext,
-  user: Pick<SeededMember, 'username' | 'password'>,
+  user: Pick<SeededMember, 'username' | 'password'> & { roles?: string[] },
 ): Promise<APIResponse> {
   const response = await request.post('/api/auth/signin', {
     data: { username: user.username, password: user.password },
@@ -259,13 +273,30 @@ export async function authenticateViaApi(
     response.ok(),
     `Signin API responded with ${response.status()}: ${await response.text()}`,
   ).toBeTruthy();
+
+  // Privileged browser sessions stay signed in as members; unlock admin APIs
+  // with the same password so specs can exercise moderation tools.
+  const responseJSON = await response.json().catch(() => null);
+  const roles =
+    responseJSON?.roles ||
+    (responseJSON?.isGreeter ? ['welcome-team'] : user.roles || []);
+  if (
+    roles.includes('admin') ||
+    roles.includes('welcome-team') ||
+    roles.includes('support-team')
+  ) {
+    await elevateAdminViaApi(request, user.password);
+  } else if (user.username === SEEDED_ADMIN.username) {
+    await elevateAdminViaApi(request, user.password);
+  }
+
   return response;
 }
 
 export async function signInViaApi(
   page: Page,
   request: APIRequestContext | undefined,
-  user: Pick<SeededMember, 'username' | 'password'>,
+  user: Pick<SeededMember, 'username' | 'password'> & { roles?: string[] },
 ): Promise<void> {
   // A project storage state can be shared by many test contexts. Passport
   // regenerates the current session on login, so never send that shared cookie
@@ -298,7 +329,7 @@ export async function signInViaApi(
  */
 export async function signIn(
   page: Page,
-  user: Pick<SeededMember, 'username' | 'password'>,
+  user: Pick<SeededMember, 'username' | 'password'> & { roles?: string[] },
   identifier = user.username,
 ): Promise<void> {
   await page.goto('/signin');
