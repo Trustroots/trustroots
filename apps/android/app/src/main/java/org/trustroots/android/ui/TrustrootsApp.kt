@@ -65,7 +65,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
@@ -102,8 +101,6 @@ import org.trustroots.android.api.SecureResponseCache
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.DefaultBrowserContent
 import org.trustroots.android.notifications.MessageAlerts
-import org.trustroots.android.ui.theme.TrustrootsGreen
-import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 import org.trustroots.android.ui.inbox.MessageInboxScreen
 import org.trustroots.android.ui.contacts.ContactsScreen
 import org.trustroots.android.ui.common.horizontalInset
@@ -190,7 +187,7 @@ internal fun TrustrootsApp(
 @Composable
 internal fun StartupScreen(firstName: String?) {
     val buildDate = rememberBuildDate()
-    Box(Modifier.fillMaxSize().background(TrustrootsPaleGreen).safeDrawingPadding()) {
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primaryContainer).safeDrawingPadding()) {
         Column(
             modifier = Modifier.align(Alignment.Center),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -263,7 +260,7 @@ private fun SignInScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(TrustrootsPaleGreen)
+            .background(MaterialTheme.colorScheme.primaryContainer)
             .safeDrawingPadding()
             .imePadding(),
     ) {
@@ -328,7 +325,7 @@ private fun SignInScreen(
                 if (isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(20.dp),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         strokeWidth = 2.dp,
                     )
                 } else {
@@ -510,10 +507,10 @@ private fun MemberShell(
                 Text(
                     "Offline · Showing saved data from " +
                         SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ROOT).format(Date(savedAt)),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(TrustrootsGreen)
+                        .background(MaterialTheme.colorScheme.primary)
                         .padding(top = contentPadding.calculateTopPadding())
                         .padding(8.dp),
                 )
@@ -640,17 +637,17 @@ internal fun MemberNavigationBar(
 ) {
     NavigationBar(
         modifier = Modifier.shadow(elevation = 8.dp),
-        containerColor = TrustrootsGreen,
+        containerColor = MaterialTheme.colorScheme.primary,
         tonalElevation = 0.dp,
     ) {
         Destination.entries.forEach { item ->
             NavigationBarItem(
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color.White,
-                    selectedTextColor = Color.White,
-                    unselectedIconColor = Color.White.copy(alpha = 0.7f),
-                    unselectedTextColor = Color.White.copy(alpha = 0.7f),
-                    indicatorColor = Color.White.copy(alpha = 0.25f),
+                    selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                    selectedTextColor = MaterialTheme.colorScheme.onPrimary,
+                    unselectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                    unselectedTextColor = MaterialTheme.colorScheme.onPrimary,
+                    indicatorColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f),
                 ),
                 selected = destination == item,
                 label = { Text(item.label) },
@@ -765,7 +762,7 @@ internal fun MenuScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(TrustrootsPaleGreen)
+                .background(MaterialTheme.colorScheme.primaryContainer)
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {

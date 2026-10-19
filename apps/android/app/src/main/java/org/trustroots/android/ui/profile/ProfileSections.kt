@@ -28,7 +28,6 @@ import org.trustroots.android.api.ProfileContact
 import org.trustroots.android.api.ProfileReference
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.common.languageName
-import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 
 internal enum class ProfileSection(val label: String) {
     About("About"),
@@ -42,7 +41,7 @@ internal fun ProfileSectionBar(
     contactCount: Int,
     onSelect: (ProfileSection) -> Unit,
 ) {
-    TabRow(selectedTabIndex = selected.ordinal, containerColor = TrustrootsPaleGreen, modifier = Modifier.fillMaxWidth().testTag("profileSections")) {
+    TabRow(selectedTabIndex = selected.ordinal, containerColor = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.fillMaxWidth().testTag("profileSections")) {
         ProfileSection.entries.forEach { section ->
             Tab(
                 selected = section == selected,

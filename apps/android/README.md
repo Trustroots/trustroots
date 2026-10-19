@@ -136,8 +136,8 @@ from an old query cannot repopulate a cleared member search or move the map.
 
 ## Build and verify locally
 
-The app deliberately uses the light Trustroots colour scheme regardless of the
-device appearance setting. With Android Studio's bundled JDK selected, run:
+The app follows the device appearance setting and uses the matching Trustroots
+light or dark colour scheme. With Android Studio's bundled JDK selected, run:
 
 ```sh
 ./gradlew testDebugUnitTest lintDebug assembleDebug

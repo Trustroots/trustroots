@@ -25,6 +25,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import org.trustroots.android.R
 import org.trustroots.android.ui.common.LiveFilterField
@@ -105,7 +106,7 @@ internal fun CirclesScreen(
                 sessionCookie = null,
                 label = circle.label,
                 subtitle = "${circle.count} members",
-                background = circleColor(circle.color),
+                background = circleColor(circle.color, MaterialTheme.colorScheme.secondary),
                 blurBackground = false,
                 testTag = "circleHero",
             )
@@ -115,7 +116,7 @@ internal fun CirclesScreen(
                     .align(Alignment.TopStart)
                     .padding(contentPadding.horizontalInset())
                     .padding(top = contentPadding.calculateTopPadding() + 8.dp, bottom = 8.dp, start = 8.dp, end = 8.dp),
-                tint = Color.White,
+                tint = colorResource(R.color.artwork_on_scrim),
             )
             }
             Column(Modifier.padding(20.dp).padding(contentPadding.horizontalInset()).padding(contentPadding.bottomInset())) {
@@ -162,7 +163,7 @@ internal fun CirclesScreen(
                         sessionCookie = null,
                         label = circle.label,
                         size = 54.dp,
-                        background = circleColor(circle.color),
+                        background = circleColor(circle.color, MaterialTheme.colorScheme.secondary),
                     )
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
@@ -187,6 +188,6 @@ internal fun CirclesScreen(
     }
 }
 
-private fun circleColor(value: String?): Color =
+private fun circleColor(value: String?, fallback: Color): Color =
     runCatching { Color(android.graphics.Color.parseColor("#$value")) }
-        .getOrDefault(Color(0xFF12B591))
+        .getOrDefault(fallback)

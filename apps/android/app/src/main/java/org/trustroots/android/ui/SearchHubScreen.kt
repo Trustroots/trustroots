@@ -27,7 +27,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
-import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 import org.trustroots.android.ui.membersearch.MemberSearchScreen
 
 @Composable
