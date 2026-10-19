@@ -4,7 +4,7 @@ Production client modules use TypeScript. Shared API contracts live alongside
 their features in `modules/*/shared/` and contain only types, so the JavaScript
 server does not need a TypeScript runtime.
 
-`npm run typecheck` checks client code, TypeScript test fixtures and the opted-in
+`pnpm run typecheck` checks client code, TypeScript test fixtures and the opted-in
 server payload builders in `tsconfig.contracts.json`. The latter uses strict
 `checkJs` with JSDoc imports of the same contracts used by the client. It does
 not enable checking across the legacy server tree.

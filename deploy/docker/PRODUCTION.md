@@ -1,6 +1,6 @@
 # Production Docker operations
 
-After an upgrade or database restore, run `npm run ensure-circle-discovery-indexes`
+After an upgrade or database restore, run `pnpm run ensure-circle-discovery-indexes`
 inside the application container. Production disables automatic index creation;
 without these indexes, circle member discovery can exceed its query time limit.
 This command is idempotent and does not drop indexes or change member data.

@@ -36,9 +36,9 @@ Image requirements:
 To test images locally:
 
 1. Install Trustroots locally (good luck)
-2. Generate new circles with `npm run seed` command.
+2. Generate new circles with `pnpm run seed` command.
 3. Place your image file at `public/uploads-circle`. Mind the above filename instructions.
-4. Start the application with `npm start`, or run `npm run generate-circle-images`
+4. Start the application with `pnpm start`, or run `pnpm run generate-circle-images`
 5. Additional image sizes and formats get generated at `/public/uploads-circle/image-name/*`
 6. To re-generate images, remove the above folder.
 

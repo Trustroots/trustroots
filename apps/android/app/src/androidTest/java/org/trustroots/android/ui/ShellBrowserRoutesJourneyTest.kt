@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.test.assertDoesNotExist
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -144,6 +145,53 @@ class ShellBrowserRoutesJourneyTest {
         compose.onNodeWithText("Account").assertIsDisplayed()
         assertTrue(requests.any { it.startsWith("GET /api/users/browser-route-member ") })
         assertTrue(requests.none { it.startsWith("GET /signup ") || it.startsWith("GET /password/forgot ") })
+    }
+
+    @Test fun systemBackClosesBrowserAndPreservesItsMenuOrAccountOrigin() {
+        SecureMobileSessionStore(context).save(session)
+        startResponder()
+        showApp()
+
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-menu").performClick()
+        scrollMenuControlAboveNavigation("Contact and support")
+        compose.onNodeWithText("Contact and support").performClick()
+        assertBrowserRoute("Contact and support", "https://www.trustroots.org/support")
+
+        pressSystemBack()
+        assertMenuOrigin()
+
+        scrollMenuControlAboveNavigation("Account")
+        compose.onNodeWithText("Account").performClick()
+        waitForText("Email address")
+        scrollAccountControlAboveNavigation("Forgot your password?")
+        compose.onNodeWithText("Forgot your password?").performClick()
+        assertBrowserRoute("Reset password", "https://www.trustroots.org/password/forgot")
+
+        pressSystemBack()
+        compose.onNodeWithTag("offlineBrowserSurface").assertDoesNotExist()
+        compose.onNodeWithTag("accountSettingsScreen").assertIsDisplayed()
+        compose.onNodeWithText("Email address").assertIsDisplayed()
+        compose.onNodeWithText("Contact and support").assertDoesNotExist()
+        compose.onNodeWithText("Discover circles").assertDoesNotExist()
+
+        pressSystemBack()
+        compose.onNodeWithTag("accountSettingsScreen").assertDoesNotExist()
+        assertMenuOrigin()
+        compose.onNodeWithText("Username or email").assertDoesNotExist()
+        assertTrue(requests.none { it.startsWith("GET /support ") || it.startsWith("GET /password/forgot ") })
+    }
+
+    private fun pressSystemBack() {
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+    }
+
+    private fun assertMenuOrigin() {
+        compose.onNodeWithTag("offlineBrowserSurface").assertDoesNotExist()
+        compose.onNodeWithTag("navigation-menu").assertIsDisplayed()
+        scrollMenuControlAboveNavigation("Contact and support")
+        compose.onNodeWithText("Contact and support").assertIsDisplayed()
+        compose.onNodeWithText("Discover circles").assertDoesNotExist()
     }
 
     private fun showApp() {
