@@ -69,6 +69,7 @@ export default function Admin() {
       <div className="container admin-landing">
         <header className="admin-landing__hero">
           <h1 className="admin-landing__title">Admin Dashboard</h1>
+          <a href="/admin/circles">Manage circles</a>
         </header>
 
         <div className="admin-landing__search">

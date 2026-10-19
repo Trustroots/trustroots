@@ -47,6 +47,7 @@ const AREA_BY_SPEC: Record<string, string> = {
   'experience-actions.spec.js': 'Experiences',
   'experience-changes.spec.js': 'Experiences',
   'admin.spec.js': 'Admin',
+  'admin-circles.spec.js': 'Admin',
   'admin-actions.spec.js': 'Admin',
   'admin-acquisition.spec.js': 'Admin',
   'support-team.spec.js': 'Admin',

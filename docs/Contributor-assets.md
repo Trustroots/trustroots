@@ -15,7 +15,11 @@ Guidance for contributing circle images and photos to Trustroots.
 
 ### Adding new circle
 
-Circles are added directly to the database manually.
+Administrators can add and edit circles from `/admin/circles`. The editor
+stores the circle details in the database. The public URL slug is generated
+from the name when the circle is created and stays the same when the name
+changes, so existing circle URLs keep working. Existing members and their
+cached count are preserved when a circle is edited.
 
 ### Adding circle image
 
@@ -30,6 +34,22 @@ Image requirements:
 - Work with text overlay
 - Preferably have humans to be easier to identify with
 - Allowed to use non-commercially (E.g. be Creative Commons licensed)
+
+When an administrator uploads an image, Trustroots converts it to a canonical
+JPG named after the circle slug and generates 120x120, 742x496, 906x240, and
+1400x900 JPG and WebP variants. The public files are replaced only after every
+size has been generated. Another upload for the same circle waits until that
+replacement has finished. Descriptions are limited to 4000 characters. The
+editor warns when a colour would make white labels hard to read; existing
+colours, including brighter ones already in the catalogue, stay valid.
+Production keeps those files on the persistent circle image mount described in
+`deploy/docker/PRODUCTION.md`. A container start copies shipped images into
+that mount when they are missing, and leaves files already stored there in
+place, including administrator uploads. Removing a shipped file from the mount
+copies it back on the next container start.
+
+The manual file workflow below remains useful for preparing images in the
+repository.
 
 #### Test images locally
 

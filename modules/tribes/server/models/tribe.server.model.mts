@@ -57,6 +57,10 @@ function randomHex(): string {
   return circleColours[Math.floor(Math.random() * circleColours.length)];
 }
 
+function validateColour(color: string) {
+  return /^[0-9a-fA-F]{6}$/.test(color);
+}
+
 /** Validate labels while preserving the existing validator's truthiness result. */
 function validateLabel(
   label: string,
@@ -107,6 +111,7 @@ const TribeSchema = new Schema<TribeRecord>({
     maxlength: 6,
     required: true,
     default: randomHex,
+    validate: [validateColour, 'Please choose a valid colour.'],
   },
   count: {
     type: Number,
@@ -132,6 +137,7 @@ const TribeSchema = new Schema<TribeRecord>({
   description: {
     type: String,
     trim: true,
+    maxlength: [4000, 'Please keep the description under 4000 characters.'],
     get: (value: string | undefined) =>
       value && sanitizeHtml(value, sanitizeOptions),
   },

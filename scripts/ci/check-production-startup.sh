@@ -64,7 +64,7 @@ done
 # available in the runtime image.
 docker run --rm --entrypoint node "$image" -e '
   const assert = require("assert");
-  for (const dependency of ["jest", "webpack", "nodemon", "sharp"]) {
+  for (const dependency of ["jest", "webpack", "nodemon"]) {
     assert.throws(
       () => require.resolve(dependency),
       error => error.code === "MODULE_NOT_FOUND",
@@ -73,6 +73,10 @@ docker run --rm --entrypoint node "$image" -e '
   }
   for (const dependency of ["express", "file-type", "gm", "semver"]) {
     require.resolve(dependency);
+  }
+  const sharp = require("sharp");
+  if (typeof sharp !== "function" || !sharp.versions || !sharp.versions.vips) {
+    throw new Error("sharp native binding did not load");
   }
   console.log("Production dependencies present; representative build tools omitted.");
 '

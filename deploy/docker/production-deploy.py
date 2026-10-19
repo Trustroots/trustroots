@@ -61,6 +61,19 @@ def check_existing_logging(args):
             validate_logging('Existing ' + service, config.get('Type'), config.get('Config') or {})
 
 
+PROFILE_PHOTO_MOUNT = '/home/app/trustroots/public/uploads-profile'
+CIRCLE_IMAGE_MOUNT = '/home/app/trustroots/public/uploads-circle'
+
+
+def require_media_directory(service, volumes, target, label, media):
+    mounts = [volume for volume in volumes if volume.get('target') == target]
+    if len(mounts) != 1 or mounts[0].get('type') != 'bind':
+        raise RuntimeError(service + ' must bind mount ' + label)
+    source = Path(mounts[0]['source']).resolve()
+    if not source.is_relative_to(media) or not source.is_dir():
+        raise RuntimeError(label.capitalize() + ' directory must exist on the required media mount')
+
+
 def preflight(args, runtime=True):
     if not os.path.ismount(args.media_mount):
         raise RuntimeError('Required media filesystem is not mounted: ' + str(args.media_mount))
@@ -69,15 +82,13 @@ def preflight(args, runtime=True):
         definition = config['services'][service]
         logging = definition.get('logging', {})
         validate_logging(service, logging.get('driver'), logging.get('options') or {})
+    media = args.media_mount.resolve()
     for service in SERVICES:
-        mounts = [v for v in config['services'][service].get('volumes', [])
-                  if v.get('target') == '/home/app/trustroots/public/uploads-profile']
-        if len(mounts) != 1 or mounts[0].get('type') != 'bind':
-            raise RuntimeError(service + ' must bind mount profile photo storage')
-        source = Path(mounts[0]['source']).resolve()
-        media = args.media_mount.resolve()
-        if not source.is_relative_to(media) or not source.is_dir():
-            raise RuntimeError('Photo directory must exist on the required media mount')
+        volumes = config['services'][service].get('volumes', [])
+        require_media_directory(
+            service, volumes, PROFILE_PHOTO_MOUNT, 'profile photo storage', media)
+        require_media_directory(
+            service, volumes, CIRCLE_IMAGE_MOUNT, 'circle image storage', media)
     check_existing_logging(args)
     if not runtime:
         return
