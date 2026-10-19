@@ -200,6 +200,10 @@ test.describe('seeded message API flows', () => {
     );
     expectPresent(persisted);
     expect(persisted.content).toBe(content);
+    expect(persisted).not.toHaveProperty('spam');
+    expect(persisted.shadowHidden).toBe(false);
+    expect(persisted.read).toBe(false);
+    expect(persisted.notificationCount).toBe(0);
     const thread = await request.get(`/api/messages/${SEEDED_MEMBERS[1].id}`);
     expect(
       ((await thread.json()) as MessageApiReply[]).map(reply => reply.content),
