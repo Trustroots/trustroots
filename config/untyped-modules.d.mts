@@ -304,16 +304,6 @@ declare module 'nunjucks' {
   export default nunjucks;
 }
 
-declare module 'winston-papertrail-transport' {
-  const transport: {
-    PapertrailTransport: new (options: {
-      host: string;
-      port: number;
-    }) => import('winston-transport');
-  };
-  export default transport;
-}
-
 declare module 'morgan' {
   export default function morgan(
     format: string,

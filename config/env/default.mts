@@ -292,15 +292,6 @@ const service = {
     scriptSrc: 'https://1p.trustroots.org/script.js',
     websiteId: '',
   },
-  log: {
-    papertrail: {
-      // If host & port are false, papertrail is disabled
-      host: false,
-      port: false,
-      level: 'debug',
-      program: 'production',
-    },
-  },
   // Spam detection
   // https://akismet.com/
   akismet: {

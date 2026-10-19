@@ -171,8 +171,7 @@
     "use-local-storage-state": "20.0.0",
     "validator": "13.15.35",
     "web-push": "3.6.7",
-    "winston": "3.19.0",
-    "winston-papertrail-transport": "1.0.9"
+    "winston": "3.19.0"
   },
   "devDependencies": {
     "@babel/cli": "7.29.7",
