@@ -287,3 +287,108 @@ for (const reviewerRole of ['admin', 'support-team']) {
     }
   });
 }
+
+test('support member cannot change an Experience on their own profile', async ({
+  browser,
+  baseURL,
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'experiences.change-requests', [
+    'Support member cannot change an Experience on their own profile.',
+  ]);
+
+  const memberContext = await createIsolatedContext(browser, baseURL);
+  const memberPage = await memberContext.newPage();
+  const ownProfile =
+    'Support members cannot change Experiences on their own profile.';
+
+  try {
+    const author = await createPublicUser(memberContext.request);
+    const recipient = await createPublicUser(memberContext.request);
+    await updateUserByUsername(author.username, {
+      $set: { roles: ['user', 'support-team'] },
+    });
+    const recipientId = await fetchUserIdByUsername(
+      memberContext.request,
+      recipient.username,
+    );
+    await signInViaApi(memberPage, memberContext.request, author);
+    const created = await memberPage.request.post('/api/experiences', {
+      data: {
+        userTo: recipientId,
+        interactions: { met: true, guest: false, host: false },
+        recommend: 'yes',
+        feedbackPublic: 'An anonymous own-profile Experience.',
+      },
+    });
+    expect(created.status()).toBe(201);
+
+    await signInViaApi(page, request, author);
+    await page.goto('/admin/experience-changes');
+    await page.getByLabel('Member username').fill(author.username);
+    await page.getByRole('button', { name: 'Find Experiences' }).click();
+    const ownExperience = page.locator('.panel').filter({
+      hasText: 'An anonymous own-profile Experience.',
+    });
+    await expect(ownExperience.getByText(ownProfile)).toBeVisible();
+    await expect(
+      ownExperience.getByRole('button', { name: 'Copy link for author' }),
+    ).toBeDisabled();
+    await expect(
+      ownExperience.getByRole('button', {
+        name: 'Copy link for profile owner',
+      }),
+    ).toBeDisabled();
+
+    const peer = await createPublicUser(request);
+    await updateUserByUsername(peer.username, {
+      $set: { roles: ['user', 'support-team'] },
+    });
+    await signInViaApi(page, request, peer);
+    await page.goto('/admin/experience-changes');
+    await page.getByLabel('Member username').fill(author.username);
+    await page.getByRole('button', { name: 'Find Experiences' }).click();
+    await page
+      .locator('.panel')
+      .filter({ hasText: 'An anonymous own-profile Experience.' })
+      .getByRole('button', { name: 'Copy link for author' })
+      .click();
+    const link = await page
+      .getByLabel('Support link (expires in seven days)')
+      .inputValue();
+
+    await memberPage.goto(link);
+    await memberPage
+      .getByLabel('Written feedback')
+      .fill('An anonymous own-profile revision.');
+    await memberPage.getByLabel('Recommendation').selectOption('no');
+    await memberPage.getByRole('button', { name: 'Request edit' }).click();
+    await expect(memberPage.getByRole('status')).toContainText(
+      'awaiting admin review',
+    );
+
+    await signInViaApi(page, request, author);
+    await page.goto('/admin/experience-changes');
+    const pendingRequest = page
+      .locator('section')
+      .filter({ has: page.getByRole('heading', { name: 'Pending requests' }) })
+      .locator('.panel')
+      .filter({ hasText: `${author.firstName} ${author.lastName}` });
+    await expect(pendingRequest.getByText(ownProfile)).toBeVisible();
+    await expect(
+      pendingRequest.getByRole('button', { name: 'Approve' }),
+    ).toBeDisabled();
+    await expect(
+      pendingRequest.getByRole('button', { name: 'Reject' }),
+    ).toBeDisabled();
+
+    await signInViaApi(page, request, SEEDED_ADMIN);
+    await page.goto('/admin/experience-changes');
+    await pendingRequest.getByRole('button', { name: 'Approve' }).click();
+    await memberPage.reload();
+    await expect(memberPage.getByRole('status')).toContainText('approved');
+  } finally {
+    await memberContext.close();
+  }
+});

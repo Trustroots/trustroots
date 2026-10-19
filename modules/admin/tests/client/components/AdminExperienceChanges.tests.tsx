@@ -284,6 +284,39 @@ it('copies an issued link and shows empty proposed feedback', async () => {
   });
 });
 
+it('explains when a support member cannot change their own profile', async () => {
+  apiMock.listRequests.mockResolvedValueOnce([
+    editRequest({ canReview: false, canApprove: false }),
+  ]);
+  apiMock.findExperiences.mockResolvedValueOnce([
+    { ...experience, canIssue: false },
+  ]);
+  render(<AdminExperienceChanges />);
+  expect(
+    await screen.findByText(
+      'Support members cannot change Experiences on their own profile.',
+    ),
+  ).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Reject' })).toBeDisabled();
+
+  fireEvent.change(screen.getByLabelText('Member username'), {
+    target: { value: 'fictional-author' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Find Experiences' }));
+  expect(
+    await screen.findByRole('button', { name: 'Copy link for author' }),
+  ).toBeDisabled();
+  expect(
+    screen.getByRole('button', { name: 'Copy link for profile owner' }),
+  ).toBeDisabled();
+  expect(
+    screen.getAllByText(
+      'Support members cannot change Experiences on their own profile.',
+    ),
+  ).toHaveLength(2);
+});
+
 it('explains when approval needs another reviewer while allowing rejection', async () => {
   apiMock.listRequests.mockResolvedValueOnce([
     editRequest({ canApprove: false }),

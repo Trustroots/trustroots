@@ -157,10 +157,16 @@ export default function AdminExperienceChanges(): React.JSX.Element {
             <div className="panel panel-default" key={experience._id}>
               <div className="panel-body">
                 <ExperienceDetails experience={experience} />
+                {experience.canIssue === false && (
+                  <p>
+                    Support members cannot change Experiences on their own
+                    profile.
+                  </p>
+                )}
                 <button
                   className="btn btn-default"
                   type="button"
-                  disabled={busy}
+                  disabled={busy || experience.canIssue === false}
                   onClick={() =>
                     void createLink(experience, experience.userFrom)
                   }
@@ -170,7 +176,7 @@ export default function AdminExperienceChanges(): React.JSX.Element {
                 <button
                   className="btn btn-default"
                   type="button"
-                  disabled={busy}
+                  disabled={busy || experience.canIssue === false}
                   onClick={() => void createLink(experience, experience.userTo)}
                 >
                   Copy link for profile owner
@@ -222,11 +228,18 @@ export default function AdminExperienceChanges(): React.JSX.Element {
                       </p>
                     </div>
                   )}
-                  {request.canApprove === false && (
+                  {request.canReview === false ? (
                     <p>
-                      Approval requires another support team member or an
-                      administrator.
+                      Support members cannot change Experiences on their own
+                      profile.
                     </p>
+                  ) : (
+                    request.canApprove === false && (
+                      <p>
+                        Approval requires another support team member or an
+                        administrator.
+                      </p>
+                    )
                   )}
                   <button
                     className="btn btn-primary"
@@ -239,7 +252,7 @@ export default function AdminExperienceChanges(): React.JSX.Element {
                   <button
                     className="btn btn-default"
                     type="button"
-                    disabled={busy}
+                    disabled={busy || request.canReview === false}
                     onClick={() => void decide(request, 'reject')}
                   >
                     Reject

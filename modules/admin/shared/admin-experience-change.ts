@@ -34,6 +34,7 @@ export interface AdminExperienceChangeSearchExperience<
 > extends AdminExperienceChangeExperienceFields<Id, Timestamp> {
   userFrom: AdminExperienceChangeMember<Id> | null;
   userTo: AdminExperienceChangeMember<Id> | null;
+  canIssue?: boolean;
 }
 
 /** The queue populates the Experience and both members. */
@@ -56,6 +57,7 @@ interface AdminExperienceChangeRequestBase<Id = string, Timestamp = string> {
   requester: AdminExperienceChangeMember<Id> | null;
   experience: AdminExperienceChangeQueuedExperience<Id, Timestamp> | null;
   status: 'pending' | 'processing' | 'approved';
+  canReview?: boolean;
   canApprove?: boolean;
 }
 
