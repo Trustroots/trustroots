@@ -85,6 +85,44 @@ describe('Admin circle routes', () => {
       .post('/api/admin/circles')
       .send({ label: 'Bad colour', color: 'zzzzzz' })
       .expect(400);
+    await agent
+      .post('/api/admin/circles')
+      .send({
+        label: 'Bright circle',
+        color: '2ecc71',
+        description: 'x'.repeat(4001),
+      })
+      .expect(400);
+    const { body: bright } = await agent
+      .post('/api/admin/circles')
+      .send({
+        label: 'Bright circle',
+        color: '2ecc71',
+        description: 'Plant-based travellers.',
+      })
+      .expect(201);
+    assert.strictEqual(bright.color, '2ecc71');
+  });
+
+  it('denies a signed-in member', async () => {
+    const members = utils.generateUsersWithSharedPassword(1);
+    members[0].roles = ['user'];
+    await utils.saveUsersWithCachedPasswords(members);
+    await utils.signIn(
+      { username: members[0].username, password: members[0].password },
+      agent,
+    );
+    const id = new mongoose.Types.ObjectId();
+    await agent.get('/api/admin/circles').expect(403);
+    await agent.get(`/api/admin/circles/${id}`).expect(403);
+    await agent
+      .post('/api/admin/circles')
+      .send({ label: 'Example walkers' })
+      .expect(403);
+    await agent
+      .put(`/api/admin/circles/${id}`)
+      .send({ label: 'Example walkers' })
+      .expect(403);
   });
 
   it('denies unauthenticated catalogue reads and writes', async () => {

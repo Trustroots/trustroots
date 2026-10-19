@@ -11,6 +11,7 @@ export type AdminCircle = {
   attribution_url?: string;
   description?: string;
   image?: boolean;
+  modified?: string | Date;
 };
 
 export async function getCircles(): Promise<AdminCircle[]> {

@@ -788,6 +788,7 @@ describe('API route registrations', () => {
       [auditLog.record, newsletter.listCircleMembers],
     );
     assertHandlers(routeByPath(routes, '/api/admin/circles').get, [
+      auditLog.record,
       circles.list,
     ]);
     assertHandlers(routeByPath(routes, '/api/admin/circles').post, [
@@ -796,6 +797,7 @@ describe('API route registrations', () => {
       circles.create,
     ]);
     assertHandlers(routeByPath(routes, '/api/admin/circles/:circle').get, [
+      auditLog.record,
       circles.get,
     ]);
     assertHandlers(routeByPath(routes, '/api/admin/circles/:circle').put, [

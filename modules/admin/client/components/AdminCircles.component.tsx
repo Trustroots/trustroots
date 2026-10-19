@@ -26,10 +26,31 @@ const emptyCircle: AdminCircle = {
   description: '',
 };
 
+function channelLuminance(value: number) {
+  const srgb = value / 255;
+  return srgb <= 0.04045 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4;
+}
+
+function whiteLabelIsReadable(color: string) {
+  if (!/^[0-9a-fA-F]{6}$/.test(color)) return true;
+  const luminance = [0, 2, 4]
+    .map(offset =>
+      channelLuminance(parseInt(color.slice(offset, offset + 2), 16)),
+    )
+    .reduce(
+      (total, channel, index) =>
+        total + channel * [0.2126, 0.7152, 0.0722][index],
+      0,
+    );
+  return 1.05 / (luminance + 0.05) >= 3;
+}
+
 function imageUrl(circle: AdminCircle) {
-  return circle.image
-    ? `/uploads-circle/${circle.slug}/120x120.jpg`
-    : undefined;
+  if (!circle.image) return undefined;
+  const version = circle.modified ? new Date(circle.modified).getTime() : 0;
+  return `/uploads-circle/${circle.slug}/120x120.jpg${
+    version ? `?v=${version}` : ''
+  }`;
 }
 
 export default function AdminCircles() {
@@ -38,7 +59,9 @@ export default function AdminCircles() {
   const [image, setImage] = useState<File | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const imageInput = useRef<HTMLInputElement>(null);
+  const saving = useRef(false);
 
   async function loadCircles() {
     setCircles(await getCircles());
@@ -62,19 +85,29 @@ export default function AdminCircles() {
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving.current) return;
+    saving.current = true;
+    setIsSaving(true);
     setMessage(null);
     setError(null);
     try {
       const saved = await saveCircle(circle, image);
       setCircle(saved);
       clearSelectedImage();
-      await loadCircles();
       setMessage('Circle saved.');
+      try {
+        await loadCircles();
+      } catch {
+        setError('Circle saved, but the catalogue could not be reloaded.');
+      }
     } catch (requestError) {
       const apiMessage = (
         requestError as { response?: { data?: { message?: string } } }
       ).response?.data?.message;
       setError(apiMessage || 'Could not save circle.');
+    } finally {
+      saving.current = false;
+      setIsSaving(false);
     }
   }
 
@@ -155,9 +188,11 @@ export default function AdminCircles() {
                   id="circle-description"
                   name="description"
                   onChange={update}
+                  maxLength={4000}
                   rows={4}
                   value={circle.description || ''}
                 />
+                <p className="help-block">Up to 4000 characters.</p>
               </div>
               <div className="row">
                 <div className="col-sm-4 form-group">
@@ -183,6 +218,11 @@ export default function AdminCircles() {
                     Six hexadecimal characters. Suggested colours keep white
                     labels readable.
                   </p>
+                  {circle.color && !whiteLabelIsReadable(circle.color) && (
+                    <p className="help-block text-warning">
+                      White labels will be hard to read on this colour.
+                    </p>
+                  )}
                 </div>
                 <div className="col-sm-8 form-group">
                   <label htmlFor="circle-image">Image</label>
@@ -215,6 +255,10 @@ export default function AdminCircles() {
                   />{' '}
                   Public
                 </label>
+                <p className="help-block">
+                  Hiding a circle removes it from the public catalogue.
+                  Memberships stay in place.
+                </p>
               </div>
               <div className="form-group">
                 <label htmlFor="circle-attribution">Image attribution</label>
@@ -237,8 +281,12 @@ export default function AdminCircles() {
                   value={circle.attribution_url || ''}
                 />
               </div>
-              <button className="btn btn-primary" type="submit">
-                Save circle
+              <button
+                className="btn btn-primary"
+                disabled={isSaving}
+                type="submit"
+              >
+                {isSaving ? 'Saving…' : 'Save circle'}
               </button>
             </form>
           </div>

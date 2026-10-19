@@ -38,10 +38,15 @@ Image requirements:
 When an administrator uploads an image, Trustroots converts it to a canonical
 JPG named after the circle slug and generates 120x120, 742x496, 906x240, and
 1400x900 JPG and WebP variants. The public files are replaced only after every
-size has been generated. Production keeps those files on the persistent circle
-image mount described in `deploy/docker/PRODUCTION.md`. A container start copies
-shipped images into that mount when they are missing, and leaves files already
-stored there in place.
+size has been generated. Another upload for the same circle waits until that
+replacement has finished. Descriptions are limited to 4000 characters. The
+editor warns when a colour would make white labels hard to read; existing
+colours, including brighter ones already in the catalogue, stay valid.
+Production keeps those files on the persistent circle image mount described in
+`deploy/docker/PRODUCTION.md`. A container start copies shipped images into
+that mount when they are missing, and leaves files already stored there in
+place, including administrator uploads. Removing a shipped file from the mount
+copies it back on the next container start.
 
 The manual file workflow below remains useful for preparing images in the
 repository.

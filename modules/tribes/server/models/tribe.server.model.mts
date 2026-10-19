@@ -137,6 +137,7 @@ const TribeSchema = new Schema<TribeRecord>({
   description: {
     type: String,
     trim: true,
+    maxlength: [4000, 'Please keep the description under 4000 characters.'],
     get: (value: string | undefined) =>
       value && sanitizeHtml(value, sanitizeOptions),
   },

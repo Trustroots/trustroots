@@ -790,7 +790,8 @@ The acquisition-stories API SHALL return an allowlisted `restrictionStatuses` ar
 ### Requirement: Circle catalogue administration
 
 The system SHALL provide authorised administrators with tools to create and
-edit circle catalogue records and their associated images.
+edit circle catalogue records and their associated images. Catalogue reads and
+writes SHALL be recorded in the administration audit log.
 
 #### Scenario: Administrator manages circles
 

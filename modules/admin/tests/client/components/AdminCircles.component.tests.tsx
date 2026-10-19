@@ -93,7 +93,13 @@ describe('circle form feedback and fields', () => {
       attribution_url: 'https://example.org',
     };
     getCirclesMock.mockResolvedValue([circle]);
-    saveCircleMock.mockResolvedValue(circle);
+    const saved = {
+      ...circle,
+      public: true,
+      description: 'Updated circle',
+      modified: '2026-10-19T12:00:00.000Z',
+    };
+    saveCircleMock.mockResolvedValue(saved);
     render(<AdminCircles />);
     fireEvent.click(
       await screen.findByRole('button', { name: /Walkers Hidden/ }),
@@ -122,6 +128,12 @@ describe('circle form feedback and fields', () => {
       { ...circle, public: true, description: 'Updated circle' },
       image,
     );
+    expect(screen.getByAltText('Current circle')).toHaveAttribute(
+      'src',
+      `/uploads-circle/walkers/120x120.jpg?v=${new Date(
+        saved.modified,
+      ).getTime()}`,
+    );
     expect(screen.getByLabelText('Image')).toHaveValue('');
     fireEvent.click(screen.getByRole('button', { name: 'New circle' }));
     expect(screen.queryByText('Circle saved.')).not.toBeInTheDocument();
@@ -144,5 +156,59 @@ describe('circle form feedback and fields', () => {
       screen.getByRole('button', { name: 'Save circle' }).closest('form')!,
     );
     expect(await screen.findByText(message)).toBeVisible();
+  });
+
+  it('ignores a second submit while a save is in progress', async () => {
+    let resolveSave: (circle: CircleFixture) => void = () => undefined;
+    saveCircleMock.mockReturnValue(
+      new Promise(resolve => {
+        resolveSave = resolve;
+      }),
+    );
+    render(<AdminCircles />);
+    const form = screen
+      .getByRole('button', { name: 'Save circle' })
+      .closest('form')!;
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    expect(saveCircleMock).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled();
+    resolveSave({ label: 'Cyclists', public: true });
+    expect(await screen.findByText('Circle saved.')).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Save circle' })).toBeEnabled();
+  });
+
+  it('keeps the saved circle when the catalogue cannot be reloaded', async () => {
+    getCirclesMock
+      .mockResolvedValueOnce([])
+      .mockRejectedValueOnce(new Error('Unavailable'));
+    saveCircleMock.mockResolvedValue({ label: 'Cyclists', public: true });
+    render(<AdminCircles />);
+    fireEvent.submit(
+      screen.getByRole('button', { name: 'Save circle' }).closest('form')!,
+    );
+    expect(await screen.findByText('Circle saved.')).toBeVisible();
+    expect(
+      screen.getByText(
+        'Circle saved, but the catalogue could not be reloaded.',
+      ),
+    ).toBeVisible();
+  });
+
+  it('warns when a colour hides white labels', () => {
+    render(<AdminCircles />);
+    const colour = screen.getByLabelText('Colour');
+    fireEvent.change(colour, { target: { value: 'zzzzzz' } });
+    expect(
+      screen.queryByText('White labels will be hard to read on this colour.'),
+    ).not.toBeInTheDocument();
+    fireEvent.change(colour, { target: { value: '000000' } });
+    expect(
+      screen.queryByText('White labels will be hard to read on this colour.'),
+    ).not.toBeInTheDocument();
+    fireEvent.change(colour, { target: { value: 'ffffff' } });
+    expect(
+      screen.getByText('White labels will be hard to read on this colour.'),
+    ).toBeVisible();
   });
 });

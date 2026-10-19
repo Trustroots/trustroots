@@ -17,6 +17,11 @@ const imageSizes = [
 ];
 const circleFields =
   '_id slug label count color image public attribution attribution_url description created modified';
+const descriptionLimit = 4000;
+const maxImagePixels = 50_000_000;
+const lockWaitMs = 30_000;
+const lockStaleMs = 120_000;
+const lockRetryMs = 25;
 
 function validationError(field, message) {
   const error = new Error(message);
@@ -42,6 +47,18 @@ function assertColour(color) {
   }
 }
 
+function assertDescription(description) {
+  if (
+    typeof description !== 'string' ||
+    description.length > descriptionLimit
+  ) {
+    throw validationError(
+      'description',
+      'Please keep the description under 4000 characters.',
+    );
+  }
+}
+
 function assertSlug(slug) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug || '')) {
     throw validationError('slug', 'Circle slug is not safe for image storage.');
@@ -55,7 +72,10 @@ function circleData(body, existing) {
     attribution: blankToUndefined(body.attribution),
     attribution_url: blankToUndefined(body.attribution_url),
   };
-  if (body.description !== undefined) data.description = body.description;
+  if (body.description !== undefined) {
+    assertDescription(body.description);
+    data.description = body.description;
+  }
   if (body.color !== undefined && body.color !== '') {
     assertColour(body.color);
     data.color = body.color;
@@ -75,6 +95,10 @@ function variantsPath(slug) {
   return path.join(imageRoot(), slug);
 }
 
+function lockPath(slug) {
+  return path.join(imageRoot(), `.staging-lock-${slug}`);
+}
+
 async function removeIfExists(filePath) {
   try {
     await fs.promises.rm(filePath, { recursive: true, force: true });
@@ -90,6 +114,52 @@ async function moveAside(from, to) {
   } catch (err) {
     if (err.code !== 'ENOENT') throw err;
     return false;
+  }
+}
+
+async function sleep(ms) {
+  await new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function lockAge(file) {
+  try {
+    const stat = await fs.promises.stat(file);
+    return Date.now() - stat.mtimeMs;
+  } catch (err) {
+    if (err.code === 'ENOENT') return null;
+    throw err;
+  }
+}
+
+async function acquireSlugLock(slug) {
+  const file = lockPath(slug);
+  const deadline = Date.now() + lockWaitMs;
+  for (;;) {
+    try {
+      const handle = await fs.promises.open(file, 'wx', 0o600);
+      try {
+        await handle.writeFile(String(process.pid));
+      } finally {
+        await handle.close();
+      }
+      return async () => {
+        await removeIfExists(file);
+      };
+    } catch (err) {
+      if (err.code !== 'EEXIST') throw err;
+      const age = await lockAge(file);
+      if (age !== null && age > lockStaleMs) {
+        await removeIfExists(file);
+        continue;
+      }
+      if (Date.now() >= deadline) {
+        throw validationError(
+          'image',
+          'Another update of this circle image is in progress.',
+        );
+      }
+      await sleep(lockRetryMs);
+    }
   }
 }
 
@@ -121,7 +191,13 @@ async function processCircleImage(filePath, slug) {
   try {
     await fs.promises.mkdir(variantsStage, { recursive: true, mode: 0o700 });
     const canonicalStage = path.join(staging, 'canonical.jpg');
-    await sharp(filePath).rotate().jpeg({ quality: 85 }).toFile(canonicalStage);
+    await sharp(filePath, {
+      animated: false,
+      limitInputPixels: maxImagePixels,
+    })
+      .rotate()
+      .jpeg({ quality: 85 })
+      .toFile(canonicalStage);
     await Promise.all(
       imageSizes.flatMap(size =>
         ['jpg', 'webp'].map(async extension => {
@@ -167,44 +243,32 @@ async function processCircleImage(filePath, slug) {
   }
 }
 
-async function moveCircleImage(oldSlug, newSlug) {
-  assertSlug(oldSlug);
-  assertSlug(newSlug);
-  try {
-    await fs.promises.rename(sourcePath(oldSlug), sourcePath(newSlug));
-  } catch (err) {
-    if (err.code !== 'ENOENT') throw err;
-  }
-  try {
-    await fs.promises.rename(variantsPath(oldSlug), variantsPath(newSlug));
-  } catch (err) {
-    if (err.code !== 'ENOENT') throw err;
-  }
-}
-
 function sendError(res, err) {
   return res.status(400).send({ message: errorService.getErrorMessage(err) });
 }
 
-async function saveCircle(circle, filePath, oldSlug) {
-  let publication;
-  let saved = false;
+async function saveCircle(circle, filePath) {
+  let release = async () => {};
   if (filePath) {
     assertSlug(circle.slug);
-    publication = await processCircleImage(filePath, circle.slug);
-    circle.image = true;
+    release = await acquireSlugLock(circle.slug);
   }
+  let publication;
+  let saved = false;
   try {
+    if (filePath) {
+      publication = await processCircleImage(filePath, circle.slug);
+      circle.image = true;
+    }
     await circle.save();
     saved = true;
     if (publication) await publication.commit();
-    if (circle.image && oldSlug && oldSlug !== circle.slug) {
-      await moveCircleImage(oldSlug, circle.slug);
-    }
     return circle;
   } catch (err) {
     if (publication && !saved) await publication.rollback();
     throw err;
+  } finally {
+    await release();
   }
 }
 
@@ -251,11 +315,10 @@ export const update = async (req, res) => {
   try {
     const circle = await Tribe.findById(req.params.circle).exec();
     if (!circle) return res.status(404).send({ message: 'Circle not found.' });
-    const oldSlug = circle.slug;
     Object.assign(circle, circleData(req.body, circle));
     circle.modified = new Date();
     await circle.validate();
-    await saveCircle(circle, req.file?.path, oldSlug);
+    await saveCircle(circle, req.file?.path);
     return res.json(circle.toJSON());
   } catch (err) {
     return sendError(res, err);

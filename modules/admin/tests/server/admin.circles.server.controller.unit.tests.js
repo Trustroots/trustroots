@@ -22,6 +22,7 @@ describe('Admin circles controller', () => {
   let fs;
   let sharp;
   let image;
+  let lockHandle;
   let uploadFile;
   let circle;
   let query;
@@ -50,10 +51,16 @@ describe('Admin circles controller', () => {
     Tribe.find = sinon.stub().returns(query);
     Tribe.findById = sinon.stub().returns(query);
     Tribe.findByIdAndDelete = sinon.stub().resolves();
+    lockHandle = {
+      writeFile: sinon.stub().resolves(),
+      close: sinon.stub().resolves(),
+    };
     fs = {
       mkdir: sinon.stub().resolves(),
+      open: sinon.stub().resolves(lockHandle),
       rename: sinon.stub().resolves(),
       rm: sinon.stub().resolves(),
+      stat: sinon.stub().resolves({ mtimeMs: 0 }),
     };
     image = {
       rotate: sinon.stub().returnsThis(),
@@ -193,6 +200,20 @@ describe('Admin circles controller', () => {
         '/circle-images/walkers',
       );
       sinon.assert.calledWith(image.rotate);
+      sinon.assert.calledWith(sharp, '/upload.png', {
+        animated: false,
+        limitInputPixels: 50_000_000,
+      });
+      sinon.assert.calledWith(
+        fs.open,
+        '/circle-images/.staging-lock-walkers',
+        'wx',
+        0o600,
+      );
+      sinon.assert.calledWith(fs.rm, '/circle-images/.staging-lock-walkers', {
+        recursive: true,
+        force: true,
+      });
       sinon.assert.calledWith(fs.rm, '/upload.png', {
         recursive: true,
         force: true,
@@ -261,58 +282,17 @@ describe('Admin circles controller', () => {
     );
   });
 
-  function renameFrom(oldSlug) {
+  it('keeps image files on the original slug when a save changes it', async () => {
     circle.image = true;
-    circle.slug = oldSlug;
     circle.save.callsFake(async () => {
       circle.slug = 'renamed';
       return circle;
     });
-  }
-
-  it('moves image files when a circle is renamed', async () => {
-    renameFrom('walkers');
-    await controller.update({ params: {}, body: {} }, res);
-    sinon.assert.calledWith(
-      fs.rename,
-      '/circle-images/walkers.jpg',
-      '/circle-images/renamed.jpg',
-    );
-    sinon.assert.calledWith(
-      fs.rename,
-      '/circle-images/walkers',
-      '/circle-images/renamed',
-    );
-  });
-
-  it('does not move images when the slug is unchanged', async () => {
-    circle.image = true;
-    await controller.update({ params: {}, body: {} }, res);
-    sinon.assert.notCalled(fs.rename);
-  });
-
-  it('tolerates a missing previous slug', async () => {
-    renameFrom(undefined);
-    await controller.update({ params: {}, body: {} }, res);
-    sinon.assert.notCalled(fs.rename);
-  });
-
-  it('tolerates missing image assets when renaming', async () => {
-    renameFrom('walkers');
-    fs.rename.rejects(missing);
     await controller.update({ params: {}, body: {} }, res);
     assert.strictEqual(res.statusCode, 200);
-    sinon.assert.calledTwice(fs.rename);
+    sinon.assert.notCalled(fs.rename);
+    sinon.assert.notCalled(fs.open);
   });
-
-  for (const index of [0, 1]) {
-    it(`reports rename errors for asset ${index}`, async () => {
-      renameFrom('walkers');
-      fs.rename.onCall(index).rejects(failure);
-      await controller.update({ params: {}, body: {} }, res);
-      assert.strictEqual(res.statusCode, 400);
-    });
-  }
 
   it('passes JSON requests through the upload middleware', () => {
     const next = sinon.spy();
@@ -329,6 +309,21 @@ describe('Admin circles controller', () => {
     }
     sinon.assert.notCalled(circle.save);
     sinon.assert.notCalled(sharp);
+  });
+
+  it('rejects an oversized or non-text description before saving', async () => {
+    for (const description of ['x'.repeat(4001), 12]) {
+      await controller.create(
+        { body: { label: 'Walkers', color: '1e3a8a', description } },
+        res,
+      );
+      assert.strictEqual(res.statusCode, 400);
+      assert.strictEqual(
+        res.body.message,
+        'Please keep the description under 4000 characters.',
+      );
+    }
+    sinon.assert.notCalled(circle.save);
   });
 
   it('keeps the stored colour when the submitted colour is blank', async () => {
@@ -525,6 +520,112 @@ describe('Admin circles controller', () => {
     );
     assert.strictEqual(res.statusCode, 400);
     sinon.assert.notCalled(circle.save);
+  });
+
+  const busy = Object.assign(new Error('busy'), { code: 'EEXIST' });
+
+  it('waits while another update holds the image lock', async () => {
+    fs.open.onCall(0).rejects(busy);
+    fs.open.onCall(1).resolves(lockHandle);
+    fs.stat.resolves({ mtimeMs: Date.now() });
+    await controller.update(
+      {
+        params: { circle: 'circle-1' },
+        body: { label: 'Walkers', color: '1e3a8a' },
+        file: { path: '/upload.png' },
+      },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 200);
+    sinon.assert.calledTwice(fs.open);
+  });
+
+  it('replaces a stale image lock', async () => {
+    fs.open.onCall(0).rejects(busy);
+    fs.open.onCall(1).resolves(lockHandle);
+    fs.stat.resolves({ mtimeMs: Date.now() - 130_000 });
+    await controller.update(
+      {
+        params: { circle: 'circle-1' },
+        body: { label: 'Walkers', color: '1e3a8a' },
+        file: { path: '/upload.png' },
+      },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 200);
+    sinon.assert.calledWith(fs.rm, '/circle-images/.staging-lock-walkers', {
+      recursive: true,
+      force: true,
+    });
+  });
+
+  it('retries when the image lock disappears while waiting', async () => {
+    fs.open.onCall(0).rejects(busy);
+    fs.open.onCall(1).resolves(lockHandle);
+    fs.stat.rejects(missing);
+    await controller.update(
+      {
+        params: { circle: 'circle-1' },
+        body: { label: 'Walkers', color: '1e3a8a' },
+        file: { path: '/upload.png' },
+      },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 200);
+    sinon.assert.calledTwice(fs.open);
+  });
+
+  it('reports an image-lock status failure', async () => {
+    fs.open.rejects(busy);
+    fs.stat.rejects(failure);
+    await controller.update(
+      {
+        params: { circle: 'circle-1' },
+        body: { label: 'Walkers', color: '1e3a8a' },
+        file: { path: '/upload.png' },
+      },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 400);
+    assert.strictEqual(res.body.message, failure.message);
+    sinon.assert.notCalled(sharp);
+  });
+
+  it('reports a failure to create the image lock', async () => {
+    fs.open.rejects(failure);
+    await controller.update(
+      {
+        params: { circle: 'circle-1' },
+        body: { label: 'Walkers', color: '1e3a8a' },
+        file: { path: '/upload.png' },
+      },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 400);
+    assert.strictEqual(res.body.message, failure.message);
+    sinon.assert.notCalled(sharp);
+  });
+
+  it('stops waiting when an image update stays locked', async () => {
+    const clock = sinon.useFakeTimers({ now: 1_000_000 });
+    fs.open.rejects(busy);
+    fs.stat.resolves({ mtimeMs: 1_000_000 });
+    const pending = controller.update(
+      {
+        params: { circle: 'circle-1' },
+        body: { label: 'Walkers', color: '1e3a8a' },
+        file: { path: '/upload.png' },
+      },
+      res,
+    );
+    await clock.tickAsync(31_000);
+    await pending;
+    assert.strictEqual(res.statusCode, 400);
+    assert.strictEqual(
+      res.body.message,
+      'Another update of this circle image is in progress.',
+    );
+    sinon.assert.notCalled(sharp);
   });
 
   it('validates multipart images through the shared upload handler', () => {

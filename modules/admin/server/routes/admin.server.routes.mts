@@ -58,7 +58,7 @@ const registerRoutes = (app: RouteApp): void => {
   app
     .route('/api/admin/circles')
     .all(adminPolicy.isAllowed)
-    .get(adminCircles.list)
+    .get(adminAuditLog.record, adminCircles.list)
     .post(
       adminCircles.processImageUpload,
       adminAuditLog.record,
@@ -68,7 +68,7 @@ const registerRoutes = (app: RouteApp): void => {
   app
     .route('/api/admin/circles/:circle')
     .all(adminPolicy.isAllowed)
-    .get(adminCircles.get)
+    .get(adminAuditLog.record, adminCircles.get)
     .put(
       adminCircles.processImageUpload,
       adminAuditLog.record,
