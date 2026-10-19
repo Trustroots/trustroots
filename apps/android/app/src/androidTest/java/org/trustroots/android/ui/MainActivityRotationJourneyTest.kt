@@ -9,6 +9,11 @@ import android.graphics.Color
 import android.os.ParcelFileDescriptor
 import android.view.inputmethod.InputMethodManager
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.core.view.WindowCompat
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -19,6 +24,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.Assume.assumeTrue
@@ -112,7 +119,15 @@ class MainActivityRotationJourneyTest {
                         Color.parseColor("#101613"),
                         activity.getColor(org.trustroots.android.R.color.trustroots_background),
                     )
+                    val controller = WindowCompat.getInsetsController(activity.window, activity.window.decorView)
+                    assertFalse("Night status bar icons must be light", controller.isAppearanceLightStatusBars)
+                    assertFalse("Night navigation bar icons must be light", controller.isAppearanceLightNavigationBars)
                 }
+                val logoPixels = compose.onNodeWithContentDescription("Trustroots").captureToImage().toPixelMap()
+                val wordmarkHasLightInk = (logoPixels.height * 3 / 4 until logoPixels.height).any { y ->
+                    (0 until logoPixels.width).any { x -> logoPixels[x, y].luminance() > 0.9f }
+                }
+                assertTrue("The logo wordmark should remain legible against its night background", wordmarkHasLightInk)
                 compose.onNodeWithText("anonymous-member").performScrollTo().assertIsDisplayed()
                 compose.onNodeWithText("Sign in").performScrollTo().assertIsDisplayed()
                 captureUsabilityScreenshot(compose, "appearance-sign-in-dark")
