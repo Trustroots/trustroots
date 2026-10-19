@@ -38,6 +38,7 @@ COPY .prettierrc.json .prettierignore eslint.config.cjs eslint.config.cts babel.
 COPY bin bin
 COPY config config
 COPY migrations migrations
+COPY layers layers
 COPY modules modules
 COPY public public
 COPY testutils testutils
