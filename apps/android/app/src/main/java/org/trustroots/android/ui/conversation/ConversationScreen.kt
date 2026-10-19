@@ -24,7 +24,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,10 +41,12 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.trustroots.android.api.DirectMessage
+import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageDraftStore
 import org.trustroots.android.api.MessageMember
@@ -179,10 +181,10 @@ internal fun ConversationScreen(
             )
         }
         Spacer(Modifier.height(8.dp))
-        OutlinedTextField(
+        TextField(
             draft,
             updateDraft,
-            label = { Text("Message") },
+            label = { Text(stringResource(R.string.form_message)) },
             modifier = Modifier
                 .fillMaxWidth()
                 .focusRequester(composerFocus)
@@ -192,7 +194,12 @@ internal fun ConversationScreen(
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
             trailingIcon = {
                 IconButton(onClick = send, enabled = member.id != null && draft.isNotBlank() && !sending) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = if (sending) "Sending…" else "Send")
+                    Icon(
+                        Icons.AutoMirrored.Filled.Send,
+                        contentDescription = stringResource(
+                            if (sending) R.string.form_sending_message else R.string.form_send_message,
+                        ),
+                    )
                 }
             },
         )

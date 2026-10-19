@@ -27,7 +27,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.getValue
@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -51,6 +52,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import org.trustroots.android.api.AccountDetails
+import org.trustroots.android.R
 import org.trustroots.android.api.ExperienceCreate
 import org.trustroots.android.api.HostOfferUpdate
 import org.trustroots.android.api.MemberSession
@@ -189,31 +191,31 @@ internal fun HostOfferScreen(
             }
         }
         if (status != "no") {
-            OutlinedTextField(
+            TextField(
                 description,
                 { description = it },
-                enabled = !saving, label = { Text("Hosting description") },
+                enabled = !saving, label = { Text(stringResource(R.string.form_hosting_description)) },
                 minLines = 4,
                 maxLines = 10,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
             )
-            OutlinedTextField(
+            TextField(
                 maxGuests.toString(),
                 {
                     maxGuests = it.filter(Char::isDigit).toIntOrNull()?.coerceIn(1, 20) ?: maxGuests
                 },
-                enabled = !saving, label = { Text("Maximum guests") },
+                enabled = !saving, label = { Text(stringResource(R.string.form_maximum_guests)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
             )
         } else {
-            OutlinedTextField(
+            TextField(
                 noOfferDescription,
                 { noOfferDescription = it },
-                enabled = !saving, label = { Text("Why you are not hosting") },
+                enabled = !saving, label = { Text(stringResource(R.string.form_not_hosting_reason)) },
                 minLines = 3,
                 maxLines = 8,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
             )
         }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
@@ -312,10 +314,10 @@ internal fun CreateExperienceScreen(
                 )
             }
         }
-        OutlinedTextField(
+        TextField(
             feedback,
             { feedback = it },
-            enabled = !saving, label = { Text("Public experience (optional)") },
+            enabled = !saving, label = { Text(stringResource(R.string.form_public_experience_optional)) },
             minLines = 4,
             maxLines = 10,
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
@@ -499,13 +501,13 @@ internal fun AccountSettingsScreen(
             loading -> CircularProgressIndicator(modifier = Modifier.padding(top = 20.dp))
             else -> {
         Text("Email", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 20.dp))
-        OutlinedTextField(
+        TextField(
             email,
             { email = it },
-            label = { Text("Email address") },
+            label = { Text(stringResource(R.string.form_email_address)) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = newsletter, onCheckedChange = { newsletter = it })
@@ -539,29 +541,29 @@ internal fun AccountSettingsScreen(
         ) { Text(if (savingAccount) "Saving…" else "Save email settings") }
         HorizontalDivider(Modifier.padding(vertical = 20.dp))
         Text("Change password", style = MaterialTheme.typography.titleMedium)
-        OutlinedTextField(
+        TextField(
             currentPassword,
             { currentPassword = it },
-            label = { Text("Current password") },
+            label = { Text(stringResource(R.string.form_current_password)) },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
         )
-        OutlinedTextField(
+        TextField(
             newPassword,
             { newPassword = it },
-            label = { Text("New password") },
+            label = { Text(stringResource(R.string.form_new_password)) },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
         )
-        OutlinedTextField(
+        TextField(
             verifyPassword,
             { verifyPassword = it },
-            label = { Text("Verify new password") },
+            label = { Text(stringResource(R.string.form_verify_new_password)) },
             singleLine = true,
             visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
         )
         Button(
             onClick = {

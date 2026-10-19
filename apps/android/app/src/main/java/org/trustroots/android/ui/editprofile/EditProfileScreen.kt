@@ -17,7 +17,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,12 +28,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.ProfileUpdate
+import org.trustroots.android.R
 import org.trustroots.android.ui.common.FormActionBar
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.isAuthenticationFailure
@@ -86,11 +88,22 @@ internal fun EditProfileScreen(
             }
     Column(Modifier.fillMaxSize().imePadding().padding(top = contentPadding.calculateTopPadding())) {
         FormActionBar("Edit profile", saving, name.isNotBlank(), cancel, save, horizontalInset = contentPadding.horizontalInset())
+        error?.let {
+            Text(
+                it,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(contentPadding.horizontalInset())
+                    .padding(vertical = 8.dp),
+            )
+        }
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = contentPadding.calculateBottomPadding()).padding(20.dp).padding(contentPadding.horizontalInset())) {
-        OutlinedTextField(name, { name = it }, enabled = !saving, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(tagline, { tagline = it }, enabled = !saving, label = { Text("Tagline") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(living, { living = it }, enabled = !saving, label = { Text("Lives in") }, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(from, { from = it }, enabled = !saving, label = { Text("From") }, modifier = Modifier.fillMaxWidth())
+        TextField(name, { name = it }, enabled = !saving, label = { Text(stringResource(R.string.form_name)) }, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp))
+        TextField(tagline, { tagline = it }, enabled = !saving, label = { Text(stringResource(R.string.form_tagline)) }, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp))
+        TextField(living, { living = it }, enabled = !saving, label = { Text(stringResource(R.string.form_lives_in)) }, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp))
+        TextField(from, { from = it }, enabled = !saving, label = { Text(stringResource(R.string.form_from)) }, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp))
         Text("Languages", modifier = Modifier.padding(top = 12.dp))
         Box {
             Surface(onClick = { languageMenu = true }, enabled = !saving, shape = MaterialTheme.shapes.small, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline), modifier = Modifier.fillMaxWidth()) {
@@ -108,11 +121,10 @@ internal fun EditProfileScreen(
                 }
             }
         }
-        OutlinedTextField(
-            description, { description = it }, enabled = !saving, label = { Text("About me") },
-            minLines = 5, maxLines = 12, modifier = Modifier.fillMaxWidth(),
+        TextField(
+            description, { description = it }, enabled = !saving, label = { Text(stringResource(R.string.form_about_me)) },
+            minLines = 5, maxLines = 12, modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
         )
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         }
     }
 }

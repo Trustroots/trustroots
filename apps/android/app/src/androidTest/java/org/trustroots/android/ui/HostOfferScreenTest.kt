@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.compose.ui.unit.dp
 import java.net.ServerSocket
 import kotlin.concurrent.thread
 import org.junit.After
@@ -59,5 +60,10 @@ class HostOfferScreenTest {
         compose.onNodeWithText("Host").assertIsDisplayed()
         compose.onNodeWithText("Spare sofa").assertIsDisplayed()
         compose.onNodeWithText("Save changes").assertIsDisplayed()
+
+        val descriptionBottom = compose.onNodeWithText("Hosting description").fetchSemanticsNode().boundsInRoot.bottom
+        val guestsTop = compose.onNodeWithText("Maximum guests").fetchSemanticsNode().boundsInRoot.top
+        val minimumGap = with(compose.density) { 12.dp.toPx() }
+        org.junit.Assert.assertTrue("Adjacent hosting fields should have a consistent gap", guestsTop - descriptionBottom >= minimumGap)
     }
 }
