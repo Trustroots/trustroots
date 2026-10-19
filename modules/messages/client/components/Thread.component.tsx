@@ -245,6 +245,15 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     };
   }
 
+  async function fetchHostingOffer(userId: string) {
+    const offers = await getOffers(userId, 'host');
+    setHostingOffer(
+      offers.find(offer => offer.requireHostingDescriptionAcknowledgement) ||
+        null,
+    );
+    setHostingDescriptionAcknowledged(false);
+  }
+
   async function fetchData() {
     try {
       setIsFetching(true);
@@ -273,19 +282,12 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
         otherUser._id,
       );
       if (messages.length === 0 && !userRemoved) {
-        let offers: Awaited<ReturnType<typeof getOffers>>;
         try {
-          offers = await getOffers(otherUser._id, 'host');
+          await fetchHostingOffer(otherUser._id);
         } catch {
           setFailedToLoad(true);
           return;
         }
-        setHostingOffer(
-          offers.find(
-            offer => offer.requireHostingDescriptionAcknowledgement,
-          ) || null,
-        );
-        setHostingDescriptionAcknowledged(false);
       }
       setOtherUser(otherUser);
       const sortedMessages = messages.sort((a, b) =>
@@ -327,10 +329,21 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
           hostingDescriptionAcknowledged,
         )
       : api.messages.sendMessage((otherUser as MessageUser)._id, content);
-    const apiResponse = await sendMessageRequest.catch(error => {
+    const apiResponse = await sendMessageRequest.catch(async error => {
       track('message_send_failed', {
         reason: messageSendFailureReason(error),
       });
+      if (
+        error?.response?.data?.error ===
+        'hosting-description-acknowledgement-required'
+      ) {
+        try {
+          await fetchHostingOffer((otherUser as MessageUser)._id);
+          return;
+        } catch {
+          // Keep the draft available if refreshing fails.
+        }
+      }
       // Too many requests - error
       if (error?.response?.status === 429) {
         window.alert(

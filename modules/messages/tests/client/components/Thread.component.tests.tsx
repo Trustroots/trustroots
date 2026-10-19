@@ -162,6 +162,157 @@ let routeParams: { username: string; userId?: string } = {
 showThread(routeParams);
 
 describe('<Thread>', () => {
+  it.each(['<p>Please arrive before sunset.</p>', undefined])(
+    'requires an unchecked hosting acknowledgement before sending: %s',
+    async description => {
+      jest.mocked(getOffers).mockResolvedValue([
+        {
+          _id: 'hosting-offer',
+          user: otherUser._id,
+          type: 'host',
+          location: [12, 34],
+          description,
+          requireHostingDescriptionAcknowledgement: true,
+        },
+      ]);
+      api.messages.sendMessage.mockResolvedValue({
+        data: createMessage(me),
+      } as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
+      render(<Thread user={me} profileMinimumLength={0} />);
+      const checkbox = await screen.findByRole('checkbox', {
+        name: 'I have read this host’s hosting description and requirements.',
+      });
+      expect(checkbox).not.toBeChecked();
+      if (description)
+        expect(screen.getByText('Please arrive before sunset.')).toBeVisible();
+      fireEvent.change(screen.getByRole('textbox'), {
+        target: { value: 'A fictional first message.' },
+      });
+      expect(screen.getByRole('button', { name: /Send/ })).toBeDisabled();
+      fireEvent.submit(document.querySelector('#message-reply')!);
+      expect(api.messages.sendMessage).not.toHaveBeenCalled();
+      fireEvent.click(checkbox);
+      fireEvent.click(checkbox);
+      expect(screen.getByRole('button', { name: /Send/ })).toBeDisabled();
+      fireEvent.click(checkbox);
+      fireEvent.submit(document.querySelector('#message-reply')!);
+      await waitFor(() =>
+        expect(api.messages.sendMessage).toHaveBeenCalledWith(
+          otherUser._id,
+          'A fictional first message.',
+          true,
+        ),
+      );
+      await waitFor(() =>
+        expect(screen.queryByRole('checkbox')).not.toBeInTheDocument(),
+      );
+    },
+  );
+
+  it('does not load hosting preferences for an existing conversation', async () => {
+    api.messages.fetchMessages.mockResolvedValue({
+      messages: [createMessage(me)],
+    });
+    render(<Thread user={me} profileMinimumLength={0} />);
+    await screen.findByRole('textbox');
+    expect(getOffers).not.toHaveBeenCalled();
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+  });
+
+  it('refreshes a newly required acknowledgement and preserves the draft for retry', async () => {
+    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+    jest
+      .mocked(getOffers)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          _id: 'hosting-offer',
+          user: otherUser._id,
+          type: 'host',
+          location: [12, 34],
+          description: 'Please arrive before sunset.',
+          requireHostingDescriptionAcknowledgement: true,
+        },
+      ]);
+    api.messages.sendMessage
+      .mockRejectedValueOnce({
+        response: {
+          status: 400,
+          data: { error: 'hosting-description-acknowledgement-required' },
+        },
+      })
+      .mockResolvedValueOnce({ data: createMessage(me) } as Awaited<
+        ReturnType<typeof messagesAPI.sendMessage>
+      >);
+    render(<Thread user={me} profileMinimumLength={0} />);
+    fireEvent.change(await screen.findByRole('textbox'), {
+      target: { value: 'A saved draft.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Send/ }));
+    const checkbox = await screen.findByRole('checkbox');
+    expect(checkbox).not.toBeChecked();
+    expect(screen.getByText('Please arrive before sunset.')).toBeVisible();
+    expect(screen.getByRole('textbox')).toHaveValue('A saved draft.');
+    expect(screen.getByRole('button', { name: /Send/ })).toBeDisabled();
+    expect(alertSpy).not.toHaveBeenCalled();
+    fireEvent.click(checkbox);
+    fireEvent.click(screen.getByRole('button', { name: /Send/ }));
+    await waitFor(() =>
+      expect(api.messages.sendMessage).toHaveBeenLastCalledWith(
+        otherUser._id,
+        'A saved draft.',
+        true,
+      ),
+    );
+    await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(''));
+    alertSpy.mockRestore();
+  });
+
+  it('keeps the draft available when refreshing the requirement fails', async () => {
+    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+    jest
+      .mocked(getOffers)
+      .mockResolvedValueOnce([])
+      .mockRejectedValueOnce(new Error('Unavailable'));
+    api.messages.sendMessage.mockRejectedValueOnce({
+      response: {
+        status: 400,
+        data: { error: 'hosting-description-acknowledgement-required' },
+      },
+    });
+    render(<Thread user={me} profileMinimumLength={0} />);
+    fireEvent.change(await screen.findByRole('textbox'), {
+      target: { value: 'A saved draft.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Send/ }));
+    await waitFor(() => expect(alertSpy).toHaveBeenCalled());
+    expect(screen.getByRole('textbox')).toHaveValue('A saved draft.');
+    expect(screen.getByRole('button', { name: /Send/ })).toBeEnabled();
+    alertSpy.mockRestore();
+  });
+
+  it('shows a load failure when the hosting preference cannot be checked', async () => {
+    jest.mocked(getOffers).mockRejectedValue(new Error('Unavailable'));
+    render(<Thread user={me} profileMinimumLength={0} />);
+    await screen.findByText('Failed to load messages. Please try again.');
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
+
+  it('allows first contact when the hosting preference is disabled', async () => {
+    jest.mocked(getOffers).mockResolvedValue([
+      {
+        _id: 'hosting-offer',
+        user: otherUser._id,
+        type: 'host',
+        location: [12, 34],
+        requireHostingDescriptionAcknowledgement: false,
+      },
+    ]);
+    render(<Thread user={me} profileMinimumLength={0} />);
+    await screen.findByRole('textbox');
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Send/ })).toBeEnabled();
+  });
   let originalVisualViewport: PropertyDescriptor | undefined;
 
   beforeEach(() => {

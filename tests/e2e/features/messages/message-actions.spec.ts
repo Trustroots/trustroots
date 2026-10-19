@@ -55,14 +55,20 @@ for (const width of [390, 1280]) {
         name: /Require guests to acknowledge/,
       });
       await expect(preference).not.toBeChecked();
+      await signInViaApi(page, request, berlin);
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto(`/messages/${host.username}`);
+      const editor = page.locator('#message-reply-content');
+      await editor.fill('A fictional opening request.');
+      await expect(page.locator('#messageReplySubmit')).toBeEnabled();
+
+      // The host opts in while the guest is already writing a message.
       await preference.check();
       await hostPage.getByRole('button', { name: 'Save and Exit' }).click();
       await expect(hostPage).toHaveURL(new RegExp(`/profile/${host.username}`));
       await hostPage.goto('/offer/host#description');
       await expect(preference).toBeChecked();
 
-      await signInViaApi(page, request, berlin);
-      await page.setViewportSize({ width, height: 844 });
       const hostId = await fetchUserIdByUsername(request, host.username);
       const rejected = await page.request.post('/api/messages', {
         data: { userTo: hostId, content: 'A fictional request.' },
@@ -71,7 +77,7 @@ for (const width of [390, 1280]) {
       expect((await rejected.json()).error).toBe(
         'hosting-description-acknowledgement-required',
       );
-      await page.goto(`/messages/${host.username}`);
+      await page.locator('#messageReplySubmit').click();
       const acknowledgement = page.getByRole('checkbox', {
         name: 'I have read this host’s hosting description and requirements.',
       });
@@ -79,8 +85,7 @@ for (const width of [390, 1280]) {
         page.getByText('Please arrive before sunset.'),
       ).toBeVisible();
       await expect(acknowledgement).not.toBeChecked();
-      const editor = page.locator('#message-reply-content');
-      await editor.fill('A fictional opening request.');
+      await expect(editor).toHaveText('A fictional opening request.');
       await expect(page.locator('#messageReplySubmit')).toBeDisabled();
       await editor.press('Control+Enter');
       await expect(editor).toHaveText('A fictional opening request.');
