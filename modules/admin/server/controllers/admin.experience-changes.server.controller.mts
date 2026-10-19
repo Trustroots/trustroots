@@ -128,6 +128,10 @@ const ExperienceChangeRequest = mongoose.model<ChangeRequestRecord>(
 const User = mongoose.model<UserRecord>('User');
 const active = { removedAt: { $exists: false } };
 const APPROVED_EDIT_VISIBILITY_MS = 7 * 24 * 60 * 60 * 1000;
+const OWN_PROFILE_DENIAL =
+  'Support members cannot change Experiences on their own profile.';
+const ISSUER_DENIAL =
+  'Approval requires another support team member or an administrator.';
 
 function isId(value: unknown): value is IdInput {
   return mongoose.Types.ObjectId.isValid(
@@ -177,11 +181,12 @@ const findExperiences: Handler<
       )
       .lean()
       .exec();
-    const result: AdminExperienceChangeSearchExperience<
-      Types.ObjectId,
-      Date
-    >[] = experiences;
-    return response.json(result);
+    return response.json(
+      experiences.map(experience => ({
+        ...experience,
+        canIssue: canChange(request.user, experience),
+      })),
+    );
   } catch (error) {
     return next(error);
   }
@@ -220,6 +225,9 @@ const issueLink: Handler<AdminExperienceChangeLink<Date>> = async (
       return response
         .status(400)
         .json({ message: 'Member is not part of this Experience.' });
+    }
+    if (!canChange(request.user, experience)) {
+      return response.status(403).json({ message: OWN_PROFILE_DENIAL });
     }
 
     const token = crypto.randomBytes(32).toString('hex');
@@ -268,14 +276,65 @@ function queuedRequests(
     .exec();
 }
 
+interface ExperienceParties {
+  userFrom?: unknown;
+  userTo?: unknown;
+}
+
+function isAdministrator(member: AuthenticatedMember): boolean {
+  return Boolean(member.roles?.includes('admin'));
+}
+
+function idOf(value: unknown): unknown {
+  if (value !== null && typeof value === 'object' && '_id' in value) {
+    return Reflect.get(value, '_id');
+  }
+  return value;
+}
+
+function sameId(left: unknown, right: unknown): boolean {
+  if (
+    left === null ||
+    left === undefined ||
+    right === null ||
+    right === undefined
+  ) {
+    return false;
+  }
+  return String(left) === String(right);
+}
+
+/** A profile lists Experiences written by that member and written about them. */
+function isOwnProfileExperience(
+  memberId: Types.ObjectId,
+  experience: ExperienceParties | null | undefined,
+): boolean {
+  if (!experience) return false;
+  return (
+    sameId(memberId, idOf(experience.userFrom)) ||
+    sameId(memberId, idOf(experience.userTo))
+  );
+}
+
+function canChange(
+  member: AuthenticatedMember,
+  experience: ExperienceParties | null | undefined,
+): boolean {
+  return (
+    isAdministrator(member) || !isOwnProfileExperience(member._id, experience)
+  );
+}
+
 function canApprove(
   member: AuthenticatedMember,
   changeRequest: { linkIssuedBy?: Types.ObjectId },
+  experience: ExperienceParties | null | undefined,
 ): boolean {
+  if (!canChange(member, experience)) return false;
   return Boolean(
-    member.roles?.includes('admin') ||
+    isAdministrator(member) ||
     (changeRequest.linkIssuedBy &&
-      !equals(changeRequest.linkIssuedBy, member._id)),
+      !sameId(changeRequest.linkIssuedBy, member._id)),
   );
 }
 
@@ -302,7 +361,12 @@ const listRequests: Handler<
     return response.json(
       result.map(changeRequest => ({
         ...changeRequest,
-        canApprove: canApprove(request.user, changeRequest),
+        canReview: canChange(request.user, changeRequest.experience),
+        canApprove: canApprove(
+          request.user,
+          changeRequest,
+          changeRequest.experience,
+        ),
       })),
     );
   } catch (error) {
@@ -321,6 +385,30 @@ const decide: Handler<
     if (!isDecision(decision)) {
       return response.status(400).json({ message: 'Invalid review decision.' });
     }
+    const pendingRequest = await ExperienceChangeRequest.findOne({
+      _id: request.params.id,
+      status: 'pending',
+      active: true,
+    }).exec();
+    if (!pendingRequest) {
+      return response
+        .status(409)
+        .json({ message: 'This request is no longer pending.' });
+    }
+    const parties = await Experience.findById(pendingRequest.experience)
+      .select('userFrom userTo')
+      .lean<ExperienceParties | null>()
+      .exec();
+    if (!canChange(request.user, parties)) {
+      return response.status(403).json({ message: OWN_PROFILE_DENIAL });
+    }
+    if (
+      decision === 'approve' &&
+      !canApprove(request.user, pendingRequest, parties)
+    ) {
+      return response.status(403).json({ message: ISSUER_DENIAL });
+    }
+
     const changeRequest = await ExperienceChangeRequest.findOneAndUpdate(
       { _id: request.params.id, status: 'pending', active: true },
       { $set: { status: 'processing' } },
@@ -333,16 +421,6 @@ const decide: Handler<
     }
 
     try {
-      if (decision === 'approve' && !canApprove(request.user, changeRequest)) {
-        await ExperienceChangeRequest.updateOne(
-          { _id: changeRequest._id, status: 'processing' },
-          { $set: { status: 'pending' } },
-        ).exec();
-        return response.status(403).json({
-          message:
-            'Approval requires another support team member or an administrator.',
-        });
-      }
       if (decision === 'approve') {
         const update =
           changeRequest.kind === 'remove'

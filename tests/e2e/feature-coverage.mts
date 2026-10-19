@@ -2617,6 +2617,7 @@ const features = [
       'Approved edit stays on the review page with profile links.',
       'Approved removal hides the Experience.',
       'Approved removal leaves the reciprocal Experience.',
+      'Support member cannot change an Experience on their own profile.',
     ],
     relatedSpecs: [
       spec(

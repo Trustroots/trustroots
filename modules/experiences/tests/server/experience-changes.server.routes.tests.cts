@@ -3,6 +3,7 @@ import type {
   ExperienceModel,
   ExperienceRecord,
   TestAgent,
+  TestExpressApp,
   TestExpressModule,
   UserDocument,
   UserModel,
@@ -79,13 +80,14 @@ const createTestResponse = () => {
 };
 
 describe('Experience change requests', () => {
+  let app: TestExpressApp;
   let adminAgent: TestAgent;
   let authorAgent: TestAgent;
   let recipientAgent: TestAgent;
   let unrelatedAgent: TestAgent;
 
   before(async () => {
-    const app = await express.init(mongoose.connection);
+    app = await express.init(mongoose.connection);
     adminAgent = request.agent(app);
     authorAgent = request.agent(app);
     recipientAgent = request.agent(app);
@@ -191,19 +193,23 @@ describe('Experience change requests', () => {
         .get('/api/admin/experience-change-requests')
         .expect(200);
       queue.body[0].canApprove.should.equal(false);
+      queue.body[0].canReview.should.equal(true);
       // A new issuer must not replace attribution on an already submitted request.
       await issue(String(author._id));
       await unrelatedAgent.post(path).send({ decision: 'approve' }).expect(403);
-      await User.updateOne(
-        { _id: recipient._id },
-        { $set: { roles: ['user', 'support-team'] } },
-      );
-      await utils.signIn(users[2], recipientAgent);
-      const peerQueue = await recipientAgent
+      const [peerFixture] = utils.generateUsers(1, { public: true });
+      if (!peerFixture) throw new Error('Expected a peer member');
+      peerFixture.roles = ['user', 'support-team'];
+      await utils.saveUsers([peerFixture]);
+      const peerAgent = request.agent(app);
+      await utils.signIn(peerFixture, peerAgent);
+      const peerQueue = await peerAgent
         .get('/api/admin/experience-change-requests')
         .expect(200);
       peerQueue.body[0].canApprove.should.equal(true);
-      await recipientAgent.post(path).send({ decision: 'approve' }).expect(200);
+      peerQueue.body[0].canReview.should.equal(true);
+      await peerAgent.post(path).send({ decision: 'approve' }).expect(200);
+      await utils.signOut(peerAgent);
     });
   }
 
@@ -231,6 +237,156 @@ describe('Experience change requests', () => {
       .post(`/api/admin/experience-change-requests/${rejection._id}/decision`)
       .send({ decision: 'reject' })
       .expect(200);
+  });
+
+  it('stops support members changing an Experience on their own profile', async () => {
+    const denial =
+      'Support members cannot change Experiences on their own profile.';
+    await User.updateOne(
+      { _id: author._id },
+      { $set: { roles: ['user', 'support-team'] } },
+    );
+    await utils.signIn(users[1], authorAgent);
+    const ownSearch = await authorAgent
+      .get('/api/admin/experiences')
+      .query({ username: author.username })
+      .expect(200);
+    ownSearch.body[0].canIssue.should.equal(false);
+    await authorAgent
+      .post(`/api/admin/experiences/${experience._id}/change-links`)
+      .send({ memberId: String(author._id) })
+      .expect(403)
+      .expect({ message: denial });
+
+    await User.updateOne(
+      { username: users[3].username },
+      { $set: { roles: ['user', 'support-team'] } },
+    );
+    await utils.signIn(users[3], unrelatedAgent);
+    const peerSearch = await unrelatedAgent
+      .get('/api/admin/experiences')
+      .query({ username: author.username })
+      .expect(200);
+    peerSearch.body[0].canIssue.should.equal(true);
+    const issued = await unrelatedAgent
+      .post(`/api/admin/experiences/${experience._id}/change-links`)
+      .send({ memberId: String(author._id) })
+      .expect(201);
+    const secret = new URL(
+      issued.body.path,
+      'https://example.test',
+    ).searchParams.get('secret');
+    if (!secret) throw new Error('Expected secret');
+    const submitted = await authorAgent
+      .post(`/api/experiences/${experience._id}/change-requests`)
+      .set(secretHeader(secret))
+      .send({
+        kind: 'edit',
+        proposed: {
+          feedbackPublic: 'Anonymous updated feedback.',
+          recommend: 'no',
+          interactions: { met: true, host: false, guest: false },
+        },
+      })
+      .expect(201);
+    const path = `/api/admin/experience-change-requests/${submitted.body._id}/decision`;
+    await authorAgent
+      .post(path)
+      .send({ decision: 'approve' })
+      .expect(403)
+      .expect({ message: denial });
+    await authorAgent
+      .post(path)
+      .send({ decision: 'reject' })
+      .expect(403)
+      .expect({ message: denial });
+    const ownQueue = await authorAgent
+      .get('/api/admin/experience-change-requests')
+      .expect(200);
+    ownQueue.body[0].canReview.should.equal(false);
+    ownQueue.body[0].canApprove.should.equal(false);
+    const pending = await ExperienceChangeRequest.findById(submitted.body._id);
+    pending!.status.should.equal('pending');
+
+    await User.updateOne(
+      { _id: recipient._id },
+      { $set: { roles: ['user', 'support-team'] } },
+    );
+    await utils.signIn(users[2], recipientAgent);
+    await recipientAgent
+      .post(`/api/admin/experiences/${experience._id}/change-links`)
+      .send({ memberId: String(recipient._id) })
+      .expect(403)
+      .expect({ message: denial });
+    for (const decision of ['approve', 'reject']) {
+      await recipientAgent
+        .post(path)
+        .send({ decision })
+        .expect(403)
+        .expect({ message: denial });
+    }
+
+    await User.updateOne(
+      { _id: author._id },
+      { $set: { roles: ['user', 'admin'] } },
+    );
+    await utils.signIn(users[1], authorAgent);
+    await authorAgent.post(path).send({ decision: 'approve' }).expect(200);
+  });
+
+  it('lets uninvolved support review requests with deleted references', async () => {
+    const secret = await issue(String(author._id));
+    const submitted = await authorAgent
+      .post(`/api/experiences/${experience._id}/change-requests`)
+      .set(secretHeader(secret))
+      .send({ kind: 'remove' })
+      .expect(201);
+    await User.updateOne(
+      { username: users[3].username },
+      { $set: { roles: ['user', 'support-team'] } },
+    );
+    await utils.signIn(users[3], unrelatedAgent);
+    await User.deleteOne({ _id: recipient._id });
+    const search = await unrelatedAgent
+      .get('/api/admin/experiences')
+      .query({ username: author.username })
+      .expect(200);
+    search.body[0].canIssue.should.equal(true);
+    const queue = await unrelatedAgent
+      .get('/api/admin/experience-change-requests')
+      .expect(200);
+    queue.body[0].canReview.should.equal(true);
+    await Experience.deleteOne({ _id: experience._id });
+    const orphanedQueue = await unrelatedAgent
+      .get('/api/admin/experience-change-requests')
+      .expect(200);
+    orphanedQueue.body[0].canReview.should.equal(true);
+    await unrelatedAgent
+      .post(
+        `/api/admin/experience-change-requests/${submitted.body._id}/decision`,
+      )
+      .send({ decision: 'reject' })
+      .expect(200);
+  });
+
+  it('returns a conflict if another reviewer claims the request after permission checks', async () => {
+    const secret = await issue(String(author._id));
+    const submitted = await authorAgent
+      .post(`/api/experiences/${experience._id}/change-requests`)
+      .set(secretHeader(secret))
+      .send({ kind: 'remove' })
+      .expect(201);
+    const query = ExperienceChangeRequest.findOneAndUpdate({}, {});
+    sinon.stub(query, 'exec').resolves(null);
+    sinon.stub(ExperienceChangeRequest, 'findOneAndUpdate').returns(query);
+    await adminAgent
+      .post(
+        `/api/admin/experience-change-requests/${submitted.body._id}/decision`,
+      )
+      .send({ decision: 'approve' })
+      .expect(409);
+    const pending = await ExperienceChangeRequest.findById(submitted.body._id);
+    pending!.status.should.equal('pending');
   });
 
   it('issues a scoped link, keeps an edit pending, and applies an approved edit', async () => {
@@ -886,7 +1042,7 @@ describe('Experience change requests', () => {
       next,
     );
     sinon.restore();
-    sinon.stub(ExperienceChangeRequest, 'findOneAndUpdate').throws(error);
+    sinon.stub(ExperienceChangeRequest, 'findOne').throws(error);
     await adminChanges.decide(
       {
         params: { id: String(experience._id) },
