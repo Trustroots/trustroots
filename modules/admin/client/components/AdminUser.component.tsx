@@ -46,6 +46,7 @@ interface MemberProfile {
   displayName?: string;
   email?: string;
   emailTemporary?: string;
+  nostrNpub?: string;
   acquisitionStory?: string;
   roles: string[];
   public?: boolean;
@@ -99,6 +100,35 @@ const ROLE_DESCRIPTIONS: Record<string, string> = {
   'volunteer-alumni': 'Former Trustroots volunteer.',
 };
 
+interface MemberExperienceStats {
+  total: number;
+  positive: number;
+  negative: number;
+  neutral: number;
+  unpublished: number;
+}
+
+function ExperienceStats({
+  title,
+  stats = { total: 0, positive: 0, negative: 0, neutral: 0, unpublished: 0 },
+}: {
+  title: string;
+  stats?: MemberExperienceStats;
+}) {
+  return (
+    <section className="admin-member-stat" aria-label={title}>
+      <h5>{title}</h5>
+      <p className="admin-member-stat-total">{stats.total} total</p>
+      <ul>
+        <li className="text-success">{stats.positive} positive</li>
+        <li className="text-danger">{stats.negative} negative</li>
+        <li>{stats.neutral} neutral</li>
+        <li>{stats.unpublished} unpublished</li>
+      </ul>
+    </section>
+  );
+}
+
 interface MemberRecord {
   _id: string;
   profile: MemberProfile;
@@ -128,6 +158,8 @@ interface MemberRecord {
   threadReferencesReceivedNo?: number;
   threadReferencesSentYes?: number;
   threadReferencesSentNo?: number;
+  experiencesReceived?: MemberExperienceStats;
+  experiencesWritten?: MemberExperienceStats;
   messageFromCount?: number;
   messageToCount?: number;
 }
@@ -613,6 +645,7 @@ export default class AdminUser extends Component<
           ],
           ['Email', user.profile.email],
           ['Temporary email', user.profile.emailTemporary],
+          ['Nostr npub', user.profile.nostrNpub],
           ['Acquisition story', user.profile.acquisitionStory],
           [
             'Roles',
@@ -778,108 +811,140 @@ export default class AdminUser extends Component<
                       Public profile
                     </a>
                   )}
-                  {[
-                    {
-                      role: 'suspended',
-                      color: 'danger',
-                      label: 'Suspend',
-                    },
-                    ...(!isSuspended || isShadowbanned
-                      ? [
-                          {
-                            role: 'shadowban',
-                            color: 'danger',
-                            label: 'Shadow ban',
-                          },
-                        ]
-                      : []),
-                    ...(isSuspended
-                      ? []
-                      : [
-                          {
-                            role: 'volunteer',
-                            color: 'success',
-                            label: 'Make volunteer',
-                          },
-                          {
-                            role: 'volunteer-alumni',
-                            color: 'success',
-                            label: 'Make volunteer alumni',
-                          },
-                        ]),
-                  ].map(({ role, color, label }) =>
-                    role === 'shadowban' && isShadowbanned ? (
+                  <div
+                    className="admin-user-action-group"
+                    role="group"
+                    aria-label="Account access"
+                  >
+                    <span className="admin-user-action-label">
+                      Account access
+                    </span>
+                    {[
+                      {
+                        role: 'suspended',
+                        color: 'danger',
+                        label: 'Suspend',
+                      },
+                      ...(!isSuspended || isShadowbanned
+                        ? [
+                            {
+                              role: 'shadowban',
+                              color: 'danger',
+                              label: 'Shadow ban',
+                            },
+                          ]
+                        : []),
+                    ].map(({ role, color, label }) =>
+                      role === 'shadowban' && isShadowbanned ? (
+                        <button
+                          key={role}
+                          type="button"
+                          className="btn btn-default"
+                          disabled={isSettingUserRole}
+                          onClick={() =>
+                            this.handleUserRoleChange('shadowban', 'remove')
+                          }
+                        >
+                          Unshadowban
+                        </button>
+                      ) : (
+                        <button
+                          key={role}
+                          className={`btn btn-${color}`}
+                          disabled={
+                            user.profile.roles.includes(role) ||
+                            isSettingUserRole
+                          }
+                          onClick={() => this.handleUserRoleChange(role)}
+                        >
+                          {label}
+                        </button>
+                      ),
+                    )}
+                  </div>
+                  <div
+                    className="admin-user-action-group"
+                    role="group"
+                    aria-label="Team roles"
+                  >
+                    <span className="admin-user-action-label">Team roles</span>
+                    {!isSuspended &&
+                      [
+                        { role: 'volunteer', label: 'Make volunteer' },
+                        {
+                          role: 'volunteer-alumni',
+                          label: 'Make volunteer alumni',
+                        },
+                      ].map(({ role, label }) => (
+                        <button
+                          key={role}
+                          type="button"
+                          className="btn btn-default"
+                          disabled={
+                            user.profile.roles.includes(role) ||
+                            isSettingUserRole
+                          }
+                          onClick={() => this.handleUserRoleChange(role)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    <Tooltip
+                      id="welcome-team-role-help"
+                      placement="bottom"
+                      tooltip={ROLE_DESCRIPTIONS['welcome-team']}
+                    >
                       <button
-                        key={role}
                         type="button"
                         className="btn btn-default"
+                        aria-describedby="welcome-team-role-description"
                         disabled={isSettingUserRole}
                         onClick={() =>
-                          this.handleUserRoleChange('shadowban', 'remove')
+                          this.handleUserRoleChange(
+                            'welcome-team',
+                            this.hasRole('welcome-team') ? 'remove' : 'add',
+                          )
                         }
                       >
-                        Unshadowban
+                        {this.hasRole('welcome-team')
+                          ? 'Remove greeter'
+                          : 'Make greeter'}
                       </button>
-                    ) : (
-                      <button
-                        key={role}
-                        className={`btn btn-${color}`}
-                        disabled={
-                          user.profile.roles.includes(role) || isSettingUserRole
-                        }
-                        onClick={() => this.handleUserRoleChange(role)}
-                      >
-                        {label}
-                      </button>
-                    ),
-                  )}
-                  <Tooltip
-                    id="welcome-team-role-help"
-                    placement="bottom"
-                    tooltip={ROLE_DESCRIPTIONS['welcome-team']}
-                  >
+                    </Tooltip>
+                    <span
+                      id="welcome-team-role-description"
+                      className="sr-only"
+                    >
+                      {ROLE_DESCRIPTIONS['welcome-team']}
+                    </span>
                     <button
                       type="button"
-                      className="btn btn-success"
-                      aria-describedby="welcome-team-role-description"
+                      className="btn btn-default"
                       disabled={isSettingUserRole}
+                      title={ROLE_DESCRIPTIONS['support-team']}
                       onClick={() =>
                         this.handleUserRoleChange(
-                          'welcome-team',
-                          this.hasRole('welcome-team') ? 'remove' : 'add',
+                          'support-team',
+                          this.hasRole('support-team') ? 'remove' : 'add',
                         )
                       }
                     >
-                      {this.hasRole('welcome-team')
-                        ? 'Remove greeter'
-                        : 'Make greeter'}
+                      {this.hasRole('support-team')
+                        ? 'Remove from support team'
+                        : 'Add to support team'}
                     </button>
-                  </Tooltip>
-                  <span id="welcome-team-role-description" className="sr-only">
-                    {ROLE_DESCRIPTIONS['welcome-team']}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn btn-default"
-                    disabled={isSettingUserRole}
-                    title={ROLE_DESCRIPTIONS['support-team']}
-                    onClick={() =>
-                      this.handleUserRoleChange(
-                        'support-team',
-                        this.hasRole('support-team') ? 'remove' : 'add',
-                      )
-                    }
-                  >
-                    {this.hasRole('support-team')
-                      ? 'Remove from support team'
-                      : 'Add to support team'}
-                  </button>
+                  </div>
                 </div>
               </div>
 
               <div id="roles" className="admin-user-roles">
                 <div className="panel-body">
-                  <ul className="list-inline">
+                  {user.profile.roles.some(role => role !== 'user') && (
+                    <span className="admin-user-action-label">
+                      Current roles
+                    </span>
+                  )}
+                  <ul className="list-inline" aria-label="Current roles">
                     {user.profile.roles
                       .filter(role => role !== 'user')
                       .map(role => (
@@ -925,293 +990,343 @@ export default class AdminUser extends Component<
                 </div>
               </div>
 
-              <h4 id="stats">
-                <a href="#stats">Stats</a>
-              </h4>
-              <div className="panel panel-default admin-user">
-                <div className="panel-body">
-                  <UserState user={user.profile} />
-                  <ul className="list-inline">
-                    <li>
-                      <strong>Messages</strong>
-                    </li>
-                    <li>{user.messageFromCount || 0} sent</li>
-                    <li>{user.messageToCount || 0} received</li>
-                    <li>
-                      <a href={`/admin/threads?userId=${user.profile._id}`}>
-                        {user.threadCount || 0} threads total
-                      </a>
-                    </li>
-                  </ul>
-                  <ul className="list-inline">
-                    <li>
-                      <strong>Thread votes received</strong>
-                    </li>
-                    <li>
-                      <a
-                        className="text-success"
-                        href="#thread-votes-received-positive"
-                      >
-                        {user.threadReferencesReceivedYes} positive
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        className="text-danger"
-                        href="#thread-votes-received-negative"
-                      >
-                        {user.threadReferencesReceivedNo} negative
-                      </a>
-                    </li>
-                  </ul>
-                  <ul className="list-inline">
-                    <li>
-                      <strong>Thread votes gave</strong>
-                    </li>
-                    <li>
-                      <a
-                        className="text-success"
-                        href="#thread-votes-gave-positive"
-                      >
-                        {user.threadReferencesSentYes} positive
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        className="text-danger"
-                        href="#thread-votes-gave-negative"
-                      >
-                        {user.threadReferencesSentNo} negative
-                      </a>
-                    </li>
-                  </ul>
-                  <p>
-                    <strong>{user.contacts.length} contact(s)</strong>
-                  </p>
-                  <p>
-                    <strong>
-                      {user.offers.length} hosting or meet offer(s)
-                    </strong>
-                  </p>
-                  <UserEmailConfirmLink user={user.profile} />
+              <div className="admin-member-report-grid">
+                <div className="admin-member-box admin-member-box--wide">
+                  <h4 id="stats">
+                    <a href="#stats">Stats</a>
+                  </h4>
+                  <section
+                    className="panel panel-default admin-user admin-member-stats"
+                    aria-labelledby="stats"
+                  >
+                    <div className="panel-body">
+                      <UserState user={user.profile} showRoles={false} />
+                      <div className="admin-member-stats-grid">
+                        <section
+                          className="admin-member-stat"
+                          aria-label="Messages"
+                        >
+                          <h5>Messages</h5>
+                          <p className="admin-member-stat-total">
+                            <a
+                              href={`/admin/threads?userId=${user.profile._id}`}
+                            >
+                              {user.threadCount || 0} threads total
+                            </a>
+                          </p>
+                          <ul>
+                            <li>{user.messageFromCount || 0} sent</li>
+                            <li>{user.messageToCount || 0} received</li>
+                          </ul>
+                        </section>
+                        <ExperienceStats
+                          title="Experiences received"
+                          stats={user.experiencesReceived}
+                        />
+                        <ExperienceStats
+                          title="Experiences written"
+                          stats={user.experiencesWritten}
+                        />
+                        <section
+                          className="admin-member-stat"
+                          aria-label="Thread votes received"
+                        >
+                          <h5>Thread votes received</h5>
+                          <ul>
+                            <li>
+                              <a
+                                className="text-success"
+                                href="#thread-votes-received-positive"
+                              >
+                                {user.threadReferencesReceivedYes || 0} positive
+                              </a>
+                            </li>
+                            <li>
+                              <a
+                                className="text-danger"
+                                href="#thread-votes-received-negative"
+                              >
+                                {user.threadReferencesReceivedNo || 0} negative
+                              </a>
+                            </li>
+                          </ul>
+                        </section>
+                        <section
+                          className="admin-member-stat"
+                          aria-label="Thread votes given"
+                        >
+                          <h5>Thread votes given</h5>
+                          <ul>
+                            <li>
+                              <a
+                                className="text-success"
+                                href="#thread-votes-gave-positive"
+                              >
+                                {user.threadReferencesSentYes || 0} positive
+                              </a>
+                            </li>
+                            <li>
+                              <a
+                                className="text-danger"
+                                href="#thread-votes-gave-negative"
+                              >
+                                {user.threadReferencesSentNo || 0} negative
+                              </a>
+                            </li>
+                          </ul>
+                        </section>
+                        <section
+                          className="admin-member-stat"
+                          aria-label="Connections and offers"
+                        >
+                          <h5>Connections and offers</h5>
+                          <ul>
+                            <li>{user.contacts.length} contacts</li>
+                            <li>{user.offers.length} hosting or meet offers</li>
+                          </ul>
+                        </section>
+                      </div>
+                      <p className="admin-member-stat-note">
+                        Experience recommendations cover published experiences;
+                        unpublished experiences are counted separately.
+                      </p>
+                      <div className="admin-member-email-status">
+                        <UserEmailConfirmLink user={user.profile} />
+                      </div>
+                    </div>
+                  </section>
                 </div>
-              </div>
 
-              {hasThreadVotes && (
-                <>
-                  <h4 id="thread-votes">
-                    <a href="#thread-votes">Thread votes</a>
+                {hasThreadVotes && (
+                  <div className="admin-member-box">
+                    <h4 id="thread-votes">
+                      <a href="#thread-votes">Thread votes</a>
+                    </h4>
+                    <div className="panel panel-default">
+                      <div className="panel-body">
+                        {threadVoteGroups.map(
+                          ({ id, label, votes }) =>
+                            votes.length > 0 && (
+                              <section id={id} key={id}>
+                                <h5>{label}</h5>
+                                <ul className="list-unstyled">
+                                  {votes.map(referenceThread => (
+                                    <AdminReferenceVoteItem
+                                      key={referenceThread._id}
+                                      referenceThread={referenceThread}
+                                      showBadge
+                                      showMessagesLink
+                                    />
+                                  ))}
+                                </ul>
+                              </section>
+                            ),
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="admin-member-box">
+                  <AdminNotes
+                    id={userId}
+                    refreshToken={this.state.notesRevision}
+                  />
+                </div>
+
+                {isRestricted && (
+                  <div className="admin-member-box admin-member-box--wide">
+                    <h4 id="potential-matches">
+                      <a href="#potential-matches">
+                        Potential related accounts
+                      </a>
+                    </h4>
+                    <div className="panel panel-warning">
+                      <div className="panel-body">
+                        <p className="text-muted">
+                          Investigation leads only. Matches do not change
+                          account state automatically.
+                        </p>
+                        <table className="table table-condensed table-striped">
+                          <thead>
+                            <tr>
+                              <th>Member</th>
+                              <th>Email</th>
+                              <th>Roles</th>
+                              <th>Matched on</th>
+                              <th>Acquisition story</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {potentialMatches.map(match => (
+                              <tr key={match._id}>
+                                <td>
+                                  <a href={getAdminUserHref(match)}>
+                                    {match.displayName || match.username}
+                                  </a>
+                                  <div className="text-muted">
+                                    @{match.username}
+                                  </div>
+                                </td>
+                                <td>{match.email}</td>
+                                <td>
+                                  {match.roles.map(formatRoleLabel).join(', ')}
+                                </td>
+                                <td>{match.matchReasons.join(', ')}</td>
+                                <td>{match.acquisitionStory}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {!potentialMatches.length && (
+                          <p>
+                            <em>No potential related accounts found.</em>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="admin-member-box">
+                  <h4 id="profile">
+                    <a href="#profile">Profile</a>
+                    <details className="admin-section-raw-data">
+                      <summary>raw data</summary>
+                      <Json content={user.profile} />
+                    </details>
                   </h4>
                   <div className="panel panel-default">
                     <div className="panel-body">
-                      {threadVoteGroups.map(
-                        ({ id, label, votes }) =>
-                          votes.length > 0 && (
-                            <section id={id} key={id}>
-                              <h5>{label}</h5>
-                              <ul className="list-unstyled">
-                                {votes.map(referenceThread => (
-                                  <AdminReferenceVoteItem
-                                    key={referenceThread._id}
-                                    referenceThread={referenceThread}
-                                    showBadge
-                                    showMessagesLink
-                                  />
-                                ))}
-                              </ul>
-                            </section>
-                          ),
-                      )}
+                      <InfoTable rows={profileRows} />
                     </div>
                   </div>
-                </>
-              )}
-
-              <AdminNotes id={userId} refreshToken={this.state.notesRevision} />
-
-              {isRestricted && (
-                <>
-                  <h4 id="potential-matches">
-                    <a href="#potential-matches">Potential related accounts</a>
-                  </h4>
-                  <div className="panel panel-warning">
-                    <div className="panel-body">
-                      <p className="text-muted">
-                        Investigation leads only. Matches do not change account
-                        state automatically.
-                      </p>
-                      <table className="table table-condensed table-striped">
-                        <thead>
-                          <tr>
-                            <th>Member</th>
-                            <th>Email</th>
-                            <th>Roles</th>
-                            <th>Matched on</th>
-                            <th>Acquisition story</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {potentialMatches.map(match => (
-                            <tr key={match._id}>
-                              <td>
-                                <a href={getAdminUserHref(match)}>
-                                  {match.displayName || match.username}
-                                </a>
-                                <div className="text-muted">
-                                  @{match.username}
-                                </div>
-                              </td>
-                              <td>{match.email}</td>
-                              <td>
-                                {match.roles.map(formatRoleLabel).join(', ')}
-                              </td>
-                              <td>{match.matchReasons.join(', ')}</td>
-                              <td>{match.acquisitionStory}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {!potentialMatches.length && (
-                        <p>
-                          <em>No potential related accounts found.</em>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              <h4 id="profile">
-                <a href="#profile">Profile</a>
-                <details className="admin-section-raw-data">
-                  <summary>raw data</summary>
-                  <Json content={user.profile} />
-                </details>
-              </h4>
-              <div className="panel panel-default">
-                <div className="panel-body">
-                  <InfoTable rows={profileRows} />
                 </div>
               </div>
             </>
           )}
 
           {user && (
-            <>
-              <h4 id="offers">
-                <a href="#offers">Hosting & meeting offers</a>
-              </h4>
-              <div className="panel panel-default">
-                <div className="panel-body">
-                  {user.offers.length ? (
-                    user.offers.map(offer => {
-                      const formattedLocation = formatLocation(offer.location);
-                      const searchLocation = formatLocationForSearch(
-                        offer.location,
-                      );
+            <div className="admin-member-report-grid">
+              <div className="admin-member-box">
+                <h4 id="offers">
+                  <a href="#offers">Hosting & meeting offers</a>
+                </h4>
+                <div className="panel panel-default">
+                  <div className="panel-body">
+                    {user.offers.length ? (
+                      user.offers.map(offer => {
+                        const formattedLocation = formatLocation(
+                          offer.location,
+                        );
+                        const searchLocation = formatLocationForSearch(
+                          offer.location,
+                        );
 
-                      return (
-                        <div className="admin-readable-item" key={offer._id}>
-                          <InfoTable
-                            rows={[
-                              ['Type', offer.type],
-                              ['Status', offer.status],
-                              ['Description', offer.description],
-                              ['Location', formattedLocation],
-                              ['Created', formatAdminUtcDate(offer.created)],
-                              ['Updated', formatAdminUtcDate(offer.updated)],
-                            ]}
-                          />
-                          <p>
-                            <a
-                              href={`/search?offer=${offer._id}`}
-                              className="btn btn-sm btn-default"
-                            >
-                              Show offer on map
-                            </a>
-                            {formattedLocation && (
+                        return (
+                          <div className="admin-readable-item" key={offer._id}>
+                            <InfoTable
+                              rows={[
+                                ['Type', offer.type],
+                                ['Status', offer.status],
+                                ['Description', offer.description],
+                                ['Location', formattedLocation],
+                                ['Created', formatAdminUtcDate(offer.created)],
+                                ['Updated', formatAdminUtcDate(offer.updated)],
+                              ]}
+                            />
+                            <p>
                               <a
-                                href={`/search?location=${searchLocation}`}
+                                href={`/search?offer=${offer._id}`}
                                 className="btn btn-sm btn-default"
                               >
-                                Show location on map
+                                Show offer on map
                               </a>
-                            )}
-                          </p>
-                          <details>
-                            <summary>Raw offer data</summary>
-                            <Json content={offer} />
-                          </details>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <p>
-                      <em>{"Member doesn't have any saved offers."}</em>
-                    </p>
-                  )}
+                              {formattedLocation && (
+                                <a
+                                  href={`/search?location=${searchLocation}`}
+                                  className="btn btn-sm btn-default"
+                                >
+                                  Show location on map
+                                </a>
+                              )}
+                            </p>
+                            <details>
+                              <summary>Raw offer data</summary>
+                              <Json content={offer} />
+                            </details>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <p>
+                        <em>{"Member doesn't have any saved offers."}</em>
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
+              <div className="admin-member-box">
+                <h4 id="contacts">
+                  <a href="#contacts">Contacts</a>
+                </h4>
+                <div className="panel panel-default">
+                  <div className="panel-body">
+                    {user.contacts.length ? (
+                      <table className="table table-condensed table-striped">
+                        <thead>
+                          <tr>
+                            <th>Member</th>
+                            <th>Created</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[...user.contacts]
+                            .sort(newestFirstByCreated)
+                            .map(contact => {
+                              const contactMember = getContactOtherMember(
+                                contact,
+                                userId,
+                              );
+                              const contactName =
+                                get(contactMember, ['username']) ||
+                                get(contactMember, ['displayName']) ||
+                                'Unknown member';
+                              const contactMemberId = get(contactMember, [
+                                '_id',
+                              ]);
 
-              <h4 id="contacts">
-                <a href="#contacts">Contacts</a>
-              </h4>
-              <div className="panel panel-default">
-                <div className="panel-body">
-                  {user.contacts.length ? (
-                    <table className="table table-condensed table-striped">
-                      <thead>
-                        <tr>
-                          <th>Member</th>
-                          <th>Created</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {[...user.contacts]
-                          .sort(newestFirstByCreated)
-                          .map(contact => {
-                            const contactMember = getContactOtherMember(
-                              contact,
-                              userId,
-                            );
-                            const contactName =
-                              get(contactMember, ['username']) ||
-                              get(contactMember, ['displayName']) ||
-                              'Unknown member';
-                            const contactMemberId = get(contactMember, ['_id']);
-
-                            return (
-                              <tr key={contact._id}>
-                                <td>
-                                  {contactMemberId ? (
-                                    <a
-                                      href={getAdminUserHref({
-                                        _id: contactMemberId,
-                                        username: get(contactMember, [
-                                          'username',
-                                        ]),
-                                      })}
-                                    >
-                                      {contactName}
-                                    </a>
-                                  ) : (
-                                    contactName
-                                  )}
-                                </td>
-                                <td>{formatAdminUtcDate(contact.created)}</td>
-                              </tr>
-                            );
-                          })}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <p>
-                      <em>{"Member doesn't have any contacts."}</em>
-                    </p>
-                  )}
+                              return (
+                                <tr key={contact._id}>
+                                  <td>
+                                    {contactMemberId ? (
+                                      <a
+                                        href={getAdminUserHref({
+                                          _id: contactMemberId,
+                                          username: get(contactMember, [
+                                            'username',
+                                          ]),
+                                        })}
+                                      >
+                                        {contactName}
+                                      </a>
+                                    ) : (
+                                      contactName
+                                    )}
+                                  </td>
+                                  <td>{formatAdminUtcDate(contact.created)}</td>
+                                </tr>
+                              );
+                            })}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <p>
+                        <em>{"Member doesn't have any contacts."}</em>
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </>
+            </div>
           )}
           {isProfile && user.profile.username && viewer?._id && (
             <section

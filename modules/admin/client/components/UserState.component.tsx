@@ -22,7 +22,13 @@ interface UserStateUser {
   public?: boolean;
 }
 
-export default function UserState({ user }: { user: UserStateUser }) {
+export default function UserState({
+  user,
+  showRoles = true,
+}: {
+  user: UserStateUser;
+  showRoles?: boolean;
+}) {
   const {
     email,
     emailTemporary,
@@ -36,7 +42,8 @@ export default function UserState({ user }: { user: UserStateUser }) {
   return (
     <div className="admin-user-state">
       {/* What special roles user has? */}
-      {roles &&
+      {showRoles &&
+        roles &&
         roles.length &&
         roles
           .filter(role => role !== 'user')

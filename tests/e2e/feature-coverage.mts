@@ -3182,11 +3182,17 @@ const features = [
       'Admin report shows the member public profile below moderation information.',
       'Restricted member report shows potential related accounts.',
       'Missing user id shows a usable error state.',
+      'Member statistics show received and written experiences with separate unpublished counts.',
+      'Removed experiences are excluded and activity cards fit mobile screens.',
     ],
     relatedSpecs: [
       spec(
         'admin-inspection.spec.js',
         'admin user report card shows message counts for a shadowbanned member',
+      ),
+      spec(
+        'admin-member-stats.spec.ts',
+        'admin member statistics distinguish published, unpublished and removed experiences',
       ),
     ],
   },

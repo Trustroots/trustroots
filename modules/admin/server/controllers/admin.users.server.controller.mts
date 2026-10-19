@@ -7,6 +7,7 @@ import mongoose, {
   type HydratedDocument,
   type Types,
   type UpdateQuery,
+  type PipelineStage,
 } from 'mongoose';
 import net from 'net';
 import { prepareStaffBlockers } from '../services/staff-blockers-payload.server.service.mts';
@@ -132,6 +133,7 @@ interface AdminNext {
 
 const AdminNote = mongoose.model<AdminNoteRecord>('AdminNote');
 const Contact = mongoose.model<ContactRecord>('Contact');
+const Experience = mongoose.model('Experience');
 const Message = mongoose.model<MessageRecord>('Message');
 const Offer = mongoose.model<OfferRecord>('Offer');
 const ReferenceThread =
@@ -199,6 +201,50 @@ const USER_LIST_FIELDS = [
 ];
 
 const POTENTIAL_MATCH_FIELDS = [...USER_LIST_FIELDS, 'acquisitionStory'];
+
+const EMPTY_EXPERIENCE_STATS = {
+  total: 0,
+  positive: 0,
+  negative: 0,
+  neutral: 0,
+  unpublished: 0,
+};
+
+function experienceStatsStages(
+  field: 'userFrom' | 'userTo',
+  userId: Types.ObjectId,
+): PipelineStage.FacetPipelineStage[] {
+  const publishedRecommendation = (
+    recommendation: 'yes' | 'no' | 'unknown',
+  ) => ({
+    $sum: {
+      $cond: [
+        {
+          $and: [
+            { $eq: ['$public', true] },
+            { $eq: ['$recommend', recommendation] },
+          ],
+        },
+        1,
+        0,
+      ],
+    },
+  });
+  return [
+    { $match: { [field]: userId } },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: 1 },
+        positive: publishedRecommendation('yes'),
+        negative: publishedRecommendation('no'),
+        neutral: publishedRecommendation('unknown'),
+        unpublished: { $sum: { $cond: [{ $eq: ['$public', false] }, 1, 0] } },
+      },
+    },
+    { $project: { _id: 0 } },
+  ];
+}
 
 /**
  * Overwrite tokens from results as a security measure.
@@ -633,6 +679,23 @@ export const getUser = async (
 
     const offers = await Offer.find({ user: userId });
 
+    // Aggregations do not cast IDs, unlike Mongoose find queries.
+    const experienceUserId = user._id;
+    const [experienceStats] = await Experience.aggregate([
+      {
+        $match: {
+          removedAt: { $exists: false },
+          $or: [{ userFrom: experienceUserId }, { userTo: experienceUserId }],
+        },
+      },
+      {
+        $facet: {
+          received: experienceStatsStages('userTo', experienceUserId),
+          written: experienceStatsStages('userFrom', experienceUserId),
+        },
+      },
+    ]);
+
     const isRestricted = ['shadowban', 'suspended'].some(role =>
       user.roles.includes(role),
     );
@@ -642,6 +705,14 @@ export const getUser = async (
 
     res.send({
       contacts: contacts || [],
+      experiencesReceived: {
+        ...EMPTY_EXPERIENCE_STATS,
+        ...experienceStats.received[0],
+      },
+      experiencesWritten: {
+        ...EMPTY_EXPERIENCE_STATS,
+        ...experienceStats.written[0],
+      },
       messageFromCount,
       messageToCount,
       offers: offers || [],

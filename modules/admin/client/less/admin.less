@@ -3,15 +3,67 @@
 .navbar-admin {
   margin-top: @navbar-height;
   margin-bottom: 0;
+  padding: 16px 0;
+  border-bottom: 1px solid @gray-lighter;
+
+  > .container {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .navbar-header {
+    float: none;
+  }
+
+  .navbar-brand {
+    float: none;
+    display: inline-block;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
 
   .navbar-nav {
+    float: none;
+    display: flex;
     flex-direction: row;
     flex-wrap: wrap;
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
   .navbar-nav > li > a {
     display: block;
-    padding: 10px 12px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: @gray-dark;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+    text-decoration: none;
+
+    &:hover {
+      color: darken(@brand-primary, 15%);
+      background: @gray-lighter;
+    }
+
+    &:focus-visible {
+      outline: 2px solid darken(@brand-primary, 10%);
+      outline-offset: 2px;
+    }
+  }
+
+  .navbar-nav > .active > a {
+    color: darken(@brand-primary, 20%);
+    background: fade(@brand-primary, 10%);
+    font-weight: 600;
   }
 
   + .container {
@@ -336,16 +388,128 @@ td:hover .admin-hidden-until-hover {
 .admin-user-actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-start;
-  gap: 8px;
+  align-items: flex-end;
+  gap: 16px 24px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid @gray-lighter;
+  border-radius: 8px;
 
   .btn {
-    margin-bottom: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    margin: 0;
+    padding: 8px 12px;
+    border: 1px solid darken(@gray-lighter, 8%);
+    border-radius: 6px;
+    background: #fff;
+    color: @gray-dark;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 20px;
+    text-decoration: none;
+    box-shadow: none;
+
+    &:hover:not(:disabled) {
+      background: @body-bg;
+      border-color: @gray-light;
+      color: @gray-darker;
+    }
+
+    &:focus-visible {
+      outline: 2px solid darken(@brand-primary, 10%);
+      outline-offset: 2px;
+    }
+
+    &:disabled {
+      color: @gray;
+      background: @gray-lighter;
+      border-color: @gray-lighter;
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+  }
+
+  .btn-danger {
+    color: darken(@brand-danger, 15%);
+    background: fade(@brand-danger, 5%);
+    border-color: fade(@brand-danger, 30%);
+
+    &:hover:not(:disabled) {
+      color: darken(@brand-danger, 20%);
+      background: fade(@brand-danger, 12%);
+      border-color: @brand-danger;
+    }
   }
 }
 
-.admin-user-roles .panel-body {
-  padding: 0;
+.admin-user-action-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-user-action-label {
+  flex-basis: 100%;
+  color: @gray;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.admin-user-roles {
+  .panel-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 12px;
+    padding: 0;
+  }
+
+  .admin-user-action-label {
+    flex-basis: auto;
+  }
+
+  .list-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    padding: 0;
+  }
+
+  li > a,
+  li > span:not(.sr-only) {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border: 1px solid darken(@gray-lighter, 5%);
+    border-radius: 20px;
+    background: #fff;
+    color: @gray-dark;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 20px;
+    text-decoration: none;
+
+    &:focus-visible {
+      outline: 2px solid darken(@brand-primary, 10%);
+      outline-offset: 2px;
+    }
+  }
+
+  li > a:hover {
+    color: darken(@brand-primary, 20%);
+    background: fade(@brand-primary, 8%);
+    border-color: fade(@brand-primary, 40%);
+  }
 }
 
 .admin-user-embedded-profile {
@@ -748,5 +912,230 @@ td:hover .admin-hidden-until-hover {
 
   .support-inbox__members {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.admin-member-stats {
+  border-radius: 8px;
+
+  .panel-body {
+    padding: 16px;
+  }
+
+  .admin-user-state:empty {
+    display: none;
+  }
+}
+
+.admin-member-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+
+  @media (max-width: 991px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 599px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.admin-member-stat {
+  padding: 16px;
+  border: 1px solid @gray-lighter;
+  border-radius: 6px;
+  background: @body-bg;
+
+  h5 {
+    margin: 0 0 12px;
+    color: @gray;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+
+    &:focus-visible {
+      outline: 2px solid darken(@brand-primary, 10%);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.admin-member-stat-total {
+  margin: 0 0 10px;
+  color: @gray-dark;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+
+  a {
+    color: inherit;
+  }
+}
+
+.admin-member-stat-note {
+  margin: 12px 0 0;
+  color: @gray;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.admin-member-email-status:not(:empty) {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid @gray-lighter;
+}
+
+// Member reports use the available desktop width; public profiles stay contained.
+@media (min-width: 1200px) {
+  .navbar-admin > .container,
+  .container.admin-user-page {
+    width: 100%;
+    max-width: none;
+    padding-right: 24px;
+    padding-left: 24px;
+  }
+}
+
+.admin-user-page {
+  padding-bottom: 20px;
+
+  .admin-user-report-header {
+    gap: 10px;
+    margin-bottom: 10px;
+
+    h3 {
+      font-size: 22px;
+    }
+  }
+
+  .admin-user-actions {
+    gap: 12px 20px;
+    padding: 12px;
+
+    .btn {
+      min-height: 34px;
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+  }
+
+  .admin-user-roles {
+    margin-bottom: 14px;
+  }
+}
+
+.admin-member-report-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  @media (max-width: 991px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.admin-member-box {
+  min-width: 0;
+  border: 1px solid @gray-lighter;
+  border-radius: 8px;
+  background: #fff;
+
+  > h4 {
+    margin: 0;
+    padding: 10px 14px;
+    border-bottom: 1px solid @gray-lighter;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.5;
+
+    > a {
+      color: @gray-dark;
+    }
+  }
+
+  > .panel {
+    margin: 0;
+    border: 0;
+    border-radius: 0 0 8px 8px;
+    box-shadow: none;
+
+    > .panel-body {
+      padding: 12px 14px;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .admin-readable-table {
+    table-layout: fixed;
+    margin-bottom: 0;
+  }
+
+  .table:last-child,
+  .panel-body > p:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.admin-member-box--wide {
+  grid-column: ~'1 / -1';
+}
+
+.admin-member-stats-grid {
+  gap: 10px;
+
+  @media (min-width: 1440px) {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+.admin-member-stat {
+  padding: 12px;
+
+  h5 {
+    margin-bottom: 8px;
+  }
+  ul {
+    gap: 4px 12px;
+  }
+}
+
+.admin-member-stat-total {
+  font-size: 20px;
+}
+.admin-member-stats .admin-user-state .admin-label {
+  font-size: 12px;
+}
+
+.admin-user-page .admin-user-embedded-profile {
+  margin-top: 0;
+  padding: 14px;
+  border: 1px solid @gray-lighter;
+  border-radius: 8px;
+  background: #fff;
+
+  > h4 {
+    margin-top: 0;
+    font-size: 15px;
+    font-weight: 600;
   }
 }

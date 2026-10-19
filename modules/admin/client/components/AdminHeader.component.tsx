@@ -65,12 +65,20 @@ export default function AdminHeader() {
         active: currentPath === path,
       })}
     >
-      <a href={`/admin/${path}`}>{label}</a>
+      <a
+        href={`/admin/${path}`}
+        aria-current={currentPath === path ? 'page' : undefined}
+      >
+        {label}
+      </a>
     </li>
   );
 
   return (
-    <nav className="navbar navbar-white navbar-admin">
+    <nav
+      className="navbar navbar-white navbar-admin"
+      aria-label="Administration"
+    >
       <div className="container">
         <div className="navbar-header">
           <a
@@ -100,8 +108,6 @@ export default function AdminHeader() {
                   page.path === 'location-corrections'),
             )
             .map(page => renderTab(page))}
-        </ul>
-        <ul className="nav navbar-nav pull-right">
           {isAdmin && renderTab({ path: 'audit-log', label: 'Audit log' })}
         </ul>
       </div>

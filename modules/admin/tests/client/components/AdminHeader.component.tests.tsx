@@ -100,6 +100,16 @@ describe('<AdminHeader />', () => {
       screen.getByRole('link', { name: 'Messages' }).closest('li'),
     ).toHaveClass('active');
     expect(
+      screen.getByRole('navigation', { name: 'Administration' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Messages' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(screen.getByRole('link', { name: 'Threads' })).not.toHaveAttribute(
+      'aria-current',
+    );
+    expect(
       screen.getByRole('link', { name: 'Threads' }).closest('li'),
     ).not.toHaveClass('active');
   });
