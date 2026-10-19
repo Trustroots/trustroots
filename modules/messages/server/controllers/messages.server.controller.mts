@@ -25,6 +25,7 @@ import type {
 } from '../../shared/messages.js';
 import type { MessageRecord } from '../models/message.server.model.mts';
 import type { ThreadRecord } from '../models/thread.server.model.mts';
+import type { OfferServerRecord } from '../../../offers/server/models/offer.server.types.mts';
 import {
   prepareMarkReadSelector,
   prepareMarkReadResponse,
@@ -244,6 +245,7 @@ const Thread = mongoose.model<ThreadEndpointRecord>(
 const User = mongoose.model<MessageUser>(
   'User',
 ) as unknown as UserEndpointModel;
+const Offer = mongoose.model<OfferServerRecord>('Offer');
 type ObjectIdInput = Parameters<typeof mongoose.Types.ObjectId.isValid>[0];
 function isValidObjectId(value: unknown): value is ObjectIdInput {
   return mongoose.Types.ObjectId.isValid(value as ObjectIdInput);
@@ -595,6 +597,26 @@ service.send = async function (req, res) {
       ],
     });
     if (!existingThread) {
+      if (body.hostingDescriptionAcknowledged !== true) {
+        const requiredOffer = await Offer.findOne({
+          user: new mongoose.Types.ObjectId(body.userTo as string),
+          type: 'host',
+          requireHostingDescriptionAcknowledgement: true,
+          $or: [
+            { validUntil: { $gte: new Date() } },
+            { validUntil: { $exists: false } },
+          ],
+        })
+          .select('_id')
+          .exec();
+        if (requiredOffer) {
+          return res.status(400).send({
+            error: 'hosting-description-acknowledgement-required',
+            message:
+              'Please acknowledge this host’s hosting description and requirements before sending your first message.',
+          });
+        }
+      }
       // Stryker disable next-line StringLiteral: an empty projection returns the whole user, which still includes the description
       const sender = await User.findById(user._id, 'description').exec();
       const descriptionLength = sender?.description

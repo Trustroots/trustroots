@@ -15,6 +15,7 @@ const offerUpdateFields = [
   'meetingStatus',
   'volunteering',
   'showOnlyInMyCircles',
+  'requireHostingDescriptionAcknowledgement',
 ] as const;
 
 export type OfferUpdateInput = Partial<
@@ -49,6 +50,12 @@ export function prepareOfferPayload<Id, Timestamp>(
     ...(offer.showOnlyInMyCircles === undefined
       ? {}
       : { showOnlyInMyCircles: offer.showOnlyInMyCircles }),
+    ...(offer.requireHostingDescriptionAcknowledgement === undefined
+      ? {}
+      : {
+          requireHostingDescriptionAcknowledgement:
+            offer.requireHostingDescriptionAcknowledgement,
+        }),
   };
 }
 

@@ -12,12 +12,14 @@ type ThreadReplyProps = {
   onSend: (content: string) => Promise<unknown>;
   cacheKey?: string;
   autoFocus?: boolean;
+  disabled?: boolean;
 };
 
 export default function ThreadReply({
   onSend,
   cacheKey,
   autoFocus = false,
+  disabled = false,
 }: ThreadReplyProps) {
   const { t } = useTranslation('messages');
   const sendShortcut = navigator.platform.startsWith('Mac')
@@ -117,7 +119,7 @@ export default function ThreadReply({
     event.preventDefault();
     event.stopPropagation();
 
-    if (sending) {
+    if (sending || disabled) {
       return;
     }
 
@@ -281,7 +283,7 @@ export default function ThreadReply({
           intent="primary"
           className="message-reply-btn"
           type="submit"
-          disabled={sending}
+          disabled={sending || disabled}
         >
           <i className="icon-send" />
           <span className="tw:max-sm:hidden">&nbsp;{t('Send')}</span>

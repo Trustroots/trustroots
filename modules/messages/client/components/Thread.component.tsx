@@ -20,6 +20,8 @@ import ThreadReply from '@/modules/messages/client/components/ThreadReply';
 import ActivateProfileNotice from '@/modules/users/client/components/ActivateProfileNotice.component';
 import ThreadMessages from '@/modules/messages/client/components/ThreadMessages';
 import QuickReply from '@/modules/messages/client/components/QuickReply';
+import RichText from '@/modules/core/client/components/RichText';
+import { getOffers } from '@/modules/offers/client/api/offers.api';
 import Flashcard from '@/modules/messages/client/components/Flashcard';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import YourConnection from '@/modules/contacts/client/components/YourConnection';
@@ -156,6 +158,12 @@ export default function Thread({
   const [failedToLoad, setFailedToLoad] = useState(false);
   const [removed, setRemoved] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [hostingOffer, setHostingOffer] = useState<{
+    description?: string;
+    requireHostingDescriptionAcknowledgement?: boolean;
+  } | null>(null);
+  const [hostingDescriptionAcknowledged, setHostingDescriptionAcknowledged] =
+    useState(false);
   const cacheKey = `messages.thread.${user._id}-${username}`;
   const isBlocked = user.blocked?.includes(otherUser?._id || '');
 
@@ -169,6 +177,10 @@ export default function Thread({
   );
   const showReply = (messages.length > 0 || !hasEmptyProfile) && !removed;
   const showQuickReply = showReply && messages.length > 0 && !userHasReplied;
+  const requiresHostingAcknowledgement = Boolean(
+    messages.length === 0 &&
+    hostingOffer?.requireHostingDescriptionAcknowledgement,
+  );
 
   const isExtraSmall = useMediaQuery('(max-width: 767px)');
 
@@ -266,6 +278,21 @@ export default function Thread({
       const { messages, nextParams } = await api.messages.fetchMessages(
         otherUser._id,
       );
+      if (messages.length === 0 && !userRemoved) {
+        let offers: Awaited<ReturnType<typeof getOffers>>;
+        try {
+          offers = await getOffers(otherUser._id, 'host');
+        } catch {
+          setFailedToLoad(true);
+          return;
+        }
+        setHostingOffer(
+          offers.find(
+            offer => offer.requireHostingDescriptionAcknowledgement,
+          ) || null,
+        );
+        setHostingDescriptionAcknowledged(false);
+      }
       setOtherUser(otherUser);
       const sortedMessages = messages.sort((a, b) =>
         a.created.localeCompare(b.created),
@@ -299,27 +326,32 @@ export default function Thread({
   }
 
   async function sendMessage(content: string, via: 'editor' | 'quick_reply') {
-    const apiResponse = await api.messages
-      .sendMessage((otherUser as MessageUser)._id, content)
-      .catch(error => {
-        track('message_send_failed', {
-          reason: messageSendFailureReason(error),
-        });
-        // Too many requests - error
-        if (error?.response?.status === 429) {
-          window.alert(
-            t(
-              'You are writing to too many people too fast. Slow down and try later again.',
-            ),
-          );
-        } else {
-          window.alert(
-            t(
-              'Failed to send the message. Perhaps your internet went down? Please try again.',
-            ),
-          );
-        }
+    const sendMessageRequest = requiresHostingAcknowledgement
+      ? api.messages.sendMessage(
+          (otherUser as MessageUser)._id,
+          content,
+          hostingDescriptionAcknowledged,
+        )
+      : api.messages.sendMessage((otherUser as MessageUser)._id, content);
+    const apiResponse = await sendMessageRequest.catch(error => {
+      track('message_send_failed', {
+        reason: messageSendFailureReason(error),
       });
+      // Too many requests - error
+      if (error?.response?.status === 429) {
+        window.alert(
+          t(
+            'You are writing to too many people too fast. Slow down and try later again.',
+          ),
+        );
+      } else {
+        window.alert(
+          t(
+            'Failed to send the message. Perhaps your internet went down? Please try again.',
+          ),
+        );
+      }
+    });
 
     // Failed to send message
     if (!apiResponse?.data) {
@@ -446,12 +478,42 @@ export default function Thread({
                 />
               )}
               {!isBlocked && showReply && (
-                <ThreadReply
-                  key={cacheKey}
-                  cacheKey={cacheKey}
-                  autoFocus={!isExtraSmall}
-                  onSend={content => sendMessage(content, 'editor')}
-                />
+                <>
+                  {requiresHostingAcknowledgement && (
+                    <section
+                      className="hosting-description-acknowledgement"
+                      aria-label={t('Hosting description and requirements')}
+                    >
+                      <h4>{t('Hosting description and requirements')}</h4>
+                      <RichText content={hostingOffer?.description || ''} />
+                      <label>
+                        <input
+                          type="checkbox"
+                          required
+                          checked={hostingDescriptionAcknowledged}
+                          onChange={event =>
+                            setHostingDescriptionAcknowledged(
+                              event.target.checked,
+                            )
+                          }
+                        />{' '}
+                        {t(
+                          'I have read this host’s hosting description and requirements.',
+                        )}
+                      </label>
+                    </section>
+                  )}
+                  <ThreadReply
+                    key={cacheKey}
+                    cacheKey={cacheKey}
+                    autoFocus={!isExtraSmall}
+                    onSend={content => sendMessage(content, 'editor')}
+                    disabled={
+                      requiresHostingAcknowledgement &&
+                      !hostingDescriptionAcknowledged
+                    }
+                  />
+                </>
               )}
               {removed && (
                 <div className="panel panel-default">

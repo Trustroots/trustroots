@@ -243,14 +243,6 @@ vi.mock('@/modules/messages/client/components/Inbox.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => <main>Inbox {user?.username}</main>,
 }));
-vi.mock(
-  '@/modules/references-thread/client/components/ReferenceThread',
-  () => ({
-    default: ({ userToId }: { userToId: string }) => (
-      <p>References for {userToId}</p>
-    ),
-  }),
-);
 vi.mock('@/modules/messages/client/components/Thread.component', () => ({
   __esModule: true,
   default: ({ user }: UserRouteProps) => (
@@ -768,9 +760,9 @@ describe('React route ownership', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('composes the reference panel into the message thread route', () => {
+  it('renders the message thread route for an authenticated member', () => {
     const { container } = renderRoute(findRoute('/messages/bob'));
-    expect(container).toHaveTextContent('References for thread-member');
+    expect(container).toHaveTextContent('Thread');
   });
 
   it('renders circle list and detail routes for guests and members', () => {

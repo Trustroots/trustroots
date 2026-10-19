@@ -302,8 +302,23 @@
   }
 }
 
+
 // Enter and Shift+Enter both advance one line.
 .message-bubble .panel-body p,
 #message-reply-content p {
   margin-block: 0;
+}
+
+.hosting-description-acknowledgement {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 40vh;
+  overflow-y: auto;
+  padding: 12px;
+  background: white;
+  border: 1px solid #ddd;
+  label {
+    display: block;
+    margin-top: 12px;
+  }
 }
