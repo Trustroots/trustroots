@@ -324,8 +324,6 @@ function initHelmetHeaders(app: Express) {
         // Defines the origins from which images can be loaded.
         imgSrc: [
           "'self'",
-          'https://hosted.weblate.org',
-          // Translation tool, used on /statistics page
           'grafana.trustroots.org',
           // Stats tool, used on /statistics page
           'https://*.tiles.mapbox.com',

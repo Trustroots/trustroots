@@ -468,15 +468,6 @@ export default function Statistics({
                   />
                 </a>
               </Stat>
-
-              <Stat title={t('Translation status')} className="is-graph">
-                <a href="https://hosted.weblate.org/engage/trustroots/">
-                  <StatisticsImage
-                    alt={t('Translation status')}
-                    src="https://hosted.weblate.org/widgets/trustroots/-/horizontal-auto.svg"
-                  />
-                </a>
-              </Stat>
             </Grid>
 
             <hr />

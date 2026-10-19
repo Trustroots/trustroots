@@ -31,7 +31,6 @@
     {% endfor %} {% endif %}
     <link rel="dns-prefetch" href="//api.tiles.mapbox.com" />
     <link rel="dns-prefetch" href="//gravatar.com" />
-    <link rel="dns-prefetch" href="//ucarecdn.com" />
 
     <meta name="description" content="{{description}}" />
     {% if googlePage !== '' %}
@@ -178,10 +177,10 @@
     {{tribe.label | striptags | replace('"', '\'')}}. Trustroots is a
     travellers' community for sharing, hosting and getting people together.">
     <meta name="twitter:url" content="{{hostPort}}/circles/{{tribe.slug}}" />
-    {% if tribe.image_UUID %}
+    {% if tribe.image %}
     <meta
       name="twitter:image"
-      content="https://ucarecdn.com/{{tribe.image_UUID}}/-/progressive/yes/-/scale_crop/1200x630/center/-/quality/lightest/-/format/jpeg/-/overlay/b72e2604-e926-4e17-acbd-e37c0e1f5c73/50%25x50%25/center/{{tribe.slug}}.jpg"
+      content="{{hostPort}}/uploads-circle/{{tribe.slug}}/1400x900.jpg"
     />
     {% else %}
     <meta name="twitter:image" content="{{hostPort}}/img/og_image.jpg" />
