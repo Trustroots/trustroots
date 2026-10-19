@@ -56,7 +56,6 @@ let offer1: OfferRecord;
 let offer2: OfferDocument;
 let offer2Id: OfferDocument['_id'];
 let offer3: OfferDocument;
-let offerMeet: OfferDocument;
 let tribe1: TribeDocument;
 let tribe2: TribeDocument;
 let tribe1Id: TribeDocument['_id'];
@@ -95,6 +94,73 @@ const testLocations = {
     location: [80.912672, 79.732322],
   },
 };
+
+/**
+ * Plain request payload for a meet offer; Mongoose documents can't be sent as request bodies
+ */
+function meetOfferPayload(overrides?: Partial<OfferRecord>): OfferRecord {
+  return Object.assign(
+    {
+      type: 'meet',
+      description: '<p>Dinner party!</p>',
+      location: testLocations.Europe.location,
+    },
+    overrides,
+  );
+}
+
+/**
+ * Time window in which a defaulted `validUntil` ("30 days from now") has to fall,
+ * given the moments just before and after the request was made
+ */
+function expectDefaultValidUntil(
+  validUntil: Date | undefined,
+  before: Date,
+  after: Date,
+): asserts validUntil is Date {
+  assertPresent(validUntil);
+  validUntil.should.be.instanceof(Date);
+  validUntil
+    .getTime()
+    .should.be.within(
+      moment(before).add(30, 'days').valueOf(),
+      moment(after).add(30, 'days').valueOf(),
+    );
+}
+
+async function signIn(user: Credentials) {
+  await agent.post('/api/auth/signin').send(user).expect(200);
+}
+
+async function postMeetOffer(payload: OfferRecord) {
+  const before = new Date();
+  await agent.post('/api/offers').send(payload).expect(200);
+  const after = new Date();
+  const offer = await Offer.findOne({ user: user1Id });
+  assertPresent(offer);
+  return { offer, before, after };
+}
+
+async function putOffer(
+  offerId: OfferDocument['_id'],
+  payload: Partial<OfferRecord>,
+) {
+  const before = new Date();
+  await agent
+    .put('/api/offers/' + offerId)
+    .send(payload)
+    .expect(200);
+  const after = new Date();
+  const offer = await Offer.findById(offerId);
+  assertPresent(offer);
+  return { offer, before, after };
+}
+
+async function saveMeetOffer(validUntil: Date) {
+  return new Offer(
+    meetOfferPayload({ user: user1Id, validUntil, updated: new Date() }),
+  ).save();
+}
 
 /**
  * Offer routes tests
@@ -189,13 +255,7 @@ describe('Offer CRUD tests', function () {
       updated: new Date(),
       location: [52.49898120929877, 13.41832995414733],
     });
-    offerMeet = new Offer({
-      type: 'meet',
-      description: '<p>Dinner party!</p>',
-      validUntil: moment().add(30, 'day').toDate(),
-      updated: new Date(),
-      location: [52.49898120929888, 13.41832995414744],
-    });
+
     tribe1 = new Tribe({
       slug: 'tribe1',
       label: 'tribe1',
@@ -662,129 +722,45 @@ describe('Offer CRUD tests', function () {
             });
         });
     });
-    it.skip('should be able to set `validUntil`', function (done) {
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-          offerMeet.validUntil = moment().add(5, 'days').toDate();
 
-          // Post offer
-          agent
-            .post('/api/offers')
-            .send(offerMeet)
-            .expect(200)
-            .end(function (offerPostErr) {
-              // Handle offer post error
-              if (offerPostErr) return done(offerPostErr);
-              agent
-                .get('/api/offers-by/' + user1Id)
-                .expect(200)
-                .end(function (offersByErr, offers) {
-                  if (offersByErr) return done(offersByErr);
-                  moment(offers.body[0].validUntil)
-                    .diff(moment(), 'days')
-                    .should.equal(4);
-                  return done();
-                });
-            });
-        });
+    it('should be able to set `validUntil`', async function () {
+      await signIn(credentials);
+      const validUntil = moment().add(5, 'days').toDate();
+
+      const { offer } = await postMeetOffer(meetOfferPayload({ validUntil }));
+
+      assertPresent(offer.validUntil);
+      offer.validUntil.getTime().should.equal(validUntil.getTime());
     });
-    it.skip('should default to 30 days from now when trying to set `validUntil` to past', function (done) {
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-          offerMeet.validUntil = moment().subtract(5, 'days').toDate();
 
-          // Post offer
-          agent
-            .post('/api/offers')
-            .send(offerMeet)
-            .expect(200)
-            .end(function (offerPostErr) {
-              // Handle offer post error
-              if (offerPostErr) return done(offerPostErr);
-              agent
-                .get('/api/offers-by/' + user1Id)
-                .expect(200)
-                .end(function (offersByErr, offers) {
-                  if (offersByErr) return done(offersByErr);
-                  moment(offers.body[0].validUntil)
-                    .diff(moment(), 'days')
-                    .should.equal(29);
-                  return done();
-                });
-            });
-        });
+    it('should default to 30 days from now when trying to set `validUntil` to past', async function () {
+      await signIn(credentials);
+      const validUntil = moment().subtract(5, 'days').toDate();
+
+      const { offer, before, after } = await postMeetOffer(
+        meetOfferPayload({ validUntil }),
+      );
+
+      expectDefaultValidUntil(offer.validUntil, before, after);
     });
-    it.skip('should default to 30 days from now when trying to set `validUntil` to over 30 days from now', function (done) {
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-          offerMeet.validUntil = moment().add(32, 'days').toDate();
 
-          // Post offer
-          agent
-            .post('/api/offers')
-            .send(offerMeet)
-            .expect(200)
-            .end(function (offerPostErr) {
-              // Handle offer post error
-              if (offerPostErr) return done(offerPostErr);
-              agent
-                .get('/api/offers-by/' + user1Id)
-                .expect(200)
-                .end(function (offersByErr, offers) {
-                  if (offersByErr) return done(offersByErr);
-                  moment(offers.body[0].validUntil)
-                    .diff(moment(), 'days')
-                    .should.equal(29);
-                  return done();
-                });
-            });
-        });
+    it('should default to 30 days from now when trying to set `validUntil` to over 30 days from now', async function () {
+      await signIn(credentials);
+      const validUntil = moment().add(32, 'days').toDate();
+
+      const { offer, before, after } = await postMeetOffer(
+        meetOfferPayload({ validUntil }),
+      );
+
+      expectDefaultValidUntil(offer.validUntil, before, after);
     });
-    it.skip('should default to 30 days from now when not explicitly setting `validUntil`', function (done) {
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-          delete offerMeet.validUntil;
 
-          // Post offer
-          agent
-            .post('/api/offers')
-            .send(offerMeet)
-            .expect(200)
-            .end(function (offerPostErr) {
-              // Handle offer post error
-              if (offerPostErr) return done(offerPostErr);
-              agent
-                .get('/api/offers-by/' + user1Id)
-                .expect(200)
-                .end(function (offersByErr, offers) {
-                  if (offersByErr) return done(offersByErr);
-                  moment(offers.body[0].validUntil)
-                    .diff(moment(), 'days')
-                    .should.equal(29);
-                  return done();
-                });
-            });
-        });
+    it('should default to 30 days from now when not explicitly setting `validUntil`', async function () {
+      await signIn(credentials);
+
+      const { offer, before, after } = await postMeetOffer(meetOfferPayload());
+
+      expectDefaultValidUntil(offer.validUntil, before, after);
     });
   });
   describe('Updating offer', function () {
@@ -800,62 +776,7 @@ describe('Offer CRUD tests', function () {
           return done(offerSaveErr);
         });
     });
-    it.skip('should be able to update existing offer', function (done) {
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
 
-          // Save a new offer
-          agent
-            .post('/api/offers')
-            .send(offer1)
-            .expect(200)
-            .end(function (offerSaveErr) {
-              // Handle offer save error
-              if (offerSaveErr) return done(offerSaveErr);
-
-              // Get id for offer we just saved
-              findOneOffer({ user: user1Id }).then(function (offer) {
-                assertPresent(offer);
-
-                // Modify offer
-                offer.description = 'MODIFIED';
-                offer.noOfferDescription = 'MODIFIED';
-                offer.showOnlyInMyCircles = true;
-
-                // Store this for later comparison
-                const previousUpdated = offer.updated;
-
-                // Update offer
-                agent
-                  .put('/api/offers/' + offer._id)
-                  .send(offer)
-                  .expect(200)
-                  .end(function (offerPutErr, offerPutRes) {
-                    // Handle offer put error
-                    if (offerPutErr) return done(offerPutErr);
-                    offerPutRes.body.message.should.equal('Offer updated.');
-                    findOneOffer({ _id: offer._id }).then(function (offerNew) {
-                      assertPresent(offerNew);
-                      assertPresent(offerNew.description);
-                      assertPresent(offerNew.noOfferDescription);
-                      assertPresent(offerNew.updated);
-                      assertPresent(offerNew.showOnlyInMyCircles);
-                      offerNew.description.should.equal('MODIFIED');
-                      offerNew.noOfferDescription.should.equal('MODIFIED');
-                      offerNew.updated.should.not.equal(previousUpdated);
-                      offerNew.showOnlyInMyCircles.should.equal(true);
-                      done();
-                    }, done);
-                  });
-              }, done);
-            });
-        });
-    });
     it('should not be able to update offer of other user', function (done) {
       agent
         .post('/api/auth/signin')
@@ -933,183 +854,115 @@ describe('Offer CRUD tests', function () {
             });
         });
     });
-    it.skip('should be able to update `validUntil` value to 31 days from now', function (done) {
-      const now = moment();
-      const fromNow1 = moment().add(2, 'days');
-      const fromNow2 = moment().add(31, 'days');
-      offerMeet.user = user1Id;
-      offerMeet.validUntil = fromNow1.toDate();
-      offerMeet.save().then(function (offerMeetSaved) {
-        moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            // Handle signin error
-            if (signinErr) return done(signinErr);
-            offerMeet.validUntil = fromNow2.toDate();
 
-            // Update offer
-            agent
-              .put('/api/offers/' + offerMeetSaved._id)
-              .send(offerMeet)
-              .expect(200)
-              .end(function (offerPutErr) {
-                // Handle offer put error
-                if (offerPutErr) return done(offerPutErr);
-                findOneOffer({ _id: offerMeetSaved._id }).then(function (
-                  offerNew,
-                ) {
-                  assertPresent(offerNew);
-                  moment(offerNew.validUntil)
-                    .diff(now, 'days')
-                    .should.equal(30);
-                  done();
-                }, done);
-              });
-          });
-      }, done);
+    it('should be able to update existing offer', async function () {
+      await signIn(credentials);
+      await agent.post('/api/offers').send(offer1).expect(200);
+      const saved = await Offer.findOne({ user: user1Id });
+      assertPresent(saved);
+      const previousUpdated = moment().subtract(1, 'day').toDate();
+      await Offer.updateOne({ _id: saved._id }, { updated: previousUpdated });
+
+      const res = await agent
+        .put('/api/offers/' + saved._id)
+        .send({
+          status: saved.status,
+          location: saved.location,
+          description: 'MODIFIED',
+          noOfferDescription: 'MODIFIED',
+          showOnlyInMyCircles: true,
+        })
+        .expect(200);
+
+      res.body.message.should.equal('Offer updated.');
+      const offer = await Offer.findById(saved._id);
+      assertPresent(offer);
+      assertPresent(offer.updated);
+      assertPresent(offer.description);
+      assertPresent(offer.noOfferDescription);
+      assertPresent(offer.showOnlyInMyCircles);
+      offer.description.should.equal('MODIFIED');
+      offer.noOfferDescription.should.equal('MODIFIED');
+      offer.showOnlyInMyCircles.should.equal(true);
+      offer.updated.getTime().should.be.above(previousUpdated.getTime());
     });
-    it.skip('should be keep `validUntil` value to previously saved when updating offer', function (done) {
-      const now = moment();
-      offerMeet.user = user1Id;
-      offerMeet.validUntil = moment().add(2, 'days').toDate();
-      offerMeet.save().then(function (offerMeetSaved) {
-        moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            // Handle signin error
-            if (signinErr) return done(signinErr);
 
-            // Update offer
-            agent
-              .put('/api/offers/' + offerMeetSaved._id)
-              .send(offerMeet)
-              .expect(200)
-              .end(function (offerPutErr) {
-                // Handle offer put error
-                if (offerPutErr) return done(offerPutErr);
-                findOneOffer({ _id: offerMeetSaved._id }).then(function (
-                  offerNew,
-                ) {
-                  assertPresent(offerNew);
-                  moment(offerNew.validUntil).diff(now, 'days').should.equal(2);
-                  done();
-                }, done);
-              });
-          });
-      }, done);
+    it('should be able to update `validUntil` value to 31 days from now', async function () {
+      const saved = await saveMeetOffer(moment().add(2, 'days').toDate());
+      await signIn(credentials);
+
+      const { offer, before, after } = await putOffer(
+        saved._id,
+        meetOfferPayload({ validUntil: moment().add(31, 'days').toDate() }),
+      );
+
+      expectDefaultValidUntil(offer.validUntil, before, after);
     });
-    it.skip('should default to 30 days from now when attempting to set `validUntil` value to over 30 days from now', function (done) {
-      const now = moment();
-      const fromNow1 = moment().add(2, 'days');
-      const fromNow2 = moment().add(32, 'days');
-      offerMeet.user = user1Id;
-      offerMeet.validUntil = fromNow1.toDate();
-      offerMeet.save().then(function (offerMeetSaved) {
-        moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            // Handle signin error
-            if (signinErr) return done(signinErr);
-            offerMeet.validUntil = fromNow2.toDate();
 
-            // Update offer
-            agent
-              .put('/api/offers/' + offerMeetSaved._id)
-              .send(offerMeet)
-              .expect(200)
-              .end(function (offerPutErr) {
-                // Handle offer put error
-                if (offerPutErr) return done(offerPutErr);
-                findOneOffer({ _id: offerMeetSaved._id }).then(function (
-                  offerNew,
-                ) {
-                  assertPresent(offerNew);
-                  // We set it to 32, but it should default to 30 days
-                  moment(offerNew.validUntil)
-                    .diff(now, 'days')
-                    .should.equal(30);
-                  done();
-                }, done);
-              });
-          });
-      }, done);
+    it('should be keep `validUntil` value to previously saved when updating offer', async function () {
+      const validUntil = moment().add(2, 'days').toDate();
+      const saved = await saveMeetOffer(validUntil);
+      await signIn(credentials);
+
+      const { offer } = await putOffer(
+        saved._id,
+        meetOfferPayload({ validUntil }),
+      );
+
+      assertPresent(offer.validUntil);
+      offer.validUntil.getTime().should.equal(validUntil.getTime());
     });
-    it.skip('should default to 30 days from now when attempting to set `validUntil` value to past', function (done) {
-      const now = moment();
-      const fromNow1 = moment().add(2, 'days');
-      const fromNow2 = moment().subtract(1, 'days');
-      offerMeet.user = user1Id;
-      offerMeet.validUntil = fromNow1.toDate();
-      offerMeet.save().then(function (offerMeetSaved) {
-        moment(offerMeetSaved.validUntil).diff(now, 'days').should.equal(2);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            // Handle signin error
-            if (signinErr) return done(signinErr);
-            offerMeet.validUntil = fromNow2.toDate();
 
-            // Update offer
-            agent
-              .put('/api/offers/' + offerMeetSaved._id)
-              .send(offerMeet)
-              .expect(200)
-              .end(function (offerPutErr) {
-                // Handle offer put error
-                if (offerPutErr) return done(offerPutErr);
-                findOneOffer({ _id: offerMeetSaved._id }).then(function (
-                  offerNew,
-                ) {
-                  assertPresent(offerNew);
-                  // We set it to -2 days, but it should default to 30 days
-                  moment(offerNew.validUntil)
-                    .diff(now, 'days')
-                    .should.equal(30);
-                  done();
-                }, done);
-              });
-          });
-      }, done);
+    it('should default to 30 days from now when updating without `validUntil`', async function () {
+      const saved = await saveMeetOffer(moment().add(2, 'days').toDate());
+      await signIn(credentials);
+
+      const { offer, before, after } = await putOffer(
+        saved._id,
+        meetOfferPayload(),
+      );
+
+      expectDefaultValidUntil(offer.validUntil, before, after);
     });
-    it.skip('should remove reactivation flag field when updating offer', function (done) {
-      agent
-        .post('/api/auth/signin')
-        .send(credentials2)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
 
-          // Add field to offer
-          offer2.reactivateReminderSent = new Date();
-          offer2.save().then(function (offerSavedRes) {
-            // Save a new offer
-            agent
-              .put('/api/offers/' + offerSavedRes._id)
-              .send(offer2)
-              .expect(200)
-              .end(function (offerSaveErr) {
-                // Handle offer save error
-                if (offerSaveErr) return done(offerSaveErr);
-                findOneOffer({ user: user2Id }).then(function (offer) {
-                  assertPresent(offer);
-                  should.not.exist(offer.reactivateReminderSent);
-                  done();
-                }, done);
-              });
-          }, done);
-        });
+    it('should default to 30 days from now when attempting to set `validUntil` value to over 30 days from now', async function () {
+      const saved = await saveMeetOffer(moment().add(2, 'days').toDate());
+      await signIn(credentials);
+
+      const { offer, before, after } = await putOffer(
+        saved._id,
+        meetOfferPayload({ validUntil: moment().add(32, 'days').toDate() }),
+      );
+
+      expectDefaultValidUntil(offer.validUntil, before, after);
+    });
+
+    it('should default to 30 days from now when attempting to set `validUntil` value to past', async function () {
+      const saved = await saveMeetOffer(moment().add(2, 'days').toDate());
+      await signIn(credentials);
+
+      const { offer, before, after } = await putOffer(
+        saved._id,
+        meetOfferPayload({ validUntil: moment().subtract(5, 'days').toDate() }),
+      );
+
+      expectDefaultValidUntil(offer.validUntil, before, after);
+    });
+
+    it('should remove reactivation flag field when updating offer', async function () {
+      await signIn(credentials2);
+      await Offer.updateOne(
+        { _id: offer2Id },
+        { reactivateReminderSent: new Date() },
+      );
+
+      const { offer } = await putOffer(offer2Id, {
+        status: offer2.status,
+        description: offer2.description,
+        location: offer2.location,
+      });
+
+      should.not.exist(offer.reactivateReminderSent);
     });
   });
 });
