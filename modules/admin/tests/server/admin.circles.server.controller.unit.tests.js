@@ -1,5 +1,11 @@
 const assert = require('assert');
 const mongoose = require('mongoose');
+const realFs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const realSharp = require('sharp');
+const urlslugs =
+  require('../../../../config/lib/mongoose-url-slugs.mjs').default;
 const sinon = require('sinon');
 const proxyquire = require('../../../../testutils/server/mock-module');
 
@@ -26,6 +32,7 @@ describe('Admin circles controller', () => {
   let uploadFile;
   let circle;
   let query;
+  let config;
   let res;
   const failure = new Error('Storage unavailable');
   const missing = Object.assign(new Error('Missing'), { code: 'ENOENT' });
@@ -57,6 +64,7 @@ describe('Admin circles controller', () => {
     };
     fs = {
       mkdir: sinon.stub().resolves(),
+      chmod: sinon.stub().resolves(),
       open: sinon.stub().resolves(lockHandle),
       rename: sinon.stub().resolves(),
       rm: sinon.stub().resolves(),
@@ -71,13 +79,14 @@ describe('Admin circles controller', () => {
     };
     sharp = sinon.stub().returns(image);
     uploadFile = sinon.stub();
+    config = { circleImagesDir: '/circle-images' };
     controller = proxyquire(
       require.resolve('../../server/controllers/admin.circles.server.controller.mjs'),
       {
         mongoose: { model: () => Tribe },
         'node:fs': { promises: fs },
         sharp,
-        '../../../../config/config': { circleImagesDir: '/circle-images' },
+        '../../../../config/config': config,
         '../../../core/server/services/error.server.service': {
           getErrorMessage: err => err.message,
         },
@@ -220,6 +229,95 @@ describe('Admin circles controller', () => {
       });
     });
   }
+
+  it('publishes real image variants with web-server traversal permissions', async () => {
+    const directory = await realFs.promises.mkdtemp(
+      path.join(os.tmpdir(), 'circle-images-'),
+    );
+    config.circleImagesDir = directory;
+    for (const name of Object.keys(fs)) {
+      fs[name].callsFake(realFs.promises[name].bind(realFs.promises));
+    }
+    sharp.callsFake(realSharp);
+    const upload = path.join(directory, 'upload.png');
+    try {
+      await realSharp({
+        create: { width: 8, height: 8, channels: 3, background: '#123456' },
+      })
+        .png()
+        .toFile(upload);
+      await controller.create(
+        { body: { label: 'Walkers' }, file: { path: upload } },
+        res,
+      );
+      assert.strictEqual(res.statusCode, 201);
+      const variants = path.join(directory, 'walkers');
+      assert.strictEqual(
+        (await realFs.promises.stat(variants)).mode & 0o777,
+        0o755,
+      );
+      for (const size of ['120x120', '742x496', '906x240', '1400x900']) {
+        for (const extension of ['jpg', 'webp']) {
+          const metadata = await realSharp(
+            path.join(variants, `${size}.${extension}`),
+          ).metadata();
+          assert.strictEqual(`${metadata.width}x${metadata.height}`, size);
+        }
+      }
+    } finally {
+      await realFs.promises.rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it('rolls back a colliding create without regenerating its published slug', async () => {
+    const schema = new mongoose.Schema({
+      label: String,
+      image: Boolean,
+      modified: Date,
+    });
+    schema.plugin(urlslugs('label', { generator: () => 'walkers' }));
+    const Probe =
+      mongoose.models.AdminCircleCollisionProbe ||
+      mongoose.model('AdminCircleCollisionProbe', schema);
+    const find = sinon.stub(Probe, 'find');
+    find.onFirstCall().returns({ exec: async () => [] });
+    // A competing create commits after initial validation. A second validation
+    // would silently choose walkers-2, after publishing this upload at walkers.
+    find.returns({ exec: async () => [{ get: () => 'walkers' }] });
+    const duplicate = Object.assign(new Error('Duplicate slug'), {
+      code: 11000,
+    });
+    const insert = sinon.stub(Probe.collection, 'insertOne').rejects(duplicate);
+    Tribe.callsFake(data => new Probe(data));
+    await controller.create(
+      { body: { label: 'Walkers!' }, file: { path: '/upload.png' } },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 400);
+    sinon.assert.calledOnce(find);
+    sinon.assert.calledOnce(insert);
+    assert.strictEqual(insert.firstCall.args[0].slug, 'walkers');
+    sinon.assert.calledWith(
+      fs.rename,
+      sinon.match(/previous-variants$/),
+      '/circle-images/walkers',
+    );
+  });
+
+  it('keeps existing images when setting publication permissions fails', async () => {
+    fs.chmod.rejects(failure);
+    await controller.update(
+      {
+        params: { circle: 'circle-1' },
+        body: { label: 'Walkers' },
+        file: { path: '/upload.png' },
+      },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 400);
+    sinon.assert.notCalled(circle.save);
+    sinon.assert.notCalled(fs.rename);
+  });
 
   it('reports validation failures before any circle is saved', async () => {
     circle.save.rejects(failure);

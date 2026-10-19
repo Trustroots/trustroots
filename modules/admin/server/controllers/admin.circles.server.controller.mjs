@@ -216,6 +216,9 @@ async function processCircleImage(filePath, slug) {
         }),
       ),
     );
+    // The staging parent remains private; published variants must be traversable
+    // by the web server, which runs as a different user from the application.
+    await fs.promises.chmod(variantsStage, 0o755);
     state.hadCanonical = await moveAside(
       state.canonical,
       state.canonicalBackup,
@@ -260,7 +263,10 @@ async function saveCircle(circle, filePath) {
       publication = await processCircleImage(filePath, circle.slug);
       circle.image = true;
     }
-    await circle.save();
+    // create/update already validated this document. Revalidation can regenerate
+    // a new circle's slug after images have been published under the locked slug.
+    // Let the unique index reject a concurrent collision and roll the files back.
+    await circle.save({ validateBeforeSave: false });
     saved = true;
     if (publication) await publication.commit();
     return circle;
