@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,13 +50,7 @@ internal fun RemoteArtwork(
     size: Dp,
     background: Color = MaterialTheme.colorScheme.primary,
 ) {
-    val context = LocalContext.current.applicationContext
-    val cacheKey = "${url.orEmpty()}|${sessionCookie.orEmpty()}"
-    val bitmap by produceState<Bitmap?>(null, cacheKey) {
-        value = if (url == null) null else artworkCache.get(cacheKey) ?: withContext(Dispatchers.IO) {
-            loadArtwork(context, url, sessionCookie)?.also { artworkCache.put(cacheKey, it) }
-        }
-    }
+    val bitmap = rememberArtworkBitmap(url, sessionCookie)
     Box(
         modifier = Modifier.size(size).clip(CircleShape).background(background),
         contentAlignment = Alignment.Center,
@@ -85,13 +78,7 @@ internal fun ArtworkHero(
     blurBackground: Boolean,
     testTag: String,
 ) {
-    val context = LocalContext.current.applicationContext
-    val cacheKey = "${url.orEmpty()}|${sessionCookie.orEmpty()}"
-    val bitmap by produceState<Bitmap?>(null, cacheKey) {
-        value = if (url == null) null else artworkCache.get(cacheKey) ?: withContext(Dispatchers.IO) {
-            loadArtwork(context, url, sessionCookie)?.also { artworkCache.put(cacheKey, it) }
-        }
-    }
+    val bitmap = rememberArtworkBitmap(url, sessionCookie)
     Box(Modifier.fillMaxWidth().height(250.dp).background(background).testTag(testTag)) {
         if (bitmap != null) {
             Image(
@@ -121,6 +108,17 @@ internal fun ArtworkHero(
             Text(subtitle, color = Color.White, style = MaterialTheme.typography.bodyMedium)
         }
     }
+}
+
+@Composable
+private fun rememberArtworkBitmap(url: URL?, sessionCookie: String?): Bitmap? {
+    val context = LocalContext.current.applicationContext
+    val cacheKey = "${url.orEmpty()}|${sessionCookie.orEmpty()}"
+    return produceState<Bitmap?>(null, cacheKey) {
+        value = if (url == null) null else artworkCache.get(cacheKey) ?: withContext(Dispatchers.IO) {
+            loadArtwork(context, url, sessionCookie)?.also { artworkCache.put(cacheKey, it) }
+        }
+    }.value
 }
 
 private fun URL?.orEmpty(): String = this?.toString().orEmpty()
