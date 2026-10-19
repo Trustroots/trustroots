@@ -98,6 +98,7 @@ describe('<Statistics />', () => {
         .map(heading => heading.textContent),
     ).toEqual(['Real-life connections', 'Message interactions']);
     expect(screen.getByText('Trustroots Statistics')).toBeInTheDocument();
+    expect(screen.queryByAltText('Translation status')).not.toBeInTheDocument();
     expect(screen.getByText('Members')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Subscribe to newsletter' }),

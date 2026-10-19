@@ -1,33 +1,31 @@
 import React from 'react';
 
-// Internal dependencies
-import { getMapBoxToken } from '../../utils/map';
-
-/**
- * Map icon
- * @link https://docs.mapbox.com/playground/static/
- * @link https://docs.mapbox.com/api/maps/#static-images
- */
 type MapIconProps = { mapboxStyle?: string };
 
 export default function MapIcon({ mapboxStyle }: MapIconProps) {
-  const MAPBOX_TOKEN = getMapBoxToken();
-  const image =
-    mapboxStyle && MAPBOX_TOKEN
-      ? `https://api.mapbox.com/styles/v1/mapbox/${mapboxStyle
-          .split('/')
-          .pop()}/static/14.1663,55.6438,8.22,0/128x128@2x?attribution=false&access_token=${MAPBOX_TOKEN}`
-      : // Default image when API isn't available
-        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNc8mTSfwAHaQMbL4UQfQAAAABJRU5ErkJggg==';
+  const background = mapboxStyle?.includes('satellite')
+    ? '#42594b'
+    : mapboxStyle?.includes('outdoors')
+      ? '#c6dfb5'
+      : '#ece7db';
 
   return (
-    <img
+    <svg
       className="img-circle"
-      alt=""
       aria-hidden="true"
+      focusable="false"
       width="24"
       height="24"
-      src={image}
-    />
+      viewBox="0 0 24 24"
+    >
+      <circle cx="12" cy="12" r="12" fill={background} />
+      <path d="M0 17 8 12 15 14 24 7V24H0Z" fill="#8dbcc9" />
+      <path
+        d="M3 0 10 10 8 24M0 8 10 10 24 17"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="2"
+      />
+    </svg>
   );
 }
