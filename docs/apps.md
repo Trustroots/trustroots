@@ -7,17 +7,20 @@ permalink: /apps/
 
 # Mobile apps
 
-Latest release times are in UTC, checked on 2026-10-08.
+Release times are in UTC. The Trustroots Android release is checked automatically
+when you open this page.
 
 <h2 id="trustroots-android">Trustroots</h2>
 
 Find travellers, discover circles and share hospitality.
 
-- [Download the latest Android build](/apps/latest-apk/) — updated <time datetime="2026-10-05T23:15:13Z">2026-10-05 23:15</time>
+- <a id="android-preview-link" href="/apps/latest-apk/">Download the latest Android build</a><span id="android-preview-updated" hidden> — updated <time id="android-preview-time"></time></span>
 - [Get Android preview updates with Zapstore](https://zapstore.dev/)
 - [Read the iOS build guide](https://github.com/Trustroots/trustroots/blob/main/apps/ios/README.md)
 
 The Android download is a signed preview build, updated from the main branch.
+
+<script src="/assets/js/latest-apk.js" defer></script>
 
 In Zapstore, search for Trustroots and select the beta channel for Android
 preview releases.
