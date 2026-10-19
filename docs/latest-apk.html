@@ -26,40 +26,4 @@ permalink: /apps/latest-apk/
   </p>
 </section>
 
-<script>
-  (() => {
-    const status = document.getElementById('latest-apk-status');
-    const downloadLink = document.getElementById('latest-apk-link');
-    const releasesUrl = 'https://github.com/Trustroots/trustroots/releases';
-
-    fetch(
-      'https://api.github.com/repos/Trustroots/trustroots/releases?per_page=30',
-      {
-        headers: { Accept: 'application/vnd.github+json' },
-      },
-    )
-      .then(response => {
-        if (!response.ok) throw new Error('Release lookup failed');
-        return response.json();
-      })
-      .then(releases => {
-        const release = releases.find(
-          item =>
-            item.prerelease &&
-            item.tag_name.startsWith('android-preview-') &&
-            item.assets.some(asset => asset.name.endsWith('.apk')),
-        );
-        const apk = release?.assets.find(asset => asset.name.endsWith('.apk'));
-        if (!apk) throw new Error('No signed APK found');
-
-        downloadLink.href = apk.browser_download_url;
-        downloadLink.textContent = `Download ${apk.name}`;
-        status.textContent = `Latest signed preview: ${apk.name}`;
-        window.location.replace(apk.browser_download_url);
-      })
-      .catch(() => {
-        status.textContent = 'We could not look up the latest APK just now.';
-        downloadLink.href = releasesUrl;
-      });
-  })();
-</script>
+<script src="/assets/js/latest-apk.js" defer></script>
