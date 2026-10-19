@@ -162,7 +162,7 @@ function clientFiles(directory: string): string[] {
 }
 
 const routesFile = readSource(
-  path.join(root, 'modules/core/client/react-app/routes.tsx'),
+  path.join(root, 'layers/shell/client/routes.tsx'),
 );
 const routeIds = new Map<string, Set<string>>();
 function findRoutes(node: ts.Node): void {
