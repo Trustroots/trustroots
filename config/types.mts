@@ -101,7 +101,6 @@ export interface Config {
     allowedHosts: string[];
   };
   umami: { scriptSrc: string; websiteId: string };
-  akismet: { enabled: boolean; key: string; url: string };
   db: DatabaseConfig;
   files: {
     server: {

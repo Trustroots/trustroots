@@ -292,13 +292,6 @@ const service = {
     scriptSrc: 'https://1p.trustroots.org/script.js',
     websiteId: '',
   },
-  // Spam detection
-  // https://akismet.com/
-  akismet: {
-    enabled: false,
-    key: '',
-    url: 'https://www.trustroots.org',
-  },
 } satisfies DefaultConfig;
 export default service;
 export { service as 'module.exports' };

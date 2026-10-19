@@ -29,10 +29,8 @@ const messagesController: typeof import('../../server/controllers/messages.serve
 interface ControllerTestConfig {
   limits: { messagesToIndividualsThrottle: { count: number } };
   https: boolean;
-  akismet: { enabled: boolean };
 }
 const config: ControllerTestConfig = require('./../../../../config/config.mts');
-const spamService = require('./../../../core/server/services/spam.server.service.mjs');
 const messageStatService = require('./../../server/services/message-stat.server.service.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
@@ -1626,208 +1624,31 @@ describe('Messages controller unit tests', () => {
       ).should.be.true();
     });
 
-    it('marks messages as spam when akismet reports spam', async () => {
-      const originalEnv = process.env.NODE_ENV;
-      const originalAkismetEnabled = config.akismet.enabled;
-      process.env.NODE_ENV = 'development';
-      config.akismet.enabled = true;
-      sinon.stub(spamService, 'check').resolves('spam');
-
-      try {
-        const { sender, receiver } = await prepareSender();
-        const res = deferredResponse();
-        messagesController.send(
-          {
-            user: sender,
-            body: {
-              userTo: receiver._id.toString(),
-              content: 'Buy cheap pills now',
-            },
-            headers: { 'x-forwarded-for': '203.0.113.1' },
+    it('sends and stores messages without an automatic spam classification', async () => {
+      const { sender, receiver } = await prepareSender();
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'A fictional greeting.',
           },
-          res,
-        );
-        await res.waitForResponse();
-        res.statusCode.should.equal(200);
-
-        const saved = required(
-          await Message.findOne({ userFrom: sender._id }).sort({
-            created: -1,
-          }),
-        );
-        saved.spam!.should.be.true();
-      } finally {
-        process.env.NODE_ENV = originalEnv;
-        config.akismet.enabled = originalAkismetEnabled;
-      }
-    });
-
-    it('marks messages as not spam when akismet reports clean', async () => {
-      const originalEnv = process.env.NODE_ENV;
-      const originalAkismetEnabled = config.akismet.enabled;
-      process.env.NODE_ENV = 'development';
-      config.akismet.enabled = true;
-      sinon.stub(spamService, 'check').resolves('not-spam');
-
-      try {
-        const { sender, receiver } = await prepareSender();
-        const res = deferredResponse();
-        messagesController.send(
-          {
-            user: sender,
-            body: {
-              userTo: receiver._id.toString(),
-              content: 'Hello there, would love to host you!',
-            },
-            headers: { 'x-forwarded-for': '203.0.113.1' },
-          },
-          res,
-        );
-        await res.waitForResponse();
-        res.statusCode.should.equal(200);
-
-        const saved = required(
-          await Message.findOne({ userFrom: sender._id }).sort({
-            created: -1,
-          }),
-        );
-        saved.spam!.should.be.false();
-      } finally {
-        process.env.NODE_ENV = originalEnv;
-        config.akismet.enabled = originalAkismetEnabled;
-      }
-    });
-
-    it('sends successfully when spam check rejects', async () => {
-      const originalEnv = process.env.NODE_ENV;
-      const originalAkismetEnabled = config.akismet.enabled;
-      process.env.NODE_ENV = 'development';
-      config.akismet.enabled = true;
-      sinon
-        .stub(spamService, 'check')
-        .rejects(new Error('akismet unavailable'));
-
-      try {
-        const { sender, receiver } = await prepareSender();
-        const res = deferredResponse();
-        messagesController.send(
-          {
-            user: sender,
-            body: {
-              userTo: receiver._id.toString(),
-              content: 'Hello despite akismet failure',
-            },
-            headers: { 'x-forwarded-for': '203.0.113.1' },
-          },
-          res,
-        );
-        await res.waitForResponse();
-        res.statusCode.should.equal(200);
-        bodyField<string>(res.body, 'content').should.containEql(
-          'Hello despite akismet failure',
-        );
-      } finally {
-        process.env.NODE_ENV = originalEnv;
-        config.akismet.enabled = originalAkismetEnabled;
-      }
-    });
-
-    it('uses the passenger client address for spam checks when present', async () => {
-      const originalEnv = process.env.NODE_ENV;
-      const originalAkismetEnabled = config.akismet.enabled;
-      process.env.NODE_ENV = 'development';
-      config.akismet.enabled = true;
-      const check = sinon.stub(spamService, 'check').resolves('not-spam');
-
-      try {
-        const { sender, receiver } = await prepareSender();
-        const res = deferredResponse();
-        messagesController.send(
-          {
-            user: sender,
-            body: {
-              userTo: receiver._id.toString(),
-              content: 'Hello with passenger header',
-            },
-            headers: {
-              '!~passenger-client-address': '198.51.100.10',
-              'x-forwarded-for': '203.0.113.20',
-              'user-agent': 'Trustroots e2e',
-            },
-          },
-          res,
-        );
-        await res.waitForResponse();
-        res.statusCode.should.equal(200);
-        check.firstCall.args[0].ip.should.equal('198.51.100.10');
-        check.firstCall.args[0].useragent.should.equal('Trustroots e2e');
-      } finally {
-        process.env.NODE_ENV = originalEnv;
-        config.akismet.enabled = originalAkismetEnabled;
-      }
-    });
-
-    it('uses req.ip for spam checks when proxy headers are absent', async () => {
-      const originalEnv = process.env.NODE_ENV;
-      const originalAkismetEnabled = config.akismet.enabled;
-      process.env.NODE_ENV = 'development';
-      config.akismet.enabled = true;
-      const check = sinon.stub(spamService, 'check').resolves('not-spam');
-
-      try {
-        const { sender, receiver } = await prepareSender();
-        const res = deferredResponse();
-        messagesController.send(
-          {
-            user: sender,
-            body: {
-              userTo: receiver._id.toString(),
-              content: 'Hello with request ip',
-            },
-            headers: { 'user-agent': 'Trustroots tests' },
-            ip: '192.0.2.55',
-          },
-          res,
-        );
-        await res.waitForResponse();
-        res.statusCode.should.equal(200);
-        check.firstCall.args[0].ip.should.equal('192.0.2.55');
-        check.firstCall.args[0].useragent.should.equal('Trustroots tests');
-      } finally {
-        process.env.NODE_ENV = originalEnv;
-        config.akismet.enabled = originalAkismetEnabled;
-      }
-    });
-
-    it('uses empty spam metadata defaults when request details are absent', async () => {
-      const originalEnv = process.env.NODE_ENV;
-      const originalAkismetEnabled = config.akismet.enabled;
-      process.env.NODE_ENV = 'development';
-      config.akismet.enabled = true;
-      const check = sinon.stub(spamService, 'check').resolves('not-spam');
-
-      try {
-        const { sender, receiver } = await prepareSender();
-        const res = deferredResponse();
-        messagesController.send(
-          {
-            user: sender,
-            body: {
-              userTo: receiver._id.toString(),
-              content: 'Hello with no request metadata',
-            },
-            headers: {},
-          },
-          res,
-        );
-        await res.waitForResponse();
-        res.statusCode.should.equal(200);
-        check.firstCall.args[0].ip.should.equal('');
-        check.firstCall.args[0].useragent.should.equal('');
-      } finally {
-        process.env.NODE_ENV = originalEnv;
-        config.akismet.enabled = originalAkismetEnabled;
-      }
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      bodyField<string>(res.body, 'content').should.equal(
+        'A fictional greeting.',
+      );
+      const saved = required(
+        await Message.findOne({ userFrom: sender._id }).sort({ created: -1 }),
+      );
+      (saved.spam === undefined).should.be.true();
+      (saved.read === false).should.be.true();
+      (saved.shadowHidden === false).should.be.true();
+      required(await Thread.findOne({ message: saved._id }));
     });
 
     it('returns 400 when first-message profile lookup fails', async () => {

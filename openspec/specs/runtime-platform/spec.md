@@ -159,7 +159,7 @@ The users, offers, messages, contacts, tribes and reference-thread callback-base
 
 ### Requirement: Migrated service objects preserve shared method replacements
 
-Migrated spam, upload, statistics and Influx services SHALL expose named ESM functions and retain synchronous CommonJS adapters with the existing API. Where consumers replace service methods, the adapter SHALL return the same mutable object used by ESM consumers and internal dispatch.
+Migrated upload, statistics and Influx services SHALL expose named ESM functions and retain synchronous CommonJS adapters with the existing API. Where consumers replace service methods, the adapter SHALL return the same mutable object used by ESM consumers and internal dispatch.
 
 #### Scenario: A consumer replaces an Influx method
 
@@ -168,8 +168,8 @@ Migrated spam, upload, statistics and Influx services SHALL expose named ESM fun
 
 #### Scenario: Existing service behaviour is exercised
 
-- **WHEN** migrated services classify spam, validate uploads or record statistics
-- **THEN** classifications, error responses, temporary-file cleanup and measurement payloads remain unchanged
+- **WHEN** migrated services validate uploads or record statistics
+- **THEN** error responses, temporary-file cleanup and measurement payloads remain unchanged
 
 #### Scenario: Both module systems load a service
 

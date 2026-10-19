@@ -9,7 +9,6 @@ import messageToStatsService from '../services/message-to-stats.server.service.m
 import messageStatService from '../services/message-stat.server.service.mjs';
 import errorService from '../../../core/server/services/error.server.service.mjs';
 import textService from '../../../core/server/services/text.server.service.mjs';
-import spamService from '../../../core/server/services/spam.server.service.mjs';
 import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
 import statService from '../../../stats/server/services/stats.server.service.mts';
 import paginationService from '../../../core/server/services/pagination.server.service.mjs';
@@ -190,14 +189,6 @@ type ClientThreadSummary = MessageThreadSummary<
   Types.ObjectId | string,
   Date | string
 >;
-type SpamComment = Parameters<typeof spamService.check>[0];
-type SpamCheckInput = Omit<SpamComment, 'ip' | 'useragent'> & {
-  ip?: string | string[];
-  useragent?: string | string[];
-};
-const spamServiceWithRawHeaders = spamService as unknown as {
-  check(message: SpamCheckInput): ReturnType<typeof spamService.check>;
-};
 type PaginatedResponse = ControllerResponse & {
   locals: { paginate: { href(params: Record<string, unknown>): string } };
   links(links: Record<string, string>): unknown;
@@ -690,45 +681,8 @@ service.send = async function (req, res) {
           done();
         }
       },
-      // Spam filter
-      function (done: WaterfallDone<[string]>) {
-        // Skip filter when disabled or when running a test
-        // @TODO: instead of skipping on test, mock the service
-        if (!config.akismet.enabled || process.env.NODE_ENV === 'test') {
-          return done(null, 'unknown');
-        }
-        const headers = req.headers!;
-        const userIp =
-          // https://www.phusionpassenger.com/library/indepth/nodejs/secure_http_headers.html#passenger-client-address
-          // Note that Passenger also appends the X-Forwarded-For header, which serves the same function.
-          // But since X-Forwarded-For can be spoofed by the client, you should prefer !~Passenger-Client-Address instead.
-          headers['!~passenger-client-address'] ||
-          headers['x-forwarded-for'] ||
-          req.ip ||
-          // http://expressjs.com/en/5x/api.html#req.ip — can be spoofed by client
-          '';
-        const userAgent = headers['user-agent'] || '';
-        spamServiceWithRawHeaders
-          .check({
-            content: body.content as string,
-            ip: userIp,
-            useragent: userAgent,
-            email: user.email,
-            name: user.displayName,
-          })
-          .then((spamStatus: 'unknown' | 'spam' | 'not-spam') => {
-            done(null, spamStatus);
-          })
-          .catch(() => {
-            // Continue normally regardless of error, just skip spam check
-            done(null, 'unknown');
-          });
-      },
       // Save message
-      function (
-        spamStatus: string,
-        done: WaterfallDone<[MessageEndpointDocument]>,
-      ) {
+      function (done: WaterfallDone<[MessageEndpointDocument]>) {
         const message = new Message(
           prepareNewMessageFields(
             {
@@ -747,12 +701,6 @@ service.send = async function (req, res) {
         message.shadowHidden = senderIsRestricted;
         message.notified = false;
 
-        // Include spam status only if we have definitive yes or no, otherwise it's unknown
-        if (spamStatus === 'spam') {
-          message.spam = true;
-        } else if (spamStatus === 'not-spam') {
-          message.spam = false;
-        }
         message.save().then(saved => done(null, saved), done);
       },
       // Create/upgrade Thread handle between these two users

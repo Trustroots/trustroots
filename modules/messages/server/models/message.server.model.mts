@@ -64,7 +64,7 @@ const MessageSchema = new Schema<MessageRecord>({
   },
   spam: {
     type: Boolean,
-    // No default; lack of value means no definitive check has been done
+    // Historical classification only; new messages leave this unset.
   },
   // Hidden delivery path used for shadowbanned/suspended senders:
   // sender can still see own messages, recipients can't.
