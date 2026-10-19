@@ -105,6 +105,36 @@ describe('Admin policy unit tests', () => {
       .should.containEql('/api/admin/newsletter-subscribers/split');
   });
 
+  it('limits Experience change operations to administrators and support', async () => {
+    const policy =
+      await import('../../server/policies/admin.server.policy.mts');
+    policy.invokeRolesPolicies();
+    const operations = [
+      ['/api/admin/experiences', 'GET'],
+      ['/api/admin/experiences/:id/change-links', 'POST'],
+      ['/api/admin/experience-change-requests', 'GET'],
+      ['/api/admin/experience-change-requests/:id/decision', 'POST'],
+    ];
+    for (const role of [
+      'admin',
+      'support-team',
+      'welcome-team',
+      'user',
+      'guest',
+    ]) {
+      for (const [path, method] of operations) {
+        const req = policyRequest([role]);
+        req.route.path = path;
+        req.method = method;
+        const res = mockResponse();
+        const next = sinon.stub();
+        policy.isAllowed(req, res, next);
+        next.calledOnce.should.equal(['admin', 'support-team'].includes(role));
+        if (!next.called) res.statusCode.should.equal(403);
+      }
+    }
+  });
+
   it('calls next when ACL allows the admin request', async () => {
     const { policy, areAnyRolesAllowed } = await loadPolicy();
     areAnyRolesAllowed.yields(null, true);

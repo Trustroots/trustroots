@@ -90,7 +90,8 @@ export default function AdminHeader() {
             .filter(
               page =>
                 isAdmin ||
-                (page.path === 'support' && isSupport) ||
+                (['support', 'experience-changes'].includes(page.path) &&
+                  isSupport) ||
                 (page.path === 'staff-blockers' &&
                   (isWelcomeTeam || isSupport)) ||
                 page.path === 'acquisition-stories' ||

@@ -113,7 +113,7 @@ denominators.
 
 ### Requirement: Admin-issued Experience change links
 
-The system SHALL let an administrator issue a seven-day link for one Experience
+The system SHALL let an administrator or support-team member issue a seven-day link for one Experience
 and one of its members. Issuing a replacement link for that member and
 Experience SHALL invalidate the earlier link. A link SHALL require both the
 secret and the matching signed-in member to submit a request.
@@ -136,9 +136,9 @@ secret and the matching signed-in member to submit a request.
 ### Requirement: Experience change review
 
 The system SHALL keep the current Experience unchanged while a change request
-awaits administrator review. It SHALL allow at most one pending request per
-Experience. An administrator SHALL be able to approve or reject an edit or
-removal request, and the requester SHALL be able to see its status.
+awaits staff review. It SHALL allow at most one pending request per
+Experience. Administrators and support-team members SHALL be able to approve or reject an edit or
+removal request subject to independent support approval, and the requester SHALL be able to see its status.
 
 #### Scenario: Administrator approves an edit
 
@@ -207,3 +207,32 @@ feedback limit and prevent submission of oversized feedback without removing tex
 - **WHEN** public feedback exceeds the configured character limit
 - **THEN** the form shows the character count and an explanation
 - **AND** saving is disabled until the member shortens the feedback
+
+### Requirement: Independent support approval of Experience changes
+
+The system SHALL allow support-team members to issue Experience change links and review requests. Each request SHALL retain the issuer of the link used at submission. A support-team member SHALL NOT approve a request submitted through their own link. Another support-team member SHALL be able to approve it. Administrators SHALL be able to approve any request, including requests submitted through their own links. Rejection SHALL remain available to the issuer. Requests without issuer attribution SHALL require administrator approval. Link replacement or expiry SHALL NOT alter a submitted request's issuer attribution. The queue SHALL explain when approval requires another reviewer.
+
+#### Scenario: Support issuer attempts approval
+
+- **WHEN** a support member attempts to approve an edit or removal submitted through their own link
+- **THEN** approval is denied and the request remains pending
+
+#### Scenario: Another support member approves
+
+- **WHEN** a different support member approves the request
+- **THEN** the change is applied
+
+#### Scenario: Administrator approves their own link
+
+- **WHEN** an administrator approves a request submitted through their own link
+- **THEN** the change is applied
+
+#### Scenario: Link is replaced after submission
+
+- **WHEN** another staff member replaces a link after a request is submitted
+- **THEN** the original issuer remains unable to approve as support
+
+#### Scenario: Earlier request has no issuer attribution
+
+- **WHEN** support attempts approval of a request without an issuer snapshot
+- **THEN** approval is denied and an administrator can approve it

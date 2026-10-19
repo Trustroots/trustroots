@@ -417,6 +417,7 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   {
     ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/experience-changes',
+    requiresRole: ['admin', 'support-team'],
     title: 'Admin - Experience changes',
   },
   {

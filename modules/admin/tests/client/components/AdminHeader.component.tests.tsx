@@ -38,6 +38,9 @@ describe('<AdminHeader />', () => {
       screen.getByRole('link', { name: 'Location corrections' }),
     ).toHaveAttribute('href', '/admin/location-corrections');
     expect(
+      screen.getByRole('link', { name: 'Experience changes' }),
+    ).toHaveAttribute('href', '/admin/experience-changes');
+    expect(
       screen.queryByRole('link', { name: 'Messages' }),
     ).not.toBeInTheDocument();
   });

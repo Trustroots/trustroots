@@ -12,6 +12,7 @@ import type {
 } from '../../shared/admin-experience-change.js';
 
 interface AuthenticatedMember {
+  roles?: string[];
   _id: Types.ObjectId;
 }
 
@@ -55,6 +56,7 @@ interface ChangeRequestBase {
   _id: Types.ObjectId;
   experience: Types.ObjectId;
   requester: Types.ObjectId;
+  linkIssuedBy?: Types.ObjectId;
   status: 'pending' | 'processing' | 'approved' | 'rejected';
   active: boolean;
   createdAt: Date;
@@ -266,9 +268,20 @@ function queuedRequests(
     .exec();
 }
 
+function canApprove(
+  member: AuthenticatedMember,
+  changeRequest: { linkIssuedBy?: Types.ObjectId },
+): boolean {
+  return Boolean(
+    member.roles?.includes('admin') ||
+    (changeRequest.linkIssuedBy &&
+      !equals(changeRequest.linkIssuedBy, member._id)),
+  );
+}
+
 const listRequests: Handler<
   AdminExperienceChangeRequest<Types.ObjectId, Date>[]
-> = async (_request, response, next) => {
+> = async (request, response, next) => {
   try {
     // Keep pending reviews and recent approvals in separate limited queries so
     // a full page of approvals cannot hide a review that is still waiting.
@@ -285,11 +298,13 @@ const listRequests: Handler<
         { reviewedAt: -1 },
       ),
     ]);
-    const result: AdminExperienceChangeRequest<Types.ObjectId, Date>[] = [
-      ...pending,
-      ...approved,
-    ];
-    return response.json(result);
+    const result = [...pending, ...approved];
+    return response.json(
+      result.map(changeRequest => ({
+        ...changeRequest,
+        canApprove: canApprove(request.user, changeRequest),
+      })),
+    );
   } catch (error) {
     return next(error);
   }
@@ -318,6 +333,16 @@ const decide: Handler<
     }
 
     try {
+      if (decision === 'approve' && !canApprove(request.user, changeRequest)) {
+        await ExperienceChangeRequest.updateOne(
+          { _id: changeRequest._id, status: 'processing' },
+          { $set: { status: 'pending' } },
+        ).exec();
+        return response.status(403).json({
+          message:
+            'Approval requires another support team member or an administrator.',
+        });
+      }
       if (decision === 'approve') {
         const update =
           changeRequest.kind === 'remove'
