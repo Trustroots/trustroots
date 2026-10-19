@@ -263,6 +263,15 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     };
   }
 
+  async function fetchHostingOffer(userId: string) {
+    const offers = await getOffers(userId, 'host');
+    setHostingOffer(
+      offers.find(offer => offer.requireHostingDescriptionAcknowledgement) ||
+        null,
+    );
+    setHostingDescriptionAcknowledged(false);
+  }
+
   async function fetchData() {
     try {
       setIsFetching(true);
@@ -292,13 +301,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
         otherUser._id,
       );
       if (messages.length === 0 && !userRemoved) {
-        const offers = await getOffers(otherUser._id, 'host');
-        setHostingOffer(
-          offers.find(
-            offer => offer.requireHostingDescriptionAcknowledgement,
-          ) || null,
-        );
-        setHostingDescriptionAcknowledged(false);
+        await fetchHostingOffer(otherUser._id);
       }
       setOtherUser(otherUser);
       const sortedMessages = messages.sort((a, b) =>
@@ -333,7 +336,18 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
       : [];
     const apiResponse = await api.messages
       .sendMessage((otherUser as MessageUser)._id, content, ...acknowledgement)
-      .catch(error => {
+      .catch(async error => {
+        if (
+          error?.response?.data?.error ===
+          'hosting-description-acknowledgement-required'
+        ) {
+          try {
+            await fetchHostingOffer(otherUser!._id);
+            return;
+          } catch {
+            // Keep the draft and allow another attempt if refreshing fails.
+          }
+        }
         // Too many requests - error
         if (error?.response?.status === 429) {
           window.alert(

@@ -225,6 +225,78 @@ describe('<Thread>', () => {
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
   });
 
+  it('refreshes a newly required acknowledgement and preserves the draft for retry', async () => {
+    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+    jest
+      .mocked(getOffers)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          _id: 'hosting-offer',
+          user: otherUser._id,
+          type: 'host',
+          location: [12, 34],
+          description: 'Please arrive before sunset.',
+          requireHostingDescriptionAcknowledgement: true,
+        },
+      ]);
+    api.messages.sendMessage
+      .mockRejectedValueOnce({
+        response: {
+          status: 400,
+          data: { error: 'hosting-description-acknowledgement-required' },
+        },
+      })
+      .mockResolvedValueOnce({ data: createMessage(me) } as Awaited<
+        ReturnType<typeof messagesAPI.sendMessage>
+      >);
+    render(<Thread user={me} profileMinimumLength={0} />);
+    fireEvent.change(await screen.findByRole('textbox'), {
+      target: { value: 'A saved draft.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Send/ }));
+    const checkbox = await screen.findByRole('checkbox');
+    expect(checkbox).not.toBeChecked();
+    expect(screen.getByText('Please arrive before sunset.')).toBeVisible();
+    expect(screen.getByRole('textbox')).toHaveValue('A saved draft.');
+    expect(screen.getByRole('button', { name: /Send/ })).toBeDisabled();
+    expect(alertSpy).not.toHaveBeenCalled();
+    fireEvent.click(checkbox);
+    fireEvent.click(screen.getByRole('button', { name: /Send/ }));
+    await waitFor(() =>
+      expect(api.messages.sendMessage).toHaveBeenLastCalledWith(
+        otherUser._id,
+        'A saved draft.',
+        true,
+      ),
+    );
+    await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(''));
+    alertSpy.mockRestore();
+  });
+
+  it('keeps the draft available when refreshing the requirement fails', async () => {
+    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+    jest
+      .mocked(getOffers)
+      .mockResolvedValueOnce([])
+      .mockRejectedValueOnce(new Error('Unavailable'));
+    api.messages.sendMessage.mockRejectedValueOnce({
+      response: {
+        status: 400,
+        data: { error: 'hosting-description-acknowledgement-required' },
+      },
+    });
+    render(<Thread user={me} profileMinimumLength={0} />);
+    fireEvent.change(await screen.findByRole('textbox'), {
+      target: { value: 'A saved draft.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Send/ }));
+    await waitFor(() => expect(alertSpy).toHaveBeenCalled());
+    expect(screen.getByRole('textbox')).toHaveValue('A saved draft.');
+    expect(screen.getByRole('button', { name: /Send/ })).toBeEnabled();
+    alertSpy.mockRestore();
+  });
+
   it('shows a load failure when the hosting preference cannot be checked', async () => {
     jest.mocked(getOffers).mockRejectedValue(new Error('Unavailable'));
     render(<Thread user={me} profileMinimumLength={0} />);

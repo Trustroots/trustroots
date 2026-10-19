@@ -97,6 +97,7 @@ interface MessageEndpointModel {
     },
   ): MessageEndpointDocument;
   distinct(field: string, query: object): Promise<Types.ObjectId[]>;
+  exists(query: object): Promise<{ _id: Types.ObjectId } | null>;
   find(query: object): QueryResult<MessageEndpointDocument[]>;
   paginate(
     query: object,
@@ -655,7 +656,21 @@ service.send = async function (req, res) {
               })
                 .select('_id')
                 .exec();
-              if (requiredOffer) {
+              // Messages can exist without an inbox thread. Match the history
+              // visible to this sender, including their own outgoing messages.
+              const hasVisibleHistory =
+                requiredOffer &&
+                (await Message.exists({
+                  $or: [
+                    { userFrom: user._id, userTo: body.userTo },
+                    {
+                      userFrom: body.userTo,
+                      userTo: user._id,
+                      shadowHidden: { $ne: true },
+                    },
+                  ],
+                }));
+              if (requiredOffer && !hasVisibleHistory) {
                 res.status(400).send({
                   error: 'hosting-description-acknowledgement-required',
                   message:

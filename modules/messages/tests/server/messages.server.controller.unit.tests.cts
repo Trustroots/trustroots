@@ -180,6 +180,41 @@ describe('Messages controller unit tests', () => {
       (await send(undefined, true)).statusCode.should.equal(200);
     });
 
+    it('allows follow-ups when outgoing messages have no inbox thread', async () => {
+      sender.roles = ['user', 'shadowban'];
+      await sender.save();
+      (await send()).statusCode.should.equal(400);
+      (await send(true)).statusCode.should.equal(200);
+      (await Thread.countDocuments({})).should.equal(0);
+      (await send()).statusCode.should.equal(200);
+      (await Message.countDocuments({ shadowHidden: true })).should.equal(2);
+      (await Thread.countDocuments({})).should.equal(0);
+    });
+
+    for (const shadowHidden of [false, true]) {
+      it(`uses only visible incoming history without an inbox thread: ${shadowHidden}`, async () => {
+        await new Message({
+          userFrom: host._id,
+          userTo: sender._id,
+          content: 'A fictional earlier greeting.',
+          shadowHidden,
+        }).save();
+        (await send()).statusCode.should.equal(shadowHidden ? 400 : 200);
+      });
+    }
+
+    it('reports history lookup failures without creating a conversation', async () => {
+      const stub = sinon
+        .stub(Message, 'exists')
+        .rejects(new Error('Lookup failed'));
+      try {
+        (await send()).statusCode.should.equal(400);
+        (await Message.countDocuments({})).should.equal(0);
+      } finally {
+        stub.restore();
+      }
+    });
+
     it('does not enforce a preference on meetup offers', async () => {
       await Offer.updateMany({}, { $set: { type: 'meet' } });
       (await send()).statusCode.should.equal(200);
