@@ -24,6 +24,7 @@
     ],
     "messages": [
       "core",
+      "offers",
       "references-thread",
       "stats",
       "support",
@@ -116,6 +117,7 @@
       "users"
     ],
     "messages": [
+      "offers",
       "users"
     ],
     "mobile": [

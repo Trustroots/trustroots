@@ -14,6 +14,7 @@ import '@/config/client/i18n';
 import Thread from '@/modules/messages/client/components/Thread.component';
 import * as usersAPI from '@/modules/users/client/api/users.api';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
+import * as offersAPI from '@/modules/offers/client/api/offers.api';
 import {
   malformedFixture,
   resolveMalformed,
@@ -44,6 +45,7 @@ const api = {
   },
 };
 const updateUnreadCount = jest.mocked(updateUnreadMessageCount);
+const getOffers = jest.mocked(offersAPI.getOffers);
 const showThread = ({ username, userId }: typeof routeParams) =>
   window.history.pushState(
     {},
@@ -56,6 +58,7 @@ jest.mock('@tanstack/react-router', () =>
 );
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/messages/client/api/messages.api');
+jest.mock('@/modules/offers/client/api/offers.api');
 jest.mock(
   '@/modules/messages/client/services/unread-message-count.client.service',
 );
@@ -136,6 +139,7 @@ function createMessage(
 
 beforeEach(() => {
   analytics = fakeAnalytics();
+  getOffers.mockReset().mockResolvedValue([]);
   api.users.fetch.mockReset();
   api.messages.fetchMessages.mockReset();
   api.messages.sendMessage.mockReset();
@@ -322,6 +326,60 @@ describe('<Thread>', () => {
       expect(
         screen.getByRole('link', { name: 'community rules' }),
       ).toHaveAttribute('href', '/rules');
+    });
+
+    it('requires acknowledgement before the first message to an opted-in host', async () => {
+      getOffers.mockResolvedValueOnce([
+        {
+          _id: 'fictional-offer',
+          type: 'host',
+          user: otherUser._id,
+          location: [12, 34],
+          description: 'Please arrive before sunset.',
+          requireHostingDescriptionAcknowledgement: true,
+        },
+      ]);
+      api.messages.sendMessage.mockResolvedValueOnce({
+        data: {
+          ...createMessage(me),
+          _id: 'sent-message',
+          content: '<p>Hello, can I stay next Tuesday?</p>',
+          created: '2026-06-05T12:00:00.000Z',
+        },
+      } as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
+
+      render(<Thread user={me} profileMinimumLength={0} />);
+
+      expect(
+        await screen.findByText('Please arrive before sunset.'),
+      ).toBeInTheDocument();
+      const editor = await screen.findByRole('textbox');
+      fireEvent.change(editor, {
+        target: { value: '<p>Hello, can I stay next Tuesday?</p>' },
+      });
+      const replyForm = editor.closest('form');
+      expect(replyForm).toBeTruthy();
+      expect(
+        within(replyForm!).getByRole('button', { name: 'Send' }),
+      ).toBeDisabled();
+
+      fireEvent.click(
+        screen.getByRole('checkbox', {
+          name: 'I have read this host’s hosting description and requirements.',
+        }),
+      );
+      expect(
+        within(replyForm!).getByRole('button', { name: 'Send' }),
+      ).toBeEnabled();
+      fireEvent.submit(replyForm!);
+
+      await waitFor(() =>
+        expect(api.messages.sendMessage).toHaveBeenCalledWith(
+          otherUser._id,
+          '<p>Hello, can I stay next Tuesday?</p>',
+          true,
+        ),
+      );
     });
 
     it('focuses the reply editor when a conversation opens on desktop', async () => {

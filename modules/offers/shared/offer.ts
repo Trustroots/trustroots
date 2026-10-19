@@ -14,6 +14,7 @@ export interface OfferEditableFields {
   validUntil?: string | number | Date;
   meetingStatus?: MeetingStatus;
   showOnlyInMyCircles?: boolean;
+  requireHostingDescriptionAcknowledgement?: boolean;
 }
 
 /** Request payload accepted by POST /api/offers. */
@@ -61,6 +62,7 @@ export interface OfferPayload<Id = string, Timestamp = string> {
   validUntil?: Timestamp;
   meetingStatus?: MeetingStatus;
   showOnlyInMyCircles?: boolean;
+  requireHostingDescriptionAcknowledgement?: boolean;
 }
 
 /** Populated read-one response from GET /api/offers/:offerId. */

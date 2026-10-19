@@ -24,6 +24,89 @@ const berlin = SEEDED_MEMBERS[0];
 const portland = SEEDED_MEMBERS[1];
 const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
 
+for (const width of [390, 1280]) {
+  test(`hosting acknowledgement is optional and required only for a new conversation at ${width}px`, async ({
+    page,
+    browser,
+    baseURL,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.new-conversation', [
+      'Opted-in hosts require acknowledgement only for a new conversation.',
+    ]);
+    const host = createUser();
+    const context = await createIsolatedContext(browser, baseURL);
+    try {
+      await registerViaApi(context.request, host);
+      await updateUserByUsername(host.username, { $set: { public: true } });
+      const hostPage = await context.newPage();
+      await signInViaApi(hostPage, context.request, host);
+      const created = await context.request.post('/api/offers', {
+        data: {
+          type: 'host',
+          status: 'yes',
+          description: '<p>Please arrive before sunset.</p>',
+          location: [12, 34],
+        },
+      });
+      expect(created.ok()).toBeTruthy();
+      await hostPage.goto('/offer/host#description');
+      const preference = hostPage.getByRole('checkbox', {
+        name: /Require guests to acknowledge/,
+      });
+      await expect(preference).not.toBeChecked();
+      await preference.check();
+      await hostPage.getByRole('button', { name: 'Save and Exit' }).click();
+      await expect(hostPage).toHaveURL(new RegExp(`/profile/${host.username}`));
+      await hostPage.goto('/offer/host#description');
+      await expect(preference).toBeChecked();
+
+      await signInViaApi(page, request, berlin);
+      await page.setViewportSize({ width, height: 844 });
+      const hostId = await fetchUserIdByUsername(request, host.username);
+      const rejected = await page.request.post('/api/messages', {
+        data: { userTo: hostId, content: 'A fictional request.' },
+      });
+      expect(rejected.status()).toBe(400);
+      expect((await rejected.json()).error).toBe(
+        'hosting-description-acknowledgement-required',
+      );
+      await page.goto(`/messages/${host.username}`);
+      const acknowledgement = page.getByRole('checkbox', {
+        name: 'I have read this host’s hosting description and requirements.',
+      });
+      await expect(
+        page.getByText('Please arrive before sunset.'),
+      ).toBeVisible();
+      await expect(acknowledgement).not.toBeChecked();
+      const editor = page.locator('#message-reply-content');
+      await editor.fill('A fictional opening request.');
+      await expect(page.locator('#messageReplySubmit')).toBeDisabled();
+      await editor.press('Control+Enter');
+      await expect(editor).toHaveText('A fictional opening request.');
+      await acknowledgement.check();
+      await expect(page.locator('#messageReplySubmit')).toBeInViewport();
+      const sent = page.waitForResponse(
+        response =>
+          new URL(response.url()).pathname === '/api/messages' &&
+          response.request().method() === 'POST',
+      );
+      await page.locator('#messageReplySubmit').click();
+      expect((await sent).ok()).toBeTruthy();
+      await expect(acknowledgement).toHaveCount(0);
+      await page.reload();
+      await expect(editor).toBeVisible();
+      await expect(acknowledgement).toHaveCount(0);
+      const reply = await page.request.post('/api/messages', {
+        data: { userTo: hostId, content: 'A fictional follow-up.' },
+      });
+      expect(reply.ok()).toBeTruthy();
+    } finally {
+      await context.close();
+    }
+  });
+}
+
 async function dragComposer(
   page: Page,
   layout: 'mobile' | 'desktop',
