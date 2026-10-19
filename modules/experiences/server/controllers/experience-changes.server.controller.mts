@@ -42,6 +42,7 @@ interface ExperienceRecord {
 }
 
 interface ChangeLinkRecord {
+  issuedBy: Types.ObjectId;
   experience: Types.ObjectId;
   member: Types.ObjectId;
   tokenHash: string;
@@ -136,12 +137,12 @@ function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
-async function hasValidLink(
+async function loadValidLink(
   request: AuthenticatedRequest,
   experience: ExperienceRecord,
-): Promise<boolean> {
+): Promise<ChangeLinkRecord | null> {
   const token = request.get('X-Experience-Change-Secret');
-  if (!token || !/^[a-f0-9]{64}$/.test(token)) return false;
+  if (!token || !/^[a-f0-9]{64}$/.test(token)) return null;
 
   const link = await ExperienceChangeLink.findOne({
     experience: experience._id,
@@ -151,7 +152,7 @@ async function hasValidLink(
   })
     .lean()
     .exec();
-  return Boolean(link);
+  return link;
 }
 
 function validateEdit(body: unknown): ExperienceChangeProposal | null {
@@ -214,7 +215,7 @@ const readAccess: Handler<ExperienceChangeAccess<Types.ObjectId>> = async (
   try {
     const experience = await loadExperience(request, response);
     if (!experience) return;
-    if (!(await hasValidLink(request, experience))) {
+    if (!(await loadValidLink(request, experience))) {
       return response
         .status(403)
         .json({ message: 'This link is invalid or has expired.' });
@@ -281,7 +282,8 @@ const submit: Handler<
   try {
     const experience = await loadExperience(request, response);
     if (!experience) return;
-    if (!(await hasValidLink(request, experience))) {
+    const link = await loadValidLink(request, experience);
+    if (!link) {
       return response
         .status(403)
         .json({ message: 'This link is invalid or has expired.' });
@@ -336,7 +338,10 @@ const submit: Handler<
         .json({ message: 'An Experience change is already pending.' });
     }
 
-    const changeRequest = await ExperienceChangeRequest.create(input);
+    const changeRequest = await ExperienceChangeRequest.create({
+      ...input,
+      linkIssuedBy: link.issuedBy,
+    });
     const result: ExperienceChangeSubmissionResult<Types.ObjectId, Date> = {
       _id: changeRequest._id,
       kind: changeRequest.kind,

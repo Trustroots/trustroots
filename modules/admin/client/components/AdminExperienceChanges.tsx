@@ -222,10 +222,16 @@ export default function AdminExperienceChanges(): React.JSX.Element {
                       </p>
                     </div>
                   )}
+                  {request.canApprove === false && (
+                    <p>
+                      Approval requires another support team member or an
+                      administrator.
+                    </p>
+                  )}
                   <button
                     className="btn btn-primary"
                     type="button"
-                    disabled={busy}
+                    disabled={busy || request.canApprove === false}
                     onClick={() => void decide(request, 'approve')}
                   >
                     Approve

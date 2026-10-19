@@ -12,6 +12,7 @@ export interface ExperienceChangeLinkRecord {
 export interface ExperienceChangeRequestRecord {
   experience: Types.ObjectId;
   requester: Types.ObjectId;
+  linkIssuedBy?: Types.ObjectId;
   kind: 'edit' | 'remove';
   proposed?: {
     feedbackPublic?: string;
@@ -52,6 +53,7 @@ const ExperienceChangeRequestSchema = new Schema({
     required: true,
   },
   requester: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  linkIssuedBy: { type: Schema.Types.ObjectId, ref: 'User', immutable: true },
   kind: { type: String, enum: ['edit', 'remove'], required: true },
   proposed: {
     feedbackPublic: String,

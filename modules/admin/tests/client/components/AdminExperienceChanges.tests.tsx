@@ -283,3 +283,17 @@ it('copies an issued link and shows empty proposed feedback', async () => {
     value: undefined,
   });
 });
+
+it('explains when approval needs another reviewer while allowing rejection', async () => {
+  apiMock.listRequests.mockResolvedValueOnce([
+    editRequest({ canApprove: false }),
+  ]);
+  render(<AdminExperienceChanges />);
+  expect(
+    await screen.findByText(
+      'Approval requires another support team member or an administrator.',
+    ),
+  ).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Reject' })).toBeEnabled();
+});

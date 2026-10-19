@@ -145,6 +145,94 @@ describe('Experience change requests', () => {
     await utils.clearDatabase();
   });
 
+  for (const kind of ['edit', 'remove']) {
+    it(`requires a different support member to approve ${kind}`, async () => {
+      const issuer = await User.findOneAndUpdate(
+        { username: users[3].username },
+        { $set: { roles: ['user', 'support-team'] } },
+        { new: true },
+      );
+      if (!issuer) throw new Error('Expected support issuer');
+      await utils.signIn(users[3], unrelatedAgent);
+      const issued = await unrelatedAgent
+        .post(`/api/admin/experiences/${experience._id}/change-links`)
+        .send({ memberId: String(author._id) })
+        .expect(201);
+      const secret = new URL(
+        issued.body.path,
+        'https://example.test',
+      ).searchParams.get('secret');
+      if (!secret) throw new Error('Expected secret');
+      const body =
+        kind === 'edit'
+          ? {
+              kind,
+              proposed: {
+                feedbackPublic: 'Anonymous updated feedback.',
+                recommend: 'no',
+                interactions: { met: true, host: false, guest: false },
+              },
+            }
+          : { kind };
+      const submitted = await authorAgent
+        .post(`/api/experiences/${experience._id}/change-requests`)
+        .set(secretHeader(secret))
+        .send(body)
+        .expect(201);
+      const saved = await ExperienceChangeRequest.findById(submitted.body._id);
+      String(saved!.linkIssuedBy).should.equal(String(issuer._id));
+      const path = `/api/admin/experience-change-requests/${submitted.body._id}/decision`;
+      await unrelatedAgent.post(path).send({ decision: 'approve' }).expect(403);
+      const pending = await ExperienceChangeRequest.findById(
+        submitted.body._id,
+      );
+      pending!.status.should.equal('pending');
+      const queue = await unrelatedAgent
+        .get('/api/admin/experience-change-requests')
+        .expect(200);
+      queue.body[0].canApprove.should.equal(false);
+      // A new issuer must not replace attribution on an already submitted request.
+      await issue(String(author._id));
+      await unrelatedAgent.post(path).send({ decision: 'approve' }).expect(403);
+      await User.updateOne(
+        { _id: recipient._id },
+        { $set: { roles: ['user', 'support-team'] } },
+      );
+      await utils.signIn(users[2], recipientAgent);
+      const peerQueue = await recipientAgent
+        .get('/api/admin/experience-change-requests')
+        .expect(200);
+      peerQueue.body[0].canApprove.should.equal(true);
+      await recipientAgent.post(path).send({ decision: 'approve' }).expect(200);
+    });
+  }
+
+  it('allows issuer rejection and administrator approval of legacy requests', async () => {
+    await User.updateOne(
+      { username: users[3].username },
+      { $set: { roles: ['user', 'support-team'] } },
+    );
+    await utils.signIn(users[3], unrelatedAgent);
+    const legacy = await ExperienceChangeRequest.create({
+      experience: experience._id,
+      requester: author._id,
+      kind: 'remove',
+    });
+    const path = `/api/admin/experience-change-requests/${legacy._id}/decision`;
+    await unrelatedAgent.post(path).send({ decision: 'approve' }).expect(403);
+    await adminAgent.post(path).send({ decision: 'approve' }).expect(200);
+    const rejection = await ExperienceChangeRequest.create({
+      experience: experience._id,
+      requester: author._id,
+      kind: 'remove',
+      linkIssuedBy: (await User.findOne({ username: users[3].username }))!._id,
+    });
+    await unrelatedAgent
+      .post(`/api/admin/experience-change-requests/${rejection._id}/decision`)
+      .send({ decision: 'reject' })
+      .expect(200);
+  });
+
   it('issues a scoped link, keeps an edit pending, and applies an approved edit', async () => {
     const search = await adminAgent
       .get('/api/admin/experiences')

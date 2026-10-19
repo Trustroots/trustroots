@@ -12,6 +12,19 @@ const {
 const should: typeof import('should') = require('should');
 
 describe('React route ownership', function () {
+  it('allows administrators and support to review Experience changes', () => {
+    const route = getReactRoutePolicy('/admin/experience-changes');
+    for (const role of ['admin', 'support-team']) {
+      should(getReactRouteAccessRedirect(route, { roles: [role] })).be.null();
+    }
+    for (const role of ['user', 'welcome-team']) {
+      getReactRouteAccessRedirect(route, { roles: [role] }).should.equal(
+        '/volunteering',
+      );
+    }
+    getReactRouteAccessRedirect(route, null).should.equal('/signin');
+  });
+
   it('owns username admin links with the same admin-only access as ID links', () => {
     const matched = matchReactRoute('/admin/user/fictional-member');
     matched.params.should.deepEqual({ username: 'fictional-member' });
