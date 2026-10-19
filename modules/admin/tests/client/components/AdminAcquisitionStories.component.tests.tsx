@@ -113,6 +113,12 @@ describe('<AdminAcquisitionStories />', () => {
       ]);
       render(<AdminAcquisitionStories />);
       await screen.findByRole('table');
+      for (const username of ['restricted-member', 'matched-member']) {
+        expect(screen.getByRole('link', { name: username })).toHaveAttribute(
+          'href',
+          role === 'admin' ? `/admin/user/${username}` : `/profile/${username}`,
+        );
+      }
       const row = screen
         .getByRole('link', { name: 'restricted-member' })
         .closest('tr')!;

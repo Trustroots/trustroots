@@ -45,7 +45,7 @@ export default function AdminNotes({
       setNotes(notes);
     } catch {
       // eslint-disable-next-line no-console
-      console.log(`Could not load admin notes for user ${id}`);
+      console.log(`Could not load safety notes for user ${id}`);
     } finally {
       setIsFetching(false);
     }
@@ -62,7 +62,7 @@ export default function AdminNotes({
         userId: id,
       });
     } catch {
-      alert(`Could not write admin notes for user ${id}`);
+      alert(`Could not write safety notes for user ${id}`);
     } finally {
       setNewNote('');
       fetchNotes();
@@ -72,7 +72,7 @@ export default function AdminNotes({
   return (
     <>
       <h4 id="notes">
-        <a href="#notes">Admin notes about user</a>
+        <a href="#notes">Safety notes about user</a>
       </h4>
       <div className="panel panel-default admin-notes">
         <div className="panel-body">
