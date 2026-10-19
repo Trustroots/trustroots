@@ -344,24 +344,26 @@ describe('Admin circles controller', () => {
     assert.strictEqual(circle.color, 'e74c3c');
   });
 
-  it('rejects an unsafe slug before writing image files', async () => {
-    circle.slug = '../outside';
-    await controller.update(
-      {
-        params: { circle: 'circle-1' },
-        body: { label: 'Walkers', color: '1e3a8a' },
-        file: { path: '/upload.png' },
-      },
-      res,
-    );
-    assert.strictEqual(res.statusCode, 400);
-    assert.strictEqual(
-      res.body.message,
-      'Circle slug is not safe for image storage.',
-    );
-    sinon.assert.notCalled(sharp);
-    sinon.assert.notCalled(circle.save);
-  });
+  for (const slug of ['../outside', undefined]) {
+    it(`rejects an unsafe or absent slug (${slug}) before writing image files`, async () => {
+      circle.slug = slug;
+      await controller.update(
+        {
+          params: { circle: 'circle-1' },
+          body: { label: 'Walkers', color: '1e3a8a' },
+          file: { path: '/upload.png' },
+        },
+        res,
+      );
+      assert.strictEqual(res.statusCode, 400);
+      assert.strictEqual(
+        res.body.message,
+        'Circle slug is not safe for image storage.',
+      );
+      sinon.assert.notCalled(sharp);
+      sinon.assert.notCalled(circle.save);
+    });
+  }
 
   it('unsets cleared attribution fields', async () => {
     const document = new mongoose.Schema({

@@ -168,7 +168,6 @@ async function processCircleImage(filePath, slug) {
 }
 
 async function moveCircleImage(oldSlug, newSlug) {
-  if (!oldSlug || oldSlug === newSlug) return;
   assertSlug(oldSlug);
   assertSlug(newSlug);
   try {

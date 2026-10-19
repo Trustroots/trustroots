@@ -50,7 +50,7 @@ export default function AdminCircles() {
 
   function clearSelectedImage() {
     setImage(null);
-    if (imageInput.current) imageInput.current.value = '';
+    imageInput.current!.value = '';
   }
 
   function editCircle(selected: AdminCircle) {
