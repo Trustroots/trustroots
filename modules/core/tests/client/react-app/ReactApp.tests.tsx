@@ -69,6 +69,16 @@ jest.mock(
   },
 );
 
+jest.mock('@/modules/admin/client/components/AdminCircles.component', () => {
+  const React = jest.requireActual<typeof import('react')>('react');
+
+  function MockAdminCircles() {
+    return <main>Admin circles route</main>;
+  }
+
+  return MockAdminCircles;
+});
+
 jest.mock('@/modules/admin/client/components/AdminMessages.component', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 
@@ -435,6 +445,14 @@ describe('<ReactApp />', () => {
     expect(screen.getByText('Header admin')).toBeInTheDocument();
     expect(screen.getByText('Footer')).toBeInTheDocument();
     expect(document.title).toBe('Admin - Audit log - Trustroots');
+  });
+
+  it('renders the admin circles page for an administrator', async () => {
+    renderApp('/admin/circles', {
+      user: { roles: ['user', 'admin'], username: 'admin' },
+    });
+    expect(await screen.findByText('Admin circles route')).toBeInTheDocument();
+    expect(document.title).toBe('Admin - Circles - Trustroots');
   });
 
   it('honors headerHidden and noScrollingTop route metadata', async () => {

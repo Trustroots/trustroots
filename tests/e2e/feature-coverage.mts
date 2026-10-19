@@ -82,8 +82,8 @@ const ROLE_DEFINITIONS = {
 };
 
 const source = {
-  adminClient: 'modules/admin/client/config/admin.client.routes.js',
-  adminServer: 'modules/admin/server/routes/admin.server.routes.js',
+  adminClient: 'modules/core/client/react-app/routes.tsx',
+  adminServer: 'modules/admin/server/routes/admin.server.routes.mjs',
   contactsClient: 'modules/contacts/client/config/contacts.client.routes.js',
   contactsServer: 'modules/contacts/server/routes/contacts.server.routes.js',
   coreClient: 'modules/core/client/config/core.client.routes.js',
@@ -143,6 +143,7 @@ function apiRoute(
 }
 
 const specPaths: Record<string, string> = {
+  'admin-circles.spec.js': 'features/admin-moderation/admin-circles.spec.ts',
   'account-email-tokens.spec.js':
     'features/auth-account/account-email-tokens.spec.js',
   'account-settings.spec.js': 'features/auth-account/account-settings.spec.js',
@@ -3329,6 +3330,35 @@ const features = [
         'admin-newsletter-api.spec.js',
         'admin can build a location and circle newsletter audience',
       ),
+    ],
+  },
+  {
+    id: 'admin.circles',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description: 'Admins can create and edit circles.',
+    roles: ['admin'],
+    references: {
+      clientRoutes: [
+        clientRoute('admin-circles', '/admin/circles', source.adminClient, {
+          requiresAuth: true,
+          requiresRole: 'admin',
+        }),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/admin/circles', source.adminServer),
+        apiRoute('POST', '/api/admin/circles', source.adminServer),
+        apiRoute('GET', '/api/admin/circles/:circle', source.adminServer),
+        apiRoute('PUT', '/api/admin/circles/:circle', source.adminServer),
+      ],
+    },
+    requiredScenarios: [
+      'Admin circles page loads.',
+      'Admin can create a circle.',
+      'Admin can edit an existing circle.',
+    ],
+    relatedSpecs: [
+      spec('admin-circles.spec.js', 'admin can create and edit a circle'),
     ],
   },
   {

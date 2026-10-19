@@ -67,11 +67,15 @@ class DeploymentTests(unittest.TestCase):
                 with self.subTest(action=action, failure=failure), tempfile.TemporaryDirectory() as directory:
                     media = Path(directory)
                     photos = media / 'photos'
+                    circles = media / 'circles'
                     photos.mkdir()
+                    circles.mkdir()
                     services = {name: {'logging': {'driver': 'local', 'options': {
                         'max-size': '10m', 'max-file': '3'}}, 'volumes': [
                         {'type': 'bind', 'target': '/home/app/trustroots/public/uploads-profile',
-                         'source': str(photos)}
+                         'source': str(photos)},
+                        {'type': 'bind', 'target': '/home/app/trustroots/public/uploads-circle',
+                         'source': str(circles)},
                     ]} for name in (*deploy.SERVICES, 'mongodb')}
                     commands = []
                     def docker(command, **kwargs):
@@ -117,15 +121,24 @@ class DeploymentTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             media = Path(directory)
             photos = media / 'photos'
+            circles = media / 'circles'
             photos.mkdir()
+            circles.mkdir()
             services = {name: {'logging': {'driver': 'local', 'options': {
                 'max-size': '10m', 'max-file': '3'}}, 'volumes': [
-                {'type': 'bind', 'target': '/home/app/trustroots/public/uploads-profile', 'source': str(photos)}
+                {'type': 'bind', 'target': '/home/app/trustroots/public/uploads-profile', 'source': str(photos)},
+                {'type': 'bind', 'target': '/home/app/trustroots/public/uploads-circle', 'source': str(circles)},
             ]} for name in (*deploy.SERVICES, 'mongodb')}
             args = SimpleNamespace(media_mount=media, compose=media / 'compose.yml', url='https://example.test')
             with patch.object(deploy.os.path, 'ismount', return_value=True), patch.object(deploy, 'run') as docker:
                 docker.side_effect = lambda command, **kwargs: json.dumps({'services': services}) if 'config' in command else ''
                 deploy.preflight(args, runtime=False)
+                services['webapp']['volumes'].pop()
+                with self.assertRaisesRegex(RuntimeError, 'circle image'):
+                    deploy.preflight(args, runtime=False)
+                services['webapp']['volumes'].append(
+                    {'type': 'bind', 'target': '/home/app/trustroots/public/uploads-circle',
+                     'source': str(circles)})
                 services['worker']['logging']['driver'] = 'loki'
                 with self.assertRaisesRegex(RuntimeError, 'local logging'):
                     deploy.preflight(args, runtime=False)

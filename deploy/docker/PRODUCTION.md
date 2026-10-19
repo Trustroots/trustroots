@@ -95,8 +95,13 @@ restart Docker until the correct volume is mounted. Verify with
 
 Install Python 3.9 or newer and copy `production-deploy.py` to the deployment
 host. Run as an operator with Docker access (or through `sudo`). The script
-expects the existing `webapp`, `worker`, and `mongodb` services and the photo
-bind mount at `/home/app/trustroots/public/uploads-profile`.
+expects the existing `webapp`, `worker`, and `mongodb` services, the photo
+bind mount at `/home/app/trustroots/public/uploads-profile`, and the circle
+image bind mount at `/home/app/trustroots/public/uploads-circle`. Circle images
+committed with the application are copied into that mount on container start
+when the files are missing. Files already in the mount, including administrator
+uploads, are left in place, so a new deploy does not discard them. Create the
+directory on the media mount before the first deploy that includes this check.
 
 ```bash
 sudo python3 production-deploy.py preflight \

@@ -653,6 +653,10 @@ describe('API route registrations', () => {
     );
     const notes = controller(['addNote', 'getNotes'], 'adminNotes');
     const referenceThreads = controller(['list'], 'adminReferenceThreads');
+    const circles = controller(
+      ['create', 'get', 'list', 'processImageUpload', 'update'],
+      'adminCircles',
+    );
     const threads = controller(['getThreads'], 'adminThreads');
     const users = controller(
       [
@@ -680,6 +684,7 @@ describe('API route registrations', () => {
         '../controllers/admin.notes.server.controller': notes,
         '../controllers/admin.reference-threads.server.controller':
           referenceThreads,
+        '../controllers/admin.circles.server.controller': circles,
         '../controllers/admin.threads.server.controller': threads,
         '../controllers/admin.users.server.controller': users,
         '../policies/admin.server.policy': policy,
@@ -782,6 +787,24 @@ describe('API route registrations', () => {
       routeByPath(routes, '/api/admin/newsletter-subscribers/circle').get,
       [auditLog.record, newsletter.listCircleMembers],
     );
+    assertHandlers(routeByPath(routes, '/api/admin/circles').get, [
+      auditLog.record,
+      circles.list,
+    ]);
+    assertHandlers(routeByPath(routes, '/api/admin/circles').post, [
+      circles.processImageUpload,
+      auditLog.record,
+      circles.create,
+    ]);
+    assertHandlers(routeByPath(routes, '/api/admin/circles/:circle').get, [
+      auditLog.record,
+      circles.get,
+    ]);
+    assertHandlers(routeByPath(routes, '/api/admin/circles/:circle').put, [
+      circles.processImageUpload,
+      auditLog.record,
+      circles.update,
+    ]);
     routes.forEach(route => assertPolicy(route, policy));
   });
 

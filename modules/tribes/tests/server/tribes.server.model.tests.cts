@@ -148,6 +148,43 @@ describe('Tribe Model Unit Tests:', function () {
         })
         .catch(done);
     });
+    it('should accept an existing hexadecimal colour outside the default palette', function (done) {
+      const _tribe = new Tribe({ label: 'Palette exception', color: 'e74c3c' });
+      _tribe
+        .save()
+        .then(saved => {
+          saved.color!.should.equal('e74c3c');
+          done();
+        })
+        .catch(done);
+    });
+    it('should reject a description longer than 4000 characters', function (done) {
+      const _tribe = new Tribe({
+        label: 'Long description',
+        description: 'x'.repeat(4001),
+      });
+      _tribe
+        .save()
+        .then(() => done(new Error('expected the description to be rejected')))
+        .catch((err: { errors: { description: { message: string } } }) => {
+          err.errors.description.message.should.equal(
+            'Please keep the description under 4000 characters.',
+          );
+          done();
+        });
+    });
+    it('should reject a colour that is not hexadecimal', function (done) {
+      const _tribe = new Tribe({ label: 'Bad colour', color: 'zzzzzz' });
+      _tribe
+        .save()
+        .then(() => done(new Error('expected the colour to be rejected')))
+        .catch((err: { errors: { color: { message: string } } }) => {
+          err.errors.color.message.should.equal(
+            'Please choose a valid colour.',
+          );
+          done();
+        });
+    });
     /*
         // Disabled reason: flaky test
         it('should fail to save an existing tribe again', function (done) {

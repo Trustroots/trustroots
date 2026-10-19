@@ -1,3 +1,4 @@
+import adminCircles from '../controllers/admin.circles.server.controller.mjs';
 import adminAcquisitionStories from './../controllers/admin.acquisition-stories.server.controller.mts';
 import adminAuditLog from './../controllers/admin.audit-log.server.controller.mts';
 import adminMessages from './../controllers/admin.messages.server.controller.mts';
@@ -20,6 +21,7 @@ interface RouteChain {
   get(...handlers: RouteHandler[]): RouteChain;
   patch(...handlers: RouteHandler[]): RouteChain;
   post(...handlers: RouteHandler[]): RouteChain;
+  put(...handlers: RouteHandler[]): RouteChain;
 }
 
 interface RouteApp {
@@ -53,6 +55,26 @@ const registerRoutes = (app: RouteApp): void => {
     .route('/api/admin/hackerspaces/preview')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminHackerspaces.preview);
+  app
+    .route('/api/admin/circles')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminCircles.list)
+    .post(
+      adminCircles.processImageUpload,
+      adminAuditLog.record,
+      adminCircles.create,
+    );
+
+  app
+    .route('/api/admin/circles/:circle')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminCircles.get)
+    .put(
+      adminCircles.processImageUpload,
+      adminAuditLog.record,
+      adminCircles.update,
+    );
+
   app
     .route('/api/admin/acquisition-stories')
     .all(adminPolicy.isAllowed)
