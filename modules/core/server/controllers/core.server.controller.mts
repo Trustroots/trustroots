@@ -49,7 +49,6 @@ const service = {
   renderIndex,
   renderNotFound,
   receiveCSPViolationReport,
-  receiveExpectCTViolationReport,
   getLanguages,
 };
 const { getReactRouteAccessRedirect, getReactRoutePolicy } =
@@ -137,26 +136,6 @@ function receiveCSPViolationReport(req: { body?: unknown }, res: CoreResponse) {
   res.status(204).json();
 }
 
-/**
- * Log received CT report
- * See `config/lib/express.js` and `initHelmetHeaders()` for more
- * @link https://helmetjs.github.io/docs/expect-ct/
- * @link https://scotthelme.co.uk/a-new-security-header-expect-ct/
- */
-function receiveExpectCTViolationReport(
-  req: { body?: unknown },
-  res: CoreResponse,
-) {
-  if (process.env.NODE_ENV !== 'test') {
-    log('warn', 'Expect-CT violation report #3hg8ha', {
-      report: req.body
-        ? textService.plainText(JSON.stringify(req.body))
-        : 'No report available.',
-    });
-  }
-  res.status(204).json();
-}
-
 // Future push: restore renderServiceWorkerConfig (previously served
 // `var FCM_SENDER_ID = …` at GET /config/sw.js) when browser push returns.
 
@@ -179,11 +158,5 @@ function getLanguages(
 }
 const defaultExport = service;
 export default defaultExport;
-export {
-  getLanguages,
-  receiveCSPViolationReport,
-  receiveExpectCTViolationReport,
-  renderIndex,
-  renderNotFound,
-};
+export { getLanguages, receiveCSPViolationReport, renderIndex, renderNotFound };
 export { defaultExport as 'module.exports' };

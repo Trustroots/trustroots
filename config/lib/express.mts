@@ -19,7 +19,6 @@ import favicon from 'serve-favicon';
 import compress from 'compression';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-import expectCt from 'expect-ct';
 import nunjucks from 'nunjucks';
 import buildMetadata from './build-metadata.mjs';
 import path from 'path';
@@ -409,21 +408,6 @@ function initHelmetHeaders(app: Express) {
   // @link https://helmetjs.github.io/docs/frameguard/
   // @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
   app.use(helmet.frameguard());
-
-  // Sets Expect-CT header
-  // @link https://helmetjs.github.io/docs/expect-ct/
-  // @link https://scotthelme.co.uk/a-new-security-header-expect-ct/
-  app.use(
-    expectCt({
-      enforce: false,
-      maxAge: 30,
-      reportUri:
-        (config.https === true ? 'https' : 'http') +
-        '://' +
-        config.domain +
-        '/api/report-expect-ct-violation',
-    }),
-  );
 
   // Adds some small XSS protections
   // @link https://helmetjs.github.io/docs/xss-filter/

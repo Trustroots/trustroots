@@ -31,7 +31,6 @@ const coreController: Pick<
   | 'renderIndex'
   | 'renderNotFound'
   | 'receiveCSPViolationReport'
-  | 'receiveExpectCTViolationReport'
   | 'getLanguages'
 > = require('./../../server/controllers/core.server.controller.mjs');
 type MockResponse = {
@@ -299,74 +298,6 @@ describe('Controller: core', function () {
 
       const res = mockResponse();
       coreController.receiveCSPViolationReport({ body: { foo: 'bar' } }, res);
-      res.statusCode.should.equal(204);
-    });
-  });
-
-  describe('receiveExpectCTViolationReport', function () {
-    let originalEnv: string | undefined;
-
-    beforeEach(function () {
-      originalEnv = process.env.NODE_ENV;
-      process.env.NODE_ENV = 'production';
-    });
-
-    afterEach(function () {
-      process.env.NODE_ENV = originalEnv;
-    });
-
-    it('responds with status 204 when a report body is present', function () {
-      const res = mockResponse();
-      coreController.receiveExpectCTViolationReport(
-        { body: { foo: 'bar' } },
-        res,
-      );
-      res.statusCode.should.equal(204);
-    });
-
-    it('redacts report URLs before logging security reports', function () {
-      const originalLog = winston.log;
-      const calls: unknown[][] = [];
-      winston.log = ((...args: unknown[]) => {
-        calls.push(args);
-        return winston;
-      }) as unknown as typeof winston.log;
-
-      try {
-        const res = mockResponse();
-        coreController.receiveExpectCTViolationReport(
-          {
-            body: {
-              'blocked-uri': 'https://example.test/?token=private-token',
-            },
-          },
-          res,
-        );
-
-        const report = calls.find(
-          ([level, event]) =>
-            level === 'warn' && event === 'Expect-CT violation report #3hg8ha',
-        );
-        should(report?.[2]).deepEqual({ report: '[REDACTED]' });
-      } finally {
-        winston.log = originalLog;
-      }
-    });
-
-    it('responds with status 204 when no report body is present', function () {
-      const res = mockResponse();
-      coreController.receiveExpectCTViolationReport({ body: null }, res);
-      res.statusCode.should.equal(204);
-    });
-
-    it('responds with status 204 in test mode', function () {
-      process.env.NODE_ENV = 'test';
-
-      const res = mockResponse();
-      coreController.receiveExpectCTViolationReport(
-        { body: { foo: 'bar' } },
-        res,
-      );
       res.statusCode.should.equal(204);
     });
   });

@@ -340,14 +340,6 @@ declare module 'compression' {
   }): import('express').RequestHandler;
 }
 
-declare module 'expect-ct' {
-  export default function expectCt(options: {
-    enforce: boolean;
-    maxAge: number;
-    reportUri: string;
-  }): import('express').RequestHandler;
-}
-
 declare module 'express-session' {
   export default function session(options: {
     saveUninitialized: boolean;
