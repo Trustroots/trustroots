@@ -41,6 +41,24 @@ describe('<UserState />', () => {
     );
   });
 
+  it('can omit duplicate role badges while retaining account status', () => {
+    render(
+      <UserState
+        showRoles={false}
+        user={{
+          roles: ['admin', 'volunteer'],
+          public: false,
+          email: 'river@example.org',
+          emailTemporary: 'river@example.org',
+        }}
+      />,
+    );
+    expect(screen.queryByText('admin')).not.toBeInTheDocument();
+    expect(screen.queryByText('volunteer')).not.toBeInTheDocument();
+    expect(screen.getByText('Hidden profile')).toBeInTheDocument();
+    expect(screen.getByText('Unconfirmed signup')).toBeInTheDocument();
+  });
+
   it('distinguishes unconfirmed signups from email changes', () => {
     render(
       <UserState

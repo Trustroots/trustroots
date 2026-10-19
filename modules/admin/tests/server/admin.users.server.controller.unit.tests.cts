@@ -29,6 +29,7 @@ type ReferenceThreadModel =
   import('../../../../testutils/server/model-contracts.mts').ReferenceThreadModel;
 const User = mongoose.model<UserRecord, UserModel>('User');
 const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
+const Experience = mongoose.model('Experience');
 const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
 const ReferenceThread = mongoose.model<
   ReferenceThreadRecord,
@@ -48,7 +49,16 @@ interface AdminUserResponse {
     twitter?: { token?: string };
   };
 }
+interface ExperienceStats {
+  total: number;
+  positive: number;
+  negative: number;
+  neutral: number;
+  unpublished: number;
+}
 interface AdminResponseBody {
+  experiencesReceived?: ExperienceStats;
+  experiencesWritten?: ExperienceStats;
   message?: string;
   users?: Array<AdminUserResponse | null | undefined>;
   pagination?: {
@@ -588,6 +598,68 @@ describe('Admin users controller unit tests', () => {
 
       responseField(res, 'profile').username!.should.equal(users[0].username);
       responseField(res, 'messageFromCount').should.equal(0);
+      responseField(res, 'experiencesReceived').should.deepEqual({
+        total: 0,
+        positive: 0,
+        negative: 0,
+        neutral: 0,
+        unpublished: 0,
+      });
+      responseField(res, 'experiencesWritten').should.deepEqual({
+        total: 0,
+        positive: 0,
+        negative: 0,
+        neutral: 0,
+        unpublished: 0,
+      });
+    });
+
+    it('counts received and written experiences without mixing unpublished recommendations or removed records', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(8));
+      const member = users[0]._id;
+      const categories = [
+        { public: true, recommend: 'yes' },
+        { public: true, recommend: 'no' },
+        { public: true, recommend: 'unknown' },
+        { public: false, recommend: 'no' },
+        { public: true, recommend: 'yes', removedAt: new Date() },
+      ];
+      await Experience.create([
+        ...categories.map((category, index) => ({
+          userFrom: users[index + 1]._id,
+          userTo: member,
+          ...category,
+        })),
+        ...categories.slice(2).map((category, index) => ({
+          userFrom: member,
+          userTo: users[index + 1]._id,
+          ...category,
+        })),
+        {
+          userFrom: users[6]._id,
+          userTo: users[7]._id,
+          public: true,
+          recommend: 'no',
+        },
+      ]);
+      const res = mockResponse();
+      await adminUsers.getUser({ body: { id: member.toString() } }, res);
+      res.statusCode.should.equal(200);
+      const expected = {
+        total: 4,
+        positive: 1,
+        negative: 1,
+        neutral: 1,
+        unpublished: 1,
+      };
+      responseField(res, 'experiencesReceived').should.deepEqual(expected);
+      responseField(res, 'experiencesWritten').should.deepEqual({
+        total: 2,
+        positive: 0,
+        negative: 0,
+        neutral: 1,
+        unpublished: 1,
+      });
     });
 
     it('defaults nullable contact and offer lookups to empty arrays', async () => {

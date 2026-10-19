@@ -288,6 +288,18 @@ describe('<AdminUser />', () => {
     ).toBeInTheDocument();
     expect(mockedUsersApi.getUser).toHaveBeenCalledWith(userId);
     expect(screen.getByText('State for alice')).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('group', { name: 'Account access' })).getByRole(
+        'button',
+        { name: 'Suspend' },
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('group', { name: 'Team roles' })).getByRole(
+        'button',
+        { name: 'Make volunteer' },
+      ),
+    ).toBeInTheDocument();
     expect(screen.queryByText('Role management')).not.toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: 'Make greeter' }),
@@ -355,6 +367,75 @@ describe('<AdminUser />', () => {
     expect(
       screen.getByRole('link', { name: 'Show location on map' }),
     ).toHaveAttribute('href', '/search?location=60.17,24.94');
+  });
+
+  it('shows experience totals and publication-aware recommendation counts in separate activity cards', async () => {
+    mockedUsersApi.getUserByUsername.mockResolvedValueOnce(
+      makeReportCard({
+        experiencesReceived: {
+          total: 10,
+          positive: 4,
+          negative: 2,
+          neutral: 1,
+          unpublished: 3,
+        },
+        experiencesWritten: {
+          total: 5,
+          positive: 1,
+          negative: 0,
+          neutral: 2,
+          unpublished: 2,
+        },
+      }),
+    );
+    render(<AdminUser username="alice" />);
+    const received = within(
+      await screen.findByRole('region', { name: 'Experiences received' }),
+    );
+    for (const label of [
+      '10 total',
+      '4 positive',
+      '2 negative',
+      '1 neutral',
+      '3 unpublished',
+    ]) {
+      expect(received.getByText(label)).toBeInTheDocument();
+    }
+    const written = within(
+      screen.getByRole('region', { name: 'Experiences written' }),
+    );
+    for (const label of [
+      '5 total',
+      '1 positive',
+      '0 negative',
+      '2 neutral',
+      '2 unpublished',
+    ]) {
+      expect(written.getByText(label)).toBeInTheDocument();
+    }
+    expect(
+      within(screen.getByRole('region', { name: 'Stats' })).getAllByRole(
+        'region',
+      ),
+    ).toHaveLength(6);
+  });
+
+  it('shows zero experience counts when the member response has no experience statistics', async () => {
+    mockedUsersApi.getUserByUsername.mockResolvedValueOnce(makeReportCard());
+    render(<AdminUser username="alice" />);
+    await screen.findByRole('heading', { name: 'alice: Alice Example' });
+    for (const title of ['Experiences received', 'Experiences written']) {
+      const card = within(screen.getByRole('region', { name: title }));
+      for (const label of [
+        '0 total',
+        '0 positive',
+        '0 negative',
+        '0 neutral',
+        '0 unpublished',
+      ]) {
+        expect(card.getByText(label)).toBeInTheDocument();
+      }
+    }
   });
 
   it('links listable roles and describes recognised and historical roles', async () => {
@@ -708,6 +789,29 @@ describe('<AdminUser />', () => {
     expect(
       screen.queryByLabelText('Member username, email or ID'),
     ).not.toBeInTheDocument();
+  });
+
+  it.each([
+    'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
+    '',
+    undefined,
+  ])('shows the member npub only when present (%s)', async nostrNpub => {
+    window.history.pushState({}, '', '/admin/user/alex');
+    mockedUsersApi.getUserByUsername.mockResolvedValueOnce(
+      makeReportCard({
+        profile: { _id: userId, roles: ['user'], username: 'alex', nostrNpub },
+      }),
+    );
+    render(<AdminUser username="alex" />);
+    await screen.findByRole('heading', { name: 'alex' });
+
+    if (nostrNpub) {
+      expect(
+        screen.getByRole('row', { name: `Nostr npub ${nostrNpub}` }),
+      ).toBeInTheDocument();
+    } else {
+      expect(screen.queryByText('Nostr npub')).not.toBeInTheDocument();
+    }
   });
 
   it('embeds the reported username using the signed-in viewer', async () => {
