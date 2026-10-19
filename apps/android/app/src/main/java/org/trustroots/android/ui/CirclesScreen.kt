@@ -25,7 +25,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.res.stringResource
+import org.trustroots.android.R
+import org.trustroots.android.ui.common.LiveFilterField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -132,7 +134,12 @@ internal fun CirclesScreen(
         Column(Modifier.padding(horizontal = 20.dp).padding(contentPadding.horizontalInset())) {
         Text("Discover circles", style = MaterialTheme.typography.headlineMedium)
         Text("Joining circles helps you find likeminded Trustroots members.", modifier = Modifier.padding(vertical = 8.dp))
-        OutlinedTextField(filter, { filter = it }, label = { Text("Filter circles") }, modifier = Modifier.fillMaxWidth())
+        LiveFilterField(
+            value = filter,
+            onValueChange = { filter = it },
+            label = stringResource(R.string.filter_circles),
+            clearLabel = stringResource(R.string.clear_circle_filter),
+        )
         if (loading) CircularProgressIndicator()
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         }

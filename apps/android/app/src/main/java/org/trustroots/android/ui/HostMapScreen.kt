@@ -9,8 +9,6 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Point
 import android.graphics.drawable.BitmapDrawable
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -34,14 +32,15 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Close
 import org.trustroots.android.api.MemberProfile
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.res.stringResource
+import org.trustroots.android.R
+import org.trustroots.android.ui.common.SubmittedSearchField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.getValue
@@ -63,7 +62,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.viewinterop.AndroidView
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
@@ -89,7 +87,6 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.TrustrootsCircle
 import org.trustroots.android.api.CommunityNote
 import org.trustroots.android.api.NostrootsNotesClient
-import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.messageOr
@@ -133,6 +130,7 @@ internal fun HostMapScreen(
     var loading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var locationQuery by remember { mutableStateOf("") }
+    var locationRevision by remember { mutableIntStateOf(0) }
     var includeHosts by remember { mutableStateOf(true) }
     var includeMeet by remember { mutableStateOf(false) }
     var seenMonths by remember { mutableStateOf<Int?>(6) }
@@ -269,6 +267,7 @@ internal fun HostMapScreen(
     val findLocation: () -> Unit = find@{
         val query = locationQuery.trim()
         if (query.isEmpty()) return@find
+        val revision = locationRevision
         showSuggestions = false
         keyboard?.hide()
         focusManager.clearFocus()
@@ -277,6 +276,7 @@ internal fun HostMapScreen(
             val result = runCatching {
                 lookupAddresses(query, 1).firstOrNull()
             }
+            if (revision != locationRevision) return@launch
             val location = result.getOrNull()
             if (location == null) error = "Could not find that place."
             else {
@@ -384,16 +384,19 @@ internal fun HostMapScreen(
                 .padding(top = contentPadding.calculateTopPadding()),
         ) {
             Row(Modifier.fillMaxWidth().padding(contentPadding.horizontalInset()).padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    locationQuery, { locationQuery = it; showSuggestions = true },
-                    placeholder = { Text("Search places") },
-                    singleLine = true,
-                    leadingIcon = searchMode,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                    keyboardActions = KeyboardActions(onSearch = { findLocation() }),
-                    trailingIcon = {
-                        IconButton(onClick = findLocation, enabled = locationQuery.isNotBlank()) { Icon(Icons.Default.Search, "Search places") }
+                SubmittedSearchField(
+                    value = locationQuery,
+                    onValueChange = {
+                        locationRevision++
+                        locationQuery = it
+                        showSuggestions = it.isNotEmpty()
                     },
+                    label = stringResource(R.string.search_places),
+                    clearLabel = stringResource(R.string.clear_place_search),
+                    searchLabel = stringResource(R.string.search_places),
+                    searchMode = searchMode,
+                    onSearch = findLocation,
+                    searchEnabled = locationQuery.isNotBlank(),
                     modifier = Modifier.weight(1f).testTag("placeSearchField"),
                 )
                 IconButton(onClick = {
@@ -408,6 +411,7 @@ internal fun HostMapScreen(
             }
             if (showSuggestions) suggestions.forEach { address ->
                 TextButton(onClick = {
+                    locationRevision++
                     locationQuery = address.getAddressLine(0).orEmpty()
                     showSuggestions = false
                     keyboard?.hide()

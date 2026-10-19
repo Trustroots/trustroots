@@ -12,19 +12,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -32,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -42,11 +38,13 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.trustroots.android.api.MemberProfile
+import org.trustroots.android.R
+import org.trustroots.android.ui.common.SubmittedSearchField
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.RemoteArtwork
@@ -68,6 +66,7 @@ internal fun MemberSearchScreen(
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     var query by remember { mutableStateOf("") }
+    var queryRevision by remember { mutableIntStateOf(0) }
     var results by remember { mutableStateOf<List<MemberProfile>>(emptyList()) }
     var selected by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(selected) { onProfileOpenChange(selected != null) }
@@ -75,17 +74,28 @@ internal fun MemberSearchScreen(
     var searched by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    val updateQuery: (String) -> Unit = {
+        queryRevision++
+        query = it
+        searched = false
+        error = null
+        results = emptyList()
+    }
     val search: () -> Unit = search@{
         if (query.trim().length < 3 || loading) return@search
+        val revision = queryRevision
+        val submittedQuery = query
         keyboard?.hide()
         focusManager.clearFocus()
+        loading = true
+        error = null
         scope.launch {
-            loading = true
-            error = null
-            api.searchMembers(session, query).onSuccess { results = it; searched = true }
+            api.searchMembers(session, submittedQuery).onSuccess {
+                if (revision == queryRevision) { results = it; searched = true }
+            }
                 .onFailure {
                     if (it.isAuthenticationFailure()) onSessionInvalidated()
-                    else error = it.messageOr("Could not search members.")
+                    else if (revision == queryRevision) error = it.messageOr("Could not search members.")
                 }
             loading = false
         }
@@ -96,20 +106,16 @@ internal fun MemberSearchScreen(
     }
     Column(Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding())) {
         Surface(color = Color.White, modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(
+        SubmittedSearchField(
             value = query,
-            onValueChange = { query = it; searched = false; error = null; results = emptyList() },
-            placeholder = { Text("Name or username") },
-            leadingIcon = searchMode,
-            singleLine = true,
+            onValueChange = updateQuery,
+            label = stringResource(R.string.member_search_hint),
+            clearLabel = stringResource(R.string.clear_member_search),
+            searchLabel = stringResource(R.string.search_members),
+            searchMode = searchMode,
+            onSearch = search,
+            searchEnabled = query.trim().length >= 3 && !loading,
             modifier = Modifier.fillMaxWidth().padding(contentPadding.horizontalInset()).padding(8.dp).testTag("memberSearchField"),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { search() }),
-            trailingIcon = {
-                IconButton(onClick = search, enabled = query.trim().length >= 3 && !loading) {
-                    Icon(Icons.Default.Search, contentDescription = "Search members")
-                }
-            },
         )
         }
         if (query.trim().isNotEmpty() && query.trim().length < 3) Text("Enter at least 3 characters.")

@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Trustroots</string>
+    <string name="filter_circles">Filter circles</string>
+    <string name="clear_circle_filter">Clear circle filter</string>
+    <string name="filter_conversations">Filter conversations</string>
+    <string name="clear_conversation_filter">Clear conversation filter</string>
+    <string name="member_search_hint">Name or username</string>
+    <string name="search_members">Search members</string>
+    <string name="clear_member_search">Clear member search</string>
+    <string name="search_places">Search places</string>
+    <string name="clear_place_search">Clear place search</string>
 </resources>
