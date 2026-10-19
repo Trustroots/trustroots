@@ -54,11 +54,15 @@ export async function fetchMessages(
 export async function sendMessage(
   userToId: string,
   content: string,
+  hostingDescriptionAcknowledged?: boolean,
 ): Promise<import('axios').AxiosResponse<Message>> {
   const payload: SendMessageRequest = {
     userTo: userToId,
     content,
     read: false,
+    ...(hostingDescriptionAcknowledged === undefined
+      ? {}
+      : { hostingDescriptionAcknowledged }),
   };
   return await axios.post<Message>('/api/messages', payload);
 }

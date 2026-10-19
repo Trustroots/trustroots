@@ -120,6 +120,112 @@ function deferredResponse(): DeferredResponse {
 }
 
 describe('Messages controller unit tests', () => {
+  describe('hosting description acknowledgement', () => {
+    const Offer = mongoose.model('Offer');
+    let sender: UserDocument;
+    let host: UserDocument;
+
+    beforeEach(async () => {
+      [sender, host] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      sender.description =
+        'A fictional member who enjoys sharing food, travelling slowly and meeting other members. '.repeat(
+          4,
+        );
+      await sender.save();
+      host.description = sender.description;
+      await host.save();
+      await new Offer({
+        user: host._id,
+        type: 'host',
+        location: [12, 34],
+        description: 'Please arrive before sunset.',
+        requireHostingDescriptionAcknowledgement: true,
+      }).save();
+    });
+
+    async function send(acknowledgement?: unknown, reverse = false) {
+      const res = deferredResponse();
+      await messagesController.send(
+        {
+          user: reverse ? host : sender,
+          body: {
+            userTo: (reverse ? sender : host)._id.toString(),
+            content: 'A fictional request.',
+            hostingDescriptionAcknowledged: acknowledgement,
+          },
+          headers: {},
+        },
+        res,
+      );
+      return res.waitForResponse();
+    }
+
+    for (const value of [undefined, false, 'true', 1, {}, []]) {
+      it(`rejects first contact without literal true: ${JSON.stringify(value)}`, async () => {
+        const res = await send(value);
+        res.statusCode.should.equal(400);
+        bodyField<string>(res.body, 'error').should.equal(
+          'hosting-description-acknowledgement-required',
+        );
+        (await Message.countDocuments({})).should.equal(0);
+        (await Thread.countDocuments({})).should.equal(0);
+      });
+    }
+
+    it('allows acknowledgement once and subsequent messages in either direction', async () => {
+      (await send(true)).statusCode.should.equal(200);
+      (await send()).statusCode.should.equal(200);
+      (await send(undefined, true)).statusCode.should.equal(200);
+    });
+
+    it('does not enforce a preference on meetup offers', async () => {
+      await Offer.updateMany({}, { $set: { type: 'meet' } });
+      (await send()).statusCode.should.equal(200);
+    });
+
+    it('allows first contact after the host disables the preference', async () => {
+      await Offer.updateMany(
+        {},
+        { $set: { requireHostingDescriptionAcknowledgement: false } },
+      );
+      (await send()).statusCode.should.equal(200);
+    });
+
+    it('ignores expired legacy host offers that are not visible to guests', async () => {
+      await Offer.updateMany(
+        {},
+        { $set: { validUntil: new Date('2000-01-01') } },
+      );
+      (await send()).statusCode.should.equal(200);
+    });
+
+    it('requires acknowledgement for an unexpired legacy host offer', async () => {
+      await Offer.updateMany(
+        {},
+        { $set: { validUntil: new Date('2100-01-01') } },
+      );
+      (await send()).statusCode.should.equal(400);
+    });
+
+    it('does not enforce the sender’s own hosting preference', async () => {
+      (await send(undefined, true)).statusCode.should.equal(200);
+      (await send()).statusCode.should.equal(200);
+    });
+
+    it('reports offer query failures without creating a conversation', async () => {
+      const stub = sinon
+        .stub(Offer, 'findOne')
+        .throws(new Error('Fictional lookup failure'));
+      try {
+        (await send()).statusCode.should.equal(400);
+        (await Thread.countDocuments({})).should.equal(0);
+      } finally {
+        stub.restore();
+      }
+    });
+  });
   describe('draft previews', () => {
     it('requires authentication', () => {
       const res = deferredResponse();

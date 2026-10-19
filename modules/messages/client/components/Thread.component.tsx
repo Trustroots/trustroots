@@ -10,6 +10,9 @@ import {
 } from '@/modules/core/client/services/client-runtime';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import * as usersAPI from '@/modules/users/client/api/users.api';
+import { getOffers } from '@/modules/offers/client/api/offers.api';
+import type { OfferPayload } from '@/modules/offers/shared/offer';
+import RichText from '@/modules/core/client/components/RichText';
 import Monkeybox from '@/modules/users/client/components/Monkeybox';
 import ReportMember from '@/modules/support/client/components/ReportMember.component';
 import BlockMember from '@/modules/users/client/components/BlockMember.component';
@@ -171,6 +174,12 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
   const [failedToLoad, setFailedToLoad] = useState(false);
   const [removed, setRemoved] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [hostingOffer, setHostingOffer] = useState<OfferPayload | null>(null);
+  const [hostingDescriptionAcknowledged, setHostingDescriptionAcknowledged] =
+    useState(false);
+  const requiresHostingAcknowledgement =
+    messages.length === 0 &&
+    hostingOffer?.requireHostingDescriptionAcknowledgement === true;
   const cacheKey = `messages.thread.${user._id}-${username}`;
   const isBlocked = user.blocked?.includes(otherUser?._id || '');
 
@@ -282,6 +291,15 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
       const { messages, nextParams } = await api.messages.fetchMessages(
         otherUser._id,
       );
+      if (messages.length === 0 && !userRemoved) {
+        const offers = await getOffers(otherUser._id, 'host');
+        setHostingOffer(
+          offers.find(
+            offer => offer.requireHostingDescriptionAcknowledgement,
+          ) || null,
+        );
+        setHostingDescriptionAcknowledged(false);
+      }
       setOtherUser(otherUser);
       const sortedMessages = messages.sort((a, b) =>
         a.created.localeCompare(b.created),
@@ -302,14 +320,19 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
         setMessages(sortedMessages);
       }
       setNextParams(nextParams ?? null);
+    } catch {
+      setFailedToLoad(true);
     } finally {
       setIsFetching(false);
     }
   }
 
   async function sendMessage(content: string) {
+    const acknowledgement: [boolean?] = requiresHostingAcknowledgement
+      ? [hostingDescriptionAcknowledged]
+      : [];
     const apiResponse = await api.messages
-      .sendMessage((otherUser as MessageUser)._id, content)
+      .sendMessage((otherUser as MessageUser)._id, content, ...acknowledgement)
       .catch(error => {
         // Too many requests - error
         if (error?.response?.status === 429) {
@@ -422,12 +445,46 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
                 />
               )}
               {!isBlocked && showReply && (
-                <ThreadReply
-                  key={cacheKey}
-                  cacheKey={cacheKey}
-                  autoFocus={!isExtraSmall}
-                  onSend={content => sendMessage(content)}
-                />
+                <>
+                  {requiresHostingAcknowledgement && (
+                    <section
+                      className="hosting-description-acknowledgement"
+                      aria-label={t<string>(
+                        'Hosting description and requirements',
+                      )}
+                    >
+                      <h4>
+                        {t<string>('Hosting description and requirements')}
+                      </h4>
+                      <RichText content={hostingOffer!.description || ''} />
+                      <label>
+                        <input
+                          type="checkbox"
+                          required
+                          checked={hostingDescriptionAcknowledged}
+                          onChange={event =>
+                            setHostingDescriptionAcknowledged(
+                              event.target.checked,
+                            )
+                          }
+                        />{' '}
+                        {t<string>(
+                          'I have read this host’s hosting description and requirements.',
+                        )}
+                      </label>
+                    </section>
+                  )}
+                  <ThreadReply
+                    key={cacheKey}
+                    cacheKey={cacheKey}
+                    autoFocus={!isExtraSmall}
+                    onSend={content => sendMessage(content)}
+                    disabled={
+                      requiresHostingAcknowledgement &&
+                      !hostingDescriptionAcknowledged
+                    }
+                  />
+                </>
               )}
               {removed && (
                 <div className="panel panel-default">

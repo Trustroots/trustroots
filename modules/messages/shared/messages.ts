@@ -21,6 +21,7 @@ export interface SendMessageRequest {
   userTo: string;
   content: string;
   read?: false;
+  hostingDescriptionAcknowledged?: boolean;
 }
 
 export interface MarkMessagesReadRequest {

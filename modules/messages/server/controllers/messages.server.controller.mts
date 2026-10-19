@@ -20,6 +20,7 @@ import type {
 } from '../../shared/messages.js';
 import type { MessageRecord } from '../models/message.server.model.mts';
 import type { ThreadRecord } from '../models/thread.server.model.mts';
+import type { OfferServerRecord } from '../../../offers/server/models/offer.server.types.mts';
 import {
   prepareMarkReadSelector,
   prepareMarkReadResponse,
@@ -257,6 +258,7 @@ const Thread = mongoose.model<ThreadEndpointRecord>(
 const User = mongoose.model<MessageUser>(
   'User',
 ) as unknown as UserEndpointModel;
+const Offer = mongoose.model<OfferServerRecord>('Offer');
 type ObjectIdInput = Parameters<typeof mongoose.Types.ObjectId.isValid>[0];
 function isValidObjectId(value: unknown): value is ObjectIdInput {
   return mongoose.Types.ObjectId.isValid(value as ObjectIdInput);
@@ -624,21 +626,47 @@ service.send = async function (req, res) {
       },
       // Check if this is first message to this thread (=does the thread object exist?)
       function (done: WaterfallDone<[ThreadEndpointDocument | null]>) {
-        Thread.findOne({
-          // User id's can be either way around in thread handle, so we gotta test for both situations
-          $or: [
-            {
-              userTo: user._id,
-              userFrom: body.userTo,
-            },
-            {
-              userTo: body.userTo,
-              userFrom: user._id,
-            },
-          ],
-        }).then(function (thread) {
-          done(null, thread);
-        }, done);
+        Promise.resolve(
+          Thread.findOne({
+            // User id's can be either way around in thread handle, so we gotta test for both situations
+            $or: [
+              {
+                userTo: user._id,
+                userFrom: body.userTo,
+              },
+              {
+                userTo: body.userTo,
+                userFrom: user._id,
+              },
+            ],
+          }),
+        )
+          .then(async function (thread) {
+            if (!thread && body.hostingDescriptionAcknowledged !== true) {
+              const requiredOffer = await Offer.findOne({
+                user: body.userTo,
+                type: 'host',
+                requireHostingDescriptionAcknowledgement: true,
+                // Match the offers visible through /api/offers-by/:userId.
+                $or: [
+                  { validUntil: { $gte: new Date() } },
+                  { validUntil: { $exists: false } },
+                ],
+              })
+                .select('_id')
+                .exec();
+              if (requiredOffer) {
+                res.status(400).send({
+                  error: 'hosting-description-acknowledgement-required',
+                  message:
+                    'Please acknowledge this host’s hosting description and requirements before sending your first message.',
+                });
+                return;
+              }
+            }
+            done(null, thread);
+          })
+          .catch(done);
       },
       // Check sender's profile isn't empty If it was first message
       // If the sending user has an empty profile, reject the message

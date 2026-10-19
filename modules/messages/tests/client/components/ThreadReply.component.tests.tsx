@@ -53,6 +53,23 @@ function getForm(container: HTMLElement): HTMLFormElement {
 }
 
 describe('<ThreadReply>', () => {
+  it('blocks form submission and Ctrl+Enter until acknowledgement enables sending, preserving the draft', async () => {
+    const onSend: OnSend = jest.fn().mockResolvedValue(true);
+    const { container, getByRole, rerender } = render(
+      <ThreadReply disabled onSend={onSend} />,
+    );
+    const editor = getByRole('textbox');
+    fireEvent.change(editor, {
+      target: { value: 'A fictional opening message.' },
+    });
+    fireEvent.submit(getForm(container));
+    fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true });
+    expect(onSend).not.toHaveBeenCalled();
+    expect(editor).toHaveValue('A fictional opening message.');
+    rerender(<ThreadReply disabled={false} onSend={onSend} />);
+    fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true });
+    await waitFor(() => expect(onSend).toHaveBeenCalledTimes(1));
+  });
   it('resizes with the keyboard within limits without replacing the editor or changing the draft', () => {
     const { container, getByRole } = render(
       <ThreadReply cacheKey="expanded-draft" onSend={jest.fn()} />,

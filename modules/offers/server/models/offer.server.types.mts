@@ -20,4 +20,5 @@ export interface OfferServerRecord {
   user?: Types.ObjectId;
   reactivateReminderSent?: Date;
   showOnlyInMyCircles?: boolean;
+  requireHostingDescriptionAcknowledgement?: boolean;
 }

@@ -26,6 +26,19 @@ afterEach(() => {
 });
 
 describe('messages api', () => {
+  it.each([true, false])(
+    'includes an explicit hosting acknowledgement: %s',
+    async acknowledged => {
+      mockedAxios.post.mockResolvedValueOnce({ data: {} });
+      await sendMessage('fictional-host', 'A fictional request.', acknowledged);
+      expect(mockedAxios.post).toHaveBeenCalledWith('/api/messages', {
+        userTo: 'fictional-host',
+        content: 'A fictional request.',
+        read: false,
+        hostingDescriptionAcknowledged: acknowledged,
+      });
+    },
+  );
   it('formats a draft without sending it', async () => {
     mockedAxios.post.mockResolvedValueOnce({
       data: { content: '<p>Draft</p>' },

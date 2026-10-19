@@ -12,6 +12,7 @@ import '@/config/client/i18n';
 import Thread from '@/modules/messages/client/components/Thread.component';
 import * as usersAPI from '@/modules/users/client/api/users.api';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
+import { getOffers } from '@/modules/offers/client/api/offers.api';
 import {
   malformedFixture,
   resolveMalformed,
@@ -41,6 +42,7 @@ const getRouteParams = jest.mocked(clientRuntime.getCurrentRouteParams);
 
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/messages/client/api/messages.api');
+jest.mock('@/modules/offers/client/api/offers.api');
 jest.mock(
   '@/modules/messages/client/services/unread-message-count.client.service',
 );
@@ -143,6 +145,7 @@ function createMessage(
 }
 
 beforeEach(() => {
+  jest.mocked(getOffers).mockReset().mockResolvedValue([]);
   api.users.fetch.mockReset();
   api.messages.fetchMessages.mockReset();
   api.messages.sendMessage.mockReset();
@@ -165,6 +168,85 @@ let routeParams: { username: string; userId?: string } = {
 getRouteParams.mockReturnValue(routeParams);
 
 describe('<Thread>', () => {
+  it.each(['<p>Please arrive before sunset.</p>', undefined])(
+    'requires an unchecked hosting acknowledgement before sending: %s',
+    async description => {
+      jest.mocked(getOffers).mockResolvedValue([
+        {
+          _id: 'hosting-offer',
+          user: otherUser._id,
+          type: 'host',
+          location: [12, 34],
+          description,
+          requireHostingDescriptionAcknowledgement: true,
+        },
+      ]);
+      api.messages.sendMessage.mockResolvedValue({
+        data: createMessage(me),
+      } as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
+      render(<Thread user={me} profileMinimumLength={0} />);
+      const checkbox = await screen.findByRole('checkbox', {
+        name: 'I have read this host’s hosting description and requirements.',
+      });
+      expect(checkbox).not.toBeChecked();
+      if (description)
+        expect(screen.getByText('Please arrive before sunset.')).toBeVisible();
+      fireEvent.change(screen.getByRole('textbox'), {
+        target: { value: 'A fictional first message.' },
+      });
+      expect(screen.getByRole('button', { name: /Send/ })).toBeDisabled();
+      fireEvent.submit(document.querySelector('#message-reply')!);
+      expect(api.messages.sendMessage).not.toHaveBeenCalled();
+      fireEvent.click(checkbox);
+      fireEvent.click(checkbox);
+      expect(screen.getByRole('button', { name: /Send/ })).toBeDisabled();
+      fireEvent.click(checkbox);
+      fireEvent.submit(document.querySelector('#message-reply')!);
+      await waitFor(() =>
+        expect(api.messages.sendMessage).toHaveBeenCalledWith(
+          otherUser._id,
+          'A fictional first message.',
+          true,
+        ),
+      );
+      await waitFor(() =>
+        expect(screen.queryByRole('checkbox')).not.toBeInTheDocument(),
+      );
+    },
+  );
+
+  it('does not load hosting preferences for an existing conversation', async () => {
+    api.messages.fetchMessages.mockResolvedValue({
+      messages: [createMessage(me)],
+    });
+    render(<Thread user={me} profileMinimumLength={0} />);
+    await screen.findByRole('textbox');
+    expect(getOffers).not.toHaveBeenCalled();
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+  });
+
+  it('shows a load failure when the hosting preference cannot be checked', async () => {
+    jest.mocked(getOffers).mockRejectedValue(new Error('Unavailable'));
+    render(<Thread user={me} profileMinimumLength={0} />);
+    await screen.findByText('Failed to load messages. Please try again.');
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
+
+  it('allows first contact when the hosting preference is disabled', async () => {
+    jest.mocked(getOffers).mockResolvedValue([
+      {
+        _id: 'hosting-offer',
+        user: otherUser._id,
+        type: 'host',
+        location: [12, 34],
+        requireHostingDescriptionAcknowledgement: false,
+      },
+    ]);
+    render(<Thread user={me} profileMinimumLength={0} />);
+    await screen.findByRole('textbox');
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Send/ })).toBeEnabled();
+  });
   let originalVisualViewport: PropertyDescriptor | undefined;
 
   beforeEach(() => {

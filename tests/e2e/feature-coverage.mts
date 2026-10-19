@@ -2372,6 +2372,7 @@ const features = [
       'New thread empty state is visible.',
       'New thread empty state links to safety guidance.',
       'Sending an opening message creates the conversation.',
+      'Opted-in hosts require acknowledgement only for a new conversation.',
     ],
     relatedSpecs: [
       spec(
