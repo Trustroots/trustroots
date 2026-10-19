@@ -227,7 +227,7 @@
     "istanbul-lib-instrument": "6.0.3",
     "jest": "30.5.2",
     "jest-environment-jsdom": "30.5.2",
-    "js-yaml": "4.3.2",
+    "js-yaml": "5.5.0",
     "less": "4.9.1",
     "lint-staged": "17.6.0",
     "mjolnir.js": "2.7.3",
