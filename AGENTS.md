@@ -73,7 +73,7 @@ Links between `modules/*` (imports and `mongoose.model('X')` lookups of another
 module's models) are recorded in `module-graph-baseline.json`, and CI fails when
 they differ from it. Do not add a link from one module to another without a
 reason you can state in the PR. If one is intended, run
-`npm run modules:update-baseline` and explain it in the PR; after removing one,
+`pnpm run modules:update-baseline` and explain it in the PR; after removing one,
 run the same command to lock in the improvement.
 
 For how we work on GitHub (draft pull requests, rebasing instead of merging `main`, squash-merging, CI checks, keeping pull requests small, and keeping agent tooling out of the repo), see [GITHUB.md](GITHUB.md).

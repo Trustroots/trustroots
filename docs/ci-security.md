@@ -8,7 +8,7 @@ Keep `GITHUB_TOKEN` permissions limited to the job that needs them. Grant packag
 
 ## Dependency advisory review
 
-The lockfile audit reviewed on 29 September 2026 reports four vulnerable dependency entries: two low, one moderate, and one high. The production-only audit reports only Bootstrap's moderate findings. Re-run `npm audit` when reviewing dependency changes because advisory data and the lockfile move independently.
+The lockfile audit reviewed on 29 September 2026 reports four vulnerable dependency entries: two low, one moderate, and one high. The production-only audit reports only Bootstrap's moderate findings. Re-run `pnpm audit` when reviewing dependency changes because advisory data and the lockfile move independently.
 
 `nodemailer` is a production dependency used by the email job. This branch updates it to 10.0.12, above the 10.0.2 fix for [GHSA-6vj9-mwq6-2f5v](https://github.com/advisories/GHSA-6vj9-mwq6-2f5v). The update is a major-version change from 9.x, so check SMTP delivery and deployment configuration when releasing it. The advisory's credential-disclosure scenario requires direct TLS (`secure: true`), transports sharing a DNS host, and different TLS server names. The job creates transports from one process-level configuration; deployment-specific `local.js` settings are not committed, so maintainers should confirm that no deployment creates per-tenant transports with varying `tls.servername` values.
 
