@@ -1,4 +1,4 @@
-package org.trustroots.android.ui
+package org.trustroots.android.ui.common
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory

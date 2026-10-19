@@ -36,6 +36,8 @@ import org.trustroots.android.api.MobileMember
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.TrustrootsBrowser
 import org.trustroots.android.ui.theme.TrustrootsTheme
+import org.trustroots.android.ui.inbox.MessageInboxScreen
+import org.trustroots.android.ui.common.horizontalInset
 
 /** Native end-to-end journeys use a local HTTP API and real map/view lifecycles. */
 @RunWith(AndroidJUnit4::class)

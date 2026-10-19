@@ -1,4 +1,4 @@
-package org.trustroots.android.ui
+package org.trustroots.android.ui.common
 
 import org.trustroots.android.api.MobileApiException
 

@@ -29,6 +29,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.trustroots.android.ui.common.RemoteArtwork
+import org.trustroots.android.ui.common.ArtworkHero
 
 @RunWith(AndroidJUnit4::class)
 class ArtworkRedirectJourneyTest {

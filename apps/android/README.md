@@ -111,6 +111,21 @@ this repository. Download and extract the artifact
 to obtain `app-debug.apk` and its SHA-256 checksum. New commits to a labelled PR
 trigger a fresh build. Android changes also build automatically without the label.
 
+## Member screen source layout
+
+The member screens extracted from `MemberJourneys.kt` each have a package below
+`app/src/main/java/org/trustroots/android/ui`: `membersearch`, `profile`,
+`editprofile`, `inbox`, `conversation` and `contacts`. Profile actions and sections
+live beside the profile screen; the conversation's quick replies live beside its
+screen. Shared artwork, form navigation, inset and failure helpers, language
+labels and message timestamps live in `ui/common`.
+
+This source organisation preserves the current screen state and navigation
+callbacks. The remaining screen organisation, ViewModels, Navigation 3,
+localisation, themes and presentation work are tracked in
+[issue #3234](https://github.com/Trustroots/trustroots/issues/3234). Reproduce
+reported behaviour against the current app before implementing those changes.
+
 ## Build and verify locally
 
 The app deliberately uses the light Trustroots colour scheme regardless of the

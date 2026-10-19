@@ -4,6 +4,7 @@ import java.io.IOException
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.ui.common.messageOr
 
 class FailureMessageTest {
     @Test

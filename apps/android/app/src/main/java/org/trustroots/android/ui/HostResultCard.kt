@@ -34,6 +34,8 @@ import org.trustroots.android.api.HostOffer
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.ui.common.horizontalInset
+import org.trustroots.android.ui.common.RemoteArtwork
 
 @Composable
 internal fun HostResultCard(
