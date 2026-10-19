@@ -46,8 +46,8 @@ importers:
         specifier: 4.4.0
         version: 4.4.0(supports-color@5.5.0)
       akismet-api:
-        specifier: 5.3.0
-        version: 5.3.0(supports-color@5.5.0)
+        specifier: 6.0.0
+        version: 6.0.0(supports-color@5.5.0)
       async:
         specifier: 3.2.6
         version: 3.2.6
@@ -2512,9 +2512,9 @@ packages:
   ajv@6.15.0:
     resolution: {integrity: sha512-fgFx7Hfoq60ytK2c7DhnF8jIvzYgOMxfugjLOSMHjLIPgenqa7S7oaagATUq99mV6IYvN2tRmC0wnTYX6iPbMw==}
 
-  akismet-api@5.3.0:
-    resolution: {integrity: sha512-mFkZptwjdPt73gH63vqzVXe2kYZBgGV05FNS3BWLolYG4B8mVRxgoXtuSyg+jXl/pRPC37a92E9fX6tKwrMErg==}
-    engines: {node: '>=4.0.0'}
+  akismet-api@6.0.0:
+    resolution: {integrity: sha512-IqPwdqKOpRXXJg/T2772BB1RoCFfB5kBX1Zeef98T/RkIIFuRqO1kPM4wAjgIdGtvP7YNQ8VYh9kTszpR0637g==}
+    engines: {node: '>=14.0.0'}
 
   ansi-colors@4.1.3:
     resolution: {integrity: sha512-/6w/C21Pm1A7aZitlI5Ni/2J6FFQN8i1Cvz3kHABAAbw93v/NlvKdVOqz7CCWz/3iv/JplRSEEZ83XION15ovw==}
@@ -5755,8 +5755,8 @@ packages:
     engines: {node: '>= 7.0.0'}
     deprecated: Please upgrade to superagent v10.2.2+, see release notes at https://github.com/forwardemail/superagent/releases/tag/v10.2.2 - maintenance is supported by Forward Email @ https://forwardemail.net
 
-  superagent@7.1.6:
-    resolution: {integrity: sha512-gZkVCQR1gy/oUXr+kxJMLDjla434KmSOKbx5iGD30Ql+AkJQ/YlPKECJy2nhqOsHLjGHzoDTXNSjhnvWhzKk7g==}
+  superagent@8.1.2:
+    resolution: {integrity: sha512-6WTxW1EB6yCxV5VFOIPQruWGHqc3yI7hEmZK6h+pyk69Lk/Ut7rLUY6W/ONF2MjBuGjvmMiIpsrVJ2vjrHlslA==}
     engines: {node: '>=6.4.0 <13 || >=14'}
     deprecated: Please upgrade to superagent v10.2.2+, see release notes at https://github.com/forwardemail/superagent/releases/tag/v10.2.2 - maintenance is supported by Forward Email @ https://forwardemail.net
 
@@ -8686,10 +8686,10 @@ snapshots:
       json-schema-traverse: 0.4.1
       uri-js: 4.4.1
 
-  akismet-api@5.3.0(supports-color@5.5.0):
+  akismet-api@6.0.0(supports-color@5.5.0):
     dependencies:
       bluebird: 3.7.2
-      superagent: 7.1.6(supports-color@5.5.0)
+      superagent: 8.1.2(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -12625,7 +12625,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  superagent@7.1.6(supports-color@5.5.0):
+  superagent@8.1.2(supports-color@5.5.0):
     dependencies:
       component-emitter: 1.3.1
       cookiejar: 2.1.4
@@ -12636,7 +12636,6 @@ snapshots:
       methods: 1.1.2
       mime: 2.6.0
       qs: 6.16.0
-      readable-stream: 3.6.2
       semver: 7.8.5
     transitivePeerDependencies:
       - supports-color
