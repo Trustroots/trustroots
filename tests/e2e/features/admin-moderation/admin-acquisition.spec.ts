@@ -35,6 +35,72 @@ test.describe('admin acquisition feature coverage', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
   });
 
+  test('support opens ordinary profiles from the welcoming list', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.acquisition-stories');
+    const support = createUser();
+    const member = createUser();
+    const context = await createIsolatedContext(browser, baseURL);
+    try {
+      for (const user of [support, member]) {
+        await registerViaApi(context.request, user);
+      }
+      await withE2eDb(async db => {
+        await db
+          .collection('users')
+          .updateOne(
+            { username: support.username },
+            { $set: { roles: ['user', 'support-team'], public: true } },
+          );
+        await db.collection('users').updateOne(
+          { username: member.username },
+          {
+            $set: {
+              public: true,
+              acquisitionStory: 'A fictional recommendation.',
+            },
+          },
+        );
+      });
+      const page = await context.newPage();
+      await signInViaApi(page, context.request, support);
+      await page.goto('/admin/acquisition-stories');
+      const memberLink = page.getByRole('link', {
+        name: `${member.username} (${member.firstName} ${member.lastName})`,
+        exact: true,
+      });
+      await expect(memberLink).toHaveAttribute(
+        'href',
+        `/profile/${member.username}`,
+      );
+      const noteRequests: string[] = [];
+      page.on('request', request => {
+        if (new URL(request.url()).pathname === '/api/admin/notes') {
+          noteRequests.push(request.url());
+        }
+      });
+      await memberLink.click();
+      await expect(page).toHaveURL(`/profile/${member.username}`);
+      await expect(
+        page.getByRole('heading', {
+          name: `${member.firstName} ${member.lastName}`,
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(page.locator('.admin-notes')).toHaveCount(0);
+      expect(noteRequests).toEqual([]);
+    } finally {
+      await context.close();
+      await withE2eDb(db =>
+        db.collection('users').deleteMany({
+          username: { $in: [support.username, member.username] },
+        }),
+      );
+    }
+  });
+
   test('greeters see restriction badges without moderation access', async ({
     browser,
     baseURL,

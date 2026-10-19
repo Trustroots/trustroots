@@ -84,6 +84,9 @@ describe('<AdminNotes />', () => {
     render(<AdminNotes id={userId} />);
 
     expect(
+      screen.getByRole('heading', { name: 'Safety notes about user' }),
+    ).toBeInTheDocument();
+    expect(
       await screen.findByRole('link', { name: 'admin-alice (Admin Alice)' }),
     ).toHaveAttribute('href', '/admin/user/admin-alice');
     expect(screen.getByText('Needs review')).toBeInTheDocument();
@@ -135,7 +138,7 @@ describe('<AdminNotes />', () => {
 
     await waitFor(() =>
       expect(window.alert).toHaveBeenCalledWith(
-        `Could not write admin notes for user ${userId}`,
+        `Could not write safety notes for user ${userId}`,
       ),
     );
     expect(mockedNotesApi.listNotes).toHaveBeenCalledTimes(2);
@@ -149,7 +152,7 @@ describe('<AdminNotes />', () => {
 
     await waitFor(() =>
       expect(log).toHaveBeenCalledWith(
-        `Could not load admin notes for user ${userId}`,
+        `Could not load safety notes for user ${userId}`,
       ),
     );
     expect(screen.getByRole('button', { name: 'Save note' })).toBeDisabled();

@@ -201,6 +201,16 @@ test('support can triage a report and investigate only its verified member pair'
       .getByRole('link', { name: 'Reported account and notes' })
       .click();
     await expect(page.getByText('shadowban', { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Safety notes about user' }),
+    ).toBeVisible();
+    const noteText = `Fictional safety follow-up ${Date.now()}`;
+    await page.locator('.admin-notes .tr-editor').click();
+    await page.keyboard.insertText(noteText);
+    await page.getByRole('button', { name: 'Save note', exact: true }).click();
+    await expect(page.getByText(noteText, { exact: true })).toBeVisible();
+    await page.reload();
+    await expect(page.getByText(noteText, { exact: true })).toBeVisible();
     const denied = await context.request.post('/api/admin/user/change-role', {
       headers: { 'X-Trustroots-Request': '1' },
       data: { role: 'suspended', id: '111111111111111111111111' },

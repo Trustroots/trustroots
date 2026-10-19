@@ -176,8 +176,7 @@ function StaticHeader({ label, tooltip }: StaticHeaderProps) {
 export default function AdminAcquisitionStories() {
   const viewerLanguages = getCurrentUser()?.languages || [];
   const viewerRoles = getCurrentUser()?.roles || [];
-  const publicProfile =
-    !viewerRoles.includes('admin') && !viewerRoles.includes('support-team');
+  const publicProfile = !viewerRoles.includes('admin');
   const [stories, setStories] = useState<AcquisitionStory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [unassignedOnly, setUnassignedOnly] = useState(false);

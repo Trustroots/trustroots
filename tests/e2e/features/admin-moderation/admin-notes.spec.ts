@@ -64,7 +64,7 @@ test.describe('admin notes feature coverage', () => {
         name: `${SEEDED_SHADOW.username}: ${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName}`,
       }),
     ).toBeVisible();
-    await expect(page.getByText('Admin notes about user')).toBeVisible();
+    await expect(page.getByText('Safety notes about user')).toBeVisible();
 
     const editor = page.locator('.admin-notes .tr-editor');
     await expect(editor).toBeVisible();
