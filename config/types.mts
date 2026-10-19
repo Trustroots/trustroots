@@ -101,14 +101,6 @@ export interface Config {
     allowedHosts: string[];
   };
   umami: { scriptSrc: string; websiteId: string };
-  log: {
-    papertrail: {
-      host: string | false;
-      port: number | false;
-      level: string;
-      program: string;
-    };
-  };
   akismet: { enabled: boolean; key: string; url: string };
   db: DatabaseConfig;
   files: {

@@ -274,13 +274,8 @@ describe('diagnostic log redaction', () => {
 
   it('wraps Winston without changing event strings, callbacks or return values', () => {
     const calls: Array<{ args: unknown[]; thisValue: unknown }> = [];
-    const addCalls: unknown[][] = [];
-    const papertrailConfig = { host: 'logs.example.test', port: 1234 };
+    const configurations: Array<{ transports: unknown[] }> = [];
     const returnValue = { accepted: true };
-    const transportConfigs: (typeof papertrailConfig)[] = [];
-    function PapertrailTransport(options: typeof papertrailConfig) {
-      transportConfigs.push(options);
-    }
     const winston = {
       transports: { Console: function Console() {} },
       format: {
@@ -288,9 +283,8 @@ describe('diagnostic log redaction', () => {
         colorize: () => ({}),
         simple: () => ({}),
       },
-      configure() {},
-      add(...args: unknown[]) {
-        addCalls.push(args);
+      configure(options: { transports: unknown[] }) {
+        configurations.push(options);
       },
       log(this: unknown, ...args: unknown[]) {
         calls.push({ args, thisValue: this });
@@ -301,14 +295,14 @@ describe('diagnostic log redaction', () => {
       require.resolve('./../../../../config/lib/logger.mts'),
       {
         winston,
-        '../config': { log: { papertrail: papertrailConfig } },
-        'winston-papertrail-transport': { PapertrailTransport },
       },
     );
     calls.length = 0;
-    assert.strictEqual(addCalls.length, 1);
-    assert.ok(addCalls[0][0] instanceof PapertrailTransport);
-    assert.strictEqual(transportConfigs[0], papertrailConfig);
+    assert.strictEqual(configurations.length, 1);
+    assert.strictEqual(configurations[0].transports.length, 1);
+    assert.ok(
+      configurations[0].transports[0] instanceof winston.transports.Console,
+    );
 
     const callback = () => {};
     const result = logger(

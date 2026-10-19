@@ -1,8 +1,5 @@
-import _ from 'lodash';
 import winston from 'winston';
-import config from './../config.mts';
 import dependency3 from './log-redaction.mjs';
-import dependency4 from 'winston-papertrail-transport';
 /*
  * A general purpose logging service that can be used anywhere in the app
  *
@@ -14,9 +11,6 @@ import dependency4 from 'winston-papertrail-transport';
  */
 
 const { redactMetadata } = dependency3;
-const { PapertrailTransport } = dependency4;
-
-const papertrailConfig = _.get(config, 'log.papertrail');
 
 winston.configure({
   level: 'info',
@@ -26,18 +20,6 @@ winston.configure({
   ),
   transports: [new winston.transports.Console()],
 });
-
-// If there we have a host and port for papertrail, then configure it
-if (papertrailConfig.host && papertrailConfig.port) {
-  winston.add(
-    new PapertrailTransport(
-      papertrailConfig as typeof papertrailConfig & {
-        host: string;
-        port: number;
-      },
-    ),
-  );
-}
 
 // Log that the logger has been instantiated
 winston.log('info', 'Logger started #a5fKSK');
