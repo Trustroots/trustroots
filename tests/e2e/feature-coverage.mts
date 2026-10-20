@@ -1971,6 +1971,43 @@ const features = [
     ],
   },
   {
+    id: 'circles.radio',
+    area: AREA.searchOffersCircles,
+    status: STATUS.active,
+    description:
+      'The Radio circle provides public playback and authenticated shared listening.',
+    roles: ['visitor', 'member'],
+    references: {
+      clientRoutes: [
+        clientRoute('circles.circle', '/circles/:circle', source.tribesClient),
+      ],
+    },
+    requiredScenarios: [
+      'Visitors can listen, save favourites and see shared listener counts.',
+      'Chat and listener identities require login.',
+      'A matching verified signer can publish chat, favourites and listening activity.',
+      'Playback survives relay failures and stops when leaving the circle.',
+    ],
+    relatedSpecs: [
+      spec(
+        'features/public-core/radio-circle.spec.ts',
+        'visitors can play radio, save favourites and see a deduplicated count without social identities',
+      ),
+      spec(
+        'features/public-core/radio-circle.spec.ts',
+        'logged-in members can read radio chat but need a matching signer to publish',
+      ),
+      spec(
+        'features/public-core/radio-circle.spec.ts',
+        'a matching Trustroots Nostr signer can chat, share favourites and announce listening',
+      ),
+      spec(
+        'features/public-core/radio-circle.spec.ts',
+        'radio remains playable when the shared room is unavailable and stops on navigation',
+      ),
+    ],
+  },
+  {
     id: 'circles.member-only',
     area: AREA.searchOffersCircles,
     status: STATUS.active,
