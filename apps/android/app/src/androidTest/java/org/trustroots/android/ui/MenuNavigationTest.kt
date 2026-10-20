@@ -12,6 +12,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.menu.MenuScreen
 
 @RunWith(AndroidJUnit4::class)
 class MenuNavigationTest {

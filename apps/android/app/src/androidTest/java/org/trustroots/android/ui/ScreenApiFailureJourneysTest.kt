@@ -29,6 +29,9 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.account.AccountSettingsScreen
+import org.trustroots.android.ui.circles.CirclesScreen
+import org.trustroots.android.ui.hostoffer.HostOfferScreen
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)

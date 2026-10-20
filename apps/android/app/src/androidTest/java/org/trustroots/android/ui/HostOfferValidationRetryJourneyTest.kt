@@ -26,6 +26,7 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.hostoffer.HostOfferScreen
 
 @RunWith(AndroidJUnit4::class)
 class HostOfferValidationRetryJourneyTest {

@@ -39,7 +39,6 @@ import org.trustroots.android.api.ProfileContact
 import org.trustroots.android.api.ProfileReference
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.DefaultBrowserContent
-import org.trustroots.android.ui.CreateExperienceScreen
 import org.trustroots.android.ui.common.ArtworkHero
 import org.trustroots.android.ui.common.NativeBackButton
 import org.trustroots.android.ui.common.horizontalInset
@@ -47,6 +46,7 @@ import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.messageOr
 import org.trustroots.android.ui.conversation.ConversationScreen
 import org.trustroots.android.ui.editprofile.EditProfileScreen
+import org.trustroots.android.ui.experience.CreateExperienceScreen
 
 @Composable
 internal fun MemberProfileScreen(

@@ -34,6 +34,7 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.NostrootsNotesClient
 import org.trustroots.android.api.decodeOpenLocationCode
+import org.trustroots.android.ui.hostmap.HostMapScreen
 
 @RunWith(AndroidJUnit4::class)
 class HostMapVisibleNotesRetryJourneyTest {

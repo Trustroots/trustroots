@@ -14,6 +14,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.Implementation
 import org.robolectric.annotation.Implements
+import org.trustroots.android.ui.hostmap.lookupAndroidPlaces
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE, shadows = [SynchronousNameGeocoderShadow::class])

@@ -7,8 +7,8 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -35,9 +35,14 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.TrustrootsBrowser
-import org.trustroots.android.ui.theme.TrustrootsTheme
-import org.trustroots.android.ui.inbox.MessageInboxScreen
+import org.trustroots.android.ui.circles.CirclesScreen
+import org.trustroots.android.ui.common.MemberNavigationBar
 import org.trustroots.android.ui.common.horizontalInset
+import org.trustroots.android.ui.hostmap.HostMapScreen
+import org.trustroots.android.ui.hostoffer.HostOfferScreen
+import org.trustroots.android.ui.inbox.MessageInboxScreen
+import org.trustroots.android.ui.search.SearchHubScreen
+import org.trustroots.android.ui.theme.TrustrootsTheme
 
 /** Native end-to-end journeys use a local HTTP API and real map/view lifecycles. */
 @RunWith(AndroidJUnit4::class)

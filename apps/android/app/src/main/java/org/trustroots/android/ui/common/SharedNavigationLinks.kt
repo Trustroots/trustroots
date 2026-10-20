@@ -1,4 +1,6 @@
-package org.trustroots.android.ui
+package org.trustroots.android.ui.common
+
+
 
 /**
  * Mirror of the shared navigation link registry at

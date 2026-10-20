@@ -3,6 +3,7 @@ package org.trustroots.android.ui
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.osmdroid.util.MapTileIndex
+import org.trustroots.android.ui.hostmap.hostMapTileSource
 
 class HostMapTileSourceTest {
     @Test fun usesMapboxTilesAndIncludesTheConfiguredTokenInTileRequests() {
