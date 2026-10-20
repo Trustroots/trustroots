@@ -189,8 +189,6 @@ declare module 'html-to-text' {
     text: string,
     options?: { wordwrap?: number },
   ): string;
-  const htmlToTextModule: { htmlToText: typeof htmlToText };
-  export default htmlToTextModule;
 }
 
 declare module 'validator' {
@@ -212,8 +210,7 @@ declare module 'validator' {
 }
 
 declare module 'he' {
-  const he: { decode(content: string): string };
-  export default he;
+  export function decode(content: string): string;
 }
 
 declare module 'juice' {

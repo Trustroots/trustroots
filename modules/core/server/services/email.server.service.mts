@@ -6,7 +6,7 @@ import async from 'async';
 import juice from 'juice';
 import moment from 'moment';
 import { Autolinker as autolinker } from 'autolinker';
-import he from 'he';
+import * as he from 'he';
 import analyticsHandler from './../controllers/analytics.server.controller.mts';
 import textService from './text.server.service.mts';
 import renderModule from './../../../../config/lib/render.mjs';

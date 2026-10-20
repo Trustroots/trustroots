@@ -5,7 +5,7 @@ import emailService from '../../../core/server/services/email.server.service.mjs
 import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
 import sanitizeHtml from 'sanitize-html';
-import htmlToText from 'html-to-text';
+import * as htmlToText from 'html-to-text';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
 import type { ContactRecord } from '../models/contacts.server.model.mts';
 

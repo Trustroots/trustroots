@@ -4,7 +4,7 @@
 import _ from 'lodash';
 import { Autolinker } from 'autolinker';
 import sanitizeHtml, { type SanitizeOptions } from 'sanitize-html';
-import he from 'he';
+import * as he from 'he';
 import {
   richTextTags,
   richTextAttributes,
