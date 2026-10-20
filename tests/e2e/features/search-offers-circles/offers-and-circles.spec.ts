@@ -31,6 +31,23 @@ import type { Locator, Page } from '@playwright/test';
 const berlin = SEEDED_MEMBERS[0];
 const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
 
+async function expectHostingMapSettled(map: Locator): Promise<void> {
+  await expect(map.locator('.leaflet-pan-anim')).toHaveCount(0);
+  await expect
+    .poll(async () => {
+      const box = await map.boundingBox();
+      const marker = await map
+        .locator('.leaflet-overlay-pane path')
+        .boundingBox();
+      if (!box || !marker) return false;
+      return (
+        Math.abs(marker.x + marker.width / 2 - (box.x + box.width / 2)) < 2 &&
+        Math.abs(marker.y + marker.height / 2 - (box.y + box.height / 2)) < 2
+      );
+    })
+    .toBe(true);
+}
+
 async function swipeUpFrom(page: Page, element: Locator): Promise<void> {
   const box = await element.boundingBox();
   expect(box).toBeTruthy();
@@ -316,9 +333,8 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await page.mouse.move(box.x + box.width / 2 + 100, box.y + box.height / 2, {
       steps: 10,
     });
-    // Stop before releasing to avoid map inertia changing the final centre.
-    await page.waitForTimeout(200);
     await page.mouse.up();
+    await expectHostingMapSettled(map);
     const saved = page.waitForResponse(
       response =>
         response.url().includes('/api/offers/') &&
@@ -422,7 +438,6 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await expect(map).toBeVisible();
     await expect(page.locator('.offer-map .mapboxgl-canvas')).toHaveCount(0);
     await expect(map.locator('.leaflet-tile-loaded').first()).toBeVisible();
-    const marker = map.locator('.leaflet-overlay-pane path');
     const box = await map.boundingBox();
     expectPresent(box);
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -430,17 +445,8 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await page.mouse.move(box.x + box.width / 2 + 80, box.y + box.height / 2, {
       steps: 10,
     });
-    await page.waitForTimeout(200);
     await page.mouse.up();
-    await expect
-      .poll(async () => {
-        const markerBox = await marker.boundingBox();
-        expectPresent(markerBox);
-        return Math.abs(
-          markerBox.x + markerBox.width / 2 - (box.x + box.width / 2),
-        );
-      })
-      .toBeLessThan(2);
+    await expectHostingMapSettled(map);
   });
 
   test('map search resolves bounding boxes, offers, and circle filters', async ({

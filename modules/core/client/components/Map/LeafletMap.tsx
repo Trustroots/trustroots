@@ -58,11 +58,18 @@ export default function LeafletMap({
         ? null
         : new ResizeObserver(() => map.invalidateSize({ animate: false }));
     resizeObserver?.observe(containerRef.current as HTMLDivElement);
-    map.on('dragend', () => {
-      if (locationChangeRef.current) {
+    let hasDragged = false;
+    map.on('dragstart', () => {
+      hasDragged = true;
+    });
+    map.on('moveend', () => {
+      // Include inertial movement after the pointer is released, without
+      // choosing locations during zooms or programmatic viewport changes.
+      if (hasDragged && locationChangeRef.current) {
         const centre = map.getCenter();
         locationChangeRef.current([centre.lat, centre.lng]);
       }
+      hasDragged = false;
     });
     map.on('click', (event: L.LeafletMouseEvent) => {
       locationChangeRef.current?.([event.latlng.lat, event.latlng.lng]);
