@@ -3,6 +3,7 @@ package org.trustroots.android.browser
 import android.content.ContextWrapper
 import android.content.Intent
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.CookieManager
@@ -17,14 +18,15 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.performClick
-import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import java.io.IOException
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.UUID
 import kotlin.concurrent.thread
@@ -95,7 +97,7 @@ class BrowserSessionAndDismissalJourneyTest {
     }
 
     @Test fun backDismissesExternalConfirmationWithoutClosingBrowserRoute() {
-        var closeCount = 0
+        val closeCount = AtomicInteger()
         val openedIntents = mutableListOf<Intent>()
         compose.setContent {
             val current = LocalContext.current
@@ -104,7 +106,7 @@ class BrowserSessionAndDismissalJourneyTest {
                     override fun startActivity(intent: Intent) { openedIntents += intent }
                 },
             ) {
-                TrustrootsBrowser(BrowserRoute("Fictional help", "about:blank"), { closeCount++ })
+                TrustrootsBrowser(BrowserRoute("Fictional help", "about:blank"), { closeCount.incrementAndGet() })
             }
         }
         compose.runOnIdle {
@@ -123,10 +125,14 @@ class BrowserSessionAndDismissalJourneyTest {
             compose.onAllNodesWithText("Open external website?").fetchSemanticsNodes().isEmpty()
         }
         assertTrue(openedIntents.isEmpty())
-        compose.runOnIdle { assertEquals(0, closeCount) }
+        compose.runOnIdle { assertEquals(0, closeCount.get()) }
 
-        Espresso.pressBack()
-        compose.runOnIdle { assertEquals(1, closeCount) }
+        compose.waitUntil(5_000) { compose.runOnIdle { compose.activity.hasWindowFocus() } }
+        val backCommand = InstrumentationRegistry.getInstrumentation().uiAutomation
+            .executeShellCommand("input keyevent KEYCODE_BACK")
+        ParcelFileDescriptor.AutoCloseInputStream(backCommand).use { it.readBytes() }
+        compose.waitUntil(5_000) { closeCount.get() == 1 }
+        compose.runOnIdle { assertEquals(1, closeCount.get()) }
     }
 
     private fun startSinglePageResponder() {

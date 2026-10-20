@@ -31,6 +31,7 @@ import org.junit.Assert.assertTrue
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.membersearch.MemberSearchScreen
 
 @RunWith(AndroidJUnit4::class)
 class MemberSearchJourneyTest {

@@ -5,6 +5,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.trustroots.android.ui.common.topInset
+import org.trustroots.android.ui.common.bottomInset
 
 class ScreenInsetsTest {
     @Test fun extractsTopAndBottomWithoutCopyingOtherEdges() {

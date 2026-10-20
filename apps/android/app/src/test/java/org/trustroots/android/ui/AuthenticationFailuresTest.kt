@@ -5,6 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.ui.common.isAuthenticationFailure
 
 class AuthenticationFailuresTest {
     @Test fun onlyDirectUnauthorizedApiFailuresInvalidateTheSession() {

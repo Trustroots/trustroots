@@ -90,6 +90,12 @@ import org.trustroots.android.api.TrustrootsCircle
 import org.trustroots.android.api.CommunityNote
 import org.trustroots.android.api.NostrootsNotesClient
 import org.trustroots.android.ui.theme.TrustrootsPaleGreen
+import org.trustroots.android.ui.common.horizontalInset
+import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.messageOr
+import org.trustroots.android.ui.common.languageName
+import org.trustroots.android.ui.common.messageTime
+import org.trustroots.android.ui.profile.MemberProfileScreen
 
 internal fun lookupAndroidPlaces(
     context: Context,

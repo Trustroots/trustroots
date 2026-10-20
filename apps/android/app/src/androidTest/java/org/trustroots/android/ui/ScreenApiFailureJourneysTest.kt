@@ -3,6 +3,7 @@ package org.trustroots.android.ui
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -182,6 +183,13 @@ class ScreenApiFailureJourneysTest {
         }
 
         waitForText("The circle directory is temporarily unavailable.")
+        // The directory error appears before the separate membership load completes.
+        compose.waitUntil(10_000) {
+            requests.any { it.path == "/api/users/memberships" } &&
+                compose.onAllNodes(
+                    hasProgressBarRangeInfo(androidx.compose.ui.semantics.ProgressBarRangeInfo.Indeterminate),
+                ).fetchSemanticsNodes().isEmpty()
+        }
         compose.onNodeWithText("Discover circles").assertIsDisplayed()
         compose.onNodeWithText("The circle directory is temporarily unavailable.").assertIsDisplayed()
         assertTrue(requests.any { it.path == "/api/users/memberships" })

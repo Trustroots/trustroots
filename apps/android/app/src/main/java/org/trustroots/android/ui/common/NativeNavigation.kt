@@ -1,4 +1,4 @@
-package org.trustroots.android.ui
+package org.trustroots.android.ui.common
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.PaddingValues

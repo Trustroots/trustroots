@@ -3,6 +3,8 @@ package org.trustroots.android.ui
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.trustroots.android.ui.common.languageName
+import org.trustroots.android.ui.common.messageTime
 
 class MemberPresentationTest {
     @Test fun namesCommonProfileLanguages() {

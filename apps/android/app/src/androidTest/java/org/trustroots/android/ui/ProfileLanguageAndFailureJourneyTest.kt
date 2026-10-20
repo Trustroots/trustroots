@@ -35,6 +35,8 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.testing.pressBackFromNonActivityRoot
 import org.trustroots.android.ui.theme.TrustrootsTheme
+import org.trustroots.android.ui.editprofile.EditProfileScreen
+import org.trustroots.android.ui.common.languageName
 
 @RunWith(AndroidJUnit4::class)
 class ProfileLanguageAndFailureJourneyTest {

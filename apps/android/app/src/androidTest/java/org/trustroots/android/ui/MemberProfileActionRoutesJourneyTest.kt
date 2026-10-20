@@ -37,6 +37,7 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.TrustrootsBrowser
+import org.trustroots.android.ui.profile.MemberProfileScreen
 
 @RunWith(AndroidJUnit4::class)
 class MemberProfileActionRoutesJourneyTest {

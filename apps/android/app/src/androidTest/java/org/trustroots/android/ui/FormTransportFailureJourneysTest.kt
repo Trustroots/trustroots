@@ -34,6 +34,7 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.theme.TrustrootsTheme
+import org.trustroots.android.ui.editprofile.EditProfileScreen
 
 @RunWith(AndroidJUnit4::class)
 class FormTransportFailureJourneysTest {
