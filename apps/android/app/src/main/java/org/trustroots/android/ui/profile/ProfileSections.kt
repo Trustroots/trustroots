@@ -21,6 +21,8 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalConfiguration
+import org.trustroots.android.ui.common.languageName
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -34,7 +36,6 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.ProfileContact
 import org.trustroots.android.api.ProfileReference
 import org.trustroots.android.ui.common.RemoteArtwork
-import org.trustroots.android.ui.common.languageName
 
 internal enum class ProfileSection(val label: Int) {
     About(R.string.profile_section_about),
@@ -145,6 +146,7 @@ internal fun ProfileOverviewSection(
 
 @Composable
 internal fun ProfileAboutSection(member: MemberProfile, api: MobileApiClient) {
+    val languageLocale = LocalConfiguration.current.locales[0]
     member.description?.let {
         Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
     } ?: Text(
@@ -153,7 +155,7 @@ internal fun ProfileAboutSection(member: MemberProfile, api: MobileApiClient) {
     )
     if (member.languages.isNotEmpty()) {
         Text(
-            stringResource(R.string.profile_languages_prefix, member.languages.joinToString { languageName(it) }),
+            stringResource(R.string.profile_languages_prefix, member.languages.joinToString { languageName(it, languageLocale) }),
             modifier = Modifier.padding(top = 16.dp),
         )
     }

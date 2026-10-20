@@ -7,6 +7,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.junit.Test
+import java.util.Locale
 import org.trustroots.android.ui.common.languageName
 import org.trustroots.android.ui.common.messageTime
 
@@ -17,6 +18,21 @@ class MemberPresentationTest {
     @Test fun namesCommonProfileLanguages() {
         assertEquals("English", languageName("eng"))
         assertEquals("Portuguese", languageName("por"))
+    }
+
+    @Test fun canonicalisesLegacyLanguageAliasesForEnglishDisplay() {
+        assertEquals("German", languageName("ger", Locale.ENGLISH))
+        assertEquals("German", languageName("deu", Locale.ENGLISH))
+        assertEquals("French", languageName("fre", Locale.ENGLISH))
+        assertEquals("French", languageName("fra", Locale.ENGLISH))
+        assertEquals("Dutch", languageName("dut", Locale.ENGLISH))
+        assertEquals("Dutch", languageName("nld", Locale.ENGLISH))
+    }
+
+    @Test fun usesRequestedLocaleForLanguageDisplayAndKeepsUnknownFallback() {
+        assertEquals("allemand", languageName("ger", Locale.FRENCH))
+        assertEquals("alemão", languageName("ger", Locale("pt")))
+        assertEquals("ZZX", languageName("zzx", Locale.FRENCH))
     }
 
     @Test fun showsRelativeMessageTime() {

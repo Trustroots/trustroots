@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.trustroots.android.api.MemberProfile
@@ -68,10 +69,11 @@ internal fun EditProfileScreen(
     var languageMenu by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    val languageLocale = LocalConfiguration.current.locales[0]
     val scope = rememberCoroutineScope()
-    val options = remember(languages) {
+    val options = remember(languages, languageLocale) {
         (listOf("eng", "por", "spa", "fra", "deu", "ita", "nld", "rus", "ara", "zho", "hin", "jpn", "tur", "pol", "swe", "ukr") + languages)
-            .distinct().sortedBy(::languageName)
+            .distinct().sortedBy { languageName(it, languageLocale) }
     }
     val initialDescription = remember(profile.username) { Html.fromHtml(profile.description.orEmpty(), Html.FROM_HTML_MODE_COMPACT).toString().trim() }
     val dirty = name != profile.displayName || tagline != profile.tagline.orEmpty() || description != initialDescription ||
@@ -112,14 +114,14 @@ internal fun EditProfileScreen(
         Box {
             Surface(onClick = { languageMenu = true }, enabled = !saving, shape = MaterialTheme.shapes.small, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline), modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (languages.isEmpty()) chooseLanguagesLabel else languages.sortedBy(::languageName).joinToString { languageName(it) }, modifier = Modifier.weight(1f))
+                    Text(if (languages.isEmpty()) chooseLanguagesLabel else languages.sortedBy { languageName(it, languageLocale) }.joinToString { languageName(it, languageLocale) }, modifier = Modifier.weight(1f))
                     Icon(Icons.Default.Edit, contentDescription = null)
                 }
             }
             DropdownMenu(expanded = languageMenu, onDismissRequest = { languageMenu = false }) {
                 options.forEach { code ->
                     DropdownMenuItem(
-                        text = { Text("${if (code in languages) "✓ " else ""}${languageName(code)}") },
+                        text = { Text("${if (code in languages) "✓ " else ""}${languageName(code, languageLocale)}") },
                         onClick = { languages = if (code in languages) languages - code else languages + code },
                     )
                 }
