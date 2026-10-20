@@ -126,6 +126,14 @@ localisation, themes and presentation work are tracked in
 [issue #3234](https://github.com/Trustroots/trustroots/issues/3234). Reproduce
 reported behaviour against the current app before implementing those changes.
 
+## Search controls
+
+Circle and conversation filters update as you type; their Clear buttons restore
+the loaded list immediately. Member and place searches use the keyboard Search
+action or the green search button. Clear removes member results and errors, or
+dismisses place suggestions while keeping the current map and filters. Results
+from an old query cannot repopulate a cleared member search or move the map.
+
 ## Build and verify locally
 
 The app deliberately uses the light Trustroots colour scheme regardless of the

@@ -13,7 +13,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.res.stringResource
+import org.trustroots.android.R
+import org.trustroots.android.ui.common.LiveFilterField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -94,7 +96,12 @@ internal fun MessageInboxScreen(
     ) {
         Column (Modifier.padding(contentPadding.horizontalInset())) {
             Text("Messages", style = MaterialTheme.typography.headlineMedium)
-            OutlinedTextField(filter, { filter = it }, label = { Text("Filter conversations") }, modifier = Modifier.fillMaxWidth())
+            LiveFilterField(
+                value = filter,
+                onValueChange = { filter = it },
+                label = stringResource(R.string.filter_conversations),
+                clearLabel = stringResource(R.string.clear_conversation_filter),
+            )
             if (loading) CircularProgressIndicator()
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             if (loaded && threads.isEmpty() && error == null) Text("No conversations yet.")
