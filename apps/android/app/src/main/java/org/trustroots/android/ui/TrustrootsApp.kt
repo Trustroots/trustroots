@@ -303,7 +303,6 @@ private fun MemberShell(
     UsageScreenTracking(analytics, analyticsScreen)
     var unreadMessageCount by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var messagesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
-    var circlesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var searchNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var searchInitialTab by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val api = remember(session.member.username) {
@@ -324,6 +323,16 @@ private fun MemberShell(
         }
         menuPage = MenuPage.Menu
         browserRoute = null
+    }
+    val reselectCircles = {
+        val current = tabBackStack.lastOrNull() as? MemberTabVisit
+        if (current?.destination == Destination.Circles) {
+            val firstAvailableID = (tabBackStack.filterIsInstance<MemberTabVisit>()
+                .maxOfOrNull(MemberTabVisit::visitID) ?: -1L) + 1L
+            val replacementID = maxOf(nextVisitID, firstAvailableID)
+            tabBackStack[tabBackStack.lastIndex] = MemberTabVisit(Destination.Circles, replacementID)
+            nextVisitID = replacementID + 1
+        }
     }
     val leaveGuard = remember { mutableStateOf<LeaveGuard?>(null) }
     LaunchedEffect(session.member.username, alertDestination) {
@@ -382,12 +391,15 @@ private fun MemberShell(
                     onNavigate = { item ->
                         val action = {
                             if (item == Destination.Messages) messagesNavigationID++
-                            if (item == Destination.Circles) circlesNavigationID++
-                            if (item == Destination.Search) {
+                            if (item == Destination.Circles && item == destination) {
+                                reselectCircles()
+                            } else if (item == Destination.Search) {
                                 searchInitialTab = 0
                                 searchNavigationID++
+                                navigateTo(item)
+                            } else {
+                                navigateTo(item)
                             }
-                            navigateTo(item)
                         }
                         leaveGuard.value?.invoke(action) ?: action()
                     },
@@ -443,7 +455,6 @@ private fun MemberShell(
                                                 navigateTo(Destination.Search)
                                             },
                                             openCircles = {
-                                                circlesNavigationID++
                                                 navigateTo(Destination.Circles)
                                             },
                                             openAccount = { menuPage = MenuPage.Account },
@@ -508,14 +519,12 @@ private fun MemberShell(
                                             },
                                         )
                                     }
-                                    Destination.Circles -> key(circlesNavigationID) {
-                                        CirclesScreen(
-                                            api,
-                                            session,
-                                            onSessionInvalidated,
-                                            contentPadding = contentPadding,
-                                        )
-                                    }
+                                    Destination.Circles -> CirclesScreen(
+                                        api,
+                                        session,
+                                        onSessionInvalidated,
+                                        contentPadding = contentPadding,
+                                    )
                                     Destination.Search -> key(searchNavigationID) {
                                         SearchHubScreen(
                                             api,

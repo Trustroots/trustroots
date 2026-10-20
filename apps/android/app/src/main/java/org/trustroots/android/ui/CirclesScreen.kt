@@ -34,11 +34,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -47,7 +46,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
@@ -57,8 +57,6 @@ import org.trustroots.android.ui.common.LiveFilterField
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.common.bottomInset
 import org.trustroots.android.ui.common.horizontalInset
-import org.trustroots.android.ui.common.isAuthenticationFailure
-import org.trustroots.android.ui.common.messageOr
 
 @Composable
 internal fun CirclesScreen(
@@ -67,84 +65,75 @@ internal fun CirclesScreen(
     onSessionInvalidated: () -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
-    var circles by remember { mutableStateOf<List<TrustrootsCircle>>(emptyList()) }
-    var memberships by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var filter by remember { mutableStateOf("") }
-    var selected by remember { mutableStateOf<TrustrootsCircle?>(null) }
-    var updating by remember { mutableStateOf<String?>(null) }
-    var loading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
+    val owner = checkNotNull(LocalViewModelStoreOwner.current) {
+        "CirclesScreen must be hosted by a Navigation 3 entry ViewModelStoreOwner"
+    }
+    val factory = remember(owner, api, session.member.username) {
+        CirclesViewModel.Factory(MobileApiCircleRepository(api, session))
+    }
+    val viewModel = remember(owner, factory) {
+        ViewModelProvider(owner, factory).get(CirclesViewModel::class.java)
+    }
+    SideEffect { viewModel.updateSession(session) }
+    val state by viewModel.state.collectAsState()
+    val failureMessage = when (val failure = state.failure) {
+        null -> null
+        else -> failure.serverMessage ?: stringResource(
+            when (failure.kind) {
+                CirclesFailureKind.CIRCLES_LOAD -> R.string.screen_circles_load_error
+                CirclesFailureKind.MEMBERSHIPS_LOAD -> R.string.screen_circle_memberships_load_error
+                CirclesFailureKind.MEMBERSHIP_UPDATE -> R.string.screen_circle_membership_update_error
+            },
+        )
+    }
     val overviewScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val detailScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-    BackHandler(enabled = selected != null) { selected = null }
-    LaunchedEffect(session) {
-        loading = true
-        api.circles(session).onSuccess { circles = it }.onFailure {
-            if (it.isAuthenticationFailure()) onSessionInvalidated()
-            else error = it.messageOr("Could not load circles.")
-        }
-        api.circleMemberships(session).onSuccess { memberships = it }.onFailure {
-            if (it.isAuthenticationFailure()) onSessionInvalidated()
-            else error = it.messageOr("Could not load circle memberships.")
-        }
-        loading = false
+    LaunchedEffect(viewModel, state.pendingSessionInvalidation?.id) {
+        val pending = state.pendingSessionInvalidation ?: return@LaunchedEffect
+        onSessionInvalidated()
+        viewModel.onEvent(CirclesEvent.SessionInvalidationDelivered(pending.id))
+    }
+    val selected = state.selectedCircle
+    BackHandler(enabled = selected != null) {
+        viewModel.onEvent(CirclesEvent.BackFromDetail)
     }
     val toggle: (TrustrootsCircle) -> Unit = { circle ->
-        if (updating == null) {
-            scope.launch {
-                updating = circle.id
-                error = null
-                val joined = circle.id in memberships
-                api.setCircleMembership(session, circle.id, joined).onSuccess {
-                    memberships = if (joined) memberships - circle.id else memberships + circle.id
-                }.onFailure {
-                    if (it.isAuthenticationFailure()) onSessionInvalidated()
-                    else error = it.messageOr("Could not update membership.")
-                }
-                updating = null
-            }
-        }
+        viewModel.onEvent(CirclesEvent.ToggleMembership(circle))
     }
 
-    val visibleCircles = remember(circles, filter) {
-        circles.filter { circle ->
-            val description = circle.description?.let(::circleDescriptionText).orEmpty()
-            "${circle.label} $description".contains(filter.trim(), ignoreCase = true)
-        }.sortedWith(compareByDescending<TrustrootsCircle> { it.count }.thenBy { it.label })
-    }
-
-    val circle = selected
-    if (circle != null) {
+    if (selected != null) {
         CircleDetailScreen(
-            circle = circle,
+            circle = selected,
             api = api,
-            memberships = memberships,
-            updating = updating,
-            error = error,
+            memberships = state.memberships,
+            updating = state.updatingCircleID,
+            error = failureMessage,
+            canRetryLoad = state.canRetryLoad,
+            onRetry = { viewModel.onEvent(CirclesEvent.RetryLoad) },
             scrollBehavior = detailScrollBehavior,
             contentPadding = contentPadding,
-            onBack = { selected = null },
+            onBack = { viewModel.onEvent(CirclesEvent.BackFromDetail) },
             onToggleMembership = toggle,
         )
-        return
+    } else {
+        CircleOverviewScreen(
+            api = api,
+            circles = state.visibleCircles,
+            memberships = state.memberships,
+            filter = state.filter,
+            onFilterChange = { viewModel.onEvent(CirclesEvent.FilterChanged(it)) },
+            loading = state.isLoading,
+            updating = state.updatingCircleID,
+            error = failureMessage,
+            canRetryLoad = state.canRetryLoad,
+            onRetry = { viewModel.onEvent(CirclesEvent.RetryLoad) },
+            scrollBehavior = overviewScrollBehavior,
+            contentPadding = contentPadding,
+            onSelect = { viewModel.onEvent(CirclesEvent.CircleSelected(it)) },
+            onToggleMembership = toggle,
+        )
     }
-
-    CircleOverviewScreen(
-        api = api,
-        circles = visibleCircles,
-        memberships = memberships,
-        filter = filter,
-        onFilterChange = { filter = it },
-        loading = loading,
-        updating = updating,
-        error = error,
-        scrollBehavior = overviewScrollBehavior,
-        contentPadding = contentPadding,
-        onSelect = { selected = it },
-        onToggleMembership = toggle,
-    )
 }
 
 @Composable
@@ -157,6 +146,8 @@ private fun CircleOverviewScreen(
     loading: Boolean,
     updating: String?,
     error: String?,
+    canRetryLoad: Boolean,
+    onRetry: () -> Unit,
     scrollBehavior: TopAppBarScrollBehavior,
     contentPadding: PaddingValues,
     onSelect: (TrustrootsCircle) -> Unit,
@@ -191,6 +182,9 @@ private fun CircleOverviewScreen(
                     )
                     if (loading) CircularProgressIndicator()
                     error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    if (canRetryLoad) {
+                        Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+                    }
                 }
             }
             items(circles, key = { it.id }) { circle ->
@@ -237,6 +231,8 @@ private fun CircleDetailScreen(
     memberships: Set<String>,
     updating: String?,
     error: String?,
+    canRetryLoad: Boolean,
+    onRetry: () -> Unit,
     scrollBehavior: TopAppBarScrollBehavior,
     contentPadding: PaddingValues,
     onBack: () -> Unit,
@@ -282,6 +278,9 @@ private fun CircleDetailScreen(
                         Text(if (circle.id in memberships) "Leave circle" else "Join circle")
                     }
                     error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    if (canRetryLoad) {
+                        Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+                    }
                 }
             }
         }
