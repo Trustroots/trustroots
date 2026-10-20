@@ -16,6 +16,19 @@ class MenuNavigationRouteTest {
         assertEquals("https://www.trustroots.org/faq", support.url)
         assertNull(support.sessionCookie)
 
+        val unknownSupport = browserRouteFor(
+            MenuBrowserVisit(MenuBrowserDestination.SupportLink, 5L, "unknown"),
+            "fictional=session",
+            context,
+        )
+        assertEquals(context.getString(org.trustroots.android.R.string.screen_info_and_support), unknownSupport.title)
+        assertEquals(SharedNavigationLinks.SITE_URL, unknownSupport.url)
+        assertNull(unknownSupport.sessionCookie)
+        assertEquals(
+            org.trustroots.android.R.string.screen_info_and_support,
+            supportLinkLabelResource("unknown"),
+        )
+
         val privateSite = browserRouteFor(
             MenuBrowserVisit(MenuBrowserDestination.Nostroots, 4L),
             "fictional=session",
