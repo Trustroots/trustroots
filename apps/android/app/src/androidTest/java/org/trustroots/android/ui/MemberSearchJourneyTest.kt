@@ -118,7 +118,7 @@ class MemberSearchJourneyTest {
         compose.onNodeWithText("Languages: English, Portuguese").performScrollTo().assertIsDisplayed()
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Spare room").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Spare room").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("profileSection-contacts").performScrollTo().performClick()
+        compose.onNodeWithTag("profileSection-contacts").assertIsDisplayed().performClick()
         compose.onNodeWithTag("profileContact-contact-one").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("profilePager").performTouchInput { swipeLeft() }
         compose.onNodeWithText("A thoughtful guest").performScrollTo().assertIsDisplayed()
