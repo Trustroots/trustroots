@@ -18,7 +18,7 @@ interface AvatarProps {
   size?: number;
   source?: string;
   link?: boolean;
-  onClick?: React.MouseEventHandler<HTMLDivElement>;
+  onClick?: React.MouseEventHandler<HTMLElement>;
 }
 
 /**
@@ -58,16 +58,28 @@ export default function Avatar({
   );
 
   return (
-    <div onClick={onClick}>
+    <div>
       {link ? (
         <a
           href={`/profile/${user.username}`}
+          onClick={onClick}
           aria-label={t('Open user profile for {{name}}', {
             name: user.displayName || user.username,
           })}
         >
           {img}
         </a>
+      ) : onClick ? (
+        <button
+          type="button"
+          className="btn btn-link"
+          aria-label={t('Open profile picture of {{name}}', {
+            name: user.displayName || user.username,
+          })}
+          onClick={onClick}
+        >
+          {img}
+        </button>
       ) : (
         img
       )}

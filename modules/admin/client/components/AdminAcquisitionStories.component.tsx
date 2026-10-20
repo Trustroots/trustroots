@@ -161,6 +161,8 @@ function StaticHeader({ label, tooltip }: StaticHeaderProps) {
         placement="bottom"
         tooltip={tooltip}
       >
+        {/* Keep the explanatory tooltip reachable without suggesting sorting. */}
+        {/* eslint-disable jsx-a11y/no-noninteractive-tabindex */}
         <span
           aria-label={`${label}: ${tooltip}`}
           className="admin-acquisition-stories-header-help"
@@ -168,6 +170,7 @@ function StaticHeader({ label, tooltip }: StaticHeaderProps) {
         >
           {label}
         </span>
+        {/* eslint-enable jsx-a11y/no-noninteractive-tabindex */}
       </AccessibleTooltip>
     </th>
   );

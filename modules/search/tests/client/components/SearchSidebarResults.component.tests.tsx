@@ -83,6 +83,12 @@ describe('<SearchSidebarResults />', () => {
     render(<SearchSidebarResults onCloseSidebar={jest.fn()} />);
 
     expect(screen.getByText(/no results are visible/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('region', { name: 'Search results' }),
+    ).toHaveAttribute('aria-busy', 'false');
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Offers in this map area: 0. Community note threads: 0.',
+    );
   });
 
   it('lists visible offers and opens the selected offer details', () => {
@@ -104,6 +110,10 @@ describe('<SearchSidebarResults />', () => {
 
     fireEvent.click(
       screen.getByRole('button', { name: /open hosting offer from a host/i }),
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Offers in this map area: 1. Community note threads: 0.',
     );
 
     expect(onOfferSelect).toHaveBeenCalledWith(visibleOffer);

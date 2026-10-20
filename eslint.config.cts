@@ -107,7 +107,10 @@ const legacyConfig = {
   overrides: [
     {
       files: ['modules/*/client/**/*.{js,ts,tsx}'],
+      extends: ['plugin:jsx-a11y/recommended'],
       rules: {
+        // Custom editors manage focus themselves; native autoFocus stays banned.
+        'jsx-a11y/no-autofocus': [2, { ignoreNonDOM: true }],
         'react/no-danger': 2,
         'no-restricted-properties': [
           2,

@@ -207,6 +207,9 @@ export default function AdminLocationCorrections() {
                 <label htmlFor="location-correction-message">
                   Message from your account
                 </label>
+                {/* This dialog opens after an explicit Review action; focus
+                    starts in the message field within the modal focus trap. */}
+                {/* eslint-disable jsx-a11y/no-autofocus */}
                 <textarea
                   autoFocus
                   className="form-control"
@@ -216,6 +219,7 @@ export default function AdminLocationCorrections() {
                   rows={8}
                   value={content}
                 />
+                {/* eslint-enable jsx-a11y/no-autofocus */}
                 <button
                   className="btn btn-primary"
                   disabled={isSending || !content.trim()}

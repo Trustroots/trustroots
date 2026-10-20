@@ -191,9 +191,27 @@ describe('<Avatar />', () => {
     );
 
     expect(container.querySelector('a')).not.toBeInTheDocument();
-    const avatar = container.firstElementChild;
-    if (!avatar) throw new Error('Expected the avatar wrapper');
+    const avatar = screen.getByRole('button', {
+      name: /open profile picture/i,
+    });
     fireEvent.click(avatar);
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('names an interactive avatar using the username when the display name is missing', () => {
+    const onClick = jest.fn();
+    render(
+      <Avatar
+        user={{ username: 'fictional-member' }}
+        link={false}
+        onClick={onClick}
+      />,
+    );
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'Open profile picture of fictional-member',
+      }),
+    );
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 });

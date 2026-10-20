@@ -17,6 +17,7 @@ export default function Icon({
 }: IconProps) {
   return (
     <i
+      aria-hidden="true"
       className={classnames('icon', `icon-${icon}`, className, {
         'icon-fw': fixedWidth,
         'icon-lg': size === 'lg',

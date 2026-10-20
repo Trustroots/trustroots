@@ -136,7 +136,6 @@ export default function SigninPage() {
                     <input
                       type="text"
                       autoCapitalize="off"
-                      autoFocus
                       required
                       id="username"
                       name="username"
@@ -147,7 +146,6 @@ export default function SigninPage() {
                       onChange={event =>
                         updateCredential('username', event.target.value)
                       }
-                      tabIndex={1}
                     />
                   </div>
                   <div className="form-group">
@@ -168,7 +166,6 @@ export default function SigninPage() {
                         onChange={event =>
                           updateCredential('password', event.target.value)
                         }
-                        tabIndex={2}
                       />
                       <span className="input-group-btn">
                         <button
@@ -191,7 +188,6 @@ export default function SigninPage() {
                       type="submit"
                       className="btn btn-default btn-lg"
                       disabled={isLoading}
-                      tabIndex={3}
                     >
                       {isLoading
                         ? 'Wait...'
@@ -205,7 +201,6 @@ export default function SigninPage() {
                       className={`btn-link${
                         authError ? ' btn-lg btn-link' : ''
                       }`}
-                      tabIndex={4}
                     >
                       Forgot?
                       {authError && (
@@ -235,7 +230,6 @@ export default function SigninPage() {
             <div className="container">
               <ul
                 className="nav navbar-nav nav-justified"
-                role="toolbar"
                 aria-label="Profile actions"
               >
                 <li>

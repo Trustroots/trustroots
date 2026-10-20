@@ -59,7 +59,6 @@ export default function SearchUsers() {
       <div className="input-group">
         <input
           aria-label={t('Search members')}
-          autoFocus
           disabled={isSearching}
           className="form-control input-lg"
           onChange={({ target: { value } }) => {

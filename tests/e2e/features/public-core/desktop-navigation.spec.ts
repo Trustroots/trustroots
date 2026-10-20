@@ -1,5 +1,42 @@
-import { expect, test } from '../../support/fixtures.mts';
+import { annotateFeature, expect, test } from '../../support/fixtures.mts';
 import { SEEDED_MEMBERS, signInViaApi } from '../../support/helpers.mts';
+
+test('navigation links and profile menu have accessible names on desktop and mobile', async ({
+  page,
+}, testInfo) => {
+  annotateFeature(testInfo, 'public.navigation', [
+    'Icon navigation links have accessible names on small screens.',
+    'The desktop profile menu opens using the keyboard.',
+  ]);
+  await signInViaApi(page, undefined, SEEDED_MEMBERS[0]);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/circles');
+  const header = page.locator('#tr-header');
+  const profileMenu = header.getByRole('button', { name: 'Profile menu' });
+  await profileMenu.focus();
+  await page.keyboard.press('Enter');
+  await expect(profileMenu).toHaveAttribute('aria-expanded', 'true');
+  await expect(
+    header.getByRole('link', { name: 'My profile', exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(profileMenu).toHaveAttribute('aria-expanded', 'false');
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const name of [
+    'Circles',
+    'Search hosts',
+    'Messages',
+    'My profile, info and support',
+  ]) {
+    const link = header.getByRole('link', { name, exact: true });
+    await expect(link).toBeVisible();
+    await link.focus();
+    await expect(link).toBeFocused();
+  }
+  await expect(
+    header.getByRole('link', { name: 'Circles', exact: true }),
+  ).toHaveAttribute('aria-current', 'page');
+});
 
 test('desktop header offers own circles and member search on hover and focus', async ({
   page,

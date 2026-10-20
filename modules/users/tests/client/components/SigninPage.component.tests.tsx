@@ -61,7 +61,10 @@ describe('SigninPage', () => {
     renderPage();
 
     expect(screen.getByRole('button', { name: 'Login' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Email or username')).toHaveFocus();
+    expect(screen.getByLabelText('Email or username')).not.toHaveFocus();
+    expect(screen.getByLabelText('Email or username')).not.toHaveAttribute(
+      'tabindex',
+    );
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
   });
 

@@ -18,9 +18,13 @@ export default function NavigationMenuItem({
   target,
   submenu,
   onClick,
+  'aria-label': ariaLabel,
   ...rest
 }: NavigationMenuItemProps) {
   return (
+    // Clicks bubble from native links; this handler only releases pointer focus.
+    // Keyboard navigation remains on the links, including submenu links.
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <li
       className={classnames(className, {
         active: path === currentPath,
@@ -42,7 +46,12 @@ export default function NavigationMenuItem({
         onClick?.(event);
       }}
     >
-      <a href={path} target={target}>
+      <a
+        href={path}
+        target={target}
+        aria-label={ariaLabel}
+        aria-current={path === currentPath ? 'page' : undefined}
+      >
         {children}
       </a>
       {submenu}

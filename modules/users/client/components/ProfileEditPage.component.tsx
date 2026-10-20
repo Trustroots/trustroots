@@ -35,7 +35,6 @@ function ProfileEditNav({
         'nav-pills nav-stacked profile-edit-navbar': variant === 'sidebar',
         'navbar-nav': variant === 'bottom',
       })}
-      role="toolbar"
       aria-label={t('Profile actions')}
     >
       {EDIT_TABS.map(tab => (
@@ -43,7 +42,11 @@ function ProfileEditNav({
           key={tab.key}
           className={classNames({ active: activeTab === tab.key })}
         >
-          <a href={getProfileEditTabPath(tab.key)} aria-label={t(tab.label)}>
+          <a
+            href={getProfileEditTabPath(tab.key)}
+            aria-label={t(tab.label)}
+            aria-current={activeTab === tab.key ? 'page' : undefined}
+          >
             {variant === 'bottom' ? (
               <i className={`${tab.icon} icon-2x`} role="presentation" />
             ) : (

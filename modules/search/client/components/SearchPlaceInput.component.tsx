@@ -153,21 +153,20 @@ export default function SearchPlaceInput({
       {isOpen && suggestions.length > 0 && (
         <ul
           className="dropdown-menu"
-          role="listbox"
+          aria-label="Place suggestions"
           style={{ display: 'block' }}
         >
           {suggestions.map(feature => (
             <li key={feature.id}>
-              <a
-                href="#"
-                onClick={event => {
-                  event.preventDefault();
+              <button
+                className="dropdown-item"
+                type="button"
+                onClick={() => {
                   handleSelect(feature);
                 }}
-                role="option"
               >
                 {feature.trTitle}
-              </a>
+              </button>
             </li>
           ))}
         </ul>

@@ -141,7 +141,17 @@ export default function SearchSidebarResults({
   );
 
   return (
-    <section className="search-sidebar-results">
+    <section
+      aria-label="Search results"
+      aria-busy={Boolean(isLoadingOffers || isLoadingOffer)}
+      className="search-sidebar-results"
+    >
+      {showList && (
+        <p role="status" className="sr-only">
+          Offers in this map area: {offers.length}. Community note threads:{' '}
+          {communityNoteThreads.length}.
+        </p>
+      )}
       {communityNote && (
         <div aria-live="polite">
           <CommunityNotesSidebar
@@ -207,7 +217,6 @@ export default function SearchSidebarResults({
           aria-label="Search results: no results are visible in this map area."
           aria-live="polite"
           className="content-empty text-muted text-center"
-          tabIndex={0}
         >
           <br />
           <br />

@@ -72,7 +72,7 @@ describe('<NavigationLoggedIn />', () => {
       'href',
       '/circles',
     );
-    expect(screen.getByRole('link', { name: 'Search' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Search hosts' })).toHaveAttribute(
       'href',
       '/search',
     );
@@ -88,7 +88,7 @@ describe('<NavigationLoggedIn />', () => {
     expect(
       within(supportMenu).getByRole('link', { name: 'Report a bug' }),
     ).toHaveAttribute('href', '/support?category=reportBug');
-    fireEvent.click(screen.getByRole('button', { name: /avatar/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Profile menu' }));
     expect(screen.getAllByText('Alice Example').length).toBe(2);
     expect(screen.getByRole('link', { name: 'About' })).toHaveAttribute(
       'href',
@@ -185,7 +185,7 @@ describe('<NavigationLoggedIn />', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /avatar/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Profile menu' }));
     fireEvent.click(screen.getByRole('link', { name: 'Sign out' }));
 
     expect(onSignout).toHaveBeenCalledTimes(1);
