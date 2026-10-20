@@ -6,6 +6,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -59,12 +60,12 @@ class MemberContactRemovalJourneyTest {
         startResponder(confirmed = true)
         compose.setContent { profile() }
 
-        waitForText("Remove contact")
-        compose.onNodeWithText("Remove contact").performClick()
+        openContactAction("Remove contact")
         compose.onNodeWithText("Remove contact?").assertIsDisplayed()
         compose.onNodeWithText("You will no longer be contacts with this member.").assertIsDisplayed()
         compose.onNodeWithText("Cancel").performClick()
 
+        openActionMenu()
         compose.onNodeWithText("Remove contact").assertIsDisplayed()
         assertFalse(compose.onAllNodesWithText("Remove contact?").fetchSemanticsNodes().isNotEmpty())
         assertFalse(requests.any { it.method == "DELETE" })
@@ -74,16 +75,16 @@ class MemberContactRemovalJourneyTest {
         startResponder(confirmed = false)
         compose.setContent { profile() }
 
-        waitForText("Delete contact request")
-        compose.onNodeWithText("Delete contact request").performClick()
+        openContactAction("Delete contact request")
         compose.onNodeWithText("Delete contact request?").assertIsDisplayed()
         compose.onNodeWithText("This cancels the pending contact request.").assertIsDisplayed()
         compose.onNodeWithText("Confirm").performClick()
 
         compose.waitUntil(10_000) {
             requests.any { it.method == "DELETE" && it.path == "/api/contact/contact-two" } &&
-                compose.onAllNodesWithText("Add contact").fetchSemanticsNodes().isNotEmpty()
+                compose.onAllNodesWithText("Delete contact request?").fetchSemanticsNodes().isEmpty()
         }
+        openActionMenu()
         compose.onNodeWithText("Add contact").assertIsDisplayed()
         assertTrue(requests.any { it.method == "DELETE" && it.path == "/api/contact/contact-two" })
         assertFalse(compose.onAllNodesWithText("Delete contact request?").fetchSemanticsNodes().isNotEmpty())
@@ -94,8 +95,7 @@ class MemberContactRemovalJourneyTest {
         val invalidations = AtomicInteger()
         compose.setContent { profile(onSessionInvalidated = { invalidations.incrementAndGet() }) }
 
-        waitForText("Remove contact")
-        compose.onNodeWithText("Remove contact").performClick()
+        openContactAction("Remove contact")
         compose.onNodeWithText("Confirm").performClick()
         compose.waitUntil(10_000) {
             deleteAttempts.get() == 1 && runCatching {
@@ -118,8 +118,7 @@ class MemberContactRemovalJourneyTest {
         startResponder(confirmed = true, deleteStatuses = listOf(503))
         compose.setContent { profile() }
 
-        waitForText("Remove contact")
-        compose.onNodeWithText("Remove contact").performClick()
+        openContactAction("Remove contact")
         compose.onNodeWithText("Confirm").performClick()
         try {
             assertTrue("The local delete request should start", deleteReceived.await(10, TimeUnit.SECONDS))
@@ -157,6 +156,16 @@ class MemberContactRemovalJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
+    }
+
+    private fun openActionMenu() {
+        compose.onNodeWithContentDescription("More profile actions").performClick()
+    }
+
+    private fun openContactAction(label: String) {
+        openActionMenu()
+        waitForText(label)
+        compose.onNodeWithText(label).performClick()
     }
 
     private fun startResponder(confirmed: Boolean, deleteStatuses: List<Int> = listOf(200)) {

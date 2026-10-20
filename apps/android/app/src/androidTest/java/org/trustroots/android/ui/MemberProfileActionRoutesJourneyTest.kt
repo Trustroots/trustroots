@@ -90,6 +90,7 @@ class MemberProfileActionRoutesJourneyTest {
             }
         }
 
+        compose.onNodeWithContentDescription("More profile actions").performClick()
         waitForText("Add contact")
         compose.onNodeWithText("Add contact").performClick()
         waitForText("Fixture browser: Add contact")
@@ -98,6 +99,7 @@ class MemberProfileActionRoutesJourneyTest {
         compose.onNodeWithText("URL: https://www.trustroots.org/contact-add/member-two").assertIsDisplayed()
         compose.onNodeWithText("Cookie: ${session.cookieHeader}").assertIsDisplayed()
         compose.onNodeWithText("Close fixture browser").performClick()
+        compose.onNodeWithContentDescription("More profile actions").performClick()
         waitForText("Add contact")
 
         compose.onNodeWithText("Add contact").assertIsDisplayed()
