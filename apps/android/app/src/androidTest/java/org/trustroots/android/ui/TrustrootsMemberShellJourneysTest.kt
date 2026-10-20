@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -127,6 +128,35 @@ class TrustrootsMemberShellJourneysTest {
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
         assertTrue(requests.any { it.path == "/api/contacts/member-self" })
         assertTrue(requests.any { it.path == "/api/users/quiet-fox" })
+    }
+
+    @Test fun relatedProfileIsAnEntryAndRecreationBackRestoresItsOpenerWithoutReloading() {
+        showShell()
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-menu").performClick()
+        compose.onNodeWithText("Contacts").performScrollTo().performClick()
+        waitForText("Quiet Fox")
+        compose.onNodeWithText("Quiet Fox").performClick()
+        waitForText("A welcoming place to pause.")
+        compose.onNodeWithTag("profileSection-experiences").performClick()
+        compose.onNodeWithText("Reference Author").performScrollTo().performClick()
+        waitForText("@reference-author")
+        assertEquals(1, requests.count { it.path == "/api/users/quiet-fox" })
+        assertEquals(1, requests.count { it.path == "/api/users/reference-author" })
+
+        requireNotNull(scenario).recreate()
+        waitForText("@reference-author")
+        assertEquals(1, requests.count { it.path == "/api/users/quiet-fox" })
+        assertEquals(1, requests.count { it.path == "/api/users/reference-author" })
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Reference Author").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("profileSection-experiences").assertIsSelected()
+        compose.onNodeWithText("Reference Author").assertIsDisplayed()
+        compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
+        assertEquals(1, requests.count { it.path == "/api/users/quiet-fox" })
+        assertEquals(1, requests.count { it.path == "/api/users/reference-author" })
     }
 
     @Test fun savingOwnProfileUpdatesThePersistedShellMember() {
@@ -264,12 +294,19 @@ class TrustrootsMemberShellJourneysTest {
             "200 OK",
             """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox","tagline":"A welcoming place to pause.","description":"A neighbour who enjoys slow journeys.","languages":["por"]}""",
         )
+        path == "/api/users/reference-author" -> FixtureResponse(
+            "200 OK", """{"_id":"member-reference","username":"reference-author","displayName":"Reference Author"}""",
+        )
         path.startsWith("/api/messages?") -> FixtureResponse("200 OK", "[]")
         path == "/api/tribes?limit=150" -> FixtureResponse("200 OK", "[]")
         path == "/api/users/memberships" -> FixtureResponse("200 OK", "[]")
         path == "/api/contacts/member-self" -> FixtureResponse("200 OK", CONTACTS)
         path.startsWith("/api/contacts/") -> FixtureResponse("200 OK", "[]")
         path.startsWith("/api/offers-by/") -> FixtureResponse("200 OK", "[]")
+        path == "/api/experiences?userTo=member-one" -> FixtureResponse(
+            "200 OK",
+            """[{"_id":"experience-one","userFrom":{"_id":"member-reference","username":"reference-author","displayName":"Reference Author"},"feedbackPublic":"A generous and thoughtful visit.","recommend":"yes"}]""",
+        )
         path.startsWith("/api/experiences?") -> FixtureResponse("200 OK", "[]")
         path.startsWith("/api/contact-by/") -> FixtureResponse("404 Not Found", "")
         else -> FixtureResponse("404 Not Found", "")

@@ -28,12 +28,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -44,7 +47,6 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
@@ -52,15 +54,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import kotlinx.coroutines.launch
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavEntryDecorator
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
 import org.trustroots.android.R
-import org.trustroots.android.api.AccommodationOffer
-import org.trustroots.android.api.ContactRelationship
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
-import org.trustroots.android.api.ProfileContact
-import org.trustroots.android.api.ProfileReference
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.DefaultBrowserContent
 import org.trustroots.android.ui.CreateExperienceScreen
@@ -69,8 +74,6 @@ import org.trustroots.android.ui.common.ArtworkHero
 import org.trustroots.android.ui.common.NativeBackButton
 import org.trustroots.android.ui.common.LocalLeaveGuard
 import org.trustroots.android.ui.common.horizontalInset
-import org.trustroots.android.ui.common.isAuthenticationFailure
-import org.trustroots.android.ui.common.toUiFailure
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.resolveFailureMessage
@@ -90,29 +93,73 @@ internal fun MemberProfileScreen(
     onBack: () -> Unit,
     browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit = DefaultBrowserContent,
 ) {
-    val context = LocalContext.current
-    var profile by remember(username) { mutableStateOf<MemberProfile?>(null) }
-    var hosting by remember(username) { mutableStateOf<AccommodationOffer?>(null) }
-    var hostingLoaded by remember(username) { mutableStateOf(false) }
-    var error by remember(username) { mutableStateOf<UiFailure?>(null) }
+    val initialVisit = remember(username) { MemberProfileVisit(username, 0L) }
+    val backStack = rememberNavBackStack(initialVisit)
+    var nextVisitID by rememberSaveable(username) { mutableStateOf(1L) }
+    val popProfile: () -> Unit = { if (backStack.size > 1) backStack.removeLastOrNull() else onBack() }
+    val pushRelated: (String) -> Unit = { related -> backStack.add(MemberProfileVisit(related, nextVisitID++)) }
+    val decorators: List<NavEntryDecorator<NavKey>> = listOf(
+        rememberSaveableStateHolderNavEntryDecorator(),
+        rememberViewModelStoreNavEntryDecorator(),
+    )
+    NavDisplay(
+        backStack = backStack,
+        onBack = popProfile,
+        entryDecorators = decorators,
+        entryProvider = entryProvider {
+            entry<MemberProfileVisit> { route ->
+                val model = rememberMemberProfileViewModel(api, session, route.username)
+                MemberProfileContent(
+                    api = api, session = session, username = route.username,
+                    onSessionInvalidated = onSessionInvalidated, onOwnProfileSaved = onOwnProfileSaved,
+                    startInEditMode = startInEditMode && route.visitID == 0L,
+                    contentPadding = contentPadding, onBack = popProfile,
+                    browserContent = browserContent, viewModel = model, onOpenRelated = pushRelated,
+                )
+            }
+        },
+    )
+}
+
+@Composable
+private fun MemberProfileContent(
+    api: MobileApiClient,
+    session: MemberSession,
+    username: String,
+    onSessionInvalidated: () -> Unit,
+    onOwnProfileSaved: (MemberProfile) -> Unit,
+    startInEditMode: Boolean,
+    contentPadding: PaddingValues,
+    onBack: () -> Unit,
+    browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit,
+    viewModel: MemberProfileViewModel,
+    onOpenRelated: (String) -> Unit,
+) {
+    SideEffect { viewModel.updateEnvironment(api, session) }
+    val profileState by viewModel.state.collectAsState()
+    val profile = profileState.profile
+    val hosting = profileState.hosting
+    val hostingLoaded = profileState.hostingLoaded
+    val error = profileState.failure?.let {
+        UiFailure(serverMessage = it.serverMessage, apiKind = it.apiKind, fallback = UiFailureFallback.LOAD_PROFILE)
+    }
     var recipient by remember(username) { mutableStateOf<MessageMember?>(null) }
-    var relatedUsername by remember(username) { mutableStateOf<String?>(null) }
-    var contacts by remember(username) { mutableStateOf<List<ProfileContact>>(emptyList()) }
-    var references by remember(username) { mutableStateOf<List<ProfileReference>>(emptyList()) }
-    var showAllContacts by remember(username) { mutableStateOf(false) }
-    var showAllReferences by remember(username) { mutableStateOf(false) }
-    var editing by remember(username) { mutableStateOf(startInEditMode) }
+    val contacts = profileState.contacts
+    val references = profileState.references
+    var showAllContacts by rememberSaveable(username) { mutableStateOf(false) }
+    var showAllReferences by rememberSaveable(username) { mutableStateOf(false) }
+    var editing by rememberSaveable(username) { mutableStateOf(startInEditMode) }
     val profilePager = rememberPagerState { ProfileSection.entries.size }
     var browserRoute by remember(username) { mutableStateOf<BrowserRoute?>(null) }
-    var relationship by remember(username) { mutableStateOf<ContactRelationship?>(null) }
-    var relationshipResolved by remember(username) { mutableStateOf(false) }
-    var confirmRemoveContact by remember(username) { mutableStateOf(false) }
-    var removingContact by remember(username) { mutableStateOf(false) }
-    var sharingExperience by remember(username) { mutableStateOf(false) }
+    val relationship = profileState.relationship
+    val relationshipResolved = profileState.relationshipResolved
+    var confirmRemoveContact by rememberSaveable(username) { mutableStateOf(false) }
+    val removingContact = profileState.isRemovingContact
+    var sharingExperience by rememberSaveable(username) { mutableStateOf(false) }
     var profileActionsHeight by remember(username) { mutableStateOf(0.dp) }
     var profileSectionBarHeight by remember(username) { mutableStateOf(48.dp) }
     val density = LocalDensity.current
-    var showingProfileImage by remember(username) { mutableStateOf(false) }
+    var showingProfileImage by rememberSaveable(username) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val profileImageState = rememberArtworkBitmapState(
         url = if (showingProfileImage) profile?.id?.let { api.avatarURL(it, 2048) } else null,
@@ -121,7 +168,7 @@ internal fun MemberProfileScreen(
     )
     ProfileHeaderStatusBarStyle(
         enabled = profile != null && error == null && !editing && !sharingExperience &&
-            relatedUsername == null && recipient == null && browserRoute == null,
+            recipient == null && browserRoute == null,
     )
     val leaveGuard = LocalLeaveGuard.current
     val leaveEditMode = {
@@ -136,7 +183,6 @@ internal fun MemberProfileScreen(
             confirmRemoveContact -> if (!removingContact) confirmRemoveContact = false
             browserRoute != null -> browserRoute = null
             recipient != null -> recipient = null
-            relatedUsername != null -> relatedUsername = null
             sharingExperience -> sharingExperience = false
             editing -> leaveEditModeWithGuard()
             else -> onBack()
@@ -146,7 +192,7 @@ internal fun MemberProfileScreen(
         EditProfileScreen(
             api, session, requireNotNull(profile), onSessionInvalidated,
             onCancel = leaveEditMode,
-            onSaved = { updated -> profile = updated; editing = false; onOwnProfileSaved(updated) },
+            onSaved = { updated -> viewModel.onEvent(MemberProfileEvent.ProfileSaved(updated)); editing = false; onOwnProfileSaved(updated) },
             contentPadding = contentPadding,
         )
         return
@@ -164,15 +210,6 @@ internal fun MemberProfileScreen(
         )
         return
     }
-    relatedUsername?.let { related ->
-        MemberProfileScreen(
-            api, session, related, onSessionInvalidated,
-            onBack = { relatedUsername = null },
-            contentPadding = contentPadding,
-            browserContent = browserContent,
-        )
-        return
-    }
     recipient?.let {
         ConversationScreen(api, session, it, onSessionInvalidated, onBack = { recipient = null }, contentPadding = contentPadding)
         return
@@ -184,7 +221,12 @@ internal fun MemberProfileScreen(
     if (confirmRemoveContact) {
         val existing = relationship
         AlertDialog(
-            onDismissRequest = { if (!removingContact) confirmRemoveContact = false },
+            onDismissRequest = {
+                if (!removingContact) {
+                    confirmRemoveContact = false
+                    viewModel.onEvent(MemberProfileEvent.DismissRemoveContact)
+                }
+            },
             title = {
                 Text(
                     stringResource(
@@ -206,60 +248,31 @@ internal fun MemberProfileScreen(
                 TextButton(
                     enabled = !removingContact && existing?.id != null,
                     onClick = {
-                        val contactID = existing?.id ?: return@TextButton
-                        scope.launch {
-                            removingContact = true
-                            api.removeContact(session, contactID).onSuccess {
-                                relationship = ContactRelationship(id = null, confirmed = false)
-                                confirmRemoveContact = false
-                            }.onFailure {
-                                if (it.isAuthenticationFailure()) {
-                                    onSessionInvalidated()
-                                }
-                            }
-                            removingContact = false
-                        }
+                        if (existing?.id == null) return@TextButton
+                        viewModel.onEvent(MemberProfileEvent.ConfirmRemoveContact)
                     },
                 ) { Text(if (removingContact) stringResource(R.string.profile_removing_contact) else stringResource(R.string.profile_confirm)) }
             },
             dismissButton = {
-                TextButton(enabled = !removingContact, onClick = { confirmRemoveContact = false }) {
+                TextButton(enabled = !removingContact, onClick = {
+                    confirmRemoveContact = false
+                    viewModel.onEvent(MemberProfileEvent.DismissRemoveContact)
+                }) {
                     Text(stringResource(R.string.profile_cancel))
                 }
             },
         )
     }
-    LaunchedEffect(username) {
-        if (profile != null) return@LaunchedEffect
-        api.profile(session, username).onSuccess { member ->
-            profile = member
-            member.id?.let { id ->
-                launch {
-                    api.accommodationOffer(session, id).onSuccess { hosting = it }.onFailure {
-                        if (it.isAuthenticationFailure()) onSessionInvalidated()
-                    }
-                    hostingLoaded = true
-                }
-                launch { api.contacts(session, id).onSuccess { contacts = it } }
-                launch { api.references(session, id).onSuccess { references = it } }
-                if (member.username != session.member.username) {
-                    launch {
-                        api.contactWith(session, id).onSuccess {
-                            relationship = it
-                            relationshipResolved = true
-                        }.onFailure {
-                            if (it.isAuthenticationFailure()) {
-                                onSessionInvalidated()
-                            } else {
-                                relationshipResolved = true
-                            }
-                        }
-                    }
-                }
-            }
-        }.onFailure {
-            if (it.isAuthenticationFailure()) onSessionInvalidated()
-            else error = it.toUiFailure(UiFailureFallback.LOAD_PROFILE)
+    LaunchedEffect(profileState.pendingSessionInvalidation?.id) {
+        profileState.pendingSessionInvalidation?.let { invalidation ->
+            onSessionInvalidated()
+            viewModel.onEvent(MemberProfileEvent.SessionInvalidationDelivered(invalidation.id))
+        }
+    }
+    LaunchedEffect(profileState.contactRemovalSucceeded) {
+        if (profileState.contactRemovalSucceeded) {
+            confirmRemoveContact = false
+            viewModel.onEvent(MemberProfileEvent.DismissRemoveContact)
         }
     }
     val isSelf = profile?.username == session.member.username
@@ -286,13 +299,13 @@ internal fun MemberProfileScreen(
                             .coerceAtMost(profileActionsHeight + 250.dp)
                     } else profileActionsHeight + 250.dp
                     val maxCollapsePx = with(LocalDensity.current) { (expandedHeaderHeight - compactHeaderHeight).toPx() }
-                    val collapseOffset = remember(username) { mutableFloatStateOf(0f) }
+                    var collapseOffset by rememberSaveable(username) { mutableFloatStateOf(0f) }
                     val collapseConnection = remember(maxCollapsePx) {
                         object : NestedScrollConnection {
                             private fun consume(deltaY: Float): Float {
-                                val before = collapseOffset.floatValue.coerceIn(0f, maxCollapsePx)
+                                val before = collapseOffset.coerceIn(0f, maxCollapsePx)
                                 val after = (before - deltaY).coerceIn(0f, maxCollapsePx)
-                                collapseOffset.floatValue = after
+                                collapseOffset = after
                                 return before - after
                             }
 
@@ -306,7 +319,7 @@ internal fun MemberProfileScreen(
                             ): Offset = Offset(0f, consume(available.y))
                         }
                     }
-                    val collapsedDp = with(LocalDensity.current) { collapseOffset.floatValue.coerceIn(0f, maxCollapsePx).toDp() }
+                    val collapsedDp = with(LocalDensity.current) { collapseOffset.coerceIn(0f, maxCollapsePx).toDp() }
                     val headerHeight = (expandedHeaderHeight - collapsedDp).coerceAtLeast(compactHeaderHeight)
                     val compactProfileHeader = headerHeight <= compactHeaderHeight + 1.dp
                     val addContactLabel = stringResource(R.string.profile_add_contact)
@@ -368,7 +381,7 @@ internal fun MemberProfileScreen(
                                         relationship?.confirmed == true -> stringResource(R.string.profile_remove_contact)
                                         else -> stringResource(R.string.profile_delete_contact_request)
                                     },
-                                    onContactAction = {
+                                onContactAction = {
                                         val current = relationship
                                         when {
                                             current?.id.isNullOrBlank() -> {
@@ -404,7 +417,7 @@ internal fun MemberProfileScreen(
                                             references = references,
                                             showAllReferences = showAllReferences,
                                             onToggleReferences = { showAllReferences = !showAllReferences },
-                                            onOpenRelated = { relatedUsername = it },
+                                            onOpenRelated = onOpenRelated,
                                             api = api,
                                             session = session,
                                         )
@@ -412,7 +425,7 @@ internal fun MemberProfileScreen(
                                             contacts = contacts,
                                             showAllContacts = showAllContacts,
                                             onToggleContacts = { showAllContacts = !showAllContacts },
-                                            onOpenRelated = { relatedUsername = it },
+                                            onOpenRelated = onOpenRelated,
                                             api = api,
                                             session = session,
                                         )

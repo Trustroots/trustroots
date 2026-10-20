@@ -62,6 +62,29 @@ ViewModel-store decorators, including repeated visits to the same username or
 recipient, so Conversation, Profile, Edit and Experience ViewModels have the
 same lifetime as the visible route that owns them.
 
+Before related-profile routing, establish a real per-entry
+`MemberProfileViewModel` on the actual decorated profile route. The current
+profile, hosting offer, contacts, references, contact relationship, loading and
+failure state, and contact-removal request state are business state held by
+that ViewModel rather than ordinary `remember` values. The ViewModel is
+created from the current Navigation 3 entry's `ViewModelStoreOwner` and the
+route username. Repeated visits to the same username therefore receive
+different ViewModels because they have distinct entry stores; do not use a
+shared/global profile ViewModel or add a synthetic owner solely to host it.
+The route key and authenticated parent supply the public username and live
+session respectively. On Activity recreation, the retained entry store keeps
+the loaded opener profile; after process death, only the username key is
+restored and the canonical data is loaded again.
+
+Keep pager selection, list expansion, and scroll positions in the entry's
+saveable state so disposing the opener while a related profile is current does
+not reset its visible position. Keep transient photo, confirmation, browser,
+Conversation, Experience and Edit presentation state in the owning entry until
+their later route slices. Their existing Back order and the active Edit
+leave-guard remain ahead of the route pop. A related-profile push is available
+only from the profile content where its link is shown; it must not discard an
+active form or bypass a guard.
+
 Use serialisable keys with unique visit identity and only the resource ID
 needed to reload the destination:
 
@@ -89,7 +112,16 @@ authenticated parent or entry repository, never from a route key.
 The `MemberProfileVisit` key already used by message, search and map flows
 contains a username; retain that public identifier when opening a profile from
 Contacts or another profile. Search/map roots, Contacts, Messages and each
-profile visit own their own child stack. Thus a profile opened from Contacts
+profile visit own their own child stack. A related-profile child is a distinct
+`MemberProfileVisit(username, visitID)` in the profile visit's stack; it is
+not a nullable selected-profile overlay or a recursive call to
+`MemberProfileScreen`. Extract the existing profile body into an entry content
+composable rendered by the route host. Each profile entry obtains its own
+`MemberProfileViewModel` from its decorated store and loads the canonical
+profile by username, so the opener's loaded model and saveable UI state remain
+underneath the child.
+
+Thus a profile opened from Contacts
 is a child of that Contacts entry; one opened from member search or a map host
 result is a child of that Search visit; one opened from Messages is a child of
 the message source route; and related profiles or conversations are children

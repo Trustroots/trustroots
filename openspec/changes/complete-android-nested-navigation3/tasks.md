@@ -51,19 +51,26 @@
 - [ ] 4.6 Route member-search and map/host-result profile openings on their
       existing Search stack in a separate slice; preserve the source state and
       test each exact origin/Back path.
-- [ ] 4.7 Replace related-profile selection with a decorated child profile
-      entry and preserve the opening profile visit.
-- [ ] 4.8 Replace profile conversation selection with a decorated Conversation
+- [x] 4.7 Establish a per-entry `MemberProfileViewModel` from the actual
+      decorated profile route owner for canonical profile, hosting, contacts,
+      references, relationship and contact-removal business state; retain the
+      opener's saveable pager/list state across child-route disposal.
+- [x] 4.8 Replace related-profile selection with a decorated
+      `MemberProfileVisit(username, visitID)` child entry and preserve the
+      opening profile visit. Extract profile entry content so the route does
+      not recursively compose `MemberProfileScreen`; keep photo, confirmation,
+      browser, Conversation, Experience and guarded Edit Back precedence intact.
+- [ ] 4.9 Replace profile conversation selection with a decorated Conversation
       entry and preserve the source profile route.
-- [ ] 4.9 Move own-profile and direct Menu editing into decorated Edit entries;
+- [ ] 4.10 Move own-profile and direct Menu editing into decorated Edit entries;
       own each form's canonical load, HTML normalisation, dirty guard and save,
       and define safe process-restoration behaviour.
-- [ ] 4.10 Move experience creation into a decorated Experience entry and
+- [ ] 4.11 Move experience creation into a decorated Experience entry and
       preserve its recipient and opening profile route.
-- [ ] 4.11 Move profile contact-add browser selection into a decorated browser
+- [ ] 4.12 Move profile contact-add browser selection into a decorated browser
       entry keyed by stable destination/member ID; derive title/URL and supply
       cookies only at runtime.
-- [ ] 4.12 Retain image viewing and confirmations as transient presentation
+- [ ] 4.13 Retain image viewing and confirmations as transient presentation
       state, consuming Back before the active Navigation 3 route is popped.
 
 ## 5. State, restoration and cleanup
