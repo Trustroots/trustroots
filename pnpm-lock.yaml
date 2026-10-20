@@ -499,30 +499,9 @@ importers:
 
   modules/core:
     dependencies:
-      '@trustroots/admin':
-        specifier: workspace:*
-        version: link:../admin
-      '@trustroots/contacts':
-        specifier: workspace:*
-        version: link:../contacts
-      '@trustroots/experiences':
-        specifier: workspace:*
-        version: link:../experiences
       '@trustroots/messages':
         specifier: workspace:*
         version: link:../messages
-      '@trustroots/offers':
-        specifier: workspace:*
-        version: link:../offers
-      '@trustroots/pages':
-        specifier: workspace:*
-        version: link:../pages
-      '@trustroots/search':
-        specifier: workspace:*
-        version: link:../search
-      '@trustroots/statistics':
-        specifier: workspace:*
-        version: link:../statistics
       '@trustroots/support':
         specifier: workspace:*
         version: link:../support
